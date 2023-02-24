@@ -23,6 +23,9 @@ extern "C" {
 #include "hal/check.h"
 #include "hal/assert.h"
 
+/* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
+#define MWDT_LL_DEFAULT_CLK_PRESCALER 20000
+
 //Type check wdt_stage_action_t
 STATIC_HAL_REG_CHECK("mwdt", WDT_STAGE_ACTION_OFF, TIMG_WDT_STG_SEL_OFF);
 STATIC_HAL_REG_CHECK("mwdt", WDT_STAGE_ACTION_INT, TIMG_WDT_STG_SEL_INT);

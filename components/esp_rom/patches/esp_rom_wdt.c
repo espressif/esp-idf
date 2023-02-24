@@ -7,13 +7,15 @@
 #include "sdkconfig.h"
 #include <stddef.h>
 
+#include "esp_rom_caps.h"
+
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
 #include "hal/mwdt_ll.h"
 
 #if CONFIG_HAL_WDT_USE_ROM_IMPL
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if ESP_ROM_WDT_INIT_PATCH
 void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescaler, bool enable_intr)
 {
     //Initialize HAL context
@@ -116,6 +118,6 @@ void wdt_hal_deinit(wdt_hal_context_t *hal)
     //Deinit HAL context
     hal->mwdt_dev = NULL;
 }
-#endif // CONFIG_IDF_TARGET_ESP32C6
+#endif // ESP_ROM_WDT_INIT_PATCH
 
 #endif // CONFIG_HAL_WDT_USE_ROM_IMPL

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "sdkconfig.h"
 #include "hal/wdt_hal.h"
+#include "hal/mwdt_ll.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -17,8 +18,8 @@
 #include "esp_private/esp_task_wdt_impl.h"
 
 #define TWDT_INSTANCE           WDT_MWDT0
-#define TWDT_TICKS_PER_US       MWDT0_TICKS_PER_US
-#define TWDT_PRESCALER          MWDT0_TICK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
+#define TWDT_TICKS_PER_US       500
+#define TWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define TWDT_PERIPH_MODULE      PERIPH_TIMG0_MODULE
 #define TWDT_INTR_SOURCE        ETS_TG0_WDT_LEVEL_INTR_SOURCE
 

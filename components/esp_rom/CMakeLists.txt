@@ -119,11 +119,16 @@ if(BOOTLOADER_BUILD)
         rom_linker_script("newlib")
         # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
         rom_linker_script("phy")
-        rom_linker_script("wdt")
+        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+            rom_linker_script("wdt")
+        endif()
         rom_linker_script("version")
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
+        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+            rom_linker_script("wdt")
+        endif()
     endif()
 
 else() # Regular app build
@@ -259,6 +264,10 @@ else() # Regular app build
 
         if(CONFIG_SPI_FLASH_ROM_IMPL)
             rom_linker_script("spiflash")
+        endif()
+
+        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+            rom_linker_script("wdt")
         endif()
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
