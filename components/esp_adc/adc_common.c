@@ -15,7 +15,6 @@
 #include "driver/gpio.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
-#include "hal/adc_hal_conf.h"
 #include "soc/adc_periph.h"
 
 

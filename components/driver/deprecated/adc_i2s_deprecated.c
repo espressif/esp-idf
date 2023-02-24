@@ -16,7 +16,6 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
-#include "hal/adc_hal_conf.h"
 #ifdef CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -235,13 +234,13 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     }
     adc_common_gpio_init(adc_unit, channel);
     ADC_ENTER_CRITICAL();
-    adc_ll_digi_set_fsm_time(ADC_HAL_FSM_RSTB_WAIT_DEFAULT, ADC_HAL_FSM_START_WAIT_DEFAULT,
-                             ADC_HAL_FSM_STANDBY_WAIT_DEFAULT);
-    adc_ll_set_sample_cycle(ADC_HAL_SAMPLE_CYCLE_DEFAULT);
-    adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
-    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
-    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
-    adc_ll_digi_set_clk_div(ADC_HAL_DIGI_SAR_CLK_DIV_DEFAULT);
+    adc_ll_digi_set_fsm_time(ADC_LL_FSM_RSTB_WAIT_DEFAULT, ADC_LL_FSM_START_WAIT_DEFAULT,
+                             ADC_LL_FSM_STANDBY_WAIT_DEFAULT);
+    adc_ll_set_sample_cycle(ADC_LL_SAMPLE_CYCLE_DEFAULT);
+    adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+    adc_ll_digi_set_clk_div(ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT);
     adc_digi_controller_reg_set(&dig_cfg);
     ADC_EXIT_CRITICAL();
 

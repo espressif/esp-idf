@@ -44,8 +44,6 @@ api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/storage/nvs_partition_parse
 api-reference/peripherals/sdspi_share
-api-reference/peripherals/adc_continuous
-api-reference/peripherals/adc_oneshot
 api-reference/peripherals/usb_host
 api-reference/peripherals/usb_device
 api-reference/peripherals/sdspi_host

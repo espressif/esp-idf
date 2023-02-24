@@ -88,10 +88,10 @@ void sar_periph_ctrl_adc_oneshot_power_release(void)
 
 void sar_periph_ctrl_adc_continuous_power_acquire(void)
 {
-    adc_ll_digi_set_power_manage(ADC_POWER_SW_ON);
+    adc_ll_digi_set_power_manage(ADC_LL_POWER_SW_ON);
 }
 
 void sar_periph_ctrl_adc_continuous_power_release(void)
 {
-    adc_ll_digi_set_power_manage(ADC_POWER_BY_FSM);
+    adc_ll_digi_set_power_manage(ADC_LL_POWER_BY_FSM);
 }

@@ -27,27 +27,47 @@
 extern "C" {
 #endif
 
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+
+/*---------------------------------------------------------------
+                    Oneshot
+---------------------------------------------------------------*/
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
+#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         ((PERIPH_NUM==0)? 2 : 1)
+
+/*---------------------------------------------------------------
+                    DMA
+---------------------------------------------------------------*/
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM)    (0)
+#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                   (8)
+#define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
+#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
+#define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (2)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
+
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
-#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
-#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+/*---------------------------------------------------------------
+                    PWDET (Power Detect)
+---------------------------------------------------------------*/
+#define ADC_LL_PWDET_CCT_DEFAULT                       (4)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
-    ADC_POWER_MAX,      /*!< For parameter check. */
+    ADC_LL_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_LL_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_LL_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
 } adc_ll_power_t;
 
 typedef enum {
-    ADC_RTC_DATA_OK = 0,
-    ADC_RTC_CTRL_UNSELECTED = 1,
-    ADC_RTC_CTRL_BREAK = 2,
-    ADC_RTC_DATA_FAIL = -1,
+    ADC_LL_RTC_DATA_OK = 0,
+    ADC_LL_RTC_CTRL_UNSELECTED = 1,
+    ADC_LL_RTC_CTRL_BREAK = 2,
+    ADC_LL_RTC_DATA_FAIL = -1,
 } adc_ll_rtc_raw_data_t;
 
 typedef enum {
@@ -481,30 +501,6 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 {
     /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
     abort();
-}
-
-/**
- * Analyze whether the obtained raw data is correct.
- * ADC2 can use arbiter. The arbitration result is stored in the channel information of the returned data.
- *
- * @param adc_n ADC unit.
- * @param raw_data ADC raw data input (convert value).
- * @return
- *        -  0: The data is correct to use.
- *        - -1: The data is invalid.
- */
-static inline adc_ll_rtc_raw_data_t adc_ll_analysis_raw_data(adc_unit_t adc_n, int raw_data)
-{
-    if (adc_n == ADC_UNIT_1) {
-        return ADC_RTC_DATA_OK;
-    }
-
-    //The raw data API returns value without channel information. Read value directly from the register
-    if (((APB_SARADC.apb_saradc2_data_status.adc2_data >> 13) & 0xF) > 9) {
-        return ADC_RTC_DATA_FAIL;
-    }
-
-    return ADC_RTC_DATA_OK;
 }
 
 /*---------------------------------------------------------------

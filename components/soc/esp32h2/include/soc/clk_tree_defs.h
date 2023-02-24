@@ -367,16 +367,15 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of ADC digital controller
  */
-// TODO: temporary support, need to check while supporting
-#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F96M}
+#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F96M, SOC_MOD_CLK_RC_FAST}
 
 /**
  * @brief ADC digital controller clock source
  */
-// TODO: temporary support, need to check while supporting
 typedef enum {
     ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     ADC_DIGI_CLK_SRC_PLL_F96M = SOC_MOD_CLK_PLL_F96M,   /*!< Select PLL_F96M as the source clock */
+    ADC_DIGI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,    /*!< Select PLL_F96M as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
 

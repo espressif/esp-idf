@@ -25,9 +25,9 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
-#include "hal/adc_hal_conf.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
+#include "clk_tree.h"
 
 #if SOC_DAC_SUPPORTED
 #include "hal/dac_types.h"
@@ -101,7 +101,9 @@ static esp_pm_lock_handle_t s_adc2_arbiter_lock;
 #endif  //CONFIG_PM_ENABLE
 #endif  // !CONFIG_IDF_TARGET_ESP32
 
-static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw);
+static uint32_t clk_src_freq_hz;
+
+static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, uint32_t clk_src_freq_hz, int *out_raw);
 
 /*---------------------------------------------------------------
                     ADC Common
@@ -154,17 +156,17 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 #if SOC_DAC_SUPPORTED
         dac_ll_rtc_sync_by_adc(false);
 #endif
-        adc_oneshot_ll_output_invert(ADC_UNIT_1, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_1));
-        adc_ll_set_sar_clk_div(ADC_UNIT_1, ADC_HAL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_1));
+        adc_oneshot_ll_output_invert(ADC_UNIT_1, ADC_LL_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+        adc_ll_set_sar_clk_div(ADC_UNIT_1, ADC_LL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_1));
 #ifdef CONFIG_IDF_TARGET_ESP32
         adc_ll_hall_disable(); //Disable other peripherals.
         adc_ll_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
     }
     if (adc_unit == ADC_UNIT_2) {
-        adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
-        adc_oneshot_ll_output_invert(ADC_UNIT_2, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
-        adc_ll_set_sar_clk_div(ADC_UNIT_2, ADC_HAL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_2));
+        adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+        adc_oneshot_ll_output_invert(ADC_UNIT_2, ADC_LL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+        adc_ll_set_sar_clk_div(ADC_UNIT_2, ADC_LL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_2));
     }
 }
 
@@ -275,6 +277,13 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
     ESP_RETURN_ON_FALSE(atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
+
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    if (!clk_src_freq_hz) {
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    }
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
     adc_common_gpio_init(ADC_UNIT_1, channel);
     SARADC1_ENTER();
@@ -387,7 +396,7 @@ int adc1_get_raw(adc1_channel_t channel)
 #endif
     adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_RTC);    //Set controller
     adc_oneshot_ll_set_channel(ADC_UNIT_1, channel);
-    adc_hal_convert(ADC_UNIT_1, channel, &adc_value);   //Start conversion, For ADC1, the data always valid.
+    adc_hal_convert(ADC_UNIT_1, channel, clk_src_freq_hz, &adc_value);   //Start conversion, For ADC1, the data always valid.
 #if !CONFIG_IDF_TARGET_ESP32
     adc_ll_rtc_reset();    //Reset FSM of rtc controller
 #endif
@@ -428,6 +437,12 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_2), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
     ESP_RETURN_ON_FALSE(atten <= SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC2 Atten Err");
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    if (!clk_src_freq_hz) {
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    }
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
     adc_common_gpio_init(ADC_UNIT_2, channel);
 
@@ -572,7 +587,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_IDF_TARGET_ESP32
 
     adc_oneshot_ll_set_channel(ADC_UNIT_2, channel);
-    ret = adc_hal_convert(ADC_UNIT_2, channel, &adc_value);
+    ret = adc_hal_convert(ADC_UNIT_2, channel, clk_src_freq_hz, &adc_value);
     if (ret != ESP_OK) {
         adc_value = -1;
     }
@@ -735,6 +750,12 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC1 channel error");
     ESP_RETURN_ON_FALSE((atten < SOC_ADC_ATTEN_NUM), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    if (!clk_src_freq_hz) {
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    }
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
     esp_err_t ret = ESP_OK;
     s_atten1_single[channel] = atten;
@@ -766,7 +787,7 @@ int adc1_get_raw(adc1_channel_t channel)
 
     ADC_REG_LOCK_ENTER();
     adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, atten);
-    adc_hal_convert(ADC_UNIT_1, channel, &raw_out);
+    adc_hal_convert(ADC_UNIT_1, channel, clk_src_freq_hz, &raw_out);
     ADC_REG_LOCK_EXIT();
 
     sar_periph_ctrl_adc_oneshot_power_release();
@@ -799,6 +820,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
     }
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    if (!clk_src_freq_hz) {
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    }
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
     esp_err_t ret = ESP_OK;
 
@@ -820,7 +847,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     ADC_REG_LOCK_ENTER();
     adc_oneshot_ll_set_atten(ADC_UNIT_2, channel, atten);
-    ret = adc_hal_convert(ADC_UNIT_2, channel, raw_out);
+    ret = adc_hal_convert(ADC_UNIT_2, channel, clk_src_freq_hz, raw_out);
     ADC_REG_LOCK_EXIT();
 
     sar_periph_ctrl_adc_oneshot_power_release();
@@ -833,7 +860,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
 
-static void adc_hal_onetime_start(adc_unit_t adc_n)
+static void adc_hal_onetime_start(adc_unit_t adc_n, uint32_t clk_src_freq_hz)
 {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     (void)adc_n;
@@ -841,16 +868,13 @@ static void adc_hal_onetime_start(adc_unit_t adc_n)
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
      * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
      * clock cycle.
-     *
-     * This limitation will be removed in hardware future versions.
-     *
      */
-    uint32_t digi_clk = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
+    uint32_t digi_clk = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
     //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
     uint32_t delay = (1000 * 1000) / digi_clk + 1;
     //3 ADC digital controller clock cycle
     delay = delay * 3;
-    //This coefficient (8) is got from test. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
+    //This coefficient (8) is got from test, and verified from DT. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
     if (digi_clk >= APB_CLK_FREQ/8) {
         delay = 0;
     }
@@ -861,19 +885,21 @@ static void adc_hal_onetime_start(adc_unit_t adc_n)
 
     //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
 #else
+    (void)clk_src_freq_hz;
     adc_oneshot_ll_start(adc_n);
 #endif
 }
 
-static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw)
+static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, uint32_t clk_src_freq_hz, int *out_raw)
 {
+
     uint32_t event = (adc_n == ADC_UNIT_1) ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE;
     adc_oneshot_ll_clear_event(event);
     adc_oneshot_ll_disable_all_unit();
     adc_oneshot_ll_enable(adc_n);
     adc_oneshot_ll_set_channel(adc_n, channel);
 
-    adc_hal_onetime_start(adc_n);
+    adc_hal_onetime_start(adc_n, clk_src_freq_hz);
 
     while (adc_oneshot_ll_get_event(event) != true) {
         ;

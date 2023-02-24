@@ -22,6 +22,7 @@
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "clk_tree.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_continuous.h"
 #include "hal/adc_types.h"
@@ -533,10 +534,15 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
     ESP_RETURN_ON_FALSE(config->format == ADC_DIGI_OUTPUT_FORMAT_TYPE2, ESP_ERR_INVALID_ARG, ADC_TAG, "Please use type2");
 #endif
 
+    uint32_t clk_src_freq_hz = 0;
+    clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+
     handle->hal_digi_ctrlr_cfg.adc_pattern_len = config->pattern_num;
     handle->hal_digi_ctrlr_cfg.sample_freq_hz = config->sample_freq_hz;
     handle->hal_digi_ctrlr_cfg.conv_mode = config->conv_mode;
     memcpy(handle->hal_digi_ctrlr_cfg.adc_pattern, config->adc_pattern, config->pattern_num * sizeof(adc_digi_pattern_config_t));
+    handle->hal_digi_ctrlr_cfg.clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
+    handle->hal_digi_ctrlr_cfg.clk_src_freq_hz = clk_src_freq_hz;
 
     const int atten_uninitialized = 999;
     handle->adc1_atten = atten_uninitialized;

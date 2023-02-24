@@ -66,3 +66,5 @@
 #define DR_REG_ASSIST_DEBUG_BASE                0x600C2000
 #define DR_REG_INTPRI_BASE                      0x600C5000
 #define DR_REG_EXTMEM_BASE                      0x600C8000
+
+#define PWDET_CONF_REG                          0x600A8010

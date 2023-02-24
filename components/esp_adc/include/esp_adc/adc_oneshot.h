@@ -27,6 +27,7 @@ typedef struct adc_oneshot_unit_ctx_t *adc_oneshot_unit_handle_t;
  */
 typedef struct {
     adc_unit_t unit_id;             ///< ADC unit
+    adc_oneshot_clk_src_t clk_src;  ///< Clock source
     adc_ulp_mode_t ulp_mode;        ///< ADC controlled by ULP, see `adc_ulp_mode_t`
 } adc_oneshot_unit_init_cfg_t;
 
@@ -51,6 +52,7 @@ typedef struct {
  *        - ESP_ERR_INVALID_ARG: Invalid arguments
  *        - ESP_ERR_NO_MEM:      No memory
  *        - ESP_ERR_NOT_FOUND:   The ADC peripheral to be claimed is already in use
+ *        - ESP_FAIL:            Clock source isn't initialised correctly
  */
 esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, adc_oneshot_unit_handle_t *ret_unit);
 

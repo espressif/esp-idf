@@ -26,7 +26,6 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
-#include "hal/adc_hal_conf.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 //For calibration
@@ -71,16 +70,23 @@ void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 
     if (version == ESP_EFUSE_ADC_CALIB_VER) {
         init_code = esp_efuse_rtc_calib_get_init_code(version, adc_n, atten);
-    } else {
+    }
+#if SOC_ADC_SELF_HW_CALI_SUPPORTED
+    else {
         ESP_EARLY_LOGD(TAG, "Calibration eFuse is not configured, use self-calibration for ICode");
         sar_periph_ctrl_adc_oneshot_power_acquire();
         portENTER_CRITICAL(&rtc_spinlock);
-        adc_ll_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
+        adc_ll_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
         const bool internal_gnd = true;
         init_code = adc_hal_self_calibration(adc_n, atten, internal_gnd);
         portEXIT_CRITICAL(&rtc_spinlock);
         sar_periph_ctrl_adc_oneshot_power_release();
     }
+#else
+    else {
+        ESP_EARLY_LOGD(TAG, "ICode self-calibration isn't supported");
+    }
+#endif  //SOC_ADC_SELF_HW_CALI_SUPPORTED
 
     s_adc_cali_param[adc_n][atten] = init_code;
     ESP_EARLY_LOGV(TAG, "Calib(V%d) ADC%d atten=%d: %04X", version, adc_n + 1, atten, init_code);
