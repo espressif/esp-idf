@@ -446,10 +446,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
  */
 uint64_t rtc_time_get(void);
 
-uint64_t rtc_light_slp_time_get(void);
-
-uint64_t rtc_deep_slp_time_get(void);
-
 /**
  * @brief Busy loop until next RTC_SLOW_CLK cycle
  *

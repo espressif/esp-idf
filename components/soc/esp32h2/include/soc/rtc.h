@@ -17,7 +17,7 @@ extern "C" {
 
 /**
  * @file rtc.h
- * @brief Low-level RTC power, clock, and sleep functions.
+ * @brief Low-level RTC power, clock functions.
  *
  * Functions in this file facilitate configuration of ESP32's RTC_CNTL peripheral.
  * RTC_CNTL peripheral handles many functions:
@@ -456,10 +456,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
  */
 uint64_t rtc_time_get(void);
 
-uint64_t rtc_light_slp_time_get(void);
-
-uint64_t rtc_deep_slp_time_get(void);
-
 /**
  * @brief Busy loop until next RTC_SLOW_CLK cycle
  *
@@ -496,7 +492,6 @@ bool rtc_dig_8m_enabled(void);
  * @return Frequency of the clock in Hz
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
-
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.

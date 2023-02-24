@@ -185,11 +185,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period)
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
 }
 
-void rtc_sleep_set_wakeup_time(uint64_t t)
-{
-    rtc_cntl_ll_set_wakeup_timer(t);
-}
-
 /* Read back 'reject' status when waking from light or deep sleep */
 static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu);
 

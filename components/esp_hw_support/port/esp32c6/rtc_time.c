@@ -210,21 +210,6 @@ uint64_t rtc_time_get(void)
     return lp_timer_hal_get_cycle_count(0);
 }
 
-uint64_t rtc_light_slp_time_get(void)
-{
-    // TODO: IDF-5645
-    ESP_EARLY_LOGW(TAG, "rtc_light_slp_time_get() has not been implemented yet");
-    return 0;
-}
-
-uint64_t rtc_deep_slp_time_get(void)
-{
-    uint64_t t_slp = READ_PERI_REG(LP_TIMER_MAIN_BUF1_LOW_REG);
-    t_slp |= ((uint64_t) READ_PERI_REG(LP_TIMER_MAIN_BUF1_HIGH_REG)) << 32;
-    uint64_t t_wake = rtc_time_get();
-    return (t_wake - t_slp);
-}
-
 void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more
 {
     // TODO: IDF-5781

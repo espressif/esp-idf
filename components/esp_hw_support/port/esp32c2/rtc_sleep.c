@@ -149,12 +149,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period)
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
 }
 
-void rtc_sleep_set_wakeup_time(uint64_t t)
-{
-    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, t & UINT32_MAX);
-    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER1_REG, t >> 32);
-}
-
 static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu);
 
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu)

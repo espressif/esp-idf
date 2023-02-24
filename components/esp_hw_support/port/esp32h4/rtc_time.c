@@ -167,23 +167,6 @@ uint64_t rtc_time_get(void)
     return rtc_cntl_ll_get_rtc_time();
 }
 
-uint64_t rtc_light_slp_time_get(void)
-{
-    uint64_t t_wake = READ_PERI_REG(RTC_CNTL_TIME_LOW0_REG);
-    t_wake |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME_HIGH0_REG)) << 32;
-    uint64_t t_slp = READ_PERI_REG(RTC_CNTL_TIME_LOW1_REG);
-    t_slp |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME_HIGH1_REG)) << 32;
-    return (t_wake - t_slp);
-}
-
-uint64_t rtc_deep_slp_time_get(void)
-{
-    uint64_t t_slp = READ_PERI_REG(RTC_CNTL_TIME_LOW1_REG);
-    t_slp |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME_HIGH1_REG)) << 32;
-    uint64_t t_wake = rtc_time_get();
-    return (t_wake - t_slp);
-}
-
 void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more
 {
     SET_PERI_REG_MASK(RTC_CNTL_SLOW_CLK_CONF_REG, RTC_CNTL_SLOW_CLK_NEXT_EDGE);

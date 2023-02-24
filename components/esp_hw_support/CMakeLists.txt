@@ -107,6 +107,7 @@ if(NOT BOOTLOADER_BUILD)
                 "adc_share_hw_ctrl.c" # TODO: IDF-6215
                 "sleep_cpu.c"         # TODO: IDF-6267
                 "sleep_modes.c"       # TODO: IDF-6267
+                "sleep_wake_stub.c"   # TODO: IDF-6267
             )
     endif()
 else()

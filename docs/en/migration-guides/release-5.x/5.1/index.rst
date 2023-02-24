@@ -10,3 +10,4 @@ Migration from 5.0 to 5.1
     peripherals
     storage
     networking
+    system
