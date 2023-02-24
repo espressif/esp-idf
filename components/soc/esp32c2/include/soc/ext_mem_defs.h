@@ -15,18 +15,17 @@ extern "C" {
 #include <stdint.h>
 
 /*IRAM0 is connected with Cache IBUS0*/
-#define IRAM0_ADDRESS_LOW               0x40000000
-#define IRAM0_ADDRESS_HIGH(page_size)              IRAM0_CACHE_ADDRESS_HIGH(page_size)
-#define IRAM0_CACHE_ADDRESS_LOW         0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH(page_size)        (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
+#define IRAM0_ADDRESS_LOW                      0x4037C000
+#define IRAM0_ADDRESS_HIGH                     0x403C0000
+#define IRAM0_CACHE_ADDRESS_LOW                0x42000000
+#define IRAM0_CACHE_ADDRESS_HIGH(page_size)    (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
 
 /*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_ADDRESS_LOW               0x3C000000
-#define DRAM0_ADDRESS_HIGH              0x40000000
-#define DRAM0_CACHE_ADDRESS_LOW         0x3C000000
-#define DRAM0_CACHE_ADDRESS_HIGH(page_size)        (DRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64))
-#define DRAM0_CACHE_OPERATION_HIGH(page_size)      DRAM0_CACHE_ADDRESS_HIGH(page_size)
-#define ESP_CACHE_TEMP_ADDR             0x3C000000
+#define DRAM0_ADDRESS_LOW                      0x3FCA0000
+#define DRAM0_ADDRESS_HIGH                     0x3FCE0000
+#define DRAM0_CACHE_ADDRESS_LOW                0x3C000000
+#define DRAM0_CACHE_ADDRESS_HIGH(page_size)    (DRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
+#define DRAM0_CACHE_OPERATION_HIGH(page_size)  DRAM0_CACHE_ADDRESS_HIGH(page_size)
 
 #define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
 #define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH(page_size))
