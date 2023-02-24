@@ -50,19 +50,19 @@
 
 void RTC_IRAM_ATTR esp_wake_stub_sleep(esp_deep_sleep_wake_stub_fn_t new_stub)
 {
-#if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-    extern char _rtc_text_start[];
-    #if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
-    extern char _rtc_noinit_end[];
-    size_t rtc_fast_length = (size_t)_rtc_noinit_end - (size_t)_rtc_text_start;
-    #else
-    extern char _rtc_force_fast_end[];
-    size_t rtc_fast_length = (size_t)_rtc_force_fast_end - (size_t)_rtc_text_start;
-    #endif // CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
-    esp_rom_set_rtc_wake_addr((esp_rom_wake_func_t)new_stub, rtc_fast_length);
-#else
-    // Set the pointer of the wake stub function.
+
+#if CONFIG_IDF_TARGET_ESP32
+    // Since the app core of esp32 does not support access to RTC_FAST_MEMORY,
+    // `esp_set_deep_sleep_wake_stub` is not declared in RTC_FAST_MEMORY,
+    // so we cannot call it here
     REG_WRITE(RTC_ENTRY_ADDR_REG, (uint32_t)new_stub);
+#else
+    esp_set_deep_sleep_wake_stub(new_stub);
+#endif
+
+#if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
+    esp_set_deep_sleep_wake_stub_default_entry();
+#else
     set_rtc_memory_crc();
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_MEM
 

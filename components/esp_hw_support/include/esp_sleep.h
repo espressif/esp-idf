@@ -478,6 +478,11 @@ typedef void (*esp_deep_sleep_wake_stub_fn_t)(void);
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub);
 
 /**
+ * @brief Set wake stub entry to default `esp_wake_stub_entry`
+ */
+void esp_set_deep_sleep_wake_stub_default_entry(void);
+
+/**
  * @brief Get current wake from deep sleep stub
  * @return Return current wake from deep sleep stub, or NULL if
  *         no stub is installed.

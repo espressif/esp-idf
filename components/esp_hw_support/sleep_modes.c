@@ -263,6 +263,19 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
 #endif
 
 }
+
+void RTC_IRAM_ATTR esp_set_deep_sleep_wake_stub_default_entry(void)
+{
+    extern char _rtc_text_start[];
+#if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
+    extern char _rtc_noinit_end[];
+    size_t rtc_fast_length = (size_t)_rtc_noinit_end - (size_t)_rtc_text_start;
+#else
+    extern char _rtc_force_fast_end[];
+    size_t rtc_fast_length = (size_t)_rtc_force_fast_end - (size_t)_rtc_text_start;
+#endif
+    esp_rom_set_rtc_wake_addr((esp_rom_wake_func_t)esp_wake_stub_entry, rtc_fast_length);
+}
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
 /* Wake from deep sleep stub
@@ -281,7 +294,13 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
     return stub_ptr;
 }
 
-void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
+#if CONFIG_IDF_TARGET_ESP32
+/* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
+void
+#else
+void RTC_IRAM_ATTR
+#endif
+esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 {
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     wake_stub_fn_handler = new_stub;
@@ -548,15 +567,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
 
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-        extern char _rtc_text_start[];
-#if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
-        extern char _rtc_noinit_end[];
-        size_t rtc_fast_length = (size_t)_rtc_noinit_end - (size_t)_rtc_text_start;
-#else
-        extern char _rtc_force_fast_end[];
-        size_t rtc_fast_length = (size_t)_rtc_force_fast_end - (size_t)_rtc_text_start;
-#endif
-        esp_rom_set_rtc_wake_addr((esp_rom_wake_func_t)esp_wake_stub_entry, rtc_fast_length);
+    esp_set_deep_sleep_wake_stub_default_entry();
     // Enter Deep Sleep
 #if SOC_PMU_SUPPORTED
         result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);

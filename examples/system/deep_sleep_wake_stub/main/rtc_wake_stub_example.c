@@ -34,7 +34,7 @@ static const uint32_t s_max_count = 20;
 static uint32_t wakeup_cause;
 
 // wake up stub function stored in RTC memory
-void __attribute__((aligned(4))) wake_stub_example(void)
+void wake_stub_example(void)
 {
     // Get wakeup cause.
     wakeup_cause = esp_wake_stub_get_wakeup_cause();
