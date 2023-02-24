@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "unity.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,7 +32,7 @@
 #define LENGTH_PER_TIME        1024
 #endif
 
-static esp_err_t spi0_psram_test(void)
+TEST_CASE("MSPI: Test_SPI0_PSRAM", "[mspi]")
 {
     printf("----------SPI0 PSRAM Test----------\n");
 
@@ -55,17 +56,14 @@ static esp_err_t spi0_psram_test(void)
         memcpy(psram_rd_buf + i * LENGTH_PER_TIME, psram_wr_buf, LENGTH_PER_TIME);
 
         if (memcmp(psram_rd_buf + i * LENGTH_PER_TIME, psram_wr_buf, LENGTH_PER_TIME) != 0) {
-            printf("Fail\n");
             free(psram_rd_buf);
             free(psram_wr_buf);
-            return ESP_FAIL;
+            TEST_FAIL_MESSAGE("SPI0 PSRAM Test Fail");
         }
     }
-
     free(psram_rd_buf);
     free(psram_wr_buf);
     printf(DRAM_STR("----------SPI0 PSRAM Test Success----------\n\n"));
-    return ESP_OK;
 }
 #endif
 
@@ -76,8 +74,6 @@ static esp_err_t spi0_psram_test(void)
 #define SPI1_FLASH_TEST_NUM     (SECTOR_LEN / SPI1_FLASH_TEST_LEN)
 #define SPI1_FLASH_TEST_ADDR    0x2a0000
 
-extern void spi_flash_disable_interrupts_caches_and_other_cpu(void);
-extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
 static uint8_t rd_buf[SPI1_FLASH_TEST_LEN];
 static uint8_t wr_buf[SPI1_FLASH_TEST_LEN];
 
@@ -90,7 +86,7 @@ static const esp_partition_t *get_test_flash_partition(void)
     return result;
 }
 
-static NOINLINE_ATTR IRAM_ATTR esp_err_t spi1_flash_test(void)
+TEST_CASE("MSPI: Test_SPI1_Flash", "[mspi]")
 {
     printf(DRAM_STR("----------SPI1 Flash Test----------\n"));
 
@@ -114,15 +110,14 @@ static NOINLINE_ATTR IRAM_ATTR esp_err_t spi1_flash_test(void)
                     printf(DRAM_STR("err: wr[%d]: 0x%02x -- rd[%d]: 0x%02x\n"), i, wr_buf[i], i, rd_buf[i]);
                 }
             }
-            return ESP_FAIL;
+            TEST_FAIL_MESSAGE("SPI1 Flash Test Fail");
         }
         memset(rd_buf, 0x0, SPI1_FLASH_TEST_LEN);
     }
 
     printf(DRAM_STR("----------SPI1 Flash Test Success----------\n\n"));
-
-    return ESP_OK;
 }
+
 
 //-----------------------------------------SPI0 FLASH TEST-----------------------------------------------//
 #define SPI0_FLASH_TEST_LEN    32
@@ -133,8 +128,7 @@ static const uint8_t flash_rd_buf[SPI0_FLASH_TEST_LEN] = SPI0_FLASH_TEST_BUF;
 extern int _flash_rodata_start;
 extern int _rodata_reserved_end;
 
-
-static IRAM_ATTR esp_err_t spi0_flash_test(void)
+TEST_CASE("MSPI: Test_SPI0_Flash", "[mspi]")
 {
     printf("----------SPI0 Flash Test----------\n");
     //Check if the flash_rd_buf is in .rodata
@@ -144,22 +138,8 @@ static IRAM_ATTR esp_err_t spi0_flash_test(void)
 
     for (int i = 0; i < SPI0_FLASH_TEST_LEN; i++) {
         if (flash_rd_buf[i] != cmp_buf[i]) {
-            return ESP_FAIL;
+            TEST_FAIL_MESSAGE("SPI0 Flash Test Fail");
         }
     }
     printf(DRAM_STR("----------SPI0 Flash Test Success----------\n\n"));
-
-    return ESP_OK;
-}
-
-void app_main(void)
-{
-    ESP_ERROR_CHECK(spi0_flash_test());
-
-#if CONFIG_SPIRAM
-    ESP_ERROR_CHECK(spi0_psram_test());
-#endif
-    ESP_ERROR_CHECK(spi1_flash_test());
-
-    printf("flash psram test success\n");
 }

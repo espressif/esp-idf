@@ -696,6 +696,30 @@ component_ut_pytest_esp32s3_flash_multi:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_multi ]
 
+component_ut_pytest_esp32s3_mspi_f4r4:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, MSPI_F4R4 ]
+
+component_ut_pytest_esp32s3_mspi_f4r8:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, MSPI_F4R8 ]
+
+component_ut_pytest_esp32s3_mspi_f8r8:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, MSPI_F8R8 ]
+
 component_ut_pytest_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
