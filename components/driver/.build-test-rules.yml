@@ -43,10 +43,6 @@ components/driver/test_apps/legacy_adc_driver:
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: default group resolution changed, IDF-6812
 
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
