@@ -28,6 +28,9 @@
 #include "ulp_common.h"
 #include "esp_rom_sys.h"
 
+#include "esp_check.h"
+#include "esp_private/rtc_ctrl.h"
+
 typedef struct {
     uint32_t magic;
     uint16_t text_offset;
@@ -39,6 +42,24 @@ typedef struct {
 #define ULP_BINARY_MAGIC_ESP32 (0x00706c75)
 
 static const char* TAG = "ulp";
+
+esp_err_t ulp_isr_register(intr_handler_t fn, void *arg)
+{
+    ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, "ULP ISR is NULL");
+    REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA_M);
+#if CONFIG_IDF_TARGET_ESP32
+    return rtc_isr_register(fn, arg, RTC_CNTL_SAR_INT_ST_M, 0);
+#else
+    return rtc_isr_register(fn, arg, RTC_CNTL_ULP_CP_INT_ST_M, 0);
+#endif /* CONFIG_IDF_TARGET_ESP32 */
+}
+
+esp_err_t ulp_isr_deregister(intr_handler_t fn, void *arg)
+{
+    ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, "ULP ISR is NULL");
+    REG_CLR_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA_M);
+    return rtc_isr_deregister(fn, arg);
+}
 
 esp_err_t ulp_run(uint32_t entry_point)
 {
