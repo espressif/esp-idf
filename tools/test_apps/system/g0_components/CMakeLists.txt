@@ -26,12 +26,6 @@ idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 project(g0_components)
 
-# As a workaround for ESP32-C2, we need to define the MMU page size here, until MMU hal-driver
-# is refactored
-if(CONFIG_IDF_TARGET_ESP32C2)
-    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_MMU_PAGE_SIZE=64" APPEND)
-endif()
-
 # Currently, only support a single core on Xtensa targets.
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     idf_build_set_property(C_COMPILE_OPTIONS "-DportNUM_PROCESSORS=1" APPEND)
