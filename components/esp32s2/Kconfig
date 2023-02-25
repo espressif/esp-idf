@@ -34,11 +34,16 @@ menu "ESP32S2-specific"
         # MAX Revision
         #
 
-        comment "Maximum Supported ESP32-S2 Revision (Rev v1.99)"
-        # Maximum revision that IDF supports.
-        # It can not be changed by user.
-        # Only Espressif can change it when a new version will be supported in IDF.
-        # Supports all chips starting from ESP32S2_REV_MIN_FULL to ESP32S2_REV_MAX_FULL
+    choice ESP32S2_REV_MAX_FULL_STR
+        prompt "Maximum Supported ESP32-S2 Revision"
+        config ESP32S2_REV_MAX_FULL_STR_OPT
+            bool "Rev v1.99"
+    endchoice
+
+    # Maximum revision that IDF supports.
+    # It can not be changed by user.
+    # Only Espressif can change it when a new version will be supported in IDF.
+    # Supports all chips starting from ESP32S2_REV_MIN_FULL to ESP32S2_REV_MAX_FULL
 
     config ESP32S2_REV_MAX_FULL
         int
