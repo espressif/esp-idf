@@ -47,23 +47,10 @@ static const ble_uuid128_t gatt_svr_dsc_uuid =
     BLE_UUID128_INIT(0x01, 0x01, 0x01, 0x01, 0x12, 0x12, 0x12, 0x12,
                      0x23, 0x23, 0x23, 0x23, 0x34, 0x34, 0x34, 0x34);
 
-static void* subscription_list_buffer;
-static struct os_mempool subscription_list_mempool;
-struct subscription {
-    SLIST_ENTRY(subscription) next;
-    uint16_t val_handle;
-};
-SLIST_HEAD(subscription_list, subscription);
-/*** SLIST that contains the handles of all the characteristics that are subscribed ***/
-static struct subscription_list slist;
-
 static int
 gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 struct ble_gatt_access_ctxt *ctxt,
                 void *arg);
-
-static bool
-gatt_svr_is_subscribed(uint16_t val_handle);
 
 static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     {
@@ -78,9 +65,9 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
 #if CONFIG_EXAMPLE_ENCRYPTION
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE |
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC |
-                BLE_GATT_CHR_F_NOTIFY,
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
 #else
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
 #endif
                 .val_handle = &gatt_svr_chr_val_handle,
                 .descriptors = (struct ble_gatt_dsc_def[])
@@ -133,6 +120,7 @@ gatt_svr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
  * ctxt->op tells weather the operation is read or write and
  * weather it is on a characteristic or descriptor,
  * ctxt->dsc->uuid tells which characteristic/descriptor is accessed.
+ * attr_handle give the value handle of the attribute being accessed.
  * Accordingly do:
  *     Append the value to ctxt->om if the operation is READ
  *     Write ctxt->om to the value if the operation is WRITE
@@ -146,8 +134,15 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
 
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
+        if (conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            MODLOG_DFLT(INFO, "Characteristic read; conn_handle=%d attr_handle=%d\n",
+                        conn_handle, attr_handle);
+        } else {
+            MODLOG_DFLT(INFO, "Characteristic read by NimBLE stack; attr_handle=%d\n",
+                        attr_handle);
+        }
         uuid = ctxt->chr->uuid;
-        if (ble_uuid_cmp(uuid, &gatt_svr_chr_uuid.u) == 0) {
+        if (attr_handle == gatt_svr_chr_val_handle) {
             rc = os_mbuf_append(ctxt->om,
                                 &gatt_svr_chr_val,
                                 sizeof(gatt_svr_chr_val));
@@ -156,30 +151,34 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
         goto unknown;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        if (conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            MODLOG_DFLT(INFO, "Characteristic write; conn_handle=%d attr_handle=%d",
+                        conn_handle, attr_handle);
+        } else {
+            MODLOG_DFLT(INFO, "Characteristic write by NimBLE stack; attr_handle=%d",
+                        attr_handle);
+        }
         uuid = ctxt->chr->uuid;
-        if (ble_uuid_cmp(uuid, &gatt_svr_chr_uuid.u) == 0) {
+        if (attr_handle == gatt_svr_chr_val_handle) {
             rc = gatt_svr_write(ctxt->om,
                                 sizeof(gatt_svr_chr_val),
                                 sizeof(gatt_svr_chr_val),
                                 &gatt_svr_chr_val, NULL);
-            if (gatt_svr_is_subscribed(attr_handle)) {
-                struct os_mbuf *txom;
-                uint8_t notification[] = {0x00, 0x01, 0x02, 0x03};
-                txom = ble_hs_mbuf_from_flat(notification, sizeof(notification));
-                /* No need to free txom as it is consumed by ble_gattc_notify_custom */
-                rc = ble_gattc_notify_custom(conn_handle,
-                                             gatt_svr_chr_val_handle, txom);
-                if (rc == 0) {
-                    MODLOG_DFLT(INFO, "Notification sent succesfully\n");
-                } else {
-                    MODLOG_DFLT(INFO, "Error in sending notification rc = %d\n", rc);
-                }
-            }
+            ble_gatts_chr_updated(attr_handle);
+            MODLOG_DFLT(INFO, "Notification/Indication scheduled for "
+                        "all subscribed peers.\n");
             return rc;
         }
         goto unknown;
 
     case BLE_GATT_ACCESS_OP_READ_DSC:
+        if (conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            MODLOG_DFLT(INFO, "Descriptor read; conn_handle=%d attr_handle=%d\n",
+                        conn_handle, attr_handle);
+        } else {
+            MODLOG_DFLT(INFO, "Descriptor read by NimBLE stack; attr_handle=%d\n",
+                        attr_handle);
+        }
         uuid = ctxt->dsc->uuid;
         if (ble_uuid_cmp(uuid, &gatt_svr_dsc_uuid.u) == 0) {
             rc = os_mbuf_append(ctxt->om,
@@ -236,77 +235,6 @@ gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
     }
 }
 
-/**
- * Tells if a characteristic has been subscribed to
- * based on it's value handle.
- * All subscribed characteristic value handles are stored
- * in an SLIST.
- **/
-static bool
-gatt_svr_is_subscribed(uint16_t val_handle)
-{
-    struct subscription *sub;
-    SLIST_FOREACH(sub, &slist, next) {
-        if (sub->val_handle == val_handle) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/*
- * Call this with the value handle of the characteristic
- * that needs to be subscribed to, to add the handle in the
- * list of subscribed characteristics
- */
-int
-gatt_svr_subscribe(uint16_t val_handle) {
-    struct subscription *sub;
-
-    SLIST_FOREACH(sub, &slist, next) {
-        if (sub->val_handle == val_handle) {
-            return BLE_ATT_ERR_INVALID_HANDLE;
-        }
-    }
-    sub = os_memblock_get(&subscription_list_mempool);
-    if (sub == NULL) {
-        /* Out of memory */
-        return BLE_ATT_ERR_INSUFFICIENT_RES;
-    }
-    memset(sub, 0, sizeof(struct subscription));
-    SLIST_NEXT(sub, next) = NULL;
-    sub->val_handle = val_handle;
-
-    SLIST_INSERT_HEAD(&slist, sub, next);
-
-    return 0;
-}
-
-/**
- * Removes all subscriptions from the list
- * of subscribed characteristics.
- * Called upon disconnect
- **/
-void
-gatt_svr_subscription_delete()
-{
-    struct subscription *sub;
-
-    while(true) {
-        sub = SLIST_FIRST(&slist);
-        if (sub == NULL) {
-            break;
-        }
-        SLIST_REMOVE_HEAD(&slist, next);
-        os_memblock_put(&subscription_list_mempool, sub);
-        sub = NULL;
-    }
-
-    os_mempool_clear(&subscription_list_mempool);
-    free(subscription_list_buffer);
-    subscription_list_buffer = NULL;
-}
-
 int
 gatt_svr_init(void)
 {
@@ -328,26 +256,6 @@ gatt_svr_init(void)
 
     /* Setting a value for the read-only descriptor */
     gatt_svr_dsc_val = 0x99;
-
-    /* Allocating mempool for the SLIST */
-    subscription_list_buffer = malloc(OS_MEMPOOL_BYTES(MAX_NOTIFY, sizeof(struct subscription)));
-    if (subscription_list_buffer == NULL) {
-        rc = BLE_HS_ENOMEM;
-        return rc;
-    }
-    rc = os_mempool_init(&subscription_list_mempool, MAX_NOTIFY,
-                         sizeof(struct subscription), subscription_list_buffer,
-                         "subscription_list_mempool");
-    if (rc != 0) {
-        rc = BLE_HS_EOS;
-        free(subscription_list_buffer);
-        subscription_list_buffer = NULL;
-        MODLOG_DFLT(ERROR, "Error while allocating memory\n");
-        return rc;
-    }
-
-    SLIST_INIT(&slist);
-    assert(SLIST_EMPTY(&slist));
 
     return 0;
 }
