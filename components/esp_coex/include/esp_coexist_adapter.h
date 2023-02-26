@@ -36,15 +36,13 @@ typedef struct {
     int (* _is_in_isr)(void);
     void * (* _malloc_internal)(size_t size);
     void (* _free)(void *p);
-#if CONFIG_IDF_TARGET_ESP32
+    int64_t (* _esp_timer_get_time)(void);
+    bool (* _env_is_chip)(void);
+    uint32_t (* _slowclk_cal_get)(void);
     void (* _timer_disarm)(void *timer);
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
-#endif
-    int64_t (* _esp_timer_get_time)(void);
-    bool (* _env_is_chip)(void);
-    uint32_t (* _slowclk_cal_get)(void);
     int32_t _magic;
 } coex_adapter_funcs_t;
 

@@ -86,6 +86,7 @@
 .patterns-target_test-i154: &patterns-target_test-i154
   - "components/esp_phy/**/*"
   - "components/ieee802154/**/*"
+  - "components/esp_coex/**/*"
 
 .patterns-example_test-i154: &patterns-example_test-i154
   - "components/esp_netif/**/*"
@@ -100,6 +101,7 @@
   - "components/esp_wifi/**/*"
   - "components/esp_phy/**/*"
   - "components/wpa_supplicant/**/*"
+  - "components/esp_coex/**/*"
 
 .patterns-integration_test-ble: &patterns-integration_test-ble
   - "tools/ci/python_packages/gitlab_api.py"
@@ -109,6 +111,7 @@
   - "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"
   - "components/bt/host/nimble/nimble"
   - "components/esp_phy/lib"
+  - "components/esp_coex/**/*"
 
 .patterns-integration_test-wifi: &patterns-integration_test-wifi
   - "tools/ci/python_packages/gitlab_api.py"
@@ -183,6 +186,7 @@
   - "components/cmock/CMock"
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
+  - "components/esp_coex/lib"
   - "components/ieee802154/lib"
   - "components/json/cJSON"
   - "components/lwip/lwip"

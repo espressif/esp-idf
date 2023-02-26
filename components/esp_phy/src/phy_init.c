@@ -25,7 +25,6 @@
 #include "endian.h"
 #include "esp_private/phy.h"
 #include "phy_init_data.h"
-#include "esp_coexist_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/wifi.h"
 #include "esp_rom_crc.h"

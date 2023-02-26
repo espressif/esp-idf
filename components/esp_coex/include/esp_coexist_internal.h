@@ -22,8 +22,15 @@ typedef enum {
     COEX_PREFER_NUM,
 } coex_prefer_t;
 
+typedef enum {
+    COEX_SCHM_CALLBACK_TYPE_WIFI = 0,
+    COEX_SCHM_CALLBACK_TYPE_BT,
+    COEX_SCHM_CALLBACK_TYPE_I154,
+} coex_schm_callback_type_t;
+
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
 typedef esp_err_t (* coex_set_lpclk_source_callback_t)(void);
+typedef void (* coex_wifi_channel_change_cb_t)(uint8_t primary, uint8_t secondary);
 
 /**
  * @brief Pre-Init software coexist
@@ -117,11 +124,74 @@ int coex_wifi_release(uint32_t event);
 int coex_wifi_channel_set(uint8_t primary, uint8_t secondary);
 
 /**
+ * @brief Get WiFi channel from coexistence module.
+ *
+ *  @param primary : pointer to value of WiFi primary channel
+ *  @param secondary : pointer to value of WiFi secondary channel
+ *  @return : 0 - success, other - failed
+ */
+int coex_wifi_channel_get(uint8_t *primary, uint8_t *secondary);
+
+/**
  * @brief Register application callback function to Wi-Fi update low power clock module.
  *
  * @param callback : Wi-Fi update low power clock callback function
  */
 void coex_wifi_register_update_lpclk_callback(coex_set_lpclk_source_callback_t callback);
+
+/**
+ * @brief Bluetooth requests coexistence
+ *
+ *  @param event : Bluetooth event
+ *  @param latency : Bluetooth will request coexistence after latency
+ *  @param duration : duration for Bluetooth to request coexistence
+ *  @return : 0 - success, other - failed
+ */
+int coex_bt_request(uint32_t event, uint32_t latency, uint32_t duration);
+
+/**
+ * @brief Bluetooth release coexistence.
+ *
+ *  @param event : Bluetooth event
+ *  @return : 0 - success, other - failed
+ */
+int coex_bt_release(uint32_t event);
+
+#if CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Bluetooth registers callback function to coexistence module
+ *        This function is only used on ESP32.
+ *
+ *  @param callback: callback function registered to coexistence module
+ *  @return : 0 - success, other - failed
+ */
+int coex_register_bt_cb(coex_func_cb_t callback);
+
+/**
+ * @brief To acquire the spin-lock used in resetting Bluetooth baseband.
+ *        This function is only used to workaround ESP32 hardware issue.
+ *
+ *  @param callback: callback function registered to coexistence module
+ *  @return : value of the spinlock to be restored
+ */
+uint32_t coex_bb_reset_lock(void);
+
+/**
+ * @brief To release the spin-lock used in resetting Bluetooth baseband.
+ *        This function is only used to workaround ESP32 hardware issue.
+ *
+ *  @param restore: value of the spinlock returned from previous call of coex_bb_rest_lock
+ */
+void coex_bb_reset_unlock(uint32_t restore);
+#endif /* CONFIG_IDF_TARGET_ESP32 */
+
+/**
+ * @brief Bluetooth registers callback function to receive notification when Wi-Fi channel changes
+ *
+ *  @param callback: callback function registered to coexistence module
+ *  @return : 0 - success, other - failed
+ */
+int coex_register_wifi_channel_change_callback(coex_wifi_channel_change_cb_t callback);
 
 /**
  * @brief Update low power clock interval
@@ -215,6 +285,22 @@ int coex_schm_curr_phase_idx_get(void);
  *  @return : 0 - success, other - failed
  */
 int coex_register_start_cb(int (* cb)(void));
+
+/**
+ * @brief Restart current coexistence scheme.
+ *
+ *  @return : 0 - success, other - failed
+ */
+int coex_schm_process_restart(void);
+
+/**
+ * @brief Register callback for coexistence scheme.
+ *
+ *  @param type : callback type
+ *  @param callback : callback
+ *  @return : 0 - success, other - failed
+ */
+int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
 
 /**
  * @brief Register coexistence adapter functions.

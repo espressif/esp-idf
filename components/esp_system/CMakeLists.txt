@@ -121,7 +121,7 @@ if(CONFIG_VFS_SUPPORT_IO)
 endif()
 
 if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
-    idf_component_optional_requires(PRIVATE esp_wifi)
+    idf_component_optional_requires(PRIVATE esp_coex)
 endif()
 
 if(NOT BOOTLOADER_BUILD)

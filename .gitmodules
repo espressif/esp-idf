@@ -86,3 +86,7 @@
 [submodule "components/heap/tlsf"]
 	path = components/heap/tlsf
 	url = ../../espressif/tlsf.git
+
+[submodule "components/esp_coex/lib"]
+	path = components/esp_coex/lib
+	url = ../../espressif/esp-coex-lib.git
