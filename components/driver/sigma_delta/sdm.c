@@ -19,6 +19,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_pm.h"
+#include "clk_tree.h"
 #include "driver/gpio.h"
 #include "driver/sdm.h"
 #include "hal/gpio_hal.h"
@@ -209,46 +210,27 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
 
     ESP_GOTO_ON_FALSE(group->clk_src == 0 || group->clk_src == config->clk_src, ESP_ERR_INVALID_ARG, err, TAG, "clock source conflict");
     uint32_t src_clk_hz = 0;
-    switch (config->clk_src) {
-#if SOC_SDM_CLK_SUPPORT_APB
-    case SDM_CLK_SRC_APB:
-        src_clk_hz = esp_clk_apb_freq();
+    ESP_GOTO_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src,
+        CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz), err, TAG, "get source clock frequency failed");
+
 #if CONFIG_PM_ENABLE
-        sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
-        ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
-#endif
-        break;
-#endif // SOC_SDM_CLK_SUPPORT_APB
+    esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;
 #if SOC_SDM_CLK_SUPPORT_XTAL
-    case SDM_CLK_SRC_XTAL:
-        src_clk_hz = esp_clk_xtal_freq();
-        break;
-#endif // SOC_SDM_CLK_SUPPORT_XTAL
-#if SOC_SDM_CLK_SUPPORT_PLL_F80M
-    case SDM_CLK_SRC_PLL_F80M:
-        src_clk_hz = 80 * 1000 * 1000;
-#if CONFIG_PM_ENABLE
-        sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
-#endif // CONFIG_PM_ENABLE
-        break;
-#endif // SOC_SDM_CLK_SUPPORT_PLL_F80M
-#if SOC_SDM_CLK_SUPPORT_PLL_F48M
-    case SDM_CLK_SRC_PLL_F48M:
-        src_clk_hz = 48 * 1000 * 1000;
-#if CONFIG_PM_ENABLE
-        sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
-#endif // CONFIG_PM_ENABLE
-        break;
-#endif // SOC_SDM_CLK_SUPPORT_PLL_F48M
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "clock source %d is not support", config->clk_src);
-        break;
+    if (config->clk_src == SDM_CLK_SRC_XTAL) {
+        pm_type = -1;
     }
+#endif // SOC_SDM_CLK_SUPPORT_XTAL
+#if SOC_SDM_CLK_SUPPORT_APB
+    if (config->clk_src == SDM_CLK_SRC_APB) {
+        pm_type = ESP_PM_APB_FREQ_MAX;
+    }
+#endif // SOC_SDM_CLK_SUPPORT_APB
+    if (pm_type >= 0) {
+        sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
+        ret = esp_pm_lock_create(pm_type, 0, chan->pm_lock_name, &chan->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create %s lock failed", chan->pm_lock_name);
+    }
+#endif // CONFIG_PM_ENABLE
     group->clk_src = config->clk_src;
 
     // SDM clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well
