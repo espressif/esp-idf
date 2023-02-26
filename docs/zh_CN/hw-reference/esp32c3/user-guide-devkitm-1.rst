@@ -154,7 +154,8 @@ J1
 6     GND   G           接地
 7     RST   I           CHIP_PU
 8     GND   G           接地
-9     IO1   I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N
+9     IO0   I/O/T       GPIO0, ADC1_CH0, XTAL_32K_P
+10    IO1   I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N
 11    IO10  I/O/T       GPIO10, FSPICS0
 12    GND   G           接地
 13    5V    P           5 V 电源
