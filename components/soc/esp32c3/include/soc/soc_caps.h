@@ -89,9 +89,6 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_6~GPIO_NUM_21)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000003FFFC0ULL
 
-// Support to configure sleep status
-#define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
-
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C3 have 2 I2C.
 #define SOC_I2C_NUM                 (1)

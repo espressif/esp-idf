@@ -410,7 +410,6 @@ esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
 }
 #endif // SOC_PM_SUPPORT_CPU_PD
 
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 static inline void gpio_sleep_mode_config_apply(void)
 {
@@ -461,7 +460,6 @@ void esp_sleep_enable_gpio_switch(bool enable)
         }
     }
 }
-#endif // SOC_GPIO_SUPPORT_SLP_SWITCH
 
 static IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
 {
