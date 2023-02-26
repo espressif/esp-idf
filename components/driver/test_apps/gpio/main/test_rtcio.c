@@ -326,10 +326,9 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6) // TODO: IDF-5349 Remove when deep sleep is supported on ESP32C6
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
-// (ESP32: IO25, ESP32S2, S3: IO6) these pads' default configuration is low level
+// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5) these pads' default configuration is low level
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
 
 static void rtcio_deep_sleep_hold_test_first_stage(void)
@@ -375,5 +374,4 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
 TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
                          rtcio_deep_sleep_hold_test_first_stage,
                          rtcio_deep_sleep_hold_test_second_stage)
-#endif  // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
-#endif  // #if SOC_RTCIO_HOLD_SUPPORTED
+#endif //SOC_RTCIO_HOLD_SUPPORTED

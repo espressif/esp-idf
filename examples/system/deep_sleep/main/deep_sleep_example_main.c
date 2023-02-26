@@ -133,7 +133,9 @@ void app_main(void)
      * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
      * increase some power comsumption. */
 #  if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
+#endif
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
     ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_1));
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_2));

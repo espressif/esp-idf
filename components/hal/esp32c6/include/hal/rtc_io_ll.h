@@ -30,8 +30,6 @@ extern "C" {
 
 #define RTCIO_LL_PIN_FUNC       0
 
-#define RTCIO_LL_PIN_MASK_ALL   ((1 << SOC_RTCIO_PIN_COUNT) - 1)
-
 typedef enum {
     RTCIO_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
@@ -245,22 +243,6 @@ static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 }
 
 /**
- * @brief Enable all LP IO pads hold function during Deep-sleep
- */
-static inline void rtcio_ll_deep_sleep_hold_en_all(void)
-{
-    PMU.imm.pad_hold_all.tie_high_lp_pad_hold_all = 1;
-}
-
-/**
- * @brief Disable all LP IO pads hold function during Deep-sleep
- */
-static inline void rtcio_ll_deep_sleep_hold_dis_all(void)
-{
-    PMU.imm.pad_hold_all.tie_low_lp_pad_hold_all = 1;
-}
-
-/**
  * Enable force hold function for all RTC IO pads
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
@@ -270,8 +252,7 @@ static inline void rtcio_ll_deep_sleep_hold_dis_all(void)
  */
 static inline void rtcio_ll_force_hold_all(void)
 {
-    // No such a 'hold_all' bit on C6, use bit hold instead
-    LP_AON.gpio_hold0.gpio_hold0 |= RTCIO_LL_PIN_MASK_ALL;
+    PMU.imm.pad_hold_all.tie_high_lp_pad_hold_all = 1;
 }
 
 /**
@@ -281,8 +262,7 @@ static inline void rtcio_ll_force_hold_all(void)
  */
 static inline void rtcio_ll_force_unhold_all(void)
 {
-    // No such a 'hold_all' bit on C6, use bit hold instead
-    LP_AON.gpio_hold0.gpio_hold0 &= ~RTCIO_LL_PIN_MASK_ALL;
+    PMU.imm.pad_hold_all.tie_low_lp_pad_hold_all = 1;
 }
 
 /**

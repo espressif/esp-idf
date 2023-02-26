@@ -21,7 +21,7 @@
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
 #include "soc/lp_io_struct.h"
-#include "soc/pmu_reg.h"
+#include "soc/pmu_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -356,26 +356,6 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
 }
 
 /**
-  * @brief Enable all digital gpio pads hold function during Deep-sleep.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  */
-static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
-{
-    REG_SET_BIT(PMU_IMM_PAD_HOLD_ALL_REG, PMU_TIE_HIGH_HP_PAD_HOLD_ALL);
-}
-
-/**
-  * @brief Disable all digital gpio pads hold function during Deep-sleep.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  */
-static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
-{
-    REG_SET_BIT(PMU_IMM_PAD_HOLD_ALL_REG, PMU_TIE_LOW_HP_PAD_HOLD_ALL);
-}
-
-/**
   * @brief Enable gpio pad hold function.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -495,6 +475,26 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
         // Unsupported IO_MUX clock source
         HAL_ASSERT(false);
     }
+}
+
+/**
+  * @brief Force hold digital io pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_hold_all(void)
+{
+    // WT flag, it gets self-cleared after the configuration is done
+    PMU.imm.pad_hold_all.tie_high_hp_pad_hold_all = 1;
+}
+
+/**
+  * @brief Force unhold digital io pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_unhold_all(void)
+{
+    // WT flag, it gets self-cleared after the configuration is done
+    PMU.imm.pad_hold_all.tie_low_hp_pad_hold_all = 1;
 }
 
 /**
