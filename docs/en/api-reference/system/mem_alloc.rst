@@ -130,7 +130,28 @@ Thread Safety
 
 Heap functions are thread safe, meaning they can be called from different tasks simultaneously without any limitations.
 
-It is technically possible to call ``malloc``, ``free``, and related functions from interrupt handler (ISR) context. However this is not recommended, as heap function calls may delay other interrupts. It is strongly recommended to refactor applications so that any buffers used by an ISR are pre-allocated outside of the ISR. Support for calling heap functions from ISRs may be removed in a future update.
+It is technically possible to call ``malloc``, ``free``, and related functions from interrupt handler (ISR) context (see :ref:`calling-heap-related-functions-from-isr`). However this is not recommended, as heap function calls may delay other interrupts. It is strongly recommended to refactor applications so that any buffers used by an ISR are pre-allocated outside of the ISR. Support for calling heap functions from ISRs may be removed in a future update.
+
+.. _calling-heap-related-functions-from-isr:
+
+Calling heap related functions from ISR
+---------------------------------------
+
+The following functions from the heap component can be called form interrupt handler (ISR):
+
+* :cpp:func:`heap_caps_malloc`
+* :cpp:func:`heap_caps_malloc_default`
+* :cpp:func:`heap_caps_realloc_default`
+* :cpp:func:`heap_caps_malloc_prefer`
+* :cpp:func:`heap_caps_realloc_prefer`
+* :cpp:func:`heap_caps_calloc_prefer`
+* :cpp:func:`heap_caps_free`
+* :cpp:func:`heap_caps_realloc`
+* :cpp:func:`heap_caps_calloc`
+* :cpp:func:`heap_caps_aligned_alloc`
+* :cpp:func:`heap_caps_aligned_free`
+
+Note however this practice is strongly discouraged.
 
 Heap Tracing & Debugging
 ------------------------

@@ -85,20 +85,8 @@ typedef struct multi_heap_info {
     tlsf_t heap_data;
 } heap_t;
 
-/* Return true if this block is free. */
-static inline bool is_free(const block_header_t *block)
-{
-    return ((block->size & 0x01) != 0);
-}
-
-/* Data size of the block (excludes this block's header) */
-static inline size_t block_data_size(const block_header_t *block)
-{
-    return (block->size & ~0x03);
-}
-
 /* Check a block is valid for this heap. Used to verify parameters. */
-static void assert_valid_block(const heap_t *heap, const block_header_t *block)
+__attribute__((noinline)) NOCLONE_ATTR static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 {
     pool_t pool = tlsf_get_pool(heap->heap_data);
     void *ptr = block_to_ptr(block);
@@ -110,8 +98,7 @@ static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 
 void *multi_heap_get_block_address_impl(multi_heap_block_handle_t block)
 {
-    void *ptr = block_to_ptr(block);
-    return (ptr);
+    return block_to_ptr(block);
 }
 
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
@@ -122,7 +109,7 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
 multi_heap_handle_t multi_heap_register_impl(void *start_ptr, size_t size)
 {
     assert(start_ptr);
-    if(size < (tlsf_size() + tlsf_block_size_min() + sizeof(heap_t))) {
+    if(size < (sizeof(heap_t))) {
         //Region too small to be a heap.
         return NULL;
     }
@@ -130,13 +117,16 @@ multi_heap_handle_t multi_heap_register_impl(void *start_ptr, size_t size)
     heap_t *result = (heap_t *)start_ptr;
     size -= sizeof(heap_t);
 
-    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size);
+    /* Do not specify any maximum size for the allocations so that the default configuration is used */
+    const size_t max_bytes = 0;
+
+    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size, max_bytes);
     if(!result->heap_data) {
         return NULL;
     }
 
     result->lock = NULL;
-    result->free_bytes = size - tlsf_size();
+    result->free_bytes = size - tlsf_size(result->heap_data);
     result->pool_size = size;
     result->minimum_free_bytes = result->free_bytes;
     return result;
@@ -147,12 +137,12 @@ void multi_heap_set_lock(multi_heap_handle_t heap, void *lock)
     heap->lock = lock;
 }
 
-void inline multi_heap_internal_lock(multi_heap_handle_t heap)
+void multi_heap_internal_lock(multi_heap_handle_t heap)
 {
     MULTI_HEAP_LOCK(heap->lock);
 }
 
-void inline multi_heap_internal_unlock(multi_heap_handle_t heap)
+void multi_heap_internal_unlock(multi_heap_handle_t heap)
 {
     MULTI_HEAP_UNLOCK(heap->lock);
 }
@@ -172,7 +162,7 @@ multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, mu
     assert_valid_block(heap, block);
     block_header_t* next = block_next(block);
 
-    if(block_data_size(next) == 0) {
+    if(block_size(next) == 0) {
         //Last block:
         return NULL;
     } else {
@@ -183,7 +173,7 @@ multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, mu
 
 bool multi_heap_is_free(multi_heap_block_handle_t block)
 {
-    return is_free(block);
+    return block_is_free(block);
 }
 
 void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
@@ -309,7 +299,7 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     return valid;
 }
 
-static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
 {
     (void)user;
     MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n",
@@ -346,7 +336,7 @@ size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap)
     return heap->minimum_free_bytes;
 }
 
-static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
 {
     multi_heap_info_t *info = user;
 
@@ -365,9 +355,7 @@ static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* use
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 {
-    uint32_t sl_interval;
     uint32_t overhead;
-
     memset(info, 0, sizeof(multi_heap_info_t));
 
     if (heap == NULL) {
@@ -379,12 +367,9 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     /* TLSF has an overhead per block. Calculate the total amount of overhead, it shall not be
      * part of the allocated bytes */
     overhead = info->allocated_blocks * tlsf_alloc_overhead();
-    info->total_allocated_bytes = (heap->pool_size - tlsf_size()) - heap->free_bytes - overhead;
+    info->total_allocated_bytes = (heap->pool_size - tlsf_size(heap->heap_data)) - heap->free_bytes - overhead;
     info->minimum_free_bytes = heap->minimum_free_bytes;
     info->total_free_bytes = heap->free_bytes;
-    if (info->largest_free_block) {
-        sl_interval = (1 << (31 - __builtin_clz(info->largest_free_block))) / SL_INDEX_COUNT;
-        info->largest_free_block = info->largest_free_block & ~(sl_interval - 1);
-    }
+    info->largest_free_block = tlsf_fit_size(heap->heap_data, info->largest_free_block);
     multi_heap_internal_unlock(heap);
 }
