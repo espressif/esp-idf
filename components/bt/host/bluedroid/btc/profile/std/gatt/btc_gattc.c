@@ -914,6 +914,8 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         param.connect.conn_params.interval = connect->conn_params.interval;
         param.connect.conn_params.latency = connect->conn_params.latency;
         param.connect.conn_params.timeout = connect->conn_params.timeout;
+        param.connect.ble_addr_type = connect->ble_addr_type;
+        param.connect.conn_handle = connect->conn_handle;
         btc_gattc_cb_to_app(ESP_GATTC_CONNECT_EVT, gattc_if, &param);
         break;
     }
