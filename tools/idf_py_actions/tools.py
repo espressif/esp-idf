@@ -384,19 +384,27 @@ def _parse_cmakecache(path: str) -> Dict:
     return result
 
 
-def _new_cmakecache_entries(cache_path: str, new_cache_entries: List) -> bool:
-    if not os.path.exists(cache_path):
-        return True
+def _parse_cmdl_cmakecache(entries: List) -> Dict[str, str]:
+    """
+    Parse list of CMake cache entries passed in via the -D option.
 
-    if new_cache_entries:
-        current_cache = _parse_cmakecache(cache_path)
+    Returns a dict of name:value.
+    """
+    result: Dict = {}
+    for entry in entries:
+        key, value = entry.split('=', 1)
+        value = _strip_quotes(value)
+        result[key] = value
 
-        for entry in new_cache_entries:
-            key, value = entry.split('=', 1)
-            current_value = current_cache.get(key, None)
-            if current_value is None or _strip_quotes(value) != current_value:
-                return True
+    return result
 
+
+def _new_cmakecache_entries(cache: Dict, cache_cmdl: Dict) -> bool:
+    for entry in cache_cmdl:
+        if entry not in cache:
+            return True
+        if cache_cmdl[entry] != cache[entry]:
+            return True
     return False
 
 
@@ -444,12 +452,14 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
     cache_path = os.path.join(build_dir, 'CMakeCache.txt')
     cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
 
+    args.define_cache_entry.append('CCACHE_ENABLE=%d' % args.ccache)
+
+    cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
+
     # Validate or set IDF_TARGET
     _guess_or_check_idf_target(args, prog_name, cache)
 
-    args.define_cache_entry.append('CCACHE_ENABLE=%d' % args.ccache)
-
-    if always_run_cmake or _new_cmakecache_entries(cache_path, args.define_cache_entry):
+    if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
         if args.generator is None:
             args.generator = _detect_cmake_generator(prog_name)
         try:
