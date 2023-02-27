@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include "sdkconfig.h"
@@ -70,6 +62,21 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
 void twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode)
 {
     twai_ll_set_mode(hal_ctx->dev, mode);                //Set operating mode
+    //Clear the TEC and REC
+    twai_ll_set_tec(hal_ctx->dev, 0);
+#ifdef CONFIG_TWAI_ERRATA_FIX_LISTEN_ONLY_DOM
+    /*
+    Errata workaround: Prevent transmission of dominant error frame while in listen only mode by setting REC to 128
+    before exiting reset mode. This forces the controller to be error passive (thus only transmits recessive bits).
+    The TEC/REC remain frozen in listen only mode thus ensuring we remain error passive.
+    */
+    if (mode == TWAI_MODE_LISTEN_ONLY) {
+        twai_ll_set_rec(hal_ctx->dev, 128);
+    } else
+#endif
+    {
+        twai_ll_set_rec(hal_ctx->dev, 0);
+    }
     (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);    //Clear any latched interrupts
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RUNNING);
     twai_ll_exit_reset_mode(hal_ctx->dev);
