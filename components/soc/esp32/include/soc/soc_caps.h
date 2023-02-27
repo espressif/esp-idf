@@ -401,12 +401,10 @@
 #define SOC_SDMMC_NUM_SLOTS  2
 
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
-#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< FTM is not supported */
-#define SOC_WIFI_GCMP_SUPPORT               (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
-#define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
-#define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
-#define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
-#define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
+#define SOC_WIFI_WAPI_SUPPORT                   (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT                    (1)    /*!< Support CSI */
+#define SOC_WIFI_MESH_SUPPORT                   (1)    /*!< Support WIFI MESH */
+#define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW (1)    /*!< Support delta early time for rf phy on/off */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
