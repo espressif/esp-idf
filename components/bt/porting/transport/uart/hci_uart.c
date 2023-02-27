@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,6 +122,7 @@ int hci_uart_config(int port_num, int32_t baud_rate, uint8_t data_bits, uint8_t 
         .stop_bits = stop_bits,
         .flow_ctrl = HCI_UART_FLOWCTRL,
         .source_clk = UART_SCLK_DEFAULT,
+        .rx_flow_ctrl_thresh = UART_FIFO_LEN - 1,
     };
     hci_uart.port = port_num;
     hci_uart.cfg = uart_cfg;
@@ -175,9 +176,12 @@ int hci_uart_init_cbs(int port_num, hci_uart_tx_char tx_func,
 
 int hci_uart_close(int port_num)
 {
+    uart_event_t uart_event;
+    uart_event.type = UART_BREAK;
     hci_uart.uart_opened = false;
     // Stop uart rx task
     if (hci_uart.rx_task_handler != NULL) {
+        xQueueSend(hci_uart.evt_queue, (void *)&uart_event, 1000);
         ESP_LOGW(TAG, "Waiting for uart task finish...");
     }
     while (hci_uart.rx_task_handler != NULL);
