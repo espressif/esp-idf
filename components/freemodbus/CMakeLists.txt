@@ -57,8 +57,6 @@ add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/freemodbus/" ${srcs})
 add_prefix(include_dirs "${CMAKE_CURRENT_LIST_DIR}/freemodbus/" ${include_dirs})
 add_prefix(priv_include_dirs "${CMAKE_CURRENT_LIST_DIR}/freemodbus/" ${priv_include_dirs})
 
-message(STATUS "DEBUG: Use esp-modbus component folder: ${CMAKE_CURRENT_LIST_DIR}.")
-
 set(requires driver lwip)
 
 # esp_timer component was introduced in v4.2
