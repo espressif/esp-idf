@@ -222,6 +222,15 @@ function(__build_expand_requirements component_target)
 
     get_property(reqs TARGET ${component_target} PROPERTY REQUIRES)
     get_property(priv_reqs TARGET ${component_target} PROPERTY PRIV_REQUIRES)
+    __component_get_property(component_name ${component_target} COMPONENT_NAME)
+    __component_get_property(component_alias ${component_target} COMPONENT_ALIAS)
+    idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
+    list(APPEND reqs ${common_reqs})
+
+    if(reqs)
+        list(REMOVE_DUPLICATES reqs)
+        list(REMOVE_ITEM reqs ${component_alias} ${component_name})
+    endif()
 
     foreach(req ${reqs})
         __build_resolve_and_add_req(_component_target ${component_target} ${req} __REQUIRES)

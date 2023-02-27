@@ -408,8 +408,7 @@ macro(project project_name)
         __component_get_target(main_target idf::main)
         __component_get_property(reqs ${main_target} REQUIRES)
         __component_get_property(priv_reqs ${main_target} PRIV_REQUIRES)
-        idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
-        if(reqs STREQUAL common_reqs AND NOT priv_reqs) #if user has not set any requirements
+        if(NOT reqs AND NOT priv_reqs) #if user has not set any requirements
             if(test_components)
                 list(REMOVE_ITEM build_components ${test_components})
             endif()
