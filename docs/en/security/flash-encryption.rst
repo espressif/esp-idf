@@ -903,11 +903,11 @@ On the first boot, the flash encryption process burns by default the following e
   .. list::
 
     - ``DIS_DOWNLOAD_MANUAL_ENCRYPT`` which disables flash encryption operation when running in UART bootloader boot mode.
-    :esp32s2 or esp32s3: - ``DIS_DOWNLOAD_ICACHE`` and ``DIS_DOWNLOAD_DCACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
-    :esp32c3 or esp32c2 or esp32c6: - ``DIS_DOWNLOAD_ICACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
+    :SOC_EFUSE_DIS_DOWNLOAD_ICACHE and SOC_EFUSE_DIS_DOWNLOAD_DCACHE: - ``DIS_DOWNLOAD_ICACHE`` and ``DIS_DOWNLOAD_DCACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
+    :SOC_EFUSE_DIS_DOWNLOAD_ICACHE and not SOC_EFUSE_DIS_DOWNLOAD_DCACHE: - ``DIS_DOWNLOAD_ICACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
     :esp32s2: - ``HARD_DIS_JTAG`` which disables JTAG.
-    :esp32c3 or esp32c6: - ``DIS_PAD_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
-    :esp32s3: - ``HARD_DIS_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
+    :SOC_EFUSE_DIS_PAD_JTAG and SOC_EFUSE_DIS_USB_JTAG: - ``DIS_PAD_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
+    :SOC_EFUSE_HARD_DIS_JTAG and SOC_EFUSE_DIS_USB_JTAG: - ``HARD_DIS_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
     - ``DIS_DIRECT_BOOT`` (old name ``DIS_LEGACY_SPI_BOOT``)  which disables direct boot mode
 
 However, before the first boot you can choose to keep any of these features enabled by burning only selected eFuses and write-protect the rest of eFuses with unset value 0. For example:

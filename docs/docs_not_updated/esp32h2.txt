@@ -126,7 +126,6 @@ api-reference/protocols/esp_tls
 api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
-security/flash-encryption
 security/esp32h2_log.inc
 security/security
 security/secure-boot-v2

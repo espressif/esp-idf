@@ -58,7 +58,7 @@
 #define SOC_SHA_SUPPORTED               1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
-// #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
+#define SOC_FLASH_ENC_SUPPORTED         1
 // #define SOC_SECURE_BOOT_SUPPORTED       1 // TODO: IDF-6281
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
@@ -384,7 +384,6 @@
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
-// TODO: IDF-6282 (Copy from esp32c6, need check)
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
