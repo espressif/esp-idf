@@ -215,21 +215,14 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
 
 #if CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;
-#if SOC_SDM_CLK_SUPPORT_XTAL
-    if (config->clk_src == SDM_CLK_SRC_XTAL) {
-        pm_type = -1;
-    }
-#endif // SOC_SDM_CLK_SUPPORT_XTAL
 #if SOC_SDM_CLK_SUPPORT_APB
     if (config->clk_src == SDM_CLK_SRC_APB) {
         pm_type = ESP_PM_APB_FREQ_MAX;
     }
 #endif // SOC_SDM_CLK_SUPPORT_APB
-    if (pm_type >= 0) {
-        sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
-        ret = esp_pm_lock_create(pm_type, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create %s lock failed", chan->pm_lock_name);
-    }
+    sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
+    ret = esp_pm_lock_create(pm_type, 0, chan->pm_lock_name, &chan->pm_lock);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create %s lock failed", chan->pm_lock_name);
 #endif // CONFIG_PM_ENABLE
     group->clk_src = config->clk_src;
 
