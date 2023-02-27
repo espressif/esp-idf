@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import logging
@@ -8,11 +8,11 @@ import pytest
 from pytest_embedded import Dut
 
 
-# IDF-5053
 @pytest.mark.esp32
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c2
 @pytest.mark.generic
 def test_light_sleep(dut: Dut) -> None:
 

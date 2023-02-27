@@ -1,7 +1,8 @@
 set(requires "unity"
              "test_utils"
              "driver"
-             "esp_timer")
+             "esp_timer"
+             "nvs_flash")
 
 set(excludes "test_ipc_isr.c"
              "test_ipc_isr.S"

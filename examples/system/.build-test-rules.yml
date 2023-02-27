@@ -90,12 +90,6 @@ examples/system/ipc/ipc_isr:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/light_sleep:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-
 examples/system/ota/advanced_https_ota:
   disable_test:
     - if: IDF_TARGET == "esp32c2"
