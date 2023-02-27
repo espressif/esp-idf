@@ -35,10 +35,10 @@ void ble_mesh_register_configuration_client_model(void)
 }
 
 void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
-        esp_ble_mesh_cfg_client_cb_param_t *param)
+                                            esp_ble_mesh_cfg_client_cb_param_t *param)
 {
     uint32_t opcode;
-    ESP_LOGD(TAG, "enter %s, event = %x\n, error_code = %x\n", __func__, event, param->error_code);
+    ESP_LOGD(TAG, "enter %s, event = %x, error_code = %x", __func__, event, param->error_code);
 
     if (!param->error_code) {
         opcode = param->params->opcode;
@@ -112,7 +112,7 @@ void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t e
                 if (param->status_cb.model_pub_status.status == ESP_OK) {
                     ESP_LOGI(TAG, "CfgClient:PublishSet,OK,0x%x", param->status_cb.model_pub_status.publish_addr);
                 } else {
-                    ESP_LOGI(TAG, "CfgClient:PublishSet,Fail");
+                    ESP_LOGI(TAG, "CfgClient:PublishSet,Fail,%d", param->status_cb.model_pub_status.status);
                 }
                 break;
             case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD:
@@ -200,7 +200,7 @@ void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t e
     } else {
         ESP_LOGI(TAG, "CnfClient:Fail,%d", param->error_code);
     }
-    ESP_LOGD(TAG, "exit %s \n", __func__);
+    ESP_LOGD(TAG, "exit %s", __func__);
 }
 
 int ble_mesh_configuration_client_model_operation(int argc, char **argv)
@@ -249,8 +249,6 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
         ESP_LOGE(TAG, "CfgClient:LoadModel,Fail");
         return ESP_FAIL;
     }
-
-    ESP_LOGD(TAG, "enter %s \n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &configuration_client_model_operation);
     if (nerrors != 0) {
@@ -374,8 +372,6 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
     } else {
         ESP_LOGI(TAG, "ConfigClient:Fail");
     }
-
-    ESP_LOGD(TAG, "exit %s %d\n", __func__, err);
     return err;
 }
 
