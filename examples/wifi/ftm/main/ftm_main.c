@@ -9,8 +9,8 @@
 
 #include <errno.h>
 #include <string.h>
+#include <inttypes.h>
 #include <stdio.h>
-#include <string.h>
 #include "nvs_flash.h"
 #include "cmd_system.h"
 #include "argtable3/argtable3.h"
@@ -170,7 +170,7 @@ static void ftm_process_report(void)
             log_ptr += sprintf(log_ptr, "%6d|", s_ftm_report[i].dlog_token);
         }
         if (g_report_lvl & BIT1) {
-            log_ptr += sprintf(log_ptr, "%7u  |", s_ftm_report[i].rtt);
+            log_ptr += sprintf(log_ptr, "%7" PRIu32 "  |", s_ftm_report[i].rtt);
         }
         if (g_report_lvl & BIT2) {
             log_ptr += sprintf(log_ptr, "%14llu  |%14llu  |%14llu  |%14llu  |", s_ftm_report[i].t1,
@@ -491,7 +491,7 @@ static int wifi_cmd_ftm(int argc, char **argv)
         free(s_ftm_report);
         s_ftm_report = NULL;
         s_ftm_report_num_entries = 0;
-        ESP_LOGI(TAG_STA, "Estimated RTT - %d nSec, Estimated Distance - %d.%02d meters",
+        ESP_LOGI(TAG_STA, "Estimated RTT - %" PRId32 " nSec, Estimated Distance - %" PRId32 ".%02" PRId32 " meters",
                           s_rtt_est, s_dist_est / 100, s_dist_est % 100);
     } else {
         /* Failure case */
