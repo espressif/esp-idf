@@ -71,6 +71,10 @@ config SOC_ULP_SUPPORTED
     bool
     default y
 
+config SOC_ULP_FSM_SUPPORTED
+    bool
+    default y
+
 config SOC_RISCV_COPROC_SUPPORTED
     bool
     default y

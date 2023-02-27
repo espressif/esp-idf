@@ -6,11 +6,12 @@ add_executable(${ULP_APP_NAME})
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
+option(ULP_COCPU_IS_LP_CORE "Use RISC-V based LP Core" OFF)
 
 message(STATUS "Building ULP app ${ULP_APP_NAME}")
 
 # Check the supported assembler version
-if(NOT ULP_COCPU_IS_RISCV)
+if(NOT (ULP_COCPU_IS_RISCV OR ULP_COCPU_IS_LP_CORE))
     check_expected_tool_version("esp32ulp-elf" ${CMAKE_ASM_COMPILER})
 endif()
 
@@ -33,9 +34,12 @@ list(APPEND ULP_PREPROCESSOR_ARGS -D__ASSEMBLER__)
 # Pre-process the linker script
 if(ULP_COCPU_IS_RISCV)
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
+elseif(ULP_COCPU_IS_LP_CORE)
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld)
 else()
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
 endif()
+
 get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
 add_custom_command(OUTPUT ${ULP_LD_SCRIPT}
                    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE}
@@ -72,8 +76,19 @@ if(ULP_COCPU_IS_RISCV)
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
     target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
 
-else()
+elseif(ULP_COCPU_IS_LP_CORE)
+    list(APPEND ULP_S_SOURCES
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c")
 
+    target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
+    target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
+    target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
+    target_link_options(${ULP_APP_NAME} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
+    target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
+    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include")
+
+else()
     foreach(ulp_s_source ${ULP_S_SOURCES})
         get_filename_component(ulp_ps_source ${ulp_s_source} NAME_WE)
         set(ulp_ps_output ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.ulp.S)
@@ -96,9 +111,11 @@ else()
 
 endif()
 
-# Currently all the supported targets have the same base address of the ULP memory in the CPU address space.
-# Modify this or pull this out of some SoC header file, if that becomes necessary.
-set(ULP_BASE_ADDR "0x50000000")
+if(ULP_COCPU_IS_LP_CORE)
+    set(ULP_BASE_ADDR "0x0")
+else()
+    set(ULP_BASE_ADDR "0x50000000")
+endif()
 
 # Dump the list of global symbols in a convenient format
 add_custom_command(OUTPUT ${ULP_APP_NAME}.sym

@@ -47,6 +47,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
+#define SOC_ULP_FSM_SUPPORTED           1
 #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1

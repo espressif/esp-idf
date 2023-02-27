@@ -1,7 +1,3 @@
-message(WARNING "Embedding ULP binary by including \
-${IDF_PATH}/components/ulp/component_ulp_common.cmake is deprecated. Use `ulp_embed_binary` instead. \
-See API Guide for more details.")
-
 spaces2list(ULP_S_SOURCES)
 spaces2list(ULP_EXP_DEP_SRCS)
 

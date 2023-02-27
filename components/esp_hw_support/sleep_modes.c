@@ -483,6 +483,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO IDF-7012 Add sleep support for lp core
 #if CONFIG_ULP_COPROC_ENABLED
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
@@ -493,6 +494,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
     }
 #endif
+#endif //!CONFIG_IDF_TARGET_ESP32C6
 
     if (!deep_sleep) {
         misc_modules_sleep_prepare();
@@ -1000,7 +1002,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
-#if CONFIG_ULP_COPROC_ENABLED
+#if CONFIG_ULP_COPROC_ENABLED && !CONFIG_IDF_TARGET_ESP32C6 // TODO IDF-7012 Add sleep support for lp core
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
