@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
+#include <inttypes.h>
 #include "esp_wifi.h"
 #include "esp_mac.h"
 #include "esp_event.h"
@@ -104,13 +105,13 @@ void esp_mesh_p2p_tx_main(void *arg)
             err = esp_mesh_send(&route_table[i], &data, MESH_DATA_P2P, NULL, 0);
             if (err) {
                 ESP_LOGE(MESH_TAG,
-                         "[ROOT-2-UNICAST:%d][L:%d]parent:"MACSTR" to "MACSTR", heap:%d[err:0x%x, proto:%d, tos:%d]",
+                         "[ROOT-2-UNICAST:%d][L:%d]parent:"MACSTR" to "MACSTR", heap:%" PRId32 "[err:0x%x, proto:%d, tos:%d]",
                          send_count, mesh_layer, MAC2STR(mesh_parent_addr.addr),
                          MAC2STR(route_table[i].addr), esp_get_minimum_free_heap_size(),
                          err, data.proto, data.tos);
             } else if (!(send_count % 100)) {
                 ESP_LOGW(MESH_TAG,
-                         "[ROOT-2-UNICAST:%d][L:%d][rtableSize:%d]parent:"MACSTR" to "MACSTR", heap:%d[err:0x%x, proto:%d, tos:%d]",
+                         "[ROOT-2-UNICAST:%d][L:%d][rtableSize:%d]parent:"MACSTR" to "MACSTR", heap:%" PRId32 "[err:0x%x, proto:%d, tos:%d]",
                          send_count, mesh_layer,
                          esp_mesh_get_routing_table_size(),
                          MAC2STR(mesh_parent_addr.addr),
@@ -155,7 +156,7 @@ void esp_mesh_p2p_rx_main(void *arg)
         mesh_light_process(&from, data.data, data.size);
         if (!(recv_count % 1)) {
             ESP_LOGW(MESH_TAG,
-                     "[#RX:%d/%d][L:%d] parent:"MACSTR", receive from "MACSTR", size:%d, heap:%d, flag:%d[err:0x%x, proto:%d, tos:%d]",
+                     "[#RX:%d/%d][L:%d] parent:"MACSTR", receive from "MACSTR", size:%d, heap:%" PRId32 ", flag:%d[err:0x%x, proto:%d, tos:%d]",
                      recv_count, send_count, mesh_layer,
                      MAC2STR(mesh_parent_addr.addr), MAC2STR(from.addr),
                      data.size, esp_get_minimum_free_heap_size(), flag, err, data.proto,
@@ -371,7 +372,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
     }
     break;
     default:
-        ESP_LOGI(MESH_TAG, "unknown id:%d", event_id);
+        ESP_LOGI(MESH_TAG, "unknown id:%" PRId32 "", event_id);
         break;
     }
 }
@@ -445,7 +446,7 @@ void app_main(void)
     /* set the network active duty cycle. (default:10, -1, MESH_PS_NETWORK_DUTY_APPLIED_ENTIRE) */
     ESP_ERROR_CHECK(esp_mesh_set_network_duty_cycle(CONFIG_MESH_PS_NWK_DUTY, CONFIG_MESH_PS_NWK_DUTY_DURATION, CONFIG_MESH_PS_NWK_DUTY_RULE));
 #endif
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s<%d>%s, ps:%d\n",  esp_get_minimum_free_heap_size(),
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%" PRId32 ", %s<%d>%s, ps:%d\n",  esp_get_minimum_free_heap_size(),
              esp_mesh_is_root_fixed() ? "root fixed" : "root not fixed",
              esp_mesh_get_topology(), esp_mesh_get_topology() ? "(chain)":"(tree)", esp_mesh_is_ps_enabled());
 }
