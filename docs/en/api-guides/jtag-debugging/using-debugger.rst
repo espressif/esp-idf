@@ -8,6 +8,8 @@ This section covers configuration and running debugger using several methods:
 * from :ref:`jtag-debugging-using-debugger-command-line`
 * using :ref:`jtag-debugging-with-idf-py`
 
+See also a separate document `Configuration for Visual Studio Code Debug <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__ describing how to run a debugger from VS Code.
+
 
 .. _jtag-debugging-using-debugger-eclipse:
 
@@ -206,7 +208,7 @@ It is also possible to execute the described debugging tools conveniently from `
 
 1.  ``idf.py openocd``
 
-    Runs OpenOCD in a console with configuration defined in the environment or via command line. It uses default script directory defined as ``OPENOCD_SCRIPTS`` environmental variable, which is automatically added from an Export script (``export.sh`` or ``export.bat``). 
+    Runs OpenOCD in a console with configuration defined in the environment or via command line. It uses default script directory defined as ``OPENOCD_SCRIPTS`` environmental variable, which is automatically added from an Export script (``export.sh`` or ``export.bat``).
     It is possible to override the script location using command line argument ``--openocd-scripts``.
 
     .. include:: {IDF_TARGET_PATH_NAME}.inc
