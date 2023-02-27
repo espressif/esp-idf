@@ -11,7 +11,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
 如果您已依照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP RISC-V 工具链已经被默认安装到了您的开发环境中。
 
-.. note: 在早期版本的ESP-IDF中，RISC-V工具链具有不同的名称：`riscv-none-embed-gcc`。
+.. note:: 在早期版本的 ESP-IDF 中，RISC-V 工具链具有不同的名称：`riscv-none-embed-gcc`。
 
 编译 ULP RISC-V 代码
 -----------------------------
@@ -20,7 +20,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
 1. ULP RISC-V 代码以 C 语言或汇编语言编写（必须使用 `.S` 扩展名)，必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
-.. note: 当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前该步骤需用于 ULP FSM。如何正确添加 ULP 源文件，请见以下步骤。
+.. note:: 当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前该步骤需用于 ULP FSM。如何正确添加 ULP 源文件，请见以下步骤。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
