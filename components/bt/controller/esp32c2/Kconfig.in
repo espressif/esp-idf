@@ -207,7 +207,7 @@ menu "Memory Settings"
 
     config BT_LE_ACL_BUF_COUNT
         int "ACL Buffer count"
-        default 24
+        default 10
         help
             The number of ACL data buffers.
 
@@ -387,3 +387,10 @@ choice BT_LE_WAKEUP_SOURCE
         help
             Use BLE rtc timer to wakeup CPU
 endchoice
+
+config BT_LE_USE_ESP_TIMER
+    bool "Use Esp Timer for callout"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer
