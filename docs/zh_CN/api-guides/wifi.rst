@@ -2193,7 +2193,14 @@ Wi-Fi 协议中定义了四个 AC （访问类别），每个 AC 有各自的优
 Wi-Fi AMSDU
 -------------------------
 
-{IDF_TARGET_NAME} 支持接收和发送 AMSDU。
+.. only:: not SOC_SPIRAM_SUPPORTED
+
+    {IDF_TARGET_NAME} 支持接收 AMSDU。
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    {IDF_TARGET_NAME} 支持接收和发送 AMSDU。开启 AMSDU 发送比较消耗内存，默认不开启 AMSDU 发送。可通过选项 :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` 使能 AMSDU 发送功能， 但是使能 AMSDU 发送依赖于 :ref:`CONFIG_SPIRAM` 。
+
 
 Wi-Fi 分片
 -------------------------
@@ -2875,7 +2882,7 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
      - **最小等级**
         {IDF_TARGET_NAME} 的最小配置等级。协议栈只使用运行所需的内存。适用于对性能没有要求，而应用程序需要大量内存的场景。
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: SOC_SPIRAM_SUPPORTED
 
     使用 PSRAM
     ++++++++++++++++++++++++++++

@@ -2193,7 +2193,13 @@ Theoretically, the higher priority AC has better performance than the lower prio
 Wi-Fi AMSDU
 -------------------------
 
-{IDF_TARGET_NAME} supports receiving and transmitting AMSDU.
+.. only:: not SOC_SPIRAM_SUPPORTED
+
+    {IDF_TARGET_NAME} supports receiving AMSDU.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
 
 Wi-Fi Fragment
 -------------------------
@@ -2875,7 +2881,7 @@ The parameters not mentioned in the following table should be set to the default
      - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios where there is no requirement for performance and the application requires lots of space.
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: SOC_SPIRAM_SUPPORTED
 
     Using PSRAM
     ++++++++++++++++++++++++++++
