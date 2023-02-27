@@ -1,12 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include "esp_cpu.h"
-#include "soc/rtc.h"
+#include "soc/soc.h"
+#include "esp_private/rtc_clk.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/system_internal.h"
 #include "esp_heap_caps.h"
@@ -31,7 +32,7 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     }
 
     // switch to XTAL (otherwise we will keep running from the PLL)
-    rtc_clk_cpu_freq_set_xtal();
+    rtc_clk_cpu_set_to_default_config();
 
     // esp_restart_noos_dig() will generates a core reset, which does not reset the
     // registers of the RTC domain, so the CPU's stall state remains after the reset,

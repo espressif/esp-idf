@@ -13,6 +13,7 @@
 #include "esp32s2/rom/ets_sys.h" // for ets_update_cpu_frequency
 #include "esp32s2/rom/rtc.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/soc_caps.h"
@@ -395,25 +396,32 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t* config)
 
 void rtc_clk_cpu_freq_set_xtal(void)
 {
+    rtc_clk_cpu_set_to_default_config();
     /* BBPLL is kept enabled */
+}
+
+void rtc_clk_cpu_set_to_default_config(void)
+{
     rtc_clk_cpu_freq_to_xtal(CLK_LL_XTAL_FREQ_MHZ, 1);
 }
 
 /**
- * Switch to XTAL frequency. Does not disable the PLL.
+ * Switch to use XTAL as the CPU clock source.
+ * Must satisfy: cpu_freq = XTAL_FREQ / div.
+ * Does not disable the PLL.
  */
-static void rtc_clk_cpu_freq_to_xtal(int freq, int div)
+static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
-    ets_update_cpu_frequency(freq);
+    ets_update_cpu_frequency(cpu_freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_divider(div);
     /* no need to adjust the REF_TICK, default register value already set it to 1MHz with any cpu clock source */
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
-    rtc_clk_apb_freq_update(freq * MHZ);
+    rtc_clk_apb_freq_update(cpu_freq * MHZ);
     /* lower the voltage */
-    int dbias = (freq <= 2) ? DIG_DBIAS_2M : DIG_DBIAS_XTAL;
+    int dbias = (cpu_freq <= 2) ? DIG_DBIAS_2M : DIG_DBIAS_XTAL;
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
 }
 

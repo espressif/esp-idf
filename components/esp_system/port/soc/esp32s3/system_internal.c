@@ -14,10 +14,10 @@
 #include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "soc/syscon_reg.h"
 #include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
@@ -121,9 +121,9 @@ void IRAM_ATTR esp_restart_noos(void)
     SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
     CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
 
-    // Set CPU back to XTAL source, no PLL, same as hard reset
+    // Set CPU back to XTAL source, same as hard reset, but keep BBPLL on so that USB Serial JTAG can log at 1st stage bootloader.
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_clk_cpu_freq_set_xtal();
+    rtc_clk_cpu_set_to_default_config();
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE

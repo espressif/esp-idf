@@ -82,6 +82,20 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
  */
 esp_err_t usb_serial_jtag_driver_uninstall(void);
 
+/**
+ * @brief Check if the USB Serial/JTAG port is connected to the host
+ *
+ * This function checks whether the USB Serial/JTAG (USJ) port is currently connected. USJ is considered "connected"
+ * so long as it is receiving SOF packets from the host, even if there is no serial commuincation occuring (i.e., the
+ * USJ is connected to the PC, but the serial port is not opened). Having the USB port connected to a power bank will
+ * never be considered as connected (due to the lack of SOF packets).
+ *
+ * @note If your application needs this function, it will add some extra overhead time to every freertos tick.
+ *
+ * @return True if USJ is connected, false otherwise
+ */
+bool usb_serial_jtag_is_connected(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -15,6 +15,7 @@
 #include "esp32h4/rom/uart.h"
 #include "esp32h4/rom/gpio.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "soc/io_mux_reg.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
@@ -32,6 +33,19 @@ static int s_cur_pll_freq;
 static uint32_t rtc_clk_ahb_freq_get(void);
 static void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 void rtc_clk_cpu_freq_to_8m(void);
+
+// Unused as unsupported yet
+static uint32_t __attribute((unused)) s_bbpll_digi_consumers_ref_count = 0; // Currently, it only tracks whether the 48MHz PHY clock is in-use by USB Serial/JTAG
+
+void rtc_clk_bbpll_add_consumer(void)
+{
+    s_bbpll_digi_consumers_ref_count += 1;
+}
+
+void rtc_clk_bbpll_remove_consumer(void)
+{
+    s_bbpll_digi_consumers_ref_count -= 1;
+}
 
 static void rtc_gpio_hangup(uint32_t gpio_no)
 {
@@ -303,18 +317,25 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 
 void rtc_clk_cpu_freq_set_xtal(void)
 {
-    int freq_mhz = (int)rtc_clk_xtal_freq_get();
-
-    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+    rtc_clk_cpu_set_to_default_config();
     rtc_clk_bbpll_disable();
 }
 
-/**
- * Switch to XTAL frequency. Does not disable the PLL.
- */
-static void rtc_clk_cpu_freq_to_xtal(int freq, int div)
+void rtc_clk_cpu_set_to_default_config(void)
 {
-    ets_update_cpu_frequency(freq);
+    int freq_mhz = (int)rtc_clk_xtal_freq_get();
+
+    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+}
+
+/**
+ * Switch to use XTAL as the CPU clock source.
+ * Must satisfy: cpu_freq = XTAL_FREQ / div.
+ * Does not disable the PLL.
+ */
+static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+{
+    ets_update_cpu_frequency(cpu_freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
     rtc_clk_cpu_freq_set(SOC_CPU_CLK_SRC_XTAL, div);
     /* no need to adjust the REF_TICK */
