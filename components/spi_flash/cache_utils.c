@@ -75,8 +75,12 @@ static __attribute__((unused)) const char *TAG = "cache";
 #define DPORT_CACHE_GET_VAL(cpuid) (cpuid == 0) ? DPORT_CACHE_VAL(PRO) : DPORT_CACHE_VAL(APP)
 #define DPORT_CACHE_GET_MASK(cpuid) (cpuid == 0) ? DPORT_CACHE_MASK(PRO) : DPORT_CACHE_MASK(APP)
 
-static void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
-static void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+/**
+ * These two shouldn't be declared as static otherwise if `CONFIG_SPI_FLASH_ROM_IMPL` is enabled,
+ * they won't get replaced by the rom version
+ */
+void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
 static uint32_t s_flash_op_cache_state[2];
 
@@ -357,7 +361,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
  * function in ROM. They are used to work around a bug where Cache_Read_Disable requires a call to
  * Cache_Flush before Cache_Read_Enable, even if cached data was not modified.
  */
-static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
+void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
 #if CONFIG_IDF_TARGET_ESP32
     uint32_t ret = 0;
@@ -398,7 +402,7 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_st
 #endif
 }
 
-static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
+void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
 #if CONFIG_IDF_TARGET_ESP32
     const uint32_t cache_mask = DPORT_CACHE_GET_MASK(cpuid);
@@ -938,7 +942,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
 
 static IRAM_ATTR void esp_enable_cache_flash_wrap(bool icache)
 {
@@ -979,7 +983,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     }
     return ESP_OK;
 }
-#endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
 
 void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 {
