@@ -750,6 +750,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
+    esp_err_t ret = ESP_OK;
+
     if (mode != ESP_BT_MODE_BLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller mode");
         return ESP_FAIL;
@@ -762,10 +764,18 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     coex_enable();
 #endif
     if (ble_controller_enable(mode) != 0) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto error;
     }
+
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
     return ESP_OK;
+
+error:
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
+    return ret;
 }
 
 esp_err_t esp_bt_controller_disable(void)
@@ -777,6 +787,9 @@ esp_err_t esp_bt_controller_disable(void)
     if (ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
 }
