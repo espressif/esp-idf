@@ -233,8 +233,8 @@ The API provides a convenient way to handle specific interrupts discussed in thi
 
 - **Pattern detection**: An interrupt triggered on detecting a 'pattern' of the same character being received/sent repeatedly. This functionality is demonstrated in the example :example:`peripherals/uart/uart_events`. It can be used, e.g., to detect a command string with a specific number of identical characters (the 'pattern') at the end. The following functions are available:
 
-    - Configure and enable this interrupt using :cpp:func:`uart_enable_pattern_det_intr`
-    - Disable the interrupt using :cpp:func:`uart_disable_pattern_det_intr`
+    - Configure and enable this interrupt using :cpp:func:`uart_enable_pattern_det_baud_intr`
+    - Disable the interrupt using :cpp:func:`uart_disable_pattern_det_baud_intr`
 
 
 Macros
