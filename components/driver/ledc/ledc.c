@@ -698,8 +698,8 @@ esp_err_t ledc_set_duty_with_hpoint(ledc_mode_t speed_mode, ledc_channel_t chann
                      hpoint,          //uint32_t hpoint_val,
                      duty,           //uint32_t duty_val,
                      1,               //uint32_t increase,
-                     0,               //uint32_t duty_num,
-                     0,               //uint32_t duty_cycle,
+                     1,               //uint32_t duty_num,
+                     1,               //uint32_t duty_cycle,
                      0                //uint32_t duty_scale
                     );
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -720,8 +720,8 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
                      LEDC_VAL_NO_CHANGE,
                      duty,           //uint32_t duty_val,
                      1,               //uint32_t increase,
-                     0,               //uint32_t duty_num,
-                     0,               //uint32_t duty_cycle,
+                     1,               //uint32_t duty_num,
+                     1,               //uint32_t duty_cycle,
                      0                //uint32_t duty_scale
                     );
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -995,7 +995,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
                  duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
         portENTER_CRITICAL(&ledc_spinlock);
-        ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, dir, 0, 1, 0);
+        ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, dir, 1, 1, 0);
         portEXIT_CRITICAL(&ledc_spinlock);
         ESP_LOGD(LEDC_TAG, "Set to target duty: %"PRIu32, target_duty);
     }
@@ -1023,9 +1023,9 @@ static esp_err_t _ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t
     if (total_cycles > duty_delta) {
         scale = 1;
         cycle_num = total_cycles / duty_delta;
-        if (cycle_num > LEDC_LL_DUTY_NUM_MAX) {
+        if (cycle_num > LEDC_LL_DUTY_CYCLE_MAX) {
             ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_SLOW_STR);
-            cycle_num = LEDC_LL_DUTY_NUM_MAX;
+            cycle_num = LEDC_LL_DUTY_CYCLE_MAX;
         }
     } else {
         cycle_num = 1;
@@ -1129,8 +1129,8 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
                      LEDC_VAL_NO_CHANGE,
                      duty_cur,             //uint32_t duty_val,
                      1,                    //uint32_t increase,
-                     0,                    //uint32_t duty_num,
-                     0,                    //uint32_t duty_cycle,
+                     1,                    //uint32_t duty_num,
+                     1,                    //uint32_t duty_cycle,
                      0                     //uint32_t duty_scale
                      );
     _ledc_update_duty(speed_mode, channel);
