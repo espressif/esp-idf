@@ -8,8 +8,11 @@ import { danger, warn, message, results } from "danger"
 function checkMrTitle() {
     const mrTitle = danger.gitlab.mr.title
 
-    if (mrTitle.toUpperCase().includes("WIP") || mrTitle.toUpperCase().includes("DRAFT")) {
-        return warn("Please remove the `WIP:`/`Draft:` prefix from the MR name before merging this MR.");
+    const regexWip = /^WIP:/i;
+    const regexDraft = /^DRAFT:/i;
+
+    if ((regexWip.test(mrTitle)) || (regexDraft.test(mrTitle))) {
+        return warn("Please remove the `WIP:`/`DRAFT:` prefix from the MR name before merging this MR.");
     }
 }
 checkMrTitle();
