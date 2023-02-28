@@ -240,3 +240,20 @@ Improving Network Speed
     :SOC_WIFI_SUPPORTED: * For Wi-Fi, see :ref:`How-to-improve-Wi-Fi-performance` and :ref:`wifi-buffer-usage`
     * For lwIP TCP/IP (Wi-Fi and Ethernet), see :ref:`lwip-performance`
     :SOC_WIFI_SUPPORTED: * The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to your project ``sdkconfig`` file in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use this information to determine exactly which options are best suited for your app.
+
+Improving I/O performance
+-------------------------
+
+Using standard C library functions like ``fread`` and ``fwrite`` instead of platform specific unbuffered syscalls such as ``read`` and ``write`` can be slow.
+These functions are designed to be portable, so they are not necessarily optimized for speed, have a certain overhead and are buffered.
+
+:doc:`FatFS </api-reference/storage/fatfs>` specific information and tips:
+
+.. list::
+    
+    - Maximum size of the R/W request == FatFS cluster size (allocation unit size)
+    - Use ``read`` and ``write`` instead of ``fread`` and ``fwrite``
+    - To increase speed of buffered reading functions like ``fread`` and ``fgets``, you can increase a size of the file buffer (Newlib's default is 128 bytes) to a higher number like 4096, 8192 or 16384. This can be done locally via ``setvbuf`` function used on a certain file pointer or globally applied to all files via modifying :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE`.
+        
+        .. note::
+            Setting a bigger buffer size will also increase the heap memory usage.
