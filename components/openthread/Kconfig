@@ -150,4 +150,12 @@ menu "OpenThread"
         help
             Select this option to acquire NAT64 address from dns servers.
 
+    config OPENTHREAD_UART_BUFFER_SIZE
+        int "The uart received buffer size of openthread"
+        depends on OPENTHREAD_ENABLED
+        default 256
+        range 128 1024
+        help
+            Set the OpenThread UART buffer size.
+
 endmenu
