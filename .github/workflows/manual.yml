@@ -1,0 +1,39 @@
+# This is a basic workflow that is manually triggered
+
+name: Build and Run QEMU Tests
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      name:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Person to greet'
+        # Default value if no value is explicitly provided
+        default: 'World'
+        # Input has to be provided for the workflow to run
+        required: true
+
+#on:
+#  pull_request:
+#    types: [opened, reopened, synchronize]
+
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    container:
+      image: zimkal/qemu2
+      options: --user root
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - run: |
+          . /opt/esp/idf/export.sh
+          python3 /opt/esp/idf/tools/ci/ci_build_apps.py . --target esp32 -m qemu -vv --pytest-apps
+          pytest --target esp32 -m qemu --embedded-services idf,qemu --build-dir=build_esp32_default
+        name: Run in container
+        
