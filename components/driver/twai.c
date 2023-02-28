@@ -668,8 +668,14 @@ esp_err_t twai_get_status_info(twai_status_info_t *status_info)
     TWAI_CHECK(status_info != NULL, ESP_ERR_INVALID_ARG);
 
     TWAI_ENTER_CRITICAL();
-    status_info->tx_error_counter = twai_hal_get_tec(&twai_context);
-    status_info->rx_error_counter = twai_hal_get_rec(&twai_context);
+    if (p_twai_obj->mode == TWAI_MODE_LISTEN_ONLY) {
+        //Error counters are frozen under listen only mode thus are meaningless. Simply return 0 in this case.
+        status_info->tx_error_counter = 0;
+        status_info->rx_error_counter = 0;
+    } else {
+        status_info->tx_error_counter = twai_hal_get_tec(&twai_context);
+        status_info->rx_error_counter = twai_hal_get_rec(&twai_context);
+    }
     status_info->msgs_to_tx = p_twai_obj->tx_msg_count;
     status_info->msgs_to_rx = p_twai_obj->rx_msg_count;
     status_info->tx_failed_count = p_twai_obj->tx_failed_count;
