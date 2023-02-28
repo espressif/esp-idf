@@ -8,8 +8,11 @@ import { danger, warn, message, results } from "danger"
 function checkMrTitle() {
     const mrTitle = danger.gitlab.mr.title
 
-    if (mrTitle.toUpperCase().includes("WIP") || mrTitle.toUpperCase().includes("DRAFT")) {
-        return warn("Please remove the `WIP:`/`Draft:` prefix from the MR name before merging this MR.");
+    const regexWip = /^WIP:/i;
+    const regexDraft = /^DRAFT:/i;
+
+    if ((regexWip.test(mrTitle)) || (regexDraft.test(mrTitle))) {
+        return warn("Please remove the `WIP:`/`DRAFT:` prefix from the MR name before merging this MR.");
     }
 }
 checkMrTitle();
@@ -72,7 +75,7 @@ function checkMrJiraLinks() {
     }
 
     if (!mrDescription.toUpperCase().includes("## RELATED") || !testJiraLabels) { // Missing section "Related" or missing links to JIRA tickets
-        return warn("Please add links to JIRA issues to the MR description section `Related`.");
+        return message("Please consider adding references to JIRA issues in the `Related` section of the MR description.");
 
     } else if (ghIssueTicket) { // Found JIRA ticket linked GitHub issue
         if (!testGithubLink.test(mrCommitMessages)) {  // Commit message does not contain a link to close the issue on GitHub
