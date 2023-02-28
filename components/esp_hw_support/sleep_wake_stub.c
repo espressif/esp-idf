@@ -11,6 +11,7 @@
 
 #include "esp_attr.h"
 #include "esp_sleep.h"
+#include "esp_cpu.h"
 
 #include "soc/soc.h"
 #include "soc/rtc.h"
@@ -77,7 +78,11 @@ void RTC_IRAM_ATTR esp_wake_stub_sleep(esp_deep_sleep_wake_stub_fn_t new_stub)
 #endif
 
     // A few CPU cycles may be necessary for the sleep to start...
-    while (true) {};
+#if __XTENSA__
+    xt_utils_wait_for_intr();
+#else
+    rv_utils_wait_for_intr();
+#endif // __XTENSA__
     // never reaches here.
 }
 
