@@ -18,6 +18,7 @@
 #include "esp_memory_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "gdma_priv.h"
+#include "hal/cache_hal.h"
 
 static const char *TAG = "gdma";
 
@@ -290,6 +291,7 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
     ESP_GOTO_ON_FALSE((sram_alignment & (sram_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid sram alignment: %zu", sram_alignment);
 
 #if SOC_GDMA_SUPPORT_PSRAM
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA);
     int block_size_index = 0;
     switch (psram_alignment) {
     case 64: // 64 Bytes alignment
@@ -303,12 +305,13 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
         break;
     case 0: // no alignment is requirement
         block_size_index = GDMA_LL_EXT_MEM_BK_SIZE_16B;
-        psram_alignment = SOC_GDMA_PSRAM_MIN_ALIGN; // fall back to minimal alignment
+        psram_alignment = data_cache_line_size; // fall back to use the same size of the psram data cache line size
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid psram alignment: %zu", psram_alignment);
         break;
     }
+    ESP_GOTO_ON_FALSE(((psram_alignment % data_cache_line_size) == 0), ESP_ERR_INVALID_ARG, err, TAG, "psram alignment (%d)B should be multiple of the data cache line size (%d)B", psram_alignment, data_cache_line_size);
 #endif // #if SOC_GDMA_SUPPORT_PSRAM
 
     if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX) {

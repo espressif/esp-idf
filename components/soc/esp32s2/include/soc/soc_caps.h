@@ -122,6 +122,9 @@
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
+/*-------------------------- CACHE CAPS --------------------------------------*/
+#define SOC_CACHE_WRITEBACK_SUPPORTED           1
+
 /*-------------------------- CP-DMA CAPS -------------------------------------*/
 #define SOC_CP_DMA_MAX_BUFFER_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
 

@@ -42,6 +42,7 @@
 #include "hal/lcd_ll.h"
 #include "hal/gdma_ll.h"
 #include "rom/cache.h"
+#include "esp_cache.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define LCD_RGB_INTR_ALLOC_FLAGS     (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
@@ -798,7 +799,7 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     if (rgb_panel->flags.fb_in_psram && !rgb_panel->bb_size) {
         // CPU writes data to PSRAM through DCache, data in PSRAM might not get updated, so write back
         // Note that if we use a bounce buffer, the data gets read by the CPU as well so no need to write back
-        Cache_WriteBack_Addr((uint32_t)(flush_ptr), bytes_to_flush);
+        esp_cache_msync((void *)(flush_ptr), (size_t)bytes_to_flush, 0);
     }
 
     if (!rgb_panel->bb_size) {
@@ -954,11 +955,7 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
         if (panel->flags.bb_invalidate_cache) {
             // We don't need the bytes we copied from the psram anymore
             // Make sure that if anything happened to have changed (because the line already was in cache) we write the data back.
-            Cache_WriteBack_Addr((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
-            // Invalidate the data.
-            // Note: possible race: perhaps something on the other core can squeeze a write between this and the writeback,
-            // in which case that data gets discarded.
-            Cache_Invalidate_Addr((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
+            esp_cache_msync(&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], (size_t)panel->bb_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
         }
     }
     panel->bounce_pos_px += panel->bb_size / bytes_per_pixel;

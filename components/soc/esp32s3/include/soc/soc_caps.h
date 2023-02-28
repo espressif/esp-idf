@@ -117,6 +117,10 @@
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
+/*-------------------------- CACHE CAPS --------------------------------------*/
+#define SOC_CACHE_WRITEBACK_SUPPORTED           1
+#define SOC_CACHE_FREEZE_SUPPORTED              1
+
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CPU_INTR_NUM                32
@@ -141,7 +145,6 @@
 #define SOC_GDMA_GROUPS            (1)  // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP   (5)  // Number of GDMA pairs in each group
 #define SOC_GDMA_SUPPORT_PSRAM     (1)  // GDMA can access external PSRAM
-#define SOC_GDMA_PSRAM_MIN_ALIGN   (16) // Minimal alignment for PSRAM transaction
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-S3 has 1 GPIO peripheral

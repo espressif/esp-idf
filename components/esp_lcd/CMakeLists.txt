@@ -7,7 +7,7 @@ set(srcs "src/esp_lcd_common.c"
          "src/esp_lcd_panel_st7789.c"
          "src/esp_lcd_panel_ops.c")
 set(includes "include" "interface")
-set(priv_requires "driver")
+set(priv_requires "driver" "esp_mm")
 
 if(CONFIG_SOC_I2S_LCD_I80_VARIANT)
     list(APPEND srcs "src/esp_lcd_panel_io_i2s.c")

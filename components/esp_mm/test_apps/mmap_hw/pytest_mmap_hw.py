@@ -14,5 +14,5 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
-def test_mmap(dut: Dut) -> None:
+def test_mmap_hw(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='mmu', timeout=600)

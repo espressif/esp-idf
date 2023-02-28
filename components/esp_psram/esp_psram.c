@@ -32,6 +32,7 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/himem.h"
 #include "esp32/rom/cache.h"
+#include "esp_private/esp_cache_esp32_private.h"
 #endif
 
 
@@ -291,6 +292,15 @@ esp_err_t esp_psram_init(void)
 
 #if CONFIG_IDF_TARGET_ESP32
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= esp_himem_reserved_area_size() - 1;
+#endif
+
+    //will be removed, TODO: IDF-6944
+#if CONFIG_IDF_TARGET_ESP32
+    cache_driver_t drv = {
+        NULL,
+        esp_psram_extram_writeback_cache,
+    };
+    cache_register_writeback(&drv);
 #endif
 
     return ESP_OK;

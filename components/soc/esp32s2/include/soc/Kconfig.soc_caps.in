@@ -267,6 +267,10 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
+config SOC_CACHE_WRITEBACK_SUPPORTED
+    bool
+    default y
+
 config SOC_CP_DMA_MAX_BUFFER_SIZE
     int
     default 4095

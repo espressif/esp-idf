@@ -23,14 +23,8 @@
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/cache.h"
-#endif
 #include "esp_private/cache_utils.h"
-#if CONFIG_SPIRAM
-#include "esp_private/esp_psram_extram.h"
-#endif
-
+#include "esp_private/esp_cache_esp32_private.h"
 #include "esp_private/esp_mmu_map_private.h"
 #include "ext_mem_layout.h"
 #include "esp_mmu_map.h"
@@ -333,29 +327,15 @@ esp_err_t esp_mmu_map_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, 
 }
 
 
-#if CONFIG_IDF_TARGET_ESP32
-/**
- * On ESP32, due to hardware limitation, we don't have an
- * easy way to sync between cache and external memory wrt
- * certain range. So we do a full sync here
- */
-static void IRAM_ATTR NOINLINE_ATTR s_cache_sync(void)
-{
-#if CONFIG_SPIRAM
-        esp_psram_extram_writeback_cache();
-#endif  //#if CONFIG_SPIRAM
-        Cache_Flush(0);
-#if !CONFIG_FREERTOS_UNICORE
-        Cache_Flush(1);
-#endif // !CONFIG_FREERTOS_UNICORE
-}
-#endif  //#if CONFIG_IDF_TARGET_ESP32
-
-
 static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, uint32_t size)
 {
 #if CONFIG_IDF_TARGET_ESP32
-    s_cache_sync();
+    /**
+     * On ESP32, due to hardware limitation, we don't have an
+     * easy way to sync between cache and external memory wrt
+     * certain range. So we do a full sync here
+     */
+    cache_sync();
 #else   //Other chips
     cache_hal_invalidate_addr(vaddr_start, size);
 #endif // CONFIG_IDF_TARGET_ESP32
