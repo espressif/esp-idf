@@ -383,9 +383,6 @@ macro(__build_process_project_includes)
         set(${build_property} "${val}")
     endforeach()
 
-    # Check that the CMake target value matches the Kconfig target value.
-    __target_check()
-
     idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
 
     # Include each component's project_include.cmake

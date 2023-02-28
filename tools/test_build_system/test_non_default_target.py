@@ -72,6 +72,42 @@ def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvD
                                         ['-D', 'IDF_TARGET={}'.format(ESP32_TARGET)])
 
 
+def test_target_consistency_cmake(default_idf_env: EnvDict, test_app_copy: Path) -> None:
+    def reconfigure_and_check_return_values(errmsg: str, opts: Optional[List[str]] = None) -> None:
+        opts = opts or []
+        ret = run_cmake(*opts, '-G', 'Ninja', '..', env=default_idf_env, check=False)
+        assert ret.returncode == 1
+        assert errmsg in ret.stderr
+
+    run_cmake('-G', 'Ninja', '..')
+
+    cfg_path = (test_app_copy / 'sdkconfig')
+
+    logging.info("cmake fails if IDF_TARGET settings don't match the environment")
+    default_idf_env.update({'IDF_TARGET': ESP32S2_TARGET})
+    reconfigure_and_check_return_values(f"IDF_TARGET '{ESP32_TARGET}' in CMake cache does not "
+                                        f"match currently selected IDF_TARGET '{ESP32S2_TARGET}'")
+
+    logging.info("cmake fails if IDF_TARGET settings don't match the sdkconfig")
+    default_idf_env.pop('IDF_TARGET')
+    (test_app_copy / 'sdkconfig').write_text(f'CONFIG_IDF_TARGET="{ESP32S2_TARGET}"')
+    reconfigure_and_check_return_values(f"Target '{ESP32S2_TARGET}' in sdkconfig '{cfg_path}' does not "
+                                        f"match currently selected IDF_TARGET '{ESP32_TARGET}'.")
+
+    logging.info("cmake fails if IDF_TOOLCHAIN settings don't match the environment")
+    (test_app_copy / 'sdkconfig').write_text(f'CONFIG_IDF_TARGET="{ESP32_TARGET}"')
+    default_idf_env.update({'IDF_TOOLCHAIN': 'clang'})
+    reconfigure_and_check_return_values("IDF_TOOLCHAIN 'gcc' in CMake cache does not match "
+                                        "currently selected IDF_TOOLCHAIN 'clang'")
+
+    logging.info("cmake fails if IDF_TARGET settings don't match CMAKE_TOOLCHAIN_FILE")
+    default_idf_env.pop('IDF_TOOLCHAIN')
+    reconfigure_and_check_return_values("CMAKE_TOOLCHAIN_FILE 'toolchain-esp32' does not "
+                                        f"match currently selected IDF_TARGET '{ESP32S2_TARGET}'",
+                                        ['-D', f'IDF_TARGET={ESP32S2_TARGET}',
+                                         '-D', 'SDKCONFIG=custom_sdkconfig'])
+
+
 def test_target_precedence(idf_py: IdfPyFunc, default_idf_env: EnvDict, test_app_copy: Path) -> None:
     logging.info('IDF_TARGET takes precedence over the value of CONFIG_IDF_TARGET in sdkconfig.defaults')
     (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))

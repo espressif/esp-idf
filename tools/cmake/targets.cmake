@@ -89,34 +89,41 @@ macro(__target_init)
                 message(STATUS "IDF_TARGET not set, using default target: ${env_idf_target}")
             endif()
         endif()
-    else()
-        # IDF_TARGET set both in environment and in cache, must be the same
-        if(NOT ${IDF_TARGET} STREQUAL ${env_idf_target})
-            message(FATAL_ERROR "IDF_TARGET in CMake cache does not match "
-                            "IDF_TARGET environment variable. To change the target, clear "
-                            "the build directory and sdkconfig file, and build the project again")
+    endif()
+
+    # Check if selected target is consistent with CMake cache
+    if(DEFINED CACHE{IDF_TARGET})
+        if(NOT $CACHE{IDF_TARGET} STREQUAL ${env_idf_target})
+            message(FATAL_ERROR " IDF_TARGET '$CACHE{IDF_TARGET}' in CMake"
+                " cache does not match currently selected IDF_TARGET '${env_idf_target}'."
+                " To change the target, clear the build directory and sdkconfig file,"
+                " and build the project again.")
         endif()
     endif()
 
-    # IDF_TARGET will be used by Kconfig, make sure it is set
+    if(SDKCONFIG)
+        get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
+    else()
+        set(sdkconfig "${CMAKE_SOURCE_DIR}/sdkconfig")
+    endif()
+
+    # Check if selected target is consistent with sdkconfig
+    __target_from_config("${sdkconfig}" sdkconfig_target where)
+    if(sdkconfig_target)
+        if(NOT ${sdkconfig_target} STREQUAL ${env_idf_target})
+            message(FATAL_ERROR " Target '${sdkconfig_target}' in sdkconfig '${where}'"
+                " does not match currently selected IDF_TARGET '${IDF_TARGET}'."
+                " To change the target, clear the build directory and sdkconfig file,"
+                " and build the project again.")
+        endif()
+    endif()
+
+    # IDF_TARGET will be used by component manager, make sure it is set
     set(ENV{IDF_TARGET} ${env_idf_target})
 
     # Finally, set IDF_TARGET in cache
     set(IDF_TARGET ${env_idf_target} CACHE STRING "IDF Build Target")
 endmacro()
-
-#
-# Check that the set build target and the config target matches.
-#
-function(__target_check)
-    # Should be called after sdkconfig CMake file has been included.
-    idf_build_get_property(idf_target IDF_TARGET)
-    if(NOT ${idf_target} STREQUAL ${CONFIG_IDF_TARGET})
-        message(FATAL_ERROR "CONFIG_IDF_TARGET in sdkconfig does not match "
-            "IDF_TARGET environment variable. To change the target, delete "
-            "sdkconfig file and build the project again.")
-    endif()
-endfunction()
 
 #
 # Used by the project CMake file to set the toolchain before project() call.
@@ -133,12 +140,12 @@ macro(__target_set_toolchain)
         else()
             set(env_idf_toolchain gcc)
         endif()
-    else()
+    elseif(DEFINED CACHE{IDF_TOOLCHAIN})
         # IDF_TOOLCHAIN set both in environment and in cache, must be the same
-        if(NOT ${IDF_TOOLCHAIN} STREQUAL ${env_idf_toolchain})
-            message(FATAL_ERROR "IDF_TOOLCHAIN in CMake cache does not match "
-                    "IDF_TOOLCHAIN environment variable. To change the toolchain, clear "
-                    "the build directory and sdkconfig file, and build the project again")
+        if(NOT $CACHE{IDF_TOOLCHAIN} STREQUAL ${env_idf_toolchain})
+            message(FATAL_ERROR " IDF_TOOLCHAIN '$CACHE{IDF_TOOLCHAIN}' in CMake cache does not match"
+                    " currently selected IDF_TOOLCHAIN '${env_idf_toolchain}'. To change the toolchain, clear"
+                    " the build directory and sdkconfig file, and build the project again.")
         endif()
     endif()
 
@@ -147,6 +154,18 @@ macro(__target_set_toolchain)
 
     if(${env_idf_toolchain} STREQUAL "clang")
         set(toolchain_type "clang-")
+    endif()
+
+    # Check if selected target is consistent with toolchain file in CMake cache
+    if(DEFINED CMAKE_TOOLCHAIN_FILE)
+        string(FIND "${CMAKE_TOOLCHAIN_FILE}" "-${toolchain_type}${IDF_TARGET}.cmake" found)
+        if(${found} EQUAL -1)
+            get_filename_component(toolchain "${CMAKE_TOOLCHAIN_FILE}" NAME_WE)
+            message(FATAL_ERROR " CMAKE_TOOLCHAIN_FILE '${toolchain}'"
+                " does not match currently selected IDF_TARGET '${IDF_TARGET}'."
+                " To change the target, clear the build directory and sdkconfig file,"
+                " and build the project again.")
+        endif()
     endif()
 
     # First try to load the toolchain file from the tools/cmake/directory of IDF
