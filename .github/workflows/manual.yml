@@ -1,6 +1,6 @@
 # This is a basic workflow that is manually triggered
 
-name: Manual workflow
+name: Build and Run QEMU Tests
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
@@ -16,15 +16,24 @@ on:
         # Input has to be provided for the workflow to run
         required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "greet"
-  greet:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+#on:
+#  pull_request:
+#    types: [opened, reopened, synchronize]
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    container:
+      image: zimkal/qemu2
+      options: --user root
     steps:
-    # Runs a single command using the runners shell
-    - name: Send greeting
-      run: echo "Hello ${{ github.event.inputs.name }}"
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - run: |
+          . /opt/esp/idf/export.sh
+          python3 /opt/esp/idf/tools/ci/ci_build_apps.py . --target esp32 -m qemu -vv --pytest-apps
+          pytest --target esp32 -m qemu --embedded-services idf,qemu --build-dir=build_esp32_default
+        name: Run in container
+        
