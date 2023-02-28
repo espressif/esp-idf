@@ -157,7 +157,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     memcpy(&ctx->mount_config, mount_config, sizeof(esp_vfs_fat_mount_config_t));
     ctx_id = s_get_unused_context_id();
     //At this stage, we should always get a free context, otherwise program should return already
-    assert (ctx_id != FF_VOLUMES);
+    assert(ctx_id != FF_VOLUMES);
     s_ctx[ctx_id] = ctx;
 
     return ESP_OK;
@@ -165,9 +165,6 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
 fail:
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
-    if (ctx_id != FF_VOLUMES) {
-        s_ctx[ctx_id] = NULL;
-    }
     free(ctx);
     return ret;
 }
@@ -176,6 +173,11 @@ esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t 
 {
     BYTE pdrv = ff_diskio_get_pdrv_wl(wl_handle);
     ESP_RETURN_ON_FALSE(pdrv != 0xff, ESP_ERR_INVALID_STATE, TAG, "partition isn't registered, call esp_vfs_fat_spiflash_mount_rw_wl first");
+
+    uint32_t id = FF_VOLUMES;
+    ESP_RETURN_ON_FALSE(s_get_context_id_by_wl_handle(wl_handle, &id), ESP_ERR_INVALID_STATE, TAG, "partition isn't registered, call esp_vfs_fat_spiflash_mount_rw_wl first");
+    //At this stage, as the wl_handle is valid, we should always get its context id, otherwise program should return already
+    assert(id != FF_VOLUMES);
 
     char drv[3] = {(char)('0' + pdrv), ':', 0};
     f_mount(0, drv, 0);
@@ -188,8 +190,6 @@ esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t 
         err = err_drv;
     }
 
-    uint32_t id = FF_VOLUMES;
-    s_get_context_id_by_wl_handle(wl_handle, &id);
     free(s_ctx[id]);
     s_ctx[id] = NULL;
 
