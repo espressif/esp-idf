@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdint.h>
 #include "soc/clk_tree_defs.h"
 #include "soc/soc_caps.h"
 
@@ -28,12 +29,12 @@ typedef int rmt_clock_source_t;
  */
 typedef union {
     struct {
-        unsigned int duration0 : 15; /*!< Duration of level0 */
-        unsigned int level0 : 1;     /*!< Level of the first part */
-        unsigned int duration1 : 15; /*!< Duration of level1 */
-        unsigned int level1 : 1;     /*!< Level of the second part */
+        uint16_t duration0 : 15; /*!< Duration of level0 */
+        uint16_t level0 : 1;     /*!< Level of the first part */
+        uint16_t duration1 : 15; /*!< Duration of level1 */
+        uint16_t level1 : 1;     /*!< Level of the second part */
     };
-    unsigned int val; /*!< Equivalent unsigned value for the RMT symbol */
+    uint32_t val; /*!< Equivalent unsigned value for the RMT symbol */
 } rmt_symbol_word_t;
 
 #ifdef __cplusplus

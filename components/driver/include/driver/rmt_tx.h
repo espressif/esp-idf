@@ -30,7 +30,7 @@ typedef struct {
  * @brief RMT TX channel specific configuration
  */
 typedef struct {
-    int gpio_num;               /*!< GPIO number used by RMT TX channel. Set to -1 if unused */
+    gpio_num_t gpio_num;        /*!< GPIO number used by RMT TX channel. Set to -1 if unused */
     rmt_clock_source_t clk_src; /*!< Clock source of RMT TX channel, channels in the same group must use the same clock source */
     uint32_t resolution_hz;     /*!< Channel clock resolution, in Hz */
     size_t mem_block_symbols;   /*!< Size of memory block, in number of `rmt_symbol_word_t`, must be an even */
