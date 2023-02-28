@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import random
@@ -110,11 +110,11 @@ def dlt_short_extern_addr_in_pendingtable(ser:IdfDut, table:List, short:int=5, e
         cnt = cnt + 1
 
 
-@pytest.mark.esp32h4
+@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (2, 'release', 'esp32h2beta2'),     # No need to rename beta_target as it is still called h2 in esptool
+    'count, config', [
+        (2, 'release'),
     ], indirect=True
 )
 def test_based_txrx(dut: Tuple[IdfDut, IdfDut]) -> None:
@@ -147,12 +147,11 @@ def test_based_txrx(dut: Tuple[IdfDut, IdfDut]) -> None:
     assert 'Rx Done' not in str(tmp)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_energy(dut: IdfDut) -> None:
     transmit = dut
@@ -162,12 +161,11 @@ def test_based_energy(dut: IdfDut) -> None:
     transmit.expect('ed_scan_rss_value:', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_channel(dut: IdfDut) -> None:
     transmit = dut
@@ -178,12 +176,11 @@ def test_based_channel(dut: IdfDut) -> None:
     transmit.expect('current channel: 23', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_txpower(dut: IdfDut) -> None:
     transmit = dut
@@ -194,12 +191,11 @@ def test_based_txpower(dut: IdfDut) -> None:
     transmit.expect('current txpower: 13', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_promiscuous(dut: IdfDut) -> None:
     transmit = dut
@@ -214,12 +210,11 @@ def test_based_promiscuous(dut: IdfDut) -> None:
     transmit.expect('hardware promiscuous mode was disabled', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_panid(dut: IdfDut) -> None:
     transmit = dut
@@ -230,12 +225,11 @@ def test_based_panid(dut: IdfDut) -> None:
     transmit.expect('current panid: 0x60', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_shortaddr(dut: IdfDut) -> None:
     transmit = dut
@@ -246,12 +240,11 @@ def test_based_shortaddr(dut: IdfDut) -> None:
     transmit.expect('current shortaddr: 0x1234', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_extaddr(dut: IdfDut) -> None:
     transmit = dut
@@ -262,12 +255,11 @@ def test_based_extaddr(dut: IdfDut) -> None:
     transmit.expect('get extaddr: 0807060504030201', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_coordinator(dut: IdfDut) -> None:
     transmit = dut
@@ -282,12 +274,11 @@ def test_based_coordinator(dut: IdfDut) -> None:
     transmit.expect('hardware coordinator was disabled', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_pending(dut: IdfDut) -> None:
     transmit = dut
@@ -304,12 +295,11 @@ def test_based_pending(dut: IdfDut) -> None:
     transmit.expect('clear the pending address table', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_cca(dut: IdfDut) -> None:
     transmit = dut
@@ -322,11 +312,11 @@ def test_based_cca(dut: IdfDut) -> None:
     transmit.expect('threshold:-60 dB, mode: 0', timeout=1)
 
 
-@pytest.mark.esp32h4
+@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (2, 'release', 'esp32h2beta2'),
+    'count, config', [
+        (2, 'release'),
     ], indirect=True
 )
 def test_based_autoack(dut: Tuple[IdfDut, IdfDut]) -> None:
@@ -369,11 +359,11 @@ def test_based_autoack(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('02 00 00', timeout=1)
 
 
-@pytest.mark.esp32h4
+@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (2, 'release', 'esp32h2beta2'),
+    'count, config', [
+        (2, 'release'),
     ], indirect=True
 )
 def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
@@ -567,12 +557,11 @@ def test_based_autopending(dut: Tuple[IdfDut, IdfDut]) -> None:
     transmit.expect('02 00 10', timeout=1)
 
 
-@pytest.mark.esp32h4
+@pytest.mark.esp32c6
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_transmit_failed(dut: IdfDut) -> None:
     transmit = dut
@@ -590,12 +579,11 @@ def test_based_transmit_failed(dut: IdfDut) -> None:
     transmit.expect('08 09 00 00 00 00 00 00', timeout=1)
 
 
-@pytest.mark.esp32h4
-@pytest.mark.ieee802154
+@pytest.mark.esp32c6
+@pytest.mark.generic
 @pytest.mark.parametrize(
-    'count, config, beta_target', [
-        (1, 'release', 'esp32h2beta2'),
-    ], indirect=True
+    'config', ['release',],
+    indirect=True
 )
 def test_based_initialize(dut: IdfDut) -> None:
     transmit = dut

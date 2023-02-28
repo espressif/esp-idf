@@ -805,38 +805,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
-.rules:build:component_ut-esp32h4:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32h4
-    - <<: *if-label-target_test
-    - <<: *if-label-unit_test
-    - <<: *if-label-unit_test_esp32h4
-    - <<: *if-dev-push
-      changes: *patterns-build_components
-    - <<: *if-dev-push
-      changes: *patterns-build_system
-    - <<: *if-dev-push
-      changes: *patterns-component_ut
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-sdio
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-usb
-    - <<: *if-dev-push
-      changes: *patterns-downloadable-tools
-    - <<: *if-dev-push
-      changes: *patterns-target_test-adc
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
-      changes: *patterns-target_test-wifi
-
 .rules:build:component_ut-esp32s2:
   rules:
     - <<: *if-revert-branch
@@ -2097,6 +2065,19 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
+.rules:test:component_ut-esp32c6-i154:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c6
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+
 .rules:test:component_ut-esp32h2:
   rules:
     - <<: *if-revert-branch
@@ -2124,19 +2105,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:component_ut-esp32h4-i154:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32h4
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
 
 .rules:test:component_ut-esp32s2:
   rules:
