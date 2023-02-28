@@ -12,10 +12,12 @@ examples/protocols/coap_server:
     - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/esp_http_client:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable:
     - if: IDF_TARGET in ["esp32h2"]
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "linux"]
       temporary: true
       reason: only test on esp32
 
