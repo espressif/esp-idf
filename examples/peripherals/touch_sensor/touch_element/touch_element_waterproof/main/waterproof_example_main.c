@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -36,11 +36,11 @@ static void button_handler_task(void *arg)
         touch_element_message_receive(&element_message, portMAX_DELAY); //Block take
         const touch_button_message_t *button_message = touch_button_get_message(&element_message);
         if (button_message->event == TOUCH_BUTTON_EVT_ON_PRESS) {
-            ESP_LOGI(TAG, "Button[%d] Press", (uint32_t)element_message.arg);
+            ESP_LOGI(TAG, "Button[%d] Press", (int)element_message.arg);
         } else if (button_message->event == TOUCH_BUTTON_EVT_ON_RELEASE) {
-            ESP_LOGI(TAG, "Button[%d] Release", (uint32_t)element_message.arg);
+            ESP_LOGI(TAG, "Button[%d] Release", (int)element_message.arg);
         } else if (button_message->event == TOUCH_BUTTON_EVT_ON_LONGPRESS) {
-            ESP_LOGI(TAG, "Button[%d] LongPress", (uint32_t)element_message.arg);
+            ESP_LOGI(TAG, "Button[%d] LongPress", (int)element_message.arg);
         }
     }
 }
@@ -74,8 +74,9 @@ void app_main(void)
         /* Create touch button */
         ESP_ERROR_CHECK(touch_button_create(&button_config, &button_handle[i]));
         /* Subscribe touch button event(Press, Release, LongPress) */
-        ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i], TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
-                                                     (void *)channel_array[i]));
+        ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i],
+                        TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
+                        (void *)channel_array[i]));
         /* Button set dispatch method */
         ESP_ERROR_CHECK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_EVENT));
 #ifdef CONFIG_TOUCH_WATERPROOF_GUARD_ENABLE

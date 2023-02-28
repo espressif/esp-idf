@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "touch_element/touch_button.h"
@@ -53,11 +54,11 @@ static void button_handler(touch_elem_message_t element_message)
 {
     const touch_button_message_t *button_message = touch_button_get_message(&element_message);
     if (button_message->event == TOUCH_BUTTON_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Button[%d] Press", (uint32_t)element_message.arg);
+        ESP_LOGI(TAG, "Button[%d] Press", (int)element_message.arg);
     } else if (button_message->event == TOUCH_BUTTON_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Button[%d] Release", (uint32_t)element_message.arg);
+        ESP_LOGI(TAG, "Button[%d] Release", (int)element_message.arg);
     } else if (button_message->event == TOUCH_BUTTON_EVT_ON_LONGPRESS) {
-        ESP_LOGI(TAG, "Button[%d] LongPress", (uint32_t)element_message.arg);
+        ESP_LOGI(TAG, "Button[%d] LongPress", (int)element_message.arg);
     }
 }
 
@@ -65,11 +66,11 @@ static void slider_handler(touch_elem_message_t element_message)
 {
     const touch_slider_message_t *slider_message = touch_slider_get_message(&element_message);
     if (slider_message->event == TOUCH_SLIDER_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Slider Press, position: %d", slider_message->position);
+        ESP_LOGI(TAG, "Slider Press, position: %"PRIu32, slider_message->position);
     } else if (slider_message->event == TOUCH_SLIDER_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Slider Release, position: %d", slider_message->position);
+        ESP_LOGI(TAG, "Slider Release, position: %"PRIu32, slider_message->position);
     } else if (slider_message->event == TOUCH_SLIDER_EVT_ON_CALCULATION) {
-        ESP_LOGI(TAG, "Slider Calculate, position: %d", slider_message->position);
+        ESP_LOGI(TAG, "Slider Calculate, position: %"PRIu32, slider_message->position);
     }
 }
 
@@ -107,7 +108,8 @@ void button_example_init(void)
         /* Create Touch buttons */
         ESP_ERROR_CHECK(touch_button_create(&button_config, &button_handle[i]));
         /* Subscribe touch button events (On Press, On Release, On LongPress) */
-        ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i], TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
+        ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i],
+                        TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
                         (void *)button_channel_array[i]));
         /* Set EVENT as the dispatch method */
         ESP_ERROR_CHECK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_EVENT));
@@ -131,7 +133,8 @@ void slider_example_init(void)
     };
     ESP_ERROR_CHECK(touch_slider_create(&slider_config, &slider_handle));
     /* Subscribe touch slider events (On Press, On Release, On Calculation) */
-    ESP_ERROR_CHECK(touch_slider_subscribe_event(slider_handle, TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
+    ESP_ERROR_CHECK(touch_slider_subscribe_event(slider_handle,
+                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
     /* Set EVENT as the dispatch method */
     ESP_ERROR_CHECK(touch_slider_set_dispatch_method(slider_handle, TOUCH_ELEM_DISP_EVENT));
     ESP_LOGI(TAG, "Touch slider created");

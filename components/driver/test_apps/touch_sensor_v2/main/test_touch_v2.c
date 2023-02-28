@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,9 @@
  Tests for the touch sensor device driver for ESP32-S2 & ESP32-S3
 */
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 
 #include <string.h>
+#include <inttypes.h>
 #include "esp_system.h"
 #include "driver/touch_pad.h"
 #include "unity.h"
@@ -20,7 +20,6 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
-#include "test_utils.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_reg.h"
@@ -59,7 +58,7 @@ void test_pxp_deinit_io(void)
 #endif
 
 #define TOUCH_READ_INVALID_VAL          (SOC_TOUCH_PAD_THRESHOLD_MAX)
-#define TOUCH_READ_ERROR                (100)
+#define TOUCH_READ_ERROR_THRESH         (0.1) // 10% error
 #define TOUCH_INTR_THRESHOLD            (0.1)
 #define TOUCH_EXCEED_TIME_MS            (1000)
 
@@ -114,7 +113,7 @@ static void printf_touch_hw_read(const char *str)
     printf("[%s] ", str);
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         touch_pad_read_raw_data(touch_list[i], &touch_value);
-        printf("[%d]%d ", touch_list[i], touch_value);
+        printf("[%d]%"PRIu32" ", touch_list[i], touch_value);
     }
     printf("\r\n");
 }
@@ -125,7 +124,7 @@ static void printf_touch_benchmark_read(const char *str)
     printf("[%s] ", str);
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        printf("[%d]%d ", touch_list[i], touch_value);
+        printf("[%d]%"PRIu32" ", touch_list[i], touch_value);
     }
     printf("\r\n");
 }
@@ -136,7 +135,7 @@ static void printf_touch_smooth_read(const char *str)
     printf("[%s] ", str);
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         touch_pad_filter_read_smooth(touch_list[i], &touch_value);
-        printf("[%d]%d ", touch_list[i], touch_value);
+        printf("[%d]%"PRIu32" ", touch_list[i], touch_value);
     }
     printf("\r\n");
 }
@@ -227,14 +226,14 @@ esp_err_t test_touch_sw_read(void)
             TEST_ESP_OK( touch_pad_sw_start() );
             while (!touch_pad_meas_is_done()) ;
             TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
-            printf("T%d:[%4d] ", touch_list[i], touch_value[i]);
+            printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_value[i]);
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
         }
         printf("\n");
         /* Check the stable of reading. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp[i]) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             }
             touch_temp[i] = touch_value[i];
         }
@@ -246,7 +245,7 @@ esp_err_t test_touch_sw_read(void)
             TEST_ESP_OK( touch_pad_sw_start() );
             while (!touch_pad_meas_is_done()) ;
             TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_push[i]) );
-            printf("T%d:[%4d] ", touch_list[i], touch_push[i]);
+            printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_push[i]);
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_push[i]);
         }
         printf("\n");
@@ -298,12 +297,12 @@ esp_err_t test_touch_timer_read(void)
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
-            printf("T%d:[%4d] ", touch_list[i], touch_value[i]);
+            printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_value[i]);
         }
         printf("\n");
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp[i]) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             }
             touch_temp[i] = touch_value[i];
         }
@@ -314,7 +313,7 @@ esp_err_t test_touch_timer_read(void)
         /* Read the touch sensor raw data in FSM mode. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_push[i]) );
-            printf("T%d:[%4d] ", touch_list[i], touch_push[i]);
+            printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_push[i]);
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_push[i]);
         }
         printf("\n");
@@ -368,10 +367,10 @@ esp_err_t test_touch_filtered_read(void)
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
         TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_temp[i]) );
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]) );
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
     }
     printf("touch filter init value:\n");
     printf_touch_hw_read("raw  ");
@@ -385,13 +384,13 @@ esp_err_t test_touch_filtered_read(void)
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
             TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_temp[i]) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         }
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp[i]) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             }
             touch_temp[i] = touch_value[i];
         }
@@ -460,19 +459,19 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
         /* Correctness of reading. Ideal: benchmark == raw data == smooth data. */
         TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
         TEST_ESP_OK( touch_pad_read_benchmark(pad_num, &touch_filter) );
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_filter, touch_value);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter*TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
         TEST_ESP_OK( touch_pad_filter_read_smooth(pad_num, &touch_filter) );
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_filter, touch_value);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter*TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
 
         /* Stable of reading */
         TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
         if (touch_temp) {
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
         }
         touch_temp = touch_value;
 
-        printf("T%d:[%4d] ", pad_num, touch_value);
+        printf("T%d:[%4"PRIu32"] ", pad_num, touch_value);
         val_sum += touch_value; // For check.
         vTaskDelay(20 / portTICK_PERIOD_MS);
     }
@@ -544,7 +543,7 @@ static esp_err_t test_touch_check_ch_touched(uint32_t test_ch_num, uint32_t exce
     while (1) {
         if (pdTRUE == xQueueReceive(que_touch, &evt, exceed_time_ms / portTICK_PERIOD_MS)) {
             if (evt.intr_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-                printf("0x%x, ", evt.pad_status);
+                printf("0x%"PRIx32", ", evt.pad_status);
                 if (test_ch_num == __builtin_popcount(evt.pad_status)) {
                     ret = ESP_OK;
                     break;
@@ -552,7 +551,7 @@ static esp_err_t test_touch_check_ch_touched(uint32_t test_ch_num, uint32_t exce
             } else if (evt.intr_mask & (TOUCH_PAD_INTR_MASK_DONE | TOUCH_PAD_INTR_MASK_SCAN_DONE)) {
                 continue;
             } else {    // If the interrupt type error, test error.
-                ESP_LOGI(TAG, "Touch[%d] intr error, status %d, evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
+                ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
                 break;
             }
         } else {
@@ -575,7 +574,7 @@ static esp_err_t test_touch_check_ch_released(uint32_t test_ch_num, uint32_t exc
     while (1) {
         if (pdTRUE == xQueueReceive(que_touch, &evt, exceed_time_ms / portTICK_PERIOD_MS)) {
             if (evt.intr_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-                printf("0x%x, ", evt.pad_status);
+                printf("0x%"PRIx32", ", evt.pad_status);
                 if ((TEST_TOUCH_CHANNEL - test_ch_num) == __builtin_popcount(evt.pad_status)) {
                     ret = ESP_OK;
                     break;
@@ -583,7 +582,7 @@ static esp_err_t test_touch_check_ch_released(uint32_t test_ch_num, uint32_t exc
             } else if (evt.intr_mask & (TOUCH_PAD_INTR_MASK_DONE | TOUCH_PAD_INTR_MASK_SCAN_DONE)) {
                 continue;
             } else {    // If the interrupt type error, test error.
-                ESP_LOGI(TAG, "Touch[%d] intr error, status %d, evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
+                ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
                 break;
             }
         } else {
@@ -607,7 +606,7 @@ static esp_err_t test_touch_check_ch_touched_with_proximity(uint32_t test_ch_num
     while (1) {
         if (pdTRUE == xQueueReceive(que_touch, &evt, exceed_time_ms / portTICK_PERIOD_MS)) {
             if (evt.intr_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-                printf("0x%x, ", evt.pad_status);
+                printf("0x%"PRIx32", ", evt.pad_status);
                 if (test_ch_num == __builtin_popcount(evt.pad_status)) {
                     ret = ESP_OK;
                     break;
@@ -618,14 +617,14 @@ static esp_err_t test_touch_check_ch_touched_with_proximity(uint32_t test_ch_num
                     if (BIT(i) & ch_mask) {
                         if (evt.pad_num == i) {
                             if (count == evt.slp_proxi_cnt) {
-                                esp_rom_printf("priximity base(%d) cnt(%d)\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
+                                esp_rom_printf("priximity base(%"PRIu32") cnt(%"PRIu32")\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
                             }
                         }
                     }
                 }
                 continue;
             } else {    // If the interrupt type error, test error.
-                ESP_LOGI(TAG, "Touch[%d] intr error, status %d, evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
+                ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
                 continue;;
             }
         } else {
@@ -649,7 +648,7 @@ static esp_err_t test_touch_check_ch_released_with_proximity(uint32_t test_ch_nu
     while (1) {
         if (pdTRUE == xQueueReceive(que_touch, &evt, exceed_time_ms / portTICK_PERIOD_MS)) {
             if (evt.intr_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-                printf("0x%x, ", evt.pad_status);
+                printf("0x%"PRIx32", ", evt.pad_status);
                 if ((TEST_TOUCH_CHANNEL - test_ch_num) == __builtin_popcount(evt.pad_status)) {
                     ret = ESP_OK;
                     break;
@@ -660,14 +659,14 @@ static esp_err_t test_touch_check_ch_released_with_proximity(uint32_t test_ch_nu
                     if (BIT(i) & ch_mask) {
                         if (evt.pad_num == i) {
                             if (count == evt.slp_proxi_cnt) {
-                                esp_rom_printf("priximity base(%d) cnt(%d)\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
+                                esp_rom_printf("priximity base(%"PRIu32") cnt(%"PRIu32")\n", evt.slp_proxi_base, evt.slp_proxi_cnt);
                             }
                         }
                     }
                 }
                 continue;
             } else {    // If the interrupt type error, test error.
-                ESP_LOGI(TAG, "Touch[%d] intr error, status %d, evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
+                ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
                 continue;;
             }
         } else {
@@ -705,7 +704,7 @@ static esp_err_t test_touch_check_ch_intr_scan_done(void)
             } else if (evt.intr_mask & (TOUCH_PAD_INTR_MASK_DONE | TOUCH_PAD_INTR_MASK_SCAN_DONE)) {
                 continue;
             } else {    // If the interrupt type error, test error.
-                ESP_LOGI(TAG, "Touch[%d] intr error, status %d, evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
+                ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
                 break;
             }
         } else {
@@ -737,7 +736,7 @@ static esp_err_t test_touch_check_ch_intr_timeout(touch_pad_t pad_num)
                     touch_pad_timeout_resume();
                     break;
                 } else {
-                    esp_rom_printf("-timeout %x T[%d] status %d, evt_msk %x -\n",
+                    esp_rom_printf("-timeout %x T[%"PRIu32"] status %"PRIx32", evt_msk %x -\n",
                                s_touch_timeout_mask, evt.pad_num, evt.pad_status, evt.intr_mask);
                     touch_pad_timeout_resume();
                 }
@@ -763,7 +762,6 @@ static void test_touch_intr_cb(void *arg)
     evt.pad_num = touch_pad_get_current_meas_channel();
 
     if (!evt.intr_mask) {
-        esp_rom_printf(".");
         return;
     }
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
@@ -777,7 +775,6 @@ static void test_touch_intr_cb(void *arg)
     }
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         s_touch_timeout_mask |= (BIT(evt.pad_num));
-        esp_rom_printf("-%dtout-", SENS.sar_touch_status0.touch_scan_curr);
     }
 
     xQueueSendFromISR(que_touch, &evt, &task_awoken);
@@ -832,7 +829,7 @@ esp_err_t test_touch_interrupt(void)
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d",
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -900,7 +897,7 @@ esp_err_t test_touch_scan_done_interrupt(void)
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d", \
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -965,7 +962,7 @@ esp_err_t test_touch_timeout_interrupt(void)
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d",
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
     /* Set timeout parameter */
@@ -1011,7 +1008,7 @@ TEST_CASE("Touch Sensor interrupt test (active, inactive, scan_done, timeout)", 
 static void test_touch_measure_step(uint32_t step)
 {
     /* Fake the process of debounce. */
-    // printf("measure cnt %d: [ ", step);
+    // printf("measure cnt %"PRIu32": [ ", step);
     for (int i = 0; i < step; i++) {
         for (int j = 0; j < TEST_TOUCH_CHANNEL; j++) {
             TEST_ESP_OK( touch_pad_sw_start() );
@@ -1067,7 +1064,7 @@ esp_err_t test_touch_filter_parameter_debounce(int deb_cnt)
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, thresh %d", \
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -1132,7 +1129,7 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, thresh %d", \
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -1267,7 +1264,7 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         //set interrupt threshold.
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, thresh %d", \
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -1400,7 +1397,7 @@ TEST_CASE("Touch Sensor denoise test (cap, level)", "[touch]")
     } else {
         /* If the value of denoise is approximately 0,
         The difference between touch reading is very small. Should skip value test. */
-        ESP_LOGI(TAG, "denoise value is %d", denoise_val[0]);
+        ESP_LOGI(TAG, "denoise value is %"PRIu32"", denoise_val[0]);
     }
 
     ESP_LOGI(TAG, "*********** touch filter denoise cap level test ********************");
@@ -1416,7 +1413,7 @@ TEST_CASE("Touch Sensor denoise test (cap, level)", "[touch]")
     printf("denoise read: ");
     for (int i = 0; i < TOUCH_PAD_DENOISE_CAP_MAX - 1; i++) {
         TEST_ASSERT_GREATER_OR_EQUAL(denoise_val[i], denoise_val[i + 1]);
-        printf("%d ", denoise_val[i]);
+        printf("%"PRIu32" ", denoise_val[i]);
     }
     printf("\n");
 }
@@ -1557,11 +1554,11 @@ esp_err_t test_touch_proximity(int meas_num)
             /* The threshold of proximity pad is the sum of touch reading `meas_num` times */
             TEST_ESP_OK( touch_pad_set_thresh(touch_list[i],
                                               meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)) );
-            ESP_LOGI(TAG, "proximity pad [%d] base %d, thresh %d", touch_list[i], touch_value,
+            ESP_LOGI(TAG, "proximity pad [%d] base %"PRIu32", thresh %"PRIu32"", touch_list[i], touch_value,
                      (uint32_t)(meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)));
         } else {
             TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-            ESP_LOGI(TAG, "touch pad [%d] base %d, thresh %d", \
+            ESP_LOGI(TAG, "touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                      touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
         }
     }
@@ -1653,7 +1650,7 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d",
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -1667,13 +1664,13 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &touch_value) );
             TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_temp) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_temp) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
         }
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             }
             touch_temp = touch_value;
         }
@@ -1754,18 +1751,18 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
             if (touch_list[i] == sleep_pad) {
                 touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_value);
                 touch_pad_sleep_set_threshold(sleep_pad, meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD));
-                ESP_LOGI(TAG, "Sleep pad [%d] base %d, thresh %d", touch_list[i], touch_value,
+                ESP_LOGI(TAG, "Sleep pad [%d] base %"PRIu32", thresh %"PRIu32"", touch_list[i], touch_value,
                          (uint32_t)(meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)));
             } else if (touch_list[i] == sleep_pad) {
                 touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_value);
                 /* The threshold of proximity pad is the sum of touch reading `meas_num` times */
                 touch_pad_sleep_set_threshold(sleep_pad, meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD));
-                ESP_LOGI(TAG, "proximity pad [%d] base %d, thresh %d", touch_list[i], touch_value,
+                ESP_LOGI(TAG, "proximity pad [%d] base %"PRIu32", thresh %"PRIu32"", touch_list[i], touch_value,
                          (uint32_t)(meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)));
             } else {
                 TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
                 TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-                ESP_LOGI(TAG, "touch pad [%d] base %d, thresh %d", \
+                ESP_LOGI(TAG, "touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                          touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
             }
         }
@@ -1787,7 +1784,7 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
             TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
             TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
             TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-            ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d",
+            ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                      touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
         }
         /* Sleep channel setting */
@@ -1808,7 +1805,7 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
             TEST_ESP_OK( touch_pad_proximity_get_data(sleep_pad, &measure_out) );
             TEST_ESP_OK( touch_pad_sleep_channel_read_proximity_cnt(sleep_pad, &proximity_cnt) );
             TEST_ESP_OK( touch_pad_sleep_get_threshold(sleep_pad, &touch_thres) );
-            printf("touch slp smooth %d, base %d, proxi %d cnt %d thres%d status 0x%x\n",
+            printf("touch slp smooth %"PRIu32", base %"PRIu32", proxi %"PRIu32" cnt %"PRIu32" thres%"PRIu32" status 0x%"PRIx32"\n",
                    smooth, touch_value, measure_out, proximity_cnt,
                    touch_thres, touch_pad_get_status());
         }
@@ -1820,7 +1817,7 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
             TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
             TEST_ESP_OK( touch_pad_proximity_get_data(sleep_pad, &measure_out) );
             TEST_ESP_OK( touch_pad_sleep_channel_read_proximity_cnt(sleep_pad, &proximity_cnt) );
-            printf("touch slp smooth %d, base %d, proxi %d cnt %d status 0x%x\n",
+            printf("touch slp smooth %"PRIu32", base %"PRIu32", proxi %"PRIu32" cnt %"PRIu32" status 0x%"PRIx32"\n",
                    smooth, touch_value, measure_out, proximity_cnt, touch_pad_get_status());
         }
     }
@@ -1899,7 +1896,7 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d",
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
@@ -1915,7 +1912,7 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
     TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth) );
     TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &raw) );
     TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
-    printf("touch slp raw %d, smooth %d, base %d, status 0x%x\n", raw, smooth, touch_value, touch_pad_get_status());
+    printf("touch slp raw %"PRIu32", smooth %"PRIu32", base %"PRIu32", status 0x%"PRIx32"\n", raw, smooth, touch_value, touch_pad_get_status());
 
     test_touch_release_all();
     TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
@@ -1923,10 +1920,12 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
     TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth) );
     TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &raw) );
     TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
-    printf("touch slp raw %d, smooth %d, base %d, status 0x%x\n", raw, smooth, touch_value, touch_pad_get_status());
+    printf("touch slp raw %"PRIu32", smooth %"PRIu32", base %"PRIu32", status 0x%"PRIx32"\n", raw, smooth, touch_value, touch_pad_get_status());
 
     return ESP_OK;
 }
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) //TODO: IDF-5218
 
 #include <sys/time.h>
 #include "esp_sleep.h"
@@ -1944,18 +1943,18 @@ static void test_deep_sleep_init(void)
         uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
         if (wakeup_pin_mask != 0) {
             int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
-            printf("Wake up from GPIO %d\n", pin);
+            printf("Wake up from GPIO %"PRIu32"\n", pin);
         } else {
             printf("Wake up from GPIO\n");
         }
         break;
     }
     case ESP_SLEEP_WAKEUP_TIMER: {
-        printf("Wake up from timer. Time spent in deep sleep: %dms\n", sleep_time_ms);
+        printf("Wake up from timer. Time spent in deep sleep: %"PRIu32"ms\n", sleep_time_ms);
         break;
     }
     case ESP_SLEEP_WAKEUP_TOUCHPAD: {
-        printf("Wake up from touch on pad %d\n", esp_sleep_get_touchpad_wakeup_status());
+        printf("Wake up from touch on pad %"PRIu32"\n", esp_sleep_get_touchpad_wakeup_status());
         break;
     }
     case ESP_SLEEP_WAKEUP_UNDEFINED:
@@ -1978,10 +1977,6 @@ static void test_deep_sleep_init(void)
 
 TEST_CASE("Touch Sensor sleep pad wakeup deep sleep test", "[touch][ignore]")
 {
-//TODO: IDF-5218
-#if TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
-    abort();
-#endif //TEMPORARY_DISABLED_FOR_TARGETS(..)
     test_deep_sleep_init();
 
     /* Change the work duty of touch sensor to reduce current. */
@@ -1996,6 +1991,7 @@ TEST_CASE("Touch Sensor sleep pad wakeup deep sleep test", "[touch][ignore]")
 
     esp_deep_sleep_start();
 }
+#endif //TEMPORARY_DISABLED_FOR_TARGETS(..)
 
 #include "touch_scope.h"
 /*
@@ -2059,7 +2055,7 @@ void test_touch_slope_debug(int pad_num)
         TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
         TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_THRESHOLD) );
-        ESP_LOGI(TAG, "test init: touch pad [%d] base %d, smooth %d, thresh %d", \
+        ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_THRESHOLD));
     }
 
@@ -2139,5 +2135,3 @@ void test_touch_slope_debug(int pad_num)
 #endif
     TEST_ESP_OK( touch_pad_deinit() );
 }
-
-#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3

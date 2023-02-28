@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
  Tests for the touch sensor device driver for ESP32
 */
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
 
 #include "esp_system.h"
 #include "driver/touch_pad.h"
@@ -17,8 +16,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "nvs_flash.h"
-#include "test_utils.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_reg.h"
@@ -28,6 +25,9 @@
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
 #include "esp_rom_sys.h"
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
 
 static const char *TAG = "test_touch";
 
@@ -40,9 +40,9 @@ static const char *TAG = "test_touch";
    TEST_ASSERT_EQUAL_UINT32(REG_GET_FIELD(RTC_IO_DATE_REG, RTC_IO_IO_DATE), RTCIO.date.date);           \
 })
 
-#define TOUCH_READ_ERROR     (100)
-#define TEST_TOUCH_COUNT_NUM (10)
-#define TEST_TOUCH_CHANNEL   (3)
+#define TOUCH_READ_ERROR_THRESH (0.1) // 10% error
+#define TEST_TOUCH_COUNT_NUM    (10)
+#define TEST_TOUCH_CHANNEL      (3)
 static touch_pad_t touch_list[TEST_TOUCH_CHANNEL] = {
     // TOUCH_PAD_NUM0,
     // TOUCH_PAD_NUM1 is GPIO0, for download.
@@ -158,7 +158,7 @@ static esp_err_t test_touch_timer_read(void)
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_read(touch_list[i], &touch_temp[i]) );
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
@@ -192,7 +192,7 @@ static esp_err_t test_touch_filtered_read(void)
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
             TEST_ESP_OK( touch_pad_read_filtered(touch_list[i], &touch_temp) );
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp);
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             printf("T%d:[%4d] ", touch_list[i], touch_value);
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -207,11 +207,20 @@ static esp_err_t test_touch_filtered_read(void)
 // test the basic configuration function with right parameters and error parameters
 TEST_CASE("Touch Sensor all channel read test", "[touch]")
 {
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "test_touch", &pm_lock));
+    TEST_ESP_OK(esp_pm_lock_acquire(pm_lock));
+#endif
     TOUCH_REG_BASE_TEST();
     test_touch_sw_read_test_runner();
     TEST_ESP_OK( test_touch_sw_read() );
     TEST_ESP_OK( test_touch_timer_read() );
     TEST_ESP_OK( test_touch_filtered_read() );
+#if CONFIG_PM_ENABLE
+    TEST_ESP_OK(esp_pm_lock_release(pm_lock));
+    TEST_ESP_OK(esp_pm_lock_delete(pm_lock));
+#endif
 }
 
 static int test_touch_parameter(touch_pad_t pad_num, int meas_time, int slp_time, int vol_h, int vol_l, int vol_a, int slope)
@@ -258,7 +267,7 @@ TEST_CASE("Touch Sensor parameters test", "[touch]")
     touch_val[1] = test_touch_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
                                         TOUCH_HVOLT_2V5, TOUCH_LVOLT_0V6, TOUCH_HVOLT_ATTEN_1V,
                                         TOUCH_PAD_SLOPE_DEFAULT);
-    touch_val[2] = test_touch_parameter(touch_list[0], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
+    touch_val[2] = test_touch_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
                                         TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V5,
                                         TOUCH_PAD_SLOPE_DEFAULT);
 
@@ -366,5 +375,3 @@ TEST_CASE("Touch Sensor interrupt test", "[touch]")
 {
     TEST_ESP_OK( test_touch_interrupt() );
 }
-
-#endif // CONFIG_IDF_TARGET_ESP32

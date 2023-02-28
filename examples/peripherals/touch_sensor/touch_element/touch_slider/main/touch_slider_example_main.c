@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "touch_element/touch_slider.h"
@@ -51,11 +52,11 @@ static void slider_handler_task(void *arg)
             /* Decode message */
             const touch_slider_message_t *slider_message = touch_slider_get_message(&element_message);
             if (slider_message->event == TOUCH_SLIDER_EVT_ON_PRESS) {
-                ESP_LOGI(TAG, "Slider Press, position: %d", slider_message->position);
+                ESP_LOGI(TAG, "Slider Press, position: %"PRIu32, slider_message->position);
             } else if (slider_message->event == TOUCH_SLIDER_EVT_ON_RELEASE) {
-                ESP_LOGI(TAG, "Slider Release, position: %d", slider_message->position);
+                ESP_LOGI(TAG, "Slider Release, position: %"PRIu32, slider_message->position);
             } else if (slider_message->event == TOUCH_SLIDER_EVT_ON_CALCULATION) {
-                ESP_LOGI(TAG, "Slider Calculate, position: %d", slider_message->position);
+                ESP_LOGI(TAG, "Slider Calculate, position: %"PRIu32, slider_message->position);
             }
         }
     }
@@ -69,11 +70,11 @@ void slider_handler(touch_slider_handle_t out_handle, touch_slider_message_t *ou
         return;
     }
     if (out_message->event == TOUCH_SLIDER_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Slider Press, position: %d", out_message->position);
+        ESP_LOGI(TAG, "Slider Press, position: %"PRIu32, out_message->position);
     } else if (out_message->event == TOUCH_SLIDER_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Slider Release, position: %d", out_message->position);
+        ESP_LOGI(TAG, "Slider Release, position: %"PRIu32, out_message->position);
     } else if (out_message->event == TOUCH_SLIDER_EVT_ON_CALCULATION) {
-        ESP_LOGI(TAG, "Slider Calculate, position: %d", out_message->position);
+        ESP_LOGI(TAG, "Slider Calculate, position: %"PRIu32, out_message->position);
     }
 }
 #endif
@@ -97,7 +98,8 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(touch_slider_create(&slider_config, &slider_handle));
     /* Subscribe touch slider events (On Press, On Release, On Calculation) */
-    ESP_ERROR_CHECK(touch_slider_subscribe_event(slider_handle, TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
+    ESP_ERROR_CHECK(touch_slider_subscribe_event(slider_handle,
+                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
 #ifdef CONFIG_TOUCH_ELEM_EVENT
     /* Set EVENT as the dispatch method */
     ESP_ERROR_CHECK(touch_slider_set_dispatch_method(slider_handle, TOUCH_ELEM_DISP_EVENT));
