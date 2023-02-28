@@ -248,9 +248,6 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
         err = listen(listen_socket, 1);
         ESP_GOTO_ON_FALSE((err == 0), ESP_FAIL, exit, TAG, "Error occurred during listen: errno %d", errno);
 
-        timeout.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
-        setsockopt(listen_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
         memcpy(&listen_addr, &listen_addr6, sizeof(listen_addr6));
     } else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4) {
         listen_addr4.sin_family = AF_INET;
@@ -272,6 +269,8 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
         memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
     }
 
+    timeout.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
+    setsockopt(listen_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     client_socket = accept(listen_socket, (struct sockaddr *)&remote_addr, &addr_len);
     ESP_GOTO_ON_FALSE((client_socket >= 0), ESP_FAIL, exit, TAG, "Unable to accept connection: errno %d", errno);
     ESP_LOGI(TAG, "accept: %s,%d\n", inet_ntoa(remote_addr.sin_addr), htons(remote_addr.sin_port));
@@ -315,6 +314,7 @@ static esp_err_t iperf_run_tcp_client(void)
     struct sockaddr_storage dest_addr = { 0 };
     struct sockaddr_in6 dest_addr6 = { 0 };
     struct sockaddr_in dest_addr4 = { 0 };
+    struct timeval timeout = { 0 };
 
     ESP_GOTO_ON_FALSE((s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV6 || s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4), ESP_FAIL, exit, TAG, "Ivalid AF types");
 
@@ -342,7 +342,8 @@ static esp_err_t iperf_run_tcp_client(void)
         ESP_LOGI(TAG, "Successfully connected");
         memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
     }
-
+    timeout.tv_sec = IPERF_SOCKET_TCP_TX_TIMEOUT;
+    setsockopt(client_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
     wifi_cmd_clr_rx_statistics(0, NULL);
