@@ -126,6 +126,10 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
  *          the item will occupy will be rounded up to the nearest 32-bit aligned
  *          size. This is done to ensure all items are always stored in 32-bit
  *          aligned fashion.
+ * @note    For no-split/allow-split buffers, an xItemSize of 0 will result in
+ *          an item with no data being set (i.e., item only contains the header).
+ *          For byte buffers, an xItemSize of 0 will simply return pdTRUE without
+ *          copying any data.
  *
  * @return
  *      - pdTRUE if succeeded
@@ -151,6 +155,10 @@ BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer,
  *          the item will occupy will be rounded up to the nearest 32-bit aligned
  *          size. This is done to ensure all items are always stored in 32-bit
  *          aligned fashion.
+ * @note    For no-split/allow-split buffers, an xItemSize of 0 will result in
+ *          an item with no data being set (i.e., item only contains the header).
+ *          For byte buffers, an xItemSize of 0 will simply return pdTRUE without
+ *          copying any data.
  *
  * @return
  *      - pdTRUE if succeeded
@@ -182,6 +190,8 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer,
  *       memory that the item will occupy will be rounded up to the nearest 32-bit
  *       aligned size. This is done to ensure all items are always stored in 32-bit
  *       aligned fashion.
+ * @note An xItemSize of 0 will result in a buffer being acquired, but the buffer
+ *       will have a size of 0.
  *
  * @return
  *      - pdTRUE if succeeded
@@ -216,6 +226,7 @@ BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem);
  * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
  *
  * @note    A call to vRingbufferReturnItem() is required after this to free the item retrieved.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -236,6 +247,7 @@ void *xRingbufferReceive(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickTy
  * @note    A call to vRingbufferReturnItemFromISR() is required after this to free the item retrieved.
  * @note    Byte buffers do not allow multiple retrievals before returning an item
  * @note    Two calls to RingbufferReceiveFromISR() are required if the bytes wrap around the end of the ring buffer.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -260,6 +272,7 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t xRingbuffer, size_t *pxItemSize)
  *
  * @note    Call(s) to vRingbufferReturnItem() is required after this to free up the item(s) retrieved.
  * @note    This function should only be called on allow-split buffers
+ * @note    It is possible to receive items with a pxItemSize of 0 on allow split buffers.
  *
  * @return
  *      - pdTRUE if an item (split or unsplit) was retrieved
@@ -288,6 +301,7 @@ BaseType_t xRingbufferReceiveSplit(RingbufHandle_t xRingbuffer,
  *
  * @note    Calls to vRingbufferReturnItemFromISR() is required after this to free up the item(s) retrieved.
  * @note    This function should only be called on allow-split buffers
+ * @note    It is possible to receive items with a pxItemSize of 0 on allow split buffers.
  *
  * @return
  *      - pdTRUE if an item (split or unsplit) was retrieved
@@ -336,7 +350,7 @@ void *xRingbufferReceiveUpTo(RingbufHandle_t xRingbuffer,
  *
  * @param[in]   xRingbuffer Ring buffer to retrieve the item from
  * @param[out]  pxItemSize  Pointer to a variable to which the size of the retrieved item will be written.
- * @param[in]   xMaxSize    Maximum number of bytes to return.
+ * @param[in]   xMaxSize    Maximum number of bytes to return. Size of 0 simply returns NULL.
  *
  * @note    A call to vRingbufferReturnItemFromISR() is required after this to free up the data received.
  * @note    This function should only be called on byte buffers

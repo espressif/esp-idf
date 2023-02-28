@@ -982,7 +982,7 @@ BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, s
 
     //Check arguments
     configASSERT(pxRingbuffer);
-    configASSERT(ppvItem != NULL || xItemSize == 0);
+    configASSERT(ppvItem != NULL);
     configASSERT((pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) == 0); //Send acquire currently only supported in NoSplit buffers
 
     *ppvItem = NULL;
@@ -1089,7 +1089,7 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer,
         xReturn = pdFALSE;
     }
     portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
-
+    //Defer notifying the queue set until we are outside the critical section.
     if (xNotifyQueueSet == pdTRUE) {
         xQueueSendFromISR((QueueHandle_t)pxRingbuffer->xQueueSet, (QueueSetMemberHandle_t *)&pxRingbuffer, pxHigherPriorityTaskWoken);
     }
