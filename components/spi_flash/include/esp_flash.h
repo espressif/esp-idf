@@ -100,7 +100,7 @@ struct esp_flash_t {
     void *os_func_data;                         ///< Pointer to argument for os-specific hooks. Left NULL and will be initialized with ``os_func``.
 
     esp_flash_io_mode_t read_mode; ///< Configured SPI flash read mode. Set before ``esp_flash_init`` is called.
-    uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation.
+    uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation. Note: this stands for the size in the binary image header. If you want to get the flash physical size, please call `esp_flash_get_physical_size`.
     uint32_t chip_id;               ///< Detected chip id.
     uint32_t busy             :1;   ///< This flag is used to verify chip's status.
     uint32_t hpm_dummy_ena    :1;   ///< This flag is used to verify whether flash works under HPM status.
@@ -148,14 +148,28 @@ esp_err_t esp_flash_read_id(esp_flash_t *chip, uint32_t *out_id);
 /** @brief Detect flash size based on flash ID.
  *
  * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
- * @param[out] out_size Detected size in bytes.
+ * @param[out] out_size Detected size in bytes, standing for the size in the binary image header.
+ *
+ * @note 1. Most flash chips use a common format for flash ID, where the lower 4 bits specify the size as a power of 2. If
+ * the manufacturer doesn't follow this convention, the size may be incorrectly detected.
+ *       2. The out_size returned only stands for The out_size stands for the size in the binary image header.
+ *  If you want to get the real size of the chip, please call `esp_flash_get_physical_size` instead.
+ *
+ * @return ESP_OK on success, or a flash error code if operation failed.
+ */
+esp_err_t esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size);
+
+/** @brief Detect flash size based on flash ID.
+ *
+ * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
+ * @param[out] flash_size Detected size in bytes.
  *
  * @note Most flash chips use a common format for flash ID, where the lower 4 bits specify the size as a power of 2. If
  * the manufacturer doesn't follow this convention, the size may be incorrectly detected.
  *
  * @return ESP_OK on success, or a flash error code if operation failed.
  */
-esp_err_t esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size);
+esp_err_t esp_flash_get_physical_size(esp_flash_t *chip, uint32_t *flash_size);
 
 /** @brief Read flash unique ID via the common "RDUID" SPI flash command.
  *
