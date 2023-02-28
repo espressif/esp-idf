@@ -75,7 +75,7 @@ function checkMrJiraLinks() {
     }
 
     if (!mrDescription.toUpperCase().includes("## RELATED") || !testJiraLabels) { // Missing section "Related" or missing links to JIRA tickets
-        return warn("Please add links to JIRA issues to the MR description section `Related`.");
+        return message("Please consider adding references to JIRA issues in the `Related` section of the MR description.");
 
     } else if (ghIssueTicket) { // Found JIRA ticket linked GitHub issue
         if (!testGithubLink.test(mrCommitMessages)) {  // Commit message does not contain a link to close the issue on GitHub
