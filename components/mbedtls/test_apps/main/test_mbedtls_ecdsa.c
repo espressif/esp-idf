@@ -22,6 +22,14 @@
 
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
+#if CONFIG_NEWLIB_NANO_FORMAT
+#define NEWLIB_NANO_COMPAT_FORMAT             PRIu32
+#define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  (uint32_t)int64_t_var
+#else
+#define NEWLIB_NANO_COMPAT_FORMAT             PRId64
+#define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
+#endif
+
 #if CONFIG_MBEDTLS_HARDWARE_ECC
 
 /*
@@ -115,9 +123,9 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
     elapsed_time = ccomp_timer_stop();
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P192_VERIFY_OP, "%" PRId64 " us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P192_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%" PRId64 " us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     }
 
     mbedtls_mpi_free(&r);

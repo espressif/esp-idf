@@ -41,6 +41,14 @@
 #define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
+#if CONFIG_NEWLIB_NANO_FORMAT
+#define NEWLIB_NANO_COMPAT_FORMAT             PRIu32
+#define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  (uint32_t)int64_t_var
+#else
+#define NEWLIB_NANO_COMPAT_FORMAT             PRId64
+#define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
+#endif
+
 TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
 {
     mbedtls_ecdh_context ctx;
@@ -248,9 +256,9 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
     TEST_ASSERT_EQUAL(0, memcmp(y, result_y_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(Y))));
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%" PRId64 " us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%" PRId64 " us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     }
 
     mbedtls_ecp_point_free(&R);
@@ -304,9 +312,9 @@ static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, con
     TEST_ASSERT_EQUAL(0, ret);
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%" PRId64 " us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%" PRId64 " us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     }
 
     mbedtls_ecp_point_free(&P);
