@@ -784,8 +784,8 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.generic
 @pytest.mark.esp32
+@pytest.mark.esp32eco3
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
