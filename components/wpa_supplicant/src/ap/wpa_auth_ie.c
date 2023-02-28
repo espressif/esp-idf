@@ -14,6 +14,7 @@
 #include "ap/wpa_auth_i.h"
 #include "common/wpa_common.h"
 #include "utils/wpa_debug.h"
+#include "ap/pmksa_cache_auth.h"
 
 #ifdef CONFIG_RSN_TESTING
 int rsn_testing = 0;
@@ -298,6 +299,36 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 }
 
 
+int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len)
+{
+	u8 *pos = buf;
+	u16 capab = 0;
+	size_t flen;
+
+	if (wpa_key_mgmt_sae(conf->wpa_key_mgmt) &&
+	    (conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
+	     conf->sae_pwe == SAE_PWE_BOTH)) {
+		capab |= BIT(WLAN_RSNX_CAPAB_SAE_H2E);
+	}
+
+	flen = (capab & 0xff00) ? 2 : 1;
+	if (!capab)
+		return 0; /* no supported extended RSN capabilities */
+	if (len < 2 + flen)
+		return -1;
+	capab |= flen - 1; /* bit 0-3 = Field length (n - 1) */
+
+	*pos++ = WLAN_EID_RSNX;
+	*pos++ = flen;
+	*pos++ = capab & 0x00ff;
+	capab >>= 8;
+	if (capab)
+		*pos++ = capab;
+
+	return pos - buf;
+}
+
+
 int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 {
 	u8 *pos, buf[128];
@@ -308,6 +339,11 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 	if (wpa_auth->conf.wpa & WPA_PROTO_RSN) {
 		res = wpa_write_rsn_ie(&wpa_auth->conf,
 				       pos, buf + sizeof(buf) - pos, NULL);
+		if (res < 0)
+			return res;
+		pos += res;
+		res = wpa_write_rsnxe(&wpa_auth->conf, pos,
+					buf + sizeof(buf) - pos);
 		if (res < 0)
 			return res;
 		pos += res;
@@ -355,14 +391,18 @@ u8 * wpa_add_kde(u8 *pos, u32 kde, const u8 *data, size_t data_len,
 	return pos;
 }
 
-int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
+enum wpa_validate_result
+wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			struct wpa_state_machine *sm,
-			const u8 *wpa_ie, size_t wpa_ie_len/*,
+			const u8 *wpa_ie, size_t wpa_ie_len,
+			const u8 *rsnxe, size_t rsnxe_len/*,
 			const u8 *mdie, size_t mdie_len*/)
 {
 	struct wpa_ie_data data = {0};
 	int ciphers, key_mgmt, res, version;
 	u32 selector;
+	size_t i;
+	const u8 *pmkid = NULL;
 
 	if (wpa_auth == NULL || sm == NULL)
 		return WPA_NOT_ENABLED;
@@ -569,6 +609,29 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	else
 		sm->wpa = WPA_VERSION_WPA;
 
+	sm->pmksa = NULL;
+	for (i = 0; i < data.num_pmkid; i++) {
+		wpa_hexdump(MSG_DEBUG, "RSN IE: STA PMKID",
+			&data.pmkid[i * PMKID_LEN], PMKID_LEN);
+		sm->pmksa = pmksa_cache_auth_get(wpa_auth->pmksa, sm->addr,
+				&data.pmkid[i * PMKID_LEN]);
+		if (sm->pmksa) {
+			pmkid = sm->pmksa->pmkid;
+			break;
+		}
+	}
+	if (sm->pmksa && pmkid) {
+		wpa_printf(MSG_DEBUG, "PMKID found from PMKSA cache");
+		os_memcpy(wpa_auth->dot11RSNAPMKIDUsed, pmkid, PMKID_LEN);
+	}
+
+#ifdef CONFIG_SAE
+	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_SAE && data.num_pmkid &&
+		!sm->pmksa) {
+		wpa_printf(MSG_DEBUG, "No PMKSA cache entry found for SAE");
+		return WPA_INVALID_PMKID;
+	}
+#endif /* CONFIG_SAE */
 	if (sm->wpa_ie == NULL || sm->wpa_ie_len < wpa_ie_len) {
 		os_free(sm->wpa_ie);
 		sm->wpa_ie = os_malloc(wpa_ie_len);
@@ -577,6 +640,20 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	}
 	memcpy(sm->wpa_ie, wpa_ie, wpa_ie_len);
 	sm->wpa_ie_len = wpa_ie_len;
+	if (rsnxe && rsnxe_len) {
+		if (!sm->rsnxe || sm->rsnxe_len < rsnxe_len) {
+			os_free(sm->rsnxe);
+			sm->rsnxe = os_malloc(rsnxe_len);
+			if (!sm->rsnxe)
+				return WPA_ALLOC_FAIL;
+		}
+		os_memcpy(sm->rsnxe, rsnxe, rsnxe_len);
+		sm->rsnxe_len = rsnxe_len;
+	} else {
+		os_free(sm->rsnxe);
+		sm->rsnxe = NULL;
+		sm->rsnxe_len = 0;
+	}
 
 	return WPA_IE_OK;
 }
@@ -676,6 +753,11 @@ int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie)
 			ie->ftie = pos;
 			ie->ftie_len = pos[1] + 2;
 #endif /* CONFIG_IEEE80211R_AP */
+		} else if (*pos == WLAN_EID_RSNX) {
+			ie->rsnxe = pos;
+			ie->rsnxe_len = pos[1] + 2;
+			wpa_hexdump(MSG_DEBUG, "WPA: RSNXE in EAPOL-Key",
+				    ie->rsnxe, ie->rsnxe_len);
 		} else if (*pos == WLAN_EID_VENDOR_SPECIFIC) {
 			ret = wpa_parse_generic(pos, end, ie);
 			if (ret < 0)

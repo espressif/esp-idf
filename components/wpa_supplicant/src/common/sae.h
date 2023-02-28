@@ -17,6 +17,7 @@
 
 #define SAE_KCK_LEN 32
 #define SAE_PMK_LEN 32
+#define SAE_PMK_LEN_MAX 64
 #define SAE_PMKID_LEN 16
 #define SAE_KEYSEED_KEY_LEN 32
 #define SAE_MAX_PRIME_LEN 512
@@ -57,6 +58,7 @@ struct sae_temporary_data {
 	const struct crypto_bignum *order;
 	struct crypto_bignum *prime_buf;
 	struct crypto_bignum *order_buf;
+	struct wpabuf *anti_clogging_token;
 	char *pw_id;
 	int order_len;
 	struct wpabuf *own_rejected_groups;
@@ -125,7 +127,7 @@ void sae_clear_data(struct sae_data *sae);
 int sae_prepare_commit(const u8 *addr1, const u8 *addr2,
 		       const u8 *password, size_t password_len,
 		       struct sae_data *sae);
-int sae_prepare_commit_pt(struct sae_data *sae, struct sae_pt *pt,
+int sae_prepare_commit_pt(struct sae_data *sae, const struct sae_pt *pt,
 			  const u8 *addr1, const u8 *addr2,
 			  int *rejected_groups, const struct sae_pk *pk);
 int sae_process_commit(struct sae_data *sae);

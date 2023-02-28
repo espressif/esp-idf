@@ -369,7 +369,7 @@ int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
              struct wpa_ie_data *data)
 {
 	uint8_t rsnxe_capa = 0;
-	uint8_t sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
+	uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
 	memset(data, 0, sizeof(*data));
 
 	if (rsnxe_ie_len < 1) {
@@ -827,6 +827,28 @@ int wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 #endif /* CONFIG_IEEE80211R */
 
 
+
+/**
+* wpa_use_akm_defined - Is AKM-defined Key Descriptor Version used
+* @akmp: WPA_KEY_MGMT_* used in key derivation
+* Returns: 1 if AKM-defined Key Descriptor Version is used; 0 otherwise
+*/
+
+int wpa_use_akm_defined(int akmp){
+	int ret = 0;
+	if(wpa_key_mgmt_sae(akmp))
+		ret = 1;
+	return ret;
+}
+
+int wpa_use_aes_key_wrap(int akmp)
+{
+	return akmp == WPA_KEY_MGMT_OSEN ||
+		wpa_key_mgmt_ft(akmp) ||
+		wpa_key_mgmt_sha256(akmp) ||
+		wpa_key_mgmt_sae(akmp) ||
+		wpa_key_mgmt_suite_b(akmp);
+}
 
 /**
  * wpa_eapol_key_mic - Calculate EAPOL-Key MIC

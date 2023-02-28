@@ -53,7 +53,7 @@ struct wpa_sm {
     void *network_ctx;
 
     int rsn_enabled; /* Whether RSN is enabled in configuration */
-    int sae_pwe; /* SAE PWE generation options */
+    enum sae_pwe sae_pwe; /* SAE PWE generation options */
 
     bool sae_pk; /* whether SAE-PK is used */
 

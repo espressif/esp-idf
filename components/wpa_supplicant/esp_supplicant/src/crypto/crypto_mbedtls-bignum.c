@@ -317,10 +317,10 @@ int crypto_bignum_addmod(const struct crypto_bignum *a,
     struct crypto_bignum *tmp = crypto_bignum_init();
     int ret = -1;
 
-    if (mbedtls_mpi_add_mpi((mbedtls_mpi *) tmp, (const mbedtls_mpi *) b, (const mbedtls_mpi *) c) < 0)
+    if (mbedtls_mpi_add_mpi((mbedtls_mpi *) tmp, (const mbedtls_mpi *) a, (const mbedtls_mpi *) b) < 0)
         goto fail;
 
-    if (mbedtls_mpi_mod_mpi( (mbedtls_mpi *) a, (const mbedtls_mpi *) tmp, (const mbedtls_mpi *) d) < 0)
+    if (mbedtls_mpi_mod_mpi( (mbedtls_mpi *) d, (const mbedtls_mpi *) tmp, (const mbedtls_mpi *) c) < 0)
         goto fail;
 
     ret = 0;

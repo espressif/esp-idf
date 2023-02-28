@@ -11,6 +11,7 @@
 #include "utils/common.h"
 #include "utils/eloop.h"
 #include "common/ieee802_11_defs.h"
+#include "common/sae.h"
 #include "crypto/crypto.h"
 #include "hostapd.h"
 #include "ieee802_1x.h"
@@ -104,6 +105,15 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 
 	hapd->num_sta--;
 
+#ifdef CONFIG_SAE
+	sae_clear_data(sta->sae);
+	os_free(sta->sae);
+	if (sta->lock) {
+		os_mutex_unlock(sta->lock);
+		os_mutex_delete(sta->lock);
+		sta->lock = NULL;
+	}
+#endif /* CONFIG_SAE */
 	wpa_auth_sta_deinit(sta->wpa_sm);
 #ifdef CONFIG_WPS_REGISTRAR
 	if (ap_sta_pending_delayed_1x_auth_fail_disconnect(hapd, sta))
@@ -162,6 +172,11 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	hapd->sta_list = sta;
 	hapd->num_sta++;
 	ap_sta_hash_add(hapd, sta);
+#ifdef CONFIG_SAE
+	sta->sae_commit_processing = false;
+	sta->remove_pending = false;
+	sta->lock = os_mutex_create();
+#endif /* CONFIG_SAE */
 
 	return sta;
 }

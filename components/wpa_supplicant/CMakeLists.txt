@@ -4,7 +4,10 @@ set(srcs "port/os_xtensa.c"
     "src/ap/ieee802_1x.c"
     "src/ap/wpa_auth.c"
     "src/ap/wpa_auth_ie.c"
+    "src/ap/pmksa_cache_auth.c"
     "src/ap/sta_info.c"
+    "src/ap/ieee802_11.c"
+    "src/ap/comeback_token.c"
     "src/common/sae.c"
     "src/common/dragonfly.c"
     "src/common/wpa_common.c"
@@ -233,6 +236,9 @@ if(CONFIG_ESP_WIFI_ENABLE_WPA3_SAE)
 endif()
 if(CONFIG_ESP_WIFI_ENABLE_SAE_PK)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE_PK)
+endif()
+if(CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE)
 endif()
 if(CONFIG_ESP_WIFI_WPS_STRICT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_STRICT)

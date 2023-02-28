@@ -29,6 +29,8 @@ struct wpa_eapol_ie_parse {
 	const u8 *ftie;
 	size_t ftie_len;
 #endif /* CONFIG_IEEE80211R */
+	const u8 *rsnxe;
+	size_t rsnxe_len;
 };
 
 int wpa_parse_kde_ies(const u8 *buf, size_t len,
