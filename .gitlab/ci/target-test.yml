@@ -844,6 +844,14 @@ component_ut_pytest_esp32h2_generic:
   tags: [ esp32h2, generic ]
   parallel: 2
 
+component_ut_pytest_esp32h2_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, generic_multi_device ]
+
 component_ut_pytest_esp32h2_adc:
   extends:
     - .pytest_components_dir_template
