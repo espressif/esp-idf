@@ -95,7 +95,7 @@ int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
 
 void wpa_supplicant_transition_disable(void *sm, u8 bitmap)
 {
-    wpa_printf(MSG_INFO, "TRANSITION_DISABLE %02x", bitmap);
+    wpa_printf(MSG_DEBUG, "TRANSITION_DISABLE %02x", bitmap);
 
     if (bitmap & TRANSITION_DISABLE_WPA3_PERSONAL) {
         esp_wifi_sta_disable_wpa2_authmode_internal();

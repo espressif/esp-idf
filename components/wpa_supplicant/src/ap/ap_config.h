@@ -53,6 +53,7 @@ struct hostapd_ssid {
 
 	struct hostapd_wpa_psk *wpa_psk;
 	char *wpa_passphrase;
+	struct sae_pt *pt;
 
 	struct hostapd_wep_keys wep;
 
@@ -299,6 +300,12 @@ struct hostapd_bss_config {
 	char *dump_msk_file;
 #endif /* CONFIG_RADIUS_TEST */
 
+	unsigned int sae_anti_clogging_threshold;
+	enum sae_pwe sae_pwe;
+	unsigned int sae_sync;
+	int *sae_groups;
+#define SAE_ANTI_CLOGGING_THRESHOLD 2 /* max number of commit msg allowed to queue without anti-clogging token request */
+
 };
 
 
@@ -367,13 +374,17 @@ void hostapd_config_free(struct hostapd_config *conf);
 int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
 			  const u8 *addr, int *vlan_id);
 int hostapd_rate_found(int *list, int rate);
+void hostapd_config_clear_wpa_psk(struct hostapd_wpa_psk **p);
+void hostapd_config_free_bss(struct hostapd_bss_config *conf);
 int hostapd_wep_key_cmp(struct hostapd_wep_keys *a,
 			struct hostapd_wep_keys *b);
 const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
 struct sta_info;
-bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable);
+bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
+		 uint8_t wpa_ie_len,uint8_t *rsnxe, uint8_t rsnxe_len,
+		 bool *pmf_enable, int subtype);
 bool wpa_ap_remove(void* sta_info);
 
 #endif /* HOSTAPD_CONFIG_H */

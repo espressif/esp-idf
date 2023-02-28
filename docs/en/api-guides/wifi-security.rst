@@ -75,9 +75,11 @@ Please refer to `Security <https://www.wi-fi.org/discover-wi-fi/security>`_ sect
 Setting up WPA3 with {IDF_TARGET_NAME}
 ++++++++++++++++++++++++++++++++++++++
 
-In IDF Menuconfig under Wi-Fi component, a config option "Enable WPA3-Personal" is provided to Enable/Disable WPA3. By default it is kept enabled, if disabled {IDF_TARGET_NAME} will not be able to establish a WPA3 connection. Currently, WPA3 is supported only in the Station mode. Additionally, since PMF is mandated by WPA3 protocol, PMF Mode should be set to either Optional or Required while setting WiFi config.
+In IDF Menuconfig under Wi-Fi component, a config option "Enable WPA3-Personal" is provided to Enable/Disable WPA3. By default it is kept enabled, if disabled {IDF_TARGET_NAME} will not be able to establish a WPA3 connection. WPA3 is supported by station as well as softAP. Additionally, since PMF is mandated by WPA3 protocol, PMF Mode should be set to either Optional or Required while setting WiFi config.
 
 Refer to `Protected Management Frames (PMF)`_ on how to set this mode.
 
 After these settings are done, Station is ready to use WPA3-Personal. Application developers need not worry about the underlying security mode of the AP. WPA3-Personal is now the highest supported protocol in terms of security, so it will be automatically selected for the connection whenever available. For example, if an AP is configured to be in WPA3 Transition Mode, where it will advertise as both WPA2 and WPA3 capable, Station will choose WPA3 for the connection with above settings.
 Note that Wi-Fi stack size requirement will increase 3kB when WPA3 is used.
+
+To configure WPA3 for softAP you have set up authmode as WIFI_AUTH_WPA3_PSK in config. For WPA3 softAP PMF is mandatory.

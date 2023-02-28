@@ -250,6 +250,14 @@ menu "Wi-Fi"
         help
             Select this option to enable SAE-PK
 
+    config ESP_WIFI_SOFTAP_SAE_SUPPORT
+        bool "Enable WPA3 Personal(SAE) SoftAP"
+        default y
+        depends on ESP_WIFI_ENABLE_WPA3_SAE
+        depends on ESP_WIFI_SOFTAP_SUPPORT
+        help
+            Select this option to enable SAE support in softAP mode.
+
     config ESP_WIFI_ENABLE_WPA3_OWE_STA
         bool "Enable OWE STA"
         default y

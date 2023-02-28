@@ -161,6 +161,7 @@ struct wpa_auth_config {
 #endif /* CONFIG_IEEE80211R */
 	int disable_gtk;
 	int ap_mlme;
+	enum sae_pwe sae_pwe;
 	struct rsn_sppamsdu_sup spp_sup;
 };
 
@@ -213,16 +214,19 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth);
 int wpa_reconfig(struct wpa_authenticator *wpa_auth,
 		 struct wpa_auth_config *conf);
 
-enum {
+enum wpa_validate_result{
 	WPA_IE_OK, WPA_INVALID_IE, WPA_INVALID_GROUP, WPA_INVALID_PAIRWISE,
 	WPA_INVALID_AKMP, WPA_NOT_ENABLED, WPA_ALLOC_FAIL,
 	WPA_MGMT_FRAME_PROTECTION_VIOLATION, WPA_INVALID_MGMT_GROUP_CIPHER,
-	WPA_INVALID_MDIE, WPA_INVALID_PROTO
+	WPA_INVALID_MDIE, WPA_INVALID_PROTO, WPA_INVALID_PMKID,
+	WPA_DENIED_OTHER_REASON
 };
 
-int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
+enum wpa_validate_result
+wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			struct wpa_state_machine *sm,
-			const u8 *wpa_ie, size_t wpa_ie_len/*,
+			const u8 *wpa_ie, size_t wpa_ie_len,
+			const u8 *rsnxe, size_t rsnxe_len/*,
 			const u8 *mdie, size_t mdie_len*/);
 int wpa_auth_uses_mfp(struct wpa_state_machine *sm);
 struct wpa_state_machine *
@@ -290,5 +294,10 @@ int wpa_wnmsleep_gtk_subelem(struct wpa_state_machine *sm, u8 *pos);
 int wpa_wnmsleep_igtk_subelem(struct wpa_state_machine *sm, u8 *pos);
 
 int wpa_auth_uses_sae(struct wpa_state_machine *sm);
+int wpa_auth_pmksa_add_sae(struct wpa_authenticator *wpa_auth, const u8 *addr,
+			    const u8 *pmk, const u8 *pmkid,bool cache_pmksa);
+void wpa_auth_add_sae_pmkid(struct wpa_state_machine *sm, const u8 *pmkid);
+void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
+			    const u8 *sta_addr);
 
 #endif /* WPA_AUTH_H */

@@ -180,6 +180,7 @@ void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 
 bool  wpa_deattach(void)
 {
+    esp_wpa3_free_sae_data();
     esp_wifi_sta_wpa2_ent_disable();
     wpa_sm_deinit();
     return true;
@@ -275,7 +276,7 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 *rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype)
 {
     struct sta_info *sta_info;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
@@ -284,7 +285,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bo
         return 0;
     }
 
-    if (*sta) {
+    if (*sta && !esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
        ap_free_sta(hapd, *sta);
     }
     sta_info = ap_sta_add(hapd, bssid);
@@ -298,7 +299,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bo
         return true;
     }
 #endif
-    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
+    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype)) {
         *sta = sta_info;
         return true;
     }
@@ -345,6 +346,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_done = wpa_config_done;
     wpa_cb->wpa_sta_set_ap_rsnxe = wpa_sm_set_ap_rsnxe;
 
+    esp_wifi_register_wpa3_ap_cb(wpa_cb);
     esp_wifi_register_wpa3_cb(wpa_cb);
 #ifdef CONFIG_OWE_STA
     esp_wifi_register_owe_cb(wpa_cb);
