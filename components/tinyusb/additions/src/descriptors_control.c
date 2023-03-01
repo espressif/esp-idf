@@ -22,8 +22,8 @@ static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
 
 #if CFG_TUD_HID //HID Report Descriptor
 uint8_t const desc_hid_report[] = {
-    TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD), ),
-    TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE), )
+    TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD) ),
+    TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE) )
 };
 #endif
 
@@ -41,7 +41,7 @@ uint8_t const desc_configuration[] = {
 #   endif
 #   if CFG_TUD_HID
     // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10)
+    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x80 | EPNUM_HID, CFG_TUD_HID_BUFSIZE, 10)
 #   endif
 };
 
@@ -120,7 +120,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
  * @return uint8_t const*
  */
 #if CFG_TUD_HID
-uint8_t const *tud_hid_descriptor_report_cb(void)
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t itf)
 {
     return desc_hid_report;
 }
@@ -187,4 +187,22 @@ void tusb_clear_descriptor(void)
     memset(&s_descriptor, 0, sizeof(s_descriptor));
     memset(&s_str_descriptor, 0, sizeof(s_str_descriptor));
     tusb_desc_set = false;
+}
+
+uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen)
+{
+  // TODO not Implemented
+  (void) instance;
+  (void) report_id;
+  (void) report_type;
+  (void) buffer;
+  (void) reqlen;
+
+  return 0;
+}
+
+// Invoked when received SET_REPORT control request or
+// received data on OUT endpoint ( Report ID = 0, Type = 0 )
+void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize)
+{
 }
