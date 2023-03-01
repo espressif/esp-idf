@@ -36,12 +36,6 @@ examples/system/console/basic:
       temporary: true
       reason: lack of runners
 
-examples/system/deep_sleep:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-
 examples/system/efuse:
   disable_test:
     - if: IDF_TARGET == "esp32s3"
