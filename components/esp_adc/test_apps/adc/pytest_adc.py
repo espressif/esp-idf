@@ -13,6 +13,7 @@ from pytest_embedded import Dut
 @pytest.mark.parametrize('config', [
     'iram_safe',
     'release',
+    'pm_enable'
 ], indirect=True)
 def test_adc(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -21,6 +22,7 @@ def test_adc(dut: Dut) -> None:
 
 
 # All ESP32C2 ADC runners are 26m xtal
+# No PM test, as C2 doesn't support ADC continuous mode
 @pytest.mark.esp32c2
 @pytest.mark.adc
 @pytest.mark.parametrize(
