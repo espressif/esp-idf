@@ -21,6 +21,7 @@ set(arch "linux")
 endif()
 
 set(srcs
+    "heap_idf.c"
     "${kernel_dir}/list.c"
     "${kernel_dir}/queue.c"
     "${kernel_dir}/tasks.c"

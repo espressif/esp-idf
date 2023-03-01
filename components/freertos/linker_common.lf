@@ -47,6 +47,23 @@ entries:
     FreeRTOS-openocd (noflash)
 
     # ------------------------------------------------------------------------------------------------------------------
+    # heap_idf.c
+    # Placement Rules:
+    #   - Default: Place all functions in internal RAM.
+    #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
+    #     context (directly or indirectly).
+    # ------------------------------------------------------------------------------------------------------------------
+    heap_idf (noflash_text)         # Default all functions to internal RAM
+    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        heap_idf:pvPortMalloc (default)
+        heap_idf:vPortFree (default)
+        heap_idf:xPortGetFreeHeapSize (default)
+        heap_idf:xPortGetMinimumEverFreeHeapSize (default)
+        if FREERTOS_SMP = n:
+            heap_idf:xPortCheckValidTCBMem (default)
+            heap_idf:xPortcheckValidStackMem (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
     # port_common.c
     # Placement Rules:
     #   - Default: Place all functions in internal RAM.
@@ -55,8 +72,5 @@ entries:
     # ------------------------------------------------------------------------------------------------------------------
     port_common (noflash_text)      # Default all functions to internal RAM
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
-        if FREERTOS_SMP = n:
-            port_common:xPortCheckValidTCBMem (default)
-            port_common:xPortcheckValidStackMem (default)
         port_common:vApplicationGetIdleTaskMemory (default)
         port_common:vApplicationGetTimerTaskMemory (default)

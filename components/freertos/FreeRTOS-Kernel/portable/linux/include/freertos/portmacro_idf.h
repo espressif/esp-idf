@@ -51,18 +51,30 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
     return (BaseType_t) 0;
 }
 
-static inline bool portVALID_TCB_MEM(const void *ptr)
-{
-    return true;
-}
+/**
+ * @brief Checks if a given piece of memory can be used to store a task's TCB
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a TCB
+ * @return false Otherwise
+ */
+bool xPortCheckValidTCBMem(const void *ptr);
 
-static inline bool portVALID_STACK_MEM(const void *ptr)
-{
-    return true;
-}
+/**
+ * @brief Checks if a given piece of memory can be used to store a task's stack
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a task stack
+ * @return false Otherwise
+ */
+bool xPortcheckValidStackMem(const void *ptr);
 
-#define pvPortMallocTcbMem(size)        pvPortMalloc(size)
-#define pvPortMallocStackMem(size)      pvPortMalloc(size)
+#define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
+#define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 
 BaseType_t xPortCheckIfInISR(void);
 
