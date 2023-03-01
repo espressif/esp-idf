@@ -1,0 +1,18 @@
+menu "Iperf Configuration"
+
+    config IPERF_SOCKET_RX_TIMEOUT
+        int "iperf socket TCP/UDP rx timeout in seconds"
+        default 10
+        help
+            The value is used for iperf socket TCP/UDP rx timeout, iperf will be aborted
+            and socket will be closed and shutdown.
+
+    config IPERF_SOCKET_TCP_TX_TIMEOUT
+        int "iperf socket TCP tx timeout in seconds"
+        default 10
+        help
+            The value is used for iperf socket TCP tx timeout, iperf will be aborted
+            and socket will be closed and shutdown.
+
+
+endmenu
