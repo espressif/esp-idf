@@ -130,6 +130,13 @@ menu "OpenThread"
             Select this option to enable SRP Client in OpenThread. This allows a device to register SRP services to SRP
             Server.
 
+    config OPENTHREAD_DNS_CLIENT
+        bool "Enable DNS Client"
+        depends on OPENTHREAD_ENABLED
+        default y
+        help
+            Select this option to enable DNS Client in OpenThread.
+
     config OPENTHREAD_BORDER_ROUTER
         bool "Enable Border Router"
         depends on OPENTHREAD_ENABLED

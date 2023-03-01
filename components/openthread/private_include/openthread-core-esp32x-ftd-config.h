@@ -213,6 +213,9 @@
 #define OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE 1
 #endif
 
+#endif // CONFIG_OPENTHREAD_BORDER_ROUTER
+
+#if !CONFIG_OPENTHREAD_RADIO_NATIVE
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT
  *
@@ -224,7 +227,19 @@
 #define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 1
 #endif
 
-#endif // CONFIG_OPENTHREAD_BORDER_ROUTER
+/**
+ * @def OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL
+ *
+ * This setting configures the interval (in units of microseconds) for host-rcp
+ * time sync. The host will recalculate the time offset between host and RCP
+ * every interval.
+ *
+ */
+#ifndef OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL
+#define OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL (60 * 1000 * 1000)
+#endif
+
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE
@@ -233,16 +248,6 @@
  *
  */
 #define OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE 1
-
-/**
- * @def OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE
- *
- * Define to 1 to enable Child Supervision support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE
-#define OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE 1
-#endif
 
 /**
  * @def OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
@@ -262,16 +267,6 @@
  */
 #ifndef OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
- *
- * Define to 1 to enable DNS Client support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
-#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE 1
 #endif
 
 /**
@@ -430,5 +425,13 @@
 #define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
 #endif
 #endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
+ *
+ * Define to 1 to enable DNS Client support.
+ *
+ */
+#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE CONFIG_OPENTHREAD_DNS_CLIENT
 
 #define OPENTHREAD_FTD 1
