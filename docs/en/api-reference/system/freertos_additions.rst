@@ -368,17 +368,6 @@ The code snippet below demonstrates a ring buffer being allocated entirely in ex
     free(buffer_struct);
     free(buffer_storage);
 
-Priority Inversion
-^^^^^^^^^^^^^^^^^^
-
-Ideally, ring buffers can be used with multiple tasks in an SMP fashion where the **highest priority task will always be serviced first.** However due to the usage of binary semaphores in the ring buffer's underlying implementation, priority inversion may occur under very specific circumstances.
-
-The ring buffer governs sending by a binary semaphore which is given whenever space is freed on the ring buffer. The highest priority task waiting to send will repeatedly take the semaphore until sufficient free space becomes available or until it times out. Ideally this should prevent any lower priority tasks from being serviced as the semaphore should always be given to the highest priority task.
-
-However, in between iterations of acquiring the semaphore, there is a **gap in the critical section** which may permit another task (on the other core or with an even higher priority) to free some space on the ring buffer and as a result give the semaphore. Therefore, the semaphore will be given before the highest priority task can re-acquire the semaphore. This will result in the **semaphore being acquired by the second-highest priority task** waiting to send, hence causing priority inversion.
-
-This side effect will not affect ring buffer performance drastically given if the number of tasks using the ring buffer simultaneously is low, and the ring buffer is not operating near maximum capacity.
-
 
 .. ------------------------------------------- ESP-IDF Tick and Idle Hooks ---------------------------------------------
 

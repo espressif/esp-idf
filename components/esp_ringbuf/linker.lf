@@ -12,7 +12,6 @@ entries:
         ringbuf: vRingbufferGetInfo (default)
         ringbuf: vRingbufferReturnItem (default)
         ringbuf: xRingbufferAddToQueueSetRead (default)
-        ringbuf: xRingbufferCanRead (default)
         ringbuf: xRingbufferCreate (default)
         ringbuf: xRingbufferCreateStatic (default)
         ringbuf: xRingbufferReceive (default)

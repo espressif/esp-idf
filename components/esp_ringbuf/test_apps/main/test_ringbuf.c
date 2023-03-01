@@ -1046,3 +1046,49 @@ TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[esp_ring
     TEST_ASSERT( iram_ringbuf_test() );
 }
 #endif /* !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH */
+
+/* ------------------------ Test ring buffer 0 Item Size -----------------------
+ * The following test case tests that sending/acquiring an item/bytes of 0 size
+ * is permissible.
+ */
+
+TEST_CASE("Test ringbuffer 0 item size", "[esp_ringbuf]")
+{
+    RingbufHandle_t no_split_rb = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    RingbufHandle_t allow_split_rb = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
+    RingbufHandle_t byte_rb = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(no_split_rb && allow_split_rb && byte_rb, "Failed to create ring buffers");
+
+    void *pvItem1;
+    void *pvItem2;
+    size_t xItemSize1;
+    size_t xItemSize2;
+
+    //Test that 0 item size on no split buffers should only send a header with no data
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(no_split_rb, NULL, 0, 0));
+    TEST_ASSERT_NOT_EQUAL(NULL, xRingbufferReceive(no_split_rb, &xItemSize1, 0));
+    TEST_ASSERT_EQUAL(0, xItemSize1);
+
+    //Test that acquiring 0 item size on no split buffers should only send a header without reserving a data buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(no_split_rb, &pvItem1, 0, 0));
+    TEST_ASSERT_NOT_EQUAL(NULL, pvItem1);
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(no_split_rb, pvItem1));
+    TEST_ASSERT_NOT_EQUAL(NULL, xRingbufferReceive(no_split_rb, &xItemSize1, 0));
+    TEST_ASSERT_EQUAL(0, xItemSize1);
+
+    //Test that 0 item size on allow split buffers should only send a header with no data
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(allow_split_rb, NULL, 0, 0));
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(allow_split_rb, &pvItem1, &pvItem2, &xItemSize1, &xItemSize2, 0));
+    TEST_ASSERT_NOT_EQUAL(NULL, pvItem1);
+    TEST_ASSERT_EQUAL(NULL, pvItem2);
+    TEST_ASSERT_EQUAL(0, xItemSize1);
+
+    //Test that 0 item size on byte buffers should send nothing
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(byte_rb, NULL, 0, 0));
+    TEST_ASSERT_EQUAL(pdFALSE, xRingbufferReceiveUpTo(byte_rb, &xItemSize1, 0, BUFFER_SIZE));
+
+    //Cleanup
+    vRingbufferDelete(no_split_rb);
+    vRingbufferDelete(allow_split_rb);
+    vRingbufferDelete(byte_rb);
+}

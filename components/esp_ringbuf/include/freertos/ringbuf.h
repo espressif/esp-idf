@@ -1,21 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef FREERTOS_RINGBUF_H
-#define FREERTOS_RINGBUF_H
+#pragma once
 
-#ifndef INC_FREERTOS_H
-    #error "include FreeRTOS.h" must appear in source files before "include ringbuf.h"
-#endif
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <freertos/queue.h>
 
 /**
  * Type by which ring buffers are referenced. For example, a call to xRingbufferCreate()
@@ -57,18 +53,17 @@ typedef enum {
  * buffer's control data structure.
  *
  */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
 typedef struct xSTATIC_RINGBUFFER {
     /** @cond */    //Doxygen command to hide this structure from API Reference
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
     BaseType_t xDummy3;
     void *pvDummy4[11];
-    StaticSemaphore_t xDummy5[2];
+    StaticList_t xDummy5[2];
+    void * pvDummy6;
     portMUX_TYPE muxDummy;
     /** @endcond */
 } StaticRingbuffer_t;
-#endif
 
 /**
  * @brief       Create a ring buffer
@@ -111,12 +106,10 @@ RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
  *
  * @return  A handle to the created ring buffer
  */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
 RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
                                         RingbufferType_t xBufferType,
                                         uint8_t *pucRingbufferStorage,
                                         StaticRingbuffer_t *pxStaticRingbuffer);
-#endif
 
 /**
  * @brief       Insert an item into the ring buffer
@@ -133,6 +126,10 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
  *          the item will occupy will be rounded up to the nearest 32-bit aligned
  *          size. This is done to ensure all items are always stored in 32-bit
  *          aligned fashion.
+ * @note    For no-split/allow-split buffers, an xItemSize of 0 will result in
+ *          an item with no data being set (i.e., item only contains the header).
+ *          For byte buffers, an xItemSize of 0 will simply return pdTRUE without
+ *          copying any data.
  *
  * @return
  *      - pdTRUE if succeeded
@@ -158,6 +155,10 @@ BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer,
  *          the item will occupy will be rounded up to the nearest 32-bit aligned
  *          size. This is done to ensure all items are always stored in 32-bit
  *          aligned fashion.
+ * @note    For no-split/allow-split buffers, an xItemSize of 0 will result in
+ *          an item with no data being set (i.e., item only contains the header).
+ *          For byte buffers, an xItemSize of 0 will simply return pdTRUE without
+ *          copying any data.
  *
  * @return
  *      - pdTRUE if succeeded
@@ -189,6 +190,8 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer,
  *       memory that the item will occupy will be rounded up to the nearest 32-bit
  *       aligned size. This is done to ensure all items are always stored in 32-bit
  *       aligned fashion.
+ * @note An xItemSize of 0 will result in a buffer being acquired, but the buffer
+ *       will have a size of 0.
  *
  * @return
  *      - pdTRUE if succeeded
@@ -223,6 +226,7 @@ BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem);
  * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
  *
  * @note    A call to vRingbufferReturnItem() is required after this to free the item retrieved.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -243,6 +247,7 @@ void *xRingbufferReceive(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickTy
  * @note    A call to vRingbufferReturnItemFromISR() is required after this to free the item retrieved.
  * @note    Byte buffers do not allow multiple retrievals before returning an item
  * @note    Two calls to RingbufferReceiveFromISR() are required if the bytes wrap around the end of the ring buffer.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -267,6 +272,7 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t xRingbuffer, size_t *pxItemSize)
  *
  * @note    Call(s) to vRingbufferReturnItem() is required after this to free up the item(s) retrieved.
  * @note    This function should only be called on allow-split buffers
+ * @note    It is possible to receive items with a pxItemSize of 0 on allow split buffers.
  *
  * @return
  *      - pdTRUE if an item (split or unsplit) was retrieved
@@ -295,6 +301,7 @@ BaseType_t xRingbufferReceiveSplit(RingbufHandle_t xRingbuffer,
  *
  * @note    Calls to vRingbufferReturnItemFromISR() is required after this to free up the item(s) retrieved.
  * @note    This function should only be called on allow-split buffers
+ * @note    It is possible to receive items with a pxItemSize of 0 on allow split buffers.
  *
  * @return
  *      - pdTRUE if an item (split or unsplit) was retrieved
@@ -343,7 +350,7 @@ void *xRingbufferReceiveUpTo(RingbufHandle_t xRingbuffer,
  *
  * @param[in]   xRingbuffer Ring buffer to retrieve the item from
  * @param[out]  pxItemSize  Pointer to a variable to which the size of the retrieved item will be written.
- * @param[in]   xMaxSize    Maximum number of bytes to return.
+ * @param[in]   xMaxSize    Maximum number of bytes to return. Size of 0 simply returns NULL.
  *
  * @note    A call to vRingbufferReturnItemFromISR() is required after this to free up the data received.
  * @note    This function should only be called on byte buffers
@@ -429,14 +436,14 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t xRingbuffer);
 size_t xRingbufferGetCurFreeSize(RingbufHandle_t xRingbuffer);
 
 /**
- * @brief   Add the ring buffer's read semaphore to a queue set.
+ * @brief   Add the ring buffer to a queue set. Notified when data has been written to the ring buffer
  *
- * The ring buffer's read semaphore indicates that data has been written
- * to the ring buffer. This function adds the ring buffer's read semaphore to
- * a queue set.
+ * This function adds the ring buffer to a queue set, thus allowing a task to
+ * block on multiple queues/ring buffers. The queue set is notified when the new
+ * data becomes available to read on the ring buffer.
  *
  * @param[in]   xRingbuffer     Ring buffer to add to the queue set
- * @param[in]   xQueueSet       Queue set to add the ring buffer's read semaphore to
+ * @param[in]   xQueueSet       Queue set to add the ring buffer to
  *
  * @return
  *      - pdTRUE on success, pdFALSE otherwise
@@ -445,29 +452,32 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHan
 
 
 /**
- * @brief   Check if the selected queue set member is the ring buffer's read semaphore
+ * @brief   Check if the selected queue set member is a particular ring buffer
  *
- * This API checks if queue set member returned from xQueueSelectFromSet()
- * is the read semaphore of this ring buffer. If so, this indicates the ring buffer
- * has items waiting to be retrieved.
+ * This API checks if queue set member returned from xQueueSelectFromSet() is
+ * a particular ring buffer. If so, this indicates the ring buffer has items
+ * waiting to be retrieved.
  *
- * @param[in]   xRingbuffer     Ring buffer which should be checked
+ * @param[in]   xRingbuffer     Ring buffer to check
  * @param[in]   xMember         Member returned from xQueueSelectFromSet
  *
  * @return
- *      - pdTRUE when semaphore belongs to ring buffer
+ *      - pdTRUE when selected queue set member is the ring buffer
  *      - pdFALSE otherwise.
  */
-BaseType_t xRingbufferCanRead(RingbufHandle_t xRingbuffer, QueueSetMemberHandle_t xMember);
+static inline BaseType_t xRingbufferCanRead(RingbufHandle_t xRingbuffer, QueueSetMemberHandle_t xMember)
+{
+    return (xMember == (QueueSetMemberHandle_t)xRingbuffer) ? pdTRUE : pdFALSE;
+}
 
 /**
- * @brief   Remove the ring buffer's read semaphore from a queue set.
+ * @brief   Remove the ring buffer from a queue set
  *
- * This specifically removes a ring buffer's read semaphore from a queue set. The
- * read semaphore is used to indicate when data has been written to the ring buffer
+ * This function removes a ring buffer from a queue set. The ring buffer must have been previously added to the queue
+ * set using xRingbufferAddToQueueSetRead().
  *
  * @param[in]   xRingbuffer     Ring buffer to remove from the queue set
- * @param[in]   xQueueSet       Queue set to remove the ring buffer's read semaphore from
+ * @param[in]   xQueueSet       Queue set to remove the ring buffer from
  *
  * @return
  *      - pdTRUE on success
@@ -506,5 +516,3 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* FREERTOS_RINGBUF_H */
