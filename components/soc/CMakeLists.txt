@@ -78,6 +78,10 @@ if(CONFIG_SOC_LCDCAM_SUPPORTED OR CONFIG_SOC_LCD_I80_SUPPORTED)
     list(APPEND srcs "${target}/lcd_periph.c")
 endif()
 
+if(CONFIG_SOC_PARLIO_SUPPORTED)
+    list(APPEND srcs "${target}/parlio_periph.c")
+endif()
+
 if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "${target}/mcpwm_periph.c")
 endif()

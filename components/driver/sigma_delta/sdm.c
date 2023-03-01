@@ -177,7 +177,7 @@ static void sdm_unregister_from_group(sdm_channel_t *chan)
     sdm_release_group_handle(group);
 }
 
-static esp_err_t sdm_destory(sdm_channel_t *chan)
+static esp_err_t sdm_destroy(sdm_channel_t *chan)
 {
     if (chan->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(chan->pm_lock), TAG, "delete pm lock failed");
@@ -283,7 +283,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     return ESP_OK;
 err:
     if (chan) {
-        sdm_destory(chan);
+        sdm_destroy(chan);
     }
     return ret;
 }
@@ -297,7 +297,7 @@ esp_err_t sdm_del_channel(sdm_channel_handle_t chan)
     int chan_id = chan->chan_id;
     ESP_LOGD(TAG, "del channel (%d,%d)", group_id, chan_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(sdm_destory(chan), TAG, "destory channel failed");
+    ESP_RETURN_ON_ERROR(sdm_destroy(chan), TAG, "destroy channel failed");
     return ESP_OK;
 }
 

@@ -56,7 +56,7 @@ static void mcpwm_generator_unregister_from_operator(mcpwm_gen_t *gen)
     portEXIT_CRITICAL(&oper->spinlock);
 }
 
-static esp_err_t mcpwm_generator_destory(mcpwm_gen_t *gen)
+static esp_err_t mcpwm_generator_destroy(mcpwm_gen_t *gen)
 {
     if (gen->oper) {
         mcpwm_generator_unregister_from_operator(gen);
@@ -105,7 +105,7 @@ esp_err_t mcpwm_new_generator(mcpwm_oper_handle_t oper, const mcpwm_generator_co
 
 err:
     if (gen) {
-        mcpwm_generator_destory(gen);
+        mcpwm_generator_destroy(gen);
     }
     return ret;
 }
@@ -118,7 +118,7 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen)
 
     ESP_LOGD(TAG, "del generator (%d,%d,%d)", group->group_id, oper->oper_id, gen->gen_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_generator_destory(gen), TAG, "destory generator failed");
+    ESP_RETURN_ON_ERROR(mcpwm_generator_destroy(gen), TAG, "destroy generator failed");
     return ESP_OK;
 }
 

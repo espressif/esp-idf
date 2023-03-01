@@ -79,6 +79,10 @@ config SOC_RMT_SUPPORTED
     bool
     default y
 
+config SOC_PARLIO_SUPPORTED
+    bool
+    default y
+
 config SOC_GPSPI_SUPPORTED
     bool
     default y
@@ -612,6 +616,34 @@ config SOC_MCPWM_SUPPORT_ETM
     default y
 
 config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    bool
+    default y
+
+config SOC_PARLIO_GROUPS
+    int
+    default 1
+
+config SOC_PARLIO_TX_UNITS_PER_GROUP
+    int
+    default 1
+
+config SOC_PARLIO_RX_UNITS_PER_GROUP
+    int
+    default 1
+
+config SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
+    int
+    default 8
+
+config SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
+    int
+    default 8
+
+config SOC_PARLIO_TX_CLK_SUPPORT_GATING
+    bool
+    default y
+
+config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 

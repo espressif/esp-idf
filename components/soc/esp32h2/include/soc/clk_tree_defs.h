@@ -415,6 +415,22 @@ typedef enum {
     LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
+//////////////////////////////////////////////////PARLIO////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of PARLIO
+ */
+#define SOC_PARLIO_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F96M}
+
+/**
+ * @brief PARLIO clock source
+ */
+typedef enum {
+    PARLIO_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the source clock */
+    PARLIO_CLK_SRC_PLL_F96M = SOC_MOD_CLK_PLL_F96M,  /*!< Select PLL_F96M as the source clock */
+    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,   /*!< Select PLL_F96M as the default clock choice */
+} soc_periph_parlio_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

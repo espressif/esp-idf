@@ -17,6 +17,7 @@ set(includes "include"
              "i2s/include"
              "ledc/include"
              "mcpwm/include"
+             "parlio/include"
              "pcnt/include"
              "rmt/include"
              "sdio_slave/include"
@@ -47,6 +48,11 @@ if(CONFIG_SOC_DAC_SUPPORTED)
                      "dac/${target}/dac_dma.c"
                      "deprecated/dac_common_legacy.c"
                      "deprecated/${target}/dac_legacy.c")
+endif()
+
+# Parallel IO related source files
+if(CONFIG_SOC_PARLIO_SUPPORTED)
+    list(APPEND srcs "parlio/parlio_common.c" "parlio/parlio_tx.c")
 endif()
 
 # GPIO related source files

@@ -111,6 +111,18 @@ examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
       temporary: true
       reason: lack of runners
 
+examples/peripherals/parlio:
+  disable:
+    - if: SOC_PARLIO_SUPPORTED != 1
+
+examples/peripherals/parlio/simple_rgb_led_matrix:
+  disable:
+    - if: SOC_PARLIO_SUPPORTED != 1 or SOC_DEDICATED_GPIO_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32c6"
+      temporary: true
+      reason: lack of runners
+
 examples/peripherals/pcnt:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1

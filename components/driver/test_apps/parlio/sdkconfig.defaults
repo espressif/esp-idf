@@ -1,0 +1,5 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_ESP_TASK_WDT_INIT=n
+CONFIG_FREERTOS_HZ=1000
