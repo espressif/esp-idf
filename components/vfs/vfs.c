@@ -176,7 +176,7 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 
     _lock_acquire(&s_fd_table_lock);
     // Delete all references from the FD lookup-table
-    for (int j = 0; j < VFS_MAX_COUNT; ++j) {
+    for (int j = 0; j < MAX_FDS; ++j) {
         if (s_fd_table[j].vfs_index == vfs_id) {
             s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
         }
