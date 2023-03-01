@@ -21,6 +21,16 @@ extern "C" {
  */
 typedef struct parlio_tx_unit_t *parlio_tx_unit_handle_t;
 
+/**
+ * @brief Type of Parallel IO RX unit handle
+ */
+typedef struct parlio_rx_unit_t *parlio_rx_unit_handle_t;
+
+/**
+ * @brief Type of Parallel IO RX frame delimiter handle
+ */
+typedef struct parlio_rx_delimiter_t *parlio_rx_delimiter_handle_t;
+
 #ifdef __cplusplus
 }
 #endif
