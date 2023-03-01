@@ -55,6 +55,8 @@ int __weak lwip_hook_ip6_input(struct pbuf *p, struct netif *inp)
 }
 #endif
 
+#ifdef CONFIG_LWIP_IPV4
+
 #ifdef LWIP_HOOK_IP4_ROUTE_SRC
 #if ESP_IP4_ROUTE
 #include "lwip/netif.h"
@@ -270,3 +272,5 @@ void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg 
 #endif /* LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS */
 
 }
+
+#endif /* CONFIG_LWIP_IPV4 */

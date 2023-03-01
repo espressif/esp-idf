@@ -25,7 +25,7 @@ if(CONFIG_ESP_WIFI_ENABLED)
         "src/wifi_default_ap.c"
         "${idf_target}/esp_adapter.c")
 
-    if(CONFIG_ESP_NETIF_USES_TCPIP_WITH_BSD_API)
+    if(CONFIG_ESP_NETIF_USES_TCPIP_WITH_BSD_API AND CONFIG_LWIP_IPV4)
         list(APPEND srcs
             "src/smartconfig_ack.c")
     endif()

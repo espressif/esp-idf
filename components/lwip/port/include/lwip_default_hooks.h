@@ -55,6 +55,7 @@ int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp);
 #define LWIP_HOOK_IP6_INPUT lwip_hook_ip6_input
 #endif /* CONFIG_LWIP_HOOK_IP6_INPUT_CUSTIOM... */
 
+#ifdef CONFIG_LWIP_IPV4
 struct netif *
 ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest);
 
@@ -68,6 +69,7 @@ void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg 
 int dhcp_set_vendor_class_identifier(uint8_t len, const char * str);
 int dhcp_get_vendor_specific_information(uint8_t len, char * str);
 void dhcp_free_vendor_class_identifier(void);
+#endif /* CONFIG_LWIP_IPV4 */
 
 #ifdef __cplusplus
 }

@@ -36,7 +36,7 @@ static void
 low_level_init(struct netif *netif)
 {
   /* set MAC hardware address length */
-  netif->hwaddr_len = ETHARP_HWADDR_LEN;
+  netif->hwaddr_len = ETH_HWADDR_LEN;
 
   /* set MAC hardware address */
 
@@ -205,7 +205,9 @@ wlanif_init(struct netif *netif)
      * You can instead declare your own function an call etharp_output()
      * from it if you have to do some checks before sending (e.g. if link
      * is available...) */
+#if LWIP_IPV4
     netif->output = etharp_output;
+#endif
 #if LWIP_IPV6
     netif->output_ip6 = ethip6_output;
 #endif /* LWIP_IPV6 */

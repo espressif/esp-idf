@@ -92,3 +92,5 @@ fetches `/.well-known/core`
 * CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration -> Enable CoAP debugging'
 and setting appropriate log level.  If Mbed TLS logging is required, this needs to be configured separately under mbedTLS
 Component Configuration and the CoAP logging level set to mbedTLS.
+
+* CoAP library does not support IPv6 only configuration, so it is necessary to enable `LWIP_IPv4`

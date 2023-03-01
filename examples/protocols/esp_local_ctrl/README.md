@@ -9,6 +9,8 @@ See the `esp_local_ctrl` component documentation for details.
 
 Before using the example, run `idf.py menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
 
+Note, that this example in not supported for IPv6-only configuration.
+
 ## Client Side Implementation
 
 A python test script `scripts/esp_local_ctrl.py` has been provided for as a client side application for controlling the device over the same Wi-Fi network. The script relies on a pre-generated `main/certs/rootCA.pem` to verify the server certificate. The server side private key and certificate can also be found under `main/certs`, namely `prvtkey.pem` and `cacert.pem`.

@@ -15,6 +15,8 @@ API to exchange data, such as routing table from root to all nodes and an event 
 to all other nodes in the mesh. As a demonstration, the same event is also published at the mqtt broker
 on a subscribed topic, so both internal mesh_recv() notification as well as mqtt data event are to be received.
 
+Note, that this example in not supported for IPv6-only configuration.
+
 ### Hardware Required
 
 This example can be executed on any platform board, the only required interface is WiFi and connection to internet.

@@ -56,7 +56,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         }
     }
 
-    struct sockaddr_in addr_from;
+    struct sockaddr_storage addr_from;
     socklen_t addr_from_len = sizeof(addr_from);
     int new_fd = accept(listen_fd, (struct sockaddr *)&addr_from, &addr_from_len);
     if (new_fd < 0) {

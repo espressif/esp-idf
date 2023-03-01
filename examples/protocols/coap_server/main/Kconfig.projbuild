@@ -1,5 +1,11 @@
 menu "Example CoAP Server Configuration"
 
+    # Hidden option that selects IPv4
+    config EXAMPLE_COAP_NEEDS_IPV4
+        bool
+        default true
+        select LWIP_IPV4
+
     config EXAMPLE_COAP_PSK_KEY
         string "Preshared Key (PSK) to used in the connection from the CoAP client"
         depends on COAP_MBEDTLS_PSK

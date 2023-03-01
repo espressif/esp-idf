@@ -24,9 +24,15 @@ extern "C" {
 #define ESP_NETIF_DEFAULT_ARP_FLAGS (0)
 #endif
 
+#ifdef CONFIG_LWIP_IPV4
+#define ESP_NETIF_IPV4_ONLY_FLAGS(flags) (flags)
+#else
+#define ESP_NETIF_IPV4_ONLY_FLAGS(flags) (0)
+#endif
+
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_STA() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_IPV4_ONLY_FLAGS(ESP_NETIF_DHCP_CLIENT) | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_STA_GOT_IP, \
@@ -40,7 +46,7 @@ extern "C" {
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_AP() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_IPV4_ONLY_FLAGS(ESP_NETIF_DHCP_SERVER) | ESP_NETIF_FLAG_AUTOUP), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         .ip_info = &_g_esp_netif_soft_ap_ip, \
         .get_ip_event = 0, \
@@ -54,7 +60,7 @@ extern "C" {
 
 #define ESP_NETIF_INHERENT_DEFAULT_ETH() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_IPV4_ONLY_FLAGS(ESP_NETIF_DHCP_CLIENT) | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_ETH_GOT_IP, \

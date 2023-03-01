@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -214,10 +214,12 @@ void example_ethernet_shutdown(void)
 
 esp_err_t example_ethernet_connect(void)
 {
+#if CONFIG_EXAMPLE_CONNECT_IPV4
     s_semph_get_ip_addrs = xSemaphoreCreateBinary();
     if (s_semph_get_ip_addrs == NULL) {
         return ESP_ERR_NO_MEM;
     }
+#endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
     s_semph_get_ip6_addrs = xSemaphoreCreateBinary();
     if (s_semph_get_ip6_addrs == NULL) {
@@ -227,7 +229,9 @@ esp_err_t example_ethernet_connect(void)
 #endif
     eth_start();
     ESP_LOGI(TAG, "Waiting for IP(s).");
+#if CONFIG_EXAMPLE_CONNECT_IPV4
     xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+#endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
     xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
 #endif

@@ -107,7 +107,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 {
     int ret;
     struct addrinfo hints, *addr_list, *cur;
-    struct sockaddr_in *serv_addr = NULL;
+    struct sockaddr_storage *serv_addr = NULL;
 #if SO_REUSE
     int n = 1;
 #endif
@@ -144,9 +144,22 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
             continue;
         }
 #endif
-        /*bind interface dafault don't process the addr is 0xffffffff for TCP Protocol*/
-        serv_addr = (struct sockaddr_in *)cur->ai_addr;
-        serv_addr->sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+        serv_addr = (struct sockaddr_storage *) cur->ai_addr;
+#if CONFIG_LWIP_IPV4
+        if (cur->ai_family == AF_INET) {
+            /*bind interface dafault don't process the addr is 0xffffffff for TCP Protocol*/
+            struct sockaddr_in *p = (struct sockaddr_in *)serv_addr;
+            p->sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+        }
+#endif  // CONFIG_LWIP_IPV4
+#if CONFIG_LWIP_IPV6
+        if (cur->ai_family == AF_INET6) {
+            struct sockaddr_in6 *p = (struct sockaddr_in6 *) serv_addr;
+            struct in6_addr inaddr_any = IN6ADDR_ANY_INIT;
+            p->sin6_addr = inaddr_any;
+        }
+#endif // CONFIG_LWIP_IPV6
+
         if ( bind( fd, (struct sockaddr *)serv_addr, cur->ai_addrlen ) != 0 ) {
             close( fd );
             ret = MBEDTLS_ERR_NET_BIND_FAILED;
@@ -206,7 +219,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     int ret;
     int type;
 
-    struct sockaddr_in client_addr;
+    struct sockaddr_storage client_addr;
 
     socklen_t n = (socklen_t) sizeof( client_addr );
     socklen_t type_len = (socklen_t) sizeof( type );
@@ -242,7 +255,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     /* UDP: hijack the listening socket to communicate with the client,
      * then bind a new socket to accept new connections */
     if ( type != SOCK_STREAM ) {
-        struct sockaddr_in local_addr;
+        struct sockaddr_storage local_addr;
         int one = 1;
 
         if ( connect( bind_ctx->fd, (struct sockaddr *) &client_addr, n ) != 0 ) {
@@ -252,10 +265,10 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
         client_ctx->fd = bind_ctx->fd;
         bind_ctx->fd   = -1; /* In case we exit early */
 
-        n = sizeof( struct sockaddr_in );
+        n = sizeof( struct sockaddr_storage );
         if ( getsockname( client_ctx->fd,
                           (struct sockaddr *) &local_addr, &n ) != 0 ||
-                ( bind_ctx->fd = (int) socket( AF_INET,
+                ( bind_ctx->fd = (int) socket( local_addr.ss_family,
                                                SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ||
                 setsockopt( bind_ctx->fd, SOL_SOCKET, SO_REUSEADDR,
                             (const char *) &one, sizeof( one ) ) != 0 ) {
@@ -268,14 +281,32 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     }
 
     if ( client_ip != NULL ) {
-        struct sockaddr_in *addr4 = (struct sockaddr_in *) &client_addr;
-        *ip_len = sizeof( addr4->sin_addr.s_addr );
+#ifdef CONFIG_LWIP_IPV4
+        if( client_addr.ss_family == AF_INET )
+        {
+            struct sockaddr_in *addr4 = (struct sockaddr_in *) &client_addr;
+            *ip_len = sizeof( addr4->sin_addr.s_addr );
 
-        if ( buf_size < *ip_len ) {
-            return ( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+            if ( buf_size < *ip_len ) {
+                return ( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+            }
+
+            memcpy( client_ip, &addr4->sin_addr.s_addr, *ip_len );
         }
+#endif // CONFIG_LWIP_IPV4
+#ifdef CONFIG_LWIP_IPV6
+        if( client_addr.ss_family == AF_INET6 )
+        {
+            struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *) &client_addr;
+            *ip_len = sizeof( addr6->sin6_addr.s6_addr );
 
-        memcpy( client_ip, &addr4->sin_addr.s_addr, *ip_len );
+            if( buf_size < *ip_len ) {
+                return( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+            }
+
+            memcpy( client_ip, &addr6->sin6_addr.s6_addr, *ip_len);
+        }
+#endif  // CONFIG_LWIP_IPV6
     }
 
     return ( 0 );
