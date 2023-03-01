@@ -1,16 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <ctype.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <inttypes.h>
 #include <time.h>
-#include "unity.h"
-#include "nvs.h"
-#include "nvs_flash.h"
-#include "esp_partition.h"
+
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
-#include <string.h>
+#include "esp_partition.h"
 #include "esp_system.h"
+
+#include "nvs.h"
+#include "nvs_flash.h"
+
+#include "unity.h"
 
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "mbedtls/aes.h"
@@ -49,6 +59,8 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
     nvs_flash_deinit();
 }
 
+#ifndef CONFIG_NVS_ENCRYPTION
+// NOTE: `nvs_flash_init_partition_ptr` does not support NVS encryption
 TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 {
     // First, open and write to partition using normal initialization
@@ -77,6 +89,7 @@ TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 
     nvs_flash_deinit();
 }
+#endif
 
 // test could have different output on host tests
 TEST_CASE("nvs deinit with open handle", "[nvs]")
@@ -310,11 +323,11 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
         TEST_ESP_OK( nvs_set_blob(my_handle, "key", key, sizeof(key)) );
         TEST_ESP_OK( nvs_commit(my_handle) );
         nvs_close(my_handle);
-        printf("%d\n", esp_get_free_heap_size());
+        printf("%" PRId32 "\n", esp_get_free_heap_size());
     }
 
     nvs_flash_deinit();
-    printf("%d\n", esp_get_free_heap_size());
+    printf("%" PRId32 "\n", esp_get_free_heap_size());
     /* heap leaks will be checked in unity_platform.c */
 }
 
@@ -496,7 +509,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == SPI_FLASH_SEC_SIZE);
 
     assert(nvs_part && "partition table must have an NVS partition");
-    printf("\n nvs_part size:%d\n", nvs_part->size);
+    printf("\n nvs_part size:%" PRId32 "\n", nvs_part->size);
 
     ESP_ERROR_CHECK(esp_partition_erase_range(key_part, 0, key_part->size));
     ESP_ERROR_CHECK( esp_partition_erase_range(nvs_part, 0, nvs_part->size) );
