@@ -40,6 +40,7 @@
 //#define LOG_TAG "bt_btm_ble"
 //#include "osi/include/log.h"
 #if BLE_INCLUDED == TRUE
+extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
 #if SMP_INCLUDED == TRUE
 // The temp variable to pass parameter between functions when in the connected event callback.
 static BOOLEAN temp_enhanced = FALSE;
@@ -1987,6 +1988,17 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         if (enhanced) {
             STREAM_TO_BDADDR   (local_rpa, p);
             STREAM_TO_BDADDR   (peer_rpa, p);
+#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+            BD_ADDR dummy_bda = {0};
+            /* For controller generates RPA, if resolving list contains no matching entry, it use identity address.
+             * So we should update own addr type in Host */
+            if (memcmp(local_rpa, dummy_bda, BD_ADDR_LEN)) {
+                btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type |= (BLE_ADDR_TYPE_ID_BIT);
+                BTM_UpdateAddrInfor(btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, local_rpa);
+            } else {
+                btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type &= (~BLE_ADDR_TYPE_ID_BIT);
+            }
+#endif
         }
 #if (BLE_PRIVACY_SPT == TRUE )
         peer_addr_type = bda_type;
@@ -2566,7 +2578,11 @@ static void btm_ble_process_irk(tSMP_ENC *p)
         memcpy(btm_cb.devcb.id_keys.irk, p->param_buf, BT_OCTET16_LEN);
         btm_notify_new_key(BTM_BLE_KEY_TYPE_ID);
 
-#if BLE_PRIVACY_SPT == TRUE
+#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+        btm_ble_add_default_entry_to_resolving_list();
+#endif
+
+#if (BLE_PRIVACY_SPT == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == FALSE)
         /* if privacy is enabled, new RPA should be calculated */
         if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
             btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
