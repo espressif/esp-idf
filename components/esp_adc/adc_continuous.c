@@ -53,11 +53,6 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 #define INTERNAL_BUF_NUM      5
 
-#ifdef CONFIG_PM_ENABLE
-//Only for deprecated API
-extern esp_pm_lock_handle_t adc_digi_arbiter_lock;
-#endif  //CONFIG_PM_ENABLE
-
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
 ---------------------------------------------------------------*/
@@ -396,11 +391,6 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     adc_hal_digi_stop(&handle->hal);
 
     adc_hal_digi_deinit(&handle->hal);
-#if CONFIG_PM_ENABLE
-    if (handle->pm_lock) {
-        esp_pm_lock_release(handle->pm_lock);
-    }
-#endif  //CONFIG_PM_ENABLE
 
     if (handle->use_adc2) {
         adc_lock_release(ADC_UNIT_2);
@@ -461,11 +451,9 @@ esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle)
         free(handle->ringbuf_struct);
     }
 
-#if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
         esp_pm_lock_delete(handle->pm_lock);
     }
-#endif  //CONFIG_PM_ENABLE
 
     free(handle->rx_dma_buf);
     free(handle->hal.rx_desc);
