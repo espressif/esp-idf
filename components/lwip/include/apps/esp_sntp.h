@@ -212,6 +212,12 @@ const char *esp_sntp_getservername(u8_t idx);
  */
 const ip_addr_t* esp_sntp_getserver(u8_t idx);
 
+/**
+ * @brief Checks if sntp is enabled
+ * @return true if sntp module is enabled
+ */
+bool esp_sntp_enabled(void);
+
 #if LWIP_DHCP_GET_NTP_SRV
 /**
  * @brief Enable acquiring SNTP server from DHCP
