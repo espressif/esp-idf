@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
+import json
 import os
 import re
 import subprocess
@@ -530,6 +531,27 @@ def merge_action_lists(*action_lists: Dict) -> Dict:
         merged_actions['actions'].update(action_list.get('actions', {}))
         merged_actions['global_action_callbacks'].extend(action_list.get('global_action_callbacks', []))
     return merged_actions
+
+
+def get_sdkconfig_filename(args: 'PropertyDict', cache_cmdl: Dict=None) -> str:
+    """
+    Get project's sdkconfig file name.
+    """
+    if not cache_cmdl:
+        cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
+    config = cache_cmdl.get('SDKCONFIG')
+    if config:
+        return os.path.abspath(config)
+
+    proj_desc_path = os.path.join(args.build_dir, 'project_description.json')
+    try:
+        with open(proj_desc_path, 'r') as f:
+            proj_desc = json.load(f)
+        return str(proj_desc['config_file'])
+    except (OSError, KeyError):
+        pass
+
+    return os.path.join(args.project_dir, 'sdkconfig')
 
 
 def get_sdkconfig_value(sdkconfig_file: str, key: str) -> Optional[str]:
