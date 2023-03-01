@@ -512,28 +512,6 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length)
     return ESP_OK;
 }
 
-#if CONFIG_IDF_TARGET_ESP32
-esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle)
-{
-    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
-    ESP_RETURN_ON_FALSE(chr_tout >= 0 && chr_tout <= UART_RX_GAP_TOUT_V, ESP_FAIL, UART_TAG, "uart pattern set error\n");
-    ESP_RETURN_ON_FALSE(post_idle >= 0 && post_idle <= UART_POST_IDLE_NUM_V, ESP_FAIL, UART_TAG, "uart pattern set error\n");
-    ESP_RETURN_ON_FALSE(pre_idle >= 0 && pre_idle <= UART_PRE_IDLE_NUM_V, ESP_FAIL, UART_TAG, "uart pattern set error\n");
-    uart_at_cmd_t at_cmd = {0};
-    at_cmd.cmd_char = pattern_chr;
-    at_cmd.char_num = chr_num;
-    at_cmd.gap_tout = chr_tout;
-    at_cmd.pre_idle = pre_idle;
-    at_cmd.post_idle = post_idle;
-    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_CMD_CHAR_DET);
-    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_at_cmd_char(&(uart_context[uart_num].hal), &at_cmd);
-    uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_CMD_CHAR_DET);
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    return ESP_OK;
-}
-#endif
-
 esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle)
 {
     ESP_RETURN_ON_FALSE(uart_num < UART_NUM_MAX, ESP_FAIL, UART_TAG, "uart_num error");
