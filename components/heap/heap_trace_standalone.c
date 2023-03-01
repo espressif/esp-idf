@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include <sdkconfig.h>
+#include <inttypes.h>
 
 #define HEAP_TRACE_SRCFILE /* don't warn on inclusion here */
 #include "esp_heap_trace.h"
@@ -56,15 +57,6 @@ typedef struct {
     bool has_overflowed;
 } records_t;
 
-typedef struct {
-
-    /* Buffer used for hashmap entries */
-    heap_trace_hashmap_entry_t *buffer;
-
-    /* length of 'buffer' */
-    size_t count;
-} hashmap_t;
-
 // Forward Defines
 static void heap_trace_dump_base(bool internal_ram, bool psram);
 static void record_deep_copy(heap_trace_record_t *r_dest, const heap_trace_record_t *r_src);
@@ -73,15 +65,9 @@ static void list_remove(heap_trace_record_t *r_remove);
 static heap_trace_record_t* list_add(const heap_trace_record_t *r_append);
 static heap_trace_record_t* list_pop_unused(void);
 static heap_trace_record_t* list_find_address_reverse(void *p);
-static void map_add(const heap_trace_record_t *r_add);
-static void map_remove(void *p);
-static heap_trace_record_t* map_find(void *p);
 
 /* The actual records. */
 static records_t records;
-
-/* The hashmap */
-static hashmap_t map;
 
 /* Actual number of allocations logged */
 static size_t total_allocations;
@@ -89,13 +75,71 @@ static size_t total_allocations;
 /* Actual number of frees logged */
 static size_t total_frees;
 
-/* track hits and misses */
-static size_t total_hashmap_hits;
-static size_t total_hashmap_miss;
-
 /* Used to speed up heap_trace_get */
 static heap_trace_record_t* r_get;
 static size_t r_get_idx;
+
+#if CONFIG_HEAP_TRACE_HASH_MAP
+
+typedef struct heap_trace_hashmap_entry_t {
+    heap_trace_record_t* record; // associated record
+} heap_trace_hashmap_entry_t;
+
+static heap_trace_hashmap_entry_t hash_map[(size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE]; // Buffer used for hashmap entries
+static size_t total_hashmap_hits;
+static size_t total_hashmap_miss;
+
+static size_t hash_idx(void* p)
+{
+    static const uint32_t fnv_prime = 16777619UL; // expression 224 + 28 + 0x93 (32 bits size)
+    return ((uint32_t)p * fnv_prime) % (uint32_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
+}
+
+static void map_add(const heap_trace_record_t *r_add)
+{
+    size_t idx = hash_idx(r_add->address);
+
+    // linear search: find empty location
+    for(size_t i = 0; i < CONFIG_HEAP_TRACE_HASH_MAP_MAX_LINEAR; i++) {
+        size_t n = (i + idx) % (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
+        if (hash_map[n].record == NULL) {
+            hash_map[n].record = (heap_trace_record_t*) r_add;
+            break;
+        }
+    }
+}
+
+static void map_remove(void *p)
+{
+    size_t idx = hash_idx(p);
+
+    // linear search: find matching address
+    for(size_t i = 0; i < CONFIG_HEAP_TRACE_HASH_MAP_MAX_LINEAR; i++) {
+        size_t n = (i + idx) % (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
+        if (hash_map[n].record != NULL && hash_map[n].record->address == p) {
+            hash_map[n].record = NULL;
+            break;
+        }
+    }
+}
+
+static heap_trace_record_t* map_find(void *p)
+{
+    size_t idx = hash_idx(p);
+
+    // linear search: find matching address
+    for(size_t i = 0; i < CONFIG_HEAP_TRACE_HASH_MAP_MAX_LINEAR; i++) {
+        size_t n = (i + idx) % (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
+        if (hash_map[n].record != NULL && hash_map[n].record->address == p) {
+            total_hashmap_hits++;
+            return hash_map[n].record;
+        }
+    }
+
+    total_hashmap_miss++;
+    return NULL;
+}
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
 
 esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t num_records)
 {
@@ -113,16 +157,12 @@ esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t 
     return ESP_OK;
 }
 
-
-esp_err_t heap_trace_set_hashmap(heap_trace_hashmap_entry_t *entries_buffer, size_t num_entries)
+static esp_err_t set_tracing(bool enable)
 {
-    if (tracing) {
+    if (tracing == enable) {
         return ESP_ERR_INVALID_STATE;
     }
-
-    map.buffer = entries_buffer;
-    map.count = num_entries;
-
+    tracing = enable;
     return ESP_OK;
 }
 
@@ -134,14 +174,17 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
     portENTER_CRITICAL(&trace_mux);
 
-    tracing = false;
+    set_tracing(false);
     mode = mode_param;
 
     // clear buffers
     memset(records.buffer, 0, sizeof(heap_trace_record_t) * records.capacity);
-    if (map.buffer) {
-        memset(map.buffer, 0, sizeof(heap_trace_hashmap_entry_t) * map.count);
-    }
+
+#if CONFIG_HEAP_TRACE_HASH_MAP
+    memset(hash_map, 0, sizeof(hash_map));
+    total_hashmap_hits = 0;
+    total_hashmap_miss = 0;
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
 
     records.count = 0;
     records.has_overflowed = false;
@@ -149,31 +192,27 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
     total_allocations = 0;
     total_frees = 0;
-    total_hashmap_hits = 0;
-    total_hashmap_miss = 0;
-    heap_trace_resume();
+
+    const esp_err_t ret_val = set_tracing(true);
 
     portEXIT_CRITICAL(&trace_mux);
-    return ESP_OK;
-}
-
-static esp_err_t set_tracing(bool enable)
-{
-    if (tracing == enable) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    tracing = enable;
-    return ESP_OK;
+    return ret_val;
 }
 
 esp_err_t heap_trace_stop(void)
 {
-    return set_tracing(false);
+    portENTER_CRITICAL(&trace_mux);
+    const esp_err_t ret_val = set_tracing(false);
+    portEXIT_CRITICAL(&trace_mux);
+    return ret_val;
 }
 
 esp_err_t heap_trace_resume(void)
 {
-    return set_tracing(true);
+    portENTER_CRITICAL(&trace_mux);
+    const esp_err_t ret_val = set_tracing(true);
+    portEXIT_CRITICAL(&trace_mux);
+    return ret_val;
 }
 
 size_t heap_trace_get_count(void)
@@ -244,8 +283,10 @@ esp_err_t heap_trace_summary(heap_trace_summary_t *summary)
     summary->capacity = records.capacity;
     summary->high_water_mark = records.high_water_mark;
     summary->has_overflowed = records.has_overflowed;
+#if CONFIG_HEAP_TRACE_HASH_MAP
     summary->total_hashmap_hits = total_hashmap_hits;
     summary->total_hashmap_miss = total_hashmap_miss;
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
     portEXIT_CRITICAL(&trace_mux);
 
     return ESP_OK;
@@ -267,7 +308,7 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
     size_t delta_allocs = 0;
     size_t start_count = records.count;
 
-    esp_rom_printf("====== Heap Trace: %u records (%u capacity) ======\n",
+    esp_rom_printf("====== Heap Trace: %"PRIu32" records (%"PRIu32" capacity) ======\n",
         records.count, records.capacity);
 
     // Iterate through through the linked list
@@ -325,21 +366,23 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
 
     if (mode == HEAP_TRACE_ALL) {
         esp_rom_printf("Mode: Heap Trace All\n");
-        esp_rom_printf("%u bytes alive in trace (%u/%u allocations)\n",
+        esp_rom_printf("%"PRIu32" bytes alive in trace (%"PRIu32"/%"PRIu32" allocations)\n",
                delta_size, delta_allocs, heap_trace_get_count());
     } else {
         esp_rom_printf("Mode: Heap Trace Leaks\n");
-        esp_rom_printf("%u bytes 'leaked' in trace (%u allocations)\n", delta_size, delta_allocs);
+        esp_rom_printf("%"PRIu32" bytes 'leaked' in trace (%"PRIu32" allocations)\n", delta_size, delta_allocs);
     }
 
-    esp_rom_printf("records: %u (%u capacity, %u high water mark)\n",
+    esp_rom_printf("records: %"PRIu32" (%"PRIu32" capacity, %"PRIu32" high water mark)\n",
         records.count, records.capacity, records.high_water_mark);
 
-    esp_rom_printf("hashmap: %u capacity (%u hits, %u misses)\n",
-        map.count, total_hashmap_hits, total_hashmap_miss);
+#if CONFIG_HEAP_TRACE_HASH_MAP
+    esp_rom_printf("hashmap: %"PRIu32" capacity (%"PRIu32" hits, %"PRIu32" misses)\n",
+        (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE, total_hashmap_hits, total_hashmap_miss);
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
 
-    esp_rom_printf("total allocations: %u\n", total_allocations);
-    esp_rom_printf("total frees: %u\n", total_frees);
+    esp_rom_printf("total allocations: %"PRIu32"\n", total_allocations);
+    esp_rom_printf("total frees: %"PRIu32"\n", total_frees);
 
     if (start_count != records.count) { // only a problem if trace isn't stopped before dumping
         esp_rom_printf("(NB: New entries were traced while dumping, so trace dump may have duplicate entries.)\n");
@@ -372,16 +415,20 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
             heap_trace_record_t *r_first = TAILQ_FIRST(&records.list);
 
             list_remove(r_first);
+#if CONFIG_HEAP_TRACE_HASH_MAP
             map_remove(r_first->address);
         }
-
         // push onto end of list
         heap_trace_record_t *r_dest = list_add(r_allocation);
-
         // add to hashmap
         if (r_dest) {
             map_add(r_dest);
         }
+#else
+        }
+        // push onto end of list
+        list_add(r_allocation);
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
 
         total_allocations++;
     }
@@ -404,11 +451,19 @@ static IRAM_ATTR void record_free(void *p, void **callers)
     }
 
     portENTER_CRITICAL(&trace_mux);
+    // return directly if records.count == 0. In case of hashmap being used
+    // this prevents the hashmap to return an item that is no longer in the
+    // records list.
+    if (records.count == 0) {
+        portEXIT_CRITICAL(&trace_mux);
+        return;
+    }
 
     if (tracing) {
 
         total_frees++;
 
+#if CONFIG_HEAP_TRACE_HASH_MAP
         // check the hashmap
         heap_trace_record_t *r_found = map_find(p);
 
@@ -416,7 +471,9 @@ static IRAM_ATTR void record_free(void *p, void **callers)
         if(!r_found) {
             r_found = list_find_address_reverse(p);
         }
-
+#else
+        heap_trace_record_t *r_found = list_find_address_reverse(p);
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
         // search backwards for the allocation record matching this fre
 
         if (r_found) {
@@ -430,7 +487,9 @@ static IRAM_ATTR void record_free(void *p, void **callers)
                 // Leak trace mode, once an allocation is freed
                 // we remove it from the list & hashmap
                 list_remove(r_found);
+#if CONFIG_HEAP_TRACE_HASH_MAP
                 map_remove(p);
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
             }
         }
     }
@@ -541,10 +600,6 @@ static IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r_appe
 // search records.list backwards for the allocation record matching this address
 static IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void *p)
 {
-    if (records.count == 0) {
-        return NULL;
-    }
-
     heap_trace_record_t *r_found = NULL;
 
     // Perf: We search backwards because new allocations are appended
@@ -558,74 +613,6 @@ static IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void *p)
     }
 
     return r_found;
-}
-
-#define MAXLINEAR 100
-
-static size_t hash_idx(void* p)
-{
-    const uint64_t prime = 11020851777194292899ULL;
-    uint32_t n = (uint32_t) p;
-    return (n * prime) % map.count;
-}
-
-static void map_add(const heap_trace_record_t *r_add)
-{
-    if (map.buffer == NULL || map.count == 0) {
-        return;
-    }
-
-    size_t idx = hash_idx(r_add->address);
-
-    // linear search: find empty location
-    for(size_t i = 0; i < MAXLINEAR; i++) {
-        size_t n = (i + idx) % map.count;
-        if (map.buffer[n].address == NULL) {
-            map.buffer[n].address = r_add->address;
-            map.buffer[n].record = (heap_trace_record_t*) r_add;
-            break;
-        }
-    }
-}
-
-static void map_remove(void *p)
-{
-    if (map.buffer == NULL || map.count == 0) {
-        return;
-    }
-
-    size_t idx = hash_idx(p);
-
-    // linear search: find matching address
-    for(size_t i = 0; i < MAXLINEAR; i++) {
-        size_t n = (i + idx) % map.count;
-        if (map.buffer[n].address == p) {
-            map.buffer[n].address = NULL;
-            map.buffer[n].record = NULL;
-            break;
-        }
-    }
-}
-
-static heap_trace_record_t* map_find(void *p)
-{
-    if (map.buffer == NULL || map.count == 0) {
-        return NULL;
-    }
-
-    size_t idx = hash_idx(p);
-
-    // linear search: find matching address
-    for(size_t i = 0; i < MAXLINEAR; i++) {
-        size_t n = (i + idx) % map.count;
-        if (map.buffer[n].address == p) {
-            total_hashmap_hits++;
-            return map.buffer[n].record;
-        }
-    }
-
-    total_hashmap_miss++;
-    return NULL;
 }
 
 #include "heap_trace.inc"

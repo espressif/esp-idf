@@ -41,11 +41,6 @@ typedef struct heap_trace_record_t {
 #endif // CONFIG_HEAP_TRACING_STANDALONE
 } heap_trace_record_t;
 
-typedef struct heap_trace_hashmap_entry_t {
-    void* address;                 ///< ptr returned by malloc/calloc/realloc
-    heap_trace_record_t* record;   ///< associated record
-} heap_trace_hashmap_entry_t;
-
 /**
  * @brief Stores information about the result of a heap trace.
  */
@@ -57,8 +52,10 @@ typedef struct {
     size_t capacity;                 ///< The capacity of the internal buffer
     size_t high_water_mark;          ///< The maximum value that 'count' got to
     size_t has_overflowed;           ///< True if the internal buffer overflowed at some point
+#if CONFIG_HEAP_TRACE_HASH_MAP
     size_t total_hashmap_hits;       ///< If hashmap is used, the total number of hits
     size_t total_hashmap_miss;       ///< If hashmap is used, the total number of misses (possibly due to overflow)
+#endif
 } heap_trace_summary_t;
 
 /**
@@ -77,22 +74,6 @@ typedef struct {
  *  - ESP_OK Heap tracing initialised successfully.
  */
 esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t num_records);
-
-
-/**
- * @brief Provide a hashmap to greatly improve the performance of standalone heap trace leaks mode.
- *
- * This function must be called before heap_trace_start.
- *
- * @param entries_buffer Provide a buffer to use for heap trace hashmap.
- * Note: External RAM is allowed, but it prevents recording allocations made from ISR's.
- * @param num_entries Size of the entries_buffer. Should be greater than num_records, preferably 2-4x as large.
- * @return
- *  - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
- *  - ESP_ERR_INVALID_STATE Heap tracing is currently in progress.
- *  - ESP_OK Heap tracing initialised successfully.
- */
-esp_err_t heap_trace_set_hashmap(heap_trace_hashmap_entry_t *entries_buffer, size_t num_entries);
 
 /**
  * @brief Initialise heap tracing in host-based mode.
