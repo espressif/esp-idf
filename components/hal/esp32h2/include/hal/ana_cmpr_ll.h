@@ -11,8 +11,11 @@
 #include "hal/assert.h"
 #include "soc/gpio_ext_struct.h"
 
-#define ANALOG_CMPR_LL_GET_HW()    (&ANALOG_CMPR)
-#define ANALOG_CMPR_LL_EVENT_CROSS (1 << 0)
+#define ANALOG_CMPR_LL_GET_HW()         (&ANALOG_CMPR)
+#define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
+
+#define ANALOG_CMPR_LL_POS_CROSS_MASK   (1 << 1)
+#define ANALOG_CMPR_LL_NEG_CROSS_MASK   (1 << 2)
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,14 +36,11 @@ static inline void analog_cmpr_ll_enable(analog_cmpr_dev_t *hw, bool en)
  * @brief Set the voltage of the internal reference
  *
  * @param hw Analog comparator register base address
- * @param voltage The voltage of the internal reference, range [0.0V, 0.7VDD], step 0.1VDD
+ * @param volt_level The voltage level of the internal reference, range [0.0V, 0.7VDD], step 0.1VDD
  */
-static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw, float voltage)
+static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw, uint32_t volt_level)
 {
-    hw->pad_comp_config.mode_comp = 0;
-    uint32_t volt_reg_val = (uint32_t)((voltage + 0.05F) / 0.1F);
-    HAL_ASSERT(volt_reg_val <= 7);
-    hw->pad_comp_config.dref_comp = volt_reg_val;
+    hw->pad_comp_config.dref_comp = volt_level;
 }
 
 /**
@@ -55,55 +55,31 @@ static inline float analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *h
 }
 
 /**
- * @brief The reference voltage comes from GPIO pad (GPIO10)
+ * @brief The reference voltage comes from internal or external
  *
  * @note Also see `analog_cmpr_ll_set_internal_ref_voltage` to use the internal reference voltage
  *
  * @param hw Analog comparator register base address
+ * @param ref_src reference source, 0 for internal, 1 for external GPIO pad (GPIO10)
  */
-static inline void analog_cmpr_ll_ref_voltage_from_external(analog_cmpr_dev_t *hw)
+static inline void analog_cmpr_ll_ref_source(analog_cmpr_dev_t *hw, uint32_t ref_src)
 {
-    hw->pad_comp_config.mode_comp = 1;
+    hw->pad_comp_config.mode_comp = ref_src;
 }
 
 /**
- * @brief Disable the cross detection
+ * @brief Set cross interrupt trigger type
  *
  * @param hw Analog comparator register base address
+ * @param type The type of cross interrupt
+ *              - 0: disable interrupt
+ *              - 1: enable positive cross interrupt (input analog goes from low to high and across the reference voltage)
+ *              - 2: enable negative cross interrupt (input analog goes from high to low and across the reference voltage)
+ *              - 3: enable any positive or negative cross interrupt
  */
-static inline void analog_cmpr_ll_disable_cross_detection(analog_cmpr_dev_t *hw)
+static inline void analog_cmpr_ll_set_cross_intr_type(analog_cmpr_dev_t *hw, uint8_t type)
 {
-    hw->pad_comp_config.zero_det_mode = 0;
-}
-
-/**
- * @brief Enable to detect the positive cross (input analog goes from low to high and across the reference voltage)
- *
- * @param hw Analog comparator register base address
- * @param enable True to enable, False to disable
- */
-static inline void analog_cmpr_ll_enable_pos_cross_detection(analog_cmpr_dev_t *hw, bool enable)
-{
-    if (enable) {
-        hw->pad_comp_config.zero_det_mode |= (1 << 0);
-    } else {
-        hw->pad_comp_config.zero_det_mode &= ~(1 << 0);
-    }
-}
-
-/**
- * @brief Enable to detect the negative cross (input analog goes from high to low and across the reference voltage)
- *
- * @param hw Analog comparator register base address
- * @param enable True to enable, False to disable
- */
-static inline void analog_cmpr_ll_enable_neg_cross_detection(analog_cmpr_dev_t *hw, bool enable)
-{
-    if (enable) {
-        hw->pad_comp_config.zero_det_mode |= (1 << 1);
-    } else {
-        hw->pad_comp_config.zero_det_mode &= ~(1 << 1);
-    }
+    hw->pad_comp_config.zero_det_mode = type;
 }
 
 /**
@@ -140,9 +116,9 @@ static inline void analog_cmpr_ll_enable_intr(analog_cmpr_dev_t *hw, uint32_t ma
  *
  * @param hw Analog comparator register base address
  */
-static inline void analog_cmpr_ll_get_intr_status(analog_cmpr_dev_t *hw)
+static inline uint32_t analog_cmpr_ll_get_intr_status(analog_cmpr_dev_t *hw)
 {
-    hw->int_st.val;
+    return hw->int_st.val;
 }
 
 /**

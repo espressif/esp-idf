@@ -330,6 +330,22 @@ typedef enum {
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,                 /*!< Select PLL_F48M as the default clock choice */
 } soc_periph_sdm_clk_src_t;
 
+///////////////////////////////////////////////////Analog Comparator////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Analog Comparator
+ */
+#define SOC_ANA_CMPR_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Sigma Delta Modulator clock source
+ */
+typedef enum {
+    ANA_CMPR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                   /*!< Select XTAL clock as the source clock */
+    ANA_CMPR_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,           /*!< Select PLL_F48M clock as the source clock */
+    ANA_CMPR_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,            /*!< Select PLL_F48M as the default clock choice */
+} soc_periph_ana_cmpr_clk_src_t;
+
 //////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
 
 /**

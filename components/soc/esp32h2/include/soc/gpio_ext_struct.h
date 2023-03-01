@@ -75,8 +75,8 @@ typedef union {
          */
         uint32_t xpd_comp:1;
         /** mode_comp : R/W; bitpos: [1]; default: 0;
-         *  1 to enable external reference from PAD[0]. 0 to enable internal reference,
-         *  meanwhile PAD[0] can be used as a regular GPIO.
+         *  1 to enable external reference from PAD[10]. 0 to enable internal reference,
+         *  meanwhile PAD[10] can be used as a regular GPIO.
          */
         uint32_t mode_comp:1;
         /** dref_comp : R/W; bitpos: [4:2]; default: 0;
