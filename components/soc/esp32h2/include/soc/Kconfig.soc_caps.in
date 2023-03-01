@@ -39,6 +39,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
 config SOC_IEEE802154_BLE_ONLY
     bool
     default y

@@ -34,9 +34,9 @@
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
-// #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
-#define SOC_GPTIMER_SUPPORTED              1
-#define SOC_IEEE802154_BLE_ONLY            1
+#define SOC_GPTIMER_SUPPORTED           1
+#define SOC_IEEE802154_SUPPORTED        1
+#define SOC_IEEE802154_BLE_ONLY         1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1 // TODO: IDF-6281

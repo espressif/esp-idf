@@ -70,6 +70,7 @@ default_cli_ot_para = ocf.thread_parameter('router', '', '12', '', False)
 
 # Case 1: Thread network formation and attaching
 @pytest.mark.esp32s3
+@pytest.mark.esp32h2
 @pytest.mark.esp32h4
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
