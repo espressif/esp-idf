@@ -549,3 +549,50 @@ TEST_CASE("gptimer_overflow", "[gptimer]")
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }
+
+TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_late_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
+{
+    bool *alarm_fired = (bool *)user_data;
+    *alarm_fired = true;
+    esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
+    return false;
+}
+
+TEST_CASE("gptimer_trig_alarm_with_old_count", "[gptimer]")
+{
+    printf("install gptimer driver\r\n");
+    gptimer_config_t timer_config = {
+        .resolution_hz = 10 * 1000, // 10KHz, 1 tick = 0.1ms
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+        .direction = GPTIMER_COUNT_UP,
+    };
+    gptimer_handle_t timer;
+    TEST_ESP_OK(gptimer_new_timer(&timer_config, &timer));
+
+    printf("register alarm callback\r\n");
+    bool alarm_fired = false;
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = test_gptimer_alarm_late_callback,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(timer, &cbs, &alarm_fired));
+    TEST_ESP_OK(gptimer_enable(timer));
+    TEST_ESP_OK(gptimer_start(timer));
+
+    printf("let the timer go for sometime\r\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("set alarm config with a very early count value\r\n");
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = 10, // 1ms < current count, so the alarm should fire immediately
+    };
+    TEST_ESP_OK(gptimer_set_alarm_action(timer, &alarm_config));
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+    // check it's fired
+    TEST_ASSERT_TRUE(alarm_fired);
+
+    TEST_ESP_OK(gptimer_stop(timer));
+    TEST_ESP_OK(gptimer_disable(timer));
+    TEST_ESP_OK(gptimer_del_timer(timer));
+}
