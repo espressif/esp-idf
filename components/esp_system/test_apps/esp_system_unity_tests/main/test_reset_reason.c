@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_task_wdt.h"

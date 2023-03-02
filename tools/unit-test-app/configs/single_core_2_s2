@@ -1,5 +1,5 @@
 # This config is split between targets since different component needs to be excluded (esp32, esp32s2)
 CONFIG_IDF_TARGET="esp32s2"
-TEST_EXCLUDE_COMPONENTS=bt esp_system driver soc spi_flash vfs
+TEST_EXCLUDE_COMPONENTS=bt driver soc spi_flash vfs
 CONFIG_FREERTOS_UNICORE=y
 CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM=y

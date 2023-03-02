@@ -42,6 +42,12 @@
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+
+static void check_sleep_reset(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+}
+
 #ifndef CONFIG_FREERTOS_UNICORE
 static void deep_sleep_task(void *arg)
 {
@@ -50,6 +56,8 @@ static void deep_sleep_task(void *arg)
 
 static void do_deep_sleep_from_app_cpu(void)
 {
+    esp_sleep_enable_timer_wakeup(2000000);
+
     xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
 
 #ifdef CONFIG_FREERTOS_SMP
@@ -65,25 +73,33 @@ static void do_deep_sleep_from_app_cpu(void)
     }
 }
 
-TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
-{
-    esp_sleep_enable_timer_wakeup(2000000);
-    do_deep_sleep_from_app_cpu();
-}
+TEST_CASE_MULTIPLE_STAGES("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          do_deep_sleep_from_app_cpu,
+                          check_sleep_reset)
+
 #endif
 
-TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
+static void do_deep_sleep_timer(void)
 {
     esp_sleep_enable_timer_wakeup(2000000);
     esp_deep_sleep_start();
 }
 
-TEST_CASE("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]")
+TEST_CASE_MULTIPLE_STAGES("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          do_deep_sleep_timer,
+                          check_sleep_reset)
+
+
+static void do_light_sleep_deep_sleep_timer(void)
 {
     esp_sleep_enable_timer_wakeup(1000000);
     esp_light_sleep_start();
     esp_deep_sleep_start();
 }
+
+TEST_CASE_MULTIPLE_STAGES("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          do_light_sleep_deep_sleep_timer,
+                          check_sleep_reset)
 
 TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
 {
@@ -247,11 +263,6 @@ static void check_sleep_reset_and_sleep(void)
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
-}
-
-static void check_sleep_reset(void)
-{
-    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
 }
 
 TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=DEEPSLEEP_RESET,DEEPSLEEP_RESET,DEEPSLEEP_RESET]",
