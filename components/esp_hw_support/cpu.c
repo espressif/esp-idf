@@ -686,8 +686,12 @@ void esp_cpu_configure_region_protection(void)
 #if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
     extern int _rtc_text_end;
     PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW, PMP_NONE);
-    PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | PMP_RX);
-    PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | PMP_RW);
+#if CONFIG_ULP_COPROC_RESERVE_MEM
+    // First part of LP mem is reserved for coprocessor
+    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW + CONFIG_ULP_COPROC_RESERVE_MEM, PMP_TOR | PMP_RW);
+#endif //CONFIG_ULP_COPROC_RESERVE_MEM
+    PMP_ENTRY_SET(12, (int)&_rtc_text_end, PMP_TOR | PMP_RX);
+    PMP_ENTRY_SET(13, SOC_RTC_IRAM_HIGH, PMP_TOR | PMP_RW);
 #else
     const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
     PMP_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | CONDITIONAL_RWX);
@@ -696,8 +700,8 @@ void esp_cpu_configure_region_protection(void)
 
 
     // 7. Peripheral addresses
-    const uint32_t pmpaddr13 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_ENTRY_SET(13, pmpaddr13, PMP_NAPOT | PMP_RW);
+    const uint32_t pmpaddr14 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_ENTRY_SET(14, pmpaddr14, PMP_NAPOT | PMP_RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
 #elif CONFIG_IDF_TARGET_ESP32H2
