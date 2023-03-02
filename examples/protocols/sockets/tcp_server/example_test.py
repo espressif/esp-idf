@@ -74,6 +74,7 @@ def test_examples_protocol_socket_tcpserver(env, extra_data):
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
     print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
+    dut1.expect('Socket listening')
 
     interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
