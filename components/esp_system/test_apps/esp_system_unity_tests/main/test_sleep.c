@@ -553,10 +553,10 @@ static void trigger_deepsleep(void)
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
+        TEST_ESP_OK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(err);
+    TEST_ESP_OK(err);
 
     nvs_handle_t nvs_handle;
     err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
@@ -579,12 +579,12 @@ static void trigger_deepsleep(void)
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);
 
-    ESP_ERROR_CHECK(nvs_set_i32(nvs_handle, "start_sec", start.tv_sec));
-    ESP_ERROR_CHECK(nvs_set_i32(nvs_handle, "start_usec", start.tv_usec));
-    ESP_ERROR_CHECK(nvs_commit(nvs_handle));
+    TEST_ESP_OK(nvs_set_i32(nvs_handle, "start_sec", start.tv_sec));
+    TEST_ESP_OK(nvs_set_i32(nvs_handle, "start_usec", start.tv_usec));
+    TEST_ESP_OK(nvs_commit(nvs_handle));
     nvs_close(nvs_handle);
     // Deinit NVS to prevent Unity from complaining "The test leaked too much memory"
-    ESP_ERROR_CHECK(nvs_flash_deinit());
+    TEST_ESP_OK(nvs_flash_deinit());
 
     esp_sleep_enable_timer_wakeup(1000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
@@ -601,10 +601,10 @@ static void check_time_deepsleep(void)
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
+        TEST_ESP_OK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(err);
+    TEST_ESP_OK(err);
 
     nvs_handle_t nvs_handle;
     err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
@@ -615,11 +615,11 @@ static void check_time_deepsleep(void)
     }
 
     // Get start time of deep sleep
-    ESP_ERROR_CHECK(nvs_get_i32(nvs_handle, "start_sec", (int32_t *)&start.tv_sec));
-    ESP_ERROR_CHECK(nvs_get_i32(nvs_handle, "start_usec", (int32_t *)&start.tv_usec));
+    TEST_ESP_OK(nvs_get_i32(nvs_handle, "start_sec", (int32_t *)&start.tv_sec));
+    TEST_ESP_OK(nvs_get_i32(nvs_handle, "start_usec", (int32_t *)&start.tv_usec));
     nvs_close(nvs_handle);
     // Deinit NVS to prevent Unity from complaining "The test leaked too much memory"
-    ESP_ERROR_CHECK(nvs_flash_deinit());
+    TEST_ESP_OK(nvs_flash_deinit());
 
     // Reset must be caused by deep sleep
     soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
