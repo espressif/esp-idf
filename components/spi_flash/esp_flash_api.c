@@ -1044,8 +1044,10 @@ restore_cache:
 
 esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
 {
+    esp_err_t ret = ESP_FAIL;
 #if CONFIG_SPI_FLASH_VERIFY_WRITE
-    const uint32_t *except_buf = buffer;
+    //used for verify write
+    bool is_encrypted = true;
 #endif //CONFIG_SPI_FLASH_VERIFY_WRITE
 
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
@@ -1133,6 +1135,14 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
         row_size_length = row_size;
 #endif //CONFIG_IDF_TARGET_ESP32
 
+#if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
+        err = s_check_setting_zero_to_one(chip, row_addr, encrypt_byte, NULL, is_encrypted);
+        if (err != ESP_OK) {
+            //Error happens, we end flash operation. Re-enable cache and flush it
+            goto restore_cache;
+        }
+#endif  //#if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
+
 #if CONFIG_IDF_TARGET_ESP32S2
         esp_crypto_dma_lock_acquire();
 #endif //CONFIG_IDF_TARGET_ESP32S2
@@ -1142,7 +1152,8 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
 #if CONFIG_IDF_TARGET_ESP32S2
             esp_crypto_dma_lock_release();
 #endif //CONFIG_IDF_TARGET_ESP32S2
-            break;
+            //Error happens, we end flash operation. Re-enable cache and flush it
+            goto restore_cache;
         }
         bus_acquired = true;
 
@@ -1153,7 +1164,8 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
 #endif //CONFIG_IDF_TARGET_ESP32S2
             bus_acquired = false;
             assert(bus_acquired);
-            break;
+            //Error happens, we end flash operation. Re-enable cache and flush it
+            goto restore_cache;
         }
         err = rom_spiflash_api_funcs->end(chip, ESP_OK);
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -1161,25 +1173,30 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
 #endif //CONFIG_IDF_TARGET_ESP32S2
         if (err != ESP_OK) {
             bus_acquired = false;
-            break;
+            //Error happens, we end flash operation. Re-enable cache and flush it
+            goto restore_cache;
         }
         bus_acquired = false;
-    }
-    err = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
 
 #if CONFIG_SPI_FLASH_VERIFY_WRITE
-    uint32_t *actual_buf = malloc(length);;
-    esp_flash_read(chip, actual_buf, address, length);
-
-    for (int r = 0; r < length / sizeof(uint32_t); r++) {
-        if (actual_buf[r] != except_buf[r]) {
-            ESP_LOGE(TAG, "Bad write at %d offset: 0x%x, expected: 0x%08x, readback: 0x%08x",r, address + r, except_buf[r], actual_buf[r]);
-            err = ESP_FAIL;
+        err = s_verify_write(chip, row_addr, encrypt_byte, (uint32_t *)encrypt_buf, is_encrypted);
+        if (err != ESP_OK) {
+            //Error happens, we end flash operation. Re-enable cache and flush it
+            goto restore_cache;
         }
+#endif //CONFIG_SPI_FLASH_VERIFY_WRITE
     }
 
-    free(actual_buf);
-#endif //CONFIG_SPI_FLASH_VERIFY_WRITE
+    err = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
+
+    return err;
+
+restore_cache:
+
+    ret = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
+    if (ret != ESP_OK) {
+       ESP_DRAM_LOGE(TAG, "restore cache fail\n");
+    }
 
     return err;
 }
