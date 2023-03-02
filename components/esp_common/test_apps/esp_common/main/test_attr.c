@@ -115,7 +115,7 @@ static void check_spiram_contents(void)
     TEST_ASSERT(error_count == 0);
 }
 
-TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[spiram]", write_spiram_and_reset, check_spiram_contents);
+TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[psram][ld]", write_spiram_and_reset, check_spiram_contents);
 
 #endif // CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
@@ -124,7 +124,7 @@ TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[spiram]", write_spiram_
 #define TEST_BSS_NUM    (256 * 1024)
 static EXT_RAM_BSS_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
 
-TEST_CASE("Test variables placed in external .bss segment", "[ld]")
+TEST_CASE("Test variables placed in external .bss segment", "[psram][ld]")
 {
     for (int i = 0; i < TEST_BSS_NUM; i++) {
         TEST_ASSERT(data_in_segment(&s_bss_buffer[i], &_ext_ram_bss_start, &_ext_ram_bss_end));
