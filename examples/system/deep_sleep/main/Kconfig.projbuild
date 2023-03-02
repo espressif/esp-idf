@@ -56,7 +56,7 @@ menu "Example Configuration"
             recommand you to connect external pull-up resistance.
 
     menu "GPIO wakeup configuration"
-        visible if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+        visible if EXAMPLE_GPIO_WAKEUP
 
         config EXAMPLE_GPIO_WAKEUP_PIN
             int "Enable wakeup from GPIO"

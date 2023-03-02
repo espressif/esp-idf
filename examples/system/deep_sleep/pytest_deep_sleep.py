@@ -32,23 +32,22 @@ def test_deep_sleep(dut: Dut) -> None:
         expect_items = ['Enabling timer wakeup, 20s']
         for pad in wake_pads:
             expect_items += [r'Touch pad #{} average: \d+, wakeup threshold set to \d+.'.format(pad)]
-        expect_items += ['Enabling touch pad wakeup',
-                         'Entering deep sleep']
+        expect_items += ['Enabling touch pad wakeup']
 
         for exp in expect_items:
             dut.expect(exp, timeout=10)
 
     def expect_enable_deep_sleep_no_touch() -> None:
         dut.expect_exact('Enabling timer wakeup, 20s', timeout=10)
-        dut.expect_exact('Entering deep sleep', timeout=10)
 
     if dut.target in touch_wake_up_support:
         expect_enable_deep_sleep = expect_enable_deep_sleep_touch
     else:
         expect_enable_deep_sleep = expect_enable_deep_sleep_no_touch
 
-    dut.expect_exact('Not a deep sleep reset')
     expect_enable_deep_sleep()
+    dut.expect_exact('Not a deep sleep reset')
+    dut.expect_exact('Entering deep sleep')
 
     start_sleep = time.time()
     logging.info('Waiting for wakeup...')
@@ -65,5 +64,6 @@ def test_deep_sleep(dut: Dut) -> None:
         dut.expect_exact('boot: Fast booting app from partition', timeout=2)
 
     # Check that it measured 2xxxxms in deep sleep, i.e at least 20 seconds:
-    dut.expect(r'Wake up from timer. Time spent in deep sleep: 2\d{4}ms', timeout=2)
     expect_enable_deep_sleep()
+    dut.expect(r'Wake up from timer. Time spent in deep sleep: 2\d{4}ms', timeout=2)
+    dut.expect_exact('Entering deep sleep')
