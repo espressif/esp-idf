@@ -493,17 +493,17 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (left >= 2) {
-		data->num_pmkid = WPA_GET_LE16(pos);
+		u16 num_pmkid = WPA_GET_LE16(pos);
 		pos += 2;
 		left -= 2;
-		if (left < (int) data->num_pmkid * PMKID_LEN) {
+		if (num_pmkid > (unsigned int) left / PMKID_LEN) {
 			wpa_printf(MSG_DEBUG, "%s: PMKID underflow "
-				   "(num_pmkid=%lu left=%d)",
-				   __func__, (unsigned long) data->num_pmkid,
-				   left);
+				   "(num_pmkid=%u left=%d)",
+				   __func__, num_pmkid, left);
 			data->num_pmkid = 0;
 			return -9;
 		} else {
+			data->num_pmkid = num_pmkid;
 			data->pmkid = pos;
 			pos += data->num_pmkid * PMKID_LEN;
 			left -= data->num_pmkid * PMKID_LEN;

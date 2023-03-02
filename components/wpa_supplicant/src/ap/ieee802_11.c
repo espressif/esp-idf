@@ -202,7 +202,7 @@ static int use_sae_anti_clogging(struct hostapd_data *hapd)
     for (sta = hapd->sta_list; sta; sta = sta->next) {
         if (sta->sae &&
             (sta->sae->state == SAE_COMMITTED ||
-             sta->sae->state != SAE_CONFIRMED)) {
+             sta->sae->state == SAE_CONFIRMED)) {
             open++;
         }
         if (open >= hapd->conf->sae_anti_clogging_threshold) {
@@ -358,12 +358,11 @@ static int sae_sm_step(struct hostapd_data *hapd, struct sta_info *sta,
             if (ret) {
                 return ret;
             }
+            sae_set_state(sta, SAE_COMMITTED, "Sent Commit");
 
             if (sae_process_commit(sta->sae) < 0) {
                 return WLAN_STATUS_UNSPECIFIED_FAILURE;
             }
-
-            sae_set_state(sta, SAE_COMMITTED, "Sent Commit");
 
             sta->sae->sync = 0;
         } else {
@@ -534,38 +533,36 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
             goto remove_sta;
         }
 
-        if (sta->sae->state >= SAE_CONFIRMED) {
-            const u8 *var;
-            size_t var_len;
-            u16 peer_send_confirm;
+       const u8 *var;
+       size_t var_len;
+       u16 peer_send_confirm;
 
-            var = buf;
-            var_len = len;
-            if (var_len < 2) {
-                resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
-                goto reply;
-            }
+       var = buf;
+       var_len = len;
+       if (var_len < 2) {
+           resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+           goto reply;
+       }
 
-            peer_send_confirm = WPA_GET_LE16(var);
+       peer_send_confirm = WPA_GET_LE16(var);
 
-            if (sta->sae->state == SAE_ACCEPTED &&
-                    (peer_send_confirm <= sta->sae->rc ||
-                     peer_send_confirm == 0xffff)) {
-                wpa_printf(MSG_DEBUG,
-                           "SAE: Silently ignore unexpected Confirm from peer "
-                           MACSTR
-                           " (peer-send-confirm=%u Rc=%u)",
-                           MAC2STR(sta->addr),
-                           peer_send_confirm, sta->sae->rc);
-                return 0;
-            }
+       if (sta->sae->state == SAE_ACCEPTED &&
+               (peer_send_confirm <= sta->sae->rc ||
+                peer_send_confirm == 0xffff)) {
+           wpa_printf(MSG_DEBUG,
+                      "SAE: Silently ignore unexpected Confirm from peer "
+                      MACSTR
+                      " (peer-send-confirm=%u Rc=%u)",
+                      MAC2STR(sta->addr),
+                      peer_send_confirm, sta->sae->rc);
+           return 0;
+       }
 
-            if (sae_check_confirm(sta->sae, buf, len) < 0) {
-                resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
-                goto reply;
-            }
-            sta->sae->rc = peer_send_confirm;
-        }
+       if (sae_check_confirm(sta->sae, buf, len) < 0) {
+           resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+           goto reply;
+       }
+       sta->sae->rc = peer_send_confirm;
 
         resp = sae_sm_step(hapd, sta, bssid, auth_transaction,
                            status, 0, &sta_removed);

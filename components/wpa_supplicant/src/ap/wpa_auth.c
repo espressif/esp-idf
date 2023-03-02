@@ -495,7 +495,7 @@ static void wpa_free_sta_sm(struct wpa_state_machine *sm)
 void wpa_auth_sta_deinit(struct wpa_state_machine *sm)
 {
 #ifdef ESP_SUPPLICANT
-    if (esp_wifi_ap_is_sta_sae_reauth_node(sm->addr)) {
+    if (sm && esp_wifi_ap_is_sta_sae_reauth_node(sm->addr)) {
         wpa_printf( MSG_DEBUG, "deinit old sm=%p\n", sm);
     }
 #else /* ESP_SUPPLICANT */
@@ -2509,6 +2509,7 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth)
 
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
                 uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
                 bool *pmf_enable, int subtype)
@@ -2614,6 +2615,7 @@ bool wpa_ap_remove(void* sta_info)
 
     return true;
 }
+#endif /* CONFIG_ESP_WIFI_SOFTAP_SUPPORT */
 
 void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
                const u8 *sta_addr)

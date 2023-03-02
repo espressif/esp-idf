@@ -311,7 +311,7 @@ int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len)
 		capab |= BIT(WLAN_RSNX_CAPAB_SAE_H2E);
 	}
 
-	flen = (capab & 0xff00) ? 2 : 1;
+	flen = 1;
 	if (!capab)
 		return 0; /* no supported extended RSN capabilities */
 	if (len < 2 + flen)
@@ -321,9 +321,6 @@ int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len)
 	*pos++ = WLAN_EID_RSNX;
 	*pos++ = flen;
 	*pos++ = capab & 0x00ff;
-	capab >>= 8;
-	if (capab)
-		*pos++ = capab;
 
 	return pos - buf;
 }
