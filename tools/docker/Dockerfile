@@ -51,6 +51,14 @@ ARG IDF_INSTALL_TARGETS=all
 ENV IDF_PATH=/opt/esp/idf
 ENV IDF_TOOLS_PATH=/opt/esp
 
+# install build essential needed for linux target apps, which is a preview target so it is installed with "all" only
+RUN if [ "$IDF_INSTALL_TARGETS" = "all" ]; then \
+    apt-get update \
+    && apt-get install -y build-essential \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* ; \
+  fi
+
 RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_BRANCH_OR_TAG && \
     git clone --recursive \
       ${IDF_CLONE_SHALLOW:+--depth=1 --shallow-submodules} \
