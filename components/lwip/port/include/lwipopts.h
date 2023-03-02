@@ -1517,6 +1517,9 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #ifdef CONFIG_LWIP_DHCPS
 #define ESP_DHCPS                       1
 #define ESP_DHCPS_TIMER                 0
+#ifdef CONFIG_LWIP_DHCPS_ENABLE_SUBNET_CHECK
+#define ESP_DHCPS_ENABLE_SUBNET_CHECK   1
+#endif
 #else
 #define ESP_DHCPS                       0
 #define ESP_DHCPS_TIMER                 0
