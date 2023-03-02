@@ -3,6 +3,7 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_VERIFY_WRITE
         bool "Verify SPI flash writes"
+        depends on !SPI_FLASH_ROM_IMPL
         default n
         help
             If this option is enabled, any time SPI flash is written then the data will be read
