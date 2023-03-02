@@ -13,7 +13,7 @@
 #define SRAM_DRAM_START     0x3FCA0000
 #define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C2 */
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START + ICACHE_SIZE)
-#define SRAM_DRAM_END       0x403B0000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x403AEB70 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + ICACHE_SIZE)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START)
