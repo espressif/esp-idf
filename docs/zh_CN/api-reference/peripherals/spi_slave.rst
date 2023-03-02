@@ -9,7 +9,9 @@ SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 SPI 外设�
 {IDF_TARGET_NAME} 中 SPI 外设概述
 -----------------------------------------------
 
-{IDF_TARGET_NAME} 集成了 {SOC_SPI_PERIPH_NUM} 个通用的 SPI 控制器。该控制器具有与之同名的独立总线信号。
+{IDF_TARGET_MAX_SLAVE_PERIPH_NUM:default="2", esp32c3="1", esp32c2="1", esp32c6="1", esp32h2="1"}
+
+{IDF_TARGET_NAME} 集成了 {IDF_TARGET_MAX_SLAVE_PERIPH_NUM} 个通用的 SPI 控制器。该控制器具有与之同名的独立总线信号。
 
 .. only:: esp32
 
@@ -63,7 +65,7 @@ SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 SPI 外设�
 
 SPI 从机驱动程序允许将 SPI 外设作为全双工设备使用。驱动程序可以发送/接收长度不超过 {IDF_TARGET_MAX_DATA_BUF} 字节的传输事务，或者利用 DMA 来发送/接收更长的传输事务。然而，存在一些与 DMA 有关的 :ref:`已知问题 <spi_dma_known_issues>`。
 
-SPI 从机驱动程序支持将 SPI ISR 注册至 CPU 内核。如果多个任务同时尝试访问一个 SPI 设备，建议您重构应用程序，以使每个 SPI 外设一次只由一个任务访问。此外，请使用 :cpp:member:`spi_bus_config_t::isr_cpu_id` 将 SPI ISR 注册至与 SPI 外设相关任务相同的内核，确保线程安全。
+SPI 从机驱动程序支持将 SPI ISR 注册至指定 CPU 内核。如果多个任务同时尝试访问一个 SPI 设备，建议您重构应用程序，以使每个 SPI 外设一次只由一个任务访问。此外，请使用 :cpp:member:`spi_bus_config_t::isr_cpu_id` 将 SPI ISR 注册至与 SPI 外设相关任务相同的内核，确保线程安全。
 
 SPI 传输事务
 ----------------
@@ -72,7 +74,7 @@ SPI 传输事务
 
 传输事务的属性由作为从机设备的 SPI 外设的配置结构体 :cpp:type:`spi_slave_interface_config_t` 和传输事务配置结构体 :cpp:type:`spi_slave_transaction_t` 决定。
 
-由于并非每次传输事务都需要写入和读取数据，您可以选择配置 :cpp:type:`spi_transaction_t` 为仅 TX、仅 RX 或同时 TX 和 RX 传输事务。如果将 :cpp:member:`spi_slave_transaction_t::rx_buffer` 设置为 NULL，读取阶段将被跳过。如果将 :cpp:member:`spi_slave_transaction_t::tx_buffer` 设置为 NULL，则写入阶段将被跳过。
+由于并非每次传输事务都需要写入和读取数据，您可以选择配置 :cpp:type:`spi_transaction_t` 为仅 TX、仅 RX 或同时 TX 和 RX 传输事务。如果将 :cpp:member:`spi_slave_transaction_t::rx_buffer` 设置为 NULL，读取阶段将被跳过。与之类似，如果将 :cpp:member:`spi_slave_transaction_t::tx_buffer` 设置为 NULL，则写入阶段将被跳过。
 
 .. note::
 
@@ -86,7 +88,7 @@ SPI 传输事务
 
 .. only:: esp32
 
-    如果传输事务的数据大于 32 字节，需要将参数 ``dma_chan`` 分别设置为 ``1`` 或 ``2`` 以使能 DMA 通道 1 或通道 2。若数据小于 32 字节，则应将 ``dma_chan`` 设为 ``0``。
+    如果传输事务的数据大于 32 字节，需要将参数 ``dma_chan`` 分别设置为 ``1`` 或 ``2`` 以使能 DMA 通道 1 或通道 2，否则应将 ``dma_chan`` 设为 ``0``。
 
 .. only:: esp32s2
 
