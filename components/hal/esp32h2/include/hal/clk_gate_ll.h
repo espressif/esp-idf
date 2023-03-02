@@ -71,6 +71,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_HMAC_CLK_EN;
         case PERIPH_DS_MODULE:
             return PCR_DS_CLK_EN;
+        case PERIPH_ECDSA_MODULE:
+            return PCR_ECDSA_CLK_EN;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_EN;
         // case PERIPH_RNG_MODULE:
@@ -163,6 +165,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_HMAC_RST_EN;
         case PERIPH_DS_MODULE:
             return PCR_DS_RST_EN;
+        case PERIPH_ECDSA_MODULE:
+            return PCR_ECDSA_RST_EN;
         // case PERIPH_RNG_MODULE:
         //     return PCR_WIFI_CLK_RNG_EN;
         // case PERIPH_WIFI_MODULE:
@@ -243,6 +247,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_HMAC_CONF_REG;
         case PERIPH_DS_MODULE:
             return PCR_DS_CONF_REG;
+        case PERIPH_ECDSA_MODULE:
+            return PCR_ECDSA_CONF_REG;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_CONF_REG;
     default:
@@ -306,6 +312,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_HMAC_CONF_REG;
         case PERIPH_DS_MODULE:
             return PCR_DS_CONF_REG;
+        case PERIPH_ECDSA_MODULE:
+            return PCR_ECDSA_CONF_REG;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_CONF_REG;
     default:
