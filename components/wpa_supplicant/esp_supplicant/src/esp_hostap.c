@@ -19,6 +19,8 @@
 #include "esp_wifi_types.h"
 #include "esp_wpa3_i.h"
 
+#define WIFI_PASSWORD_LEN_MAX 65
+
 struct hostapd_data *global_hapd;
 
 #ifdef CONFIG_SAE
@@ -139,7 +141,7 @@ void *hostap_init(void)
     memcpy(hapd->conf->ssid.ssid, ssid->ssid, ssid->len);
     hapd->conf->ssid.ssid_len = ssid->len;
     hapd->conf->wpa_key_mgmt = auth_conf->wpa_key_mgmt;
-    hapd->conf->ssid.wpa_passphrase = (char *)os_zalloc(64);
+    hapd->conf->ssid.wpa_passphrase = (char *)os_zalloc(WIFI_PASSWORD_LEN_MAX);
     if (hapd->conf->ssid.wpa_passphrase == NULL) {
         os_free(auth_conf);
         os_free(hapd->conf);
@@ -163,7 +165,7 @@ void *hostap_init(void)
 #endif /* CONFIG_SAE */
 
     os_memcpy(hapd->conf->ssid.wpa_passphrase, esp_wifi_ap_get_prof_password_internal(), strlen((char *)esp_wifi_ap_get_prof_password_internal()));
-
+    hapd->conf->ssid.wpa_passphrase[WIFI_PASSWORD_LEN_MAX - 1] = '\0';
     hapd->conf->max_num_sta = esp_wifi_ap_get_max_sta_conn();
 
     hapd->conf->ap_max_inactivity = 5 * 60;
@@ -190,6 +192,8 @@ void hostapd_cleanup(struct hostapd_data *hapd)
     }
 
     if (hapd->conf) {
+        forced_memzero(hapd->conf->ssid.wpa_passphrase, WIFI_PASSWORD_LEN_MAX);
+        os_free(hapd->conf->ssid.wpa_passphrase);
         hostapd_config_free_bss(hapd->conf);
         hapd->conf = NULL;
     }

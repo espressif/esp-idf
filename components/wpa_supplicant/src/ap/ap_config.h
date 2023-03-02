@@ -385,6 +385,6 @@ struct sta_info;
 bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
 		 uint8_t wpa_ie_len,uint8_t *rsnxe, uint8_t rsnxe_len,
 		 bool *pmf_enable, int subtype);
-bool wpa_ap_remove(void* sta_info);
+bool wpa_ap_remove(u8* bssid);
 
 #endif /* HOSTAPD_CONFIG_H */

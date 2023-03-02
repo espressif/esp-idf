@@ -409,7 +409,7 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
             goto free;
         }
     }
-    if (sta->lock && os_mutex_lock(sta->lock)) {
+    if (sta->lock && os_semphr_take(sta->lock, 0)) {
         sta->sae_commit_processing = true;
         ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
 
@@ -418,7 +418,7 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
             goto free;
         }
         sta->sae_commit_processing = false;
-        os_mutex_unlock(sta->lock);
+        os_semphr_give(sta->lock);
         uint16_t aid = 0;
         if (ret != WLAN_STATUS_SUCCESS &&
             ret != WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ) {
@@ -447,7 +447,7 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
         return;
     }
 
-    if (sta->lock && os_mutex_lock(sta->lock)) {
+    if (sta->lock && os_semphr_take(sta->lock, 0)) {
         ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
 
         if (sta->remove_pending) {
@@ -460,7 +460,7 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
                 goto done;
             }
         }
-        os_mutex_unlock(sta->lock);
+        os_semphr_give(sta->lock);
         if (ret != WLAN_STATUS_SUCCESS) {
             uint16_t aid = -1;
             if (esp_wifi_ap_get_sta_aid(frm->bssid, &aid) == ESP_OK && aid == 0) {
