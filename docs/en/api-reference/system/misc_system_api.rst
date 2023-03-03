@@ -169,8 +169,8 @@ Once custom eFuse MAC address has been obtained (using :cpp:func:`esp_efuse_mac_
 
 .. _local-mac-addresses:
 
-Local vs Universal MAC Addresses
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Local Versus Universal MAC Addresses
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 {IDF_TARGET_NAME} comes pre-programmed with enough valid Espressif universally administered MAC addresses for all internal interfaces. The table above shows how to calculate and derive the MAC address for a specific interface according to the base MAC address.
 

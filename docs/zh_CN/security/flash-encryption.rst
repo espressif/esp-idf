@@ -1,4 +1,4 @@
-Flash 加密
+flash 加密
 ============
 
 {IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
@@ -45,13 +45,13 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 相关 eFuses
 ------------------------------
 
-Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这些 eFuse 列表及其描述，下表中的各 eFuse 名称也在 espefuse.py 工具中使用，为了能在 eFuse API 中使用，请在名称前加上 ``ESP_EFUSE_``，如：esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT)。
+flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这些 eFuse 列表及其描述，下表中的各 eFuse 名称也在 espefuse.py 工具中使用，为了能在 eFuse API 中使用，请在名称前加上 ``ESP_EFUSE_``，如：esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT)。
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
 .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
-    .. list-table:: Flash 加密过程中使用的 eFuses
+    .. list-table:: flash 加密过程中使用的 eFuses
        :widths: 25 40 10
        :header-rows: 0
 
@@ -80,7 +80,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-    .. list-table:: Flash 加密过程中使用的 eFuses
+    .. list-table:: flash 加密过程中使用的 eFuses
        :widths: 25 40 10
        :header-rows: 0
 
@@ -91,7 +91,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
          - AES 密钥存储，N 在 0-5 之间。
          - XTS_AES_128 有一个 256 位密钥块，XTS_AES_256 有两个 256 位密钥块（共 512 位）。
        * - ``KEY_PURPOSE_N``
-         - 控制 eFuse 块 ``BLOCK_KEYN`` 的目的，其中 N 在 0-5 之间。可能的值：``2`` 代表 ``XTS_AES_256_KEY_1``，``3`` 代表 ``XTS_AES_256_KEY_2``，``4`` 代表 ``XTS_AES_128_KEY``。最终 AES 密钥是基于其中一个或两个目的 eFuses 值推导。有关各种可能的组合，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *外部内存加密和解密（XTS_AES)* [PDF <{IDF_TARGET_TRM_CN_URL}#extmemencr>__]。
+         - 控制 eFuse 块 ``BLOCK_KEYN`` 的目的，其中 N 在 0-5 之间。可能的值：``2`` 代表 ``XTS_AES_256_KEY_1``，``3`` 代表 ``XTS_AES_256_KEY_2``，``4`` 代表 ``XTS_AES_128_KEY``。最终 AES 密钥是基于其中一个或两个目的 eFuses 值推导。有关各种可能的组合，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *外部内存加密和解密（XTS_AES)* [`PDF <{IDF_TARGET_TRM_CN_URL}#extmemencr>`__]。
          - 4
        * - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``
          - 设置后，在下载启动模式下禁用 flash 加密。
@@ -102,7 +102,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-    .. list-table:: Flash 加密过程中使用的 eFuses
+    .. list-table:: flash 加密过程中使用的 eFuses
        :widths: 25 40 10
        :header-rows: 0
 
@@ -124,7 +124,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-    .. list-table:: Flash 加密过程中使用的 eFuses
+    .. list-table:: flash 加密过程中使用的 eFuses
        :widths: 25 40 10
        :header-rows: 0
 
@@ -155,7 +155,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
     .. important::
        {IDF_TARGET_NAME} 具有安全启动和 flash 加密两个密钥，但仅有一个 eFuse 密钥块。由于 eFuse 密钥块仅支持一次烧录，故应将密钥同时同批进行烧录。请勿单独启用“安全启动”或 “flash 加密”，否则在 eFuse 密钥块随后的写入中将返回错误。
 
-Flash 的加密过程
+flash 的加密过程
 ------------------
 
 假设 eFuse 值处于默认状态，且固件的引导加载程序编译为支持 flash 加密，则 flash 加密的具体过程如下：
@@ -166,9 +166,9 @@ Flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b0000000``)。因为该值为 0（偶数位），固件的引导加载程序将配置并启用 flash 加密块，同时将 ``FLASH_CRYPT_CONFIG`` eFuse 的值编程为 0xF。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器(eFuse)* > *flash 加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 AES-256 位密钥，然后将其写入 ``flash_encryption`` eFuse 中。由于 ``flash_encryption`` eFuse 已设置编写和读取保护位，将无法通过软件访问密钥。Flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 AES-256 位密钥，然后将其写入 ``flash_encryption`` eFuse 中。由于 ``flash_encryption`` eFuse 已设置编写和读取保护位，将无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
-  4. Flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
   5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b0000001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数个比特位。
 
@@ -184,9 +184,9 @@ Flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器(eFuse)* > *自动加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位或 512 位密钥，具体取决于 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`，然后分别将其写入一个或两个 `BLOCK_KEYN` eFuses。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于一或两个 ``BLOCK_KEYN`` eFuse 已设置编写和读取保护位，将无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。Flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位或 512 位密钥，具体取决于 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`，然后分别将其写入一个或两个 `BLOCK_KEYN` eFuses。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于一或两个 ``BLOCK_KEYN`` eFuse 已设置编写和读取保护位，将无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
-  4. Flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
   5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
@@ -210,9 +210,9 @@ Flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位密钥，然后将其写入 `BLOCK_KEYN` eFuse。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于 ``BLOCK_KEYN`` eFuse 已设置编写和读取保护位，故无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。Flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位密钥，然后将其写入 `BLOCK_KEYN` eFuse。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于 ``BLOCK_KEYN`` eFuse 已设置编写和读取保护位，故无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
-  4. Flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
   5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
@@ -228,9 +228,9 @@ Flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位或 128 位密钥（具体位数取决于 :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`），然后将其写入 `BLOCK_KEY0` eFuse。同时，根据所选选项，软件对 ``XTS_KEY_LENGTH_256`` 进行更新。由于 ``BLOCK_KEY0`` eFuse 已设置编写和读取保护位，故无法通过软件访问密钥。Flash 加密操作完全在硬件中完成，无法通过软件访问密钥。若使用 128 位 flash 加密密钥，则整个 eFuse 密钥块都受写保护，但只有低 128 位受读保护，高 128 位是可读的，以满足安全启动的需要。如果 flash 加密的密钥是 256 位，那么 ``XTS_KEY_LENGTH_256`` 为 1，否则为 0。为防止意外将 eFuse 从 0 改为 1，RELEASE 模式中设置了一个写保护位。
+  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位或 128 位密钥（具体位数取决于 :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`），然后将其写入 `BLOCK_KEY0` eFuse。同时，根据所选选项，软件对 ``XTS_KEY_LENGTH_256`` 进行更新。由于 ``BLOCK_KEY0`` eFuse 已设置编写和读取保护位，故无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。若使用 128 位 flash 加密密钥，则整个 eFuse 密钥块都受写保护，但只有低 128 位受读保护，高 128 位是可读的，以满足安全启动的需要。如果 flash 加密的密钥是 256 位，那么 ``XTS_KEY_LENGTH_256`` 为 1，否则为 0。为防止意外将 eFuse 从 0 改为 1，RELEASE 模式中设置了一个写保护位。
 
-  4. Flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
   5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
@@ -242,11 +242,11 @@ Flash 的加密过程
 
 在开发阶段常需编写不同的明文 flash 镜像并测试 flash 的加密过程。这要求固件下载模式能够根据需求不断加载新的明文镜像。但是，在制造和生产过程中，出于安全考虑，固件下载模式不应有权限访问 flash 内容。
 
-因此需要有两种不同的 flash 加密配置：一种用于开发，另一种用于生产。详情请参考 `Flash 加密设置`_ 小节。
+因此需要有两种不同的 flash 加密配置：一种用于开发，另一种用于生产。详情请参考 `flash 加密设置`_ 小节。
 
 
 
-Flash 加密设置
+flash 加密设置
 ----------------------
 
 提供以下 flash 加密模式：
@@ -434,7 +434,7 @@ Flash 加密设置
 
         espefuse.py  --port PORT  burn_key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
 
-    对于由 128 位导出的 AES-128 密钥（SHA256（128 位））- ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``。Flash 加密密钥会被写入 eFuse BLOCK_KEY0 的低位，留出高 128 位以支持软件读取。如小节 ``同时烧录两个密钥`` 所示，在 espefuse 工具的特殊模式下，您可以使用任意 espefuse 命令来写入数据。
+    对于由 128 位导出的 AES-128 密钥（SHA256（128 位））- ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``。flash 加密密钥会被写入 eFuse BLOCK_KEY0 的低位，留出高 128 位以支持软件读取。如小节 ``同时烧录两个密钥`` 所示，在 espefuse 工具的特殊模式下，您可以使用任意 espefuse 命令来写入数据。
 
     .. code-block:: bash
 
@@ -696,19 +696,19 @@ Flash 加密设置
 一旦启用 flash 加密，使用代码访问 flash 内容时要更加小心。
 
 
-Flash 加密范围
+flash 加密范围
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 当 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 设置为奇数位的值，所有通过 MMU 的 flash 缓存访问的 flash 内容都将被透明解密。包括：
 
-- Flash 中可执行的应用程序代码 (IROM)。
+- flash 中可执行的应用程序代码 (IROM)。
 - 所有存储于 flash 中的只读数据 (DROM)。
 - 通过函数 :cpp:func:`spi_flash_mmap` 访问的任意数据。
 - ROM 引导加载程序读取的固件引导加载程序镜像。
 
 .. important::
 
-    MMU flash 缓存将无条件解密所有数据。Flash 中未加密存储的数据将通过 flash 缓存“被透明解密”，并在软件中存储为随机垃圾数据。
+    MMU flash 缓存将无条件解密所有数据。flash 中未加密存储的数据将通过 flash 缓存“被透明解密”，并在软件中存储为随机垃圾数据。
 
 
 读取加密的 flash
@@ -792,20 +792,20 @@ OTA 更新
 重置 {IDF_TARGET_NAME}，flash 加密应处于关闭状态，引导加载程序将正常启动。
 
 
-Flash 加密的要点
+flash 加密的要点
 ---------------------------------
 
 .. list::
 
-  :esp32: - 使用 AES-256 加密 flash。Flash 加密密钥存储于芯片内部的 ``flash_encryption`` eFuse 中，并（默认）受保护，防止软件访问。
+  :esp32: - 使用 AES-256 加密 flash。flash 加密密钥存储于芯片内部的 ``flash_encryption`` eFuse 中，并（默认）受保护，防止软件访问。
 
-  :esp32: - Flash 加密算法采用的是 AES-256，其中密钥随着 flash 的每个 32 字节块的偏移地址“调整”。这意味着，每个 32 字节块（2 个连续的 16 字节 AES 块）使用从 flash 加密密钥中产生的一个特殊密钥进行加密。
+  :esp32: - flash 加密算法采用的是 AES-256，其中密钥随着 flash 的每个 32 字节块的偏移地址“调整”。这意味着，每个 32 字节块（2 个连续的 16 字节 AES 块）使用从 flash 加密密钥中产生的一个特殊密钥进行加密。
 
-  :esp32s2 or esp32s3: - 使用 XTS-AES-128 或 XTS-AES-256 加密 flash。Flash 加密密钥分别为 256 位和 512 位，存储于芯片内部一个或两个 ``BLOCK_KEYN`` eFuse 中，并（默认）受保护，防止软件访问。
+  :esp32s2 or esp32s3: - 使用 XTS-AES-128 或 XTS-AES-256 加密 flash。flash 加密密钥分别为 256 位和 512 位，存储于芯片内部一个或两个 ``BLOCK_KEYN`` eFuse 中，并（默认）受保护，防止软件访问。
 
-  :esp32c3: - 使用 XTS-AES-128 加密 flash。 Flash 加密密钥为 256 位，存储于芯片内部的 ``BLOCK_KEYN`` eFuse 中，并（默认）受保护，防止软件访问。
+  :esp32c3: - 使用 XTS-AES-128 加密 flash。 flash 加密密钥为 256 位，存储于芯片内部的 ``BLOCK_KEYN`` eFuse 中，并（默认）受保护，防止软件访问。
 
-  :esp32c2: - 使用 XTS-AES-128 加密 flash。 Flash 加密密钥为 128 位或 256 位，存储于芯片内部的 ``BLOCK_KEY0`` eFuse 中，并（默认）受保护，防止软件访问。
+  :esp32c2: - 使用 XTS-AES-128 加密 flash。 flash 加密密钥为 128 位或 256 位，存储于芯片内部的 ``BLOCK_KEY0`` eFuse 中，并（默认）受保护，防止软件访问。
 
   - 通过 {IDF_TARGET_NAME} 的 flash 缓存映射功能，flash 可支持透明访问——任何映射到地址空间的 flash 区域在读取时都将被透明地解密。
 
@@ -824,22 +824,22 @@ Flash 加密的要点
 
 .. _flash-encryption-limitations:
 
-Flash 加密的局限性
+flash 加密的局限性
 --------------------
 
 flash 加密可以保护固件，防止未经授权的读取与修改。了解 flash 加密系统的局限之处亦十分重要：
 
 .. list::
 
-    - Flash 加密功能与密钥同样稳固。因而，推荐您首次启动设备时在设备上生成密钥（默认行为）。如果在设备外生成密钥，请确保遵循正确的后续步骤，不要在所有生产设备之间使用相同的密钥。
+    - flash 加密功能与密钥同样稳固。因而，推荐您首次启动设备时在设备上生成密钥（默认行为）。如果在设备外生成密钥，请确保遵循正确的后续步骤，不要在所有生产设备之间使用相同的密钥。
     - 并非所有数据都是加密存储。因而在 flash 上存储数据时，请检查您使用的存储方式（库、API 等）是否支持 flash 加密。
-    - Flash 加密无法防止攻击者获取 flash 的高层次布局信息。这是因为每对相邻的 16 字节 AES 块都使用相邻的 AES 密钥。当这些相邻的 16 字节块中包含相同内容时（如空白或填充区域），这些字节块将加密以产生匹配的加密块对。这让攻击者可在加密设备间进行高层次对比（例如，确认两设备是否可能运行相同的固件版本）。
+    - flash 加密无法防止攻击者获取 flash 的高层次布局信息。这是因为每对相邻的 16 字节 AES 块都使用相邻的 AES 密钥。当这些相邻的 16 字节块中包含相同内容时（如空白或填充区域），这些字节块将加密以产生匹配的加密块对。这让攻击者可在加密设备间进行高层次对比（例如，确认两设备是否可能运行相同的固件版本）。
     :esp32: - 出于相同原因，攻击者始终可获知一对相邻的 16 字节块（32 字节对齐）何时包含相同的 16 字节序列。因此，在 flash 上存储敏感数据时应牢记这点，可进行相关设置避免该情况发生（可使用计数器字节或每 16 字节设置不同的值即可）。具体请参考 :ref:`NVS 加密 <nvs_encryption>`。
     - 单独使用 flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 flash 加密使用 :doc:`安全启动 <secure-boot-v2>`。
 
 .. _flash-encryption-and-secure-boot:
 
-Flash 加密与安全启动
+flash 加密与安全启动
 ----------------------
 
 推荐 flash 加密与安全启动搭配使用。但是，如果已启用安全启动，则重新烧录设备时会受到其他限制：
@@ -854,7 +854,7 @@ Flash 加密与安全启动
 
 .. _flash-encryption-without-secure-boot:
 
-Flash 加密的高级功能
+flash 加密的高级功能
 --------------------------------
 
 以下部分介绍了 flash 加密的高级功能。
@@ -1019,19 +1019,19 @@ JTAG 调试
 
   .. _flash-encryption-algorithm:
 
-  Flash 加密算法
+  flash 加密算法
   ^^^^^^^^^^^^^^^^
 
-  - AES-256 在 16 字节的数据块上运行。Flash 加密引擎在 32 字节的数据（2 个 串行 AES 块）上加密或解密数据。
+  - AES-256 在 16 字节的数据块上运行。flash 加密引擎在 32 字节的数据（2 个 串行 AES 块）上加密或解密数据。
 
-  - Flash 加密的主密钥存储于 ``flash_encryption`` eFuse 中，默认受保护防止进一步写入或软件读取。
+  - flash 加密的主密钥存储于 ``flash_encryption`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
   - AES-256 密钥大小为 256 位（32 字节），从 ``flash_encryption`` eFuse 中读取。与 ``flash_encryption`` 中的存储顺序相比，硬件 AES 引擎使用的是相反的字节顺序的密钥。
 
     - 如果 ``CODING_SCHEME`` eFuse 设置为 0（默认“无”编码方案），则 eFuse 密钥块为 256 位，且密钥按原方式存储（反字节序）。
     - 如果 ``CODING_SCHEME`` eFuse 设置为 1（3/4 编码），则 eFuse 密钥块为 192 位（反字节序），信息熵总量减少。硬件 flash 加密仍在 256 字节密钥上运行，在读取后（字节序未反向），密钥扩展为 ``key = key[0:255] + key[64:127]``。
 
-  - Flash 加密中使用了逆向 AES 算法，因此 flash 加密的“加密”操作相当于 AES 解密，而其“解密”操作则相当于 AES 加密。这是为了优化性能，不会影响算法的有效性。
+  - flash 加密中使用了逆向 AES 算法，因此 flash 加密的“加密”操作相当于 AES 解密，而其“解密”操作则相当于 AES 加密。这是为了优化性能，不会影响算法的有效性。
 
   - 每个 32 字节块（2 个相邻的 16 字节 AES 块）都由一个特殊的密钥进行加密。该密钥由 ``flash_encryption`` 中 flash 加密的主密钥产生，并随 flash 中该字节块的偏移进行 XOR 运算（一次“密钥调整”）。
 
@@ -1054,14 +1054,14 @@ JTAG 调试
 
   .. _flash-encryption-algorithm:
 
-  Flash 加密算法
+  flash 加密算法
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   - {IDF_TARGET_NAME} 使用 XTS-AES 块密码模式进行 flash 加密，密钥大小为 256 位或 512 位。
 
   - XTS-AES 是一种专门为光盘加密设计的块密码模式，它解决了其它潜在模式如 AES-CTR 在此使用情景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。
 
-  - Flash 加密的密钥存储于一个或两个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
+  - flash 加密的密钥存储于一个或两个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
   - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
 
@@ -1070,14 +1070,14 @@ JTAG 调试
 
   .. _flash-encryption-algorithm:
 
-  Flash 加密算法
+  flash 加密算法
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   - {IDF_TARGET_NAME} 使用 XTS-AES 块密码模式进行 flash 加密，密钥大小为 256 位。
 
   - XTS-AES 是一种专门为光盘加密设计的块密码模式，它解决了其它潜在模式如 AES-CTR 在此使用情景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。
 
-  - Flash 加密的密钥存储于一个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
+  - flash 加密的密钥存储于一个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
   - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
 
@@ -1085,13 +1085,13 @@ JTAG 调试
 
   .. _flash-encryption-algorithm:
 
-  Flash 加密算法
+  flash 加密算法
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   - {IDF_TARGET_NAME} 使用 XTS-AES 块密码模式进行 flash 加密，密钥大小为 256 位。如果 128 位的密钥存储于 eFuse 密钥块中，那么最终的 256 位 AES 密钥将以 SHA256(EFUSE_KEY0_FE_128BIT) 的形式获得。
 
   - XTS-AES 是一种专门为光盘加密设计的块密码模式，它弥补了其他潜在模式如 AES-CTR 在此使用场景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。
 
-  - Flash 加密的密钥存储于一个 ``BLOCK_KEY0`` eFuse 中，默认受保护防止进一步写入或软件读取。
+  - flash 加密的密钥存储于一个 ``BLOCK_KEY0`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
   - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
