@@ -21,7 +21,9 @@
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
 
-#if !SOC_PMU_SUPPORTED
+#if SOC_LP_AON_SUPPORTED
+#include "hal/lp_aon_hal.h"
+#else
 #include "hal/rtc_hal.h"
 #endif
 
@@ -107,8 +109,7 @@ void esp_sleep_enable_gpio_switch(bool enable)
     }
 }
 
-// TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
 {
     gpio_hal_context_t gpio_hal = {
@@ -146,11 +147,11 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
         }
     }
 }
-#endif
+#endif // !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 void esp_deep_sleep_wakeup_io_reset(void)
 {
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     uint32_t rtc_io_mask = rtc_hal_ext1_get_wakeup_pins();
     // Disable ext1 wakeup before releasing hold, such that wakeup status can reflect the correct wakeup pin
     rtc_hal_ext1_clear_wakeup_pins();

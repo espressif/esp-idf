@@ -175,6 +175,8 @@ typedef void (* esp_rom_wake_func_t)(void);
   * @brief Read stored RTC wake function address
   *
   * Returns pointer to wake address if a value is set in RTC registers, and stored length & CRC all valid.
+  * valid means that both stored stub length and stored wake function address are four-byte aligned non-zero values
+  * and the crc check passes
   *
   * @param  None
   *
@@ -188,8 +190,11 @@ esp_rom_wake_func_t esp_rom_get_rtc_wake_addr(void);
   * Set a new RTC wake address function. If a non-NULL function pointer is set then the function
   * memory is calculated and stored also.
   *
-  * @param entry_addr Address of function. If NULL, length is ignored and all registers are cleared to 0.
-  * @param length of function in RTC fast memory. cannot be larger than RTC Fast memory size.
+  * @param entry_addr Address of function. should be 4-bytes aligned otherwise it will not start from the stub after wake from deepsleep，
+  *                   if NULL length will be ignored and all registers are cleared to 0.
+  *
+  * @param length length of function in RTC fast memory. should be less than RTC Fast memory size and aligned to 4-bytes.
+  *               otherwise all registers are cleared to 0.
   *
   * @return None
   */

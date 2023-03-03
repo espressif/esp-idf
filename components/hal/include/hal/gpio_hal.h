@@ -242,8 +242,8 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   *   in output mode: the output level of the pad will be force locked and can not be changed.
   *   in input mode: the input value read will not change, regardless the changes of input signal.
   *
-  * The state of digital gpio cannot be held during Deep-sleep, and it will resume the hold function
-  * when the chip wakes up from Deep-sleep. If the digital gpio also needs to be held during Deep-sleep,
+  * On ESP32/S2/C3/S3/C2, the state of digital gpio cannot be held during Deep-sleep, and it will resume the hold
+  * function when the chip wakes up from Deep-sleep. If the digital gpio also needs to be held during Deep-sleep,
   * `gpio_deep_sleep_hold_en` should also be called.
   *
   * Power down or call gpio_hold_dis will disable this function.
@@ -285,6 +285,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   */
 #define gpio_hal_is_digital_io_hold(hal, gpio_num) gpio_ll_is_digital_io_hold((hal)->dev, gpio_num)
 
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
   * @brief Enable all digital gpio pad hold function during Deep-sleep.
   *
@@ -315,6 +316,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   *     - false deep sleep hold is disabled
   */
 #define gpio_hal_deep_sleep_hold_is_en(hal) gpio_ll_deep_sleep_hold_is_en((hal)->dev)
+#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 /**
   * @brief Set pad input to a peripheral signal through the IOMUX.
@@ -448,7 +450,7 @@ void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, uint32_t gpio_num
 void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_num);
 #endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0)
 /**
  * @brief Enable GPIO deep-sleep wake-up function.
  *

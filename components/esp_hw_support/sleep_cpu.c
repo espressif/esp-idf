@@ -565,7 +565,6 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
 {
     RvCoreCriticalSleepFrame * frame = rv_core_critical_regs_save();
     if ((frame->pmufunc & 0x3) == 0x1) {
-        REG_CLR_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
         REG_WRITE(LIGHT_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
         return (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
     }

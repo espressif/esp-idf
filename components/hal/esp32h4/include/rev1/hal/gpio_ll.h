@@ -271,6 +271,22 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
+ * @brief  Select a function for the pin in the IOMUX
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ * @param  func Function to assign to the pin
+ */
+static inline __attribute__((always_inline)) void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
+{
+    // Disable USB Serial JTAG if pins 18 or pins 19 needs to select an IOMUX function
+    if (gpio_num == USB_DM_GPIO_NUM || gpio_num == USB_DP_GPIO_NUM) {
+        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
+    }
+    PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
+}
+
+/**
  * @brief  GPIO set output level
  *
  * @param  hw Peripheral GPIO hardware instance address.
@@ -384,6 +400,21 @@ static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
 }
 
 /**
+ * @brief  Get deep sleep hold status
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ *
+ * @return
+ *     - true  deep sleep hold is enabled
+ *     - false deep sleep hold is disabled
+ */
+__attribute__((always_inline))
+static inline bool gpio_ll_deep_sleep_hold_is_en(gpio_dev_t *hw)
+{
+    return !GET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD) && GET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
+}
+
+/**
   * @brief Enable gpio pad hold function.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -415,6 +446,24 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD1_REG, GPIO_HOLD_MASK[gpio_num]);
     }
+}
+
+/**
+  * @brief Get digital gpio pad hold status.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number, only support output GPIOs
+  *
+  * @note caller must ensure that gpio_num is a digital io pad
+  *
+  * @return
+  *     - true  digital gpio pad is held
+  *     - false digital gpio pad is unheld
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return GET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, BIT(gpio_num));
 }
 
 /**

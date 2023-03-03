@@ -254,6 +254,36 @@ void rtcio_hal_isolate(int rtc_num);
 
 #endif
 
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+
+#define gpio_hal_deepsleep_wakeup_enable(hal, gpio_num, intr_type)  rtcio_hal_wakeup_enable(gpio_num, intr_type)
+#define gpio_hal_deepsleep_wakeup_disable(hal, gpio_num)            rtcio_hal_wakeup_disable(gpio_num)
+#define gpio_hal_deepsleep_wakeup_is_enabled(hal, gpio_num)         rtcio_hal_wakeup_is_enabled(gpio_num)
+#define rtc_hal_gpio_get_wakeup_status()                            rtcio_hal_get_interrupt_status()
+#define rtc_hal_gpio_clear_wakeup_status()                          rtcio_hal_clear_interrupt_status()
+
+/**
+ * @brief Get the status of whether an IO is used for sleep wake-up.
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param rtcio_num GPIO number
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+#define rtcio_hal_wakeup_is_enabled(rtcio_num) rtcio_ll_wakeup_is_enabled(rtcio_num)
+
+/**
+ * @brief Get the rtc io interrupt status
+ *
+ * @return  bit 0~7 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ */
+#define rtcio_hal_get_interrupt_status()        rtcio_ll_get_interrupt_status()
+
+/**
+ * @brief Clear all LP IO pads status
+ */
+#define rtcio_hal_clear_interrupt_status()      rtcio_ll_clear_interrupt_status()
+
+#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 #ifdef __cplusplus
 }
 #endif

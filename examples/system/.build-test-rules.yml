@@ -40,13 +40,13 @@ examples/system/console/basic:
 
 examples/system/deep_sleep:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32h2"]
       temporary: true
-      reason: target(s) not supported yet
+      reason: target(s) not supported yet # IDF-5432 / IDF-6268
 
 examples/system/deep_sleep_wake_stub:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32h2"]
       temporary: true
       reason: target(s) is not supported yet
 

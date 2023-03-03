@@ -110,6 +110,7 @@ if(NOT BOOTLOADER_BUILD)
                 "sleep_cpu.c"         # TODO: IDF-6267
                 "sleep_modes.c"       # TODO: IDF-6267
                 "sleep_wake_stub.c"   # TODO: IDF-6267
+                "sleep_gpio.c"        # TODO: IDF-6267
             )
     endif()
 else()

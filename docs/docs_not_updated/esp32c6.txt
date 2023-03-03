@@ -36,7 +36,6 @@ api-reference/network/esp-wifi-mesh
 api-reference/network/esp_smartconfig
 api-reference/network/esp_wifi
 api-reference/network/index
-api-reference/system/sleep_modes
 api-reference/system/ulp_macros
 api-reference/system/ulp
 api-reference/system/efuse

@@ -172,6 +172,12 @@
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000003FFE07FULL
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2
+// Support to hold a single GPIO when the digital domain is powered off
+// ESP32H4-BETA1 only supports hold all in deepsleep
+#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
+#endif
+
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */

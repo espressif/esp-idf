@@ -20,7 +20,8 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
-#include "soc/pmu_reg.h"
+#include "soc/lp_io_struct.h"
+#include "soc/pmu_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -355,26 +356,6 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
 }
 
 /**
-  * @brief Enable all digital gpio pads hold function during Deep-sleep.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  */
-static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
-{
-    REG_SET_BIT(PMU_IMM_PAD_HOLD_ALL_REG, PMU_TIE_HIGH_HP_PAD_HOLD_ALL);
-}
-
-/**
-  * @brief Disable all digital gpio pads hold function during Deep-sleep.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  */
-static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
-{
-    REG_SET_BIT(PMU_IMM_PAD_HOLD_ALL_REG, PMU_TIE_LOW_HP_PAD_HOLD_ALL);
-}
-
-/**
   * @brief Enable gpio pad hold function.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -394,6 +375,24 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
     LP_AON.gpio_hold0.gpio_hold0 &= ~GPIO_HOLD_MASK[gpio_num];
+}
+
+/**
+  * @brief Get digital gpio pad hold status.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number, only support output GPIOs
+  *
+  * @note caller must ensure that gpio_num is a digital io pad
+  *
+  * @return
+  *     - true  digital gpio pad is held
+  *     - false digital gpio pad is unheld
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return !!(LP_AON.gpio_hold0.gpio_hold0 & GPIO_HOLD_MASK[gpio_num]);
 }
 
 /**
@@ -476,6 +475,26 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
         // Unsupported IO_MUX clock source
         HAL_ASSERT(false);
     }
+}
+
+/**
+  * @brief Force hold digital io pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_hold_all(void)
+{
+    // WT flag, it gets self-cleared after the configuration is done
+    PMU.imm.pad_hold_all.tie_high_hp_pad_hold_all = 1;
+}
+
+/**
+  * @brief Force unhold digital io pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_unhold_all(void)
+{
+    // WT flag, it gets self-cleared after the configuration is done
+    PMU.imm.pad_hold_all.tie_low_hp_pad_hold_all = 1;
 }
 
 /**
@@ -587,63 +606,6 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_OUTPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-}
-
-/**
- * @brief Enable GPIO deep-sleep wake-up function.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number.
- * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
- */
-static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
-{
-    HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
-
-    LP_AON.ext_wakeup_cntl.ext_wakeup_filter = 1;
-
-    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
-    wakeup_sel_mask |= BIT(gpio_num);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
-
-    bool trigger_level = (intr_type == GPIO_INTR_LOW_LEVEL) ? 0 : 1;
-    uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv);
-    if (trigger_level) {
-        wakeup_level_mask |= BIT(gpio_num);
-    } else {
-        wakeup_level_mask &= ~BIT(gpio_num);
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, wakeup_level_mask);
-}
-
-/**
- * @brief Disable GPIO deep-sleep wake-up function.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number
- */
-static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
-{
-    HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
-
-    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
-    wakeup_sel_mask &= ~BIT(gpio_num);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
-}
-
-/**
- * @brief Get the status of whether an IO is used for deep-sleep wake-up.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number
- * @return True if the pin is enabled to wake up from deep-sleep
- */
-static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
-{
-    HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
-
-    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
-    return wakeup_sel_mask & BIT(gpio_num);
 }
 
 #ifdef __cplusplus

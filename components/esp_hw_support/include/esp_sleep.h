@@ -193,8 +193,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
  */
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
-
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
 /**
  * @brief Enable wakeup using a pin
  *
@@ -223,7 +222,9 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
+#endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
 /**
  * @brief Enable wakeup using multiple pins
  *
@@ -249,6 +250,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *                - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
  *                - ESP32-S2: 0-21;
  *                - ESP32-S3: 0-21.
+ *                - ESP32-C6: 0-7.
  * @param mode select logic function used to determine wakeup condition:
  *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
  *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
@@ -259,7 +261,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  */
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode);
 
-#endif // SOC_PM_SUPPORT_EXT_WAKEUP
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 /**
@@ -474,6 +476,11 @@ typedef void (*esp_deep_sleep_wake_stub_fn_t)(void);
  * for esp_wake_deep_sleep().
  */
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub);
+
+/**
+ * @brief Set wake stub entry to default `esp_wake_stub_entry`
+ */
+void esp_set_deep_sleep_wake_stub_default_entry(void);
 
 /**
  * @brief Get current wake from deep sleep stub

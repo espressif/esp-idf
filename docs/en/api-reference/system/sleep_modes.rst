@@ -71,7 +71,7 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
 
     :cpp:func:`esp_sleep_enable_touchpad_wakeup` function can be used to enable this wakeup source.
 
-.. only:: SOC_PM_SUPPORT_EXT_WAKEUP
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
 
     External Wakeup (ext0)
     ^^^^^^^^^^^^^^^^^^^^^^
@@ -127,11 +127,11 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
     GPIO Wakeup (Light-sleep Only)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    .. only:: SOC_PM_SUPPORT_EXT_WAKEUP
+    .. only:: (SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP)
 
         In addition to EXT0 and EXT1 wakeup sources described above, one more method of wakeup from external inputs is available in Light-sleep mode. With this wakeup source, each pin can be individually configured to trigger wakeup on high or low level using :cpp:func:`gpio_wakeup_enable` function. Unlike EXT0 and EXT1 wakeup sources, which can only be used with RTC IOs, this wakeup source can be used with any IO (RTC or digital).
 
-    .. only:: not SOC_PM_SUPPORT_EXT_WAKEUP
+    .. only:: not (SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP)
 
         One more method of wakeup from external inputs is available in Light-sleep mode. With this wakeup source, each pin can be individually configured to trigger wakeup on high or low level using :cpp:func:`gpio_wakeup_enable` function. This wakeup source can be used with any IO (RTC or digital).
 
@@ -257,7 +257,7 @@ Checking Sleep Wakeup Cause
 
     For touchpad, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_touchpad_wakeup_status` functions.
 
-.. only:: SOC_PM_SUPPORT_EXT_WAKEUP
+.. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
 
     For ext1 wakeup sources, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_ext1_wakeup_status` functions.
 
