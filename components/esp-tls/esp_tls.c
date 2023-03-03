@@ -13,6 +13,7 @@
 #include <netdb.h>
 
 #include <http_parser.h>
+#include "sdkconfig.h"
 #include "esp_tls.h"
 #include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
@@ -25,8 +26,16 @@
 #include <linux/if.h>
 #include <sys/time.h>
 
-#define ipaddr_ntoa(ipaddr)     inet_ntoa(*ipaddr)
 typedef struct in_addr ip_addr_t;
+typedef struct in6_addr ip6_addr_t;
+#define ipaddr_ntoa(ipaddr)     inet_ntoa(*ipaddr)
+
+static inline char *ip6addr_ntoa(const ip6_addr_t *addr)
+{
+  static char str[40];
+  return (char *)inet_ntop(AF_INET6, addr->s6_addr, str, 40);
+}
+
 #endif
 
 static const char *TAG = "esp-tls";
@@ -84,6 +93,14 @@ static const char *TAG = "esp-tls";
 #else   /* ESP_TLS_USING_WOLFSSL */
 #error "No TLS stack configured"
 #endif
+
+#if CONFIG_IDF_TARGET_LINUX
+#define IPV4_ENABLED    1
+#define IPV6_ENABLED    1
+#else   // CONFIG_IDF_TARGET_LINUX
+#define IPV4_ENABLED    CONFIG_LWIP_IPV4
+#define IPV6_ENABLED    CONFIG_LWIP_IPV6
+#endif  // !CONFIG_IDF_TARGET_LINUX
 
 #define ESP_TLS_DEFAULT_CONN_TIMEOUT  (10)  /*!< Default connection timeout in seconds */
 
@@ -182,7 +199,7 @@ static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int po
         return ESP_ERR_ESP_TLS_CANNOT_CREATE_SOCKET;
     }
 
-#if CONFIG_LWIP_IPV4
+#if IPV4_ENABLED
     if (address_info->ai_family == AF_INET) {
         struct sockaddr_in *p = (struct sockaddr_in *)address_info->ai_addr;
         p->sin_port = htons(port);
@@ -191,11 +208,11 @@ static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int po
     }
 #endif
 
-#if defined(CONFIG_LWIP_IPV4) && defined(CONFIG_LWIP_IPV6)
+#if IPV4_ENABLED && IPV6_ENABLED
     else
 #endif
 
-#if CONFIG_LWIP_IPV6
+#if IPV6_ENABLED
     if (address_info->ai_family == AF_INET6) {
         struct sockaddr_in6 *p = (struct sockaddr_in6 *)address_info->ai_addr;
         p->sin6_port = htons(port);
