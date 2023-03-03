@@ -59,6 +59,7 @@ static const char *SPI_TAG = "spi_slave";
 
 typedef struct {
     int id;
+    spi_bus_config_t bus_config;
     spi_slave_interface_config_t cfg;
     intr_handle_t intr;
     spi_slave_hal_context_t hal;
@@ -144,6 +145,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
     memset(spihost[host], 0, sizeof(spi_slave_t));
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
+    memcpy(&spihost[host]->bus_config, bus_config, sizeof(spi_bus_config_t));
     spihost[host]->id = host;
 
     bool use_dma = (dma_chan != SPI_DMA_DISABLED);
@@ -270,6 +272,7 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     if (spihost[host]->dma_enabled) {
         spicommon_slave_free_dma(host);
     }
+    spicommon_bus_free_io_cfg(&spihost[host]->bus_config);
     free(spihost[host]->hal.dmadesc_tx);
     free(spihost[host]->hal.dmadesc_rx);
     esp_intr_free(spihost[host]->intr);
