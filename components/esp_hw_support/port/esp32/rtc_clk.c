@@ -288,7 +288,7 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
 
     if (enable) {
         uint8_t sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV1;
-        if (efuse_hal_get_major_chip_version() == 0) {
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
             sdm0 = 0;
             sdm1 = 0;
             sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV0;
