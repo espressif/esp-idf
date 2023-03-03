@@ -112,6 +112,11 @@ extern int _bss_end;
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 
+extern int _instruction_reserved_start;
+extern int _instruction_reserved_end;
+extern int _rodata_reserved_start;
+extern int _rodata_reserved_end;
+
 extern int _vector_table;
 
 static const char *TAG = "cpu_start";
@@ -359,17 +364,16 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
-    /* Configure the Cache MMU size for instruction and rodata in flash. */
-    extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
-    extern int _rodata_reserved_start;
-    uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
-    uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+    uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
+    uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
+    uint32_t cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 
 #if CONFIG_IDF_TARGET_ESP32S3
-    extern int _rodata_reserved_end;
-    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
-#endif
+    uint32_t cache_mmu_drom_size = ((_rodata_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+#endif // CONFIG_IDF_TARGET_ESP32S3
 
+    /* Configure the Cache MMU size for instruction and rodata in flash. */
+    extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 
