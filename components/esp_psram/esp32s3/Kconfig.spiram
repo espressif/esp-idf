@@ -47,7 +47,6 @@ menu "SPI RAM config"
 
             This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
             This should only be used for tasks where the stack is never accessed while the cache is disabled.
-            Cannot be used together with ESP_COREDUMP_ENABLE_TO_FLASH.
 
     config SPIRAM_CLK_IO
         int
