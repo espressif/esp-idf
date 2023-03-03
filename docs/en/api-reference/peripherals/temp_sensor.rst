@@ -29,11 +29,15 @@ Due to restrictions of hardware, the sensor has predefined measurement ranges wi
 Functional Overview
 -------------------
 
--  `Resource Allocation <#resource-allocation>`__ - covers which parameters should be set up to get a temperature sensor handle and how to recycle the resources when temperature sensor finishes working.
--  `Enable and Disable Temperature Sensor <#enable-and-disable-temperature-sensor>`__ - covers how to enable and disable the temperature sensor.
--  `Get Temperature Value <#get-temperature-value>`__ - covers how to get the real-time temperature value.
--  `Power Management <#power-management>`__ - covers how temperature sensor is affected when changing power mode (i.e. light sleep).
--  `Thread Safety <#thread-safety>`__ - covers how to make the driver to be thread safe.
+.. list::
+
+    -  `Resource Allocation <#resource-allocation>`__ - covers which parameters should be set up to get a temperature sensor handle and how to recycle the resources when temperature sensor finishes working.
+    -  `Enable and Disable Temperature Sensor <#enable-and-disable-temperature-sensor>`__ - covers how to enable and disable the temperature sensor.
+    -  `Get Temperature Value <#get-temperature-value>`__ - covers how to get the real-time temperature value.
+    :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: - `Temperature Threshold Interrupt <#install-temperature-threshold-callback>`__ - describes how to register a temperature threshold callback.
+    -  `Power Management <#power-management>`__ - covers how temperature sensor is affected when changing power mode (i.e. light sleep).
+    :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: - `IRAM Safe <#iram-safe>`__ - describes tips on how to make the temperature sensor interrupt work better along with a disabled cache.
+    -  `Thread Safety <#thread-safety>`__ - covers how to make the driver to be thread safe.
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -89,10 +93,57 @@ After the temperature sensor is enabled by :cpp:func:`temperature_sensor_enable`
     // Disable the temperature sensor if it's not needed and save the power
     ESP_ERROR_CHECK(temperature_sensor_disable(temp_handle));
 
+.. only:: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+    Install Temperature Threshold Callback
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports automatically triggering to monitor the temperature value continuously. When temperature value reaches a given threshold, an interrupt will happen. Thus users can install their own interrupt callback functions to do what they want. (e.g. alarm, restart, etc.). Following information indicates how to prepare a threshold callback.
+
+    -  :cpp:member:`temperature_sensor_event_callbacks_t::on_threshold`. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function, etc.). The function prototype is declared in :cpp:type:`temperature_thres_cb_t`.
+
+    You can save your own context to :cpp:func:`temperature_sensor_register_callbacks` as well, via the parameter ``user_arg``. The user data will be directly passed to the callback function.
+
+    .. code:: c
+
+        IRAM_ATTR static bool temp_sensor_monitor_cbs(temperature_sensor_handle_t tsens, const temperature_sensor_threshold_event_data_t *edata, void *user_data)
+        {
+            ESP_DRAM_LOGI("tsens", "Temperature value is higher or lower than threshold, value is %d\n...\n\n", edata->celsius_value);
+            return false;
+        }
+
+        // Callback configurations
+        temperature_sensor_abs_threshold_config_t threshold_cfg = {
+            .high_threshold = 50,
+            .low_threshold = -10,
+        };
+        // Set absolute value monitor threshold.
+        temperature_sensor_set_absolute_threshold(temp_sensor, &threshold_cfg);
+        // Register interrupt callback
+        temperature_sensor_event_callbacks_t cbs = {
+            .on_threshold = temp_sensor_monitor_cbs,
+        };
+        // Install temperature callback.
+        temperature_sensor_register_callbacks(temp_sensor, &cbs, NULL);
+
 Power Management
 ^^^^^^^^^^^^^^^^
 
 When power management is enabled (i.e. ``CONFIG_PM_ENABLE`` is on), temperature sensor will still keep working because it uses XTAL clock (on ESP32-C3) or RTC clock (on ESP32-S2/S3).
+
+.. only:: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+    IRAM Safe
+    ^^^^^^^^^
+
+    By default, the temperature sensor interrupt will be deferred when the Cache is disabled for reasons like writing/erasing Flash. Thus the event callback functions will not get executed in time, which is not expected in a real-time application.
+
+    There's a Kconfig option :ref:`CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE` that will:
+
+    1. Enable the interrupt being serviced even when cache is disabled.
+    2. Place all functions that used by the ISR into IRAM.
+
+    This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -112,7 +163,10 @@ Unexpected Behaviors
 Application Example
 -------------------
 
-* Temperature sensor reading example: :example:`peripherals/temp_sensor`.
+.. list::
+
+    * Temperature sensor reading example: :example:`peripherals/temperature_sensor/temp_sensor`.
+    :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: * Temperature sensor value monitor example: :example:`peripherals/temperature_sensor/temp_sensor`.
 
 API Reference
 ----------------------------------

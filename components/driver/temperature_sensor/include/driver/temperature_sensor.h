@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_err.h"
 #include "hal/temperature_sensor_types.h"
 
@@ -93,6 +94,92 @@ esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens);
  *     - ESP_FAIL Parse the sensor data into ambient temperature failed (e.g. out of the range).
  */
 esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, float *out_celsius);
+
+#if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+/**
+ * @brief Temperature sensor event data
+ */
+typedef struct {
+    int celsius_value; /**< Celsius value in interrupt callback. */
+} temperature_sensor_threshold_event_data_t;
+
+/**
+ * @brief Callback for temperature sensor threshold interrupt.
+ *
+ * @param[in] tsens The handle created by `temperature_sensor_install()`.
+ * @param[in] edata temperature sensor event data, fed by driver.
+ * @param[in] user_data User data, set in `temperature_sensor_register_callbacks()`.
+ * @return Whether a high priority task has been waken up by this function.
+ */
+typedef bool (*temperature_thres_cb_t)(temperature_sensor_handle_t tsens, const temperature_sensor_threshold_event_data_t *edata, void *user_data);
+
+/**
+ * @brief Group of temperature sensor callback functions, all of them will be run in ISR.
+ */
+typedef struct {
+    temperature_thres_cb_t on_threshold;  /**< Temperature value interrupt callback */
+} temperature_sensor_event_callbacks_t;
+
+/**
+ * @brief Config options for temperature value absolute interrupt.
+ */
+typedef struct {
+    float high_threshold;  /**< High threshold value(Celsius). Interrupt will be triggered if temperature value is higher than this value */
+    float low_threshold;   /**< Low threshold value(Celsius). Interrupt will be triggered if temperature value is lower than this value */
+} temperature_sensor_abs_threshold_config_t;
+
+/**
+ * @brief Set temperature sensor absolute mode automatic monitor.
+ *
+ * @param tsens The handle created by `temperature_sensor_install()`.
+ * @param abs_cfg Configuration of temperature sensor absolute mode interrupt, see `temperature_sensor_abs_threshold_config_t`.
+ * @note This function should not be called with `temperature_sensor_set_delta_threshold`.
+ *
+ * @return
+ *      - ESP_OK: Set absolute threshold successfully.
+ *      - ESP_ERR_INVALID_STATE: Set absolute threshold failed because of wrong state.
+ *      - ESP_ERR_INVALID_ARG: Set absolute threshold failed because of invalid argument.
+ */
+esp_err_t temperature_sensor_set_absolute_threshold(temperature_sensor_handle_t tsens, const temperature_sensor_abs_threshold_config_t *abs_cfg);
+
+/**
+ * @brief Config options for temperature value delta interrupt.
+ */
+typedef struct {
+    float increase_delta;   /**< Interrupt will be triggered if the temperature increment of two consecutive samplings if larger than `increase_delta` */
+    float decrease_delta;   /**< Interrupt will be triggered if the temperature decrement of two consecutive samplings if smaller than `decrease_delta` */
+} temperature_sensor_delta_threshold_config_t;
+
+/**
+ * @brief Set temperature sensor differential mode automatic monitor.
+ *
+ * @param tsens The handle created by `temperature_sensor_install()`.
+ * @param delta_cfg Configuration of temperature sensor delta mode interrupt, see `temperature_sensor_delta_threshold_config_t`.
+ * @note This function should not be called with `temperature_sensor_set_absolute_threshold`
+ *
+ * @return
+ *      - ESP_OK: Set differential value threshold successfully.
+ *      - ESP_ERR_INVALID_STATE: Set absolute threshold failed because of wrong state.
+ *      - ESP_ERR_INVALID_ARG: Set differential value threshold failed because of invalid argument.
+ */
+esp_err_t temperature_sensor_set_delta_threshold(temperature_sensor_handle_t tsens, const temperature_sensor_delta_threshold_config_t *delta_cfg);
+
+/**
+ * @brief Install temperature sensor interrupt callback. Temperature sensor interrupt will be enabled at same time
+ *
+ * @param tsens The handle created by `temperature_sensor_install()`.
+ * @param cbs Pointer to the group of temperature sensor interrupt callbacks.
+ * @param user_arg Callback argument.
+ *
+ * @return
+ *      - ESP_OK: Set event callbacks successfully
+ *      - ESP_ERR_INVALID_ARG: Set event callbacks failed because of invalid argument
+ *      - ESP_FAIL: Set event callbacks failed because of other error
+ */
+esp_err_t temperature_sensor_register_callbacks(temperature_sensor_handle_t tsens, const temperature_sensor_event_callbacks_t *cbs, void *user_arg);
+
+#endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
 #ifdef __cplusplus
 }

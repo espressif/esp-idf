@@ -109,6 +109,9 @@
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (0) /*!< support HW offset calibration version 1*/
 
+/*!< Interrupt */
+#define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
+
 // ESP32H2-TODO: Copy from esp32c6, need check
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (0)
@@ -453,10 +456,10 @@
 
 #define SOC_CLK_LP_FAST_SUPPORT_LP_PLL           (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
 
-// TODO: IDF-6229 (Copy from esp32c6, need check)
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
-#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
+#define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
