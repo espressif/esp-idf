@@ -27,16 +27,6 @@
 //ESP32-S2 cannot do single board test over IOMUX+GPIO matrix
 #define TEST_MASTER_GPIO_MATRIX     1
 
-#define SPI_SLOT_TEST_DEFAULT_CONFIG() {\
-    .spics_io_num = PIN_NUM_CS, \
-    .flags = 0, \
-    .mode = 0, \
-    .command_bits = 8,\
-    .address_bits = 8,\
-    .dummy_bits = 8,\
-    .queue_size = 10,\
-}
-
 //context definition for the tcf framework
 typedef struct {
     WORD_ALIGNED_ATTR uint8_t master_wrdma_buf[TEST_DMA_MAX_SIZE];

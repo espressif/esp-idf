@@ -17,6 +17,7 @@
 #define IDF_PERFORMANCE_MAX_ECDSA_P192_VERIFY_OP                                18000
 #define IDF_PERFORMANCE_MAX_ECDSA_P256_VERIFY_OP                                27000
 
+#define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        26*1000*1000
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            34
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               17
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     32

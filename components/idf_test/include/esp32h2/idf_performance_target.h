@@ -18,6 +18,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              670000
 
+#define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        26*1000*1000
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               28
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        24
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            58

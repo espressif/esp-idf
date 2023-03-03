@@ -165,6 +165,17 @@
         .flags=0,\
     }
 
+//default device config for slave hd devices
+#define SPI_SLOT_TEST_DEFAULT_CONFIG() {\
+        .spics_io_num = PIN_NUM_CS, \
+        .flags = 0, \
+        .mode = 0, \
+        .command_bits = 8,\
+        .address_bits = 8,\
+        .dummy_bits = 8,\
+        .queue_size = 10,\
+    }
+
 typedef enum {
     FULL_DUPLEX = 0,
     HALF_DUPLEX_MISO = 1,
@@ -252,8 +263,8 @@ esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_
 #define spitest_cmp_or_dump(expected, actual, len) ({\
     int r = memcmp(expected, actual, len);\
     if (r != 0) {\
-        ESP_LOG_BUFFER_HEXDUMP("expected", expected, len, ESP_LOG_INFO);\
-        ESP_LOG_BUFFER_HEXDUMP("actual", actual, len, ESP_LOG_WARN);\
+        ESP_LOG_BUFFER_HEXDUMP("actual ", actual, len, ESP_LOG_WARN);\
+        ESP_LOG_BUFFER_HEXDUMP("expecte", expected, len, ESP_LOG_INFO);\
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, actual, len);\
     }\
     r;\
