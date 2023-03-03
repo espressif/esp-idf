@@ -113,6 +113,9 @@
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (0) /*!< support HW offset calibration version 1*/
 
+/*!< Interrupt */
+#define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
+
 // ESP32C6-TODO: Copy from esp32c6, need check
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (0)
@@ -460,7 +463,8 @@
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
-#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
+#define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
