@@ -5,6 +5,9 @@
 #include "sdkconfig.h"
 #include "unity.h"
 
+// Testing ROM code is only useful during FPGA testing and chip bringup
+#if CONFIG_IDF_ENV_FPGA
+
 // compression/decompression will take off a bunch of memory
 // test it only with PSRAM enabled
 #ifdef CONFIG_SPIRAM
@@ -102,3 +105,4 @@ TEST_CASE("Test miniz compression/decompression", "[rom][miniz]")
 
 #endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)
 #endif // CONFIG_SPIRAM
+#endif // CONFIG_IDF_ENV_FPGA
