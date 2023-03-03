@@ -62,10 +62,6 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
-#define C6_H2_ROM_IMPL    (CONFIG_SPI_FLASH_ROM_IMPL && (CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2))
-
-#if !C6_H2_ROM_IMPL
-//TODO: IDF-6931
 
 // This needs to sufficiently large array, otherwise it may end up in
 // DRAM (e.g. size <= 8 bytes && ARCH == RISCV)
@@ -104,7 +100,6 @@ TEST_CASE("invalid access to cache raises panic (PRO CPU)", "[spi_flash][reset="
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 0);
     vTaskDelay(1000/portTICK_PERIOD_MS);
 }
-#endif  //#if !C6_H2_ROM_IMPL
 
 #ifndef CONFIG_FREERTOS_UNICORE
 
