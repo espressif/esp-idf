@@ -74,7 +74,7 @@ def test_examples_protocol_http_ws_echo_server(env, extra_data):
 
     # Parse IP address of STA
     Utility.console_log('Waiting to connect with AP')
-    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+.\d+.\d+.\d+)'), timeout=60)[0]
+    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=60)[0]
     got_port = dut1.expect(re.compile(r"Starting server on port: '(\d+)'"), timeout=60)[0]
 
     Utility.console_log('Got IP   : ' + got_ip)
