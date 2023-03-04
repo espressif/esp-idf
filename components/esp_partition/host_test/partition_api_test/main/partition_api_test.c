@@ -7,6 +7,11 @@
  */
 
 #include <string.h>
+#if __has_include(<bsd/string.h>)
+// for strlcpy
+#include <bsd/string.h>
+#endif
+#include <unistd.h>
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_private/partition_linux.h"
@@ -144,7 +149,331 @@ TEST(partition_api, test_partition_mmap)
     TEST_ASSERT_EQUAL(err,ESP_ERR_INVALID_SIZE);
 }
 
-#define EMULATED_VIRTUAL_SECTOR_COUNT (ESP_PARTITION_EMULATED_FLASH_SIZE / ESP_PARTITION_EMULATED_SECTOR_SIZE)
+TEST(partition_api, test_partition_mmap_diff_size)
+{
+    // Scenario: default temporary flash file, explicitly specified size and file with partition table
+    // Check the size of "storage" partition. Should be 6M = 6*1024*1024
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl);
+
+    memset(p_file_mmap_ctrl, 0, sizeof(*p_file_mmap_ctrl));
+    p_file_mmap_ctrl->flash_file_size = 0x800000;   // 8MB
+    strlcpy(p_file_mmap_ctrl->partition_file_name, "./build/partition_table/partition-table_8M.bin", sizeof(p_file_mmap_ctrl->partition_file_name));
+
+    // esp_partition_find_first calls the esp_partition_file_mmap in the background
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    // Check partition size
+    size_t exp_size = 0x600000;  // 6MB
+    size_t act_size = partition_data->size;
+    TEST_ASSERT_EQUAL(exp_size, act_size);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+}
+
+TEST(partition_api, test_partition_mmap_reopen)
+{
+    // Scenario: default temporary flash file, write some data
+    // Remember name of temporary file, reset remove flag, unmmap file.
+    // Set file name from previous step, mmap file, read and compare data
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+
+    // esp_partition_find_first calls the esp_partition_file_mmap in the background
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    const char *test_string = "Is HAL6000 an IBM6000 ?";
+    size_t test_string_len = strlen(test_string) + 1;
+
+    // write test string
+    esp_err_t err = esp_partition_write(partition_data, 0, test_string, test_string_len);
+    TEST_ESP_OK(err);
+
+    // remember memory mapped file name
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_act = esp_partition_get_file_mmap_ctrl_act();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_act);
+
+    char generated_file_name[PATH_MAX];
+    strlcpy(generated_file_name, p_file_mmap_ctrl_act->flash_file_name, sizeof(generated_file_name));
+
+    // ensure remove flag is not set
+    p_file_mmap_ctrl_input->remove_dump = false;
+
+    // unmap
+    err = esp_partition_file_munmap();
+    TEST_ESP_OK(err);
+
+    // initialize control struct with memory mapped file name
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    strlcpy(p_file_mmap_ctrl_input->flash_file_name, generated_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
+
+    // get partiton
+    partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    // read verify string
+    char *verify_string = malloc(test_string_len);
+    err = esp_partition_read(partition_data, 0, verify_string, test_string_len);
+    TEST_ESP_OK(err);
+
+    // compare strings
+    bool strings_equal = (strncmp(test_string, verify_string, test_string_len) == 0);
+    TEST_ASSERT_EQUAL(strings_equal,true);
+
+    free(verify_string);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+}
+
+TEST(partition_api, test_partition_mmap_remove)
+{
+    // Scenario: default temporary flash file, write some data
+    // Remember name of temporary file, set remove flag, unmmap file.
+    // Set file name from previous step, try to get partition "storage", should fail with NULL returned
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+
+    // esp_partition_find_first calls the esp_partition_file_mmap in the background
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    const char *test_string = "This text should dismiss after esp_partition_file_munmap";
+    size_t test_string_len = strlen(test_string) + 1;
+
+    // write test string
+    esp_err_t err = esp_partition_write(partition_data, 0, test_string, test_string_len);
+    TEST_ESP_OK(err);
+
+    // remember memory mapped file name
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_act = esp_partition_get_file_mmap_ctrl_act();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_act);
+
+    char generated_file_name[PATH_MAX];
+    strlcpy(generated_file_name, p_file_mmap_ctrl_act->flash_file_name, sizeof(generated_file_name));
+
+    // ensure remove flag is set
+    p_file_mmap_ctrl_input->remove_dump = true;
+
+    // unmap
+    err = esp_partition_file_munmap();
+    TEST_ESP_OK(err);
+
+    // initialize control struct with memory mapped file name
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    strlcpy(p_file_mmap_ctrl_input->flash_file_name, generated_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
+
+    // get partiton, should fail with NULL returned
+    partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_EQUAL(NULL, partition_data);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+}
+
+TEST(partition_api, test_partition_mmap_name_size)
+{
+    // Negative Scenario: conflicting settings - flash_file_name together with one or both of
+    //                    flash_file_size, partition_file_name
+    // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    const char *flash_file_name = "/tmp/xyz";
+    strlcpy(p_file_mmap_ctrl_input->flash_file_name, flash_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
+    p_file_mmap_ctrl_input->flash_file_size = 1;  // anything different from 0
+
+    const uint8_t *p_mem_block = NULL;
+    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+
+    // expected result is invalid argument
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+}
+
+TEST(partition_api, test_partition_mmap_size_no_partition)
+{
+    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size set
+    //                    and partition_file_name not set
+    // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    p_file_mmap_ctrl_input->flash_file_size = 1;  // anything different from 0
+
+    const uint8_t *p_mem_block = NULL;
+    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+
+    // expected result is invalid argument
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+}
+
+TEST(partition_api, test_partition_mmap_no_size_partition)
+{
+    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size not set
+    //                    and partition_file_name set
+    // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    const char *partition_file_name = "/tmp/xyz.bin";
+    strlcpy(p_file_mmap_ctrl_input->partition_file_name, partition_file_name, sizeof(p_file_mmap_ctrl_input->partition_file_name));
+
+    const uint8_t *p_mem_block = NULL;
+    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+
+    // expected result is invalid argument
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+}
+
+TEST(partition_api, test_partition_mmap_ffile_nf)
+{
+    // Negative Scenario: specified flash_file_name file not found
+    // esp_partition_file_mmap should return ESP_ERR_NOT_FOUND
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    const char *flash_file_name = "/tmp/strangefilename.tmp";
+
+    // make sure file doesn't exist
+    if (access(flash_file_name, F_OK) == 0) {
+        // our strange file exists, skip rest of test
+    } else {
+        strlcpy(p_file_mmap_ctrl_input->flash_file_name, flash_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
+
+        const uint8_t *p_mem_block = NULL;
+        esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+
+        // expected result is file not found
+        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+
+        // cleanup after test
+        esp_partition_file_munmap();
+        memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    }
+}
+
+TEST(partition_api, test_partition_mmap_pfile_nf)
+{
+    // Negative Scenario: specified partition_file_name file not found
+    // esp_partition_file_mmap should return ESP_ERR_NOT_FOUND
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    const char *partition_file_name = "/tmp/strangefilename.tmp";
+
+    // make sure file doesn't exist
+    if (access(partition_file_name, F_OK) == 0) {
+        // our strange file exists, skip rest of test
+    } else {
+        strlcpy(p_file_mmap_ctrl_input->partition_file_name, partition_file_name, sizeof(p_file_mmap_ctrl_input->partition_file_name));
+        p_file_mmap_ctrl_input->flash_file_size = 0x10000;    // any non zero value to pass validation
+
+        const uint8_t *p_mem_block = NULL;
+        esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+
+        // expected result is file not found
+        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+
+        // cleanup after test
+        esp_partition_file_munmap();
+        memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+    }
+}
+
+TEST(partition_api, test_partition_mmap_size_too_small)
+{
+    // Negative Scenario: specified flash file size too small
+    //                    to hold at least partition table at default offset
+    // esp_partition_file_mmap should return ESP_ERR_INVALID_SIZE
+
+    // unmap file to have correct initial conditions, regardless of result
+    esp_partition_file_munmap();
+
+    // get and initialize the control structure for file mmap
+    esp_partition_file_mmap_ctrl_t *p_file_mmap_ctrl_input = esp_partition_get_file_mmap_ctrl_input();
+    TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
+
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+
+    // set valid partition table name and very small flash size
+    strlcpy(p_file_mmap_ctrl_input->partition_file_name, "./build/partition_table/partition-table.bin", sizeof(p_file_mmap_ctrl_input->partition_file_name));
+    p_file_mmap_ctrl_input->flash_file_size = 1;
+
+    const uint8_t *p_mem_block = NULL;
+    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+
+    // expected result is invalid argument
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
+}
 
 typedef struct
 {
@@ -154,8 +483,23 @@ typedef struct
     size_t read_bytes;
     size_t write_bytes;
     size_t total_time;
-    size_t sector_erase_count[EMULATED_VIRTUAL_SECTOR_COUNT];
+    size_t *sector_erase_count;
+    size_t sector_erase_count_size;
 } t_stats;
+
+void init_stats(t_stats *p_stats)
+{
+    memset(p_stats, 0, sizeof(t_stats));
+    p_stats->sector_erase_count_size = esp_partition_get_file_mmap_ctrl_act()->flash_file_size / ESP_PARTITION_EMULATED_SECTOR_SIZE;
+    p_stats->sector_erase_count = calloc(p_stats->sector_erase_count_size, sizeof(size_t));
+}
+
+void dispose_stats(t_stats *p_stats)
+{
+    if(p_stats->sector_erase_count != NULL){
+        free(p_stats->sector_erase_count);
+    }
+}
 
 void print_stats(const t_stats *p_stats)
 {
@@ -177,7 +521,7 @@ void read_stats(t_stats *p_stats)
     p_stats->write_bytes = esp_partition_get_write_bytes();
     p_stats->total_time = esp_partition_get_total_time();
 
-    for(size_t i = 0; i < EMULATED_VIRTUAL_SECTOR_COUNT; i++)
+    for(size_t i = 0; i < p_stats->sector_erase_count_size; i++)
         p_stats->sector_erase_count[i] = esp_partition_get_sector_erase_count(i);
 }
 
@@ -198,7 +542,7 @@ bool evaluate_stats(const t_stats *p_initial_stats, const t_stats *p_final_stats
     if(p_expected_difference_stats->total_time != SIZE_MAX)
         TEST_ASSERT_EQUAL(p_initial_stats->total_time + p_expected_difference_stats->total_time, p_final_stats->total_time);
 
-    for(size_t i = 0; i < EMULATED_VIRTUAL_SECTOR_COUNT; i++)
+    for(size_t i = 0; i < p_initial_stats->sector_erase_count_size; i++)
     {
         if(p_expected_difference_stats->sector_erase_count[i] != SIZE_MAX)
         {
@@ -220,7 +564,11 @@ TEST(partition_api, test_partition_stats)
 
     t_stats initial_stats;
     t_stats final_stats;
-    t_stats zero_stats = {0};
+    t_stats zero_stats;
+
+    init_stats(&initial_stats);
+    init_stats(&final_stats);
+    init_stats(&zero_stats);
 
     // get actual statistics
     read_stats(&initial_stats);
@@ -256,15 +604,16 @@ TEST(partition_api, test_partition_stats)
     if((non_aligned_portions % ESP_PARTITION_EMULATED_SECTOR_SIZE) > 0)
         erase_ops += 1;
 
-    t_stats expected_difference_stats = {
-        .read_ops = 1,
-        .write_ops = 1,
-        .erase_ops = erase_ops,
-        .read_bytes = size,
-        .write_bytes = size,
-        .total_time = SIZE_MAX
-    };
-    for (size_t i = 0; i < EMULATED_VIRTUAL_SECTOR_COUNT; i++)
+    t_stats expected_difference_stats;
+    init_stats(&expected_difference_stats);
+
+    expected_difference_stats.read_ops = 1;
+    expected_difference_stats.write_ops = 1;
+    expected_difference_stats.erase_ops = erase_ops;
+    expected_difference_stats.read_bytes = size;
+    expected_difference_stats.write_bytes = size;
+    expected_difference_stats.total_time = SIZE_MAX;
+    for (size_t i = 0; i < expected_difference_stats.sector_erase_count_size; i++)
         expected_difference_stats.sector_erase_count[i] = SIZE_MAX;
 
     evaluate_stats(&initial_stats, &final_stats, &expected_difference_stats);
@@ -276,15 +625,20 @@ TEST(partition_api, test_partition_stats)
     // evaluate zero statistics
     evaluate_stats(&zero_stats, &final_stats, &zero_stats);
 
+    // free symanically allocated space
+    dispose_stats(&initial_stats);
+    dispose_stats(&final_stats);
+    dispose_stats(&zero_stats);
+    dispose_stats(&expected_difference_stats);
     free(test_data_ptr);
 }
 
-TEST(partition_api, test_partition_wear_emulation)
+TEST(partition_api, test_partition_power_off_emulation)
 {
     const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
     TEST_ASSERT_NOT_NULL(partition_data);
 
-    // no offset, map whole partition
+    //no offset, map whole partition
     size_t offset = 0;
     size_t size = partition_data->size;
 
@@ -293,9 +647,9 @@ TEST(partition_api, test_partition_wear_emulation)
     TEST_ASSERT_NOT_NULL(test_data_ptr);
     memset(test_data_ptr, 0xff, size);
 
-    // --- wear off ---
-    // ensure wear emulation is off
-    esp_partition_fail_after(SIZE_MAX);
+    // --- power-off off ---
+    // ensure power-off emulation is off
+    esp_partition_fail_after(SIZE_MAX, 0);
 
     // erase partition data
     esp_err_t err = esp_partition_erase_range(partition_data, offset, size);
@@ -309,39 +663,38 @@ TEST(partition_api, test_partition_wear_emulation)
     err = esp_partition_erase_range(partition_data, offset, size);
     TEST_ESP_OK(err);
 
-    // --- wear on, write ---
-    // ensure wear emulation is on, below the limit for size
-    // esp_partition_write consumes one wear cycle per 4 bytes written
-    esp_partition_fail_after(size / 4 - 1);
+    // --- power-off on, write ---
+    // ensure power-off emulation is on, below the limit for size
+    // esp_partition_write consumes one power off failure cycle per 4 bytes written
+    esp_partition_fail_after(size / 4 - 1, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
 
     // write data - should fail
     err = esp_partition_write(partition_data, offset, test_data_ptr, size);
     TEST_ASSERT_EQUAL(ESP_FAIL, err);
 
-    // --- wear on, erase has just enough wear cycles available---
-    // ensure wear emulation is on, at the limit for size
-    // esp_partition_erase_range consumes one wear cycle per one virtual sector erased
-    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE);
+    // --- power-off on, erase has just enough power off failure cycles available---
+    // ensure power-off emulation is on, at the limit for size
+    // esp_partition_erase_range consumes one power-off emulation cycle per one virtual sector erased
+    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
 
     // write data - should be ok
     err = esp_partition_erase_range(partition_data, offset, size);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    // --- wear on, erase has one cycle less than required---
-    // ensure wear emulation is on, below the limit for size
-    // esp_partition_erase_range consumes one wear cycle per one virtual sector erased
-    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE - 1);
+    // --- power-off on, erase has one cycle less than required---
+    // ensure power-off emulation is on, below the limit for size
+    // esp_partition_erase_range consumes one power-off emulation cycle per one virtual sector erased
+    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE - 1, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
 
     // write data - should fail
     err = esp_partition_erase_range(partition_data, offset, size);
     TEST_ASSERT_EQUAL(ESP_FAIL, err);
 
     // ---cleanup ---
-    // disable wear emulation
-    esp_partition_fail_after(SIZE_MAX);
+    // disable power-off emulation
+    esp_partition_fail_after(SIZE_MAX, 0);
     free(test_data_ptr);
 }
-
 
 TEST_GROUP_RUNNER(partition_api)
 {
@@ -351,8 +704,17 @@ TEST_GROUP_RUNNER(partition_api)
     RUN_TEST_CASE(partition_api, test_partition_find_first);
     RUN_TEST_CASE(partition_api, test_partition_ops);
     RUN_TEST_CASE(partition_api, test_partition_mmap);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_diff_size);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_reopen);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_remove);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_name_size);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_size_no_partition);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_no_size_partition);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_ffile_nf);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_pfile_nf);
+    RUN_TEST_CASE(partition_api, test_partition_mmap_size_too_small);
     RUN_TEST_CASE(partition_api, test_partition_stats);
-    RUN_TEST_CASE(partition_api, test_partition_wear_emulation);
+    RUN_TEST_CASE(partition_api, test_partition_power_off_emulation);
 }
 
 static void run_all_tests(void)

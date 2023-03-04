@@ -132,7 +132,6 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char *cur_path
 
         struct stat sb;
         stat(path, &sb);
-
         if (S_ISDIR(sb.st_mode)) {
             if (!strcmp(name, ".") || !strcmp(name, "..")) {
                 continue;
@@ -249,7 +248,6 @@ TEST(spiffs, can_read_spiffs_image)
     char *img = (char *) malloc(img_size);
     TEST_ASSERT(fread(img, 1, img_size, img_file) == img_size);
     fclose(img_file);
-
     TEST_ASSERT_TRUE(partition->size == img_size);
 
     esp_partition_erase_range(partition, 0, partition->size);
@@ -265,7 +263,7 @@ TEST(spiffs, can_read_spiffs_image)
     spiffs_res = SPIFFS_check(&fs);
     TEST_ASSERT_TRUE(spiffs_res == SPIFFS_OK);
 
-    char path_buf[PATH_MAX];
+    char path_buf[PATH_MAX] = {0};
 
     // The image is created from the spiffs source directory. Compare the files in that
     // directory to the files read from the SPIFFS image.

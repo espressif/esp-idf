@@ -21,6 +21,16 @@ idf_component_register(SRCS "${srcs}"
     REQUIRES ${reqs}
     PRIV_REQUIRES ${priv_reqs})
 
+if(${target} STREQUAL "linux")
+    # link bsd library for strlcpy
+    find_library(LIB_BSD bsd)
+    if(LIB_BSD)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
+    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
+    endif()
+endif()
+
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     # These flags are GCC specific
     set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
