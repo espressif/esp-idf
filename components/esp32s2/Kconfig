@@ -176,7 +176,6 @@ menu "ESP32S2-specific"
 
                 This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
                 This should only be used for tasks where the stack is never accessed while the cache is disabled.
-                Cannot be used together with ESP_COREDUMP_ENABLE_TO_FLASH.
 
         choice SPIRAM_SPEED
             prompt "Set RAM clock speed"
