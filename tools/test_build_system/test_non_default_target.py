@@ -4,6 +4,7 @@
 import logging
 import shutil
 from pathlib import Path
+from typing import List, Optional
 
 import pytest
 from test_build_system_helpers import EnvDict, IdfPyFunc, check_file_contains, run_cmake
@@ -31,15 +32,16 @@ def test_target_from_environment_cmake(default_idf_env: EnvDict) -> None:
 
 
 def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvDict, test_app_copy: Path) -> None:
-    def reconfigure_and_check_return_values(errmsg: str) -> None:
-        ret = idf_py('reconfigure', check=False)
+    def reconfigure_and_check_return_values(errmsg: str, opts: Optional[List[str]] = None) -> None:
+        opts = opts or []
+        ret = idf_py(*opts, 'reconfigure', check=False)
         assert ret.returncode == 2
         assert errmsg in ret.stderr
 
     idf_py('set-target', ESP32S2_TARGET)
     default_idf_env.update({'IDF_TARGET': ESP32_TARGET})
 
-    cfg_path = test_app_copy.joinpath('sdkconfig')
+    cfg_path = (test_app_copy / 'sdkconfig')
 
     logging.info("idf.py fails if IDF_TARGET settings don't match the environment")
     reconfigure_and_check_return_values("Project sdkconfig '{}' was generated for target '{}', but environment "
@@ -55,6 +57,19 @@ def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvD
     default_idf_env.pop('IDF_TARGET')
     reconfigure_and_check_return_values("Project sdkconfig '{}' was generated for target '{}', but CMakeCache.txt "
                                         "contains '{}'.".format(cfg_path, ESP32_TARGET, ESP32S2_TARGET))
+
+    logging.info('idf.py fails if IDF_TARGET is set differently in environment and with -D option')
+    (test_app_copy / 'sdkconfig').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    default_idf_env.update({'IDF_TARGET': ESP32S2_TARGET})
+    reconfigure_and_check_return_values("Target '{}' specified on command line is not consistent with target '{}' "
+                                        'in the environment.'.format(ESP32_TARGET, ESP32S2_TARGET),
+                                        ['-D', 'IDF_TARGET={}'.format(ESP32_TARGET)])
+
+    logging.info('idf.py fails if IDF_TARGET is set differently in CMakeCache.txt and with -D option')
+    default_idf_env.pop('IDF_TARGET')
+    reconfigure_and_check_return_values("Target '{}' specified on command line is not consistent with "
+                                        "target '{}' in CMakeCache.txt.".format(ESP32_TARGET, ESP32S2_TARGET),
+                                        ['-D', 'IDF_TARGET={}'.format(ESP32_TARGET)])
 
 
 def test_target_precedence(idf_py: IdfPyFunc, default_idf_env: EnvDict, test_app_copy: Path) -> None:

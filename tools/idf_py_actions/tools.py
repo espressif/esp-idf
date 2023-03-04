@@ -590,6 +590,7 @@ def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict, cache_c
     idf_target_from_sdkconfig = get_sdkconfig_value(sdkconfig, 'CONFIG_IDF_TARGET')
     idf_target_from_env = os.environ.get('IDF_TARGET')
     idf_target_from_cache = cache.get('IDF_TARGET')
+    idf_target_from_cache_cmdl = cache_cmdl.get('IDF_TARGET')
 
     if idf_target_from_env:
         # Let's check that IDF_TARGET values are consistent
@@ -603,12 +604,25 @@ def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict, cache_c
                              "Run '{prog} fullclean' to start again."
                              .format(t_env=idf_target_from_env, t_cache=idf_target_from_cache, prog=prog_name))
 
-    elif idf_target_from_cache and idf_target_from_sdkconfig and idf_target_from_cache != idf_target_from_sdkconfig:
+        if idf_target_from_cache_cmdl and idf_target_from_cache_cmdl != idf_target_from_env:
+            raise FatalError("Target '{t_cmdl}' specified on command line is not consistent with "
+                             "target '{t_env}' in the environment."
+                             .format(t_cmdl=idf_target_from_cache_cmdl, t_env=idf_target_from_env))
+    elif idf_target_from_cache_cmdl:
+        # Check if -DIDF_TARGET is consistent with target in CMakeCache.txt
+        if idf_target_from_cache and idf_target_from_cache != idf_target_from_cache_cmdl:
+            raise FatalError("Target '{t_cmdl}' specified on command line is not consistent with "
+                             "target '{t_cache}' in CMakeCache.txt. Run '{prog} set-target {t_cmdl}' to re-generate "
+                             'CMakeCache.txt.'
+                             .format(t_cache=idf_target_from_cache, t_cmdl=idf_target_from_cache_cmdl, prog=prog_name))
+
+    elif idf_target_from_cache:
         # This shouldn't happen, unless the user manually edits CMakeCache.txt or sdkconfig, but let's check anyway.
-        raise FatalError("Project sdkconfig '{cfg}' was generated for target '{t_conf}', but CMakeCache.txt contains '{t_cache}'. "
-                         "To keep the setting in sdkconfig ({t_conf}) and re-generate CMakeCache.txt, run '{prog} fullclean'. "
-                         "To re-generate sdkconfig for '{t_cache}' target, run '{prog} set-target {t_cache}'."
-                         .format(cfg=sdkconfig, t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
+        if idf_target_from_sdkconfig and idf_target_from_cache != idf_target_from_sdkconfig:
+            raise FatalError("Project sdkconfig '{cfg}' was generated for target '{t_conf}', but CMakeCache.txt contains '{t_cache}'. "
+                             "To keep the setting in sdkconfig ({t_conf}) and re-generate CMakeCache.txt, run '{prog} fullclean'. "
+                             "To re-generate sdkconfig for '{t_cache}' target, run '{prog} set-target {t_cache}'."
+                             .format(cfg=sdkconfig, t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
 
 
 class TargetChoice(click.Choice):
