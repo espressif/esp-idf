@@ -9,12 +9,12 @@ menu "SoC Settings"
 
         config MMU_PAGE_SIZE_16KB
             bool
-            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_1MB
+            default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_1MB
             default n
 
         config MMU_PAGE_SIZE_32KB
             bool
-            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_2MB
+            default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_2MB
             default n
 
         config MMU_PAGE_SIZE_64KB
