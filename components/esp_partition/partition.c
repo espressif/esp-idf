@@ -9,20 +9,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
+#include <sys/queue.h>
 #include "sdkconfig.h"
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_partition.h"
-
 #if !CONFIG_IDF_TARGET_LINUX
 #include "esp_flash.h"
 #include "esp_flash_encrypt.h"
 #endif
-
 #include "esp_log.h"
 #include "esp_rom_md5.h"
 #include "bootloader_util.h"
-
 #if CONFIG_IDF_TARGET_LINUX
 #if __has_include(<bsd/string.h>)
 #include <bsd/string.h>
@@ -228,8 +226,8 @@ static esp_err_t load_partitions(void)
 void unload_partitions(void)
 {
     _lock_acquire(&s_partition_list_lock);
-    partition_list_item_t *it;
-    SLIST_FOREACH(it, &s_partition_list, next) {
+    partition_list_item_t *it, *tmp;
+    SLIST_FOREACH_SAFE(it, &s_partition_list, next, tmp) {
         SLIST_REMOVE(&s_partition_list, it, partition_list_item_, next);
         free(it);
     }
