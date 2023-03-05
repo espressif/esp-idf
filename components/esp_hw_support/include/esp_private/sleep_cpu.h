@@ -28,6 +28,16 @@ extern "C" {
  */
 bool cpu_domain_pd_allowed(void);
 
+/**
+ * @brief Configure the parameters of the CPU domain during the sleep process
+ *
+ * @param light_sleep_enable true for enable light sleep mode, false for disable light sleep mode
+ *
+ * @return
+ *  - ESP_OK on success
+ */
+esp_err_t sleep_cpu_configure(bool light_sleep_enable);
+
 #endif
 
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL

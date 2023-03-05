@@ -43,6 +43,11 @@
 #include "esp32c6/rom/ets_sys.h"
 #include "esp_modem_wrapper.h"
 
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#include "esp_private/esp_regdma.h"
+#include "esp_private/sleep_retention.h"
+#endif
+
 #define TAG "esp_adapter"
 
 #ifdef CONFIG_PM_ENABLE
@@ -293,18 +298,6 @@ static void wifi_reset_mac_wrapper(void)
 {
     // TODO: IDF-5713
     ESP_LOGW(TAG, "wifi_reset_mac_wrapper() has not been implemented yet");
-}
-
-static void IRAM_ATTR wifi_rtc_enable_iso_wrapper(void)
-{
-    // TODO: IDF-5351
-    ESP_LOGW(TAG, "wifi_rtc_enable_iso_wrapper() has not been implemented yet");
-}
-
-static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
-{
-    // TODO: IDF-5351
-    ESP_LOGW(TAG, "wifi_rtc_disable_iso_wrapper() has not been implemented yet");
 }
 
 static void wifi_clock_enable_wrapper(void)
@@ -601,8 +594,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._wifi_reset_mac = wifi_reset_mac_wrapper,
     ._wifi_clock_enable = wifi_clock_enable_wrapper,
     ._wifi_clock_disable = wifi_clock_disable_wrapper,
-    ._wifi_rtc_enable_iso = wifi_rtc_enable_iso_wrapper,
-    ._wifi_rtc_disable_iso = wifi_rtc_disable_iso_wrapper,
+    ._wifi_rtc_enable_iso = esp_empty_wrapper,
+    ._wifi_rtc_disable_iso = esp_empty_wrapper,
     ._esp_timer_get_time = esp_timer_get_time,
     ._nvs_set_i8 = nvs_set_i8,
     ._nvs_get_i8 = nvs_get_i8,
@@ -651,8 +644,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_curr_period_get = coex_schm_curr_period_get_wrapper,
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
     ._coex_register_start_cb = coex_register_start_cb_wrapper,
-#if 0//CONFIG_IDF_TARGET_ESP32C6
-    // TODO: WIFI-5150
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
     ._regdma_link_set_write_wait_content = regdma_link_set_write_wait_content,
     ._sleep_retention_find_link_by_id = sleep_retention_find_link_by_id,
     ._sleep_retention_entries_create = (int (*)(const void *, int, int, int))sleep_retention_entries_create,

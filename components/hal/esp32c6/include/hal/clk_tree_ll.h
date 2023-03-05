@@ -79,6 +79,14 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 }
 
 /**
+ * @brief Release the root clock source locked by PMU
+ */
+static inline __attribute__((always_inline)) void clk_ll_cpu_clk_src_lock_release(void)
+{
+    SET_PERI_REG_MASK(PMU_IMM_SLEEP_SYSCLK_REG, PMU_UPDATE_DIG_SYS_CLK_SEL);
+}
+
+/**
  * @brief Enable the 32kHz crystal oscillator
  *
  * @param mode Used to determine the xtal32k configuration parameters

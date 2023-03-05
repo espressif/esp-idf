@@ -35,7 +35,9 @@
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/esp_clk.h"
-
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/sleep_gpio.h"
+#include "esp_private/sleep_modem.h"
 #include "esp_sleep.h"
 
 #include "sdkconfig.h"
@@ -178,9 +180,6 @@ static const char* TAG = "pm";
 static void do_switch(pm_mode_t new_mode);
 static void leave_idle(void);
 static void on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_per_us);
-#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
-static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
-#endif
 
 pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg)
 {
@@ -195,6 +194,22 @@ pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg)
         // unsupported mode
         abort();
     }
+}
+
+static esp_err_t esp_pm_sleep_configure(const void *vconfig)
+{
+    esp_err_t err = ESP_OK;
+    const esp_pm_config_t* config = (const esp_pm_config_t*) vconfig;
+
+#if SOC_PM_SUPPORT_CPU_PD
+    err = sleep_cpu_configure(config->light_sleep_enable);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
+
+    err = sleep_modem_configure(config->max_freq_mhz, config->min_freq_mhz, config->light_sleep_enable);
+    return err;
 }
 
 esp_err_t esp_pm_configure(const void* vconfig)
@@ -282,21 +297,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
 
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_SUPPORT_CPU_PD
-    if (config->light_sleep_enable) {
-        if (esp_sleep_cpu_retention_init() != ESP_OK) {
-            ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
-        }
-    } else {
-        esp_sleep_cpu_retention_deinit();
-    }
-#endif
-
-#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
-    if (config->light_sleep_enable) {
-        esp_pm_light_sleep_default_params_config(min_freq_mhz, max_freq_mhz);
-    }
-#endif
+    esp_pm_sleep_configure(config);
 
     return ESP_OK;
 }
@@ -816,66 +817,3 @@ void esp_pm_impl_waiti(void)
     esp_cpu_wait_for_intr();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
-
-#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 1
-
-/* Inform peripherals of light sleep wakeup overhead time */
-static inform_out_light_sleep_overhead_cb_t s_periph_inform_out_light_sleep_overhead_cb[PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO];
-
-esp_err_t esp_pm_register_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
-{
-    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
-        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
-            return ESP_OK;
-        } else if (s_periph_inform_out_light_sleep_overhead_cb[i] == NULL) {
-            s_periph_inform_out_light_sleep_overhead_cb[i] = cb;
-            return ESP_OK;
-        }
-    }
-    return ESP_ERR_NO_MEM;
-}
-
-esp_err_t esp_pm_unregister_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
-{
-    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
-        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
-            s_periph_inform_out_light_sleep_overhead_cb[i] = NULL;
-            return ESP_OK;
-        }
-    }
-    return ESP_ERR_INVALID_STATE;
-}
-
-void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time)
-{
-    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
-        if (s_periph_inform_out_light_sleep_overhead_cb[i]) {
-            s_periph_inform_out_light_sleep_overhead_cb[i](out_light_sleep_time);
-        }
-    }
-}
-
-static update_light_sleep_default_params_config_cb_t s_light_sleep_default_params_config_cb = NULL;
-
-void esp_pm_register_light_sleep_default_params_config_callback(update_light_sleep_default_params_config_cb_t cb)
-{
-    if (s_light_sleep_default_params_config_cb == NULL) {
-        s_light_sleep_default_params_config_cb = cb;
-    }
-}
-
-void esp_pm_unregister_light_sleep_default_params_config_callback(void)
-{
-    if (s_light_sleep_default_params_config_cb) {
-        s_light_sleep_default_params_config_cb = NULL;
-    }
-}
-
-#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
-static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz)
-{
-    if (s_light_sleep_default_params_config_cb) {
-        (*s_light_sleep_default_params_config_cb)(min_freq_mhz, max_freq_mhz);
-    }
-}
-#endif

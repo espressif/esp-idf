@@ -624,11 +624,20 @@ void esp_wifi_set_keep_alive_time(uint32_t keep_alive_time);
 /**
  * @brief   Configure wifi beacon montior default parameters
  *
- * @param   enable: enable or disable beacon monitor
- * @param   timeout: timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond
- * @param   threshold: maximum number of consecutive lost beacons allowed
+ * @param   config: the configuration parameters for wifi beacon monitor
  */
-void esp_wifi_beacon_monitor_configure(bool enable, int timeout, int threshold, int delta_intr_early, int delta_timeout);
+void esp_wifi_beacon_monitor_configure(wifi_beacon_monitor_config_t *config);
+
+/**
+ * @brief   Require WiFi to enable or disable Advanced DTIM sleep function
+ *
+ * @param   light_sleep_enable: true for light sleep mode is enabled, false for light sleep mode is disabled.
+ * @param   modem_state_enable: true for require WiFi to enable Advanced DTIM sleep function,
+ *                              false for require WiFi to disable Advanced DTIM sleep function.
+ * @return
+ *    - ESP_OK: succeed
+ */
+void esp_wifi_internal_mac_sleep_configure(bool light_sleep_enable, bool modem_state_enable);
 
 #ifdef __cplusplus
 }

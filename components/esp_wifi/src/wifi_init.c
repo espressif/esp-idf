@@ -9,6 +9,7 @@
 #include "esp_log.h"
 #include "esp_private/wifi.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sleep_modem.h"
 #include "esp_pm.h"
 #include "esp_sleep.h"
 #include "esp_private/pm_impl.h"
@@ -55,6 +56,28 @@ uint64_t g_wifi_feature_caps =
 #endif
 0;
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+# define WIFI_BEACON_MONITOR_CONFIG_DEFAULT(ena)   { \
+    .enable = (ena), \
+    .loss_timeout = CONFIG_ESP_WIFI_SLP_BEACON_LOST_TIMEOUT, \
+    .loss_threshold = CONFIG_ESP_WIFI_SLP_BEACON_LOST_THRESHOLD, \
+    .delta_intr_early = 0, \
+    .delta_loss_timeout = 0, \
+    .beacon_abort = 1, \
+    .broadcast_wakeup = 1, \
+    .tsf_time_sync_deviation = 5, \
+    .modem_state_consecutive = 10, \
+    .rf_ctrl_wait_cycle = 20 \
+}
+#else
+# define WIFI_BEACON_MONITOR_CONFIG_DEFAULT(ena)   { \
+    .enable = (ena), \
+    .loss_timeout = CONFIG_ESP_WIFI_SLP_BEACON_LOST_TIMEOUT, \
+    .loss_threshold = CONFIG_ESP_WIFI_SLP_BEACON_LOST_THRESHOLD, \
+    .delta_intr_early = CONFIG_ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME, \
+    .delta_loss_timeout = CONFIG_ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME \
+}
+#endif
 
 static const char* TAG = "wifi_init";
 
@@ -112,7 +135,8 @@ esp_err_t esp_wifi_deinit(void)
     }
 
 #if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
-    esp_wifi_beacon_monitor_configure(false, 0, 0, 0, 0);
+    wifi_beacon_monitor_config_t monitor_config = WIFI_BEACON_MONITOR_CONFIG_DEFAULT(false);
+    esp_wifi_beacon_monitor_configure(&monitor_config);
 #endif
 
 #if CONFIG_ESP_WIFI_SLP_IRAM_OPT
@@ -123,8 +147,11 @@ esp_err_t esp_wifi_deinit(void)
     esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
     esp_sleep_disable_wifi_wakeup();
-#endif
-#endif
+# if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    esp_sleep_disable_wifi_beacon_wakeup();
+# endif
+#endif /* SOC_WIFI_HW_TSF */
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #if CONFIG_MAC_BB_PD
     esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
     esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
@@ -236,11 +263,14 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         return ret;
     }
     esp_sleep_enable_wifi_wakeup();
+# if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    esp_sleep_enable_wifi_beacon_wakeup();
+# endif
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_wifi_register_update_lpclk_callback(esp_wifi_update_tsf_tick_interval);
 #endif
-#endif
-#endif
+#endif /* SOC_WIFI_HW_TSF */
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_init();
@@ -269,9 +299,8 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         }
     }
 #if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
-    esp_wifi_beacon_monitor_configure(true, CONFIG_ESP_WIFI_SLP_BEACON_LOST_TIMEOUT,
-            CONFIG_ESP_WIFI_SLP_BEACON_LOST_THRESHOLD, CONFIG_ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME,
-            CONFIG_ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME);
+    wifi_beacon_monitor_config_t monitor_config = WIFI_BEACON_MONITOR_CONFIG_DEFAULT(true);
+    esp_wifi_beacon_monitor_configure(&monitor_config);
 #endif
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 

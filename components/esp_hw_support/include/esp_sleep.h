@@ -62,6 +62,9 @@ typedef enum {
 #if SOC_PM_SUPPORT_VDDSDIO_PD
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
 #endif
+#if SOC_PM_SUPPORT_MODEM_PD
+    ESP_PD_DOMAIN_MODEM,           //!< MODEM, includes WiFi, Bluetooth and IEEE802.15.4
+#endif
 #if SOC_PM_SUPPORT_TOP_PD
     ESP_PD_DOMAIN_TOP,             //!< SoC TOP
 #endif
@@ -355,6 +358,20 @@ esp_err_t esp_sleep_enable_wifi_wakeup(void);
  *      - ESP_OK on success
  */
 esp_err_t esp_sleep_disable_wifi_wakeup(void);
+
+/**
+ * @brief Enable beacon wakeup by WiFi MAC, it will wake up the system into modem state
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_wifi_beacon_wakeup(void);
+
+/**
+ * @brief Disable beacon wakeup by WiFi MAC
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_disable_wifi_beacon_wakeup(void);
 
 /**
  * @brief Get the bit mask of GPIOs which caused wakeup (ext1)

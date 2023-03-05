@@ -21,11 +21,9 @@ extern "C" {
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 
-#define RTC_SLEEP_PD_DIG                PMU_SLEEP_PD_TOP        //!< Deep sleep (power down digital domain)
+#define RTC_SLEEP_PD_DIG                PMU_SLEEP_PD_TOP        //!< Deep sleep (power down digital domain, includes all power domains
+                                                                //   except CPU, Modem, LP peripheral, AON，VDDSDIO, MEM and clock power domains)
 #define RTC_SLEEP_PD_RTC_PERIPH         PMU_SLEEP_PD_LP_PERIPH  //!< Power down RTC peripherals
-// #define RTC_SLEEP_PD_RTC_SLOW_MEM       BIT(2)               //!< Power down RTC SLOW memory
-// #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)               //!< Power down RTC FAST memory
-// #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)               //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            PMU_SLEEP_PD_VDDSDIO    //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_CPU                PMU_SLEEP_PD_CPU        //!< Power down CPU when in lightsleep, but not restart
 #define RTC_SLEEP_PD_DIG_PERIPH         PMU_SLEEP_PD_HP_PERIPH  //!< Power down DIG peripherals
@@ -150,6 +148,13 @@ void pmu_sleep_enable_regdma_backup(void);
   * @brief  Disable_regdma_backup.
   */
 void pmu_sleep_disable_regdma_backup(void);
+
+/**
+ * @brief Get sleep PLL enable status
+ *
+ * @return true if PLL is enabled by PMU in modem state
+ */
+bool pmu_sleep_pll_already_enabled(void);
 
 /**
  * @brief Calculate the hardware time overhead during sleep to compensate for sleep time

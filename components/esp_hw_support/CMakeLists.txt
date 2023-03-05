@@ -23,7 +23,7 @@ if(NOT BOOTLOADER_BUILD)
                      "rtc_module.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
-                     "sleep_mac_bb.c"
+                     "sleep_modem.c"
                      "regi2c_ctrl.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/clk_tree.c"
@@ -38,7 +38,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "sleep_retention.c"  "sleep_peripheral.c" "sleep_clock.c")
+        list(APPEND srcs "sleep_retention.c"  "sleep_system_peripheral.c" "sleep_clock.c")
     endif()
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)

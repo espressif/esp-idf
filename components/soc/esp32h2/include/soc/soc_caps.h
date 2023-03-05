@@ -461,6 +461,8 @@
 
 #define SOC_CLK_LP_FAST_SUPPORT_LP_PLL           (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
 
+// #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1) // TODO: IDF-6267
+
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)

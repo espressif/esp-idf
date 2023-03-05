@@ -1051,10 +1051,6 @@ config SOC_WIFI_FTM_SUPPORT
     bool
     default y
 
-config SOC_WIFI_GCMP_SUPPORT
-    bool
-    default n
-
 config SOC_WIFI_WAPI_SUPPORT
     bool
     default y
@@ -1064,5 +1060,9 @@ config SOC_WIFI_CSI_SUPPORT
     default y
 
 config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
     bool
     default y

@@ -20,6 +20,14 @@ menu "Example Configuration"
             For example, if beacon interval is 100 ms and listen interval is 3, the interval for station to listen
             to beacon is 300 ms.
 
+    config EXAMPLE_WIFI_BEACON_TIMEOUT
+        int "WiFi beacon timeout"
+        default 6
+        range 6 30
+        help
+            For Station, If the station does not receive a beacon frame from the connected SoftAP during the
+            inactive time, disconnect from SoftAP. Default 6s.
+
     choice EXAMPLE_POWER_SAVE_MODE
         prompt "power save mode"
         default EXAMPLE_POWER_SAVE_MIN_MODEM

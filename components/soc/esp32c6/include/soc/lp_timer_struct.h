@@ -80,29 +80,29 @@ typedef union {
     uint32_t val;
 } lp_timer_lp_intr_reg_t;
 
-typedef volatile struct lp_timer_dev_t{
-    lp_timer_target_reg_t          target[2];
-    lp_timer_update_reg_t          update;
-    lp_timer_counter_reg_t         counter[2];
-    lp_timer_overflow_reg_t        overflow;
-    lp_timer_intr_reg_t            int_raw;
-    lp_timer_intr_reg_t            int_st;
-    lp_timer_intr_reg_t            int_en;
-    lp_timer_intr_reg_t            int_clr;
-    lp_timer_lp_intr_reg_t         lp_int_raw;
-    lp_timer_lp_intr_reg_t         lp_int_st;
-    lp_timer_lp_intr_reg_t         lp_int_en;
-    lp_timer_lp_intr_reg_t         lp_int_clr;
+typedef union {
+    struct {
+        uint32_t date  : 31;
+        uint32_t clk_en: 1;
+    };
+    uint32_t val;
+} lp_timer_date_clken_reg_t;
 
+typedef struct lp_timer_dev_t{
+    volatile lp_timer_target_reg_t          target[2];
+    volatile lp_timer_update_reg_t          update;
+    volatile lp_timer_counter_reg_t         counter[2];
+    volatile lp_timer_overflow_reg_t        overflow;
+    volatile lp_timer_intr_reg_t            int_raw;
+    volatile lp_timer_intr_reg_t            int_st;
+    volatile lp_timer_intr_reg_t            int_en;
+    volatile lp_timer_intr_reg_t            int_clr;
+    volatile lp_timer_lp_intr_reg_t         lp_int_raw;
+    volatile lp_timer_lp_intr_reg_t         lp_int_st;
+    volatile lp_timer_lp_intr_reg_t         lp_int_en;
+    volatile lp_timer_lp_intr_reg_t         lp_int_clr;
     uint32_t reserved[237];
-
-    union {
-        struct {
-            uint32_t date  : 31;
-            uint32_t clk_en: 1;
-        };
-        uint32_t val;
-    } date;
+    volatile lp_timer_date_clken_reg_t      date_clken;
 } lp_timer_dev_t;
 
 extern lp_timer_dev_t LP_TIMER;

@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 /**
- * @file sleep_peripheral.h
+ * @file sleep_sys_periph.h
  *
  * This file contains declarations of digital peripheral retention related functions in light sleep mode.
  */
@@ -30,13 +30,13 @@ extern "C" {
 bool peripheral_domain_pd_allowed(void);
 
 /**
- * @brief Digital peripheral power down initialize\
+ * @brief Digital peripheral power down initialize
  *
  * @return ESP_OK on success
  *         ESP_ERR_INVALID_ARG on invalid sleep_retention_entries_create args
  *         No memory for the retention link
  */
-void sleep_peripheral_retention_init(void);
+void sleep_sys_periph_retention_init(void);
 
 #ifdef __cplusplus
 }

@@ -13,6 +13,19 @@ extern "C" {
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
 
+typedef enum {
+    PHY_I2C_MST_CMD_TYPE_OFF = 0,
+    PHY_I2C_MST_CMD_TYPE_ON,
+    PHY_I2C_MST_CMD_TYPE_MAX
+} phy_i2c_master_command_type_t;
+
+typedef struct {
+    struct {
+        uint8_t start, end; /* the start and end index of phy i2c master command memory */
+        uint8_t host_id;    /* phy i2c master host id */
+    } config[PHY_I2C_MST_CMD_TYPE_MAX];
+} phy_i2c_master_command_attribute_t;
+
 /**
  * @file phy.h
  * @brief Declarations for functions provided by libphy.a
@@ -73,6 +86,15 @@ void phy_xpd_tsens(void);
  * @brief Update internal state of PHY when wifi deinit powers off the wifi power domain.
  */
 void phy_init_flag(void);
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C6
+/**
+ * @brief Get the configuration info of PHY i2c master command memory.
+ *
+ * @param   attr the configuration info of PHY i2c master command memory
+ */
+void phy_i2c_master_mem_cfg(phy_i2c_master_command_attribute_t *attr);
 #endif
 
 /**
