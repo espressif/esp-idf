@@ -515,7 +515,6 @@ components/esp_rom/include/esp32s2/rom/usb/usb_dfu.h
 components/esp_rom/include/esp32s2/rom/usb/usb_os_glue.h
 components/esp_rom/include/esp32s2/rom/usb/usb_persist.h
 components/esp_rom/include/esp32s3/rom/bigint.h
-components/esp_rom/include/esp32s3/rom/cache.h
 components/esp_rom/include/esp32s3/rom/crc.h
 components/esp_rom/include/esp32s3/rom/digital_signature.h
 components/esp_rom/include/esp32s3/rom/hmac.h

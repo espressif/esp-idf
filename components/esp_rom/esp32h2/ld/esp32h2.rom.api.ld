@@ -31,7 +31,6 @@ PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
 PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );
 PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
 
-
 PROVIDE ( esp_rom_md5_init   = MD5Init );
 PROVIDE ( esp_rom_md5_update = MD5Update );
 PROVIDE ( esp_rom_md5_final  = MD5Final );

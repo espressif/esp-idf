@@ -503,6 +503,14 @@ uint32_t Cache_Get_IROM_MMU_End(void);
   */
 uint32_t Cache_Get_DROM_MMU_End(void);
 
+/**
+ * @brief Configure cache MMU page size according to instruction and rodata size
+ *
+ * @param irom_size The instruction cache MMU page size
+ * @param drom_size The rodata data cache MMU page size
+ */
+void Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
+
 #ifdef __cplusplus
 }
 #endif
