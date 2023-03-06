@@ -58,3 +58,7 @@ config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 config ESP_ROM_WDT_INIT_PATCH
     bool
     default y
+
+config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+    bool
+    default y
