@@ -92,15 +92,6 @@ esp_err_t __attribute__((optimize("-Os"))) bootloader_common_check_chip_validity
                 err = ESP_FAIL;
             }
         }
-        if (type == ESP_IMAGE_APPLICATION) {
-            unsigned max_rev = img_hdr->max_chip_rev_full;
-            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_ll_get_disable_wafer_version_major())) {
-                ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
-                         max_rev / 100, max_rev % 100,
-                         major_rev, minor_rev);
-                err = ESP_FAIL;
-            }
-        }
 #endif // CONFIG_IDF_ENV_FPGA
     }
 
