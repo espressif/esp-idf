@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,6 +120,7 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     printf("start timer\r\n");
     TEST_ESP_OK(gptimer_start(timer));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    TEST_ESP_OK(gptimer_stop(timer));
 
     //Tear Down
     TEST_ESP_OK(gptimer_disable(timer));
