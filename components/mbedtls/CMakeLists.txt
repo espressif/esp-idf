@@ -235,6 +235,18 @@ if(CONFIG_MBEDTLS_HARDWARE_ECC)
                                        "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
 endif()
 
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
+
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign")
+    endif()
+
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify")
+    endif()
+endif()
+
 if(CONFIG_MBEDTLS_ROM_MD5)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/md/esp_md.c")
 endif()
@@ -265,6 +277,10 @@ set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 
 if(CONFIG_PM_ENABLE)
     target_link_libraries(mbedcrypto PRIVATE idf::esp_pm)
+endif()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+    target_link_libraries(mbedcrypto PRIVATE idf::efuse)
 endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
