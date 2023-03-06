@@ -17,10 +17,6 @@ api-reference/storage/spiffs
 api-reference/storage/wear-levelling
 api-reference/storage/fatfs
 api-reference/storage/nvs_partition_gen
-api-reference/storage/spi_flash_concurrency
-api-reference/storage/spi_flash
-api-reference/storage/spi_flash_override_driver
-api-reference/storage/spi_flash_optional_feature
 api-reference/storage/nvs_flash
 api-reference/storage/sdmmc
 api-reference/storage/mass_mfg
