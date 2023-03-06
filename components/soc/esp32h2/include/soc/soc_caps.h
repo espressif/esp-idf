@@ -39,7 +39,7 @@
 #define SOC_IEEE802154_BLE_ONLY         1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
-// #define SOC_SUPPORTS_SECURE_DL_MODE     1 // TODO: IDF-6281
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
 //#define SOC_RISCV_COPROC_SUPPORTED       1 // TODO: IDF-6272
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
@@ -60,7 +60,7 @@
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_FLASH_ENC_SUPPORTED         1
-// #define SOC_SECURE_BOOT_SUPPORTED       1 // TODO: IDF-6281
+#define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
 #define SOC_PMU_SUPPORTED               1
@@ -397,7 +397,6 @@
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 
-// TODO: IDF-6281 (Copy from esp32c6, need check)
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
 #define SOC_SECURE_BOOT_V2_ECC              1
