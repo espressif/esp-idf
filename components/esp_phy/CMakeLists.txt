@@ -45,12 +45,10 @@ idf_component_register(SRCS "${srcs}"
 set(target_name "${idf_target}")
 if(IDF_TARGET STREQUAL "esp32h4")
     if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-        # TODO: rename esp32h2 to esp32h4 [WIFI-4956]
-        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev2")
+        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h4/rev2")
     endif()
     if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-        # TODO: rename esp32h2 to esp32h4 [WIFI-4956]
-        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev1")
+        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h4/rev1")
     endif()
 else()
     target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
