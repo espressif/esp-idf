@@ -363,19 +363,19 @@ void IRAM_ATTR call_start_cpu0(void)
         esp_restart();
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
     uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
-    uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     uint32_t cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 
 #if CONFIG_IDF_TARGET_ESP32S3
+    uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     uint32_t cache_mmu_drom_size = ((_rodata_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#endif // CONFIG_ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE && CONFIG_SPI_FLASH_ROM_IMPL
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
     bool efuse_opflash_en = efuse_ll_get_flash_type();
@@ -477,7 +477,7 @@ void IRAM_ATTR call_start_cpu0(void)
                              (uint32_t)&_rodata_reserved_end, \
                              s_instr_flash2spiram_off, \
                              s_rodata_flash2spiram_off);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32S3
 
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S2_DATA_CACHE_WRAP || \
     CONFIG_ESP32S3_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S3_DATA_CACHE_WRAP
