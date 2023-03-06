@@ -270,6 +270,24 @@
 #endif /* configNUM_CORES > 1 */
 
 /*
+ * Check if a task can be scheduled on a core.
+ * On a dual-core system:
+ *      - If a task is pinned, check the scheduler suspension state on the task's pinned core. The task can be scheduled
+ *        if the scheduler is not suspended on the pinned core.
+ *      - If a task is unpinned, check the scheduler suspension state on both cores. The task can be scheduled if the
+ *        scheduler is not suspended on either of the cores.
+ * On a single-core system:
+ *      - Check the scheduler suspension state on core 0. The task can be scheduled if the scheduler is not suspended.
+ */
+#if ( configNUM_CORES > 1 )
+    #define taskCAN_BE_SCHEDULED( pxTCB )                                                                              \
+    ( ( pxTCB->xCoreID != tskNO_AFFINITY ) ) ? ( uxSchedulerSuspended[ pxTCB->xCoreID ] == ( UBaseType_t ) pdFALSE ) : \
+    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE ) || ( uxSchedulerSuspended[ 1 ] == ( UBaseType_t ) pdFALSE ) )
+#else
+    #define taskCAN_BE_SCHEDULED( pxTCB )    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE ) )
+#endif /* configNUM_CORES > 1 */
+
+/*
  * Several functions take a TaskHandle_t parameter that can optionally be NULL,
  * where NULL is used to indicate that the handle of the currently executing
  * task should be used in place of the parameter.  This macro simply checks to
@@ -685,7 +703,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
  *
  * Scheduling Algorithm:
  * This function will bias towards yielding the current core.
- * - If the unblocked task has a higher (or equal) priority than then current
+ * - If the unblocked task has a higher (or equal) priority than the current
  *   core, the current core is yielded regardless of the current priority of the
  *   other core.
  * - A core (current or other) will only yield if their schedulers are not
@@ -1363,13 +1381,15 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         /* Indicate whether the current core needs to yield */
         BaseType_t xYieldRequiredCurrentCore;
 
-        /* If the target task can run on the current core, and has a higher priority than the current core, then yield the current core */
-        if( ( ( xTaskCoreID == xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) ) && ( uxTaskPriority > pxCurrentTCB[ xCurCoreID ]->uxPriority ) )
+        /* If the target task can run on the current core, and has a higher priority than the current core, and the core has not suspended scheduling, then yield the current core */
+        if( ( ( xTaskCoreID == xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) ) &&
+            ( uxTaskPriority > pxCurrentTCB[ xCurCoreID ]->uxPriority ) &&
+            ( uxSchedulerSuspended[ xCurCoreID ] == ( UBaseType_t ) pdFALSE ) )
         {
             /* Return true for the caller to yield the current core */
             xYieldRequiredCurrentCore = pdTRUE;
         }
-        /* If the target task can run on the other core, and has a higher priority then the other core, and the other core has not suspended scheduling, the yield the other core */
+        /* If the target task can run on the other core, and has a higher priority then the other core, and the other core has not suspended scheduling, then yield the other core */
         else if( ( ( xTaskCoreID == !xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) ) &&
                  ( uxTaskPriority > pxCurrentTCB[ !xCurCoreID ]->uxPriority ) &&
                  ( uxSchedulerSuspended[ !xCurCoreID ] == ( UBaseType_t ) pdFALSE ) )
@@ -2261,8 +2281,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 traceTASK_RESUME_FROM_ISR( pxTCB );
 
                 /* Check the ready lists can be accessed. */
-                /* Known issue IDF-5856. We also need to check if the other core is suspended */
-                if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
+                if( taskCAN_BE_SCHEDULED( pxTCB ) )
                 {
                     /* Ready lists can be accessed so move the task from the
                      * suspended list to the ready list directly. */
@@ -3878,12 +3897,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
              * has NOT suspended its scheduler. This occurs when:
              * - The task is pinned, and the pinned core's scheduler is running
              * - The task is unpinned, and at least one of the core's scheduler is running */
-            #if ( configNUM_CORES > 1 )
-                if( ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE ) && ( taskCAN_RUN_ON_CORE( 0, pxUnblockedTCB->xCoreID ) == pdTRUE ) ) ||
-                    ( ( uxSchedulerSuspended[ 1 ] == ( UBaseType_t ) pdFALSE ) && ( taskCAN_RUN_ON_CORE( 1, pxUnblockedTCB->xCoreID ) == pdTRUE ) ) )
-            #else
-                if( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE )
-            #endif /* configNUM_CORES > 1 */
+            if( taskCAN_BE_SCHEDULED( pxUnblockedTCB ) )
             {
                 ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
                 prvAddTaskToReadyList( pxUnblockedTCB );
@@ -6109,7 +6123,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 /* The task should not have been on an event list. */
                 configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
 
-                if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
+                if( taskCAN_BE_SCHEDULED( pxTCB ) )
                 {
                     ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
                     prvAddTaskToReadyList( pxTCB );
@@ -6200,7 +6214,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 /* The task should not have been on an event list. */
                 configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
 
-                if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
+                if( taskCAN_BE_SCHEDULED( pxTCB ) )
                 {
                     ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
                     prvAddTaskToReadyList( pxTCB );
