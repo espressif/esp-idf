@@ -275,8 +275,8 @@ typedef union {
 typedef struct gpio_sd_dev_t {
     volatile gpio_sigmadelta_chn_reg_t channel[4];
     uint32_t reserved_010[4];
-    volatile gpio_sigmadelta_misc_reg_t misc;
     volatile gpio_sigmadelta_clock_gate_reg_t clock_gate;
+    volatile gpio_sigmadelta_misc_reg_t misc;
 } gpio_sd_dev_t;
 
 typedef struct {

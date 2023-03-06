@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -41,13 +41,13 @@ extern "C" {
 #define GPIO_SD1_IN_M  (GPIO_SD1_IN_V << GPIO_SD1_IN_S)
 #define GPIO_SD1_IN_V  0x000000FFU
 #define GPIO_SD1_IN_S  0
-/** GPIO_SD0_PRESCALE : R/W; bitpos: [15:8]; default: 255;
+/** GPIO_SD1_PRESCALE : R/W; bitpos: [15:8]; default: 255;
  *  This field is used to set a divider value to divide APB clock.
  */
-#define GPIO_SD0_PRESCALE    0x000000FFU
-#define GPIO_SD0_PRESCALE_M  (GPIO_SD0_PRESCALE_V << GPIO_SD0_PRESCALE_S)
-#define GPIO_SD0_PRESCALE_V  0x000000FFU
-#define GPIO_SD0_PRESCALE_S  8
+#define GPIO_SD1_PRESCALE    0x000000FFU
+#define GPIO_SD1_PRESCALE_M  (GPIO_SD1_PRESCALE_V << GPIO_SD1_PRESCALE_S)
+#define GPIO_SD1_PRESCALE_V  0x000000FFU
+#define GPIO_SD1_PRESCALE_S  8
 
 /** GPIO_SIGMADELTA2_REG register
  *  Duty Cycle Configure Register of SDM2
@@ -60,13 +60,13 @@ extern "C" {
 #define GPIO_SD2_IN_M  (GPIO_SD2_IN_V << GPIO_SD2_IN_S)
 #define GPIO_SD2_IN_V  0x000000FFU
 #define GPIO_SD2_IN_S  0
-/** GPIO_SD0_PRESCALE : R/W; bitpos: [15:8]; default: 255;
+/** GPIO_SD2_PRESCALE : R/W; bitpos: [15:8]; default: 255;
  *  This field is used to set a divider value to divide APB clock.
  */
-#define GPIO_SD0_PRESCALE    0x000000FFU
-#define GPIO_SD0_PRESCALE_M  (GPIO_SD0_PRESCALE_V << GPIO_SD0_PRESCALE_S)
-#define GPIO_SD0_PRESCALE_V  0x000000FFU
-#define GPIO_SD0_PRESCALE_S  8
+#define GPIO_SD2_PRESCALE    0x000000FFU
+#define GPIO_SD2_PRESCALE_M  (GPIO_SD2_PRESCALE_V << GPIO_SD2_PRESCALE_S)
+#define GPIO_SD2_PRESCALE_V  0x000000FFU
+#define GPIO_SD2_PRESCALE_S  8
 
 /** GPIO_SIGMADELTA3_REG register
  *  Duty Cycle Configure Register of SDM3
@@ -79,13 +79,13 @@ extern "C" {
 #define GPIO_SD3_IN_M  (GPIO_SD3_IN_V << GPIO_SD3_IN_S)
 #define GPIO_SD3_IN_V  0x000000FFU
 #define GPIO_SD3_IN_S  0
-/** GPIO_SD0_PRESCALE : R/W; bitpos: [15:8]; default: 255;
+/** GPIO_SD3_PRESCALE : R/W; bitpos: [15:8]; default: 255;
  *  This field is used to set a divider value to divide APB clock.
  */
-#define GPIO_SD0_PRESCALE    0x000000FFU
-#define GPIO_SD0_PRESCALE_M  (GPIO_SD0_PRESCALE_V << GPIO_SD0_PRESCALE_S)
-#define GPIO_SD0_PRESCALE_V  0x000000FFU
-#define GPIO_SD0_PRESCALE_S  8
+#define GPIO_SD3_PRESCALE    0x000000FFU
+#define GPIO_SD3_PRESCALE_M  (GPIO_SD3_PRESCALE_V << GPIO_SD3_PRESCALE_S)
+#define GPIO_SD3_PRESCALE_V  0x000000FFU
+#define GPIO_SD3_PRESCALE_S  8
 
 /** GPIO_CLOCK_GATE_REG register
  *  Clock Gating Configure Register
