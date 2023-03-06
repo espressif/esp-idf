@@ -182,6 +182,7 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 
 
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
+                    'https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf',  # Rejects user-agent
                     ]
 
 
