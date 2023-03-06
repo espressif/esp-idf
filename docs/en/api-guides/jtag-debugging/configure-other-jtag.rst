@@ -44,6 +44,7 @@ Configure Drivers
 
 You may need to install driver software to make JTAG work with computer. Refer to documentation of your JTAG adapter for related details.
 
+On Linux adding OpenOCD udev rules is required and is done by placing the following `udev rules file <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ in the ``/etc/udev/rules.d`` folder.
 
 Connect
 ^^^^^^^
