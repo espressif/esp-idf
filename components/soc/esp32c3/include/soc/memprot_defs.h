@@ -35,6 +35,9 @@ typedef union {
 
 #define DRAM_SRAM_START             0x3FC7C000
 
+#define IRAM0_VIOLATE_STATUS_ADDR_OFFSET  0x40000000
+#define DRAM0_VIOLATE_STATUS_ADDR_OFFSET  0x3C000000
+
 #ifndef MAP_DRAM_TO_IRAM
 #define MAP_DRAM_TO_IRAM(addr)       (addr - DRAM_SRAM_START + SOC_IRAM_LOW)
 #endif
