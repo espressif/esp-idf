@@ -46,17 +46,10 @@ api-reference/storage/nvs_partition_parse
 api-reference/peripherals/usb_host
 api-reference/peripherals/usb_device
 api-reference/peripherals/i2s
-api-reference/peripherals/temp_sensor
 api-reference/peripherals/spi_features
 api-reference/peripherals/sdio_slave
 api-reference/peripherals/spi_flash/xip_from_psram.inc
-api-reference/peripherals/spi_flash/spi_flash_concurrency
-api-reference/peripherals/spi_flash/spi_flash_override_driver
-api-reference/peripherals/spi_flash/spi_flash_optional_feature
-api-reference/peripherals/spi_flash/index
-api-reference/peripherals/spi_flash/auto_suspend.inc
 api-reference/peripherals/adc_calibration
-api-reference/peripherals/i2c
 api-reference/peripherals/dedic_gpio
 api-reference/peripherals/sd_pullup_requirements
 api-reference/peripherals/index
