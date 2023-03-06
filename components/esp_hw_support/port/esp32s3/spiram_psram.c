@@ -361,8 +361,8 @@ esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   
          */
         psram_read_id(SPI1_NUM, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", s_psram_id);
-            return ESP_FAIL;
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", (uint32_t)s_psram_id);
+            return ESP_ERR_NOT_SUPPORTED;
         }
     }
 
