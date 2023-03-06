@@ -315,8 +315,8 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         rc = simple_ble_gatts_get_attr_value(attr_handle, &temp_outlen,
                                              &temp_outbuf);
         if (rc != 0) {
-            ESP_LOGE(TAG, "Failed to read characteristic with attr_handle = %d", attr_handle);
-            return rc;
+            ESP_LOGE(TAG, "Characteristic with attr_handle = %d is not added to the list", attr_handle);
+            return 0;
         }
 
         rc = os_mbuf_append(ctxt->om, temp_outbuf, temp_outlen);
