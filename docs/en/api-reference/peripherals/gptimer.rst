@@ -129,6 +129,7 @@ Start and Stop Timer
 ^^^^^^^^^^^^^^^^^^^^
 
 The basic IO operation of a timer is to start and stop. Calling :cpp:func:`gptimer_start` can make the internal counter work, while calling :cpp:func:`gptimer_stop` can make the counter stop working. The following illustrates how to start a timer with or without an alarm event.
+Calling :cpp:func:`gptimer_start` will transit the driver state from **enable** to **run**, and vice versa. You need to make sure the start and stop functions are used in pairs, otherwise, the functions may return :c:macro:`ESP_ERR_INVALID_STATE`. Most of the time, this error means that the timer is already stopped or in the "start protection" state (i.e. :cpp:func:`gptimer_start` is called but not finished).
 
 Start Timer as a Wall Clock
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -312,17 +313,14 @@ There is another Kconfig option :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` that can
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`gptimer_new_timer` is guaranteed to be thread safe by the driver, which means, you can call it from different RTOS tasks without protection by extra locks.
-
-The following functions are allowed to run under ISR context, as the driver uses a critical section to prevent them being called concurrently in the task and ISR.
+All the APIs provided by the driver are guaranteed to be thread safe, which means you can call them from different RTOS tasks without protection by extra locks. The following functions are allowed to run under ISR context.
 
 - :cpp:func:`gptimer_start`
 - :cpp:func:`gptimer_stop`
 - :cpp:func:`gptimer_get_raw_count`
 - :cpp:func:`gptimer_set_raw_count`
+- :cpp:func:`gptimer_get_captured_count`
 - :cpp:func:`gptimer_set_alarm_action`
-
-Other functions that take :cpp:type:`gptimer_handle_t` as the first positional parameter, are not treated as thread safe, which means you should avoid calling them from multiple tasks.
 
 .. _gptimer-kconfig-options:
 
