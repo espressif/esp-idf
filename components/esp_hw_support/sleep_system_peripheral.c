@@ -141,25 +141,25 @@ esp_err_t sleep_sys_periph_spimem_retention_init(void)
     #define N_REGS_SPI1_MEM_0()     (((SPI_MEM_SPI_SMEM_DDR_REG(1) - REG_SPI_MEM_BASE(1)) / 4) + 1)
     #define N_REGS_SPI1_MEM_1()     (((SPI_MEM_SPI_SMEM_AC_REG(1) - SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(1)) / 4) + 1)
     #define N_REGS_SPI1_MEM_2()     (1)
-    #define N_REGS_SPI1_MEM_3()     (((SPI_MEM_DATE_REG(1) - SPI_MEM_DPA_CTRL_REG(1)) / 4) + 1)
+    #define N_REGS_SPI1_MEM_3()     (((SPI_MEM_DATE_REG(1) - SPI_MEM_MMU_POWER_CTRL_REG(1)) / 4) + 1)
 
     #define N_REGS_SPI0_MEM_0()     (((SPI_MEM_SPI_SMEM_DDR_REG(0) - REG_SPI_MEM_BASE(0)) / 4) + 1)
     #define N_REGS_SPI0_MEM_1()     (((SPI_MEM_SPI_SMEM_AC_REG(0) - SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(0)) / 4) + 1)
     #define N_REGS_SPI0_MEM_2()     (1)
-    #define N_REGS_SPI0_MEM_3()     (((SPI_MEM_DATE_REG(0) - SPI_MEM_DPA_CTRL_REG(0)) / 4) + 1)
+    #define N_REGS_SPI0_MEM_3()     (((SPI_MEM_DATE_REG(0) - SPI_MEM_MMU_POWER_CTRL_REG(0)) / 4) + 1)
 
     const static sleep_retention_entries_config_t spimem_regs_retention[] = {
         /* Note: SPI mem should not to write mmu SPI_MEM_MMU_ITEM_CONTENT_REG and SPI_MEM_MMU_ITEM_INDEX_REG */
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x00), REG_SPI_MEM_BASE(1),               REG_SPI_MEM_BASE(1),               N_REGS_SPI1_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* spi1_mem */
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x01), SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(1), SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(1), N_REGS_SPI1_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x02), SPI_MEM_CLOCK_GATE_REG(1),         SPI_MEM_CLOCK_GATE_REG(1),         N_REGS_SPI1_MEM_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x03), SPI_MEM_DPA_CTRL_REG(1),           SPI_MEM_DPA_CTRL_REG(1),           N_REGS_SPI1_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x03), SPI_MEM_MMU_POWER_CTRL_REG(1),           SPI_MEM_MMU_POWER_CTRL_REG(1),           N_REGS_SPI1_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
 
         /* Note: SPI mem should not to write mmu SPI_MEM_MMU_ITEM_CONTENT_REG and SPI_MEM_MMU_ITEM_INDEX_REG */
         [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x04), REG_SPI_MEM_BASE(0),               REG_SPI_MEM_BASE(0),               N_REGS_SPI0_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* spi0_mem */
         [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x05), SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(0), SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(0), N_REGS_SPI0_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
         [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x06), SPI_MEM_CLOCK_GATE_REG(0),         SPI_MEM_CLOCK_GATE_REG(0),         N_REGS_SPI0_MEM_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x07), SPI_MEM_DPA_CTRL_REG(0),           SPI_MEM_DPA_CTRL_REG(0),           N_REGS_SPI0_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }
+        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x07), SPI_MEM_MMU_POWER_CTRL_REG(0),           SPI_MEM_MMU_POWER_CTRL_REG(0),           N_REGS_SPI0_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }
     };
 
     esp_err_t err = sleep_retention_entries_create(spimem_regs_retention, ARRAY_SIZE(spimem_regs_retention), SLEEP_RETENTION_PERIPHERALS_PRIORITY_DEFAULT, SLEEP_RETENTION_MODULE_SPIMEM);
