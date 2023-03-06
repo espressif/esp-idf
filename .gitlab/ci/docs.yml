@@ -212,8 +212,12 @@ deploy_docs_production:
 check_doc_links:
   extends:
     - .build_docs_template
-    - .rules:protected
+  rules:
+    - <<: *if-protected-no_label
   stage: post_deploy
+  needs:
+    - job: deploy_docs_production
+      artifacts: false
   tags: ["build", "amd64", "internet"]
   artifacts:
     when: always
