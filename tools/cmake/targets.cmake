@@ -70,7 +70,7 @@ endfunction()
 #
 # Set the target used for the standard project build.
 #
-macro(__target_init)
+macro(__target_init config_file)
     # Input is IDF_TARGET environement variable
     set(env_idf_target $ENV{IDF_TARGET})
 
@@ -101,14 +101,8 @@ macro(__target_init)
         endif()
     endif()
 
-    if(SDKCONFIG)
-        get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
-    else()
-        set(sdkconfig "${CMAKE_SOURCE_DIR}/sdkconfig")
-    endif()
-
     # Check if selected target is consistent with sdkconfig
-    __target_from_config("${sdkconfig}" sdkconfig_target where)
+    __target_from_config("${config_file}" sdkconfig_target where)
     if(sdkconfig_target)
         if(NOT ${sdkconfig_target} STREQUAL ${env_idf_target})
             message(FATAL_ERROR " Target '${sdkconfig_target}' in sdkconfig '${where}'"

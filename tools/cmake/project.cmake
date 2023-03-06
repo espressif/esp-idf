@@ -1,12 +1,29 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
 cmake_minimum_required(VERSION 3.16)
 
+# Get the currently selected sdkconfig file early, so this doesn't
+# have to be done multiple times on different places.
+if(SDKCONFIG)
+    get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
+else()
+    set(sdkconfig "${CMAKE_SOURCE_DIR}/sdkconfig")
+endif()
+
+# Check if the cmake was started as part of the set-target action.
+# If so, check for existing sdkconfig file and rename it.
+# This is done before __target_init, so the existing IDF_TARGET from sdkconfig
+# is not considered for consistence checking.
+if("$ENV{_IDF_PY_SET_TARGET_ACTION}" EQUAL "1" AND EXISTS "${sdkconfig}")
+    file(RENAME "${sdkconfig}" "${sdkconfig}.old")
+    message(STATUS "Existing sdkconfig '${sdkconfig}' renamed to '${sdkconfig}.old'.")
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/targets.cmake)
 # Initialize build target for this build using the environment variable or
 # value passed externally.
-__target_init()
+__target_init("${sdkconfig}")
 
-# The mere inclusion of this CMake file sets up some interal build properties.
+# The mere inclusion of this CMake file sets up some internal build properties.
 # These properties can be modified in between this inclusion the the idf_build_process
 # call.
 include(${CMAKE_CURRENT_LIST_DIR}/idf.cmake)
@@ -316,7 +333,7 @@ function(__project_init components_var test_components_var)
     set(${test_components_var} "${test_components}" PARENT_SCOPE)
 endfunction()
 
-# Trick to temporarily redefine project(). When functions are overriden in CMake, the originals can still be accessed
+# Trick to temporarily redefine project(). When functions are overridden in CMake, the originals can still be accessed
 # using an underscore prefixed function of the same name. The following lines make sure that __project  calls
 # the original project(). See https://cmake.org/pipermail/cmake/2015-October/061751.html.
 function(project)
@@ -430,12 +447,6 @@ macro(project project_name)
         endif()
         list(APPEND sdkconfig_defaults ${sdkconfig_default})
     endforeach()
-
-    if(SDKCONFIG)
-        get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
-    else()
-        set(sdkconfig "${CMAKE_CURRENT_LIST_DIR}/sdkconfig")
-    endif()
 
     if(BUILD_DIR)
         get_filename_component(build_dir "${BUILD_DIR}" ABSOLUTE)

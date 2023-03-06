@@ -419,7 +419,8 @@ def _detect_cmake_generator(prog_name: str) -> Any:
     raise FatalError("To use %s, either the 'ninja' or 'GNU make' build tool must be available in the PATH" % prog_name)
 
 
-def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmake: bool=False) -> None:
+def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmake: bool=False,
+                           env: Dict=None) -> None:
     """Check the build directory exists and that cmake has been run there.
 
     If this isn't the case, create the build directory (if necessary) and
@@ -480,7 +481,7 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
             cmake_args += [project_dir]
 
             hints = not args.no_hints
-            RunTool('cmake', cmake_args, cwd=args.build_dir, hints=hints)()
+            RunTool('cmake', cmake_args, cwd=args.build_dir, env=env, hints=hints)()
         except Exception:
             # don't allow partially valid CMakeCache.txt files,
             # to keep the "should I run cmake?" logic simple
