@@ -21,6 +21,7 @@
 #include "esp_partition.h"
 #include <functional>
 #include "nvs_handle_simple.hpp"
+#include "nvs_memory_management.hpp"
 #include "esp_err.h"
 
 #ifdef LINUX_TARGET
@@ -35,7 +36,7 @@
 static const char* TAG = "nvs";
 #endif // ! LINUX_TARGET
 
-class NVSHandleEntry : public intrusive_list_node<NVSHandleEntry> {
+class NVSHandleEntry : public intrusive_list_node<NVSHandleEntry>, public ExceptionlessAllocatable {
 public:
     NVSHandleEntry(nvs::NVSHandleSimple *handle, const char* part_name)
         : nvs_handle(handle),

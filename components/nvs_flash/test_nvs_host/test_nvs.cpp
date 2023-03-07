@@ -2562,10 +2562,11 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
     esp_part.address = 0;
     esp_part.size = size * SPI_FLASH_SEC_SIZE;
     strncpy(esp_part.label, part_name, PART_NAME_MAX_SIZE);
-    shared_ptr<Partition> part;
+    unique_ptr<nvs::Partition> part;
 
     if (is_encr) {
-        NVSEncryptedPartition *enc_part = new NVSEncryptedPartition(&esp_part);
+        nvs::NVSEncryptedPartition *enc_part = new (std::nothrow) nvs::NVSEncryptedPartition(&esp_part);
+        REQUIRE(enc_part != nullptr);
         TEST_ESP_OK(enc_part->init(xts_cfg));
         part.reset(enc_part);
     } else {
@@ -2652,10 +2653,11 @@ static void check_nvs_part_gen_args_mfg(SpiFlashEmulator *spi_flash_emulator,
     esp_part.address = 0;
     esp_part.size = size * SPI_FLASH_SEC_SIZE;
     strncpy(esp_part.label, part_name, PART_NAME_MAX_SIZE);
-    shared_ptr<Partition> part;
+    unique_ptr<nvs::Partition> part;
 
     if (is_encr) {
-        NVSEncryptedPartition *enc_part = new NVSEncryptedPartition(&esp_part);
+        nvs::NVSEncryptedPartition *enc_part = new (std::nothrow) nvs::NVSEncryptedPartition(&esp_part);
+        REQUIRE(enc_part != nullptr);
         TEST_ESP_OK(enc_part->init(xts_cfg));
         part.reset(enc_part);
     } else {
