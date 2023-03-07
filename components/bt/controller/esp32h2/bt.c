@@ -724,11 +724,11 @@ esp_err_t esp_bt_controller_deinit(void)
 
     if (s_ble_active) {
         esp_phy_disable();
-        // esp_phy_modem_deinit();
-        // modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
-        // modem_clock_module_disable(PERIPH_BT_MODULE);
         s_ble_active = false;
     }
+    // esp_phy_modem_deinit();
+    // modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+    // modem_clock_module_disable(PERIPH_BT_MODULE);
 
     ble_controller_deinit();
 
