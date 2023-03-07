@@ -96,29 +96,29 @@ static inline void bootloader_hardware_init(void)
 
 static inline void bootloader_ana_reset_config(void)
 {
+    //Enable super WDT reset.
+    bootloader_ana_super_wdt_reset_config(true);
+
     /*
-      For origin chip & ECO1: only support swt reset;
-      For ECO2: fix brownout reset bug, support swt & brownout reset;
-      For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
+      For origin chip & ECO1: brownout & clock glitch reset not available
+      For ECO2: fix brownout reset bug
+      For ECO3: fix clock glitch reset bug
     */
     switch (efuse_hal_chip_revision()) {
         case 0:
         case 1:
-            //Enable WDT reset. Disable BOD and GLITCH reset
-            bootloader_ana_super_wdt_reset_config(true);
+            //Disable BOD and GLITCH reset
             bootloader_ana_bod_reset_config(false);
             bootloader_ana_clock_glitch_reset_config(false);
             break;
         case 2:
-            //Enable WDT and BOD reset. Disable GLITCH reset
-            bootloader_ana_super_wdt_reset_config(true);
+            //Enable BOD reset. Disable GLITCH reset
             bootloader_ana_bod_reset_config(true);
             bootloader_ana_clock_glitch_reset_config(false);
             break;
         case 3:
         default:
-            //Enable WDT, BOD, and GLITCH reset
-            bootloader_ana_super_wdt_reset_config(true);
+            //Enable BOD, and GLITCH reset
             bootloader_ana_bod_reset_config(true);
             bootloader_ana_clock_glitch_reset_config(true);
             break;
