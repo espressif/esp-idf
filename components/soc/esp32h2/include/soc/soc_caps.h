@@ -33,7 +33,7 @@
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
-// #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
+#define SOC_BT_SUPPORTED                1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_IEEE802154_SUPPORTED        1
 #define SOC_IEEE802154_BLE_ONLY         1
@@ -470,3 +470,5 @@
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
+#define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */
