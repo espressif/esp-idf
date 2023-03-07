@@ -38,9 +38,12 @@ def test_examples_efuse(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c6
+@pytest.mark.esp32h2
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
 @pytest.mark.parametrize('config', ['virt_flash_enc',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
@@ -136,7 +139,10 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.esp32s2
+@pytest.mark.esp32s3
 @pytest.mark.parametrize('config', ['virt_flash_enc',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
@@ -208,7 +214,10 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.esp32s2
+@pytest.mark.esp32s3
 @pytest.mark.parametrize('config', ['virt_flash_enc_release',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
@@ -620,10 +629,34 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32c2(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.esp32c6
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c6'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32c6(dut: Dut) -> None:
+    test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32h2
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32h2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32h2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
 @pytest.mark.esp32s2
 @pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_secure_boot_v2_esp32s2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32s3
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s3'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32s3(dut: Dut) -> None:
     test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
 
 
@@ -712,10 +745,34 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32c2_pre_loaded(dut: Dut) ->
 
 
 @pytest.mark.generic
+@pytest.mark.esp32c6
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c6'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32c6_pre_loaded(dut: Dut) -> None:
+    test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32h2
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32h2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32h2_pre_loaded(dut: Dut) -> None:
+    test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
+
+
+@pytest.mark.generic
 @pytest.mark.esp32s2
 @pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_secure_boot_v2_esp32s2_pre_loaded(dut: Dut) -> None:
+    test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32s3
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s3'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32s3_pre_loaded(dut: Dut) -> None:
     test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
 
 
@@ -973,8 +1030,32 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32c2(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.esp32c6
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32c6'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32c6(dut: Dut) -> None:
+    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32h2
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32h2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32h2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
+
+
+@pytest.mark.generic
 @pytest.mark.esp32s2
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32s2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32s2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32s3
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32s3'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32s3(dut: Dut) -> None:
     test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
