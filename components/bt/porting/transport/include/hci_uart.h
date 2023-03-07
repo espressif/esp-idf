@@ -84,6 +84,16 @@ void hci_uart_start_tx(int port_num);
  */
 void hci_uart_start_rx(int port_num);
 
+/**
+ * @brief reconfig hci uart pin
+ *
+ * @param tx_pin  The Tx pin
+ * @param rx_pin  The Rx pin
+ * @param cts_pin The CTS pin
+ * @param rts_pin The RTS pin
+ * @return int  0 on success, non-zero error code on failure
+ */
+int hci_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
 
 #ifdef __cplusplus
 }
