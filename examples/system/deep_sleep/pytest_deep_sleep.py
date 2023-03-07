@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import logging
@@ -12,7 +12,7 @@ touch_wake_up_support = ['esp32', 'esp32s2']
 
 CONFIGS = [
     pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
-    pytest.param('basic', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.esp32s3, pytest.mark.esp32c3]),
+    pytest.param('basic', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.esp32s3, pytest.mark.esp32c3, pytest.mark.esp32c2]),
 ]
 
 
@@ -60,7 +60,9 @@ def test_deep_sleep(dut: Dut) -> None:
 
     # This line indicates that the CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP option set in sdkconfig.defaults
     # has correctly allowed skipping verification on wakeup
-    dut.expect_exact('boot: Fast booting app from partition', timeout=2)
+    # Note: this feature depends on rtc mem
+    if dut.app.sdkconfig.get('SOC_RTC_MEM_SUPPORTED') is True:
+        dut.expect_exact('boot: Fast booting app from partition', timeout=2)
 
     # Check that it measured 2xxxxms in deep sleep, i.e at least 20 seconds:
     dut.expect(r'Wake up from timer. Time spent in deep sleep: 2\d{4}ms', timeout=2)
