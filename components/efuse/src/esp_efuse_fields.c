@@ -59,7 +59,7 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 {
     size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION));
     if (size < secure_version) {
-        ESP_LOGE(TAG, "Max secure version is %d. Given %d version can not be written.", size, secure_version);
+        ESP_LOGE(TAG, "Max secure version is %d. Given %"PRIu32" version can not be written.", size, secure_version);
         return ESP_ERR_INVALID_ARG;
     }
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(ESP_EFUSE_SECURE_VERSION_NUM_BLOCK);
@@ -75,9 +75,9 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
         // Repeated programming of programmed bits is strictly forbidden
         uint32_t new_bits = num_bit_app - num_bit_hw; // get only new bits
         esp_efuse_write_field_blob(ESP_EFUSE_SECURE_VERSION, &new_bits, size);
-        ESP_LOGI(TAG, "Anti-rollback is set. eFuse field is updated(%d).", secure_version);
+        ESP_LOGI(TAG, "Anti-rollback is set. eFuse field is updated(%"PRIu32").", secure_version);
     } else if (sec_ver_hw > secure_version) {
-        ESP_LOGE(TAG, "Anti-rollback is not set. secure_version of app is lower that eFuse field(%d).", sec_ver_hw);
+        ESP_LOGE(TAG, "Anti-rollback is not set. secure_version of app is lower that eFuse field(%"PRIu32").", sec_ver_hw);
         return ESP_FAIL;
     }
     return ESP_OK;
