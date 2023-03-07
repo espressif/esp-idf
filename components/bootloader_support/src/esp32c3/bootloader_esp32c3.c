@@ -104,20 +104,20 @@ static inline void bootloader_ana_reset_config(void)
     switch (efuse_hal_chip_revision()) {
         case 0:
         case 1:
-            //Enable WDT reset. Disable BOR and GLITCH reset
+            //Enable WDT reset. Disable BOD and GLITCH reset
             bootloader_ana_super_wdt_reset_config(true);
             bootloader_ana_bod_reset_config(false);
             bootloader_ana_clock_glitch_reset_config(false);
             break;
         case 2:
-            //Enable WDT and BOR reset. Disable GLITCH reset
+            //Enable WDT and BOD reset. Disable GLITCH reset
             bootloader_ana_super_wdt_reset_config(true);
             bootloader_ana_bod_reset_config(true);
             bootloader_ana_clock_glitch_reset_config(false);
             break;
         case 3:
         default:
-            //Enable WDT, BOR, and GLITCH reset
+            //Enable WDT, BOD, and GLITCH reset
             bootloader_ana_super_wdt_reset_config(true);
             bootloader_ana_bod_reset_config(true);
             bootloader_ana_clock_glitch_reset_config(true);
