@@ -355,7 +355,7 @@ static esp_err_t esp_console_setup_history(const char *history_path, uint32_t ma
 
     /* Set command history size */
     if (linenoiseHistorySetMaxLen(max_history_len) != 1) {
-        ESP_LOGE(TAG, "set max history length to %d failed", max_history_len);
+        ESP_LOGE(TAG, "set max history length to %"PRIu32" failed", max_history_len);
         ret = ESP_FAIL;
         goto _exit;
     }
