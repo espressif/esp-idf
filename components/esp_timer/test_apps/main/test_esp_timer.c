@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1177,4 +1177,43 @@ TEST_CASE("Test ESP_TIMER_ISR, stop API cleans alarm reg if ISR timer list is em
     vSemaphoreDelete(done);
     printf("timer deleted\n");
 }
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static void task_callback3(void* arg)
+{
+    int *data = (int *)arg;
+    ++*data;
+    esp_rom_printf("callback from CPU%d\n", xPortGetCoreID());
+#if defined(CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY) || defined(CONFIG_ESP_TIMER_ISR_AFFINITY_CPU1)
+    TEST_ASSERT_EQUAL_INT(1, xPortGetCoreID());
+#endif // CONFIG_ESP_TIMER_AFFINITY_NO_AFFINITY
+}
+
+TEST_CASE("Test that CPU1 can handle esp_timer ISR even when CPU0 is blocked", "[esp_timer][isr_dispatch]")
+{
+    int data = 0;
+
+    esp_timer_handle_t timer;
+    const esp_timer_create_args_t timer_args = {
+        .callback = &task_callback3,
+        .dispatch_method = ESP_TIMER_ISR,
+        .arg = &data,
+        .name = "test",
+    };
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+    TEST_ESP_OK(esp_timer_start_periodic(timer, 10000));
+
+    portDISABLE_INTERRUPTS();
+    TEST_ASSERT_EQUAL_INT(0, xPortGetCoreID());
+    esp_rom_printf("CPU%d is blocked\n", xPortGetCoreID());
+    esp_rom_delay_us(100000);
+    esp_rom_printf("CPU%d is released\n", xPortGetCoreID());
+    portENABLE_INTERRUPTS();
+
+    TEST_ESP_OK(esp_timer_stop(timer));
+    TEST_ESP_OK(esp_timer_dump(stdout));
+    TEST_ASSERT_INT_WITHIN(3, 10, data);
+    TEST_ESP_OK(esp_timer_delete(timer));
+}
+#endif // not CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
