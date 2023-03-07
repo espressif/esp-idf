@@ -3,19 +3,19 @@
 Secure Boot V2
 ==============
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS or ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6 or esp32h2="RSA-PSS or ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6="RSA-3072, ECDSA-256, or ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6 or esp32h2="RSA-3072, ECDSA-256, or ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6 or esp32h2="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(ECO 3 onwards)", esp32c3="(ECO 3 onwards)"}
 
-{IDF_TARGET_RSA_TIME:default="", esp32c6="~2.7 ms"}
+{IDF_TARGET_RSA_TIME:default="", esp32c6="~2.7 ms", esp32h2="~4.5 ms"}
 
-{IDF_TARGET_ECDSA_TIME:default="", esp32c6="~21.5 ms"}
+{IDF_TARGET_ECDSA_TIME:default="", esp32c6="~21.5 ms", esp32h2="~36 ms"}
 
-{IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz"}
+{IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz", esp32h2="96 MHz"}
 
 {IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (V2)"}
 

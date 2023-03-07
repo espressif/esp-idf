@@ -118,9 +118,6 @@ api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
 security/esp32h2_log.inc
-security/security
-security/secure-boot-v2
-security/secure-boot-v1
 about
 resources
 migration-guides/release-5.x/5.1/index
