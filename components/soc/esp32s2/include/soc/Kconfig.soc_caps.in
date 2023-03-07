@@ -863,6 +863,10 @@ config SOC_EFUSE_DIS_LEGACY_SPI_BOOT
     bool
     default y
 
+config SOC_EFUSE_DIS_ICACHE
+    bool
+    default y
+
 config SOC_SECURE_BOOT_V2_RSA
     bool
     default y
