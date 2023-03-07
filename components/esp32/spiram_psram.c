@@ -35,6 +35,7 @@
 #include "soc/chip_revision.h"
 #include "driver/gpio.h"
 #include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
 #include "hal/gpio_hal.h"
 #include "driver/spi_common_internal.h"
 #include "driver/periph_ctrl.h"
@@ -831,7 +832,7 @@ bool psram_is_32mbit_ver0(void)
 esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
 {
     psram_io_t psram_io={0};
-    uint32_t pkg_ver = esp_efuse_get_pkg_ver();
+    uint32_t pkg_ver = efuse_ll_get_chip_ver_pkg();
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D2WD");
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
