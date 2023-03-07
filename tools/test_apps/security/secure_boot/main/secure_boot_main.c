@@ -41,7 +41,9 @@ static void example_print_chip_info(void)
             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
 
-    printf("silicon revision %d, ", chip_info.revision);
+    unsigned major_rev = chip_info.full_revision / 100;
+    unsigned minor_rev = chip_info.full_revision % 100;
+    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
 
     printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
@@ -53,7 +55,7 @@ static void example_secure_boot_status(void)
 {
     uint32_t efuse_block0 = REG_READ(EFUSE_BLK0_RDATA6_REG);
 
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, i;
     ESP_LOGI(TAG, "Checking for secure boot v2..");
     if(efuse_block0 & EFUSE_RD_ABS_DONE_1) {
@@ -72,9 +74,9 @@ static void example_secure_boot_status(void)
     ESP_LOGI(TAG, "Checking for secure boot v1..");
     uint32_t dis_reg = REG_READ(EFUSE_BLK0_RDATA0_REG);
     if (efuse_block0 & EFUSE_RD_ABS_DONE_0) {
-    ESP_LOGI(TAG, "ABS_DONE_0 is set. Secure Boot V1 enabled");
-#ifdef CONFIG_ESP32_REV_MIN_3
-    ESP_LOGW(TAG, "This chip version supports Secure Boot V2. It is recommended to use Secure Boot V2.");
+        ESP_LOGI(TAG, "ABS_DONE_0 is set. Secure Boot V1 enabled");
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
+        ESP_LOGW(TAG, "This chip version supports Secure Boot V2. It is recommended to use Secure Boot V2.");
 #endif
         bool efuse_key_read_protected = dis_reg & EFUSE_RD_DIS_BLK2;
         bool efuse_key_write_protected = dis_reg & EFUSE_WR_DIS_BLK2;

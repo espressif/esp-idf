@@ -108,6 +108,7 @@ INPUT = \
     $(IDF_PATH)/components/hal/include/hal/adc_types.h \
     $(IDF_PATH)/components/hal/include/hal/twai_types.h \
     $(IDF_PATH)/components/hal/include/hal/touch_sensor_types.h \
+    $(IDF_PATH)/components/hal/include/hal/efuse_hal.h \
     $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(IDF_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif.h \

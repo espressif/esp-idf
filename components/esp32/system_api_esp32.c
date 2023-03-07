@@ -23,6 +23,7 @@
 #include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_periph.h"
+#include "soc/chip_revision.h"
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
 #include "soc/timer_periph.h"
@@ -179,6 +180,7 @@ void esp_chip_info(esp_chip_info_t* out_info)
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 inline bool soc_has_cache_lock_bug(void)
 {
-    return (efuse_hal_get_major_chip_version() == 3);
+    unsigned rev = efuse_hal_chip_revision();
+    return ESP_CHIP_REV_ABOVE(rev, 300);
 }
 #endif
