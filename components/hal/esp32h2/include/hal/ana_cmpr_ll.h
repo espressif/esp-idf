@@ -38,6 +38,7 @@ static inline void analog_cmpr_ll_enable(analog_cmpr_dev_t *hw, bool en)
  * @param hw Analog comparator register base address
  * @param volt_level The voltage level of the internal reference, range [0.0V, 0.7VDD], step 0.1VDD
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw, uint32_t volt_level)
 {
     hw->pad_comp_config.dref_comp = volt_level;
@@ -90,6 +91,7 @@ static inline void analog_cmpr_ll_set_cross_intr_type(analog_cmpr_dev_t *hw, uin
  * @param hw Analog comparator register base address
  * @param cycle The debounce cycle
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_set_debounce_cycle(analog_cmpr_dev_t *hw, uint32_t cycle)
 {
     hw->pad_comp_filter.zero_det_filter_cnt = cycle;
@@ -116,6 +118,7 @@ static inline void analog_cmpr_ll_enable_intr(analog_cmpr_dev_t *hw, uint32_t ma
  *
  * @param hw Analog comparator register base address
  */
+__attribute__((always_inline))
 static inline uint32_t analog_cmpr_ll_get_intr_status(analog_cmpr_dev_t *hw)
 {
     return hw->int_st.val;
@@ -127,6 +130,7 @@ static inline uint32_t analog_cmpr_ll_get_intr_status(analog_cmpr_dev_t *hw)
  * @param hw Analog comparator register base address
  * @param mask Interrupt status word
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_clear_intr(analog_cmpr_dev_t *hw, uint32_t mask)
 {
     hw->int_clr.val = mask;

@@ -90,7 +90,7 @@ typedef int ana_cmpr_clk_src_t;
  *
  */
 typedef struct {
-    // Currently no data
+    // No data for now
 } ana_cmpr_cross_event_data_t;
 
 /**

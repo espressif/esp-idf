@@ -20,6 +20,7 @@
 #include "esp_pm.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
+#include "esp_memory_utils.h"
 #include "soc/periph_defs.h"
 #include "soc/ana_cmpr_periph.h"
 #include "hal/ana_cmpr_ll.h"
@@ -30,6 +31,7 @@
 struct ana_cmpr_t {
     ana_cmpr_unit_t             unit;               /*!< Analog comparator unit id */
     analog_cmpr_dev_t           *dev;               /*!< Analog comparator unit device address */
+    ana_cmpr_ref_source_t       ref_src;            /*!< Analog comparator reference source, internal or external */
     bool                        is_enabled;         /*!< Whether the Analog comparator unit is enabled */
     ana_cmpr_event_callbacks_t  cbs;                /*!< The callback group that set by user */
     intr_handle_t               intr_handle;        /*!< Interrupt handle */
@@ -46,9 +48,11 @@ struct ana_cmpr_t {
 
 /* Memory allocation caps which decide the section that memory supposed to allocate */
 #if CONFIG_ANA_CMPR_ISR_IRAM_SAFE
-#define ANA_CMPR_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#define ANA_CMPR_MEM_ALLOC_CAPS         (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#define ANA_CMPR_INTR_FLAG              (ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_IRAM)
 #else
-#define ANA_CMPR_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
+#define ANA_CMPR_MEM_ALLOC_CAPS         MALLOC_CAP_DEFAULT
+#define ANA_CMPR_INTR_FLAG              ESP_INTR_FLAG_LEVEL1
 #endif
 
 /* Driver tag */
@@ -99,6 +103,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
 
     /* Assign analog comparator unit */
     s_ana_cmpr[unit]->dev = ANALOG_CMPR_LL_GET_HW();
+    s_ana_cmpr[unit]->ref_src = config->ref_src;
     s_ana_cmpr[unit]->is_enabled = false;
     s_ana_cmpr[unit]->pm_lock = NULL;
 
@@ -124,7 +129,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     portEXIT_CRITICAL(&s_spinlock);
 
     /* Allocate the interrupt, currently the interrupt source of Analog Comparator is shared with GPIO interrupt source */
-    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ESP_INTR_FLAG_LEVEL1,
+    esp_intr_alloc(ETS_GPIO_INTR_SOURCE, ANA_CMPR_INTR_FLAG,
                    s_ana_cmpr_default_intr_handler, s_ana_cmpr[unit], &s_ana_cmpr[unit]->intr_handle);
 
     if (config->ref_src == ANA_CMPR_REF_SRC_INTERNAL) {
@@ -183,11 +188,13 @@ esp_err_t ana_cmpr_set_intl_reference(ana_cmpr_handle_t cmpr, const ana_cmpr_int
 {
     ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
     ANA_CMPR_NULL_POINTER_CHECK_ISR(ref_cfg);
+    ESP_RETURN_ON_FALSE_ISR(cmpr->ref_src == ANA_CMPR_REF_SRC_INTERNAL, ESP_ERR_INVALID_STATE,
+                            TAG, "the reference channel is not internal, no need to configure internal reference");
 
     /* Set internal reference voltage */
-    portENTER_CRITICAL_ISR(&s_spinlock);
+    portENTER_CRITICAL_SAFE(&s_spinlock);
     analog_cmpr_ll_set_internal_ref_voltage(cmpr->dev, ref_cfg->ref_volt);
-    portEXIT_CRITICAL_ISR(&s_spinlock);
+    portEXIT_CRITICAL_SAFE(&s_spinlock);
 
     ESP_EARLY_LOGD(TAG, "unit %d internal voltage level %"PRIu32, (int)cmpr->unit, ref_cfg->ref_volt);
 
@@ -202,9 +209,9 @@ esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_
     /* Transfer the time to clock cycles */
     uint32_t wait_cycle = (uint32_t)(dbc_cfg->wait_us * cmpr->src_clk_freq_hz) / 1000000;
     /* Set the waiting clock cycles */
-    portENTER_CRITICAL_ISR(&s_spinlock);
+    portENTER_CRITICAL_SAFE(&s_spinlock);
     analog_cmpr_ll_set_debounce_cycle(cmpr->dev, wait_cycle);
-    portEXIT_CRITICAL_ISR(&s_spinlock);
+    portEXIT_CRITICAL_SAFE(&s_spinlock);
 
     ESP_EARLY_LOGD(TAG, "unit %d debounce wait cycle %"PRIu32, (int)cmpr->unit, wait_cycle);
 
@@ -217,6 +224,12 @@ esp_err_t ana_cmpr_register_event_callbacks(ana_cmpr_handle_t cmpr, const ana_cm
     ANA_CMPR_NULL_POINTER_CHECK(cbs);
     ESP_RETURN_ON_FALSE(!cmpr->is_enabled, ESP_ERR_INVALID_STATE, TAG,
                         "please disable the analog comparator before registering the callbacks");
+#if CONFIG_ANA_CMPR_ISR_IRAM_SAFE
+    if (cbs->on_cross) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_cross), ESP_ERR_INVALID_ARG, TAG,
+                            "ANA_CMPR_ISR_IRAM_SAFE enabled but the callback function not in IRAM");
+    }
+#endif
 
     /* Save the callback group */
     memcpy(&(cmpr->cbs), cbs, sizeof(ana_cmpr_event_callbacks_t));
