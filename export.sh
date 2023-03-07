@@ -13,7 +13,7 @@ __realpath() {
 
 
 __verbose() {
-    [ -n "${IDF_EXPORT_QUIET}" ] && return
+    [ -n "${IDF_EXPORT_QUIET-}" ] && return
     echo "$@"
 }
 
@@ -72,7 +72,7 @@ __main() {
     # Since sh or dash shells can't detect script_dir correctly, check if script_dir looks like an IDF directory
     is_script_dir_esp_idf=$(__is_dir_esp_idf "${script_dir}")
 
-    if [ -z "${IDF_PATH}" ]
+    if [ -z "${IDF_PATH-}" ]
     then
         # IDF_PATH not set in the environment.
 
