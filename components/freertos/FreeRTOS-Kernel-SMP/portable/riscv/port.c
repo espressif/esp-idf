@@ -349,42 +349,6 @@ void vPortEndScheduler(void)
     abort();
 }
 
-// ----------------------- Memory --------------------------
-
-#define FREERTOS_SMP_MALLOC_CAPS    (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-
-void *pvPortMalloc( size_t xSize )
-{
-    return heap_caps_malloc(xSize, FREERTOS_SMP_MALLOC_CAPS);
-}
-
-void vPortFree( void *pv )
-{
-    heap_caps_free(pv);
-}
-
-void vPortInitialiseBlocks( void )
-{
-    ;   //Does nothing, heap is initialized separately in ESP-IDF
-}
-
-size_t xPortGetFreeHeapSize( void )
-{
-    return esp_get_free_heap_size();
-}
-
-#if( configSTACK_ALLOCATION_FROM_SEPARATE_HEAP == 1 )
-void *pvPortMallocStack( size_t xSize )
-{
-    return NULL;
-}
-
-void vPortFreeStack( void *pv )
-{
-
-}
-#endif
-
 // ------------------------ Stack --------------------------
 
 /**

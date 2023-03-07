@@ -16,6 +16,7 @@
 #include "freertos/queue.h"
 #include "unity.h"
 #include "esp_heap_caps.h"
+#include "esp_system.h"
 
 #include "sdkconfig.h"
 
@@ -127,7 +128,7 @@ TEST_CASE("unreasonable allocs should all fail", "[heap]")
     TEST_ASSERT_NULL(test_malloc_wrapper(16*1024*1024));
     TEST_ASSERT_NULL(test_malloc_wrapper(SIZE_MAX / 2));
     TEST_ASSERT_NULL(test_malloc_wrapper(SIZE_MAX - 256));
-    TEST_ASSERT_NULL(test_malloc_wrapper(xPortGetFreeHeapSize() - 1));
+    TEST_ASSERT_NULL(test_malloc_wrapper(esp_get_free_heap_size() - 1));
 }
 
 TEST_CASE("malloc(0) should return a NULL pointer", "[heap]")
