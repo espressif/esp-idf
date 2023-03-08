@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -251,6 +251,28 @@ static inline void modem_syscon_ll_reset_all(modem_syscon_dev_t *hw)
 {
     hw->modem_rst_conf.val = 0xffffffff;
     hw->modem_rst_conf.val = 0;
+}
+
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_clk_conf1_configure(modem_syscon_dev_t *hw, bool en, uint32_t mask)
+{
+    if(en){
+        hw->clk_conf1.val = hw->clk_conf1.val | mask;
+    } else {
+        hw->clk_conf1.val = hw->clk_conf1.val & ~mask;
+    }
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_clk_wifibb_configure(modem_syscon_dev_t *hw, bool en)
+{
+    /* Configure
+        clk_wifibb_22m / clk_wifibb_40m / clk_wifibb_44m / clk_wifibb_80m
+        clk_wifibb_40x / clk_wifibb_80x / clk_wifibb_40x1 / clk_wifibb_80x1
+        clk_wifibb_160x1
+    */
+    modem_syscon_ll_clk_conf1_configure(hw, en, 0x1ff);
 }
 
 __attribute__((always_inline))

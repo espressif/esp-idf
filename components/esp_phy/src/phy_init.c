@@ -418,11 +418,13 @@ void esp_mac_bb_pd_mem_deinit(void)
 
 IRAM_ATTR void esp_mac_bb_power_up(void)
 {
-    esp_wifi_bt_power_domain_on();
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     if (s_mac_bb_pd_mem == NULL) {
         return;
     }
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+    esp_wifi_bt_power_domain_on();
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     if (!s_mac_bb_pu) {
         esp_phy_common_clock_enable();
         phy_freq_mem_backup(false, s_mac_bb_pd_mem);

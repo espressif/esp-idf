@@ -48,21 +48,17 @@ typedef struct modem_clock_context {
 
 static void IRAM_ATTR modem_clock_wifi_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_wifi_apb_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifi_mac_clock(ctx->hal->syscon_dev, enable);
+    if (enable) {
+        modem_syscon_ll_enable_wifi_apb_clock(ctx->hal->syscon_dev, enable);
+        modem_syscon_ll_enable_wifi_mac_clock(ctx->hal->syscon_dev, enable);
+    }
 }
 
 static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_wifibb_160x1_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_80x1_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_40x1_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_80x_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_40x_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_80m_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_44m_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_40m_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_wifibb_22m_clock(ctx->hal->syscon_dev, enable);
+    if (enable) {
+        modem_syscon_ll_clk_wifibb_configure(ctx->hal->syscon_dev, enable);
+    }
 }
 
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
@@ -91,10 +87,12 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 
 static void IRAM_ATTR modem_clock_fe_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_fe_apb_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_fe_cal_160m_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_fe_160m_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_fe_80m_clock(ctx->hal->syscon_dev, enable);
+    if (enable) {
+        modem_syscon_ll_enable_fe_apb_clock(ctx->hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_cal_160m_clock(ctx->hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_160m_clock(ctx->hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_80m_clock(ctx->hal->syscon_dev, enable);
+    }
 }
 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)

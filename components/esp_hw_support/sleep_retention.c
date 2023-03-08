@@ -182,16 +182,14 @@ static void sleep_retention_entries_stats(void)
 #if REGDMA_LINK_DBG
 void sleep_retention_entries_show_memories(void)
 {
-    if (&s_retention.lock) {
-        _lock_acquire_recursive(&s_retention.lock);
-        if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY && s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
-            for (int entry = 0; entry < ARRAY_SIZE(s_retention.lists[s_retention.highpri].entries); entry++) {
-                ESP_LOGW(TAG, "Print sleep retention entries[%d] memories:", entry);
-                regdma_link_show_memories(s_retention.lists[s_retention.highpri].entries[entry], entry);
-            }
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY && s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        for (int entry = 0; entry < ARRAY_SIZE(s_retention.lists[s_retention.highpri].entries); entry++) {
+            ESP_LOGW(TAG, "Print sleep retention entries[%d] memories:", entry);
+            regdma_link_show_memories(s_retention.lists[s_retention.highpri].entries[entry], entry);
         }
-        _lock_release_recursive(&s_retention.lock);
     }
+    _lock_release_recursive(&s_retention.lock);
 }
 #endif
 
@@ -343,7 +341,7 @@ void sleep_retention_entries_destroy(int module)
         s_retention.lock = NULL;
         return;
     }
-    _lock_acquire_recursive(&s_retention.lock);
+    _lock_release_recursive(&s_retention.lock);
 }
 
 static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module)
