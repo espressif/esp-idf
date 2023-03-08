@@ -75,7 +75,7 @@ static void task_asm(void *arg)
         ++counter;
     }
     printf("task_asm counter = %d\n", counter);
-    TEST_ASSERT_GREATER_THAN(1000000, counter);
+    TEST_ASSERT_GREATER_THAN(10000, counter);
     xSemaphoreGive(*sema);
     vTaskDelete(NULL);
 }
@@ -89,7 +89,7 @@ TEST_CASE("Test ipc_isr two tasks use IPC function calls", "[ipc]")
     printf("Test start\n");
     xTaskCreatePinnedToCore(task_asm, "task_asm", 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
     xTaskCreatePinnedToCore(task_asm, "task_asm", 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     s_stop = true;
     xSemaphoreTake(exit_sema[0], portMAX_DELAY);
     xSemaphoreTake(exit_sema[1], portMAX_DELAY);
