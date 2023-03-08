@@ -34,6 +34,7 @@
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
+#include "bootloader_soc.h"
 #include "esp_private/bootloader_flash_internal.h"
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
@@ -78,10 +79,19 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
+static inline void bootloader_ana_reset_config(void)
+{
+    //Enable super WDT reset.
+    bootloader_ana_super_wdt_reset_config(true);
+    //Enable BOD reset
+    bootloader_ana_bod_reset_config(true);
+}
+
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
 
+    bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`
