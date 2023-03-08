@@ -230,4 +230,12 @@
 #endif
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
+ *
+ * Define to 1 to enable DNS Client support.
+ *
+ */
+#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE CONFIG_OPENTHREAD_DNS_CLIENT
+
 #define OPENTHREAD_MTD 1

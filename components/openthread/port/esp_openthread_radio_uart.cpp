@@ -241,7 +241,7 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 
 void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCounter)
 {
-    SuccessOrDie(s_radio.SetMacFrameCounter(aMacFrameCounter));
+    SuccessOrDie(s_radio.SetMacFrameCounter(aMacFrameCounter, true));
 }
 
 #if OPENTHREAD_CONFIG_DIAG_ENABLE

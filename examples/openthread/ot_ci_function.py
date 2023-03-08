@@ -147,8 +147,7 @@ def get_linklocal_addr(dut:IdfDut) -> str:
 def get_global_unicast_addr(dut:IdfDut, br:IdfDut) -> str:
     dut_adress = ''
     clean_buffer(br)
-    br.write('br omrprefix')
-    omrprefix = br.expect(r'\n((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    omrprefix = get_omrprefix(br)
     clean_buffer(dut)
     dut.write('ipaddr')
     dut_adress = dut.expect(r'(%s(?:\w+:){3}\w+)\r' % str(omrprefix), timeout=5)[1].decode()
@@ -231,8 +230,7 @@ def clean_buffer(dut:IdfDut) -> None:
 def check_if_host_receive_ra(br:IdfDut) -> bool:
     interface_name = get_host_interface_name()
     clean_buffer(br)
-    br.write('br omrprefix')
-    omrprefix = br.expect(r'\n((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    omrprefix = get_omrprefix(br)
     command = 'ip -6 route | grep ' + str(interface_name)
     out_str = subprocess.getoutput(command)
     print('br omrprefix: ', str(omrprefix))
@@ -448,12 +446,11 @@ def create_host_tcp_server(mytcp:tcp_parameter) -> None:
 
 def get_ipv6_from_ipv4(ipv4_address:str, br:IdfDut) -> str:
     clean_buffer(br)
-    br.write('br nat64prefix')
-    omrprefix = br.expect(r'\n((?:\w+:){6}):/\d+', timeout=5)[1].decode()
+    nat64prefix = get_nat64prefix(br)
     ipv4_find = re.findall(r'\d+', ipv4_address)
     ipv6_16_1 = decimal_to_hex(ipv4_find[0]) + decimal_to_hex(ipv4_find[1])
     ipv6_16_2 = decimal_to_hex(ipv4_find[2]) + decimal_to_hex(ipv4_find[3])
-    ipv6_get_from_ipv4 = omrprefix + ':' + ipv6_16_1 + ':' + ipv6_16_2
+    ipv6_get_from_ipv4 = nat64prefix + ':' + ipv6_16_1 + ':' + ipv6_16_2
     return str(ipv6_get_from_ipv4)
 
 
@@ -461,3 +458,15 @@ def decimal_to_hex(decimal_str:str) -> str:
     decimal_int = int(decimal_str)
     hex_str = hex(decimal_int)[2:]
     return hex_str
+
+
+def get_omrprefix(br:IdfDut) -> str:
+    br.write('br omrprefix')
+    omrprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    return str(omrprefix)
+
+
+def get_nat64prefix(br:IdfDut) -> str:
+    br.write('br nat64prefix')
+    nat64prefix = br.expect(r'Local: ((?:\w+:){6}):/\d+', timeout=5)[1].decode()
+    return str(nat64prefix)

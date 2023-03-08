@@ -59,6 +59,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         list(APPEND exclude_srcs
             "openthread/examples/apps/ncp/main.c"
             "openthread/src/core/api/backbone_router_api.cpp"
+            "openthread/src/core/api/child_supervision_api.cpp"
             "openthread/src/core/api/dataset_api.cpp"
             "openthread/src/core/api/dns_api.cpp"
             "openthread/src/core/api/entropy_api.cpp"
@@ -86,6 +87,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/announce_begin_server.cpp"
             "openthread/src/core/thread/announce_sender.cpp"
             "openthread/src/core/thread/address_resolver.cpp"
+            "openthread/src/core/thread/child_supervision.cpp"
             "openthread/src/core/thread/discover_scanner.cpp"
             "openthread/src/core/thread/energy_scan_server.cpp"
             "openthread/src/core/thread/key_manager.cpp"
