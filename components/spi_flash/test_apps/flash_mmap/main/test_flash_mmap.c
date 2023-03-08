@@ -159,6 +159,7 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
+#if !CONFIG_SPI_FLASH_ROM_IMPL //flash mmap API in ROM does not support mmap into instruction address
 TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 {
     setup_mmap_tests();
@@ -205,6 +206,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     printf("Unmapping handle3\n");
     spi_flash_munmap(handle3);
 }
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
 TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")
 {

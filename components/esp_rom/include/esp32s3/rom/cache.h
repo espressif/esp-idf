@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -1161,6 +1153,26 @@ uint32_t Cache_Get_IROM_MMU_End(void);
   * @return uint32_t : the word value of the address.
   */
 uint32_t Cache_Get_DROM_MMU_End(void);
+
+/**
+ * @brief Configure cache MMU page size according to instruction and rodata size
+ *
+ * @param irom_size The instruction cache MMU page size
+ * @param drom_size The rodata data cache MMU page size
+ */
+void Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
+
+/**
+ * @brief Configure cache MMU page information
+ *
+ * @param instr_page_num The instruction cache MMU page num
+ * @param rodata_page_num The rodata cache MMU page num
+ * @param rodata_start The rodata start cache address
+ * @param rodata_end The rodata end cache address
+ * @param i_off The offset of instruction when instruction copied from flash to xip_psram
+ * @param ro_off The offset of rodata when rodata copied from flash to xip_psram
+ */
+void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num, uint32_t rodata_start, uint32_t rodata_end, int i_off, int ro_off);
 
 /**
   * @brief Used by SPI flash mmap
