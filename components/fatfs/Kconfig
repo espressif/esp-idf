@@ -216,4 +216,18 @@ menu "FAT Filesystem support"
             This value should be chosen based on prior knowledge of
             maximum elements of each file entry would store.
 
+    config FATFS_VFS_FSTAT_BLKSIZE
+        int "Default block size"
+        default 0
+        help
+            If set to 0, the 'newlib' library's default size (BLKSIZ) is used (128 B).
+            If set to a non-zero value, the value is used as the block size.
+            Default file buffer size is set to this value
+            and the buffer is allocated when first attempt of reading/writing to a file is made.
+            Increasing this value improves fread() speed, however the heap usage is increased as well.
+
+            NOTE: The block size value is shared by all the filesystem functions
+            accessing target media for given file descriptor!
+            See 'Improving I/O performance' section of 'Maximizing Execution Speed' documentation page
+            for more details.
 endmenu

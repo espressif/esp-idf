@@ -600,6 +600,7 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     st->st_mtime = 0;
     st->st_atime = 0;
     st->st_ctime = 0;
+    st->st_blksize = CONFIG_FATFS_VFS_FSTAT_BLKSIZE;
     return 0;
 }
 
