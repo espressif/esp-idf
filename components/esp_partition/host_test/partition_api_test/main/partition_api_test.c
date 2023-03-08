@@ -8,19 +8,27 @@
 
 #include <string.h>
 #if __has_include(<bsd/string.h>)
-// for strlcpy
 #include <bsd/string.h>
 #endif
 #include <unistd.h>
+#include <sys/time.h>
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_private/partition_linux.h"
 #include "unity.h"
 #include "unity_fixture.h"
-
 #include "esp_log.h"
+
 const char *TAG = "partition_api_test";
 
+/* generate timestamp-based filename in /tmp dir */
+static void partition_test_get_unique_filename(char *filename, size_t len)
+{
+    struct timeval  tv;
+    gettimeofday(&tv, NULL);
+    long long int nanotimestamp = tv.tv_sec * 1000000000 + tv.tv_usec;
+    snprintf(filename, len, "/tmp/espparttest%lld", nanotimestamp);
+}
 
 TEST_GROUP(partition_api);
 
@@ -91,16 +99,16 @@ TEST(partition_api, test_partition_ops)
     size_t bufsize = sizeof(buff);
     size_t off = 0x100;
 
-    //8. esp_partition_write/raw
+    // esp_partition_write/raw
     esp_err_t err = esp_partition_write(partition_data, off, (const void *)buff, bufsize);
     TEST_ESP_OK(err);
 
-    //9. esp_partition_read/raw
+    // esp_partition_read/raw
     uint8_t buffout[32] = {0};
     err = esp_partition_read(partition_data, off, (void *)buffout, bufsize);
     TEST_ESP_OK(err);
 
-    //10. esp_partition_erase_range
+    // esp_partition_erase_range
     uint8_t buferase[bufsize];
     memset(buferase, 0xFF, bufsize);
     memset(buffout, 0, sizeof(buffout));
@@ -111,7 +119,7 @@ TEST(partition_api, test_partition_ops)
     TEST_ESP_OK(err);
     TEST_ASSERT_EQUAL(0, memcmp(buffout, buferase, bufsize));
 
-    //11. esp_partition_verify (partition_data)
+    // esp_partition_verify (partition_data)
     const esp_partition_t *verified_partition = esp_partition_verify(partition_data);
     TEST_ASSERT_NOT_NULL(verified_partition);
 }
@@ -135,18 +143,18 @@ TEST(partition_api, test_partition_mmap)
     esp_partition_munmap(out_handle);
 
     // offset out of partition size
-    offset = partition_data->size+1;
+    offset = partition_data->size + 1;
     size = 1;
 
     err = esp_partition_mmap(partition_data, offset, size, memory, (const void **) &out_ptr, &out_handle);
-    TEST_ASSERT_EQUAL(err,ESP_ERR_INVALID_ARG);
+    TEST_ASSERT_EQUAL(err, ESP_ERR_INVALID_ARG);
 
     // mapped length beyond partition size
     offset = 1;
     size = partition_data->size;
 
     err = esp_partition_mmap(partition_data, offset, size, memory, (const void **) &out_ptr, &out_handle);
-    TEST_ASSERT_EQUAL(err,ESP_ERR_INVALID_SIZE);
+    TEST_ASSERT_EQUAL(err, ESP_ERR_INVALID_SIZE);
 }
 
 TEST(partition_api, test_partition_mmap_diff_size)
@@ -233,7 +241,7 @@ TEST(partition_api, test_partition_mmap_reopen)
 
     // compare strings
     bool strings_equal = (strncmp(test_string, verify_string, test_string_len) == 0);
-    TEST_ASSERT_EQUAL(strings_equal,true);
+    TEST_ASSERT_EQUAL(strings_equal, true);
 
     free(verify_string);
 
@@ -241,6 +249,10 @@ TEST(partition_api, test_partition_mmap_reopen)
     esp_partition_file_munmap();
 }
 
+/* Positive TC to prove temporary file removal after file unmap.
+ * Error is reported during subsequent attempt to map already removed file.
+ * This error proves that file was removed after unmap as requested.
+ */
 TEST(partition_api, test_partition_mmap_remove)
 {
     // Scenario: default temporary flash file, write some data
@@ -294,10 +306,13 @@ TEST(partition_api, test_partition_mmap_remove)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
+/* Negative TC to ensure mmap setup is consistent prior call to mmap.
+ * Configuration specifies both flash file name to be mapped and its size.
+ * This is invalid combination as size is determined by the file itself.
+ */
 TEST(partition_api, test_partition_mmap_name_size)
 {
-    // Negative Scenario: conflicting settings - flash_file_name together with one or both of
-    //                    flash_file_size, partition_file_name
+    // Negative Scenario: conflicting settings - flash_file_name together with one or both of flash_file_size, partition_file_name
     // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
 
     // unmap file to have correct initial conditions, regardless of result
@@ -323,10 +338,13 @@ TEST(partition_api, test_partition_mmap_name_size)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
+/* Negative TC to ensure mmap setup checks presence of partition file name (partition table binary file)
+ * if flash size parameter was specified.
+ * This test case specifies just flash file size but omits partition table binary file name.
+ */
 TEST(partition_api, test_partition_mmap_size_no_partition)
 {
-    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size set
-    //                    and partition_file_name not set
+    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size set and partition_file_name not set
     // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
 
     // unmap file to have correct initial conditions, regardless of result
@@ -350,10 +368,12 @@ TEST(partition_api, test_partition_mmap_size_no_partition)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
+/* Negative TC to ensure mmap setup checks presence of flash size parameter if partition file name (partition table binary file) was specified.
+ * This test case specifies just partition table binary file name but omits flash file size.
+ */
 TEST(partition_api, test_partition_mmap_no_size_partition)
 {
-    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size not set
-    //                    and partition_file_name set
+    // Negative Scenario: conflicting settings - flash_file_name empty, flash_file_size not set and partition_file_name set
     // esp_partition_file_mmap should return ESP_ERR_INVALID_ARG
 
     // unmap file to have correct initial conditions, regardless of result
@@ -378,6 +398,8 @@ TEST(partition_api, test_partition_mmap_no_size_partition)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
+/*  Negative TC to ensure missing flash file to be mapped is reported with correct error code.
+ */
 TEST(partition_api, test_partition_mmap_ffile_nf)
 {
     // Negative Scenario: specified flash_file_name file not found
@@ -391,26 +413,26 @@ TEST(partition_api, test_partition_mmap_ffile_nf)
     TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
 
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-    const char *flash_file_name = "/tmp/strangefilename.tmp";
 
-    // make sure file doesn't exist
-    if (access(flash_file_name, F_OK) == 0) {
-        // our strange file exists, skip rest of test
-    } else {
-        strlcpy(p_file_mmap_ctrl_input->flash_file_name, flash_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
+    // timestamp-based unique filename, the file is very unlikely to exist => no extra check
+    char flash_file_name[40] = {0};
+    partition_test_get_unique_filename(flash_file_name, sizeof(flash_file_name));
 
-        const uint8_t *p_mem_block = NULL;
-        esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+    strlcpy(p_file_mmap_ctrl_input->flash_file_name, flash_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
 
-        // expected result is file not found
-        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    const uint8_t *p_mem_block = NULL;
+    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
 
-        // cleanup after test
-        esp_partition_file_munmap();
-        memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-    }
+    // expected result is file not found
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
+/* Negative TC to ensure missing binary partition file to be loaded is reported with correct error code.
+ */
 TEST(partition_api, test_partition_mmap_pfile_nf)
 {
     // Negative Scenario: specified partition_file_name file not found
@@ -424,31 +446,31 @@ TEST(partition_api, test_partition_mmap_pfile_nf)
     TEST_ASSERT_NOT_NULL(p_file_mmap_ctrl_input);
 
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-    const char *partition_file_name = "/tmp/strangefilename.tmp";
 
-    // make sure file doesn't exist
-    if (access(partition_file_name, F_OK) == 0) {
-        // our strange file exists, skip rest of test
-    } else {
-        strlcpy(p_file_mmap_ctrl_input->partition_file_name, partition_file_name, sizeof(p_file_mmap_ctrl_input->partition_file_name));
-        p_file_mmap_ctrl_input->flash_file_size = 0x10000;    // any non zero value to pass validation
+    // timestamp-based unique filename, the file is very unlikely to exist => no extra check
+    char partition_file_name[40] = {0};
+    partition_test_get_unique_filename(partition_file_name, sizeof(partition_file_name));
 
-        const uint8_t *p_mem_block = NULL;
-        esp_err_t err = esp_partition_file_mmap(&p_mem_block);
+    strlcpy(p_file_mmap_ctrl_input->partition_file_name, partition_file_name, sizeof(p_file_mmap_ctrl_input->partition_file_name));
+    p_file_mmap_ctrl_input->flash_file_size = 0x10000;    // any non zero value to pass validation
 
-        // expected result is file not found
-        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    const uint8_t *p_mem_block = NULL;
+    esp_err_t err = esp_partition_file_mmap(&p_mem_block);
 
-        // cleanup after test
-        esp_partition_file_munmap();
-        memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
-    }
+    // expected result is file not found
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+
+    // cleanup after test
+    esp_partition_file_munmap();
+    memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
+/* Negative TC to check that requested size of emulated flash is at least so big to be able to load binary partition table.
+ * Too small emulated flash size is introduced and respective error code is evaluated after mmap call.
+ */
 TEST(partition_api, test_partition_mmap_size_too_small)
 {
-    // Negative Scenario: specified flash file size too small
-    //                    to hold at least partition table at default offset
+    // Negative Scenario: specified flash file size too small to hold at least partition table at default offset
     // esp_partition_file_mmap should return ESP_ERR_INVALID_SIZE
 
     // unmap file to have correct initial conditions, regardless of result
@@ -475,8 +497,7 @@ TEST(partition_api, test_partition_mmap_size_too_small)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 }
 
-typedef struct
-{
+typedef struct {
     size_t read_ops;
     size_t write_ops;
     size_t erase_ops;
@@ -496,7 +517,7 @@ void init_stats(t_stats *p_stats)
 
 void dispose_stats(t_stats *p_stats)
 {
-    if(p_stats->sector_erase_count != NULL){
+    if (p_stats->sector_erase_count != NULL) {
         free(p_stats->sector_erase_count);
     }
 }
@@ -504,12 +525,12 @@ void dispose_stats(t_stats *p_stats)
 void print_stats(const t_stats *p_stats)
 {
     ESP_LOGI(TAG, "read_ops:%06lu write_ops:%06lu erase_ops:%06lu read_bytes:%06lu write_bytes:%06lu total_time:%06lu\n",
-        p_stats->read_ops,
-        p_stats->write_ops,
-        p_stats->erase_ops,
-        p_stats->read_bytes,
-        p_stats->write_bytes,
-        p_stats->total_time);
+             p_stats->read_ops,
+             p_stats->write_ops,
+             p_stats->erase_ops,
+             p_stats->read_bytes,
+             p_stats->write_bytes,
+             p_stats->total_time);
 }
 
 void read_stats(t_stats *p_stats)
@@ -521,31 +542,36 @@ void read_stats(t_stats *p_stats)
     p_stats->write_bytes = esp_partition_get_write_bytes();
     p_stats->total_time = esp_partition_get_total_time();
 
-    for(size_t i = 0; i < p_stats->sector_erase_count_size; i++)
+    for (size_t i = 0; i < p_stats->sector_erase_count_size; i++) {
         p_stats->sector_erase_count[i] = esp_partition_get_sector_erase_count(i);
+    }
 }
 
 // evaluates if final stats differ from initial stats by expected difference stats.
 // if there is no need to evaluate some stats, set respective expeted difference stats members to SIZE_MAX
 bool evaluate_stats(const t_stats *p_initial_stats, const t_stats *p_final_stats, const t_stats *p_expected_difference_stats)
 {
-    if(p_expected_difference_stats->read_ops != SIZE_MAX)
+    if (p_expected_difference_stats->read_ops != SIZE_MAX) {
         TEST_ASSERT_EQUAL(p_initial_stats->read_ops + p_expected_difference_stats->read_ops, p_final_stats->read_ops);
-    if(p_expected_difference_stats->write_ops != SIZE_MAX)
+    }
+    if (p_expected_difference_stats->write_ops != SIZE_MAX) {
         TEST_ASSERT_EQUAL(p_initial_stats->write_ops + p_expected_difference_stats->write_ops, p_final_stats->write_ops);
-    if(p_expected_difference_stats->erase_ops != SIZE_MAX)
+    }
+    if (p_expected_difference_stats->erase_ops != SIZE_MAX) {
         TEST_ASSERT_EQUAL(p_initial_stats->erase_ops + p_expected_difference_stats->erase_ops, p_final_stats->erase_ops);
-    if(p_expected_difference_stats->read_bytes != SIZE_MAX)
+    }
+    if (p_expected_difference_stats->read_bytes != SIZE_MAX) {
         TEST_ASSERT_EQUAL(p_initial_stats->read_bytes + p_expected_difference_stats->read_bytes, p_final_stats->read_bytes);
-    if(p_expected_difference_stats->write_bytes != SIZE_MAX)
+    }
+    if (p_expected_difference_stats->write_bytes != SIZE_MAX) {
         TEST_ASSERT_EQUAL(p_initial_stats->write_bytes + p_expected_difference_stats->write_bytes, p_final_stats->write_bytes);
-    if(p_expected_difference_stats->total_time != SIZE_MAX)
+    }
+    if (p_expected_difference_stats->total_time != SIZE_MAX) {
         TEST_ASSERT_EQUAL(p_initial_stats->total_time + p_expected_difference_stats->total_time, p_final_stats->total_time);
+    }
 
-    for(size_t i = 0; i < p_initial_stats->sector_erase_count_size; i++)
-    {
-        if(p_expected_difference_stats->sector_erase_count[i] != SIZE_MAX)
-        {
+    for (size_t i = 0; i < p_initial_stats->sector_erase_count_size; i++) {
+        if (p_expected_difference_stats->sector_erase_count[i] != SIZE_MAX) {
             size_t expected_value = p_initial_stats->sector_erase_count[i] + p_expected_difference_stats->sector_erase_count[i];
             size_t final_value = p_final_stats->sector_erase_count[i];
 
@@ -585,7 +611,7 @@ TEST(partition_api, test_partition_stats)
     TEST_ESP_OK(err);
 
     // do some reads
-    err = esp_partition_read(partition_data , 0, test_data_ptr, size);
+    err = esp_partition_read(partition_data, 0, test_data_ptr, size);
     TEST_ESP_OK(err);
 
     // do erase
@@ -601,8 +627,9 @@ TEST(partition_api, test_partition_stats)
     size_t non_aligned_portions = (part_offset % ESP_PARTITION_EMULATED_SECTOR_SIZE) + (size % ESP_PARTITION_EMULATED_SECTOR_SIZE);
     size_t erase_ops = size / ESP_PARTITION_EMULATED_SECTOR_SIZE;
     erase_ops += non_aligned_portions / ESP_PARTITION_EMULATED_SECTOR_SIZE;
-    if((non_aligned_portions % ESP_PARTITION_EMULATED_SECTOR_SIZE) > 0)
+    if ((non_aligned_portions % ESP_PARTITION_EMULATED_SECTOR_SIZE) > 0) {
         erase_ops += 1;
+    }
 
     t_stats expected_difference_stats;
     init_stats(&expected_difference_stats);
@@ -613,8 +640,9 @@ TEST(partition_api, test_partition_stats)
     expected_difference_stats.read_bytes = size;
     expected_difference_stats.write_bytes = size;
     expected_difference_stats.total_time = SIZE_MAX;
-    for (size_t i = 0; i < expected_difference_stats.sector_erase_count_size; i++)
+    for (size_t i = 0; i < expected_difference_stats.sector_erase_count_size; i++) {
         expected_difference_stats.sector_erase_count[i] = SIZE_MAX;
+    }
 
     evaluate_stats(&initial_stats, &final_stats, &expected_difference_stats);
 
