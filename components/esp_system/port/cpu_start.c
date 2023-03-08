@@ -42,6 +42,7 @@
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
 #include "esp32s3/rom/opi_flash.h"
+#include "hal/cache_hal.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
@@ -84,6 +85,7 @@
 #include "esp_private/sleep_gpio.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
+#include "hal/cache_ll.h"
 #include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
@@ -256,6 +258,37 @@ static void start_other_core(void)
         esp_rom_delay_us(100);
     }
 }
+
+// This function is needed to make the multicore app runnable on a unicore bootloader (built with FREERTOS UNICORE).
+// It does some cache settings for other CPUs.
+void IRAM_ATTR do_multicore_settings(void)
+{
+    // We intentionally do not check the cache settings before changing them,
+    // because it helps to get the application to run on older bootloaders.
+#ifdef CONFIG_IDF_TARGET_ESP32
+    if (!efuse_ll_get_disable_app_cpu()) {
+        Cache_Read_Disable(1);
+        Cache_Flush(1);
+        DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+        DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+        // We do not enable cache for CPU1 now because it will be done later in start_other_core().
+    }
+#endif
+
+    cache_bus_mask_t cache_bus_mask_core0 = cache_ll_l1_get_enabled_bus(0);
+#ifndef CONFIG_IDF_TARGET_ESP32
+    // 1. disable the cache before changing its settings.
+    cache_hal_disable(CACHE_TYPE_ALL);
+#endif
+    for (unsigned core = 1; core < SOC_CPU_CORES_NUM; core++) {
+        // 2. change cache settings. All cores must have the same settings.
+        cache_ll_l1_enable_bus(core, cache_bus_mask_core0);
+    }
+#ifndef CONFIG_IDF_TARGET_ESP32
+    // 3. enable the cache after changing its settings.
+    cache_hal_enable(CACHE_TYPE_ALL);
+#endif
+}
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 /*
@@ -311,6 +344,16 @@ void IRAM_ATTR call_start_cpu0(void)
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 #endif
+
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    ESP_EARLY_LOGI(TAG, "Unicore app");
+#else
+    ESP_EARLY_LOGI(TAG, "Multicore app");
+    // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
+    do_multicore_settings();
+#endif
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
     // in the bootloader are still necessary
