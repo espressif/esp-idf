@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "esp_timer.h"
 
+#include "esp_timer.h"
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_cmd";
@@ -467,6 +467,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         if (++count % 10 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
         }
+        vTaskDelay(1);
     }
     /* SPI mode: although card busy indication is based on the busy token,
      * SD spec recommends that the host checks the results of programming by sending
@@ -572,6 +573,7 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
         if (++count % 10 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
         }
+        vTaskDelay(1);
     }
     return ESP_OK;
 }

@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_timer.h"
+#include "esp_check.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
 #include "soc/gpio_periph.h"
@@ -81,6 +82,7 @@ esp_err_t sdmmc_host_reset(void)
         if (esp_timer_get_time() - t0 > SDMMC_HOST_RESET_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
+        vTaskDelay(1);
     }
 
     return ESP_OK;
@@ -189,11 +191,7 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
     bool repeat = true;
     while(repeat) {
 
-        esp_err_t err = sdmmc_host_start_command(slot, cmd_val, 0);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "sdmmc_host_start_command() failed");
-            return err;
-        }
+        ESP_RETURN_ON_ERROR(sdmmc_host_start_command(slot, cmd_val, 0), TAG, "sdmmc_host_start_command returned 0x%x", err_rc_);
 
         int64_t t0 = esp_timer_get_time();
         while (true) {
@@ -215,6 +213,8 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
                 repeat = false;
                 break;
             }
+
+            vTaskDelay(1);
         }
     }
 
@@ -267,7 +267,8 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     SDMMC.clkena.cclk_enable &= ~BIT(slot);
     esp_err_t err = sdmmc_host_clock_update_command(slot);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "disable clk failed");
+        ESP_LOGE(TAG, "disabling clk failed");
+        ESP_LOGE(TAG, "%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
         return err;
     }
 
@@ -292,7 +293,8 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     sdmmc_host_set_clk_div(host_div);
     err = sdmmc_host_clock_update_command(slot);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "set clk div failed");
+        ESP_LOGE(TAG, "setting clk div failed");
+        ESP_LOGE(TAG, "%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
         return err;
     }
 
@@ -301,7 +303,8 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     SDMMC.clkena.cclk_low_power |= BIT(slot);
     err = sdmmc_host_clock_update_command(slot);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "re-enable clk failed");
+        ESP_LOGE(TAG, "re-enabling clk failed");
+        ESP_LOGE(TAG, "%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
         return err;
     }
 
@@ -352,6 +355,7 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
         if (esp_timer_get_time() - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
+        vTaskDelay(1);
     }
     SDMMC.cmdarg = arg;
     cmd.card_num = slot;
@@ -375,7 +379,7 @@ esp_err_t sdmmc_host_init(void)
     // Reset
     esp_err_t err = sdmmc_host_reset();
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "sdmmc_host_reset() failed");
+        ESP_LOGE(TAG, "%s: sdmmc_host_reset returned 0x%x", __func__, err);
         return err;
     }
 
@@ -585,7 +589,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "sdmmc_host_set_card_clk() 400kHz failed");
+        ESP_LOGE(TAG, "setting probing freq and 1-bit bus failed");
+        ESP_LOGE(TAG, "%s: sdmmc_host_set_card_clk returned 0x%x", __func__, ret);
         return ret;
     }
     ret = sdmmc_host_set_bus_width(slot, 1);

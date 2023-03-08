@@ -14,8 +14,8 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include "esp_timer.h"
 
+#include "esp_timer.h"
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_sd";
@@ -152,6 +152,7 @@ esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card)
         if (++count % 16 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
         }
+        vTaskDelay(1);
     }
     return ESP_OK;
 }
