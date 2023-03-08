@@ -44,7 +44,7 @@ Linenoise library does not need explicit initialization. However, some configura
 
 :cpp:func:`linenoiseSetMaxLineLen`
 
-  Set maximum length of the line for linenoise library. Default length is 4096. The default value can be updated to optimize RAM memory usage.
+  Set maximum length of the line for linenoise library. Default length is 4096 bytes. The default value can be updated to optimize RAM memory usage.
 
 
 Main loop

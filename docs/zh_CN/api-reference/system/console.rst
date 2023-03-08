@@ -44,7 +44,7 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 :cpp:func:`linenoiseSetMaxLineLen`
 
-    设置 linenoise 库中每行的最大长度。默认长度为 4096。如果需要优化 RAM 内存的使用，则可以通过这个函数设置一个小于默认 4 KB 的值来实现。
+    设置 linenoise 库中每行的最大长度，默认长度为 4096 字节，可以通过更新该默认值来优化 RAM 内存的使用。
 
 
 主循环
