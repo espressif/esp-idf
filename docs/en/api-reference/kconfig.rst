@@ -41,7 +41,7 @@ The following attributes of ``Kconfig`` files are standardized:
 Format checker
 --------------
 
-``tools/check_kconfigs.py`` is provided for checking the ``Kconfig`` formatting rules. The checker checks all ``Kconfig`` and ``Kconfig.projbuild`` files in the ESP-IDF directory and generates a new file with suffix ``.new`` with some recommendations how to fix issues (if there are any). Please note that the checker cannot correct all rules and the responsibility of the developer is to check and make final corrections in order to pass the tests. For example, indentations will be corrected if there isn't some misleading previous formatting but it cannot come up with a common prefix for options inside a menu.
+``tools/ci/check_kconfigs.py`` is provided for checking the ``Kconfig`` formatting rules. The checker checks all ``Kconfig`` and ``Kconfig.projbuild`` files in the ESP-IDF directory and generates a new file with suffix ``.new`` with some recommendations how to fix issues (if there are any). Please note that the checker cannot correct all rules and the responsibility of the developer is to check and make final corrections in order to pass the tests. For example, indentations will be corrected if there isn't some misleading previous formatting but it cannot come up with a common prefix for options inside a menu.
 
 .. _configuration-options-compatibility:
 
