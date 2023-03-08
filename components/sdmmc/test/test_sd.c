@@ -1035,6 +1035,29 @@ TEST_CASE("SDMMC discard test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]
 }
 #endif //WITH_SD_TEST
 
+#if WITH_SD_TEST
+TEST_CASE("sdmmc read/write/erase sector shoud return ESP_OK with sector count == 0", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    TEST_ESP_OK(sdmmc_host_init());
+
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+
+    TEST_ESP_OK(sdmmc_write_sectors(card, NULL, 0, 0));
+    TEST_ESP_OK(sdmmc_read_sectors(card, NULL, 0, 0));
+    TEST_ESP_OK(sdmmc_erase_sectors(card, 0, 0, SDMMC_ERASE_ARG));
+
+    free(card);
+    TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
+}
+#endif //WITH_SD_TEST
+
 #if WITH_EMMC_TEST
 static void test_mmc_sanitize_blocks(sdmmc_card_t* card)
 {
