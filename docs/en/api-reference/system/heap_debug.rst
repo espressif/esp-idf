@@ -24,6 +24,19 @@ To obtain information about the state of the heap:
 - :cpp:func:`heap_caps_dump` and :cpp:func:`heap_caps_dump_all` will output detailed information about the structure of each block in the heap. Note that this can be large amount of output.
 
 
+.. _heap-allocation-free:
+
+Heap allocation and free function hooks
+---------------------------------------
+
+Heap allocation and free detection hooks allows you to be notified of every successful allocation and free operations:
+- Providing a definition of :cpp:func:`esp_heap_trace_alloc_hook` will allow you to be notified of every successful memory allocation operations
+- Providing a definition of :cpp:func:`esp_heap_trace_free_hook` will allow you to be notified of every memory free operations
+
+To activate the feature, navigate to ``Component config`` -> ``Heap Memory Debugging`` in the configuration menu and select ``Use allocation and free hooks`` option (see :ref:`CONFIG_HEAP_USE_HOOKS`).
+:cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` have weak declarations, it is not necessary to provide a declarations for both hooks.
+Since allocating and freeing memory is allowed even though strongly recommended against, :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` can potentially be called from ISR.
+
 .. _heap-corruption:
 
 Heap Corruption Detection

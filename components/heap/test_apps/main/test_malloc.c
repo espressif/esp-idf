@@ -182,6 +182,7 @@ TEST_CASE("test get allocated size", "[heap]")
     }
 }
 
+#ifdef CONFIG_HEAP_USE_HOOKS
 // provide the definition of alloc and free hooks
 static const size_t alloc_size = 1234; // make this size atypical to be able to rely on it in the hook
 static const size_t expected_calls = 2; // one call for malloc/calloc and one call for realloc
@@ -247,3 +248,4 @@ TEST_CASE("test allocation and free function hooks", "[heap]")
 
     TEST_ASSERT_TRUE(test_success);
 }
+#endif

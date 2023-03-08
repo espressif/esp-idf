@@ -56,6 +56,11 @@ menu "Heap memory debugging"
             More stack frames uses more memory in the heap trace buffer (and slows down allocation), but
             can provide useful information.
 
+    config HEAP_USE_HOOKS
+        bool "Use allocation and free hooks"
+        help
+            Enable the user to implement function hooks triggered for each successful allocation and free.
+
     config HEAP_TASK_TRACKING
         bool "Enable heap task tracking"
         depends on !HEAP_POISONING_DISABLED

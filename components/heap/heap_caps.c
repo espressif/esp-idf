@@ -15,11 +15,15 @@
 #include "heap_private.h"
 #include "esp_system.h"
 
+#ifdef CONFIG_HEAP_USE_HOOKS
 #define CALL_HOOK(hook, ...) {      \
     if (hook != NULL) {             \
         hook(__VA_ARGS__);          \
     }                               \
 }
+#else
+#define CALL_HOOK(hook, ...) {}
+#endif
 
 /* Forward declaration for base function, put in IRAM.
  * These functions don't check for errors after trying to allocate memory. */

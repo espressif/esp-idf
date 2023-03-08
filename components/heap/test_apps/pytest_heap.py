@@ -102,3 +102,17 @@ def test_memory_protection(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('[heap][mem_prot]')
     dut.expect_unity_test_output(timeout=300)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.parametrize(
+    'config',
+    [
+        'func_hooks'
+    ]
+)
+def test_heap_func_hooks(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"test allocation and free function hooks"')
+    dut.expect_unity_test_output(timeout=300)

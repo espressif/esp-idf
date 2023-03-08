@@ -54,6 +54,7 @@ typedef void (*esp_alloc_failed_hook_t) (size_t size, uint32_t caps, const char 
  */
 esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callback);
 
+#ifdef CONFIG_HEAP_USE_HOOKS
 /**
  * @brief callback called after every allocation
  * @param ptr the allocated memory
@@ -71,6 +72,7 @@ __attribute__((weak)) IRAM_ATTR void esp_heap_trace_alloc_hook(void* ptr, size_t
  * You should refrain from doing heavy work, logging, flash writes, or any locking.
  */
 __attribute__((weak)) IRAM_ATTR void esp_heap_trace_free_hook(void* ptr);
+#endif
 
 /**
  * @brief Allocate a chunk of memory which has the given capabilities
