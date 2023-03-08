@@ -444,7 +444,7 @@ Start 子命令语法：
     6. 双击创建的端口，会打开此端口的视图。
     7. 单击 ``Start/Stop Streaming`` 按钮，数据将会被加载。
     8. 使用 ``Zoom Out``，``Zoom In`` 和 ``Zoom Fit`` 按钮来查看数据。
-    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <https://toem.de/index.php/projects/impulse>`_ 。
+    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <https://toem.de/index.php/products/impulse>`_ 。
 
     .. note::
 
