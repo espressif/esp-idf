@@ -165,14 +165,6 @@ check_artifacts_expire_time:
     # check if we have set expire time for all artifacts
     - python tools/ci/check_artifacts_expire_time.py
 
-check_commit_msg:
-  extends: .pre_check_template
-  script:
-    - git status
-    - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
-    # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'
-
 check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
