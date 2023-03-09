@@ -35,8 +35,8 @@ def apptrace_wait_stop(openocd: OpenOcd, timeout: int = 30) -> None:
         pytest.param(None, None, marks=[pytest.mark.esp32, pytest.mark.jtag]),
         pytest.param(None, '-f board/esp32s2-kaluga-1.cfg', marks=[pytest.mark.esp32s2, pytest.mark.jtag]),
         pytest.param(None, '-f board/esp32c2-ftdi.cfg', marks=[pytest.mark.esp32c2, pytest.mark.jtag]),
-        pytest.param('/dev/ttyACM0', '-f board/esp32s3-builtin.cfg', marks=[pytest.mark.esp32s3, pytest.mark.usb_serial_jtag]),
-        pytest.param('/dev/ttyACM0', '-f board/esp32c3-builtin.cfg', marks=[pytest.mark.esp32c3, pytest.mark.usb_serial_jtag]),
+        pytest.param('/dev/serial_ports/ttyACM-esp32', '-f board/esp32s3-builtin.cfg', marks=[pytest.mark.esp32s3, pytest.mark.usb_serial_jtag]),
+        pytest.param('/dev/serial_ports/ttyACM-esp32', '-f board/esp32c3-builtin.cfg', marks=[pytest.mark.esp32c3, pytest.mark.usb_serial_jtag]),
     ],
     indirect=True
 )
