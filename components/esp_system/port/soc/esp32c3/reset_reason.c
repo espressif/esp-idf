@@ -53,6 +53,10 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_SYS_BROWN_OUT:
         return ESP_RST_BROWNOUT;
 
+    case RESET_REASON_CORE_USB_UART:
+    case RESET_REASON_CORE_USB_JTAG:
+        return ESP_RST_USB;
+
     default:
         return ESP_RST_UNKNOWN;
     }
