@@ -270,6 +270,15 @@ void Cache_Occupy_ICache_MEMORY(cache_array_t icache_low);
 void Cache_Get_Mode(struct cache_mode * mode);
 
 /**
+  * @brief Init Cache for ROM boot, including resetting the Icache, initializing Owner, MMU, setting ICache mode, Enabling ICache, unmasking bus.
+  *
+  * @param None
+  *
+  * @return None
+  */
+void ROM_Boot_Cache_Init(void);
+
+/**
   * @brief Init mmu owner register to make i/d cache use half mmu entries.
   *
   * @param None

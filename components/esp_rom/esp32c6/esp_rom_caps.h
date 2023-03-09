@@ -24,3 +24,4 @@
 #define ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE (1) // ECO 0 does not have ets_ecdsa_verify symbol, future revision will have it
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE    (1) // ROM needs to set cache MMU size according to instruction and rodata for flash mmap
+#define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init

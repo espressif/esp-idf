@@ -135,7 +135,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
         str = "16MHz";
         break;
     }
-    ESP_LOGI(TAG, "SPI Speed      : %s", str);
+    ESP_EARLY_LOGI(TAG, "SPI Speed      : %s", str);
 
     /* SPI mode could have been set to QIO during boot already,
        so test the SPI registers not the flash header */
@@ -153,7 +153,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     } else {
         str = "SLOW READ";
     }
-    ESP_LOGI(TAG, "SPI Mode       : %s", str);
+    ESP_EARLY_LOGI(TAG, "SPI Mode       : %s", str);
 
     switch (bootloader_hdr->spi_size) {
     case ESP_IMAGE_FLASH_SIZE_1MB:
@@ -175,7 +175,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
         str = "2MB";
         break;
     }
-    ESP_LOGI(TAG, "SPI Flash Size : %s", str);
+    ESP_EARLY_LOGI(TAG, "SPI Flash Size : %s", str);
 }
 
 static void IRAM_ATTR bootloader_init_flash_configure(void)

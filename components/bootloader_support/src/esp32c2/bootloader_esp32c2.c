@@ -110,7 +110,7 @@ esp_err_t bootloader_init(void)
     /* print 2nd bootloader banner */
     bootloader_print_banner();
 
-#if !CONFIG_APP_BUILD_TYPE_RAM
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     //init cache hal
     cache_hal_init();
     //reset mmu
@@ -119,6 +119,7 @@ esp_err_t bootloader_init(void)
     mmu_ll_set_page_size(0, SPI_FLASH_MMU_PAGE_SIZE);
     // update flash ID
     bootloader_flash_update_id();
+#if !CONFIG_APP_BUILD_TYPE_RAM
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         return ret;
@@ -127,11 +128,12 @@ esp_err_t bootloader_init(void)
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
         return ret;
     }
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
         return ret;
     }
-#endif // !CONFIG_APP_BUILD_TYPE_RAM
+#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();
