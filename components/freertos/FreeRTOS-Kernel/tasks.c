@@ -282,6 +282,27 @@
     #define prvGetTCBFromHandle( pxHandle )    ( ( ( pxHandle ) == NULL ) ? ( TaskHandle_t ) pxCurrentTCB[ 0 ] : ( ( TaskHandle_t ) pxHandle ) )
 #endif
 
+/*
+ * There are various blocking tasks.c API that call configASSERT() to check if
+ * the API is being called while the scheduler is suspended. However, these
+ * asserts are done outside a critical section or interrupt disabled block.
+ * Directly checking uxSchedulerSuspended[ xPortGetCoreID() ] outside a critical
+ * section can lead to false positives in SMP. Thus for SMP, we call
+ * xTaskGetSchedulerState() instead.
+ *
+ * Take the following example of an unpinned Task A in SMP calling
+ * uxSchedulerSuspended[ xPortGetCoreID() ]:
+ * - Task A calls xPortGetCoreID() which is 0
+ * - Task A gets preempted by Task B, Task A switches to core 1
+ * - Task B on core 0 calls vTaskSuspendAll()
+ * - Task A checks uxSchedulerSuspended[ 0 ] leading to a false positive
+ */
+#if ( configNUM_CORES > 1 )
+    #define taskIS_SCHEDULER_SUSPENDED()    ( xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED )
+#else
+    #define taskIS_SCHEDULER_SUSPENDED()    ( uxSchedulerSuspended[ 0 ] > 0 )
+#endif /* configNUM_CORES > 1 */
+
 /* The item value of the event list item is normally used to hold the priority
  * of the task to which it belongs (coded to allow it to be held in reverse
  * priority order).  However, it is occasionally borrowed for other purposes.  It
@@ -1488,7 +1509,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
             if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xPortGetCoreID() ) )
             {
-                configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
+                configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
                 portYIELD_WITHIN_API();
             }
             else
@@ -1522,7 +1543,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
         configASSERT( pxPreviousWakeTime );
         configASSERT( ( xTimeIncrement > 0U ) );
-        configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
+        configASSERT( !taskIS_SCHEDULER_SUSPENDED() );
 
         prvENTER_CRITICAL_OR_SUSPEND_ALL( &xKernelLock );
         {
@@ -1608,7 +1629,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         /* A delay time of zero just forces a reschedule. */
         if( xTicksToDelay > ( TickType_t ) 0U )
         {
-            configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
+            configASSERT( !taskIS_SCHEDULER_SUSPENDED() );
             prvENTER_CRITICAL_OR_SUSPEND_ALL( &xKernelLock );
             {
                 traceTASK_DELAY();
@@ -2540,7 +2561,7 @@ BaseType_t xTaskResumeAll( void )
 
     /* If uxSchedulerSuspended is zero then this function does not match a
      * previous call to vTaskSuspendAll(). */
-    configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] );
+    configASSERT( taskIS_SCHEDULER_SUSPENDED() );
 
     /* It is possible that an ISR caused a task to be removed from an event
      * list while the scheduler was suspended.  If this was the case then the
@@ -2990,11 +3011,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
     /* Must not be called with the scheduler suspended as the implementation
      * relies on xPendedTicks being wound down to 0 in xTaskResumeAll(). */
-    #ifdef ESP_PLATFORM
-        configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
-    #else
-        configASSERT( uxSchedulerSuspended == 0 );
-    #endif // ESP_PLATFORM
+    configASSERT( !taskIS_SCHEDULER_SUSPENDED() );
 
     /* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occurring when
      * the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
@@ -3974,7 +3991,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
 
         /* THIS FUNCTION MUST BE CALLED WITH THE SCHEDULER SUSPENDED.  It is used by
          * the event flags implementation. */
-        configASSERT( uxSchedulerSuspended != pdFALSE );
+        configASSERT( uxSchedulerSuspended[ 0 ] != pdFALSE );
     #endif /* configNUM_CORES > 1 */
 
     /* Store the new item value in the event list. */
