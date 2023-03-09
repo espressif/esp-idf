@@ -177,13 +177,27 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
 /**
  * @brief Apply channel strategy for GDMA channel
  *
- * @param dma_chan GDMA channel handle, allocated by `gdma_new_channel`
- * @param config Configuration of GDMA channel strategy
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] config Configuration of GDMA channel strategy
  *      - ESP_OK: Apply channel strategy successfully
  *      - ESP_ERR_INVALID_ARG: Apply channel strategy failed because of invalid argument
  *      - ESP_FAIL: Apply channel strategy failed because of other error
  */
 esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strategy_config_t *config);
+
+/**
+ * @brief Set GDMA channel priority
+ *
+ * @note By default, all GDMA channels are with the same priority: 0. Channels with the same priority are served in round-robin manner.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] priority Priority of GDMA channel, higher value means higher priority
+ * @return
+ *      - ESP_OK: Set GDMA channel priority successfully
+ *      - ESP_ERR_INVALID_ARG: Set GDMA channel priority failed because of invalid argument, e.g. priority out of range [0,GDMA_LL_CHANNEL_MAX_PRIORITY]
+ *      - ESP_FAIL: Set GDMA channel priority failed because of other error
+ */
+esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority);
 
 /**
  * @brief Delete GDMA channel

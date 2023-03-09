@@ -18,6 +18,8 @@ extern "C" {
 
 #define GDMA_LL_GET_HW(id) (((id) == 0) ? (&GDMA) : NULL)
 
+#define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
+
 #define GDMA_LL_RX_EVENT_MASK        (0x3FF)
 #define GDMA_LL_TX_EVENT_MASK        (0xFF)
 

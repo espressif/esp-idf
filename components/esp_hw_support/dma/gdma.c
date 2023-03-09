@@ -359,6 +359,24 @@ err:
     return ret;
 }
 
+esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority)
+{
+    gdma_pair_t *pair = NULL;
+    gdma_group_t *group = NULL;
+    ESP_RETURN_ON_FALSE(dma_chan && priority <= GDMA_LL_CHANNEL_MAX_PRIORITY, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    pair = dma_chan->pair;
+    group = pair->group;
+
+    if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX) {
+        gdma_ll_tx_set_priority(group->hal.dev, pair->pair_id, priority);
+    } else {
+        gdma_ll_rx_set_priority(group->hal.dev, pair->pair_id, priority);
+    }
+
+    return ESP_OK;
+
+}
+
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data)
 {
     esp_err_t ret = ESP_OK;
@@ -651,6 +669,8 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
         ESP_LOGD(TAG, "uninstall interrupt service for tx channel (%d,%d)", group_id, pair_id);
     }
 
+    gdma_ll_tx_set_priority(group->hal.dev, pair_id, 0); // reset the priority to 0 (lowest)
+
     free(tx_chan);
     ESP_LOGD(TAG, "del tx channel (%d,%d)", group_id, pair_id);
     // channel has a reference on pair, release it now
@@ -678,6 +698,8 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
         portEXIT_CRITICAL(&pair->spinlock);
         ESP_LOGD(TAG, "uninstall interrupt service for rx channel (%d,%d)", group_id, pair_id);
     }
+
+    gdma_ll_rx_set_priority(group->hal.dev, pair_id, 0); // reset the priority to 0 (lowest)
 
     free(rx_chan);
     ESP_LOGD(TAG, "del rx channel (%d,%d)", group_id, pair_id);
