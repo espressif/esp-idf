@@ -140,19 +140,23 @@ int ble_hci_trans_reset(void)
 
 static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
 {
-    struct os_mbuf *m;
+    struct os_mbuf *m = NULL;
     int rc;
     int sr;
     if (len < BLE_HCI_DATA_HDR_SZ || len > MYNEWT_VAL(BLE_TRANSPORT_ACL_SIZE)) {
         return;
     }
 
-    m = ble_transport_alloc_acl_from_hs();
+    do {
+        m = ble_transport_alloc_acl_from_hs();
 
-    if (!m) {
-        ESP_LOGE(TAG, "%s failed to allocate ACL buffers; increase ACL_BUF_COUNT", __func__);
-        return;
-    }
+        if (!m) {
+            ESP_LOGD(TAG,"Failed to allocate buffer, retrying \n");
+	    /* Give some time to free buffer and try again */
+	    vTaskDelay(1);
+	}
+    }while(!m);
+
     if ((rc = os_mbuf_append(m, data, len)) != 0) {
         ESP_LOGE(TAG, "%s failed to os_mbuf_append; rc = %d", __func__, rc);
         os_mbuf_free_chain(m);
