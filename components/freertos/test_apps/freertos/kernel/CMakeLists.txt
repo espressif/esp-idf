@@ -21,6 +21,3 @@ idf_component_register(SRC_DIRS ${src_dirs}
                        PRIV_INCLUDE_DIRS ${priv_include_dirs}
                        PRIV_REQUIRES test_utils esp_timer driver
                        WHOLE_ARCHIVE)
-
-# Todo: Fix no-format errors
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
