@@ -869,6 +869,7 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
             param.psth_rsp.tl = p_remote_rsp->label;
             param.psth_rsp.key_code = p_remote_rsp->rc_id;
             param.psth_rsp.key_state = key_state;
+            param.psth_rsp.rsp_code = p_remote_rsp->rsp_code;
             btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
         } while (0);
     } else {
