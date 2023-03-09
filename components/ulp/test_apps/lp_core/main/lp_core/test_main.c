@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "test_shared.h"
+#include "ulp_lp_core_utils.h"
+
 
 
 volatile lp_core_test_commands_t main_cpu_command = LP_CORE_NO_COMMAND;
@@ -33,10 +35,48 @@ void handle_commands(lp_core_test_commands_t cmd)
 
             /* Set the command reply status */
             main_cpu_reply = LP_CORE_COMMAND_OK;
+            main_cpu_command = LP_CORE_NO_COMMAND;
+
+            break;
+
+        case LP_CORE_DELAY_TEST:
+            counter++;
+            /* Echo the command ID back to the main CPU */
+            command_resp = LP_CORE_DELAY_TEST;
+
+            ulp_lp_core_delay_us(test_data_in);
+            main_cpu_reply = LP_CORE_COMMAND_OK;
+            main_cpu_command = LP_CORE_NO_COMMAND;
+            break;
+
+        case LP_CORE_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST:
+            /* Echo the command ID back to the main CPU */
+            command_resp = LP_CORE_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST;
+
+            /* Set the command reply status */
+            main_cpu_reply = LP_CORE_COMMAND_OK;
+            main_cpu_command = LP_CORE_NO_COMMAND;
+
+            ulp_lp_core_delay_us(1000*1000);
+            ulp_lp_core_wakeup_main_processor();
+
+            break;
+
+        case LP_CORE_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST:
+            /* Echo the command ID back to the main CPU */
+            command_resp = LP_CORE_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST;
+
+            /* Set the command reply status */
+            main_cpu_reply = LP_CORE_COMMAND_OK;
+            main_cpu_command = LP_CORE_NO_COMMAND;
+
+            ulp_lp_core_delay_us(10000*1000);
+            ulp_lp_core_wakeup_main_processor();
+
             break;
 
         case LP_CORE_NO_COMMAND:
-            main_cpu_reply = LP_CORE_COMMAND_OK;
+            main_cpu_reply = LP_CORE_COMMAND_NOK;
             break;
 
         default:
@@ -49,7 +89,7 @@ int main (void)
 {
     while (1) {
         handle_commands(main_cpu_command);
-    }
+   }
 
     return 0;
 }

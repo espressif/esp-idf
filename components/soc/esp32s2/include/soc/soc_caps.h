@@ -460,3 +460,5 @@
 #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
 #define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
 #define SOC_WIFI_NAN_SUPPORT                (1)    /*!< Support WIFI Aware (NAN) */
+/*-------------------------- ULP CAPS ----------------------------------------*/
+#define SOC_ULP_HAS_ADC                     (1)    /* ADC can be accessed from ULP */

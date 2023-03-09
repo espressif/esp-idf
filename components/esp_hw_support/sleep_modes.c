@@ -533,8 +533,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32C6 // TODO IDF-7012 Add sleep support for lp core
-#if CONFIG_ULP_COPROC_ENABLED
+#if CONFIG_ULP_COPROC_TYPE_FSM
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -544,7 +543,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
     }
 #endif
-#endif //!CONFIG_IDF_TARGET_ESP32C6
 
     misc_modules_sleep_prepare(deep_sleep);
 
@@ -1075,7 +1073,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
-#if CONFIG_ULP_COPROC_ENABLED && !CONFIG_IDF_TARGET_ESP32C6 // TODO IDF-7012 Add sleep support for lp core
+#if CONFIG_ULP_COPROC_TYPE_FSM
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
@@ -1108,6 +1106,9 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
     return ESP_OK;
 #elif CONFIG_ULP_COPROC_TYPE_RISCV
     s_config.wakeup_triggers |= (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+    return ESP_OK;
+#elif CONFIG_ULP_COPROC_TYPE_LP_CORE
+    s_config.wakeup_triggers |= RTC_LP_CORE_TRIG_EN;
     return ESP_OK;
 #else
     return ESP_ERR_NOT_SUPPORTED;
@@ -1494,7 +1495,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_TOUCH_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_TOUCHPAD;
 #endif
-#if SOC_ULP_SUPPORTED
+#if SOC_ULP_FSM_SUPPORTED
     } else if (wakeup_cause & RTC_ULP_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
 #endif
@@ -1511,6 +1512,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_ULP;
     } else if (wakeup_cause & RTC_COCPU_TRAP_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG;
+#endif
+#if SOC_LP_CORE_SUPPORTED
+    } else if (wakeup_cause & RTC_LP_CORE_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_ULP;
 #endif
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;

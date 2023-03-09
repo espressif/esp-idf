@@ -18,7 +18,7 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
 {
     if (unit == ADC_UNIT_1) {
         switch (work_mode) {
-#if SOC_ULP_SUPPORTED
+#if SOC_ULP_HAS_ADC
             case ADC_HAL_ULP_FSM_MODE:
                 return ADC_LL_CTRL_ULP;
 #endif
@@ -35,7 +35,7 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
         }
     } else {
         switch (work_mode) {
-#if SOC_ULP_SUPPORTED
+#if SOC_ULP_HAS_ADC
             case ADC_HAL_ULP_FSM_MODE:
                 return ADC_LL_CTRL_ULP;
 #endif

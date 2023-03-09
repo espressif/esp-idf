@@ -18,7 +18,7 @@ GPIO Summary
     .. list::
 
         - In Deep-sleep mode
-        :SOC_ULP_SUPPORTED: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
+        :SOC_ULP_SUPPORTED and not esp32c6: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
         - Analog functions such as ADC/DAC/etc are in use.
 
 
