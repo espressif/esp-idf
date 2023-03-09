@@ -15,6 +15,7 @@ module.exports = async function () {
     const mrCommitMessages = danger.gitlab.commits.map(
         (commit) => commit.message
     );
+    const jiraTicketRegex = /[A-Z0-9]+-[0-9]+/;
 
     let partMessages = []; // Create a blank field for future records of individual issues
 
@@ -22,8 +23,8 @@ module.exports = async function () {
     const sectionRelated = extractSectionRelated(mrDescription);
 
     if (
-        !sectionRelated.header ||  // No section Related in MR description or ...
-        !/\s[A-Z]+-[0-9]+\s/.test(sectionRelated.content) // no Jira links in section Related
+        !sectionRelated.header || // No section Related in MR description or ...
+        !jiraTicketRegex.test(sectionRelated.content) // no Jira links in section Related
     ) {
         return message(
             "Please consider adding references to JIRA issues in the `Related` section of the MR description."
@@ -38,7 +39,7 @@ module.exports = async function () {
 
         if (!ticket.correctFormat) {
             partMessages.push(
-                `- closing ticket \`${ticket.record}\` seems to be in the incorrect format. The correct format is for example \`- Closes JIRA-123\``
+                `- closing ticket \`${ticket.record}\` seems to be in the wrong format (or inaccessible to Jira DangerBot).. The correct format is for example \`- Closes JIRA-123\`.`
             );
         }
 
@@ -135,17 +136,19 @@ module.exports = async function () {
                 continue; // Not closing-type ticket, skip
             }
 
-            const correctJiraClosingLinkFormat = /^- Closes [A-Z]+\-\d+$/;
+            const correctJiraClosingLinkFormat = new RegExp(
+                `^- Closes ${jiraTicketRegex.source}$`
+            );
             if (!correctJiraClosingLinkFormat.test(line)) {
                 closingTickets.push({
                     record: line,
-                    ticketName: line.match(/[A-Z]+\-\d+/)[0],
+                    ticketName: line.match(jiraTicketRegex)[0],
                     correctFormat: false,
                 });
             } else {
                 closingTickets.push({
                     record: line,
-                    ticketName: line.match(/[A-Z]+\-\d+/)[0],
+                    ticketName: line.match(jiraTicketRegex)[0],
                     correctFormat: true,
                 });
             }
