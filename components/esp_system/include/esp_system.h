@@ -33,6 +33,8 @@ typedef enum {
     ESP_RST_DEEPSLEEP,  //!< Reset after exiting deep sleep mode
     ESP_RST_BROWNOUT,   //!< Brownout reset (software or hardware)
     ESP_RST_SDIO,       //!< Reset over SDIO
+    ESP_RST_USB_UART,   //!< Reset via USB UART peripheral
+    ESP_RST_USB_JTAG,   //!< Reset via USB JTAG peripheral
 } esp_reset_reason_t;
 
 /**
