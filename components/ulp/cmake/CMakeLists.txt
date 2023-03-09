@@ -79,7 +79,9 @@ if(ULP_COCPU_IS_RISCV)
 elseif(ULP_COCPU_IS_LP_CORE)
     list(APPEND ULP_S_SOURCES
     "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c")
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")

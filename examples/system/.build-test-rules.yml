@@ -175,7 +175,7 @@ examples/system/task_watchdog:
 
 examples/system/ulp_fsm/ulp:
   disable:
-    - if: SOC_ULP_SUPPORTED != 1
+    - if: SOC_ULP_FSM_SUPPORTED != 1
 
 examples/system/ulp_fsm/ulp_adc:
   enable:

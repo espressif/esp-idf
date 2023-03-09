@@ -3,7 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs "")
 set(includes "")
 
-if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
+if(CONFIG_ULP_COPROC_TYPE_FSM OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
 
     list(APPEND srcs
         "ulp_common/ulp_common.c"

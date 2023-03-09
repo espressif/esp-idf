@@ -18,7 +18,7 @@ GPIO 汇总
     .. list::
 
         - 处于 Deep-sleep 模式时
-        :SOC_ULP_SUPPORTED: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
+        :SOC_ULP_SUPPORTED and not esp32c6: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
         - 使用 ADC/DAC 等模拟功能时
 
 
