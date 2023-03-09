@@ -892,6 +892,7 @@ example_test_pytest_openthread_br:
     - build_pytest_examples_esp32s3
     - build_pytest_examples_esp32c6
     - build_pytest_examples_esp32h4
+    - build_pytest_examples_esp32h2
   tags:
     - esp32h4
     - openthread_br
