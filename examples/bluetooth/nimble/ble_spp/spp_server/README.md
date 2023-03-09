@@ -65,14 +65,9 @@
   SPP_COMMAND_CHAR|0xABF3|READ&WRITE_NR
   SPP_STATUS_CHAR|0xABF4|READ & NOTIFY
 
-This example creates GATT client and performs passive scan, it then connects to peripheral device if the device advertises connectability and the write characteristic.
+This example creates GATT server and advertises data, it then gets connected to a central device.
 
-It performs three GATT operations against the specified peer:
-
-* Discover all services,characteristics and descriptors.
-
-* After the discovery is completed, take UART input from user and write characteristic.
-
+It takes input from user and performs notify GATT operations against the specified peer.
 
 Note :
 
