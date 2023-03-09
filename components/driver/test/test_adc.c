@@ -290,6 +290,9 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
 /********************************************************************************
  *      ADC Speed Related Tests
  ********************************************************************************/
+//ESP32C3 ADC2 oneshot mode is not supported anymore
+#define ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3)
+
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define CPU_FREQ_MHZ                    CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -374,26 +377,34 @@ TEST_CASE("test_adc_single_cali_time", "[adc][ignore][manual]")
 {
     ESP_LOGI(TAG, "CPU FREQ is %dMHz", CPU_FREQ_MHZ);
     uint32_t adc1_time_record[4][TIMES_PER_ATTEN] = {};
-    uint32_t adc2_time_record[4][TIMES_PER_ATTEN] = {};
     int adc1_raw = 0;
-    int adc2_raw = 0;
 
     //atten0 ~ atten3
     for (int i = 0; i < 4; i++) {
         ESP_LOGI(TAG, "----------------atten%d----------------", i);
         adc_single_cali_init(ADC_UNIT_1, ADC1_CALI_TEST_CHAN0, i);
+
+        for (int j = 0; j < TIMES_PER_ATTEN; j++) {
+            adc1_raw = adc1_get_raw(ADC1_CALI_TEST_CHAN0);
+            adc1_time_record[i][j] = get_cali_time_in_ccount(adc1_raw, &adc1_chars);
+            IDF_LOG_PERFORMANCE("ADC1 Cali time", "%d us", (int)GET_US_BY_CCOUNT(adc1_time_record[i][j]));
+        }
+    }
+
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+    int adc2_raw = 0;
+    uint32_t adc2_time_record[4][TIMES_PER_ATTEN] = {};
+
+    //atten0 ~ atten3
+    for (int i = 0; i < 4; i++) {
+        ESP_LOGI(TAG, "----------------atten%d----------------", i);
         adc_single_cali_init(ADC_UNIT_2, ADC2_CALI_TEST_CHAN0, i);
 
         for (int j = 0; j < TIMES_PER_ATTEN; j++) {
-
-            adc1_raw = adc1_get_raw(ADC1_CALI_TEST_CHAN0);
             TEST_ESP_OK(adc2_get_raw(ADC2_CALI_TEST_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc2_raw));
-
-            adc1_time_record[i][j] = get_cali_time_in_ccount(adc1_raw, &adc1_chars);
             adc2_time_record[i][j] = get_cali_time_in_ccount(adc2_raw, &adc2_chars);
-
-            IDF_LOG_PERFORMANCE("ADC1 Cali time", "%d us", (int)GET_US_BY_CCOUNT(adc1_time_record[i][j]));
             IDF_LOG_PERFORMANCE("ADC2 Cali time", "%d us", (int)GET_US_BY_CCOUNT(adc2_time_record[i][j]));
         }
     }
+#endif  //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 }
