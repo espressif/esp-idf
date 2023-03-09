@@ -201,6 +201,14 @@ esp_err_t esp_external_coex_set_validate_high(bool is_high_valid);
 #endif
 #endif
 
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
+/**
+ * @brief Enable Wi-Fi and 802.15.4 coexistence.
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_coex_wifi_i154_enable(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
