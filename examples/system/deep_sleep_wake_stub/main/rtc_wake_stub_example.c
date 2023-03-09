@@ -34,6 +34,9 @@ static const uint32_t s_max_count = 20;
 // wakeup_cause stored in RTC memory
 static uint32_t wakeup_cause;
 
+// wakeup_time from CPU start to wake stub
+static uint32_t wakeup_time;
+
 // wake up stub function stored in RTC memory
 void wake_stub_example(void)
 {
@@ -45,7 +48,7 @@ void wake_stub_example(void)
     // Increment the counter.
     s_count++;
     // Print the counter value and wakeup cause.
-    ESP_RTC_LOGI("wake stub: wakeup count is %d, wakeup cause is %d", s_count, wakeup_cause);
+    ESP_RTC_LOGI("wake stub: wakeup count is %d, wakeup cause is %d, wakeup cost %ld us", s_count, wakeup_cause, wakeup_time);
 
     if (s_count >= s_max_count) {
         // Reset s_count
