@@ -192,6 +192,7 @@ typedef struct {
     uint8_t command_bits;           ///< The command length in this transaction, in bits.
     uint8_t address_bits;           ///< The address length in this transaction, in bits.
     uint8_t dummy_bits;             ///< The dummy length in this transaction, in bits.
+    uint32_t seg_gap_clock_len;     ///< The len of CS inactive time between segments, in clocks.
     uint32_t seg_trans_flags;       ///< SCT specific flags. See `SPI_SEG_TRANS_XXX` macros.
 
     /**< Necessary buffer required by HW, don't touch this. >**/

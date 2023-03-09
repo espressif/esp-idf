@@ -781,6 +781,21 @@ static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
 }
 
 #if SOC_SPI_SCT_SUPPORTED
+static void SPI_MASTER_ISR_ATTR spi_sct_set_hal_trans_config(spi_seg_transaction_t *trans_header, spi_hal_trans_config_t *hal_trans)
+{
+    spi_transaction_t *trans = &trans_header->base;
+
+    //Set up OIO/QIO/DIO if needed
+    hal_trans->line_mode.data_lines = (trans->flags & SPI_TRANS_MODE_DIO) ? 2 : (trans->flags & SPI_TRANS_MODE_QIO) ? 4 : 1;
+#if SOC_SPI_SUPPORT_OCT
+    if (trans->flags & SPI_TRANS_MODE_OCT) {
+        hal_trans->line_mode.data_lines = 8;
+    }
+#endif
+    hal_trans->line_mode.addr_lines = (trans->flags & SPI_TRANS_MULTILINE_ADDR) ? hal_trans->line_mode.data_lines : 1;
+    hal_trans->line_mode.cmd_lines = (trans->flags & SPI_TRANS_MULTILINE_CMD) ? hal_trans->line_mode.data_lines : 1;
+}
+
 static void SPI_MASTER_ISR_ATTR spi_new_sct_trans(spi_device_t *dev, spi_sct_desc_priv_t *cur_sct_trans)
 {
     dev->host->cur_cs = dev->id;
@@ -788,6 +803,10 @@ static void SPI_MASTER_ISR_ATTR spi_new_sct_trans(spi_device_t *dev, spi_sct_des
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
     spi_setup_device(dev);
 
+#if !CONFIG_IDF_TARGET_ESP32S2
+    // s2 update this seg_gap_clock_len by dma from conf_buffer
+    spi_hal_sct_set_conf_bits_len(&dev->host->hal, cur_sct_trans->sct_trans_desc_head->seg_gap_clock_len);
+#endif
     spi_hal_sct_load_dma_link(&dev->host->hal, cur_sct_trans->rx_seg_head, cur_sct_trans->tx_seg_head);
     if (dev->cfg.pre_cb) {
         dev->cfg.pre_cb((spi_transaction_t *)cur_sct_trans->sct_trans_desc_head);
@@ -869,7 +888,9 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         if (host->sct_mode_enabled) {
             //cur_cs is changed to DEV_NUM_MAX here
             spi_post_sct_trans(host);
-            xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_sct_trans, &do_yield);
+            if (!(host->device[cs]->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT)) {
+                xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_sct_trans, &do_yield);
+            }
         } else
 #endif  //#if SOC_SPI_SCT_SUPPORTED
         {
@@ -1402,6 +1423,7 @@ esp_err_t spi_bus_segment_trans_mode_enable(spi_device_handle_t handle, bool ena
 {
     SPI_CHECK(handle, "Invalid arguments.", ESP_ERR_INVALID_ARG);
     SPI_CHECK(SOC_SPI_SCT_SUPPORTED_PERIPH(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX, "SCT mode only available under Half Duplex mode", ESP_ERR_INVALID_STATE);
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot queue new transaction while previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE);
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue) == 0, "Cannot enable SCT mode when internal Queue still has items", ESP_ERR_INVALID_STATE);
 
@@ -1432,8 +1454,13 @@ esp_err_t spi_bus_segment_trans_mode_enable(spi_device_handle_t handle, bool ena
         spi_hal_trans_config_t hal_trans = {};
         spi_format_hal_trans_struct(handle, &trans_buf, &hal_trans);
         spi_hal_setup_trans(hal, hal_dev, &hal_trans);
+#if CONFIG_IDF_TARGET_ESP32S2
+        // conf_base need ensure transaction gap len more than about 2us under different freq.
+        // conf_base only configurable on s2.
+        spi_hal_sct_setup_conf_base(hal, handle->real_clk_freq_hz/600000);
+#endif
 
-        spi_hal_sct_init(&handle->host->hal);
+        spi_hal_sct_init(hal);
     } else {
         spi_hal_sct_deinit(&handle->host->hal);
     }
@@ -1445,8 +1472,13 @@ esp_err_t spi_bus_segment_trans_mode_enable(spi_device_handle_t handle, bool ena
 
 static void SPI_MASTER_ATTR s_sct_init_conf_buffer(spi_hal_context_t *hal, spi_seg_transaction_t *seg_trans_desc, uint32_t seg_num)
 {
+    // read from HW need waiting for slower APB clock domain return data, loop to contact slow clock domain will waste time.
+    // use one imagen then copied by cpu instead.
+    uint32_t conf_buffer_img[SOC_SPI_SCT_BUFFER_NUM_MAX];
+    spi_hal_sct_init_conf_buffer(hal, conf_buffer_img);
+
     for (int i = 0; i < seg_num; i++) {
-        spi_hal_sct_init_conf_buffer(hal, seg_trans_desc[i].conf_buffer);
+        memcpy(seg_trans_desc[i].conf_buffer, conf_buffer_img, sizeof(conf_buffer_img));
     }
 }
 
@@ -1503,7 +1535,10 @@ static void SPI_MASTER_ATTR s_sct_format_conf_buffer(spi_device_handle_t handle,
     if (seg_end) {
         seg_config.seg_end = true;
     }
+    seg_config.seg_gap_len = seg_trans_desc->seg_gap_clock_len;
 
+    // set line mode or ...
+    spi_sct_set_hal_trans_config(seg_trans_desc, &hal->trans_config);
     spi_hal_sct_format_conf_buffer(hal, &seg_config, hal_dev, seg_trans_desc->conf_buffer);
 }
 

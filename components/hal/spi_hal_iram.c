@@ -174,6 +174,7 @@ void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[S
 
 void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
 {
+    spi_ll_format_line_mode_conf_buff(hal->hw, hal->trans_config.line_mode, conf_buffer);
     spi_ll_format_prep_phase_conf_buffer(hal->hw, config->cs_setup, conf_buffer);
     spi_ll_format_cmd_phase_conf_buffer(hal->hw, config->cmd, config->cmd_bits, dev->tx_lsbfirst, conf_buffer);
     spi_ll_format_addr_phase_conf_buffer(hal->hw, config->addr, config->addr_bits, dev->rx_lsbfirst, conf_buffer);
@@ -181,7 +182,11 @@ void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_co
     spi_ll_format_dout_phase_conf_buffer(hal->hw, config->tx_bitlen, conf_buffer);
     spi_ll_format_din_phase_conf_buffer(hal->hw, config->rx_bitlen, conf_buffer);
     spi_ll_format_done_phase_conf_buffer(hal->hw, config->cs_hold, conf_buffer);
-    spi_ll_format_conf_phase_conf_buffer(hal->hw, conf_buffer, config->seg_end);
+    spi_ll_format_conf_phase_conf_buffer(hal->hw, config->seg_end, conf_buffer);
+#if CONFIG_IDF_TARGET_ESP32S2
+    // only s2 support update seg_gap_len by conf_buffer
+    spi_ll_format_conf_bitslen_buffer(hal->hw, config->seg_gap_len, conf_buffer);
+#endif
 }
 
 void spi_hal_sct_load_dma_link(spi_hal_context_t *hal, lldesc_t *rx_seg_head, lldesc_t *tx_seg_head)
@@ -275,7 +280,7 @@ spi_hal_dma_desc_status_t spi_hal_sct_link_tx_seg_dma_desc(spi_hal_context_t *ha
 
     lldesc_t *internal_head = NULL;
     s_sct_prepare_tx_seg(hal, conf_buffer, send_buffer, buf_len_bytes, &internal_head);
-    *used_desc_num = 1 + lldesc_get_required_num(buf_len_bytes);
+    *used_desc_num += 1 + lldesc_get_required_num(buf_len_bytes);
 
     return SPI_HAL_DMA_DESC_LINKED;
 }
@@ -331,7 +336,7 @@ spi_hal_dma_desc_status_t spi_hal_sct_link_rx_seg_dma_desc(spi_hal_context_t *ha
 
     lldesc_t *internal_head = NULL;
     s_sct_prepare_rx_seg(hal, recv_buffer, buf_len_bytes, &internal_head);
-    *used_desc_num = lldesc_get_required_num(buf_len_bytes);
+    *used_desc_num += lldesc_get_required_num(buf_len_bytes);
 
     return SPI_HAL_DMA_DESC_LINKED;
 }

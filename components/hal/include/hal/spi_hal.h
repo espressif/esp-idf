@@ -160,6 +160,7 @@ typedef struct {
 typedef struct {
     /* CONF State */
     bool seg_end;                       ///< True: this segment is the end; False: this segment isn't the end;
+    uint32_t seg_gap_len;               ///< spi clock length of CS inactive on config phase for sct
     /* PREP State */
     int cs_setup;                       ///< Setup time of CS active edge before the first SPI clock
     /* CMD State */
@@ -430,6 +431,17 @@ void spi_hal_sct_load_dma_link(spi_hal_context_t *hal, lldesc_t *rx_seg_head, ll
  * Deinit SCT mode related registers and hal states
  */
 void spi_hal_sct_deinit(spi_hal_context_t *hal);
+
+/**
+ * Set conf_bitslen to HW for sct.
+ */
+#define spi_hal_sct_set_conf_bits_len(hal, conf_len)    spi_ll_set_conf_phase_bits_len((hal)->hw, conf_len)
+
+/**
+ * Set conf_bitslen base to HW for sct, only supported on s2.
+ */
+#define spi_hal_sct_setup_conf_base(hal, conf_base)     spi_ll_set_conf_base_bitslen((hal)->hw, conf_base)
+
 #endif  //#if SOC_SPI_SCT_SUPPORTED
 #endif  //#if SOC_GPSPI_SUPPORTED
 

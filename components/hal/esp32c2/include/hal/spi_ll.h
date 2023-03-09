@@ -296,7 +296,7 @@ static inline void spi_ll_user_start(spi_dev_t *hw)
  */
 static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 {
-    return hw->cmd.val;
+    return hw->cmd.usr;
 }
 
 /**
@@ -650,8 +650,8 @@ static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t li
     hw->ctrl.faddr_dual = (line_mode.addr_lines == 2);
     hw->ctrl.faddr_quad = (line_mode.addr_lines == 4);
     hw->ctrl.fread_dual = (line_mode.data_lines == 2);
-    hw->user.fwrite_dual = (line_mode.data_lines == 2);
     hw->ctrl.fread_quad = (line_mode.data_lines == 4);
+    hw->user.fwrite_dual = (line_mode.data_lines == 2);
     hw->user.fwrite_quad = (line_mode.data_lines == 4);
 }
 
@@ -1303,18 +1303,70 @@ static inline int spi_ll_get_slave_hd_dummy_bits(spi_line_mode_t line_mode)
 #define SPI_LL_SCT_MAGIC_NUMBER                 (0x2)
 
 /**
+ * Set conf phase bits len to HW for segment config trans mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param conf_bitlen Value of field conf_bitslen in cmd reg.
+ */
+static inline void spi_ll_set_conf_phase_bits_len(spi_dev_t *hw, uint32_t conf_bitlen)
+{
+    if (conf_bitlen <= SOC_SPI_SCT_CONF_BITLEN_MAX) {
+        hw->cmd.conf_bitlen = conf_bitlen;
+    }
+}
+
+/**
  * Update the conf buffer for conf phase
  *
  * @param hw Beginning address of the peripheral registers.
+ * @param is_end Is this transaction the end of this segment.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_conf_phase_conf_buffer(spi_dev_t *hw, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], bool is_end)
+static inline void spi_ll_format_conf_phase_conf_buffer(spi_dev_t *hw, bool is_end, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
 {
     //user reg: usr_conf_nxt
     if (is_end) {
         SPI_LL_CONF_BUF_CLR_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_USR_CONF_NXT_M);
     } else {
         SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_USR_CONF_NXT_M);
+    }
+}
+
+/**
+ * Update the line mode of conf buffer for conf phase
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param line_mode line mode struct of each phase.
+ * @param conf_buffer Conf buffer to be updated.
+ */
+static inline void spi_ll_format_line_mode_conf_buff(spi_dev_t *hw, spi_line_mode_t line_mode, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+{
+    conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] &= ~SPI_LL_ONE_LINE_CTRL_MASK;
+    conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] &= ~SPI_LL_ONE_LINE_USER_MASK;
+
+    switch (line_mode.cmd_lines)
+    {
+    case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FCMD_DUAL_M); break;
+    case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FCMD_QUAD_M); break;
+    default: break;
+    }
+
+    switch (line_mode.addr_lines)
+    {
+    case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FADDR_DUAL_M); break;
+    case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FADDR_QUAD_M); break;
+    default: break;
+    }
+
+    switch (line_mode.data_lines)
+    {
+    case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_DUAL_M );
+            SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_DUAL_M);
+            break;
+    case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_QUAD_M );
+            SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_QUAD_M);
+            break;
+    default: break;
     }
 }
 

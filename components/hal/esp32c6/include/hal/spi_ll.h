@@ -290,7 +290,7 @@ static inline void spi_ll_user_start(spi_dev_t *hw)
  */
 static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 {
-    return hw->cmd.val;
+    return hw->cmd.usr;
 }
 
 /**

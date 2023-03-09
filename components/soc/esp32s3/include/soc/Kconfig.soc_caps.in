@@ -851,6 +851,10 @@ config SOC_SPI_SCT_BUFFER_NUM_MAX
     bool
     default y
 
+config SOC_SPI_SCT_CONF_BITLEN_MAX
+    hex
+    default 0x3FFFA
+
 config SOC_MEMSPI_SRC_FREQ_120M
     bool
     default y
