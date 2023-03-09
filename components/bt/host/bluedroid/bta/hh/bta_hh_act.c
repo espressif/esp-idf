@@ -459,8 +459,7 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         /* move state machine W4_CONN ->IDLE */
         bta_hh_sm_execute(p_cb, BTA_HH_API_CLOSE_EVT, NULL);
 
-        /* if this is an outgoing connection to an unknown device, clean up cb */
-        if (p_cb->app_id == 0 && !p_cb->incoming_conn) {
+        if (p_cb->app_id == 0) {
             /* clean up device control block */
             bta_hh_clean_up_kdev(p_cb);
         }
