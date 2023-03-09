@@ -23,6 +23,7 @@
 #include "lwip/ip_addr.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/mld6.h"
+#include "lwip/prot/mld6.h"
 #include "lwip/nd6.h"
 #include "lwip/snmp.h"
 #include "lwip/priv/tcpip_priv.h"
@@ -134,6 +135,8 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif);
 #endif
 #if LWIP_IPV6
 static void esp_netif_internal_nd6_cb(struct netif *p_netif, uint8_t ip_index);
+static void netif_set_mldv6_flag(struct netif *netif);
+static void netif_unset_mldv6_flag(struct netif *netif);
 #endif /* LWIP_IPV6 */
 
 static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args)
@@ -799,6 +802,11 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
 #if ESP_GRATUITOUS_ARP
         if (esp_netif->flags & ESP_NETIF_FLAG_GARP) {
             netif_unset_garp_flag(esp_netif->lwip_netif);
+        }
+#endif
+#if ESP_MLDV6_REPORT && LWIP_IPV6
+        if (esp_netif->flags & ESP_NETIF_FLAG_MLDV6_REPORT) {
+            netif_unset_mldv6_flag(esp_netif->lwip_netif);
         }
 #endif
         if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
@@ -1638,6 +1646,11 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 #endif
     }
 #if CONFIG_LWIP_IPV6
+#if ESP_MLDV6_REPORT
+        if (esp_netif->flags & ESP_NETIF_FLAG_MLDV6_REPORT) {
+            netif_unset_mldv6_flag(esp_netif->lwip_netif);
+        }
+#endif
     for(int8_t i = 0 ;i < LWIP_IPV6_NUM_ADDRESSES ;i++) {
         netif_ip6_addr_set(lwip_netif, i, IP6_ADDR_ANY6);
         netif_ip6_addr_set_valid_life(lwip_netif, i, 0);
@@ -1934,6 +1947,34 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
 }
 
 #if CONFIG_LWIP_IPV6
+
+#ifdef CONFIG_LWIP_MLDV6_TMR_INTERVAL
+
+static void netif_send_mldv6(void *arg)
+{
+    struct netif *netif = arg;
+    if (!netif_is_up(netif)) {
+        return;
+    }
+    mld6_report_groups(netif);
+    sys_timeout(CONFIG_LWIP_MLDV6_TMR_INTERVAL*1000, netif_send_mldv6, netif);
+}
+
+static void netif_set_mldv6_flag(struct netif *netif)
+{
+    if (!netif_is_up(netif)) {
+        return;
+    }
+    sys_timeout(CONFIG_LWIP_MLDV6_TMR_INTERVAL*1000, netif_send_mldv6, netif);
+}
+
+static void netif_unset_mldv6_flag(struct netif *netif)
+{
+    sys_untimeout(netif_send_mldv6, netif);
+}
+
+#endif
+
 esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
 {
     ip6_addr_t* lwip_ip6_info = (ip6_addr_t*)ip6_addr;
@@ -1973,6 +2014,14 @@ static void esp_netif_internal_nd6_cb(struct netif *netif, uint8_t ip_index)
     memcpy(&ip6_info.ip, &lwip_ip6_info, sizeof(ip6_addr_t));
     ip6_info.ip.zone = 0;   // zero out zone, as not used in lwip
 #endif /* LWIP_IPV6_SCOPES */
+
+    if (esp_netif->flags&ESP_NETIF_FLAG_MLDV6_REPORT) {
+#if ESP_MLDV6_REPORT
+        netif_set_mldv6_flag(netif);
+#else
+        ESP_LOGW(TAG,"CONFIG_LWIP_ESP_MLDV6_REPORT not enabled, but esp-netif configured with ESP_NETIF_FLAG_MLDV6_REPORT");
+#endif
+    }
 
     memcpy(&evt.ip6_info, &ip6_info, sizeof(esp_netif_ip6_info_t));
     int ret = esp_event_post(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0);
