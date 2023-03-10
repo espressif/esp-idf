@@ -134,6 +134,9 @@
 #define SOC_CPU_WATCHPOINTS_NUM         4
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
+#define SOC_CPU_HAS_PMA                 1
+#define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
+
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
 #define SOC_MMU_PERIPH_NUM                    (1U)
