@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <esp_types.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -94,8 +95,8 @@ TEST_CASE("isr latency test vport-yield-from-isr with no parameter", "[freertos]
     vTaskDelay(100);
     BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
-    TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%d cycles" ,delta_enter_cycles);
-    TEST_PERFORMANCE_LESS_THAN(ISR_EXIT_CYCLES, "%d cycles" ,delta_exit_cycles);
+    TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%"PRIu32" cycles" ,delta_enter_cycles);
+    TEST_PERFORMANCE_LESS_THAN(ISR_EXIT_CYCLES, "%"PRIu32" cycles" ,delta_exit_cycles);
 
     esp_intr_free(handle);
 }
@@ -113,8 +114,8 @@ TEST_CASE("isr latency test vport-yield-from-isr with parameter", "[freertos][ig
     xTaskCreatePinnedToCore(test_task, "tst" , 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);
     BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
-    TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%d cycles" ,delta_enter_cycles);
-    TEST_PERFORMANCE_LESS_THAN(ISR_EXIT_CYCLES, "%d cycles" ,delta_exit_cycles);
+    TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%"PRIu32" cycles" ,delta_enter_cycles);
+    TEST_PERFORMANCE_LESS_THAN(ISR_EXIT_CYCLES, "%"PRIu32" cycles" ,delta_exit_cycles);
 
     esp_intr_free(handle);
 }

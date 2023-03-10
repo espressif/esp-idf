@@ -5,6 +5,3 @@
 idf_component_register(SRC_DIRS "."
                        PRIV_REQUIRES test_utils
                        WHOLE_ARCHIVE)
-
-# Todo: Fix no-format errors
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

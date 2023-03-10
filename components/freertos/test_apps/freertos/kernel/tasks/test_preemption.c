@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -77,7 +78,7 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
         TEST_ASSERT( flag );
 
         delta = now_ccount - yield_ccount;
-        printf("Yielding from lower priority task took %u cycles\n", delta);
+        printf("Yielding from lower priority task took %"PRIu32" cycles\n", delta);
         TEST_ASSERT(delta < MAX_YIELD_COUNT);
 
         vTaskDelete(sender_task);
@@ -114,7 +115,7 @@ TEST_CASE("Yield from lower priority task, other CPU", "[freertos]")
         TEST_ASSERT( flag );
 
         delta = now_ccount - trigger_ccount;
-        printf("Yielding from task on other core took %u cycles\n", delta);
+        printf("Yielding from task on other core took %"PRIu32" cycles\n", delta);
         TEST_ASSERT(delta < MAX_YIELD_COUNT);
 
         vQueueDelete(queue);
