@@ -659,7 +659,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     // modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, 249);
     // esp_phy_modem_init();
     esp_phy_enable();
-    bt_bb_v2_init_cmplx(PHY_ENABLE_VERSION_PRINT);
     s_ble_active = true;
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
