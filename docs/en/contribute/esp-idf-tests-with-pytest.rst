@@ -543,18 +543,50 @@ The binaries in the target test jobs are downloaded from build jobs, the artifac
 Run the Tests Locally
 =====================
 
-The local executing process is the same as the CI process.
+First you need to install ESP-IDF with additional python requirements:
 
-For example, if you want to run all the esp32 tests under the ``$IDF_PATH/examples/system/console/basic`` folder, you may:
-
-.. code:: shell
+.. code-block:: shell
 
    $ cd $IDF_PATH
    $ bash install.sh --enable-pytest
    $ . ./export.sh
+
+By default, the pytest script will look for the build directory in this order:
+
+- ``build_<target>_<sdkconfig>``
+- ``build_<target>``
+- ``build_<sdkconfig>``
+- ``build``
+
+Which means, the simplest way to run pytest is calling ``idf.py build``.
+
+For example, if you want to run all the esp32 tests under the ``$IDF_PATH/examples/get-started/hello_world`` folder, you should run:
+
+.. code-block:: shell
+
+   $ cd examples/get-started/hello_world
+   $ idf.py build
+   $ pytest --target esp32
+
+If you have multiple sdkconfig files in your test app, like those ``sdkconfig.ci.*`` files, the simple ``idf.py build`` won't apply the extra sdkconfig files. Let's take ``$IDF_PATH/examples/system/console/basic`` as an example.
+
+If you want to test this app with config ``history``, and build with ``idf.py build``, you should run
+
+.. code-block:: shell
+
+   $ cd examples/system/console/basic
+   $ idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.history" build
+   $ pytest --target esp32 --sdkconfig history
+
+If you want to build and test with all sdkconfig files at the same time, you should use our CI script as an helper script:
+
+.. code-block:: shell
+
    $ cd examples/system/console/basic
    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
    $ pytest --target esp32
+
+The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
 
 Tips and Tricks
 ===============
