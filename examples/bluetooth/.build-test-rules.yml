@@ -99,6 +99,16 @@ examples/bluetooth/nimble/ble_l2cap_coc:
       temporary: true
       reason: the other targets are not tested yet
 
+examples/bluetooth/nimble/ble_multi_adv:
+  enable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3"]
+      temporary: true
+      reason: The other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32"]
+      temporary: true
+      reason: The runner doesn't support yet
+
 examples/bluetooth/nimble/ble_periodic_adv:
   enable:
     - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3"]
