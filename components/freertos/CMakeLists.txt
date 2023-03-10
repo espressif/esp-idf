@@ -81,7 +81,6 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         "${kernel_dir}/portable/${arch}/xtensa_context.S"
         "${kernel_dir}/portable/${arch}/xtensa_init.c"
         "${kernel_dir}/portable/${arch}/xtensa_overlay_os_hook.c"
-        "${kernel_dir}/portable/${arch}/xtensa_vector_defaults.S"
         "${kernel_dir}/portable/${arch}/xtensa_vectors.S")
 endif()
 
