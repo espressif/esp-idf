@@ -416,9 +416,6 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
-/*-------------------------- MEMPROT CAPS ------------------------------------*/
-
-
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C6 has 2 UARTs
 #define SOC_UART_NUM                    (2)

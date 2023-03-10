@@ -234,7 +234,6 @@
 #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
 #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 
-// TODO: IDF-6332 (Copy from esp32c6, need check)
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
 #define SOC_MPU_MIN_REGION_SIZE                   0x20000000U
@@ -417,11 +416,6 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
-
-// TODO:    IDF-6332 (Copy from esp32c6, need check)
-/*-------------------------- MEMPROT CAPS ------------------------------------*/
-#define SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE   16
-#define SOC_MEMPROT_MEM_ALIGN_SIZE          512
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-H2 has 2 UARTs
