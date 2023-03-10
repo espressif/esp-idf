@@ -59,6 +59,8 @@ Flash Chips List:
 6. XMC
 7. BOYA
 
+.. _hpm-doc:
+
 High performance mode
 ---------------------
 
@@ -83,6 +85,9 @@ Flash Chips (name & ID) List:
 
     It is hard to create several strategies to cover all situations, so all flash chips using HPM need to be supported explicitly. Therefore, if you try to use a flash not listed as supported under high performance mode, it might cause some error. So, when you try to use the flash chip beyond supported list, please test properly.
 
+
+.. _oct-flash-doc:
+
 OPI flash support
 -----------------
 
@@ -101,6 +106,9 @@ ESP Chips List:
 Flash Chips List:
 
 1. MX25UM25645G
+
+
+.. _32-bit-flash-doc:
 
 32-bit Address Flash Chips
 --------------------------

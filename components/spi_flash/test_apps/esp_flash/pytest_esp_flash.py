@@ -16,6 +16,7 @@ from pytest_embedded import Dut
     [
         'release',
         'flash_qio',
+        'verify'
     ],
     indirect=True,
 )
