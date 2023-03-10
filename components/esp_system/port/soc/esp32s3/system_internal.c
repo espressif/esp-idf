@@ -88,7 +88,7 @@ void IRAM_ATTR esp_restart_noos(void)
     const uint32_t core_id = esp_cpu_get_core_id();
 #if !CONFIG_FREERTOS_UNICORE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-    esp_cpu_reset(other_core_id);
+    esp_rom_software_reset_cpu(other_core_id);
     esp_cpu_stall(other_core_id);
 #endif
 
@@ -135,17 +135,17 @@ void IRAM_ATTR esp_restart_noos(void)
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
 #if !CONFIG_FREERTOS_UNICORE
-        esp_cpu_reset(1);
+        esp_rom_software_reset_cpu(1);
 #endif
-        esp_cpu_reset(0);
+        esp_rom_software_reset_cpu(0);
     }
 #if !CONFIG_FREERTOS_UNICORE
     else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU
-        esp_cpu_reset(0);
+        esp_rom_software_reset_cpu(0);
         esp_cpu_unstall(0);
-        esp_cpu_reset(1);
+        esp_rom_software_reset_cpu(1);
     }
 #endif
     while (true) {

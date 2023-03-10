@@ -55,7 +55,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // to the stalled CPU, preventing current CPU from accessing this pool.
     const uint32_t core_id = esp_cpu_get_core_id();
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-    esp_cpu_reset(other_core_id);
+    esp_rom_software_reset_cpu(other_core_id);
     esp_cpu_stall(other_core_id);
 
     // Other core is now stalled, can access DPORT registers directly
@@ -130,14 +130,14 @@ void IRAM_ATTR esp_restart_noos(void)
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-        esp_cpu_reset(1);
-        esp_cpu_reset(0);
+        esp_rom_software_reset_cpu(1);
+        esp_rom_software_reset_cpu(0);
     } else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU
-        esp_cpu_reset(0);
+        esp_rom_software_reset_cpu(0);
         esp_cpu_unstall(0);
-        esp_cpu_reset(1);
+        esp_rom_software_reset_cpu(1);
     }
     while(true) {
         ;
