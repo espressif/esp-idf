@@ -248,7 +248,7 @@ void app_main(void)
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_adv_data_raw(2, sizeof(legacy_adv_data), &legacy_adv_data[0]), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_scan_rsp_data_raw(2, sizeof(legacy_scan_rsp_data), &legacy_scan_rsp_data[0]), test_sem);
 
-    // coded phy extend adv, Connectable advertising
+    // coded phy extend adv, Scannable advertising
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(3, &ext_adv_params_coded), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(3, addr_coded), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_scan_rsp_data_raw(3, sizeof(raw_scan_rsp_data_coded), &raw_scan_rsp_data_coded[0]), test_sem);
