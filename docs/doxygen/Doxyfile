@@ -112,6 +112,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/twai.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
     $(PROJECT_PATH)/components/driver/include/driver/uart.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif.h \

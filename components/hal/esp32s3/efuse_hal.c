@@ -10,6 +10,7 @@
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
+#include "esp_attr.h"
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
 
@@ -23,7 +24,7 @@ static inline bool is_eco0(uint32_t minor_raw)
             efuse_ll_get_blk_version_major() == 1 && efuse_ll_get_blk_version_minor() == 1);
 }
 
-uint32_t efuse_hal_get_major_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
 {
     uint32_t minor_raw = efuse_ll_get_chip_wafer_version_minor();
 
@@ -33,7 +34,7 @@ uint32_t efuse_hal_get_major_chip_version(void)
     return efuse_ll_get_chip_wafer_version_major();
 }
 
-uint32_t efuse_hal_get_minor_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_minor_chip_version(void)
 {
     uint32_t minor_raw = efuse_ll_get_chip_wafer_version_minor();
 

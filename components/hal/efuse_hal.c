@@ -10,9 +10,10 @@
 #include "hal/efuse_ll.h"
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
+#include "esp_attr.h"
 
 
-uint32_t efuse_hal_chip_revision(void)
+IRAM_ATTR uint32_t efuse_hal_chip_revision(void)
 {
     return efuse_hal_get_major_chip_version() * 100 + efuse_hal_get_minor_chip_version();
 }

@@ -428,16 +428,21 @@ menu "Security features"
         select MBEDTLS_ECDSA_C
         depends on SECURE_SIGNED_ON_BOOT || SECURE_SIGNED_ON_UPDATE
 
+    config SECURE_ESP32_SUPPORTS_RSA
+        bool
+        default y if ESP32_REV_MIN_FULL >= 300
+        depends on IDF_TARGET_ESP32
+
     config SECURE_BOOT_SUPPORTS_RSA
         bool
         default y
-        depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        # RSA secure boot is supported in ESP32 revision >= v3.0
+        depends on SECURE_ESP32_SUPPORTS_RSA || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 # NOERROR
 
     config SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
         bool
         default y
         depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
@@ -508,7 +513,8 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN >= 3 || IDF_TARGET_ESP32S3
+        # Secure boot is not supported for ESP32-C3 revision < v0.3
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || (IDF_TARGET_ESP32C3 && ESP32C3_REV_MIN_FULL >= 3) || IDF_TARGET_ESP32S3 # NOERROR
         select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
@@ -521,7 +527,7 @@ menu "Security features"
 
     choice SECURE_BOOT_VERSION
         bool "Select secure boot version"
-        default SECURE_BOOT_V2_ENABLED if ESP32_REV_MIN_3
+        default SECURE_BOOT_V2_ENABLED if ESP32_REV_MIN_FULL >= 300
         depends on SECURE_BOOT
         help
             Select the Secure Boot Version. Depends on the Chip Revision.
@@ -874,7 +880,7 @@ menu "Security features"
         default SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT # NOERROR
         default SECURE_INSECURE_ALLOW_DL_MODE
         depends on SECURE_BOOT_V2_ENABLED || SECURE_FLASH_ENC_ENABLED
-        depends on !IDF_TARGET_ESP32 || ESP32_REV_MIN_3
+        depends on !(IDF_TARGET_ESP32 && ESP32_REV_MIN_FULL < 300)
 
         config SECURE_DISABLE_ROM_DL_MODE
             bool "UART ROM download mode (Permanently disabled (recommended))"

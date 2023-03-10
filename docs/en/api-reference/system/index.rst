@@ -7,6 +7,7 @@ System API
     App image format <app_image_format>
     Application Level Tracing <app_trace>
     :SOC_ASYNC_MEMCPY_SUPPORTED: Async Memory Copy <async_memcpy>
+    Chip Revision <chip_revision>
     Console Component <console>
     eFuse Manager <efuse>
     Error Codes and Helper Functions <esp_err>

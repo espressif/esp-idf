@@ -27,29 +27,70 @@ menu "ESP32C3-Specific"
         prompt "Minimum Supported ESP32-C3 Revision"
         default ESP32C3_REV_MIN_3
         help
-            Minimum revision that ESP-IDF would support.
+            Required minimum chip revision. ESP-IDF will check for it and
+            reject to boot if the chip revision fails the check.
+            This ensures the chip used will have some modifications (features, or bugfixes).
 
-            Only supporting higher chip revisions can reduce binary size.
+            The complied binary will only support chips above this revision,
+            this will also help to reduce binary size.
 
         config ESP32C3_REV_MIN_0
-            bool "Rev 0"
+            bool "Rev v0.0 (ECO0)"
         config ESP32C3_REV_MIN_1
-            bool "Rev 1"
+            bool "Rev v0.1 (ECO1)"
         config ESP32C3_REV_MIN_2
-            bool "Rev 2"
+            bool "Rev v0.2 (ECO2)"
         config ESP32C3_REV_MIN_3
-            bool "Rev 3"
+            bool "Rev v0.3 (ECO3)"
         config ESP32C3_REV_MIN_4
-            bool "Rev 4"
+            bool "Rev v0.4 (ECO4)"
     endchoice
 
     config ESP32C3_REV_MIN
+        # we keep it for compatibility. Use ESP32C3_REV_MIN_FULL instead.
         int
         default 0 if ESP32C3_REV_MIN_0
         default 1 if ESP32C3_REV_MIN_1
         default 2 if ESP32C3_REV_MIN_2
         default 3 if ESP32C3_REV_MIN_3
         default 4 if ESP32C3_REV_MIN_4
+
+    config ESP32C3_REV_MIN_FULL
+        int
+        default 0 if ESP32C3_REV_MIN_0
+        default 1 if ESP32C3_REV_MIN_1
+        default 2 if ESP32C3_REV_MIN_2
+        default 3 if ESP32C3_REV_MIN_3
+        default 4 if ESP32C3_REV_MIN_4
+
+    config ESP_REV_MIN_FULL
+        int
+        default ESP32C3_REV_MIN_FULL
+
+        #
+        # MAX Revision
+        #
+
+    choice ESP32C3_REV_MAX_FULL_STR
+        prompt "Maximum Supported ESP32-C3 Revision"
+        config ESP32C3_REV_MAX_FULL_STR_OPT
+            bool "Rev v0.99"
+    endchoice
+
+    # Maximum revision that IDF supports.
+    # It can not be changed by user.
+    # Only Espressif can change it when a new version will be supported in IDF.
+    # Supports all chips starting from ESP32C3_REV_MIN_FULL to ESP32C3_REV_MAX_FULL
+
+    config ESP32C3_REV_MAX_FULL
+        int
+        default 99
+        # keep in sync the "Maximum Supported Revision" description with this value
+
+    config ESP_REV_MAX_FULL
+        int
+        default ESP32C3_REV_MAX_FULL
+
 
     config ESP32C3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ bool ets_secure_boot_check_start(uint8_t abs_index, uint32_t iv_addr);
 
 int ets_secure_boot_check_finish(uint32_t *abstract);
 
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
 #include "rsa_pss.h"
 
 #define SECURE_BOOT_NUM_BLOCKS 1
@@ -115,7 +115,7 @@ bool ets_use_secure_boot_v2(void);
 #else
 #define SECURE_BOOT_NUM_BLOCKS 0
 
-#endif /* CONFIG_ESP32_REV_MIN_3 */
+#endif /* CONFIG_ESP32_REV_MIN_FULL >= 300 */
 
 #ifdef __cplusplus
 }
