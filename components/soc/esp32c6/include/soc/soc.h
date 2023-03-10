@@ -179,6 +179,9 @@
 #define SOC_DIRAM_DRAM_LOW    0x40800000
 #define SOC_DIRAM_DRAM_HIGH   0x40880000
 
+#define MAP_DRAM_TO_IRAM(addr) (addr)
+#define MAP_IRAM_TO_DRAM(addr) (addr)
+
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x40800000
 #define SOC_DMA_HIGH 0x40880000
