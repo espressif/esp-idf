@@ -41,27 +41,16 @@ static void hd_master(void)
 {
     spi_device_handle_t handle;
 
-    spi_bus_config_t buscfg={
-        .mosi_io_num = SPI2_IOMUX_PIN_NUM_MOSI,
-        .miso_io_num = SPI2_IOMUX_PIN_NUM_MISO,
-        .sclk_io_num = SPI2_IOMUX_PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = 4092 * 10,
-    };
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.max_transfer_sz = 4092 * 10;
 
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 8,
-        .address_bits = 8,
-        .dummy_bits = 8,
-        .clock_speed_hz = 10 * 1000,
-        .duty_cycle_pos = 128,        //50% duty cycle
-        .mode = 0,
-        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
-        .cs_ena_posttrans = 3,        //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
-        .queue_size = 3,
-        .flags = SPI_DEVICE_HALFDUPLEX,
-    };
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.command_bits = 8;
+    devcfg.address_bits = 8;
+    devcfg.dummy_bits = 8;
+    devcfg.clock_speed_hz = 10 * 1000;
+    devcfg.input_delay_ns = 0;
+    devcfg.flags = SPI_DEVICE_HALFDUPLEX;
 
     TEST_ESP_OK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
     TEST_ESP_OK(spi_bus_add_device(SPI2_HOST, &devcfg, &handle));
@@ -181,26 +170,11 @@ static void hd_master(void)
 
 static void hd_slave(void)
 {
-    spi_bus_config_t bus_cfg = {
-        .miso_io_num = SPI2_IOMUX_PIN_NUM_MISO,
-        .mosi_io_num = SPI2_IOMUX_PIN_NUM_MOSI,
-        .sclk_io_num = SPI2_IOMUX_PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = 4092 * 4,
-    };
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+    slave_hd_cfg.dma_chan = SPI_DMA_CH_AUTO,
 
-    spi_slave_hd_slot_config_t slave_hd_cfg = {
-        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
-        .dma_chan = SPI_DMA_CH_AUTO,
-        .flags = 0,
-        .mode = 0,
-        .command_bits = 8,
-        .address_bits = 8,
-        .dummy_bits = 8,
-        .queue_size = 4,
-    };
-    TEST_ESP_OK(spi_slave_hd_init(SPI2_HOST, &bus_cfg, &slave_hd_cfg));
+    TEST_ESP_OK(spi_slave_hd_init(SPI2_HOST, &buscfg, &slave_hd_cfg));
 
     spi_slave_hd_data_t *ret_trans = NULL;
 
