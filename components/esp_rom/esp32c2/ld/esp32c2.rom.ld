@@ -823,7 +823,6 @@ r_ble_ll_get_tx_pwr_compensation = 0x40000f88;
 r_ble_ll_hci_acl_rx = 0x40000f8c;
 r_ble_ll_hci_adv_mode_ext = 0x40000f90;
 r_ble_ll_hci_adv_set_enable = 0x40000f94;
-r_ble_ll_hci_cb_host_buf_size = 0x40000f98;
 r_ble_ll_hci_cb_set_ctrlr_to_host_fc = 0x40000f9c;
 r_ble_ll_hci_cb_set_event_mask = 0x40000fa0;
 r_ble_ll_hci_cb_set_event_mask2 = 0x40000fa4;
