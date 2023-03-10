@@ -268,7 +268,7 @@ esp_err_t esp_wifi_deinit(void);
 /**
   * @brief     Set the WiFi operating mode
   *
-  *            Set the WiFi operating mode as station, soft-AP or station+soft-AP,
+  *            Set the WiFi operating mode as station, soft-AP, station+soft-AP or NAN.
   *            The default mode is station mode.
   *
   * @param     mode  WiFi operating mode
@@ -295,9 +295,10 @@ esp_err_t esp_wifi_get_mode(wifi_mode_t *mode);
 
 /**
   * @brief  Start WiFi according to current configuration
-  *         If mode is WIFI_MODE_STA, it create station control block and start station
-  *         If mode is WIFI_MODE_AP, it create soft-AP control block and start soft-AP
-  *         If mode is WIFI_MODE_APSTA, it create soft-AP and station control block and start soft-AP and station
+  *         If mode is WIFI_MODE_STA, it creates station control block and starts station
+  *         If mode is WIFI_MODE_AP, it creates soft-AP control block and starts soft-AP
+  *         If mode is WIFI_MODE_APSTA, it creates soft-AP and station control block and starts soft-AP and station
+  *         If mode is WIFI_MODE_NAN, it creates NAN control block and starts NAN
   *
   * @return
   *    - ESP_OK: succeed
@@ -311,9 +312,10 @@ esp_err_t esp_wifi_start(void);
 
 /**
   * @brief  Stop WiFi
-  *         If mode is WIFI_MODE_STA, it stop station and free station control block
-  *         If mode is WIFI_MODE_AP, it stop soft-AP and free soft-AP control block
-  *         If mode is WIFI_MODE_APSTA, it stop station/soft-AP and free station/soft-AP control block
+  *         If mode is WIFI_MODE_STA, it stops station and frees station control block
+  *         If mode is WIFI_MODE_AP, it stops soft-AP and frees soft-AP control block
+  *         If mode is WIFI_MODE_APSTA, it stops station/soft-AP and frees station/soft-AP control block
+  *         If mode is WIFI_MODE_NAN, it stops NAN and frees NAN control block
   *
   * @return
   *    - ESP_OK: succeed
@@ -790,16 +792,16 @@ esp_err_t esp_wifi_set_promiscuous_ctrl_filter(const wifi_promiscuous_filter_t *
 esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter);
 
 /**
-  * @brief     Set the configuration of the STA or AP
+  * @brief     Set the configuration of the STA, AP or NAN
   *
   * @attention 1. This API can be called only when specified interface is enabled, otherwise, API fail
   * @attention 2. For station configuration, bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.
   * @attention 3. ESP devices are limited to only one channel, so when in the soft-AP+station mode, the soft-AP will adjust its channel automatically to be the same as
   *               the channel of the station.
-  * @attention 4. The configuration will be stored in NVS
+  * @attention 4. The configuration will be stored in NVS for station and soft-AP
   *
   * @param     interface  interface
-  * @param     conf  station or soft-AP configuration
+  * @param     conf  station, soft-AP or NAN configuration
   *
   * @return
   *    - ESP_OK: succeed
@@ -1345,6 +1347,7 @@ esp_err_t esp_wifi_sta_get_aid(uint16_t *aid);
   *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
+
 #ifdef __cplusplus
 }
 #endif

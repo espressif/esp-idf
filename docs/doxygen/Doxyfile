@@ -178,6 +178,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_default.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
+    $(PROJECT_PATH)/components/esp_wifi/wifi_apps/include/esp_nan.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls_errors.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls.h \
     $(PROJECT_PATH)/components/fatfs/diskio/diskio_impl.h \
@@ -277,6 +278,7 @@ INPUT = \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
+    $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_supplicant_utils.h \
 
 ## Target specific headers are in seperate Doxyfile files
 @INCLUDE = $(PROJECT_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)

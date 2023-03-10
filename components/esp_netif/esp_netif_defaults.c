@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,10 @@ const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip = {
 };
 
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+#endif
+
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+const esp_netif_inherent_config_t _g_esp_netif_inherent_nan_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_NAN();
 #endif
 
 const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = ESP_NETIF_INHERENT_DEFAULT_ETH();

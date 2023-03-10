@@ -23,6 +23,16 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 
+/* Utility Functions */
+esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
+{
+    if (hwaddr_aton2(str, dest) < 0) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
 struct wpa_supplicant g_wpa_supp;
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,13 @@ err_t wlanif_init_ap(struct netif *netif);
  * @return ERR_OK on success
  */
 err_t wlanif_init_sta(struct netif *netif);
+
+/**
+ * @brief   LWIP's network stack init function for WiFi Aware interface (NAN)
+ * @param netif LWIP's network interface handle
+ * @return ERR_OK on success
+ */
+err_t wlanif_init_nan(struct netif *netif);
 
 /**
  * @brief   LWIP's network stack input packet function for WiFi (both STA/AP)
