@@ -7,9 +7,11 @@
 #include <stdint.h>
 #include "esp_cpu.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/spi_flash_os.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -30,6 +32,10 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
         esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
+
+#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
+    spi_flash_set_clock_src(MSPI_CLK_SRC_ROM_DEFAULT);
+#endif
 
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_set_to_default_config();
