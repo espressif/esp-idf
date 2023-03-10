@@ -502,7 +502,7 @@ config BT_NIMBLE_MAX_CONN_REATTEMPT
 
 menuconfig BT_NIMBLE_50_FEATURE_SUPPORT
     bool "Enable BLE 5 feature"
-    depends on BT_NIMBLE_ENABLED
+    depends on BT_NIMBLE_ENABLED && (SOC_BLE_50_SUPPORTED || !BT_CONTROLLER_ENABLED)
     default y
     help
             Enable BLE 5 feature
