@@ -28,9 +28,9 @@
 // --------------------- Constants -------------------------
 
 #define INIT_DELAY_MS                           30  //A delay of at least 25ms to enter Host mode. Make it 30ms to be safe
-#define DEBOUNCE_DELAY_MS                       250 //A debounce delay of 250ms
-#define RESET_HOLD_MS                           30  //Spec requires at least 10ms. Make it 30ms to be safe
-#define RESET_RECOVERY_MS                       30  //Reset recovery delay of 10ms (make it 30 ms to be safe) to allow for connected device to recover (and for port enabled interrupt to occur)
+#define DEBOUNCE_DELAY_MS                       CONFIG_USB_HOST_DEBOUNCE_DELAY_MS
+#define RESET_HOLD_MS                           CONFIG_USB_HOST_RESET_HOLD_MS
+#define RESET_RECOVERY_MS                       CONFIG_USB_HOST_RESET_RECOVERY_MS
 #define RESUME_HOLD_MS                          30  //Spec requires at least 20ms, Make it 30ms to be safe
 #define RESUME_RECOVERY_MS                      20  //Resume recovery of at least 10ms. Make it 20 ms to be safe. This will include the 3 LS bit times of the EOP
 
