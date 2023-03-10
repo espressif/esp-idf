@@ -8,16 +8,15 @@
 
 #ifdef CONFIG_SOC_IEEE802154_SUPPORTED
 typedef enum {
-    IEEE802154_RISK_TX = 1,
-    IEEE802154_TX_AT,
-    IEEE802154_RX_AT,
-    IEEE802154_ACK,
-    IEEE802154_NORMAL,
-    IEEE802154_IDLE_RX,
+    IEEE802154_HIGH = 1,
+    IEEE802154_MIDDLE,
+    IEEE802154_LOW,
+    IEEE802154_IDLE,
     IEEE802154_EVENT_MAX,
 } ieee802154_coex_event_t;
 
-void esp_coex_ieee802154_pti_set(ieee802154_coex_event_t event);
+void esp_coex_ieee802154_txrx_pti_set(ieee802154_coex_event_t event);
+void esp_coex_ieee802154_ack_pti_set(ieee802154_coex_event_t event);
 #endif
 
 #endif

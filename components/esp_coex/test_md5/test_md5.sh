@@ -22,7 +22,7 @@ case $IDF_TARGET in
     esp32s3)
         PREFIX=xtensa-esp32s3-elf-
         ;;
-    esp32c2|esp32c3|esp32c6)
+    esp32c2|esp32c3|esp32c6|esp32h2)
         PREFIX=riscv32-esp-elf-
         ;;
     *)
@@ -60,9 +60,11 @@ function check_md5()
 echo "Checking libraries for target ${IDF_TARGET}..."
 check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coexist_adapter.h g_coex_adapter_funcs_md5
 
-if [ "${IDF_TARGET}" == "esp32c6" ]; then
+case $IDF_TARGET in
+    esp32c6|esp32h2)
     check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coex_i154.h g_coex_i154_funcs_md5
-fi
+    ;;
+esac
 
 if [ $FAILURES -gt 0 ]; then
     exit 1
