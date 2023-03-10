@@ -50,16 +50,6 @@ examples/system/deep_sleep_wake_stub:
       temporary: true
       reason: target(s) is not supported yet
 
-examples/system/efuse:
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: lack of runners
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: target esp32c6 is not supported yet
-
 examples/system/esp_timer:
   disable:
     - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
