@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,7 +214,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
 #if CONFIG_PM_ENABLE
         sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
         ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
+        ESP_GOTO_ON_ERROR(ret, err, TAG, "create APB_FREQ_MAX lock failed");
 #endif
         break;
     default:
