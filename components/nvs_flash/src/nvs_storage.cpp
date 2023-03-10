@@ -112,12 +112,14 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
             item.getKey(entry->mName, sizeof(entry->mName));
             err = item.getValue(entry->mIndex);
             if (err != ESP_OK) {
+                delete entry;
                 return err;
             }
-            mNamespaces.push_back(entry);
             if (mNamespaceUsage.set(entry->mIndex, true) != ESP_OK) {
+                delete entry;
                 return ESP_FAIL;
             }
+            mNamespaces.push_back(entry);
             itemIndex += item.span;
         }
     }
