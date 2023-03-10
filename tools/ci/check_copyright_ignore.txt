@@ -1570,7 +1570,6 @@ examples/system/console/basic/main/cmd_wifi.h
 examples/system/console/basic/main/console_example_main.c
 examples/system/console_usb/main/console_usb_example_main.c
 examples/system/deep_sleep/example_test.py
-examples/system/deep_sleep/main/deep_sleep_example_main.c
 examples/system/efuse/example_test.py
 examples/system/efuse/main/efuse_main.c
 examples/system/esp_event/default_event_loop/example_test.py
