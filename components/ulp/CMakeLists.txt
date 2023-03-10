@@ -34,6 +34,18 @@ if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
     endif()
 endif()
 
+if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+   list(APPEND includes
+        ulp_common/include
+        ulp_common/include/${target})
+
+    list(APPEND srcs
+        "lp_core/lp_core.c")
+
+    list(APPEND includes
+        "lp_core/include")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        REQUIRES driver esp_adc)

@@ -1,5 +1,8 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/ulp/test_apps/lp_core:
+  disable:
+    - if: SOC_LP_CORE_SUPPORTED != 1
 components/ulp/test_apps/ulp_fsm:
   enable:
     - if: SOC_ULP_SUPPORTED == 1
