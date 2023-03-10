@@ -84,19 +84,25 @@ TEST_CASE("Test ipc_task works with the priority of the caller's task", "[ipc]")
 static void test_func2_ipc(void *arg)
 {
     int callers_priority = *(int *)arg;
-    esp_rom_delay_us(1000000 + xPortGetCoreID() * 100);
+    esp_rom_delay_us(10000 + xPortGetCoreID() * 100);
     UBaseType_t priority = uxTaskPriorityGet(NULL);
     esp_rom_printf("test_func2_ipc: [callers_priority = %d, priority = %d, cpu = %d]\n", callers_priority, priority, xPortGetCoreID());
 }
 
-static void task(void *sema)
+typedef struct {
+    SemaphoreHandle_t start;
+    SemaphoreHandle_t done;
+} test_semaphore_args_t;
+
+static void task(void *semaphore_args)
 {
+    test_semaphore_args_t* test_semaphore = (test_semaphore_args_t*) semaphore_args;
     int priority = uxTaskPriorityGet(NULL);
     ESP_LOGI("task", "start [priority = %d, cpu = %d]", priority, xPortGetCoreID());
-    xSemaphoreTake(*(SemaphoreHandle_t *)sema, portMAX_DELAY);
+    xSemaphoreTake(test_semaphore->start, portMAX_DELAY);
     esp_ipc_call_blocking(!xPortGetCoreID(), test_func2_ipc, &priority);
-    xSemaphoreGive(*(SemaphoreHandle_t *)sema);
     ESP_LOGI("task", "finish [priority = %d, cpu = %d]", priority, xPortGetCoreID());
+    xSemaphoreGive(test_semaphore->done);
     vTaskDelete(NULL);
 }
 
@@ -105,28 +111,27 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
     const int max_tasks = 5;
     UBaseType_t priority = uxTaskPriorityGet(NULL);
     ESP_LOGI("test", "priority = %d, cpu = %d", priority, xPortGetCoreID());
-    SemaphoreHandle_t sema_ipc_done[max_tasks * portNUM_PROCESSORS];
+    test_semaphore_args_t test_semaphore[max_tasks * portNUM_PROCESSORS];
 
     for (int task_num = 0; task_num < max_tasks; ++task_num) {
         ++priority;
         ESP_LOGI("test", "task prio = %d", priority);
         for (int cpu_num = 0; cpu_num < portNUM_PROCESSORS; ++cpu_num) {
-            sema_ipc_done[task_num * 2 + cpu_num] = xSemaphoreCreateBinary();
-            xTaskCreatePinnedToCore(task, "task", 4096, &sema_ipc_done[task_num * 2 + cpu_num], priority, NULL, cpu_num);
+            unsigned i = task_num * 2 + cpu_num;
+            test_semaphore[i].start = xSemaphoreCreateBinary();
+            test_semaphore[i].done = xSemaphoreCreateBinary();
+            xTaskCreatePinnedToCore(task, "task", 4096, &test_semaphore[i], priority, NULL, cpu_num);
         }
     }
 
-    for (int task_num = 0; task_num < max_tasks; ++task_num) {
-        for (int cpu_num = 0; cpu_num < portNUM_PROCESSORS; ++cpu_num) {
-            xSemaphoreGive(sema_ipc_done[task_num * 2 + cpu_num]);
-        }
+    for (int i = 0; i < max_tasks * portNUM_PROCESSORS; ++i) {
+        xSemaphoreGive(test_semaphore[i].start);
     }
 
-    for (int task_num = 0; task_num < max_tasks; ++task_num) {
-        for (int cpu_num = 0; cpu_num < portNUM_PROCESSORS; ++cpu_num) {
-            xSemaphoreTake(sema_ipc_done[task_num * 2 + cpu_num], portMAX_DELAY);
-            vSemaphoreDelete(sema_ipc_done[task_num * 2 + cpu_num]);
-        }
+    for (int i = 0; i < max_tasks * portNUM_PROCESSORS; ++i) {
+        xSemaphoreTake(test_semaphore[i].done, portMAX_DELAY);
+        vSemaphoreDelete(test_semaphore[i].done);
+        vSemaphoreDelete(test_semaphore[i].start);
     }
 }
 #endif /* CONFIG_ESP_IPC_USES_CALLERS_PRIORITY */
