@@ -1652,7 +1652,13 @@ static uint32_t get_power_down_flags(void)
     return pd_flags;
 }
 
-void esp_deep_sleep_disable_rom_logging(void)
+#if CONFIG_IDF_TARGET_ESP32
+/* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
+void
+#else
+void RTC_IRAM_ATTR
+#endif
+esp_deep_sleep_disable_rom_logging(void)
 {
     rtc_suppress_rom_log();
 }
