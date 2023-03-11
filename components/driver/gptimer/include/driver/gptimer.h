@@ -32,7 +32,7 @@ typedef struct {
 /**
  * @brief Create a new General Purpose Timer, and return the handle
  *
- * @note The newly created timer is put in the init state.
+ * @note The newly created timer is put in the "init" state.
  *
  * @param[in] config GPTimer configuration
  * @param[out] ret_timer Returned timer handle
@@ -48,8 +48,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 /**
  * @brief Delete the GPTimer handle
  *
- * @note A timer can't be in the enable state when this function is invoked.
- *       See also `gptimer_disable` for how to disable a timer.
+ * @note A timer must be in the "init" state before it can be deleted.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @return
@@ -65,7 +64,8 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer);
  *
  * @note When updating the raw count of an active timer, the timer will immediately start counting from the new value.
  * @note This function is allowed to run within ISR context
- * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *       makes it possible to execute even when the Flash Cache is disabled.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[in] value Count value to be set
@@ -82,7 +82,8 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, uint64_t value);
  * @note This function will trigger a software capture event and then return the captured count value.
  * @note With the raw count value and the resolution returned from `gptimer_get_resolution`, you can convert the count value into seconds.
  * @note This function is allowed to run within ISR context
- * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *       makes it possible to execute even when the Flash Cache is disabled.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[out] value Returned GPTimer count value
@@ -96,7 +97,8 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
 /**
  * @brief Return the real resolution of the timer
  *
- * @note usually the timer resolution is same as what you configured in the `gptimer_config_t::resolution_hz`, but for some unstable clock source (e.g. RC_FAST), which needs a calibration, the real resolution may be different from the configured one.
+ * @note usually the timer resolution is same as what you configured in the `gptimer_config_t::resolution_hz`,
+ *       but some unstable clock source (e.g. RC_FAST) will do a calibration, the real resolution can be different from the configured one.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[out] out_resolution Returned timer resolution, in Hz
@@ -110,9 +112,10 @@ esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolutio
 /**
  * @brief Get GPTimer captured count value
  *
- * @note The capture action can be issued either by external event or by software (see also `gptimer_get_raw_count`).
+ * @note The capture action can be issued either by ETM event or by software (see also `gptimer_get_raw_count`).
  * @note This function is allowed to run within ISR context
- * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *       makes it possible to execute even when the Flash Cache is disabled.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[out] value Returned captured count value
@@ -165,7 +168,8 @@ typedef struct {
  * @brief Set alarm event actions for GPTimer.
  *
  * @note This function is allowed to run within ISR context, so that user can set new alarm action immediately in the ISR callback.
- * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *       makes it possible to execute even when the Flash Cache is disabled.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[in] config Alarm configuration, especially, set config to NULL means disabling the alarm function
@@ -179,7 +183,7 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
 /**
  * @brief Enable GPTimer
  *
- * @note This function will transit the timer state from init to enable.
+ * @note This function will transit the timer state from "init" to "enable".
  * @note This function will enable the interrupt service, if it's lazy installed in `gptimer_register_event_callbacks`.
  * @note This function will acquire a PM lock, if a specific source clock (e.g. APB) is selected in the `gptimer_config_t`, while `CONFIG_PM_ENABLE` is enabled.
  * @note Enable a timer doesn't mean to start it. See also `gptimer_start` for how to make the timer start counting.
@@ -196,7 +200,9 @@ esp_err_t gptimer_enable(gptimer_handle_t timer);
 /**
  * @brief Disable GPTimer
  *
- * @note This function will do the opposite work to the `gptimer_enable`
+ * @note This function will transit the timer state from "enable" to "init".
+ * @note This function will disable the interrupt service if it's installed.
+ * @note This function will release the PM lock if it's acquired in the `gptimer_enable`.
  * @note Disable a timer doesn't mean to stop it. See also `gptimer_stop` for how to make the timer stop counting.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
@@ -211,15 +217,16 @@ esp_err_t gptimer_disable(gptimer_handle_t timer);
 /**
  * @brief Start GPTimer (internal counter starts counting)
  *
- * @note This function should be called when the timer is in the enable state (i.e. after calling `gptimer_enable`)
+ * @note This function will transit the timer state from "enable" to "run".
  * @note This function is allowed to run within ISR context
- * @note This function will be placed into IRAM if `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is on, so that it's allowed to be executed when Cache is disabled
+ * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *       makes it possible to execute even when the Flash Cache is disabled.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @return
  *      - ESP_OK: Start GPTimer successfully
  *      - ESP_ERR_INVALID_ARG: Start GPTimer failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Start GPTimer failed because the timer is not enabled yet
+ *      - ESP_ERR_INVALID_STATE: Start GPTimer failed because the timer is not enabled or is already in running
  *      - ESP_FAIL: Start GPTimer failed because of other error
  */
 esp_err_t gptimer_start(gptimer_handle_t timer);
@@ -227,15 +234,16 @@ esp_err_t gptimer_start(gptimer_handle_t timer);
 /**
  * @brief Stop GPTimer (internal counter stops counting)
  *
- * @note This function should be called when the timer is in the enable state (i.e. after calling `gptimer_enable`)
+ * @note This function will transit the timer state from "run" to "enable".
  * @note This function is allowed to run within ISR context
- * @note This function will be placed into IRAM if `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is on, so that it's allowed to be executed when Cache is disabled
+ * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *       makes it possible to execute even when the Flash Cache is disabled.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @return
  *      - ESP_OK: Stop GPTimer successfully
  *      - ESP_ERR_INVALID_ARG: Stop GPTimer failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Stop GPTimer failed because the timer is not enabled yet
+ *      - ESP_ERR_INVALID_STATE: Stop GPTimer failed because the timer is not in running.
  *      - ESP_FAIL: Stop GPTimer failed because of other error
  */
 esp_err_t gptimer_stop(gptimer_handle_t timer);

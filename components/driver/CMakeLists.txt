@@ -75,6 +75,7 @@ endif()
 # GPTimer related source files
 if(CONFIG_SOC_GPTIMER_SUPPORTED)
     list(APPEND srcs "gptimer/gptimer.c"
+                     "gptimer/gptimer_priv.c"
                      "deprecated/timer_legacy.c")
 endif()
 

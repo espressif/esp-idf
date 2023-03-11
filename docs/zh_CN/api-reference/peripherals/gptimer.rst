@@ -129,6 +129,7 @@
 ^^^^^^^^^^^^^^^^
 
 启动和停止是定时器的基本 IO 操作。调用 :cpp:func:`gptimer_start` 可以使内部计数器开始工作，而 :cpp:func:`gptimer_stop` 可以使计数器停止工作。下文说明了如何在存在或不存在警报事件的情况下启动定时器。
+调用 :cpp:func:`gptimer_start` 将使驱动程序状态从 enable 转换为 run, 反之亦然。您需要确保 start 和 stop 函数成对使用，否则，函数可能返回 :c:macro:`ESP_ERR_INVALID_STATE`。
 
 将定时器作为挂钟启动
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -310,19 +311,16 @@ IRAM 安全
 .. _gptimer-thread-safety:
 
 线程安全
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^
 
-驱动程序会保证工厂函数 :cpp:func:`gptimer_new_timer` 的线程安全，这意味着您可以从不同的 RTOS 任务中调用这一函数，而无需额外的锁保护。
-
-由于驱动程序通过使用临界区来防止这些函数在任务和 ISR 中同时被调用，所以以下函数能够在 ISR 上下文中运行。
+驱动提供的所有 API 都是线程安全的，这意味着您可以从不同的 RTOS 任务中调用这些函数，而无需额外的互斥锁去保护。以下这些函数还被允许在中断上下文中运行。
 
 - :cpp:func:`gptimer_start`
 - :cpp:func:`gptimer_stop`
 - :cpp:func:`gptimer_get_raw_count`
 - :cpp:func:`gptimer_set_raw_count`
+- :cpp:func:`gptimer_get_captured_count`
 - :cpp:func:`gptimer_set_alarm_action`
-
-将 :cpp:type:`gptimer_handle_t` 作为第一个位置参数的其他函数不被视作线程安全，也就是说应该避免从多个任务中调用这些函数。
 
 .. _gptimer-kconfig-options:
 

@@ -89,12 +89,12 @@ static void test_gpio_intr_callback(void *args)
 // put the simulation code in the IRAM to avoid cache miss
 NOINLINE_ATTR IRAM_ATTR static void test_gpio_simulate_glitch_pulse(void)
 {
-    static portMUX_TYPE g_lock = portMUX_INITIALIZER_UNLOCKED;
+    static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
     // the following code is used to generate a short glitch pulse
     // around 20ns @CPU160MHz, 40ns @CPU96MHz
     // pull high for 4 CPU cycles, to ensure the short pulse can be sampled by GPIO
     // we don't want any preemption to happen during the glitch signal generation
-    portENTER_CRITICAL(&g_lock);
+    portENTER_CRITICAL(&s_lock);
     asm volatile(
         "csrrsi zero, %0, 0x1\n"
         "csrrsi zero, %0, 0x1\n"
@@ -103,7 +103,7 @@ NOINLINE_ATTR IRAM_ATTR static void test_gpio_simulate_glitch_pulse(void)
         "csrrci zero, %0, 0x1"
         :: "i"(CSR_GPIO_OUT_USER)
     );
-    portEXIT_CRITICAL(&g_lock);
+    portEXIT_CRITICAL(&s_lock);
 }
 
 TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
