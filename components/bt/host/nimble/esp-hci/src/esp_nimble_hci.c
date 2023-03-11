@@ -148,7 +148,7 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
     }
 
     do {
-        m = ble_transport_alloc_acl_from_hs();
+        m = ble_transport_alloc_acl_from_ll();
 
         if (!m) {
             ESP_LOGD(TAG,"Failed to allocate buffer, retrying \n");
