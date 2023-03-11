@@ -1,6 +1,8 @@
 LED Control (LEDC)
 ==================
-{IDF_TARGET_LEDC_CHAN_NUM:default="6", esp32="16", esp32s2="8", esp32s3="8"}
+{IDF_TARGET_LEDC_CHAN_NUM: default="6", esp32="16", esp32s2="8", esp32s3="8"}
+
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -269,6 +271,12 @@ The LEDC hardware provides the means to gradually transition from one duty cycle
 * :cpp:func:`ledc_set_fade_with_step`
 * :cpp:func:`ledc_set_fade`
 
+.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+
+    On {IDF_TARGET_NAME}, the hardware additionally allows to perform up to {IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM} consecutive linear fades without CPU intervention. This feature can be useful if you want to do a fade with gamma correction.
+
+    The luminance perceived by human eyes does not have a linear relationship with the PWM duty cycle. In order to make human feel the LED is dimming or lightening linearly, the change in duty cycle should be non-linear, which is the so-called gamma correction. The LED controller can simulate a gamma curve fading by piecewise linear approximation. :cpp:func:`ledc_fill_multi_fade_param_list` is a function that can help to construct the parameters for the piecewise linear fades. First, you need to allocate a memory block for saving the fade parameters, then by providing start/end PWM duty cycle values, gamma correction function, and the total number of desired linear segments to the helper function, it will fill the calculation results into the allocated space. You can also construct the array of :cpp:type:`ledc_fade_param_config_t` manually. Once the fade parameter structs are prepared, a consecutive fading can be configured by passing the pointer to the prepared :cpp:type:`ledc_fade_param_config_t` list and the total number of fade ranges to :cpp:func:`ledc_set_multi_fade`.
+
 .. only:: esp32
 
     Start fading with :cpp:func:`ledc_fade_start`. A fade can be operated in blocking or non-blocking mode, please check :cpp:enum:`ledc_fade_mode_t` for the difference between the two available fade modes. Note that with either fade mode, the next fade or fixed-duty update will not take effect until the last fade finishes. Due to hardware limitations, there is no way to stop a fade before it reaches its target duty.
@@ -361,9 +369,13 @@ The duty resolution is normally set using :cpp:type:`ledc_timer_bit_t`. This enu
 Application Example
 -------------------
 
+The LEDC basic example: :example:`peripherals/ledc/ledc_basic`.
+
 The LEDC change duty cycle and fading control example: :example:`peripherals/ledc/ledc_fade`.
 
-The LEDC basic example: :example:`peripherals/ledc/ledc_basic`.
+.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+
+    The LEDC color control with Gamma correction on RGB LED example: :example:`peripherals/ledc/ledc_gamma_curve_fade`.
 
 API Reference
 -------------

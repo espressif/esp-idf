@@ -55,17 +55,22 @@ void ledc_hal_set_duty_scale(ledc_hal_context_t *hal, ledc_channel_t channel_num
     ledc_ll_set_duty_scale(hal->dev, hal->speed_mode, channel_num, duty_scale);
 }
 
-#if SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
-void ledc_hal_set_duty_range(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_range)
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+void ledc_hal_set_duty_range_wr_addr(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_range)
 {
-    ledc_ll_set_duty_range(hal->dev, hal->speed_mode, channel_num, duty_range);
+    ledc_ll_set_duty_range_wr_addr(hal->dev, hal->speed_mode, channel_num, duty_range);
 }
 
 void ledc_hal_set_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range_num)
 {
     ledc_ll_set_range_number(hal->dev, hal->speed_mode, channel_num, range_num);
 }
-#endif //SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
+
+void ledc_hal_get_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t *range_num)
+{
+    ledc_ll_get_range_number(hal->dev, hal->speed_mode, channel_num, range_num);
+}
+#endif //SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
 void ledc_hal_get_fade_end_intr_status(ledc_hal_context_t *hal, uint32_t *intr_status)
 {

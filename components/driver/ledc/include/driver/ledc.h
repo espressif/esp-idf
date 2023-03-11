@@ -530,6 +530,157 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
  */
 esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_cbs_t *cbs, void *user_arg);
 
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+/**
+ * @brief Structure for the fade parameters for one hardware fade to be written to gamma wr register
+ *
+ * @verbatim
+ *                                  duty ^                 ONE HW LINEAR FADE
+ *                                       |
+ *                                       |
+ *                                       |
+ *                                       |
+ *     start_duty + scale * n = end_duty |. . . . . . . . . . . . . . . . . . . . . . . . . .+-
+ *                                       |                                                   |
+ *                                       |                                                   |
+ *                                       |                                          +--------+
+ *                                       |                                          |        .
+ *                                       |                                          |        .
+ *                                       |                                   -------+        .
+ *                                       |                                  .                .
+ *                                       |                                .                  .
+ *                                       |                              .                    .
+ *                                       |                            .                      .
+ *                                 ^ --- |. . . . . . . . . .+--------                       .
+ *                            scale|     |                   |                               .
+ *                                 |     |                   |                               .
+ *                                 v --- |. . . . .+---------+                               .
+ *                                       |         |         .                               .
+ *                                       |         |         .                               .
+ *                            start_duty +---------+         .                               .
+ *                                       |         .         .                               .
+ *                                       |         .         .                               .
+ *                                       +----------------------------------------------------------->
+ *                                                                                                  PWM cycle
+ *                                       |         |         |                               |
+ *                                       | 1 step  | 1 step  |                               |
+ *                                       |<------->|<------->|                               |
+ *                                       | m cycles  m cycles                                |
+ *                                       |                                                   |
+ *                                       <--------------------------------------------------->
+ *                                                           n total steps
+ *                                                          cycles = m * n
+ * @endverbatim
+ *
+ * @note Be aware of the maximum value available on each element
+ */
+typedef struct {
+        uint32_t dir       : 1;    /*!< Duty change direction. Set 1 as increase, 0 as decrease */
+        uint32_t cycle_num : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Number of PWM cycles of each step [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
+        uint32_t scale     : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Duty change of each step [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
+        uint32_t step_num  : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Total number of steps in one hardware fade [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
+} ledc_fade_param_config_t;
+
+/**
+ * @brief Set a LEDC multi-fade
+ *
+ * @note  Call `ledc_fade_func_install()` once before calling this function.
+ *        Call `ledc_fade_start()` after this to start fading.
+ * @note  This function is not thread-safe, do not call it to control one LEDC channel in different tasks at the same time.
+ *        A thread-safe version of API is ledc_set_multi_fade_and_start
+ * @note  This function does not prohibit from duty overflow. User should take care of this by themselves. If duty
+ *        overflow happens, the PWM signal will suddenly change from 100% duty cycle to 0%, or the other way around.
+ *
+ * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param start_duty Set the start of the gradient duty, the range of duty setting is [0, (2**duty_resolution)]
+ * @param fade_params_list Pointer to the array of fade parameters for a multi-fade
+ * @param list_len Length of the fade_params_list, i.e. number of fade ranges for a multi-fade (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX)
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Fade function not installed
+ *     - ESP_FAIL Fade function init error
+ */
+esp_err_t ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t start_duty, const ledc_fade_param_config_t *fade_params_list, uint32_t list_len);
+
+/**
+ * @brief A thread-safe API to set and start LEDC multi-fade function
+ *
+ * @note  Call `ledc_fade_func_install()` once before calling this function.
+ * @note  Fade will always begin from the current duty cycle. Make sure it is stable and synchronized to the desired
+ *        initial value before calling this function. Otherwise, you may see unexpected duty change.
+ * @note  This function does not prohibit from duty overflow. User should take care of this by themselves. If duty
+ *        overflow happens, the PWM signal will suddenly change from 100% duty cycle to 0%, or the other way around.
+ *
+ * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param start_duty Set the start of the gradient duty, the range of duty setting is [0, (2**duty_resolution)]
+ * @param fade_params_list Pointer to the array of fade parameters for a multi-fade
+ * @param list_len Length of the fade_params_list, i.e. number of fade ranges for a multi-fade (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX)
+ * @param fade_mode Choose blocking or non-blocking mode
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Fade function not installed
+ *     - ESP_FAIL Fade function init error
+ */
+esp_err_t ledc_set_multi_fade_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t start_duty, const ledc_fade_param_config_t *fade_params_list, uint32_t list_len, ledc_fade_mode_t fade_mode);
+
+/**
+ * @brief Helper function to fill the fade params for a multi-fade. Useful if desires a gamma curve fading.
+ *
+ * @note  The fade params are calculated based on the given start_duty and end_duty. If the duty is not at
+ *        the start duty (gamma-corrected) when the fade begins, you may see undesired brightness change.
+ *        Therefore, please always remember thet when passing the fade_params to either `ledc_set_multi_fade` or
+ *        `ledc_set_multi_fade_and start`, the start_duty argument has to be the gamma-corrected start_duty.
+ *
+ * @param[in] speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param[in] channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param[in] start_duty Duty cycle [0, (2**duty_resolution)] where the multi-fade begins with. This value should be a non-gamma-corrected duty cycle.
+ * @param[in] end_duty Duty cycle [0, (2**duty_resolution)] where the multi-fade ends with. This value should be a non-gamma-corrected duty cycle.
+ * @param[in] linear_phase_num Number of linear fades to simulate a gamma curved fade (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX)
+ * @param[in] max_fade_time_ms The maximum time of the fading ( ms ).
+ * @param[in] gamma_correction_operator User provided gamma correction function. The function argument should be able to
+ *                                      take any value within [0, (2**duty_resolution)]. And returns the gamma-corrected duty cycle.
+ * @param[in] fade_params_list_size The size of the fade_params_list user allocated (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX)
+ * @param[out] fade_params_list Pointer to the array of ledc_fade_param_config_t structure
+ * @param[out] hw_fade_range_num Number of fade ranges for this multi-fade
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE LEDC not initialized
+ *     - ESP_ERR_NO_MEM Out of memory
+ *     - ESP_FAIL Required number of hardware ranges exceeds the size of the ledc_fade_param_config_t array user allocated
+ */
+esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t channel,
+                                          uint32_t start_duty, uint32_t end_duty,
+                                          uint32_t linear_phase_num, uint32_t max_fade_time_ms,
+                                          uint32_t (* gamma_correction_operator)(uint32_t),
+                                          uint32_t fade_params_list_size,
+                                          ledc_fade_param_config_t *fade_params_list, uint32_t *hw_fade_range_num);
+
+/**
+ * @brief Get the fade parameters that are stored in gamma ram for a certain fade range
+ *
+ * Gamma ram is where saves the fade parameters for each fade range. The fade parameters are written in during fade
+ * configuration. When fade begins, the duty will change according to the parameters in gamma ram.
+ *
+ * @param[in] speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param[in] channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param[in] range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to read
+ * @param[out] dir Pointer to accept fade direction value
+ * @param[out] cycle Pointer to accept fade cycle value
+ * @param[out] scale Pointer to accept fade scale value
+ * @param[out] step Pointer to accept fade step value
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE LEDC not initialized
+ */
+esp_err_t ledc_read_fade_param(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step);
+#endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+
 #ifdef __cplusplus
 }
 #endif

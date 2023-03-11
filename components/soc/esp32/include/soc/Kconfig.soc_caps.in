@@ -395,10 +395,6 @@ config SOC_LEDC_TIMER_BIT_WIDTH
     int
     default 20
 
-config SOC_LEDC_GAMMA_FADE_RANGE_MAX
-    int
-    default 1
-
 config SOC_MCPWM_GROUPS
     int
     default 2

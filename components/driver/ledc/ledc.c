@@ -209,8 +209,8 @@ int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t 
     ledc_hal_set_duty_num(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_num);
     ledc_hal_set_duty_cycle(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_cycle);
     ledc_hal_set_duty_scale(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_scale);
-#if SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
-    ledc_hal_set_duty_range(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+    ledc_hal_set_duty_range_wr_addr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
     return ESP_OK;
@@ -840,6 +840,14 @@ void IRAM_ATTR ledc_fade_isr(void *arg)
             uint32_t duty_cur = 0;
             ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
             uint32_t duty_tar = s_ledc_fade_rec[speed_mode][channel]->target_duty;
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+            // If a multi-fade is done, check that target duty computed in sw is equal to the duty at the end of the fade
+            uint32_t range_num;
+            ledc_hal_get_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &range_num);
+            if (range_num > 1) {
+                assert(duty_cur == duty_tar);
+            }
+#endif
             int scale = s_ledc_fade_rec[speed_mode][channel]->scale;
             if (duty_cur == duty_tar || scale == 0) {
                 // Target duty has reached
@@ -1246,3 +1254,222 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     _ledc_op_lock_release(speed_mode, channel);
     return ESP_OK;
 }
+
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+static esp_err_t _ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t start_duty, const ledc_fade_param_config_t *fade_params_list, uint32_t list_len)
+{
+    uint32_t max_duty = ledc_get_max_duty(speed_mode, channel);
+    LEDC_ARG_CHECK(start_duty <= max_duty, "start_duty");
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), channel, start_duty);
+    for (int i = 0; i < list_len; i++) {
+        ledc_fade_param_config_t fade_param = fade_params_list[i];
+        ledc_hal_set_duty_direction(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.dir);
+        ledc_hal_set_duty_cycle(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.cycle_num);
+        ledc_hal_set_duty_scale(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.scale);
+        ledc_hal_set_duty_num(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.step_num);
+        ledc_hal_set_duty_range_wr_addr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, i);
+    }
+    ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
+    portEXIT_CRITICAL(&ledc_spinlock);
+    // Calculate target duty, and take account for overflow
+    uint32_t target_duty = start_duty;
+    for (int i = 0; i < list_len; i++) {
+        uint32_t delta_duty = (fade_params_list[i].step_num * fade_params_list[i].scale) % (max_duty + 1);
+        if (fade_params_list[i].dir == LEDC_DUTY_DIR_INCREASE) {
+            target_duty += delta_duty;
+            if (target_duty > max_duty) {
+                target_duty -= max_duty + 1;
+            }
+        } else {
+            if (delta_duty > target_duty) {
+                target_duty += max_duty + 1;
+            }
+            target_duty -= delta_duty;
+        }
+    }
+    // Set interrupt exit criteria
+    s_ledc_fade_rec[speed_mode][channel]->target_duty = target_duty;
+    s_ledc_fade_rec[speed_mode][channel]->scale = fade_params_list[list_len - 1].scale;
+    return ESP_OK;
+}
+
+esp_err_t ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t start_duty, const ledc_fade_param_config_t *fade_params_list, uint32_t list_len)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(list_len <= SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, "list_len");
+    LEDC_ARG_CHECK(fade_params_list, "fade_params_list");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+
+    _ledc_fade_hw_acquire(speed_mode, channel);
+    esp_err_t ret = _ledc_set_multi_fade(speed_mode, channel, start_duty, fade_params_list, list_len);
+    _ledc_fade_hw_release(speed_mode, channel);
+    return ret;
+}
+
+esp_err_t ledc_set_multi_fade_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t start_duty, const ledc_fade_param_config_t *fade_params_list, uint32_t list_len, ledc_fade_mode_t fade_mode)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(list_len <= SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, "list_len");
+    LEDC_ARG_CHECK(fade_params_list, "fade_params_list");
+    LEDC_ARG_CHECK(fade_mode < LEDC_FADE_MAX, "fade_mode");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+
+    _ledc_op_lock_acquire(speed_mode, channel);
+    _ledc_fade_hw_acquire(speed_mode, channel);
+    esp_err_t ret = _ledc_set_multi_fade(speed_mode, channel, start_duty, fade_params_list, list_len);
+    if (ret != ESP_OK) {
+        _ledc_fade_hw_release(speed_mode, channel);
+    } else {
+        _ledc_fade_start(speed_mode, channel, fade_mode);
+    }
+    _ledc_op_lock_release(speed_mode, channel);
+    return ret;
+}
+
+esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t channel,
+                                          uint32_t start_duty, uint32_t end_duty,
+                                          uint32_t linear_phase_num, uint32_t max_fade_time_ms,
+                                          uint32_t (* gamma_correction_operator)(uint32_t),
+                                          uint32_t fade_params_list_size,
+                                          ledc_fade_param_config_t *fade_params_list, uint32_t *hw_fade_range_num)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(linear_phase_num > 0 && linear_phase_num <= SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, "linear_phase_num");
+    LEDC_ARG_CHECK(gamma_correction_operator, "gamma_correction_operator");
+    LEDC_ARG_CHECK(fade_params_list_size <= SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, "fade_params_list_size");
+    LEDC_ARG_CHECK(fade_params_list, "fade_params_list");
+    LEDC_ARG_CHECK(hw_fade_range_num, "hw_fade_range_num");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    uint32_t max_duty = ledc_get_max_duty(speed_mode, channel);
+    LEDC_ARG_CHECK(start_duty <= max_duty && end_duty <= max_duty, "duty");
+
+    esp_err_t ret = ESP_OK;
+
+    ledc_timer_t timer_sel;
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &timer_sel);
+    uint32_t freq = ledc_get_freq(speed_mode, timer_sel);
+
+    uint32_t dir = (end_duty > start_duty) ? LEDC_DUTY_DIR_INCREASE : LEDC_DUTY_DIR_DECREASE;
+    uint32_t total_cycles = max_fade_time_ms * freq / 1000;
+    // If no duty change is need, then simplify the case
+    if (start_duty == end_duty) {
+        total_cycles = 1;
+        linear_phase_num = 1;
+    }
+    uint32_t avg_cycles_per_phase = total_cycles / linear_phase_num;
+    if (avg_cycles_per_phase == 0) {
+        ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_FAST_STR);
+        avg_cycles_per_phase = 1;
+    }
+    int sgn = (dir == LEDC_DUTY_DIR_INCREASE) ? 1 : (-1);
+    int32_t delta_brightness_per_phase = sgn * ((sgn * (end_duty - start_duty)) / linear_phase_num);
+
+    // First phase start and end values
+    uint32_t gamma_corrected_phase_head = gamma_correction_operator(start_duty);
+    uint32_t gamma_corrected_phase_tail = 0;
+    int32_t phase_tail = start_duty + delta_brightness_per_phase;
+
+    // Compute raw fade parameters for each linear phase
+    uint32_t total_fade_range = 0; // To record the required hw fade ranges
+    uint32_t surplus_cycles_last_phase = 0;
+    for (int i = 0; i < linear_phase_num; i++) {
+        uint32_t cycle, scale, step;
+        gamma_corrected_phase_tail = gamma_correction_operator(phase_tail);
+        uint32_t duty_delta = (dir == LEDC_DUTY_DIR_INCREASE) ? (gamma_corrected_phase_tail - gamma_corrected_phase_head) :
+                                                                (gamma_corrected_phase_head - gamma_corrected_phase_tail);
+        uint32_t cycles_per_phase = avg_cycles_per_phase + surplus_cycles_last_phase;
+        if (duty_delta == 0) {
+            scale = 0;
+            cycle = (cycles_per_phase > LEDC_LL_DUTY_CYCLE_MAX) ? LEDC_LL_DUTY_CYCLE_MAX : cycles_per_phase;
+            step = 1;
+        } else if (cycles_per_phase > duty_delta) {
+            scale = 1;
+            step = duty_delta;
+            cycle = cycles_per_phase / duty_delta;
+            if (cycle > LEDC_LL_DUTY_CYCLE_MAX) {
+                ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_SLOW_STR);
+                cycle = LEDC_LL_DUTY_CYCLE_MAX;
+            }
+        } else {
+            cycle = 1;
+            scale = duty_delta / cycles_per_phase;
+            if (scale > LEDC_LL_DUTY_SCALE_MAX) {
+                ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_FAST_STR);
+                scale = LEDC_LL_DUTY_SCALE_MAX;
+            }
+            step = duty_delta / scale;
+        }
+
+        // Prepare for next phase calculation
+        phase_tail = phase_tail + delta_brightness_per_phase;
+        if (dir == LEDC_DUTY_DIR_INCREASE) {
+            gamma_corrected_phase_head += step * scale;
+        } else {
+            gamma_corrected_phase_head -= step * scale;
+        }
+        surplus_cycles_last_phase = cycles_per_phase - step * cycle;
+        // If next phase is the last one, then account for all remaining duty and cycles
+        if (i == linear_phase_num - 2) {
+            phase_tail = end_duty;
+            surplus_cycles_last_phase += total_cycles - avg_cycles_per_phase * linear_phase_num;
+        }
+
+        // Fill into the fade parameter list
+        // One linear phase might need multiple hardware fade ranges
+        do {
+            if (total_fade_range >= fade_params_list_size) {
+                ret = ESP_FAIL;
+                break;
+            }
+            fade_params_list[total_fade_range].dir = dir;
+            fade_params_list[total_fade_range].cycle_num = cycle;
+            fade_params_list[total_fade_range].scale = scale;
+            fade_params_list[total_fade_range].step_num = (step > LEDC_LL_DUTY_NUM_MAX) ? LEDC_LL_DUTY_NUM_MAX : step;
+            step -= fade_params_list[total_fade_range].step_num;
+            total_fade_range += 1;
+        } while (step > 0);
+
+        if (ret != ESP_OK) {
+            break;
+        }
+    }
+
+    uint32_t remaining_duty_delta = (dir == LEDC_DUTY_DIR_INCREASE) ? (gamma_corrected_phase_tail - gamma_corrected_phase_head) :
+                                                                      (gamma_corrected_phase_head - gamma_corrected_phase_tail);
+    if (remaining_duty_delta) {
+        total_fade_range += 1;
+    }
+
+    ESP_RETURN_ON_FALSE(total_fade_range <= fade_params_list_size, ESP_FAIL, LEDC_TAG,
+                        "hw fade ranges required exceeds the space offered to fill the fade params."
+                        " Please allocate more space, or split into smaller multi-fades, or reduce linear_phase_num");
+
+    if (remaining_duty_delta) {
+        fade_params_list[total_fade_range].dir = dir;
+        fade_params_list[total_fade_range].step_num = 1;
+        fade_params_list[total_fade_range].cycle_num = 1;
+        fade_params_list[total_fade_range].scale = remaining_duty_delta;
+    }
+
+    *hw_fade_range_num = total_fade_range;
+    return ret;
+}
+
+esp_err_t ledc_read_fade_param(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, "range");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    ledc_hal_get_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, range, dir, cycle, scale, step);
+    return ESP_OK;
+}
+#endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED

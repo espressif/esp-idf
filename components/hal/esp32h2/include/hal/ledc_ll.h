@@ -395,16 +395,16 @@ static inline void ledc_ll_set_duty_scale(ledc_dev_t *hw, ledc_mode_t speed_mode
 }
 
 /**
- * @brief Set the range number of the specified duty configurations written to gamma_wr register
+ * @brief Set the range number of the specified duty configurations to be written from gamma_wr register to gamma ram
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
  * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_FADE_RANGE_MAX-1)), it specifies to which range the configurations in gamma_wr register apply
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to write
  *
  * @return None
  */
-static inline void ledc_ll_set_duty_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
+static inline void ledc_ll_set_duty_range_wr_addr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
 {
     hw->channel_gamma_group[speed_mode].channel[channel_num].wr_addr.gamma_wr_addr = duty_range;
 }
@@ -415,13 +415,65 @@ static inline void ledc_ll_set_duty_range(ledc_dev_t *hw, ledc_mode_t speed_mode
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
  * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param range_num Total number of ranges (1 - SOC_LEDC_GAMMA_FADE_RANGE_MAX) of the fading configured
+ * @param range_num Total number of ranges (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX) of the fading configured
  *
  * @return None
  */
 static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t range_num)
 {
     hw->channel_gamma_conf_group[speed_mode].gamma_conf[channel_num].gamma_entry_num = range_num;
+}
+
+/**
+ * @brief Get the total number of ranges in one fading
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param range_num Pointer to accept fade range number
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *range_num)
+{
+    *range_num = hw->channel_gamma_conf_group[speed_mode].gamma_conf[channel_num].gamma_entry_num;
+}
+
+/**
+ * @brief Set the range number of the specified duty configurations to be read from gamma ram to gamma_rd register
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to read
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_range_rd_addr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].rd_addr.gamma_rd_addr = duty_range;
+}
+
+/**
+ * @brief Get fade configurations in gamma_rd register
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param dir Pointer to accept fade direction value
+ * @param cycle Pointer to accept fade cycle value
+ * @param scale Pointer to accept fade scale value
+ * @param step Pointer to accept fade step value
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_duty_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+{
+    uint32_t val = hw->channel_gamma_group[speed_mode].channel[channel_num].rd_data.gamma_rd_data;
+    *dir = (val & LEDC_CH0_GAMMA_DUTY_INC_M) >> LEDC_CH0_GAMMA_DUTY_INC_S;
+    *cycle = (val & LEDC_CH0_GAMMA_DUTY_CYCLE_M) >> LEDC_CH0_GAMMA_DUTY_CYCLE_S;
+    *scale = (val & LEDC_CH0_GAMMA_SCALE_M) >> LEDC_CH0_GAMMA_SCALE_S;
+    *step = (val & LEDC_CH0_GAMMA_DUTY_NUM_M) >> LEDC_CH0_GAMMA_DUTY_NUM_S;
 }
 
 /**
