@@ -71,6 +71,15 @@ typedef struct tls_keep_alive_cfg {
     int keep_alive_count;                 /*!< Keep-alive packet retry send count */
 } tls_keep_alive_cfg_t;
 
+/*
+* @brief ESP-TLS Address families
+*/
+typedef enum esp_tls_addr_family {
+    ESP_TLS_AF_UNSPEC = 0,                /**< Unspecified address family. */
+    ESP_TLS_AF_INET,                      /**< IPv4 address family. */
+    ESP_TLS_AF_INET6,                     /**< IPv6 address family. */
+} esp_tls_addr_family_t;
+
 /**
  * @brief      ESP-TLS configuration parameters
  *
@@ -182,6 +191,8 @@ typedef struct esp_tls_cfg {
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     esp_tls_client_session_t *client_session; /*! Pointer for the client session ticket context. */
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
+    esp_tls_addr_family_t addr_family;      /*!< The address family to use when connecting to a host. */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
