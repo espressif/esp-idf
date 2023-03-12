@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -564,7 +564,7 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
 void heap_caps_print_heap_info( uint32_t caps )
 {
     multi_heap_info_t info;
-    printf("Heap summary for capabilities 0x%08X:\n", caps);
+    printf("Heap summary for capabilities 0x%08"PRIX32":\n", caps);
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
         if (heap_caps_match(heap, caps)) {
