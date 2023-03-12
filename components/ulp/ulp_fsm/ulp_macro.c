@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,7 +190,7 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
     size_t real_program_size = *psize - macro_count;
     const size_t ulp_mem_end = CONFIG_ULP_COPROC_RESERVE_MEM / sizeof(ulp_insn_t);
     if (load_addr > ulp_mem_end) {
-        ESP_LOGW(TAG, "invalid load address %x, max is %x",
+        ESP_LOGW(TAG, "invalid load address %"PRIx32", max is %x",
                 load_addr, ulp_mem_end);
         return ESP_ERR_ULP_INVALID_LOAD_ADDR;
     }
