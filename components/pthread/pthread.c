@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -307,7 +307,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 
     *thread = (pthread_t)pthread; // pointer value fit into pthread_t (uint32_t)
 
-    ESP_LOGV(TAG, "Created task %x", (uint32_t)xHandle);
+    ESP_LOGV(TAG, "Created task %"PRIx32, (uint32_t)xHandle);
 
     return 0;
 }
