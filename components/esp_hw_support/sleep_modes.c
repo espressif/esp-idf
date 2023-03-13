@@ -569,6 +569,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         timer_wakeup_prepare();
     }
 
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+        rtc_sleep_systimer_enable(false);
+    }
+#endif
+
     uint32_t result;
     if (deep_sleep) {
 #if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
@@ -623,6 +629,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         }
 #endif
     }
+
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+        rtc_sleep_systimer_enable(true);
+    }
+#endif
 
     // Restore CPU frequency
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
