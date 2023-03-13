@@ -8,7 +8,7 @@ from pytest_embedded import Dut
 @pytest.mark.usb_device
 def test_usb_device_msc_example(dut: Dut) -> None:
     dut.expect('Mount storage')
-    dut.expect('Initializing FAT')
+    dut.expect('TinyUSB Driver installed')
     dut.expect('USB MSC initialization DONE')
     dut.write(' help')
     dut.expect('read')

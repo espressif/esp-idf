@@ -25,7 +25,7 @@ As a USB stack, a TinyUSB component is used.
      - Result: Host PC can't access the partition over USB MSC. Application example can perform operations (read, write) on partition.
 2. USB which accesses the ESP MSC Partition is already plugged-in at boot time.
      - Result: Host PC recongnize it as removable device and can access the partition over USB MSC. Application example can't perform any operation on partition.
-3. USB which accesses the ESP MSC Partition is plugged-in at boo-up. After boot-up, it is ejected on Host PC manually by user.
+3. USB which accesses the ESP MSC Partition is plugged-in at boot-up. After boot-up, it is ejected on Host PC manually by user.
      - Result: Host PC can't access the partition over USB MSC. Application example can perform operations (read, write) on partition.
 4. USB which accesses the ESP MSC Partition is plugged-in at boot-up. It is then unplugged(removed) from Host PC manually by user.
      - Result: The behaviour is different for bus-powered devices and self-powered devices
@@ -75,7 +75,7 @@ Note that even if card's D3 line is not connected to the ESP chip, it still has 
 
 1. By default, the example will compile to access SPI Flash as storage media. Here, SPI Flash Wear Levelling WL_SECTOR_SIZE is set to 512 and WL_SECTOR_MODE is set to PERF in Menuconfig.
 2. In order to access SD MMC card as storage media, configuration has to be changed using `idf.py menuconfig`:
-  - i. Open "USB DEV MSC Example Configuration" and select "SDMMC CARD" for "Storage Media Used"
+  - i. Open "USB Dev MSC Example Configuration" and select "SDMMC CARD" for "Storage Media Used"
   - ii. Open "SD/MMC bus width" and select between "4 lines (D0 - D3)" or "1 line (D0)"
   - iii. Select the GPIO Pin numbers for SD Card Pin.
   - iv. Save the configuration.
@@ -97,15 +97,22 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 After the flashing you should see the output at idf monitor:
 
 ```
-I (311) cpu_start: Starting scheduler on PRO CPU.
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (332) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (332) example_msc_main: Initializing storage...
-I (342) example_msc_storage: Initializing wear levelling
-I (350) example_main: Mount storage...
-I (350) example_sdmmc: Initializing FAT
-I (372) example_msc_main: USB MSC initialization
-I (372) tusb_desc: 
+I (329) app_start: Starting scheduler on CPU0
+I (334) app_start: Starting scheduler on CPU1
+I (334) main_task: Started on CPU0
+I (344) main_task: Calling app_main()
+I (344) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (354) example_main: Initializing storage...
+I (364) example_main: Initializing wear levelling
+I (374) example_main: Mount storage...
+I (374) example_main:
+ls command output:
+.fseventsd
+_pic.jpg
+.__pic.jpg
+README.MD
+I (384) example_main: USB MSC initialization
+I (384) tusb_desc:
 ┌─────────────────────────────────┐
 │  USB Device Descriptor Summary  │
 ├───────────────────┬─────────────┤
@@ -131,21 +138,13 @@ I (372) tusb_desc:
 ├───────────────────┼─────────────┤
 │bNumConfigurations │ 0x1         │
 └───────────────────┴─────────────┘
-I (532) TinyUSB: TinyUSB Driver installed
-I (532) example_msc_main: USB MSC initialization DONE
-I (552) example_msc_main: 
-ls command output:
-README.MD
-.fseventsd
+I (554) TinyUSB: TinyUSB Driver installed
+I (564) example_main: USB MSC initialization DONE
 
 Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
-esp32s3> I (912) example_msc_main: tud_mount_cb MSC START: Expose Over USB
-I (912) example_msc_main: Unmount storage...
-I (2032) example_msc_main: tud_msc_scsi_cb() invoked: SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL
-I (2032) example_msc_main: tud_msc_capacity_cb() size(1024000), sec_size(512)
-esp32s3> 
+I (724) main_task: Returned from app_main()
 esp32s3> 
 esp32s3> help
 help 
@@ -171,43 +170,32 @@ exit
 
 esp32s3> 
 esp32s3> read
-E (19102) example_msc_main: storage exposed over USB. Application can't read from storage.
+E (80054) example_main: storage exposed over USB. Application can't read from storage.
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> write
-E (22412) example_msc_main: storage exposed over USB. Application can't write to storage.
+E (83134) example_main: storage exposed over USB. Application can't write to storage.
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> size
-E (24962) example_msc_main: storage exposed over USB. Application can't access storage
+E (85354) example_main: storage exposed over USB. Application can't access storage
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> status
 storage exposed over USB: Yes
+esp32s3> expose
+E (108344) example_main: storage is already exposed
+Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> 
 esp32s3> 
-esp32s3> I (49692) example_msc_main: tud_msc_scsi_cb() invoked: SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL
-I (49692) example_msc_main: tud_msc_start_stop_cb() invoked, power_condition=0, start=0, load_eject=1
-I (49702) example_msc_main: tud_msc_start_stop_cb: MSC EJECT: Mount on Example
-I (49712) example_msc_main: Mount storage...
-I (49712) example_msc_storage: Initializing FAT
-I (49712) example_msc_main: 
-ls command output:
-README.MD
-esp32s3> 
-esp32s3> 
-esp32s3> status
-storage exposed over USB: No
 esp32s3> read
 Mass Storage Devices are one of the most common USB devices. It use Mass Storage Class (MSC) that allow access to their internal data storage.
 In this example, ESP chip will be recognised by host (PC) as Mass Storage Device.
 Upon connection to USB host (PC), the example application will initialize the storage module and then the storage will be seen as removable device on PC.
 esp32s3> write
 esp32s3> size
-storage size(1024000), sec_size(512)
-esp32s3> 
+Storage Capacity 0MB
+esp32s3> status
+storage exposed over USB: No
 esp32s3> expose
-I (76402) example_msc_main: Unmount storage...
-esp32s3> I (76772) example_msc_main: tud_msc_scsi_cb() invoked: SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL
-I (76772) example_msc_main: tud_msc_capacity_cb() size(1024000), sec_size(512)
-esp32s3> 
+I (181224) example_main: Unmount storage...
 esp32s3> status
 storage exposed over USB: Yes
 esp32s3> 

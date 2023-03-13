@@ -1,4 +1,4 @@
-menu "USB DEV MSC Example Configuration"
+menu "USB Dev MSC Example Configuration"
 
     choice EXAMPLE_STORAGE_MEDIA
         prompt "Storage Media Used"
