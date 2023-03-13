@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6256f9b7c6783e0b651bf52b5b162aa8
+// md5_digest_table c5ac3aa2d3a97d98ced4f4fccf48c328
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -99,12 +99,20 @@ static const esp_efuse_desc_t UART_DOWNLOAD_DIS[] = {
     {EFUSE_BLK0, 27, 1}, 	 // Disable UART download mode. Valid for ESP32 V3 and newer,
 };
 
+static const esp_efuse_desc_t WR_DIS[] = {
+    {EFUSE_BLK0, 0, 16}, 	 // [] Efuse write disable mask,
+};
+
 static const esp_efuse_desc_t WR_DIS_EFUSE_RD_DISABLE[] = {
     {EFUSE_BLK0, 0, 1}, 	 // Write protection for EFUSE_RD_DISABLE,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_CRYPT_CNT[] = {
     {EFUSE_BLK0, 2, 1}, 	 // Flash encrypt. Write protection FLASH_CRYPT_CNT,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_CACHE[] = {
+    {EFUSE_BLK0, 3, 1}, 	 // [] wr_dis of DIS_CACHE,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLK1[] = {
@@ -294,6 +302,11 @@ const esp_efuse_desc_t* ESP_EFUSE_UART_DOWNLOAD_DIS[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
+    &WR_DIS[0],    		// [] Efuse write disable mask
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE[] = {
     &WR_DIS_EFUSE_RD_DISABLE[0],    		// Write protection for EFUSE_RD_DISABLE
     NULL
@@ -301,6 +314,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT[] = {
     &WR_DIS_FLASH_CRYPT_CNT[0],    		// Flash encrypt. Write protection FLASH_CRYPT_CNT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_CACHE[] = {
+    &WR_DIS_DIS_CACHE[0],    		// [] wr_dis of DIS_CACHE
     NULL
 };
 

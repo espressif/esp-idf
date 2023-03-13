@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table b9e60ac2d8c534764d7bee10063617aa
+// md5_digest_table 4561606695cfe94477d259619fd723ef
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -19,6 +19,7 @@ extern "C" {
 
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_ICACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT[];

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 6256f9b7c6783e0b651bf52b5b162aa8
+// md5_digest_table c5ac3aa2d3a97d98ced4f4fccf48c328
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -34,8 +34,10 @@ extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CRYPT_CNT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CONSOLE_DEBUG_DISABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_UART_DOWNLOAD_DIS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_CACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK3[];
