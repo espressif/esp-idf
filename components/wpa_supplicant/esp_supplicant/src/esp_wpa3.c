@@ -461,7 +461,7 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
         }
         os_mutex_unlock(sta->lock);
         if (ret != WLAN_STATUS_SUCCESS) {
-            uint16_t aid = 0;
+            uint16_t aid = -1;
             if (esp_wifi_ap_get_sta_aid(frm->bssid, &aid) == ESP_OK && aid == 0) {
                 esp_wifi_ap_deauth_internal(frm->bssid, ret);
             }
@@ -521,23 +521,23 @@ static void esp_wpa3_hostap_task(void *pvParameters)
 
 int wpa3_hostap_auth_init(void *data)
 {
-    int ret = ESP_OK;
     if (g_wpa3_hostap_evt_queue) {
         wpa_printf(MSG_ERROR, "esp_wpa3_hostap_task has already been initialised");
-        return ret;
+        return ESP_OK;
     }
 
-    g_wpa3_hostap_auth_api_lock = os_semphr_create(1, 0);
-    if (!g_wpa3_hostap_auth_api_lock) {
-        wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create WPA3 hostap auth API lock");
-        return ESP_FAIL;
+    if (g_wpa3_hostap_auth_api_lock == NULL) {
+        g_wpa3_hostap_auth_api_lock = os_semphr_create(1, 1);
+        if (!g_wpa3_hostap_auth_api_lock) {
+            wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create WPA3 hostap auth API lock");
+            return ESP_FAIL;
+        }
     }
 
     g_wpa3_hostap_evt_queue =  os_queue_create(10, sizeof(wpa3_hostap_auth_event_t));
     if (!g_wpa3_hostap_evt_queue) {
         wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create queue");
-        ret = ESP_FAIL;
-        goto init_done;
+        return ESP_FAIL;
     }
 
     if (os_task_create(esp_wpa3_hostap_task, "esp_wpa3_hostap_task",
@@ -546,22 +546,18 @@ int wpa3_hostap_auth_init(void *data)
                     &g_wpa3_hostap_task_hdl) != pdPASS) {
         wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create task");
         os_queue_delete(g_wpa3_hostap_evt_queue);
-        ret = ESP_FAIL;
-        goto init_done;
+        return ESP_FAIL;
     }
 
     struct hostapd_data *hapd = (struct hostapd_data *)data;
     dl_list_init(&hapd->sae_commit_queue);
-
-init_done:
-    WPA3_HOSTAP_AUTH_API_UNLOCK();
-    return ret;
+    return ESP_OK;
 }
 
 bool wpa3_hostap_auth_deinit(void)
 {
     if (wpa3_hostap_post_evt(SIG_TASK_DEL, 0) != 0) {
-        wpa_printf(MSG_ERROR, "failed to send task delete event");
+        wpa_printf(MSG_DEBUG, "failed to send task delete event");
         return false;
     } else {
         return true;

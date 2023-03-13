@@ -224,17 +224,11 @@ bool hostap_deinit(void *data)
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
 
 #ifdef CONFIG_SAE
-    uint8_t authmode;
-    authmode = esp_wifi_ap_get_prof_authmode_internal();
-    if (authmode == WIFI_AUTH_WPA3_PSK ||
-        authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
-        wpa3_hostap_auth_deinit();
-        /* Wait till lock is released by wpa3 task */
-        if (WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
-            WPA3_HOSTAP_AUTH_API_UNLOCK();
-            os_mutex_delete(g_wpa3_hostap_auth_api_lock);
-            g_wpa3_hostap_auth_api_lock = NULL;
-        }
+    wpa3_hostap_auth_deinit();
+    /* Wait till lock is released by wpa3 task */
+    if (g_wpa3_hostap_auth_api_lock &&
+        WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
+        WPA3_HOSTAP_AUTH_API_UNLOCK();
     }
 #endif /* CONFIG_SAE */
 
@@ -259,7 +253,7 @@ int esp_wifi_build_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
         capab |= BIT(WLAN_RSNX_CAPAB_SAE_H2E);
     }
 
-    flen = (capab & 0xff00) ? 2 : 1;
+    flen = 1;
     if (len < 2 + flen || !capab) {
         return 0; /* no supported extended RSN capabilities */
     }
@@ -268,10 +262,6 @@ int esp_wifi_build_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
     *pos++ = WLAN_EID_RSNX;
     *pos++ = flen;
     *pos++ = capab & 0x00ff;
-    capab >>= 8;
-    if (capab) {
-        *pos++ = capab;
-    }
 
     return pos - eid;
 }
