@@ -803,7 +803,7 @@ The detailed description of all instructions is presented below:
 
     Conditions *LT*, *GE*, *LE* and *GT*: 2 cycles to execute, 2 cycles to fetch next instruction
 
-    Conditions *LE* and *GT* are implemented in the assembler using one **JUMPR** instructions::
+    Conditions *LE* and *GT* are implemented in the assembler using one **JUMPR** instruction::
 
       // JUMPR target, threshold, GT is implemented as:
 
