@@ -31,7 +31,7 @@ Once wakeup sources are configured, the application can enter sleep mode using :
     Wi-Fi/Bluetooth and Sleep Modes
     ---------------------------------
 
-    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections will not be maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
+    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). In both Deep-sleep and Light-sleep modes, Wi-Fi and Bluetooth connection cannot be maintained.
 
 .. only:: not SOC_BT_SUPPORTED
 
