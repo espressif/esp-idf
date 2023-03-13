@@ -798,20 +798,48 @@ The detailed description of all instructions is presented below:
       - *GE* (greater or equal) – jump if value in R0 >= threshold
 
 **Cycles**
-  Conditions *EQ*, *GT* and *LT*: 2 cycles to execute, 2 cycles to fetch next instruction
-  Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
 
-    // JUMPR target, threshold, LE is implemented as:
+.. only:: esp32
 
-             JUMPR target, threshold, EQ
-             JUMPR target, threshold, LT
+    Conditions *LT*, *GE*, *LE* and *GT*: 2 cycles to execute, 2 cycles to fetch next instruction
 
-    // JUMPR target, threshold, GE is implemented as:
+    Conditions *LE* and *GT* are implemented in the assembler using one **JUMPR** instruction::
 
-             JUMPR target, threshold, EQ
-             JUMPR target, threshold, GT
+      // JUMPR target, threshold, GT is implemented as:
 
-  Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
+               JUMPR target, threshold+1, GE
+
+      // JUMPR target, threshold, LE is implemented as:
+
+               JUMPR target, threshold + 1, LT
+
+    Conditions *EQ* is implemented in the assembler using two **JUMPR** instructions::
+
+      // JUMPR target, threshold, EQ is implemented as:
+
+               JUMPR next, threshold + 1, GE
+               JUMPR target, threshold, GE
+      next:
+
+
+.. only:: esp32s2 or esp32s3
+
+    Conditions *EQ*, *GT* and *LT*: 2 cycles to execute, 2 cycles to fetch next instruction
+
+    Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
+
+      // JUMPR target, threshold, LE is implemented as:
+
+               JUMPR target, threshold, EQ
+               JUMPR target, threshold, LT
+
+      // JUMPR target, threshold, GE is implemented as:
+
+               JUMPR target, threshold, EQ
+               JUMPR target, threshold, GT
+
+    Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
+
 
 **Description**
    The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of R0 register value and the threshold value.
@@ -844,21 +872,32 @@ The detailed description of all instructions is presented below:
        - *GE* (greater or equal) — jump if value in stage_cnt >= threshold
 
 **Cycles**
-  2 cycles to execute, 2 cycles to fetch next instruction::
 
-    // JUMPS target, threshold, EQ is implemented as:
+.. only:: esp32
 
-             JUMPS next, threshold, LT
-             JUMPS target, threshold, LE
-    next:
+    Conditions *LE*, *LT*, *GE*: 2 cycles to execute, 2 cycles to fetch next instruction
 
-    // JUMPS target, threshold, GT is implemented as:
+    Conditions *EQ*, *GT* are implemented in the assembler using two **JUMPS** instructions::
 
-             JUMPS next, threshold, LE
-             JUMPS target, threshold, GE
-    next:
+      // JUMPS target, threshold, EQ is implemented as:
 
-  Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
+               JUMPS next, threshold, LT
+               JUMPS target, threshold, LE
+      next:
+
+      // JUMPS target, threshold, GT is implemented as:
+
+               JUMPS next, threshold, LE
+               JUMPS target, threshold, GE
+      next:
+
+    Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
+
+
+.. only:: esp32s2 or esp32s3
+
+    2 cycles to execute, 2 cycles to fetch next instruction
+
 
 **Description**
     The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of count register value and threshold value.
