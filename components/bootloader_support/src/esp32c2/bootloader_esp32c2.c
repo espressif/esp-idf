@@ -38,7 +38,6 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
-#include "hal/mmu_ll.h"
 
 static const char *TAG = "boot.esp32c2";
 
@@ -113,10 +112,8 @@ esp_err_t bootloader_init(void)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     //init cache hal
     cache_hal_init();
-    //reset mmu
+    //init mmu
     mmu_hal_init();
-    // config mmu page size
-    mmu_ll_set_page_size(0, SPI_FLASH_MMU_PAGE_SIZE);
     // update flash ID
     bootloader_flash_update_id();
 #if !CONFIG_APP_BUILD_TYPE_RAM

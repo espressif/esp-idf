@@ -142,7 +142,7 @@ esp_err_t bootloader_init(void)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     // init cache hal
     cache_hal_init();
-    // reset mmu
+    //init mmu
     mmu_hal_init();
     // Workaround: normal ROM bootloader exits with DROM0 cache unmasked, but 2nd bootloader exits with it masked.
     REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);

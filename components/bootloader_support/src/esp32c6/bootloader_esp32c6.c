@@ -40,7 +40,6 @@
 #include "esp_private/bootloader_flash_internal.h"
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
-#include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/lp_wdt_reg.h"
@@ -169,10 +168,8 @@ esp_err_t bootloader_init(void)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     //init cache hal
     cache_hal_init();
-    //reset mmu
+    //init mmu
     mmu_hal_init();
-    // config mmu page size
-    mmu_ll_set_page_size(0, SPI_FLASH_MMU_PAGE_SIZE);
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow

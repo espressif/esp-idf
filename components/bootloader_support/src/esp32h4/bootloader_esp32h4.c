@@ -120,7 +120,7 @@ esp_err_t bootloader_init(void)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     //init cache hal
     cache_hal_init();   //TODO IDF-4649
-    //reset mmu
+    //init mmu
     mmu_hal_init();
     // update flash ID
     bootloader_flash_update_id();
