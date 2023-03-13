@@ -35,8 +35,6 @@
 #define SERVER_ADDRESS "localhost"
 #define SERVER_PORT "4433"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2) // IDF-6847
-
 extern const uint8_t server_cert_chain_pem_start[] asm("_binary_server_cert_chain_pem_start");
 extern const uint8_t server_cert_chain_pem_end[]   asm("_binary_server_cert_chain_pem_end");
 
@@ -487,5 +485,3 @@ TEST_CASE("custom certificate bundle init API - bound checking", "[mbedtls]")
 
     esp_crt_bundle_detach(NULL);
 }
-
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
