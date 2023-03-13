@@ -59,7 +59,7 @@ Refer to `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_ and `{IDF_TARGET_NA
 
 Event-Handling
 ++++++++++++++
-Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_ and `WIFI_EVENT_STA_CONNECTED`_. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
+Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_ and `WIFI_EVENT_STA_CONNECTED`_. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also the :doc:`overview of the Event Loop Library in ESP-IDF<../api-reference/system/esp_event>`.
 
 Write Error-Recovery Routines Correctly at All Times
 ++++++++++++++++++++++++++++++++++++++++++++++++++++

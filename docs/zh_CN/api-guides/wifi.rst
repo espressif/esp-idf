@@ -1,4 +1,4 @@
-﻿Wi-Fi 驱动程序
+Wi-Fi 驱动程序
 ==================
 
 :link_to_translation:`en:[English]`
@@ -59,7 +59,7 @@ Wi-Fi 初始化
 
 事件处理
 ++++++++++++++
-通常，在理想环境下编写代码难度并不大，如 `WIFI_EVENT_STA_START`_、`WIFI_EVENT_STA_CONNECTED`_ 中所述。难度在于如何在现实的困难环境下编写代码，如 `WIFI_EVENT_STA_DISCONNECTED`_ 中所述。能否在后者情况下完美地解决各类事件冲突，是编写一个强健的 Wi-Fi 应用程序的根本。请参阅 `{IDF_TARGET_NAME} Wi-Fi 事件描述`_, `{IDF_TARGET_NAME} Wi-Fi station 一般情况`_, `{IDF_TARGET_NAME} Wi-Fi AP 一般情况`_。另可参阅 ESP-IDF 中的 `事件处理概述 <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/event-handling.html?highlight=event%20handling>`_。
+通常，在理想环境下编写代码难度并不大，如 `WIFI_EVENT_STA_START`_、`WIFI_EVENT_STA_CONNECTED`_ 中所述。难度在于如何在现实的困难环境下编写代码，如 `WIFI_EVENT_STA_DISCONNECTED`_ 中所述。能否在后者情况下完美地解决各类事件冲突，是编写一个强健的 Wi-Fi 应用程序的根本。请参阅 `{IDF_TARGET_NAME} Wi-Fi 事件描述`_, `{IDF_TARGET_NAME} Wi-Fi station 一般情况`_, `{IDF_TARGET_NAME} Wi-Fi AP 一般情况`_。另可参阅 ESP-IDF 中的 :doc:`事件处理概述 <../api-reference/system/esp_event>`。
 
 编写错误恢复程序
 ++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -4,11 +4,17 @@ Event Loop Library
 Overview
 --------
 
-The event loop library allows components to declare events to which other components can register handlers -- code which will
-execute when those events occur. This allows loosely coupled components to attach desired behavior to changes in state of other components
-without application involvement. For instance, a high level connection handling library may subscribe to events produced
-by the Wi-Fi subsystem directly and act on those events. This also simplifies event processing by serializing and deferring
-code execution to another context.
+The event loop library allows components to declare events to which other components can register handlers -- code which will execute when those events occur. This allows loosely coupled components to attach desired behavior to state changes of other components without application involvement. This also simplifies event processing by serializing and deferring code execution to another context.
+
+.. only:: SOC_WIFI_SUPPORTED
+
+    One common use case is if a high level library is using the WiFi library: it may subscribe to :ref:`events produced by the Wi-Fi subsystem <wifi-programming-model>` directly and act on those events. 
+
+.. only:: SOC_BT_SUPPORTED
+
+    .. note::
+    
+        Various modules of the Bluetooth stack deliver events to applications via dedicated callback functions instead of via the Event Loop Library.
 
 Using ``esp_event`` APIs
 ------------------------
