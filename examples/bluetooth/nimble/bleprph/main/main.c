@@ -93,8 +93,9 @@ ext_bleprph_advertise(void)
     int rc;
 
     /* First check if any instance is already active */
-    if(ble_gap_adv_active())
+    if(ble_gap_ext_adv_active(instance)) {
         return;
+    }
 
     /* use defaults for non-set params */
     memset (&params, 0, sizeof(params));
