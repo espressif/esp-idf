@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,12 @@
 
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
 #include <stdio.h>
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/task_snapshot.h"
 #include "esp_cpu.h"
+#include "esp_rom_sys.h"
 #include "unity.h"
 #include "sdkconfig.h"
 
@@ -19,10 +21,34 @@
 #define NUM_TASKS_PER_LIST      2
 #define TASK_PRIORITY           (configMAX_PRIORITIES - 2)
 
+static volatile bool start_ready_flag = false;
+static volatile bool start_resp_flag = false;
+static volatile bool stop_flag = false;
+
 static void ready_task(void *arg)
 {
     while (1) {
-        ;
+#if !CONFIG_FREERTOS_UNICORE
+        taskDISABLE_INTERRUPTS();
+        /*
+        The main task (on core 0) has a higher priority than this task. Thus, by the time this flag is set, this task
+        is guaranteed to running on core 1.
+        */
+        if (start_ready_flag) {   // Is the test starting?
+            start_resp_flag = true;   // Indicate we are ready to start
+            while (!stop_flag) {
+                ;   // Wait until test completes
+            }
+
+            // Reset the flags
+            start_ready_flag = false;
+            start_resp_flag = false;
+            stop_flag = false;
+        }
+        taskENABLE_INTERRUPTS();
+        // Short non-blocking delay to allow INT WDT to feed
+        esp_rom_delay_us(1000);
+#endif // !CONFIG_FREERTOS_UNICORE
     }
 }
 
@@ -60,13 +86,25 @@ static void setup(TaskHandle_t *task_list, int *num_tasks_ret, UBaseType_t *old_
     // Short delay to allow tasks to spin up
     vTaskDelay(10);
 
-    // Stop preemption on this core, and stall the other core
+    /*
+    Task snapshot functions are only meant to be called when FreeRTOS is no longer running (e.g., during a panic),
+    thus assumes that nothing else (interrupt or the other core) will access the task lists simultaneously. However, for
+    unit tests, FreeRTOS is still running. So we must guarantee thread safe access another way.
+
+    - For single core, simply disabling interrupts will guarantee that the current task is the only thread to access the
+      task lists
+    - For SMP, we also need to stop the other core from accessing the task lists. Thus, we use a 2-way handshake to put
+      the other core into a while loop with interrupts disabled.
+    */
+    // Disable interrupts so that the current core isn't preempted.
     taskDISABLE_INTERRUPTS();
 #if !CONFIG_FREERTOS_UNICORE
-    esp_cpu_stall(!xPortGetCoreID());
-#endif
-
-
+    // For SMP, we need to do a 2-way handshake to ensure the other core spins with interrupts disabled.
+    start_ready_flag = true;
+    while (!start_resp_flag) {
+        ;
+    }
+#endif // !CONFIG_FREERTOS_UNICORE
 }
 
 static void check_snapshots(TaskHandle_t *task_list, int num_tasks, TaskSnapshot_t *task_snapshots, UBaseType_t num_snapshots)
@@ -86,10 +124,11 @@ static void check_snapshots(TaskHandle_t *task_list, int num_tasks, TaskSnapshot
 
 static void teardown(TaskHandle_t *task_list, int num_tasks, UBaseType_t old_priority)
 {
-    // Resume other cores and allow preemption
 #if !CONFIG_FREERTOS_UNICORE
-    esp_cpu_unstall(!xPortGetCoreID());
-#endif
+    // Signal to the other core that it can exit the loop
+    stop_flag = true;
+#endif // !CONFIG_FREERTOS_UNICORE
+    // Reenable interrupts on the current core.
     taskENABLE_INTERRUPTS();
 
     for (int i = 0; i < num_tasks; i++) {
