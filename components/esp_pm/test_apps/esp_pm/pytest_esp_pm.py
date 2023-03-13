@@ -14,6 +14,4 @@ CONFIGS = [
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_esp_pm(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()

@@ -13,9 +13,7 @@ from pytest_embedded import Dut
 # @pytest.mark.esp32c2  # esp32c2 are using xtal_26mhz
 @pytest.mark.generic
 def test_wifi_unit_test(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.esp32c2
@@ -28,6 +26,4 @@ def test_wifi_unit_test(dut: Dut) -> None:
     indirect=True,
 )
 def test_wifi_connect_cases_esp32c2_xtal26m(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()
