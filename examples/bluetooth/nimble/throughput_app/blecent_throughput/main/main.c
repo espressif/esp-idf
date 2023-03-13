@@ -723,7 +723,11 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(tag, "Failed to init nimble %d ", ret);
+        return;
+    }
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;

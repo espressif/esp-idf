@@ -273,7 +273,7 @@ void app_main(void)
 #endif // CONFIG_EXAMPLE_CONNECT_WIFI
 
 #if CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED
-    esp_ble_helper_init();
+    ESP_ERROR_CHECK(esp_ble_helper_init());
 #endif
 
     xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 8, NULL, 5, NULL);
