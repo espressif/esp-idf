@@ -26,5 +26,3 @@ list(APPEND extra_link_flags "-u pthread_include_pthread_rwlock_impl")
 if(extra_link_flags)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "${extra_link_flags}")
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
