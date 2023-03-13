@@ -46,17 +46,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-    // Reset and stall the other CPU.
-    // CPU must be reset before stalling, in case it was running a s32c1i
-    // instruction. This would cause memory pool to be locked by arbiter
-    // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = esp_cpu_get_core_id();
-#if !CONFIG_FREERTOS_UNICORE
-    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-    esp_cpu_reset(other_core_id);
-    esp_cpu_stall(other_core_id);
-#endif
-
     // Disable TG0/TG1 watchdogs
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
     wdt_hal_write_protect_disable(&wdt0_context);
@@ -104,28 +93,8 @@ void IRAM_ATTR esp_restart_noos(void)
     rtc_clk_cpu_set_to_default_config();
 #endif
 
-#if !CONFIG_FREERTOS_UNICORE
-    // Clear entry point for APP CPU
-    REG_WRITE(SYSTEM_CORE_1_CONTROL_1_REG, 0);
-#endif
-
-    // Reset CPUs
-    if (core_id == 0) {
-        // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-#if !CONFIG_FREERTOS_UNICORE
-        esp_cpu_reset(1);
-#endif
-        esp_cpu_reset(0);
-    }
-#if !CONFIG_FREERTOS_UNICORE
-    else {
-        // Running on APP CPU: need to reset PRO CPU and unstall it,
-        // then reset APP CPU
-        esp_cpu_reset(0);
-        esp_cpu_unstall(0);
-        esp_cpu_reset(1);
-    }
-#endif
+    // Reset CPU
+    esp_rom_software_reset_cpu(0);
     while (true) {
         ;
     }

@@ -51,12 +51,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-    // Reset and stall the other CPU.
-    // CPU must be reset before stalling, in case it was running a s32c1i
-    // instruction. This would cause memory pool to be locked by arbiter
-    // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = esp_cpu_get_core_id();
-
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
@@ -118,9 +112,7 @@ void IRAM_ATTR esp_restart_noos(void)
     rtc_clk_cpu_set_to_default_config();
 
     // Reset CPUs
-    if (core_id == 0) {
-        esp_cpu_reset(0);
-    }
+    esp_rom_software_reset_cpu(0);
     while (true) {
         ;
     }
