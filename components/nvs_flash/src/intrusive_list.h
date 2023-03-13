@@ -15,6 +15,7 @@
 #define intrusive_list_h
 
 #include <cassert>
+#include <cstddef>
 #include <unordered_map>
 
 template <typename T>
