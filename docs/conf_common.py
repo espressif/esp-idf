@@ -127,6 +127,8 @@ ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
             'api-reference/peripherals/adc_calibration.rst']
 ADC_DMA_DOCS = ['api-reference/peripherals/adc_continuous.rst']
 
+ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
@@ -194,6 +196,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
                             'SOC_ADC_SUPPORTED':ADC_DOCS,
                             'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
+                            'SOC_ANA_CMPR_SUPPORTED': ANA_CMPR_DOCS,
                             'SOC_SDM_SUPPORTED':SDM_DOCS,
                             'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'esp32':ESP32_DOCS,

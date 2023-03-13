@@ -63,7 +63,7 @@ static inline float analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *h
  * @param hw Analog comparator register base address
  * @param ref_src reference source, 0 for internal, 1 for external GPIO pad (GPIO10)
  */
-static inline void analog_cmpr_ll_ref_source(analog_cmpr_dev_t *hw, uint32_t ref_src)
+static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t ref_src)
 {
     hw->pad_comp_config.mode_comp = ref_src;
 }
@@ -78,7 +78,8 @@ static inline void analog_cmpr_ll_ref_source(analog_cmpr_dev_t *hw, uint32_t ref
  *              - 2: enable negative cross interrupt (input analog goes from high to low and across the reference voltage)
  *              - 3: enable any positive or negative cross interrupt
  */
-static inline void analog_cmpr_ll_set_cross_intr_type(analog_cmpr_dev_t *hw, uint8_t type)
+__attribute__((always_inline))
+static inline void analog_cmpr_ll_set_cross_type(analog_cmpr_dev_t *hw, uint8_t type)
 {
     hw->pad_comp_config.zero_det_mode = type;
 }

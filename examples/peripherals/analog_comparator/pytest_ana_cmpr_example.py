@@ -22,5 +22,5 @@ def test_ana_cmpr_example(dut: Dut) -> None:
         dut.expect('ana_cmpr_example: Allocate Analog Comparator with internal reference', timeout=10)
         dut.expect(r'ana_cmpr_example: Analog comparator enabled, reference voltage: [0-9]+% \* VDD', timeout=10)
     elif sdkconfig['EXAMPLE_EXTERNAL_REF']:
-        dut.expect('ana_cmpr_example: Allocate Analog Comparator with internal reference', timeout=10)
+        dut.expect('ana_cmpr_example: Allocate Analog Comparator with external reference', timeout=10)
         dut.expect('ana_cmpr_example: Analog comparator enabled, external reference selected', timeout=10)

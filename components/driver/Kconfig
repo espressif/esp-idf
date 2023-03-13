@@ -287,8 +287,8 @@ menu "Driver Configurations"
             bool "Place Analog Comparator control functions into IRAM"
             default n
             help
-                Place Analog Comparator control functions (like set_intl_reference) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Place Analog Comparator control functions (like ana_cmpr_set_internal_reference) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in an IRAM interrupt context.
                 Enabling this option can improve driver performance as well.
 
         config ANA_CMPR_ENABLE_DEBUG_LOG

@@ -13,7 +13,7 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
         .unit = SOC_ANA_CMPR_NUM,   // Set a wrong unit
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .intr_type = ANA_CMPR_INTR_ANY_CROSS,
+        .cross_type = ANA_CMPR_CROSS_ANY,
     };
     /* Allocate a wrong unit */
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ana_cmpr_new_unit(&config, &cmpr));
@@ -23,15 +23,15 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
     /* Try to allocate a existed unit */
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_new_unit(&config, &cmpr));
     /* Set the internal reference before enable */
-    ana_cmpr_intl_ref_config_t ref_cfg = {
+    ana_cmpr_internal_ref_config_t ref_cfg = {
         .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
     };
-    TEST_ESP_OK(ana_cmpr_set_intl_reference(cmpr, &ref_cfg));
+    TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     /* Enable the unit */
     TEST_ESP_OK(ana_cmpr_enable(cmpr));
     /* Set the internal reference after enable */
     ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_30_PCT_VDD;
-    TEST_ESP_OK(ana_cmpr_set_intl_reference(cmpr, &ref_cfg));
+    TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     /* Try tp delete unit after enable */
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_del_unit(cmpr));
     /* Disable the unit */
@@ -44,7 +44,7 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
     /* Try to set internal reference for a external unit */
     config.ref_src = ANA_CMPR_REF_SRC_EXTERNAL;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_set_intl_reference(cmpr, &ref_cfg));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 }
 
@@ -58,13 +58,13 @@ TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
         .unit = ANA_CMPR_UNIT_0,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .intr_type = ANA_CMPR_INTR_ANY_CROSS,
+        .cross_type = ANA_CMPR_CROSS_ANY,
     };
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
-    ana_cmpr_intl_ref_config_t ref_cfg = {
+    ana_cmpr_internal_ref_config_t ref_cfg = {
         .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
     };
-    TEST_ESP_OK(ana_cmpr_set_intl_reference(cmpr, &ref_cfg));
+    TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     ana_cmpr_debounce_config_t dbc_cfg = {
         .wait_us = 10.0,
     };

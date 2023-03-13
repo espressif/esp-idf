@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
@@ -26,7 +27,7 @@ typedef struct {
                                                  *   For internal reference, the reference voltage should be set to `internal_ref_volt`,
                                                  *   for external reference, the reference signal should be connect to `ANA_CMPRx_EXT_REF_GPIO`
                                                  */
-    ana_cmpr_intr_type_t    intr_type;          /*!< The crossing types that can trigger interrupt */
+    ana_cmpr_cross_type_t   cross_type;         /*!< The crossing types that can trigger interrupt */
 } ana_cmpr_config_t;
 
 /**
@@ -34,21 +35,21 @@ typedef struct {
  *
  */
 typedef struct {
-    ana_cmpr_ref_voltage_t  ref_volt;           /*!< The internal reference voltage. It can specify several dozen percent from the VDD power supply,
-                                                 *   currently supports 0%~70% VDD with step 10%
+    ana_cmpr_ref_voltage_t  ref_volt;           /*!< The internal reference voltage. It can be specified to a certain fixed percentage of
+                                                 *   the VDD power supply, currently supports 0%~70% VDD with a step 10%
                                                  */
-} ana_cmpr_intl_ref_config_t;
+} ana_cmpr_internal_ref_config_t;
 
 /**
  * @brief Analog comparator debounce filter configuration
  *
  */
 typedef struct {
-    float                   wait_us;            /*!< The wait time of re-enabling the interrupt after the last triggering,
+    uint32_t                   wait_us;         /*!< The wait time of re-enabling the interrupt after the last triggering,
                                                  *   it is used to avoid the spurious triggering while the source signal crossing the reference signal.
                                                  *   The value should regarding how fast the source signal changes, e.g., a rapid signal requires
                                                  *   a small wait time, otherwise the next crosses may be missed.
-                                                 *   (Unit: micro second, resolution = 1 / SRC_CLK_FREQ)
+                                                 *   (Unit: micro second)
                                                  */
 } ana_cmpr_debounce_config_t;
 
@@ -99,8 +100,9 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr);
  * @return
  *      - ESP_OK                Set denounce configuration success
  *      - ESP_ERR_INVALID_ARG   NULL pointer of the parameters
+ *      - ESP_ERR_INVALID_STATE The reference source is not `ANA_CMPR_REF_SRC_INTERNAL`
  */
-esp_err_t ana_cmpr_set_intl_reference(ana_cmpr_handle_t cmpr, const ana_cmpr_intl_ref_config_t *ref_cfg);
+esp_err_t ana_cmpr_set_internal_reference(ana_cmpr_handle_t cmpr, const ana_cmpr_internal_ref_config_t *ref_cfg);
 
 /**
  * @brief Set debounce configuration to the analog comparator
@@ -115,6 +117,21 @@ esp_err_t ana_cmpr_set_intl_reference(ana_cmpr_handle_t cmpr, const ana_cmpr_int
  *      - ESP_ERR_INVALID_ARG   NULL pointer of the parameters
  */
 esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_config_t *dbc_cfg);
+
+/**
+ * @brief Set the source signal cross type
+ * @note The initial cross type is configured in `ana_cmpr_new_unit`, this function can update the cross type
+ * @note This function is allowed to run within ISR context including intr callbacks
+ * @note This function will be placed into IRAM if `CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` is on,
+ *       so that it's allowed to be executed when Cache is disabled
+ *
+ * @param[in]  cmpr         The handle of analog comparator unit
+ * @param[in]  cross_type   The source signal cross type that can trigger the interrupt
+ * @return
+ *      - ESP_OK                Set denounce configuration success
+ *      - ESP_ERR_INVALID_ARG   NULL pointer of the parameters
+ */
+esp_err_t ana_cmpr_set_cross_type(ana_cmpr_handle_t cmpr, ana_cmpr_cross_type_t cross_type);
 
 /**
  * @brief Register analog comparator interrupt event callbacks

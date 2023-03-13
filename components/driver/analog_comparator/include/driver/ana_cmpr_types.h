@@ -44,11 +44,11 @@ typedef enum {
  *
  */
 typedef enum {
-    ANA_CMPR_INTR_DISABLE,          /*!< Disable the cross event interrupt */
-    ANA_CMPR_INTR_POS_CROSS,        /*!< Enable the positive cross event interrupt */
-    ANA_CMPR_INTR_NEG_CROSS,        /*!< Enable the negative cross event interrupt */
-    ANA_CMPR_INTR_ANY_CROSS,        /*!< Enable the both positive & negative cross event interrupt */
-} ana_cmpr_intr_type_t;
+    ANA_CMPR_CROSS_DISABLE,         /*!< Disable the cross event interrupt */
+    ANA_CMPR_CROSS_POS,             /*!< Positive cross can trigger event interrupt */
+    ANA_CMPR_CROSS_NEG,             /*!< Negative cross can trigger event interrupt */
+    ANA_CMPR_CROSS_ANY,             /*!< Any cross can trigger event interrupt */
+} ana_cmpr_cross_type_t;
 
 /**
  * @brief Analog comparator internal reference voltage

@@ -582,6 +582,9 @@ esp_err_t gpio_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
     gpio_isr_alloc_t p;
     p.source = ETS_GPIO_INTR_SOURCE;
     p.intr_alloc_flags = intr_alloc_flags;
+#if SOC_ANA_CMPR_SUPPORTED
+    p.intr_alloc_flags |= ESP_INTR_FLAG_SHARED;
+#endif
     p.fn = fn;
     p.arg = arg;
     p.handle = handle;

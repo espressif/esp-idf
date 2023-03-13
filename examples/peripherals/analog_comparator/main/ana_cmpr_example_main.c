@@ -13,25 +13,25 @@
 
 #define EXAMPLE_ANA_CMPR_UNIT               ANA_CMPR_UNIT_0     // Analog Comparator unit
 #define EXAMPLE_WAIT_TIME_PROP              (0.1)               // The wait time proportion in one relative signal period
-#define EXAMPLE_WAITE_TIME_US(freq_approx)  (1000000.0 * EXAMPLE_WAIT_TIME_PROP / (freq_approx))
+#define EXAMPLE_WAITE_TIME_US(freq_approx)  (uint32_t)(1000000 * EXAMPLE_WAIT_TIME_PROP / (freq_approx))
 
 #define EXAMPLE_MONITOR_GPIO_NUM            (0)                 // The gpio to monitor the on cross callback
 
 static const char *TAG = "ana_cmpr_example";
 
-static bool IRAM_ATTR example_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr,
+static bool example_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr,
                                                          const ana_cmpr_cross_event_data_t *edata,
                                                          void *user_ctx)
 {
 #if CONFIG_EXAMPLE_HYSTERESIS_COMPARATOR
-    static ana_cmpr_intl_ref_config_t ref_cfg = {
+    static ana_cmpr_internal_ref_config_t ref_cfg = {
         .ref_volt = ANA_CMPR_REF_VOLT_70_PCT_VDD,
     };
     bool is_70p = ref_cfg.ref_volt == ANA_CMPR_REF_VOLT_70_PCT_VDD;
-    /* Toggle the GPIO, monitor the gpio on a oscilloscope. */
+    /* Toggle the GPIO, monitor the gpio on an oscilloscope. */
     gpio_set_level(EXAMPLE_MONITOR_GPIO_NUM, is_70p);
     /* Set the internal reference voltage to 30% VDD and 70 %VDD alternately */
-    ana_cmpr_set_intl_reference(cmpr, &ref_cfg);
+    ana_cmpr_set_internal_reference(cmpr, &ref_cfg);
     ref_cfg.ref_volt = is_70p ? ANA_CMPR_REF_VOLT_30_PCT_VDD : ANA_CMPR_REF_VOLT_70_PCT_VDD;
 #else
     static int lvl = 0;
@@ -59,13 +59,13 @@ void example_init_analog_comparator(void)
         .unit = EXAMPLE_ANA_CMPR_UNIT,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .intr_type = ANA_CMPR_INTR_ANY_CROSS,
+        .cross_type = ANA_CMPR_CROSS_ANY,
     };
     ESP_ERROR_CHECK(ana_cmpr_new_unit(&config, &cmpr));
     ESP_LOGI(TAG, "Allocate Analog Comparator with internal reference");
 
     /* Step 1.1: As we are using the internal reference source, we need to configure the internal reference */
-    ana_cmpr_intl_ref_config_t ref_cfg = {
+    ana_cmpr_internal_ref_config_t ref_cfg = {
 #if CONFIG_EXAMPLE_HYSTERESIS_COMPARATOR
         /* Set the initial internal reference voltage to 70% VDD, it will be updated in the callback every time the interrupt triggered */
         .ref_volt = ANA_CMPR_REF_VOLT_70_PCT_VDD
@@ -73,17 +73,17 @@ void example_init_analog_comparator(void)
         .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
 #endif
     };
-    ESP_ERROR_CHECK(ana_cmpr_set_intl_reference(cmpr, &ref_cfg));
+    ESP_ERROR_CHECK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
 #else
      /* Step 1: Allocate the new analog comparator unit */
     ana_cmpr_config_t config = {
         .unit = EXAMPLE_ANA_CMPR_UNIT,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_EXTERNAL,
-        .intr_type = ANA_CMPR_INTR_ANY_CROSS,
+        .cross_type = ANA_CMPR_CROSS_ANY,
     };
     ESP_ERROR_CHECK(ana_cmpr_new_unit(&config, &cmpr));
-    ESP_LOGI(TAG, "Allocate Analog Comparator with internal reference");
+    ESP_LOGI(TAG, "Allocate Analog Comparator with external reference");
 #endif
 
     /* Step 2: (Optional) Set the debounce configuration
@@ -92,7 +92,7 @@ void example_init_analog_comparator(void)
      * automatically enabled after `wait_us`, so that the duplicate interrupts
      * can be suppressed while the source signal crossing the reference signal. */
     ana_cmpr_debounce_config_t dbc_cfg = {
-        /* Normally the `wait_us` is related to how fast the source signal or reference signal changes
+        /* Normally the `wait_us` is related to the relative frequency between the source and reference signal
          * comparing to another one. This example adopts an approximate frequency as the relative signal
          * frequency, and set the default wait time to EXAMPLE_WAIT_TIME_PROP of the relative signal period.
          * We need to estimate an appropriate `freq_approx` and EXAMPLE_WAIT_TIME_PROP
