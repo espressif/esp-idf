@@ -150,6 +150,10 @@
 #define CHECK_SOURCE(source, value, mask) ((s_config.wakeup_triggers & mask) && \
                                             (source == value))
 
+#define MAX_DSLP_HOOKS      3
+
+static esp_deep_sleep_cb_t s_dslp_cb[MAX_DSLP_HOOKS]={0};
+
 /**
  * Internal structure which holds all requested deep sleep parameters
  */
@@ -343,6 +347,32 @@ void esp_deep_sleep(uint64_t time_in_us)
     esp_deep_sleep_start();
 }
 
+esp_err_t esp_deep_sleep_register_hook(esp_deep_sleep_cb_t new_dslp_cb)
+{
+    portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+    for(int n = 0; n < MAX_DSLP_HOOKS; n++){
+        if (s_dslp_cb[n]==NULL || s_dslp_cb[n]==new_dslp_cb) {
+            s_dslp_cb[n]=new_dslp_cb;
+            portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+            return ESP_OK;
+        }
+    }
+    portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+    ESP_LOGE(TAG, "Registered deepsleep callbacks exceeds MAX_DSLP_HOOKS");
+    return ESP_ERR_NO_MEM;
+}
+
+void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
+{
+    portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+    for(int n = 0; n < MAX_DSLP_HOOKS; n++){
+        if(s_dslp_cb[n] == old_dslp_cb) {
+            s_dslp_cb[n] = NULL;
+        }
+    }
+    portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
+}
+
 // [refactor-todo] provide target logic for body of uart functions below
 static void IRAM_ATTR flush_uarts(void)
 {
@@ -392,21 +422,29 @@ static void IRAM_ATTR resume_uarts(void)
 /**
  * These save-restore workaround should be moved to lower layer
  */
-inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
+inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 {
+    if (deep_sleep){
+        for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
+            if (s_dslp_cb[n] != NULL) {
+                s_dslp_cb[n]();
+            }
+        }
+    } else {
 #if CONFIG_MAC_BB_PD
-    mac_bb_power_down_cb_execute();
+        mac_bb_power_down_cb_execute();
 #endif
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_apply();
+        gpio_sleep_mode_config_apply();
 #endif
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    sleep_enable_cpu_retention();
+        sleep_enable_cpu_retention();
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
-    regi2c_analog_cali_reg_read();
+        regi2c_analog_cali_reg_read();
 #endif
-    sar_periph_ctrl_power_disable();
+        sar_periph_ctrl_power_disable();
+    }
 }
 
 /**
@@ -511,9 +549,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
 #endif //!CONFIG_IDF_TARGET_ESP32C6
 
-    if (!deep_sleep) {
-        misc_modules_sleep_prepare();
-    }
+    misc_modules_sleep_prepare(deep_sleep);
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (deep_sleep) {

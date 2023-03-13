@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+/*
+ Definitions for the deepsleep prepare callbacks
+*/
+typedef void (*esp_deep_sleep_cb_t)(void);
+
 /**
  * @brief Logic function used for EXT1 wakeup mode.
  */
@@ -452,6 +457,27 @@ esp_err_t esp_light_sleep_start(void);
  */
 void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
 
+
+/**
+  * @brief Register a callback to be called from the deep sleep prepare
+  *
+  * @warning deepsleep callbacks should without parameters, and MUST NOT,
+  *          UNDER ANY CIRCUMSTANCES, CALL A FUNCTION THAT MIGHT BLOCK.
+  *
+  * @param new_dslp_cb     Callback to be called
+  *
+  * @return
+  *     - ESP_OK:         Callback registered to the deepsleep misc_modules_sleep_prepare
+  *     - ESP_ERR_NO_MEM: No more hook space for register the callback
+  */
+esp_err_t esp_deep_sleep_register_hook(esp_deep_sleep_cb_t new_dslp_cb);
+
+/**
+  * @brief Unregister an deepsleep callback
+  *
+  * @param old_dslp_cb     Callback to be unregistered
+  */
+void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb);
 
 /**
  * @brief Get the wakeup source which caused wakeup from sleep
