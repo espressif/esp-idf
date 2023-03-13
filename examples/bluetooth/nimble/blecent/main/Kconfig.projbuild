@@ -6,4 +6,9 @@ menu "Example Configuration"
         help
             Enter the peer address in aa:bb:cc:dd:ee:ff form to connect to a specific peripheral
 
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        help
+            This enables bonding and encryption after connection has been established.
 endmenu
