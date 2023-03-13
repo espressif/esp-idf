@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -115,6 +115,6 @@ TEST_CASE("pthread cond wait", "[pthread]")
         TEST_ASSERT_EQUAL_INT(0, r);
     }
 
-    pthread_mutex_destroy(&cond);
-    pthread_mutex_destroy(&mutex);
+    TEST_ASSERT_EQUAL_INT(ESP_OK, pthread_cond_destroy(&cond));
+    TEST_ASSERT_EQUAL_INT(ESP_OK, pthread_mutex_destroy(&mutex));
 }
