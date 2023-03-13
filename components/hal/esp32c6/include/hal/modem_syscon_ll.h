@@ -49,7 +49,7 @@ static inline void modem_syscon_ll_enable_ieee802154_mac_clock(modem_syscon_dev_
 }
 
 __attribute__((always_inline))
-static inline void modem_syscom_ll_enable_modem_sec_clock(modem_syscon_dev_t *hw, bool en)
+static inline void modem_syscon_ll_enable_modem_sec_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf.clk_modem_sec_en = en;
     hw->clk_conf.clk_modem_sec_ecb_en = en;
