@@ -703,18 +703,22 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     uint32_t force_pd_flags = RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | RTC_SLEEP_PD_INT_8M | RTC_SLEEP_PD_XTAL;
 #endif
 
-
-
+    /**
+     * If all wireless modules share one power domain, we name this power domain "modem".
+     * If wireless modules have their own power domain, we give these power domains separate
+     * names.
+     */
 #if SOC_PM_SUPPORT_MODEM_PD
-    force_pd_flags |= PMU_SLEEP_PD_MODEM;
-#else // !SOC_PM_SUPPORT_MODEM_PD
+    force_pd_flags |= RTC_SLEEP_PD_MODEM;
+#endif
+
 #if SOC_PM_SUPPORT_WIFI_PD
     force_pd_flags |= RTC_SLEEP_PD_WIFI;
 #endif
+
 #if SOC_PM_SUPPORT_BT_PD
     force_pd_flags |= RTC_SLEEP_PD_BT;
 #endif
-#endif // !SOC_PM_SUPPORT_MODEM_PD
 
     // Enter sleep
     esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP);
@@ -1632,7 +1636,7 @@ static uint32_t get_power_down_flags(void)
 
 #if SOC_PM_SUPPORT_MODEM_PD
     if (s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) {
-        pd_flags |= PMU_SLEEP_PD_MODEM;
+        pd_flags |= RTC_SLEEP_PD_MODEM;
     }
 #endif
 

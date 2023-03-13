@@ -448,7 +448,6 @@
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-#define SOC_PM_SUPPORT_WIFI_PD          (1)
 #define SOC_PM_SUPPORT_BT_PD            (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)

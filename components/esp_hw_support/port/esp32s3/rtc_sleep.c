@@ -59,8 +59,7 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         .rtc_fastmem_pd_en = (sleep_flags & RTC_SLEEP_PD_RTC_FAST_MEM) ? 1 : 0,
         .rtc_slowmem_pd_en = (sleep_flags & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0,
         .rtc_peri_pd_en = (sleep_flags & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0,
-        .wifi_pd_en = (sleep_flags & RTC_SLEEP_PD_WIFI) ? 1 : 0,
-        .bt_pd_en = (sleep_flags & RTC_SLEEP_PD_BT) ? 1 : 0,
+        .modem_pd_en = (sleep_flags & RTC_SLEEP_PD_MODEM) ? 1 : 0,
         .cpu_pd_en = (sleep_flags & RTC_SLEEP_PD_CPU) ? 1 : 0,
         .int_8m_pd_en = (sleep_flags & RTC_SLEEP_PD_INT_8M) ? 1 : 0,
         .dig_peri_pd_en = (sleep_flags & RTC_SLEEP_PD_DIG_PERIPH) ? 1 : 0,
@@ -157,20 +156,14 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         rtc_sleep_pu(pu_cfg);
     }
 
-    if (cfg.wifi_pd_en) {
+    if (cfg.modem_pd_en) {
         REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO | RTC_CNTL_WIFI_FORCE_ISO);
         REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_PD_EN);
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_PD_EN);
     }
-    if (cfg.bt_pd_en) {
-        REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_NOISO | RTC_CNTL_BT_FORCE_ISO);
-        REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PU);
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_PD_EN);
-    } else {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_PD_EN);
-    }
+
     if (cfg.cpu_pd_en) {
         REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_TOP_FORCE_NOISO | RTC_CNTL_CPU_TOP_FORCE_ISO);
         REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_CPU_TOP_FORCE_PU);
@@ -178,6 +171,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_CPU_TOP_PD_EN);
     }
+
     if (cfg.dig_peri_pd_en) {
         REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PERI_FORCE_NOISO | RTC_CNTL_DG_PERI_FORCE_ISO);
         REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_PERI_FORCE_PU);
@@ -185,6 +179,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_PERI_PD_EN);
     }
+
     if (cfg.rtc_peri_pd_en) {
         REG_CLR_BIT(RTC_CNTL_PWC_REG, RTC_CNTL_FORCE_NOISO | RTC_CNTL_FORCE_ISO | RTC_CNTL_FORCE_PU);
         SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PD_EN);
