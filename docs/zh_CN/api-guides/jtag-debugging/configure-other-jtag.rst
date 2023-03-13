@@ -44,6 +44,7 @@
 
 您可能还需要安装软件驱动，才能使 JTAG 在计算机上正常工作，请参阅您所使用的 JTAG 适配器的有关文档，获取相关详细信息。
 
+在 Linux 中，请务必将 `udev 规则文件 <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ 复制到 ``/etc/udev/rules.d`` 目录中，以添加 OpenOCD udev 规则。
 
 连接
 ^^^^
