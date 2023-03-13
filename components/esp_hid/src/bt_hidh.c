@@ -252,17 +252,15 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
                     break;
                 } else {
                     ESP_LOGD(TAG, "incoming device connect");
-                    if (param->open.status == ESP_HIDH_OK) {
-                        if ((dev = hidh_dev_ctor(param->open.bd_addr)) == NULL) {
-                            ESP_LOGE(TAG, "%s create device failed!", __func__);
-                            param->open.status = ESP_HIDH_ERR_NO_RES;
-                            break;
-                        }
-                        esp_hidh_dev_lock(dev);
-                        dev->opened = false; // not opened by ourself
-                        dev->is_orig = false;
-                        esp_hidh_dev_unlock(dev);
+                    if ((dev = hidh_dev_ctor(param->open.bd_addr)) == NULL) {
+                        ESP_LOGE(TAG, "%s create device failed!", __func__);
+                        param->open.status = ESP_HIDH_ERR_NO_RES;
+                        break;
                     }
+                    esp_hidh_dev_lock(dev);
+                    dev->opened = false; // not opened by ourself
+                    dev->is_orig = false;
+                    esp_hidh_dev_unlock(dev);
                 }
             }
 
