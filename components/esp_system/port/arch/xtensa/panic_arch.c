@@ -12,6 +12,7 @@
 
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
+#include "esp_private/stack_mirror.h"
 #include "soc/soc.h"
 
 #include "esp_private/cache_err_int.h"
@@ -467,5 +468,10 @@ void panic_print_backtrace(const void *f, int core)
 {
     XtExcFrame *xt_frame = (XtExcFrame *) f;
     esp_backtrace_frame_t frame = {.pc = xt_frame->pc, .sp = xt_frame->a1, .next_pc = xt_frame->a0, .exc_frame = xt_frame};
-    esp_backtrace_print_from_frame(100, &frame, true);
+    esp_err_t err = esp_backtrace_print_from_frame(100, &frame, true);
+#if CONFIG_COMPILER_STACK_MIRROR
+    if (err != ESP_OK) {
+        stack_mirror_print_backtrace(true);
+    }
+#endif // CONFIG_COMPILER_STACK_MIRROR
 }

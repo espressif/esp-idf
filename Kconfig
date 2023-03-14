@@ -478,6 +478,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 Stack smashing protection.
 
+        config COMPILER_STACK_MIRROR
+            bool
+            default "y"
+            help
+                Create a dupliate copy of stack return addresses in heap memory, making corrupted
+                backtraces much less likely. Requires a few hundred bytes of memory per thread.
+        
+        config COMPILER_STACK_MIRROR_DEPTH
+            int
+            default 42
+            depends on COMPILER_STACK_MIRROR
+            help
+                The maximum depth of the stack mirror. 4 bytes are needed per depth.
+
         config COMPILER_WARN_WRITE_STRINGS
             bool "Enable -Wwrite-strings warning flag"
             default "n"

@@ -14,6 +14,7 @@
 #include "soc/soc_memory_layout.h"
 #include "esp_cpu_utils.h"
 #include "esp_private/panic_internal.h"
+#include "esp_private/stack_mirror.h"
 
 #include "xtensa/xtensa_context.h"
 
@@ -99,5 +100,11 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     //Initialize stk_frame with first frame of stack
     esp_backtrace_frame_t start = { 0 };
     esp_backtrace_get_start(&(start.pc), &(start.sp), &(start.next_pc));
-    return esp_backtrace_print_from_frame(depth, &start, false);
+    esp_err_t err = esp_backtrace_print_from_frame(depth, &start, false);
+#if CONFIG_COMPILER_STACK_MIRROR
+    if (err != ESP_OK) {
+        stack_mirror_print_backtrace(false);
+    }
+#endif // CONFIG_COMPILER_STACK_MIRROR
+    return err;
 }
