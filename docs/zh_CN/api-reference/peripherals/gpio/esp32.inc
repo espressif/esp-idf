@@ -194,7 +194,7 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO0、GPIO2、GPIO5、GPIO12 (MTDI) 和 GPIO15 (MTDO) 是 Strapping 管脚。更多信息请参考 `ESP32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_。
+    - Strapping 管脚：GPIO0、GPIO2、GPIO5、GPIO12 (MTDI) 和 GPIO15 (MTDO) 是 Strapping 管脚。更多信息请参考 `ESP32 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1：GPIO6-11 和 GPIO16-17 通常连接到模组内集成的 SPI flash 和 PSRAM，因此不能用于其他用途。
     - JTAG：GPIO12-15 通常用于在线调试。
     - GPI：GPIO34-39 只能设置为输入模式，不具备软件使能的上拉或下拉功能。

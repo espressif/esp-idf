@@ -239,7 +239,7 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO0、GPIO45、和 GPIO46 是 Strapping 管脚。更多信息请参考 `ESP32-S2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_。
+    - Strapping 管脚：GPIO0、GPIO45、和 GPIO46 是 Strapping 管脚。更多信息请参考 `ESP32-S2 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1：GPIO26-32 通常用于 SPI flash 和 PSRAM，不推荐用于其他用途。
     - JTAG：GPIO39-42 通常用于在线调试。
     - GPI：GPIO46 固定为下拉，只能设置为输入模式。

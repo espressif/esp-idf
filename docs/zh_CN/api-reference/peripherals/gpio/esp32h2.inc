@@ -137,7 +137,7 @@
 
 .. note::
 
-    - Strapping 管脚： GPIO2、GPIO3、GPIO8、GPIO9 和 GPIO25 是 Strapping 管脚。更多信息请参考 `ESP32-H2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-h2_datasheet_cn.pdf>`_。
+    - Strapping 管脚： GPIO2、GPIO3、GPIO8、GPIO9 和 GPIO25 是 Strapping 管脚。更多信息请参考 `ESP32-H2 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1: GPIO15-21 通常用于 SPI flash, 不推荐用于其他用途。
     - USB-Serial-JTAG: GPIO26 和 GPIO27 默认用于 USB-Serial-JTAG。用做 GPIO 时驱动程序将禁用 USB-Serial-JTAG。
     - 对于合封了 flash 的芯片型号， GPIO15 ~ GPIO21 专门用于连接该 flash, 并未引出至芯片管脚。且 GPIO6 ~ GPIO7 也未引出至芯片管脚，用户不可用。用户可配置使用其他剩余的 19 个 GPIO 管脚, 编号为: GPIO0 ~ GPIO5、GPIO8 ~ GPIO14、GPIO22 ~ GPIO27。
