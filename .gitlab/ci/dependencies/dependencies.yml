@@ -178,6 +178,7 @@ build:integration_test:
     - "build:example_test-esp32h4"
     - "build:example_test-esp32s3"
     - "build:example_test-esp32c6"
+    - "build:example_test-esp32h2"
     - "build:example_test"
     - build:target_test
 
