@@ -822,6 +822,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  */
 #define LWIP_ND6_NUM_NEIGHBORS          CONFIG_LWIP_IPV6_ND6_NUM_NEIGHBORS
 
+
+/**
+ * ESP_MLDV6_REPORT==1: This option allows to send mldv6 report periodically.
+ */
+#ifdef CONFIG_LWIP_ESP_MLDV6_REPORT
+#define ESP_MLDV6_REPORT              1
+#else
+#define ESP_MLDV6_REPORT              0
+#endif
+
 /*
    ---------------------------------------
    ---------- Hook options ---------------

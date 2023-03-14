@@ -233,6 +233,24 @@ menu "LWIP"
         help
             Set the timer interval for gratuitous ARP. The default value is 60s
 
+    config LWIP_ESP_MLDV6_REPORT
+        bool "Send mldv6 report periodically"
+        depends on LWIP_IPV6
+        default y
+        help
+            Enable this option allows to send mldv6 report periodically.
+
+            This option solve the issue that failed to receive multicast data.
+            Some routers fail to forward multicast packets.
+            To solve this problem, send multicast mdlv6 report to routers regularly.
+
+    config LWIP_MLDV6_TMR_INTERVAL
+        int "mldv6 report timer interval(seconds)"
+        default 40
+        depends on LWIP_ESP_MLDV6_REPORT
+        help
+            Set the timer interval for mldv6 report. The default value is 40s
+
     config LWIP_TCPIP_RECVMBOX_SIZE
         int "TCPIP task receive mail box size"
         default 32
