@@ -64,6 +64,7 @@ static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t
  * @param lock - target spinlock object
  * @param timeout - cycles to wait, passing SPINLOCK_WAIT_FOREVER blocs indefinitely
  */
+
 static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *lock, int32_t timeout)
 {
 #if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
