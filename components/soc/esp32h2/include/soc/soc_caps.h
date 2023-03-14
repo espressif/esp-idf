@@ -357,11 +357,9 @@
 #define SOC_MAC_BB_PD_MEM_SIZE          (192*4)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-
 #define SOC_PM_SUPPORT_BT_PD            (1)
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
