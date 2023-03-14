@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,7 +159,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
     if (part->size > SIXTEEN_MB) {
         err = ESP_ERR_INVALID_ARG;
-        FAIL_LOAD("partition size 0x%x invalid, larger than 16MB", part->size);
+        FAIL_LOAD("partition size 0x%"PRIx32" invalid, larger than 16MB", part->size);
     }
 
     bootloader_sha256_handle_t *p_sha_handle = &sha_handle;
@@ -317,7 +317,7 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
 {
     esp_err_t err = ESP_OK;
 
-    ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08x",
+    ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08"PRIx32,
                 image->magic,
                 image->segment_count,
                 image->spi_mode,
@@ -325,7 +325,7 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
                 image->entry_addr);
 
     if (image->magic != ESP_IMAGE_HEADER_MAGIC) {
-        FAIL_LOAD("image at 0x%x has invalid magic byte (nothing flashed here?)", src_addr);
+        FAIL_LOAD("image at 0x%"PRIx32" has invalid magic byte (nothing flashed here?)", src_addr);
     }
 
     // Checking the chip revision header *will* print a bunch of other info
@@ -334,7 +334,7 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
     CHECK_ERR(bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION));
 
     if (image->segment_count > ESP_IMAGE_MAX_SEGMENTS) {
-        FAIL_LOAD("image at 0x%x segment count %d exceeds max %d", src_addr, image->segment_count, ESP_IMAGE_MAX_SEGMENTS);
+        FAIL_LOAD("image at 0x%"PRIx32" segment count %d exceeds max %d", src_addr, image->segment_count, ESP_IMAGE_MAX_SEGMENTS);
     }
     return err;
 err:
@@ -481,7 +481,7 @@ static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_
     bzero(data, sizeof(esp_image_metadata_t));
     data->start_addr = part_offset;
 
-    ESP_LOGD(TAG, "reading image header @ 0x%x", data->start_addr);
+    ESP_LOGD(TAG, "reading image header @ 0x%"PRIx32, data->start_addr);
     CHECK_ERR(bootloader_flash_read(data->start_addr, &data->image, sizeof(esp_image_header_t), true));
 
     if (do_verify) {
@@ -510,7 +510,7 @@ static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool 
     uint32_t next_addr = start_segments;
     for (int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
-        ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
+        ESP_LOGV(TAG, "loading segment header %d at offset 0x%"PRIx32, i, next_addr);
         CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum));
         next_addr += sizeof(esp_image_segment_header_t);
         data->segment_data[i] = next_addr;
@@ -523,7 +523,7 @@ static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool 
     }
 
     data->image_len += end_addr - start_segments;
-    ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
+    ESP_LOGV(TAG, "image start 0x%08"PRIx32" end of last section 0x%08"PRIx32, data->start_addr, end_addr);
     return err;
 err:
     if (err == ESP_OK) {
@@ -539,7 +539,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     /* read segment header */
     err = bootloader_flash_read(flash_addr, header, sizeof(esp_image_segment_header_t), true);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "bootloader_flash_read failed at 0x%08x", flash_addr);
+        ESP_LOGE(TAG, "bootloader_flash_read failed at 0x%08"PRIx32, flash_addr);
         return err;
     }
     if (sha_handle != NULL) {
@@ -550,19 +550,19 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     uint32_t data_len = header->data_len;
     uint32_t data_addr = flash_addr + sizeof(esp_image_segment_header_t);
 
-    ESP_LOGV(TAG, "segment data length 0x%x data starts 0x%x", data_len, data_addr);
+    ESP_LOGV(TAG, "segment data length 0x%"PRIx32" data starts 0x%"PRIx32, data_len, data_addr);
 
     CHECK_ERR(verify_segment_header(index, header, data_addr, silent));
 
     if (data_len % 4 != 0) {
-        FAIL_LOAD("unaligned segment length 0x%x", data_len);
+        FAIL_LOAD("unaligned segment length 0x%"PRIx32, data_len);
     }
 
     bool is_mapping = should_map(load_addr);
     do_load = do_load && should_load(load_addr);
 
     if (!silent) {
-        ESP_LOGI(TAG, "segment %d: paddr=%08x vaddr=%08x size=%05xh (%6d) %s",
+        ESP_LOGI(TAG, "segment %d: paddr=%08"PRIx32" vaddr=%08x size=%05"PRIx32"h (%6"PRIu32") %s",
                  index, data_addr, load_addr,
                  data_len, data_len,
                  (do_load) ? "load" : (is_mapping) ? "map" : "");
@@ -579,7 +579,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 #endif // BOOTLOADER_BUILD
 
     uint32_t free_page_count = bootloader_mmap_get_free_pages();
-    ESP_LOGD(TAG, "free data page_count 0x%08x", free_page_count);
+    ESP_LOGD(TAG, "free data page_count 0x%08"PRIx32, free_page_count);
 
     uint32_t data_len_remain = data_len;
     while (data_len_remain > 0) {
@@ -616,7 +616,7 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
 
     const uint32_t *data = (const uint32_t *)bootloader_mmap(data_addr, data_len);
     if (!data) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed",
+        ESP_LOGE(TAG, "bootloader_mmap(0x%"PRIx32", 0x%"PRIx32") failed",
                  data_addr, data_len);
         return ESP_FAIL;
     }
@@ -674,7 +674,7 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     if ((segment->data_len & 3) != 0
             || segment->data_len >= SIXTEEN_MB) {
         if (!silent) {
-            ESP_LOGE(TAG, "invalid segment length 0x%x", segment->data_len);
+            ESP_LOGE(TAG, "invalid segment length 0x%"PRIx32, segment->data_len);
         }
         return ESP_ERR_IMAGE_INVALID;
     }
@@ -685,12 +685,12 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     /* Check that flash cache mapped segment aligns correctly from flash to its mapped address,
        relative to the 64KB page mapping size.
     */
-    ESP_LOGV(TAG, "segment %d map_segment %d segment_data_offs 0x%x load_addr 0x%x",
+    ESP_LOGV(TAG, "segment %d map_segment %d segment_data_offs 0x%"PRIx32" load_addr 0x%"PRIx32,
              index, map_segment, segment_data_offs, load_addr);
     if (map_segment
             && ((segment_data_offs % SPI_FLASH_MMU_PAGE_SIZE) != (load_addr % SPI_FLASH_MMU_PAGE_SIZE))) {
         if (!silent) {
-            ESP_LOGE(TAG, "Segment %d load address 0x%08x, doesn't match data 0x%08x",
+            ESP_LOGE(TAG, "Segment %d load address 0x%08"PRIx32", doesn't match data 0x%08"PRIx32,
                      index, load_addr, segment_data_offs);
         }
         return ESP_ERR_IMAGE_INVALID;
@@ -726,18 +726,18 @@ static bool should_load(uint32_t load_addr)
     if (!load_rtc_memory) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
         if (load_addr >= SOC_RTC_IRAM_LOW && load_addr < SOC_RTC_IRAM_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC fast memory segment at 0x%08x", load_addr);
+            ESP_LOGD(TAG, "Skipping RTC fast memory segment at 0x%08"PRIx32, load_addr);
             return false;
         }
         if (load_addr >= SOC_RTC_DRAM_LOW && load_addr < SOC_RTC_DRAM_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC fast memory segment at 0x%08x", load_addr);
+            ESP_LOGD(TAG, "Skipping RTC fast memory segment at 0x%08"PRIx32, load_addr);
             return false;
         }
 #endif
 
 #if SOC_RTC_SLOW_MEM_SUPPORTED
         if (load_addr >= SOC_RTC_DATA_LOW && load_addr < SOC_RTC_DATA_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC slow memory segment at 0x%08x", load_addr);
+            ESP_LOGD(TAG, "Skipping RTC slow memory segment at 0x%08"PRIx32, load_addr);
             return false;
         }
 #endif
@@ -808,7 +808,7 @@ static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint3
 
     const uint32_t full_image_len = end + sig_block_len;
     if (full_image_len > part_len) {
-        FAIL_LOAD("Image length %d doesn't fit in partition length %d", full_image_len, part_len);
+        FAIL_LOAD("Image length %"PRIu32" doesn't fit in partition length %"PRIu32, full_image_len, part_len);
     }
     return err;
 err:

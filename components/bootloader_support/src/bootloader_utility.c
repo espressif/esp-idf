@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,14 +116,14 @@ static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_selec
 
     // partition table has OTA data partition
     if (ota_info->size < 2 * SPI_SEC_SIZE) {
-        ESP_LOGE(TAG, "ota_info partition size %d is too small (minimum %d bytes)", ota_info->size, (2 * SPI_SEC_SIZE));
+        ESP_LOGE(TAG, "ota_info partition size %"PRIu32" is too small (minimum %d bytes)", ota_info->size, (2 * SPI_SEC_SIZE));
         return ESP_FAIL; // can't proceed
     }
 
-    ESP_LOGD(TAG, "OTA data offset 0x%x", ota_info->offset);
+    ESP_LOGD(TAG, "OTA data offset 0x%"PRIx32, ota_info->offset);
     ota_select_map = bootloader_mmap(ota_info->offset, ota_info->size);
     if (!ota_select_map) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ota_info->offset, ota_info->size);
+        ESP_LOGE(TAG, "bootloader_mmap(0x%"PRIx32", 0x%"PRIx32") failed", ota_info->offset, ota_info->size);
         return ESP_FAIL; // can't proceed
     }
 
@@ -144,7 +144,7 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
     const uint32_t mmap_size = app_desc_offset + sizeof(esp_app_desc_t);
     const uint8_t *image = bootloader_mmap(partition->offset, mmap_size);
     if (image == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, mmap_size);
+        ESP_LOGE(TAG, "bootloader_mmap(0x%"PRIx32", 0x%"PRIx32") failed", partition->offset, mmap_size);
         return ESP_FAIL;
     }
 
@@ -243,7 +243,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
         }
 
         /* print partition type info */
-        ESP_LOGI(TAG, "%2d %-16s %-16s %02x %02x %08x %08x", i, partition->label, partition_usage,
+        ESP_LOGI(TAG, "%2d %-16s %-16s %02x %02x %08"PRIx32" %08"PRIx32, i, partition->label, partition_usage,
                  partition->type, partition->subtype,
                  partition->pos.offset, partition->pos.size);
     }
@@ -347,7 +347,7 @@ static int get_active_otadata_with_check_anti_rollback(const bootloader_state_t 
             ota_slot = ota_seq % bs->app_count; // Actual OTA partition selection
             if (check_anti_rollback(&bs->ota[ota_slot]) == false) {
                 // invalid. This otadata[i] will not be selected as active.
-                ESP_LOGD(TAG, "OTA slot %d has an app with secure_version, this version is smaller than in the device. This OTA slot will not be selected.", ota_slot);
+                ESP_LOGD(TAG, "OTA slot %"PRIu32" has an app with secure_version, this version is smaller than in the device. This OTA slot will not be selected.", ota_slot);
             } else {
                 sec_ver_valid_otadata[i] = true;
             }
@@ -372,8 +372,8 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
     }
     ota_has_initial_contents = false;
 
-    ESP_LOGD(TAG, "otadata[0]: sequence values 0x%08x", otadata[0].ota_seq);
-    ESP_LOGD(TAG, "otadata[1]: sequence values 0x%08x", otadata[1].ota_seq);
+    ESP_LOGD(TAG, "otadata[0]: sequence values 0x%08"PRIx32, otadata[0].ota_seq);
+    ESP_LOGD(TAG, "otadata[1]: sequence values 0x%08"PRIx32, otadata[1].ota_seq);
 
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
     bool write_encrypted = esp_flash_encryption_enabled();
@@ -390,7 +390,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
     if ((bootloader_common_ota_select_invalid(&otadata[0]) &&
             bootloader_common_ota_select_invalid(&otadata[1])) ||
             bs->app_count == 0) {
-        ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%d)", bs->app_count);
+        ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%"PRIu32")", bs->app_count);
         if (bs->factory.offset != 0) {
             ESP_LOGI(TAG, "Defaulting to factory image");
             boot_index = FACTORY_INDEX;
@@ -409,7 +409,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         int active_otadata = bootloader_common_get_active_otadata(otadata);
 #else
     ESP_LOGI(TAG, "Enabled a check secure version of app for anti rollback");
-    ESP_LOGI(TAG, "Secure version (from eFuse) = %d", esp_efuse_read_secure_version());
+    ESP_LOGI(TAG, "Secure version (from eFuse) = %"PRIu32, esp_efuse_read_secure_version());
     // When CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK is enabled factory partition should not be in partition table, only two ota_app are there.
     if ((otadata[0].ota_seq == UINT32_MAX || otadata[0].crc != bootloader_common_ota_select_crc(&otadata[0])) &&
             (otadata[1].ota_seq == UINT32_MAX || otadata[1].crc != bootloader_common_ota_select_crc(&otadata[1]))) {
@@ -424,7 +424,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
             ESP_LOGD(TAG, "Active otadata[%d]", active_otadata);
             uint32_t ota_seq = otadata[active_otadata].ota_seq - 1; // Raw OTA sequence number. May be more than # of OTA slots
             boot_index = ota_seq % bs->app_count; // Actual OTA partition selection
-            ESP_LOGD(TAG, "Mapping seq %d -> OTA slot %d", ota_seq, boot_index);
+            ESP_LOGD(TAG, "Mapping seq %"PRIu32" -> OTA slot %d", ota_seq, boot_index);
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
             if (otadata[active_otadata].ota_state == ESP_OTA_IMG_NEW) {
                 ESP_LOGD(TAG, "otadata[%d] is selected as new and marked PENDING_VERIFY state", active_otadata);
@@ -482,7 +482,7 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
 
         bool write_encrypted = esp_flash_encryption_enabled();
         write_otadata(&otadata, bs->ota_info.offset + FLASH_SECTOR_SIZE * 0, write_encrypted);
-        ESP_LOGI(TAG, "Set actual ota_seq=%d in otadata[0]", otadata.ota_seq);
+        ESP_LOGI(TAG, "Set actual ota_seq=%"PRIu32" in otadata[0]", otadata.ota_seq);
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
         update_anti_rollback(&bs->ota[index]);
 #endif
@@ -501,7 +501,7 @@ void bootloader_utility_load_boot_image_from_deep_sleep(void)
         if (partition != NULL) {
             esp_image_metadata_t image_data;
             if (bootloader_load_image_no_verify(partition, &image_data) == ESP_OK) {
-                ESP_LOGI(TAG, "Fast booting app from partition at offset 0x%x", partition->offset);
+                ESP_LOGI(TAG, "Fast booting app from partition at offset 0x%"PRIx32, partition->offset);
                 bootloader_common_update_rtc_retain_mem(NULL, true);
                 load_image(&image_data);
             }
@@ -512,7 +512,7 @@ void bootloader_utility_load_boot_image_from_deep_sleep(void)
 }
 #endif
 
-#define TRY_LOG_FORMAT "Trying partition index %d offs 0x%x size 0x%x"
+#define TRY_LOG_FORMAT "Trying partition index %d offs 0x%"PRIx32" size 0x%"PRIx32
 
 void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index)
 {
@@ -906,7 +906,7 @@ static void set_cache_and_start_app(
     cache_hal_enable(CACHE_TYPE_ALL);
 #endif
 
-    ESP_LOGD(TAG, "start: 0x%08x", entry_addr);
+    ESP_LOGD(TAG, "start: 0x%08"PRIx32, entry_addr);
     bootloader_atexit();
     typedef void (*entry_t)(void) __attribute__((noreturn));
     entry_t entry = ((entry_t) entry_addr);
