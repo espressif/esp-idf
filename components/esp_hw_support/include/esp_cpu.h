@@ -120,6 +120,9 @@ void esp_cpu_wait_for_intr(void);
  *
  * @return The current core's ID [0..SOC_CPU_CORES_NUM - 1]
  */
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
 FORCE_INLINE_ATTR __attribute__((pure)) int esp_cpu_get_core_id(void)
 {
     //Note: Made "pure" to optimize for single core target

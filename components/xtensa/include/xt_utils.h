@@ -24,6 +24,9 @@ extern "C" {
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
 FORCE_INLINE_ATTR __attribute__((pure)) uint32_t xt_utils_get_core_id(void)
 {
     /*

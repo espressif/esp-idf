@@ -252,6 +252,9 @@ static inline void __attribute__((always_inline)) vPortYieldFromISR( void )
 
 // ----------------------- System --------------------------
 
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void )
 {
     return (BaseType_t) esp_cpu_get_core_id();

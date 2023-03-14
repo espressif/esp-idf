@@ -335,6 +335,7 @@
     #define taskEVENT_LIST_ITEM_VALUE_IN_USE    0x80000000UL
 #endif
 
+
 /*
  * Task control block.  A task control block (TCB) is allocated for each task,
  * and stores task state information, including a pointer to the task's context
@@ -421,6 +422,11 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     #if ( configUSE_POSIX_ERRNO == 1 )
         int iTaskErrno;
     #endif
+
+    #if CONFIG_COMPILER_STACK_MIRROR
+        esp_stack_mirror_t stackMirror;
+    #endif
+
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -1070,6 +1076,11 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
             pxNewTCB->pxEndOfStack = pxNewTCB->pxStack + ( ulStackDepth - ( uint32_t ) 1 );
         }
     #endif /* portSTACK_GROWTH */
+
+    #if CONFIG_COMPILER_STACK_MIRROR
+        pxNewTCB->stackMirror.panicing = false;
+        pxNewTCB->stackMirror.depth = 0;
+    #endif
 
     /* Store the task name in the TCB. */
     if( pcName != NULL )
@@ -4424,6 +4435,16 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 #endif /* configUSE_TICKLESS_IDLE */
 /*-----------------------------------------------------------*/
 
+
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+    esp_stack_mirror_t * pvTaskGetStackMirrorPointer()
+    {
+        TCB_t *pxTCB = xTaskGetCurrentTaskHandle();
+        return &pxTCB->stackMirror;
+    }
+#endif
+
 #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
 
     #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
@@ -5006,6 +5027,9 @@ static void prvResetNextTaskUnblockTime( void )
 
 #if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) || ( configNUM_CORES > 1 ) )
 
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
     TaskHandle_t xTaskGetCurrentTaskHandle( void )
     {
         TaskHandle_t xReturn;

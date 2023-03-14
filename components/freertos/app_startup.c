@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "freertos/portmacro.h"
 #include "esp_private/esp_int_wdt.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_private/stack_mirror.h"
 #include "esp_task_wdt.h"
 #include "esp_freertos_hooks.h"
 #include "esp_heap_caps_init.h"
@@ -198,6 +199,10 @@ static void main_task(void* args)
 #endif
     ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
 #endif // CONFIG_ESP_TASK_WDT
+
+#if CONFIG_COMPILER_STACK_MIRROR
+    stack_mirror_enable();
+#endif
 
     /*
     Note: Be careful when changing the "Calling app_main()" log below as multiple pytest scripts expect this log as a

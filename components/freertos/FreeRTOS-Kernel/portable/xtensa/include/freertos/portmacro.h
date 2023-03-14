@@ -555,6 +555,9 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 
 // --------------------- Interrupts ------------------------
 
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
 static inline UBaseType_t __attribute__((always_inline)) xPortSetInterruptMaskFromISR(void)
 {
     UBaseType_t prev_int_level = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
@@ -562,6 +565,9 @@ static inline UBaseType_t __attribute__((always_inline)) xPortSetInterruptMaskFr
     return prev_int_level;
 }
 
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
 static inline void __attribute__((always_inline)) vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
 {
     portbenchmarkINTERRUPT_RESTORE(prev_level);
@@ -626,7 +632,10 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 
 // ----------------------- System --------------------------
 
-FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
+#if CONFIG_COMPILER_STACK_MIRROR
+    __attribute__((no_instrument_function))
+#endif
+FORCE_INLINE_ATTR BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
     return (BaseType_t) esp_cpu_get_core_id();
 }

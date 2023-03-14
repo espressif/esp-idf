@@ -31,6 +31,7 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
+            "stack_mirror.c"
             "ubsan.c"
             "xt_wdt.c"
             "debug_stubs.c")
