@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,7 +116,7 @@ static void esp_event_loop_run_task(void* args)
 
 static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_node_t *handler, esp_event_post_instance_t post)
 {
-    ESP_LOGD(TAG, "running post %s:%d with handler %p and context %p on loop %p", post.base, post.id, handler->handler_ctx->handler, &handler->handler_ctx, loop);
+    ESP_LOGD(TAG, "running post %s:%"PRIu32" with handler %p and context %p on loop %p", post.base, post.id, handler->handler_ctx->handler, &handler->handler_ctx, loop);
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     int64_t start, diff;
@@ -621,7 +621,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 
         if (!exec) {
             // No handlers were registered, not even loop/base level handlers
-            ESP_LOGD(TAG, "no handlers have been registered for event %s:%d posted to loop %p", base, id, event_loop);
+            ESP_LOGD(TAG, "no handlers have been registered for event %s:%"PRIu32" posted to loop %p", base, id, event_loop);
         }
     }
 
