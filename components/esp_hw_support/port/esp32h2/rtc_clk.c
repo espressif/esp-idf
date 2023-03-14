@@ -18,7 +18,6 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
-#include "hal/spimem_flash_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/lp_aon_reg.h"
 #include "soc/lp_clkrst_reg.h"
@@ -154,7 +153,6 @@ static void rtc_clk_bbpll_disable(void)
 static void rtc_clk_bbpll_enable(void)
 {
     clk_ll_bbpll_enable();
-    spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_PLL_F64M); // Switch clock to PLL at same time.
 }
 
 static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
