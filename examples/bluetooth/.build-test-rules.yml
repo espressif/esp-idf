@@ -99,6 +99,12 @@ examples/bluetooth/nimble:
 
       reason: not tested yet
 
+examples/bluetooth/nimble/ble_dynamic_service:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+
 examples/bluetooth/nimble/ble_enc_adv_data:
   enable:
     - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
