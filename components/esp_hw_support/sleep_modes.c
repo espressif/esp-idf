@@ -65,6 +65,7 @@
 #include "esp32s3/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "esp_private/sleep_mac_bb.h"
+#include "esp_private/spi_flash_os.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
 #include "esp32c3/rom/cache.h"
@@ -395,6 +396,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    // Turn down mspi clock speed
+    spi_timing_change_speed_mode_cache_safe(true);
+#endif
+
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
@@ -524,6 +530,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
+
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    // Restore mspi clock freq
+    spi_timing_change_speed_mode_cache_safe(false);
+#endif
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
