@@ -171,7 +171,7 @@ TEST(partition_api, test_partition_mmap_diff_size)
 
     memset(p_file_mmap_ctrl, 0, sizeof(*p_file_mmap_ctrl));
     p_file_mmap_ctrl->flash_file_size = 0x800000;   // 8MB
-    strlcpy(p_file_mmap_ctrl->partition_file_name, "./build/partition_table/partition-table_8M.bin", sizeof(p_file_mmap_ctrl->partition_file_name));
+    strlcpy(p_file_mmap_ctrl->partition_file_name, BUILD_DIR "/partition_table/partition-table_8M.bin", sizeof(p_file_mmap_ctrl->partition_file_name));
 
     // esp_partition_find_first calls the esp_partition_file_mmap in the background
     const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
@@ -483,7 +483,7 @@ TEST(partition_api, test_partition_mmap_size_too_small)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
 
     // set valid partition table name and very small flash size
-    strlcpy(p_file_mmap_ctrl_input->partition_file_name, "./build/partition_table/partition-table.bin", sizeof(p_file_mmap_ctrl_input->partition_file_name));
+    strlcpy(p_file_mmap_ctrl_input->partition_file_name, BUILD_DIR "/partition_table/partition-table.bin", sizeof(p_file_mmap_ctrl_input->partition_file_name));
     p_file_mmap_ctrl_input->flash_file_size = 1;
 
     const uint8_t *p_mem_block = NULL;
