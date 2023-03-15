@@ -29,6 +29,11 @@ void sar_periph_ctrl_init(void)
     //TODO: IDF-6123
 }
 
+void sar_periph_ctrl_power_enable(void)
+{
+    //TODO: IDF-6123
+}
+
 void sar_periph_ctrl_power_disable(void)
 {
     //TODO: IDF-6123
