@@ -295,7 +295,8 @@ In ESP-IDF FreeRTOS, suspending the scheduler across multiple cores is not possi
 
 - Task switching is disabled only on core A but interrupts for core A are left enabled
 - Calling any blocking/yielding function on core A is forbidden. Time slicing is disabled on core A.
-- If an interrupt on core A unblocks any tasks, those tasks will go into core A's own pending ready task list
+- If an interrupt on core A unblocks any tasks, tasks with affinity to core A will go into core A's own pending ready task list. Unpinned tasks or tasks with affinity to other cores can be scheduled on cores with the scheduler running.
+- In case the scheduler is suspended on all cores, tasks unblocked by an interrupt will go to the pending ready task lists of their pinned cores or to the pending ready list of the core on which the interrupt is called if the tasks are unpinned.
 - If core A is CPU0, the tick count is frozen and a pended tick count is incremented instead. However, the tick interrupt will still occur in order to execute the application tick hook.
 
 When :cpp:func:`xTaskResumeAll` is called on a particular core (e.g., core A):
