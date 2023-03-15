@@ -316,8 +316,15 @@ void IRAM_ATTR call_start_cpu0(void)
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
     // in the bootloader are still necessary
 #if CONFIG_APP_BUILD_TYPE_RAM
-    bootloader_init();
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+    esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
+#else
+    esp_rom_spiflash_attach(0, false);
 #endif
+#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    bootloader_init();
+#endif  //#if CONFIG_APP_BUILD_TYPE_RAM
 
 #ifndef CONFIG_BOOTLOADER_WDT_ENABLE
     // from panic handler we can be reset by RWDT or TG0WDT
@@ -593,12 +600,6 @@ void IRAM_ATTR call_start_cpu0(void)
     fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2;
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
-    extern void esp_rom_spiflash_attach(uint32_t, bool);
-#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
-    esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
-#else
-    esp_rom_spiflash_attach(0, false);
-#endif
     bootloader_flash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
