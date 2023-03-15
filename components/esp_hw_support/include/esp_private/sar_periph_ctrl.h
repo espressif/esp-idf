@@ -62,6 +62,16 @@ void sar_periph_ctrl_pwdet_power_acquire(void);
  */
 void sar_periph_ctrl_pwdet_power_release(void);
 
+/**
+ * @brief Enable SAR power when system wakes up
+ */
+void sar_periph_ctrl_power_enable(void);
+
+/**
+ * @brief Disable SAR power when system goes to sleep
+ */
+void sar_periph_ctrl_power_disable(void);
+
 #ifdef __cplusplus
 }
 #endif

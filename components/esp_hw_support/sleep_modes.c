@@ -46,6 +46,7 @@
 #include "esp_rom_sys.h"
 #include "brownout.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -345,6 +346,7 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_read();
 #endif
+    sar_periph_ctrl_power_disable();
 }
 
 /**
@@ -352,6 +354,7 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
+    sar_periph_ctrl_power_enable();
 #if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
     sleep_disable_memory_retention();
 #endif
