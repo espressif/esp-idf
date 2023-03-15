@@ -165,7 +165,7 @@ module.exports = async function () {
      * or null if not found.
      */
     async function getGitHubClosingLink(jiraIssueKey) {
-        let jiraDescrition = "";
+        let jiraDescription = "";
 
         // Get JIRA ticket description content
         try {
@@ -176,7 +176,9 @@ module.exports = async function () {
                     password: process.env.DANGER_JIRA_PASSWORD,
                 },
             });
-            jiraDescrition = response.data.fields.description;
+            if (response.data.fields.description) {
+                jiraDescription = response.data.fields.description;
+            }
         } catch (error) {
             return null;
         }
@@ -184,7 +186,7 @@ module.exports = async function () {
         // Find GitHub closing link in description
         const regexClosingGhLink =
             /Closes\s+(https:\/\/github.com\/\S+\/\S+\/issues\/\d+)/;
-        const closingGithubLink = jiraDescrition.match(regexClosingGhLink);
+        const closingGithubLink = jiraDescription.match(regexClosingGhLink);
 
         if (closingGithubLink) {
             return closingGithubLink[1];
