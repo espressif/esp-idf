@@ -5,62 +5,60 @@
  */
 
 #include <sys/time.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "unity.h"
+#include "unity_fixture.h"
+#include "unity_fixture_extras.h"
 #include "test_utils.h"
 #include "memory_checks.h"
 #include "mqtt_client.h"
-#include "nvs_flash.h"
 #include "esp_ota_ops.h"
-#include "sdkconfig.h"
 #include "test_mqtt5_client_broker.h"
 #include "test_mqtt_connection.h"
-#include "esp_mac.h"
 #include "esp_partition.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+
+TEST_GROUP(mqtt5);
+
+TEST_SETUP(mqtt5)
+{
+    test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
+}
+
+TEST_TEAR_DOWN(mqtt5)
+{
+    test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
+                                         test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
+}
+
 static esp_mqtt5_user_property_item_t user_property_arr[3] = {
     {"board", "esp32"},
     {"u", "user"},
     {"p", "password"}
 };
 
-static void test_leak_setup(const char * file, long line)
+TEST(mqtt5, init_with_invalid_url)
 {
-    uint8_t mac[6];
-    struct timeval te;
-    gettimeofday(&te, NULL); // get current time
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    printf("%s:%ld: time=%ld.%lds, mac:" MACSTR "\n", file, line, te.tv_sec, te.tv_usec, MAC2STR(mac));
-    test_utils_record_free_mem();
-}
-
-TEST_CASE("mqtt5 init with invalid url", "[mqtt5][leaks=0]")
-{
-    test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt5_cfg = {
-            .broker.address.uri = "INVALID",
-            .session.protocol_ver = MQTT_PROTOCOL_V_5,
+        .broker.address.uri = "INVALID",
+        .session.protocol_ver = MQTT_PROTOCOL_V_5,
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt5_cfg);
     TEST_ASSERT_EQUAL(NULL, client );
 }
 
-TEST_CASE("mqtt5 init and deinit", "[mqtt5][leaks=0]")
+TEST(mqtt5, init_and_deinit)
 {
-    test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt5_cfg = {
-            // no connection takes place, but the uri has to be valid for init() to succeed
-            .broker.address.uri = "mqtts://localhost:8883",
-            .session.protocol_ver = MQTT_PROTOCOL_V_5,
-            .credentials.username = "123",
-            .credentials.authentication.password = "456",
-            .session.last_will.topic = "/topic/will",
-            .session.last_will.msg = "i will leave",
-            .session.last_will.msg_len = 12,
-            .session.last_will.qos = 1,
-            .session.last_will.retain = true,
+        // no connection takes place, but the uri has to be valid for init() to succeed
+        .broker.address.uri = "mqtts://localhost:8883",
+        .session.protocol_ver = MQTT_PROTOCOL_V_5,
+        .credentials.username = "123",
+        .credentials.authentication.password = "456",
+        .session.last_will.topic = "/topic/will",
+        .session.last_will.msg = "i will leave",
+        .session.last_will.msg_len = 12,
+        .session.last_will.qos = 1,
+        .session.last_will.retain = true,
     };
     esp_mqtt5_connection_property_config_t connect_property = {
         .session_expiry_interval = 10,
@@ -88,25 +86,27 @@ TEST_CASE("mqtt5 init and deinit", "[mqtt5][leaks=0]")
     esp_mqtt_client_destroy(client);
 }
 
-static const char* this_bin_addr(void)
+static const char *this_bin_addr(void)
 {
     esp_partition_mmap_handle_t out_handle;
     const void *binary_address;
-    const esp_partition_t* partition = esp_ota_get_running_partition();
+    const esp_partition_t *partition = esp_ota_get_running_partition();
     esp_partition_mmap(partition, 0, partition->size, ESP_PARTITION_MMAP_DATA, &binary_address, &out_handle);
     return binary_address;
 }
 
-TEST_CASE("mqtt5 enqueue and destroy outbox", "[mqtt5][leaks=0]")
+TEST(mqtt5, enqueue_and_destroy_outbox)
 {
-    const char * bin_addr = this_bin_addr();
-    test_leak_setup(__FILE__, __LINE__);
+    const char *bin_addr = this_bin_addr();
+    // Reseting leak detection since this_bin_addr adds to allocated memory.
+    test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
     const int messages = 20;
     const int size = 2000;
     const esp_mqtt_client_config_t mqtt5_cfg = {
-            // no connection takes place, but the uri has to be valid for init() to succeed
-            .broker.address.uri = "mqtts://localhost:8883",
-            .session.protocol_ver = MQTT_PROTOCOL_V_5,
+        // no connection takes place, but the uri has to be valid for init() to succeed
+        .broker.address.uri = "mqtts://localhost:8883",
+        .session.protocol_ver = MQTT_PROTOCOL_V_5,
     };
     esp_mqtt5_publish_property_config_t publish_property = {
         .payload_format_indicator = 1,
@@ -129,7 +129,7 @@ TEST_CASE("mqtt5 enqueue and destroy outbox", "[mqtt5][leaks=0]")
     }
     int bytes_after = esp_get_free_heap_size();
     // check that outbox allocated all messages on heap
-    TEST_ASSERT_GREATER_OR_EQUAL(messages*size, bytes_before - bytes_after);
+    TEST_ASSERT_GREATER_OR_EQUAL(messages * size, bytes_before - bytes_after);
 
     esp_mqtt_client_destroy(client);
 }
@@ -138,7 +138,7 @@ TEST_CASE("mqtt5 enqueue and destroy outbox", "[mqtt5][leaks=0]")
 /**
  * This test cases uses ethernet kit, so build and use it only if EMAC supported
  */
-TEST_CASE("mqtt5 broker tests", "[mqtt5][test_env=UT_T2_Ethernet]")
+TEST(mqtt5, broker_tests)
 {
     test_case_uses_tcpip();
     connect_test_fixture_setup();
@@ -151,4 +151,22 @@ TEST_CASE("mqtt5 broker tests", "[mqtt5][test_env=UT_T2_Ethernet]")
     connect_test_fixture_teardown();
 }
 #endif // SOC_EMAC_SUPPORTED
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+
+TEST_GROUP_RUNNER(mqtt5)
+{
+#if !DISABLED_FOR_TARGETS(ESP32H2)
+    RUN_TEST_CASE(mqtt5, init_with_invalid_url);
+    RUN_TEST_CASE(mqtt5, init_and_deinit);
+    RUN_TEST_CASE(mqtt5, enqueue_and_destroy_outbox);
+
+#if SOC_EMAC_SUPPORTED
+    RUN_TEST_CASE(mqtt5, broker_tests);
+#endif // SOC_EMAC_SUPPORTED
+#endif //!DISABLED_FOR_TARGETS(ESP32H2)
+}
+
+
+void app_main(void)
+{
+    UNITY_MAIN(mqtt5);
+}
