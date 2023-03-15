@@ -100,6 +100,7 @@ ENV_MARKERS = {
     'ethernet': 'ethernet runner',
     'ethernet_flash_8m': 'ethernet runner with 8mb flash',
     'ethernet_router': 'both the runner and dut connect to the same router through ethernet NIC',
+    'ethernet_vlan': 'ethernet runner GARM-32-SH-1-R16S5N3',
     'wifi_ap': 'a wifi AP in the environment',
     'wifi_router': 'both the runner and dut connect to the same wifi router',
     'wifi_high_traffic': 'wifi high traffic runners',

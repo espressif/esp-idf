@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "ethernet_init.h"
@@ -18,8 +21,19 @@
 #include "lwip/prot/ieee.h"
 #include "esp_netif_net_stack.h"
 
-
 static const char *TAG = "eth_vlan_example";
+
+/* FreeRTOS event group to signal when we are connected*/
+static EventGroupHandle_t s_vlan_event_group;
+
+/* Ehernet Link upevent */
+#define VLAN_IF_UP_BIT          BIT0
+#if CONFIG_EXAMPLE_EXTRA_VLAN_INTERFACE
+#define EXTRA_VLAN_IF_UP_BIT    BIT1
+#define ALL_VLAN_IF_UP_BITS     VLAN_IF_UP_BIT | EXTRA_VLAN_IF_UP_BIT
+#else
+#define ALL_VLAN_IF_UP_BITS     VLAN_IF_UP_BIT
+#endif
 
 /**
  * @brief Event handler for Ethernet events
@@ -77,20 +91,42 @@ void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
     const esp_netif_ip_info_t *ip_info = &event->ip_info;
     u8_t hwaddr[NETIF_MAX_HWADDR_LEN];
+    u16_t netif_vlan_id;
 
     esp_netif_get_mac(event->esp_netif, hwaddr);
+    ESP_LOGI(TAG, "~~~~~~~~~~~");
     ESP_LOGI(TAG, "Ethernet interface(%"X8_F":%"X8_F":%"X8_F":%"X8_F":%"X8_F":%"X8_F"): %s, Got IP Address",
              hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5], esp_netif_get_ifkey(event->esp_netif));
+
+    /* Print Intervace VLAN Id */
+    struct netif *lwip_netif = esp_netif_get_netif_impl(event->esp_netif);
+    netif_vlan_id =  *((uint16_t *)netif_get_client_data(lwip_netif, LWIP_NETIF_CLIENT_DATA_INDEX_MAX + 1));
+    if (0xFFF != netif_vlan_id) {
+        ESP_LOGI(TAG, "NETIF VLAN: %d", netif_vlan_id);
+    }
+
+    ESP_LOGI(TAG, "NETIF IP: " IPSTR, IP2STR(&ip_info->ip));
+    ESP_LOGI(TAG, "NETIF MASK: " IPSTR, IP2STR(&ip_info->netmask));
+    ESP_LOGI(TAG, "NETIF GW: " IPSTR, IP2STR(&ip_info->gw));
     ESP_LOGI(TAG, "~~~~~~~~~~~");
-    ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip_info->ip));
-    ESP_LOGI(TAG, "ETHMASK:" IPSTR, IP2STR(&ip_info->netmask));
-    ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip_info->gw));
-    ESP_LOGI(TAG, "~~~~~~~~~~~");
+
+    /* Set event VLAN interfaces are up */
+    if (netif_vlan_id == CONFIG_EXAMPLE_ETHERNET_VLAN_ID) {
+        xEventGroupSetBits(s_vlan_event_group, VLAN_IF_UP_BIT);
+    }
+#if CONFIG_EXAMPLE_EXTRA_VLAN_INTERFACE
+    else if (netif_vlan_id == CONFIG_EXAMPLE_EXTRA_ETHERNET_VLAN_ID) {
+        xEventGroupSetBits(s_vlan_event_group, EXTRA_VLAN_IF_UP_BIT);
+    }
+#endif
+
 }
 
 
 void app_main(void)
 {
+    s_vlan_event_group = xEventGroupCreate();
+
     static esp_vlan_netifs vlan_netif_list;
 
     // Initialize Ethernet driver
@@ -131,6 +167,11 @@ void app_main(void)
     vlan_id[vlan_netif_list.netif_count] = 0xFFF;
     struct netif *lwip_netif = esp_netif_get_netif_impl(vlan_netif_list.esp_netif[vlan_netif_list.netif_count]);
     netif_set_client_data(lwip_netif, LWIP_NETIF_CLIENT_DATA_INDEX_MAX + 1, (void *)&vlan_id[vlan_netif_list.netif_count]);
+
+#if CONFIG_EXAMPLE_ETHERNET_DEF_IF
+    /* Set as the default interface */
+    esp_netif_set_default_netif(vlan_netif_list.esp_netif[vlan_netif_list.netif_count]);
+#endif
     vlan_netif_list.netif_count++;
 
 
@@ -155,11 +196,15 @@ void app_main(void)
     esp_netif_ip_info_t info_t;
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
     inet_aton(CONFIG_EXAMPLE_VLAN_STATIC_IPV4_ADDR, &info_t.ip.addr);
-    inet_aton(CONFIG_EXAMPLE_VLAN_STATIC_ADDR_MASK, &info_t.gw.addr);
-    inet_aton(CONFIG_EXAMPLE_VLAN_STATIC_ADDR_DEF_GW, &info_t.netmask.addr);
+    inet_aton(CONFIG_EXAMPLE_VLAN_STATIC_ADDR_DEF_GW, &info_t.gw.addr);
+    inet_aton(CONFIG_EXAMPLE_VLAN_STATIC_ADDR_MASK, &info_t.netmask.addr);
     esp_netif_set_ip_info(vlan_netif_list.esp_netif[vlan_netif_list.netif_count], &info_t);
-    vlan_netif_list.netif_count++;
 
+#if CONFIG_EXAMPLE_VLAN_DEF_IF
+    /* Set as the default interface */
+    esp_netif_set_default_netif(vlan_netif_list.esp_netif[vlan_netif_list.netif_count]);
+#endif
+    vlan_netif_list.netif_count++;
 
 
 #if defined(CONFIG_EXAMPLE_EXTRA_VLAN_INTERFACE)
@@ -182,9 +227,14 @@ void app_main(void)
 
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
     inet_aton(CONFIG_EXAMPLE_EXTRA_VLAN_STATIC_IPV4_ADDR, &info_t.ip.addr);
-    inet_aton(CONFIG_EXAMPLE_EXTRA_VLAN_STATIC_ADDR_MASK, &info_t.gw.addr);
-    inet_aton(CONFIG_EXAMPLE_EXTRA_VLAN_STATIC_ADDR_DEF_GW, &info_t.netmask.addr);
+    inet_aton(CONFIG_EXAMPLE_EXTRA_VLAN_STATIC_ADDR_DEF_GW, &info_t.gw.addr);
+    inet_aton(CONFIG_EXAMPLE_EXTRA_VLAN_STATIC_ADDR_MASK, &info_t.netmask.addr);
     esp_netif_set_ip_info(vlan_netif_list.esp_netif[vlan_netif_list.netif_count], &info_t);
+
+#if CONFIG_EXAMPLE_EXTRA_VLAN_DEF_IF
+    /* Set as the default interface */
+    esp_netif_set_default_netif(vlan_netif_list.esp_netif[vlan_netif_list.netif_count]);
+#endif
     vlan_netif_list.netif_count++;
 #endif  //CONFIG_EXAMPLE_EXTRA_VLAN_INTERFACE
 
@@ -193,4 +243,24 @@ void app_main(void)
 
     // start Ethernet driver state machine
     ESP_ERROR_CHECK(esp_eth_start(eth_handle[0]));
+
+    /* Wait until all the VLAN interfaces are up */
+    xEventGroupWaitBits(s_vlan_event_group,
+                        ALL_VLAN_IF_UP_BITS,
+                        pdFALSE,
+                        pdTRUE,
+                        portMAX_DELAY);
+
+#if IP_NAPT
+    /* Enable NAPT on the configured interface */
+#if CONFIG_EXAMPLE_ETHERNET_NAPT_IF
+    if (esp_netif_napt_enable(vlan_netif_list.esp_netif[0]) != ESP_OK) {
+#elif CONFIG_EXAMPLE_VLAN_NAPT_IF
+    if (esp_netif_napt_enable(vlan_netif_list.esp_netif[1]) != ESP_OK) {
+#elif CONFIG_EXAMPLE_EXTRA_VLAN_NAPT_IF
+    if (esp_netif_napt_enable(vlan_netif_list.esp_netif[2]) != ESP_OK) {
+#endif
+        ESP_LOGE(TAG, "Failed to enable NAPT on selected netif");
+    }
+#endif // #if IP_NAPT
 }

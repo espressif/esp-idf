@@ -235,6 +235,7 @@
   - "examples/protocols/**/*"
   - "examples/system/ota/**/*"
   - "examples/ethernet/iperf/**/*"
+  - "examples/network/vlan_support/**/*"
   - "components/esp_eth/**/*"
   - "components/esp_netif/esp_netif_handlers.c"
 

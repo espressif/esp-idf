@@ -57,4 +57,48 @@ menu "Example Configuration"
 
     endif #EXAMPLE_EXTRA_VLAN_INTERFACE
 
+    choice EXAMPLE_VLAN_DEFAULT_IF
+        prompt "Choose the default interface"
+        default EXAMPLE_ETHERNET_DEF_IF
+        help
+            Select the interface to be set as default
+
+        config EXAMPLE_ETHERNET_DEF_IF
+            bool
+            prompt "Internal Ethernet Interface"
+        config EXAMPLE_VLAN_DEF_IF
+            bool
+            prompt "VLAN Interface"
+        config EXAMPLE_EXTRA_VLAN_DEF_IF
+            bool
+            prompt "Additional VLAN Interface"
+            depends on EXAMPLE_EXTRA_VLAN_INTERFACE
+    endchoice
+
+    choice EXAMPLE_VLAN_ENABLE_NAPT_IF
+        prompt "Select the network interface to enable NAPT on"
+        default EXAMPLE_VLAN_NAPT_IF
+        help
+            Choose the interface on which NAPT will be enabled
+
+        config EXAMPLE_ETHERNET_NAPT_IF
+            bool
+            prompt "Internal Ethernet Interface"
+        config EXAMPLE_VLAN_NAPT_IF
+            bool
+            prompt "VLAN Interface"
+        config EXAMPLE_EXTRA_VLAN_NAPT_IF
+            bool
+            prompt "Additional VLAN Interface"
+            depends on EXAMPLE_EXTRA_VLAN_INTERFACE
+    endchoice
+
+    config EXAMPLE_VLAN_PYTEST_PC_IFACE
+        string
+        default "eth1"
+        help
+            The example will set this IPV4 address to this interface.
+            This configuration is used in pytest only.
+            This is a hidden configuration, i.e it will not show up im menuconfig.
+
 endmenu

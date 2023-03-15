@@ -20,3 +20,7 @@ examples/network/simple_sniffer:
 examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+examples/network/vlan_support:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32"]
+      reason: Runner uses esp32 ethernet kit
