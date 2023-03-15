@@ -1210,9 +1210,9 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_HOOK_FILENAME              "lwip_default_hooks.h"
 #define LWIP_HOOK_IP4_ROUTE_SRC         ip4_route_src_hook
 #if LWIP_NETCONN_FULLDUPLEX
-#define LWIP_DONE_SOCK(s)               done_socket(sock)
+#define LWIP_DONE_SOCK(sock)            done_socket(sock)
 #else
-#define LWIP_DONE_SOCK(s)               ((void)1)
+#define LWIP_DONE_SOCK(sock)            ((void)1)
 #endif /* LWIP_NETCONN_FULLDUPLEX */
 
 #define LWIP_HOOK_SOCKETS_GETSOCKOPT(s, sock, level, optname, optval, optlen, err)    \
