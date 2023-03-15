@@ -14,9 +14,14 @@ extern "C" {
 #endif
 
 /**
- * Unmap all the MMU table. After this all external memory vaddr are not available
+ * MMU Hal layer initialisation
  */
 void mmu_hal_init(void);
+
+/**
+ * Unmap all the MMU table. After this all external memory vaddr are not available
+ */
+void mmu_hal_unmap_all(void);
 
 /**
  * Helper functions to convert the MMU page numbers into bytes. e.g.:

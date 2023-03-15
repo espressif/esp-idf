@@ -391,6 +391,15 @@ uint32_t Cache_Address_Through_DCache(uint32_t addr);
   *
   * @return None
   */
+void ROM_Boot_Cache_Init(void);
+
+/**
+  * @brief Init mmu owner register to make i/d cache use half mmu entries.
+  *
+  * @param None
+  *
+  * @return None
+  */
 void Cache_Owner_Init(void);
 
 /**

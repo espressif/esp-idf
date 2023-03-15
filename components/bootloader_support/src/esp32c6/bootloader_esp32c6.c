@@ -40,7 +40,6 @@
 #include "esp_private/bootloader_flash_internal.h"
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
-#include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/lp_wdt_reg.h"
@@ -166,13 +165,11 @@ esp_err_t bootloader_init(void)
     /* print 2nd bootloader banner */
     bootloader_print_banner();
 
-#if !CONFIG_APP_BUILD_TYPE_RAM
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     //init cache hal
     cache_hal_init();
-    //reset mmu
+    //init mmu
     mmu_hal_init();
-    // config mmu page size
-    mmu_ll_set_page_size(0, SPI_FLASH_MMU_PAGE_SIZE);
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow
@@ -180,6 +177,7 @@ esp_err_t bootloader_init(void)
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
         return ret;
     }
+#if !CONFIG_APP_BUILD_TYPE_RAM
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         return ret;
@@ -188,11 +186,12 @@ esp_err_t bootloader_init(void)
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
         return ret;
     }
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
         return ret;
     }
-#endif // !CONFIG_APP_BUILD_TYPE_RAM
+#endif // #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();

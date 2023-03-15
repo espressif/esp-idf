@@ -170,6 +170,15 @@ extern const cache_op_cb_t* rom_cache_op_cb;
 void Cache_MMU_Init(void);
 
 /**
+  * @brief Init Cache for ROM boot, including resetting the Icache, initializing MMU, Enabling ICache, unmasking bus.
+  *
+  * @param None
+  *
+  * @return None
+  */
+void ROM_Boot_Cache_Init(void);
+
+/**
   * @brief Set ICache mmu mapping.
   *        Please do not call this function in your SDK application.
   *

@@ -241,7 +241,7 @@ void bootloader_munmap(const void *mapping)
         mmu_init(0);
 #else
         cache_hal_disable(CACHE_TYPE_ALL);
-        mmu_hal_init();
+        mmu_hal_unmap_all();
 #endif
         mapped = false;
         current_read_mapping = UINT32_MAX;

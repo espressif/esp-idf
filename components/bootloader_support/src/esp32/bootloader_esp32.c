@@ -39,7 +39,7 @@
 
 static const char *TAG = "boot.esp32";
 
-#if !CONFIG_APP_BUILD_TYPE_RAM
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 static void bootloader_reset_mmu(void)
 {
     /* completely reset MMU in case serial bootloader was running */
@@ -67,7 +67,7 @@ static void bootloader_reset_mmu(void)
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
 #endif
 }
-#endif //!CONFIG_APP_BUILD_TYPE_RAM
+#endif //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 static esp_err_t bootloader_check_rated_cpu_clock(void)
 {
@@ -208,7 +208,7 @@ esp_err_t bootloader_init(void)
     /* print 2nd bootloader banner */
     bootloader_print_banner();
 
-#if !CONFIG_APP_BUILD_TYPE_RAM
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     // reset MMU
     bootloader_reset_mmu();
     // update flash ID
@@ -218,6 +218,7 @@ esp_err_t bootloader_init(void)
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
         return ret;
     }
+#if !CONFIG_APP_BUILD_TYPE_RAM
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         return ret;
@@ -226,11 +227,12 @@ esp_err_t bootloader_init(void)
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
         return ret;
     }
+#endif // #if !CONFIG_APP_BUILD_TYPE_RAM
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
         return ret;
     }
-#endif // #if !CONFIG_APP_BUILD_TYPE_RAM
+#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();

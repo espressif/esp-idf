@@ -845,8 +845,8 @@ static void set_cache_and_start_app(
 #else
     cache_hal_disable(CACHE_TYPE_ALL);
 #endif
-
-    mmu_hal_init();
+    //reset MMU table first
+    mmu_hal_unmap_all();
 
     //-----------------------MAP DROM--------------------------
     uint32_t drom_load_addr_aligned = drom_load_addr & MMU_FLASH_MASK;
