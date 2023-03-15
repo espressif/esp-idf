@@ -67,7 +67,7 @@ ESP32-DevKitC V4 开发板的主要组件、接口及控制方式见下。
       - 复位按键。
     * - Boot
       - 下载按键。按下 **Boot** 键并保持，同时按一下 **EN** 键（此时不要松开 **Boot** 键）进入“固件下载”模式，通过串口下载固件。
-    * - USB-to-UART 桥接器 
+    * - USB-to-UART 桥接器
       - 单芯片 USB-UART 桥接器，可提供高达 3 Mbps 的传输速率。
     * -  Micro USB 接口。
       - USB 接口，可用作电路板的供电电源，或连接 PC 和 ESP32-WROOM-32 模组的通信接口。
@@ -208,7 +208,7 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32D & ESP32-WROOM-32U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-DA 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_cn.pdf>`_ (PDF)
-* `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32_wrover_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
 * `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`_
 
