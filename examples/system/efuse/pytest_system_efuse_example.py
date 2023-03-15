@@ -61,7 +61,7 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
     dut.expect('Checking flash encryption...')
     dut.expect('Generating new flash encryption key...')
     if dut.app.target == 'esp32':
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
         dut.expect('Setting CRYPT_CONFIG efuse to 0xF')
         dut.expect('Not disabling UART bootloader encryption')
         dut.expect('Disable UART bootloader decryption...')
@@ -70,9 +70,9 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
         dut.expect('Disable ROM BASIC interpreter fallback...')
     else:
         if dut.app.target == 'esp32c2':
-            dut.expect('Writing EFUSE_BLK_KEY0 with purpose 1')
+            dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 1')
         else:
-            dut.expect('Writing EFUSE_BLK_KEY0 with purpose 4')
+            dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 4')
         dut.expect('Not disabling UART bootloader encryption')
         if dut.app.target != 'esp32h2':
             dut.expect('Disable UART bootloader cache...')
@@ -114,8 +114,8 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     dut.expect('Checking flash encryption...')
     dut.expect('Generating new flash encryption key...')
 
-    dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
-    dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
+    dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
+    dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 3')
     dut.expect('Not disabling UART bootloader encryption')
     if dut.app.target != 'esp32h2':
         dut.expect('Disable UART bootloader cache...')
@@ -234,7 +234,7 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     dut.expect('Checking flash encryption...')
     dut.expect('Generating new flash encryption key...')
     if dut.app.target == 'esp32':
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
         dut.expect('Setting CRYPT_CONFIG efuse to 0xF')
         dut.expect('Disable UART bootloader encryption...')
         dut.expect('Disable UART bootloader decryption...')
@@ -243,9 +243,9 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
         dut.expect('Disable ROM BASIC interpreter fallback...')
     else:
         if dut.app.target == 'esp32c2':
-            dut.expect('Writing EFUSE_BLK_KEY0 with purpose 1')
+            dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 1')
         else:
-            dut.expect('Writing EFUSE_BLK_KEY0 with purpose 4')
+            dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 4')
         dut.expect('Disable UART bootloader encryption')
         if dut.app.target != 'esp32h2':
             dut.expect('Disable UART bootloader cache...')
@@ -400,7 +400,7 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
-    dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
+    dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 3')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
     dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
@@ -582,9 +582,9 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
     if dut.app.target == 'esp32c2':
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 3')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 3')
     else:
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 9')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 9')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
     dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
@@ -803,7 +803,7 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
 
     dut.expect('Checking flash encryption...')
     dut.expect('flash_encrypt: Generating new flash encryption key...')
-    dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
+    dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
     dut.expect('flash_encrypt: Setting CRYPT_CONFIG efuse to 0xF')
     dut.expect('flash_encrypt: Not disabling UART bootloader encryption')
     dut.expect('flash_encrypt: Disable UART bootloader decryption...')
@@ -874,7 +874,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
-    dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
+    dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 3')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
     dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
@@ -887,7 +887,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
 
     dut.expect('Checking flash encryption...')
     dut.expect('flash_encrypt: Generating new flash encryption key...')
-    dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
+    dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
     dut.expect('flash_encrypt: Setting CRYPT_CONFIG efuse to 0xF')
     dut.expect('flash_encrypt: Not disabling UART bootloader encryption')
     dut.expect('flash_encrypt: Disable UART bootloader decryption...')
@@ -954,9 +954,9 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
     if dut.app.target == 'esp32c2':
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 3')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 3')
     else:
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 9')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 9')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
     dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
     dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
@@ -973,9 +973,9 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect('Checking flash encryption...')
     dut.expect('flash_encrypt: Generating new flash encryption key...')
     if dut.app.target == 'esp32c2':
-        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
     else:
-        dut.expect('Writing EFUSE_BLK_KEY1 with purpose 4')
+        dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 4')
 
     dut.expect('Not disabling UART bootloader encryption')
     if dut.app.target != 'esp32h2':
