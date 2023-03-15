@@ -1472,6 +1472,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
     /* Save the state so the buffer can later be relayed */
     net_buf_simple_save(&buf, &state);
 
+    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET,
+           "\nNetRecv: ctl: %d, src: %d, dst: %d, ttl: %d, data: 0x%s",
+           CTL(buf.data), SRC(buf.data), DST(buf.data), TTL(buf.data),
+           bt_hex(buf.data + BLE_MESH_NET_HDR_LEN, buf.len - BLE_MESH_NET_HDR_LEN));
+
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
                       bt_mesh_elem_find(rx.ctx.recv_dst));
 
