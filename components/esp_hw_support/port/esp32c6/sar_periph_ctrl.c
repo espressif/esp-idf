@@ -31,6 +31,13 @@ void sar_periph_ctrl_init(void)
     //Add other periph power control initialisation here
 }
 
+void sar_periph_ctrl_power_enable(void)
+{
+    portENTER_CRITICAL_SAFE(&rtc_spinlock);
+    sar_ctrl_ll_force_power_ctrl_from_pwdet(true);
+    portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+}
+
 void sar_periph_ctrl_power_disable(void)
 {
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
