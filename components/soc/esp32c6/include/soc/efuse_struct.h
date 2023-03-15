@@ -534,18 +534,18 @@ typedef union {
         uint32_t wafer_version_minor:4;
         /** wafer_version_major : R; bitpos: [23:22]; default: 0; */
         uint32_t wafer_version_major:2;
-        /** blk_version_minor : R; bitpos: [26:24]; default: 0;
-         *  BLK_VERSION_MINOR of BLOCK2
-         */
-        uint32_t blk_version_minor:3;
-        /** blk_version_major : R; bitpos: [28:27]; default: 0;
-         *  BLK_VERSION_MAJOR of BLOCK2
-         */
-        uint32_t blk_version_major:2;
-        /** pkg_version : R; bitpos: [31:29]; default: 0;
+        /** pkg_version : R; bitpos: [26:24]; default: 0;
          *  Package version
          */
         uint32_t pkg_version:3;
+        /** blk_version_minor : R; bitpos: [29:27]; default: 0;
+         *  BLK_VERSION_MINOR of BLOCK2
+         */
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [31:30]; default: 0;
+         *  BLK_VERSION_MAJOR of BLOCK2
+         */
+        uint32_t blk_version_major:2;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_3_reg_t;
