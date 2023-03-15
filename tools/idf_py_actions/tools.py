@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
+import json
 import os
 import re
 import subprocess
@@ -384,19 +385,27 @@ def _parse_cmakecache(path: str) -> Dict:
     return result
 
 
-def _new_cmakecache_entries(cache_path: str, new_cache_entries: List) -> bool:
-    if not os.path.exists(cache_path):
-        return True
+def _parse_cmdl_cmakecache(entries: List) -> Dict[str, str]:
+    """
+    Parse list of CMake cache entries passed in via the -D option.
 
-    if new_cache_entries:
-        current_cache = _parse_cmakecache(cache_path)
+    Returns a dict of name:value.
+    """
+    result: Dict = {}
+    for entry in entries:
+        key, value = entry.split('=', 1)
+        value = _strip_quotes(value)
+        result[key] = value
 
-        for entry in new_cache_entries:
-            key, value = entry.split('=', 1)
-            current_value = current_cache.get(key, None)
-            if current_value is None or _strip_quotes(value) != current_value:
-                return True
+    return result
 
+
+def _new_cmakecache_entries(cache: Dict, cache_cmdl: Dict) -> bool:
+    for entry in cache_cmdl:
+        if entry not in cache:
+            return True
+        if cache_cmdl[entry] != cache[entry]:
+            return True
     return False
 
 
@@ -410,7 +419,8 @@ def _detect_cmake_generator(prog_name: str) -> Any:
     raise FatalError("To use %s, either the 'ninja' or 'GNU make' build tool must be available in the PATH" % prog_name)
 
 
-def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmake: bool=False) -> None:
+def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmake: bool=False,
+                           env: Dict=None) -> None:
     """Check the build directory exists and that cmake has been run there.
 
     If this isn't the case, create the build directory (if necessary) and
@@ -444,12 +454,14 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
     cache_path = os.path.join(build_dir, 'CMakeCache.txt')
     cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
 
-    # Validate or set IDF_TARGET
-    _guess_or_check_idf_target(args, prog_name, cache)
-
     args.define_cache_entry.append('CCACHE_ENABLE=%d' % args.ccache)
 
-    if always_run_cmake or _new_cmakecache_entries(cache_path, args.define_cache_entry):
+    cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
+
+    # Validate IDF_TARGET
+    _check_idf_target(args, prog_name, cache, cache_cmdl)
+
+    if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
         if args.generator is None:
             args.generator = _detect_cmake_generator(prog_name)
         try:
@@ -469,7 +481,7 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
             cmake_args += [project_dir]
 
             hints = not args.no_hints
-            RunTool('cmake', cmake_args, cwd=args.build_dir, hints=hints)()
+            RunTool('cmake', cmake_args, cwd=args.build_dir, env=env, hints=hints)()
         except Exception:
             # don't allow partially valid CMakeCache.txt files,
             # to keep the "should I run cmake?" logic simple
@@ -522,6 +534,27 @@ def merge_action_lists(*action_lists: Dict) -> Dict:
     return merged_actions
 
 
+def get_sdkconfig_filename(args: 'PropertyDict', cache_cmdl: Dict=None) -> str:
+    """
+    Get project's sdkconfig file name.
+    """
+    if not cache_cmdl:
+        cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
+    config = cache_cmdl.get('SDKCONFIG')
+    if config:
+        return os.path.abspath(config)
+
+    proj_desc_path = os.path.join(args.build_dir, 'project_description.json')
+    try:
+        with open(proj_desc_path, 'r') as f:
+            proj_desc = json.load(f)
+        return str(proj_desc['config_file'])
+    except (OSError, KeyError):
+        pass
+
+    return os.path.join(args.project_dir, 'sdkconfig')
+
+
 def get_sdkconfig_value(sdkconfig_file: str, key: str) -> Optional[str]:
     """
     Return the value of given key from sdkconfig_file.
@@ -549,48 +582,48 @@ def is_target_supported(project_path: str, supported_targets: List) -> bool:
     return get_target(project_path) in supported_targets
 
 
-def _guess_or_check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict) -> None:
+def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict, cache_cmdl: Dict) -> None:
     """
-    If CMakeCache.txt doesn't exist, and IDF_TARGET is not set in the environment, guess the value from
-    sdkconfig or sdkconfig.defaults, and pass it to CMake in IDF_TARGET variable.
-
-    Otherwise, cross-check the three settings (sdkconfig, CMakeCache, environment) and if there is
+    Cross-check the three settings (sdkconfig, CMakeCache, environment) and if there is
     mismatch, fail with instructions on how to fix this.
     """
-    # Default locations of sdkconfig files.
-    # FIXME: they may be overridden in the project or by a CMake variable (IDF-1369).
-    # These are used to guess the target from sdkconfig, or set the default target by sdkconfig.defaults.
-    idf_target_from_sdkconfig = get_target(args.project_dir)
-    idf_target_from_sdkconfig_defaults = get_target(args.project_dir, 'sdkconfig.defaults')
+    sdkconfig = get_sdkconfig_filename(args, cache_cmdl)
+    idf_target_from_sdkconfig = get_sdkconfig_value(sdkconfig, 'CONFIG_IDF_TARGET')
     idf_target_from_env = os.environ.get('IDF_TARGET')
     idf_target_from_cache = cache.get('IDF_TARGET')
+    idf_target_from_cache_cmdl = cache_cmdl.get('IDF_TARGET')
 
-    if not cache and not idf_target_from_env:
-        # CMakeCache.txt does not exist yet, and IDF_TARGET is not set in the environment.
-        guessed_target = idf_target_from_sdkconfig or idf_target_from_sdkconfig_defaults
-        if guessed_target:
-            if args.verbose:
-                print("IDF_TARGET is not set, guessed '%s' from sdkconfig" % (guessed_target))
-            args.define_cache_entry.append('IDF_TARGET=' + guessed_target)
-
-    elif idf_target_from_env:
+    if idf_target_from_env:
         # Let's check that IDF_TARGET values are consistent
         if idf_target_from_sdkconfig and idf_target_from_sdkconfig != idf_target_from_env:
-            raise FatalError("Project sdkconfig was generated for target '{t_conf}', but environment variable IDF_TARGET "
+            raise FatalError("Project sdkconfig '{cfg}' was generated for target '{t_conf}', but environment variable IDF_TARGET "
                              "is set to '{t_env}'. Run '{prog} set-target {t_env}' to generate new sdkconfig file for target {t_env}."
-                             .format(t_conf=idf_target_from_sdkconfig, t_env=idf_target_from_env, prog=prog_name))
+                             .format(cfg=sdkconfig, t_conf=idf_target_from_sdkconfig, t_env=idf_target_from_env, prog=prog_name))
 
         if idf_target_from_cache and idf_target_from_cache != idf_target_from_env:
             raise FatalError("Target settings are not consistent: '{t_env}' in the environment, '{t_cache}' in CMakeCache.txt. "
                              "Run '{prog} fullclean' to start again."
                              .format(t_env=idf_target_from_env, t_cache=idf_target_from_cache, prog=prog_name))
 
-    elif idf_target_from_cache and idf_target_from_sdkconfig and idf_target_from_cache != idf_target_from_sdkconfig:
+        if idf_target_from_cache_cmdl and idf_target_from_cache_cmdl != idf_target_from_env:
+            raise FatalError("Target '{t_cmdl}' specified on command line is not consistent with "
+                             "target '{t_env}' in the environment."
+                             .format(t_cmdl=idf_target_from_cache_cmdl, t_env=idf_target_from_env))
+    elif idf_target_from_cache_cmdl:
+        # Check if -DIDF_TARGET is consistent with target in CMakeCache.txt
+        if idf_target_from_cache and idf_target_from_cache != idf_target_from_cache_cmdl:
+            raise FatalError("Target '{t_cmdl}' specified on command line is not consistent with "
+                             "target '{t_cache}' in CMakeCache.txt. Run '{prog} set-target {t_cmdl}' to re-generate "
+                             'CMakeCache.txt.'
+                             .format(t_cache=idf_target_from_cache, t_cmdl=idf_target_from_cache_cmdl, prog=prog_name))
+
+    elif idf_target_from_cache:
         # This shouldn't happen, unless the user manually edits CMakeCache.txt or sdkconfig, but let's check anyway.
-        raise FatalError("Project sdkconfig was generated for target '{t_conf}', but CMakeCache.txt contains '{t_cache}'. "
-                         "To keep the setting in sdkconfig ({t_conf}) and re-generate CMakeCache.txt, run '{prog} fullclean'. "
-                         "To re-generate sdkconfig for '{t_cache}' target, run '{prog} set-target {t_cache}'."
-                         .format(t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
+        if idf_target_from_sdkconfig and idf_target_from_cache != idf_target_from_sdkconfig:
+            raise FatalError("Project sdkconfig '{cfg}' was generated for target '{t_conf}', but CMakeCache.txt contains '{t_cache}'. "
+                             "To keep the setting in sdkconfig ({t_conf}) and re-generate CMakeCache.txt, run '{prog} fullclean'. "
+                             "To re-generate sdkconfig for '{t_cache}' target, run '{prog} set-target {t_cache}'."
+                             .format(cfg=sdkconfig, t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
 
 
 class TargetChoice(click.Choice):

@@ -94,7 +94,8 @@ def run_idf_py(*args: str,
         text=True, encoding='utf-8', errors='backslashreplace')
 
 
-def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
+def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None,
+              check: bool = True) -> subprocess.CompletedProcess:
     """
     Run cmake command with given arguments, raise an exception on failure
     :param cmake_args: arguments to pass cmake
@@ -108,9 +109,10 @@ def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
     cmd = ['cmake'] + list(cmake_args)
 
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
-    subprocess.check_call(
+    return subprocess.run(
         cmd, env=env, cwd=workdir,
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, encoding='utf-8', errors='backslashreplace')
 
 
 def check_file_contains(filename: Union[str, Path], what: Union[str, Pattern]) -> None:
