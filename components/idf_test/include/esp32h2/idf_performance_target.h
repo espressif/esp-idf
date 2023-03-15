@@ -18,6 +18,14 @@
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              670000
 
+#define IDF_PERFORMANCE_MAX_ECP_P192_POINT_MULTIPLY_OP                          11000
+#define IDF_PERFORMANCE_MAX_ECP_P192_POINT_VERIFY_OP                            300
+#define IDF_PERFORMANCE_MAX_ECP_P256_POINT_MULTIPLY_OP                          19000
+#define IDF_PERFORMANCE_MAX_ECP_P256_POINT_VERIFY_OP                            300
+
+#define IDF_PERFORMANCE_MAX_ECDSA_P192_VERIFY_OP                                44000
+#define IDF_PERFORMANCE_MAX_ECDSA_P256_VERIFY_OP                                67000
+
 #define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        26*1000*1000
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               28
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        24

@@ -63,6 +63,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_AES_CLK_EN;
         case PERIPH_SHA_MODULE:
             return PCR_SHA_CLK_EN;
+        case PERIPH_ECC_MODULE:
+            return PCR_ECC_CLK_EN;
         case PERIPH_RSA_MODULE:
             return PCR_RSA_CLK_EN;
         case PERIPH_HMAC_MODULE:
@@ -136,6 +138,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_PARL_RST_EN;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_RST_EN;
+        case PERIPH_ECC_MODULE:
+            return PCR_ECC_RST_EN;
         case PERIPH_AES_MODULE:
             if (enable == true) {
                 // Clear reset on digital signature, otherwise AES unit is held in reset
@@ -231,6 +235,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_AES_CONF_REG;
         case PERIPH_SHA_MODULE:
             return PCR_SHA_CONF_REG;
+        case PERIPH_ECC_MODULE:
+            return PCR_ECC_CONF_REG;
         case PERIPH_RSA_MODULE:
             return PCR_RSA_CONF_REG;
         case PERIPH_HMAC_MODULE:
@@ -292,6 +298,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_AES_CONF_REG;
         case PERIPH_SHA_MODULE:
             return PCR_SHA_CONF_REG;
+        case PERIPH_ECC_MODULE:
+            return PCR_ECC_CONF_REG;
         case PERIPH_RSA_MODULE:
             return PCR_RSA_CONF_REG;
         case PERIPH_HMAC_MODULE:

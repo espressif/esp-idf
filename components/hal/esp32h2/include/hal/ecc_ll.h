@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,9 @@ typedef enum {
     ECC_PARAM_PX = 0x0,
     ECC_PARAM_PY,
     ECC_PARAM_K,
+    ECC_PARAM_QX,
+    ECC_PARAM_QY,
+    ECC_PARAM_QZ,
 } ecc_ll_param_t;
 
 static inline void ecc_ll_enable_interrupt(void)
@@ -47,6 +50,30 @@ static inline void ecc_ll_set_mode(ecc_mode_t mode)
         case ECC_MODE_VERIFY_THEN_POINT_MUL:
             REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 3);
             break;
+        case ECC_MODE_JACOBIAN_POINT_MUL:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 4);
+            break;
+        case ECC_MODE_POINT_ADD:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 5);
+            break;
+        case ECC_MODE_JACOBIAN_POINT_VERIFY:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 6);
+            break;
+        case ECC_MODE_POINT_VERIFY_JACOBIAN_MUL:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 7);
+            break;
+        case ECC_MODE_MOD_ADD:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 8);
+            break;
+        case ECC_MODE_MOD_SUB:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 9);
+            break;
+        case ECC_MODE_MOD_MUL:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 10);
+            break;
+        case ECC_MODE_INVERSE_MUL:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 11);
+            break;
         default:
             HAL_ASSERT(false && "Unsupported mode");
             break;
@@ -68,19 +95,43 @@ static inline void ecc_ll_set_curve(ecc_curve_t curve)
     }
 }
 
+static inline void ecc_ll_set_mod_base(ecc_mod_base_t base)
+{
+    switch(base) {
+        case ECC_MOD_N:
+            REG_CLR_BIT(ECC_MULT_CONF_REG, ECC_MULT_MOD_BASE);
+            break;
+        case ECC_MOD_P:
+            REG_SET_BIT(ECC_MULT_CONF_REG, ECC_MULT_MOD_BASE);
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported curve");
+            return;
+    }
+}
+
 static inline void ecc_ll_write_param(ecc_ll_param_t param, const uint8_t *buf, uint16_t len)
 {
     uint32_t reg;
     uint32_t word;
     switch (param) {
         case ECC_PARAM_PX:
-            reg = ECC_MULT_PX_1_REG;
+            reg = ECC_MULT_PX_MEM;
             break;
         case ECC_PARAM_PY:
-            reg = ECC_MULT_PY_1_REG;
+            reg = ECC_MULT_PY_MEM;
             break;
         case ECC_PARAM_K:
-            reg = ECC_MULT_K_1_REG;
+            reg = ECC_MULT_K_MEM;
+            break;
+        case ECC_PARAM_QX:
+            reg = ECC_MULT_QX_MEM;
+            break;
+        case ECC_PARAM_QY:
+            reg = ECC_MULT_QY_MEM;
+            break;
+        case ECC_PARAM_QZ:
+            reg = ECC_MULT_QZ_MEM;
             break;
         default:
             HAL_ASSERT(false && "Invalid parameter");
@@ -118,18 +169,32 @@ static inline ecc_curve_t ecc_ll_get_curve(void)
     return REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH);
 }
 
+static inline ecc_mod_base_t ecc_ll_get_mod_base(void)
+{
+    return REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_MOD_BASE);
+}
+
 static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_t len)
 {
     uint32_t reg;
     switch (param) {
         case ECC_PARAM_PX:
-            reg = ECC_MULT_PX_1_REG;
+            reg = ECC_MULT_PX_MEM;
             break;
         case ECC_PARAM_PY:
-            reg = ECC_MULT_PY_1_REG;
+            reg = ECC_MULT_PY_MEM;
             break;
         case ECC_PARAM_K:
-            reg = ECC_MULT_K_1_REG;
+            reg = ECC_MULT_K_MEM;
+            break;
+        case ECC_PARAM_QX:
+            reg = ECC_MULT_QX_MEM;
+            break;
+        case ECC_PARAM_QY:
+            reg = ECC_MULT_QY_MEM;
+            break;
+        case ECC_PARAM_QZ:
+            reg = ECC_MULT_QZ_MEM;
             break;
         default:
             HAL_ASSERT(false && "Invalid parameter");

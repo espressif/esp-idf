@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/hal/test_apps/ecc:
+  disable:
+    - if: SOC_ECC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: C2 ECC peripheral has a bug in ECC point verification, if value of K is zero the verification fails
