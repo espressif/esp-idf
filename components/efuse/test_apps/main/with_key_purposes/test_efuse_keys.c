@@ -24,7 +24,11 @@ __attribute__((unused)) static const char* TAG = "efuse_key_test";
 TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial state", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
 
     for (esp_efuse_block_t num_key = EFUSE_BLK_KEY0; num_key < EFUSE_BLK_KEY_MAX; ++num_key) {
@@ -119,7 +123,11 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
 
     for (esp_efuse_purpose_t purpose = ESP_EFUSE_KEY_PURPOSE_RESERVED; purpose < ESP_EFUSE_KEY_PURPOSE_MAX; ++purpose) {
         esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
         esp_efuse_utility_update_virt_blocks();
+#else
+        esp_efuse_utility_erase_virt_blocks();
+#endif
         esp_efuse_utility_debug_dump_blocks();
 
         TEST_ASSERT_FALSE(esp_efuse_find_purpose(purpose, NULL));
@@ -142,7 +150,11 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
 TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 
@@ -176,7 +188,11 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 TEST_CASE("Test 2 esp_efuse_write_key for FPGA", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 
@@ -211,7 +227,11 @@ TEST_CASE("Test 2 esp_efuse_write_key for FPGA", "[efuse]")
 TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
     esp_efuse_block_t key_block = EFUSE_BLK_MAX;
@@ -285,7 +305,11 @@ TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
 TEST_CASE("Test esp_efuse_write_keys for returned errors", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 
