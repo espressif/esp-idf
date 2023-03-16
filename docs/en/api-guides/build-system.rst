@@ -1517,7 +1517,7 @@ This phase sets up necessary parameters for the build.
         - Add components in :idf:`components` to the build.
     - The initial part of the custom ``project()`` command performs the following steps:
         - Set ``IDF_TARGET`` from environment variable or CMake cache and the corresponding ``CMAKE_TOOLCHAIN_FILE`` to be used.
-        - Add components in ``EXTRA_COMPONENTS_DIRS`` to the build.
+        - Add components in ``EXTRA_COMPONENT_DIRS`` to the build.
         - Prepare arguments for calling command ``idf_build_process()`` from variables such as ``COMPONENTS``/``EXCLUDE_COMPONENTS``, ``SDKCONFIG``, ``SDKCONFIG_DEFAULTS``.
 
   The call to ``idf_build_process()`` command marks the end of this phase.
