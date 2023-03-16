@@ -98,7 +98,6 @@ static void IRAM_ATTR modem_clock_fe_configure(modem_clock_context_t *ctx, bool 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_lpcon_ll_enable_i2c_master_clock(ctx->hal->lpcon_dev, enable);
-    modem_lpcon_ll_enable_i2c_master_160m_clock(ctx->hal->lpcon_dev, enable);
 }
 
 static void IRAM_ATTR modem_clock_etm_configure(modem_clock_context_t *ctx, bool enable)
