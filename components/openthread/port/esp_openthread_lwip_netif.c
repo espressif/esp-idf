@@ -134,7 +134,9 @@ static err_t openthread_netif_init(struct netif *netif)
     memset(netif->hwaddr, 0, sizeof(netif->hwaddr));
     netif->mtu = OPENTHREAD_IP6_MTU;
     netif->flags = NETIF_FLAG_BROADCAST;
+#if CONFIG_LWIP_IPV4
     netif->output = NULL;
+#endif
     netif->output_ip6 = openthread_output_ip6;
     netif->mld_mac_filter = openthread_netif_multicast_handler;
     netif_set_link_up(netif);
