@@ -33,6 +33,7 @@ extern "C" {
 #define ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED    ESP_ERR_ESP_NETIF_BASE + 0x0A
 #define ESP_ERR_ESP_NETIF_MLD6_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x0B
 #define ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED       ESP_ERR_ESP_NETIF_BASE + 0x0C
+#define ESP_ERR_ESP_NETIF_DHCPS_START_FAILED    ESP_ERR_ESP_NETIF_BASE + 0x0D
 
 
 /** @brief Type of esp_netif_object server */
@@ -154,6 +155,7 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4,
     ESP_NETIF_FLAG_IS_PPP = 1 << 5,
     ESP_NETIF_FLAG_IS_SLIP = 1 << 6,
+    ESP_NETIF_FLAG_MLDV6_REPORT = 1 << 7,
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {
