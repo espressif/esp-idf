@@ -171,5 +171,3 @@ endif()
 if(BOOTLOADER_BUILD)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

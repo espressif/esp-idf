@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,7 +76,7 @@ void bootloader_enable_qio_mode(void)
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     raw_flash_id = g_rom_flashchip.device_id;
-    ESP_LOGD(TAG, "Raw SPI flash chip id 0x%x", raw_flash_id);
+    ESP_LOGD(TAG, "Raw SPI flash chip id 0x%"PRIx32, raw_flash_id);
 
     mfg_id = (raw_flash_id >> 16) & 0xFF;
     flash_id = raw_flash_id & 0xFFFF;
@@ -130,7 +130,7 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     status = read_status_fn();
-    ESP_LOGD(TAG, "Initial flash chip status 0x%x", status);
+    ESP_LOGD(TAG, "Initial flash chip status 0x%"PRIx32, status);
 
     if ((status & (1 << status_qio_bit)) == 0) {
         bootloader_execute_flash_command(CMD_WREN, 0, 0, 0);
@@ -139,7 +139,7 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
         esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
         status = read_status_fn();
-        ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
+        ESP_LOGD(TAG, "Updated flash chip status 0x%"PRIx32, status);
         if ((status & (1 << status_qio_bit)) == 0) {
             ESP_LOGE(TAG, "Failed to set QIE bit, not enabling QIO mode");
             return ESP_FAIL;
