@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #   include "soc/spi_struct.h"
@@ -30,7 +31,7 @@
 #include "esp_rom_spiflash.h"
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-#define ENCRYPTION_IS_VIRTUAL 1
+#define ENCRYPTION_IS_VIRTUAL (!efuse_hal_flash_encryption_enabled())
 #else
 #define ENCRYPTION_IS_VIRTUAL 0
 #endif
