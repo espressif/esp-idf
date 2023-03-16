@@ -6,13 +6,9 @@
 #include <stdlib.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_event.h"
 
 extern void app_main(void);
-
-esp_err_t esp_event_loop_create_default(void)
-{
-    return ESP_OK;
-}
 
 esp_err_t esp_netif_init(void)
 {

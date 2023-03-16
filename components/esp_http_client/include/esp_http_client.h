@@ -18,6 +18,9 @@ extern "C" {
 
 #define DEFAULT_HTTP_BUF_SIZE (512)
 
+#include "esp_event.h"
+ESP_EVENT_DECLARE_BASE(ESP_HTTP_CLIENT_EVENT);
+
 typedef struct esp_http_client *esp_http_client_handle_t;
 typedef struct esp_http_client_event *esp_http_client_event_handle_t;
 
@@ -50,6 +53,21 @@ typedef struct esp_http_client_event {
     char *header_value;                     /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header value */
 } esp_http_client_event_t;
 
+/**
+ * @brief      Argument structure for HTTP_EVENT_ON_DATA event
+ */
+typedef struct esp_http_client_on_data {
+    esp_http_client_handle_t client;    /*!< Client handle */
+    int64_t data_process;               /*!< Total data processed */
+} esp_http_client_on_data_t;
+
+/**
+ * @brief      Argument structure for HTTP_EVENT_REDIRECT event
+ */
+typedef struct esp_http_client_redirect_event_data {
+    esp_http_client_handle_t client;    /*!< Client handle */
+    int status_code;                    /*!< Status Code */
+} esp_http_client_redirect_event_data_t;
 
 /**
  * @brief      HTTP Client transport
