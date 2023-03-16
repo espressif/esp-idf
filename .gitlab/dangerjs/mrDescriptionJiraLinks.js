@@ -140,7 +140,7 @@ module.exports = async function () {
                 `^- Closes ${jiraTicketRegex.source}$`
             );
             const matchedJiraTicket = line.match(jiraTicketRegex);
-            if (jiraTicketMatched) {
+            if (matchedJiraTicket) {
                 if (!correctJiraClosingLinkFormat.test(line)) {
                     closingTickets.push({
                         record: line,
