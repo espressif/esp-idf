@@ -63,6 +63,19 @@
 #define DHCPS_DEBUG          0
 #define DHCPS_LOG printf
 
+#define IS_INVALID_SUBNET_MASK(x)  (((x-1) | x) != 0xFFFFFFFF)
+/* Notes:
+*  CIDR eliminates the traditional Class A, Class B and Class C addresses.
+ */
+#define IP_CLASS_HOST_NUM(mask)            (0xffffffff & ~mask)
+#define DHCP_CHECK_SUBNET_MASK_IP(mask)                                                               \
+    do {                                                                                                  \
+        if (IS_INVALID_SUBNET_MASK(mask)) {                                                               \
+            DHCPS_LOG("dhcps: Illegal subnet mask.\n");                                                   \
+            return ERR_ARG;                                                                               \
+        }                                                                                                 \
+    } while (0)
+
 #define MAX_STATION_NUM CONFIG_LWIP_DHCPS_MAX_STATION_NUM
 
 #define DHCPS_STATE_OFFER 1
@@ -1141,23 +1154,25 @@ static void handle_dhcp(void *arg,
 *******************************************************************************/
 static void dhcps_poll_set(dhcps_t *dhcps, u32_t ip)
 {
-    u32_t softap_ip = 0, local_ip = 0;
+    u32_t server_ip = 0, local_ip = 0;
     u32_t start_ip = 0;
     u32_t end_ip = 0;
+    u32_t temp_local_ip = 0;
+    u32_t host_num = 0;
     dhcps_lease_t *dhcps_poll = &dhcps->dhcps_poll;
     if (dhcps_poll->enable == true) {
-        softap_ip = htonl(ip);
+        server_ip = htonl(ip);
         start_ip = htonl(dhcps_poll->start_ip.addr);
         end_ip = htonl(dhcps_poll->end_ip.addr);
 
         /*config ip information can't contain local ip*/
-        if ((start_ip <= softap_ip) && (softap_ip <= end_ip)) {
+        if ((start_ip <= server_ip) && (server_ip <= end_ip)) {
             dhcps_poll->enable = false;
         } else {
             /*config ip information must be in the same segment as the local ip*/
-            softap_ip >>= 8;
+            server_ip >>= 8;
 
-            if (((start_ip >> 8 != softap_ip) || (end_ip >> 8 != softap_ip))
+            if (((start_ip >> 8 != server_ip) || (end_ip >> 8 != server_ip))
                     || (end_ip - start_ip > DHCPS_MAX_LEASE)) {
                 dhcps_poll->enable = false;
             }
@@ -1165,19 +1180,24 @@ static void dhcps_poll_set(dhcps_t *dhcps, u32_t ip)
     }
 
     if (dhcps_poll->enable == false) {
-        local_ip = softap_ip = htonl(ip);
-        softap_ip &= 0xFFFFFF00;
-        local_ip &= 0xFF;
+        local_ip = server_ip = htonl(ip);
+        server_ip &= 0xFFFFFF00;
+        temp_local_ip = local_ip &= 0xFF;
 
         if (local_ip >= 0x80) {
             local_ip -= DHCPS_MAX_LEASE;
+            temp_local_ip -= DHCPS_MAX_LEASE;
         } else {
             local_ip ++;
         }
 
         bzero(dhcps_poll, sizeof(*dhcps_poll));
-        dhcps_poll->start_ip.addr = softap_ip | local_ip;
-        dhcps_poll->end_ip.addr = softap_ip | (local_ip + DHCPS_MAX_LEASE - 1);
+        host_num = IP_CLASS_HOST_NUM(htonl(dhcps->dhcps_mask.addr));
+        if (host_num > DHCPS_MAX_LEASE) {
+            host_num = DHCPS_MAX_LEASE;
+        }
+        dhcps_poll->start_ip.addr = server_ip | local_ip;
+        dhcps_poll->end_ip.addr = server_ip | (temp_local_ip + host_num - 1);
         dhcps_poll->start_ip.addr = htonl(dhcps_poll->start_ip.addr);
         dhcps_poll->end_ip.addr = htonl(dhcps_poll->end_ip.addr);
     }
@@ -1229,6 +1249,7 @@ err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
     IP4_ADDR(&dhcps->broadcast_dhcps, 255, 255, 255, 255);
 
     dhcps->server_address.addr = ip.addr;
+    DHCP_CHECK_SUBNET_MASK_IP(htonl(dhcps->dhcps_mask.addr));
     dhcps_poll_set(dhcps, dhcps->server_address.addr);
 
     dhcps->client_address_plus.addr = dhcps->dhcps_poll.start_ip.addr;

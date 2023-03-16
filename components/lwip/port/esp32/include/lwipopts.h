@@ -339,7 +339,7 @@ extern "C" {
 #define ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER       CONFIG_LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
 
 #define DHCP_DEFINE_CUSTOM_TIMEOUTS     1
-#define DHCP_COARSE_TIMER_SECS          (1)
+#define DHCP_COARSE_TIMER_SECS          CONFIG_LWIP_DHCP_COARSE_TIMER_SECS
 #define DHCP_NEXT_TIMEOUT_THRESHOLD     (3)
 /* Since for embedded devices it's not that hard to miss a discover packet, so lower
  * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
@@ -354,6 +354,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
     if (timeout == 0) {
         timeout = min;
     }
+    timeout = (timeout + DHCP_COARSE_TIMER_SECS - 1) / DHCP_COARSE_TIMER_SECS;
     return timeout;
 }
 
@@ -1453,6 +1454,15 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_GRATUITOUS_ARP_INTERVAL     (CONFIG_LWIP_GARP_TMR_INTERVAL*1000UL)
 #else
 #define ESP_GRATUITOUS_ARP              0
+#endif
+
+/**
+ * ESP_MLDV6_REPORT==1: This option allows to send mldv6 report periodically.
+ */
+#ifdef CONFIG_LWIP_ESP_MLDV6_REPORT
+#define ESP_MLDV6_REPORT              1
+#else
+#define ESP_MLDV6_REPORT              0
 #endif
 
 #define ESP_LWIP                        1
