@@ -139,18 +139,21 @@ module.exports = async function () {
             const correctJiraClosingLinkFormat = new RegExp(
                 `^- Closes ${jiraTicketRegex.source}$`
             );
-            if (!correctJiraClosingLinkFormat.test(line)) {
-                closingTickets.push({
-                    record: line,
-                    ticketName: line.match(jiraTicketRegex)[0],
-                    correctFormat: false,
-                });
-            } else {
-                closingTickets.push({
-                    record: line,
-                    ticketName: line.match(jiraTicketRegex)[0],
-                    correctFormat: true,
-                });
+            const matchedJiraTicket = line.match(jiraTicketRegex);
+            if (jiraTicketMatched) {
+                if (!correctJiraClosingLinkFormat.test(line)) {
+                    closingTickets.push({
+                        record: line,
+                        ticketName: matchedJiraTicket[0],
+                        correctFormat: false,
+                    });
+                } else {
+                    closingTickets.push({
+                        record: line,
+                        ticketName: matchedJiraTicket[0],
+                        correctFormat: true,
+                    });
+                }
             }
         }
         return closingTickets;
