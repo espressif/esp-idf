@@ -746,7 +746,7 @@ esp_err_t IRAM_ATTR bootloader_flash_reset_chip(void)
     return ESP_OK;
 }
 
-bool bootloader_flash_is_octal_mode_enabled(void)
+bool IRAM_ATTR bootloader_flash_is_octal_mode_enabled(void)
 {
 #if SOC_SPI_MEM_SUPPORT_OPI_MODE
     return efuse_ll_get_flash_type();
