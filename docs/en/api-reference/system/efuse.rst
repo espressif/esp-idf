@@ -361,6 +361,11 @@ During startup, the eFuses are copied to RAM. All eFuse operations (read and wri
 In addition to the :ref:`CONFIG_EFUSE_VIRTUAL` option there is :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option that adds a feature to keep eFuses in flash memory. To use this mode the partition_table should have the `efuse` partition. partition.csv: ``"efuse_em, data, efuse,   ,   0x2000,"``.
 During startup, the eFuses are copied from flash or, in case if flash is empty, from real eFuse to RAM and then update flash. This option allows keeping eFuses after reboots (possible to test secure_boot and flash_encryption features with this option).
 
+Flash Encryption Testing
+""""""""""""""""""""""""
+
+Flash Encryption (FE) is a hardware feature that requires the physical burning of eFuses: key and FLASH_CRYPT_CNT. If FE is not actually enabled then enabling the :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option just gives testing possibilities and does not encrypt anything in the flash, even though the logs say encryption happens. The :cpp:func:`bootloader_flash_write` is adapted for this purpose. But if FE is already enabled on the chip and you run an application or bootloader created with the :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option then the flash encryption/decryption operations will work properly (data are encrypted as it is written into an encrypted flash partition and decrypted when they are read from an encrypted partition).
+
 espefuse.py
 ^^^^^^^^^^^
 
