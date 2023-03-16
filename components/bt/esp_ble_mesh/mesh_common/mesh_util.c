@@ -75,22 +75,24 @@ uint32_t bt_mesh_bqb_test_flag_get(void)
     return bt_mesh_bqb_test_flag(BLE_MESH_BQB_TEST_FLAG_OP_GET, 0);
 }
 
-int bt_mesh_bqb_test_flag_set(uint32_t module_mask)
+int bt_mesh_bqb_test_flag_set(uint32_t flag_mask)
 {
     if (module_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
-        BT_ERR("BT_BQB module mask error : overflow");
+        BT_ERR("Invalid BQB test flag mask 0x%08x", flag_mask);
         return -EINVAL;
     }
-    return (bt_mesh_bqb_test_flag(BLE_MESH_BQB_TEST_FLAG_OP_SET, module_mask) == module_mask) ? 0 : -EINVAL;
+
+    return (bt_mesh_bqb_test_flag(BLE_MESH_BQB_TEST_FLAG_OP_SET, flag_mask) == flag_mask) ? 0 : -EINVAL;
 }
 
-bool bt_mesh_bqb_test_flag_check(uint32_t module_mask)
+bool bt_mesh_bqb_test_flag_check(uint32_t flag_mask)
 {
     if (module_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
-        BT_ERR("BT_BQB module mask error : overflow");
+        BT_ERR("Invalid BQB test flag mask 0x%08x", flag_mask);
         return false;
     }
 
-    return ((bt_mesh_bqb_test_flag_get() & module_mask) == module_mask);
+    return ((bt_mesh_bqb_test_flag_get() & flag_mask) == flag_mask);
 }
+
 #endif /* CONFIG_BLE_MESH_BQB_TEST_LOG */

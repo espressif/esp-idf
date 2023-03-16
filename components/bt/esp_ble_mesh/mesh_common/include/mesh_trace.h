@@ -150,20 +150,20 @@ enum BLE_MESH_BQB_TEST_LOG_LEVEL {
     BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_HM            = BIT(19),
 };
 
-#define BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE 0x000FFFFF
+#define BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE      0x000FFFFF
 
 #endif /* CONFIG_BLE_MESH_BQB_TEST_LOG */
 
 #if (CONFIG_BLE_MESH_BQB_TEST_LOG && !CONFIG_BLE_MESH_NO_LOG)
-extern bool bt_mesh_bqb_test_flag_check(uint32_t module_mask);
+extern bool bt_mesh_bqb_test_flag_check(uint32_t flag_mask);
 extern int bt_mesh_bqb_test_flag_set(uint32_t value);
-#define BT_BQB(module_mask, fmt, args...)                            \
-            do {                                                     \
-                if (bt_mesh_bqb_test_flag_check(module_mask))                \
-                    BLE_MESH_PRINT_I("BLE_MESH_BQB", fmt, ## args);  \
+#define BT_BQB(flag_mask, fmt, args...)                             \
+            do {                                                    \
+                if (bt_mesh_bqb_test_flag_check(flag_mask))         \
+                    BLE_MESH_PRINT_I("BLE_MESH_BQB", fmt, ## args); \
             } while (0)
 #else
-#define BT_BQB(module_mask, fmt, args...)
+#define BT_BQB(flag_mask, fmt, args...)
 #endif
 
 #ifdef __cplusplus
