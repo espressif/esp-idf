@@ -3,9 +3,10 @@ menu "Wireless Coexistence"
     config ESP_COEX_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
         depends on (ESP_WIFI_ENABLED && BT_ENABLED) || \
-            (ESP_WIFI_ENABLED && IEEE802154_ENABLED)
+            (ESP_WIFI_ENABLED && IEEE802154_ENABLED)   || \
+            (IEEE802154_ENABLED && BT_ENABLED)
         default y
-        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
+        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE if (ESP_WIFI_ENABLED)
         help
             If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
             Recommended for heavy traffic scenarios. Both coexistence configuration options are

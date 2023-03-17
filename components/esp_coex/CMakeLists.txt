@@ -9,9 +9,16 @@ if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
         set(ldfragments "linker.lf")
     endif()
 
-    set(srcs
+    # TODO: need to remove these logic when unsupport esp32h4.
+    if(IDF_TARGET STREQUAL "esp32h4")
+        set(srcs
         "src/coexist.c"
-        "${idf_target}/esp_coex_adapter.c")
+        "esp32h2/esp_coex_adapter.c")
+    else()
+        set(srcs
+            "src/coexist.c"
+            "${idf_target}/esp_coex_adapter.c")
+    endif()
 endif()
 
 if(CONFIG_ESP_WIFI_ENABLED)
@@ -31,9 +38,14 @@ if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
 
     if(link_binary_libs)
         set(blob coexist)
-
-        add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
-                            REQUIRES ${COMPONENT_NAME})
+        # TODO: need to remove these logic when unsupport esp32h4.
+        if(IDF_TARGET STREQUAL "esp32h4")
+            add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/lib${blob}.a"
+                                REQUIRES ${COMPONENT_NAME})
+        else()
+            add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
+                                    REQUIRES ${COMPONENT_NAME})
+        endif()
         target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
     endif()
 
