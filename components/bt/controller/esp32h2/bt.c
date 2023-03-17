@@ -575,7 +575,7 @@ void controller_sleep_deinit(void)
 #define MODEM_LPCON_CLK_CONF_FORCE_ON_REG       (REG_MODEM_LPCON_BASE + 0x000C)
 #include "hal/clk_tree_ll.h"
 
-static void enable_chip_clk()
+static void enable_chip_clk(void)
 {
     WRITE_PERI_REG(MODEM_SYSCON_CLK_CONF_REG,0xFFFFFFFF);
     WRITE_PERI_REG(MODEM_SYSCON_CLK_CONF1_REG,0xFFFFFFFF);
