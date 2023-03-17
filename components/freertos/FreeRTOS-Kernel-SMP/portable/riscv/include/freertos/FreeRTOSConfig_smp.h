@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -270,10 +270,5 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 #ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
 #define configTASKLIST_INCLUDE_COREID                   1
 #endif
-
-// -------------------- Compatibility ----------------------
-
-// backward compatibility for 4.4
-#define xTaskRemoveFromUnorderedEventList vTaskRemoveFromUnorderedEventList
 
 #endif /* FREERTOS_CONFIG_SMP_H */
