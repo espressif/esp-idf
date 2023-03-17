@@ -12,4 +12,9 @@ menu "Example Configuration"
         help
             Enable this flag, to perform only stack Init and Deinit in a loop.
 
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        help
+            This enables bonding and encryption after connection has been established.
 endmenu
