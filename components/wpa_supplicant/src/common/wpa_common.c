@@ -270,7 +270,7 @@ static int rsn_selector_to_bitfield(const u8 *s)
 		return WPA_CIPHER_CCMP;
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_WEP104)
 		return WPA_CIPHER_WEP104;
-#ifdef COFIG_GCMP
+#ifdef CONFIG_GCMP
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_GCMP)
 		return WPA_CIPHER_GCMP;
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_GCMP_256)
@@ -279,7 +279,7 @@ static int rsn_selector_to_bitfield(const u8 *s)
 #ifdef CONFIG_IEEE80211W
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_AES_128_CMAC)
 		return WPA_CIPHER_AES_128_CMAC;
-#ifdef COFIG_GMAC
+#ifdef CONFIG_GMAC
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_BIP_GMAC_128)
 		return WPA_CIPHER_BIP_GMAC_128;
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_BIP_GMAC_256)
