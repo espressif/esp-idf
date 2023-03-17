@@ -2,8 +2,6 @@
  * Modules with checks are stored in ".gitlab/dangerjs/<module_name>". To import them, use path relative to "dangerfile.js"
  */
 
-const checkMrCommits = require(`./mrCommitsCommitMessage.js`);
-
 async function runChecks() {
     // Checks for merge request title
     require("./mrTitleNoDraftOrWip.js")();
