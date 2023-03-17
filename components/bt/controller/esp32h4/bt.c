@@ -123,7 +123,6 @@ extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
-extern void bt_bb_v2_init_cmplx(uint8_t i);
 extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
@@ -641,6 +640,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     // init phy
     esp_phy_enable();
+    esp_btbb_enable();
     s_ble_active = true;
     // set bb delay
     bt_bb_set_le_tx_on_delay(50);
@@ -681,6 +681,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 free_controller:
     controller_sleep_deinit();
     ble_controller_deinit();
+    esp_btbb_disable();
     esp_phy_disable();
 #if CONFIG_BT_NIMBLE_ENABLED
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
@@ -703,6 +704,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
     controller_sleep_deinit();
 
+    esp_btbb_disable();
+
     if (s_ble_active) {
         esp_phy_disable();
         s_ble_active = false;
@@ -724,8 +727,6 @@ esp_err_t esp_bt_controller_deinit(void)
     npl_freertos_funcs_deinit();
 
     npl_freertos_mempool_deinit();
-
-    esp_phy_disable();
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 

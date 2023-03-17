@@ -181,6 +181,15 @@ void esp_phy_disable(void);
 void esp_btbb_enable(void);
 
 /**
+ * @brief Disable BTBB module
+ *
+ * Dsiable BTBB module, used by IEEE802154 or Bluetooth.
+ * Users should not call this API in their application.
+ *
+ */
+void esp_btbb_disable(void);
+
+/**
  * @brief Load calibration data from NVS and initialize PHY and RF module
  */
 void esp_phy_load_cal_and_init(void);
