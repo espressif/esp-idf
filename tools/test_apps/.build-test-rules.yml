@@ -161,7 +161,7 @@ tools/test_apps/system/panic:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h4"
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3", "esp32s3", "esp32c2", "esp32c6"]
+    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3", "esp32s3", "esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: test app not ported to this target yet
 

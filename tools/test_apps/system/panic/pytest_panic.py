@@ -480,12 +480,13 @@ def test_panic_delay(dut: PanicTestDut) -> None:
 #########################
 
 # Memprot-related tests are supported only on targets with PMS/PMA peripheral;
-# currently ESP32-S2, ESP32-C3, ESP32-C2, and ESP32-C6 are supported
+# currently ESP32-S2, ESP32-C3, ESP32-C2, ESP32-H2 and ESP32-C6 are supported
 CONFIGS_MEMPROT_IDRAM = [
     pytest.param('memprot_esp32s2', marks=[pytest.mark.esp32s2]),
     pytest.param('memprot_esp32c3', marks=[pytest.mark.esp32c3]),
     pytest.param('memprot_esp32c2', marks=[pytest.mark.esp32c2]),
-    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6])
+    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
+    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2])
 ]
 
 CONFIGS_MEMPROT_DCACHE = [
@@ -495,7 +496,8 @@ CONFIGS_MEMPROT_DCACHE = [
 CONFIGS_MEMPROT_RTC_FAST_MEM = [
     pytest.param('memprot_esp32s2', marks=[pytest.mark.esp32s2]),
     pytest.param('memprot_esp32c3', marks=[pytest.mark.esp32c3]),
-    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6])
+    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
+    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2])
 ]
 
 CONFIGS_MEMPROT_RTC_SLOW_MEM = [
@@ -534,7 +536,7 @@ def test_iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> No
         dut.expect_backtrace()
     elif dut.target == 'esp32c3':
         dut.expect_exact(r'Test error: Test function has returned')
-    elif dut.target in ['esp32c2', 'esp32c6']:
+    elif dut.target in ['esp32c2', 'esp32c6', 'esp32h2']:
         dut.expect_gme('Store access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
@@ -557,7 +559,7 @@ def test_iram_reg2_write_violation(dut: PanicTestDut, test_func_name: str) -> No
         dut.expect(r'  operation type: (\S+)')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
-    elif dut.target in ['esp32c2', 'esp32c6']:
+    elif dut.target in ['esp32c2', 'esp32c6', 'esp32h2']:
         dut.expect_gme('Store access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
@@ -580,7 +582,7 @@ def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> No
         dut.expect(r'  operation type: (\S+)')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
-    elif dut.target in ['esp32c2', 'esp32c6']:
+    elif dut.target in ['esp32c2', 'esp32c6', 'esp32h2']:
         dut.expect_gme('Store access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
@@ -605,7 +607,7 @@ def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> No
         dut.expect(r'  operation type: (\S+)')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
-    elif dut.target in ['esp32c2', 'esp32c6']:
+    elif dut.target in ['esp32c2', 'esp32c6', 'eps32h2']:
         dut.expect_gme('Store access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
@@ -623,7 +625,7 @@ def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
         dut.expect(r'Unknown operation at address [0-9xa-f]+ not permitted \((\S+)\)')
         dut.expect_reg_dump(0)
         dut.expect_corrupted_backtrace()
-    elif dut.target in ['esp32c3', 'esp32c2', 'esp32c6']:
+    elif dut.target in ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2']:
         dut.expect_gme('Instruction access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
@@ -638,7 +640,7 @@ def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
         dut.expect_gme('InstructionFetchError')
         dut.expect_reg_dump(0)
         dut.expect_corrupted_backtrace()
-    elif dut.target in ['esp32c3', 'esp32c2', 'esp32c6']:
+    elif dut.target in ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2']:
         dut.expect_gme('Instruction access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
@@ -653,7 +655,7 @@ def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 @pytest.mark.parametrize('config', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=True)
 @pytest.mark.generic
-@pytest.mark.skipif('config.getvalue("target") == "esp32c6"', reason='Not a violation condition because it does not have PMS peripheral')
+@pytest.mark.skipif('config.getvalue("target") in ["esp32c6", "esp32h2"]', reason='Not a violation condition because it does not have PMS peripheral')
 def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Memory protection fault')
@@ -689,7 +691,7 @@ def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str)
         dut.expect(r'  operation type: (\S+)')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
-    elif dut.target == 'esp32c6':
+    elif dut.target in ['esp32c6', 'esp32h2']:
         dut.expect_gme('Instruction access fault')
         dut.expect_reg_dump(0)
         dut.expect_stack_dump()
