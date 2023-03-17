@@ -655,3 +655,9 @@ config BT_NIMBLE_LEGACY_VHCI_ENABLE
     default n
     help
         This option is used to distinguish whether a previous version of VHCI is being used
+
+config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
+    bool "Blob transfer"
+    help
+        This option is used when data to be sent is more than 512 bytes. For peripheral role,
+        BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
