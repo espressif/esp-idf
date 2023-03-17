@@ -74,7 +74,7 @@ Linux
         crw-rw---- 1 root dialout 188, 1 Jul 10 19:04 /dev/ttyUSB1
 
 
-3.  Following section "Permissions delegation" in `OpenOCD's README <https://sourceforge.net/p/openocd/code/ci/master/tree/README>`_, set up the access permissions to both USB ports.
+3.  To set up access permissions to USB devices supported by OpenOCD, copy the `udev rules file <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ into the ``/etc/udev/rules.d`` directory.
 
 4.  Log off and login, then cycle the power to the board to make the changes effective. In terminal enter again ``ls -l /dev/ttyUSB*`` command to verify, if group-owner has changed from ``dialout`` to ``plugdev``:
 
