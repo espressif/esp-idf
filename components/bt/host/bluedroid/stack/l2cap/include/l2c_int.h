@@ -694,11 +694,12 @@ extern void     l2cu_release_rcb (tL2C_RCB *p_rcb);
 extern tL2C_RCB *l2cu_allocate_ble_rcb (UINT16 psm);
 extern tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm);
 
-
+#if (L2CAP_COC_INCLUDED == TRUE)
 extern UINT8    l2cu_process_peer_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
 extern void     l2cu_process_peer_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
 extern void     l2cu_process_our_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
 extern void     l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
+#endif // (L2CAP_COC_INCLUDED == TRUE)
 
 extern void     l2cu_device_reset (void);
 extern tL2C_LCB *l2cu_find_lcb_by_state (tL2C_LINK_STATE state);
@@ -751,10 +752,10 @@ extern void l2cu_set_info_rsp_mask (UINT32 mask);
 /* Functions provided by l2c_csm.c
 ************************************
 */
+#if (L2CAP_COC_INCLUDED == TRUE)
 extern void l2c_csm_execute (tL2C_CCB *p_ccb, UINT16 event, void *p_data);
-
+#endif
 extern void l2c_enqueue_peer_data (tL2C_CCB *p_ccb, BT_HDR *p_buf);
-
 
 /* Functions provided by l2c_fcr.c
 ************************************
