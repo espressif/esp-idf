@@ -40,7 +40,7 @@ menu "FreeRTOS"
         config FREERTOS_OPTIMIZED_SCHEDULER
             # Todo: Not available in SMP FREERTOS (IDF-3733)
             bool "configUSE_PORT_OPTIMISED_TASK_SELECTION"
-            depends on FREERTOS_UNICORE
+            depends on FREERTOS_UNICORE && !FREERTOS_SMP
             default y
             help
                 Enables port specific task selection method. This option can speed up the search of ready tasks

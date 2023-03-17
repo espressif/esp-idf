@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef FREERTOS_CONFIG_H
-#define FREERTOS_CONFIG_H
+#pragma once
 
 #include "sdkconfig.h"
 
@@ -16,13 +15,6 @@ This file gets pulled into assembly sources. Therefore, some includes need to be
 #ifndef __ASSEMBLER__
 #include <assert.h>         //For configASSERT()
 #endif /* def __ASSEMBLER__ */
-
-#ifdef CONFIG_FREERTOS_SMP
-
-// Pull in the SMP configuration
-#include "freertos/FreeRTOSConfig_smp.h"
-
-#else // CONFIG_FREERTOS_SMP
 
 /* ----------------------------------------------------- Helpers -------------------------------------------------------
  * - Macros that the FreeRTOS configuration macros depend on
@@ -71,7 +63,7 @@ This file gets pulled into assembly sources. Therefore, some includes need to be
 /* ------------------------------------------------- FreeRTOS Config ---------------------------------------------------
  * - All Vanilla FreeRTOS configuration goes into this section
  * - Keep this section in-sync with the corresponding version of single-core upstream version of FreeRTOS
- * - Don't put any SMP or ESP-IDF exclusive FreeRTOS configurations here. Those go into the next section
+ * - Don't put any Amazon SMP FreeRTOS or IDF FreeRTOS configurations here. Those go into the next section
  * - Not all FreeRTOS configuration are listed. Some configurations have default values set in FreeRTOS.h thus don't
  *   need to be explicitly defined.
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -115,7 +107,12 @@ This file gets pulled into assembly sources. Therefore, some includes need to be
 // ----------------------- System --------------------------
 
 #define configMAX_TASK_NAME_LEN                         CONFIG_FREERTOS_MAX_TASK_NAME_LEN
+#if CONFIG_FREERTOS_SMP
+/* Number of TLSP is doubled to store TLSP deletion callbacks */
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS         ( CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS * 2 )
+#else /* CONFIG_FREERTOS_SMP */
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS         CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+#endif /* CONFIG_FREERTOS_SMP */
 #define configSTACK_DEPTH_TYPE                          uint32_t
 #if CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
 #define configENABLE_BACKWARD_COMPATIBILITY             1
@@ -133,8 +130,16 @@ This file gets pulled into assembly sources. Therefore, some includes need to be
 
 // ------------------------ Hooks --------------------------
 
-#define configUSE_IDLE_HOOK                             CONFIG_FREERTOS_USE_IDLE_HOOK
-#define configUSE_TICK_HOOK                             CONFIG_FREERTOS_USE_TICK_HOOK
+#if CONFIG_FREERTOS_USE_IDLE_HOOK
+#define configUSE_IDLE_HOOK                             1
+#else /* CONFIG_FREERTOS_USE_IDLE_HOOK */
+#define configUSE_IDLE_HOOK                             0
+#endif /* CONFIG_FREERTOS_USE_IDLE_HOOK */
+#if CONFIG_FREERTOS_USE_TICK_HOOK
+#define configUSE_TICK_HOOK                             1
+#else /* CONFIG_FREERTOS_USE_TICK_HOOK */
+#define configUSE_TICK_HOOK                             0
+#endif /* CONFIG_FREERTOS_USE_TICK_HOOK */
 #if CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE
 #define configCHECK_FOR_STACK_OVERFLOW                  0
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
@@ -202,44 +207,75 @@ Note: Include trace macros here and not above as trace macros are dependent on s
 #include "SEGGER_SYSVIEW_FreeRTOS.h"
 #undef INLINE // to avoid redefinition
 #endif //CONFIG_SYSVIEW_ENABLE
+
+#if CONFIG_FREERTOS_SMP
+/* Default values for trace macros added to ESP-IDF implementation of SYSVIEW
+ * that is not part of Amazon SMP FreeRTOS. */
+#ifndef traceISR_EXIT
+    #define traceISR_EXIT()
+#endif
+#ifndef traceISR_ENTER
+    #define traceISR_ENTER(_n_)
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR
+    #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+    #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+#endif
+
+#ifndef traceQUEUE_SEMAPHORE_RECEIVE
+    #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+#endif
+#endif /* CONFIG_FREERTOS_SMP */
 #endif /* def __ASSEMBLER__ */
 
-/* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
- * - All FreeRTOS related configurations no part of Vanilla FreeRTOS goes into this section
- * - FreeRTOS configurations related to SMP and ESP-IDF additions go into this section
+/* ----------------------------------------------- Amazon SMP FreeRTOS -------------------------------------------------
+ * - All Amazon SMP FreeRTOS specific configurations
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ------------------------- SMP ---------------------------
-
-#ifndef CONFIG_FREERTOS_UNICORE
-#define portNUM_PROCESSORS                              2
+#if CONFIG_FREERTOS_SMP
+#ifdef CONFIG_FREERTOS_UNICORE
+#define configNUM_CORES                                  1
 #else
-#define portNUM_PROCESSORS                              1
-#endif
-#define configNUM_CORES                                 portNUM_PROCESSORS
+#define configNUM_CORES                                  2
+#endif /* CONFIG_FREERTOS_UNICORE */
+#define configUSE_CORE_AFFINITY                          1
+#define configRUN_MULTIPLE_PRIORITIES                    1
+#define configUSE_TASK_PREEMPTION_DISABLE                1
+/* This is always enabled to call IDF style idle hooks, by can be "--Wl,--wrap"
+ * if users enable CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK. */
+#define configUSE_MINIMAL_IDLE_HOOK                      1
+/* IDF Newlib supports dynamic reentrancy. We provide our own __getreent()
+ * function. */
+#define configNEWLIB_REENTRANT_IS_DYNAMIC                1
+#endif /* CONFIG_FREERTOS_SMP */
+
+/* -------------------------------------------------- IDF FreeRTOS -----------------------------------------------------
+ * - All IDF FreeRTOS specific configurations
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if !CONFIG_FREERTOS_SMP
+#ifdef CONFIG_FREERTOS_UNICORE
+#define configNUM_CORES                                  1
+#else
+#define configNUM_CORES                                  2
+#endif /* CONFIG_FREERTOS_UNICORE */
 #ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
-#define configTASKLIST_INCLUDE_COREID                   1
-#endif
-
-// ---------------------- Features -------------------------
-
+#define configTASKLIST_INCLUDE_COREID                    1
+#endif /* CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID */
 #ifdef CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
-#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     1
-#endif
-
+#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS      1
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-#define configCHECK_MUTEX_GIVEN_BY_OWNER                1
-#else
-#define configCHECK_MUTEX_GIVEN_BY_OWNER                0
-#endif
+#define configCHECK_MUTEX_GIVEN_BY_OWNER                 1
+#endif /* CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER */
+#endif /* !CONFIG_FREERTOS_SMP */
 
-#ifndef __ASSEMBLER__
-#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-extern void vPortCleanUpTCB ( void *pxTCB );
-#define portCLEAN_UP_TCB( pxTCB )                       vPortCleanUpTCB( pxTCB )
-#endif
-#endif
+/* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
+ * - Any other macros required by the rest of ESP-IDF
+ * ------------------------------------------------------------------------------------------------------------------ */
 
-#endif // CONFIG_FREERTOS_SMP
-
-#endif /* FREERTOS_CONFIG_H */
+#define portNUM_PROCESSORS                               configNUM_CORES

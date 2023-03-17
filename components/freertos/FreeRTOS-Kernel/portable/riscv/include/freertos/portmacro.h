@@ -385,6 +385,14 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 #define portALT_GET_RUN_TIME_COUNTER_VALUE(x)    do {x = (uint32_t)esp_timer_get_time();} while(0)
 #endif
 
+// --------------------- TCB Cleanup -----------------------
+
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+/* If enabled, users must provide an implementation of vPortCleanUpTCB() */
+extern void vPortCleanUpTCB ( void *pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
+#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+
 // -------------- Optimized Task Selection -----------------
 
 #if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
@@ -424,7 +432,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  * - Miscellaneous porting macros
- * - These are not port of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
+ * - These are not part of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
  * ------------------------------------------------------------------------------------------------------------------ */
 
 // -------------------- Heap Related -----------------------

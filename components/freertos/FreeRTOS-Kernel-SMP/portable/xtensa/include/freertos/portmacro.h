@@ -379,6 +379,20 @@ bool xPortcheckValidStackMem(const void *ptr);
 #define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 
+/* ------------------------------------------------------ Misc ---------------------------------------------------------
+ * - Miscellaneous porting macros
+ * - These are not part of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+// --------------------- App-Trace -------------------------
+
+#if CONFIG_APPTRACE_SV_ENABLE
+extern volatile BaseType_t xPortSwitchFlag;
+#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
 // --------------- Compatibility Includes ------------------
 /*
 ESP-IDF currently does not have a "Include what you use" policy. A lot of files implicitly pull in API through
