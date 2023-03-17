@@ -302,6 +302,7 @@ typedef union {
         uint8_t tl;                              /*!< transaction label, 0 to 15 */
         uint8_t key_code;                        /*!< passthrough command code */
         uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
+        esp_avrc_rsp_t rsp_code;                 /*!< response code */
     } psth_rsp;                                  /*!< passthrough command response */
 
     /**
