@@ -1837,13 +1837,6 @@
     - <<: *if-protected
     - <<: *if-label-lan8720
 
-.rules:labels:fuzzer_test-weekend_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-label-fuzzer_test
-    - <<: *if-label-weekend_test
-
 .rules:labels:iperf_stress_test:
   rules:
     - <<: *if-revert-branch
