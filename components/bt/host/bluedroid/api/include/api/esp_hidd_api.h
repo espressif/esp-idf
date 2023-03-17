@@ -23,86 +23,100 @@
 extern "C" {
 #endif
 
-/* sub_class of hid device */
-#define ESP_HID_CLASS_UNKNOWN      (0x00<<2)
-#define ESP_HID_CLASS_JOS          (0x01<<2)           /* joy stick */
-#define ESP_HID_CLASS_GPD          (0x02<<2)           /* game pad */
-#define ESP_HID_CLASS_RMC          (0x03<<2)           /* remote control */
-#define ESP_HID_CLASS_SED          (0x04<<2)           /* sensing device */
-#define ESP_HID_CLASS_DGT          (0x05<<2)           /* Digitizer tablet */
-#define ESP_HID_CLASS_CDR          (0x06<<2)           /* card reader */
-#define ESP_HID_CLASS_KBD          (0x10<<2)           /* keyboard */
-#define ESP_HID_CLASS_MIC          (0x20<<2)           /* pointing device */
-#define ESP_HID_CLASS_COM          (0x30<<2)           /* Combo keyboard/pointing */
+/// subclass of hid device
+#define ESP_HID_CLASS_UNKNOWN      (0x00<<2)           /*!< unknown HID device subclass */
+#define ESP_HID_CLASS_JOS          (0x01<<2)           /*!< joystick */
+#define ESP_HID_CLASS_GPD          (0x02<<2)           /*!< game pad */
+#define ESP_HID_CLASS_RMC          (0x03<<2)           /*!< remote control */
+#define ESP_HID_CLASS_SED          (0x04<<2)           /*!< sensing device */
+#define ESP_HID_CLASS_DGT          (0x05<<2)           /*!< digitizer tablet */
+#define ESP_HID_CLASS_CDR          (0x06<<2)           /*!< card reader */
+#define ESP_HID_CLASS_KBD          (0x10<<2)           /*!< keyboard */
+#define ESP_HID_CLASS_MIC          (0x20<<2)           /*!< pointing device */
+#define ESP_HID_CLASS_COM          (0x30<<2)           /*!< combo keyboard/pointing */
 
 /**
- * @brief HIDD handshake error
+ * @brief HIDD handshake result code
  */
 typedef enum {
-    ESP_HID_PAR_HANDSHAKE_RSP_SUCCESS = 0,
-    ESP_HID_PAR_HANDSHAKE_RSP_NOT_READY = 1,
-    ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID = 2,
-    ESP_HID_PAR_HANDSHAKE_RSP_ERR_UNSUPPORTED_REQ = 3,
-    ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_PARAM = 4,
-    ESP_HID_PAR_HANDSHAKE_RSP_ERR_UNKNOWN = 14,
-    ESP_HID_PAR_HANDSHAKE_RSP_ERR_FATAL = 15
+    ESP_HID_PAR_HANDSHAKE_RSP_SUCCESS = 0,                 /*!< successful */
+    ESP_HID_PAR_HANDSHAKE_RSP_NOT_READY = 1,               /*!< not ready, device is too busy to accept data */
+    ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID = 2,      /*!< invalid report ID */
+    ESP_HID_PAR_HANDSHAKE_RSP_ERR_UNSUPPORTED_REQ = 3,     /*!< device does not support the request */
+    ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_PARAM = 4,       /*!< parameter value is out of range or inappropriate */
+    ESP_HID_PAR_HANDSHAKE_RSP_ERR_UNKNOWN = 14,            /*!< device could not identify the error condition */
+    ESP_HID_PAR_HANDSHAKE_RSP_ERR_FATAL = 15,              /*!< restart is essential to resume functionality */
 } esp_hidd_handshake_error_t;
 
 /**
  * @brief HIDD report types
  */
 typedef enum {
-    ESP_HIDD_REPORT_TYPE_OTHER = 0,
-    ESP_HIDD_REPORT_TYPE_INPUT,
-    ESP_HIDD_REPORT_TYPE_OUTPUT,
-    ESP_HIDD_REPORT_TYPE_FEATURE,
-    // special value for reports to be sent on INTR(INPUT is assumed)
-    ESP_HIDD_REPORT_TYPE_INTRDATA
+    ESP_HIDD_REPORT_TYPE_OTHER = 0,                  /*!< unknown report type */
+    ESP_HIDD_REPORT_TYPE_INPUT,                      /*!< input report */
+    ESP_HIDD_REPORT_TYPE_OUTPUT,                     /*!< output report */
+    ESP_HIDD_REPORT_TYPE_FEATURE,                    /*!< feature report */
+    ESP_HIDD_REPORT_TYPE_INTRDATA,                   /*!< special value for reports to be sent on interrupt channel, INPUT is assumed */
 } esp_hidd_report_type_t;
 
 /**
  * @brief HIDD connection state
  */
 typedef enum {
-    ESP_HIDD_CONN_STATE_CONNECTED,
-    ESP_HIDD_CONN_STATE_CONNECTING,
-    ESP_HIDD_CONN_STATE_DISCONNECTED,
-    ESP_HIDD_CONN_STATE_DISCONNECTING,
-    ESP_HIDD_CONN_STATE_UNKNOWN
+    ESP_HIDD_CONN_STATE_CONNECTED,                   /*!< HID connection established */
+    ESP_HIDD_CONN_STATE_CONNECTING,                  /*!< connection to remote Bluetooth device */
+    ESP_HIDD_CONN_STATE_DISCONNECTED,                /*!< connection released */
+    ESP_HIDD_CONN_STATE_DISCONNECTING,               /*!< disconnecting to remote Bluetooth device*/
+    ESP_HIDD_CONN_STATE_UNKNOWN,                     /*!< unknown connection state */
 } esp_hidd_connection_state_t;
 
 /**
  * @brief HID device protocol modes
  */
 typedef enum {
-    ESP_HIDD_REPORT_MODE = 0x00,
-    ESP_HIDD_BOOT_MODE = 0x01,
-    ESP_HIDD_UNSUPPORTED_MODE = 0xff
+    ESP_HIDD_REPORT_MODE = 0x00,                     /*!< Report Protocol Mode */
+    ESP_HIDD_BOOT_MODE = 0x01,                       /*!< Boot Protocol Mode */
+    ESP_HIDD_UNSUPPORTED_MODE = 0xff,                /*!< unsupported */
 } esp_hidd_protocol_mode_t;
 
+/**
+ * @brief HID Boot Protocol report IDs
+ */
+typedef enum {
+    ESP_HIDD_BOOT_REPORT_ID_KEYBOARD = 1,            /*!< report ID of Boot Protocol keyboard report */
+    ESP_HIDD_BOOT_REPORT_ID_MOUSE = 2,               /*!< report ID of Boot Protocol mouse report */
+} esp_hidd_boot_report_id_t;
 
 /**
- * @brief HIDD characteristics for SDP report
+ * @brief HID Boot Protocol report size including report ID
+ */
+enum {
+    ESP_HIDD_BOOT_REPORT_SIZE_KEYBOARD = 9,          /*!< report size of Boot Protocol keyboard report */
+    ESP_HIDD_BOOT_REPORT_SIZE_MOUSE = 4,             /*!< report size of Boot Protocol mouse report */
+};
+
+/**
+ * @brief HID device characteristics for SDP server
  */
 typedef struct {
-    const char *name;
-    const char *description;
-    const char *provider;
-    uint8_t subclass;
-    uint8_t *desc_list;
-    int desc_list_len;
+    const char *name;                                /*!< service name */
+    const char *description;                         /*!< service description */
+    const char *provider;                            /*!< provider name */
+    uint8_t subclass;                                /*!< HID device subclass */
+    uint8_t *desc_list;                              /*!< HID descriptor list */
+    int desc_list_len;                               /*!< size in bytes of HID descriptor list */
 } esp_hidd_app_param_t;
 
 /**
- * @brief HIDD Quality of Service parameters
+ * @brief HIDD Quality of Service parameters negotiated over L2CAP
  */
 typedef struct {
-    uint8_t service_type;
-    uint32_t token_rate;
-    uint32_t token_bucket_size;
-    uint32_t peak_bandwidth;
-    uint32_t access_latency;
-    uint32_t delay_variation;
+    uint8_t service_type;                            /*!< the level of service, 0 indicates no traffic */
+    uint32_t token_rate;                             /*!< token rate in bytes per second, 0 indicates "don't care" */
+    uint32_t token_bucket_size;                      /*!< limit on the burstness of the application data */
+    uint32_t peak_bandwidth;                         /*!< bytes per second, value 0 indicates "don't care" */
+    uint32_t access_latency;                         /*!< maximum acceptable delay in microseconds */
+    uint32_t delay_variation;                        /*!< the difference in microseconds between the max and min delay */
 } esp_hidd_qos_param_t;
 
 /**
