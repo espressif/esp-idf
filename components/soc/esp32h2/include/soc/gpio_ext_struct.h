@@ -75,8 +75,8 @@ typedef union {
          */
         uint32_t xpd_comp:1;
         /** mode_comp : R/W; bitpos: [1]; default: 0;
-         *  1 to enable external reference from PAD[0]. 0 to enable internal reference,
-         *  meanwhile PAD[0] can be used as a regular GPIO.
+         *  1 to enable external reference from PAD[10]. 0 to enable internal reference,
+         *  meanwhile PAD[10] can be used as a regular GPIO.
          */
         uint32_t mode_comp:1;
         /** dref_comp : R/W; bitpos: [4:2]; default: 0;
@@ -305,10 +305,15 @@ typedef struct {
     volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
+// analog comparator is a stand alone peripheral, but it is connected to GPIO
+// so we rename it to analog_cmpr_dev_t from user's perspective
+typedef gpio_ext_dev_t analog_cmpr_dev_t;
+
 extern gpio_sd_dev_t SDM;
 extern gpio_glitch_filter_dev_t GLITCH_FILTER;
 extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
+extern analog_cmpr_dev_t ANALOG_CMPR;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(gpio_ext_dev_t) == 0x100, "Invalid size of gpio_ext_dev_t structure");

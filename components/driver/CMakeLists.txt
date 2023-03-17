@@ -10,6 +10,7 @@ set(srcs
 # Always included headers
 set(includes "include"
              "deprecated"
+             "analog_comparator/include"
              "dac/include"
              "gpio/include"
              "gptimer/include"
@@ -37,6 +38,11 @@ endif()
 
 if(CONFIG_SOC_ADC_DMA_SUPPORTED)
     list(APPEND srcs "deprecated/adc_dma_legacy.c")
+endif()
+
+# Analog comparator related source files
+if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
+    list(APPEND srcs "analog_comparator/ana_cmpr.c")
 endif()
 
 # DAC related source files

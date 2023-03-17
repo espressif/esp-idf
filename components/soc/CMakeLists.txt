@@ -30,6 +30,10 @@ if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "${target}/adc_periph.c")
 endif()
 
+if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
+    list(APPEND srcs "${target}/ana_cmpr_periph.c")
+endif()
+
 if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
     list(APPEND srcs "${target}/dedic_gpio_periph.c")
 endif()

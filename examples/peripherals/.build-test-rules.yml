@@ -8,6 +8,10 @@ examples/peripherals/adc/oneshot_read:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
 
+examples/peripherals/analog_comparator:
+  disable:
+    - if: SOC_ANA_CMPR_SUPPORTED != 1
+
 examples/peripherals/dac:
   disable:
     - if: SOC_DAC_SUPPORTED != 1

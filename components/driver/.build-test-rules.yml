@@ -1,5 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/driver/test_apps/analog_comparator:
+  disable:
+    - if: SOC_ANA_CMPR_SUPPORTED != 1
+
 components/driver/test_apps/dac_test_apps/dac:
   disable:
     - if: SOC_DAC_SUPPORTED != 1

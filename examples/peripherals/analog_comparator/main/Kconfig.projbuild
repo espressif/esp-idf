@@ -1,0 +1,28 @@
+menu "Analog Comparator Example Configuration"
+
+    choice EXAMPLE_REFERENCE_SOURCE
+        prompt "Analog Comparator reference source"
+        default EXAMPLE_INTERNAL_REF
+        help
+            Decide the reference signal comes from internal or external
+
+        config EXAMPLE_INTERNAL_REF
+            bool "Internal reference"
+            help
+                The source signal will refer to an internal voltage, which related to VDD.
+
+        config EXAMPLE_EXTERNAL_REF
+            bool "External reference"
+            help
+                The source signal will refer to the external signal on a specific GPIO.
+    endchoice
+
+    config EXAMPLE_HYSTERESIS_COMPARATOR
+        depends on EXAMPLE_INTERNAL_REF
+        bool "Enable hysteresis comparator"
+        default n
+        help
+            The internal reference voltage will be set to 30% VDD and 70% VDD alternately
+            every time the interrupt triggered.
+
+endmenu
