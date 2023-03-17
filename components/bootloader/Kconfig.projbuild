@@ -114,6 +114,7 @@ menu "Bootloader config"
     config BOOTLOADER_FACTORY_RESET
         bool "GPIO triggers factory reset"
         default N
+        select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
         help
             Allows to reset the device to factory settings:
             - clear one or more data partitions;
@@ -326,6 +327,7 @@ menu "Bootloader config"
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
         depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
+        select BOOTLOADER_RESERVE_RTC_MEM
         help
             This option disables the normal validation of an image coming out of
             deep sleep (checksums, SHA256, and signature). This is a trade-off
@@ -381,7 +383,7 @@ menu "Bootloader config"
     config BOOTLOADER_RESERVE_RTC_SIZE
         hex
         depends on SOC_RTC_FAST_MEM_SUPPORTED
-        default 0x10 if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP || BOOTLOADER_CUSTOM_RESERVE_RTC
+        default 0x10 if BOOTLOADER_RESERVE_RTC_MEM
         default 0
         help
             Reserve RTC FAST memory for Skip image validation. This option in bytes.
@@ -393,6 +395,7 @@ menu "Bootloader config"
     config BOOTLOADER_CUSTOM_RESERVE_RTC
         bool "Reserve RTC FAST memory for custom purposes"
         depends on SOC_RTC_FAST_MEM_SUPPORTED
+        select BOOTLOADER_RESERVE_RTC_MEM
         default n
         help
             This option allows the customer to place data in the RTC FAST memory,
@@ -411,6 +414,15 @@ menu "Bootloader config"
             If you want to create your own bootloader and save more information
             in this area of memory, you can increase it. It must be a multiple of 4 bytes.
             This area (rtc_retain_mem_t) is reserved and has access from the bootloader and an application.
+
+    config BOOTLOADER_RESERVE_RTC_MEM
+        bool
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
+        help
+            This option reserves an area in RTC FAST memory for the following features:
+            - "Skip image validation when exiting deep sleep"
+            - "Reserve RTC FAST memory for custom purposes"
+            - "GPIO triggers factory reset"
 
     config BOOTLOADER_FLASH_XMC_SUPPORT
         bool "Enable the support for flash chips of XMC (READ HELP FIRST)"

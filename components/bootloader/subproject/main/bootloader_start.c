@@ -98,9 +98,12 @@ static int selected_boot_partition(const bootloader_state_t *bs)
             if (bootloader_common_erase_part_type_data(list_erase, ota_data_erase) == false) {
                 ESP_LOGE(TAG, "Not all partitions were erased");
             }
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC_MEM
+            bootloader_common_set_rtc_retain_mem_factory_reset_state();
+#endif
             return bootloader_utility_get_selected_boot_partition(bs);
         }
-#endif
+#endif // CONFIG_BOOTLOADER_FACTORY_RESET
         // TEST firmware.
 #ifdef CONFIG_BOOTLOADER_APP_TEST
         bool app_test_level = false;
@@ -117,7 +120,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
                 return INVALID_INDEX;
             }
         }
-#endif
+#endif // CONFIG_BOOTLOADER_APP_TEST
         // Customer implementation.
         // if (gpio_pin_1 == true && ...){
         //     boot_index = required_boot_partition;
