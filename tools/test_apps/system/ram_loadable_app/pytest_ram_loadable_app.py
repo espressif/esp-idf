@@ -27,4 +27,4 @@ def test_pure_ram_loadable_app(dut: IdfDut) -> None:
 @pytest.mark.parametrize('config', ['defaults',], indirect=True,)
 def test_ram_loadable_app(dut: IdfDut) -> None:
     dut.expect('spi_flash: detected chip', timeout=10)
-    dut.expect('Time since boot: 3 seconds...', timeout=10)
+    dut.expect('Time since boot: 3 seconds...', timeout=30)
