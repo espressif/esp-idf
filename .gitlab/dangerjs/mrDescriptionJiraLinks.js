@@ -1,4 +1,4 @@
-/** Check that there are valid JIRA links in MR desctiption.
+/** Check that there are valid JIRA links in MR description.
  *
  * This check extracts the "Related" section from the MR description and
  * searches for JIRA ticket references in the format "Closes [JIRA ticket key]".
@@ -179,9 +179,9 @@ module.exports = async function () {
                     password: process.env.DANGER_JIRA_PASSWORD,
                 },
             });
-            if (response.data.fields.description) {
-                jiraDescription = response.data.fields.description;
-            }
+            jiraDescription = response.data.fields.description
+                ? response.data.fields.description
+                : ""; // if the Jira ticket has an unfilled Description, the ".description" property is missing in API response - in that case set "jiraDescription" to an empty string
         } catch (error) {
             return null;
         }
