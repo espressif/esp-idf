@@ -6,7 +6,7 @@
 
 #pragma once
 
-// Linux POSIX simulator specific configuration. This file is included in the common FreeRTOSConfig.h.
+/* Linux POSIX simulator specific configuration. This file is included in the common FreeRTOSConfig.h. */
 
 #include "sdkconfig.h"
 
@@ -16,35 +16,36 @@
  *   https://github.com/FreeRTOS/FreeRTOS/blob/main/FreeRTOS/Demo/Posix_GCC/FreeRTOSConfig.h
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ------------------ Scheduler Related --------------------
+/* ------------------ Scheduler Related -------------------- */
 
-#define configMAX_PRIORITIES                                ( 7 )
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION             0
+#define configMAX_PRIORITIES                       ( 7 )
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION    0
+
 /* The stack allocated by FreeRTOS will be passed to a pthread.
-   pthread has a minimal stack size which currently is 16KB.
-   The rest is for additional structures of the POSIX/Linux port.
-   This is a magic number since PTHREAD_STACK_MIN seems to not be a constant. */
-#define configMINIMAL_STACK_SIZE                            ( ( unsigned short ) (0x4000 + 40) / sizeof(portSTACK_TYPE) )
+ * pthread has a minimal stack size which currently is 16KB.
+ * The rest is for additional structures of the POSIX/Linux port.
+ * This is a magic number since PTHREAD_STACK_MIN seems to not be a constant. */
+#define configMINIMAL_STACK_SIZE                   ( ( unsigned short ) ( 0x4000 + 40 ) / sizeof( portSTACK_TYPE ) )
 /* Currently not used in Linux POSIX simulator */
-#define configMAX_API_CALL_INTERRUPT_PRIORITY               0
+#define configMAX_API_CALL_INTERRUPT_PRIORITY      0
 
-// ----------------------- System --------------------------
+/* ----------------------- System -------------------------- */
 
-#define configUSE_NEWLIB_REENTRANT                          0
-#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H           0
+#define configUSE_NEWLIB_REENTRANT                   0
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    0
 
-// ----------------------- Memory  -------------------------
+/* ----------------------- Memory  ------------------------- */
 
-#define configTOTAL_HEAP_SIZE                               ( ( size_t ) ( 65 * 1024 ) )
+#define configTOTAL_HEAP_SIZE    ( ( size_t ) ( 65 * 1024 ) )
 
-// ------------------- Run-time Stats ----------------------
+/* ------------------- Run-time Stats ---------------------- */
 
-#define configUSE_TRACE_FACILITY                            1
+#define configUSE_TRACE_FACILITY    1
 
-// -------------------- API Includes -----------------------
+/* -------------------- API Includes ----------------------- */
 
-#define INCLUDE_xTaskGetCurrentTaskHandle                   0 /* not defined in POSIX simulator */
-#define INCLUDE_vTaskDelayUntil                             1
+#define INCLUDE_xTaskGetCurrentTaskHandle    0                /* not defined in POSIX simulator */
+#define INCLUDE_vTaskDelayUntil              1
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *

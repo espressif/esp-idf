@@ -6,7 +6,7 @@
 
 #pragma once
 
-// Xtensa Architecture specific configuration. This file is included in the common FreeRTOSConfig.h.
+/* Xtensa Architecture specific configuration. This file is included in the common FreeRTOSConfig.h. */
 
 #include "sdkconfig.h"
 
@@ -26,55 +26,55 @@
  *      - XT_USE_SWPRI         We don't define this (unused)
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#define configXT_SIMULATOR                                  0
-#define configXT_BOARD                                      1   /* Board mode */
+#define configXT_SIMULATOR          0
+#define configXT_BOARD              1                           /* Board mode */
 #if CONFIG_FREERTOS_CORETIMER_0
-#define configXT_TIMER_INDEX                                0
+    #define configXT_TIMER_INDEX    0
 #elif CONFIG_FREERTOS_CORETIMER_1
-#define configXT_TIMER_INDEX                                1
+    #define configXT_TIMER_INDEX    1
 #endif
-#define configXT_INTEXC_HOOKS                               0
+#define configXT_INTEXC_HOOKS       0
 
-#define configBENCHMARK                                     0
+#define configBENCHMARK             0
 
 /* ------------------------------------------------- FreeRTOS Config ---------------------------------------------------
  * - All Vanilla FreeRTOS configuration goes into this section
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ------------------ Scheduler Related --------------------
+/* ------------------ Scheduler Related -------------------- */
 
-#define configMAX_PRIORITIES                                ( 25 )
+#define configMAX_PRIORITIES                           ( 25 )
 #ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION             1
+    #define configUSE_PORT_OPTIMISED_TASK_SELECTION    1
 #else
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION             0
+    #define configUSE_PORT_OPTIMISED_TASK_SELECTION    0
 #endif /* CONFIG_FREERTOS_OPTIMIZED_SCHEDULER */
-#define configMINIMAL_STACK_SIZE                            ( CONFIG_FREERTOS_IDLE_TASK_STACKSIZE + configSTACK_OVERHEAD_TOTAL )
-#define configMAX_API_CALL_INTERRUPT_PRIORITY               XCHAL_EXCM_LEVEL
+#define configMINIMAL_STACK_SIZE                       ( CONFIG_FREERTOS_IDLE_TASK_STACKSIZE + configSTACK_OVERHEAD_TOTAL )
+#define configMAX_API_CALL_INTERRUPT_PRIORITY          XCHAL_EXCM_LEVEL
 
-// ----------------------- System --------------------------
+/* ----------------------- System -------------------------- */
 
-#define configUSE_NEWLIB_REENTRANT                          1
-#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H           1
+#define configUSE_NEWLIB_REENTRANT                   1
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    1
 
-// ----------------------- Memory  -------------------------
+/* ----------------------- Memory  ------------------------- */
 
 /* This isn't used as FreeRTOS will only allocate from internal memory (see
  * heap_idf.c). We simply define this macro to span all non-statically-allocated
  * shared RAM. */
-#define configTOTAL_HEAP_SIZE                               (&_heap_end - &_heap_start)
+#define configTOTAL_HEAP_SIZE    ( &_heap_end - &_heap_start )
 
-// ------------------- Run-time Stats ----------------------
+/* ------------------- Run-time Stats ---------------------- */
 
 #if CONFIG_FREERTOS_USE_TRACE_FACILITY
     /* Used by uxTaskGetSystemState(), and other trace facility functions */
-    #define configUSE_TRACE_FACILITY                        1
+    #define configUSE_TRACE_FACILITY    1
 #endif /* CONFIG_FREERTOS_USE_TRACE_FACILITY */
 
-// -------------------- API Includes -----------------------
+/* -------------------- API Includes ----------------------- */
 
-#define INCLUDE_xTaskDelayUntil                             1
-#define INCLUDE_xTaskGetCurrentTaskHandle                   1
+#define INCLUDE_xTaskDelayUntil              1
+#define INCLUDE_xTaskGetCurrentTaskHandle    1
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *
@@ -85,7 +85,7 @@
  * Size needs to be aligned to the stack increment, since the location of
  * the stack for the 2nd CPU will be calculated using configISR_STACK_SIZE.
  */
-#define configSTACK_ALIGNMENT                               16
+#define configSTACK_ALIGNMENT       16
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE                                ((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
+    #define configISR_STACK_SIZE    ( ( CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1 ) & ( ~( configSTACK_ALIGNMENT - 1 ) ) )
 #endif
