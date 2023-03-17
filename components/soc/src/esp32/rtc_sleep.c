@@ -211,6 +211,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, cfg.rtc_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, cfg.dig_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_SLP, cfg.dig_dbias_slp);
+
+    extern bool esp_phy_is_initialized(void);
+    if (esp_phy_is_initialized()){
+        extern void phy_close_rf(void);
+        phy_close_rf();
+    }
 }
 
 void rtc_sleep_set_wakeup_time(uint64_t t)
