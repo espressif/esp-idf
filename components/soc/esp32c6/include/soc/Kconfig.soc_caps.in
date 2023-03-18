@@ -1103,6 +1103,10 @@ config SOC_PM_SUPPORT_MAC_BB_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_RTC_PERIPH_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y

@@ -203,15 +203,14 @@ static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
         [22] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x14), I2C_ANA_MST_ANA_CONF0_REG,        0x4,                       0xc,        0, 1), /* BBPLL calibration disable */
 
         [23] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x15), MODEM_LPCON_CLK_CONF_REG,         0,                         MODEM_LPCON_CLK_I2C_MST_EN_M,       0, 1), /* I2C MST disable */
-        [24] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x16), MODEM_LPCON_I2C_MST_CLK_CONF_REG, 0,                         MODEM_LPCON_CLK_I2C_MST_SEL_160M_M, 0, 1), /* I2C MST sel 160m disable */
 
         /* PMU to trigger disable RXBLOCK */
-        [25] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x17), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1),
-        [26] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x18), WDEVTXQ_BLOCK,                    WDEV_RXBLOCK,              0x1000,     0, 1),
-        [27] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x19), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1),
+        [24] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x17), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1),
+        [25] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x18), WDEVTXQ_BLOCK,                    WDEV_RXBLOCK,              0x1000,     0, 1),
+        [26] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x19), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1),
 
-        [28] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1a), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),
-        [29] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1b), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
+        [27] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1a), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),
+        [28] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1b), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
     };
     wifi_modem_config[7].write_wait.value  = I2C_BURST_VAL(cmd.config[1].host_id, cmd.config[1].start, cmd.config[1].end);
     wifi_modem_config[18].write_wait.value = I2C_BURST_VAL(cmd.config[0].host_id, cmd.config[0].start, cmd.config[0].end);

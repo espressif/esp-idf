@@ -64,7 +64,7 @@ static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, 
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_syscon_ll_enable_etm_clock(ctx->hal->syscon_dev, enable);
-    modem_syscom_ll_enable_modem_sec_clock(ctx->hal->syscon_dev, enable);
+    modem_syscon_ll_enable_modem_sec_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }
 
@@ -98,7 +98,6 @@ static void IRAM_ATTR modem_clock_fe_configure(modem_clock_context_t *ctx, bool 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_lpcon_ll_enable_i2c_master_clock(ctx->hal->lpcon_dev, enable);
-    modem_lpcon_ll_enable_i2c_master_160m_clock(ctx->hal->lpcon_dev, enable);
 }
 
 static void IRAM_ATTR modem_clock_etm_configure(modem_clock_context_t *ctx, bool enable)

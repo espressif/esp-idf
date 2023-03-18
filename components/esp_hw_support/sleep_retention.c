@@ -9,9 +9,11 @@
 #include <sys/lock.h>
 #include <sys/param.h>
 
+#include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_sleep.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_regdma.h"
 #include "esp_private/esp_pau.h"
@@ -433,6 +435,7 @@ esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t 
     err = sleep_retention_entries_create_wrapper(retent, num, priority, module);
     if (err)  goto error;
     pmu_sleep_enable_regdma_backup();
+    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&pmu_sleep_disable_regdma_backup));
 
 error:
     return err;

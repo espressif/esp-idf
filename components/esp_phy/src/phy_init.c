@@ -19,6 +19,7 @@
 #include "nvs_flash.h"
 #include "esp_efuse.h"
 #include "esp_timer.h"
+#include "esp_sleep.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -246,8 +247,7 @@ void esp_phy_enable(void)
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
             s_is_phy_calibrated = true;
-        }
-        else {
+        } else {
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
             extern bool pm_mac_modem_rf_already_enabled(void);
             if (!pm_mac_modem_rf_already_enabled()) {
@@ -814,6 +814,8 @@ void esp_phy_load_cal_and_init(void)
 #else
     esp_phy_release_init_data(init_data);
 #endif
+
+    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_close_rf));
 
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
