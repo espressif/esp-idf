@@ -13,7 +13,7 @@ __realpath() {
 
 
 __verbose() {
-    [ -n "${IDF_EXPORT_QUIET}" ] && return
+    [ -n "${IDF_EXPORT_QUIET-}" ] && return
     echo "$@"
 }
 
@@ -30,7 +30,7 @@ __main() {
         return 1
     fi
 
-    if [ -z "${IDF_PATH}" ]
+    if [ -z "${IDF_PATH-}" ]
     then
         # IDF_PATH not set in the environment.
         # If using bash or zsh, try to guess IDF_PATH from script location.
