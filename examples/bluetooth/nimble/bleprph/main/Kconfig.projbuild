@@ -68,4 +68,11 @@ menu "Example Configuration"
         prompt "Enable Link Encryption"
         help
             This adds Encrypted Read and Write permissions in the custom GATT server.
+
+    config EXAMPLE_RESOLVE_PEER_ADDR
+        bool
+        prompt "Enable resolving peer address"
+        help
+            Use this option to enable resolving peer's address.
+
 endmenu
