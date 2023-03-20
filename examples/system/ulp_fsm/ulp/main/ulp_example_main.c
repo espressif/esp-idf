@@ -1,7 +1,5 @@
 /* ULP Example
-
    This example code is in the Public Domain (or CC0 licensed, at your option.)
-
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
@@ -98,12 +96,12 @@ static void init_ulp_program(void)
 
 static void update_pulse_count(void)
 {
-    const char* namespace = "plusecnt";
+    const char* nvs_namespace = "plusecnt";
     const char* count_key = "count";
 
     ESP_ERROR_CHECK( nvs_flash_init() );
     nvs_handle_t handle;
-    ESP_ERROR_CHECK( nvs_open(namespace, NVS_READWRITE, &handle));
+    ESP_ERROR_CHECK( nvs_open(nvs_namespace, NVS_READWRITE, &handle));
     uint32_t pulse_count = 0;
     esp_err_t err = nvs_get_u32(handle, count_key, &pulse_count);
     assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
