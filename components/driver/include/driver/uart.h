@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,9 @@ typedef enum {
     UART_PARITY_ERR,        /*!< UART RX parity event*/
     UART_DATA_BREAK,        /*!< UART TX data and break event*/
     UART_PATTERN_DET,       /*!< UART pattern detected */
+#if SOC_UART_SUPPORT_WAKEUP_INT
+    UART_WAKEUP,            /*!< UART wakeup event */
+#endif
     UART_EVENT_MAX,         /*!< UART event max index*/
 } uart_event_type_t;
 

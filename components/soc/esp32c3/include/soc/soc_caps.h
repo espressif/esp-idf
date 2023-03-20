@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -277,6 +277,7 @@
 
 #define SOC_UART_SUPPORT_RTC_CLK    (1)
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_REQUIRE_CORE_RESET (1)
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
