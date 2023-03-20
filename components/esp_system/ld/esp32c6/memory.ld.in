@@ -45,12 +45,8 @@
 #define IDRAM0_2_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
 #endif
 
-#if CONFIG_ESP32C6_USE_FIXED_STATIC_RAM_SIZE
-ASSERT((CONFIG_ESP32C6_FIXED_STATIC_RAM_SIZE <= I_D_SRAM_SIZE), "Fixed static ram data does not fit.")
-#define DRAM0_0_SEG_LEN CONFIG_ESP3C6_FIXED_STATIC_RAM_SIZE
-#else
 #define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
-#endif // CONFIG_ESP32C6_USE_FIXED_STATIC_RAM_SIZE
+
 MEMORY
 {
   /**
@@ -99,13 +95,6 @@ MEMORY
 #endif // CONFIG_ULP_COPROC_ENABLED
 
 }
-
-#if CONFIG_ESP32C6_USE_FIXED_STATIC_RAM_SIZE
-/* static data ends at defined address */
-_static_data_end = 0x40820000 + DRAM0_0_SEG_LEN;
-#else
-_static_data_end = _bss_end;
-#endif // CONFIG_ESP32C6_USE_FIXED_STATIC_RAM_SIZE
 
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000;
