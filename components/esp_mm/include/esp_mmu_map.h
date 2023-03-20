@@ -156,6 +156,20 @@ esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target
  */
 esp_err_t esp_mmu_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, void **out_vaddr);
 
+/**
+ * @brief If the physical address is mapped, this API will provide the capabilities of the virtual address where the physical address is mapped to.
+ *
+ * @note: Only return value is ESP_OK(which means physically address is successfully mapped), then caps you get make sense.
+ * @note This API only check one page (see CONFIG_MMU_PAGE_SIZE), starting from the `paddr`
+ *
+ * @param[in]  paddr     Physical address
+ * @param[out] out_caps  Bitwise OR of MMU_MEM_CAP_* flags indicating the capabilities of a virtual address where the physical address is mapped to.
+ * @return
+ *      - ESP_OK: Physical address successfully mapped.
+ *      - ESP_ERR_INVALID_ARG: Null pointer
+ *      - ESP_ERR_NOT_FOUND: Physical address is not mapped successfully.
+ */
+esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_caps_t *out_caps);
 
 #ifdef __cplusplus
 }

@@ -13,37 +13,24 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "hal/mmu_ll.h"
+#include "hal/mmu_hal.h"
+#include "hal/cache_hal.h"
 #include "soc/mmu.h"
 
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_mmu_map.h"
+#include "esp_rom_spiflash.h"
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
 #include "esp_private/mmu_psram_flash.h"
 #endif
 
-#include "esp_private/cache_utils.h"
-#include "spi_flash_mmap.h"
-
-
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
+#include "esp_private/esp_cache_esp32_private.h"
 #endif
 
+#include "esp_private/cache_utils.h"
+#include "spi_flash_mmap.h"
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 extern int _instruction_reserved_start;
@@ -342,35 +329,24 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
     return (const void *)ptr;
 }
 
-
-static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page, const void **out_ptr)
+static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_addr, const void **out_ptr)
 {
-    int start[2], end[2];
-
     *out_ptr = NULL;
+    mmu_mem_caps_t caps = 0;
 
-    /* SPI_FLASH_MMAP_DATA */
-    start[0] = SOC_MMU_DROM0_PAGES_START;
-    end[0] = SOC_MMU_DROM0_PAGES_END;
-
-    /* SPI_FLASH_MMAP_INST */
-    start[1] = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
-    end[1] = SOC_MMU_IROM0_PAGES_END;
-
-    for (int j = 0; j < 2; j++) {
-        for (int i = start[j]; i < end[j]; i++) {
-            uint32_t entry_pro = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
-            if (entry_pro == SOC_MMU_PAGE_IN_FLASH(phys_page)) {
+    esp_err_t err = esp_mmu_paddr_find_caps(phys_addr, &caps);
+    if (err == ESP_OK) {
+    // On ESP32, we will always flush all, so always return true, and don't care the vaddr
 #if !CONFIG_IDF_TARGET_ESP32
-                if (j == 0) { /* SPI_FLASH_MMAP_DATA */
-                    *out_ptr = (const void *)(SOC_MMU_VADDR0_START_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[0]));
-                } else { /* SPI_FLASH_MMAP_INST */
-                    *out_ptr = (const void *)(SOC_MMU_VADDR1_FIRST_USABLE_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[1]));
-                }
-#endif
-                return true;
-            }
+        uint32_t vaddr = 0;
+        if (caps & MMU_MEM_CAP_EXEC) {
+            mmu_hal_paddr_to_vaddr(0, phys_addr, MMU_TARGET_FLASH0, MMU_VADDR_INSTRUCTION, &vaddr);
+        } else {
+            mmu_hal_paddr_to_vaddr(0, phys_addr, MMU_TARGET_FLASH0, MMU_VADDR_DATA, &vaddr);
         }
+        *out_ptr = (void *)vaddr;
+#endif
+        return true;
     }
     return false;
 }
@@ -384,26 +360,18 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     length += (start_addr - page_start_addr);
     length = (length + SPI_FLASH_MMU_PAGE_SIZE - 1) & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
     for (uint32_t addr = page_start_addr; addr < page_start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
-        uint32_t page = addr / SPI_FLASH_MMU_PAGE_SIZE;
-        // TODO: IDF-4969
-        if (page >= 256) {
+        if (addr >= g_rom_flashchip.chip_size) {
             return false; /* invalid address */
         }
 
         const void *vaddr = NULL;
-        if (is_page_mapped_in_cache(page, &vaddr)) {
+        if (is_page_mapped_in_cache(addr, &vaddr)) {
 #if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_SPIRAM
-            esp_psram_extram_writeback_cache();
-#endif
-            Cache_Flush(0);
-#ifndef CONFIG_FREERTOS_UNICORE
-            Cache_Flush(1);
-#endif
+            cache_sync();
             return true;
 #else // CONFIG_IDF_TARGET_ESP32
             if (vaddr != NULL) {
-                Cache_Invalidate_Addr((uint32_t)vaddr, SPI_FLASH_MMU_PAGE_SIZE);
+                cache_hal_invalidate_addr((uint32_t)vaddr, SPI_FLASH_MMU_PAGE_SIZE);
                 ret = true;
             }
 #endif // CONFIG_IDF_TARGET_ESP32
