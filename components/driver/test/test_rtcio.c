@@ -21,7 +21,7 @@
 #include "esp_log.h"
 #include "soc/rtc_io_periph.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP32C2)
+#if SOC_RTCIO_PIN_COUNT > 0
 
 #define RTCIO_CHECK(condition) TEST_ASSERT_MESSAGE((condition == ESP_OK), "ret is not ESP_OK")
 #define RTCIO_VERIFY(condition, msg) TEST_ASSERT_MESSAGE((condition), msg)
@@ -73,6 +73,32 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_16,   //GPIO16
     GPIO_NUM_17,   //GPIO17
     // GPIO_NUM_18,   //GPIO18  // Workaround: IO18 is pullup outside in ESP32S2-Saola Runner.
+    GPIO_NUM_19,   //GPIO19
+    GPIO_NUM_20,   //GPIO20
+    GPIO_NUM_21,   //GPIO21
+};
+#elif defined CONFIG_IDF_TARGET_ESP32S3
+#define TEST_GPIO_PIN_COUNT 21
+const int s_test_map[TEST_GPIO_PIN_COUNT] = {
+    // GPIO_NUM_0,    //GPIO0   // Workaround: GPIO0 is strap pin, can not be used pullup/pulldown test.
+    GPIO_NUM_1,    //GPIO1
+    GPIO_NUM_2,    //GPIO2
+    GPIO_NUM_3,    //GPIO3
+    GPIO_NUM_4,    //GPIO4
+    GPIO_NUM_5,    //GPIO5
+    GPIO_NUM_6,    //GPIO6
+    GPIO_NUM_7,    //GPIO7
+    GPIO_NUM_8,    //GPIO8
+    GPIO_NUM_9,    //GPIO9
+    GPIO_NUM_10,   //GPIO10
+    GPIO_NUM_11,   //GPIO11
+    GPIO_NUM_12,   //GPIO12
+    GPIO_NUM_13,   //GPIO13
+    GPIO_NUM_14,   //GPIO14
+    GPIO_NUM_15,   //GPIO15
+    GPIO_NUM_16,   //GPIO16
+    GPIO_NUM_17,   //GPIO17
+    GPIO_NUM_18,   //GPIO18
     GPIO_NUM_19,   //GPIO19
     GPIO_NUM_20,   //GPIO20
     GPIO_NUM_21,   //GPIO21
@@ -276,4 +302,52 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
 
-#endif
+// It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
+// Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
+// (ESP32: IO25, ESP32S2, S3: IO6) these pads' default configuration is low level
+#define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
+
+static void rtcio_deep_sleep_hold_test_first_stage(void)
+{
+    printf("configure rtcio pin to hold during deep sleep");
+    int io_num = s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX];
+
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
+
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .pin_bit_mask = (1ULL << io_num),
+        .pull_down_en = 0,
+        .pull_up_en = 0,
+    };
+    gpio_config(&io_conf);
+
+    gpio_set_level(io_num, 1);
+    // Enable global persistence
+    TEST_ESP_OK(gpio_hold_en(io_num));
+
+    esp_deep_sleep_start();
+}
+
+static void rtcio_deep_sleep_hold_test_second_stage(void)
+{
+    int io_num = s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX];
+    // Check reset reason is waking up from deepsleep
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+    // Pin should stay at high level after the deep sleep
+    TEST_ASSERT_EQUAL_INT(1, gpio_get_level(io_num));
+
+    gpio_hold_dis(io_num);
+}
+
+/*
+ * Test rtcio hold function during deep sleep.
+ * This test case can only check the hold state after waking up from deep sleep
+ * If you want to check that the rtcio hold function works properly during deep sleep,
+ * please use logic analyzer or oscillscope
+ */
+TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
+                         rtcio_deep_sleep_hold_test_first_stage,
+                         rtcio_deep_sleep_hold_test_second_stage)
+#endif // SOC_RTCIO_PIN_COUNT > 0
