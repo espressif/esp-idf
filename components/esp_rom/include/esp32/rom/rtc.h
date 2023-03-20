@@ -45,8 +45,7 @@ extern "C" {
   *************************************************************************************
   *     rtc memory addr         type    size            usage
   *     0x3ff61000(0x50000000)  Slow    SIZE_CP         Co-Processor code/Reset Entry
-  *     0x3ff61000+SIZE_CP      Slow    4096-SIZE_CP
-  *     0x3ff62800              Slow    4096            Reserved
+  *     0x3ff61000+SIZE_CP      Slow    8192-SIZE_CP
   *
   *     0x3ff80000(0x400c0000)  Fast    8192            deep sleep entry code
   *
