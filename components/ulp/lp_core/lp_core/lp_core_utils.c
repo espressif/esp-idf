@@ -42,6 +42,21 @@ void ulp_lp_core_delay_us(uint32_t us)
     }
 }
 
+/**
+ * @brief Makes the co-processor busy wait for a certain number of cycles
+ *
+ * @param cycles Number of cycles to busy-wait for
+ */
+void ulp_lp_core_delay_cycles(uint32_t cycles)
+{
+    uint32_t start = RV_READ_CSR(mcycle);
+    uint32_t end = cycles;
+
+    while ((RV_READ_CSR(mcycle) - start) < end) {
+        /* nothing to do */
+    }
+}
+
 void ulp_lp_core_halt(void)
 {
     REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
