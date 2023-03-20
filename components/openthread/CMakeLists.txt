@@ -167,6 +167,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
                        REQUIRES esp_netif lwip
+                       LDFRAGMENTS linker.lf
                        PRIV_REQUIRES console driver esp_event esp_partition esp_timer
                                      ieee802154 mbedtls spi_flash)
 
