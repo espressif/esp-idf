@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -311,10 +311,5 @@ extern volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (false)
 #endif
 #endif
-
-// -------------------- Compatibility ----------------------
-
-// backward compatibility for 4.4
-#define xTaskRemoveFromUnorderedEventList vTaskRemoveFromUnorderedEventList
 
 #endif /* FREERTOS_CONFIG_SMP_H */

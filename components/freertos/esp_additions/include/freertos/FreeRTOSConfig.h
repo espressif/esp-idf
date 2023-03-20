@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -282,11 +282,6 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define portCLEAN_UP_TCB( pxTCB )                       vPortCleanUpTCB( pxTCB )
 #endif
 #endif
-
-// -------------------- Compatibility ----------------------
-
-// backward compatibility for 4.4
-#define xTaskRemoveFromUnorderedEventList vTaskRemoveFromUnorderedEventList
 
 #endif // CONFIG_FREERTOS_SMP
 
