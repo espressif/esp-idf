@@ -108,7 +108,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,
                             RTC_CNTL_CKGEN_I2C_PU | RTC_CNTL_PLL_I2C_PU |
                             RTC_CNTL_RFRX_PBUS_PU | RTC_CNTL_TXRF_I2C_PU);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PU);
+
+        extern bool esp_phy_is_initialized(void);
+        if (esp_phy_is_initialized()){
+            extern void phy_close_rf(void);
+            phy_close_rf();
+        }
     } else {
 	SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_PD_EN);
