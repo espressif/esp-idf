@@ -30,6 +30,10 @@ extern "C" {
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
+#define ADC_LL_THRES_ALL_INTR_ST_M  (APB_SARADC_ADC1_THRES_INT_ST_M | APB_SARADC_ADC2_THRES_INT_ST_M)
+#define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? APB_SARADC_ADC1_THRES_INT_ST_M : APB_SARADC_ADC2_THRES_INT_ST_M)
+#define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_ADC1_THRES_INT_ST_M : APB_SARADC_ADC2_THRES_INT_ST_M)
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
@@ -460,48 +464,88 @@ static inline uint32_t adc_ll_digi_filter_read_data(adc_unit_t adc_n)
  * Set monitor mode of adc digital controller.
  *
  * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param monitor_id ADC digi monitor unit index.
  * @param is_larger true:  If ADC_OUT >  threshold, Generates monitor interrupt.
  *                  false: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
-static inline void adc_ll_digi_monitor_set_mode(adc_unit_t adc_n, bool is_larger)
+static inline void adc_ll_digi_monitor_set_mode(adc_monitor_id_t monitor_id, bool is_larger)
 {
-    if (adc_n == ADC_UNIT_1) {
+    if (monitor_id == ADC_MONITOR_0) {
         APB_SARADC.thres_ctrl.adc1_thres_mode = is_larger;
-    } else { // adc_n == ADC_UNIT_2
+    } else { // monitor_id == ADC_MONITOR_1
         APB_SARADC.thres_ctrl.adc2_thres_mode = is_larger;
     }
 }
 
 /**
- * Set monitor threshold of adc digital controller.
+ * Set monitor threshold of adc digital controller on specific channel.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
- * @param threshold Monitor threshold.
+ * @param monitor_id ADC digi monitor unit index.
+ * @param adc_n      Which adc unit the channel belong to.
+ * @param channel    Which channel of adc want to be monitored.
+ * @param h_thresh   High threshold of this monitor.
+ * @param l_thresh   Low threshold of this monitor.
  */
-static inline void adc_ll_digi_monitor_set_thres(adc_unit_t adc_n, uint32_t threshold)
+static inline void adc_ll_digi_monitor_set_thres(adc_monitor_id_t monitor_id, adc_unit_t adc_n, uint8_t channel, int32_t h_thresh, int32_t l_thresh)
 {
-    if (adc_n == ADC_UNIT_1) {
-        APB_SARADC.thres_ctrl.adc1_thres = threshold;
-    } else { // adc_n == ADC_UNIT_2
-        APB_SARADC.thres_ctrl.adc2_thres = threshold;
+    if (monitor_id == ADC_MONITOR_0) {
+        APB_SARADC.thres_ctrl.adc1_thres = (h_thresh == -1)? l_thresh : h_thresh;
+    } else { // monitor_id == ADC_MONITOR_1
+        APB_SARADC.thres_ctrl.adc2_thres = (h_thresh == -1)? l_thresh : h_thresh;
+    }
+    adc_ll_digi_monitor_set_mode(monitor_id, l_thresh == -1);
+}
+
+/**
+ * Start/Stop monitor of adc digital controller.
+ *
+ * @param monitor_id ADC digi monitor unit index.
+ * @param start 1 for start, 0 for stop
+ */
+static inline void adc_ll_digi_monitor_user_start(adc_monitor_id_t monitor_id, bool start)
+{
+    if (monitor_id == ADC_MONITOR_0) {
+        APB_SARADC.thres_ctrl.adc1_thres_en = start;
+    } else {
+        APB_SARADC.thres_ctrl.adc2_thres_en = start;
     }
 }
 
 /**
- * Enable/disable monitor of adc digital controller.
+ * Enable/disable a intr of adc digital monitor.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param monitor_id ADC digi monitor unit index.
+ * @param mode monit mode to enable/disable intr.
+ * @param enable enable or disable.
  */
-static inline void adc_ll_digi_monitor_enable(adc_unit_t adc_n, bool enable)
+static inline void adc_ll_digi_monitor_enable_intr(adc_monitor_id_t monitor_id, adc_monitor_mode_t mode, bool enable)
 {
-    if (adc_n == ADC_UNIT_1) {
-        APB_SARADC.thres_ctrl.adc1_thres_en = enable;
-    } else { // adc_n == ADC_UNIT_2
-        APB_SARADC.thres_ctrl.adc2_thres_en = enable;
+    if (monitor_id == ADC_MONITOR_0) {
+        APB_SARADC.int_ena.adc1_thres = enable;
     }
+    if (monitor_id == ADC_MONITOR_1) {
+        APB_SARADC.int_ena.adc2_thres = enable;
+    }
+}
+
+/**
+ * Clear intr raw for adc digi monitors.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_digi_monitor_clear_intr(void)
+{
+    APB_SARADC.int_clr.val |= ADC_LL_THRES_ALL_INTR_ST_M;
+}
+
+/**
+ * Get the address of digi monitor intr statue register.
+ *
+ * @return address of register.
+ */
+__attribute__((always_inline))
+static inline volatile const void *adc_ll_digi_monitor_get_intr_status_addr(void)
+{
+    return &APB_SARADC.int_st.val;
 }
 
 /**

@@ -243,6 +243,10 @@ config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     int
     default 2
 
+config SOC_ADC_DIGI_MONITOR_NUM
+    int
+    default 2
+
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
     default 83333

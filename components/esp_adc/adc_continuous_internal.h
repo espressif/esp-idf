@@ -24,6 +24,7 @@
 #endif
 
 #include "esp_adc/adc_filter.h"
+#include "esp_adc/adc_monitor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,19 +35,36 @@ typedef enum {
     ADC_FSM_STARTED,
 } adc_fsm_t;
 
+typedef enum {
+    ADC_MONITOR_FSM_INIT,
+    ADC_MONITOR_FSM_ENABLED,
+} adc_monitor_fsm_t;
+
 /*---------------------------------------------------------------
             Driver Context
 ---------------------------------------------------------------*/
 typedef struct adc_iir_filter_t adc_iir_filter_t;
+typedef struct adc_monitor_t adc_monitor_t;
 typedef struct adc_continuous_ctx_t adc_continuous_ctx_t;
 
 /**
  * @brief ADC iir filter context
  */
 struct adc_iir_filter_t {
-    adc_digi_iir_filter_t filter_id;                            // Filter ID
+    adc_digi_iir_filter_t               filter_id;              // Filter ID
     adc_continuous_iir_filter_config_t  cfg;                    //filter configuration
     adc_continuous_ctx_t                *continuous_ctx;        //ADC continuous driver context
+};
+
+/**
+ * @brief ADC digi monitor context
+ */
+struct adc_monitor_t {
+    adc_monitor_id_t        monitor_id;         // monitor unit number
+    adc_monitor_fsm_t       fsm;                // monitor status indicator
+    adc_monitor_config_t    config;             // monitor configuration
+    adc_monitor_evt_cbs_t   cbs;                // monitor thresh callbacks
+    void                    *user_data;         // user data pointer to use in cb
 };
 
 /**
@@ -78,6 +96,9 @@ struct adc_continuous_ctx_t {
     esp_pm_lock_handle_t            pm_lock;                    //For power management
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
     adc_iir_filter_t                *iir_filter[SOC_ADC_DIGI_IIR_FILTER_NUM];  //ADC IIR filter context
+#endif
+#if SOC_ADC_MONITOR_SUPPORTED
+    adc_monitor_t                   *adc_monitor[SOC_ADC_DIGI_MONITOR_NUM];    // adc monitor context
 #endif
 };
 

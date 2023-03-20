@@ -10,6 +10,9 @@ set(srcs "adc_cali.c"
 
 if(CONFIG_SOC_ADC_DMA_SUPPORTED)
     list(APPEND srcs "adc_continuous.c")
+    if(CONFIG_SOC_ADC_MONITOR_SUPPORTED)
+        list(APPEND srcs "adc_monitor.c")
+    endif()
 endif()
 
 if(CONFIG_SOC_ADC_DIG_IIR_FILTER_SUPPORTED)
