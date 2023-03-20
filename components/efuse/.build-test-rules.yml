@@ -2,6 +2,6 @@
 
 components/efuse/test_apps:
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32h2"]
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
-      reason: eFuse for S2 and S3 is similar to the C3 chip, so we only test for C3. H2 fails IDF-6897
+      reason: eFuse for S2 and S3 is similar to the C3 chip, so we only test for C3.
