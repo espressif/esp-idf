@@ -156,7 +156,6 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._free = free,
     ._esp_timer_get_time = esp_timer_get_time,
     ._env_is_chip = esp_coex_common_env_is_chip_wrapper,
-    ._slowclk_cal_get = esp_coex_common_clk_slowclk_cal_get_wrapper,
     ._timer_disarm = esp_coex_common_timer_disarm_wrapper,
     ._timer_done = esp_coex_common_timer_done_wrapper,
     ._timer_setfn = esp_coex_common_timer_setfn_wrapper,

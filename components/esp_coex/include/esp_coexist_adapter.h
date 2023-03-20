@@ -38,7 +38,10 @@ typedef struct {
     void (* _free)(void *p);
     int64_t (* _esp_timer_get_time)(void);
     bool (* _env_is_chip)(void);
+#if CONFIG_IDF_TARGET_ESP32C2
+    // this function is only used on esp32c2
     uint32_t (* _slowclk_cal_get)(void);
+#endif
     void (* _timer_disarm)(void *timer);
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
