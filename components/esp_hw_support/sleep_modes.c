@@ -447,7 +447,13 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 #endif
 
-    if (!deep_sleep) {
+    if (deep_sleep) {
+        extern bool esp_phy_is_initialized(void);
+        if (esp_phy_is_initialized()){
+            extern void phy_close_rf(void);
+            phy_close_rf();
+        }
+    } else {
         misc_modules_sleep_prepare();
     }
 

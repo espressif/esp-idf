@@ -151,6 +151,12 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
 esp_err_t esp_phy_erase_cal_data_in_nvs(void);
 
 /**
+ * @brief Get phy initialize status
+ * @return  return true if phy is already initialized.
+ */
+bool esp_phy_is_initialized(void);
+
+/**
  * @brief Enable PHY and RF module
  *
  * PHY and RF module should be enabled in order to use WiFi or BT.

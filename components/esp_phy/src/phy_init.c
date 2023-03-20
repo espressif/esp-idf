@@ -224,6 +224,11 @@ static inline void phy_digital_regs_load(void)
     }
 }
 
+bool esp_phy_is_initialized(void)
+{
+    return s_is_phy_calibrated;
+}
+
 void esp_phy_enable(void)
 {
     _lock_acquire(&s_phy_access_lock);
