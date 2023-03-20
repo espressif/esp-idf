@@ -6,6 +6,8 @@
 
 #include "esp_openthread_radio.h"
 
+#include "error.h"
+#include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_ieee802154.h"
@@ -188,13 +190,11 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
             case ESP_IEEE802154_TX_ERR_CCA_BUSY:
             case ESP_IEEE802154_TX_ERR_ABORT:
             case ESP_IEEE802154_TX_ERR_COEXIST:
-            case ESP_IEEE802154_TX_ERR_COEXIST_REJ:
                 err = OT_ERROR_CHANNEL_ACCESS_FAILURE;
                 break;
 
             case ESP_IEEE802154_TX_ERR_NO_ACK:
             case ESP_IEEE802154_TX_ERR_INVALID_ACK:
-            case ESP_IEEE802154_TX_ERR_COEXIST_ACK:
                 err = OT_ERROR_NO_ACK;
                 break;
 
@@ -614,7 +614,7 @@ static void IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
     esp_ieee802154_set_transmit_security(&ack_frame->mPsdu[-1], s_security_key, s_security_addr);
 }
 
-void IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info,
+esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info,
                                                 uint8_t *enhack_frame)
 {
     otRadioFrame ack_frame;
@@ -626,6 +626,7 @@ void IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_f
     uint8_t link_metrics_data[OT_ENH_PROBING_IE_DATA_MAX_SIZE];
     otMacAddress mac_addr;
 #endif
+    otError err;
     ack_frame.mPsdu = enhack_frame + 1;
     convert_to_ot_frame(frame, frame_info, &ot_frame);
 
@@ -643,8 +644,11 @@ void IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_f
         offset += otMacFrameGenerateEnhAckProbingIe(ack_ie_data, link_metrics_data, link_metrics_data_len);
     }
 #endif
+    err = otMacFrameGenerateEnhAck(&ot_frame, frame_info->pending, ack_ie_data, offset, &ack_frame);
 
-    ETS_ASSERT(otMacFrameGenerateEnhAck(&ot_frame, frame_info->pending, ack_ie_data, offset, &ack_frame) == OT_ERROR_NONE);
+    if (err != OT_ERROR_NONE) {
+        return ESP_FAIL;
+    }
     enhack_frame[0] = ack_frame.mLength;
 
     s_enhack = enhack_frame;
@@ -653,6 +657,7 @@ void IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_f
         otMacFrameSetFrameCounter(&ack_frame, s_mac_frame_counter++);
         enh_ack_set_security_addr_and_key(&ack_frame);
     }
+    return ESP_OK;
 }
 
 void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
