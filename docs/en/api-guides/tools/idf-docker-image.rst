@@ -90,9 +90,19 @@ Using remote serial port
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The `RFC2217`_ (Telnet) protocol can be used to remotely connect to a serial port. For more information please see the `remote serial ports`_ documentation in the esptool project. This method can also be used to access the serial port inside a Docker container if it cannot be accessed directly. Following is an example how to use the flash command from within a Docker container.
 
-On host start ``esp_rfc2217_server``. It is available as a one-file bundled executable created by pyinstaller and it can be downloaded from the `esptool releases`_ page in a zip archive along with other esptool utilities::
+On host install and start ``esp_rfc2217_server``:
 
-    esp_rfc2217_server -v -p 4000 COM3
+* On Windows, package is available as a one-file bundled executable created by pyinstaller and it can be downloaded from the `esptool releases`_ page in a zip archive along with other esptool utilities::
+
+        esp_rfc2217_server -v -p 4000 COM3
+
+* On Linux/MacOS, package is available as part of `esptool` which can be found in ESP-IDF environment or by installing using pip::
+
+        pip install esptool
+
+  And then starting the server by executing::
+
+        esp_rfc2217_server.py -v -p 4000 /dev/ttyUSB0
 
 Now the device attached to the host can be flashed from inside a Docker container by using::
 
