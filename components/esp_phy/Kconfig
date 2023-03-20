@@ -101,7 +101,7 @@ menu "PHY"
     config ESP_PHY_REDUCE_TX_POWER
         bool "Reduce PHY TX power when brownout reset"
         depends on ESP_BROWNOUT_DET
-        default y
+        default n
         help
             When brownout reset occurs, reduce PHY TX power to keep the code running.
 
@@ -120,5 +120,29 @@ menu "PHY"
         depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             If enabled, you can use RF certification test APIs.
+
+    choice ESP_PHY_CALIBRATION_MODE
+        prompt "Calibration mode"
+        default ESP_PHY_RF_CAL_PARTIAL
+        help
+            Select PHY calibration mode. During RF initialization, the partial calibration
+            method is used by default for RF calibration. Full calibration takes about 100ms
+            more than partial calibration. If boot duration is not critical, it is suggested
+            to use the full calibration method. No calibration method is only used when the
+            device wakes up from deep sleep.
+
+        config ESP_PHY_RF_CAL_PARTIAL
+            bool "Calibration partial"
+        config ESP_PHY_RF_CAL_NONE
+            bool "Calibration none"
+        config ESP_PHY_RF_CAL_FULL
+            bool "Calibration full"
+    endchoice #ESP_PHY_CALIBRATION_MODE
+
+    config ESP_PHY_CALIBRATION_MODE
+        int
+        default 0 if ESP_PHY_RF_CAL_PARTIAL
+        default 1 if ESP_PHY_RF_CAL_NONE
+        default 2 if ESP_PHY_RF_CAL_FULL
 
 endmenu  # PHY
