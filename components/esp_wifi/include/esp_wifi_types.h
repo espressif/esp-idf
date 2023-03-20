@@ -129,6 +129,7 @@ typedef enum {
     WIFI_REASON_AP_TSF_RESET                       = 206,
     WIFI_REASON_ROAMING                            = 207,
     WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG       = 208,
+    WIFI_REASON_SA_QUERY_TIMEOUT                   = 209,
 } wifi_err_reason_t;
 
 typedef enum {

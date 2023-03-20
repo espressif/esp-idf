@@ -1982,7 +1982,7 @@ ieee80211_alloc_deauth = 0x40002124;
 ieee80211_send_proberesp = 0x40002128;
 ieee80211_getcapinfo = 0x40002130;
 sta_rx_csa = 0x40002134;
-sta_recv_sa_query_resp = 0x40002144;
+/* sta_recv_sa_query_resp = 0x40002144; */
 ieee80211_set_max_rate = 0x4000214c;
 ic_set_sta = 0x40002150;
 ieee80211_parse_wpa = 0x40002158;
@@ -2009,13 +2009,13 @@ s_wifi_task_hdl = 0x3fcdfaec;
 in_rssi_adjust = 0x3fcdfae8;
 rssi_saved = 0x3fcdfae0;
 rssi_index = 0x3fcdfadc;
-s_sa_query_retries = 0x3fcdfad8;
-s_sa_query_success = 0x3fcdfad5;
+/* s_sa_query_retries = 0x3fcdfad8; */
+/* s_sa_query_success = 0x3fcdfad5; */
 g_sta_connected_flag = 0x3fcdfad4;
 wpa_crypto_funcs_ptr = 0x3fcdfad0;
 s_netstack_ref = 0x3fcdfacc;
 sta_csa_timer_ptr = 0x3fcdfac8;
-s_trans_id = 0x3fcdfac4;
+/* s_trans_id = 0x3fcdfac4; */
 
 
 /***************************************
