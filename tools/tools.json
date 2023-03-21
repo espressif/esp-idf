@@ -774,6 +774,11 @@
             "sha256": "46580ccb9cc00d76c419636b884c5cc57422124a0a0f755595218f30b92884fa",
             "size": 2492151,
             "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20230313/openocd-esp32-win32-0.12.0-esp32-20230313.zip"
+          },
+          "win64": {
+            "sha256": "46580ccb9cc00d76c419636b884c5cc57422124a0a0f755595218f30b92884fa",
+            "size": 2492151,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20230313/openocd-esp32-win32-0.12.0-esp32-20230313.zip"
           }
         }
       ]
