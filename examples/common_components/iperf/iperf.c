@@ -1,7 +1,7 @@
 /* Iperf Example - iperf implementation
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
-
+/
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_check.h"
@@ -86,14 +87,14 @@ static void iperf_report_task(void *arg)
     while (!s_iperf_ctrl.finish) {
         vTaskDelay(delay_interval);
         actual_bandwidth = (s_iperf_ctrl.actual_len / coefficient[format] * 8) / interval;
-        printf("%4d-%4d sec       %.2f %cbits/sec\n", cur, cur + interval,
+        printf("%4" PRIi32 "-%4" PRIi32 " sec       %.2f %cbits/sec\n", cur, cur + interval,
             actual_bandwidth, unit[format]);
         cur += interval;
         average = ((average * (k - 1) / k) + (actual_bandwidth / k));
         k++;
         s_iperf_ctrl.actual_len = 0;
         if (cur >= time) {
-            printf("%4d-%4d sec       %.2f %cbits/sec\n", 0, time,
+            printf("%4d-%4" PRIu32 " sec       %.2f %cbits/sec\n", 0, time,
                 average, unit[format]);
             break;
         }
@@ -396,7 +397,7 @@ static esp_err_t IRAM_ATTR iperf_run_udp_server(void)
 
         err = bind(listen_socket, (struct sockaddr *)&listen_addr6, sizeof(struct sockaddr_in6));
         ESP_GOTO_ON_FALSE((err == 0), ESP_FAIL, exit, TAG, "Socket unable to bind: errno %d", errno);
-        ESP_LOGI(TAG, "Socket bound, port %d", listen_addr6.sin6_port);
+        ESP_LOGI(TAG, "Socket bound, port %" PRIu16, listen_addr6.sin6_port);
 
         memcpy(&listen_addr, &listen_addr6, sizeof(listen_addr6));
     } else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4) {
@@ -453,7 +454,7 @@ static esp_err_t iperf_run_udp_client(void)
 
         client_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IPV6);
         ESP_GOTO_ON_FALSE((client_socket >= 0), ESP_FAIL, exit, TAG, "Unable to create socket: errno %d", errno);
-        ESP_LOGI(TAG, "Socket created, sending to %s:%d", s_iperf_ctrl.cfg.destination_ip6, s_iperf_ctrl.cfg.dport);
+        ESP_LOGI(TAG, "Socket created, sending to %s:%" PRIu16, s_iperf_ctrl.cfg.destination_ip6, s_iperf_ctrl.cfg.dport);
 
         setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         memcpy(&dest_addr, &dest_addr6, sizeof(dest_addr6));
@@ -464,7 +465,12 @@ static esp_err_t iperf_run_udp_client(void)
 
         client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         ESP_GOTO_ON_FALSE((client_socket >= 0), ESP_FAIL, exit, TAG, "Unable to create socket: errno %d", errno);
-        ESP_LOGI(TAG, "Socket created, sending to %d:%d", s_iperf_ctrl.cfg.destination_ip4, s_iperf_ctrl.cfg.dport);
+        ESP_LOGI(TAG, "Socket created, sending to %d.%d.%d.%d:%" PRIu16,
+            (uint16_t) s_iperf_ctrl.cfg.destination_ip4 & 0xFF,
+            (uint16_t) (s_iperf_ctrl.cfg.destination_ip4 >> 8) & 0xFF,
+            (uint16_t) (s_iperf_ctrl.cfg.destination_ip4 >> 16) & 0xFF,
+            (uint16_t) (s_iperf_ctrl.cfg.destination_ip4 >> 24) & 0xFF,
+            s_iperf_ctrl.cfg.dport);
 
         setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));

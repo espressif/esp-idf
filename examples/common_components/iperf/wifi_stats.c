@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,8 +158,8 @@ int wifi_cmd_get_tx_statistics(int argc, char **argv)
     for (i = 2; i < 3; i++) {
         esp_wifi_get_tx_tb_statistics(i, &tb_stats);
         /* TB */
-        printf("(test)aci:%d, tb(suc:%d, ack:%d, err:%d), "
-               "count(suc:%d, ack:%d, err:%d, tot:%d, max_sent:%d)\n",
+        printf("(test)aci:%" PRIu8 ", tb(suc:%" PRIu32 ", ack:%" PRIu32 ", err:%" PRIu32 "), "
+               "count(suc:%" PRIu32 ", ack:%" PRIu32 ", err:%" PRIu32 ", tot:%" PRIu32 ", max_sent:%" PRIu32 ")\n",
                i,
                tb_stats.complete_suc_tb,
                tb_stats.complete_ack_tb,
@@ -173,9 +173,9 @@ int wifi_cmd_get_tx_statistics(int argc, char **argv)
         esp_wifi_get_tx_statistics(i, &tx_stats, (esp_test_tx_fail_statistics_t *) &tx_fail);
         int tot_tx_times = tx_stats.tb_times + (tx_stats.tx_enable - tx_stats.tb_last); //TB + EDCA
         int tot_fail = tx_fail[1].count + tx_fail[2].count + tx_fail[3].count + tx_fail[4].count + tx_fail[5].count;
-        printf("(test)aci:%d, enable:%d, complete:%d, tb_times:%d, tb_last:%d, edca:%d, "
-               "succ:%d, fail(%d,%d,%d, cts:%d/%2.2f%%, ack:%d/%2.2f%%, tot:%d, %.2f%%), "
-               "edca(ack:%d, ba:%d), tb(hw-ba:%d, sw-ba:%d)\n",
+        printf("(test)aci:%" PRIu8 ", enable:%" PRIu32 ", complete:%" PRIu32 ", tb_times:%" PRIu32 ", tb_last:%" PRIu32 ", edca:%" PRIu32 ", "
+               "succ:%" PRIu32 ", fail(%" PRIu32 ",%" PRIu32 ",%" PRIu32 ", cts:%" PRIu32 "/%2.2f%%, ack:%" PRIu32 "/%2.2f%%, tot:%d, %.2f%%), "
+               "edca(ack:%" PRIu32 ", ba:%" PRIu32 "), tb(hw-ba:%" PRIu32 ", sw-ba:%" PRIu32 ")\n",
                i, tx_stats.tx_enable,
                tx_stats.tx_complete,
                tx_stats.tb_times,
@@ -195,9 +195,9 @@ int wifi_cmd_get_tx_statistics(int argc, char **argv)
                tx_stats.tb_rx_ba, //including ACKs
                tx_stats.rx_dump_ba);
 
-        printf("(test)aci:%d, txFrames:%d, s-mpdu:%d(%.2f%%), "
-               "bitmap(max:%d, min:%d, tot:%d, avg:%.2f), "
-               "retry(edca:%d, tb:%d, %.2f%%), collision:%d, timeout:%d\n",
+        printf("(test)aci:%" PRIu8 ", txFrames:%" PRIu32 ", s-mpdu:%" PRIu32 "(%.2f%%), "
+               "bitmap(max:%d, min:%d, tot:%" PRIu32 ", avg:%.2f), "
+               "retry(edca:%" PRIu32 ", tb:%" PRIu32 ", %.2f%%), collision:%" PRIu32 ", timeout:%" PRIu32 "\n",
                i,
                tx_stats.tx_succ,
                tx_stats.rx_ack,
@@ -210,7 +210,7 @@ int wifi_cmd_get_tx_statistics(int argc, char **argv)
                tx_stats.collision, tx_stats.timeout);
 
         float tot_rtt_ms = (float) tx_stats.tx_tot_rtt / (float) 1000;
-        printf("(test)aci:%d, seqno_rtt[%d,%d], hw_rtt[%d, %d], muedca[enable:%d, times:%d, %.2f, %.2f, tot:%.2f], avg:%.3f ms, tot:%.3f secs\n",
+        printf("(test)aci:%" PRIu8 ", seqno_rtt[%" PRIu32 ",%" PRIu32 "], hw_rtt[%" PRIu32 ", %" PRIu32 "], muedca[enable:%" PRIu32 ", times:%" PRIi64 ", %.2f, %.2f, tot:%.2f], avg:%.3f ms, tot:%.3f secs\n",
                i,
                tx_stats.tx_seq_min_rtt,
                tx_stats.tx_seq_max_rtt,
@@ -228,7 +228,7 @@ int wifi_cmd_get_tx_statistics(int argc, char **argv)
             for (j = 0; j < TEST_TX_WAIT_MAX; j++) { //match
                 for (k = 0; k < TEST_TX_FAIL_ERROR_MAX; k++) { //error
                     if (tx_fail[h].match[j][k]) {
-                        printf("(test)[%d][%d][%d](%16s + %16s + %16s)%3d/%3d(%.2f%%)\n", h, j, k, tx_fail_state2str(h),
+                        printf("(test)[%d][%d][%d](%16s + %16s + %16s)%3" PRIu32 "/%3" PRIu32 "(%.2f%%)\n", h, j, k, tx_fail_state2str(h),
                                tx_fail_match2str(j), tx_fail_error2str(k),
                                tx_fail[h].match[j][k], tx_fail[h].count,
                                ((float) tx_fail[h].match[j][k] / (float) tx_fail[h].count) * 100);
@@ -250,16 +250,16 @@ void print_rx_statistics_nonmimo(const esp_test_rx_mu_statistics_t *mu_stats)
 
     int i, j;
     int tot_rx_nonmimo = 0;
-    ESP_LOGW(TAG, "(nonmimo)dut rx:%d", mu_stats->nonmimo_rx);
-    ESP_LOGW(TAG, "(nonmimo)ru_alloc_96_num_2046:%d, ru_alloc_112_num_2046:%d", mu_stats->ru_alloc_96_num_2046, mu_stats->ru_alloc_112_num_2046);
-    ESP_LOGW(TAG, "(nonmimo)sigb, mcs0:%d(%2.2f%%), mcs1:%d(%2.2f%%), mcs2:%d(%2.2f%%), mcs3:%d(%2.2f%%), mcs4:%d(%2.2f%%), mcs5:%d(%2.2f%%)",
+    ESP_LOGW(TAG, "(nonmimo)dut rx:%" PRIu32, mu_stats->nonmimo_rx);
+    ESP_LOGW(TAG, "(nonmimo)ru_alloc_96_num_2046:%" PRIu32 ", ru_alloc_112_num_2046:%" PRIu32, mu_stats->ru_alloc_96_num_2046, mu_stats->ru_alloc_112_num_2046);
+    ESP_LOGW(TAG, "(nonmimo)sigb, mcs0:%" PRIu32 "(%2.2f%%), mcs1:%" PRIu32 "(%2.2f%%), mcs2:%" PRIu32 "(%2.2f%%), mcs3:%" PRIu32 "(%2.2f%%), mcs4:%" PRIu32 "(%2.2f%%), mcs5:%" PRIu32 "(%2.2f%%)",
              mu_stats->nonmimo_sigb_mcs[0], ((float) mu_stats->nonmimo_sigb_mcs[0] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_sigb_mcs[1], ((float) mu_stats->nonmimo_sigb_mcs[1] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_sigb_mcs[2], ((float) mu_stats->nonmimo_sigb_mcs[2] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_sigb_mcs[3], ((float) mu_stats->nonmimo_sigb_mcs[3] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_sigb_mcs[4], ((float) mu_stats->nonmimo_sigb_mcs[4] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_sigb_mcs[5], ((float) mu_stats->nonmimo_sigb_mcs[5] / (float) mu_stats->nonmimo_rx) * 100);
-    ESP_LOGW(TAG, "(nonmimo)users, num1:%d(%2.2f%%), num2:%d(%2.2f%%), num3:%d(%2.2f%%), num4:%d(%2.2f%%), num5:%d(%2.2f%%), num6:%d(%2.2f%%), num7:%d(%2.2f%%), num8:%d(%2.2f%%), num9:%d(%2.2f%%)",
+    ESP_LOGW(TAG, "(nonmimo)users, num1:%" PRIu32 "(%2.2f%%), num2:%" PRIu32 "(%2.2f%%), num3:%" PRIu32 "(%2.2f%%), num4:%" PRIu32 "(%2.2f%%), num5:%" PRIu32 "(%2.2f%%), num6:%" PRIu32 "(%2.2f%%), num7:%" PRIu32 "(%2.2f%%), num8:%" PRIu32 "(%2.2f%%), num9:%" PRIu32 "(%2.2f%%)",
              mu_stats->nonmimo_user_num_occu[0], ((float) mu_stats->nonmimo_user_num_occu[0] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_user_num_occu[1], ((float) mu_stats->nonmimo_user_num_occu[1] / (float) mu_stats->nonmimo_rx) * 100,
              mu_stats->nonmimo_user_num_occu[2], ((float) mu_stats->nonmimo_user_num_occu[2] / (float) mu_stats->nonmimo_rx) * 100,
@@ -274,7 +274,7 @@ void print_rx_statistics_nonmimo(const esp_test_rx_mu_statistics_t *mu_stats)
             if (!mu_stats->nonmimo_ru_alloc[i][j]) {
                 continue;
             }
-            ESP_LOGI(TAG, "(nonmimo)ru_allocation:0x%2x(%3d), position:%d, %5d(%2.2f%%)", i, i, j + 1, mu_stats->nonmimo_ru_alloc[i][j],
+            ESP_LOGI(TAG, "(nonmimo)ru_allocation:0x%2x(%3" PRIu8 "), position:%" PRIu8 ", %5" PRIu32 "(%2.2f%%)", i, i, j + 1, mu_stats->nonmimo_ru_alloc[i][j],
                      ((float) mu_stats->nonmimo_ru_alloc[i][j] / (float) mu_stats->nonmimo_rx) * 100);
         }
     }
@@ -286,12 +286,12 @@ void print_rx_statistics_nonmimo(const esp_test_rx_mu_statistics_t *mu_stats)
             continue;
         }
         tot_rx_nonmimo = mu_stats->nonmimo[i].occu_nsts[0] + mu_stats->nonmimo[i].occu_nsts[1] + mu_stats->nonmimo[i].occu_nsts[2] + mu_stats->nonmimo[i].occu_nsts[3];
-        printf("[%d]%said:0x%x, txbf:%d, dcm:%d\n", i, (mu_stats->aid == mu_stats->nonmimo[i].aid) ? "#" : " ", mu_stats->nonmimo[i].aid,
+        printf("[%" PRIu8 "]%said:0x%x, txbf:%" PRIu32 ", dcm:%" PRIu32 "\n", i, (mu_stats->aid == mu_stats->nonmimo[i].aid) ? "#" : " ", mu_stats->nonmimo[i].aid,
                mu_stats->nonmimo[i].txbf, mu_stats->nonmimo[i].dcm);
         printf("[%d]%said:0x%x, "
-               "mcs0:%d(%2.2f%%), mcs1:%d(%2.2f%%), mcs2:%d(%2.2f%%), mcs3:%d(%2.2f%%), mcs4:%d(%2.2f%%), "
-               "mcs5:%d(%2.2f%%), mcs6:%d(%2.2f%%), mcs7:%d(%2.2f%%), mcs8:%d(%2.2f%%), mcs9:%d(%2.2f%%), "
-               "mcs10:%d(%2.2f%%), mcs11:%d(%2.2f%%)\n",
+               "mcs0:%" PRIu32 "(%2.2f%%), mcs1:%" PRIu32 "(%2.2f%%), mcs2:%" PRIu32 "(%2.2f%%), mcs3:%" PRIu32 "(%2.2f%%), mcs4:%" PRIu32 "(%2.2f%%), "
+               "mcs5:%" PRIu32 "(%2.2f%%), mcs6:%" PRIu32 "(%2.2f%%), mcs7:%" PRIu32 "(%2.2f%%), mcs8:%" PRIu32 "(%2.2f%%), mcs9:%" PRIu32 "(%2.2f%%), "
+               "mcs10:%" PRIu32 "(%2.2f%%), mcs11:%" PRIu32 "(%2.2f%%)\n",
                i, (mu_stats->aid == mu_stats->nonmimo[i].aid) ? "#" : " ", mu_stats->nonmimo[i].aid,
                mu_stats->nonmimo[i].occu_mcs[0], ((float) mu_stats->nonmimo[i].occu_mcs[0] / (float) tot_rx_nonmimo) * 100,
                mu_stats->nonmimo[i].occu_mcs[1], ((float) mu_stats->nonmimo[i].occu_mcs[1] / (float) tot_rx_nonmimo) * 100,
@@ -305,14 +305,14 @@ void print_rx_statistics_nonmimo(const esp_test_rx_mu_statistics_t *mu_stats)
                mu_stats->nonmimo[i].occu_mcs[9], ((float) mu_stats->nonmimo[i].occu_mcs[9] / (float) tot_rx_nonmimo) * 100,
                mu_stats->nonmimo[i].occu_mcs[10], ((float) mu_stats->nonmimo[i].occu_mcs[10] / (float) tot_rx_nonmimo) * 100,
                mu_stats->nonmimo[i].occu_mcs[11], ((float) mu_stats->nonmimo[i].occu_mcs[11] / (float) tot_rx_nonmimo) * 100);
-        printf("[%d]%said:0x%x, "
-               "nsts0:%d(%2.2f%%), nsts1:%d(%2.2f%%), nsts2:%d(%2.2f%%), nsts3:%d(%2.2f%%)\n",
+        printf("[%" PRIu8 "]%said:0x%x, "
+               "nsts0:%" PRIu32 "(%2.2f%%), nsts1:%" PRIu32 "(%2.2f%%), nsts2:%" PRIu32 "(%2.2f%%), nsts3:%" PRIu32 "(%2.2f%%)\n",
                i, (mu_stats->aid == mu_stats->nonmimo[i].aid) ? "#" : " ", mu_stats->nonmimo[i].aid,
                mu_stats->nonmimo[i].occu_nsts[0], ((float) mu_stats->nonmimo[i].occu_nsts[0] / (float) tot_rx_nonmimo) * 100,
                mu_stats->nonmimo[i].occu_nsts[1], ((float) mu_stats->nonmimo[i].occu_nsts[1] / (float) tot_rx_nonmimo) * 100,
                mu_stats->nonmimo[i].occu_nsts[2], ((float) mu_stats->nonmimo[i].occu_nsts[2] / (float) tot_rx_nonmimo) * 100,
                mu_stats->nonmimo[i].occu_nsts[3], ((float) mu_stats->nonmimo[i].occu_nsts[3] / (float) tot_rx_nonmimo) * 100);
-        printf("[%d]%said:0x%x, "
+        printf("[%" PRIu8 "]%said:0x%x, "
                "tot_rx_nonmimo:%8d, sta/dut:%2.2f%%\n",
                i, (mu_stats->aid == mu_stats->nonmimo[i].aid) ? "#" : " ", mu_stats->nonmimo[i].aid,
                tot_rx_nonmimo, ((float) tot_rx_nonmimo / (float) mu_stats->nonmimo_rx) * 100);
@@ -327,15 +327,15 @@ void print_rx_statistics_mimo(const esp_test_rx_mu_statistics_t *mu_stats)
 
     int i;
     int tot_rx_mimo = 0;
-    ESP_LOGW(TAG, "(mimo)dut rx:%d", mu_stats->mimo_rx);
-    ESP_LOGW(TAG, "(mimo)sigb, mcs0:%d(%2.2f%%), mcs1:%d(%2.2f%%), mcs2:%d(%2.2f%%), mcs3:%d(%2.2f%%), mcs4:%d(%2.2f%%), mcs5:%d(%2.2f%%)",
+    ESP_LOGW(TAG, "(mimo)dut rx:%" PRIu32 "", mu_stats->mimo_rx);
+    ESP_LOGW(TAG, "(mimo)sigb, mcs0:%" PRIu32 "(%2.2f%%), mcs1:%" PRIu32 "(%2.2f%%), mcs2:%" PRIu32 "(%2.2f%%), mcs3:%" PRIu32 "(%2.2f%%), mcs4:%" PRIu32 "(%2.2f%%), mcs5:%" PRIu32 "(%2.2f%%)",
              mu_stats->mimo_sigb_mcs[0], ((float) mu_stats->mimo_sigb_mcs[0] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_sigb_mcs[1], ((float) mu_stats->mimo_sigb_mcs[1] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_sigb_mcs[2], ((float) mu_stats->mimo_sigb_mcs[2] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_sigb_mcs[3], ((float) mu_stats->mimo_sigb_mcs[3] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_sigb_mcs[4], ((float) mu_stats->mimo_sigb_mcs[4] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_sigb_mcs[5], ((float) mu_stats->mimo_sigb_mcs[5] / (float) mu_stats->mimo_rx) * 100);
-    ESP_LOGW(TAG, "(mimo)users num2:%d(%2.2f%%), num3:%d(%2.2f%%), num4:%d(%2.2f%%), num5:%d(%2.2f%%), num6:%d(%2.2f%%), num7:%d(%2.2f%%), num8:%d(%2.2f%%)",
+    ESP_LOGW(TAG, "(mimo)users num2:%" PRIu32 "(%2.2f%%), num3:%" PRIu32 "(%2.2f%%), num4:%" PRIu32 "(%2.2f%%), num5:%" PRIu32 "(%2.2f%%), num6:%" PRIu32 "(%2.2f%%), num7:%" PRIu32 "(%2.2f%%), num8:%" PRIu32 "(%2.2f%%)",
              mu_stats->mimo_user_num_occu[0], ((float) mu_stats->mimo_user_num_occu[0] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_user_num_occu[1], ((float) mu_stats->mimo_user_num_occu[1] / (float) mu_stats->mimo_rx) * 100,
              mu_stats->mimo_user_num_occu[2], ((float) mu_stats->mimo_user_num_occu[2] / (float) mu_stats->mimo_rx) * 100,
@@ -348,10 +348,10 @@ void print_rx_statistics_mimo(const esp_test_rx_mu_statistics_t *mu_stats)
             continue;
         }
         tot_rx_mimo = mu_stats->mimo[i].occu_ss[0] + mu_stats->mimo[i].occu_ss[1] + mu_stats->mimo[i].occu_ss[2] + mu_stats->mimo[i].occu_ss[3];
-        printf("[%d]%said:0x%x, "
-               "mcs0:%d(%2.2f%%), mcs1:%d(%2.2f%%), mcs2:%d(%2.2f%%), mcs3:%d(%2.2f%%), mcs4:%d(%2.2f%%), "
-               "mcs5:%d(%2.2f%%), mcs6:%d(%2.2f%%), mcs7:%d(%2.2f%%), mcs8:%d(%2.2f%%), mcs9:%d(%2.2f%%), "
-               "mcs10:%d(%2.2f%%), mcs11:%d(%2.2f%%)\n",
+        printf("[%" PRIu8 "]%said:0x%x, "
+               "mcs0:%" PRIu32 "(%2.2f%%), mcs1:%" PRIu32 "(%2.2f%%), mcs2:%" PRIu32 "(%2.2f%%), mcs3:%" PRIu32 "(%2.2f%%), mcs4:%" PRIu32 "(%2.2f%%), "
+               "mcs5:%" PRIu32 "(%2.2f%%), mcs6:%" PRIu32 "(%2.2f%%), mcs7:%" PRIu32 "(%2.2f%%), mcs8:%" PRIu32 "(%2.2f%%), mcs9:%" PRIu32 "(%2.2f%%), "
+               "mcs10:%" PRIu32 "(%2.2f%%), mcs11:%" PRIu32 "(%2.2f%%)\n",
                i, (mu_stats->aid == mu_stats->mimo[i].aid) ? "#" : " ", mu_stats->mimo[i].aid,
                mu_stats->mimo[i].occu_mcs[0], ((float) mu_stats->mimo[i].occu_mcs[0] / (float) tot_rx_mimo) * 100,
                mu_stats->mimo[i].occu_mcs[1], ((float) mu_stats->mimo[i].occu_mcs[1] / (float) tot_rx_mimo) * 100,
@@ -365,14 +365,14 @@ void print_rx_statistics_mimo(const esp_test_rx_mu_statistics_t *mu_stats)
                mu_stats->mimo[i].occu_mcs[9], ((float) mu_stats->mimo[i].occu_mcs[9] / (float) tot_rx_mimo) * 100,
                mu_stats->mimo[i].occu_mcs[10], ((float) mu_stats->mimo[i].occu_mcs[10] / (float) tot_rx_mimo) * 100,
                mu_stats->mimo[i].occu_mcs[11], ((float) mu_stats->mimo[i].occu_mcs[11] / (float) tot_rx_mimo) * 100);
-        printf("[%d]%said:0x%x, "
-               "ss0:%d(%2.2f%%), ss1:%d(%2.2f%%), ss2:%d(%2.2f%%), ss3:%d(%2.2f%%)\n",
+        printf("[%" PRIu8 "]%said:0x%x, "
+               "ss0:%" PRIu32 "(%2.2f%%), ss1:%" PRIu32 "(%2.2f%%), ss2:%" PRIu32 "(%2.2f%%), ss3:%" PRIu32 "(%2.2f%%)\n",
                i, (mu_stats->aid == mu_stats->mimo[i].aid) ? "#" : " ", mu_stats->mimo[i].aid,
                mu_stats->mimo[i].occu_ss[0], ((float) mu_stats->mimo[i].occu_ss[0] / (float) tot_rx_mimo) * 100,
                mu_stats->mimo[i].occu_ss[1], ((float) mu_stats->mimo[i].occu_ss[1] / (float) tot_rx_mimo) * 100,
                mu_stats->mimo[i].occu_ss[2], ((float) mu_stats->mimo[i].occu_ss[2] / (float) tot_rx_mimo) * 100,
                mu_stats->mimo[i].occu_ss[3], ((float) mu_stats->mimo[i].occu_ss[3] / (float) tot_rx_mimo) * 100);
-        printf("[%d]%said:0x%x, "
+        printf("[%" PRIu8 "]%said:0x%x, "
                "tot_rx_mimo:%8d, sta/dut:%2.2f%%\n",
                i, (mu_stats->aid == mu_stats->mimo[i].aid) ? "#" : " ", mu_stats->mimo[i].aid,
                tot_rx_mimo, ((float) tot_rx_mimo / (float) mu_stats->mimo_rx) * 100);
@@ -396,7 +396,7 @@ void print_hw_rx_statistics(void)
         "WDEVRX_LASTUNMATCH_ERR  :%d\n"
         "RXHUNG_STATIS           :%d\n"
         "TXHUNG_STATIS           :%d\n"
-        "RXTXHUNG                :%d\n"
+        "RXTXHUNG                :%" PRIu32 "\n"
         "WDEVRX_CFO              :%d\n"
         "WDEVRX_SF               :%d\n"
         "WDEVRX_OTHER_UCAST      :%d\n"
@@ -493,12 +493,12 @@ int wifi_cmd_get_rx_statistics(int argc, char **argv)
     esp_wifi_get_rx_statistics(0, &rx_stats); //tid=0
     print_hw_tb_statistics();
 
-    ESP_LOGW(TAG, "(0)legacy:%d, ht(ht:%d, ht_retry:%d/%2.2f%%, ht_noeb:%d/%2.2f%%)",
+    ESP_LOGW(TAG, "(0)legacy:%" PRIu32 ", ht(ht:%" PRIu32 ", ht_retry:%" PRIu32 "/%2.2f%%, ht_noeb:%" PRIu32 "/%2.2f%%)",
              rx_stats.legacy,
              rx_stats.ht, rx_stats.ht_retry,
              rx_stats.ht_retry ? ((float) ((float) rx_stats.ht_retry / (float) rx_stats.ht) * 100) : 0,
              rx_stats.ht_noeb, rx_stats.ht_noeb ? ((float) ((float) rx_stats.ht_noeb / (float) rx_stats.ht) * 100) : 0);
-    ESP_LOGW(TAG, "(0)su(su:%d, su_txbf:%d, su_stbc:%d, su_retry:%d/%2.2f%%, ersu:%d, ersu_dcm:%d, su_noeb:%d/%2.2f%%)",
+    ESP_LOGW(TAG, "(0)su(su:%" PRIu32 ", su_txbf:%" PRIu32 ", su_stbc:%" PRIu32 ", su_retry:%" PRIu32 "/%2.2f%%, ersu:%" PRIu32 ", ersu_dcm:%" PRIu32 ", su_noeb:%" PRIu32 "/%2.2f%%)",
              rx_stats.su,
              rx_stats.su_txbf, rx_stats.su_stbc,
              rx_stats.su_retry,
@@ -506,7 +506,7 @@ int wifi_cmd_get_rx_statistics(int argc, char **argv)
              rx_stats.ersu,
              rx_stats.ersu_dcm,
              rx_stats.su_noeb, rx_stats.su_noeb ? ((float) ((float) rx_stats.su_noeb / (float) rx_stats.su) * 100) : 0);
-    ESP_LOGW(TAG, "(0)mu(mu:%d, mimo:%d, non-mimo:%d, txbf:%d, stbc:%d, mu_retry:%d/%2.2f%%, mu_noeb:%d/%2.2f%%)",
+    ESP_LOGW(TAG, "(0)mu(mu:%" PRIu32 ", mimo:%" PRIu32 ", non-mimo:%" PRIu32 ", txbf:%" PRIu32 ", stbc:%" PRIu32 ", mu_retry:%" PRIu32 "/%2.2f%%, mu_noeb:%" PRIu32 "/%2.2f%%)",
              rx_stats.mu,
              rx_stats.mu_mimo,
              rx_stats.mu_ofdma, rx_stats.mu_txbf, rx_stats.mu_stbc,
@@ -516,26 +516,26 @@ int wifi_cmd_get_rx_statistics(int argc, char **argv)
 
     memset(&rx_stats, 0, sizeof(rx_stats));
     esp_wifi_get_rx_statistics(7, &rx_stats); //tid=7
-    ESP_LOGW(TAG, "(7)legacy:%d, ht:%d, su:%d, su_txbf:%d, ersu:%d, mu:%d", rx_stats.legacy,
+    ESP_LOGW(TAG, "(7)legacy:%" PRIu32 ", ht:%" PRIu32 ", su:%" PRIu32 ", su_txbf:%" PRIu32 ", ersu:%" PRIu32 ", mu:%" PRIu32, rx_stats.legacy,
              rx_stats.ht, rx_stats.su, rx_stats.su_txbf, rx_stats.ersu, rx_stats.mu);
-    ESP_LOGW(TAG, "(hw)isr:%d, nblks:%d", rx_stats.rx_isr, rx_stats.rx_nblks);
+    ESP_LOGW(TAG, "(hw)isr:%" PRIu32 ", nblks:%" PRIu32, rx_stats.rx_isr, rx_stats.rx_nblks);
     /* hw rx statistics */
     print_hw_rx_statistics();
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     print_rx_mu_statistics();
 #endif
     esp_test_get_rx_error_occurs(&rx_error_occurs);
-    ESP_LOGW(TAG, "(rx)tot_errors:%d", rx_error_occurs.tot);
+    ESP_LOGW(TAG, "(rx)tot_errors:%" PRIu32, rx_error_occurs.tot);
     int known_errors = 0; //rx error: 0x40-0xff
     int i;
     for (i = 0; i < 2; i++) {
         if (rx_error_occurs.occurs[i]) {
             known_errors += rx_error_occurs.occurs[i];
-            printf("[%3d]  0x%x, %8d, %2.2f%%\n", i, (i ? 0xf5 : 0xc6), rx_error_occurs.occurs[i],  ((float) rx_error_occurs.occurs[i] / (float) rx_error_occurs.tot) * 100);
+            printf("[%3d]  0x%x, %8" PRIu32 ", %2.2f%%\n", i, (i ? 0xf5 : 0xc6), rx_error_occurs.occurs[i],  ((float) rx_error_occurs.occurs[i] / (float) rx_error_occurs.tot) * 100);
         }
     }
     if (rx_error_occurs.tot - known_errors) {
-        printf("[%3d]others, %8d, %2.2f%%\n\n", i, rx_error_occurs.tot - known_errors,  ((float) known_errors / (float) rx_error_occurs.tot) * 100);
+        printf("[%3d]others, %8" PRIu32 ", %2.2f%%\n\n", i, rx_error_occurs.tot - known_errors,  ((float) known_errors / (float) rx_error_occurs.tot) * 100);
     }
     wifi_cmd_clr_rx_statistics(0, 0);
     return 0;
