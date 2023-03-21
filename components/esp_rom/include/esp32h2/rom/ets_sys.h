@@ -43,7 +43,10 @@ extern "C" {
 
 typedef enum {
     ETS_OK     = 0, /**< return successful in ets*/
-    ETS_FAILED = 1  /**< return failed in ets*/
+    ETS_FAILED = 1, /**< return failed in ets*/
+    ETS_PENDING = 2,
+    ETS_BUSY = 3,
+    ETS_CANCEL = 4,
 } ETS_STATUS;
 
 typedef ETS_STATUS ets_status_t;
@@ -406,13 +409,16 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 #define ETS_MEM_BAR() asm volatile ( "" : : : "memory" )
 
+#ifdef ESP_PLATFORM
+// Remove in IDF v6.0 (IDF-7044)
 typedef enum {
     OK = 0,
     FAIL,
     PENDING,
     BUSY,
     CANCEL,
-} STATUS;
+} STATUS __attribute__((deprecated("Use ETS_STATUS instead")));
+#endif
 
 /**
   * @}

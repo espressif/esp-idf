@@ -24,7 +24,7 @@
 
 extern struct wpa_supplicant g_wpa_supp;
 
-static void scan_done_event_handler(void *arg, STATUS status)
+static void scan_done_event_handler(void *arg, ETS_STATUS status)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
@@ -226,7 +226,7 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 	wpa_s->type |= (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP);
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 
-	typedef void (* scan_done_cb_t)(void *arg, STATUS status);
+	typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
 	extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
 	/* issue scan */
 	if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) < 0) {

@@ -15,13 +15,11 @@
 #include "esp_efuse_table.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
-#include "bootloader_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
-#include "bootloader_common.h"
 
 __attribute__((unused)) static const char* TAG = "efuse_test";
 

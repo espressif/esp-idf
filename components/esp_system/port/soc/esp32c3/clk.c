@@ -23,7 +23,6 @@
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
-#include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
