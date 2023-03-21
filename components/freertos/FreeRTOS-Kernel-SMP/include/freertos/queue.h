@@ -235,6 +235,35 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
 
 /**
  * queue. h
+ * @code{c}
+ * BaseType_t xQueueGetStaticBuffers( QueueHandle_t xQueue,
+ *                                    uint8_t ** ppucQueueStorage,
+ *                                    StaticQueue_t ** ppxStaticQueue );
+ * @endcode
+ *
+ * Retrieve pointers to a statically created queue's data structure buffer
+ * and storage area buffer. These are the same buffers that are supplied
+ * at the time of creation.
+ *
+ * @param xQueue The queue for which to retrieve the buffers.
+ *
+ * @param ppucQueueStorage Used to return a pointer to the queue's storage
+ * area buffer.
+ *
+ * @param ppxStaticQueue Used to return a pointer to the queue's data
+ * structure buffer.
+ *
+ * @return pdTRUE if buffers were retrieved, pdFALSE otherwise.
+ *
+ * \defgroup xQueueGetStaticBuffers xQueueGetStaticBuffers
+ * \ingroup QueueManagement
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    #define xQueueGetStaticBuffers( xQueue, ppucQueueStorage, ppxStaticQueue )    xQueueGenericGetStaticBuffers( ( xQueue ), ( ppucQueueStorage ), ( ppxStaticQueue ) )
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+/**
+ * queue. h
  * <pre>
  * BaseType_t xQueueSendToToFront(
  *                                 QueueHandle_t    xQueue,
@@ -1556,6 +1585,18 @@ BaseType_t xQueueGiveMutexRecursive( QueueHandle_t xMutex ) PRIVILEGED_FUNCTION;
                                              uint8_t * pucQueueStorage,
                                              StaticQueue_t * pxStaticQueue,
                                              const uint8_t ucQueueType ) PRIVILEGED_FUNCTION;
+#endif
+
+/*
+ * Generic version of the function used to retrieve the buffers of statically
+ * created queues. This is called by other functions and macros that retrieve
+ * the buffers of other statically created RTOS objects that use the queue
+ * structure as their base.
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    BaseType_t xQueueGenericGetStaticBuffers( QueueHandle_t xQueue,
+                                              uint8_t ** ppucQueueStorage,
+                                              StaticQueue_t ** ppxStaticQueue ) PRIVILEGED_FUNCTION;
 #endif
 
 /*
