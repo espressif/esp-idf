@@ -398,7 +398,6 @@ components/bt/host/bluedroid/stack/smp/smp_main.c
 components/bt/host/bluedroid/stack/smp/smp_utils.c
 components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
-components/esp_eth/src/dm9051.h
 components/esp_eth/src/ksz8851.h
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
