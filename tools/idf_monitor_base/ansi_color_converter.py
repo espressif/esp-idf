@@ -28,7 +28,7 @@ if os.name == 'nt':
     SetConsoleTextAttribute = ctypes.windll.kernel32.SetConsoleTextAttribute  # type: ignore
 
 
-def get_converter(orig_output_method=None, force_color=False):
+def get_ansi_converter(orig_output_method=None, force_color=False):
     # type: (Any[TextIO, Optional[TextIOBase]], bool) -> Union[ANSIColorConverter, Optional[TextIOBase]]
     """
     Returns an ANSIColorConverter on Windows and the original output method (orig_output_method) on other platforms.
@@ -53,8 +53,13 @@ class ANSIColorConverter(object):
     def __init__(self, output=None, force_color=False):
         # type: (TextIOBase, bool) -> None
         self.output = output
-        # string stream has to be encoded and then decoded back for proper escape sequence handling
-        self.decode_output = isinstance(output, TextIOBase)
+        # check if output supports writing bytes or if decoding before writing is necessary
+        try:
+            output.write(b'')  # type: ignore
+        except Exception:
+            self.decode_output = True
+        else:
+            self.decode_output = False
         self.handle = GetStdHandle(STD_ERROR_HANDLE if self.output == sys.stderr else STD_OUTPUT_HANDLE)
         self.matched = b''
         self.force_color = force_color  # always print ANSI for colors if true
