@@ -36,7 +36,7 @@ Each I2S controller has the following features that can be configured by the I2S
 
 .. only:: SOC_I2S_HW_VERSION_2
 
-    Each controller has separate rx and tx channel. That means they are able to work under different clock and slot configurations with separate GPIO pins. Note that although the internal MCLK of tx channel and rx channel are separate on a controller, the output MCLK signal can only be attached to one channel. If two different MCLK ouput is required, they must be allocated on different I2S controller.
+    Each controller has separate rx and tx channel. That means they are able to work under different clock and slot configurations with separate GPIO pins. Note that although the internal MCLK of tx channel and rx channel are separate on a controller, the output MCLK signal can only be attached to one channel. If two different MCLK output is required, they must be allocated on different I2S controller.
 
 I2S File Structure
 ------------------
@@ -228,7 +228,7 @@ The ``<mode>`` in the diagram can be replaced by corresponding I2S communication
 Data Transport
 ^^^^^^^^^^^^^^
 
-The data transport of I2S peripheral, including sending and receiving, is realized by DMA. Before transporting data, please call :cpp:func:`i2s_channel_enable` to enable the specific channel. When the sent or received data reach the size of one DMA buffer, ``I2S_OUT_EOF`` or ``I2S_IN_SUC_EOF`` interrupt will be triggered. Note that the DMA buffer size is not equal to :cpp:member:`i2s_chan_config_t::dma_frame_num`, one frame here means all the sampled data in one WS circle. Therefore, ``dma_buffer_size = dma_frame_num * slot_num * slot_bit_width / 8``. For the transmit case, users can input the data by calling :cpp:func:`i2s_channel_write`. This function will help users to copy the data from the source buffer to the DMA tx buffer and wait for the transmition finished. Then it'll repeat until the sent bytes reach the given size. For the receive case, the function :cpp:func:`i2s_channel_read` will wait for receiving the message queue which contains the DMA buffer address, it will help users to copy the data from DMA rx buffer to the destination buffer.
+The data transport of I2S peripheral, including sending and receiving, is realized by DMA. Before transporting data, please call :cpp:func:`i2s_channel_enable` to enable the specific channel. When the sent or received data reach the size of one DMA buffer, ``I2S_OUT_EOF`` or ``I2S_IN_SUC_EOF`` interrupt will be triggered. Note that the DMA buffer size is not equal to :cpp:member:`i2s_chan_config_t::dma_frame_num`, one frame here means all the sampled data in one WS circle. Therefore, ``dma_buffer_size = dma_frame_num * slot_num * slot_bit_width / 8``. For the transmit case, users can input the data by calling :cpp:func:`i2s_channel_write`. This function will help users to copy the data from the source buffer to the DMA tx buffer and wait for the transmission finished. Then it'll repeat until the sent bytes reach the given size. For the receive case, the function :cpp:func:`i2s_channel_read` will wait for receiving the message queue which contains the DMA buffer address, it will help users to copy the data from DMA rx buffer to the destination buffer.
 
 Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking functions, they will keep waiting until the whole source buffer are sent or the whole destination buffer loaded, unless they exceed the max blocking time, then the error code `ESP_ERR_TIMEOUT` will return in this case. To send or receive data asynchronously, callbacks can be registered by  :cpp:func:`i2s_channel_register_event_callback`, users are able to access the DMA buffer directly in the callback function instead of transmitting or receiving by the two blocking functions. However, please be aware that it is an interrupt callback, don't do complex logic, floating operation or call non-reentrant functions in the callback.
 
@@ -319,7 +319,7 @@ Here is the table of the real data on the line with different :cpp:member:`i2s_s
 
         It's similar when the data is 32-bit width, but take care when using 8-bit and 24-bit data width. For 8-bit width, the written buffer should still using ``uint16_t`` (i.e. align with 2 bytes), and only the high 8 bits will be valid, the low 8 bits are dropped, and for 24-bit width, the buffer is supposed to use ``uint32_t`` (i.e. align with 4 bytes), and only the high 24 bits valid, the low 8 bits are dropped.
 
-        Another point is that, for the ``8-bit`` and ``16-bit`` mono mode, the real data on the line are swapped. To get the correct sequence, the writting buffer need to swap the data every two bytes.
+        Another point is that, for the ``8-bit`` and ``16-bit`` mono mode, the real data on the line are swapped. To get the correct sequence, the writing buffer need to swap the data every two bytes.
 
 .. only:: esp32s2
 
@@ -341,7 +341,7 @@ Here is the table of the real data on the line with different :cpp:member:`i2s_s
 
     .. note::
 
-        Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writting buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
+        Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writing buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
 
 .. only:: esp32c3 or esp32s3 or esp32h2
 
@@ -363,7 +363,7 @@ Here is the table of the real data on the line with different :cpp:member:`i2s_s
 
     .. note::
 
-        Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writting buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
+        Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writing buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
 
 .. code-block:: c
 
@@ -541,7 +541,7 @@ Here is the table of the data that received in the buffer with different :cpp:me
     Please refer to :ref:`i2s-api-reference-i2s_pdm` for PDM TX API information.
     And for more details, please refer to :component_file:`driver/include/driver/i2s_pdm.h`.
 
-    The PDM data width is fixed to 16-bit, when the data in a ``int16_t`` writting buffer are:
+    The PDM data width is fixed to 16-bit, when the data in a ``int16_t`` writing buffer are:
 
     +--------+--------+--------+--------+--------+--------+--------+--------+--------+
     | data 0 | data 1 | data 2 | data 3 | data 4 | data 5 | data 6 | data 7 |  ...   |
@@ -829,8 +829,8 @@ Here is an example of how to allocate a pair of full-duplex channels:
             },
         },
     };
-    i2s_init_channle(tx_handle, &std_cfg);
-    i2s_init_channle(rx_handle, &std_cfg);
+    i2s_channel_init_std_mode(tx_handle, &std_cfg);
+    i2s_channel_init_std_mode(rx_handle, &std_cfg);
 
     i2s_channel_enable(tx_handle);
     i2s_channel_enable(rx_handle);

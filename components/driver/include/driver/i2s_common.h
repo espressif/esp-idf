@@ -45,7 +45,7 @@ typedef struct {
     i2s_isr_callback_t on_sent;             /**< Callback of data sent event, only for tx channel
                                              *   The event data includes DMA buffer address and size that just finished sending data
                                              */
-    i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed evnet, only for tx channel
+    i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed event, only for tx channel
                                              *   The event data includes buffer size that has been overwritten
                                              */
 } i2s_event_callbacks_t;
@@ -130,7 +130,7 @@ esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_i
  * @brief Enable the i2s channel
  * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
  *        the channel will enter RUNNING state once it is enabled successfully.
- * @note  Enbale the channel can start the I2S communication on hardware. It will start outputting bclk and ws signal.
+ * @note  Enable the channel can start the I2S communication on hardware. It will start outputting bclk and ws signal.
  *        For mclk signal, it will start to output when initialization is finished
  *
  * @param[in]   handle      I2S channel handler
