@@ -428,6 +428,28 @@ esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_get_user_data(esp_http_client_handle_t client, void **data)
+{
+    if (NULL == client || NULL == data) {
+        ESP_LOGE(TAG, "client or data must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *data = client->user_data;
+    return ESP_OK;
+}
+
+esp_err_t esp_http_client_set_user_data(esp_http_client_handle_t client, void *data)
+{
+    if (NULL == client) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    client->user_data = data;
+    return ESP_OK;
+}
+
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     esp_err_t ret = ESP_OK;
