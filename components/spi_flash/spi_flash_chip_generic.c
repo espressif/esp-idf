@@ -101,7 +101,7 @@ esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size)
        However, some other flash vendors also have their own rule, we will add them in chip specific files.
      */
     uint32_t mem_density = (id & 0xFF);
-    if (mem_density > SPI_FLASH_LINEAR_DENSITY_LAST_VALUE ) {
+    if (mem_density > SPI_FLASH_LINEAR_DENSITY_LAST_VALUE) {
         mem_density -= SPI_FLASH_HEX_A_F_RANGE;
     }
 
