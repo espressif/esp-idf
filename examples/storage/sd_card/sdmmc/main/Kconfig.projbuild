@@ -22,7 +22,8 @@ menu "SD/MMC Example Configuration"
             bool "1 line (D0)"
     endchoice
 
-    if SOC_SDMMC_USE_GPIO_MATRIX
+
+    if IDF_TARGET_ESP32S3
 
         config EXAMPLE_PIN_CMD
             int "CMD GPIO number"
@@ -52,6 +53,6 @@ menu "SD/MMC Example Configuration"
 
         endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
 
-    endif  # SOC_SDMMC_USE_GPIO_MATRIX
+    endif  # IDF_TARGET_ESP32S3
 
 endmenu

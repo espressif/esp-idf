@@ -61,7 +61,7 @@ void app_main(void)
 
     // On chips where the GPIOs used for SD card can be configured, set them in
     // the slot_config structure:
-#ifdef CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
+#ifdef CONFIG_IDF_TARGET_ESP32S3
     slot_config.clk = CONFIG_EXAMPLE_PIN_CLK;
     slot_config.cmd = CONFIG_EXAMPLE_PIN_CMD;
     slot_config.d0 = CONFIG_EXAMPLE_PIN_D0;
@@ -70,7 +70,7 @@ void app_main(void)
     slot_config.d2 = CONFIG_EXAMPLE_PIN_D2;
     slot_config.d3 = CONFIG_EXAMPLE_PIN_D3;
 #endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
-#endif  // CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
+#endif  // CONFIG_IDF_TARGET_ESP32S3
 
     // Enable internal pullups on enabled pins. The internal pullups
     // are insufficient however, please make sure 10k external pullups are
