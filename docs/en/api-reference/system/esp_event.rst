@@ -192,6 +192,28 @@ If the hypothetical event ``MY_EVENT_BASE``, ``MY_OTHER_EVENT_ID`` is posted, on
 
 If the hypothetical event ``MY_OTHER_EVENT_BASE``, ``MY_OTHER_EVENT_ID`` is posted, only ``run_on_event_3`` would execute.
 
+Handler Un-registering Itself
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In general, an event handler run by an event loop is *not allowed to do any (un)registering activity on that event loop*. There is one exception, though: un-registering itself is allowed for the handler. E.g., it is possible to do the following:
+
+.. code-block:: c
+
+    void run_on_event(void* handler_arg, esp_event_base_t base, int32_t id, void* event_data)
+    {
+        esp_event_loop_handle_t *loop_handle = (esp_event_loop_handle_t*) handler_arg;
+        esp_event_handler_unregister_with(*loop_handle, MY_EVENT_BASE, MY_EVENT_ID, run_on_event);
+    }
+
+    void app_main(void)
+    {
+        esp_event_loop_handle_t loop_handle;
+        esp_event_loop_create(&loop_args, &loop_handle);
+        esp_event_handler_register_with(loop_handle, MY_EVENT_BASE, MY_EVENT_ID, run_on_event, &loop_handle);
+        // ... post event MY_EVENT_BASE, MY_EVENT_ID and run loop at some point
+    }
+
+
 Handler Registration and Handler Dispatch Order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
