@@ -47,7 +47,7 @@ extern "C" {
  *      - the to-be-mapped paddr block is overlapped with an already mapped paddr block.
  *      - the to-be-mapped paddr block encloses an already mapped paddr block.
  *   2. If the to-be-mapped paddr block is enclosed by an already mapped paddr block, no new mapping will happen, return ESP_ERR_INVALID_STATE. The out pointer will be the already mapped paddr corresponding vaddr.
- *   3. If the to-be-mapped paddr block is totally the same as an already mapped paddr block, no new mapping will happen, return ESP_ERR_INVALID_STATE. The out pointer will be the corresponding vaddr.
+ *   3. If the to-be-mapped paddr block is identical with an already mapped paddr block, no new mapping will happen, return ESP_ERR_INVALID_STATE. The out pointer will be the corresponding vaddr.
  *
  * - If this flag isn't set, overlapped, enclosed or same to-be-mapped paddr block will lead to ESP_ERR_INVALID_ARG.
  */
@@ -77,7 +77,7 @@ typedef uint32_t esp_paddr_t;
  *        - ESP_ERR_NOT_FOUND:     No enough size free block to use
  *        - ESP_ERR_NO_MEM:        Out of memory, this API will allocate some heap memory for internal usage
  *        - ESP_ERR_INVALID_STATE: Paddr is mapped already, this API will return corresponding vaddr_start of the previously mapped block.
- *                                 Only to-be-mapped paddr block is totally enclosed by a previously mapped block will lead to this error:
+ *                                 Only to-be-mapped paddr block is totally enclosed by a previously mapped block will lead to this error. (Identical scenario will behave similarly)
  *                                 new_block_start               new_block_end
  *                                              |-------- New Block --------|
  *                                      |--------------- Block ---------------|

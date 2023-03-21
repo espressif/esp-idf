@@ -155,6 +155,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
+    $(PROJECT_PATH)/components/esp_mm/include/esp_mmu_map.h \
+    $(PROJECT_PATH)/components/esp_mm/include/esp_cache.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_ip_addr.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_types.h \
