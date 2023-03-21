@@ -76,7 +76,7 @@ The default stack sizes for these tasks are usually set conservatively high, to 
    - :ref:`Main task that executes app_main function <app-main-task>` has stack size :ref:`CONFIG_ESP_MAIN_TASK_STACK_SIZE`.
    - :doc:`/api-reference/system/esp_timer` system task which executes callbacks has stack size :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`.
    - FreeRTOS Timer Task to handle FreeRTOS timer callbacks has stack size :ref:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`.
-   - :doc:`/api-guides/event-handling` system task to execute callbacks for the default system event loop has stack size :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`.
+   - :doc:`/api-reference/system/esp_event` system task to execute callbacks for the default system event loop has stack size :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`.
    - :doc:`/api-guides/lwip` TCP/IP task has stack size :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
    :SOC_BT_SUPPORTED: - :doc:`Bluedroid Bluetooth Host </api-reference/bluetooth/index>` have task stack sizes :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`, :ref:`CONFIG_BT_BTU_TASK_STACK_SIZE`.
    :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`
