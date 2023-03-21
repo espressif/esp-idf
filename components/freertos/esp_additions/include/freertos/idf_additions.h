@@ -36,7 +36,7 @@
  * @brief Create a new task that is pinned to a particular core
  *
  * Helper function to create a task that is pinned to a particular core, or has
- * no affinity. In other wrods, the created task will have an affinity mask of:
+ * no affinity. In other words, the created task will have an affinity mask of:
  * - (1 << xCoreID) if it is pinned to a particular core
  * - Set to tskNO_AFFINITY if it has no affinity
  *
@@ -119,7 +119,7 @@
     TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
 
 /**
- * @brief Get the current core affintiy of a particular task
+ * @brief Get the current core affinity of a particular task
  *
  * Helper function to get the core affinity of a particular task. If the task is
  * pinned to a particular core, the core ID is returned. If the task is not
