@@ -60,49 +60,58 @@ Press TAB when typing command name to auto-complete.
 I (598) main_task: Returned from app_main()
 phy> 
 phy> tx_contin_en 1
-I (4788) phy:  Tx continuous test!
-phy> 
+I (11870) phy:  Tx continuous test!
+phy>
 phy> tx_contin_en 0
-I (7518) phy: Tx packet test!
-phy> 
+I (19860) phy:  Tx packet test!
+phy>
 phy> cbw40m_en 1
-I (10668) phy: cbw40m_en: 1
-phy> 
+I (25660) phy: cbw40m_en: 1
+phy>
 phy> cbw40m_en 0
-I (13238) phy: cbw40m_en: 0
-phy> 
+I (33490) phy: cbw40m_en: 0
+phy>
+phy> esp_tx -n 1 -r 0x0 -p 0 -l 1000 -d 1000 -c 0
+I (39640) phy: Wifi tx out: chan=1, rate=0x0, BK=0, len=1000, delay=1000, tx_num=0
+phy>
 phy> cmdstop
-I (8828) phy: Tx Over 0x0
-phy> 
+I (45460) phy: Tx Over 0x0
+phy>
 phy> esp_rx -n 1 -r 0
-I (19348) phy: wifi rx start: channel is 1, rate is 0x0
-phy> 
+I (51130) phy: wifi rx start: channel is 1, rate is 0x0
+phy>
 phy> cmdstop
-I (142881) phy: Total: 535 Correct: 474 RSSI: -650 noise: -960 gain: 531 para1: 5759 para2: 3
+I (58800) phy: rx_num: 166 rx_rssi: -527
 phy>
 phy> get_rx_result
-I (145991) cmd_phy: Total: 535, Correct: 474, RSSI: -650, flag: 1
-phy> 
+I (66350) cmd_phy: Desired: 167, Correct: 166, RSSI: -527, flag: 1
+phy>
 phy> wifiscwout -e 1 -c 1 -p 0
-I (98308) phy:  wifi single carrier tx out, single carrier is in 1 channel, power is about (2
-phy> 
+I (80310) phy: wifi single carrier tx start: chan=1, pwr=20-0.0 
+phy>
+phy> wifiscwout -e 0 -c 1 -p 0
+I (88260) phy: wifi single carrier tx stop
+phy>
 phy> esp_ble_tx -p 8 -n 1 -l 37 -t 2 -s 0x71764129 -r 0 -m 0
-I (319138) phy: fcc_le_tx_syncw: txpwr=8,chan=1,len=37,data_type=2,syncw=0x71764129,rate=0,tx_
-phy> 
+I (91470) phy: ble_tx:pwr=8,chan=1,len=37,type=2,syncw=0x71764129,rate=0,txnum=0
+phy>
 phy> cmdstop
-I (321208) phy: rw done! ce9
-phy> 
+I (98650) phy: rw done! e22e
+phy>
 phy> esp_ble_rx -n 1 -s 0x71764129 -r 0
-I (2898) phy: RW LE V9 RX PER
-phy> 
+I (104990) phy: RW LE V9 RX PER
+phy>
 phy> cmdstop
-I (381241) phy: 3 0 0 0 3 0 0 0 0 0 p -263 -86 -279 a8 -100 -77
+I (130260) phy: rx_num: 0 rx_rssi: 0
 phy>
 phy> get_rx_result
-I (383871) cmd_phy: Total: 3, Correct: 0, RSSI: 0, flag: 2
-phy> 
+I (139550) cmd_phy: Desired: 0, Correct: 0, RSSI: 0, flag: 2
+phy>
 phy> bt_tx_tone -e 1 -n 1 -p 0
-I (56008) phy: BT TX TONE START!
+I (151900) phy: BT TX TONE START!
+phy>
+phy> bt_tx_tone -e 0 -n 1 -p 0
+I (191970) phy: BT TX TONE STOP!
 phy>
 ```
 

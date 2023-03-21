@@ -13,6 +13,8 @@
 
 #define TAG "cmd_phy"
 
+#define CERT_TASK_PRIO 2
+
 #if CONFIG_ESP_PHY_ENABLE_CERT_TEST
 
 static phy_args_t       phy_args;
@@ -67,7 +69,7 @@ static int esp_phy_get_rx_result_func(int argc, char **argv)
 
     esp_phy_get_rx_result(&rx_result);
 
-    ESP_LOGI(TAG, "Total: %lu, Correct: %lu, RSSI: %d, flag: %lu", rx_result.phy_rx_total_count,
+    ESP_LOGI(TAG, "Desired: %lu, Correct: %lu, RSSI: %d, flag: %lu", rx_result.phy_rx_total_count,
                 rx_result.phy_rx_correct_count, rx_result.phy_rx_rssi, rx_result.phy_rx_result_flag);
 
     return 0;
@@ -111,7 +113,7 @@ static int esp_phy_cbw40m_en_func(int argc, char **argv)
 
 static int esp_phy_wifi_tx_func(int argc, char **argv)
 {
-    phy_wifi_tx_s cmd;
+    static phy_wifi_tx_s cmd;
     int nerrors = arg_parse(argc, argv, (void **) &phy_wifi_tx_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, phy_wifi_tx_args.end, argv[0]);
@@ -160,14 +162,14 @@ static int esp_phy_wifi_tx_func(int argc, char **argv)
         ESP_LOGW(TAG, "Default packet_num is 0");
     }
 
-    xTaskCreate(cert_wifi_tx, "cert_wifi_tx", 1024 * 10, (void *)&cmd, 10, NULL);
+    xTaskCreate(cert_wifi_tx, "cert_wifi_tx", 1024 * 10, (void *)&cmd, CERT_TASK_PRIO, NULL);
 
     return 0;
 }
 
 static int esp_phy_wifi_rx_func(int argc, char **argv)
 {
-    phy_wifi_tx_s cmd;
+    static phy_wifi_rx_s cmd;
     int nerrors = arg_parse(argc, argv, (void **) &phy_wifi_rx_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, phy_wifi_rx_args.end, argv[0]);
@@ -188,7 +190,7 @@ static int esp_phy_wifi_rx_func(int argc, char **argv)
         ESP_LOGW(TAG, "Default rate is PHY_RATE_1M");
     }
 
-    xTaskCreate(cert_wifi_rx, "cert_wifi_rx", 1024 * 20, (void *)&cmd, 10, NULL);
+    xTaskCreate(cert_wifi_rx, "cert_wifi_rx", 1024 * 20, (void *)&cmd, CERT_TASK_PRIO, NULL);
     return 0;
 }
 
@@ -253,7 +255,7 @@ void cert_ble_rx(void *arg)
 
 static int esp_phy_ble_tx_func(int argc, char **argv)
 {
-    phy_ble_tx_s cmd;
+    static phy_ble_tx_s cmd;
     int nerrors = arg_parse(argc, argv, (void **) &phy_ble_tx_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, phy_ble_tx_args.end, argv[0]);
@@ -309,14 +311,14 @@ static int esp_phy_ble_tx_func(int argc, char **argv)
         ESP_LOGW(TAG, "Default tx_num_in is 0");
     }
 
-    xTaskCreate(cert_ble_tx, "cert_ble_tx", 4096, (void *)&cmd, 10, NULL);
+    xTaskCreate(cert_ble_tx, "cert_ble_tx", 4096, (void *)&cmd, CERT_TASK_PRIO, NULL);
 
     return 0;
 }
 
 static int esp_phy_ble_rx_func(int argc, char **argv)
 {
-    phy_ble_rx_s cmd;
+    static phy_ble_rx_s cmd;
     int nerrors = arg_parse(argc, argv, (void **) &phy_ble_rx_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, phy_ble_rx_args.end, argv[0]);
@@ -324,7 +326,7 @@ static int esp_phy_ble_rx_func(int argc, char **argv)
     }
 
     if (phy_ble_rx_args.channel->count == 1) {
-        cmd.channel = phy_ble_tx_args.channel->ival[0];
+        cmd.channel = phy_ble_rx_args.channel->ival[0];
     } else {
         cmd.channel = 1;
         ESP_LOGW(TAG, "Default channel is 1");
@@ -344,7 +346,7 @@ static int esp_phy_ble_rx_func(int argc, char **argv)
         ESP_LOGW(TAG, "Default rate is PHY_BLE_RATE_1M");
     }
 
-    xTaskCreate(cert_ble_rx, "cert_ble_rx", 4096, (void *)&cmd, 10, NULL);
+    xTaskCreate(cert_ble_rx, "cert_ble_rx", 4096, (void *)&cmd, CERT_TASK_PRIO, NULL);
 
     return 0;
 }
