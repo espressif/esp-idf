@@ -13,6 +13,7 @@
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
+#include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_types_private.h"
@@ -156,6 +157,8 @@ const fifo_mps_limits_t mps_limits_bias_ptx = {
 #define URB_HCD_STATE_GET(reserved_flags)           (reserved_flags & URB_HCD_STATE_MASK)
 
 // -------------------- Convenience ------------------------
+
+const char *HCD_DWC_TAG = "HCD DWC";
 
 #define HCD_ENTER_CRITICAL_ISR()                portENTER_CRITICAL_ISR(&hcd_lock)
 #define HCD_EXIT_CRITICAL_ISR()                 portEXIT_CRITICAL_ISR(&hcd_lock)
@@ -1610,34 +1613,54 @@ static void buffer_block_free(dma_buffer_block_t *buffer)
     free(buffer);
 }
 
-static bool pipe_alloc_check_args(const hcd_pipe_config_t *pipe_config, usb_speed_t port_speed, const fifo_mps_limits_t *mps_limits, usb_transfer_type_t type, bool is_default_pipe)
+static bool pipe_args_usb_compliance_verification(const hcd_pipe_config_t *pipe_config, usb_speed_t port_speed, usb_transfer_type_t type)
 {
     //Check if pipe can be supported
     if (port_speed == USB_SPEED_LOW && pipe_config->dev_speed == USB_SPEED_FULL) {
-        //Low speed port does not supported full speed pipe
+        ESP_LOGE(HCD_DWC_TAG, "Low speed port does not support full speed pipe");
         return false;
-    }
-    if (pipe_config->dev_speed == USB_SPEED_LOW && (type == USB_TRANSFER_TYPE_BULK || type == USB_TRANSFER_TYPE_ISOCHRONOUS)) {
-        //Low speed does not support Bulk or Isochronous pipes
-        return false;
-    }
-    //Check interval of pipe
-    if (type == USB_TRANSFER_TYPE_INTR &&
-        (pipe_config->ep_desc->bInterval > 0 && pipe_config->ep_desc->bInterval > 32)) {
-        //Interval not supported for interrupt pipe
-        return false;
-    }
-    if (type == USB_TRANSFER_TYPE_ISOCHRONOUS &&
-        (pipe_config->ep_desc->bInterval > 0 && pipe_config->ep_desc->bInterval > 6)) {
-        //Interval not supported for isochronous pipe (where 0 < 2^(bInterval - 1) <= 32)
-        return false;
-    }
-    if (is_default_pipe) {
-        return true;
     }
 
+    if (pipe_config->dev_speed == USB_SPEED_LOW && (type == USB_TRANSFER_TYPE_BULK || type == USB_TRANSFER_TYPE_ISOCHRONOUS)) {
+        ESP_LOGE(HCD_DWC_TAG, "Low speed does not support Bulk or Isochronous pipes");
+        return false;
+    }
+
+    return true;
+}
+
+static bool pipe_alloc_hcd_support_verification(const usb_ep_desc_t * ep_desc, const fifo_mps_limits_t *mps_limits)
+{
+    assert(ep_desc != NULL);
+    usb_transfer_type_t type = USB_EP_DESC_GET_XFERTYPE(ep_desc);
+
+    //Check the pipe's interval is not zero
+    if ((type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) &&
+        (ep_desc->bInterval == 0)) {
+        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) invalid for pipe type INTR/ISOC",
+                        ep_desc->bInterval);
+        return false;
+    }
+
+    //Check if the pipe's interval is compatible with the periodic frame list's length
+    if (type == USB_TRANSFER_TYPE_INTR &&
+        (ep_desc->bInterval > FRAME_LIST_LEN)) {
+        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) of Interrupt pipe exceeds max supported limit",
+                ep_desc->bInterval);
+        return false;
+    }
+
+    if (type == USB_TRANSFER_TYPE_ISOCHRONOUS &&
+        ((1 << (ep_desc->bInterval - 1)) > FRAME_LIST_LEN)) {
+        // (where 0 < 2^(bInterval - 1) <= FRAME_LIST_LEN)
+        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) of Isochronous pipe exceeds max supported limit",
+                ep_desc->bInterval);
+        return false;
+    }
+
+    //Check if pipe MPS exceeds HCD MPS limits (due to DWC FIFO sizing)
     int limit;
-    if (USB_EP_DESC_GET_EP_DIR(pipe_config->ep_desc)) { //IN
+    if (USB_EP_DESC_GET_EP_DIR(ep_desc)) { //IN
         limit = mps_limits->in_mps;
     } else {    //OUT
         if (type == USB_TRANSFER_TYPE_CTRL || type == USB_TRANSFER_TYPE_BULK) {
@@ -1646,7 +1669,15 @@ static bool pipe_alloc_check_args(const hcd_pipe_config_t *pipe_config, usb_spee
             limit = mps_limits->periodic_out_mps;
         }
     }
-    return (pipe_config->ep_desc->wMaxPacketSize <= limit);
+
+    if (ep_desc->wMaxPacketSize > limit) {
+        ESP_LOGE(HCD_DWC_TAG, "EP MPS (%d) exceeds supported limit (%d)",
+                ep_desc->wMaxPacketSize,
+                limit);
+        return false;
+    }
+
+    return true;
 }
 
 static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_type_t type, bool is_default_pipe, int pipe_idx, usb_speed_t port_speed, usb_dwc_hal_ep_char_t *ep_char)
@@ -1828,18 +1859,23 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     usb_transfer_type_t type;
     bool is_default;
     if (pipe_config->ep_desc == NULL) {
+        // Default CTRL pipe allocation
         type = USB_TRANSFER_TYPE_CTRL;
         is_default = true;
     } else {
         type = USB_EP_DESC_GET_XFERTYPE(pipe_config->ep_desc);
         is_default = false;
     }
-    //Check if pipe configuration can be supported
-    if (!pipe_alloc_check_args(pipe_config, port_speed, mps_limits, type, is_default)) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
 
     esp_err_t ret;
+    //Check if pipe configuration can be supported
+    if (!pipe_args_usb_compliance_verification(pipe_config, port_speed, type)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    //Default pipes have a NULL ep_desc thus should skip the HCD support verification
+    if (!is_default && !pipe_alloc_hcd_support_verification(pipe_config->ep_desc, mps_limits)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     //Allocate the pipe resources
     pipe_t *pipe = calloc(1, sizeof(pipe_t));
     usb_dwc_hal_chan_t *chan_obj = calloc(1, sizeof(usb_dwc_hal_chan_t));
