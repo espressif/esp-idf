@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 | ESP32-H2 | ESP32-H4 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C6 | ESP32-H2 |
+| ----------------- | -------- | -------- |
 
 # OpenThread Radio Co-Processor (RCP) Example
 
