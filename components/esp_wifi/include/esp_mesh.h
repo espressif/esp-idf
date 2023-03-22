@@ -188,7 +188,8 @@ typedef enum {
     MESH_EVENT_PARENT_DISCONNECTED,     /**< parent is disconnected on station interface */
     MESH_EVENT_NO_PARENT_FOUND,         /**< no parent found */
     MESH_EVENT_LAYER_CHANGE,            /**< layer changes over the mesh network */
-    MESH_EVENT_TODS_STATE,              /**< state represents whether the root is able to access external IP network */
+    MESH_EVENT_TODS_STATE,              /**< state represents whether the root is able to access external IP network.
+                                             This state is a manual event that needs to be triggered with esp_mesh_post_toDS_state(). */
     MESH_EVENT_VOTE_STARTED,            /**< the process of voting a new root is started either by children or by the root */
     MESH_EVENT_VOTE_STOPPED,            /**< the process of voting a new root is stopped */
     MESH_EVENT_ROOT_ADDRESS,            /**< the root address is obtained. It is posted by mesh stack automatically. */
@@ -1189,7 +1190,10 @@ esp_err_t esp_mesh_get_rx_pending(mesh_rx_pending_t *pending);
 int esp_mesh_available_txupQ_num(const mesh_addr_t *addr, uint32_t *xseqno_in);
 
 /**
- * @brief      Set the number of queue
+ * @brief      Set the number of RX queue for the node, the average number of window allocated to one of
+ *             its child node is: wnd = xon_qsize / (2 * max_connection + 1).
+ *             However, the window of each child node is not strictly equal to the average value,
+ *             it is affected by the traffic also.
  *
  * @attention  This API shall be called before mesh is started.
  *
