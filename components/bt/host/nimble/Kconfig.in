@@ -591,7 +591,7 @@ config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
 
 config BT_NIMBLE_BLE_POWER_CONTROL
     bool "Enable support for BLE Power Control"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && (IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2)
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_POWER_CONTROL_SUPPORTED
     default n
     help
         Set this option to enable the Power Control feature
