@@ -205,7 +205,7 @@ extern void vTaskExitCritical( void );
 #define portALT_GET_RUN_TIME_COUNTER_VALUE(x)       do {x = (uint32_t)esp_timer_get_time();} while(0)
 #endif
 
-// ------------------- TCB Cleanup ----------------------
+// --------------------- TCB Cleanup -----------------------
 
 #define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
 
@@ -315,7 +315,7 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  * - Miscellaneous porting macros
- * - These are not port of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
+ * - These are not part of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
  * ------------------------------------------------------------------------------------------------------------------ */
 
 // --------------------- App-Trace -------------------------
