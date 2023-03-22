@@ -56,7 +56,7 @@ static uint32_t bt_mesh_bqb_test_flag(uint8_t op, uint32_t value)
 {
     static uint32_t bqb_log_flag = 0;
 
-    switch (operation) {
+    switch (op) {
     case BLE_MESH_BQB_TEST_FLAG_OP_GET:
         break;
     case BLE_MESH_BQB_TEST_FLAG_OP_SET:
@@ -77,7 +77,7 @@ uint32_t bt_mesh_bqb_test_flag_get(void)
 
 int bt_mesh_bqb_test_flag_set(uint32_t flag_mask)
 {
-    if (module_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
+    if (flag_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
         BT_ERR("Invalid BQB test flag mask 0x%08x", flag_mask);
         return -EINVAL;
     }
@@ -87,7 +87,7 @@ int bt_mesh_bqb_test_flag_set(uint32_t flag_mask)
 
 bool bt_mesh_bqb_test_flag_check(uint32_t flag_mask)
 {
-    if (module_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
+    if (flag_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
         BT_ERR("Invalid BQB test flag mask 0x%08x", flag_mask);
         return false;
     }
