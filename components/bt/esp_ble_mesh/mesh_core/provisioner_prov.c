@@ -2725,6 +2725,11 @@ static void prov_retransmit(struct k_work *work)
 #endif
     if (k_uptime_get() - link[idx].tx.start > timeout) {
         BT_WARN("Provisioner timeout, giving up transaction");
+        /**
+         * For the case MESH/PVNR/PBADV/BV-01, provisoner should
+         * sends link close with reason.
+         */
+        close_link(idx,CLOSE_REASON_TIMEOUT);
         reset_link(idx, CLOSE_REASON_TIMEOUT);
         return;
     }
@@ -2866,6 +2871,12 @@ static void prov_msg_recv(const uint8_t idx)
     return;
 
 fail:
+    /**
+     * For the case MESH/PVNR/PROV/BV-10-C and MESH/PVNR/PROV/BI-14-C,
+     * provisioner should send transaction ack before closing the link.
+     */
+    gen_prov_ack_send(idx, link[idx].rx.trans_id);
+
     close_link(idx, CLOSE_REASON_FAILED);
     return;
 }
