@@ -20,17 +20,23 @@
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
 typedef enum {
-    MODEM_CLOCK_FE         = BIT(0),
-    MODEM_CLOCK_COEXIST    = BIT(1),
-    MODEM_CLOCK_I2C_MASTER = BIT(2),
-    MODEM_CLOCK_WIFI_MAC   = BIT(3),
-    MODEM_CLOCK_WIFI_BB    = BIT(4),
-    MODEM_CLOCK_ETM        = BIT(5),
-    MODEM_CLOCK_BLE_MAC    = BIT(6),
-    MODEM_CLOCK_BLE_BB     = BIT(7),
-    MODEM_CLOCK_802154_MAC = BIT(8),
-    MODEM_CLOCK_DATADUMP   = BIT(9),
-    MODEM_CLOCK_DEVICE_MAX = 10
+    MODEM_CLOCK_FE,
+    MODEM_CLOCK_COEXIST,
+    MODEM_CLOCK_I2C_MASTER,
+#if SOC_WIFI_SUPPORTED
+    MODEM_CLOCK_WIFI_MAC,
+    MODEM_CLOCK_WIFI_BB,
+#endif
+    MODEM_CLOCK_ETM,
+#if SOC_BT_SUPPORTED
+    MODEM_CLOCK_BLE_MAC,
+    MODEM_CLOCK_BLE_BB,
+#endif
+#if SOC_IEEE802154_SUPPORTED
+    MODEM_CLOCK_802154_MAC,
+#endif
+    MODEM_CLOCK_DATADUMP,
+    MODEM_CLOCK_DEVICE_MAX
 } modem_clock_device_t;
 
 
@@ -83,6 +89,7 @@ static void IRAM_ATTR modem_clock_ble_bb_configure(modem_clock_context_t *ctx, b
 #if SOC_IEEE802154_SUPPORTED
 static void IRAM_ATTR modem_clock_ieee802154_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
+    modem_syscon_ll_enable_etm_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ieee802154_apb_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ieee802154_mac_clock(ctx->hal->syscon_dev, enable);
 }
@@ -95,12 +102,7 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 
 static void IRAM_ATTR modem_clock_fe_configure(modem_clock_context_t *ctx, bool enable)
 {
-    if (enable) {
-        modem_syscon_ll_enable_fe_apb_clock(ctx->hal->syscon_dev, enable);
-        modem_syscon_ll_enable_fe_cal_160m_clock(ctx->hal->syscon_dev, enable);
-        modem_syscon_ll_enable_fe_160m_clock(ctx->hal->syscon_dev, enable);
-        modem_syscon_ll_enable_fe_80m_clock(ctx->hal->syscon_dev, enable);
-    }
+    modem_clock_hal_enable_fe_clock(ctx->hal, enable);
 }
 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)
@@ -126,22 +128,22 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
     static DRAM_ATTR modem_clock_context_t modem_clock_context = {
         .hal = &modem_clock_hal, .lock = portMUX_INITIALIZER_UNLOCKED,
         .dev = {
-            { .refs = 0, .configure = modem_clock_fe_configure             },
-            { .refs = 0, .configure = modem_clock_coex_configure           },
-            { .refs = 0, .configure = modem_clock_i2c_master_configure     },
+            [MODEM_CLOCK_FE]            = { .refs = 0, .configure = modem_clock_fe_configure             },
+            [MODEM_CLOCK_COEXIST]       = { .refs = 0, .configure = modem_clock_coex_configure           },
+            [MODEM_CLOCK_I2C_MASTER]    = { .refs = 0, .configure = modem_clock_i2c_master_configure     },
 #if SOC_WIFI_SUPPORTED
-            { .refs = 0, .configure = modem_clock_wifi_mac_configure       },
-            { .refs = 0, .configure = modem_clock_wifi_bb_configure        },
-#endif // SOC_WIFI_SUPPORTED
-            { .refs = 0, .configure = modem_clock_etm_configure            },
+            [MODEM_CLOCK_WIFI_MAC]      = { .refs = 0, .configure = modem_clock_wifi_mac_configure       },
+            [MODEM_CLOCK_WIFI_BB]       = { .refs = 0, .configure = modem_clock_wifi_bb_configure        },
+#endif
+            [MODEM_CLOCK_ETM]           = { .refs = 0, .configure = modem_clock_etm_configure            },
 #if SOC_BT_SUPPORTED
-            { .refs = 0, .configure = modem_clock_ble_mac_configure        },
-            { .refs = 0, .configure = modem_clock_ble_bb_configure         },
-#endif // SOC_BT_SUPPORTED
+            [MODEM_CLOCK_BLE_MAC]       = { .refs = 0, .configure = modem_clock_ble_mac_configure        },
+            [MODEM_CLOCK_BLE_BB]        = { .refs = 0, .configure = modem_clock_ble_bb_configure         },
+#endif
 #if SOC_IEEE802154_SUPPORTED
-            { .refs = 0, .configure = modem_clock_ieee802154_mac_configure },
-#endif // SOC_IEEE802154_SUPPORTED
-            { .refs = 0, .configure = modem_clock_data_dump_configure      }
+            [MODEM_CLOCK_802154_MAC]    = { .refs = 0, .configure = modem_clock_ieee802154_mac_configure },
+#endif
+            [MODEM_CLOCK_DATADUMP]      = { .refs = 0, .configure = modem_clock_data_dump_configure      }
         },
         .lpclk_src = { [0 ... PERIPH_MODEM_MODULE_NUM - 1] = MODEM_CLOCK_LPCLK_SRC_INVALID }
     };
@@ -212,11 +214,11 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
     assert(refs >= 0);
 }
 
-#define WIFI_CLOCK_DEPS       (MODEM_CLOCK_WIFI_MAC | MODEM_CLOCK_FE | MODEM_CLOCK_WIFI_BB | MODEM_CLOCK_COEXIST)
-#define BLE_CLOCK_DEPS        (MODEM_CLOCK_BLE_MAC | MODEM_CLOCK_FE | MODEM_CLOCK_BLE_BB | MODEM_CLOCK_ETM | MODEM_CLOCK_COEXIST)
-#define IEEE802154_CLOCK_DEPS (MODEM_CLOCK_802154_MAC | MODEM_CLOCK_FE | MODEM_CLOCK_BLE_BB | MODEM_CLOCK_ETM | MODEM_CLOCK_COEXIST)
-#define COEXIST_CLOCK_DEPS    (MODEM_CLOCK_COEXIST)
-#define PHY_CLOCK_DEPS        (MODEM_CLOCK_I2C_MASTER | MODEM_CLOCK_FE)
+#define WIFI_CLOCK_DEPS       (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_COEXIST))
+#define BLE_CLOCK_DEPS        (BIT(MODEM_CLOCK_BLE_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_BLE_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
+#define IEEE802154_CLOCK_DEPS (BIT(MODEM_CLOCK_802154_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_BLE_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
+#define COEXIST_CLOCK_DEPS    (BIT(MODEM_CLOCK_COEXIST))
+#define PHY_CLOCK_DEPS        (BIT(MODEM_CLOCK_I2C_MASTER) | BIT(MODEM_CLOCK_FE))
 
 static inline uint32_t modem_clock_get_module_deps(periph_module_t module)
 {
