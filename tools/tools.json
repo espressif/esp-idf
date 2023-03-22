@@ -987,9 +987,10 @@
         "all"
       ],
       "version_cmd": [
-        ""
+        "true",
+        "--version"
       ],
-      "version_regex": "",
+      "version_regex": "(.?)",
       "versions": [
         {
           "any": {
