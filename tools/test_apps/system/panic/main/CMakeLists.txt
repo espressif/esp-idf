@@ -13,4 +13,5 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "include"
-                        REQUIRES spi_flash esp_psram esp_system esp_partition)
+                        REQUIRES spi_flash esp_psram esp_system esp_partition
+                        PRIV_REQUIRES esp_gdbstub)
