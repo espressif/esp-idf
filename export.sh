@@ -125,7 +125,6 @@ __main() {
     export IDF_TOOLS_INSTALL_CMD=${IDF_PATH}/install.sh
     # Allow calling some IDF python tools without specifying the full path
     # ${IDF_PATH}/tools is already added by 'idf_tools.py export'
-    IDF_ADD_PATHS_EXTRAS="${IDF_PATH}/components/esptool_py/esptool"
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/espcoredump"
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/partition_table"
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/app_update"
