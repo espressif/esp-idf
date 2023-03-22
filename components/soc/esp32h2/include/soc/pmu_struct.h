@@ -174,7 +174,7 @@ typedef union {
     uint32_t val;
 } pmu_hp_xtal_reg_t;
 
-typedef volatile struct pmu_hp_hw_regmap_t{
+typedef struct pmu_hp_hw_regmap_t{
     pmu_hp_dig_power_reg_t     dig_power;
     uint32_t                   icg_func;
     uint32_t                   icg_apb;
@@ -252,7 +252,7 @@ typedef union {
     uint32_t val;
 } pmu_lp_bias_reg_t;
 
-typedef volatile struct pmu_lp_hw_regmap_t{
+typedef struct pmu_lp_hw_regmap_t{
     pmu_lp_regulator0_reg_t    regulator0;
     pmu_lp_regulator1_reg_t    regulator1;
     pmu_lp_xtal_reg_t          xtal;   /* Only LP_SLEEP mode under lp system is valid */
@@ -347,7 +347,7 @@ typedef union {
     uint32_t val;
 } pmu_imm_i2c_isolate_reg_t;
 
-typedef volatile struct pmu_imm_hw_regmap_t{
+typedef struct pmu_imm_hw_regmap_t{
     pmu_imm_hp_clk_power_reg_t     clk_power;
     pmu_imm_sleep_sysclk_reg_t     sleep_sysclk;
     pmu_imm_hp_func_icg_reg_t      hp_func_icg;
@@ -444,7 +444,7 @@ typedef union {
     uint32_t val;
 } pmu_power_clk_wait_cntl_reg_t;
 
-typedef volatile struct pmu_power_hw_regmap_t{
+typedef struct pmu_power_hw_regmap_t{
     pmu_power_wait_timer0_reg_t    wait_timer0;
     pmu_power_wait_timer1_reg_t    wait_timer1;
     pmu_power_domain_cntl_reg_t    hp_pd[5];
@@ -516,7 +516,7 @@ typedef union {
     uint32_t val;
 } pmu_slp_wakeup_cntl7_reg_t;
 
-typedef volatile struct pmu_wakeup_hw_regmap_t{
+typedef struct pmu_wakeup_hw_regmap_t{
     pmu_slp_wakeup_cntl0_reg_t     cntl0;
     pmu_slp_wakeup_cntl1_reg_t     cntl1;
     uint32_t                       cntl2;
@@ -595,7 +595,7 @@ typedef union {
     uint32_t val;
 } pmu_hp_intr_reg_t;
 
-typedef volatile struct pmu_hp_ext_hw_regmap_t{
+typedef struct pmu_hp_ext_hw_regmap_t{
     pmu_hp_clk_poweron_reg_t   clk_poweron;
     pmu_hp_clk_cntl_reg_t      clk_cntl;
     pmu_por_status_reg_t       por_status;
@@ -652,7 +652,7 @@ typedef union {
     uint32_t val;
 } pmu_lp_cpu_pwr1_reg_t;
 
-typedef volatile struct pmu_lp_ext_hw_regmap_t{
+typedef struct pmu_lp_ext_hw_regmap_t{
     pmu_lp_intr_reg_t          int_raw;
     pmu_lp_intr_reg_t          int_st;
     pmu_lp_intr_reg_t          int_ena;
@@ -666,95 +666,95 @@ typedef struct {
     } common;
 } pmu_hp_lp_hw_regmap_t;
 
-typedef volatile struct pmu_dev_t{
-    pmu_hp_hw_regmap_t     hp_sys[3];
-    pmu_lp_hw_regmap_t     lp_sys[2];
-    pmu_imm_hw_regmap_t    imm;
-    pmu_power_hw_regmap_t  power;
-    pmu_wakeup_hw_regmap_t wakeup;
-    pmu_hp_ext_hw_regmap_t hp_ext;
-    pmu_lp_ext_hw_regmap_t lp_ext;
+typedef struct pmu_dev_t{
+    volatile pmu_hp_hw_regmap_t     hp_sys[3];
+    volatile pmu_lp_hw_regmap_t     lp_sys[2];
+    volatile pmu_imm_hw_regmap_t    imm;
+    volatile pmu_power_hw_regmap_t  power;
+    volatile pmu_wakeup_hw_regmap_t wakeup;
+    volatile pmu_hp_ext_hw_regmap_t hp_ext;
+    volatile pmu_lp_ext_hw_regmap_t lp_ext;
 
     union {
         struct {
             uint32_t reserved0    : 30;
-            uint32_t lp_trigger_hp: 1;
-            uint32_t hp_trigger_lp: 1;
+            volatile uint32_t lp_trigger_hp: 1;
+            volatile uint32_t hp_trigger_lp: 1;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } hp_lp_cpu_comm;
 
     union {
         struct {
             uint32_t reserved0           : 31;
-            uint32_t dig_regulator_en_cal: 1;
+            volatile uint32_t dig_regulator_en_cal: 1;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } hp_regulator_cfg;
 
     union {
         struct {
             uint32_t reserved0 : 11;
-            uint32_t last_st   : 7;
-            uint32_t target_st : 7;
-            uint32_t current_st: 7;
+            volatile uint32_t last_st   : 7;
+            volatile uint32_t target_st : 7;
+            volatile uint32_t current_st: 7;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } main_state;
 
     union {
         struct {
             uint32_t reserved0: 13;
-            uint32_t backup_st: 5;
-            uint32_t lp_pwr_st: 5;
-            uint32_t hp_pwr_st: 9;
+            volatile uint32_t backup_st: 5;
+            volatile uint32_t lp_pwr_st: 5;
+            volatile uint32_t hp_pwr_st: 9;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } pwr_state;
 
     union {
         struct {
-            uint32_t stable_xpd_bbpll : 1;
-            uint32_t stable_xpd_xtal  : 1;
-            uint32_t reserved0        : 13;
-            uint32_t sysclk_slp_sel   : 1;
-            uint32_t sysclk_sel       : 2;
-            uint32_t sysclk_nodiv     : 1;
-            uint32_t icg_sysclk_en    : 1;
-            uint32_t icg_modem_switch : 1;
-            uint32_t icg_modem_code   : 2;
-            uint32_t icg_slp_sel      : 1;
-            uint32_t icg_global_xtal  : 1;
-            uint32_t icg_global_pll   : 1;
-            uint32_t ana_i2c_iso_en   : 1;
-            uint32_t ana_i2c_retention: 1;
-            uint32_t ana_xpd_bb_i2c   : 1;
-            uint32_t ana_xpd_bbpll_i2c: 1;
-            uint32_t ana_xpd_bbpll    : 1;
-            uint32_t ana_xpd_xtal     : 1;
+            volatile uint32_t stable_xpd_bbpll : 1;
+            volatile uint32_t stable_xpd_xtal  : 1;
+            volatile uint32_t reserved0        : 13;
+            volatile uint32_t sysclk_slp_sel   : 1;
+            volatile uint32_t sysclk_sel       : 2;
+            volatile uint32_t sysclk_nodiv     : 1;
+            volatile uint32_t icg_sysclk_en    : 1;
+            volatile uint32_t icg_modem_switch : 1;
+            volatile uint32_t icg_modem_code   : 2;
+            volatile uint32_t icg_slp_sel      : 1;
+            volatile uint32_t icg_global_xtal  : 1;
+            volatile uint32_t icg_global_pll   : 1;
+            volatile uint32_t ana_i2c_iso_en   : 1;
+            volatile uint32_t ana_i2c_retention: 1;
+            volatile uint32_t ana_xpd_bb_i2c   : 1;
+            volatile uint32_t ana_xpd_bbpll_i2c: 1;
+            volatile uint32_t ana_xpd_bbpll    : 1;
+            volatile uint32_t ana_xpd_xtal     : 1;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } clk_state0;
 
-    uint32_t clk_state1;
-    uint32_t clk_state2;
+    volatile uint32_t clk_state1;
+    volatile uint32_t clk_state2;
 
     union {
         struct {
             uint32_t reserved0             : 31;
-            uint32_t stable_vdd_spi_pwr_drv: 1;
+            volatile uint32_t stable_vdd_spi_pwr_drv: 1;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } vdd_spi_status;
 
     uint32_t reserved[149];
 
     union {
         struct {
-            uint32_t pmu_date: 31;
-            uint32_t clk_en  : 1;
+            volatile uint32_t pmu_date: 31;
+            volatile uint32_t clk_en  : 1;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } date;
 } pmu_dev_t;
 
