@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -28,9 +29,8 @@ void setUp(void)
 {
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+    errno = 0;
 }
-
-
 
 void tearDown(void)
 {
