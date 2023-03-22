@@ -414,6 +414,11 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
     tBTA_AV_SCB         *p_scb = bta_av_cb.p_scb[index];
     int                 xx;
 
+    if (event == AVDT_DELAY_REPORT_CFM_EVT) {
+        APPL_TRACE_DEBUG("%s: AVDT_DELAY_REPORT_CFM_EVT", __func__);
+        return;
+    }
+
     if (p_data) {
         if (event == AVDT_SECURITY_IND_EVT) {
             sec_len = (p_data->security_ind.len < BTA_AV_SECURITY_MAX_LEN) ?
@@ -500,9 +505,6 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
             case AVDT_DISCONNECT_IND_EVT:
                 p_msg->hdr.offset = p_data->hdr.err_param;
                 break;
-            case AVDT_DELAY_REPORT_CFM_EVT:
-                APPL_TRACE_DEBUG("%s: AVDT_DELAY_REPORT_CFM_EVT", __func__);
-                return;
             default:
                 break;
             }
