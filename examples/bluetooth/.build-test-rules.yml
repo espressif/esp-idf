@@ -2,31 +2,31 @@
 
 examples/bluetooth/bluedroid/ble:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/bluedroid/ble_50:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/bluedroid/ble_50/multi-adv:
   enable:
-    - if: IDF_TARGET in ["esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -35,28 +35,20 @@ examples/bluetooth/bluedroid/classic_bt:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/bluedroid/coex/gattc_gatts_coex:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -105,40 +97,24 @@ examples/bluetooth/esp_hid_device:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/esp_hid_host:
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/hci/ble_adv_scan_combined:
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/hci/controller_hci_uart_esp32:
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/hci/controller_hci_uart_esp32c3_and_esp32s3:
   enable:
@@ -146,7 +122,7 @@ examples/bluetooth/hci/controller_hci_uart_esp32c3_and_esp32s3:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c3", "esp32s3"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -155,10 +131,6 @@ examples/bluetooth/hci/controller_vhci_ble_adv:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
 
 examples/bluetooth/nimble:
   enable:
