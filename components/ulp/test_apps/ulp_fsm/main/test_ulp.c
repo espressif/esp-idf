@@ -162,7 +162,7 @@ TEST_CASE("ULP FSM light-sleep wakeup test", "[ulp]")
     const ulp_insn_t program[] = {
         I_MOVI(R1, 1024),   // r1 = 1024
         M_LABEL(1),         // define label 1
-        I_DELAY(32000),     // add a delay (NOP for 32000 cycles)
+        I_DELAY(64000),     // add a delay (NOP for 64000 cycles)
         I_SUBI(R1, R1, 1),  // r1 = r1 - 1
         M_BXZ(3),           // branch to label 3 if ALU value is 0. (r1 = 0)
         I_RSHI(R3, R1, 5),  // r3 = r1 / 32
@@ -204,7 +204,7 @@ TEST_CASE("ULP FSM deep-sleep wakeup test", "[ulp][ulp_deep_sleep_wakeup]")
     const ulp_insn_t program[] = {
         I_MOVI(R1, 1024),   // r1 = 1024
         M_LABEL(1),         // define label 1
-        I_DELAY(32000),     // add a delay (NOP for 32000 cycles)
+        I_DELAY(64000),     // add a delay (NOP for 64000 cycles)
         I_SUBI(R1, R1, 1),  // r1 = r1 - 1
         M_BXZ(3),           // branch to label 3 if ALU value is 0. (r1 = 0)
         I_RSHI(R3, R1, 5),  // r3 = r1 / 32
