@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-C6 MODEM SYSCON register operations
+// The LL layer for ESP32-C6 MODEM LPCON register operations
 
 #pragma once
 
@@ -25,37 +25,37 @@ static inline void modem_lpcon_ll_enable_test_clk(modem_lpcon_dev_t *hw, bool en
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_lp_timer_slow_osc(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_ble_rtc_timer_slow_osc(modem_lpcon_dev_t *hw, bool en)
 {
     hw->lp_timer_conf.clk_lp_timer_sel_osc_slow = en;
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_lp_timer_fast_osc(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_ble_rtc_timer_fast_osc(modem_lpcon_dev_t *hw, bool en)
 {
     hw->lp_timer_conf.clk_lp_timer_sel_osc_fast = en;
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_lp_timer_main_xtal(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_ble_rtc_timer_main_xtal(modem_lpcon_dev_t *hw, bool en)
 {
     hw->lp_timer_conf.clk_lp_timer_sel_xtal = en;
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_lp_timer_32k_xtal(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_ble_rtc_timer_32k_xtal(modem_lpcon_dev_t *hw, bool en)
 {
     hw->lp_timer_conf.clk_lp_timer_sel_xtal32k = en;
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_set_lp_timer_divisor_value(modem_lpcon_dev_t *hw, uint32_t value)
+static inline void modem_lpcon_ll_set_ble_rtc_timer_divisor_value(modem_lpcon_dev_t *hw, uint32_t value)
 {
     hw->lp_timer_conf.clk_lp_timer_div_num = value;
 }
 
 __attribute__((always_inline))
-static inline uint32_t modem_lpcon_ll_get_lp_timer_divisor_value(modem_lpcon_dev_t *hw)
+static inline uint32_t modem_lpcon_ll_get_ble_rtc_timer_divisor_value(modem_lpcon_dev_t *hw)
 {
     return hw->lp_timer_conf.clk_lp_timer_div_num;
 }
@@ -163,7 +163,7 @@ static inline void modem_lpcon_ll_enable_i2c_master_clock(modem_lpcon_dev_t *hw,
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_lp_timer_clock(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_ble_rtc_timer_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf.clk_lp_timer_en = en;
 }
@@ -187,7 +187,7 @@ static inline void modem_lpcon_ll_enable_i2c_master_force_clock(modem_lpcon_dev_
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_lp_timer_force_clock(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_ble_rtc_timer_force_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf_force_on.clk_lp_timer_fo = en;
 }

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The HAL layer for MODEM CLOCK (ESP32-C6 specific part)
+// The HAL layer for MODEM CLOCK (ESP32-H2 specific part)
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "soc/soc.h"

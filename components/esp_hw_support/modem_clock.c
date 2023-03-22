@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/clk_gate_ll.h"
 #include "esp_private/esp_modem_clock.h"
@@ -46,6 +47,7 @@ typedef struct modem_clock_context {
 } modem_clock_context_t;
 
 
+#if SOC_WIFI_SUPPORTED
 static void IRAM_ATTR modem_clock_wifi_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
     if (enable) {
@@ -60,7 +62,9 @@ static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, 
         modem_syscon_ll_clk_wifibb_configure(ctx->hal->syscon_dev, enable);
     }
 }
+#endif // SOC_WIFI_SUPPORTED
 
+#if SOC_BT_SUPPORTED
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_syscon_ll_enable_etm_clock(ctx->hal->syscon_dev, enable);
@@ -74,11 +78,15 @@ static void IRAM_ATTR modem_clock_ble_bb_configure(modem_clock_context_t *ctx, b
     modem_syscon_ll_enable_bt_clock(ctx->hal->syscon_dev, enable);
 }
 
+#endif // SOC_BT_SUPPORTED
+
+#if SOC_IEEE802154_SUPPORTED
 static void IRAM_ATTR modem_clock_ieee802154_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_syscon_ll_enable_ieee802154_apb_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ieee802154_mac_clock(ctx->hal->syscon_dev, enable);
 }
+#endif // SOC_IEEE802154_SUPPORTED
 
 static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, bool enable)
 {
@@ -121,12 +129,18 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
             { .refs = 0, .configure = modem_clock_fe_configure             },
             { .refs = 0, .configure = modem_clock_coex_configure           },
             { .refs = 0, .configure = modem_clock_i2c_master_configure     },
+#if SOC_WIFI_SUPPORTED
             { .refs = 0, .configure = modem_clock_wifi_mac_configure       },
             { .refs = 0, .configure = modem_clock_wifi_bb_configure        },
+#endif // SOC_WIFI_SUPPORTED
             { .refs = 0, .configure = modem_clock_etm_configure            },
+#if SOC_BT_SUPPORTED
             { .refs = 0, .configure = modem_clock_ble_mac_configure        },
             { .refs = 0, .configure = modem_clock_ble_bb_configure         },
+#endif // SOC_BT_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
             { .refs = 0, .configure = modem_clock_ieee802154_mac_configure },
+#endif // SOC_IEEE802154_SUPPORTED
             { .refs = 0, .configure = modem_clock_data_dump_configure      }
         },
         .lpclk_src = { [0 ... PERIPH_MODEM_MODULE_NUM - 1] = MODEM_CLOCK_LPCLK_SRC_INVALID }
@@ -134,6 +148,7 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
     return &modem_clock_context;
 }
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 static void IRAM_ATTR modem_clock_domain_power_state_icg_map_init(modem_clock_context_t *ctx)
 {
     #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
@@ -159,11 +174,11 @@ static void IRAM_ATTR modem_clock_domain_power_state_icg_map_init(modem_clock_co
     }
 }
 
-
 void modem_clock_domain_pmu_state_icg_map_init(void)
 {
     modem_clock_domain_power_state_icg_map_init(MODEM_CLOCK_instance());
 }
+#endif // #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)
 {
@@ -203,27 +218,34 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
 #define COEXIST_CLOCK_DEPS    (MODEM_CLOCK_COEXIST)
 #define PHY_CLOCK_DEPS        (MODEM_CLOCK_I2C_MASTER | MODEM_CLOCK_FE)
 
+static inline uint32_t modem_clock_get_module_deps(periph_module_t module)
+{
+    uint32_t deps = 0;
+    if (module == PERIPH_PHY_MODULE) {deps = PHY_CLOCK_DEPS;}
+    else if (module == PERIPH_COEX_MODULE) { deps = COEXIST_CLOCK_DEPS; }
+#if SOC_WIFI_SUPPORTED
+    else if (module == PERIPH_WIFI_MODULE) { deps = WIFI_CLOCK_DEPS; }
+#endif
+#if SOC_BT_SUPPORTED
+    else if (module == PERIPH_BT_MODULE) { deps = BLE_CLOCK_DEPS; }
+#endif
+#if SOC_IEEE802154_SUPPORTED
+    else if (module == PERIPH_IEEE802154_MODULE) { deps = IEEE802154_CLOCK_DEPS; }
+#endif
+    return deps;
+}
+
 void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-    const int deps = (module == PERIPH_WIFI_MODULE)         ? WIFI_CLOCK_DEPS       \
-                   : (module == PERIPH_BT_MODULE)           ? BLE_CLOCK_DEPS        \
-                   : (module == PERIPH_IEEE802154_MODULE)   ? IEEE802154_CLOCK_DEPS \
-                   : (module == PERIPH_COEX_MODULE)         ? COEXIST_CLOCK_DEPS    \
-                   : (module == PERIPH_PHY_MODULE)          ? PHY_CLOCK_DEPS        \
-                   : 0;
+    uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_enable(MODEM_CLOCK_instance(), deps);
 }
 
 void IRAM_ATTR modem_clock_module_disable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-    const int deps = (module == PERIPH_WIFI_MODULE)         ? WIFI_CLOCK_DEPS       \
-                   : (module == PERIPH_BT_MODULE)           ? BLE_CLOCK_DEPS        \
-                   : (module == PERIPH_IEEE802154_MODULE)   ? IEEE802154_CLOCK_DEPS \
-                   : (module == PERIPH_COEX_MODULE)         ? COEXIST_CLOCK_DEPS    \
-                   : (module == PERIPH_PHY_MODULE)          ? PHY_CLOCK_DEPS        \
-                   : 0;
+    uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_disable(MODEM_CLOCK_instance(), deps);
 }
 
@@ -233,18 +255,24 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
     switch (module)
     {
+#if SOC_WIFI_SUPPORTED
     case PERIPH_WIFI_MODULE:
         modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_select_wifi_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_lpcon_ll_set_wifi_lpclk_divisor_value(MODEM_CLOCK_instance()->hal->lpcon_dev, divider);
         modem_lpcon_ll_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, true);
         break;
+#endif // SOC_WIFI_SUPPORTED
+
+#if SOC_BT_SUPPORTED
     case PERIPH_BT_MODULE:
-        modem_clock_hal_deselect_all_lp_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
-        modem_clock_hal_select_lp_timer_lpclk_source(MODEM_CLOCK_instance()->hal, src);
-        modem_lpcon_ll_set_lp_timer_divisor_value(MODEM_CLOCK_instance()->hal->lpcon_dev, divider);
-        modem_lpcon_ll_enable_lp_timer_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, true);
+        modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
+        modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, src);
+        modem_clock_hal_set_ble_rtc_timer_divisor_value(MODEM_CLOCK_instance()->hal, divider);
+        modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, true);
         break;
+#endif // SOC_BT_SUPPORTED
+
     case PERIPH_COEX_MODULE:
         modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_select_coex_lpclk_source(MODEM_CLOCK_instance()->hal, src);
@@ -282,14 +310,19 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
     switch (module)
     {
+#if SOC_WIFI_SUPPORTED
     case PERIPH_WIFI_MODULE:
         modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_lpcon_ll_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false);
         break;
+#endif // SOC_WIFI_SUPPORTED
+
+#if SOC_BT_SUPPORTED
     case PERIPH_BT_MODULE:
-        modem_clock_hal_deselect_all_lp_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
-        modem_lpcon_ll_enable_lp_timer_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false);
+        modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
+        modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, false);
         break;
+#endif // SOC_BT_SUPPORTED
     case PERIPH_COEX_MODULE:
         modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
         // modem_lpcon_ll_enable_coex_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false); // TODO: IDF-5727
