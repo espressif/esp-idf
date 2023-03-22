@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,16 @@ void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal,
         break;
     default:
         break;
+    }
+}
+
+void modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+{
+    if (enable) {
+        modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_cal_160m_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_160m_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_80m_clock(hal->syscon_dev, enable);
     }
 }
 
