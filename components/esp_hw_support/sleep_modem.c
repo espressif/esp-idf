@@ -13,6 +13,7 @@
 #include "esp_attr.h"
 #include "esp_sleep.h"
 #include "soc/soc_caps.h"
+#include "esp_private/pm_impl.h"
 #include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_retention.h"
 #include "sdkconfig.h"
@@ -26,6 +27,7 @@
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 #include "soc/pmu_reg.h"
+#include "esp_private/esp_pau.h"
 #endif
 
 static __attribute__((unused)) const char *TAG = "sleep_modem";
@@ -153,10 +155,17 @@ typedef struct {
 typedef struct sleep_modem_config {
     struct {
         void    *phy_link;
+        union {
+            struct {
+                uint32_t modem_state_phy_done: 1;
+                uint32_t reserved: 31;
+            };
+            uint32_t flags;
+        };
     } wifi;
 } sleep_modem_config_t;
 
-static sleep_modem_config_t s_sleep_modem = { .wifi.phy_link = NULL };
+static sleep_modem_config_t s_sleep_modem = { .wifi.phy_link = NULL, .wifi.flags = 0 };
 
 static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
 {
@@ -229,6 +238,7 @@ static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
         if (err == ESP_OK) {
             pau_regdma_set_modem_link_addr(link);
             s_sleep_modem.wifi.phy_link = link;
+            s_sleep_modem.wifi.flags = 0;
         }
     }
     return err;
@@ -239,6 +249,19 @@ static __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
     if (s_sleep_modem.wifi.phy_link) {
         regdma_link_destroy(s_sleep_modem.wifi.phy_link, 0);
         s_sleep_modem.wifi.phy_link = NULL;
+        s_sleep_modem.wifi.flags = 0;
+    }
+}
+
+void IRAM_ATTR sleep_modem_wifi_do_phy_retention(bool restore)
+{
+    if (restore) {
+        if (s_sleep_modem.wifi.modem_state_phy_done == 1) {
+            pau_regdma_trigger_modem_link_restore();
+        }
+    } else {
+        pau_regdma_trigger_modem_link_backup();
+        s_sleep_modem.wifi.modem_state_phy_done = 1;
     }
 }
 
@@ -269,16 +292,27 @@ uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
     return reject_triggers;
 }
 
+static __attribute__((unused)) bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
+{
+    bool skip = false;
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    skip = (s_sleep_modem.wifi.phy_link != NULL) && (s_sleep_modem.wifi.modem_state_phy_done == 0);
+#endif
+    return skip;
+}
+
 esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_sleep_enable)
 {
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     extern int esp_wifi_internal_mac_sleep_configure(bool, bool);
     if (light_sleep_enable) {
         if (sleep_modem_wifi_modem_state_init() == ESP_OK) {
+            esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
             esp_wifi_internal_mac_sleep_configure(light_sleep_enable, true); /* require WiFi to enable automatically receives the beacon */
         }
     } else {
         esp_wifi_internal_mac_sleep_configure(light_sleep_enable, false); /* require WiFi to disable automatically receives the beacon */
+        esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
         sleep_modem_wifi_modem_state_deinit();
     }
 #endif

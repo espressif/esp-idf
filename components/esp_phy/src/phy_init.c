@@ -42,7 +42,6 @@
 #include "soc/dport_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp_private/sleep_modem.h"
-#include "esp_private/esp_pau.h"
 #endif
 #include "hal/efuse_hal.h"
 
@@ -253,7 +252,7 @@ void esp_phy_enable(void)
             extern bool pm_mac_modem_rf_already_enabled(void);
             if (!pm_mac_modem_rf_already_enabled()) {
                 if (sleep_modem_wifi_modem_state_enabled()) {
-                    pau_regdma_trigger_modem_link_restore();
+                    sleep_modem_wifi_do_phy_retention(true);
                 } else {
                     phy_wakeup_init();
                 }
@@ -287,7 +286,7 @@ void esp_phy_disable(void)
 #endif
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
         if (sleep_modem_wifi_modem_state_enabled()) {
-            pau_regdma_trigger_modem_link_backup();
+            sleep_modem_wifi_do_phy_retention(false);
         } else
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
         {
