@@ -1202,3 +1202,7 @@ config SOC_ESP_NIMBLE_CONTROLLER
 config SOC_BLE_50_SUPPORTED
     bool
     default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y

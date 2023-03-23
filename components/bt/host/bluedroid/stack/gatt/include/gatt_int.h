@@ -78,7 +78,7 @@ typedef UINT8 tGATT_SEC_ACTION;
 
 /* wait for ATT cmd response timeout value */
 #define GATT_WAIT_FOR_RSP_TOUT       30
-#define GATT_WAIT_FOR_DISC_RSP_TOUT  5
+#define GATT_WAIT_FOR_DISC_RSP_TOUT  15
 #define GATT_REQ_RETRY_LIMIT         2
 #define GATT_WAIT_FOR_IND_ACK_TOUT   5
 

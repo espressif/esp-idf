@@ -838,3 +838,7 @@ config SOC_BLE_MESH_SUPPORTED
 config SOC_BT_CLASSIC_SUPPORTED
     bool
     default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default n
