@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for SPI Slave HD
 
@@ -29,7 +21,8 @@
 #if SOC_GDMA_SUPPORTED
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
-
+#define spi_dma_ll_tx_restart(dev, chan)                           gdma_ll_tx_restart(&GDMA, chan)
+#define spi_dma_ll_rx_restart(dev, chan)                           gdma_ll_rx_restart(&GDMA, chan)
 #define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
 #define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan)
 #define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable)
@@ -62,7 +55,7 @@ static void s_spi_slave_hd_hal_dma_init_config(const spi_slave_hd_hal_context_t 
 
 void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *hal_config)
 {
-    spi_dev_t* hw = SPI_LL_GET_HW(hal_config->host_id);
+    spi_dev_t *hw = SPI_LL_GET_HW(hal_config->host_id);
     hal->dev = hw;
     hal->dma_in = hal_config->dma_in;
     hal->dma_out = hal_config->dma_out;
@@ -107,13 +100,14 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
             //Workaround if the previous interrupts are not writable
             spi_ll_set_intr(hw, SPI_LL_INTR_TRANS_DONE);
         }
-    }
-#if CONFIG_IDF_TARGET_ESP32S2
-    //Append mode is only supported on ESP32S2 now
-    else {
+    } else {
+#if SOC_GDMA_SUPPORTED
+        spi_ll_enable_intr(hw, SPI_LL_INTR_CMD7);
+#else
+        spi_ll_clear_intr(hw, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_CMD7);
         spi_ll_enable_intr(hw, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_CMD7);
+#endif //SOC_GDMA_SUPPORTED
     }
-#endif
 
     spi_ll_slave_hd_set_len_cond(hw,    SPI_LL_TRANS_LEN_COND_WRBUF |
                                         SPI_LL_TRANS_LEN_COND_WRDMA |
@@ -172,7 +166,6 @@ static spi_ll_intr_t get_event_intr(spi_slave_hd_hal_context_t *hal, spi_event_t
 {
     spi_ll_intr_t intr = 0;
 #if CONFIG_IDF_TARGET_ESP32S2
-//Append mode is only supported on ESP32S2 now
     if ((ev & SPI_EV_SEND) && hal->append_mode) intr |= SPI_LL_INTR_OUT_EOF;
 #endif
     if ((ev & SPI_EV_SEND) && !hal->append_mode) intr |= SPI_LL_INTR_CMD8;
@@ -221,13 +214,13 @@ bool spi_slave_hd_hal_check_disable_event(spi_slave_hd_hal_context_t *hal, spi_e
     return false;
 }
 
-void spi_slave_hd_hal_enable_event_intr(spi_slave_hd_hal_context_t* hal, spi_event_t ev)
+void spi_slave_hd_hal_enable_event_intr(spi_slave_hd_hal_context_t *hal, spi_event_t ev)
 {
     spi_ll_intr_t intr = get_event_intr(hal, ev);
     spi_ll_enable_intr(hal->dev, intr);
 }
 
-void spi_slave_hd_hal_invoke_event_intr(spi_slave_hd_hal_context_t* hal, spi_event_t ev)
+void spi_slave_hd_hal_invoke_event_intr(spi_slave_hd_hal_context_t *hal, spi_event_t ev)
 {
     spi_ll_intr_t intr = get_event_intr(hal, ev);
 
@@ -262,7 +255,7 @@ int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal)
 
 int spi_slave_hd_hal_rxdma_seg_get_len(spi_slave_hd_hal_context_t *hal)
 {
-    lldesc_t* desc = &hal->dmadesc_rx->desc;
+    lldesc_t *desc = &hal->dmadesc_rx->desc;
     return lldesc_get_received_len(desc, NULL);
 }
 
@@ -293,8 +286,6 @@ bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, voi
     return true;
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2
-//Append mode is only supported on ESP32S2 now
 static void spi_slave_hd_hal_link_append_desc(spi_slave_hd_hal_desc_append_t *dmadesc, const void *data, int len, bool isrx, void *arg)
 {
     HAL_ASSERT(len <= LLDESC_MAX_NUM_PER_DESC);     //TODO: Add support for transaction with length larger than 4092, IDF-2660
@@ -342,7 +333,6 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
         hal->tx_dma_started = true;
         //start a link
         hal->tx_dma_tail = hal->tx_cur_desc;
-        spi_ll_clear_intr(hal->dev, SPI_LL_INTR_OUT_EOF);
         spi_ll_dma_tx_fifo_reset(hal->dma_out);
         spi_ll_outfifo_empty_clr(hal->dev);
         spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
@@ -383,7 +373,6 @@ esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
         hal->rx_dma_started = true;
         //start a link
         hal->rx_dma_tail = hal->rx_cur_desc;
-        spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD7);
         spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
         spi_ll_dma_rx_fifo_reset(hal->dma_in);
         spi_ll_infifo_full_clr(hal->dev);
@@ -407,4 +396,3 @@ esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
 
     return ESP_OK;
 }
-#endif  //#if CONFIG_IDF_TARGET_ESP32S2

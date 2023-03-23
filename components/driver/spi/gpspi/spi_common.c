@@ -7,24 +7,20 @@
 
 #include <string.h>
 #include "sdkconfig.h"
-#include "driver/spi_master.h"
-#include "soc/spi_periph.h"
+#include "stdatomic.h"
 #include "esp_types.h"
 #include "esp_attr.h"
-#include "esp_log.h"
-#include "esp_err.h"
-#include "soc/soc.h"
-#include "soc/soc_caps.h"
-#include "soc/soc_pins.h"
-#include "soc/lldesc.h"
-#include "driver/gpio.h"
-#include "esp_private/periph_ctrl.h"
+#include "esp_check.h"
+#include "esp_rom_gpio.h"
 #include "esp_heap_caps.h"
+#include "soc/lldesc.h"
+#include "soc/spi_periph.h"
+#include "driver/gpio.h"
+#include "driver/spi_master.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_private/spi_common_internal.h"
-#include "stdatomic.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"
-#include "esp_rom_gpio.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #endif
@@ -34,12 +30,7 @@
 
 static const char *SPI_TAG = "spi";
 
-#define SPI_CHECK(a, str, ret_val) do { \
-    if (!(a)) { \
-        ESP_LOGE(SPI_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    } \
-    } while(0)
+#define SPI_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, SPI_TAG, str)
 
 #define SPI_CHECK_PIN(pin_num, pin_name, check_output) if (check_output) { \
             SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
@@ -308,6 +299,25 @@ cleanup:
     ctx = NULL;
     return ret;
 }
+
+#if SOC_GDMA_SUPPORTED
+esp_err_t spicommon_gdma_get_handle(spi_host_device_t host_id, gdma_channel_handle_t *gdma_handle, gdma_channel_direction_t gdma_direction)
+{
+    assert(is_valid_host(host_id));
+    ESP_RETURN_ON_FALSE((gdma_direction == GDMA_CHANNEL_DIRECTION_TX) || \
+                        (gdma_direction == GDMA_CHANNEL_DIRECTION_RX), \
+                        ESP_ERR_INVALID_ARG, SPI_TAG, "GDMA Direction not supported!");
+
+
+    if (gdma_direction == GDMA_CHANNEL_DIRECTION_TX) {
+        *gdma_handle = bus_ctx[host_id]->tx_channel;
+    }
+    if (gdma_direction == GDMA_CHANNEL_DIRECTION_RX) {
+        *gdma_handle = bus_ctx[host_id]->rx_channel;
+    }
+    return ESP_OK;
+}
+#endif // SOC_GDMA_SUPPORTED
 
 //----------------------------------------------------------free dma periph-------------------------------------------------------//
 static esp_err_t dma_chan_free(spi_host_device_t host_id)

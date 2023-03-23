@@ -117,8 +117,9 @@
 #define ESP_SPI_SLAVE_MAX_FREQ      20 * 1000 * 1000
 #define ESP_SPI_SLAVE_MAX_FREQ_SYNC 40 * 1000 * 1000
 
-#define MAX_TEST_SIZE   16  ///< in this test we run several transactions, this is the maximum trans that can be run
-#define PSET_NAME_LEN   30  ///< length of each param set name
+#define TEST_DMA_MAX_SIZE       4092///< length of each transaction with dma
+#define MAX_TEST_SIZE           16  ///< in this test we run several transactions, this is the maximum trans that can be run
+#define PSET_NAME_LEN           30  ///< length of each param set name
 
 //test low frequency, high frequency until freq limit for worst case (both GPIO)
 #define TEST_FREQ_DEFAULT(){    \
