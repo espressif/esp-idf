@@ -738,7 +738,7 @@ typedef struct pmu_dev_t{
             volatile uint32_t pmu_date: 31;
             volatile uint32_t clk_en  : 1;
         };
-        uint32_t val;
+        volatile uint32_t val;
     } date;
 } pmu_dev_t;
 
