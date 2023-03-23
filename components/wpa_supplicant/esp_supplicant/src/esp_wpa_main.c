@@ -29,6 +29,7 @@
 #include "esp_wpa2.h"
 #include "esp_common_i.h"
 
+struct wpa_funcs *wpa_cb;
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
 {
@@ -229,7 +230,6 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 int esp_supplicant_init(void)
 {
     int ret = ESP_OK;
-    struct wpa_funcs *wpa_cb;
 
     wpa_cb = (struct wpa_funcs *)os_zalloc(sizeof(struct wpa_funcs));
     if (!wpa_cb) {

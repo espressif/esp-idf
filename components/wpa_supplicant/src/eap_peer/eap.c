@@ -618,6 +618,7 @@ void eap_peer_config_deinit(struct eap_sm *sm)
 	os_free(sm->config.new_password);
 	os_free(sm->config.eap_methods);
 	os_bzero(&sm->config, sizeof(struct eap_peer_config));
+	config_methods = NULL;
 }
 
 int eap_peer_blob_init(struct eap_sm *sm)
