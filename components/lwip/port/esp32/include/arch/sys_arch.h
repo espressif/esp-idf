@@ -97,6 +97,17 @@ sys_sem_t* sys_thread_sem_init(void);
 void sys_thread_sem_deinit(void);
 sys_sem_t* sys_thread_sem_get(void);
 
+typedef enum {
+    LWIP_CORE_LOCK_QUERY_HOLDER,
+    LWIP_CORE_LOCK_MARK_HOLDER,
+    LWIP_CORE_LOCK_UNMARK_HOLDER,
+    LWIP_CORE_MARK_TCPIP_TASK,
+    LWIP_CORE_IS_TCPIP_INITIALIZED,
+} sys_thread_core_lock_t;
+
+bool
+sys_thread_tcpip(sys_thread_core_lock_t type);
+
 #ifdef __cplusplus
 }
 #endif

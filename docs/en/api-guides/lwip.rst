@@ -14,6 +14,11 @@ ESP-IDF supports the following lwIP TCP/IP stack functions:
 Adapted APIs
 ^^^^^^^^^^^^
 
+    .. warning::
+
+        When using any lwIP API (other than `BSD Sockets API`_), please make sure that it is thread safe. To check if a given API call is safe, enable :ref:`CONFIG_LWIP_CHECK_THREAD_SAFETY` and run the application. This way lwIP asserts the TCP/IP core functionality to be correctly accessed; the execution aborts if it is not locked properly or accessed from the correct task (`lwIP FreeRTOS Task`_).
+        The general recommendation is to use :doc:`/api-reference/network/esp_netif` component to interact with lwIP.
+
 Some common lwIP "app" APIs are supported indirectly by ESP-IDF:
 
 - DHCP Server & Client are supported indirectly via the :doc:`/api-reference/network/esp_netif` functionality

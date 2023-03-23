@@ -17,7 +17,7 @@
 #include "freertos/task.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "lwip/apps/sntp.h"
+#include "esp_sntp.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
@@ -89,8 +89,8 @@ static void set_time(void)
     settimeofday(&tv, &tz);
 
     /* Start SNTP service */
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_init();
+    esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
+    esp_sntp_init();
 }
 
 static void http2_task(void *args)

@@ -19,12 +19,21 @@ menu "LWIP"
         bool "Enable tcpip core locking"
         default n
         help
-            If Enable tcpip　core locking,Creates a global mutex that is held
+            If Enable tcpip core locking,Creates a global mutex that is held
             during TCPIP thread operations.Can be locked by client code to perform
             lwIP operations without changing into TCPIP thread using callbacks.
             See LOCK_TCPIP_CORE() and UNLOCK_TCPIP_CORE().
 
-            If disable tcpip　core locking,TCP IP will perform tasks through context switching．
+            If disable tcpip core locking,TCP IP will perform tasks through context switching
+
+    config LWIP_CHECK_THREAD_SAFETY
+        bool "Checks that lwip API runs in expected context"
+        default n
+        help
+            Enable to check that the project does not violate lwip thread safety.
+            If enabled, all lwip functions that require thread awareness run an assertion
+            to verify that the TCP/IP core functionality is either locked or accessed
+            from the correct thread.
 
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"
