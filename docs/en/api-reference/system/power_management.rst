@@ -133,6 +133,49 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
     - The legacy timer group driver
     :SOC_MCPWM_SUPPORTED: - MCPWM
 
+
+Light-sleep Peripheral Power Down
+---------------------------------
+
+.. only:: esp32c6 or esp32h2
+
+    {IDF_TARGET_NAME} supports power-down peripherals during Light-sleep.
+
+    If :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, when the driver initializes the peripheral, the driver will register the working register context of the peripheral to the sleep retention link. Before entering sleep, the REG_DMA peripheral will read the configuration in the sleep retention link, and back up the register context to memory according to the configuration. REG_DMA will also restore context from memory to peripheral registers on wakeup.
+
+    Currently IDF supports Light-sleep context retention for the following peripherals:
+    - INT_MTX
+    - TEE/APM
+    - IO_MUX / GPIO
+    - UART0
+    - TIMG0
+    - SPI0/1
+    - SYSTIMER
+
+    The following peripherals are not yet supported:
+    - GDMA
+    - ETM
+    - TIMG1
+    - ASSIST_DEBUG
+    - Trace
+    - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
+    - SPI2
+    - I2C
+    - I2S
+    - PCNT
+    - USB-Serial-JTAG
+    - TWAI
+    - LEDC
+    - MCPWM
+    - RMT
+    - SARADC
+    - SDIO
+    - PARL_IO
+    - UART1
+
+    For peripherals that do not support Light-sleep context retention, if the Power management is enabled, the `ESP_PM_NO_LIGHT_SLEEP` lock should be held when the peripheral is working to avoid losing the working context of the peripheral when entering sleep.
+
+
 API Reference
 -------------
 
