@@ -120,8 +120,8 @@ esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id);
   * @param      req  NAN Datapath Request parameters.
   *
   * @return
-  *    - non-zero: NAN Datapath Identifier
-  *    - zero: failed
+  *    - non-zero NAN Datapath identifier: If NAN datapath req was accepted by publisher
+  *    - zero: If NAN datapath req was rejected by publisher or a timeout occurs
   */
 uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req);
 
