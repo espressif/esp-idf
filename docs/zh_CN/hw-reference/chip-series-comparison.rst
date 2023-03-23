@@ -246,4 +246,4 @@
 
 - `ESP32-S2 技术规格书 (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_
 - `ESP32-C3 技术规格书 (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf>`_
-- `ESP 产品选型 <http://products.espressif.com:8000/#/>`_
+- `ESP 产品对比 <https://products.espressif.com/#/product-comparison>`_
