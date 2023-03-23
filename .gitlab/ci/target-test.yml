@@ -915,10 +915,9 @@ example_test_pytest_openthread_br:
   needs:
     - build_pytest_examples_esp32s3
     - build_pytest_examples_esp32c6
-    - build_pytest_examples_esp32h4
     - build_pytest_examples_esp32h2
   tags:
-    - esp32h4
+    - esp32c6
     - openthread_br
 
 component_ut_pytest_esp32s3_usb_host:

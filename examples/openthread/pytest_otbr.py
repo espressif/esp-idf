@@ -65,38 +65,31 @@ def fixture_Init_interface() -> bool:
 
 default_br_ot_para = ocf.thread_parameter('leader', '', '12', '7766554433221100', True)
 default_br_wifi_para = ocf.wifi_parameter('OTCITE', 'otcitest888', 10)
-default_cli_ot_para = ocf.thread_parameter('router', '', '12', '', False)
+default_cli_ot_para = ocf.thread_parameter('router', '', '', '', False)
 
 
 # Case 1: Thread network formation and attaching
-@pytest.mark.esp32s3
+@pytest.mark.supported_targets
 @pytest.mark.esp32h2
-@pytest.mark.esp32h4
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=0, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR|/dev/USB_CLI_C6|/dev/USB_CLI_H2',
-         'rcp|cli|br|cli_c6|cli_h2', 5,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3|esp32c6|esp32h2',
-         'esp32h4|esp32h4|esp32s3|esp32c6|esp32h2'),
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
-def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut, IdfDut, IdfDut]) -> None:
+def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli_h4  = dut[1]
-    cli_c6 = dut[3]
-    cli_h2 = dut[4]
+    cli_h2 = dut[1]
     dut[0].serial.stop_redirect_thread()
-    cli_list = [cli_h4, cli_c6, cli_h2]
-    router_extaddr_list = ['7766554433221101', '7766554433221102', '7766554433221103']
+    cli_list = [cli_h2]
+    router_extaddr_list = ['7766554433221101']
 
     ocf.reset_thread(br)
     for cli in cli_list:
@@ -144,17 +137,18 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
 
 
 # Case 2: Bidirectional IPv6 connectivity
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=0, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -191,17 +185,18 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
 
 
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -230,17 +225,18 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
 
 
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -281,17 +277,18 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
 
 
 # Case 5: discover dervice published by Thread device
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -336,17 +333,18 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
 
 
 # Case 6: discover dervice published by Wi-Fi device
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -401,17 +399,18 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
 
 
 # Case 7: ICMP communication via NAT64
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -435,17 +434,18 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
 
 
 # Case 8: UDP communication via NAT64
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
@@ -487,17 +487,18 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 
 
 # Case 9: TCP communication via NAT64
-@pytest.mark.esp32s3
-@pytest.mark.esp32h4
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
-    'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
+         'esp32c6|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
