@@ -584,7 +584,9 @@ esp_err_t esp_bt_gap_config_eir_data(esp_bt_eir_data_t *eir_data);
 /**
  * @brief           This function is called to set class of device.
  *                  The structure esp_bt_gap_cb_t will be called with ESP_BT_GAP_SET_COD_EVT after set COD ends.
- *                  Some profile have special restrictions on class of device, changes may cause these profile do not work.
+ *                  This function should be called after Bluetooth profiles are initialized, otherwise the user configured
+ *                  class of device can be overwritten.
+ *                  Some profiles have special restrictions on class of device, and changes may make these profiles unable to work.
  *
  * @param[in]       cod - class of device
  * @param[in]       mode - setting mode
