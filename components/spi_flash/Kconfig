@@ -74,6 +74,7 @@ menu "SPI Flash driver"
 
     choice SPI_FLASH_DANGEROUS_WRITE
         bool  "Writing to dangerous flash regions"
+        default SPI_FLASH_DANGEROUS_WRITE_ALLOWED if APP_BUILD_TYPE_RAM
         default SPI_FLASH_DANGEROUS_WRITE_ABORTS
         help
             SPI flash APIs can optionally abort or return a failure code

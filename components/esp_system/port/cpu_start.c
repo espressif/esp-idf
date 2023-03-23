@@ -372,11 +372,19 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 
 #if CONFIG_ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+#if CONFIG_APP_BUILD_TYPE_ELF_RAM
+    // For RAM loadable ELF case, we don't need to reserve IROM/DROM as instructions and data
+    // are all in internal RAM. If the RAM loadable ELF has any requirement to memory map the
+    // external flash then it should use flash or partition mmap APIs.
+    uint32_t cache_mmu_irom_size = 0;
+    __attribute__((unused)) uint32_t cache_mmu_drom_size = 0;
+#else // CONFIG_APP_BUILD_TYPE_ELF_RAM
     uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
     uint32_t cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 
     uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     __attribute__((unused)) uint32_t cache_mmu_drom_size = ((_rodata_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+#endif // !CONFIG_APP_BUILD_TYPE_ELF_RAM
 
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
