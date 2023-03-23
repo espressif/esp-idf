@@ -48,7 +48,6 @@ void esp_phy_enable(void)
     _lock_acquire(&s_phy_access_lock);
     if (s_phy_access_ref == 0) {
         register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
-        bt_bb_v2_init_cmplx(PHY_ENABLE_VERSION_PRINT);
         phy_version_print();
     }
 

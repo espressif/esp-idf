@@ -23,3 +23,12 @@ void esp_btbb_enable(void)
     s_btbb_access_ref++;
     _lock_release(&s_btbb_access_lock);
 }
+
+void esp_btbb_disable(void)
+{
+    _lock_acquire(&s_btbb_access_lock);
+    if (s_btbb_access_ref > 0) {
+        s_btbb_access_ref--;
+    }
+    _lock_release(&s_btbb_access_lock);
+}

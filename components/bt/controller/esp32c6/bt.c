@@ -67,7 +67,6 @@
 #define ACL_DATA_MBUF_LEADINGSPCAE    4
 #endif // CONFIG_BT_BLUEDROID_ENABLED
 
-#define PHY_ENABLE_VERSION_PRINT    (1)
 
 /* Types definition
  ************************************************************************
@@ -120,7 +119,6 @@ extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
-extern void bt_bb_v2_init_cmplx(uint8_t i);
 extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
@@ -631,7 +629,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, 249);
     esp_phy_modem_init();
     esp_phy_enable();
-    bt_bb_v2_init_cmplx(PHY_ENABLE_VERSION_PRINT);
+    esp_btbb_enable();
     s_ble_active = true;
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
@@ -669,6 +667,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 free_controller:
     controller_sleep_deinit();
     ble_controller_deinit();
+    esp_btbb_disable();
     esp_phy_disable();
     esp_phy_modem_deinit();
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
@@ -694,6 +693,8 @@ esp_err_t esp_bt_controller_deinit(void)
     }
 
     controller_sleep_deinit();
+
+    esp_btbb_disable();
 
     if (s_ble_active) {
         esp_phy_disable();
