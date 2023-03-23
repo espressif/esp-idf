@@ -63,9 +63,9 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
      - ✔️ Four-way set associative, independent instruction cache and data cache
      - ✔️ Eight-way set associative, 32-bit data/instruction bus width
    * - **Peripherals**
-     - 
      -
-     - 
+     -
+     -
    * - ADC
      - Two 12-bit, 18 channels
      - Two 13-bit, 20 channels
@@ -73,11 +73,11 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
    * - DAC
      - Two 8-bit channels
      - Two 8-bit channels
-     - ✖️ 
+     - ✖️
    * - Timers
      - Four 64-bit general-purpose timers, and three watchdog timers
      - Four 64-bit general-purpose timers, and three watchdog timers
-     - Two 54-bit general-purpose timers, and three watchdog timers       
+     - Two 54-bit general-purpose timers, and three watchdog timers
    * - Temperature sensor
      - ✖️
      - 1
@@ -136,12 +136,12 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
      - 6 channels :sup:`2`
    * - MCPWM
      - 2, six PWM outputs
-     - ✖️ 
-     - ✖️ 
+     - ✖️
+     - ✖️
    * - USB OTG
      - ✖️
      - 1
-     - ✖️           
+     - ✖️
    * - TWAI® controller (compatible with ISO 11898-1)
      - 1
      - 1
@@ -167,9 +167,9 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
      - ✖️
      - 1
    * - **Security**
-     - 
      -
-     - 
+     -
+     -
    * - Secure boot
      - ✔️
      - ✔️ Faster and safer, compared with ESP32
@@ -211,16 +211,16 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
      - ✔️ XTS-AES-128, XTS-AES-256
      - ✔️ XTS-AES-128
    * - **Other**
-     - 
      -
-     - 
+     -
+     -
    * - Deep-sleep (ULP sensor-monitored pattern)
      - 100 μA (when ADC work with a duty cycle of 1%)
      - 22 μA (when touch sensors work with a duty cycle of 1%)
      - No such pattern
    * - Size
      - QFN48 5*5, 6*6, depending on variants
-     - QFN56 7*7 
+     - QFN56 7*7
      - QFN32 5*5
 
 **Note** 1: Reduced chip area compared with ESP32
@@ -246,4 +246,4 @@ Related Documents
 
 - `ESP32-S2 Datasheet (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_
 - `ESP32-C3 Datasheet (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf>`_
-- `ESP Product Selector <http://products.espressif.com:8000/#/>`_
+- `ESP Product Comparison <https://products.espressif.com/#/product-comparison>`_
