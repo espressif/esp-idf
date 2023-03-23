@@ -64,8 +64,10 @@ static esp_err_t set_dhcps_dns(esp_netif_t *netif, uint32_t addr)
     dns.ip.u_addr.ip4.addr = addr;
     dns.ip.type = IPADDR_TYPE_V4;
     dhcps_offer_t dhcps_dns_value = OFFER_DNS;
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_stop(netif));
     ESP_ERROR_CHECK(esp_netif_dhcps_option(netif, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
     ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, ESP_NETIF_DNS_MAIN, &dns));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_start(netif));
     return ESP_OK;
 }
 
