@@ -459,7 +459,6 @@ components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_netif/include/esp_netif_ppp.h
-components/esp_netif/private_include/esp_netif_private.h
 components/esp_netif/test/test_esp_netif.c
 components/esp_netif/test_apps/component_ut_test.py
 components/esp_netif/test_apps/main/esp_netif_test.c
@@ -796,11 +795,9 @@ components/log/esp_log_private.h
 components/log/host_test/log_test/main/log_test.cpp
 components/log/log_linux.c
 components/lwip/apps/ping/ping.c
-components/lwip/apps/sntp/sntp.c
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
 components/lwip/include/apps/ping/ping.h
-components/lwip/include/apps/sntp/sntp.h
 components/lwip/port/esp32/debug/lwip_debug.c
 components/lwip/port/esp32/freertos/sys_arch.c
 components/lwip/port/esp32/hooks/tcp_isn_default.c

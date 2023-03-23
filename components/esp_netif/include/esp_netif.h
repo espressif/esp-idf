@@ -307,6 +307,34 @@ esp_err_t esp_netif_bridge_fdb_remove(esp_netif_t *esp_netif_br, uint8_t *addr);
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
 
 /**
+ * @brief  Cause the TCP/IP stack to join a IPv6 multicast group
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  addr      The multicast group to join
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+ *         - ESP_ERR_ESP_NETIF_MLD6_FAILED
+ *         - ESP_ERR_NO_MEM
+ */
+esp_err_t esp_netif_join_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
+
+/**
+ * @brief  Cause the TCP/IP stack to leave a IPv6 multicast group
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  addr      The multicast group to leave
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+ *         - ESP_ERR_ESP_NETIF_MLD6_FAILED
+ *         - ESP_ERR_NO_MEM
+ */
+esp_err_t esp_netif_leave_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
+
+/**
  * @}
  */
 
@@ -939,6 +967,27 @@ void esp_netif_netstack_buf_ref(void *netstack_buf);
  *
  */
 void esp_netif_netstack_buf_free(void *netstack_buf);
+
+/**
+ * @}
+ */
+
+/** @addtogroup ESP_NETIF_TCPIP_EXEC
+ * @{
+ */
+
+/**
+ * @brief  TCPIP thread safe callback used with esp_netif_tcpip_exec()
+ */
+typedef esp_err_t (*esp_netif_callback_fn)(void *ctx);
+
+/**
+ * @brief Utility to execute the supplied callback in TCP/IP context
+ * @param fn Pointer to the callback
+ * @param ctx Parameter to the callback
+ * @return The error code (esp_err_t) returned by the callback
+ */
+esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void *ctx);
 
 /**
  * @}
