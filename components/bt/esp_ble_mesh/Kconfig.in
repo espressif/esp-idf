@@ -1133,7 +1133,7 @@ if BLE_MESH
                 networking is initialized.
 
         config BLE_MESH_BQB_TEST
-            bool
+            bool "Enable BLE Mesh specific internal test"
             default n
             help
                 This option is used to enable some internal functions for auto-pts test.
