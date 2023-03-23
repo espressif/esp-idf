@@ -21,7 +21,10 @@ static void recur_and_smash(void)
     }
 }
 
-
+/* Test is marked as ignore, since we cannot run it as a regular unity test case
+   Instead we run it in a seperate test case and check output with pytest,
+   see test_stack_smash_protection in the pytest file.
+ */
 TEST_CASE("stack smashing protection", "[stack_check] [ignore]")
 {
     recur_and_smash();

@@ -16,3 +16,17 @@ from pytest_embedded import Dut
 )
 def test_esp_system(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        pytest.param('default', marks=[pytest.mark.supported_targets]),
+    ]
+)
+def test_stack_smash_protection(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"stack smashing protection"')
+    dut.expect_exact('Stack smashing protect failure!')
+    dut.expect_exact('Rebooting...')
