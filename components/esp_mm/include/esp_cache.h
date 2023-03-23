@@ -41,9 +41,9 @@ extern "C" {
  * @note You should not call this during any Flash operations (e.g. esp_flash APIs, nvs and some other APIs that are based on esp_flash APIs)
  * @note If XIP_From_PSRAM is enabled (by enabling both CONFIG_SPIRAM_FETCH_INSTRUCTIONS and CONFIG_SPIRAM_RODATA), you can call this API during Flash operations
  *
- * @param[in] Starting address to do the msync
- * @param[in] Size to do the msync
- * @param[in] Flags, see `ESP_CACHE_MSYNC_FLAG_x`
+ * @param[in] addr   Starting address to do the msync
+ * @param[in] size   Size to do the msync
+ * @param[in] flags  Flags, see `ESP_CACHE_MSYNC_FLAG_x`
  *
  * @return
  *        - ESP_OK:

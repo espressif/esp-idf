@@ -19,6 +19,7 @@ System API
     freertos_idf
     freertos_additions
     mem_alloc
+    mm
     heap_debug
     esp_timer
     internal-unstable
