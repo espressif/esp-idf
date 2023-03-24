@@ -738,7 +738,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, 
         return 0;
     }
 
-    ESP_LOGI(TAG, "Started Publishing %s [Service ID - %lu]", publish_cfg->service_name, pub_id);
+    ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
     nan_record_own_svc(pub_id, ESP_NAN_PUBLISH, publish_cfg->service_name, ndp_resp_needed);
 
     return pub_id;
@@ -767,7 +767,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         return 0;
     }
 
-    ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %lu]", subscribe_cfg->service_name, sub_id);
+    ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
     nan_record_own_svc(sub_id, ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name, false);
 
     return sub_id;

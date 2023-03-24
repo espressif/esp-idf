@@ -66,5 +66,4 @@ if(CONFIG_ESP_WIFI_ENABLED)
         endforeach()
     endif()
 
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

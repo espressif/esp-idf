@@ -15,6 +15,7 @@
 #include "esp_wpa3_i.h"
 #include "endian.h"
 #include "esp_hostap.h"
+#include <inttypes.h>
 
 #ifdef CONFIG_SAE_PK
 #include "common/bss.h"
@@ -308,7 +309,7 @@ static int wpa3_parse_sae_msg(u8 *buf, size_t len, u32 sae_msg_type, u16 status)
             esp_wpa3_free_sae_data();
             break;
         default:
-            wpa_printf(MSG_ERROR, "wpa3: Invalid SAE msg type(%d)!", sae_msg_type);
+            wpa_printf(MSG_ERROR, "wpa3: Invalid SAE msg type(%" PRId32 ")!", sae_msg_type);
             ret = ESP_FAIL;
             break;
     }
