@@ -48,6 +48,10 @@
 #include "netif/dhcp_state.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#if IP_NAPT
+#include "lwip/lwip_napt.h"
+#endif
+
 
 //
 // This is the main module implementing lwip interaction with esp-netif
@@ -2378,6 +2382,59 @@ esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
     return esp_netif_lwip_ipc_call(esp_netif_get_netif_impl_name_api, esp_netif, name);
+}
+
+esp_err_t esp_netif_napt_enable(esp_netif_t *esp_netif)
+{
+#if !IP_NAPT
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+
+    /* Check if the interface is up */
+    if (!netif_is_up(esp_netif->lwip_netif)) {
+        return ESP_FAIL;
+    }
+
+    esp_netif_list_lock();
+    /* Disable napt on all other interface */
+    esp_netif_t *netif = esp_netif_next_unsafe(NULL);
+    while (netif) {
+        if (netif != esp_netif) {
+            ip_napt_enable_netif(netif->lwip_netif, 0); // Fails only if netif is down
+            ESP_LOGW(TAG, "napt disabled on esp_netif:%p", esp_netif);
+        }
+        netif = esp_netif_next_unsafe(netif);
+    }
+
+    int ret = ip_napt_enable_netif(esp_netif->lwip_netif, 1);
+    esp_netif_list_unlock();
+
+    if (ret == 0) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+#endif /* IP_NAPT */
+}
+
+esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif)
+{
+#if !IP_NAPT
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    /* Check if the interface is up */
+    if (!netif_is_up(esp_netif->lwip_netif)) {
+        return ESP_FAIL;
+    }
+
+    esp_netif_list_lock();
+    ip_napt_enable_netif(esp_netif->lwip_netif, 0); // Fails only if netif is down
+    ESP_LOGD(TAG, "napt disabled on esp_netif:%p", esp_netif);
+    esp_netif_list_unlock();
+
+    return ESP_OK;
+#endif /* IP_NAPT */
 }
 
 #if MIB2_STATS

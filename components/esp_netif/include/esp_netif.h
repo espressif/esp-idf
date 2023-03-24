@@ -524,6 +524,34 @@ int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
 esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name);
 
 /**
+ * @brief  Enable NAPT on an interface
+ *
+ * @note Enable operation can be performed only on one interface at a time.
+ * NAPT cannot be enabled on multiple interfaces according to this implementation.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_FAIL
+ *         - ESP_ERR_NOT_SUPPORTED
+*/
+
+esp_err_t esp_netif_napt_enable(esp_netif_t *esp_netif);
+
+/**
+ * @brief  Disable NAPT on an interface.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_FAIL
+ *         - ESP_ERR_NOT_SUPPORTED
+*/
+esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif);
+
+/**
  * @}
  */
 
