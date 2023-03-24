@@ -158,6 +158,7 @@ Heap Tracing & Debugging
 The following features are documented on the :doc:`Heap Memory Debugging </api-reference/system/heap_debug>` page:
 
 - :ref:`Heap Information <heap-information>` (free space, etc.)
+- :ref:`Heap allocation and free function hooks <heap-allocation-free>`
 - :ref:`Heap Corruption Detection <heap-corruption>`
 - :ref:`Heap Tracing <heap-tracing>` (memory leak detection, monitoring, etc.)
 

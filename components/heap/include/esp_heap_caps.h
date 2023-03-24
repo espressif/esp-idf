@@ -11,6 +11,7 @@
 #include "multi_heap.h"
 #include <sdkconfig.h>
 #include "esp_err.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,26 @@ typedef void (*esp_alloc_failed_hook_t) (size_t size, uint32_t caps, const char 
  * @return ESP_OK if callback was registered.
  */
 esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callback);
+
+#ifdef CONFIG_HEAP_USE_HOOKS
+/**
+ * @brief callback called after every allocation
+ * @param ptr the allocated memory
+ * @param size in bytes of the allocation
+ * @param caps Bitwise OR of MALLOC_CAP_* flags indicating the type of memory allocated.
+ * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
+ * You should refrain from doing heavy work, logging, flash writes, or any locking.
+ */
+__attribute__((weak)) IRAM_ATTR void esp_heap_trace_alloc_hook(void* ptr, size_t size, uint32_t caps);
+
+/**
+ * @brief callback called after every free
+ * @param ptr the memory that was freed
+ * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
+ * You should refrain from doing heavy work, logging, flash writes, or any locking.
+ */
+__attribute__((weak)) IRAM_ATTR void esp_heap_trace_free_hook(void* ptr);
+#endif
 
 /**
  * @brief Allocate a chunk of memory which has the given capabilities

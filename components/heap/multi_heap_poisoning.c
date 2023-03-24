@@ -370,7 +370,7 @@ multi_heap_handle_t multi_heap_register(void *start, size_t size)
     return multi_heap_register_impl(start, size);
 }
 
-static inline void subtract_poison_overhead(size_t *arg) {
+static inline __attribute__((always_inline)) void subtract_poison_overhead(size_t *arg) {
     if (*arg > POISON_OVERHEAD) {
         *arg -= POISON_OVERHEAD;
     } else {
