@@ -79,7 +79,7 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE);
 #endif
 
-#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+#ifndef CONFIG_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE
     // Set write-protection for DIS_ICACHE to prevent bricking chip in case it will be set accidentally.
     // esp32 has DIS_ICACHE. Write-protection bit = 3.
     // List of eFuses with the same write protection bit:

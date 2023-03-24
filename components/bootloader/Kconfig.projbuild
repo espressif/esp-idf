@@ -829,6 +829,10 @@ menu "Security features"
 
     endchoice
 
+    config SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+        bool
+        default y if (SOC_EFUSE_DIS_ICACHE || IDF_TARGET_ESP32) && SECURE_FLASH_ENC_ENABLED
+
     menu "Potentially insecure options"
         visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT # NOERROR
 
@@ -855,6 +859,7 @@ menu "Security features"
         config SECURE_BOOT_ALLOW_JTAG
             bool "Allow JTAG Debugging"
             depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+            select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
             default N
             help
                 If not set (default), the bootloader will permanently disable JTAG (across entire chip) on first boot
@@ -912,6 +917,7 @@ menu "Security features"
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+            select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader encryption access on
@@ -934,6 +940,7 @@ menu "Security features"
             bool "Leave UART bootloader flash cache enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && (IDF_TARGET_ESP32 || SOC_EFUSE_DIS_DOWNLOAD_ICACHE || SOC_EFUSE_DIS_DOWNLOAD_DCACHE) # NOERROR
             default N
+            select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
             help
                 If not set (default), the bootloader will permanently disable UART bootloader flash cache access on
                 first boot. If set, the UART bootloader will still be able to access the flash cache.
@@ -954,6 +961,40 @@ menu "Security features"
                 Only use this option in testing environments, to avoid accidentally enabling flash encryption on
                 the wrong device. The device needs to have flash encryption already enabled using espefuse.py.
 
+        config SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE
+            bool "Skip write-protection of DIS_CACHE (DIS_ICACHE, DIS_DCACHE)"
+            default n
+            depends on SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+            help
+                If not set (default, recommended), on the first boot the bootloader will burn the write-protection of
+                DIS_CACHE(for ESP32) or DIS_ICACHE/DIS_DCACHE(for other chips) eFuse when Flash Encryption is enabled.
+                Write protection for cache disable efuse prevents the chip from being blocked if it is set by accident.
+                App and bootloader use cache so disabling it makes the chip useless for IDF.
+                Due to other eFuses are linked with the same write protection bit (see the list below) then
+                write-protection will not be done if these SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC,
+                SECURE_BOOT_ALLOW_JTAG or SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE options are selected
+                to give a chance to turn on the chip into the release mode later.
+
+                List of eFuses with the same write protection bit:
+                ESP32: MAC, MAC_CRC, DISABLE_APP_CPU, DISABLE_BT, DIS_CACHE, VOL_LEVEL_HP_INV.
+
+                ESP32-C3: DIS_ICACHE, DIS_USB_JTAG, DIS_DOWNLOAD_ICACHE, DIS_USB_SERIAL_JTAG,
+                DIS_FORCE_DOWNLOAD, DIS_TWAI, JTAG_SEL_ENABLE, DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
+
+                ESP32-C6: SWAP_UART_SDIO_EN, DIS_ICACHE, DIS_USB_JTAG, DIS_DOWNLOAD_ICACHE,
+                DIS_USB_SERIAL_JTAG, DIS_FORCE_DOWNLOAD, DIS_TWAI, JTAG_SEL_ENABLE,
+                DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
+
+                ESP32-H2: DIS_ICACHE, DIS_USB_JTAG, POWERGLITCH_EN, DIS_FORCE_DOWNLOAD, SPI_DOWNLOAD_MSPI_DIS,
+                DIS_TWAI, JTAG_SEL_ENABLE, DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
+
+                ESP32-S2: DIS_ICACHE, DIS_DCACHE, DIS_DOWNLOAD_ICACHE, DIS_DOWNLOAD_DCACHE,
+                DIS_FORCE_DOWNLOAD, DIS_USB, DIS_TWAI, DIS_BOOT_REMAP, SOFT_DIS_JTAG,
+                HARD_DIS_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
+
+                ESP32-S3: DIS_ICACHE, DIS_DCACHE, DIS_DOWNLOAD_ICACHE, DIS_DOWNLOAD_DCACHE,
+                DIS_FORCE_DOWNLOAD, DIS_USB_OTG, DIS_TWAI, DIS_APP_CPU, DIS_PAD_JTAG,
+                DIS_DOWNLOAD_MANUAL_ENCRYPT, DIS_USB_JTAG, DIS_USB_SERIAL_JTAG, STRAP_JTAG_SEL, USB_PHY_SEL.
     endmenu  # Potentially Insecure
 
     config SECURE_FLASH_CHECK_ENC_EN_IN_APP
