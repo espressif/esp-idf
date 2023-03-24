@@ -30,7 +30,7 @@
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
 #endif
 
-#if CONFIG_MBEDTLS_HARDWARE_ECC
+#if CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
 
 /*
  * All the following values are in big endian format, as required by the mbedTLS APIs

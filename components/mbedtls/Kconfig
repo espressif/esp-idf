@@ -455,6 +455,29 @@ menu "mbedTLS"
         help
             Use ROM MD5 in mbedTLS.
 
+    config MBEDTLS_HARDWARE_ECDSA_SIGN
+        bool "Enable ECDSA signing using on-chip ECDSA peripheral"
+        default n
+        depends on SOC_ECDSA_SUPPORTED
+        help
+            Enable hardware accelerated ECDSA peripheral to sign data
+            on curve SECP192R1 and SECP256R1 in mbedTLS.
+
+            Note that for signing, the private key has to be burnt in an efuse key block
+            with key purpose set to ECDSA_KEY.
+            If no key is burnt, it will report an error
+
+            The key should be burnt in little endian format. espefuse.py utility handles it internally
+            but care needs to be taken while burning using esp_efuse APIs
+
+    config MBEDTLS_HARDWARE_ECDSA_VERIFY
+        bool "Enable ECDSA signature verification using on-chip ECDSA peripheral"
+        default y
+        depends on SOC_ECDSA_SUPPORTED
+        help
+            Enable hardware accelerated ECDSA peripheral to verify signature
+            on curve SECP192R1 and SECP256R1 in mbedTLS.
+
     config MBEDTLS_ATCA_HW_ECDSA_SIGN
         bool "Enable hardware ECDSA sign acceleration when using ATECC608A"
         default n

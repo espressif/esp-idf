@@ -121,6 +121,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ecc_hal.c")
     endif()
 
+    if(CONFIG_SOC_ECDSA_SUPPORTED)
+        list(APPEND srcs "ecdsa_hal.c")
+    endif()
+
     if(CONFIG_SOC_SHA_SUPPORTED)
         list(APPEND srcs "sha_hal.c")
     endif()
