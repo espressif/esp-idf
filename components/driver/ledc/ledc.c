@@ -29,6 +29,7 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
 #define LEDC_CLK_NOT_FOUND  0
 #define LEDC_SLOW_CLK_UNINIT -1
+#define LEDC_TIMER_SPECIFIC_CLK_UNINIT -1
 
 // Precision degree only affects RC_FAST, other clock sources' frequences are fixed values
 // For targets that do not support RC_FAST calibration, can only use its approx. value. Precision degree other than
@@ -64,13 +65,20 @@ typedef struct {
 } ledc_fade_t;
 
 typedef struct {
-    ledc_hal_context_t ledc_hal;        /*!< LEDC hal context*/
+    ledc_hal_context_t ledc_hal;                        /*!< LEDC hal context */
+    ledc_slow_clk_sel_t glb_clk;                        /*!< LEDC global clock selection */
+    bool timer_is_stopped[LEDC_TIMER_MAX];              /*!< Indicates whether each timer has been stopped */
+    bool glb_clk_is_acquired[LEDC_TIMER_MAX];           /*!< Tracks whether the global clock is being acquired by each timer */
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    ledc_clk_src_t timer_specific_clk[LEDC_TIMER_MAX];  /*!< Tracks the timer-specific clock selection for each timer */
+#endif
 } ledc_obj_t;
 
 static ledc_obj_t *p_ledc_obj[LEDC_SPEED_MODE_MAX] = {0};
 static ledc_fade_t *s_ledc_fade_rec[LEDC_SPEED_MODE_MAX][LEDC_CHANNEL_MAX];
 static ledc_isr_handle_t s_ledc_fade_isr_handle = NULL;
 static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static _lock_t s_ledc_mutex[LEDC_SPEED_MODE_MAX];
 
 #define LEDC_VAL_NO_CHANGE        (-1)
 #define LEDC_DUTY_NUM_MAX         LEDC_LL_DUTY_NUM_MAX            // Maximum steps per hardware fade
@@ -186,9 +194,10 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
     portENTER_CRITICAL(&ledc_spinlock);
     ledc_hal_set_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, clock_divider);
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
-    /* Clock source can only be configured on boards which support timer-specific
-     * source clock. */
+    /* Clock source can only be configured on targets which support timer-specific source clock. */
     ledc_hal_set_clock_source(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, clk_src);
+    // TODO: acquire clk_src, and release old clk_src if initialized and different than new one [clk_tree]
+    p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] = clk_src;
 #endif
     ledc_hal_set_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, duty_resolution);
     ledc_ls_timer_update(speed_mode, timer_sel);
@@ -245,6 +254,7 @@ esp_err_t ledc_timer_pause(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
+    p_ledc_obj[speed_mode]->timer_is_stopped[timer_sel] = true;
     ledc_hal_timer_pause(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
@@ -256,6 +266,7 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
+    p_ledc_obj[speed_mode]->timer_is_stopped[timer_sel] = false;
     ledc_hal_timer_resume(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
@@ -269,6 +280,31 @@ esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
     ret = esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ret;
+}
+
+static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
+{
+    bool new_ctx = false;
+
+    // Prevent p_ledc_obj malloc concurrently
+    _lock_acquire(&s_ledc_mutex[speed_mode]);
+    if (!p_ledc_obj[speed_mode]) {
+        ledc_obj_t *ledc_new_mode_obj = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        if (ledc_new_mode_obj) {
+            new_ctx = true;
+            ledc_hal_init(&(ledc_new_mode_obj->ledc_hal), speed_mode);
+            ledc_new_mode_obj->glb_clk = LEDC_SLOW_CLK_UNINIT;
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+            memset(ledc_new_mode_obj->timer_specific_clk, LEDC_TIMER_SPECIFIC_CLK_UNINIT, sizeof(ledc_clk_src_t) * LEDC_TIMER_MAX);
+#endif
+            p_ledc_obj[speed_mode] = ledc_new_mode_obj;
+            // Enable APB access to LEDC registers
+            periph_module_enable(PERIPH_LEDC_MODULE);
+        }
+    }
+    _lock_release(&s_ledc_mutex[speed_mode]);
+
+    return new_ctx;
 }
 
 static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz, uint32_t precision)
@@ -501,16 +537,31 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
 #endif
         // Arriving here, variable glb_clk must have been assigned to one of the ledc_slow_clk_sel_t enum values
         assert(glb_clk != LEDC_SLOW_CLK_UNINIT);
+
+        portENTER_CRITICAL(&ledc_spinlock);
+        if (p_ledc_obj[speed_mode]->glb_clk != LEDC_SLOW_CLK_UNINIT && p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
+            for (int i = 0; i < LEDC_TIMER_MAX; i++) {
+                if (i != timer_num && p_ledc_obj[speed_mode]->glb_clk_is_acquired[i]) {
+                    portEXIT_CRITICAL(&ledc_spinlock);
+                    ESP_RETURN_ON_FALSE(false, ESP_FAIL, LEDC_TAG,
+                    "timer clock conflict, already is %d but attempt to %d", p_ledc_obj[speed_mode]->glb_clk, glb_clk);
+                }
+            }
+        }
+        p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_num] = true;
+        if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
+            // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
+            p_ledc_obj[speed_mode]->glb_clk = glb_clk;
+            ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
+        }
+        portEXIT_CRITICAL(&ledc_spinlock);
+
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
         /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
 #if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267 Remove when H2 light sleep supported
         esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
 #endif
-
-        portENTER_CRITICAL(&ledc_spinlock);
-        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
-        portEXIT_CRITICAL(&ledc_spinlock);
     }
 
     /* The divisor is correct, we can write in the hardware. */
@@ -522,6 +573,28 @@ error:
     return ESP_FAIL;
 }
 
+static esp_err_t ledc_timer_del(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
+{
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    bool is_configured = true;
+    bool is_deleted = false;
+    portENTER_CRITICAL(&ledc_spinlock);
+    if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] == false
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+        && p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] == LEDC_TIMER_SPECIFIC_CLK_UNINIT
+#endif
+    ) {
+        is_configured = false;
+    } else if (p_ledc_obj[speed_mode]->timer_is_stopped[timer_sel] == true) {
+        is_deleted = true;
+        p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] = false;
+        // TODO: release timer specific clk and global clk if possible [clk_tree]
+    }
+    portEXIT_CRITICAL(&ledc_spinlock);
+    ESP_RETURN_ON_FALSE(is_configured && is_deleted, ESP_ERR_INVALID_STATE, LEDC_TAG, "timer hasn't been configured, or it is still running, please stop it with ledc_timer_pause first");
+    return ESP_OK;
+}
+
 esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
 {
     LEDC_ARG_CHECK(timer_conf != NULL, "timer_conf");
@@ -530,28 +603,24 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
     uint32_t timer_num = timer_conf->timer_num;
     uint32_t speed_mode = timer_conf->speed_mode;
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(timer_num < LEDC_TIMER_MAX, "timer_num");
+    if (timer_conf->deconfigure) {
+        return ledc_timer_del(speed_mode, timer_num);
+    }
     LEDC_ARG_CHECK(!((timer_conf->clk_cfg == LEDC_USE_RC_FAST_CLK) && (speed_mode != LEDC_LOW_SPEED_MODE)), "Only low speed channel support RC_FAST_CLK");
-    periph_module_enable(PERIPH_LEDC_MODULE);
     if (freq_hz == 0 || duty_resolution == 0 || duty_resolution >= LEDC_TIMER_BIT_MAX) {
         ESP_LOGE(LEDC_TAG, "freq_hz=%"PRIu32" duty_resolution=%"PRIu32, freq_hz, duty_resolution);
         return ESP_ERR_INVALID_ARG;
     }
-    if (timer_num > LEDC_TIMER_3) {
-        ESP_LOGE(LEDC_TAG, "invalid timer #%"PRIu32, timer_num);
-        return ESP_ERR_INVALID_ARG;
-    }
 
-    if (p_ledc_obj[speed_mode] == NULL) {
-        p_ledc_obj[speed_mode] = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (p_ledc_obj[speed_mode] == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-        ledc_hal_init(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode);
+    if (!ledc_speed_mode_ctx_create(speed_mode) && !p_ledc_obj[speed_mode]) {
+        return ESP_ERR_NO_MEM;
     }
 
     esp_err_t ret = ledc_set_timer_div(speed_mode, timer_num, timer_conf->clk_cfg, freq_hz, duty_resolution);
     if (ret == ESP_OK) {
-        /* Reset the timer. */
+        /* Make sure timer is running and reset the timer. */
+        ledc_timer_resume(speed_mode, timer_num);
         ledc_timer_rst(speed_mode, timer_num);
     }
     return ret;
@@ -585,23 +654,26 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     LEDC_ARG_CHECK(timer_select < LEDC_TIMER_MAX, "timer_select");
     LEDC_ARG_CHECK(intr_type < LEDC_INTR_MAX, "intr_type");
 
-    periph_module_enable(PERIPH_LEDC_MODULE);
     esp_err_t ret = ESP_OK;
 
-    if (p_ledc_obj[speed_mode] == NULL) {
-        p_ledc_obj[speed_mode] = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (p_ledc_obj[speed_mode] == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-        ledc_hal_init(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode);
-#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2)
-        // On such targets, the default ledc core(global) clock does not connect to any clock source
-        // Set channel configurations and update bits before core clock is on could lead to error
-        // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
-        // It can be switched to the other desired clock sources to meet the output pwm freq requirement later at timer configuration
-        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
-#endif
+    bool new_speed_mode_ctx_created = ledc_speed_mode_ctx_create(speed_mode);
+    if (!new_speed_mode_ctx_created && !p_ledc_obj[speed_mode]) {
+        return ESP_ERR_NO_MEM;
     }
+#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2)
+    // On such targets, the default ledc core(global) clock does not connect to any clock source
+    // Set channel configurations and update bits before core clock is on could lead to error
+    // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
+    // It can be switched to the other desired clock sources to meet the output pwm freq requirement later at timer configuration
+    // So we consider the glb_clk still as LEDC_SLOW_CLK_UNINIT
+    else if (new_speed_mode_ctx_created) {
+        portENTER_CRITICAL(&ledc_spinlock);
+        if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_UNINIT) {
+            ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
+        }
+        portEXIT_CRITICAL(&ledc_spinlock);
+    }
+#endif
 
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period*/

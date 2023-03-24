@@ -51,7 +51,7 @@ typedef struct {
 } ledc_channel_config_t;
 
 /**
- * @brief Configuration parameters of LEDC Timer timer for ledc_timer_config function
+ * @brief Configuration parameters of LEDC timer for ledc_timer_config function
  */
 typedef struct {
     ledc_mode_t speed_mode;                /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
@@ -65,6 +65,11 @@ typedef struct {
                                                 as its clock source. All chips except esp32 and esp32s2 do not have
                                                 timer-specific clock sources, which means clock source for all timers
                                                 must be the same one. */
+    bool deconfigure;                      /*!< Set this field to de-configure a LEDC timer which has been configured before
+                                                Note that it will not check whether the timer wants to be de-configured
+                                                is binded to any channel. Also, the timer has to be paused first before
+                                                it can be de-configured.
+                                                When this field is set, duty_resolution, freq_hz, clk_cfg fields are ignored. */
 } ledc_timer_config_t;
 
 typedef intr_handle_t ledc_isr_handle_t;
@@ -124,6 +129,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_FAIL Can not find a proper pre-divider number base on the given frequency and the current duty_resolution.
+ *     - ESP_ERR_INVALID_STATE Timer cannot be de-configured because timer is not configured or is not paused
  */
 esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf);
 
