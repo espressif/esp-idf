@@ -20,7 +20,7 @@ menu "Example Configuration"
     config NMEA_PARSER_TASK_STACK_SIZE
         int "NMEA Parser Task Stack Size"
         range 0 4096
-        default 2048
+        default 3072
         help
             Stack size of NMEA Parser task.
 
