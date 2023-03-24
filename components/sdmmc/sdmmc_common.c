@@ -195,20 +195,21 @@ esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card)
 
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
 {
+    esp_err_t err;
     assert(card->max_freq_khz <= card->host.max_freq_khz);
 
     if (card->max_freq_khz > SDMMC_FREQ_PROBING) {
-        esp_err_t err = (*card->host.set_card_clk)(card->host.slot, card->max_freq_khz);
+        err = (*card->host.set_card_clk)(card->host.slot, card->max_freq_khz);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to switch bus frequency (0x%x)", err);
             return err;
         }
+    }
 
-        err = (*card->host.get_real_freq)(card->host.slot, &(card->real_freq_khz));
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "failed to get real working frequency (0x%x)", err);
-            return err;
-        }
+    err = (*card->host.get_real_freq)(card->host.slot, &(card->real_freq_khz));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failed to get real working frequency (0x%x)", err);
+        return err;
     }
 
     if (card->is_ddr) {
@@ -216,7 +217,7 @@ esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
             ESP_LOGE(TAG, "host doesn't support DDR mode or voltage switching");
             return ESP_ERR_NOT_SUPPORTED;
         }
-        esp_err_t err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
+        err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to switch bus to DDR mode (0x%x)", err);
             return err;
