@@ -70,6 +70,9 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif
+#if SOC_ECDSA_SUPPORTED
+            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
+#endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
@@ -121,7 +124,10 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK_KEY0, tmp_purpose, &rd_key, 33));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK10, tmp_purpose, &rd_key, sizeof(rd_key)));
 
-    for (esp_efuse_purpose_t purpose = ESP_EFUSE_KEY_PURPOSE_RESERVED; purpose < ESP_EFUSE_KEY_PURPOSE_MAX; ++purpose) {
+    for (esp_efuse_purpose_t purpose = ESP_EFUSE_KEY_PURPOSE_USER; purpose < ESP_EFUSE_KEY_PURPOSE_MAX; ++purpose) {
+        if (purpose == ESP_EFUSE_KEY_PURPOSE_USER) {
+            continue;
+        }
         esp_efuse_utility_reset();
 #ifdef CONFIG_EFUSE_FPGA_TEST
         esp_efuse_utility_update_virt_blocks();
@@ -160,7 +166,11 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 
     esp_efuse_purpose_t purpose [] = {
         ESP_EFUSE_KEY_PURPOSE_USER,
+#if SOC_ECDSA_SUPPORTED
+        ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY,
+#else
         ESP_EFUSE_KEY_PURPOSE_RESERVED,
+#endif
 #ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
