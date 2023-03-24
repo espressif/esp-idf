@@ -79,8 +79,11 @@ void app_main(void)
 
     /* Register commands */
     esp_console_register_help_command();
-    register_system();
+    register_system_common();
+    register_system_sleep();
+#if SOC_WIFI_SUPPORTED
     register_wifi();
+#endif
     register_nvs();
 
 #if defined(CONFIG_ESP_CONSOLE_UART_DEFAULT) || defined(CONFIG_ESP_CONSOLE_UART_CUSTOM)

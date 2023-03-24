@@ -7,28 +7,18 @@ examples/system/app_trace_basic:
       reason: target esp32c6, esp32h2 is not supported yet
 
 examples/system/console/advanced:
-  disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run this app on one chip with each architecture
 
 examples/system/console/advanced_usb_cdc:
   disable:
     - if: SOC_USB_PERIPH_NUM == 0
 
 examples/system/console/basic:
-  disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run this app on one chip with each architecture
 
 examples/system/deep_sleep_wake_stub:
   disable:
