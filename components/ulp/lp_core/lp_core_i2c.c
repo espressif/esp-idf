@@ -11,7 +11,7 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc_io_channel.h"
 #include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/periph_ctrl.h"
+#include "esp_private/lp_periph_ctrl.h"
 
 static const char *LPI2C_TAG = "lp_core_i2c";
 
@@ -109,7 +109,7 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
     ESP_RETURN_ON_FALSE(cfg->i2c_timing_cfg.clk_speed_hz * 20 <= source_freq, ESP_ERR_INVALID_ARG, LPI2C_TAG, "I2C_SCLK frequency (%"PRId32") should operate at a frequency at least 20 times larger than the I2C SCL bus frequency (%"PRId32")", source_freq, cfg->i2c_timing_cfg.clk_speed_hz);
 
     /* Set LP I2C source clock */
-    lp_i2c_ll_set_source_clk(i2c_hal.dev, source_clk);
+    lp_periph_set_clk_src(LP_PERIPH_I2C0_MODULE, (soc_module_clk_t)source_clk);
 
     /* Configure LP I2C timing paramters. source_clk is ignored for LP_I2C in this call */
     i2c_hal_set_bus_timing(&i2c_hal, (i2c_clock_source_t)source_clk, cfg->i2c_timing_cfg.clk_speed_hz, source_freq);
@@ -132,7 +132,7 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
     i2c_hal_init(&i2c_hal, lp_i2c_num);
 
     /* Enable LP I2C controller clock */
-    periph_module_enable(PERIPH_LP_I2C0_MODULE);
+    lp_periph_module_enable(LP_PERIPH_I2C0_MODULE);
 
     /* Initialize LP I2C Master mode */
     i2c_hal_master_init(&i2c_hal);

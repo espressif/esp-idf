@@ -59,12 +59,12 @@ static inline void esp_gdbstub_uart_init(void)
     case 0:
         gdb_uart = &UART0;
         break;
-#if CONFIG_SOC_UART_NUM > 1
+#if SOC_UART_HP_NUM > 1
     case 1:
         gdb_uart = &UART1;
         break;
 #endif
-#if CONFIG_SOC_UART_NUM > 2
+#if SOC_UART_HP_NUM > 2
     case 2:
         gdb_uart = &UART2;
         break;

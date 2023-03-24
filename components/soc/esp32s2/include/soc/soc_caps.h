@@ -323,6 +323,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-S2 has 2 UART.
 #define SOC_UART_NUM                (2)
+#define SOC_UART_HP_NUM             (2)
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_APB_CLK    (1)         /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */

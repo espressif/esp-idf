@@ -195,7 +195,7 @@ void uart_hal_init(uart_hal_context_t *hal, uart_port_t uart_num);
  *
  * @return None
  */
-void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk);
+void uart_hal_set_sclk(uart_hal_context_t *hal, soc_module_clk_t sclk);
 
 /**
  * @brief Get the UART source clock type
@@ -205,7 +205,7 @@ void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk);
  *
  * @return None
  */
-void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
+void uart_hal_get_sclk(uart_hal_context_t *hal, soc_module_clk_t *sclk);
 
 /**
  * @brief  Configure the UART baud-rate and select the source clock

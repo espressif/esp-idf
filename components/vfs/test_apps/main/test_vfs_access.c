@@ -23,14 +23,14 @@ TEST_CASE("Can use access() for UART", "[vfs]")
     const char *uarts[] = {
         "/dev/uart/0",
         "/dev/uart/1",
-#if SOC_UART_NUM > 2
+#if SOC_UART_HP_NUM > 2
         "/dev/uart/2"
 #endif
         };
 
     uart_driver_install(UART_NUM_0, 256, 0, 0, NULL, 0);
     uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0);
-#if SOC_UART_NUM > 2
+#if SOC_UART_HP_NUM > 2
     uart_driver_install(UART_NUM_2, 256, 0, 0, NULL, 0);
 #endif
 
@@ -56,7 +56,7 @@ TEST_CASE("Can use access() for UART", "[vfs]")
 
     uart_driver_delete(UART_NUM_0);
     uart_driver_delete(UART_NUM_1);
-#if SOC_UART_NUM > 2
+#if SOC_UART_HP_NUM > 2
     uart_driver_delete(UART_NUM_2);
 #endif
 }

@@ -70,6 +70,7 @@
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_LP_AON_SUPPORTED            1
+#define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
@@ -437,9 +438,12 @@
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-C6 has 2 UARTs
-#define SOC_UART_NUM                    (2)
+// ESP32-C6 has 3 UARTs (2 HP UART, and 1 LP UART)
+#define SOC_UART_NUM                    (3)
+#define SOC_UART_HP_NUM                 (2)
+#define SOC_UART_LP_NUM                 (1U)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
+#define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */

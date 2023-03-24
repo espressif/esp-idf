@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include "soc/uart_periph.h"
+#include "soc/uart_reg.h"
 #include "soc/gpio_periph.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"

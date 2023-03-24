@@ -386,7 +386,7 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
 // [refactor-todo] provide target logic for body of uart functions below
 static void IRAM_ATTR flush_uarts(void)
 {
-    for (int i = 0; i < SOC_UART_NUM; ++i) {
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
 #ifdef CONFIG_IDF_TARGET_ESP32
         esp_rom_uart_tx_wait_idle(i);
 #else
@@ -405,7 +405,7 @@ static uint32_t s_suspended_uarts_bmap = 0;
 static IRAM_ATTR void suspend_uarts(void)
 {
     s_suspended_uarts_bmap = 0;
-    for (int i = 0; i < SOC_UART_NUM; ++i) {
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
 #ifndef CONFIG_IDF_TARGET_ESP32
         if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             continue;
@@ -426,7 +426,7 @@ static IRAM_ATTR void suspend_uarts(void)
 
 static void IRAM_ATTR resume_uarts(void)
 {
-    for (int i = 0; i < SOC_UART_NUM; ++i) {
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
         if (s_suspended_uarts_bmap & 0x1) {
             uart_ll_force_xon(i);
         }

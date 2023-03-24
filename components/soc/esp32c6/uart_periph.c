@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
  Bunch of constants for every UART peripheral: GPIO signals, irqs, hw addr of registers etc
 */
 const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
-   {
+   { // HP UART0
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U0TXD_GPIO_NUM,
@@ -44,7 +44,7 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .module = PERIPH_UART0_MODULE,
     },
 
-    {
+    { // HP UART1
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U1TXD_GPIO_NUM,
@@ -76,5 +76,39 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         },
         .irq = ETS_UART1_INTR_SOURCE,
         .module = PERIPH_UART1_MODULE,
+    },
+
+    { // LP UART0
+        .pins = {
+            [SOC_UART_TX_PIN_IDX] = {
+                .default_gpio = LP_U0TXD_GPIO_NUM,
+                .iomux_func = LP_U0TXD_MUX_FUNC,
+                .input = 0,
+                .signal = UINT8_MAX, // Signal not available in signal map
+            },
+
+            [SOC_UART_RX_PIN_IDX] = {
+                .default_gpio = LP_U0RXD_GPIO_NUM,
+                .iomux_func = LP_U0RXD_MUX_FUNC,
+                .input = 1,
+                .signal = UINT8_MAX, // Signal not available in signal map
+            },
+
+            [SOC_UART_RTS_PIN_IDX] = {
+                .default_gpio = LP_U0RTS_GPIO_NUM,
+                .iomux_func = LP_U0RTS_MUX_FUNC,
+                .input = 0,
+                .signal = UINT8_MAX, // Signal not available in signal map
+            },
+
+            [SOC_UART_CTS_PIN_IDX] = {
+                .default_gpio = LP_U0CTS_GPIO_NUM,
+                .iomux_func = LP_U0CTS_MUX_FUNC,
+                .input = 1,
+                .signal = UINT8_MAX, // Signal not available in signal map
+            },
+        },
+        .irq = ETS_LP_UART_INTR_SOURCE,
+        .lp_module = LP_PERIPH_UART0_MODULE,
     },
 };

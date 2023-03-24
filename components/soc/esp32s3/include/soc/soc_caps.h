@@ -352,6 +352,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-S3 has 3 UARTs
 #define SOC_UART_NUM                (3)
+#define SOC_UART_HP_NUM             (3)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled

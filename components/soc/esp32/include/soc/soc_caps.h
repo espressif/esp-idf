@@ -319,6 +319,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32 have 3 UART.
 #define SOC_UART_NUM                (3)
+#define SOC_UART_HP_NUM             (3)
 #define SOC_UART_SUPPORT_APB_CLK    (1)         /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */

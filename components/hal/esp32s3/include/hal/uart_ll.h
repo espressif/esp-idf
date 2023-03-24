@@ -10,9 +10,10 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include "hal/misc.h"
 #include "hal/uart_types.h"
-#include "soc/uart_periph.h"
+#include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "esp_attr.h"
 
@@ -23,7 +24,7 @@ extern "C" {
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
-#define UART_LL_GET_HW(num) (((num) == 0) ? (&UART0) : (((num) == 1) ? (&UART1) : (&UART2)))
+#define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (((num) == UART_NUM_1) ? (&UART1) : (&UART2)))
 
 #define UART_LL_MIN_WAKEUP_THRESH (2)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
@@ -77,10 +78,9 @@ static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
+FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_clk)
 {
     switch (source_clk) {
-        default:
         case UART_SCLK_APB:
             hw->clk_conf.sclk_sel = 1;
             break;
@@ -90,6 +90,9 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
         case UART_SCLK_XTAL:
             hw->clk_conf.sclk_sel = 3;
             break;
+        default:
+            // Invalid UART clock source
+            abort();
     }
 }
 
@@ -101,7 +104,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
+FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk)
 {
     switch (hw->clk_conf.sclk_sel) {
         default:

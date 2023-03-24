@@ -755,6 +755,10 @@ config SOC_UART_NUM
     int
     default 2
 
+config SOC_UART_HP_NUM
+    int
+    default 2
+
 config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y

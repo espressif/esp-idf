@@ -875,6 +875,56 @@ typedef union {
     uint32_t val;
 } uart_rs485_conf_sync_reg_t;
 
+/** Type of clk_conf register
+ *  UART core clock configuration
+ */
+typedef union {
+    struct {
+        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
+         *  The  denominator of the frequency divider factor.
+         */
+        uint32_t sclk_div_b:6;
+        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
+         *  The numerator of the frequency divider factor.
+         */
+        uint32_t sclk_div_a:6;
+        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
+         *  The integral part of the frequency divider factor.
+         */
+        uint32_t sclk_div_num:8;
+        /** sclk_sel : R/W; bitpos: [21:20]; default: 3;
+         *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
+         */
+        uint32_t sclk_sel:2;
+        /** sclk_en : R/W; bitpos: [22]; default: 1;
+         *  Set this bit to enable UART Tx/Rx clock.
+         */
+        uint32_t sclk_en:1;
+        /** rst_core : R/W; bitpos: [23]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
+         */
+        uint32_t rst_core:1;
+        /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
+         *  Set this bit to enable UART Tx clock.
+         */
+        uint32_t tx_sclk_en:1;
+        /** rx_sclk_en : R/W; bitpos: [25]; default: 1;
+         *  Set this bit to enable UART Rx clock.
+         */
+        uint32_t rx_sclk_en:1;
+        /** tx_rst_core : R/W; bitpos: [26]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Tx.
+         */
+        uint32_t tx_rst_core:1;
+        /** rx_rst_core : R/W; bitpos: [27]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Rx.
+         */
+        uint32_t rx_rst_core:1;
+        uint32_t reserved_28:4;
+    };
+    uint32_t val;
+} uart_clk_conf_reg_t;
+
 
 /** Group: Status Register */
 /** Type of status register
@@ -1218,12 +1268,12 @@ typedef struct uart_dev_s {
     volatile uart_mem_tx_status_reg_t mem_tx_status;
     volatile uart_mem_rx_status_reg_t mem_rx_status;
     volatile uart_fsm_status_reg_t fsm_status;
-    volatile uart_pospulse_reg_t pospulse;
-    volatile uart_negpulse_reg_t negpulse;
-    volatile uart_lowpulse_reg_t lowpulse;
-    volatile uart_highpulse_reg_t highpulse;
-    volatile uart_rxd_cnt_reg_t rxd_cnt;
-    uint32_t reserved_088;
+    volatile uart_pospulse_reg_t pospulse;      /* LP_UART instance has this register reserved */
+    volatile uart_negpulse_reg_t negpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
+    volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
+    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1 instance have this register reserved, configure in corresponding PCR registers */
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;
@@ -1233,6 +1283,7 @@ typedef struct uart_dev_s {
 
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
+extern uart_dev_t LP_UART;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(uart_dev_t) == 0xa0, "Invalid size of uart_dev_t structure");

@@ -108,7 +108,7 @@ void UartSpinelInterface::Update(esp_openthread_mainloop_context_t &mainloop)
 
 int UartSpinelInterface::TryReadAndDecode(void)
 {
-    uint8_t buffer[UART_FIFO_LEN];
+    uint8_t buffer[UART_HW_FIFO_LEN(m_uart_config.port)];
     ssize_t rval;
 
     do {

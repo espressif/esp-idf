@@ -20,21 +20,36 @@ extern "C" {
 #include "freertos/ringbuf.h"
 #include "hal/uart_types.h"
 
-// Valid UART port number
-#define UART_NUM_0             (0) /*!< UART port 0 */
-#define UART_NUM_1             (1) /*!< UART port 1 */
-#if SOC_UART_NUM > 2
-#define UART_NUM_2             (2) /*!< UART port 2 */
-#endif
-#define UART_NUM_MAX           (SOC_UART_NUM) /*!< UART port max */
-
 /* @brief When calling `uart_set_pin`, instead of GPIO number, `UART_PIN_NO_CHANGE`
  *        can be provided to keep the currently allocated pin.
  */
 #define UART_PIN_NO_CHANGE      (-1)
 
-#define UART_FIFO_LEN           SOC_UART_FIFO_LEN       ///< Length of the UART HW FIFO
+#define UART_FIFO_LEN _Pragma ("GCC warning \"'UART_FIFO_LEN' macro is deprecated, please use 'UART_HW_FIFO_LEN' instead\"") SOC_UART_FIFO_LEN ///< Length of the HP UART HW FIFO
+#if (SOC_UART_LP_NUM >= 1)
+#define UART_HW_FIFO_LEN(uart_num) ((uart_num < SOC_UART_HP_NUM) ? SOC_UART_FIFO_LEN : SOC_LP_UART_FIFO_LEN) ///< Length of the UART HW FIFO
+#else
+#define UART_HW_FIFO_LEN(uart_num) SOC_UART_FIFO_LEN                                                         ///< Length of the UART HW FIFO
+#endif
 #define UART_BITRATE_MAX        SOC_UART_BITRATE_MAX    ///< Maximum configurable bitrate
+
+/**
+ * @brief UART configuration parameters for uart_param_config function
+ */
+typedef struct {
+    int baud_rate;                      /*!< UART baud rate*/
+    uart_word_length_t data_bits;       /*!< UART byte size*/
+    uart_parity_t parity;               /*!< UART parity mode*/
+    uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
+    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
+    uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
+    union {
+        uart_sclk_t source_clk;             /*!< UART source clock selection */
+#if (SOC_UART_LP_NUM >= 1)
+        lp_uart_sclk_t lp_source_clk;       /*!< LP_UART source clock selection */
+#endif
+    };
+} uart_config_t;
 
 /**
  * @brief UART interrupt configuration parameters for uart_intr_config function
@@ -81,7 +96,7 @@ typedef intr_handle_t uart_isr_handle_t;
  *
  * UART ISR handler will be attached to the same CPU core that this function is running on.
  *
- * @note  Rx_buffer_size should be greater than UART_FIFO_LEN. Tx_buffer_size should be either zero or greater than UART_FIFO_LEN.
+ * @note  Rx_buffer_size should be greater than UART_HW_FIFO_LEN(uart_num). Tx_buffer_size should be either zero or greater than UART_HW_FIFO_LEN(uart_num).
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param rx_buffer_size UART RX ring buffer size.
@@ -196,7 +211,7 @@ esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode);
 esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 
 /**
- * @brief Get the frequency of a clock source for the UART
+ * @brief Get the frequency of a clock source for the HP UART port
  *
  * @param sclk Clock source
  * @param[out] out_freq_hz Output of frequency, in Hz
@@ -249,7 +264,7 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask);
  *
  * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
  * @param flow_ctrl Hardware flow control mode
- * @param rx_thresh Threshold of Hardware RX flow control (0 ~ UART_FIFO_LEN).
+ * @param rx_thresh Threshold of Hardware RX flow control (0 ~ UART_HW_FIFO_LEN(uart_num)).
  *        Only when UART_HW_FLOWCTRL_RTS is set, will the rx_thresh value be set.
  *
  * @return
@@ -261,7 +276,7 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow
 /**
  * @brief Set software flow control.
  *
- * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1)
  * @param enable     switch on or off
  * @param rx_thresh_xon  low water mark
  * @param rx_thresh_xoff high water mark
@@ -358,7 +373,7 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable  1: enable; 0: disable
- * @param thresh  Threshold of TX interrupt, 0 ~ UART_FIFO_LEN
+ * @param thresh  Threshold of TX interrupt, 0 ~ UART_HW_FIFO_LEN(uart_num)
  *
  * @return
  *     - ESP_OK   Success
@@ -695,7 +710,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
  * @note If application is using higher baudrate and it is observed that bytes
  *       in hardware RX fifo are overwritten then this threshold can be reduced
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1)
  * @param threshold Threshold value above which RX fifo full interrupt is generated
  *
  * @return
@@ -708,7 +723,7 @@ esp_err_t uart_set_rx_full_threshold(uart_port_t uart_num, int threshold);
 /**
  * @brief Set uart threshold values for TX fifo empty
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1)
  * @param threshold Threshold value below which TX fifo empty interrupt is generated
  *
  * @return

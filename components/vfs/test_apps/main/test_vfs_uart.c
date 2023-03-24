@@ -38,8 +38,8 @@ static void fwrite_str_loopback(const char* str, size_t size)
 static void flush_stdin_stdout(void)
 {
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    char bitbucket[UART_FIFO_LEN];
-    while (fread(bitbucket, 1, UART_FIFO_LEN, stdin) > 0) {
+    char bitbucket[UART_HW_FIFO_LEN(CONFIG_ESP_CONSOLE_UART_NUM)];
+    while (fread(bitbucket, 1, UART_HW_FIFO_LEN(CONFIG_ESP_CONSOLE_UART_NUM), stdin) > 0) {
         ;
     }
     fflush(stdout);
