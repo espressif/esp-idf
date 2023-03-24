@@ -487,10 +487,14 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
         update_anti_rollback(&bs->ota[index]);
 #endif
     }
-#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+#if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
+#ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
     esp_partition_pos_t partition = index_to_partition(bs, index);
     bootloader_common_update_rtc_retain_mem(&partition, true);
+#else
+    bootloader_common_update_rtc_retain_mem(NULL, true);
 #endif
+#endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 }
 
 #ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP

@@ -119,7 +119,7 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
     return active_otadata;
 }
 
-#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+#if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 
 #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
 
@@ -148,7 +148,7 @@ static uint32_t rtc_retain_mem_size(void) {
 #endif
 }
 
-static bool check_rtc_retain_mem(void)
+static bool is_retain_mem_valid(void)
 {
     return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size()) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
 }
@@ -165,15 +165,37 @@ NOINLINE_ATTR void bootloader_common_reset_rtc_retain_mem(void)
 
 uint16_t bootloader_common_get_rtc_retain_mem_reboot_counter(void)
 {
-    if (check_rtc_retain_mem()) {
+    if (is_retain_mem_valid()) {
         return rtc_retain_mem->reboot_counter;
     }
     return 0;
 }
 
+void bootloader_common_set_rtc_retain_mem_factory_reset_state(void)
+{
+    if (!is_retain_mem_valid()) {
+        bootloader_common_reset_rtc_retain_mem();
+    }
+    rtc_retain_mem->flags.factory_reset_state = true;
+    update_rtc_retain_mem_crc();
+}
+
+bool bootloader_common_get_rtc_retain_mem_factory_reset_state(void)
+{
+    if (is_retain_mem_valid()) {
+        bool factory_reset_state = rtc_retain_mem->flags.factory_reset_state;
+        if (factory_reset_state == true) {
+            rtc_retain_mem->flags.factory_reset_state = false;
+            update_rtc_retain_mem_crc();
+        }
+        return factory_reset_state;
+    }
+    return false;
+}
+
 esp_partition_pos_t* bootloader_common_get_rtc_retain_mem_partition(void)
 {
-    if (check_rtc_retain_mem()) {
+    if (is_retain_mem_valid()) {
         return &rtc_retain_mem->partition;
     }
     return NULL;
@@ -182,7 +204,7 @@ esp_partition_pos_t* bootloader_common_get_rtc_retain_mem_partition(void)
 void bootloader_common_update_rtc_retain_mem(esp_partition_pos_t* partition, bool reboot_counter)
 {
     if (reboot_counter) {
-        if (!check_rtc_retain_mem()) {
+        if (!is_retain_mem_valid()) {
             bootloader_common_reset_rtc_retain_mem();
         }
         if (++rtc_retain_mem->reboot_counter == 0) {
@@ -204,4 +226,5 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 {
     return rtc_retain_mem;
 }
-#endif // defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+
+#endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM

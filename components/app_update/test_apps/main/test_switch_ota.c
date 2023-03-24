@@ -486,6 +486,9 @@ static void test_flow4(void)
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");
+#ifdef BOOTLOADER_RESERVE_RTC_MEM
+            TEST_ASSERT_FALSE(bootloader_common_get_rtc_retain_mem_factory_reset_state());
+#endif
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             mark_app_valid();
             set_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
@@ -494,6 +497,10 @@ static void test_flow4(void)
         case 4:
             reset_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
             ESP_LOGI(TAG, "Factory");
+#ifdef BOOTLOADER_RESERVE_RTC_MEM
+            TEST_ASSERT_TRUE(bootloader_common_get_rtc_retain_mem_factory_reset_state());
+            TEST_ASSERT_FALSE(bootloader_common_get_rtc_retain_mem_factory_reset_state());
+#endif
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
             erase_ota_data();
             break;
