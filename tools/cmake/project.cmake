@@ -501,7 +501,7 @@ macro(project project_name)
     set(project_elf ${CMAKE_PROJECT_NAME}.elf)
 
     # Create a dummy file to work around CMake requirement of having a source file while adding an
-    # executable. This is also used by idf_size.py to detect the target
+    # executable. This is also used by esp_idf_size to detect the target
     set(project_elf_src ${CMAKE_BINARY_DIR}/project_elf_src_${IDF_TARGET}.c)
     add_custom_command(OUTPUT ${project_elf_src}
         COMMAND ${CMAKE_COMMAND} -E touch ${project_elf_src}
@@ -566,7 +566,7 @@ macro(project project_name)
         string(TOUPPER ${idf_target} idf_target)
         # Add cross-reference table to the map file
         target_link_options(${project_elf} PRIVATE "-Wl,--cref")
-        # Add this symbol as a hint for idf_size.py to guess the target name
+        # Add this symbol as a hint for esp_idf_size to guess the target name
         target_link_options(${project_elf} PRIVATE "-Wl,--defsym=IDF_TARGET_${idf_target}=0")
         # Enable map file output
         target_link_options(${project_elf} PRIVATE "-Wl,--Map=${mapfile}")
@@ -589,9 +589,9 @@ macro(project project_name)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
-    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
+    set(idf_size ${python} -m esp_idf_size)
 
-    # Add size targets, depend on map file, run idf_size.py
+    # Add size targets, depend on map file, run esp_idf_size
     # OUTPUT_JSON is passed for compatibility reasons, SIZE_OUTPUT_FORMAT
     # environment variable is recommended and has higher priority
     add_custom_target(size

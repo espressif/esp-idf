@@ -187,7 +187,6 @@
 /tools/ci/                    @esp-idf-codeowners/ci
 /tools/cmake/                 @esp-idf-codeowners/build-config
 /tools/esp_prov/              @esp-idf-codeowners/app-utilities
-/tools/idf_size_yaml/         @esp-idf-codeowners/peripherals
 /tools/kconfig*/              @esp-idf-codeowners/build-config
 /tools/ldgen/                 @esp-idf-codeowners/build-config
 /tools/mass_mfg/              @esp-idf-codeowners/app-utilities

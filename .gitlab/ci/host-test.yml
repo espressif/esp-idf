@@ -109,18 +109,6 @@ test_certificate_bundle_on_host:
     - ./test_gen_crt_bundle.py
 
 
-test_idf_size:
-  extends: .host_test_template
-  artifacts:
-    when: on_failure
-    paths:
-      - tools/test_idf_size/output
-      - tools/test_idf_size/.coverage
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/tools/test_idf_size
-    - ./test.sh
-
 test_idf_py:
   extends: .host_test_template
   variables:
