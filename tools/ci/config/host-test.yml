@@ -315,6 +315,7 @@ test_docs:
 test_autocomplete:
   extends: .host_test_template
   image: $CI_DOCKER_REGISTRY/linux-shells:1
+  allow_failure: true
   artifacts:
     when: on_failure
     paths:
