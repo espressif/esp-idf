@@ -34,7 +34,7 @@
 
 static const char *TAG = "ANTENNA_SWITCH_EXAMPLE";
 static wifi_antenna_auto_switch_config_t wifi_three_ant_auto_get_config = {
-    .ant_num = 3,
+    .ant_num = ANT_TOTAL_THREE,
     .ant_zero = 0,
     .ant_one = 1,
     .ant_two = 3,
