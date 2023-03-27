@@ -9,7 +9,15 @@ import pytest
 from test_panic_util import PanicTestDut
 
 # Markers for all the targets this test currently runs on
-TARGETS_TESTED = [pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.esp32c3, pytest.mark.esp32s3, pytest.mark.esp32c2]
+TARGETS_TESTED = [
+    pytest.mark.esp32,
+    pytest.mark.esp32s2,
+    pytest.mark.esp32c3,
+    pytest.mark.esp32s3,
+    pytest.mark.esp32c2,
+    pytest.mark.esp32c6,
+    pytest.mark.esp32h2
+]
 
 # Most tests run on all targets and with all configs.
 # This list is passed to @pytest.mark.parametrize for each of the test cases.
@@ -225,7 +233,7 @@ def test_int_wdt_cache_disabled(
 @pytest.mark.generic
 def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    if dut.target in ['esp32c3', 'esp32c2']:
+    if dut.target in ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2']:
         # Cache error interrupt is not raised, IDF-6398
         dut.expect_gme('Illegal instruction')
     elif dut.target in ['esp32s2']:
