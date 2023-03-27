@@ -10,6 +10,7 @@
 extern "C" {
 #endif
 
+#include "sdkconfig.h"
 #include <stdint.h>
 #include "ulp_riscv_register_ops.h"
 

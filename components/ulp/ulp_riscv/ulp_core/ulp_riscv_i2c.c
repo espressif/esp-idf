@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,9 @@
 #define ULP_I2C_CMD_STOP    I2C_LL_CMD_STOP     /*!<I2C stop command */
 #define ULP_I2C_CMD_END     I2C_LL_CMD_END      /*!<I2C end command */
 #endif // CONFIG_IDF_TARGET_ESP32S3
+
+/* Read/Write timeout (number of iterationis) */
+#define ULP_RISCV_I2C_RW_TIMEOUT            500
 
 /*
  * The RTC I2C controller follows the I2C command registers to perform read/write operations.
@@ -60,6 +63,37 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
                                             // the ACK expected bit during WRITE.
                                             // Ignored during RSTART, STOP, END and READ cmds.
             ((byte_num & 0xFF) << 0));      // Byte Num
+}
+
+static inline int32_t ulp_riscv_i2c_wait_for_interrupt(uint32_t timeout)
+{
+    uint32_t status = 0;
+    uint32_t to = 0;
+
+    while (to < timeout) {
+        status = READ_PERI_REG(RTC_I2C_INT_ST_REG);
+
+        /* Return 0 if Tx or Rx data interrupt bits are set. -1 otherwise */
+        if ((status & RTC_I2C_TX_DATA_INT_ST) ||
+            (status & RTC_I2C_RX_DATA_INT_ST)) {
+            return 0;
+        /* In case of errors return immidiately */
+#if CONFIG_IDF_TARGET_ESP32S2
+        } else if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
+#elif CONFIG_IDF_TARGET_ESP32S3
+        } else if ((status & RTC_I2C_TIME_OUT_INT_ST) ||
+#endif // CONFIG_IDF_TARGET_ESP32S2
+                   (status & RTC_I2C_ACK_ERR_INT_ST) ||
+                   (status & RTC_I2C_ARBITRATION_LOST_INT_ST)) {
+            return -1;
+        }
+
+        ulp_riscv_delay_cycles(ULP_RISCV_CYCLES_PER_MS);
+        to++;
+    }
+
+    /* If we reach here, it is a timeout error */
+    return -1;
 }
 
 void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr)
@@ -135,23 +169,30 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
 
     for (i = 0; i < size; i++) {
-        /* Poll for RTC I2C Rx Data interrupt bit to be set */
-        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_RX_DATA_INT_ST)) {  }
-
-        /* Read the data
-         *
-         * Unfortunately, the RTC I2C has no fifo buffer to help us with reading and storing
-         * multiple bytes of data. Therefore, we need to read one byte at a time and clear the
-         * Rx interrupt to get ready for the next byte.
+        /* Poll for RTC I2C Rx Data interrupt bit to be set.
+         * Set a loop timeout of 500 msec to bail in case of any driver
+         * and/or hardware errors.
          */
+        if(!ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT)) {
+            /* Read the data
+             *
+             * Unfortunately, the RTC I2C has no fifo buffer to help us with reading and storing
+             * multiple bytes of data. Therefore, we need to read one byte at a time and clear the
+             * Rx interrupt to get ready for the next byte.
+             */
 #if CONFIG_IDF_TARGET_ESP32S2
-        data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_RDATA);
+            data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_RDATA);
 #elif CONFIG_IDF_TARGET_ESP32S3
-        data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_I2C_RDATA);
+            data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_I2C_RDATA);
 #endif // CONFIG_IDF_TARGET_ESP32S2
 
-        /* Clear the Rx data interrupt bit */
-        SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_RX_DATA_INT_CLR);
+            /* Clear the Rx data interrupt bit */
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_RX_DATA_INT_CLR);
+        } else {
+            /* Error in transaction */
+            CLEAR_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, READ_PERI_REG(RTC_I2C_INT_ST_REG));
+            break;
+        }
     }
 
     /* Clear the RTC I2C transmission bits */
@@ -212,11 +253,17 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
         }
 
-        /* Poll for RTC I2C Tx Data interrupt bit to be set */
-        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_TX_DATA_INT_ST)) {  }
-
-        /* Clear the Tx data interrupt bit */
-        SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
+        /* Poll for RTC I2C Tx Data interrupt bit to be set.
+         * Set a loop timeout of 500 msec to bail in case of any driver
+         * and/or hardware errors.
+         */
+        if (!ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT)) {
+            /* Clear the Tx data interrupt bit */
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
+        } else {
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, READ_PERI_REG(RTC_I2C_INT_ST_REG));
+            break;
+        }
     }
 
     /* Clear the RTC I2C transmission bits */

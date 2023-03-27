@@ -266,6 +266,7 @@ INPUT = \
     $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_lock.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
+    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_i2c.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/shared/include/ulp_riscv_lock_shared.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \

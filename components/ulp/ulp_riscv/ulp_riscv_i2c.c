@@ -40,7 +40,10 @@ static const char *RTCI2C_TAG = "ulp_riscv_i2c";
 rtc_i2c_dev_t *i2c_dev = &RTC_I2C;
 rtc_io_dev_t *rtc_io_dev = &RTCIO;
 
-#define MICROSEC_TO_RTC_FAST_CLK(period)    (period) * ((SOC_CLK_RC_FAST_FREQ_APPROX) / (1000000))
+#define MICROSEC_TO_RTC_FAST_CLK(period)    (period) * ((float)(SOC_CLK_RC_FAST_FREQ_APPROX) / (1000000.0))
+
+/* Read/Write timeout (number of iterations)*/
+#define ULP_RISCV_I2C_RW_TIMEOUT            500
 
 static esp_err_t i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_io_num)
 {
@@ -130,24 +133,26 @@ static esp_err_t i2c_set_timing(const ulp_riscv_i2c_cfg_t *cfg)
      * RTC_FAST_CLK = 8.5 MHz for esp32s2 and 17.5 MHz for esp32s3.
      * The following calculations approximate the period for each parameter.
      */
-    uint32_t scl_low_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_low_period);
-    uint32_t scl_high_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_high_period);
-    uint32_t sda_duty_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.sda_duty_period);
-    uint32_t scl_start_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_start_period);
-    uint32_t scl_stop_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_stop_period);
-    uint32_t i2c_trans_timeout = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.i2c_trans_timeout);
-    uint32_t setup_time_start = (cfg->i2c_timing_cfg.scl_high_period + cfg->i2c_timing_cfg.sda_duty_period);
-    uint32_t hold_time_start = (cfg->i2c_timing_cfg.scl_start_period - cfg->i2c_timing_cfg.sda_duty_period);
-    uint32_t setup_time_data = (cfg->i2c_timing_cfg.scl_low_period - cfg->i2c_timing_cfg.sda_duty_period);
+    float scl_low_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_low_period);
+    float scl_high_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_high_period);
+    float sda_duty_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.sda_duty_period);
+    float scl_start_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_start_period);
+    float scl_stop_period = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.scl_stop_period);
+    float i2c_trans_timeout = MICROSEC_TO_RTC_FAST_CLK(cfg->i2c_timing_cfg.i2c_trans_timeout);
+    float setup_time_start = (cfg->i2c_timing_cfg.scl_high_period + cfg->i2c_timing_cfg.sda_duty_period);
+    float hold_time_start = (cfg->i2c_timing_cfg.scl_start_period - cfg->i2c_timing_cfg.sda_duty_period);
+    float setup_time_data = (cfg->i2c_timing_cfg.scl_low_period - cfg->i2c_timing_cfg.sda_duty_period);
 
     /* Verify timing constraints */
-    ESP_RETURN_ON_FALSE((float)cfg->i2c_timing_cfg.scl_low_period > 1.3, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "SCL low period cannot be less than 1.3 micro seconds");
-    ESP_RETURN_ON_FALSE((float)cfg->i2c_timing_cfg.scl_high_period > 0.6, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "SCL high period cannot be less than 0.6 micro seconds");
-    ESP_RETURN_ON_FALSE((float)setup_time_start > 0.6, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Setup time cannot be less than 0.6 micro seconds");
-    ESP_RETURN_ON_FALSE((float)hold_time_start > 0.6, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Data hold time cannot be less than 0.6 micro seconds");
-    ESP_RETURN_ON_FALSE((float)cfg->i2c_timing_cfg.scl_stop_period > 0.6, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Setup time cannot be less than 0.6 micro seconds");
-    ESP_RETURN_ON_FALSE((float)cfg->i2c_timing_cfg.sda_duty_period < 3.45, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Data hold time cannot be greater than 3.45 micro seconds");
-    ESP_RETURN_ON_FALSE((float)(setup_time_data * 1000) > 250, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Data setup time cannot be less than 250 nano seconds");
+    ESP_RETURN_ON_FALSE(cfg->i2c_timing_cfg.scl_low_period >= 1.3f, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "SCL low period cannot be less than 1.3 micro seconds");
+    // TODO: As per specs, SCL high period must be greater than 0.6 micro seconds but after tests it is found that we can have a the period as 0.3 micro seconds to
+    // achieve performance close to I2C fast mode. Therefore, this criteria is relaxed.
+    ESP_RETURN_ON_FALSE(cfg->i2c_timing_cfg.scl_high_period >= 0.3f, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "SCL high period cannot be less than 0.3 micro seconds");
+    ESP_RETURN_ON_FALSE(setup_time_start >= 0.6f, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Setup time cannot be less than 0.6 micro seconds");
+    ESP_RETURN_ON_FALSE(hold_time_start >= 0.6f, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Data hold time cannot be less than 0.6 micro seconds");
+    ESP_RETURN_ON_FALSE(cfg->i2c_timing_cfg.scl_stop_period >= 0.6f, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Setup time cannot be less than 0.6 micro seconds");
+    ESP_RETURN_ON_FALSE(cfg->i2c_timing_cfg.sda_duty_period <= 3.45f, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Data hold time cannot be greater than 3.45 micro seconds");
+    ESP_RETURN_ON_FALSE((setup_time_data * 1000) >= 250, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "Data setup time cannot be less than 250 nano seconds");
 
     /* Verify filtering constrains
      *
@@ -228,6 +233,41 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
 #endif // CONFIG_IDF_TARGET_ESP32S2
 }
 
+static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(uint32_t timeout)
+{
+    uint32_t status = 0;
+    uint32_t to = 0;
+    esp_err_t ret = ESP_ERR_TIMEOUT;
+
+    while (to < timeout) {
+        status = READ_PERI_REG(RTC_I2C_INT_ST_REG);
+
+        /* Return ESP_OK if Tx or Rx data interrupt bits are set. */
+        if ((status & RTC_I2C_TX_DATA_INT_ST) ||
+            (status & RTC_I2C_RX_DATA_INT_ST)) {
+            ret = ESP_OK;
+            break;
+        /* In case of error status, break and return ESP_FAIL */
+#if CONFIG_IDF_TARGET_ESP32S2
+        } else if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
+#elif CONFIG_IDF_TARGET_ESP32S3
+        } else if ((status & RTC_I2C_TIME_OUT_INT_ST) ||
+#endif // CONFIG_IDF_TARGET_ESP32S2
+                   (status & RTC_I2C_ACK_ERR_INT_ST) ||
+                   (status & RTC_I2C_ARBITRATION_LOST_INT_ST)) {
+            ret = ESP_FAIL;
+            break;
+        }
+
+        vTaskDelay(1);
+
+        /* Loop timeout. If this expires, we return ESP_ERR_TIMEOUT */
+        to++;
+    }
+
+    return ret;
+}
+
 void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr)
 {
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_SLAVE_ADDR_MASK);
@@ -261,6 +301,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
+    esp_err_t ret = ESP_OK;
 
     if (size == 0) {
         // Quietly return
@@ -293,34 +334,40 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     /* Configure the RTC I2C controller in read mode */
     SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0x1, 0, 27);
 
-    /* Enable Rx data interrupt */
-    SET_PERI_REG_MASK(RTC_I2C_INT_ENA_REG, RTC_I2C_RX_DATA_INT_ENA);
-
     /* Start RTC I2C transmission */
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
 
     for (i = 0; i < size; i++) {
-        /* Poll for RTC I2C Rx Data interrupt bit to be set */
-        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_RX_DATA_INT_ST)) {
-            /* Minimal delay to avoid hogging the CPU */
-            vTaskDelay(1);
-        }
-
-        /* Read the data
-         *
-         * Unfortunately, the RTC I2C has no fifo buffer to help us with reading and storing
-         * multiple bytes of data. Therefore, we need to read one byte at a time and clear the
-         * Rx interrupt to get ready for the next byte.
+        /* Poll for RTC I2C Rx Data interrupt bit to be set.
+         * Set a loop timeout of 500 iterations to bail in case of any driver
+         * and/or hardware errors.
          */
+        ret = ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT);
+
+        if (ret == ESP_OK) {
+            /* Read the data
+             *
+             * Unfortunately, the RTC I2C has no fifo buffer to help us with reading and storing
+             * multiple bytes of data. Therefore, we need to read one byte at a time and clear the
+             * Rx interrupt to get ready for the next byte.
+             */
 #if CONFIG_IDF_TARGET_ESP32S2
-        data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_RDATA);
+            data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_RDATA);
 #elif CONFIG_IDF_TARGET_ESP32S3
-        data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_I2C_RDATA);
+            data_rd[i] = REG_GET_FIELD(RTC_I2C_DATA_REG, RTC_I2C_I2C_RDATA);
 #endif // CONFIG_IDF_TARGET_ESP32S2
 
-        /* Clear the Rx data interrupt bit */
-        SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_RX_DATA_INT_CLR);
+            /* Clear the Rx data interrupt bit */
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_RX_DATA_INT_CLR);
+        } else {
+            ESP_LOGE(RTCI2C_TAG, "Read Failed!");
+            uint32_t status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
+            ESP_LOGE(RTCI2C_TAG, "RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
+            ESP_LOGE(RTCI2C_TAG, "RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
+            break;
+        }
     }
 
     /* Clear the RTC I2C transmission bits */
@@ -349,6 +396,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
 {
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
+    esp_err_t ret = ESP_OK;
 
     if (size == 0) {
         // Quietly return
@@ -367,9 +415,6 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
     /* Configure the RTC I2C controller in write mode */
     SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0x1, 1, 27);
 
-    /* Enable Tx data interrupt */
-    SET_PERI_REG_MASK(RTC_I2C_INT_ENA_REG, RTC_I2C_TX_DATA_INT_ENA);
-
     for (i = 0; i < size; i++) {
         /* Write the data to be transmitted */
         CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_MASTER_TX_DATA_MASK);
@@ -381,14 +426,23 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
         }
 
-        /* Poll for RTC I2C Tx Data interrupt bit to be set */
-        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_TX_DATA_INT_ST)) {
-            /* Minimal delay to avoid hogging the CPU */
-            vTaskDelay(1);
-        }
+        /* Poll for RTC I2C Tx Data interrupt bit to be set.
+         * Set a loop timeout of 500 iterations to bail in case of any driver
+         * and/or hardware errors.
+         */
+        ret = ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT);
 
-        /* Clear the Tx data interrupt bit */
-        SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
+        if (ret == ESP_OK) {
+            /* Clear the Tx data interrupt bit */
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
+        } else {
+            ESP_LOGE(RTCI2C_TAG, "Write Failed!");
+            uint32_t status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
+            ESP_LOGE(RTCI2C_TAG, "RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
+            ESP_LOGE(RTCI2C_TAG, "RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+            SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
+            break;
+        }
     }
 
     /* Clear the RTC I2C transmission bits */
@@ -440,6 +494,17 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
 
     /* Configure RTC I2C timing paramters */
     ESP_RETURN_ON_ERROR(i2c_set_timing(cfg), RTCI2C_TAG, "Failed to configure RTC I2C timing");
+
+    /* Enable RTC I2C interrupts */
+    SET_PERI_REG_MASK(RTC_I2C_INT_ENA_REG, RTC_I2C_RX_DATA_INT_ENA |
+                                           RTC_I2C_TX_DATA_INT_ENA |
+                                           RTC_I2C_ARBITRATION_LOST_INT_ENA |
+                                           RTC_I2C_ACK_ERR_INT_ENA |
+#if CONFIG_IDF_TARGET_ESP32S2
+                                           RTC_I2C_TIMEOUT_INT_ENA);
+#elif CONFIG_IDF_TARGET_ESP32S3
+                                           RTC_I2C_TIME_OUT_INT_ENA);
+#endif // CONFIG_IDF_TARGET_ESP32S2
 
     return ESP_OK;
 }

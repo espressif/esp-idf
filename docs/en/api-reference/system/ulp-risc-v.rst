@@ -150,6 +150,37 @@ The program runs until the field ``RTC_CNTL_COCPU_DONE`` in register ``RTC_CNTL_
 
 To disable the timer (effectively preventing the ULP program from running again), please clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_ULP_CP_TIMER_REG`` register. This can be done both from the ULP code and from the main program.
 
+ULP RISC-V Peripheral Support
+------------------------------
+
+To enhance the capabilities of the ULP RISC-V coprocessor, it has access to peripherals which operate in the low-power (RTC) domain. The ULP RISC-V coprocessor can interact with these peripherals when the main CPU is in sleep-mode and can wakeup the main CPU once a wakeup condition is reached. The following peripherals are supported:
+
+RTC I2C
+^^^^^^^^
+
+The RTC I2C controller provides I2C Master functionality in the RTC domain. The ULP RISC-V coprocessor can read from or write to I2C slave devices using this controller. To use the RTC I2C peripheral call the :cpp:func:`ulp_riscv_i2c_master_init` from your application running on the main core before initializing the ULP RISC-V core and going in to sleep.
+
+Once the RTC I2C controller is initialized, the I2C slave device address must be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_addr` API before any read or write operation is performed.
+
+.. note:: The RTC I2C peripheral always expects a slave sub-register address to be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not, the I2C peripheral uses the ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub register address for the subsequent read or write operations. This could make the RTC I2C peripheral incompatible with certain I2C devices or sensors which do not need any sub-register to be programmed.
+
+.. note:: There is no hardware atomicity protection in accessing the RTC I2C peripheral between the main CPU and the ULP RISC-V core. Therefore, care must be taken that both cores are not accessing the peripheral simultaneously.
+
+In case your RTC I2C based ULP RISC-V program is not working as expected, the following sanity checks can help in debugging the issue:
+
+ * Incorrect SDA/SCL pin selection: The SDA pin can only be setup as GPIO1 or GPIO3 and SCL pin can only be setup as GPIO0 or GPIO2. Make sure that the pin configuration is correct.
+
+ * Incorrect I2C timing parameters: The RTC I2C bus timing configuration is limited by the I2C standard bus specification. Any timining parameters which violate the standard I2C bus specifications would result in an error. For details on the timing parameters, please read the standard I2C bus specifications.
+
+ * If the I2C slave device or sensor does not require a sub-register address to be programmed, it may not be compatible with the RTC I2C peripheral. Please refer the notes above.
+
+ * If the RTC driver reports a `Write Failed!` or `Read Failed!` error log when run from the main CPU then make sure:
+
+        * The I2C slave device or sensor works correctly with the standard I2C master on Espressif SoCs. This would rule out any problems with the I2C slave device itself.
+        * If the RTC I2C interrupt status log reports a `TIMEOUT` error or `ACK` error, it could typically mean that the I2C device did not respond to a `START` condition sent out by the RTC I2C controller. This could happen if the I2C slave device is not connected properly to the controller pins or if the I2C slave device is in a bad state. Make sure that the I2C slave device is in a good state and connected properly before continuing.
+        * If the RTC I2C interrupt log does not report any error status, it could mean that the driver is not fast enough in receiving data from the I2C slave device. This could happen as the RTC I2C controller does not have a Tx/Rx FIFO to store multiple bytes of data but rather, it depends on single byte transmissions using an interrupt status polling mechanism. This could be mitigated to some extent by making sure that the SCL clock of the peripheral is running with as fast as possible. This can be tweaked by configuring the SCL low period and SCL high period values in the initialization config parameters for the peripheral.
+
+* Other methods of debugging problems would be to ensure that the RTC I2C controller is operational *only* from the main CPU *without* any ULP RISC-V code interfering and *without* any sleepmode being activated. This is the basic configuration under which the RTC I2C peripheral must work. This way you can rule out any potential issues due to the ULP or sleep modes.
 
 Debugging Your ULP RISC-V Program
 ----------------------------------
@@ -170,6 +201,7 @@ Application Examples
 * ULP RISC-V Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp_riscv/gpio`.
 * ULP RISC-V Coprocessor uses bit-banged UART driver to print: :example:`system/ulp_riscv/uart_print`.
 * ULP RISC-V Coprocessor reads external temperature sensor while main CPU is in deep sleep: :example:`system/ulp_riscv/ds18b20_onewire`.
+* ULP RISC-V Coprocessor reads external I2C temperature and humidity sensor (BMP180) while the main CPU is in deep sleep and wakes up the main CPU once a threshold is met: :example:`system/ulp_riscv/i2c`.
 
 API Reference
 -------------
@@ -177,3 +209,4 @@ API Reference
 .. include-build-file:: inc/ulp_riscv.inc
 .. include-build-file:: inc/ulp_riscv_lock_shared.inc
 .. include-build-file:: inc/ulp_riscv_lock.inc
+.. include-build-file:: inc/ulp_riscv_i2c.inc

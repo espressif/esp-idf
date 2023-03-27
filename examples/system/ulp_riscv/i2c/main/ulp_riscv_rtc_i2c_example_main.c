@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -162,7 +162,11 @@ static void init_i2c(void)
     /* Configure RTC I2C */
     printf("Initializing RTC I2C ...\n");
     ulp_riscv_i2c_cfg_t i2c_cfg = ULP_RISCV_I2C_DEFAULT_CONFIG();
-    ulp_riscv_i2c_master_init(&i2c_cfg);
+    esp_err_t ret = ulp_riscv_i2c_master_init(&i2c_cfg);
+    if (ret!= ESP_OK) {
+        printf("ERROR: Failed to initialize RTC I2C. Aborting...\n");
+        abort();
+    }
 }
 
 static void bmp180_read16(uint16_t *data_out, uint32_t reg_msb, uint32_t reg_lsb)
