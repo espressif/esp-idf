@@ -83,6 +83,10 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "${target}/mcpwm_periph.c")
 endif()
 
+if(CONFIG_SOC_MPI_SUPPORTED)
+    list(APPEND srcs "${target}/mpi_periph.c")
+endif()
+
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
     list(APPEND srcs "${target}/sdmmc_periph.c")
 endif()

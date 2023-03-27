@@ -691,6 +691,14 @@ config SOC_SHA_SUPPORT_SHA512
     bool
     default y
 
+config SOC_MPI_MEM_BLOCKS_NUM
+    int
+    default 4
+
+config SOC_MPI_OPERATIONS_NUM
+    bool
+    default y
+
 config SOC_RSA_MAX_BIT_LEN
     int
     default 4096

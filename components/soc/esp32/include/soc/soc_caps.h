@@ -340,6 +340,9 @@
 #define SOC_SHA_SUPPORT_SHA384          (1)
 #define SOC_SHA_SUPPORT_SHA512          (1)
 
+/*--------------------------- MPI CAPS ---------------------------------------*/
+#define SOC_MPI_MEM_BLOCKS_NUM (4)
+#define SOC_MPI_OPERATIONS_NUM (1)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
