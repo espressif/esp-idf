@@ -2155,12 +2155,12 @@ If the RX antenna mode is :cpp:enumerator:`WIFI_ANT_MODE_AUTO`, the default ante
 Some limitations need to be considered:
 
  - The TX antenna can be set to :cpp:enumerator:`WIFI_ANT_MODE_AUTO` only if the RX antenna mode is :cpp:enumerator:`WIFI_ANT_MODE_AUTO`, because TX antenna selecting algorithm is based on RX antenna in :cpp:enumerator:`WIFI_ANT_MODE_AUTO` type.
+ - The TX antenna mode or RX antenna mode is configured to :cpp:enumerator:`WIFI_ANT_MODE_AUTO`. The auto switching mode is easy to trigger the switching phase, as long as there is deterioration of RF signal. This causes in some situation where the RF signal is not stable, the antenna switching will be caused frequently, the total RF performance can't meet expectation.
  - Currently, Bluetooth® does not support the multiple antennas feature, so please do not use multiple antennas related APIs.
 
 Following is the recommended scenarios to use the multiple antennas:
 
- - In Wi-Fi mode :cpp:enumerator:`WIFI_MODE_STA`, both RX/TX antenna modes are configured to :cpp:enumerator:`WIFI_ANT_MODE_AUTO`. The Wi-Fi driver selects the better RX/TX antenna automatically.
- - - The RX antenna mode is configured to :cpp:enumerator:`WIFI_ANT_MODE_AUTO`. The TX antenna mode is configured to :cpp:enumerator:`WIFI_ANT_MODE_ANT0` or :cpp:enumerator:`WIFI_ANT_MODE_ANT1`. The applications can choose to always select a specified antenna for TX, or implement their own TX antenna selecting algorithm, e.g., selecting the TX antenna mode based on the channel switch information.
+ - The applications can choose to always select a specified antenna, or implement their own antenna selecting algorithm, e.g., selecting the antenna mode based on the information collected by the application. Refer ESP-IDF example :idf_file:`examples/wifi/antenna/README.md` to design antenna selecting algorithm.
  - Both RX/TX antenna modes are configured to WIFI_ANT_MODE_ANT0 or WIFI_ANT_MODE_ANT1.
 
 
