@@ -176,7 +176,7 @@ static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int po
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
 
-    switch(addr_family) {
+    switch (addr_family) {
         case ESP_TLS_AF_INET:
             hints.ai_family = AF_INET;
             break;
@@ -331,7 +331,9 @@ static inline esp_err_t tcp_connect(const char *host, int hostlen, int port, con
 {
     struct sockaddr_storage address;
     int fd;
-    esp_err_t ret = esp_tls_hostname_to_fd(host, hostlen, port, cfg->addr_family, &address, &fd);
+
+    esp_tls_addr_family_t addr_family = (cfg != NULL) ? cfg->addr_family : ESP_TLS_AF_UNSPEC;
+    esp_err_t ret = esp_tls_hostname_to_fd(host, hostlen, port, addr_family, &address, &fd);
     if (ret != ESP_OK) {
         ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
         return ret;
