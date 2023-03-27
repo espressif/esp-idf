@@ -145,7 +145,7 @@ static esp_err_t IRAM_ATTR spiflash_end_default(esp_flash_t *chip, esp_err_t err
 }
 
 // check that the 'chip' parameter is properly initialised
-static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip)
+static IRAM_ATTR esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip)
 {
     esp_flash_t *chip = *inout_chip;
     if (chip == NULL) {
@@ -182,7 +182,7 @@ static IRAM_ATTR esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t er
 
 static esp_err_t detect_spi_flash_chip(esp_flash_t *chip);
 
-bool esp_flash_chip_driver_initialized(const esp_flash_t *chip)
+bool IRAM_ATTR esp_flash_chip_driver_initialized(const esp_flash_t *chip)
 {
     if (!chip->chip_drv) return false;
     return true;

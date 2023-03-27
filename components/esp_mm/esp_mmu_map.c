@@ -326,6 +326,43 @@ esp_err_t esp_mmu_map_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, 
     return ESP_OK;
 }
 
+IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_caps_t *out_caps)
+{
+    mem_region_t *region = NULL;
+    mem_block_t *mem_block = NULL;
+    bool found = false;
+    mem_block_t *found_block = NULL;
+    if (out_caps == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+
+    for (int i = 0; i < s_mmu_ctx.num_regions; i++) {
+        region = &s_mmu_ctx.mem_regions[i];
+
+        TAILQ_FOREACH(mem_block, &region->mem_block_head, entries) {
+            if (mem_block == TAILQ_FIRST(&region->mem_block_head) || mem_block == TAILQ_LAST(&region->mem_block_head, mem_block_head_)) {
+                //we don't care the dummy_head and the dummy_tail
+                continue;
+            }
+
+            //now we are only traversing the actual dynamically allocated blocks, dummy_head and dummy_tail are excluded already
+            if (mem_block->paddr_start == paddr) {
+                found = true;
+                found_block = mem_block;
+                break;
+            }
+        }
+    }
+
+    if (!found) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    *out_caps = found_block->caps;
+    return ESP_OK;
+}
+
 
 static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, uint32_t size)
 {
