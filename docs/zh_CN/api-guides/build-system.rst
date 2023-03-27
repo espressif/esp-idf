@@ -1519,7 +1519,7 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
         - 将 :idf:`components` 中的组件添加到构建中。
     - 自定义 ``project()`` 命令的初始部分执行以下步骤：
         - 在环境变量或 CMake 缓存中设置 ``IDF_TARGET`` 以及设置相应要使用的``CMAKE_TOOLCHAIN_FILE``。
-        - 添加 ``EXTRA_COMPONENTS_DIRS`` 中的组件至构建中
+        - 添加 ``EXTRA_COMPONENT_DIRS`` 中的组件至构建中
         - 从 ``COMPONENTS``/``EXCLUDE_COMPONENTS``、``SDKCONFIG``、``SDKCONFIG_DEFAULTS`` 等变量中为调用命令 ``idf_build_process()`` 准备参数。
 
 调用 ``idf_build_process()`` 命令标志着这个阶段的结束。
