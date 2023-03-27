@@ -14,6 +14,9 @@ components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
 
+components/esp_hw_support/test_apps/host_test_linux:
+  enable:
+    - if: IDF_TARGET == "linux"
 components/esp_hw_support/test_apps/mspi:
   disable:
     - if: IDF_TARGET != "esp32s3"
@@ -29,7 +32,3 @@ components/esp_hw_support/test_apps/security_support/esp_hw_support_unity_tests:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: H2 fails IDF-6898
-
-components/heap/host_test/host_test_linux:
-  enable:
-    - if: IDF_TARGET == "linux"

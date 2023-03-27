@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_system/host_test/esp_system:
+components/esp_system/test_apps/linux_apis:
   enable:
     - if: IDF_TARGET == "linux"
 
