@@ -6,7 +6,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -22,6 +21,8 @@ def test_flash_mmap(dut: Dut) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c2
+@pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
