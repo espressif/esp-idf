@@ -574,6 +574,7 @@ void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t 
         s_ack_frame.mPsdu = (uint8_t *)(ack + 1);
         s_ack_frame.mChannel = ack_frame_info->channel;
         s_ack_frame.mInfo.mRxInfo.mRssi = ack_frame_info->rssi;
+        s_ack_frame.mInfo.mRxInfo.mLqi = ack_frame_info->lqi;
         s_ack_frame.mInfo.mRxInfo.mTimestamp = ack_frame_info->timestamp;
     }
 
@@ -587,6 +588,7 @@ static void IRAM_ATTR convert_to_ot_frame(uint8_t *data, esp_ieee802154_frame_in
     radio_frame->mLength = *data;
     radio_frame->mChannel = frame_info->channel;
     radio_frame->mInfo.mRxInfo.mRssi = frame_info->rssi;
+    radio_frame->mInfo.mRxInfo.mLqi = frame_info->lqi;
     radio_frame->mInfo.mRxInfo.mAckedWithFramePending = frame_info->pending;
     radio_frame->mInfo.mRxInfo.mTimestamp = esp_timer_get_time();
 
