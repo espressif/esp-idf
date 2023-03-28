@@ -222,7 +222,7 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     }
 #endif
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
-    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, ESP_INTR_FLAG_LEVEL1), err, TAG, "initialize dma interrupt failed");
+    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
 #if SOC_I2S_HW_VERSION_2
     /* Enable clock to start outputting mclk signal. Some codecs will reset once mclk stop */
