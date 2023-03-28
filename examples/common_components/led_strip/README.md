@@ -4,7 +4,7 @@ This directory contains an implementation for addressable LEDs using the RMT per
 
 It's compatible with:
 
-* [WS2812](http://www.world-semi.com/Certifications/WS2812B.html)
+* [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf)
 * SK68XX
 
 This component is used as part of the following ESP-IDF examples:
