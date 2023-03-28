@@ -522,3 +522,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
     menu "Component config"
         source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
+
+    config IDF_EXPERIMENTAL_FEATURES
+        bool "Make experimental features visible"
+        default "n"
+        help
+            By enabling this option, ESP-IDF experimental feature options will be visible.
+
+            Note you should still enable a certain experimental feature option to use it, and you
+            should read the corresponding risk warning and known issue list carefully.
