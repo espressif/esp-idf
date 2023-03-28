@@ -1387,10 +1387,12 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
     }
 
     /* For case MESH/NODE/RLY/BV-01-C, even the DST is RFU, it needs to be forwarded. */
+#if !CONFIG_BLE_MESH_BQB_TEST
     if (BLE_MESH_ADDR_IS_RFU(rx->ctx.recv_dst)) {
         BT_ERR("Destination address is RFU; dropping packet 0x%02x", rx->ctx.recv_dst);
         return -EBADMSG;
     }
+#endif
 
     if (net_if != BLE_MESH_NET_IF_LOCAL && bt_mesh_elem_find(rx->ctx.addr)) {
         BT_DBG("Dropping locally originated packet");
@@ -1469,6 +1471,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 
     /* Save the state so the buffer can later be relayed */
     net_buf_simple_save(&buf, &state);
+
+    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET,
+           "\nNetRecv: ctl: %d, src: %d, dst: %d, ttl: %d, data: 0x%s",
+           CTL(buf.data), SRC(buf.data), DST(buf.data), TTL(buf.data),
+           bt_hex(buf.data + BLE_MESH_NET_HDR_LEN, buf.len - BLE_MESH_NET_HDR_LEN));
 
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
                       bt_mesh_elem_find(rx.ctx.recv_dst));
