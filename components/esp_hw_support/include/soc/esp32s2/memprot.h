@@ -68,7 +68,7 @@ typedef enum {
  * The address is given by region-specific global symbol exported from linker script,
  * it is not read out from related configuration register.
  */
-uint32_t *IRAM_ATTR esp_memprot_get_split_addr(mem_type_prot_t mem_type);
+uint32_t * esp_memprot_get_split_addr(mem_type_prot_t mem_type);
 
 /**
  * @brief Initializes illegal memory access control for required memory section.
@@ -116,7 +116,7 @@ esp_err_t esp_memprot_clear_intr(mem_type_prot_t mem_type);
  *
  * @return Memory protection area type (see mem_type_prot_t enum)
  */
-mem_type_prot_t IRAM_ATTR esp_memprot_get_active_intr_memtype(void);
+mem_type_prot_t  esp_memprot_get_active_intr_memtype(void);
 
 /**
  * @brief Gets interrupt status register contents for specified memory region
@@ -141,7 +141,7 @@ esp_err_t esp_memprot_get_fault_reg(mem_type_prot_t mem_type, uint32_t *fault_re
  *               DRAM0: 0 - non-atomic operation, 1 - atomic operation
  * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-esp_err_t IRAM_ATTR esp_memprot_get_fault_status(mem_type_prot_t mem_type, uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype);
+esp_err_t  esp_memprot_get_fault_status(mem_type_prot_t mem_type, uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype);
 
 /**
  * @brief Gets string representation of required memory region identifier
@@ -150,7 +150,7 @@ esp_err_t IRAM_ATTR esp_memprot_get_fault_status(mem_type_prot_t mem_type, uint3
  *
  * @return mem_type as string
  */
-const char *IRAM_ATTR esp_memprot_type_to_str(mem_type_prot_t mem_type);
+const char * esp_memprot_type_to_str(mem_type_prot_t mem_type);
 
 /**
  * @brief Detects whether any of the interrupt locks is active (requires digital system reset to unlock)
