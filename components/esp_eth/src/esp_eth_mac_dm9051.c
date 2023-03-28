@@ -314,12 +314,8 @@ static esp_err_t dm9051_setup_default(emac_dm9051_t *emac)
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RLENCR, 0x00), err, TAG, "write RLENCR failed");
     /* 3K-byte for TX and 13K-byte for RX */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MEMSCR, 0x00), err, TAG, "write MEMSCR failed");
-    /* reset tx and rx memory pointer */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX | MPTRCR_RST_TX), err, TAG, "write MPTRCR failed");
     /* clear network status: wakeup event, tx complete */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_NSR, NSR_WAKEST | NSR_TX2END | NSR_TX1END), err, TAG, "write NSR failed");
-    /* clear interrupt status */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_ISR, ISR_CLR_STATUS), err, TAG, "write ISR failed");
     return ESP_OK;
 err:
     return ret;
@@ -351,6 +347,10 @@ static esp_err_t emac_dm9051_start(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    /* reset tx and rx memory pointer */
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX | MPTRCR_RST_TX), err, TAG, "write MPTRCR failed");
+    /* clear interrupt status */
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_ISR, ISR_CLR_STATUS), err, TAG, "write ISR failed");
     /* enable only Rx related interrupts as others are processed synchronously */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_IMR, IMR_PAR | IMR_PRI), err, TAG, "write IMR failed");
     /* enable rx */
