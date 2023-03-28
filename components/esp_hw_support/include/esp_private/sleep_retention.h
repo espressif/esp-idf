@@ -101,6 +101,16 @@ void * sleep_retention_find_link_by_id(int id);
  */
 void sleep_retention_entries_get(sleep_retention_entries_t *entries);
 
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+/**
+ * @brief Software trigger REGDMA to do extra linked list retention
+ *
+ * @param backup_or_restore true for backup register context to memory
+ *                          or false for restore to register from memory
+ */
+void sleep_retention_do_extra_retention(bool backup_or_restore);
+#endif
+
 /**
  * @brief Get all registered modules that require sleep retention
  *
