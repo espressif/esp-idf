@@ -180,8 +180,10 @@ static void _ledc_op_lock_release(ledc_mode_t mode, ledc_channel_t channel)
 static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     // The arguments are checked before internally calling this function.
+    ledc_timer_t timer_sel;
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &timer_sel);
     uint32_t max_duty;
-    ledc_hal_get_max_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &max_duty);
+    ledc_hal_get_max_duty(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, &max_duty);
     return max_duty;
 }
 
@@ -214,12 +216,8 @@ int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t 
     if (duty_val >= 0) {
         ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_val);
     }
-    ledc_hal_set_duty_direction(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_direction);
-    ledc_hal_set_duty_num(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_num);
-    ledc_hal_set_duty_cycle(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_cycle);
-    ledc_hal_set_duty_scale(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_scale);
+    ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0, duty_direction, duty_cycle, duty_scale, duty_num);
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-    ledc_hal_set_duty_range_wr_addr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
     return ESP_OK;
@@ -853,7 +851,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
         ESP_LOGW(LEDC_TAG, "LEDC timer not configured, call ledc_timer_config to set timer frequency");
         return 0;
     }
-    return ((uint64_t) src_clk_freq << 8) / precision / clock_divider;
+    return ((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) / precision / clock_divider;
 }
 
 static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
@@ -1336,11 +1334,7 @@ static esp_err_t _ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t cha
     ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), channel, start_duty);
     for (int i = 0; i < list_len; i++) {
         ledc_fade_param_config_t fade_param = fade_params_list[i];
-        ledc_hal_set_duty_direction(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.dir);
-        ledc_hal_set_duty_cycle(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.cycle_num);
-        ledc_hal_set_duty_scale(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.scale);
-        ledc_hal_set_duty_num(&(p_ledc_obj[speed_mode]->ledc_hal), channel, fade_param.step_num);
-        ledc_hal_set_duty_range_wr_addr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, i);
+        ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, i, fade_param.dir, fade_param.cycle_num, fade_param.scale, fade_param.step_num);
     }
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
     portEXIT_CRITICAL(&ledc_spinlock);
