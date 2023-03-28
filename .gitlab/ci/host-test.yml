@@ -284,6 +284,13 @@ test_mqtt_on_host:
     - idf.py build
     - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
 
+test_transport_on_host:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/tcp_transport/host_test
+    - idf.py build
+    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_tcp_transport_test.elf
+
 test_sockets_on_host:
   extends: .host_test_template
   script:
