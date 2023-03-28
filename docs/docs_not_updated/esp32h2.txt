@@ -117,7 +117,6 @@ api-reference/protocols/esp_tls
 api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
-security/esp32h2_log.inc
 about
 resources
 migration-guides/release-5.x/5.1/index
