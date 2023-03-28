@@ -11,6 +11,7 @@
 #include "esp_efuse_table.h"
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
+#include "hal/efuse_hal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #define CRYPT_CNT ESP_EFUSE_FLASH_CRYPT_CNT
@@ -81,15 +82,14 @@ void esp_flash_encryption_init_checks()
  */
 bool IRAM_ATTR esp_flash_encryption_enabled(void)
 {
-    uint32_t flash_crypt_cnt = 0;
 #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-    flash_crypt_cnt = efuse_ll_get_flash_crypt_cnt();
+    return efuse_hal_flash_encryption_enabled();
 #else
+    uint32_t flash_crypt_cnt = 0;
 #if CONFIG_IDF_TARGET_ESP32
     esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
 #else
     esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
-#endif
 #endif
     /* __builtin_parity is in flash, so we calculate parity inline */
     bool enabled = false;
@@ -100,6 +100,7 @@ bool IRAM_ATTR esp_flash_encryption_enabled(void)
         flash_crypt_cnt >>= 1;
     }
     return enabled;
+#endif // CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 }
 
 void esp_flash_write_protect_crypt_cnt(void)
