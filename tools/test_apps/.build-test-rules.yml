@@ -144,3 +144,8 @@ tools/test_apps/system/panic:
     - if: IDF_TARGET not in ["esp32", "esp32s2"]
       temporary: true
       reason: lack of runners
+
+tools/test_apps/system/unicore_bootloader:
+  enable:
+    - if: SOC_CPU_CORES_NUM > 1
+      reason: the test should be run on multicore chips
