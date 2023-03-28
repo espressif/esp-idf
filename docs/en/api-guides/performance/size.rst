@@ -191,9 +191,9 @@ Comparing Two Binaries
 
 If making some changes that affect binary size, it's possible to use an ESP-IDF tool to break down the exact differences in size.
 
-This operation isn't part of ``idf.py``, it's necessary to run the ``idf_size.py`` Python tool directly.
+This operation isn't part of ``idf.py``, it's necessary to run the `esp_idf_size <https://github.com/espressif/esp-idf-size>`_ Python tool directly.
 
-To do so, first locate the linker map file in the build directory. It will have the name ``PROJECTNAME.map``. The ``idf_size.py`` tool performs its analysis based on the output of the linker map file.
+To do so, first locate the linker map file in the build directory. It will have the name ``PROJECTNAME.map``. The ``esp_idf_size`` tool performs its analysis based on the output of the linker map file.
 
 To compare with another binary, you will also need its corresponding ``.map`` file saved from the build directory.
 
@@ -201,7 +201,7 @@ For example, to compare two builds: one with the default :ref:`CONFIG_COMPILER_O
 
 .. code-block:: bash
 
-    $ $IDF_PATH/tools/idf_size.py --diff build_Og/https_request.map build_Os/https_request.map
+    $ python -m esp_idf_size --diff build_Og/https_request.map build_Os/https_request.map
     <CURRENT> MAP file: build_Os/https_request.map
     <REFERENCE> MAP file: build_Og/https_request.map
     Difference is counted as <CURRENT> - <REFERENCE>, i.e. a positive number means that <CURRENT> is larger.
@@ -219,17 +219,17 @@ We can see from the "Difference" column that changing this one setting caused th
 It's also possible to use the "diff" mode to output a table of component-level (static library archive) differences:
 
 .. note::
-    To get the output in JSON or CSV format using ``idf_size.py`` it is possible to use the ``--format`` option.
+    To get the output in JSON or CSV format using ``esp_idf_size`` it is possible to use the ``--format`` option.
 
 .. code-block:: bash
 
-    $IDF_PATH/tools/idf_size.py --archives --diff build_Og/https_request.map build_Oshttps_request.map
+    python -m esp_idf_size --archives --diff build_Og/https_request.map build_Oshttps_request.map
 
 Also at the individual source file level:
 
 .. code-block:: bash
 
-    $IDF_PATH/tools/idf_size.py --files --diff build_Og/https_request.map build_Oshttps_request.map
+    python -m esp_idf_size --files --diff build_Og/https_request.map build_Oshttps_request.map
 
 Other options (like writing the output to a file) are available, pass ``--help`` to see the full list.
 
@@ -240,20 +240,20 @@ Showing Size When Linker Fails
 
 If too much static memory is used, then the linker will fail with an error such as ``DRAM segment data does not fit``, ``region `iram0_0_seg' overflowed by 44 bytes``, or similar.
 
-In these cases, ``idf.py size`` will not succeed either. However it is possible to run ``idf_size.py`` manually in order to view the *partial static memory usage* (the memory usage will miss the variables which could not be linked, so there still appears to be some free space.)
+In these cases, ``idf.py size`` will not succeed either. However it is possible to run ``esp_idf_size`` manually in order to view the *partial static memory usage* (the memory usage will miss the variables which could not be linked, so there still appears to be some free space.)
 
 The map file argument is ``<projectname>.map`` in the build directory
 
 .. code-block:: bash
 
-    $IDF_PATH/tools/idf_size.py build/project_name.map
+    python -m esp_idf_size build/project_name.map
 
 It is also possible to view the equivalent of ``size-components`` or ``size-files`` output:
 
 .. code-block:: bash
 
-    $IDF_PATH/tools/idf_size.py --archives build/project_name.map
-    $IDF_PATH/tools/idf_size.py --files build/project_name.map
+    python -m esp_idf_size --archives build/project_name.map
+    python -m esp_idf_size --files build/project_name.map
 
 .. _linker-map-file:
 

@@ -62,7 +62,7 @@ def get_pytest_apps(
 
     default_size_json_path = 'size.json'
     build_dir = 'build_@t_@w'
-    if target == 'linux':  # no idf_size.py for linux target
+    if target == 'linux':  # no esp_idf_size for linux target
         default_size_json_path = None  # type: ignore
         # IDF-6644
         # hard-coded in components/esp_partition/partition_linux.c
