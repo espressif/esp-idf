@@ -74,20 +74,34 @@ All Supported Modes and Speeds
 
     For MSPI DDR mode, the data are sampled on both the positive edge and the negative edge. e.g.: if a Flash is set to 80 MHz and DDR mode, then the final speed of the Flash is 160 MHz. This is faster than the Flash setting to 120 Mhz and STR mode.
 
+.. important::
+
+    120 MHz DDR mode is an experimental feature. You will only see it when:
+
+    - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` is enabled
+
+    With above step, you will find 120 MHz option is visible.
+
+    Risks:
+
+    If your chip powers on at a certain temperature, then after the temperature increases or decreases over 20 celsius degree, the accesses to / from PSRAM / Flash will crash randomly. Flash access crash will lead to program crash.
+
+    Note 20 celsius degree is not a totally correct number. This value may changes among chips.
 
 F8R8 Hardware
 ^^^^^^^^^^^^^
 
-======= =============== ======= ============
+======= =============== ======= =============
  Group   Flash mode      Group   PSRAM mode
-======= =============== ======= ============
- A       120 MHz SDR     A       N.A.
+======= =============== ======= =============
+ A       120 MHz DDR     A       120 MHz DDR
+ A       120 MHz SDR     A
  B       80 MHz DDR      B       80 MHz DDR
  C       80 MHz SDR      C       40 MHz DDR
  C       40 MHz DDR      C
  C       < 40 MHz        C
  D                       D       disable
-======= =============== ======= ============
+======= =============== ======= =============
 
 1. Flash mode in group A works with PSRAM mode in group A/D
 2. Flash mode in group B/C works with PSRAM mode in group B/C/D
@@ -99,7 +113,7 @@ F4R8 Hardware
 ======= =============== ======= ============
  Group   Flash mode      Group   PSRAM mode
 ======= =============== ======= ============
- A       120 MHz SDR     A       N.A.
+ A       120 MHz SDR     A       120MHz DDR
  B       80 MHz  SDR     B       80MHz DDR
  C       40 MHz  SDR     C       40MHz DDR
  C       20 MHz  SDR     C
