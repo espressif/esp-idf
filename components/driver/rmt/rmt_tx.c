@@ -211,8 +211,9 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
                       ESP_ERR_INVALID_ARG, err, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
 #if SOC_RMT_SUPPORT_DMA
     // we only support 2 nodes ping-pong, if the configured memory block size needs more than two DMA descriptors, should treat it as invalid
-    ESP_GOTO_ON_FALSE(config->mem_block_symbols <= RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG, ESP_ERR_INVALID_ARG, err, TAG,
-                      "mem_block_symbols can't exceed %d", RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG);
+    ESP_GOTO_ON_FALSE(config->mem_block_symbols <= RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t),
+                      ESP_ERR_INVALID_ARG, err, TAG, "mem_block_symbols can't exceed %d",
+                      RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t));
 #else
     ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
 #endif

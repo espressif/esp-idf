@@ -78,7 +78,7 @@ To install an RMT TX channel, there's a configuration structure that needs to be
 -  :cpp:member:`rmt_tx_channel_config_t::gpio_num` sets the GPIO number used by the transmitter.
 -  :cpp:member:`rmt_tx_channel_config_t::clk_src` selects the source clock for the RMT channel. The available clocks are listed in :cpp:type:`rmt_clock_source_t`. Note that, the selected clock will also be used by other channels, which means user should ensure this configuration is same when allocating other channels, regardless of TX or RX. For the effect on power consumption of different clock source, please refer to `Power Management <#power-management>`__  section.
 -  :cpp:member:`rmt_tx_channel_config_t::resolution_hz` sets the resolution of the internal tick counter. The timing parameter of RMT signal is calculated based on this **tick**.
--  :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` sets the size of the dedicated memory block or DMA buffer that is used to store RMT encoding artifacts.
+-  :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` this field have a slightly different meaning based on if the DMA backend is enabled or not. If the DMA is enabled via :cpp:member:`rmt_tx_channel_config_t::with_dma`, then this field controls the size of the internal DMA buffer. To achieve a better throughput and smaller CPU overhead, we recommend you to set a large value, e.g. ``1024``. If DMA is not used, this field controls the size of the dedicated memory block that owned by the channel, which should be at least {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
 -  :cpp:member:`rmt_tx_channel_config_t::trans_queue_depth` sets the depth of internal transaction queue, the deeper the queue, the more transactions can be prepared in the backlog.
 -  :cpp:member:`rmt_tx_channel_config_t::invert_out` is used to decide whether to invert the RMT signal before sending it to the GPIO pad.
 -  :cpp:member:`rmt_tx_channel_config_t::with_dma` is used to indicate if the channel needs a DMA backend. A channel with DMA attached can offload the CPU by a lot. However, DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
@@ -91,7 +91,7 @@ Once the :cpp:type:`rmt_tx_channel_config_t` structure is populated with mandato
 
     rmt_channel_handle_t tx_chan = NULL;
     rmt_tx_channel_config_t tx_chan_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,       // select source clock
+        .clk_src = RMT_CLK_SRC_DEFAULT,   // select source clock
         .gpio_num = 0,                    // GPIO number
         .mem_block_symbols = 64,          // memory block size, 64 * 4 = 256Bytes
         .resolution_hz = 1 * 1000 * 1000, // 1MHz tick resolution, i.e. 1 tick = 1us
@@ -109,7 +109,7 @@ To install an RMT RX channel, there's a configuration structure that needs to be
 -  :cpp:member:`rmt_rx_channel_config_t::gpio_num` sets the GPIO number used by the receiver.
 -  :cpp:member:`rmt_rx_channel_config_t::clk_src` selects the source clock for the RMT channel. The available clocks are listed in :cpp:type:`rmt_clock_source_t`. Note that, the selected clock will also be used by other channels, which means user should ensure this configuration is same when allocating other channels, regardless of TX or RX. For the effect on power consumption of different clock source, please refer to `Power Management <#power-management>`__  section.
 -  :cpp:member:`rmt_rx_channel_config_t::resolution_hz` sets the resolution of the internal tick counter. The timing parameter of RMT signal is calculated based on this **tick**.
--  :cpp:member:`rmt_rx_channel_config_t::mem_block_symbols` sets the size of the dedicated memory block or DMA buffer that used to store RMT encoding artifacts.
+-  :cpp:member:`rmt_rx_channel_config_t::mem_block_symbols` this field have a slightly different meaning based on if the DMA backend is enabled or not. If the DMA is enabled via :cpp:member:`rmt_rx_channel_config_t::with_dma`, then this field controls the maximum size of the DMA buffer. If DMA is not used, this field controls the size of the dedicated memory block that owned by the channel, which should be at least {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
 -  :cpp:member:`rmt_rx_channel_config_t::invert_in` is used to decide whether to invert the input signals before they going into RMT receiver. The inversion is done by GPIO matrix instead of by the RMT peripheral.
 -  :cpp:member:`rmt_rx_channel_config_t::with_dma` is used to indicate if the channel needs a DMA backend. A channel with DMA attached can offload the CPU by a lot. However, DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 -  :cpp:member:`rmt_rx_channel_config_t::io_loop_back` is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral. Meanwhile, if both TX and RX channels are bound to the same GPIO, then monitoring of the data transmission line can be realized.
@@ -120,7 +120,7 @@ Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandato
 
     rmt_channel_handle_t rx_chan = NULL;
     rmt_rx_channel_config_t rx_chan_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,       // select source clock
+        .clk_src = RMT_CLK_SRC_DEFAULT,   // select source clock
         .resolution_hz = 1 * 1000 * 1000, // 1MHz tick resolution, i.e. 1 tick = 1us
         .mem_block_symbols = 64,          // memory block size, 64 * 4 = 256Bytes
         .gpio_num = 2,                    // GPIO number
