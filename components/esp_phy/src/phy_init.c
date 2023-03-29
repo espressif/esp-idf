@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <sys/lock.h>
 
@@ -483,7 +484,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         ESP_LOGE(TAG, "PHY data partition not found");
         return NULL;
     }
-    ESP_LOGD(TAG, "loading PHY init data from partition at offset 0x%x", partition->address);
+    ESP_LOGD(TAG, "loading PHY init data from partition at offset 0x%" PRIx32 "", partition->address);
     size_t init_data_store_length = sizeof(phy_init_magic_pre) +
             sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
     uint8_t* init_data_store = (uint8_t*) malloc(init_data_store_length);
@@ -650,9 +651,9 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
         return err;
     }
     uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
-    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %" PRId32 "\n", cal_format_version);
     if (cal_data_version != cal_format_version) {
-        ESP_LOGD(TAG, "%s: expected calibration data format %d, found %d",
+        ESP_LOGD(TAG, "%s: expected calibration data format %" PRId32 ", found %" PRId32 "",
                 __func__, cal_format_version, cal_data_version);
         return ESP_FAIL;
     }
@@ -708,7 +709,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
     }
 
     uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
-    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %" PRId32 "\n", cal_format_version);
     err = nvs_set_u32(handle, PHY_CAL_VERSION_KEY, cal_format_version);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: store calibration version failed(0x%x)\n", __func__, err);

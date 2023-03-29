@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-
+#include <inttypes.h>
 #include "esp_err.h"
 
 #include "utils/includes.h"
@@ -199,7 +199,7 @@ void wpa2_task(void *pvParameters )
                 if(sm->wpa2_sig_cnt[e->sig]) {
                     sm->wpa2_sig_cnt[e->sig]--;
                 } else {
-                    wpa_printf(MSG_ERROR, "wpa2_task: invalid sig cnt, sig=%d cnt=%d", e->sig, sm->wpa2_sig_cnt[e->sig]);
+                    wpa_printf(MSG_ERROR, "wpa2_task: invalid sig cnt, sig=%" PRId32 " cnt=%d", e->sig, sm->wpa2_sig_cnt[e->sig]);
                 }
                 DATA_MUTEX_GIVE();
             }
@@ -230,7 +230,7 @@ void wpa2_task(void *pvParameters )
             break;
         } else {
             if (s_wifi_wpa2_sync_sem) {
-                wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%d)", e->sig);
+                wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%" PRId32 ")", e->sig);
                 os_semphr_give(s_wifi_wpa2_sync_sem);
             } else {
                 wpa_printf(MSG_ERROR, "WPA2: null wifi->wpa2 sync sem");
@@ -243,7 +243,7 @@ void wpa2_task(void *pvParameters )
     wpa_printf(MSG_DEBUG, "WPA2: task deleted");
     s_wpa2_queue = NULL;
     if (s_wifi_wpa2_sync_sem) {
-        wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%d)", e->sig);
+        wpa_printf(MSG_DEBUG, "WPA2: wifi->wpa2 api completed sig(%" PRId32 ")", e->sig);
         os_semphr_give(s_wifi_wpa2_sync_sem);
     } else {
         wpa_printf(MSG_ERROR, "WPA2: null wifi->wpa2 sync sem");
@@ -385,10 +385,10 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
         }
 
         if (!eap_sm_allowMethod(sm, reqVendor, reqVendorMethod)) {
-            wpa_printf(MSG_DEBUG, "EAP: vendor %u method %u not allowed",
+            wpa_printf(MSG_DEBUG, "EAP: vendor %" PRIu32 " method %" PRIu32 " not allowed",
                     reqVendor, reqVendorMethod);
             wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_PROPOSED_METHOD
-                    "vendor=%u method=%u -> NAK",
+                    "vendor=%" PRIu32 " method=%" PRIu32 " -> NAK",
                     reqVendor, reqVendorMethod);
             goto build_nak;
         }
@@ -535,7 +535,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     plen = be_to_host16(hdr->length);
     data_len = plen + sizeof(*hdr);
 
-    wpa_printf(MSG_DEBUG, "IEEE 802.1X RX: version=%d type=%d length=%d",
+    wpa_printf(MSG_DEBUG, "IEEE 802.1X RX: version=%d type=%d length=%" PRId32 "",
                hdr->version, hdr->type, plen);
     if (hdr->version < EAPOL_VERSION) {
         /* TODO: backwards compatibility */
