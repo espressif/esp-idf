@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,37 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
         dbus_mask |= (mask & CACHE_BUS_DBUS0) ? EXTMEM_DCACHE_SHUT_CORE1_BUS : 0;
     }
     REG_CLR_BIT(EXTMEM_DCACHE_CTRL1_REG, dbus_mask);
+}
+
+/**
+ * Returns enabled buses for a given core
+ *
+ * @param cache_id    cache ID (when l1 cache is per core)
+ *
+ * @return State of enabled buses
+ */
+__attribute__((always_inline))
+static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
+{
+    cache_bus_mask_t mask = 0;
+    HAL_ASSERT(cache_id == 0 || cache_id == 1);
+    //On esp32s3, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
+
+    uint32_t ibus_mask = REG_READ(EXTMEM_ICACHE_CTRL1_REG);
+    if (cache_id == 0) {
+        mask |= (!(ibus_mask & EXTMEM_ICACHE_SHUT_CORE0_BUS)) ? CACHE_BUS_IBUS0 : 0;
+    } else {
+        mask |= (!(ibus_mask & EXTMEM_ICACHE_SHUT_CORE1_BUS)) ? CACHE_BUS_IBUS0 : 0;
+    }
+
+    uint32_t dbus_mask = REG_READ(EXTMEM_DCACHE_CTRL1_REG);
+    if (cache_id == 1) {
+        mask |= (!(dbus_mask & EXTMEM_DCACHE_SHUT_CORE0_BUS)) ? CACHE_BUS_DBUS0 : 0;
+    } else {
+        mask |= (!(dbus_mask & EXTMEM_DCACHE_SHUT_CORE1_BUS)) ? CACHE_BUS_DBUS0 : 0;
+    }
+
+    return mask;
 }
 
 /**

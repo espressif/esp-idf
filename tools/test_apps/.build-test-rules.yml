@@ -179,3 +179,8 @@ tools/test_apps/system/startup:
 tools/test_apps/system/test_watchpoint:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3"] # Just one test per architecture
+
+tools/test_apps/system/unicore_bootloader:
+  enable:
+    - if: SOC_CPU_CORES_NUM > 1
+      reason: the test should be run on multicore chips
