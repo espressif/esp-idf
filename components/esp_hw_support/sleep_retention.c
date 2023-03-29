@@ -326,13 +326,21 @@ static void sleep_retention_entries_all_destroy_wrapper(uint32_t module)
     _lock_release_recursive(&s_retention.lock);
 }
 
-void sleep_retention_entries_destroy(int module)
+static void sleep_retention_entries_do_destroy(int module)
 {
     assert(module != 0);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_join();
     sleep_retention_entries_stats();
     sleep_retention_entries_all_destroy_wrapper(module);
+    _lock_release_recursive(&s_retention.lock);
+}
+
+void sleep_retention_entries_destroy(int module)
+{
+    assert(module != 0);
+    _lock_acquire_recursive(&s_retention.lock);
+    sleep_retention_entries_do_destroy(module);
     if (s_retention.modules == 0) {
         sleep_retention_entries_check_and_distroy_final_default();
         pmu_sleep_disable_regdma_backup();
@@ -353,7 +361,7 @@ static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entri
         void *link = sleep_retention_entries_try_create(&retent[i].config, retent[i].owner, priority, module);
         if (link == NULL) {
             _lock_release_recursive(&s_retention.lock);
-            sleep_retention_entries_destroy(module);
+            sleep_retention_entries_do_destroy(module);
             return ESP_ERR_NO_MEM;
         }
         sleep_retention_entries_update(retent[i].owner, link, priority);
@@ -370,7 +378,7 @@ static esp_err_t sleep_retention_entries_create_bonding(regdma_link_priority_t p
     void *link = sleep_retention_entries_try_create_bonding(&bonding_dummy.config, bonding_dummy.owner, priority, module);
     if (link == NULL) {
         _lock_release_recursive(&s_retention.lock);
-        sleep_retention_entries_destroy(module);
+        sleep_retention_entries_do_destroy(module);
         return ESP_ERR_NO_MEM;
     }
     sleep_retention_entries_update(bonding_dummy.owner, link, priority);

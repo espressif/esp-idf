@@ -631,11 +631,11 @@ void * regdma_find_module_link_head(void *link, void *tail, int entry, uint32_t 
     void *next = link;
     if (link) {
         do {
-            if (next == tail) {
-                break;
-            }
             if (regdma_link_get_stats(next)->module & module) {
                 find_link = next;
+                break;
+            }
+            if (next == tail) {
                 break;
             }
         } while ((next = regdma_link_get_next(next, entry)) != NULL);
@@ -686,11 +686,11 @@ void * regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint
     void *next = link;
     if (find_head && find_head != link) {
         do {
-            if (next == tail) {
-                break;
-            }
             if (regdma_link_get_next(next, entry) == find_head) {
                 return next;
+            }
+            if (next == tail) {
+                break;
             }
         } while ((next = regdma_link_get_next(next, entry)) != NULL);
     }
