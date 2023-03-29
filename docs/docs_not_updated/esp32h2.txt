@@ -55,15 +55,12 @@ api-reference/peripherals/sd_pullup_requirements
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/network/esp_openthread
-api-reference/network/esp_eth
-api-reference/network/esp_netif_driver
 api-reference/network/esp_dpp
 api-reference/network/esp_now
 api-reference/network/esp-wifi-mesh
 api-reference/network/esp_smartconfig
 api-reference/network/esp_wifi
 api-reference/network/index
-api-reference/network/esp_netif
 api-reference/system/sleep_modes
 api-reference/system/efuse
 api-reference/system/chip_revision
@@ -101,9 +98,7 @@ api-reference/bluetooth/esp-ble-mesh
 api-reference/bluetooth/index
 api-reference/bluetooth/esp_gap_ble
 api-reference/bluetooth/classic_bt
-api-reference/protocols/icmp_echo
 api-reference/protocols/esp_serial_slave_link
-api-reference/protocols/mqtt
 api-reference/protocols/mbedtls
 api-reference/protocols/esp_http_server
 api-reference/protocols/esp_sdio_slave_protocol
@@ -114,9 +109,7 @@ api-reference/protocols/esp_https_server
 api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/modbus
 api-reference/protocols/esp_tls
-api-reference/protocols/mdns
 api-reference/protocols/index
-api-reference/protocols/asio
 about
 resources
 migration-guides/release-5.x/5.1/index
