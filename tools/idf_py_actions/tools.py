@@ -179,6 +179,8 @@ def fit_text_in_terminal(out: str) -> str:
     """Fit text in terminal, if the string is not fit replace center with `...`"""
     space_for_dots = 3  # Space for "..."
     terminal_width, _ = os.get_terminal_size()
+    if not terminal_width:
+        return out
     if terminal_width <= space_for_dots:
         # if the wide of the terminal is too small just print dots
         return '.' * terminal_width
@@ -273,9 +275,8 @@ class RunTool:
 
         def print_progression(output: str) -> None:
             # Print a new line on top of the previous line
-            sys.stdout.write('\x1b[K')
-            print('\r', end='')
-            print(fit_text_in_terminal(output.strip('\n\r')), end='', file=output_stream)
+            print('\r' + fit_text_in_terminal(output.strip('\n\r')) + '\x1b[K', end='', file=output_stream)
+            output_stream.flush()
 
         async def read_stream() -> Optional[str]:
             try:
