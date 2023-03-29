@@ -24,9 +24,7 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_twai_self(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[twai-loop-back]')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases(group='twai-loop-back')
 
 
 @pytest.fixture(name='socket_can', scope='module')

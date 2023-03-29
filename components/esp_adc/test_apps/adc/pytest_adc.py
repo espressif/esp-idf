@@ -18,9 +18,7 @@ from pytest_embedded import Dut
     'pm_enable'
 ], indirect=True)
 def test_adc(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(timeout=120)
 
 
 # No PM test, as C2 doesn't support ADC continuous mode
@@ -36,6 +34,4 @@ def test_adc(dut: Dut) -> None:
     indirect=True,
 )
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(timeout=120)

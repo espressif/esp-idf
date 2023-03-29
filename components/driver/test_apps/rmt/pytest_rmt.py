@@ -21,6 +21,4 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_rmt(dut: Dut) -> None:
-    dut.expect('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()

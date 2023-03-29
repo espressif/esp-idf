@@ -1,5 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/heap/host_test/host_test_linux:
+components/heap/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
