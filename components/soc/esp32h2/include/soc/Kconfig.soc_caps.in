@@ -1059,6 +1059,14 @@ config SOC_PM_SUPPORT_BT_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_XTAL32K_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RC32K_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_RC_FAST_PD
     bool
     default y
@@ -1092,6 +1100,10 @@ config SOC_CLK_RC32K_SUPPORTED
     default y
 
 config SOC_CLK_LP_FAST_SUPPORT_LP_PLL
+    bool
+    default y
+
+config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
 
