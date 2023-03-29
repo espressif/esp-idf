@@ -49,11 +49,13 @@ UART_DOWNLOAD_DIS,      EFUSE_BLK0,    27,    1,    Disable UART download mode. 
 
 # Write protection #
 ####################
-WR_DIS_EFUSE_RD_DISABLE,EFUSE_BLK0,    0,     1,    Write protection for EFUSE_RD_DISABLE
-WR_DIS_FLASH_CRYPT_CNT, EFUSE_BLK0,    2,     1,    Flash encrypt. Write protection FLASH_CRYPT_CNT, UART_DOWNLOAD_DIS. EFUSE_WR_DIS_FLASH_CRYPT_CNT
-WR_DIS_BLK1,            EFUSE_BLK0,    7,     1,    Flash encrypt. Write protection encryption key. EFUSE_WR_DIS_BLK1
-WR_DIS_BLK2,            EFUSE_BLK0,    8,     1,    Security boot. Write protection security key. EFUSE_WR_DIS_BLK2
-WR_DIS_BLK3,            EFUSE_BLK0,    9,     1,    Write protection for EFUSE_BLK3. EFUSE_WR_DIS_BLK3
+WR_DIS,                 EFUSE_BLK0,    0,    16,   [] Efuse write disable mask
+WR_DIS.EFUSE_RD_DISABLE,EFUSE_BLK0,    0,     1,    Write protection for EFUSE_RD_DISABLE
+WR_DIS.FLASH_CRYPT_CNT, EFUSE_BLK0,    2,     1,    Flash encrypt. Write protection FLASH_CRYPT_CNT, UART_DOWNLOAD_DIS. EFUSE_WR_DIS_FLASH_CRYPT_CNT
+WR_DIS.DIS_CACHE,       EFUSE_BLK0,    3,     1,    [] wr_dis of DIS_CACHE
+WR_DIS.BLK1,            EFUSE_BLK0,    7,     1,    Flash encrypt. Write protection encryption key. EFUSE_WR_DIS_BLK1
+WR_DIS.BLK2,            EFUSE_BLK0,    8,     1,    Security boot. Write protection security key. EFUSE_WR_DIS_BLK2
+WR_DIS.BLK3,            EFUSE_BLK0,    9,     1,    Write protection for EFUSE_BLK3. EFUSE_WR_DIS_BLK3
 
 # Read protection #
 ###################

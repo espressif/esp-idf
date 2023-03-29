@@ -15,6 +15,7 @@
     # EFUSE_RD_WR_DIS_REG #
         WR_DIS,                           EFUSE_BLK0,   0,    32,     Write protection
             WR_DIS.RD_DIS,                EFUSE_BLK0,   0,    1,      Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
+            WR_DIS.DIS_ICACHE,            EFUSE_BLK0,   2,    1,      [] wr_dis of DIS_ICACHE
             WR_DIS.GROUP_1,               EFUSE_BLK0,   2,    1,      Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
             WR_DIS.GROUP_2,               EFUSE_BLK0,   3,    1,      Write protection for WDT_DELAY_SEL
             WR_DIS.SPI_BOOT_CRYPT_CNT,    EFUSE_BLK0,   4,    1,      Write protection for SPI_BOOT_CRYPT_CNT

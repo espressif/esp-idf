@@ -375,6 +375,7 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 #define SOC_EFUSE_DIS_BOOT_REMAP 1
 #define SOC_EFUSE_DIS_LEGACY_SPI_BOOT 1
+#define SOC_EFUSE_DIS_ICACHE 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

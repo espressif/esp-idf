@@ -439,7 +439,7 @@ class FuseDefinition(object):
                          str(self.get_bit_count()) + '}, \t // ' + self.comment])
 
     def get_alt_names(self):
-        result = re.search(r'\[(.*?)\]', self.comment)
+        result = re.search(r'^\[(.*?)\]', self.comment)
         if result:
             return result.group(1).split()
         return []

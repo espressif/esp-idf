@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 3ac9188bf7eb0a27f3f636085a260743
+// md5_digest_table 10aa3ea5c0748be491a49b2b2d889166
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -25,6 +25,10 @@ static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
 
 static const esp_efuse_desc_t WR_DIS_DIS_RTC_RAM_BOOT[] = {
     {EFUSE_BLK0, 1, 1}, 	 // Write protection for DIS_RTC_RAM_BOOT,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_ICACHE[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_ICACHE,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
@@ -477,6 +481,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_RTC_RAM_BOOT[] = {
     &WR_DIS_DIS_RTC_RAM_BOOT[0],    		// Write protection for DIS_RTC_RAM_BOOT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_ICACHE[] = {
+    &WR_DIS_DIS_ICACHE[0],    		// [] wr_dis of DIS_ICACHE
     NULL
 };
 
