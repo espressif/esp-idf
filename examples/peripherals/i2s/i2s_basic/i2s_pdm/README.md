@@ -63,7 +63,7 @@ Please refer to the [Datasheet of MAX98358](https://datasheets.maximintegrated.c
 
 **NS4150**
 
-Please refer to the [Datasheet of NS4150](http://www.nsiway.com.cn/product/44.html) for more details.
+Please refer to the NS4150 datasheet for more details.
 
 ```
 ┌────────────────────────┐                              ┌───────────────┐
