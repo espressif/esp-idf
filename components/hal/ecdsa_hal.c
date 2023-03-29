@@ -46,6 +46,8 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *k, const u
         ;
     }
 
+    ecdsa_ll_write_param(ECDSA_PARAM_Z, hash, len);
+
     ecdsa_ll_set_stage(ECDSA_STAGE_LOAD_DONE);
 
     while (ecdsa_ll_get_state() != ECDSA_STATE_GET) {
