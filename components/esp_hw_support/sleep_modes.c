@@ -519,6 +519,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         timer_wakeup_prepare();
     }
 
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+        rtc_sleep_systimer_enable(false);
+    }
+#endif
+
     uint32_t result;
     if (deep_sleep) {
 #if !CONFIG_IDF_TARGET_ESP32H2 // IDF does not officially support esp32h2 in v5.0
@@ -551,6 +557,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     } else {
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
     }
+
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+        rtc_sleep_systimer_enable(true);
+    }
+#endif
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
