@@ -10,6 +10,7 @@
 #include "esp_private/wifi.h"
 #include "esp_wifi_netif.h"
 #include <string.h>
+#include <inttypes.h>
 
 //
 //  Purpose of this module is to provide basic wifi initialization setup for
@@ -34,7 +35,7 @@ static void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id,
     uint8_t mac[6];
     esp_err_t ret;
 
-    ESP_LOGD(TAG, "%s esp-netif:%p event-id%d", __func__, esp_netif, event_id);
+    ESP_LOGD(TAG, "%s esp-netif:%p event-id%" PRId32 "", __func__, esp_netif, event_id);
 
     wifi_netif_driver_t driver = esp_netif_get_io_driver(esp_netif);
 

@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "string.h"
+#include <inttypes.h>
 #include "esp_system.h"
 #include "unity.h"
 #include "esp_system.h"
@@ -45,7 +46,7 @@ void callback(void *a, void *b)
 	}
 	t++;
 
-	ESP_LOGI("Eloop Test", "timer[%d] ran after %d msec of scheduled time",
+	ESP_LOGI("Eloop Test", "timer[%d] ran after %" PRId32 " msec of scheduled time",
 				*i, ms_diff);
 
 }
