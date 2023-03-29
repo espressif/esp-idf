@@ -455,14 +455,6 @@ menu "Wi-Fi"
             Select this option to enable 192 bit NSA suite-B.
             This is necessary to support WPA3 192 bit security.
 
-    config ESP_WIFI_WPS_STRICT
-        bool "Strictly validate all WPS attributes"
-        default n
-        help
-            Select this option to enable validate each WPS attribute
-            rigorously. Disabling this add the workaorunds with various APs.
-            Enabling this may cause inter operability issues with some APs.
-
     config ESP_WIFI_11KV_SUPPORT
         bool "Enable 802.11k, 802.11v APIs Support"
         default n
@@ -529,6 +521,29 @@ menu "Wi-Fi"
         default "y"
         help
             Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics. Will use 10932 bytes memory.
+
+    menu "WPS Configuration Options"
+        config ESP_WIFI_WPS_STRICT
+            bool "Strictly validate all WPS attributes"
+            default n
+            help
+                Select this option to enable validate each WPS attribute
+                rigorously. Disabling this add the workaorunds with various APs.
+                Enabling this may cause inter operability issues with some APs.
+
+        config ESP_WIFI_WPS_PASSPHRASE
+            bool "Get WPA2 passphrase in WPS config"
+            default n
+            help
+                Select this option to get passphrase during WPS configuration.
+                This option fakes the virtual display capabilites to get the
+                configuration in passphrase mode.
+                Not recommanded to be used since WPS credentials should not
+                be shared to other devices, making it in readable format increases
+                that risk, also passphrase requires pbkdf2 to convert in psk.
+
+    endmenu # "WPS Configuration Options"
+
 
     config ESP_WIFI_DEBUG_PRINT
         bool "Print debug messages from WPA Supplicant"

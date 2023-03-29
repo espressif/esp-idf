@@ -793,11 +793,12 @@ int wps_finish(void)
                 return ESP_FAIL;
             }
 
+            esp_wifi_get_config(WIFI_IF_STA, config);
             os_memcpy(config->sta.ssid, sm->ssid[0], sm->ssid_len[0]);
             os_memcpy(config->sta.password, sm->key[0], sm->key_len[0]);
             os_memcpy(config->sta.bssid, sm->bssid, ETH_ALEN);
             config->sta.bssid_set = 0;
-            esp_wifi_set_config(0, config);
+            esp_wifi_set_config(WIFI_IF_STA, config);
 
             os_free(config);
         }
@@ -1127,7 +1128,10 @@ int wps_dev_init(void)
         ret = ESP_FAIL;
         goto _out;
     }
-    dev->config_methods = WPS_CONFIG_VIRT_PUSHBUTTON | WPS_CONFIG_PHY_DISPLAY;
+    dev->config_methods = WPS_CONFIG_VIRT_PUSHBUTTON;
+#ifdef CONFIG_ESP_WIFI_WPS_PASSPHRASE
+    dev->config_methods |= WPS_CONFIG_DISPLAY | WPS_CONFIG_VIRT_DISPLAY;
+#endif
     dev->rf_bands = WPS_RF_24GHZ;
 
     WPA_PUT_BE16(dev->pri_dev_type, WPS_DEV_PHONE);
@@ -1409,6 +1413,7 @@ static int wifi_station_wps_init(const esp_wps_config_t *config)
     }
 
     os_memcpy(cfg.wps->uuid, sm->uuid, WPS_UUID_LEN);
+    cfg.wps->config_methods = sm->wps_ctx->dev.config_methods;
     if ((sm->wps = wps_init(&cfg)) == NULL) {         /* alloc wps_data */
         goto _err;
     }
