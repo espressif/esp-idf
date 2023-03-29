@@ -129,5 +129,3 @@ if(NOT BOOTLOADER_BUILD)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
