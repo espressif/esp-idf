@@ -94,7 +94,7 @@ static void nan_ndp_confirmed_event_handler(void *arg, esp_event_base_t event_ba
     wifi_event_ndp_confirm_t *evt = (wifi_event_ndp_confirm_t *)event_data;
 
     if (evt->status == NDP_STATUS_REJECTED) {
-        ESP_LOGI(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(evt->peer_nmi), evt->ndp_id);
+        ESP_LOGE(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(evt->peer_nmi), evt->ndp_id);
         xEventGroupSetBits(nan_event_group, NDP_FAILED);
     } else {
         memcpy(g_peer_ndi, evt->peer_ndi, sizeof(g_peer_ndi));

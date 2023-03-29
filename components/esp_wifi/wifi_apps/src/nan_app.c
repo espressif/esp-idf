@@ -23,13 +23,15 @@
 
 /* NAN Events */
 #define NDP_INDICATION      BIT2
-#define NDP_CONFIRMED       BIT3
+#define NDP_ACCEPTED        BIT3
 #define NDP_TERMINATED      BIT4
+#define NDP_REJECTED        BIT5
 
 /* Macros */
 #define MACADDR_LEN 6
 #define MACADDR_EQUAL(a1, a2)   (memcmp(a1, a2, MACADDR_LEN))
 #define MACADDR_COPY(dst, src)  (memcpy(dst, src, MACADDR_LEN))
+#define NAN_DW_INTVL_MS 524     /* NAN DW interval (512 TU's ~= 524 mSec) */
 
 /* Global Variables */
 static const char *TAG = "nan_app";
@@ -477,13 +479,19 @@ static void nan_app_action_ndp_confirm(void *arg, esp_event_base_t event_base, i
         ESP_LOGE(TAG, "%s: NAN netif is NULL", __func__);
         return;
     }
+
+    if (nan_find_ndl(evt->ndp_id, NULL) == NULL) {
+        /* As ndl isn't found, timeout has occured for NDP response and datapath request is rejected */
+        return;
+    }
     if (evt->status == NDP_STATUS_REJECTED) {
         ESP_LOGE(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(evt->peer_nmi), evt->ndp_id);
         nan_reset_ndl(evt->ndp_id, false);
+        os_event_group_set_bits(nan_event_group, NDP_REJECTED);
         return;
     }
 
-    // if interface not ready when started, rxcb to be registered on connection
+    /* If interface not ready when started, rxcb to be registered on connection */
     if (esp_wifi_register_if_rxcb(driver,  esp_netif_receive, s_nan_ctx.nan_netif) != ESP_OK) {
         ESP_LOGE(TAG, "%s: esp_wifi_register_if_rxcb failed", __func__);
         return;
@@ -494,11 +502,11 @@ static void nan_app_action_ndp_confirm(void *arg, esp_event_base_t event_base, i
     esp_netif_action_connected(s_nan_ctx.nan_netif, event_base, event_id, data);
 
     esp_netif_create_ip6_linklocal(s_nan_ctx.nan_netif);
-    s_nan_ctx.state |= NDP_CONFIRMED;
     esp_wifi_nan_get_ipv6_linklocal_from_mac(&target_addr.u_addr.ip6, evt->peer_ndi);
     target_addr.type = IPADDR_TYPE_V6;
     ESP_LOGI(TAG, "NDP confirmed with Peer "MACSTR" [NDP ID - %d, Peer IPv6 - %s]",
              MAC2STR(evt->peer_nmi), evt->ndp_id, inet6_ntoa(*ip_2_ip6(&target_addr)));
+    os_event_group_set_bits(nan_event_group, NDP_ACCEPTED);
 }
 
 static void nan_app_action_ndp_terminated(void *arg, esp_event_base_t event_base, int32_t event_id, void *data)
@@ -514,7 +522,6 @@ static void nan_app_action_ndp_terminated(void *arg, esp_event_base_t event_base
     ESP_LOGI(TAG, "NDP terminated with Peer "MACSTR" [NDP ID - %d]", MAC2STR(evt->init_ndi), evt->ndp_id);
     nan_reset_ndl(evt->ndp_id, false);
 
-    s_nan_ctx.state &= ~(NDP_CONFIRMED);
     s_nan_ctx.event &= ~(NDP_INDICATION);
     os_event_group_set_bits(nan_event_group, NDP_TERMINATED);
 }
@@ -629,7 +636,7 @@ void esp_nan_action_stop(void)
 {
     nan_clear_app_default_handlers();
 
-    if (s_nan_ctx.state & NDP_CONFIRMED) {
+    if (nan_is_datapath_active()) {
         nan_reset_ndl(0, true);
         esp_wifi_internal_reg_rxcb(WIFI_IF_NAN, NULL);
     }
@@ -685,7 +692,7 @@ esp_err_t esp_wifi_nan_stop(void)
         return ESP_FAIL;
     }
 
-    if (s_nan_ctx.state & NDP_CONFIRMED) {
+    if (nan_is_datapath_active()) {
         /* Terminate all NDP's */
         wifi_nan_datapath_end_req_t ndp_end = {0};
         for (int i=0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
@@ -701,7 +708,7 @@ esp_err_t esp_wifi_nan_stop(void)
         os_event_group_wait_bits(nan_event_group, NDP_TERMINATED, pdFALSE, pdFALSE, portMAX_DELAY);
         os_event_group_clear_bits(nan_event_group, NDP_TERMINATED);
         /* Wait for 1 NAN DW interval (512 TU's ~= 524 mSec) for successful termination */
-        g_wifi_osi_funcs._task_delay(524/portTICK_PERIOD_MS);
+        g_wifi_osi_funcs._task_delay(NAN_DW_INTVL_MS/portTICK_PERIOD_MS);
     }
 
     ESP_RETURN_ON_ERROR(esp_wifi_stop(), TAG, "Stopping NAN failed");
@@ -860,7 +867,17 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
     nan_record_new_ndl(ndp_id, req->pub_id, req->peer_mac, ESP_WIFI_NDP_ROLE_INITIATOR);
     ESP_LOGD(TAG, "Requested NDP with "MACSTR" [NDP ID - %d]", MAC2STR(req->peer_mac), ndp_id);
 
-    return ndp_id;
+    EventBits_t bits = os_event_group_wait_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED, pdFALSE, pdFALSE, pdMS_TO_TICKS(2*NAN_DW_INTVL_MS));
+    if (bits & NDP_ACCEPTED) {
+        os_event_group_clear_bits(nan_event_group, NDP_ACCEPTED);
+        return ndp_id;
+    } else if (bits & NDP_REJECTED) {
+        os_event_group_clear_bits(nan_event_group, NDP_REJECTED);
+        return 0;
+    } else {
+        nan_reset_ndl(ndp_id, false);
+        return 0;
+    }
 }
 
 esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp)
@@ -892,7 +909,7 @@ esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req)
 {
     struct ndl_info *ndl = NULL;
 
-    if (!(s_nan_ctx.state & NDP_CONFIRMED)) {
+    if (!nan_is_datapath_active()) {
         ESP_LOGE(TAG, "No Datapath active");
         return ESP_FAIL;
     }

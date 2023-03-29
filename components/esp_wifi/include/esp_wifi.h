@@ -660,10 +660,10 @@ esp_err_t esp_wifi_get_country(wifi_country_t *country);
 
 
 /**
-  * @brief     Set MAC address of WiFi station or the soft-AP interface.
+  * @brief     Set MAC address of WiFi station, soft-AP or NAN interface.
   *
   * @attention 1. This API can only be called when the interface is disabled
-  * @attention 2. Soft-AP and station have different MAC addresses, do not set them to be the same.
+  * @attention 2. Above mentioned interfaces have different MAC addresses, do not set them to be the same.
   * @attention 3. The bit 0 of the first byte of MAC address can not be 1. For example, the MAC address
   *      can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
   *

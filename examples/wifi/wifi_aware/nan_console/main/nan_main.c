@@ -54,7 +54,6 @@ typedef struct {
     struct arg_str *name;
     struct arg_int *type;
     struct arg_str *filter;
-    struct arg_lit *ndp_ask;
     struct arg_lit *cancel;
     struct arg_int *id;
     struct arg_end *end;
@@ -90,9 +89,6 @@ typedef struct {
     struct arg_lit *init;
     struct arg_int *peer_pub_id;
     struct arg_str *mac_addr;
-    /* NDP Accept/Reject parameters */
-    struct arg_lit *accept;
-    struct arg_lit *reject;
     /* NDP Terminate parameters */
     struct arg_lit *terminate;
     struct arg_int *ndp_id;
@@ -299,11 +295,6 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
         strlcpy(publish.matching_filter, pub_args.filter->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
     }
 
-    if (pub_args.ndp_ask->count) {
-        ndp_resp_needed = true;
-        ESP_LOGI(TAG, "Issue 'ndp -A -d [id]' to Accept OR 'ndp -R -d [id]' to Reject incoming NDP requests");
-    }
-
     if (!esp_wifi_nan_publish_service(&publish, ndp_resp_needed)) {
         return 1;
     }
@@ -401,8 +392,7 @@ static int wifi_cmd_ndp(int argc, char **argv)
         return 1;
     }
 
-    if ((ndp_args.init->count == 0) && (ndp_args.terminate->count == 0) &&
-            (ndp_args.accept->count == 0) && (ndp_args.reject->count == 0)) {
+    if ((ndp_args.init->count == 0) && (ndp_args.terminate->count == 0)) {
         ESP_LOGE(TAG, "Invalid NDP command");
         return 1;
     }
@@ -424,22 +414,8 @@ static int wifi_cmd_ndp(int argc, char **argv)
         }
 
         if (!esp_wifi_nan_datapath_req(&ndp_req)) {
-            return 1;
+            ESP_LOGE(TAG, "Invalid configuration or NDP Request was rejected");
         }
-        goto out;
-    }
-
-    if (ndp_args.accept->count || ndp_args.reject->count) {
-        wifi_nan_datapath_resp_t ndp_resp = {0};
-        ndp_resp.accept = ndp_args.accept->count ? true : false;
-        if (ndp_args.ndp_id->count) {
-            ndp_resp.ndp_id = ndp_args.ndp_id->ival[0];
-        } else {
-            ESP_LOGE(TAG, "Missing own NDP id, add using '-d' parameter");
-            return 1;
-        }
-
-        esp_wifi_nan_datapath_resp(&ndp_resp);
         goto out;
     }
 
@@ -485,7 +461,6 @@ void register_nan(void)
     pub_args.name = arg_str0("n", "name", "<name>", "Name for the service");
     pub_args.type = arg_int0("t", "type", "<0/1>", "0 - Unsolicited(Default), 1 - Solicited");
     pub_args.filter = arg_str0("f", "filter", "<filter>", "Comma separated Matching Filter");
-    pub_args.ndp_ask = arg_lit0("a", "ndp_ask", "Explicitly Accept OR Reject incoming NDP Requests");
     /* NAN Publish cancel parameters */
     pub_args.cancel = arg_lit0("C", "cancel", "Cancel a service");
     pub_args.id = arg_int0("i", "id", "<0-255>", "Publish service id");
@@ -541,9 +516,7 @@ void register_nan(void)
     ndp_args.init = arg_lit0("I", "initiate", "NDP Initiate");
     ndp_args.peer_pub_id = arg_int0("p", "peer_pub_id", "<1-254>", "Peer's Publish Id");
     ndp_args.mac_addr = arg_str0("m", "mac", "<mac>", "Peer's MAC Address");
-    /* NDP Accept/Reject/Terminate parameters */
-    ndp_args.accept = arg_lit0("A", "accept", "Accept NDP Request");
-    ndp_args.reject = arg_lit0("R", "reject", "Reject NDP Request");
+    /* NDP Terminate parameters */
     ndp_args.terminate = arg_lit0("T", "terminate", "NDP Terminate");
     ndp_args.ndp_id = arg_int0("d", "ndp_id", "<1-254>", "NDP ID");
     ndp_args.end = arg_end(1);
