@@ -363,7 +363,7 @@ static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
         int len = (pInData->txDataBitLen + 31) / 32;
         if (p_tx_val != NULL) {
             for (int i = 0; i < len; i++) {
-                WRITE_PERI_REG(SPI_W0_REG(spi_num), p_tx_val[i]);
+                WRITE_PERI_REG(SPI_W0_REG(spi_num) + i * 4, p_tx_val[i]);
             }
         }
         // Set data send buffer length.Max data length 64 bytes.
