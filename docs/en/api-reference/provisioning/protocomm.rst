@@ -15,7 +15,14 @@ Following features are available for provisioning :
 
 Protocomm internally uses protobuf (protocol buffers) for secure session establishment. Though users can implement their own security (even without using protobuf). One can even use protocomm without any security layer.
 
-Protocomm provides framework for various transports - WiFi (SoftAP+HTTPD), BLE, console - in which case the handler invocation is automatically taken care of on the device side (see Transport Examples below for code snippets).
+Protocomm provides framework for various transports :
+
+.. list::
+
+    :SOC_BLE_SUPPORTED: - BLE
+    :SOC_WIFI_SUPPORTED: - WiFi (SoftAP+HTTPD)
+    - console, in which case the handler invocation is automatically taken care of on the device side (see Transport Examples below for code snippets).
+
 
 Note that the client still needs to establish session (for protocomm_security1 and protocomm_security2) by performing the two way handshake. See :doc:`provisioning` for more details about the secure handshake logic.
 
@@ -30,9 +37,12 @@ The respective configuration options can be found as follows:
 
 .. note:: Enabling multiple security versions allow to control them dynamically but also increases firmware size.
 
-Transport Example (SoftAP + HTTP) with Security 2
--------------------------------------------------
-For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
+.. only:: SOC_WIFI_SUPPORTED
+
+    Transport Example (SoftAP + HTTP) with Security 2
+    -------------------------------------------------
+
+    For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
 
     .. highlight:: c
 
@@ -149,9 +159,9 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
             protocomm_delete(pc);
         }
 
-Transport Example (SoftAP + HTTP) with Security 1
--------------------------------------------------
-For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
+    Transport Example (SoftAP + HTTP) with Security 1
+    -------------------------------------------------
+    For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
 
     .. highlight:: c
 
@@ -243,9 +253,11 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
             protocomm_delete(pc);
         }
 
-Transport Example (BLE) with Security 0
----------------------------------------
-For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`
+.. only:: SOC_BLE_SUPPORTED
+
+    Transport Example (BLE) with Security 0
+    ---------------------------------------
+    For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`
 
     .. highlight:: c
 
