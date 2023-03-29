@@ -62,4 +62,10 @@ menu "Example Configuration"
         prompt "Advertise RANDOM Address"
         help
             Use this option to advertise a random address instead of public address
+
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        help
+            This adds Encrypted Read and Write permissions in the custom GATT server.
 endmenu
