@@ -61,7 +61,8 @@ def run_idf_py(*args: str,
                idf_path: typing.Optional[typing.Union[str,Path]] = None,
                workdir: typing.Optional[str] = None,
                check: bool = True,
-               python: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+               python: typing.Optional[str] = None,
+               input_str: typing.Optional[str] = None) -> subprocess.CompletedProcess:
     """
     Run idf.py command with given arguments, raise an exception on failure
     :param args: arguments to pass to idf.py
@@ -70,19 +71,19 @@ def run_idf_py(*args: str,
     :param workdir: directory where to run the build; if not set, the current directory is used
     :param check: check process exits with a zero exit code, if false all retvals are accepted without failing the test
     :param python: absolute path to python interpreter
+    :param input_str: input to idf.py
     """
-    env_dict = dict(**os.environ)
-    if env is not None:
-        env_dict.update(env)
+    if not env:
+        env = dict(**os.environ)
     if not workdir:
         workdir = os.getcwd()
     # order: function argument -> value in env dictionary -> system environment
     if idf_path is None:
-        idf_path = env_dict.get('IDF_PATH')
+        idf_path = env.get('IDF_PATH')
         if not idf_path:
             raise ValueError('IDF_PATH must be set in the env array if idf_path argument is not set')
     if python is None:
-        python = find_python(env_dict['PATH'])
+        python = find_python(env['PATH'])
 
     cmd = [
         python,
@@ -91,9 +92,9 @@ def run_idf_py(*args: str,
     cmd += args  # type: ignore
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
     return subprocess.run(
-        cmd, env=env_dict, cwd=workdir,
+        cmd, env=env, cwd=workdir,
         check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, encoding='utf-8', errors='backslashreplace')
+        text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
 
 
 def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None,

@@ -139,6 +139,6 @@ def fixture_default_idf_env() -> EnvDict:
 
 @pytest.fixture
 def idf_py(default_idf_env: EnvDict) -> IdfPyFunc:
-    def result(*args: str, check: bool = True) -> subprocess.CompletedProcess:
-        return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd(), check=check)  # type: ignore
+    def result(*args: str, check: bool = True, input_str: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+        return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd(), check=check, input_str=input_str)  # type: ignore
     return result
