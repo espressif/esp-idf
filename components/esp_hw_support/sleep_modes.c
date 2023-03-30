@@ -443,6 +443,8 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
+    }
+    if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
     }
 }
