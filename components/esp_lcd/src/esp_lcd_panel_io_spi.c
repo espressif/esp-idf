@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,8 +150,8 @@ static esp_err_t panel_io_spi_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
 
-    if(spi_panel_io->on_color_trans_done != NULL) {
-        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+    if (spi_panel_io->on_color_trans_done != NULL) {
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was overwritten!");
     }
 
     spi_panel_io->on_color_trans_done = cbs->on_color_trans_done;
@@ -196,7 +196,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
     bool send_cmd = (lcd_cmd >= 0);
 
-    spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY);
+    ESP_RETURN_ON_ERROR(spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY), TAG, "acquire spi bus failed");
 
     // before issue a polling transaction, need to wait queued transactions finished
     size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
@@ -252,7 +252,7 @@ static esp_err_t panel_io_spi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
     bool send_cmd = (lcd_cmd >= 0);
 
-    spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY);
+    ESP_RETURN_ON_ERROR(spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY), TAG, "acquire spi bus failed");
 
     // before issue a polling transaction, need to wait queued transactions finished
     size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
