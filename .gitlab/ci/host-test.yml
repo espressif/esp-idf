@@ -380,13 +380,6 @@ test_esp_event:
     - idf.py build
     - build/test_esp_event_host.elf
 
-test_esp_timer_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer
-    - idf.py build
-    - build/test_esp_timer_cxx_host.elf
-
 test_eh_frame_parser:
   extends: .host_test_template
   script:
@@ -400,34 +393,6 @@ test_rom_on_linux_works:
     - cd ${IDF_PATH}/components/esp_rom/host_test/rom_test
     - idf.py build
     - build/test_rom_host.elf
-
-test_cxx_gpio:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/gpio
-    - idf.py build
-    - build/test_gpio_cxx_host.elf
-
-test_i2c_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/i2c
-    - idf.py build
-    - build/test_i2c_cxx_host.elf
-
-test_spi_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/spi
-    - idf.py build
-    - build/test_spi_cxx_host.elf
-
-test_system_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/system
-    - idf.py build
-    - build/test_system_cxx_host.elf
 
 test_linux_example:
   extends: .host_test_template
