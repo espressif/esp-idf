@@ -87,23 +87,12 @@ menu "Heap memory debugging"
     config HEAP_TRACE_HASH_MAP_SIZE
         int "The number of entries in the hash map"
         depends on HEAP_TRACE_HASH_MAP
-        range 10 10000
-        default 100
-        help
-            Defines the number of entries in the heap trace hashmap. The bigger this number is,
-            the bigger the hash map will be in the memory and the lower the miss probability will
-            be when handling heap trace records.
-
-    config HEAP_TRACE_HASH_MAP_MAX_LINEAR
-        int "The number of iterations when searching for an entry in the hash map."
-        depends on HEAP_TRACE_HASH_MAP
-        range 1 HEAP_TRACE_HASH_MAP_SIZE
+        range 1 10000
         default 10
         help
-            Defines the number of iterations when searching for an entry in the hashmap. The closer
-            this number is from the number of entries in the hashmap, the lower the miss chances are
-            but the slower the hashmap mechanism is. The lower this number is, the higher the miss
-            probability is but the faster the hashmap mechanism is.
+            Defines the number of entries in the heap trace hashmap. The bigger this number is,
+            the bigger the hash map will be in the memory. In case the tracing mode is set to
+            HEAP_TRACE_ALL, the bigger the hashmap is, the better the performances are.
 
     config HEAP_ABORT_WHEN_ALLOCATION_FAILS
         bool "Abort if memory allocation fails"

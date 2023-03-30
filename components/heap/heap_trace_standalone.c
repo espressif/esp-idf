@@ -81,61 +81,47 @@ static size_t r_get_idx;
 
 #if CONFIG_HEAP_TRACE_HASH_MAP
 
-typedef struct heap_trace_hashmap_entry_t {
-    heap_trace_record_t* record; // associated record
-} heap_trace_hashmap_entry_t;
+/* Define struct: linked list of records used in hash map */
+TAILQ_HEAD(heap_trace_hash_list_struct_t, heap_trace_record_t);
+typedef struct heap_trace_hash_list_struct_t heap_trace_hash_list_t;
 
-static heap_trace_hashmap_entry_t hash_map[(size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE]; // Buffer used for hashmap entries
+static heap_trace_hash_list_t hash_map[(size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE]; // Buffer used for hashmap entries
 static size_t total_hashmap_hits;
 static size_t total_hashmap_miss;
 
 static size_t hash_idx(void* p)
 {
-    static const uint32_t fnv_prime = 16777619UL; // expression 224 + 28 + 0x93 (32 bits size)
-    return ((uint32_t)p * fnv_prime) % (uint32_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
+    static const uint32_t fnv_prime = 16777619UL; // expression 2^24 + 2^8 + 0x93 (32 bits size)
+    // since all the addresses are 4 bytes aligned, computing address * fnv_prime always gives
+    // a modulo 4 number. The bit shift goal is to distribute more evenly the hashes in the
+    // given range [0 , CONFIG_HEAP_TRACE_HASH_MAP_SIZE - 1].
+    return ((((uint32_t)p >> 3) +
+             ((uint32_t)p >> 5) +
+             ((uint32_t)p >> 7)) * fnv_prime) % (uint32_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
 }
 
-static void map_add(const heap_trace_record_t *r_add)
+static void map_add(heap_trace_record_t *r_add)
 {
     size_t idx = hash_idx(r_add->address);
-
-    // linear search: find empty location
-    for(size_t i = 0; i < CONFIG_HEAP_TRACE_HASH_MAP_MAX_LINEAR; i++) {
-        size_t n = (i + idx) % (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
-        if (hash_map[n].record == NULL) {
-            hash_map[n].record = (heap_trace_record_t*) r_add;
-            break;
-        }
-    }
+    TAILQ_INSERT_TAIL(&hash_map[idx], r_add, tailq_hashmap);
 }
 
-static void map_remove(void *p)
+static void map_remove(heap_trace_record_t *r_remove)
 {
-    size_t idx = hash_idx(p);
-
-    // linear search: find matching address
-    for(size_t i = 0; i < CONFIG_HEAP_TRACE_HASH_MAP_MAX_LINEAR; i++) {
-        size_t n = (i + idx) % (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
-        if (hash_map[n].record != NULL && hash_map[n].record->address == p) {
-            hash_map[n].record = NULL;
-            break;
-        }
-    }
+    size_t idx = hash_idx(r_remove->address);
+    TAILQ_REMOVE(&hash_map[idx], r_remove, tailq_hashmap);
 }
 
 static heap_trace_record_t* map_find(void *p)
 {
     size_t idx = hash_idx(p);
-
-    // linear search: find matching address
-    for(size_t i = 0; i < CONFIG_HEAP_TRACE_HASH_MAP_MAX_LINEAR; i++) {
-        size_t n = (i + idx) % (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
-        if (hash_map[n].record != NULL && hash_map[n].record->address == p) {
+    heap_trace_record_t *r_cur = NULL;
+    TAILQ_FOREACH(r_cur, &hash_map[idx], tailq_hashmap) {
+        if (r_cur->address == p) {
             total_hashmap_hits++;
-            return hash_map[n].record;
+            return r_cur;
         }
     }
-
     total_hashmap_miss++;
     return NULL;
 }
@@ -181,7 +167,10 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
     memset(records.buffer, 0, sizeof(heap_trace_record_t) * records.capacity);
 
 #if CONFIG_HEAP_TRACE_HASH_MAP
-    memset(hash_map, 0, sizeof(hash_map));
+    for (size_t i = 0; i < (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE; i++) {
+        TAILQ_INIT(&hash_map[i]);
+    }
+
     total_hashmap_hits = 0;
     total_hashmap_miss = 0;
 #endif // CONFIG_HEAP_TRACE_HASH_MAP
@@ -239,7 +228,7 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *r_out)
         // Perf: speed up sequential access
         if (r_get && r_get_idx == index - 1) {
 
-            r_get = TAILQ_NEXT(r_get, tailq);
+            r_get = TAILQ_NEXT(r_get, tailq_list);
             r_get_idx = index;
 
         } else {
@@ -254,7 +243,7 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *r_out)
                     break;
                 }
 
-                r_get = TAILQ_NEXT(r_get, tailq);
+                r_get = TAILQ_NEXT(r_get, tailq_list);
                 r_get_idx = i + 1;
             }
         }
@@ -359,7 +348,7 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
             }
         }
 
-        r_cur = TAILQ_NEXT(r_cur, tailq);
+        r_cur = TAILQ_NEXT(r_cur, tailq_list);
     }
 
     esp_rom_printf("====== Heap Trace Summary ======\n");
@@ -405,7 +394,6 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
     portENTER_CRITICAL(&trace_mux);
 
     if (tracing) {
-
         // If buffer is full, pop off the oldest
         // record to make more space
         if (records.count == records.capacity) {
@@ -415,21 +403,9 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
             heap_trace_record_t *r_first = TAILQ_FIRST(&records.list);
 
             list_remove(r_first);
-#if CONFIG_HEAP_TRACE_HASH_MAP
-            map_remove(r_first->address);
-        }
-        // push onto end of list
-        heap_trace_record_t *r_dest = list_add(r_allocation);
-        // add to hashmap
-        if (r_dest) {
-            map_add(r_dest);
-        }
-#else
         }
         // push onto end of list
         list_add(r_allocation);
-#endif // CONFIG_HEAP_TRACE_HASH_MAP
-
         total_allocations++;
     }
 
@@ -446,7 +422,7 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
 */
 static IRAM_ATTR void record_free(void *p, void **callers)
 {
-    if (!tracing || p == NULL) {
+       if (!tracing || p == NULL) {
         return;
     }
 
@@ -463,19 +439,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 
         total_frees++;
 
-#if CONFIG_HEAP_TRACE_HASH_MAP
-        // check the hashmap
-        heap_trace_record_t *r_found = map_find(p);
-
-        // list search
-        if(!r_found) {
-            r_found = list_find_address_reverse(p);
-        }
-#else
         heap_trace_record_t *r_found = list_find_address_reverse(p);
-#endif // CONFIG_HEAP_TRACE_HASH_MAP
-        // search backwards for the allocation record matching this fre
-
         if (r_found) {
             if (mode == HEAP_TRACE_ALL) {
 
@@ -483,13 +447,9 @@ static IRAM_ATTR void record_free(void *p, void **callers)
                 memcpy(r_found->freed_by, callers, sizeof(void *) * STACK_DEPTH);
 
             } else { // HEAP_TRACE_LEAKS
-
                 // Leak trace mode, once an allocation is freed
                 // we remove it from the list & hashmap
                 list_remove(r_found);
-#if CONFIG_HEAP_TRACE_HASH_MAP
-                map_remove(p);
-#endif // CONFIG_HEAP_TRACE_HASH_MAP
             }
         }
     }
@@ -507,7 +467,7 @@ static void list_setup(void)
 
         heap_trace_record_t *r_cur = &records.buffer[i];
 
-        TAILQ_INSERT_TAIL(&records.unused, r_cur, tailq);
+        TAILQ_INSERT_TAIL(&records.unused, r_cur, tailq_list);
     }
 }
 
@@ -517,15 +477,19 @@ static IRAM_ATTR void list_remove(heap_trace_record_t *r_remove)
 {
     assert(records.count > 0);
 
+#if CONFIG_HEAP_TRACE_HASH_MAP
+    map_remove(r_remove);
+#endif
+
     // remove from records.list
-    TAILQ_REMOVE(&records.list, r_remove, tailq);
+    TAILQ_REMOVE(&records.list, r_remove, tailq_list);
 
     // set as unused
     r_remove->address = 0;
     r_remove->size = 0;
 
     // add to records.unused
-    TAILQ_INSERT_HEAD(&records.unused, r_remove, tailq);
+    TAILQ_INSERT_HEAD(&records.unused, r_remove, tailq_list);
 
     // decrement
     records.count--;
@@ -546,7 +510,7 @@ static IRAM_ATTR heap_trace_record_t* list_pop_unused(void)
     assert(r_unused->size == 0);
 
     // remove from records.unused
-    TAILQ_REMOVE(&records.unused, r_unused, tailq);
+    TAILQ_REMOVE(&records.unused, r_unused, tailq_list);
 
     return r_unused;
 }
@@ -579,7 +543,7 @@ static IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r_appe
         record_deep_copy(r_dest, r_append);
 
         // append to records.list
-        TAILQ_INSERT_TAIL(&records.list, r_dest, tailq);
+        TAILQ_INSERT_TAIL(&records.list, r_dest, tailq_list);
 
         // increment
         records.count++;
@@ -588,6 +552,10 @@ static IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r_appe
         if (records.count > records.high_water_mark) {
             records.high_water_mark = records.count;
         }
+
+#if CONFIG_HEAP_TRACE_HASH_MAP
+        map_add(r_dest);
+#endif
 
         return r_dest;
 
@@ -602,10 +570,19 @@ static IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void *p)
 {
     heap_trace_record_t *r_found = NULL;
 
+#if CONFIG_HEAP_TRACE_HASH_MAP
+        // check the hashmap
+        r_found = map_find(p);
+
+        if (r_found != NULL) {
+            return r_found;
+        }
+#endif
+
     // Perf: We search backwards because new allocations are appended
     // to the end of the list and most allocations are short lived.
     heap_trace_record_t *r_cur = NULL;
-    TAILQ_FOREACH_REVERSE(r_cur, &records.list, heap_trace_record_list_struct_t, tailq) {
+    TAILQ_FOREACH(r_cur, &records.list, tailq_list) {
         if (r_cur->address == p) {
             r_found = r_cur;
             break;
