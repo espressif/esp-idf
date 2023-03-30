@@ -916,6 +916,83 @@ static void test_flash_read_large_psram_buffer_low_internal_mem(const esp_partit
 }
 
 TEST_CASE_FLASH("esp_flash_read large PSRAM buffer low memory", test_flash_read_large_psram_buffer_low_internal_mem);
-
-
 #endif
+
+
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+#define TEST_CNT_RW_TIMES   4
+#define TEST_CNT_RW_LEN     64
+#define TEST_CNT_ERASE_LEN  8192
+void test_flash_counter(const esp_partition_t* part)
+{
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t offs = part->address;
+    esp_flash_counters_t flash_counter;
+    static uint8_t write_buf[TEST_CNT_RW_LEN * TEST_CNT_RW_TIMES];
+    static uint8_t read_buf[TEST_CNT_RW_LEN * TEST_CNT_RW_TIMES];
+
+    for(int i = 0;i < TEST_CNT_RW_LEN * TEST_CNT_RW_TIMES; i ++){
+        write_buf[i] = i;
+    }
+
+    esp_flash_reset_counters();
+    flash_counter = *esp_flash_get_counters();
+    // check for resset_counter and get_counter API
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, &flash_counter, sizeof(esp_flash_counters_t));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, offs, TEST_CNT_ERASE_LEN));
+    flash_counter = *esp_flash_get_counters();
+    // check for erase_counter API
+    TEST_ASSERT_EQUAL_UINT32(0, flash_counter.read.count);
+    TEST_ASSERT_EQUAL_UINT32(0, flash_counter.write.count);
+    TEST_ASSERT_EQUAL_UINT32(1, flash_counter.erase.count);
+    TEST_ASSERT_EQUAL_UINT32(0 * TEST_CNT_RW_LEN, flash_counter.read.bytes);
+    TEST_ASSERT_EQUAL_UINT32(0 * TEST_CNT_RW_LEN, flash_counter.write.bytes);
+    TEST_ASSERT_EQUAL_UINT32(TEST_CNT_ERASE_LEN, flash_counter.erase.bytes);
+
+    int count;
+    for(count = 0; count < TEST_CNT_RW_TIMES; count ++) {
+        // check counter on write option
+        TEST_ASSERT_EQUAL(ESP_OK, esp_flash_write(chip, write_buf + TEST_CNT_RW_LEN * count, offs + TEST_CNT_RW_LEN * count, TEST_CNT_RW_LEN) );
+        flash_counter = *esp_flash_get_counters();
+        TEST_ASSERT_EQUAL_UINT32((count + 1), flash_counter.write.count);
+        TEST_ASSERT_EQUAL_UINT32((count + 1) * TEST_CNT_RW_LEN, flash_counter.write.bytes);
+
+        // check counter on read option
+        TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, read_buf + TEST_CNT_RW_LEN * count, offs + TEST_CNT_RW_LEN * count, TEST_CNT_RW_LEN) );
+        flash_counter = *esp_flash_get_counters();
+        TEST_ASSERT_EQUAL_UINT32((count + 1), flash_counter.read.count);
+        TEST_ASSERT_EQUAL_UINT32((count + 1) * TEST_CNT_RW_LEN, flash_counter.read.bytes);
+
+        esp_flash_dump_counters(stdout);
+    }
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(write_buf, read_buf, TEST_CNT_RW_LEN * TEST_CNT_RW_TIMES);
+
+    // check remain value
+    flash_counter = *esp_flash_get_counters();
+    TEST_ASSERT_EQUAL_UINT32(1, flash_counter.erase.count);
+    TEST_ASSERT_EQUAL_UINT32(TEST_CNT_ERASE_LEN, flash_counter.erase.bytes);
+
+    esp_flash_reset_counters();
+    flash_counter = *esp_flash_get_counters();
+    // check for resset_counter after used
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, &flash_counter, sizeof(esp_flash_counters_t));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_write_encrypted(chip, offs, write_buf, TEST_CNT_RW_LEN) );
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read_encrypted(chip, offs, read_buf, TEST_CNT_RW_LEN) );
+
+    printf("\ntest for encrypted write/read\n");
+    esp_flash_dump_counters(stdout);
+
+    flash_counter = *esp_flash_get_counters();
+    // As we do one time of encrypted RW, no erase option
+    TEST_ASSERT_EQUAL_UINT32(1, flash_counter.read.count);
+    TEST_ASSERT_EQUAL_UINT32(1, flash_counter.write.count);
+    TEST_ASSERT_EQUAL_UINT32(0, flash_counter.erase.count);
+    TEST_ASSERT_EQUAL_UINT32(1 * TEST_CNT_RW_LEN, flash_counter.read.bytes);
+    TEST_ASSERT_EQUAL_UINT32(1 * TEST_CNT_RW_LEN, flash_counter.write.bytes);
+    TEST_ASSERT_EQUAL_UINT32(0, flash_counter.erase.bytes);
+}
+
+TEST_CASE_FLASH("SPI flash counter test", test_flash_counter);
+#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
