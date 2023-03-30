@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,8 @@
 #include "hal/assert.h"
 #include "soc/gpio_ext_struct.h"
 
-#define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  64
+// the max window size is expected to be 64, but due to a hardware issue, we need to limit it to 63
+#define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  63
 
 #ifdef __cplusplus
 extern "C" {
