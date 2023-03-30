@@ -65,38 +65,16 @@
 
 
 #define IS_INVALID_SUBNET_MASK(x)  (((x-1) | x) != 0xFFFFFFFF)
+#define IP_CLASS_HOST_NUM(mask) (0xffffffff & ~mask)
 /* Notes:
-*  1. Class a address range 0.0.0.0~127.255.255.255.
- * 2. Class b address range 128.0.0.0~191.255.255.255.
- * 3. Class c address range 192.0.0.0~223.255.255.255.
+ *  CIDR eliminates the traditional Class A, Class B and Class C addresses.
  */
-#define IS_VALID_CLASSA_SUBNET_MASK(mask)  (mask >= 0xFF000000 && mask <= 0xFFFE0000)
-#define IS_VALID_CLASSB_SUBNET_MASK(mask)  (mask >= 0xFFFF0000 && mask <= 0xFFFFFE00)
-#define IS_VALID_CLASSC_SUBNET_MASK(mask)  (mask >= 0xFFFFFF00 && mask <= 0xFFFFFFFC)
-#define IP_CLASS_HOST_NUM(mask)            (0xffffffff & ~mask)
 
-#define DHCP_CHECK_SUBNET_MASK_IP(mask, ip)                                                               \
+#define DHCP_CHECK_SUBNET_MASK_IP(mask)                                                                   \
     do {                                                                                                  \
         if (IS_INVALID_SUBNET_MASK(mask)) {                                                               \
             DHCPS_LOG("dhcps: Illegal subnet mask.\n");                                                   \
             return ERR_ARG;                                                                               \
-        } else {                                                                                          \
-            if (IP_CLASSA(ip)) {                                                                          \
-                if(!IS_VALID_CLASSA_SUBNET_MASK(mask)) {                                                  \
-                    DHCPS_LOG("dhcps: The subnet mask does not match the A address.\n");                  \
-                    return ERR_ARG;                                                                       \
-                }                                                                                         \
-            } else if (IP_CLASSB(ip)) {                                                                   \
-                if(!IS_VALID_CLASSB_SUBNET_MASK(mask)) {                                                  \
-                    DHCPS_LOG("dhcps: The subnet mask does not match the B address.\n");                  \
-                    return ERR_ARG;                                                                       \
-                }                                                                                         \
-            } else if (IP_CLASSC(ip)) {                                                                   \
-                if(!IS_VALID_CLASSC_SUBNET_MASK(mask)) {                                                  \
-                    DHCPS_LOG("dhcps: The subnet mask does not match the C address.\n");                  \
-                    return ERR_ARG;                                                                       \
-                }                                                                                         \
-            }                                                                                             \
         }                                                                                                 \
     } while (0)
 
@@ -1207,7 +1185,7 @@ err_t dhcps_start(struct netif *netif, ip4_addr_t ip)
     IP4_ADDR(&broadcast_dhcps, 255, 255, 255, 255);
 
     server_address.addr = ip.addr;
-    DHCP_CHECK_SUBNET_MASK_IP(htonl(s_dhcps_mask.addr), htonl(server_address.addr));
+    DHCP_CHECK_SUBNET_MASK_IP(htonl(s_dhcps_mask.addr));
     dhcps_poll_set(server_address.addr);
 
     client_address_plus.addr = dhcps_poll.start_ip.addr;
