@@ -11,33 +11,30 @@
  */
 
 #include <sys/time.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "unity.h"
+#include "unity_fixture.h"
+#include "unity_fixture_extras.h"
 #include "test_utils.h"
 #include "memory_checks.h"
 #include "mqtt_client.h"
-#include "nvs_flash.h"
 #include "esp_ota_ops.h"
-#include "sdkconfig.h"
 #include "test_mqtt_client_broker.h"
 #include "test_mqtt_connection.h"
-#include "esp_mac.h"
 #include "esp_partition.h"
 
-static void test_leak_setup(const char * file, long line)
-{
-    uint8_t mac[6];
-    struct timeval te;
-    gettimeofday(&te, NULL); // get current time
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    printf("%s:%ld: time=%jd.%lds, mac:" MACSTR "\n", file, line, (intmax_t)te.tv_sec, te.tv_usec, MAC2STR(mac));
+TEST_GROUP(mqtt);
+
+TEST_SETUP(mqtt){
     test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
 
-TEST_CASE("mqtt init with invalid url", "[mqtt][leaks=0]")
+TEST_TEAR_DOWN(mqtt){
+    test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
+                                         test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
+}
+
+TEST(mqtt, init_with_invalid_url)
 {
-    test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt_cfg = {
             .broker.address.uri = "INVALID",
     };
@@ -45,9 +42,8 @@ TEST_CASE("mqtt init with invalid url", "[mqtt][leaks=0]")
     TEST_ASSERT_EQUAL(NULL, client );
 }
 
-TEST_CASE("mqtt init and deinit", "[mqtt][leaks=0]")
+TEST(mqtt, init_and_deinit)
 {
-    test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt_cfg = {
             // no connection takes place, but the uri has to be valid for init() to succeed
             .broker.address.uri = "mqtts://localhost:8883",
@@ -66,10 +62,13 @@ static const char* this_bin_addr(void)
     return binary_address;
 }
 
-TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
+TEST(mqtt, enqueue_and_destroy_outbox)
 {
     const char * bin_addr = this_bin_addr();
-    test_leak_setup(__FILE__, __LINE__);
+
+    // Reseting leak detection since this_bin_addr adds to allocated memory.
+    test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
     const int messages = 20;
     const int size = 2000;
     const esp_mqtt_client_config_t mqtt_cfg = {
@@ -93,7 +92,7 @@ TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
 /**
  * This test cases uses ethernet kit, so build and use it only if EMAC supported
  */
-TEST_CASE("mqtt broker tests", "[mqtt][test_env=UT_T2_Ethernet]")
+TEST(mqtt, broker_tests)
 {
     test_case_uses_tcpip();
     connect_test_fixture_setup();
@@ -105,5 +104,19 @@ TEST_CASE("mqtt broker tests", "[mqtt][test_env=UT_T2_Ethernet]")
 
     connect_test_fixture_teardown();
 }
-
 #endif // SOC_EMAC_SUPPORTED
+
+
+TEST_GROUP_RUNNER(mqtt) {
+RUN_TEST_CASE(mqtt, init_with_invalid_url);
+RUN_TEST_CASE(mqtt, init_and_deinit);
+RUN_TEST_CASE(mqtt, enqueue_and_destroy_outbox);
+
+#if SOC_EMAC_SUPPORTED
+RUN_TEST_CASE(mqtt, broker_tests);
+#endif // SOC_EMAC_SUPPORTED
+}
+
+void app_main(void){
+  UNITY_MAIN(mqtt);
+}

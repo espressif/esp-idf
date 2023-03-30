@@ -1,0 +1,14 @@
+menu "ESP-MQTT Unit Test Config"
+
+    config MQTT_TEST_BROKER_URI
+        string "URI of the test broker"
+        default "mqtt://mqtt.eclipseprojects.io"
+        help
+            URL of an mqtt broker which this test connects to.
+
+    config MQTT5_TEST_BROKER_URI
+        string "URI of the test broker"
+        default "mqtt://mqtt.eclipseprojects.io"
+        help
+            URL of an mqtt broker which this test connects to.
+endmenu
