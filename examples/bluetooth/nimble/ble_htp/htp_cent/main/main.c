@@ -368,7 +368,11 @@ ble_htp_cent_should_connect(const struct ble_gap_disc_desc *disc)
 
     rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
     if (rc != 0) {
+<<<<<<< HEAD
         return 0;
+=======
+        return rc;
+>>>>>>> NimBLE: Added health thermometer profile
     }
 
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
