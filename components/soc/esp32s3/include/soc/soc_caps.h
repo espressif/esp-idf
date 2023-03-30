@@ -360,3 +360,7 @@
 #define SOC_SDMMC_NUM_SLOTS        2
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
+
+/*-------------------------- Bluetooth CAPS ----------------------------*/
+
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (1)
