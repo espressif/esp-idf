@@ -640,7 +640,13 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_sleep_low_init(s_config.rtc_clk_cal_period);
 
     // Set state machine time for light sleep
-    if (!deep_sleep) {
+    if (deep_sleep) {
+        extern bool esp_phy_is_initialized(void);
+        if (esp_phy_is_initialized()){
+            extern void phy_close_rf(void);
+            phy_close_rf();
+        }
+    } else {
         rtc_sleep_low_init(s_config.rtc_clk_cal_period);
     }
 
