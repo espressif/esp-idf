@@ -348,7 +348,7 @@ static void IRAM_ATTR resume_uarts(void)
 /**
  * These save-restore workaround should be moved to lower layer
  */
-inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
+inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 {
 #if CONFIG_MAC_BB_PD
     mac_bb_power_down_cb_execute();
@@ -362,7 +362,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_read();
 #endif
-    sar_periph_ctrl_power_disable();
+    if (!(deep_sleep && s_adc_tsen_enabled)){
+        sar_periph_ctrl_power_disable();
+    }
 }
 
 /**
@@ -463,7 +465,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
             phy_close_rf();
         }
     } else {
-        misc_modules_sleep_prepare();
+        misc_modules_sleep_prepare(deep_sleep);
     }
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
