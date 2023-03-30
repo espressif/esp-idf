@@ -2578,19 +2578,21 @@ static void ap_free_sta_timeout(void *ctx, void *data)
 }
 #endif
 
-bool wpa_ap_remove(void* sta_info)
+bool wpa_ap_remove(u8* bssid)
 {
     struct hostapd_data *hapd = hostapd_get_hapd_data();
 
-    if (!sta_info || !hapd) {
+    if (!hapd) {
         return false;
     }
-    struct sta_info *sta = NULL;
-    sta = (struct sta_info*)sta_info;
+    struct sta_info *sta = ap_get_sta(hapd, bssid);
+    if (!sta) {
+        return false;
+    }
 
 #ifdef CONFIG_SAE
     if (sta->lock) {
-        if (os_mutex_lock(sta->lock)) {
+        if (os_semphr_take(sta->lock, 0)) {
             ap_free_sta(hapd, sta);
         } else {
             sta->remove_pending = true;

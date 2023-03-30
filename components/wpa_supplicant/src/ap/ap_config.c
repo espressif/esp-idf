@@ -291,9 +291,8 @@ void hostapd_config_clear_wpa_psk(struct hostapd_wpa_psk **l)
 void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 {
     hostapd_config_clear_wpa_psk(&conf->ssid.wpa_psk);
-	str_clear_free(conf->ssid.wpa_passphrase);
 #ifdef CONFIG_SAE
-	sae_deinit_pt(conf->ssid.pt);
+    sae_deinit_pt(conf->ssid.pt);
 #endif /* CONFIG_SAE */
     os_free(conf);
 }

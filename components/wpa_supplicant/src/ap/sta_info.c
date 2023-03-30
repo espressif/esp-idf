@@ -109,7 +109,7 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 	sae_clear_data(sta->sae);
 	os_free(sta->sae);
 	if (sta->lock) {
-		os_mutex_unlock(sta->lock);
+		os_semphr_give(sta->lock);
 		os_mutex_delete(sta->lock);
 		sta->lock = NULL;
 	}
@@ -175,7 +175,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 #ifdef CONFIG_SAE
 	sta->sae_commit_processing = false;
 	sta->remove_pending = false;
-	sta->lock = os_mutex_create();
+	sta->lock = os_semphr_create(1, 1);
 #endif /* CONFIG_SAE */
 
 	return sta;
