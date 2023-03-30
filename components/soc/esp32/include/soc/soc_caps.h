@@ -278,3 +278,6 @@
 #  define CAN_BRP_DIV_SUPPORTED             SOC_TWAI_BRP_DIV_SUPPORTED
 #  define CAN_BRP_DIV_THRESH                SOC_TWAI_BRP_DIV_THRESH
 #endif
+
+/* ---------------------------- Bluetooth ------------------------------- */
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED    (0)

@@ -184,3 +184,6 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
+
+/* ---------------------------- Bluetooth ------------------------------- */
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED    (1)
