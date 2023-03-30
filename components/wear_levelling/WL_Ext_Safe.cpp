@@ -24,16 +24,20 @@ static const char *TAG = "wl_ext_safe";
 #define WL_EXT_SAFE_OK 0x12345678
 #endif // WL_EXT_SAFE_OK
 
-#ifndef WL_EXT_SAFE_OFFSET
-#define WL_EXT_SAFE_OFFSET 16
-#endif // WL_EXT_SAFE_OFFSET
-
-
+/*
+WL_Ext_Safe_State stores the buffer transaction state in between erase and write operation of the sector.
+This is mainly for safety purpose, in case of power outage in between erase and write operation,
+data will be recovered after power outage as temporary data is also stored on flash memory (dump_addr).
+- sector_restore_sign : if any transaction was pending before power outage, then on power up,
+  this should be WL_EXT_SAFE_OK which indicates that data recovery from dump buffer is needed, else it should be zero.
+- sector_base_addr : sector base address where data from dump buffer will be restored.
+- sector_base_addr_offset : sector base address offset at which data will be restored
+*/
 struct WL_Ext_Safe_State {
 public:
-    uint32_t erase_begin;
-    uint32_t local_addr_base;
-    uint32_t local_addr_shift;
+    uint32_t sector_restore_sign;
+    uint32_t sector_base_addr;
+    uint32_t sector_base_addr_offset;
     uint32_t count;
 };
 
@@ -51,8 +55,10 @@ esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Flash_Access *flash_drv)
 
     result = WL_Ext_Perf::config(cfg, flash_drv);
     WL_EXT_RESULT_CHECK(result);
-    this->state_addr = WL_Flash::chip_size() - 2 * WL_Flash::sector_size();
-    this->dump_addr = WL_Flash::chip_size() - 1 * WL_Flash::sector_size();
+    /* two extra sectors will be reserved to store buffer transaction state WL_Ext_Safe_State
+     and temporary storage of the actual sector data from the sector which is to be erased*/
+    this->buff_trans_state_addr = WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size;
+    this->dump_addr = WL_Ext_Perf::get_flash_size() - 1 * this->flash_sector_size;
     return ESP_OK;
 }
 
@@ -64,89 +70,110 @@ esp_err_t WL_Ext_Safe::init()
     result = WL_Ext_Perf::init();
     WL_EXT_RESULT_CHECK(result);
 
+    //check if any buffer write operation was pending and recover data if needed
     result = this->recover();
     return result;
 }
 
-size_t WL_Ext_Safe::chip_size()
+size_t WL_Ext_Safe::get_flash_size()
 {
-    ESP_LOGV(TAG, "%s size = %i", __func__, WL_Flash::chip_size() - 2 * this->flash_sector_size);
-    return WL_Flash::chip_size() - 2 * this->flash_sector_size;
+    ESP_LOGV(TAG, "%s size = %i", __func__, WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size);
+    return WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size;
 }
 
 esp_err_t WL_Ext_Safe::recover()
 {
     esp_err_t result = ESP_OK;
 
+    // read WL_Ext_Safe_State from flash memory at buff_trans_state_addr
     WL_Ext_Safe_State state;
-    result = WL_Flash::read(this->state_addr, &state, sizeof(WL_Ext_Safe_State));
+    result = this->read(this->buff_trans_state_addr, &state, sizeof(WL_Ext_Safe_State));
     WL_EXT_RESULT_CHECK(result);
-    ESP_LOGV(TAG, "%s recover, start_addr = 0x%08x, local_addr_base = 0x%08x, local_addr_shift = %i, count=%i", __func__, state.erase_begin, state.local_addr_base, state.local_addr_shift, state.count);
+    ESP_LOGV(TAG, "%s recover, start_addr = 0x%08x, sector_base_addr = 0x%08x,  sector_base_addr_offset= %i, count=%i", __func__, state.sector_restore_sign, state.sector_base_addr, state.sector_base_addr_offset, state.count);
 
-    // check if we have transaction
-    if (state.erase_begin == WL_EXT_SAFE_OK) {
+    // check if we have any incomplete transaction pending.
+    if (state.sector_restore_sign == WL_EXT_SAFE_OK) {
 
+        // recover data from dump_addr and store it to temporary storage sector_buffer.
         result = this->read(this->dump_addr, this->sector_buffer, this->flash_sector_size);
         WL_EXT_RESULT_CHECK(result);
 
-        result = WL_Flash::erase_sector(state.local_addr_base); // erase comlete flash sector
+        //erase complete flash sector
+        result = this->erase_sector(state.sector_base_addr);
         WL_EXT_RESULT_CHECK(result);
 
-        // And write back...
-        for (int i = 0; i < this->size_factor; i++) {
-            if ((i < state.local_addr_shift) || (i >= state.count + state.local_addr_shift)) {
-                result = this->write(state.local_addr_base * this->flash_sector_size + i * this->fat_sector_size, &this->sector_buffer[i * this->fat_sector_size / sizeof(uint32_t)], this->fat_sector_size);
+        /* Restore data which was previously stored to sector_buffer
+         back to data area provided by WL_Ext_Safe_State state */
+        for (int i = 0; i < this->flash_fat_sector_size_factor; i++) {
+            if ((i < state.sector_base_addr_offset) || (i >= state.count + state.sector_base_addr_offset)) {
+                result = this->write(state.sector_base_addr * this->flash_sector_size + i * this->fat_sector_size, &this->sector_buffer[i * this->fat_sector_size / sizeof(uint32_t)], this->fat_sector_size);
                 WL_EXT_RESULT_CHECK(result);
             }
         }
-        // clear transaction
-        result = WL_Flash::erase_range(this->state_addr, this->flash_sector_size);
+
+        // clear the buffer transaction state after the data recovery.
+        result = this->erase_range(this->buff_trans_state_addr, this->flash_sector_size);
     }
     return result;
 }
 
-esp_err_t WL_Ext_Safe::erase_sector_fit(uint32_t start_sector, uint32_t count)
+/*
+erase_sector_fit function is needed in case flash_sector_size != fat_sector_size and
+sector to be erased is not multiple of flash_fat_sector_size_factor
+*/
+esp_err_t WL_Ext_Safe::erase_sector_fit(uint32_t first_erase_sector, uint32_t count)
 {
     esp_err_t result = ESP_OK;
 
-    uint32_t local_addr_base = start_sector / this->size_factor;
-    uint32_t pre_check_start = start_sector % this->size_factor;
-    ESP_LOGV(TAG, "%s start_sector=0x%08x, count = %i", __func__, start_sector, count);
-    for (int i = 0; i < this->size_factor; i++) {
+    uint32_t flash_sector_base_addr = first_erase_sector / this->flash_fat_sector_size_factor;
+    uint32_t pre_check_start = first_erase_sector % this->flash_fat_sector_size_factor;
+
+    // Except pre check and post check data area, read and store all other data to sector_buffer
+    ESP_LOGV(TAG, "%s first_erase_sector=0x%08x, count = %i", __func__, first_erase_sector, count);
+    for (int i = 0; i < this->flash_fat_sector_size_factor; i++) {
         if ((i < pre_check_start) || (i >= count + pre_check_start)) {
-            result = this->read(start_sector / this->size_factor * this->flash_sector_size + i * this->fat_sector_size, &this->sector_buffer[i * this->fat_sector_size / sizeof(uint32_t)], this->fat_sector_size);
+            result = this->read(flash_sector_base_addr * this->flash_sector_size + i * this->fat_sector_size,
+                                &this->sector_buffer[i * this->fat_sector_size / sizeof(uint32_t)],
+                                this->fat_sector_size);
             WL_EXT_RESULT_CHECK(result);
         }
     }
 
-    result = WL_Flash::erase_sector(this->dump_addr / this->flash_sector_size);
+    // For safety purpose store temporary stored data sector_buffer to flash memory at dump_addr
+    result = this->erase_sector(this->dump_addr / this->flash_sector_size);
     WL_EXT_RESULT_CHECK(result);
-    result = WL_Flash::write(this->dump_addr, this->sector_buffer, this->flash_sector_size);
+    result = this->write(this->dump_addr, this->sector_buffer, this->flash_sector_size);
     WL_EXT_RESULT_CHECK(result);
 
+    //store transaction buffer state to flash memory at buff_trans_state_addr
     WL_Ext_Safe_State state;
-    state.erase_begin = WL_EXT_SAFE_OK;
-    state.local_addr_base = local_addr_base;
-    state.local_addr_shift = pre_check_start;
+    state.sector_restore_sign = WL_EXT_SAFE_OK;
+    state.sector_base_addr = flash_sector_base_addr;
+    state.sector_base_addr_offset = pre_check_start;
     state.count = count;
 
-    result = WL_Flash::erase_sector(this->state_addr / this->flash_sector_size);
+    result = this->erase_sector(this->buff_trans_state_addr / this->flash_sector_size);
     WL_EXT_RESULT_CHECK(result);
-    result = WL_Flash::write(this->state_addr + 0, &state, sizeof(WL_Ext_Safe_State));
+    result = this->write(this->buff_trans_state_addr + 0, &state, sizeof(WL_Ext_Safe_State));
     WL_EXT_RESULT_CHECK(result);
 
-    // Erase
-    result = WL_Flash::erase_sector(local_addr_base); // erase comlete flash sector
+    //erase complete flash sector which includes pre and post check data area
+    result = this->erase_sector(flash_sector_base_addr);
     WL_EXT_RESULT_CHECK(result);
-    // And write back...
-    for (int i = 0; i < this->size_factor; i++) {
+
+    /* Restore data which was previously stored to sector_buffer
+       back to data area which was not part of pre and post check data */
+    for (int i = 0; i < this->flash_fat_sector_size_factor; i++) {
         if ((i < pre_check_start) || (i >= count + pre_check_start)) {
-            result = this->write(local_addr_base * this->flash_sector_size + i * this->fat_sector_size, &this->sector_buffer[i * this->fat_sector_size / sizeof(uint32_t)], this->fat_sector_size);
+            result = this->write(flash_sector_base_addr * this->flash_sector_size + i * this->fat_sector_size,
+                                 &this->sector_buffer[i * this->fat_sector_size / sizeof(uint32_t)],
+                                 this->fat_sector_size);
             WL_EXT_RESULT_CHECK(result);
         }
     }
 
-    result = WL_Flash::erase_sector(this->state_addr / this->flash_sector_size);
+    // clear the buffer transaction state after data is restored properly.
+    result = this->erase_sector(this->buff_trans_state_addr / this->flash_sector_size);
     WL_EXT_RESULT_CHECK(result);
 
     return ESP_OK;

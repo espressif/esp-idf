@@ -21,16 +21,16 @@
 #endif
 #endif
 
-typedef struct ALIGNED_(16) WL_Config_s { /*!< Size of wl_config_t structure should be divided by 16 for encryption*/
-    size_t   start_addr;    /*!< start address in the flash*/
-    uint32_t full_mem_size; /*!< Amount of memory used to store data in bytes*/
-    uint32_t page_size;     /*!< One page size in bytes. Page could be more then memory block. This parameter must be page_size >= N*block_size.*/
-    uint32_t sector_size;   /*!< size of flash memory sector that will be erased and stored at once (erase)*/
-    uint32_t updaterate;    /*!< Amount of accesses before block will be moved*/
-    uint32_t wr_size;       /*!< Minimum amount of bytes per one block at write operation: 1...*/
-    uint32_t version;       /*!< A version of current implementation. To erase and reallocate complete memory this ID must be different from id before.*/
-    size_t   temp_buff_size;  /*!< Size of temporary allocated buffer to copy from one flash area to another. The best way, if this value will be equal to sector size.*/
-    uint32_t crc;           /*!< CRC for this config*/
+typedef struct ALIGNED_(16) WL_Config_s {/*!< Size of wl_config_t structure should be divided by 16 for encryption*/
+    size_t   wl_partition_start_addr;    /*!< Partition start address in the flash*/
+    uint32_t wl_partition_size;          /*!< Size of partition used to store data in bytes*/
+    uint32_t wl_page_size;               /*!< One page size in bytes. Page size can be more than memory block. Here, wl_page_size >= N*flash_sector_size, where N > 0.*/
+    uint32_t flash_sector_size;          /*!< Size of flash memory sector that will be erased and stored at once (erase)*/
+    uint32_t wl_update_rate;             /*!< Memory erase count after which physical sector and dummy sector swaps its address.*/
+    uint32_t wl_pos_update_record_size;  /*!< Number of bytes for storing pos update record appended on the state sector data after every wl_update_rate*/
+    uint32_t version;                    /*!< A version of current implementation. To erase and reallocate complete memory this ID must be different from id before.*/
+    size_t   wl_temp_buff_size;          /*!< Size of temporary allocated buffer to copy from one flash area to another. The best way, if this value will be equal to sector size.*/
+    uint32_t crc32;                      /*!< CRC for this config*/
 } wl_config_t;
 
 #ifndef _MSC_VER // MSVS has different format for this define

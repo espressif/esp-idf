@@ -1,78 +1,73 @@
 Wear Levelling Component
 ========================
 
-Wear Levelling Component (WLC) it is a software component that is implemented to prevent situation when some sectors in flash memory used by erase operations more then others. The component shares access attempts between all avalible sectors.
+Wear Levelling Component (WLC) is a software component, implemented to prolong the service life of a storage media. This is done by preventing frequent erase operations at specific locations of the storage media memory space, which cause wear out of that particular memory while other locations are possibly not used at all. The WLC controls access attempts to all the media sectors available.
 The WLC do not have internal cache. When write operation is finished, that means that data was really stored to the flash.
-As a parameter the WLC requires the driver to access the flash device. The driver has to implement Flash_Access interface.
+The component requires the storage media access driver as its parameter, in order to manipulate target sectors. As the WLC implements wear-levelling for the SPI Flash device, the driver is controlled through the Flash_Access interface.
 
 The WLC Versioning and Compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The WLC accept data formats from older version. Latest version of the WLC will update data format from older versions to the current one. 
+The WLC accepts data formats from older version. Latest version of the WLC will update data format from older versions to the current one.
 Current implementation of WLC has version 2. The data format from current version incompatible with data format from previous versions, and could not be 
 used with previous versions.
 
 The WLC Files
 ^^^^^^^^^^^^^^^
-The WLC consist of few components that are implemented in different files. The list and brief description of these components written below.
+The WLC consists of several components that are implemented in various files. The list and brief description of these components follows:
 
- - Flash_Access - memory access interface. Used to access the memory. A classes WL_Flash, Partition, SPI_Flash are implements this interface.
+ - Flash_Access - SPI Flash memory access interface. Implemented in classes WL_Flash, Partition and SPI_Flash.
  - SPI_Flash - class implements the Flash_Access interface to provide access to the flash memory.
  - Partition - class implements the Flash_Access interface to provide access to the partition.
  - WL_Flash - the main class that implements wear levelling functionality.
- - WL_State -  contains state structure of the WLC.
- - WL_Config - contains structure to configure the WLC component at startup.
+ - WL_State - contains state structure of the WLC.
+ - WL_Config - contains structure to configure the WLC at startup.
  - wear_levelling - wrapper API class that provides "C" interface to access the memory through the WLC
 
 
 Flash_Access Interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-In the component exist virtual interface Flash_Access. This interface implement main basic functions:
- - read - read memory to the buffer.
- - write - writes buffer to the memory.
- - erase - erase one sector.
- - erase_range - erase range of memory. The address of rage must be rounded to the sector size.
- - chip_size - returns the equivalent amount of memory.
- - sector_size - returns the sector size.
+Virtual interface Flash_Access defines the following basic functions:
+ - read - reads from the flash memory to a data buffer.
+ - write - writes to the flash memory from a data buffer.
+ - erase - erases a sector of the flash memory.
+ - erase_range - erases a range of sectors of the flash memory. The range length must be rounded to a multile of the sector size.
+ - flash_size - returns the available flash memory (in bytes).
+ - sector_size - returns the flash sector size.
  - flush - stores current state to the flash, if needed.
 
-The WLC implements this interface for the user, and requires this interface to access the memory.
-
-Structure wl_config_t to Configure the WLC at startup
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WLC startup configuration (wl_config_t structure)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The wl_config_t contains configuration parameters for the WLC component.
- - start_addr - offset in the flash memory. The WLC will place all data after this address.
- - full_mem_size - amount of memory that was allocated and can be used by WLC
- - sector_size - flash memory sector size
- - page_size - size of memory for relocation at once. Must be N*sector_size, where N > 0.
- - updaterate - amount of erase cycles to execute the relocation procedure.
- - wr_size - smalest possible write access size without erasing of sector.
+ - wl_partition_start_addr - wear levelled partition starting address (in the flash memory)
+ - wl_partition_size - size of the wear-levelled partition
+ - flash_sector_size - flash memory sector size
+ - wl_page_size - one WLC page size (in bytes). wl_page_size >= (N * sector_size), where N > 0
+ - wl_update_rate - erase operation count after which the physical sector and the WLC dummy sector swap their addresses
+ - wl_pos_update_record_size - number of bytes for storing position-update record, appended to the WLC state sector data after each expiration of wl_update_rate.
  - version - version of the WLC component.
- - temp_buff_size - amount of memory that the WLC will allocate internally. Must be > 0.
+ - temp_buff_size - size of a temporary buffer to copy data from one flash memory area to another. This value should be equal to the flash sector size.
  
 Internal Memory Organization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The WLC divide the memory that are define by start_addr and full_mem_size to three regions:
- - Data
- - States
+The WLC divides the memory given by wl_partition_start_addr and wl_partition_size to three regions:
  - Configuration
+ - States
+ - Data
  
-The Configuration region used to store configuration information. The user can use it to recover the WLC from memory dump.
-The Data - is a region where user data stored. 
-The States - is a region where the WLC stores internal information about the WLC state. The States region contains two copies  of the WLC states. It is implemented to prevent situation when the device is shut down 
-during operation when the device stores the states. If one of copies is wrong, the WLC can recover the state from another. The broken copy will be overwritten by another.
+The Configuration - a region used to store the WLC configuration information. User can use this information to restore the WL partition from a memory dump.
+The States - a region to store internal WLC status information. The States region contains two copies of the WLC status record - this is to help safely recover last-known WLC status in case of power outage.
+The Data - a region where the user data is stored. 
 
 Main Idea
 ^^^^^^^^^
-The WLC has two access addresses: virtual address and real address. The virtual address used by user to access the WLC, the real address used by the WLC to access the real memory.
-The WLC makes the conversion between virtual and real addresses.
-The Data region divided to N pages (page could be equal to the sector size). One page defined as dummy page. For user will be available only N-1 pages. 
-The WLC has two internal counters to calculate virtual and real addresses: erase counter and move counter. 
-Every erase operation will be counted by erase counter. When this counter reached the *updaterate* number the page after Dummy page will be moved to the Dummy page, and Dummy page will be changed to this one. The erase counter will 
-be cleared and move counter will be incremented. This procedure will be repeated again and again.
-When the Dummy page will be at last page in the memory and erase counter will reach the updaterate, the move counter will be cleared and the state will be stored to the State memory.
-Bellow shown the example with 4 available memory pages. Every state after updaterate erases. The X is a Dummy page.
+The WLC uses two types of flash memory-access addresses: virtual (logical) address and real (physical) address. The virtual address is used by users as a common target address, while the real address is used internally by the WLC to access the actual memory block.
+The Data region is divided into N pages (page could be equal to the sector size, see above). One WLC page is defined as a "dummy" page, which implies the users can use only N-1 pages to store the data.
+The WLC has two internal counters to calculate virtual and real addresses: erase counter (access_count) and move counter (move_count).
+Every erase operation increments the erase counter. When the counter reaches the *wl_update_rate* number, the contents of the page next after the actual "dummy" page is copied to the dummy page and the next page itself becomes a new WLC dummy page (the last partition page swaps its position with the first one). This way, the WLC dummy page will traverses across whole partition, ensuring the wear burden is distributed evenly. After a completion of one cycle, the move counter is incremented too.
+On the increment of the move counter, the WLC status record is stored to the State sector in the flash memory.
+The example below shows 4 available memory pages and their corresponding states after each wl_update_rate change. The 'X' is the WLC dummy page.
 
 - X 0 1 2 - start position
 - 0 X 1 2 - first move, the page 0 and Dummy page change the places
@@ -88,6 +83,5 @@ Bellow shown the example with 4 available memory pages. Every state after update
 - 2 0 1 X - 
 - X 0 1 2 - state stored to the memory, the memory made full cycle.
 
-As we see, if user will write data only to one address, amount of erase cycles will be shared between the full memory. The price for that is a one memory page that will not be used by user.
-
+As can be seen, erase cycles of the sectors get distributed across the entire flash at the cost of small memory part used by the WLC, which is thus not available to the users.
 
