@@ -67,7 +67,7 @@ idf.py -p PORT flash monitor
   openssl req -new -key wpa2_server.key -out wpa2_server.csr
 
 5. create certs (.crt) for client nd server
-  openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_client.csr -key (password) -out wpa2_client.crt -extensions xpserver_ext -extfile xpextensions
+  openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_client.csr -key (password) -out wpa2_client.crt -extensions xpclient_ext -extfile xpextensions
   openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_server.csr -key (password) -out wpa2_server.crt -extensions xpserver_ext -extfile xpextensions
 
 6. export .p12 files
