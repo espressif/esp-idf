@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "hal/rmt_types.h"
+#include "hal/gpio_types.h" // for gpio_num_t
 
 #ifdef __cplusplus
 extern "C" {

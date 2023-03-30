@@ -29,10 +29,12 @@ typedef struct {
  * @brief RMT RX channel specific configuration
  */
 typedef struct {
-    int gpio_num;               /*!< GPIO number used by RMT RX channel. Set to -1 if unused */
+    gpio_num_t gpio_num;        /*!< GPIO number used by RMT RX channel. Set to -1 if unused */
     rmt_clock_source_t clk_src; /*!< Clock source of RMT RX channel, channels in the same group must use the same clock source */
     uint32_t resolution_hz;     /*!< Channel clock resolution, in Hz */
-    size_t mem_block_symbols;   /*!< Size of memory block, in number of `rmt_symbol_word_t`, must be an even */
+    size_t mem_block_symbols;   /*!< Size of memory block, in number of `rmt_symbol_word_t`, must be an even.
+                                     In the DMA mode, this field controls the DMA buffer size, it can be set to a large value (e.g. 1024);
+                                     In the normal mode, this field controls the number of RMT memory block that will be used by the channel. */
     struct {
         uint32_t invert_in: 1;    /*!< Whether to invert the incoming RMT channel signal */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
