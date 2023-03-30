@@ -3,8 +3,6 @@ Inter-Integrated Circuit (I2C)
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h4="1", esp32c2="1"}
-
 Overview
 --------
 
@@ -12,7 +10,7 @@ I2C is a serial, synchronous, half-duplex communication protocol that allows co-
 
 With such advantages as simplicity and low manufacturing cost, I2C is mostly used for communication of low-speed peripheral devices over short distances (within one foot).
 
-{IDF_TARGET_NAME} has {IDF_TARGET_I2C_NUM} I2C controller (also referred to as port), responsible for handling communications on the I2C bus. A single I2C controller can operate as master or slave.
+{IDF_TARGET_NAME} has {IDF_TARGET_SOC_I2C_NUM} I2C controller (also referred to as port), responsible for handling communications on the I2C bus. A single I2C controller can operate as master or slave.
 
 Driver Features
 ---------------

@@ -1,8 +1,6 @@
 通用异步接收器/发送器 (UART)
 ==================================================
 
-{IDF_TARGET_UART_NUM:default="两", esp32="三", esp32s3="三"}
-
 {IDF_TARGET_UART_EXAMPLE_PORT:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 简介
@@ -10,7 +8,7 @@
 
 通用异步接收器/发送器 (UART) 属于一种硬件功能，通过使用 RS232、RS422、RS485 等常见异步串行通信接口来处理通信时序要求和数据帧。UART 是实现不同设备之间全双工或半双工数据交换的一种常用且经济的方式。
 
-{IDF_TARGET_NAME} 芯片有{IDF_TARGET_UART_NUM}个 UART 控制器（也称为端口），每个控制器都有一组相同的寄存器以简化编程并提高灵活性。
+{IDF_TARGET_NAME} 芯片有{IDF_TARGET_SOC_UART_NUM}个 UART 控制器（也称为端口），每个控制器都有一组相同的寄存器以简化编程并提高灵活性。
 
 每个 UART 控制器可以独立配置波特率、数据位长度、位顺序、停止位位数、奇偶校验位等参数。所有控制器都与不同制造商的 UART 设备兼容，并且支持红外数据协会 (IrDA) 定义的标准协议。
 

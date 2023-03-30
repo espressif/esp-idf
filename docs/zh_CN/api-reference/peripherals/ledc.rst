@@ -1,7 +1,5 @@
 LED PWM 控制器
 ==============
-{IDF_TARGET_LEDC_CHAN_NUM: default="6", esp32="16", esp32s2="8", esp32s3="8"}
-
 {IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
 
 :link_to_translation:`en:[English]`
@@ -10,7 +8,7 @@ LED PWM 控制器
 ------------
 
 LED 控制器 (LEDC) 主要用于控制 LED，也可产生 PWM 信号用于其他设备的控制。
-该控制器有 {IDF_TARGET_LEDC_CHAN_NUM} 路通道，可以产生独立的波形来驱动 RGB LED 等设备。
+该控制器有 {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} 路通道，可以产生独立的波形来驱动 RGB LED 等设备。
 
 .. only:: esp32
 
