@@ -118,6 +118,7 @@ struct wpa_funcs {
     bool (*wpa_sta_init)(void);
     bool (*wpa_sta_deinit)(void);
     int (*wpa_sta_connect)(uint8_t *bssid);
+    void (*wpa_sta_connected_cb)(uint8_t *bssid);
     void (*wpa_sta_disconnected_cb)(uint8_t reason_code);
     int (*wpa_sta_rx_eapol)(u8 *src_addr, u8 *buf, u32 len);
     bool (*wpa_sta_in_4way_handshake)(void);
