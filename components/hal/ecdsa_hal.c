@@ -7,12 +7,15 @@
 #include "hal/assert.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/efuse_hal.h"
 
 #define ECDSA_HAL_P192_COMPONENT_LEN        24
 #define ECDSA_HAL_P256_COMPONENT_LEN        32
 
 static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
+    efuse_hal_set_ecdsa_key(conf->efuse_key_blk);
+
     ecdsa_ll_set_mode(conf->mode);
     ecdsa_ll_set_curve(conf->curve);
     ecdsa_ll_set_k_mode(conf->k_mode);
