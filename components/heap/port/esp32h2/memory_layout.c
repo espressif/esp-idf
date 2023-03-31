@@ -85,6 +85,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_m
 
 
 extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
+extern int _rtc_reserved_start, _rtc_reserved_end;
 
 /**
  * Reserved memory regions.
@@ -102,3 +103,5 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_cod
 // TODO: IDF-6019 check reserved lp mem region
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
+
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);

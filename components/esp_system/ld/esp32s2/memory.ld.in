@@ -15,16 +15,6 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
-#if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
-#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
-#else
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
-#endif // not CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#else
-#define ESP_BOOTLOADER_RESERVE_RTC 0
-#endif // not CONFIG_BOOTLOADER_RESERVE_RTC_MEM
-
 #ifdef CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #define CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE 0x2000
 #else
@@ -94,7 +84,7 @@ MEMORY
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x40070000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+  rtc_iram_seg(RWX) :                org = 0x40070000, len = 0x2000 - RESERVE_RTC_MEM
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
 
@@ -107,8 +97,17 @@ MEMORY
   rtc_slow_seg(RW)  :                org = 0x50000000, len = 0x2000
 #endif // CONFIG_ULP_COPROC_ENABLED
 
-  /* RTC fast memory (same block as above), viewed from data bus */
-  rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+  /* RTC fast memory (same block as above, rtc_iram_seg), viewed from data bus */
+  rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0x2000 - RESERVE_RTC_MEM
+
+  /* We reduced the size of rtc_data_seg and rtc_iram_seg by RESERVE_RTC_MEM value.
+     It reserves the amount of RTC fast memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+  */
+  rtc_reserved_seg(RW) :             org = 0x3ff9e000 + 0x2000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 
   /* external memory, covers the dport, dram0, dram1 cacheable address space */
   extern_ram_seg(RWX)  :             org = 0x3F800000,
