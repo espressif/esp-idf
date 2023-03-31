@@ -70,6 +70,10 @@
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
+#if (SOC_CPU_CORES_NUM > 1)
+#include "hal/cache_ll.h"
+#endif
+#include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
@@ -244,6 +248,39 @@ static void start_other_core(void)
         esp_rom_delay_us(100);
     }
 }
+
+// This function is needed to make the multicore app runnable on a unicore bootloader (built with FREERTOS UNICORE).
+// It does some cache settings for other CPUs.
+void IRAM_ATTR do_multicore_settings(void)
+{
+    // We intentionally do not check the cache settings before changing them,
+    // because it helps to get the application to run on older bootloaders.
+#ifdef CONFIG_IDF_TARGET_ESP32
+    if (!efuse_ll_get_disable_app_cpu()) {
+        Cache_Read_Disable(1);
+        Cache_Flush(1);
+        DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+        DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+        // We do not enable cache for CPU1 now because it will be done later in start_other_core().
+    }
+#endif
+
+    cache_bus_mask_t cache_bus_mask_core0 = cache_ll_l1_get_enabled_bus(0);
+#ifndef CONFIG_IDF_TARGET_ESP32
+    // 1. disable the cache before changing its settings.
+    Cache_Disable_ICache();
+    Cache_Disable_DCache();
+#endif
+    for (unsigned core = 1; core < SOC_CPU_CORES_NUM; core++) {
+        // 2. change cache settings. All cores must have the same settings.
+        cache_ll_l1_enable_bus(core, cache_bus_mask_core0);
+    }
+#ifndef CONFIG_IDF_TARGET_ESP32
+    // 3. enable the cache after changing its settings.
+    Cache_Enable_ICache(0);
+    Cache_Enable_DCache(0);
+#endif
+}
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 /*
@@ -311,6 +348,14 @@ void IRAM_ATTR call_start_cpu0(void)
     if (rst_reas[0] != RESET_REASON_CORE_DEEP_SLEEP) {
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
+
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    ESP_EARLY_LOGI(TAG, "Unicore app");
+#else
+    ESP_EARLY_LOGI(TAG, "Multicore app");
+    // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
+    do_multicore_settings();
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
