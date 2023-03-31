@@ -140,7 +140,7 @@ def test_target_using_settarget_parameter_alternative_name(idf_py: IdfPyFunc) ->
 
 
 @pytest.mark.usefixtures('test_app_copy')
-def test_target_using_settarget_parameter(idf_py: IdfPyFunc) -> None:
+def test_target_using_settarget_parameter(idf_py: IdfPyFunc, default_idf_env: EnvDict) -> None:
     logging.info('Can set target using idf.py set-target')
     idf_py('set-target', ESP32S2_TARGET)
     check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
@@ -151,6 +151,12 @@ def test_target_using_settarget_parameter(idf_py: IdfPyFunc) -> None:
     idf_py('reconfigure')
     check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
     check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+
+    logging.info('Can set target if IDF_TARGET env is set and old sdkconfig exists')
+    default_idf_env.update({'IDF_TARGET': ESP32_TARGET})
+    idf_py('set-target', ESP32_TARGET)
+    default_idf_env.pop('IDF_TARGET')
+    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
 
 
 def test_target_using_sdkconfig(idf_py: IdfPyFunc, test_app_copy: Path) -> None:

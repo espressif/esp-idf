@@ -459,7 +459,7 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
     cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
 
     # Validate IDF_TARGET
-    _check_idf_target(args, prog_name, cache, cache_cmdl)
+    _check_idf_target(args, prog_name, cache, cache_cmdl, env)
 
     if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
         if args.generator is None:
@@ -582,7 +582,8 @@ def is_target_supported(project_path: str, supported_targets: List) -> bool:
     return get_target(project_path) in supported_targets
 
 
-def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict, cache_cmdl: Dict) -> None:
+def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict,
+                      cache_cmdl: Dict, env: Dict=None) -> None:
     """
     Cross-check the three settings (sdkconfig, CMakeCache, environment) and if there is
     mismatch, fail with instructions on how to fix this.
@@ -592,6 +593,12 @@ def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict, cache_c
     idf_target_from_env = os.environ.get('IDF_TARGET')
     idf_target_from_cache = cache.get('IDF_TARGET')
     idf_target_from_cache_cmdl = cache_cmdl.get('IDF_TARGET')
+
+    # Called from set-target action. The original sdkconfig will be renamed
+    # in cmake, so ignore any CONFIG_IDF_TARGET which may be defined in
+    # stale sdkconfig.
+    if env and env.get('_IDF_PY_SET_TARGET_ACTION') == '1':
+        idf_target_from_sdkconfig = None
 
     if idf_target_from_env:
         # Let's check that IDF_TARGET values are consistent
