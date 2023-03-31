@@ -133,3 +133,9 @@ def test_build_compiler_flags_no_overwriting(idf_py: IdfPyFunc) -> None:
     # If the compiler flags are overriden, the following build command will
     # cause issues at link time.
     idf_py('build', '-DCMAKE_C_FLAGS=', '-DCMAKE_CXX_FLAGS=')
+
+
+def test_build_with_sdkconfig_build_abspath(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    build_path = test_app_copy / 'build_tmp'
+    sdkconfig_path = build_path / 'sdkconfig'
+    idf_py('-D', f'SDKCONFIG={sdkconfig_path}', '-B', str(build_path), 'build')
