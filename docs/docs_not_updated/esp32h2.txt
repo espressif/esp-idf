@@ -28,10 +28,6 @@ libraries-and-frameworks/libs-frameworks
 libraries-and-frameworks/index
 libraries-and-frameworks/cloud-frameworks
 versions
-api-reference/provisioning/protocomm
-api-reference/provisioning/provisioning
-api-reference/provisioning/index
-api-reference/provisioning/wifi_provisioning
 api-reference/storage/vfs
 api-reference/storage/spiffs
 api-reference/storage/wear-levelling
@@ -99,16 +95,9 @@ api-reference/bluetooth/index
 api-reference/bluetooth/esp_gap_ble
 api-reference/bluetooth/classic_bt
 api-reference/protocols/esp_serial_slave_link
-api-reference/protocols/mbedtls
-api-reference/protocols/esp_http_server
 api-reference/protocols/esp_sdio_slave_protocol
-api-reference/protocols/esp_local_ctrl
-api-reference/protocols/esp_crt_bundle
-api-reference/protocols/esp_http_client
-api-reference/protocols/esp_https_server
 api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/modbus
-api-reference/protocols/esp_tls
 api-reference/protocols/index
 about
 resources
