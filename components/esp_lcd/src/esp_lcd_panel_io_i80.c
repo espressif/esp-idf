@@ -36,15 +36,13 @@
 #include "soc/lcd_periph.h"
 #include "hal/lcd_ll.h"
 #include "hal/lcd_hal.h"
+#include "esp_cache.h"
 
 static const char *TAG = "lcd_panel.io.i80";
 
 typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
 typedef struct lcd_panel_io_i80_t lcd_panel_io_i80_t;
 typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
-
-// This function is located in ROM (also see esp_rom/${target}/ld/${target}.rom.ld)
-extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
 static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
@@ -471,8 +469,9 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->user_ctx = i80_device->user_ctx;
 
     if (esp_ptr_external_ram(color)) {
-        // flush framebuffer from cache to the physical PSRAM
-        Cache_WriteBack_Addr((uint32_t)color, color_size);
+        // flush frame buffer from cache to the physical PSRAM
+        // note the esp_cache_msync function will check the alignment of the address and size, and error out if either of them is not matched
+        ESP_RETURN_ON_ERROR(esp_cache_msync((void *)color, color_size, 0), TAG, "flush cache buffer failed");
     }
 
     // send transaction to trans_queue
