@@ -113,9 +113,10 @@ esp_err_t esp_wifi_wps_disable(void);
   *
   * @attention WPS can only be used when ESP32 station is enabled.
   *
-  * @param     timeout_ms : maximum blocking time before API return.
-  *          - 0 : non-blocking
-  *          - 1~120000 : blocking time (not supported in IDF v1.0)
+  * @param     timeout_ms : deprecated: This argument's value will have not effect in functionality of API.
+  *                         The argument will be removed in future.
+  *                         The app should start WPS and register for WIFI events to get the status.
+  *                         WPS status is updated through WPS events. See wifi_event_t enum for more info.
   *
   * @return
   *          - ESP_OK : succeed
