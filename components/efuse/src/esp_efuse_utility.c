@@ -439,7 +439,7 @@ bool esp_efuse_utility_load_efuses_from_flash(void)
     }
     uint32_t efuses_in_flash[sizeof(virt_blocks)];
 
-    esp_err_t err = bootloader_flash_read(esp_efuse_flash_offset, &efuses_in_flash, sizeof(efuses_in_flash), true);
+    esp_err_t err = bootloader_flash_read(esp_efuse_flash_offset, &efuses_in_flash, sizeof(efuses_in_flash), false);
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Can not read eFuse partition from flash (err=0x%x)", err);
         abort();
