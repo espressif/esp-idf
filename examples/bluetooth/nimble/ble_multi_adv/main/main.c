@@ -156,6 +156,8 @@ start_legacy_duration(void)
     struct ble_gap_ext_adv_params params;
     int size_pattern = sizeof(legacy_dur_adv_pattern) / sizeof(legacy_dur_adv_pattern[0]);
 
+    memset (&params, 0, sizeof(params));
+
     params.legacy_pdu = 1;
     params.own_addr_type = BLE_OWN_ADDR_RANDOM;
     params.sid = 3;
@@ -178,6 +180,8 @@ start_scannable_legacy_ext(void)
     uint8_t instance = 2;
     struct ble_gap_ext_adv_params params;
     int size_pattern = sizeof(scannable_legacy_adv_pattern)/sizeof(scannable_legacy_adv_pattern[0]);
+
+    memset (&params, 0, sizeof(params));
 
     params.legacy_pdu = 1;
     params.scannable = 1;
@@ -203,6 +207,8 @@ start_connectable_ext(void)
     struct ble_gap_ext_adv_params params;
     int size_pattern = sizeof(connectable_adv_pattern) / sizeof(connectable_adv_pattern[0]);
 
+    memset (&params, 0, sizeof(params));
+
     params.connectable = 1;
     params.own_addr_type = BLE_OWN_ADDR_RANDOM;
     params.sid = 1;
@@ -223,6 +229,8 @@ start_non_connectable_ext(void)
     uint8_t instance = 0;
     struct ble_gap_ext_adv_params params;
     int size_pattern = sizeof(non_conn_adv_pattern) / sizeof(non_conn_adv_pattern[0]);
+
+    memset (&params, 0, sizeof(params));
 
     params.own_addr_type = BLE_OWN_ADDR_RANDOM;
     params.sid = 0;
