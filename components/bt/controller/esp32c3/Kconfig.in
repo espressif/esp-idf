@@ -4,11 +4,13 @@ config BT_CTRL_MODE_EFF
 
 config BT_CTRL_BLE_MAX_ACT
     int "BLE Max Instances"
-    default 10
+    default 6
     range 1 10
     help
         BLE maximum activities of bluetooth controller，both of connections,
-        scan , sync and adv(periodic adv, multi-adv).
+        scan , sync and adv(periodic adv, multi-adv). Each instance needs to
+        consume 828 bytes, you can save RAM by modifying the instance value
+        according to actual needs.
 
 config BT_CTRL_BLE_MAX_ACT_EFF
     int

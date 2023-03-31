@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02212090
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02302140
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -147,6 +147,17 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_CODED_AGC_RECORRECT        0
 #endif
 
+#if defined (CONFIG_BT_BLE_50_FEATURES_SUPPORTED) || defined (CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT)
+#ifdef CONFIG_BT_BLE_50_FEATURES_SUPPORTED
+#define BT_CTRL_50_FEATURE_SUPPORT   (CONFIG_BT_BLE_50_FEATURES_SUPPORTED)
+#endif
+#ifdef CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT
+#define BT_CTRL_50_FEATURE_SUPPORT   (CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT)
+#endif
+#else
+#define BT_CTRL_50_FEATURE_SUPPORT (1)
+#endif
+
 #define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
 
 #ifdef CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
@@ -194,6 +205,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .cca_thresh = CONFIG_BT_CTRL_HW_CCA_VAL,                               \
     .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,      \
     .dup_list_refresh_period = DUPL_SCAN_CACHE_REFRESH_PERIOD,             \
+    .ble_50_feat_supp  = BT_CTRL_50_FEATURE_SUPPORT,                       \
 }
 
 #else
@@ -263,6 +275,7 @@ typedef struct {
     uint8_t cca_thresh;                     /*!< cca threshold*/
     uint16_t scan_backoff_upperlimitmax;    /*!< scan backoff upperlimitmax value */
     uint16_t dup_list_refresh_period;       /*!< duplicate scan list refresh time */
+    bool ble_50_feat_supp;                  /*!< BLE 5.0 feature support */
 } esp_bt_controller_config_t;
 
 /**

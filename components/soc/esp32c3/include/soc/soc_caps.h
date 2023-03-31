@@ -272,5 +272,5 @@
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
 
-/*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_UPDATE_OWN_RPA  (1)
+/* ---------------------------- Bluetooth ------------------------------- */
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED    (1)
