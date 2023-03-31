@@ -1192,7 +1192,6 @@ r_ble_lll_rfmgmt_controller_sleep_en = 0x40001648;
 r_ble_lll_rfmgmt_enable_now = 0x40001658;
 r_ble_lll_rfmgmt_is_enabled = 0x40001660;
 r_ble_lll_rfmgmt_release = 0x40001664;
-r_ble_lll_rfmgmt_release_ev = 0x40001668;
 r_ble_lll_rfmgmt_scan_changed = 0x40001670;
 r_ble_lll_rfmgmt_sched_changed = 0x40001674;
 r_ble_lll_rfmgmt_set_sleep_cb = 0x40001678;

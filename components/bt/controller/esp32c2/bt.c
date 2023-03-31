@@ -186,7 +186,7 @@ static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif /* #ifdef CONFIG_PM_ENABLE */
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-#define BLE_RTC_DELAY_US                    (1100)
+#define BLE_RTC_DELAY_US                    (1800)
 #endif
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
