@@ -133,6 +133,50 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     - 旧版定时器驱动（Timer Group)
     :SOC_MCPWM_SUPPORTED: - MCPWM
 
+
+
+Light-sleep 外设下电
+-------------------------
+
+.. only:: esp32c6 or esp32h2
+
+    {IDF_TARGET_NAME} 支持在 Light-sleep 时掉电外设的电源域.
+
+    如果在 menuconfig 中启用了 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，在初始化外设时，驱动会将外设工作的寄存器上下文注册到休眠备份链表中，
+    在进入休眠前，REG_DMA 外设会读取休眠备份链表中的配置，根据链表中的配置将外设的寄存器上下文备份至内存，REG_DMA 也会在唤醒时将上下文从内存恢复到外设寄存中。
+
+    目前 IDF 支持以下外设的 Light-sleep 上下文备份：
+    - INT_MTX
+    - TEE/APM
+    - IO_MUX / GPIO
+    - UART0
+    - TIMG0
+    - SPI0/1
+    - SYSTIMER
+
+    以下外设尚未支持：
+    - GDMA
+    - ETM
+    - TIMG1
+    - ASSIST_DEBUG
+    - Trace
+    - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
+    - SPI2
+    - I2C
+    - I2S
+    - PCNT
+    - USB-Serial-JTAG
+    - TWAI
+    - LEDC
+    - MCPWM
+    - RMT
+    - SARADC
+    - SDIO
+    - PARL_IO
+    - UART1
+
+    对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 `ESP_PM_NO_LIGHT_SLEEP` 锁以避免进入休眠导致外设工作上下文丢失。
+
 API 参考
 -------------
 
