@@ -29,11 +29,182 @@
 #include "services/gap/ble_svc_gap.h"
 #include "blecent.h"
 
+/*** The UUID of the service containing the subscribable characterstic ***/
+static const ble_uuid_t * remote_svc_uuid =
+    BLE_UUID128_DECLARE(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
+                     	0x99, 0x99, 0x43, 0x95, 0x12, 0x2f, 0x46, 0x59);
+
+/*** The UUID of the subscribable chatacteristic ***/
+static const ble_uuid_t * remote_chr_uuid =
+    BLE_UUID128_DECLARE(0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11,
+                     	0x22, 0x22, 0x22, 0x22, 0x33, 0x33, 0x33, 0x33);
+
 static const char *tag = "NimBLE_BLE_CENT";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t peer_addr[6];
 
 void ble_store_config_init(void);
+
+/**
+ * Application Callback. Called when the custom subscribable chatacteristic
+ * in the remote GATT server is read.
+ * Expect to get the recently written data.
+ **/
+static int
+blecent_on_custom_read(uint16_t conn_handle,
+                       const struct ble_gatt_error *error,
+                       struct ble_gatt_attr *attr,
+                       void *arg)
+{
+    MODLOG_DFLT(INFO,
+                "Read complete for the subscribable characteristic; "
+                "status=%d conn_handle=%d", error->status, conn_handle);
+    if (error->status == 0) {
+        MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
+        print_mbuf(attr->om);
+    }
+    MODLOG_DFLT(INFO, "\n");
+
+    return 0;
+}
+
+/**
+ * Application Callback. Called when the custom subscribable characteristic
+ * in the remote GATT server is written to.
+ * Client has previously subscribed to this characeteristic,
+ * so expect a notification from the server.
+ **/
+static int
+blecent_on_custom_write(uint16_t conn_handle,
+                        const struct ble_gatt_error *error,
+                        struct ble_gatt_attr *attr,
+                        void *arg)
+{
+    const struct peer_chr *chr;
+    const struct peer *peer;
+    int rc;
+
+    MODLOG_DFLT(INFO,
+                "Write to the custom subscribable characteristic complete; "
+                "status=%d conn_handle=%d attr_handle=%d\n",
+                error->status, conn_handle, attr->handle);
+
+    peer = peer_find(conn_handle);
+    chr = peer_chr_find_uuid(peer,
+                             remote_svc_uuid,
+                             remote_chr_uuid);
+    if (chr == NULL) {
+        MODLOG_DFLT(ERROR,
+                    "Error: Peer doesn't have the custom subscribable characteristic\n");
+        goto err;
+    }
+
+    /*** Performs a read on the characteristic, the result is handled in blecent_on_new_read callback ***/
+    rc = ble_gattc_read(conn_handle, chr->chr.val_handle,
+                        blecent_on_custom_read, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR,
+                    "Error: Failed to read the custom subscribable characteristic; "
+                    "rc=%d\n", rc);
+        goto err;
+    }
+
+    return 0;
+err:
+    /* Terminate the connection */
+    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+}
+
+/**
+ * Application Callback. Called when the custom subscribable characteristic
+ * is subscribed to.
+ **/
+static int
+blecent_on_custom_subscribe(uint16_t conn_handle,
+                            const struct ble_gatt_error *error,
+                            struct ble_gatt_attr *attr,
+                            void *arg)
+{
+    const struct peer_chr *chr;
+    uint8_t value;
+    int rc;
+    const struct peer *peer;
+
+    MODLOG_DFLT(INFO,
+                "Subscribe to the custom subscribable characteristic complete; "
+                "status=%d conn_handle=%d", error->status, conn_handle);
+
+    if (error->status == 0) {
+        MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
+        print_mbuf(attr->om);
+    }
+    MODLOG_DFLT(INFO, "\n");
+
+    peer = peer_find(conn_handle);
+    chr = peer_chr_find_uuid(peer,
+                             remote_svc_uuid,
+                             remote_chr_uuid);
+    if (chr == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer doesn't have the subscribable characteristic\n");
+        goto err;
+    }
+
+    /* Write 1 byte to the new characteristic to test if it notifies after subscribing */
+    value = 0x19;
+    rc = ble_gattc_write_flat(conn_handle, chr->chr.val_handle,
+                              &value, sizeof(value), blecent_on_custom_write, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR,
+                    "Error: Failed to write to the subscribable characteristic; "
+                    "rc=%d\n", rc);
+        goto err;
+    }
+
+    return 0;
+err:
+    /* Terminate the connection */
+    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+}
+
+/**
+ * Performs 3 operations on the remote GATT server.
+ * 1. Subscribes to a characteristic by writing 0x10 to it's CCCD.
+ * 2. Writes to the characteristic and expect a notification from remote.
+ * 3. Reads the characteristic and expect to get the recently written information.
+ **/
+static void
+blecent_custom_gatt_operations(const struct peer* peer)
+{
+    const struct peer_dsc *dsc;
+    int rc;
+    uint8_t value[2];
+
+    dsc = peer_dsc_find_uuid(peer,
+                             remote_svc_uuid,
+                             remote_chr_uuid,
+                             BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
+    if (dsc == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characterstic\n");
+        goto err;
+    }
+
+    /*** Write 0x00 and 0x01 (The subscription code) to the CCCD ***/
+    value[0] = 1;
+    value[1] = 0;
+    rc = ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
+                              value, sizeof(value), blecent_on_custom_subscribe, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR,
+                    "Error: Failed to subscribe to the subscribable characteristic; "
+                    "rc=%d\n", rc);
+        goto err;
+    }
+
+    return;
+err:
+    /* Terminate the connection */
+    ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+}
 
 /**
  * Application callback.  Called when the attempt to subscribe to notifications
@@ -45,9 +216,19 @@ blecent_on_subscribe(uint16_t conn_handle,
                      struct ble_gatt_attr *attr,
                      void *arg)
 {
+    struct peer *peer;
+
     MODLOG_DFLT(INFO, "Subscribe complete; status=%d conn_handle=%d "
                 "attr_handle=%d\n",
                 error->status, conn_handle, attr->handle);
+
+    peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Error in finding peer, aborting...");
+        ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
+    /* Subscribe to, write to, and read the custom characteristic*/
+    blecent_custom_gatt_operations(peer);
 
     return 0;
 }
@@ -217,7 +398,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
                 "conn_handle=%d\n", status, peer->conn_handle);
 
     /* Now perform three GATT procedures against the peer: read,
-     * write, and subscribe to notifications.
+     * write, and subscribe to notifications for the ANS service.
      */
     blecent_read_write_subscribe(peer);
 }
@@ -409,13 +590,30 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 
-            /* Perform service discovery. */
-            rc = peer_disc_all(event->connect.conn_handle,
-                               blecent_on_disc_complete, NULL);
+#if CONFIG_EXAMPLE_ENCRYPTION
+            /** Initiate security - It will perform
+             * Pairing (Exchange keys)
+             * Bonding (Store keys)
+             * Encryption (Enable encryption)
+             * Will invoke event BLE_GAP_EVENT_ENC_CHANGE
+             **/
+            rc = ble_gap_security_initiate(event->connect.conn_handle);
             if (rc != 0) {
+                MODLOG_DFLT(INFO, "Security could not be initiated, rc = %d\n", rc);
+                return ble_gap_terminate(event->connect.conn_handle,
+                                         BLE_ERR_REM_USER_CONN_TERM);
+            } else {
+                MODLOG_DFLT(INFO, "Connection secured\n");
+            }
+#else
+            /* Perform service discovery */
+            rc = peer_disc_all(event->connect.conn_handle,
+                        blecent_on_disc_complete, NULL);
+            if(rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
@@ -450,6 +648,15 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
         assert(rc == 0);
         print_conn_desc(&desc);
+#if CONFIG_EXAMPLE_ENCRYPTION
+        /*** Go for service discovery after encryption has been successfully enabled ***/
+        rc = peer_disc_all(event->connect.conn_handle,
+                           blecent_on_disc_complete, NULL);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+            return 0;
+        }
+#endif
         return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
