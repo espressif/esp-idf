@@ -286,7 +286,7 @@ void esp_mbedtls_verify_certificate(esp_tls_t *tls)
     if ((flags = mbedtls_ssl_get_verify_result(&tls->ssl)) != 0) {
         ESP_LOGI(TAG, "Failed to verify peer certificate!");
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS, flags);
-#if (CONFIG_LOG_DEFAULT_LEVEL > CONFIG_LOG_DEFAULT_LEVEL_DEBUG)
+#if (CONFIG_LOG_DEFAULT_LEVEL_DEBUG || CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
         char buf[100];
         bzero(buf, sizeof(buf));
         mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
