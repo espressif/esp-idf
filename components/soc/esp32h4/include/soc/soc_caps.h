@@ -110,9 +110,6 @@
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)
 
-/*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
-#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
-
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 

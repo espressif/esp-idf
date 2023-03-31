@@ -117,14 +117,6 @@ void IRAM_ATTR esp_coex_common_timer_arm_us_wrapper(void *ptimer, uint32_t us, b
     ets_timer_arm_us(ptimer, us, repeat);
 }
 
-uint32_t esp_coex_common_clk_slowclk_cal_get_wrapper(void)
-{
-    /* The bit width of WiFi light sleep clock calibration is 12 while the one of
-     * system is 19. It should shift 19 - 12 = 7.
-    */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
-}
-
 void *IRAM_ATTR esp_coex_common_malloc_internal_wrapper(size_t size)
 {
     return heap_caps_malloc(size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
@@ -156,7 +148,6 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._free = free,
     ._esp_timer_get_time = esp_timer_get_time,
     ._env_is_chip = esp_coex_common_env_is_chip_wrapper,
-    ._slowclk_cal_get = esp_coex_common_clk_slowclk_cal_get_wrapper,
     ._timer_disarm = esp_coex_common_timer_disarm_wrapper,
     ._timer_done = esp_coex_common_timer_done_wrapper,
     ._timer_setfn = esp_coex_common_timer_setfn_wrapper,

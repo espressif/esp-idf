@@ -1039,10 +1039,6 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
-config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
-    int
-    default 12
-
 config SOC_PM_SUPPORT_WIFI_WAKEUP
     bool
     default y

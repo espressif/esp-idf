@@ -444,10 +444,6 @@
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
-// TODO: IDF-5679 (Copy from esp32c6, need check)
-/*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
-#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
-
 // TODO: IDF-6270 (Copy from esp32c6, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
