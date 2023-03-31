@@ -766,8 +766,10 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
  * The character that triggers wakeup is not received by UART (i.e. it can not
  * be obtained from UART FIFO). Depending on the baud rate, a few characters
  * after that will also not be received. Note that when the chip enters and exits
- * light sleep mode, APB frequency will be changing. To make sure that UART has
- * correct baud rate all the time, select UART_SCLK_REF_TICK or UART_SCLK_XTAL as UART clock source in uart_config_t::source_clk.
+ * light sleep mode, APB frequency will be changing. To ensure that UART has
+ * correct Baud rate all the time, it is necessary to select a source clock which has
+ * a fixed frequency and remains active during sleep. For the supported clock sources
+ * of the chips, please refer to `uart_sclk_t` or `soc_periph_uart_clk_src_legacy_t`
  *
  * @note in ESP32, the wakeup signal can only be input via IO_MUX (i.e.
  *       GPIO3 should be configured as function_1 to wake up UART0,
