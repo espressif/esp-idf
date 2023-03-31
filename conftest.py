@@ -123,6 +123,7 @@ ENV_MARKERS = {
     'esp32eco3': 'Runner with esp32 eco3 connected',
     'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
     'ccs811': 'Runner with CCS811 connected',
+    'ethernet_w5500': 'SPI Ethernet module with two W5500',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
@@ -396,6 +397,16 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
     return real_func
 
 
+@pytest.fixture
+def dev_password(request: FixtureRequest) -> str:
+    return request.config.getoption('dev_passwd') or ''
+
+
+@pytest.fixture
+def dev_user(request: FixtureRequest) -> str:
+    return request.config.getoption('dev_user') or ''
+
+
 ##################
 # Hook functions #
 ##################
@@ -406,6 +417,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
     base_group.addoption('--known-failure-cases-file', help='known failure cases file path')
+    base_group.addoption(
+        '--dev-user',
+        help='user name associated with some specific device/service used during the test execution',
+    )
+    base_group.addoption(
+        '--dev-passwd',
+        help='password associated with some specific device/service used during the test execution',
+    )
 
 
 _idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']()

@@ -19,6 +19,8 @@ rangehttpserver
 dbus-python; sys_platform == 'linux'
 protobuf
 paho-mqtt
+paramiko
+netmiko
 
 # iperf_test_util
 pyecharts

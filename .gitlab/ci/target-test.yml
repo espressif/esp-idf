@@ -352,6 +352,16 @@ pytest_examples_esp32_ethernet_ip101:
     - build_pytest_examples_esp32
   tags: [ esp32, ip101 ]
 
+example_test_pytest_esp32_ethernet_bridge:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ethernet_w5500 ]
+  variables:
+    PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER}"
+
 pytest_examples_esp32_flash_encryption:
   extends:
     - .pytest_examples_dir_template
