@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <sys/param.h>
 #include <sys/lock.h>
 
@@ -47,9 +48,30 @@ extern uint32_t g_ticks_per_us_pro;
 
 static portMUX_TYPE s_esp_rtc_time_lock = portMUX_INITIALIZER_UNLOCKED;
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
-static RTC_NOINIT_ATTR uint64_t s_esp_rtc_time_us, s_rtc_last_ticks;
-#endif
+#if SOC_RTC_MEM_SUPPORTED
+typedef struct {
+    uint64_t rtc_time_us;
+    uint64_t rtc_last_ticks;
+    uint32_t reserve;
+    uint32_t checksum;
+} retain_mem_t;
+_Static_assert(sizeof(retain_mem_t) == 24, "retain_mem_t must be 24 bytes");
+_Static_assert(offsetof(retain_mem_t, checksum) == sizeof(retain_mem_t) - sizeof(uint32_t), "Wrong offset for checksum field in retain_mem_t structure");
+
+static __attribute__((section(".rtc_timer_data_in_rtc_mem"))) retain_mem_t s_rtc_timer_retain_mem;
+
+static uint32_t calc_checksum(void)
+{
+    uint32_t checksum = 0;
+    uint32_t *data = (uint32_t*) &s_rtc_timer_retain_mem;
+
+    for (uint32_t i = 0; i < (sizeof(retain_mem_t) - sizeof(s_rtc_timer_retain_mem.checksum)) / 4; i++) {
+        checksum = ((checksum << 5) - checksum) ^ data[i];
+    }
+    return checksum;
+}
+#define IS_RETAIN_MEM_VALID() (s_rtc_timer_retain_mem.checksum == calc_checksum())
+#endif // SOC_RTC_MEM_SUPPORTED
 
 inline static int IRAM_ATTR s_get_cpu_freq_mhz(void)
 {
@@ -84,13 +106,24 @@ uint64_t esp_rtc_get_time_us(void)
 {
     portENTER_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
-#if SOC_RTC_FAST_MEM_SUPPORTED
-    if (cal == 0) {
-        s_esp_rtc_time_us = 0;
-        s_rtc_last_ticks = 0;
+#if SOC_RTC_MEM_SUPPORTED
+    static bool first_call = true;
+    if (cal == 0 || (first_call && !IS_RETAIN_MEM_VALID())) {
+        /*
+            If cal is 0, then this is the first power-up. Cal is keeping valid
+            after reboot and deepsleep. If s_rtc_timer_retain_mem is invalid, it means
+            that something unexpected happened (the structure was moved around
+            after OTA update). To keep the system time valid even after OTA we
+            reset the s_rtc_timer_retain_mem. But the resetting can also lead to some
+            drift of the system time, because only the last current calibration
+            value will be applied to all rtc ticks. To mitigate this effect you
+            might need updating of the system time (via SNTP).
+        */
+        memset(&s_rtc_timer_retain_mem, 0, sizeof(retain_mem_t));
     }
+    first_call = false;
     const uint64_t rtc_this_ticks = rtc_time_get();
-    const uint64_t ticks = rtc_this_ticks - s_rtc_last_ticks;
+    const uint64_t ticks = rtc_this_ticks - s_rtc_timer_retain_mem.rtc_last_ticks;
 #else
     const uint64_t ticks = rtc_time_get();
 #endif
@@ -109,11 +142,13 @@ uint64_t esp_rtc_get_time_us(void)
     const uint64_t ticks_high = ticks >> 32;
     const uint64_t delta_time_us = ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
                                    ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
-#if SOC_RTC_FAST_MEM_SUPPORTED
-    s_esp_rtc_time_us += delta_time_us;
-    s_rtc_last_ticks = rtc_this_ticks;
+#if SOC_RTC_MEM_SUPPORTED
+    s_rtc_timer_retain_mem.rtc_time_us += delta_time_us;
+    s_rtc_timer_retain_mem.rtc_last_ticks = rtc_this_ticks;
+    s_rtc_timer_retain_mem.checksum = calc_checksum();
+    uint64_t esp_rtc_time_us = s_rtc_timer_retain_mem.rtc_time_us;
     portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
-    return s_esp_rtc_time_us;
+    return esp_rtc_time_us;
 #else
     uint64_t esp_rtc_time_us = delta_time_us + clk_ll_rtc_slow_load_rtc_fix_us();
     portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
@@ -127,7 +162,7 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
     /* To force monotonic time values even when clock calibration value changes,
      * we adjust esp_rtc_time
      */
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_RTC_MEM_SUPPORTED
     esp_rtc_get_time_us();
 #else
     portENTER_CRITICAL_SAFE(&s_esp_rtc_time_lock);
@@ -154,7 +189,7 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
         clk_ll_rtc_slow_store_rtc_fix_us(new_fix_us);
     }
     portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
-#endif // SOC_RTC_FAST_MEM_SUPPORTED
+#endif // SOC_RTC_MEM_SUPPORTED
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
     clk_ll_rtc_slow_store_cal(new_cal);
 }

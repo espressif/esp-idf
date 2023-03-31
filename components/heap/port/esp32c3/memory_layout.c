@@ -77,7 +77,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCC0000,           (APP_USABLE_DRAM_END-0x3FCC0000),          SOC_MEMORY_TYPE_DEFAULT,     0x403C0000}, //D/IRAM level3, can be used as trace memory
     { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DEFAULT,  MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END)}, //D/IRAM level3, can be used as trace memory (ROM reserved area)
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000, 0x2000,  SOC_MEMORY_TYPE_RTCRAM,      0},          //Fast RTC memory
+    { 0x50000000,           0x2000,                                    SOC_MEMORY_TYPE_RTCRAM,               0}, //Fast RTC memory
 #endif
 };
 
@@ -85,6 +85,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_m
 
 
 extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
+extern int _rtc_reserved_start, _rtc_reserved_end;
 
 /**
  * Reserved memory regions.
@@ -106,3 +107,5 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_
 */
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
+
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);

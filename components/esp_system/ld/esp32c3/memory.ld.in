@@ -15,16 +15,6 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
-#if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
-#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
-#else
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
-#endif // not CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#else
-#define ESP_BOOTLOADER_RESERVE_RTC 0
-#endif // not CONFIG_BOOTLOADER_RESERVE_RTC_MEM
-
 /**
  * physical memory is mapped twice to the vritual address (IRAM and DRAM).
  * `I_D_SRAM_OFFSET` is the offset between the two locations of the same physical memory
@@ -82,7 +72,16 @@ MEMORY
   /**
    * RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+  rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000 - RESERVE_RTC_MEM
+
+  /* We reduced the size of rtc_iram_seg by RESERVE_RTC_MEM value.
+     It reserves the amount of RTC fast memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+  */
+  rtc_reserved_seg(RW) :        org = 0x50000000 + 0x2000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 }
 
 /* Heap ends at top of dram0_0_seg */

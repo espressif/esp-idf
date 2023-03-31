@@ -173,6 +173,9 @@ SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, spi_ram);
 #endif
 
 extern int _data_start, _heap_start, _heap_end, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end;
+extern int _rtc_fast_reserved_start, _rtc_fast_reserved_end;
+extern int _rtc_slow_reserved_start, _rtc_slow_reserved_end;
+
 // Static data region. DRAM used by data+bss and possibly rodata
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);
 
@@ -193,3 +196,6 @@ SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_noinit_end, rtcram_d
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_fast_end, rtcram_data);
 #endif
 #endif
+
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_fast_reserved_start, (intptr_t)&_rtc_fast_reserved_end, rtc_fast_reserved_data);
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_slow_reserved_start, (intptr_t)&_rtc_slow_reserved_end, rtc_reserved_data);
