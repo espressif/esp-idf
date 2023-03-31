@@ -362,6 +362,11 @@ app_main(void)
     ble_hs_cfg.sm_io_cap = CONFIG_EXAMPLE_IO_TYPE;
 #ifdef CONFIG_EXAMPLE_BONDING
     ble_hs_cfg.sm_bonding = 1;
+    /* Enable the appropriate bit masks to make sure the keys
+     * that are needed are exchanged
+     */
+    ble_hs_cfg.sm_our_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC;
+    ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC;
 #endif
 #ifdef CONFIG_EXAMPLE_MITM
     ble_hs_cfg.sm_mitm = 1;
@@ -371,14 +376,11 @@ app_main(void)
 #else
     ble_hs_cfg.sm_sc = 0;
 #endif
-#ifdef CONFIG_EXAMPLE_BONDING
-    /* Enable the appropriate bit masks to make sure the keys
-     * that are needed are exchanged
-     */
-    ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
-    ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
+#ifdef CONFIG_EXAMPLE_RESOLVE_PEER_ADDR
+    /* Stores the IRK */
+    ble_hs_cfg.sm_our_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
+    ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
 #endif
-
 
     rc = gatt_svr_init();
     assert(rc == 0);
