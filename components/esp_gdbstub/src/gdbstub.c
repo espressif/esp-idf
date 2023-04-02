@@ -7,6 +7,7 @@
 #include <string.h>
 #include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
+#include "esp_gdbstub_memory_regions.h"
 #include "sdkconfig.h"
 #include <sys/param.h>
 
@@ -73,7 +74,6 @@ void esp_gdbstub_panic_handler(void *in_frame)
     }
 #endif /* CONFIG_ESP_GDBSTUB_SUPPORT_TASKS */
 
-    esp_gdbstub_target_init();
     s_scratch.signal = esp_gdbstub_get_signal(frame);
     send_reason();
     while (true) {
@@ -401,6 +401,36 @@ static void handle_G_command(const unsigned char *cmd, int len)
         *p++ = gdbstub_hton(esp_gdbstub_gethex(&cmd, 32));
     }
     esp_gdbstub_send_str_packet("OK");
+}
+
+static int esp_gdbstub_readmem(intptr_t addr)
+{
+    if (!is_valid_memory_region(addr)) {
+        /* see esp_cpu_configure_region_protection */
+        return -1;
+    }
+    uint32_t val_aligned = *(uint32_t *)(addr & (~3));
+    uint32_t shift = (addr & 3) * 8;
+    return (val_aligned >> shift) & 0xff;
+}
+
+static int esp_gdbstub_writemem(unsigned int addr, unsigned char data)
+{
+    if (!is_valid_memory_region(addr)) {
+        /* see esp_cpu_configure_region_protection */
+        return -1;
+    }
+
+    unsigned *addr_aligned = (unsigned *)(addr & (~3));
+    const uint32_t bit_offset = (addr & 0x3) * 8;
+    const uint32_t mask = ~(0xff << bit_offset);
+    *addr_aligned = (*addr_aligned & mask) | (data << bit_offset);
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    asm volatile("ISYNC\nISYNC\n");
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    return 0;
 }
 
 /** Read memory to gdb */

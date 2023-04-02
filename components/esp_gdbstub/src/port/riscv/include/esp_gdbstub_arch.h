@@ -7,7 +7,6 @@
 #pragma once
 #include <stdint.h>
 #include "riscv/rvruntime-frames.h"
-#include "gdbstub_target_config.h"
 
 #ifdef __cplusplus
 extern "C" {
