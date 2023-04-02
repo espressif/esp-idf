@@ -18,6 +18,7 @@
 #include "esp_wifi_driver.h"
 #include "esp_wifi_types.h"
 #include "esp_wpa3_i.h"
+#include "esp_wps.h"
 
 #define WIFI_PASSWORD_LEN_MAX 65
 
@@ -211,7 +212,12 @@ void hostapd_cleanup(struct hostapd_data *hapd)
     }
 
 #endif /* CONFIG_SAE */
-
+#ifdef CONFIG_WPS_REGISTRAR
+    if (esp_wifi_get_wps_type_internal () != WPS_TYPE_DISABLE ||
+        esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
+        esp_wifi_ap_wps_disable();
+    }
+#endif /* CONFIG_WPS_REGISTRAR */
     os_free(hapd);
     global_hapd = NULL;
 
