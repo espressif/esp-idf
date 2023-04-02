@@ -19,7 +19,7 @@
 
 extern int _invalid_pc_placeholder;
 
-static void init_regfile(esp_gdbstub_gdb_regfile_t *dst)
+static inline void init_regfile(esp_gdbstub_gdb_regfile_t *dst)
 {
     memset(dst, 0, sizeof(*dst));
 }

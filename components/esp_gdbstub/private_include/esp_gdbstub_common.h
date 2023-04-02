@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "gdbstub_target_config.h"
 #include "esp_gdbstub_arch.h"
 #include "sdkconfig.h"
 
@@ -29,7 +28,6 @@
 /* Special task index values */
 #define GDBSTUB_CUR_TASK_INDEX_UNKNOWN -1
 
-/* Cab be set to a lower value in gdbstub_target_config.h */
 #ifndef GDBSTUB_CMD_BUFLEN
 #define GDBSTUB_CMD_BUFLEN 512
 #endif
@@ -86,14 +84,7 @@ void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 
-
-/**** Functions provided by the target specific part ****/
-
-/**
- * Do target-specific initialization before gdbstub can start communicating.
- * This may involve, for example, configuring the UART.
- */
-void esp_gdbstub_target_init(void);
+/**** UART related functions ****/
 
 /**
  * Receive a byte from the GDB client. Blocks until a byte is available.
@@ -108,25 +99,10 @@ int esp_gdbstub_getchar(void);
 void esp_gdbstub_putchar(int c);
 
 /**
- * Read a byte from target memory
- * @param ptr  address
- * @return  byte value, or GDBSTUB_ST_ERR if the address is not readable
- */
-int esp_gdbstub_readmem(intptr_t addr);
-
-/**
  * Make sure all bytes sent using putchar() end up at the host.
  * (Usually stubbed for UART, but can be useful for other channels)
  */
 void esp_gdbstub_flush(void);
-
-/**
- * Write a byte to target memory
- * @param addr  address
- * @param data  data byte
- * @return 0 in case of success, -1 in case of error
- */
-int esp_gdbstub_writemem(unsigned int addr, unsigned char data);
 
 /**
  * Read a data from fifo and detect start symbol
