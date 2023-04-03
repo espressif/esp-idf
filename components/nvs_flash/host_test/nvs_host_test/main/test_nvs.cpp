@@ -1405,7 +1405,7 @@ TEST_CASE("read/write failure (TW8406)", "[nvs]")
         ESP_ERROR_CHECK(nvs_open("LIGHT", NVS_READWRITE, &light_handle));
         ESP_ERROR_CHECK(nvs_set_u8(light_handle, "RecordNum", number));
         for (i = 0; i < number; ++i) {
-            sprintf(key, "light%d", i);
+            snprintf(key, sizeof(key), "light%d", i);
             ESP_ERROR_CHECK(nvs_set_blob(light_handle, key, data, sizeof(data)));
         }
         nvs_commit(light_handle);
@@ -1415,7 +1415,7 @@ TEST_CASE("read/write failure (TW8406)", "[nvs]")
         REQUIRE(number == get_number);
         for (i = 0; i < number; ++i) {
             char data[76] = {0};
-            sprintf(key, "light%d", i);
+            snprintf(key, sizeof(key), "light%d", i);
             ESP_ERROR_CHECK(nvs_get_blob(light_handle, key, data, &data_len));
         }
         nvs_close(light_handle);
@@ -1798,7 +1798,7 @@ TEST_CASE("nvs blob fragmentation test", "[nvs]")
         TEST_ESP_OK( nvs_set_u32(h, "magic", magic) );
         TEST_ESP_OK( nvs_set_blob(h, "blob", blob, BLOB_SIZE) );
         char seq_buf[16];
-        sprintf(seq_buf, "seq%d", i);
+        snprintf(seq_buf, sizeof(seq_buf), "seq%d", i);
         TEST_ESP_OK( nvs_set_u32(h, seq_buf, i) );
     }
     free(blob);
@@ -1818,12 +1818,12 @@ TEST_CASE("nvs code handles errors properly when partition is near to full", "[n
 
     /* Four pages should fit roughly 12 blobs*/
     for (uint8_t count = 1; count <= 12; count++) {
-        sprintf(nvs_key, "key:%u", count);
+        snprintf(nvs_key, sizeof(nvs_key), "key:%u", count);
         TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, nvs_key, blob, sizeof(blob)));
     }
 
     for (uint8_t count = 13; count <= 20; count++) {
-        sprintf(nvs_key, "key:%u", count);
+        snprintf(nvs_key, sizeof(nvs_key), "key:%u", count);
         TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::BLOB, nvs_key, blob, sizeof(blob)), ESP_ERR_NVS_NOT_ENOUGH_SPACE);
     }
 }
