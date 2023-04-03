@@ -493,6 +493,8 @@ Typical transaction duration for one byte of data are given below.
 - Polling Transaction via DMA: {IDF_TARGET_TRANS_TIME_POLL_DMA} µs.
 - Polling Transaction via CPU: {IDF_TARGET_TRANS_TIME_POLL_CPU} µs.
 
+Note that these data are tested with :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` enabled. SPI transaction related code are placed in the internal memory. If this option is turned off (for example, for internal memory optimization), the transaction duration may be affected.
+
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
 
