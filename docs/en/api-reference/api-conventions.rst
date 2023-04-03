@@ -9,7 +9,7 @@ ESP-IDF provides several kinds of programming interfaces:
 
 * C functions, structures, enums, type definitions and preprocessor macros declared in public header files of ESP-IDF components. Various pages in the API Reference section of the programming guide contain descriptions of these functions, structures and types.
 * Build system functions, predefined variables and options. These are documented in the :ref:`build system guide<cmake_buildsystem_api>`.
-* :doc:`Kconfig <kconfig>` options can can be used in code and in the build system (CMakeLists.txt) files.
+* :doc:`Kconfig <kconfig>` options can be used in code and in the build system (CMakeLists.txt) files.
 * :doc:`Host tools <../api-guides/tools/index>` and their command line parameters are also part of ESP-IDF interface.
 
 ESP-IDF consists of components written specifically for ESP-IDF as well as third-party libraries. In some cases, an ESP-IDF-specific wrapper is added to the third-party library, providing an interface that is either simpler or better integrated with the rest of ESP-IDF facilities. In other cases, the original API of the third-party library is presented to the application developers.
