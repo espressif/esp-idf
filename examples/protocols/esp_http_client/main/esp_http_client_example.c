@@ -22,11 +22,9 @@
 #include "esp_crt_bundle.h"
 #endif
 
-#if !CONFIG_IDF_TARGET_LINUX
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
-#endif
 
 #include "esp_http_client.h"
 

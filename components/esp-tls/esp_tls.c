@@ -17,9 +17,10 @@
 #include "esp_tls.h"
 #include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
+#include <fcntl.h>
 #include <errno.h>
 
-#if CONFIG_IDF_TARGET_LINUX
+#if CONFIG_IDF_TARGET_LINUX && !ESP_TLS_WITH_LWIP
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -36,7 +37,7 @@ static inline char *ip6addr_ntoa(const ip6_addr_t *addr)
   return (char *)inet_ntop(AF_INET6, addr->s6_addr, str, 40);
 }
 
-#endif
+#endif  // CONFIG_IDF_TARGET_LINUX && !ESP_TLS_WITH_LWIP
 
 static const char *TAG = "esp-tls";
 

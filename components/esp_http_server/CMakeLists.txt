@@ -1,14 +1,12 @@
 set(priv_req mbedtls)
 set(priv_inc_dir "src/util")
-set(requires http_parser)
+set(requires http_parser esp_event)
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     list(APPEND priv_req lwip esp_timer)
     list(APPEND priv_inc_dir "src/port/esp32")
-    list(APPEND requires esp_event)
 else()
     list(APPEND priv_inc_dir "src/port/linux")
     list(APPEND priv_req pthread)
-    list(APPEND requires linux)
 endif()
 
 idf_component_register(SRCS "src/httpd_main.c"

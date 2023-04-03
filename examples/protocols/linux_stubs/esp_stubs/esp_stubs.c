@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp_event.h"
-
-extern void app_main(void);
 
 esp_err_t esp_netif_init(void)
 {
@@ -18,11 +15,4 @@ esp_err_t esp_netif_init(void)
 esp_err_t example_connect(void)
 {
     return ESP_OK;
-}
-
-int main(void)
-{
-    app_main();
-
-    return 0;
 }
