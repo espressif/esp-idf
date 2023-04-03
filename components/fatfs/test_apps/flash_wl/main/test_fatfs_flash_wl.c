@@ -67,6 +67,14 @@ TEST_CASE("(WL) can create and write file", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) can create and open file with O_CREAT flag", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_create_file_with_o_creat_flag("/spiflash/hello.txt");
+    test_fatfs_open_file_with_o_creat_flag("/spiflash/hello.txt");
+    test_teardown();
+}
+
 TEST_CASE("(WL) can read file", "[fatfs][wear_levelling]")
 {
     test_setup();
