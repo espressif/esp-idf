@@ -575,6 +575,9 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
         case 2:
             clock_val = 160;
             break;
+        case 3:
+            clock_val = 240;
+            break;
         default:
             abort();
     }

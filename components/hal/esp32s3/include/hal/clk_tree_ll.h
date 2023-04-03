@@ -12,6 +12,7 @@
 #include "soc/rtc.h"
 #include "soc/system_reg.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/regi2c_defs.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
 #include "hal/assert.h"
@@ -680,6 +681,45 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
+}
+
+/**
+ * @brief Configure PLL frequency for MSPI timing tuning
+ * @note Only used by the MSPI Timing tuning driver
+ *
+ * @param xtal_freq   Xtal frequency
+ * @param pll_freq    PLL frequency
+ * @param oc_div      OC divider
+ * @param oc_ref_div  OC ref divider
+ */
+static inline __attribute__((always_inline))
+void clk_ll_bbpll_set_frequency_for_mspi_tuning(rtc_xtal_freq_t xtal_freq, int pll_freq, uint8_t oc_div, uint8_t oc_ref_div)
+{
+    HAL_ASSERT(xtal_freq == RTC_XTAL_FREQ_40M);
+    uint32_t pll_reg = GET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PD |
+                                         RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
+    HAL_ASSERT(pll_reg == 0);
+
+    /* Set this register to let the digital part know 480M PLL is used */
+    SET_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
+    uint8_t dr1 = 0;
+    uint8_t dr3 = 0;
+    uint8_t dchgp = 5;
+    uint8_t dcur = 3;
+    uint8_t dbias = 2;
+    uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (oc_ref_div);
+    uint8_t i2c_bbpll_div_7_0 = oc_div;
+    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
+
+    uint8_t i2c_bbpll_dcur = (1 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
+    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, i2c_bbpll_lref);
+    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, i2c_bbpll_div_7_0);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR1, dr1);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR3, dr3);
+    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_VCO_DBIAS, dbias);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DHREF_SEL, 3);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, 1);
 }
 
 #ifdef __cplusplus

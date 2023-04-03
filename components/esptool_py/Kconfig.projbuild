@@ -95,7 +95,18 @@ menu "Serial flasher config"
         config ESPTOOLPY_FLASHFREQ_120M
             bool "120 MHz"
             select SPI_FLASH_HPM_ENABLE
-            depends on SOC_MEMSPI_SRC_FREQ_120M && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+            depends on SOC_MEMSPI_SRC_FREQ_120M && \
+                (ESPTOOLPY_FLASH_SAMPLE_MODE_STR || IDF_EXPERIMENTAL_FEATURES)
+            help
+                - Flash 120 MHz SDR mode is stable.
+                - Flash 120 MHz DDR mode is an experimental feature, it works when
+                  the temperature is stable.
+
+                    Risks:
+                        If your chip powers on at a certain temperature, then after the temperature
+                        increases or decreases by approximately 20 Celsius degrees (depending on the
+                        chip), the program will crash randomly.
+
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
