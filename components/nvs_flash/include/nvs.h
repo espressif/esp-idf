@@ -676,13 +676,51 @@ esp_err_t nvs_entry_find(const char *part_name,
         nvs_iterator_t *output_iterator);
 
 /**
+ * @brief       Create an iterator to enumerate NVS entries based on a handle and type
+ *
+ * \code{c}
+ * // Example of listing all the key-value pairs of any type under specified handle (which defines a partition and namespace)
+ *  nvs_iterator_t it = NULL;
+ *  esp_err_t res = nvs_entry_find_in_handle(<nvs_handle>, NVS_TYPE_ANY, &it);
+ *  while(res == ESP_OK) {
+ *      nvs_entry_info_t info;
+ *      nvs_entry_info(it, &info); // Can omit error check if parameters are guaranteed to be non-NULL
+ *      printf("key '%s', type '%d' \n", info.key, info.type);
+ *      res = nvs_entry_next(&it);
+ *  }
+ *  nvs_release_iterator(it);
+ * \endcode
+ *
+ * @param[in]   handle          Handle obtained from nvs_open function.
+ *
+ * @param[in]   type            One of nvs_type_t values.
+ *
+ * @param[out] output_iterator
+ *          Set to a valid iterator to enumerate all the entries found.
+ *          Set to NULL if no entry for specified criteria was found.
+ *          If any other error except ESP_ERR_INVALID_ARG occurs, \c output_iterator is NULL, too.
+ *          If ESP_ERR_INVALID_ARG occurs, \c output_iterator is not changed.
+ *          If a valid iterator is obtained through this function, it has to be released
+ *          using \c nvs_release_iterator when not used any more, unless ESP_ERR_INVALID_ARG is returned.
+ *
+ * @return
+ *             - ESP_OK if no internal error or programming error occurred.
+ *             - ESP_ERR_NVS_NOT_FOUND if no element of specified criteria has been found.
+ *             - ESP_ERR_NO_MEM if memory has been exhausted during allocation of internal structures.
+ *             - ESP_ERR_INVALID_ARG if any of the parameters is NULL.
+ *                  Note: don't release \c output_iterator in case ESP_ERR_INVALID_ARG has been returned
+ */
+esp_err_t nvs_entry_find_in_handle(nvs_handle_t c_handle, nvs_type_t type, nvs_iterator_t *output_iterator);
+
+/**
  * @brief       Advances the iterator to next item matching the iterator criteria.
  *
  * Note that any copies of the iterator will be invalid after this call.
  *
- * @param[inout]   iterator Iterator obtained from nvs_entry_find function. Must be non-NULL.
- *                          If any error except ESP_ERR_INVALID_ARG occurs, \c iterator is set to NULL.
- *                          If ESP_ERR_INVALID_ARG occurs, \c iterator is not changed.
+ * @param[inout]   iterator Iterator obtained from nvs_entry_find or nvs_entry_find_in_handle
+ *                          function. Must be non-NULL. If any error except ESP_ERR_INVALID_ARG
+ *                          occurs, \c iterator is set to NULL. If ESP_ERR_INVALID_ARG occurs, \c
+ *                          iterator is not changed.
  *
  * @return
  *             - ESP_OK if no internal error or programming error occurred.
@@ -695,7 +733,8 @@ esp_err_t nvs_entry_next(nvs_iterator_t *iterator);
 /**
  * @brief       Fills nvs_entry_info_t structure with information about entry pointed to by the iterator.
  *
- * @param[in]   iterator     Iterator obtained from nvs_entry_find function. Must be non-NULL.
+ * @param[in]   iterator     Iterator obtained from nvs_entry_find or nvs_entry_find_in_handle
+ *                           function. Must be non-NULL.
  *
  * @param[out]  out_info     Structure to which entry information is copied.
  *
@@ -708,7 +747,9 @@ esp_err_t nvs_entry_info(const nvs_iterator_t iterator, nvs_entry_info_t *out_in
 /**
  * @brief       Release iterator
  *
- * @param[in]   iterator    Release iterator obtained from nvs_entry_find function. NULL argument is allowed.
+ * @param[in]   iterator    Release iterator obtained from nvs_entry_find or
+ *                          nvs_entry_find_in_handle or nvs_entry_next function. NULL argument is
+ *                          allowed.
  *
  */
 void nvs_release_iterator(nvs_iterator_t iterator);

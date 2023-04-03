@@ -761,6 +761,21 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         return count;
     };
 
+    auto entry_count_handle = [](nvs_handle_t handle, nvs_type_t type)-> int {
+        int count = 0;
+        nvs_iterator_t it = nullptr;
+        esp_err_t res = nvs_entry_find_in_handle(handle, type, &it);
+        for (count = 0; res == ESP_OK; count++)
+        {
+            res = nvs_entry_next(&it);
+        }
+        CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop or if no entry was found to begin with,
+        // res has to be ESP_ERR_NVS_NOT_FOUND or some internal error
+        // or programming error occurred
+        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
+        return count;
+    };
+
     SECTION("No partition found return ESP_ERR_NVS_NOT_FOUND") {
         CHECK(nvs_entry_find("", NULL, NVS_TYPE_ANY, &it) == ESP_ERR_NVS_NOT_FOUND);
     }
@@ -803,6 +818,15 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32) == 3);
         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_I32) == 5);
         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_U64) == 1);
+    }
+
+
+    SECTION("Number of entries found for specified handle and type is correct") {
+        CHECK(entry_count_handle(handle_1, NVS_TYPE_ANY) == 11);
+        CHECK(entry_count_handle(handle_1, NVS_TYPE_I32) == 3);
+        CHECK(entry_count_handle(handle_2, NVS_TYPE_ANY) == 4);
+        CHECK(entry_count_handle(handle_2, NVS_TYPE_I32) == 2);
+        CHECK(entry_count_handle(handle_2, NVS_TYPE_U64) == 1);
     }
 
     SECTION("New entry is not created when existing key-value pair is set") {
