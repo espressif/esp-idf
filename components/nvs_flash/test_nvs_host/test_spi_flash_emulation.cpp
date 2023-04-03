@@ -85,7 +85,7 @@ TEST_CASE("EMU raw read function works", "[spi_flash_emu]")
     uint32_t read_value = 0;
     CHECK(esp_partition_write(&f.esp_part, 0, &value, sizeof(value)) == ESP_OK);
 
-    CHECK(esp_partition_read_raw(&f.esp_part, 0, &read_value, sizeof(&read_value)) == ESP_OK);
+    CHECK(esp_partition_read_raw(&f.esp_part, 0, &read_value, sizeof(read_value)) == ESP_OK);
 
     CHECK(read_value == 0xdeadbeef);
 }
@@ -97,7 +97,7 @@ TEST_CASE("EMU raw write function works", "[spi_flash_emu]")
     uint32_t read_value = 0;
     CHECK(esp_partition_write_raw(&f.esp_part, 0, &value, sizeof(value)) == ESP_OK);
 
-    CHECK(esp_partition_read(&f.esp_part, 0, &read_value, sizeof(&read_value)) == ESP_OK);
+    CHECK(esp_partition_read(&f.esp_part, 0, &read_value, sizeof(read_value)) == ESP_OK);
 
     CHECK(read_value == 0xdeadbeef);
 }
