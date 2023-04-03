@@ -167,6 +167,9 @@
 #define SOC_GDMA_SHA_DMA_CHANNEL  (3)
 #define SOC_GDMA_AES_DMA_CHANNEL  (4)
 
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // AES-XTS key purpose not supported for this block
+
 /*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)
 
