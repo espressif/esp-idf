@@ -33,9 +33,7 @@
 #include "driver/gpio.h"
 #include "esp_bit_defs.h"
 #include "esp_private/periph_ctrl.h"
-#if CONFIG_SPIRAM
 #include "esp_psram.h"
-#endif
 #include "esp_lcd_common.h"
 #include "soc/lcd_periph.h"
 #include "hal/lcd_hal.h"
@@ -593,7 +591,7 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     int pixels_per_line = rgb_panel->timings.h_res;
     uint32_t bytes_per_line = bytes_per_pixel * pixels_per_line;
     uint8_t *fb = rgb_panel->fbs[rgb_panel->cur_fb_index];
-    uint32_t bytes_to_flush = v_res * h_res * bytes_per_pixel;
+    size_t bytes_to_flush = v_res * h_res * bytes_per_pixel;
     uint8_t *flush_ptr = fb;
 
     if (do_copy) {
@@ -796,10 +794,10 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
 
     }
 
+    // Note that if we use a bounce buffer, the data gets read by the CPU as well so no need to write back
     if (rgb_panel->flags.fb_in_psram && !rgb_panel->bb_size) {
         // CPU writes data to PSRAM through DCache, data in PSRAM might not get updated, so write back
-        // Note that if we use a bounce buffer, the data gets read by the CPU as well so no need to write back
-        esp_cache_msync((void *)(flush_ptr), (size_t)bytes_to_flush, 0);
+        ESP_RETURN_ON_ERROR(esp_cache_msync(flush_ptr, bytes_to_flush, 0), TAG, "flush cache buffer failed");
     }
 
     if (!rgb_panel->bb_size) {
