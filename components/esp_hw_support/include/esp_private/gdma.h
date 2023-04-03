@@ -265,6 +265,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
  * @return
  *      - ESP_OK: Start DMA engine successfully
  *      - ESP_ERR_INVALID_ARG: Start DMA engine failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Start DMA engine failed because of invalid state, e.g. the channel is controlled by ETM, so can't start it manually
  *      - ESP_FAIL: Start DMA engine failed because of other error
  */
 esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr);
@@ -279,6 +280,7 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr);
  * @return
  *      - ESP_OK: Stop DMA engine successfully
  *      - ESP_ERR_INVALID_ARG: Stop DMA engine failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Stop DMA engine failed because of invalid state, e.g. the channel is controlled by ETM, so can't stop it manually
  *      - ESP_FAIL: Stop DMA engine failed because of other error
  */
 esp_err_t gdma_stop(gdma_channel_handle_t dma_chan);
@@ -347,6 +349,7 @@ typedef struct {
  * @brief Get the ETM task for GDMA channel
  *
  * @note The created ETM task object can be deleted later by calling `esp_etm_del_task`
+ * @note If the GDMA task (e.g. start/stop) is controlled by ETM, then you can't use `gdma_start`/`gdma_stop` to control it.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
  * @param[in] config GDMA ETM task configuration

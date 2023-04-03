@@ -451,10 +451,10 @@ err:
 
 esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
 {
-    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(dma_chan->flags.start_stop_by_etm == false, ESP_ERR_INVALID_STATE, TAG, "channel is controlled by ETM");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -468,16 +468,15 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
     }
     portEXIT_CRITICAL_SAFE(&dma_chan->spinlock);
 
-err:
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
 {
-    esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(dma_chan->flags.start_stop_by_etm == false, ESP_ERR_INVALID_STATE, TAG, "channel is controlled by ETM");
     pair = dma_chan->pair;
     group = pair->group;
 
@@ -489,8 +488,7 @@ esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
     }
     portEXIT_CRITICAL_SAFE(&dma_chan->spinlock);
 
-err:
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t gdma_append(gdma_channel_handle_t dma_chan)
