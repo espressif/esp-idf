@@ -11,12 +11,20 @@
 #include <esp_log.h>
 #include <esp_err.h>
 #include <assert.h>
+#include <netinet/tcp.h>
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
 #include "ctrl_sock.h"
 #if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
 #include "freertos/semphr.h"
+#endif
+
+#if defined(CONFIG_LWIP_MAX_SOCKETS)
+#define HTTPD_MAX_SOCKETS CONFIG_LWIP_MAX_SOCKETS
+#else
+/* LwIP component is not included into the build, use a default value */
+#define HTTPD_MAX_SOCKETS 15
 #endif
 
 static const int DEFAULT_KEEP_ALIVE_IDLE = 5;
@@ -476,10 +484,10 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
      *     3) for receiving control messages over UDP
      * So the total number of required sockets is max_open_sockets + 3
      */
-    if (CONFIG_LWIP_MAX_SOCKETS < config->max_open_sockets + 3) {
+    if (HTTPD_MAX_SOCKETS < config->max_open_sockets + 3) {
         ESP_LOGE(TAG, "Config option max_open_sockets is too large (max allowed %d, 3 sockets used by HTTP server internally)\n\t"
                  "Either decrease this or configure LWIP_MAX_SOCKETS to a larger value",
-                 CONFIG_LWIP_MAX_SOCKETS - 3);
+                 HTTPD_MAX_SOCKETS - 3);
         return ESP_ERR_INVALID_ARG;
     }
 
