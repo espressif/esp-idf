@@ -22,6 +22,19 @@ def test_heap_poisoning(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.esp32
+@pytest.mark.esp32c6
+@pytest.mark.parametrize(
+    'config',
+    [
+        'in_flash'
+    ]
+)
+def test_heap_in_flash(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.esp32
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.parametrize(

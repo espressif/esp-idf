@@ -57,7 +57,7 @@ inline static uint32_t get_ccount(void)
    Calls to __builtin_return_address are "unrolled" via TEST_STACK macro as gcc requires the
    argument to be a compile-time constant.
 */
-static IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
+static HEAP_IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
 {
     bzero(callers, sizeof(void *) * STACK_DEPTH);
     TEST_STACK(0);
@@ -86,7 +86,7 @@ void *__real_heap_caps_malloc_default( size_t size );
 void *__real_heap_caps_realloc_default( void *ptr, size_t size );
 
 /* trace any 'malloc' event */
-static IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint32_t caps, trace_malloc_mode_t mode)
+static HEAP_IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint32_t caps, trace_malloc_mode_t mode)
 {
     uint32_t ccount = get_ccount();
     void *p;
@@ -110,7 +110,7 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint3
 void __real_heap_caps_free(void *p);
 
 /* trace any 'free' event */
-static IRAM_ATTR __attribute__((noinline)) void trace_free(void *p)
+static HEAP_IRAM_ATTR __attribute__((noinline)) void trace_free(void *p)
 {
     void *callers[STACK_DEPTH];
     get_call_stack(callers);
@@ -122,7 +122,7 @@ static IRAM_ATTR __attribute__((noinline)) void trace_free(void *p)
 void * __real_heap_caps_realloc(void *p, size_t size, uint32_t caps);
 
 /* trace any 'realloc' event */
-static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t size, uint32_t caps, trace_malloc_mode_t mode)
+static HEAP_IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t size, uint32_t caps, trace_malloc_mode_t mode)
 {
     void *callers[STACK_DEPTH];
     uint32_t ccount = get_ccount();
@@ -154,22 +154,22 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t s
    as they no longer go via the libc functions in ROM. But more or less
    the same in the end. */
 
-IRAM_ATTR void *__wrap_malloc(size_t size)
+HEAP_IRAM_ATTR void *__wrap_malloc(size_t size)
 {
     return trace_malloc(size, 0, TRACE_MALLOC_DEFAULT);
 }
 
-IRAM_ATTR void __wrap_free(void *p)
+HEAP_IRAM_ATTR void __wrap_free(void *p)
 {
     trace_free(p);
 }
 
-IRAM_ATTR void *__wrap_realloc(void *p, size_t size)
+HEAP_IRAM_ATTR void *__wrap_realloc(void *p, size_t size)
 {
     return trace_realloc(p, size, 0, TRACE_MALLOC_DEFAULT);
 }
 
-IRAM_ATTR void *__wrap_calloc(size_t nmemb, size_t size)
+HEAP_IRAM_ATTR void *__wrap_calloc(size_t nmemb, size_t size)
 {
     size = size * nmemb;
     void *result = trace_malloc(size, 0, TRACE_MALLOC_DEFAULT);
@@ -179,24 +179,24 @@ IRAM_ATTR void *__wrap_calloc(size_t nmemb, size_t size)
     return result;
 }
 
-IRAM_ATTR void *__wrap_heap_caps_malloc(size_t size, uint32_t caps)
+HEAP_IRAM_ATTR void *__wrap_heap_caps_malloc(size_t size, uint32_t caps)
 {
     return trace_malloc(size, caps, TRACE_MALLOC_CAPS);
 }
 
 void __wrap_heap_caps_free(void *p) __attribute__((alias("__wrap_free")));
 
-IRAM_ATTR void *__wrap_heap_caps_realloc(void *p, size_t size, uint32_t caps)
+HEAP_IRAM_ATTR void *__wrap_heap_caps_realloc(void *p, size_t size, uint32_t caps)
 {
     return trace_realloc(p, size, caps, TRACE_MALLOC_CAPS);
 }
 
-IRAM_ATTR void *__wrap_heap_caps_malloc_default( size_t size )
+HEAP_IRAM_ATTR void *__wrap_heap_caps_malloc_default( size_t size )
 {
     return trace_malloc(size, 0, TRACE_MALLOC_DEFAULT);
 }
 
-IRAM_ATTR void *__wrap_heap_caps_realloc_default( void *ptr, size_t size )
+HEAP_IRAM_ATTR void *__wrap_heap_caps_realloc_default( void *ptr, size_t size )
 {
     return trace_realloc(ptr, size, 0, TRACE_MALLOC_DEFAULT);
 }
