@@ -82,7 +82,7 @@ static inline uint32_t temperature_sensor_ll_get_raw_value(void)
             !SENS.sar_tctrl.tsens_power_up ||
             !SENS.sar_tctrl.tsens_dump_out
         ) {
-s:              SENS.sar_peri_clk_gate_conf.tsens_clk_en = true;
+                SENS.sar_peri_clk_gate_conf.tsens_clk_en = true;
                 SENS.sar_tctrl2.tsens_xpd_force = true;
                 SENS.sar_tctrl.tsens_power_up_force = true;
                 SENS.sar_tctrl.tsens_power_up = true;
