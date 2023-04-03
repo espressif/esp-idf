@@ -10,13 +10,12 @@
 #define HEAP_TRACE_SRCFILE /* don't warn on inclusion here */
 #include "esp_heap_trace.h"
 #undef HEAP_TRACE_SRCFILE
-
+#include "esp_heap_caps.h"
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_memory_utils.h"
 #include "sys/queue.h"
-
 
 #define STACK_DEPTH CONFIG_HEAP_TRACING_STACK_DEPTH
 
@@ -89,7 +88,7 @@ static heap_trace_hash_list_t hash_map[(size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE];
 static size_t total_hashmap_hits;
 static size_t total_hashmap_miss;
 
-static size_t hash_idx(void* p)
+static HEAP_IRAM_ATTR size_t hash_idx(void* p)
 {
     static const uint32_t fnv_prime = 16777619UL; // expression 2^24 + 2^8 + 0x93 (32 bits size)
     // since all the addresses are 4 bytes aligned, computing address * fnv_prime always gives
@@ -100,19 +99,19 @@ static size_t hash_idx(void* p)
              ((uint32_t)p >> 7)) * fnv_prime) % (uint32_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE;
 }
 
-static void map_add(heap_trace_record_t *r_add)
+static HEAP_IRAM_ATTR void map_add(heap_trace_record_t *r_add)
 {
     size_t idx = hash_idx(r_add->address);
     TAILQ_INSERT_TAIL(&hash_map[idx], r_add, tailq_hashmap);
 }
 
-static void map_remove(heap_trace_record_t *r_remove)
+static HEAP_IRAM_ATTR void map_remove(heap_trace_record_t *r_remove)
 {
     size_t idx = hash_idx(r_remove->address);
     TAILQ_REMOVE(&hash_map[idx], r_remove, tailq_hashmap);
 }
 
-static heap_trace_record_t* map_find(void *p)
+static HEAP_IRAM_ATTR heap_trace_record_t* map_find(void *p)
 {
     size_t idx = hash_idx(p);
     heap_trace_record_t *r_cur = NULL;
@@ -385,7 +384,7 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
 }
 
 /* Add a new allocation to the heap trace records */
-static IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
+static HEAP_IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
 {
     if (!tracing || r_allocation->address == NULL) {
         return;
@@ -420,7 +419,7 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
    callers is an array of  STACK_DEPTH function pointer from the call stack
    leading to the call of record_free.
 */
-static IRAM_ATTR void record_free(void *p, void **callers)
+static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
 {
        if (!tracing || p == NULL) {
         return;
@@ -473,7 +472,7 @@ static void list_setup(void)
 
 /* 1. removes record r_remove from records.list,
    2. places it into records.unused */
-static IRAM_ATTR void list_remove(heap_trace_record_t *r_remove)
+static HEAP_IRAM_ATTR void list_remove(heap_trace_record_t* r_remove)
 {
     assert(records.count > 0);
 
@@ -497,7 +496,7 @@ static IRAM_ATTR void list_remove(heap_trace_record_t *r_remove)
 
 
 // pop record from unused list
-static IRAM_ATTR heap_trace_record_t* list_pop_unused(void)
+static HEAP_IRAM_ATTR heap_trace_record_t* list_pop_unused(void)
 {
     // no records left?
     if (records.count >= records.capacity) {
@@ -517,7 +516,7 @@ static IRAM_ATTR heap_trace_record_t* list_pop_unused(void)
 
 // deep copy a record.
 // Note: only copies the *allocation data*, not the next & prev ptrs
-static IRAM_ATTR void record_deep_copy(heap_trace_record_t *r_dest, const heap_trace_record_t *r_src)
+static HEAP_IRAM_ATTR void record_deep_copy(heap_trace_record_t *r_dest, const heap_trace_record_t *r_src)
 {
     r_dest->ccount  = r_src->ccount;
     r_dest->address = r_src->address;
@@ -528,7 +527,7 @@ static IRAM_ATTR void record_deep_copy(heap_trace_record_t *r_dest, const heap_t
 
 // Append a record to records.list
 // Note: This deep copies r_append
-static IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r_append)
+static HEAP_IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r_append)
 {
     if (records.count < records.capacity) {
 
@@ -566,7 +565,7 @@ static IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r_appe
 }
 
 // search records.list backwards for the allocation record matching this address
-static IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void *p)
+static HEAP_IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void* p)
 {
     heap_trace_record_t *r_found = NULL;
 
