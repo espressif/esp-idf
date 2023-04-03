@@ -17,7 +17,7 @@ git checkout spindance_changes_v5.0
 
 ## Changed Files
 ```
-components/lwip/port/esp32/include/netif/wlanif.h
+components/esp_netif/include/lwip/esp_netif_net_stack.h  (was components/lwip/port/esp32/include/netif/wlanif.h)
 components/lwip/port/esp32/netif/wlanif.c
 components/protocomm/include/security/protocomm_security.h
 components/protocomm/include/transports/protocomm_ble.h
@@ -59,8 +59,8 @@ The features, their associated changes to ESP IDF and how the change is related 
   - Added support for simple bytes in/bytes out tracking and reporting in ESP's LWIP implementation
   - Embedded Starter Kit accesses these values via its PAL and includes them in metrics reported to MQTT
   - Impacted ESP IDF files:
-    - wlanif.h
-    - wlanif.h
+    - esp_netif_net_stack.h
+    - wlanif.c
   - Commits:
     - [lwip/port/esp32: add metrics for wlan bytes in/out](https://github.com/spindance/esp-idf/commit/ef9b870d0dad29b4993815c323c57202f5c1700b)
 - **Protocomm BLE Connectivity Reporting**
@@ -149,7 +149,7 @@ The features, their associated changes to ESP IDF and how the change is related 
 ## Feature / File Association
 | File                                                                 | SK Feature(s) |
 |:-------------------------------------------------------------------- | -------------- |
-|components/lwip/port/esp32/include/netif/wlanif.h                     | NW Metrics Reporting |
+|components/lwip/port/esp32/include/esp_netif_net_stack.h              | NW Metrics Reporting |
 |components/lwip/port/esp32/netif/wlanif.c                             | NW Metrics Reporting |
 |components/protocomm/include/security/protocomm_security.h            | Protocomm BLE Connectivity Reporting |
 |components/protocomm/include/transports/protocomm_ble.h               | Protocomm BLE Connectivity Reporting, Provisioning State in BLE AD |
