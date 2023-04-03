@@ -87,6 +87,7 @@ menu "Driver Configurations"
             default y
             depends on !HEAP_PLACE_FUNCTION_INTO_FLASH
             select PERIPH_CTRL_FUNC_IN_IRAM
+            select HAL_SPI_MASTER_FUNC_IN_IRAM
             help
                 Place the SPI master ISR in to IRAM to avoid possible cache miss.
 
@@ -114,6 +115,7 @@ menu "Driver Configurations"
             bool "Place SPI slave ISR function into IRAM"
             default y
             select PERIPH_CTRL_FUNC_IN_IRAM
+            select HAL_SPI_SLAVE_FUNC_IN_IRAM
             help
                 Place the SPI slave ISR in to IRAM to avoid possible cache miss.
 
