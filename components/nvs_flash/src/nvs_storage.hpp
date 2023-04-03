@@ -127,6 +127,8 @@ public:
 
     bool findEntry(nvs_opaque_iterator_t*, const char* name);
 
+    bool findEntryNs(nvs_opaque_iterator_t*, uint8_t nsIndex);
+
     bool nextEntry(nvs_opaque_iterator_t* it);
 
 protected:
