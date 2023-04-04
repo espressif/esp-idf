@@ -249,3 +249,88 @@
 -
     re: "`iram0_0_seg' overflowed"
     hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduze IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "The HFP AG API function '{}' has been renamed to '{}'.\n"
+    variables:
+        -
+            re_variables: ['esp_bt_hf_init']
+            hint_variables: ['esp_bt_hf_init', 'esp_hf_ag_init']
+        -
+            re_variables: ['esp_bt_hf_deinit']
+            hint_variables: ['esp_bt_hf_deinit', 'esp_hf_ag_deinit']
+        -
+            re_variables: ['esp_bt_hf_register_callback']
+            hint_variables: ['esp_bt_hf_register_callback', 'esp_hf_ag_register_callback']
+        -
+            re_variables: ['esp_bt_hf_connect']
+            hint_variables: ['esp_bt_hf_connect', 'esp_hf_ag_slc_connect']
+        -
+            re_variables: ['esp_bt_hf_disconnect']
+            hint_variables: ['esp_bt_hf_disconnect', 'esp_hf_ag_slc_disconnect']
+        -
+            re_variables: ['esp_bt_hf_connect_audio']
+            hint_variables: ['esp_bt_hf_connect_audio', 'esp_hf_ag_audio_connect']
+        -
+            re_variables: ['esp_bt_hf_disconnect_audio']
+            hint_variables: ['esp_bt_hf_disconnect_audio', 'esp_hf_ag_audio_disconnect']
+        -
+            re_variables: ['esp_bt_hf_vra']
+            hint_variables: ['esp_bt_hf_vra', 'esp_hf_ag_vra_control']
+        -
+            re_variables: ['esp_bt_hf_volume_control']
+            hint_variables: ['esp_bt_hf_volume_control', 'esp_hf_ag_volume_control']
+        -
+            re_variables: ['esp_hf_unat_response']
+            hint_variables: ['esp_hf_unat_response', 'esp_hf_ag_unknown_at_send']
+        -
+            re_variables: ['esp_bt_hf_cmee_response']
+            hint_variables: ['esp_bt_hf_cmee_response', 'esp_hf_ag_cmee_send']
+        -
+            re_variables: ['esp_bt_hf_indchange_notification']
+            hint_variables: ['esp_bt_hf_indchange_notification', 'esp_hf_ag_devices_status_indchange']
+        -
+            re_variables: ['esp_bt_hf_cind_response']
+            hint_variables: ['esp_bt_hf_cind_response', 'esp_hf_ag_cind_response']
+        -
+            re_variables: ['esp_bt_hf_cops_response']
+            hint_variables: ['esp_bt_hf_cops_response', 'esp_hf_ag_cops_response']
+        -
+            re_variables: ['esp_bt_hf_clcc_response']
+            hint_variables: ['esp_bt_hf_clcc_response', 'esp_hf_ag_clcc_response']
+        -
+            re_variables: ['esp_bt_hf_cnum_response']
+            hint_variables: ['esp_bt_hf_cnum_response', 'esp_hf_ag_cnum_response']
+        -
+            re_variables: ['esp_bt_hf_bsir']
+            hint_variables: ['esp_bt_hf_bsir', 'esp_hf_ag_bsir']
+        -
+            re_variables: ['esp_bt_hf_answer_call']
+            hint_variables: ['esp_bt_hf_answer_call', 'esp_hf_ag_answer_call']
+        -
+            re_variables: ['esp_bt_hf_reject_call']
+            hint_variables: ['esp_bt_hf_reject_call', 'esp_hf_ag_reject_call']
+        -
+            re_variables: ['esp_bt_hf_out_call']
+            hint_variables: ['esp_bt_hf_out_call', 'esp_hf_ag_out_call']
+        -
+            re_variables: ['esp_bt_hf_end_call']
+            hint_variables: ['esp_bt_hf_end_call', 'esp_hf_ag_end_call']
+        -
+            re_variables: ['esp_bt_hf_register_data_callback']
+            hint_variables: ['esp_bt_hf_register_data_callback', 'esp_hf_ag_register_data_callback']
+        -
+            re_variables: ['esp_hf_outgoing_data_ready']
+            hint_variables: ['esp_hf_outgoing_data_ready', 'esp_hf_ag_outgoing_data_ready']
+
+-
+    re: "error: '{}' undeclared"
+    hint: "The union element '{}' in 'esp_hf_cme_err_t' has been renamed to '{}'\n"
+    variables:
+        -
+            re_variables: ['ESP_HF_CME_MEMEORY_FULL']
+            hint_variables: ['ESP_HF_CME_MEMEORY_FULL', 'ESP_HF_CME_MEMORY_FULL']
+        -
+            re_variables: ['ESP_HF_CME_MEMEORY_FAILURE']
+            hint_variables: ['ESP_HF_CME_MEMEORY_FAILURE', 'ESP_HF_CME_MEMORY_FAILURE ']
