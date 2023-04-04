@@ -1,21 +1,23 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # Gateway Example
 
-This example demonstrates how to build a Zigbee Gateway device. It runs on a Wi-Fi SoC such as ESP32, ESP32-C3 and ESP32-S3, with an 802.15.4 SoC like ESP32-H4 running [esp_zigbee_rcp](../esp_zigbee_rcp) to provide 802.15.4 radio.
+This example demonstrates how to build a Zigbee Gateway device. It runs on a Wi-Fi SoC such as ESP32, ESP32-C3 and ESP32-S3, with an 802.15.4 SoC like ESP32-H2 running [esp_zigbee_rcp](../esp_zigbee_rcp) to provide 802.15.4 radio.
+
+The example could also run on a single SoC which supports both Wi-Fi and Zigbee (e.g., ESP32-C6), but since there is only one RF path in ESP32-C6, which means Wi-Fi and Zigbee can't receive simultaneously, it has a significant impact on performance. Hence the two SoCs solution is recommended.
 
 ## Hardware Required
 
 * One development board with ESP32 or ESP32-S3 SoC acting as Zigbee gateway (loaded with esp_zigbee_gateway example)
 * A USB cable for power supply and programming
 * Three jumper wires for UART (TX, RX and GND)
-* Gateway doesn't function alone. Choose ESP32-H4 as Zigbee rcp (see [esp_zigbee_rcp example](../esp_zigbee_rcp))
-* **Flash** Zigbee rcp on the ESP32-H4 DevKitC first **before** connecting to Zigbee gateway
-* Connect the two SoCs via UART, below is an example setup with ESP32-DevKitC and ESP32-H4-DevKitC:
+* Gateway doesn't function alone. Choose ESP32-H2 as Zigbee rcp (see [esp_zigbee_rcp example](../esp_zigbee_rcp))
+* **Flash** Zigbee rcp on the ESP32-H2 DevKitC first **before** connecting to Zigbee gateway
+* Connect the two SoCs via UART, below is an example setup with ESP32-DevKitC and ESP32-H2-DevKitC:
 ![Zigbee_gateway](../../openthread/ot_br/image/thread-border-router-esp32-esp32h4.jpg)
 
-ESP32 pin     | ESP32-H4 pin
+ESP32 pin     | ESP32-H2 pin
 ------------- |-------------
    GND        |    G
    GPIO4 (RX) |    TX

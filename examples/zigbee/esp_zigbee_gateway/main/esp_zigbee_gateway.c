@@ -38,6 +38,12 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_netif.h"
+#include "esp_vfs_eventfd.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
+#include "protocol_examples_common.h"
+#include "esp_coexist_internal.h"
 #include "esp_zigbee_gateway.h"
 
 #if (!defined ZB_MACSPLIT_HOST && defined ZB_MACSPLIT_DEVICE)
@@ -127,5 +133,18 @@ void app_main(void)
     };
     /* load Zigbee gateway platform config to initialization */
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+    ESP_ERROR_CHECK(example_connect());
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
+    coex_enable();
+    coex_schm_status_bit_set(1, 1);
+#else
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+#endif
+#endif
     xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
 }
