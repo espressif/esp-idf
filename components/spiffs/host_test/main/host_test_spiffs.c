@@ -236,9 +236,10 @@ TEST(spiffs, can_read_spiffs_image)
     s32_t spiffs_res;
 
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, "storage");
+    TEST_ASSERT_NOT_NULL(partition);
 
     // Write the contents of the image file to partition
-    FILE *img_file = fopen("image.bin", "r");
+    FILE *img_file = fopen(BUILD_DIR "/image.bin", "r");
     TEST_ASSERT_NOT_NULL(img_file);
 
     fseek(img_file, 0, SEEK_END);
@@ -248,7 +249,7 @@ TEST(spiffs, can_read_spiffs_image)
     char *img = (char *) malloc(img_size);
     TEST_ASSERT(fread(img, 1, img_size, img_file) == img_size);
     fclose(img_file);
-    TEST_ASSERT_TRUE(partition->size == img_size);
+    TEST_ASSERT_EQUAL(partition->size, img_size);
 
     esp_partition_erase_range(partition, 0, partition->size);
     esp_partition_write(partition, 0, img, img_size);
@@ -267,7 +268,7 @@ TEST(spiffs, can_read_spiffs_image)
 
     // The image is created from the spiffs source directory. Compare the files in that
     // directory to the files read from the SPIFFS image.
-    check_spiffs_files(&fs, "../spiffs", path_buf);
+    check_spiffs_files(&fs, BUILD_DIR "/../../spiffs", path_buf);
 
     deinit_spiffs(&fs);
 }

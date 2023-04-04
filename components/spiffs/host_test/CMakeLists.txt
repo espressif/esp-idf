@@ -15,12 +15,12 @@ add_custom_target(image.bin)
 add_custom_command(
     TARGET image.bin
     POST_BUILD
-    COMMAND python ../../spiffsgen.py 2097152 ../../spiffs ../image.bin
+    COMMAND python ../../spiffsgen.py 2097152 ../../spiffs ${build_dir}/image.bin
 )
 
 set_property(
     DIRECTORY
-    APPEND PROPERTY ADDITIONAL_CLEAN_FILES "../image.bin")
+    APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${build_dir}/image.bin")
 
 
 add_dependencies(host_test_spiffs.elf image.bin)

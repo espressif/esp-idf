@@ -140,7 +140,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
         // check if partition file is present, if not, use default
         if (!has_partfile) {
-            strlcpy(s_esp_partition_file_mmap_ctrl_act.partition_file_name, "build/partition_table/partition-table.bin", sizeof(s_esp_partition_file_mmap_ctrl_act.partition_file_name));
+            strlcpy(s_esp_partition_file_mmap_ctrl_act.partition_file_name, BUILD_DIR "/partition_table/partition-table.bin", sizeof(s_esp_partition_file_mmap_ctrl_act.partition_file_name));
         } else {
             strlcpy(s_esp_partition_file_mmap_ctrl_act.partition_file_name, s_esp_partition_file_mmap_ctrl_input.partition_file_name, sizeof(s_esp_partition_file_mmap_ctrl_act.partition_file_name));
         }

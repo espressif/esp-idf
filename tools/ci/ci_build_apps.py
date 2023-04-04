@@ -64,10 +64,6 @@ def get_pytest_apps(
     build_dir = 'build_@t_@w'
     if target == 'linux':  # no esp_idf_size for linux target
         default_size_json_path = None  # type: ignore
-        # IDF-6644
-        # hard-coded in components/esp_partition/partition_linux.c
-        # const char *partition_table_file_name = "build/partition_table/partition-table.bin";
-        build_dir = 'build'
 
     apps = find_apps(
         app_dirs,
