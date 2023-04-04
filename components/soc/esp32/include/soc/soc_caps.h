@@ -321,3 +321,8 @@
  */
 #define SOC_SDMMC_USE_IOMUX  1
 #define SOC_SDMMC_NUM_SLOTS  2
+
+
+/*-------------------------- Bluetooth CAPS ----------------------------*/
+
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (0)

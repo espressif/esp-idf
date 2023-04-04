@@ -6,7 +6,7 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         set(srcs "controller/esp32c3/bt.c")
     elseif(CONFIG_IDF_TARGET_ESP32S3)
-        set(srcs "controller/esp32s3/bt.c")
+        set(srcs "controller/esp32c3/bt.c")
     endif()
 
     set(include_dirs common/osi/include)
@@ -16,7 +16,7 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         list(APPEND include_dirs include/esp32c3/include)
     elseif(CONFIG_IDF_TARGET_ESP32S3)
-        list(APPEND include_dirs include/esp32s3/include)
+        list(APPEND include_dirs include/esp32c3/include)
     endif()
 
     list(APPEND priv_include_dirs

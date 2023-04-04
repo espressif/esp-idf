@@ -279,3 +279,7 @@
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*-------------------------- Bluetooth CAPS ----------------------------*/
+
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (1)
