@@ -85,8 +85,6 @@ Espressif SoCs mask ROM hardware includes binaries compiled from portions of the
 
 * miniz_, by Rich Geldreich - placed into the public domain.
 
-* `wpa_supplicant`_ Copyright (c) 2003-2022 Jouni Malinen <j@w1.fi> and contributors and licensed under the BSD license.
-
 * TJpgDec_ Copyright (C) 2011, ChaN, all right reserved. See below for license.
 
 * Parts of Zephyr RTOS USB stack:
