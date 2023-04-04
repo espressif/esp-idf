@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <stdio.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -25,8 +26,13 @@ static const char *TAG = "i2s_tdm_full_duplex_test";
 #define TEST_I2S_NUM            (I2S_NUM_0) // ESP32-C3 has only I2S0
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
 #define TEST_I2S_WS_IO          (GPIO_NUM_5)
+#if CONFIG_IDF_TARGET_ESP32H2
+#define TEST_I2S_DO_IO          (GPIO_NUM_2)
+#define TEST_I2S_DI_IO          (GPIO_NUM_3) // DI and DO gpio will be reversed on slave runner
+#else
 #define TEST_I2S_DO_IO          (GPIO_NUM_6)
 #define TEST_I2S_DI_IO          (GPIO_NUM_7) // DI and DO gpio will be reversed on slave runner
+#endif  // CONFIG_IDF_TARGET_ESP32H2
 
 typedef struct {
     TaskHandle_t maintask_handle;
@@ -296,7 +302,9 @@ static void test_i2s_tdm_slave_48k_8bits_4slots(void)
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S_TDM]",
                           test_i2s_tdm_master_48k_8bits_4slots, test_i2s_tdm_slave_48k_8bits_4slots);
 
-
+/* The I2S source clock can only reach 96Mhz on ESP32H2,
+   which can't satisfy the following configurations in slave mode */
+#if !CONFIG_IDF_TARGET_ESP32H2
 static void test_i2s_tdm_master_48k_16bits_8slots(void)
 {
     test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
@@ -325,3 +333,4 @@ static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
                           test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
+#endif  // !CONFIG_IDF_TARGET_ESP32H2
