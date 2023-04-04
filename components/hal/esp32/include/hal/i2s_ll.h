@@ -24,6 +24,7 @@
 
 #include <stdbool.h>
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
@@ -688,22 +689,57 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
  * @brief Set I2S tx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx chan mode
+ * @param chan_fmt The channel format of the TX channel
  */
-static inline void i2s_ll_tx_set_chan_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_set_chan_mod(i2s_dev_t *hw, i2s_channel_fmt_t chan_fmt)
 {
-    hw->conf_chan.tx_chan_mod = val;
+    switch (chan_fmt) {
+        case I2S_CHANNEL_FMT_ALL_RIGHT:
+            hw->conf_chan.tx_chan_mod = 1;
+            break;
+        case I2S_CHANNEL_FMT_ONLY_RIGHT:
+            hw->conf_chan.tx_chan_mod = 3;
+            break;
+        case I2S_CHANNEL_FMT_ALL_LEFT:
+            hw->conf_chan.tx_chan_mod = 2;
+            break;
+        case I2S_CHANNEL_FMT_ONLY_LEFT:
+            hw->conf_chan.tx_chan_mod = 4;
+            break;
+        case I2S_CHANNEL_FMT_RIGHT_LEFT:
+            hw->conf_chan.tx_chan_mod = 0;
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
 }
 
 /**
  * @brief Set I2S rx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx chan mode
+ * @param chan_fmt The channel format of the RX channel
+ * @param is_msb_right Is msb_right enabled, if it does, we need to flip the channel
  */
-static inline void i2s_ll_rx_set_chan_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_rx_set_chan_mod(i2s_dev_t *hw, i2s_channel_fmt_t chan_fmt, bool is_msb_right)
 {
-    hw->conf_chan.rx_chan_mod = val;
+    switch (chan_fmt) {
+        case I2S_CHANNEL_FMT_ALL_RIGHT:
+            /* fall through */
+        case I2S_CHANNEL_FMT_ONLY_RIGHT:
+            hw->conf_chan.rx_chan_mod = is_msb_right ? 1 : 2;
+            break;
+        case I2S_CHANNEL_FMT_ALL_LEFT:
+            /* fall through */
+        case I2S_CHANNEL_FMT_ONLY_LEFT:
+            hw->conf_chan.rx_chan_mod = is_msb_right ? 2 : 1;
+            break;
+        case I2S_CHANNEL_FMT_RIGHT_LEFT:
+            hw->conf_chan.rx_chan_mod = 0;
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
 }
 
 /**
