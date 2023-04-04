@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 995934abe6c7e7366404f837e547bb3f
+// md5_digest_table ab312e31f6976fdf923a9809093323fd
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -195,16 +195,16 @@ static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR,
 };
 
+static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
+};
+
 static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MAJOR[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MAJOR,
-};
-
-static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
@@ -492,16 +492,16 @@ static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
     {EFUSE_BLK1, 118, 2}, 	 // [],
 };
 
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 120, 3}, 	 // [] Package version,
+};
+
 static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
-    {EFUSE_BLK1, 120, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
+    {EFUSE_BLK1, 123, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
 };
 
 static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
-    {EFUSE_BLK1, 123, 2}, 	 // [] BLK_VERSION_MAJOR of BLOCK2,
-};
-
-static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK1, 125, 3}, 	 // [] Package version,
+    {EFUSE_BLK1, 126, 2}, 	 // [] BLK_VERSION_MAJOR of BLOCK2,
 };
 
 static const esp_efuse_desc_t FLASH_CAP[] = {
@@ -785,6 +785,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
+    &WR_DIS_PKG_VERSION[0],    		// [] wr_dis of PKG_VERSION
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
     &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
     NULL
@@ -792,11 +797,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MAJOR[] = {
     &WR_DIS_BLK_VERSION_MAJOR[0],    		// [] wr_dis of BLK_VERSION_MAJOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
-    &WR_DIS_PKG_VERSION[0],    		// [] wr_dis of PKG_VERSION
     NULL
 };
 
@@ -1155,6 +1155,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// [] Package version
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
     &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2
     NULL
@@ -1162,11 +1167,6 @@ const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
     &BLK_VERSION_MAJOR[0],    		// [] BLK_VERSION_MAJOR of BLOCK2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// [] Package version
     NULL
 };
 
