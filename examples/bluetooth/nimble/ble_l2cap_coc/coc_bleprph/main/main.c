@@ -30,7 +30,7 @@ static uint8_t own_addr_type;
 
 void ble_store_config_init(void);
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
 #define COC_BUF_COUNT         (3 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 
@@ -189,7 +189,7 @@ bleprph_advertise(void)
 }
 #endif
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 static int
 bleprph_l2cap_coc_accept(uint16_t conn_handle, uint16_t peer_mtu,
                          struct ble_l2cap_chan *chan)
@@ -332,7 +332,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
             rc = ble_l2cap_create_server(psm, mtu, bleprph_l2cap_coc_event_cb, NULL);
 #endif
         }
@@ -463,7 +463,7 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
     bleprph_l2cap_coc_mem_init();
 #endif
 
