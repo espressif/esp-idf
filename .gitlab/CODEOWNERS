@@ -148,7 +148,7 @@
 
 /docs/                                  @esp-idf-codeowners/docs
 /docs/**/api-reference/bluetooth/       @esp-idf-codeowners/bluetooth
-/docs/**/api-reference/network/         @esp-idf-codeowners/network
+/docs/**/api-reference/network/         @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /docs/**/api-reference/peripherals/     @esp-idf-codeowners/peripherals
 /docs/**/api-reference/peripherals/usb* @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
 /docs/**/api-reference/protocols/       @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
@@ -162,7 +162,7 @@
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 /examples/bluetooth/          @esp-idf-codeowners/bluetooth
 /examples/build_system/       @esp-idf-codeowners/build-config
-/examples/common_components/  @esp-idf-codeowners/system
+/examples/common_components/  @esp-idf-codeowners/system @esp-idf-codeowners/wifi @esp-idf-codeowners/lwip @esp-idf-codeowners/network
 /examples/custom_bootloader/  @esp-idf-codeowners/system
 /examples/cxx/                @esp-idf-codeowners/system
 /examples/ethernet/           @esp-idf-codeowners/network
