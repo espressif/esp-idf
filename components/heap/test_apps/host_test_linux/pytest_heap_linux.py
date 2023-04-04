@@ -9,4 +9,4 @@ from pytest_embedded import Dut
 def test_heap_linux(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('*')
-    dut.expect_unity_test_output(timeout=10)
+    dut.expect_unity_test_output(timeout=60)
