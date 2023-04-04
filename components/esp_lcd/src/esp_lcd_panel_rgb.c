@@ -105,6 +105,8 @@ struct esp_rgb_panel_t {
     size_t bb_size;                 // If not-zero, the driver uses two bounce buffers allocated from internal memory
     int bounce_pos_px;              // Position in whatever source material is used for the bounce buffer, in pixels
     uint8_t *bounce_buffer[RGB_LCD_PANEL_BOUNCE_BUF_NUM]; // Pointer to the bounce buffers
+    size_t bb_eof_count;            // record the number we received the DMA EOF event, compare with `expect_eof_count` in the VSYNC_END ISR
+    size_t expect_eof_count;        // record the number of DMA EOF event we expected to receive
     gdma_channel_handle_t dma_chan; // DMA channel handle
     esp_lcd_rgb_panel_vsync_cb_t on_vsync; // VSYNC event callback
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // callback used to fill a bounce buffer rather than copying from the frame buffer
@@ -245,10 +247,12 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // calculate buffer size
     size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * fb_bits_per_pixel / 8;
     size_t bb_size = rgb_panel_config->bounce_buffer_size_px * fb_bits_per_pixel / 8;
+    size_t expect_bb_eof_count = 0;
     if (bb_size) {
         // we want the bounce can always end in the second buffer
         ESP_GOTO_ON_FALSE(fb_size % (2 * bb_size) == 0, ESP_ERR_INVALID_ARG, err, TAG,
                           "fb size must be even multiple of bounce buffer size");
+        expect_bb_eof_count = fb_size / bb_size;
     }
 
     // calculate the number of DMA descriptors
@@ -270,6 +274,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->num_fbs = num_fbs;
     rgb_panel->fb_size = fb_size;
     rgb_panel->bb_size = bb_size;
+    rgb_panel->expect_eof_count = expect_bb_eof_count;
     rgb_panel->panel_id = -1;
     // register to platform
     int panel_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel);
@@ -915,6 +920,9 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
     // Figure out which bounce buffer to write to.
     // Note: what we receive is the *last* descriptor of this bounce buffer.
     int bb = (desc == &panel->dma_nodes[panel->num_dma_nodes - 1]) ? 0 : 1;
+    portENTER_CRITICAL_ISR(&panel->spinlock);
+    panel->bb_eof_count++;
+    portEXIT_CRITICAL_ISR(&panel->spinlock);
     return lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[bb]);
 }
 
@@ -1008,6 +1016,10 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
         panel->flags.need_restart = false;
         do_restart = true;
     }
+    if (panel->bb_eof_count < panel->expect_eof_count) {
+        do_restart = true;
+    }
+    panel->bb_eof_count = 0;
     portEXIT_CRITICAL_ISR(&panel->spinlock);
 #endif // CONFIG_LCD_RGB_RESTART_IN_VSYNC
 
