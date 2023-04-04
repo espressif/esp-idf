@@ -790,7 +790,7 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
      intptr_t mem_start, mem_end;
 
-    if (mode == ESP_BT_MODE_BLE) {
+    if (mode & ESP_BT_MODE_BLE) {
         mem_start = (intptr_t)&_bt_bss_start;
         mem_end = (intptr_t)&_bt_bss_end;
         if (mem_start != mem_end) {
