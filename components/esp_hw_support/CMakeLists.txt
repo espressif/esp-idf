@@ -98,8 +98,11 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "modem_clock.c")
     endif()
 
-    if(CONFIG_SOC_MEMSPI_SRC_FREQ_120M)
-        list(APPEND srcs "mspi_timing_tuning.c" "port/${target}/mspi_timing_config.c")
+    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+        list(APPEND srcs "mspi_timing_tuning.c" "mspi_timing_config.c")
+        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
+            list(APPEND srcs "mspi_timing_by_mspi_delay.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
