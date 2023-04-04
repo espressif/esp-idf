@@ -34,6 +34,8 @@ extern "C" {
                                 LEDC_SLOW_CLK_RC_FAST, \
                               }
 
+#define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
+
 
 /**
  * @brief Enable LEDC function clock

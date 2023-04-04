@@ -38,6 +38,9 @@ extern "C" {
 
 #define LEDC_LL_IS_TIMER_SPECIFIC_CLOCK(SPEED, CLK) ((CLK) == LEDC_USE_REF_TICK)
 
+#define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
+
+
 /**
  * @brief Set LEDC low speed timer clock
  *
