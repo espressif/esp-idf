@@ -69,18 +69,18 @@ menu "Example Configuration"
     config EXAMPLE_RESET_PROV_MGR_ON_FAILURE
         bool
         default y
-        prompt "Reset provisioned credentials and state machine after session failure"
+        prompt "Reset provisioned credentials and state machine after WiFi connection failure"
         help
-            Enable reseting provisioned credentials and state machine after session failure.
-            This will restart the provisioning service after retries are exhausted.
+            Enable reseting provisioned credentials and state machine after connection retry limit has been reached.
+            This will restart the provisioning service after WiFi connection retries are exhausted.
 
     config EXAMPLE_PROV_MGR_MAX_RETRY_CNT
         int
         default 5
-        prompt "Max retries before reseting provisioning state machine"
+        prompt "Max WiFi connection retries before reseting the provisioning state machine"
         depends on EXAMPLE_RESET_PROV_MGR_ON_FAILURE
         help
-            Set the Maximum retry to avoid reconnecting to an inexistent AP or if credentials
+            Set the Maximum retry limit to avoid trying to connect to an AP that is not within reach or if credentials
             are misconfigured. Provisioned credentials are erased and internal state machine
             is reset after this threshold is reached.
 
