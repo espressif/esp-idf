@@ -204,8 +204,6 @@ if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
     idf_component_optional_requires(PRIVATE nvs_flash)
 endif()
 
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
-
 if(${target} STREQUAL "linux")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)

@@ -261,7 +261,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     if(config->interface) {
         struct ifreq iface;
         if(netif_index_to_name(config->interface, iface.ifr_name) == NULL) {
-            ESP_LOGE(TAG, "fail to find interface name with netif index %d", config->interface);
+            ESP_LOGE(TAG, "fail to find interface name with netif index %" PRIu32, config->interface);
             goto err;
         }
         if(setsockopt(ep->sock, SOL_SOCKET, SO_BINDTODEVICE, &iface, sizeof(iface)) != 0) {
