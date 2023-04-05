@@ -1320,7 +1320,6 @@ components/vfs/test/test_vfs_paths.c
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
-components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h
 components/wifi_provisioning/proto-c/wifi_config.pb-c.c
 components/wifi_provisioning/proto-c/wifi_config.pb-c.h
 components/wifi_provisioning/proto-c/wifi_constants.pb-c.c
@@ -1332,9 +1331,6 @@ components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/wifi_provisioning/src/handlers.c
 components/wifi_provisioning/src/scheme_console.c
-components/wifi_provisioning/src/wifi_config.c
-components/wifi_provisioning/src/wifi_provisioning_priv.h
-components/wifi_provisioning/src/wifi_scan.c
 components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa3_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h

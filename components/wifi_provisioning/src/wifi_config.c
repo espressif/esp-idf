@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -312,6 +304,19 @@ esp_err_t wifi_prov_config_data_handler(uint32_t session_id, const uint8_t *inbu
     if (!req) {
         ESP_LOGE(TAG, "Unable to unpack config data");
         return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Authorize before dispatching command */
+    const wifi_prov_config_handlers_t *h = (const wifi_prov_config_handlers_t *)priv_data;
+    esp_err_t auth_status = ESP_OK;
+    if (h->config_auth) {
+        auth_status = h->config_auth(
+                (const char*)req->auth_token.data,
+                req->auth_token.len);
+    }
+    if (ESP_OK != auth_status) {
+        ESP_LOGE(TAG, "Proto command dispatch not authorized");
+        return ESP_FAIL;
     }
 
     wi_fi_config_payload__init(&resp);

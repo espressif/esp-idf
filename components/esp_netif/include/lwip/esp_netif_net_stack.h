@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,5 +71,9 @@ err_t wlanif_init_sta(struct netif *netif);
  * @param l2_buff External buffer pointer (to be passed to custom input-buffer free)
  */
 void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff);
+
+// Statistics
+int wlanif_bytes_in(void);
+int wlanif_bytes_out(void);
 
 #endif // CONFIG_ESP_NETIF_TCPIP_LWIP

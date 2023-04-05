@@ -25,6 +25,9 @@
 #include "esp_compiler.h"
 #include "lwip/esp_pbuf_ref.h"
 
+static int _bytes_in = 0;
+static int _bytes_out = 0;
+
 /**
  * In this function, the hardware should be initialized.
  * Called from wlanif_input().
@@ -86,6 +89,8 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     struct pbuf *q = p;
     esp_err_t ret;
 
+    _bytes_out += q->len;
+
     if(q->next == NULL) {
         ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
 
@@ -114,6 +119,14 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     return ERR_IF;
 }
 
+int wlanif_bytes_in(void) {
+    return _bytes_in;
+}
+
+int wlanif_bytes_out(void) {
+    return _bytes_out;
+}
+
 /**
  * This function should be called when a packet is ready to be read
  * from the interface. It uses the function low_level_input() that
@@ -138,6 +151,8 @@ void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
         }
         return;
     }
+
+    _bytes_in += len;
 
 #ifdef CONFIG_LWIP_L2_TO_L3_COPY
     p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
