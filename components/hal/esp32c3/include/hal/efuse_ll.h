@@ -32,7 +32,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    return EFUSE.rd_mac_spi_sys_0;
+    return EFUSE.rd_mac_spi_sys_0.mac_0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)
@@ -59,7 +59,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_ve
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return (EFUSE.rd_mac_spi_sys_5.wafer_version_minor_high << 3) + EFUSE.rd_mac_spi_sys_3.wafer_version_minor_low;
+    return (EFUSE.rd_mac_spi_sys_5.wafer_version_minor_hi << 3) + EFUSE.rd_mac_spi_sys_3.wafer_version_minor_lo;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
@@ -114,7 +114,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_v_rtc_dbias20
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_v_dig_dbias20(void)
 {
     // EFUSE_BLK1,    157,    8,      BLOCK1 voltage of digital dbias20
-    return (EFUSE.rd_mac_spi_sys_5.v_dig_dbias20_hi << 3) + EFUSE.rd_mac_spi_sys_4.v_dig_dbias20_low;
+    return (EFUSE.rd_mac_spi_sys_5.v_dig_dbias20_1 << 3) + EFUSE.rd_mac_spi_sys_4.v_dig_dbias20;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_dbias_hvt(void)
