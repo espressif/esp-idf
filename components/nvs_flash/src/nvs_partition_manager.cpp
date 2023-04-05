@@ -8,9 +8,9 @@
 #include "nvs_partition_lookup.hpp"
 #include "nvs_internal.h"
 
-#ifdef CONFIG_NVS_ENCRYPTION
+#ifndef LINUX_TARGET
 #include "nvs_encrypted_partition.hpp"
-#endif // CONFIG_NVS_ENCRYPTION
+#endif // ! LINUX_TARGET
 
 namespace nvs {
 
@@ -100,7 +100,6 @@ esp_err_t NVSPartitionManager::init_custom(Partition *partition, uint32_t baseSe
     return err;
 }
 
-#ifdef CONFIG_NVS_ENCRYPTION
 #ifdef ESP_PLATFORM
 esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_sec_cfg_t* cfg)
 {
@@ -140,7 +139,6 @@ esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_
     return ESP_OK;
 }
 #endif // ESP_PLATFORM
-#endif // CONFIG_NVS_ENCRYPTION
 
 esp_err_t NVSPartitionManager::deinit_partition(const char *partition_label)
 {
