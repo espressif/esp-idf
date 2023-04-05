@@ -70,6 +70,30 @@ menu "Heap memory debugging"
             This function depends on heap poisoning being enabled and adds four more bytes of overhead for each block
             allocated.
 
+    config HEAP_TRACE_HASH_MAP
+        bool "Use hash map mechanism to access heap trace records"
+        depends on HEAP_TRACING_STANDALONE
+        default n
+        help
+            Enable this flag to use a hash map to increase performance in handling
+            heap trace records.
+
+            Keeping this as "n" in your project will save RAM and heap memory but will lower
+            the performance of the heap trace in adding, retrieving and removing trace records.
+            Making this as "y" in your project, you will decrease free RAM and heap memory but,
+            the heap trace performances in adding retrieving and removing trace records will be
+            enhanced.
+
+    config HEAP_TRACE_HASH_MAP_SIZE
+        int "The number of entries in the hash map"
+        depends on HEAP_TRACE_HASH_MAP
+        range 1 10000
+        default 10
+        help
+            Defines the number of entries in the heap trace hashmap. The bigger this number is,
+            the bigger the hash map will be in the memory. In case the tracing mode is set to
+            HEAP_TRACE_ALL, the bigger the hashmap is, the better the performances are.
+
     config HEAP_ABORT_WHEN_ALLOCATION_FAILS
         bool "Abort if memory allocation fails"
         default n

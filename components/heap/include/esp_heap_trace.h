@@ -36,8 +36,11 @@ typedef struct heap_trace_record_t {
     size_t size;     ///< Size of the allocation
     void *alloced_by[CONFIG_HEAP_TRACING_STACK_DEPTH]; ///< Call stack of the caller which allocated the memory.
     void *freed_by[CONFIG_HEAP_TRACING_STACK_DEPTH];   ///< Call stack of the caller which freed the memory (all zero if not freed.)
-#ifdef CONFIG_HEAP_TRACING_STANDALONE
-    TAILQ_ENTRY(heap_trace_record_t) tailq; ///< Linked list: prev & next records
+#if CONFIG_HEAP_TRACING_STANDALONE
+    TAILQ_ENTRY(heap_trace_record_t) tailq_list; ///< Linked list: prev & next records
+#if CONFIG_HEAP_TRACE_HASH_MAP
+    TAILQ_ENTRY(heap_trace_record_t) tailq_hashmap; ///< Linked list: prev & next in hashmap entry list
+#endif // CONFIG_HEAP_TRACE_HASH_MAP
 #endif // CONFIG_HEAP_TRACING_STANDALONE
 } heap_trace_record_t;
 
@@ -52,6 +55,10 @@ typedef struct {
     size_t capacity;                 ///< The capacity of the internal buffer
     size_t high_water_mark;          ///< The maximum value that 'count' got to
     size_t has_overflowed;           ///< True if the internal buffer overflowed at some point
+#if CONFIG_HEAP_TRACE_HASH_MAP
+    size_t total_hashmap_hits;       ///< If hashmap is used, the total number of hits
+    size_t total_hashmap_miss;       ///< If hashmap is used, the total number of misses (possibly due to overflow)
+#endif
 } heap_trace_summary_t;
 
 /**
