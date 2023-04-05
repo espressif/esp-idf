@@ -562,4 +562,56 @@ menu "Wi-Fi"
         help
             Select this to enable unity test for DPP.
 
+
+    menu "WiFi SoftAP specific Network address"
+        depends on ESP_WIFI_SOFTAP_SUPPORT
+        config ESP_WIFI_SOFTAP_SPECIFIC_NET
+            bool "Specify specific network for SoftAP interface"
+            default n
+            help
+                If the default (192.168.4.1/24) does no suit your wanted
+                configuration, use this option to specify at compile
+                time the network.
+
+        config ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR1
+            int "First byte of the interface network address"
+            depends on ESP_WIFI_SOFTAP_SPECIFIC_NET
+            default 192
+            range 0 255
+            help
+                Here, the 192 for 192.168.4.1
+
+        config ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR2
+            int "Second byte of the interface network address"
+            depends on ESP_WIFI_SOFTAP_SPECIFIC_NET
+            default 168
+            range 0 255
+            help
+                Here, the 168 for 192.168.4.1
+
+        config ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR3
+            int "Third byte of the interface network address"
+            depends on ESP_WIFI_SOFTAP_SPECIFIC_NET
+            default 4
+            range 0 255
+            help
+                Here, the 4 for 192.168.4.1
+
+        config ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR4
+            int "Third byte of the interface network address"
+            depends on ESP_WIFI_SOFTAP_SPECIFIC_NET
+            default 1
+            range 0 255
+            help
+                Here, the 1 for 192.168.4.1
+
+        config ESP_WIFI_SOFTAP_SPECIFIC_NET_NETMASK_LEN
+            int "The length of the netmask, the l in the CIDR notation: a.b.c.d/l"
+            depends on ESP_WIFI_SOFTAP_SPECIFIC_NET
+            default 24
+            range 1 32
+            help
+                24 corresponds to 255.255.255.0, 16 to 255.255.0.0, 8 to 255.0.0.0
+
+    endmenu # "WiFi SoftAP specific network address"
 endmenu # Wi-Fi

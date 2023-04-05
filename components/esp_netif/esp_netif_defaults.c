@@ -20,9 +20,15 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config = ESP_NETIF_I
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip = {
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET
+        .ip = { .addr = ESP_IP4TOADDR( CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR1, CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR2, CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR3, CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR4) },
+        .gw = { .addr = ESP_IP4TOADDR( CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR1, CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR2, CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR3, CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_ADDR4) },
+        .netmask = { .addr = esp_netif_htonl(0xffffffffULL ^ ((0x1ULL << (32ULL - CONFIG_ESP_WIFI_SOFTAP_SPECIFIC_NET_NETMASK_LEN)) - 1)) },
+#else
         .ip = { .addr = ESP_IP4TOADDR( 192, 168, 4, 1) },
         .gw = { .addr = ESP_IP4TOADDR( 192, 168, 4, 1) },
         .netmask = { .addr = ESP_IP4TOADDR( 255, 255, 255, 0) },
+#endif
 };
 
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
