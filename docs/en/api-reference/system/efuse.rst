@@ -27,19 +27,22 @@ For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Co
 
 .. only:: not esp32
 
+  .. list::
+
     {IDF_TARGET_NAME} has 11 eFuse blocks each of the size of 256 bits (not all bits are available):
 
     * EFUSE_BLK0 is used entirely for system purposes;
     * EFUSE_BLK1 is used entirely for system purposes;
     * EFUSE_BLK2 is used entirely for system purposes;
-    * EFUSE_BLK3 or EFUSE_BLK_USER_DATA can be used for user purposes;
-    * EFUSE_BLK4 or EFUSE_BLK_KEY0 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK5 or EFUSE_BLK_KEY1 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK6 or EFUSE_BLK_KEY2 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK7 or EFUSE_BLK_KEY3 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK8 or EFUSE_BLK_KEY4 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK9 or EFUSE_BLK_KEY5 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK10 or EFUSE_BLK_SYS_DATA_PART2 is reseved for system purposes.
+    * EFUSE_BLK3 (also named EFUSE_BLK_USER_DATA) can be used for user purposes;
+    * EFUSE_BLK4 (also named EFUSE_BLK_KEY0) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK5 (also named EFUSE_BLK_KEY1) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK6 (also named EFUSE_BLK_KEY2) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK7 (also named EFUSE_BLK_KEY3) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK8 (also named EFUSE_BLK_KEY4) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    :SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK: * EFUSE_BLK9 (also named EFUSE_BLK_KEY5) can be used for any purpose except for flash encryption (due to a HW bug);
+    :not SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK: * EFUSE_BLK9 (also named EFUSE_BLK_KEY5) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK10 (also named EFUSE_BLK_SYS_DATA_PART2) is reseved for system purposes.
 
 
 Each block is divided into 8 32-bits registers.
