@@ -6,7 +6,8 @@
 ## Overview
 
 This example demonstrates usage of Mass Storage Class to get access to storage on USB memory stick.
-Example caries out read and write file operations, as USB storage is mounted to Virtual filesystem.
+Upon connection of USB stick, storage is mounted to Virtual filesystem. Example then creates `ESP` subdirectory(if not present already), as well as `text.txt` file. Its content is then repetitively printed to monitor until USB stick is manually ejected. User can decide whether or not to deinitialize the whole 
+USB stack or not by shorting GPIO10 to ground. When GPIO10 is left unconnected USB stack is not deinitialized, USB stick can be plugged-in again. 
 
 ### Hardware Required
 
@@ -28,6 +29,8 @@ ESP BOARD    USB CONNECTOR (type A)
                   | || GND
                    --
 ```
+
+Additionally, GPIO10 can be shorted to ground in order to deinitialize USB stack after ejecting USB stick. 
 
 ### Build and Flash
 

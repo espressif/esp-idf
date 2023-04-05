@@ -38,18 +38,12 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 After the flashing you should see the output at idf monitor:
 
 ```
+...
 I (256) USB-CDC: USB Host installed
 I (256) USB-CDC: Opening CDC ACM device 0x303A:0x4001
-CDC Header Descriptor:
-        bcdCDC: 1.20
-CDC Call Descriptor:
-        bmCapabilities: 0x00
-        bDataInterface: 1
-CDC ACM Descriptor:
-        bmCapabilities: 0x02
-CDC Union Descriptor:
-        bControlInterface: 0
-        bSubordinateInterface[0]: 1
+...
+Device descriptor is printed here
+...
 I (1666) USB-CDC: Data received
 I (1666) USB-CDC: 0x3ffc4c20   41 54 0d                                          |AT.|
 I (2666) USB-CDC: Data received
