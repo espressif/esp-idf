@@ -811,7 +811,7 @@ static void btc_gap_ble_set_channels_cmpl_callback(void *p_data)
 }
 
 
-static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION wl_opration)
+static void btc_update_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION wl_opration)
 {
     esp_ble_gap_cb_param_t param;
     bt_status_t ret;
@@ -1607,10 +1607,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         btc_ble_config_local_icon(arg->cfg_local_icon.icon);
         break;
     case BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST:
-        BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda, arg->update_white_list.wl_addr_type, btc_add_whitelist_complete_callback);
+        BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda, arg->update_white_list.wl_addr_type, btc_update_whitelist_complete_callback);
         break;
     case BTC_GAP_BLE_ACT_CLEAR_WHITE_LIST:
-        BTA_DmClearWhiteList();
+        BTA_DmClearWhiteList(btc_update_whitelist_complete_callback);
         break;
     case BTC_GAP_BLE_ACT_READ_RSSI:
         BTA_DmReadRSSI(arg->read_rssi.remote_addr, BTA_TRANSPORT_LE, btc_read_ble_rssi_cmpl_callback);
