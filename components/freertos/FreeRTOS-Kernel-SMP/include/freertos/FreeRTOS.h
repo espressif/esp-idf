@@ -1391,4 +1391,11 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
 #endif
 /* *INDENT-ON* */
 
+/* IDF API additions have been moved to idf_additions.h when building for
+ * Amazon SMP FreeRTOS. However, the rest of ESP-IDF has not been updated to
+ * include this header explicitly when calling this additional API. Thus, we
+ * include this here as a workaround until the rest of ESP-IDF can be updated
+ * to include idf_additions.h explicitly. */
+#include "freertos/idf_additions.h"
+
 #endif /* INC_FREERTOS_H */
