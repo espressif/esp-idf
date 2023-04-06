@@ -306,6 +306,11 @@
   - "components/efuse/**/*"
   - "examples/peripherals/adc/**/*"
 
+.patterns-target_test-ecdsa: &patterns-target_test-ecdsa
+  - "components/hal/**/*"
+  - "components/efuse/**/*"
+  - "components/mbedtls/port/ecdsa/*"
+
 ##############
 # if anchors #
 ##############
@@ -638,6 +643,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -671,6 +678,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -702,6 +711,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -735,6 +746,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -766,6 +779,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -799,6 +814,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -830,6 +847,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -863,6 +882,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -895,6 +916,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -920,6 +943,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -943,6 +968,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -968,6 +995,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -991,6 +1020,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1016,6 +1047,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1039,6 +1072,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1064,6 +1099,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1087,6 +1124,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1151,6 +1190,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1191,6 +1232,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1228,6 +1271,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1268,6 +1313,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1305,6 +1352,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1344,6 +1393,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1381,6 +1432,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1420,6 +1473,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1457,6 +1512,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1585,6 +1642,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1621,6 +1680,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1650,6 +1711,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1677,6 +1740,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1706,6 +1771,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1733,6 +1800,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -1762,6 +1831,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1790,6 +1861,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1817,6 +1890,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -2084,6 +2159,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+
+.rules:test:component_ut-esp32h2-ecdsa:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32h2
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
 
 .rules:test:component_ut-esp32s2:
   rules:

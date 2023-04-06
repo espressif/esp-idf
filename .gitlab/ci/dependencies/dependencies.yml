@@ -140,6 +140,7 @@ build:integration_test:
       - adc       # component_ut_pytest_esp32x_adc
       - i154
       - flash_multi
+      - ecdsa
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
