@@ -9,8 +9,9 @@
 #include "esp_heap_caps.h"
 
 
-// Some resources are lazy allocated (newlib locks) in the bootloader support code, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-650)
+// Some resources are lazy allocated, e.g. newlib locks, GDMA channel lazy installed by crypto driver
+// the threshold is left for those cases
+#define TEST_MEMORY_LEAK_THRESHOLD (-700)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

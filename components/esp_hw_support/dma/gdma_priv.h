@@ -67,6 +67,9 @@ struct gdma_channel_t {
     size_t sram_alignment;  // alignment for memory in SRAM
     size_t psram_alignment; // alignment for memory in PSRAM
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
+    struct {
+        uint32_t start_stop_by_etm: 1; // whether the channel is started/stopped by ETM
+    } flags;
 };
 
 struct gdma_tx_channel_t {
