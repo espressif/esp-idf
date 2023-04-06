@@ -5,23 +5,12 @@ import logging
 import os
 import sys
 import textwrap
-import typing
 from pathlib import Path
 from typing import List, Union
 
 import pytest
-from test_build_system_helpers import (APP_BINS, BOOTLOADER_BINS, PARTITION_BIN, EnvDict, IdfPyFunc, append_to_file,
-                                       check_file_contains, get_idf_build_env, replace_in_file, run_cmake)
-
-
-def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
-    """
-    Run cmake command with given arguments and build afterwards, raise an exception on failure
-    :param cmake_args: arguments to pass cmake
-    :param env: environment variables to run the cmake with; if not set, the default environment is used
-    """
-    run_cmake(*cmake_args, env=env)
-    run_cmake('--build', '.')
+from test_build_system_helpers import (APP_BINS, BOOTLOADER_BINS, PARTITION_BIN, IdfPyFunc, append_to_file,
+                                       file_contains, get_idf_build_env, replace_in_file, run_cmake_and_build)
 
 
 def assert_built(paths: Union[List[str], List[Path]]) -> None:
@@ -65,7 +54,7 @@ def test_build_with_generator_ninja(idf_py: IdfPyFunc) -> None:
     idf_py('-G', 'Ninja', 'build')
     cmake_cache_file = Path('build', 'CMakeCache.txt')
     assert_built([cmake_cache_file])
-    check_file_contains(cmake_cache_file, 'CMAKE_GENERATOR:INTERNAL=Ninja')
+    assert file_contains(cmake_cache_file, 'CMAKE_GENERATOR:INTERNAL=Ninja')
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
 
 
@@ -76,7 +65,7 @@ def test_build_with_generator_makefile(idf_py: IdfPyFunc) -> None:
     idf_py('-G', 'Unix Makefiles', 'build')
     cmake_cache_file = Path('build', 'CMakeCache.txt')
     assert_built([cmake_cache_file])
-    check_file_contains(cmake_cache_file, 'CMAKE_GENERATOR:INTERNAL=Unix Makefiles')
+    assert file_contains(cmake_cache_file, 'CMAKE_GENERATOR:INTERNAL=Unix Makefiles')
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
 
 
