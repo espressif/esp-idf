@@ -14,7 +14,7 @@
 #include "esp_vfs_dev.h"
 #include "esp_vfs_fat.h"
 #include "wear_levelling.h"
-#include "test_utils.h"
+#include "sdkconfig.h"
 
 static wl_handle_t test_wl_handle;
 

@@ -13,7 +13,6 @@
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"
 #include "wear_levelling.h"
-#include "test_utils.h"
 
 #define TEST_PARTITION_LABEL "flash_test"
 
