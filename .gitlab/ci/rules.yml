@@ -246,6 +246,7 @@
   - "components/driver/include/driver/sdio*.h"
   - "components/driver/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
+  - "examples/peripherals/sdio/**/*"
 
 # for jobs: component_ut_pytest_sdio related
 .patterns-component_ut-sdio: &patterns-component_ut-sdio
