@@ -306,6 +306,7 @@ build_pytest_components_esp32h2:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32h2
+  parallel: 4
   variables:
     IDF_TARGET: esp32h2
     TEST_DIR: components
