@@ -125,6 +125,7 @@
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_RESULT_BYTES               (2)
 #define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
+#define SOC_ADC_DIGI_MONITOR_NUM                (0U) // to reference `IDF_TARGET_SOC_ADC_DIGI_MONITOR_NUM` in document
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (20*1000)
 

@@ -73,6 +73,9 @@ If the ADC continuous mode driver is no longer used, you should deinitialize the
 
 .. only:: SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 
+    IIR filter
+    ~~~~~~~~~~
+
     Two IIR filters are available when ADC is working under continuous mode. To create an ADC IIR filter, you should set up the :cpp:type:`adc_continuous_iir_filter_config_t`, and call :cpp:func:`adc_new_continuous_iir_filter`.
 
     - :cpp:member:`adc_digi_filter_config_t::unit`, ADC  unit.
@@ -90,6 +93,33 @@ If the ADC continuous mode driver is no longer used, you should deinitialize the
         .. note::
 
             If you use both the filters on a same ADC channel, then only the first one will take effect.
+
+.. only:: SOC_ADC_MONITOR_SUPPORTED
+
+    Monitor
+    ~~~~~~~
+
+    {IDF_TARGET_SOC_ADC_DIGI_MONITOR_NUM} monitors are available when ADC is working under continuous mode, you can set one or two threshold(s) of a monitor on a working ADC channel, then monitor will invoke interrupts every sample loop if converted value outranges of the threshold. To create an ADC monitor, you need setup the :cpp:type:`adc_monitor_config_t` and call :cpp:func:`adc_new_continuous_monitor`.
+    - :cpp:member:`adc_monitor_config_t::adc_unit`, What ADC unit the channel you want to monit belongs to.
+    - :cpp:member:`adc_monitor_config_t::channel`, The channel you want to monit.
+    - :cpp:member:`adc_monitor_config_t::h_threshold`, The high threshold, convert value lager than this value will invoke interrupt, set to -1 if don't use.
+    - :cpp:member:`adc_monitor_config_t::l_threshold`, The low threshold, convert value less than this value will invoke interrupt, set to -1 if don't use.
+
+    Once a monitor is created, you can operate it by following APIs to construct your apps.
+
+    - :cpp:func:`adc_continuous_monitor_enable`, Enable a monitor.
+    - :cpp:func:`adc_continuous_monitor_disable`, Disable a monitor.
+    - :cpp:func:`adc_monitor_register_callbacks`, Register user callbacks to do something when ADC value outrange of the threshold.
+    - :cpp:func:`adc_del_continuous_monitor`, Delete a created monitor, free resources.
+
+    .. only:: esp32s2
+
+        .. NOTE::
+
+            There are some hardware limitations on ESP32S2:
+            1. Only one threshold supported for one monitor.
+            2. Only one monitor supported for one adc unit.
+            3. All enabled channel(s) of a certain adc unit in adc continuous mode driver will be monitored, param :cpp:member:`adc_monitor_config_t::channel` will not used.
 
 Initialize the ADC Continuous Mode Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
