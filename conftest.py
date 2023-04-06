@@ -121,6 +121,7 @@ ENV_MARKERS = {
     'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
     'psramv0': 'Runner with PSRAM version 0',
     'esp32eco3': 'Runner with esp32 eco3 connected',
+    'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
