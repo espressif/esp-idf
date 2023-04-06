@@ -139,67 +139,66 @@ To specify callbacks you can either set the pointer to your :cpp:type:`tusb_cdca
 USB Serial Console
 ^^^^^^^^^^^^^^^^^^
 
-The driver allows to redirect all standard application streams (stdinm stdout, stderr) to the USB Serial Device and return them to UART using :cpp:func:`esp_tusb_init_console`/:cpp:func:`esp_tusb_deinit_console` functions.
+The driver allows to redirect all standard application streams (stdin, stdout, stderr) to the USB Serial Device and return them to UART using :cpp:func:`esp_tusb_init_console`/:cpp:func:`esp_tusb_deinit_console` functions.
 
 USB Mass Storage Device (MSC)
 -----------------------------
 
-If the MSC CONFIG_TINYUSB_MSC_ENABLED option is enabled, the USB MSC Device can be initialized as shown below (see example below).
+If the MSC CONFIG_TINYUSB_MSC_ENABLED option is enabled in Menuconfig, the ESP Chip can be used as USB MSC Device. The storage media (spi-flash or sd-card) can be initialized as shown below (see example below).
+
+- SPI-Flash
 
 .. code-block:: c
 
-    static uint8_t const desc_configuration[] = {
-        // Config number, interface count, string index, total length, attribute, power in mA
-        TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    static esp_err_t storage_init_spiflash(wl_handle_t *wl_handle)
+    {
+        ***
+        esp_partition_t *data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
+        ***
+        wl_mount(data_partition, wl_handle);
+        ***
+    }
+    storage_init_spiflash(&wl_handle);
 
-        // Interface number, string index, EP Out & EP In address, EP size
-        TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 0, EDPT_MSC_OUT, EDPT_MSC_IN, TUD_OPT_HIGH_SPEED ? 512 : 64),
+    const tinyusb_msc_spiflash_config_t config_spi = {
+        .wl_handle = wl_handle
     };
+    tinyusb_msc_storage_init_spiflash(&config_spi);
 
-    static tusb_desc_device_t descriptor_config = {
-        .bLength = sizeof(descriptor_config),
-        .bDescriptorType = TUSB_DESC_DEVICE,
-        .bcdUSB = 0x0200,
-        .bDeviceClass = TUSB_CLASS_MISC,
-        .bDeviceSubClass = MISC_SUBCLASS_COMMON,
-        .bDeviceProtocol = MISC_PROTOCOL_IAD,
-        .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
-        .idVendor = 0x303A,
-        .idProduct = 0x4002,
-        .bcdDevice = 0x100,
-        .iManufacturer = 0x01,
-        .iProduct = 0x02,
-        .iSerialNumber = 0x03,
-        .bNumConfigurations = 0x01
-    };
 
-    static char const *string_desc_arr[] = {
-        (const char[]) { 0x09, 0x04 },  // 0: is supported language is English (0x0409)
-        "TinyUSB",                      // 1: Manufacturer
-        "TinyUSB Device",               // 2: Product
-        "123456",                       // 3: Serials
-        "Example MSC",                  // 4. MSC
-    };
-
-    const tinyusb_config_t tusb_cfg = {
-        .device_descriptor = &descriptor_config,
-        .string_descriptor = string_desc_arr,
-        .external_phy = false,
-        .configuration_descriptor = desc_configuration,
-    };
-    tinyusb_driver_install(&tusb_cfg);
-
-The mandatory callbacks that are required to be implemented are
+- SD-Card
 
 .. code-block:: c
 
-    void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4])
-    bool tud_msc_test_unit_ready_cb(uint8_t lun)
-    void tud_msc_capacity_cb(uint8_t lun, uint32_t *block_count, uint16_t *block_size)
-    bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, bool load_eject)
-    int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize)
-    int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize)
-    int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, uint16_t bufsize)
+    static esp_err_t storage_init_sdmmc(sdmmc_card_t **card)
+    {
+        ***
+        sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+        sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+        // For SD Card, set bus width to use
+
+        slot_config.width = 4;
+        slot_config.clk = CONFIG_EXAMPLE_PIN_CLK;
+        slot_config.cmd = CONFIG_EXAMPLE_PIN_CMD;
+        slot_config.d0 = CONFIG_EXAMPLE_PIN_D0;
+        slot_config.d1 = CONFIG_EXAMPLE_PIN_D1;
+        slot_config.d2 = CONFIG_EXAMPLE_PIN_D2;
+        slot_config.d3 = CONFIG_EXAMPLE_PIN_D3;
+        slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+
+        sd_card = (sdmmc_card_t *)malloc(sizeof(sdmmc_card_t));
+        (*host.init)();
+        sdmmc_host_init_slot(host.slot, (const sdmmc_slot_config_t *) &slot_config);
+        sdmmc_card_init(&host, sd_card);
+        ***
+    }
+    storage_init_sdmmc(&card);
+
+    const tinyusb_msc_sdmmc_config_t config_sdmmc = {
+        .card = card
+    };
+    tinyusb_msc_storage_init_sdmmc(&config_sdmmc);
+
 
 Application Examples
 --------------------
