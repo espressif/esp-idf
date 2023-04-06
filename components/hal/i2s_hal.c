@@ -13,7 +13,7 @@
 #include "sdkconfig.h"
 
 #ifndef SOC_I2S_SUPPORTS_TDM
-#define I2S_HAL_DEFAULT_MSB_RIGHT       (false) // Default msb_right bit to false
+#define I2S_HAL_DEFAULT_MSB_RIGHT       (true) // Default msb_right bit to true
 #define I2S_HAL_DEFAULT_RIGHT_FIRST     (I2S_HAL_DEFAULT_MSB_RIGHT) // Normally right_first bit keeps same as msb_right
 #endif  // SOC_I2S_SUPPORTS_TDM
 
