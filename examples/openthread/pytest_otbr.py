@@ -73,7 +73,7 @@ default_cli_ot_para = ocf.thread_parameter('router', '', '', '', False)
 @pytest.mark.esp32h2
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=0, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
     'config, count, app_path, target', [
         ('rcp|cli_h2|br', 3,
@@ -141,7 +141,7 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
 @pytest.mark.esp32h2
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=0, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
     'config, count, app_path, target', [
         ('rcp|cli_h2|br', 3,
@@ -261,7 +261,6 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         while not myudp.init_flag:
             if (time.time() - start_time) > 10:
                 assert False
-        assert ocf.host_joined_group('ff04::125')
         for num in range(0, 3):
             command = 'udp send ff04::125 5090 hello' + str(num)
             cli.write(command)

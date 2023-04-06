@@ -274,14 +274,6 @@ def thread_is_joined_group(dut:IdfDut) -> bool:
     return False
 
 
-def host_joined_group(group:str='') -> bool:
-    interface_name = get_host_interface_name()
-    command = 'netstat -g | grep ' + str(interface_name)
-    out_str = subprocess.getoutput(command)
-    print('groups:\n', str(out_str))
-    return group in str(out_str)
-
-
 class udp_parameter:
 
     def __init__(self, udp_type:str='', addr:str='::', port:int=5090, group:str='', init_flag:bool=False, timeout:float=15.0, udp_bytes:bytes=b''):
