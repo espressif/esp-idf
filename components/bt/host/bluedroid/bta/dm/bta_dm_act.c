@@ -845,14 +845,14 @@ void bta_dm_ble_set_channels (tBTA_DM_MSG *p_data)
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.add_wl_cb);
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.update_wl_cb);
 #endif  ///BLE_INCLUDED == TRUE
 }
 
 void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleClearWhitelist();
+    BTM_BleClearWhitelist(p_data->white_list.update_wl_cb);
 #endif
 }
 
