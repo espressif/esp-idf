@@ -77,7 +77,7 @@ menu "Example Configuration"
     config EXAMPLE_PROV_MGR_MAX_RETRY_CNT
         int
         default 5
-        prompt "Max WiFi connection retries before reseting the provisioning state machine"
+        prompt "Max WiFi connection retries before resetting the provisioning state machine"
         depends on EXAMPLE_RESET_PROV_MGR_ON_FAILURE
         help
             Set the Maximum retry limit to avoid trying to connect to an AP that is not within reach or if credentials
