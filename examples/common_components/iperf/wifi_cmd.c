@@ -365,8 +365,15 @@ static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
+
+#ifdef CONFIG_LWIP_IPV6
     printf("%" PRIu32 " bytes from %s icmp_seq=%d ttl=%d time=%" PRIu32 " ms\n",
            recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
+#else
+    printf("%" PRIu32 " bytes from %s icmp_seq=%d ttl=%d time=%" PRIu32 " ms\n",
+           recv_len, inet_ntoa(target_addr.addr), seqno, ttl, elapsed_time);
+#endif
+
 }
 
 static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
@@ -375,7 +382,11 @@ static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
     ip_addr_t target_addr;
     esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+#ifdef CONFIG_LWIP_IPV6
     printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+#else
+    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.addr), seqno);
+#endif
 }
 
 static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
@@ -391,9 +402,12 @@ static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
     uint32_t loss = (uint32_t)((1 - ((float)received) / transmitted) * 100);
     if (IP_IS_V4(&target_addr)) {
         printf("\n--- %s ping statistics ---\n", inet_ntoa(*ip_2_ip4(&target_addr)));
-    } else {
+    }
+#ifdef CONFIG_LWIP_IPV6
+    else {
         printf("\n--- %s ping statistics ---\n", inet6_ntoa(*ip_2_ip6(&target_addr)));
     }
+#endif
     printf("%" PRIu32 " packets transmitted, %" PRIu32 " received, %" PRIu32 "%% packet loss, time %" PRIu32 "ms\n",
            transmitted, received, loss, total_time_ms);
     // delete the ping sessions, so that we clean up all resources and can create a new ping session
@@ -450,10 +464,13 @@ static int do_ping_cmd(int argc, char **argv)
     if (res->ai_family == AF_INET) {
         struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
         inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
-    } else {
+    }
+#ifdef CONFIG_LWIP_IPV6
+    else {
         struct in6_addr addr6 = ((struct sockaddr_in6 *) (res->ai_addr))->sin6_addr;
         inet6_addr_to_ip6addr(ip_2_ip6(&target_addr), &addr6);
     }
+#endif
     freeaddrinfo(res);
     config.target_addr = target_addr;
 
