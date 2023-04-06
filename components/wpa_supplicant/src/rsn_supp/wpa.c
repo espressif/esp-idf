@@ -2621,6 +2621,12 @@ void eapol_txcb(void *eb)
         case WPA_FIRST_HALF_4WAY_HANDSHAKE:
             break;
         case WPA_LAST_HALF_4WAY_HANDSHAKE:
+
+            if (esp_wifi_eb_tx_status_success_internal(eb) != true) {
+                wpa_printf(MSG_ERROR, "Eapol message 4/4 tx failure, not installing keys");
+                return;
+            }
+
             if (sm->txcb_flags & WPA_4_4_HANDSHAKE_BIT) {
                 sm->txcb_flags &= ~WPA_4_4_HANDSHAKE_BIT;
                 isdeauth = wpa_supplicant_send_4_of_4_txcallback(sm);
