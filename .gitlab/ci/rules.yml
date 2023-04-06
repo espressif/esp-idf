@@ -867,6 +867,38 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
+.rules:build:custom_test:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-label-custom_test_esp32c2
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32c6
+    - <<: *if-label-custom_test_esp32h2
+    - <<: *if-label-custom_test_esp32h4
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-label-target_test
+    - <<: *if-label-weekend_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:build:custom_test-esp32:
   rules:
     - <<: *if-revert-branch
