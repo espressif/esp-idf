@@ -9,7 +9,7 @@
 [0;32mI (793) mdf_device_handle: [mdf_device_init_handle, 908]:silicon revision : 0[0m
 [0;32mI (801) mdf_device_handle: [mdf_device_init_handle, 910]:flash            : 4 MB external[0m
 [0;32mI (810) mdf_device_handle: [mdf_device_init_handle, 911]:***************************************************[0m
-E (45488) mesh: [esp_mesh_push_to_nwk_queue,5360] null args
+[5nE (45488) mesh: [esp_mesh_push_to_nwk_queue,5360] null args
 [0;32mI (50495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 00:00:00:00:00:00, mac:30:ae:a4:00:43:84, layer: -1, free heap: 87712, compile time: May 26 2018 00:22:11[0m
 [0;32mI (55495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 88452, compile time: May 26 2018 00:22:11[0m
 [0;32mI (60495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71792, compile time: May 26 2018 00:22:11[0m

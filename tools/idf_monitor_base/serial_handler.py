@@ -16,9 +16,9 @@ from .chip_specific_config import get_chip_config
 from .console_parser import ConsoleParser, prompt_next_action  # noqa: F401
 from .console_reader import ConsoleReader  # noqa: F401
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
-                        CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, PANIC_DECODE_DISABLE, PANIC_END, PANIC_IDLE,
-                        PANIC_READING, PANIC_STACK_DUMP, PANIC_START)
-from .coredump import CoreDump
+                        CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CONSOLE_STATUS_QUERY, PANIC_DECODE_DISABLE,
+                        PANIC_END, PANIC_IDLE, PANIC_READING, PANIC_STACK_DUMP, PANIC_START)
+from .coredump import CoreDump  # noqa: F401
 from .exceptions import SerialStopException
 from .gdbhelper import GDBHelper
 from .line_matcher import LineMatcher
@@ -106,6 +106,11 @@ class SerialHandler:
                     self.logger.handle_possible_pc_address_in_line(line)
             check_gdb_stub_and_run(line)
             self._force_line_print = False
+
+        if self._last_line_part.startswith(CONSOLE_STATUS_QUERY):
+            self.logger.print(CONSOLE_STATUS_QUERY)
+            self._last_line_part = self._last_line_part[len(CONSOLE_STATUS_QUERY):]
+
         # Now we have the last part (incomplete line) in _last_line_part. By
         # default we don't touch it and just wait for the arrival of the rest
         # of the line. But after some time when we didn't received it we need
@@ -254,6 +259,10 @@ class SerialHandlerNoElf(SerialHandler):
             self.logger.print(line + b'\n')
             self.compare_elf_sha256(line.decode(errors='ignore'))
             self._force_line_print = False
+
+        if self._last_line_part.startswith(CONSOLE_STATUS_QUERY):
+            self.logger.print(CONSOLE_STATUS_QUERY)
+            self._last_line_part = self._last_line_part[len(CONSOLE_STATUS_QUERY):]
 
         force_print_or_matched = any((
             self._force_line_print,
