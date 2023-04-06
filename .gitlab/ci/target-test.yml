@@ -1079,41 +1079,10 @@ pytest_test_apps_esp32s3_mspi_f4r4:
     - .example_test_template
     - .rules:test:example_test-esp32
 
-.example_test_esp32s2_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32s2
-
-.example_test_esp32c2_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32c2
-
 .example_test_esp32c3_template:
   extends:
     - .example_test_template
     - .rules:test:example_test-esp32c3
-
-.example_test_esp32c6_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32c6
-
-.example_test_esp32h2_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32h2
-
-.example_test_esp32s3_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32s3
-
-example_test_001B_V3:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_EthKitV12
 
 example_test_001C:
   extends: .example_test_esp32_template
@@ -1135,48 +1104,16 @@ example_test_005:
     - ESP32
     - Example_WIFI_BT
 
-example_test_006:
-  extends:
-    - .example_test_esp32_template
-    - .rules:labels:iperf_stress_test
-  tags:
-    - ESP32
-    - Example_ShieldBox
-
 example_test_007:
   extends: .example_test_esp32_template
   tags:
     - ESP32
     - Example_I2C_CCS811_SENSOR
 
-example_test_017:
-  extends: .example_test_esp32s2_template
-  tags:
-    - ESP32S2
-    - Example_GENERIC
-
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
   tags:
     - ESP32C3
-    - Example_GENERIC
-
-example_test_C2_GENERIC:
-  extends: .example_test_esp32c2_template
-  tags:
-    - ESP32C2
-    - Example_GENERIC
-
-example_test_C6_GENERIC:
-  extends: .example_test_esp32c6_template
-  tags:
-    - ESP32C6
-    - Example_GENERIC
-
-example_test_H2_GENERIC:
-  extends: .example_test_esp32h2_template
-  tags:
-    - ESP32H2
     - Example_GENERIC
 
 .unit_test_template:
