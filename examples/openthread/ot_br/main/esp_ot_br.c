@@ -34,6 +34,7 @@
 #include "esp_vfs_dev.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_wifi.h"
+#include "esp_coexist.h"
 #include "mdns.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
@@ -221,7 +222,12 @@ void app_main(void)
 #if CONFIG_EXAMPLE_CONNECT_WIFI
 #if CONFIG_OPENTHREAD_BR_AUTO_START
     ESP_ERROR_CHECK(example_connect());
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_OPENTHREAD_RADIO_NATIVE
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
+    ESP_ERROR_CHECK(esp_coex_wifi_i154_enable());
+#else
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+#endif
     esp_openthread_set_backbone_netif(get_example_netif());
 #else
     esp_ot_wifi_netif_init();

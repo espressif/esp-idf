@@ -395,3 +395,14 @@ esp_err_t esp_disable_extern_coex_gpio_pin()
     return ESP_OK;
 }
 #endif/*External Coex*/
+
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
+esp_err_t esp_coex_wifi_i154_enable(void)
+{
+    // TODO: Add a scheme for wifi and 154 coex.
+    // Remove this function if FCC-50 closes.
+    coex_enable();
+    coex_schm_status_bit_set(1, 1);
+    return ESP_OK;
+}
+#endif
