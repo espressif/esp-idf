@@ -26,14 +26,14 @@ TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
     const esp_partition_t *part = get_test_data_partition();
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-    spi_flash_reset_counters();
+    esp_flash_reset_counters();
 #endif
 
     // erase whole partition
     ESP_ERROR_CHECK( esp_partition_erase_range(part, 0, part->size) );
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-    spi_flash_dump_counters();
+    esp_flash_dump_counters(stdout);
 #endif
 
     // put some dummy data on sector boundaries

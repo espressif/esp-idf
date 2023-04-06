@@ -1017,7 +1017,6 @@ components/soc/include/soc/uhci_periph.h
 components/soc/lldesc.c
 components/soc/soc_include_legacy_warn.c
 components/spi_flash/cache_utils.h
-components/spi_flash/include/esp_spi_flash_counters.h
 components/spi_flash/include/spi_flash_chip_boya.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h

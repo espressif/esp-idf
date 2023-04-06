@@ -16,14 +16,12 @@ from pytest_embedded import Dut
     [
         'release',
         'flash_qio',
-        'verify'
+        'verify',
     ],
     indirect=True,
 )
 def test_esp_flash(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[esp_flash]')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases(group='esp_flash')
 
 
 @pytest.mark.esp32s3
@@ -38,9 +36,7 @@ def test_esp_flash(dut: Dut) -> None:
     indirect=True,
 )
 def test_esp_flash_rom(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[esp_flash]')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases(group='esp_flash')
 
 
 @pytest.mark.esp32
