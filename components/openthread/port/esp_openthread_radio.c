@@ -736,3 +736,12 @@ otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 
     return OT_ERROR_NONE;
 }
+
+otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aChannel, int8_t aMaxPower)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aChannel);
+    OT_UNUSED_VARIABLE(aMaxPower);
+
+    return OT_ERROR_NONE;
+}

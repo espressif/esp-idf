@@ -45,12 +45,15 @@ UartSpinelInterface::~UartSpinelInterface(void)
 
 esp_err_t UartSpinelInterface::Init(const esp_openthread_uart_config_t &radio_uart_config)
 {
+    esp_err_t error = ESP_OK;
     m_uart_rx_buffer = static_cast<uint8_t *>(heap_caps_malloc(kMaxFrameSize, MALLOC_CAP_8BIT));
     if (m_uart_rx_buffer == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
-    return InitUart(radio_uart_config);
+    error = InitUart(radio_uart_config);
+    ESP_LOGI(OT_PLAT_LOG_TAG, "spinel UART interface initialization completed");
+    return error;
 }
 
 esp_err_t UartSpinelInterface::Deinit(void)
@@ -280,6 +283,14 @@ esp_err_t UartSpinelInterface::TryRecoverUart(void)
     ESP_RETURN_ON_ERROR(DeinitUart(), OT_PLAT_LOG_TAG, "DeInitUart failed");
     ESP_RETURN_ON_ERROR(InitUart(m_uart_config), OT_PLAT_LOG_TAG, "InitUart failed");
     return ESP_OK;
+}
+
+void UartSpinelInterface::OnRcpReset(void)
+{
+    if (mRcpFailureHandler) {
+        mRcpFailureHandler();
+        TryRecoverUart();
+    }
 }
 
 } // namespace openthread

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,20 +7,14 @@
 #pragma once
 
 #include "esp_err.h"
-#include "esp_openthread.h"
 #include "esp_openthread_types.h"
-#include "hal/uart_types.h"
+#include "driver/spi_master.h"
 #include "lib/spinel/spinel_interface.hpp"
-#include "openthread/error.h"
 
 namespace esp {
 namespace openthread {
 
-/**
- * This class defines an UART interface to the Radio Co-processor (RCP).
- *
- */
-class UartSpinelInterface {
+class SpiSpinelInterface {
 public:
     /**
      * @brief   This constructor of object.
@@ -30,36 +24,37 @@ public:
      * @param[in] frame_buffer      A reference to a `RxFrameBuffer` object.
      *
      */
-    UartSpinelInterface(ot::Spinel::SpinelInterface::ReceiveFrameCallback callback, void *callback_context,
-                        ot::Spinel::SpinelInterface::RxFrameBuffer &frame_buffer);
+    SpiSpinelInterface(ot::Spinel::SpinelInterface::ReceiveFrameCallback callback, void *callback_context,
+                       ot::Spinel::SpinelInterface::RxFrameBuffer &frame_buffer);
 
     /**
      * @brief   This destructor of the object.
      *
      */
-    ~UartSpinelInterface(void);
+    ~SpiSpinelInterface(void);
 
     /**
-     * @brief   This method initializes the HDLC interface.
+     * @brief   This method initializes the spinel interface.
      *
      * @return
      *      - ESP_OK on success
+     *      - ESP_ERR_INVALID_STATE if already initialized
      *      - ESP_ERR_NO_MEM if allocation has failed
-     *      - ESP_ERROR on failure
+     *      - ESP_FAIL on failure
      */
-    esp_err_t Init(const esp_openthread_uart_config_t &radio_uart_config);
+    esp_err_t Init(const esp_openthread_spi_host_config_t &spi_config);
 
     /**
      * @brief  This method deinitializes the HDLC interface.
      *
+     * @return
+     *      - ESP_OK on success
+     *      - ESP_FAIL on failure
      */
     esp_err_t Deinit(void);
 
     /**
      * @brief   This method encodes and sends a spinel frame to Radio Co-processor (RCP) over the socket.
-     *
-     * @note    This is blocking call, i.e., if the socket is not writable, this method waits for it to become writable
-     * for up to `kMaxWaitTime` interval.
      *
      * @param[in] frame     A pointer to buffer containing the spinel frame to send.
      * @param[in] length    The length (number of bytes) in the frame.
@@ -85,7 +80,7 @@ public:
     otError WaitForFrame(uint64_t timeout_us);
 
     /**
-     * This method performs uart processing to the RCP.
+     * This method performs spi processing to the RCP.
      *
      * @param[in]  mainloop     The mainloop context
      *
@@ -108,53 +103,39 @@ public:
      */
     void RegisterRcpFailureHandler(esp_openthread_rcp_failure_handler handler) { mRcpFailureHandler = handler; }
 
-    void OnRcpReset(void);
-
+    /**
+     * This method is called when RCP is reset to recreate the connection with it.
+     * Intentionally empty.
+     *
+     */
     otError ResetConnection(void) { return OT_ERROR_NONE; }
 
+    /**
+     * This method is called when RCP failure detected and resets internal states of the interface.
+     *
+     */
+    void OnRcpReset(void);
+
 private:
-    enum {
-        /**
-         * Maximum spinel frame size.
-         *
-         */
-        kMaxFrameSize = ot::Spinel::SpinelInterface::kMaxFrameSize,
+    static constexpr uint8_t kSPIFrameHeaderSize = 5;
+    static constexpr uint16_t kSPIFrameSize = ot::Spinel::SpinelInterface::kMaxFrameSize + kSPIFrameHeaderSize;
+    static constexpr uint8_t kSmallPacketSize = 32;
+    static constexpr uint16_t kSPIDataEvent = 1;
 
-        /**
-         * Maximum wait time in Milliseconds for socket to become writable (see `SendFrame`).
-         *
-         */
-        kMaxWaitTime = 2000,
-    };
+    static void GpioIntrHandler(void *arg);
+    esp_err_t ConductSPITransaction(bool reset, uint16_t tx_data_size, uint16_t rx_data_size);
 
-    esp_err_t InitUart(const esp_openthread_uart_config_t &radio_uart_config);
-
-    esp_err_t DeinitUart(void);
-
-    int TryReadAndDecode(void);
-
-    otError WaitForWritable(void);
-
-    otError Write(const uint8_t *frame, uint16_t length);
-
-    esp_err_t TryRecoverUart(void);
-
-    static void HandleHdlcFrame(void *context, otError error);
-    void HandleHdlcFrame(otError error);
+    esp_openthread_spi_host_config_t m_spi_config;
+    uint8_t m_tx_buffer[kSPIFrameSize];
+    int m_event_fd;
+    volatile uint16_t m_pending_data_len;
 
     ot::Spinel::SpinelInterface::ReceiveFrameCallback m_receiver_frame_callback;
     void *m_receiver_frame_context;
     ot::Spinel::SpinelInterface::RxFrameBuffer &m_receive_frame_buffer;
+    bool m_has_pending_device_frame;
 
-    ot::Hdlc::Decoder m_hdlc_decoder;
-    uint8_t *m_uart_rx_buffer;
-
-    esp_openthread_uart_config_t m_uart_config;
-    int m_uart_fd;
-
-    // Non-copyable, intentionally not implemented.
-    UartSpinelInterface(const UartSpinelInterface &);
-    UartSpinelInterface &operator=(const UartSpinelInterface &);
+    spi_device_handle_t m_device;
 
     esp_openthread_rcp_failure_handler mRcpFailureHandler;
 };

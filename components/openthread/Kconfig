@@ -61,6 +61,12 @@ menu "OpenThread"
             bool "Connect via UART"
             help
                 Select this to connect to a Radio Co-Processor via UART.
+
+        config OPENTHREAD_RADIO_SPINEL_SPI
+            bool "Connect via SPI"
+            help
+                Select this to connect to a Radio Co-Processor via SPI.
+
     endchoice
 
     choice OPENTHREAD_DEVICE_TYPE
@@ -87,6 +93,22 @@ menu "OpenThread"
                 Select this to enable Radio Only Device which can only forward 15.4 packets to the host.
                 The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
                 radio only device.
+    endchoice
+
+    choice OPENTHREAD_RCP_TRANSPORT
+        prompt "The RCP transport type"
+        depends on OPENTHREAD_RADIO
+        default OPENTHREAD_RCP_UART
+
+        config OPENTHREAD_RCP_UART
+            bool "UART RCP"
+            help
+                Select this to enable UART connection to host.
+
+        config OPENTHREAD_RCP_SPI
+            bool "SPI RCP"
+            help
+                Select this to enable SPI connection to host.
     endchoice
 
     config OPENTHREAD_CLI
