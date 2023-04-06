@@ -7,7 +7,8 @@
 #pragma once
 
 #include "sdkconfig.h"
-#include "idf_additions_inc.h"
+#include "idf_additions.h"
+#include "esp_private/freertos_idf_additions_priv.h"
 
 /**
  * This file will be included in `tasks.c` file, thus, it is treated as a source

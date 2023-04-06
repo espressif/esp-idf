@@ -37,6 +37,8 @@ set(include_dirs
     "esp_additions/include/freertos"         # For files with #include "FreeRTOSConfig.h"
     "esp_additions/include"                  # For files with #include "freertos/FreeRTOSConfig.h"
                                              #      or #include "freertos/task_snapshot.h"
+                                             #      or #include "freertos/idf_additions.h"
+                                             #      or #include "esp_private/freertos_idf_additions_priv.h"
     "esp_additions/arch/${arch}/include")    # For #include "freertos/FreeRTOSConfig_arch.h"
 
 set(private_include_dirs
