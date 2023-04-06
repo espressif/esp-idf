@@ -165,10 +165,18 @@ examples/peripherals/sdio/host:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: Only the SDSPI of ESP32 supports ESP SDIO slave for now
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
 
 examples/peripherals/sdio/slave:
   disable:
     - if: SOC_SDIO_SLAVE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
 
 examples/peripherals/secure_element/atecc608_ecdsa:
   enable:
