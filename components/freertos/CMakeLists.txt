@@ -59,7 +59,7 @@ else()
         "${kernel_dir}/portable/${arch}/portasm.S")
 
     list(APPEND private_include_dirs
-        "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
+        "esp_additions")    # For #include "freertos_tasks_c_additions.h"
 
     if(CONFIG_FREERTOS_SMP)
         set(ldfragments linker_smp.lf linker_common.lf)
