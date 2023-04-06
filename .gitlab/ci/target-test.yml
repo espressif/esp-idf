@@ -1074,19 +1074,6 @@ test_app_test_pytest_esp32s3_mspi_f4r4:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
 
-test_weekend_mqtt:
-  extends:
-    - .test_app_esp32_template
-    - .rules:labels:weekend_test
-  tags:
-    - ESP32
-    - ethernet_router
-  script:
-    - export MQTT_PUBLISH_TEST=1
-    - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
-    - cd $IDF_PATH/tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $TEST_PATH -c $TEST_PATH/publish_connect_mqtt_.yml
-
 .example_test_esp32_template:
   extends:
     - .example_test_template
@@ -1191,50 +1178,6 @@ example_test_H2_GENERIC:
   tags:
     - ESP32H2
     - Example_GENERIC
-
-.test_app_template:
-  extends: .target_test_job_template
-  needs:
-    - assign_custom_test
-  variables:
-    GIT_DEPTH: 1
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
-
-.test_app_esp32_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32
-
-.test_app_esp32s2_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32s2
-
-.test_app_esp32c2_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32c2
-
-.test_app_esp32c3_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32c3
-
-.test_app_esp32c6_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32c6
-
-.test_app_esp32h2_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32h2
-
-.test_app_esp32s3_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32s3
 
 .unit_test_template:
   extends: .target_test_job_template
