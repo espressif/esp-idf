@@ -150,7 +150,7 @@ cache:
   # target test jobs
   if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
     # ttfw jobs
-    if ! echo "${CI_JOB_NAME}" | egrep ".+_pytest_.+"; then
+    if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
       run_cmd bash install.sh --enable-ci --enable-ttfw
     else
       run_cmd bash install.sh --enable-ci --enable-pytest
@@ -160,7 +160,7 @@ cache:
   elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
     run_cmd bash install.sh --enable-ci --enable-pytest
   else
-    if ! echo "${CI_JOB_NAME}" | egrep ".+_pytest_.+"; then
+    if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
       run_cmd bash install.sh --enable-ci
     else
       run_cmd bash install.sh --enable-ci --enable-pytest
