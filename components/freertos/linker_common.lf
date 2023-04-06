@@ -35,6 +35,12 @@ entries:
         tasks:prvTaskPriorityRestore (default)
 
     # ------------------------------------------------------------------------------------------------------------------
+    # idf_additions.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    idf_additions (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
     # app_startup.c
     # Placement Rules: Functions always in flash as they are never called from an ISR
     # ------------------------------------------------------------------------------------------------------------------

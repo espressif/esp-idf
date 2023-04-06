@@ -430,6 +430,12 @@ When implementing TLSP callbacks, users should note the following:
 - The callback **must never attempt to block or yield** and critical sections should be kept as short as possible
 - The callback is called shortly before a deleted task's memory is freed. Thus, the callback can either be called from :cpp:func:`vTaskDelete` itself, or from the idle task.
 
+.. ----------------------------------------------- IDF Additional API --------------------------------------------------
+
+IDF Additional API
+------------------
+
+The :component_file:`freertos/esp_additions/include/freertos/idf_additions.h` header contains FreeRTOS related helper functions added by ESP-IDF. Users can include this header via ``#include "freertos/idf_additions.h"``.
 
 .. ------------------------------------------ Component Specific Properties --------------------------------------------
 
@@ -455,3 +461,8 @@ Hooks API
 ^^^^^^^^^
 
 .. include-build-file:: inc/esp_freertos_hooks.inc
+
+Additional API
+^^^^^^^^^^^^^^
+
+.. include-build-file:: inc/idf_additions.inc
