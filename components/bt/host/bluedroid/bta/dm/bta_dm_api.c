@@ -324,26 +324,26 @@ void BTA_DmBleSetChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_channels_c
 
 }
 
-void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb)
+void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
     if ((p_msg = (tBTA_DM_API_UPDATE_WHITE_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_WHITE_LIST))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_UPDATE_WHITE_LIST_EVT;
         p_msg->add_remove = add_remove;
         p_msg->addr_type = addr_type;
-        p_msg->add_wl_cb = add_wl_cb;
+        p_msg->update_wl_cb = update_wl_cb;
         memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
 
         bta_sys_sendmsg(p_msg);
     }
 }
 
-void BTA_DmClearWhiteList(void)
+void BTA_DmClearWhiteList(tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
-    tBTA_DM_API_ENABLE *p_msg;
-    if ((p_msg = (tBTA_DM_API_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_ENABLE))) != NULL) {
+    tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
+    if ((p_msg = (tBTA_DM_API_UPDATE_WHITE_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_WHITE_LIST))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_CLEAR_WHITE_LIST_EVT;
-        p_msg->p_sec_cback = NULL;
+        p_msg->update_wl_cb = update_wl_cb;
 
         bta_sys_sendmsg(p_msg);
     }

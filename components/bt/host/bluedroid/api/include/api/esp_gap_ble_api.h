@@ -650,7 +650,9 @@ typedef enum {
 typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
-} esp_ble_wl_opration_t;
+    ESP_BLE_WHITELIST_CLEAR      = 0x02,    /*!< clear all device in whitelist */
+} esp_ble_wl_operation_t;
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 typedef enum {
     ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_ADD      = 0,  /*!< Add device info into duplicate scan exceptional list */
@@ -1063,7 +1065,7 @@ typedef union {
      */
     struct ble_update_whitelist_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
-        esp_ble_wl_opration_t wl_opration;          /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
+        esp_ble_wl_operation_t wl_opration;          /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
     } update_whitelist_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
@@ -1547,9 +1549,6 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
 esp_err_t esp_ble_gap_set_device_name(const char *name);
 
 /**
-<<<<<<< HEAD
- * @brief          This function is called to get local used address and adress type.
-=======
  * @brief           Get device name of the local device
  *
  * @return
@@ -1561,7 +1560,6 @@ esp_err_t esp_ble_gap_get_device_name(void);
 
 /**
  * @brief          This function is called to get local used address and address type.
->>>>>>> 708ca0181c... bluedroid: support get bluetooth device name
  *                 uint8_t *esp_bt_dev_get_address(void) get the public address
  *
  * @param[in]       local_used_addr - current local used ble address (six bytes)
