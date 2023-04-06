@@ -375,11 +375,13 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     // Get duty value right before stopping the fade
     uint32_t duty_before_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
+    // PWM signal is 2000 Hz. It may take one cycle (500 us) at maximum to stablize the duty.
+    esp_rom_delay_us(500);
+    // Get duty value now, which is at least one cycle after the ledc_fade_stop function returns
+    uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     fade_stop = esp_timer_get_time();
     time_ms = (fade_stop - fade_start) / 1000;
     TEST_ASSERT_TRUE(llabs(time_ms - 127) < 20);
-    // Get duty value after fade_stop returns (give at least one cycle for the duty set in fade_stop to take effective)
-    uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ASSERT_INT32_WITHIN(4, duty_before_stop, duty_after_stop); // 4 is the scale for one step in the last fade
     vTaskDelay(300 / portTICK_PERIOD_MS);
     // Duty should not change any more after ledc_fade_stop returns

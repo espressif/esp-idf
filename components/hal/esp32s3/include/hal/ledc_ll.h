@@ -33,6 +33,9 @@ extern "C" {
                                 LEDC_SLOW_CLK_RC_FAST, \
                               }
 
+#define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
+
+
 /**
  * @brief Set LEDC low speed timer clock
  *

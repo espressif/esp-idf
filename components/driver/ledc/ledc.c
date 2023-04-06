@@ -599,7 +599,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
         // Set channel configurations and update bits before core clock is on could lead to error
         // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
         // It can be switched to the other desired clock sources to meet the output pwm freq requirement later at timer configuration
-        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), 1);
+        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
 #endif
     }
 
@@ -1214,7 +1214,7 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     _ledc_fade_hw_acquire(speed_mode, channel);
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_duty_config(speed_mode, channel, hpoint, duty, 1, 0, 0, 0);
+    ledc_duty_config(speed_mode, channel, hpoint, duty, 1, 1, 1, 0);
     _ledc_update_duty(speed_mode, channel);
     portEXIT_CRITICAL(&ledc_spinlock);
     _ledc_fade_hw_release(speed_mode, channel);
