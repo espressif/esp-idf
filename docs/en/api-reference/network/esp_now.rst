@@ -21,7 +21,7 @@ ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The defaul
     ------------------------------------------------------------------------------------------------------------
     | MAC Header | Category Code | Organization Identifier | Random Values | Vendor Specific Content |   FCS   |
     ------------------------------------------------------------------------------------------------------------
-      24 bytes         1 byte              3 bytes               4 bytes             7~255 bytes        4 bytes 
+      24 bytes         1 byte              3 bytes               4 bytes             7~257 bytes        4 bytes 
 
 - Category Code: The Category Code field is set to the value(127) indicating the vendor-specific category.
 - Organization Identifier: The Organization Identifier contains a unique identifier (0x18fe34), which is the first three bytes of MAC address applied by Espressif.
