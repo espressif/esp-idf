@@ -27,6 +27,7 @@ typedef struct {
     ecdsa_curve_t curve;            /* Curve to use for operation */
     ecdsa_k_mode_t k_mode;          /* Source of K */
     ecdsa_sha_mode_t sha_mode;      /* Source of SHA that needs to be signed */
+    int efuse_key_blk;              /* Efuse block to use as ECDSA key (The purpose of the efuse block must be ECDSA_KEY) */
 } ecdsa_hal_config_t;
 
 /**

@@ -884,6 +884,14 @@ pytest_components_esp32h2_adc:
     - build_pytest_components_esp32h2
   tags: [ esp32h2, adc ]
 
+component_ut_pytest_esp32h2_ecdsa:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2-ecdsa
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, ecdsa_efuse ]
+
 pytest_components_esp32c6_generic_multi_device:
   extends:
     - .pytest_components_dir_template

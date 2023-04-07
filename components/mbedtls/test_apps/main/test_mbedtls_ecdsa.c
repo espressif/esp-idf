@@ -20,6 +20,8 @@
 #include "ccomp_timer.h"
 #include "unity.h"
 
+#include "ecdsa/ecdsa_alt.h"
+
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
 #if CONFIG_NEWLIB_NANO_FORMAT
@@ -29,8 +31,6 @@
 #define NEWLIB_NANO_COMPAT_FORMAT             PRId64
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
 #endif
-
-#if CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
 
 /*
  * All the following values are in big endian format, as required by the mbedTLS APIs
@@ -42,6 +42,8 @@ const uint8_t sha[] = {
     0x7e, 0xa3, 0xa9, 0xc3, 0xcd, 0x69, 0xb1, 0xcf,
     0x91, 0xbe, 0x58, 0x10, 0xfe, 0x80, 0x65, 0x6e
 };
+
+#if CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
 
 const uint8_t ecdsa256_r[] = {
     0x26, 0x1a, 0x0f, 0xbd, 0xa5, 0xe5, 0x1e, 0xe7,
@@ -146,3 +148,90 @@ TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbe
 }
 
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECC */
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+
+/*
+ * This test assumes that ECDSA private key has been burnt in efuse.
+ *
+ * ecdsa_key_p192.pem must be burnt in efuse block 4
+ * ecdsa_key_p256.pem must be burnt in efuse block 5
+ */
+#define SECP192R1_EFUSE_BLOCK             4         // EFUSE_BLK_KEY0
+#define SECP256R1_EFUSE_BLOCK             5         // EFUSE_BLK_KEY1
+
+#define MAX_ECDSA_COMPONENT_LEN           32
+#define HASH_LEN                          32
+
+const uint8_t ecdsa256_sign_pub_x[] = {
+    0xa2, 0x8f, 0x52, 0x60, 0x20, 0x9b, 0x54, 0x3c,
+    0x13, 0x2f, 0x51, 0xb1, 0x89, 0xbf, 0xc7, 0xfa,
+    0x84, 0x5c, 0x56, 0x96, 0x2a, 0x00, 0x67, 0xdd,
+    0x7c, 0x8c, 0x0f, 0x63, 0x8b, 0x76, 0x7f, 0xb9,
+};
+
+const uint8_t ecdsa256_sign_pub_y[] = {
+    0xf6, 0x4c, 0x87, 0x5b, 0x5a, 0x9b, 0x59, 0x0a,
+    0xc4, 0x53, 0x04, 0x72, 0x0d, 0x7c, 0xde, 0xac,
+    0x7e, 0xad, 0x49, 0x8c, 0xf7, 0x5c, 0xc3, 0x1c,
+    0x1e, 0x81, 0xf2, 0x47, 0x01, 0x74, 0x05, 0xd5
+};
+
+const uint8_t ecdsa192_sign_pub_x[] = {
+    0x88, 0x47, 0x25, 0x3c, 0xb4, 0xb7, 0x87, 0x24,
+    0x5e, 0x07, 0xe1, 0xc7, 0xfc, 0x76, 0x0f, 0x6b,
+    0x83, 0xf6, 0x81, 0x7d, 0x9b, 0x5f, 0xc4, 0xb9,
+};
+
+const uint8_t ecdsa192_sign_pub_y[] = {
+    0x9c, 0xfc, 0xaa, 0xed, 0xef, 0xba, 0x02, 0xc3,
+    0x1c, 0x0a, 0x55, 0x17, 0xe0, 0x9d, 0x10, 0xcb,
+    0x23, 0xae, 0x7e, 0x0f, 0x1f, 0x4d, 0x69, 0xd5
+};
+
+void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t *pub_x, const uint8_t *pub_y)
+{
+    uint8_t r_be[MAX_ECDSA_COMPONENT_LEN] = {0};
+    uint8_t s_be[MAX_ECDSA_COMPONENT_LEN] = {0};
+
+    mbedtls_mpi r, s;
+    mbedtls_mpi key_mpi;
+
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    mbedtls_ecdsa_context ecdsa_context;
+    mbedtls_ecdsa_init(&ecdsa_context);
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP192R1);
+        esp_ecdsa_privkey_load_mpi(&key_mpi, SECP192R1_EFUSE_BLOCK);
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
+        esp_ecdsa_privkey_load_mpi(&key_mpi, SECP256R1_EFUSE_BLOCK);
+    }
+
+    mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, HASH_LEN, NULL, NULL);
+
+    mbedtls_mpi_write_binary(&r, r_be, MAX_ECDSA_COMPONENT_LEN);
+    mbedtls_mpi_write_binary(&s, s_be, MAX_ECDSA_COMPONENT_LEN);
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        // Skip the initial zeroes
+        test_ecdsa_verify(id, sha, &r_be[8], &s_be[8], pub_x, pub_y);
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        test_ecdsa_verify(id, sha, r_be, s_be, pub_x, pub_y);
+    }
+}
+
+TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][efuse_key]")
+{
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y);
+}
+
+TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_key]")
+{
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y);
+}
+
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */

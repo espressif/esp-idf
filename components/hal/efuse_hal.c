@@ -36,3 +36,14 @@ IRAM_ATTR bool efuse_hal_flash_encryption_enabled(void)
     }
     return enabled;
 }
+
+#if SOC_ECDSA_SUPPORTED
+void efuse_hal_set_ecdsa_key(int efuse_blk)
+{
+    efuse_ll_set_ecdsa_key_blk(efuse_blk);
+
+    efuse_ll_rs_bypass_update();
+
+    efuse_hal_read();
+}
+#endif
