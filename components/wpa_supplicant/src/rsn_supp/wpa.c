@@ -53,7 +53,7 @@
 struct wpa_sm gWpaSm;
 /* fix buf for tx for now */
 #define WPA_TX_MSG_BUFF_MAXLEN 200
-#define MIN_DH_LEN 4
+#define MIN_DH_LEN(len) (len < 4)
 
 #define ASSOC_IE_LEN 24 + 2 + PMKID_LEN + RSN_SELECTOR_LEN
 #define MAX_EAPOL_RETRIES 3
@@ -2833,12 +2833,20 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
     if (rsn_ie && rsn_len && wpa_parse_wpa_ie_rsn(rsn_ie, rsn_len + 2, parsed_rsn_data) != 0) {
         goto fail;
     }
-    if (!dh_ie || dh_len < MIN_DH_LEN || parsed_rsn_data->num_pmkid == 0) {
-        wpa_printf(MSG_ERROR, "OWE: Invalid parameter");
+
+    if (dh_ie && MIN_DH_LEN(dh_len)) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid Diffie Hellman IE");
+        goto fail;
+    }
+    if (!dh_ie && parsed_rsn_data->num_pmkid == 0) {
+        wpa_printf(MSG_ERROR, "OWE: Assoc response should either have pmkid or DH IE");
         goto fail;
     }
 
     if (!sm->cur_pmksa) { /* No PMK caching */
+        if (dh_ie == NULL) {
+            goto fail;
+        }
         dh_len += 2;
 
         dh_ie += 3;
