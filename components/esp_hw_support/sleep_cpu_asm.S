@@ -53,11 +53,12 @@ rv_core_critical_regs_save:
     sw      t2, RV_SLP_CTX_T2(t0)
     sw      s0, RV_SLP_CTX_S0(t0)
     sw      s1, RV_SLP_CTX_S1(t0)
-    sw      a0, RV_SLP_CTX_A0(t0)
 
-    /* !! WARNING, do not use the a0 register below, a0 carries important sleep
-     * information and will be returned as the return value !! */
+    /* a0 is caller saved, so it does not need to be saved, but it should be the
+       pointer value of RvCoreCriticalSleepFrame for return.
+     */
     mv      a0, t0
+    sw      a0, RV_SLP_CTX_A0(t0)
 
     sw      a1, RV_SLP_CTX_A1(t0)
     sw      a2, RV_SLP_CTX_A2(t0)
