@@ -815,8 +815,8 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
     intptr_t mem_start, mem_end;
 
-    if (mode == ESP_BT_MODE_BLE) {
-	mem_start = (intptr_t)&_bt_bss_start;
+    if (mode & ESP_BT_MODE_BLE) {
+        mem_start = (intptr_t)&_bt_bss_start;
         mem_end = (intptr_t)&_bt_bss_end;
         if (mem_start != mem_end) {
             ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
@@ -831,18 +831,18 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         }
 
         mem_start = (intptr_t)&_nimble_bss_start;
-	mem_end = (intptr_t)&_nimble_bss_end;
-	if (mem_start != mem_end) {
-	    ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-	    ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-	}
+        mem_end = (intptr_t)&_nimble_bss_end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        }
 
-	mem_start = (intptr_t)&_nimble_data_start;
-	mem_end = (intptr_t)&_nimble_data_end;
-	if (mem_start != mem_end) {
-	    ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-	    ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-	}
+        mem_start = (intptr_t)&_nimble_data_start;
+        mem_end = (intptr_t)&_nimble_data_end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        }
     }
 
     return ESP_OK;
