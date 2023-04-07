@@ -1489,9 +1489,9 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
 
     client->data_written_index = 0;
     client->data_write_left = client->post_len;
+    client->state = HTTP_STATE_REQ_COMPLETE_HEADER;
     http_dispatch_event(client, HTTP_EVENT_HEADERS_SENT, NULL, 0);
     http_dispatch_event_to_event_loop(HTTP_EVENT_HEADERS_SENT, &client, sizeof(esp_http_client_handle_t));
-    client->state = HTTP_STATE_REQ_COMPLETE_HEADER;
     return ESP_OK;
 }
 
