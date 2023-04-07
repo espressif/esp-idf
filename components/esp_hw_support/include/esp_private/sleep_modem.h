@@ -43,6 +43,13 @@ void mac_bb_power_up_cb_execute(void);
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 /**
+ * @brief The retention action in the modem state of WiFi PHY module
+ *
+ * @param restore  true for restore the PHY context, false for backup the PHY context
+ */
+void sleep_modem_wifi_do_phy_retention(bool restore);
+
+/**
  * @brief Get WiFi modem state
  *
  * @return true or false for WiFi modem state is enabled or disabled
