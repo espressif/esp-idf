@@ -1030,11 +1030,13 @@ esp_err_t i2s_channel_disable(i2s_chan_handle_t handle)
     ESP_GOTO_ON_FALSE(handle->state > I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "the channel has not been enabled yet");
     /* Update the state to force quit the current reading/writing operation */
     handle->state = I2S_CHAN_STATE_READY;
+    /* Waiting for reading/wrinting operation quit
+     * It should be acquired before assigning the pointer to NULL,
+     * otherwise may cause NULL pointer panic while reading/writing threads haven't release the lock */
+    xSemaphoreTake(handle->binary, portMAX_DELAY);
     /* Reset the descriptor pointer */
     handle->dma.curr_ptr = NULL;
     handle->dma.rw_pos = 0;
-    /* Waiting for reading/wrinting operation quit */
-    xSemaphoreTake(handle->binary, portMAX_DELAY);
     handle->stop(handle);
 #if CONFIG_PM_ENABLE
     esp_pm_lock_release(handle->pm_lock);
