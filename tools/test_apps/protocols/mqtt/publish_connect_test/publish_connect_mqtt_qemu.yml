@@ -1,6 +1,0 @@
-CaseConfig:
-- name: test_app_protocol_mqtt_publish_connect
-  overwrite:
-    dut:
-      class: ESP32QEMUDUT
-      package: ttfw_idf

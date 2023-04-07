@@ -60,18 +60,13 @@ def get_pytest_apps(
     LOGGER.info(f'Found {len(app_dirs)} apps')
     app_dirs.sort()
 
-    default_size_json_path = 'size.json'
-    build_dir = 'build_@t_@w'
-    if target == 'linux':  # no esp_idf_size for linux target
-        default_size_json_path = None  # type: ignore
-
     apps = find_apps(
         app_dirs,
         target=target,
-        build_dir=build_dir,
+        build_dir='build_@t_@w',
         config_rules_str=config_rules_str,
         build_log_path='build_log.txt',
-        size_json_path=default_size_json_path,
+        size_json_path='size.json',
         check_warnings=True,
         manifest_files=[str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')],
         default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
@@ -82,6 +77,9 @@ def get_pytest_apps(
         is_test_related = app.config_name in test_related_app_configs[app.app_dir]
         if not preserve_all and not is_test_related:
             app.preserve = False
+
+        if app.target == 'linux':
+            app._size_json_path = None  # no esp_idf_size for linux target
 
     return apps  # type: ignore
 
@@ -94,6 +92,7 @@ def get_cmake_apps(
     extra_default_build_targets: Optional[List[str]] = None,
 ) -> List[App]:
     ttfw_app_dirs = get_ttfw_app_paths(paths, target)
+
     apps = find_apps(
         paths,
         recursive=True,
@@ -118,6 +117,9 @@ def get_cmake_apps(
         if PytestApp(os.path.realpath(app.app_dir), app.target, app.config_name) in pytest_cases_apps:
             LOGGER.debug('Skipping build app with pytest scripts: %s', app)
             continue
+
+        if app.target == 'linux':
+            app._size_json_path = None  # no esp_idf_size for linux target
 
         apps_for_build.append(app)
 

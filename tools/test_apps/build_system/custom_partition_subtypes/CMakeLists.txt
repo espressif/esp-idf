@@ -3,6 +3,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+set(COMPONENTS main partition_table custom)
 
 project(custom_partition_subtypes)
 
@@ -20,6 +21,10 @@ add_custom_command(OUTPUT ${blank_file}
     ${partition_size} ${blank_file})
 
 add_custom_target(blank_bin ALL DEPENDS ${blank_file})
-add_dependencies(flash blank_bin)
 
-esptool_py_flash_to_partition(flash "${partition}" "${blank_file}")
+idf_build_get_property(target IDF_TARGET)
+
+if(NOT ${target} STREQUAL "linux")
+    add_dependencies(flash blank_bin)
+    esptool_py_flash_to_partition(flash "${partition}" "${blank_file}")
+endif()

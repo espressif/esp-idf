@@ -1835,23 +1835,11 @@
     - <<: *if-protected
     - <<: *if-label-lan8720
 
-.rules:labels:iperf_stress_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-label-iperf_stress_test
-
 .rules:labels:nvs_coverage:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-label-nvs_coverage
-
-.rules:labels:weekend_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-label-weekend_test
 
 .rules:test:component_ut-esp32:
   rules:

@@ -44,36 +44,6 @@ assign_example_test:
     TEST_TYPE: example_test
     TEST_DIR: examples
 
-assign_custom_test:
-  extends:
-    - .assign_test_template
-    - .rules:build:custom_test
-  needs:
-    - job: build_test_apps_esp32
-      artifacts: false
-      optional: true
-    - job: build_test_apps_esp32s2
-      artifacts: false
-      optional: true
-    - job: build_test_apps_esp32c2
-      artifacts: false
-      optional: true
-    - job: build_test_apps_esp32c3
-      artifacts: false
-      optional: true
-    - job: build_test_apps_esp32c6
-      artifacts: false
-      optional: true
-    - job: build_test_apps_esp32h2
-      artifacts: false
-      optional: true
-    - job: build_test_apps_esp32s3
-      artifacts: false
-      optional: true
-  variables:
-    TEST_TYPE: custom_test
-    TEST_DIR: tools/test_apps
-
 assign_unit_test:
   extends:
     - .assign_test_template
