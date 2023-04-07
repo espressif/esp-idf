@@ -11,7 +11,6 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <freertos/idf_additions.h>
 #include <freertos/semphr.h>
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -57,6 +56,7 @@
 #include "spi_flash_mmap.h"
 #include "spi_flash_override.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/freertos_idf_additions_priv.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 

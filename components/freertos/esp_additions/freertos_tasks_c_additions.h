@@ -7,15 +7,15 @@
 #pragma once
 
 #include "sdkconfig.h"
-#include "idf_additions_inc.h"
+#include "idf_additions.h"
+#include "esp_private/freertos_idf_additions_priv.h"
 
 /**
- * This file will be included in `tasks.c` file, thus, it must NOT be included
- * by any (other) file.
- * The functions below only consist in getters for the static variables in
- * `tasks.c` file.
- * The only source files that should call these functions are the ones in
- * `/additions` directory.
+ * This file will be included in `tasks.c` file, thus, it is treated as a source
+ * file instead of a header file, and must NOT be included by any (other) file.
+ * This file is used to add additional functions to `tasks.c`. See the
+ * `esp_additions/include` directory of the headers that expose these `tasks.c`
+ * additional API.
  */
 
 /* ----------------------------------------------------- Newlib --------------------------------------------------------
