@@ -1,21 +1,24 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # Gateway Example
 
-This example demonstrates how to build a Zigbee Gateway device. It runs on a Wi-Fi SoC such as ESP32, ESP32-C3 and ESP32-S3, with an 802.15.4 SoC like ESP32-H4 running [esp_zigbee_rcp](../esp_zigbee_rcp) to provide 802.15.4 radio.
+This example demonstrates how to build a Zigbee Gateway device.
+
+The ESP Zigbee SDK provides more examples and tools for productization:
+* [ESP Zigbee SDK Docs](https://docs.espressif.com/projects/esp-zigbee-sdk)
+* [ESP Zigbee SDK Repo](https://github.com/espressif/esp-zigbee-sdk)
 
 ## Hardware Required
 
-* One development board with ESP32 or ESP32-S3 SoC acting as Zigbee gateway (loaded with esp_zigbee_gateway example)
-* A USB cable for power supply and programming
-* Three jumper wires for UART (TX, RX and GND)
-* Gateway doesn't function alone. Choose ESP32-H4 as Zigbee rcp (see [esp_zigbee_rcp example](../esp_zigbee_rcp))
-* **Flash** Zigbee rcp on the ESP32-H4 DevKitC first **before** connecting to Zigbee gateway
-* Connect the two SoCs via UART, below is an example setup with ESP32-DevKitC and ESP32-H4-DevKitC:
-![Zigbee_gateway](../../openthread/ot_br/image/thread-border-router-esp32-esp32h4.jpg)
+By default, two SoCs are required to run this example:
+* An ESP32 series Wi-Fi SoC (ESP32, ESP32-C, ESP32-S, etc) loaded with this esp_zigbee_gateway example.
+* An ESP32-H2 802.15.4 SoC loaded with [esp_zigbee_rcp](../esp_zigbee_rcp) example
 
-ESP32 pin     | ESP32-H4 pin
+Connect the two SoCs via UART, below is an example setup with ESP32-DevKitC and ESP32-H2-DevKitC:
+![Zigbee_gateway](../../openthread/ot_br/image/thread-border-router-esp32-esp32h2.jpg)
+
+ESP32 pin     | ESP32-H2 pin
 ------------- |-------------
    GND        |    G
    GPIO4 (RX) |    TX
@@ -23,9 +26,13 @@ ESP32 pin     | ESP32-H4 pin
 
 * TX, RX pin can be also configured by user in esp_zigbee_gateway.h
 
+The example could also run on a single SoC which supports both Wi-Fi and Zigbee (e.g., ESP32-C6), but since there is only one RF path in ESP32-C6, which means Wi-Fi and Zigbee can't receive simultaneously, it has a significant impact on performance. Hence the two SoCs solution is recommended.
+
 ## Configure the project
 
-Before project configuration and build, make sure to set the correct chip target using `idf.py set-target esp32` or `idf.py set-target esp32s3`
+Before project configuration and build, make sure to set the correct chip target using `idf.py set-target <chip_name>`.
+
+In order to run the example on single SoC which supports both Wi-Fi and Thread, the option `CONFIG_ESP_COEX_SW_COEXIST_ENABLE` and option `CONFIG_ZB_RADIO_NATIVE` should be enabled. The two options are enabled by default for ESP32-C6 target.
 
 ## Erase the NVRAM 
 
