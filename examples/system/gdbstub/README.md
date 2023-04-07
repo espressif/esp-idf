@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # GDBstub example
 
@@ -14,7 +14,9 @@ Upon exit from GDB, the application will continue to work in IDF Monitor as befo
 
 The example can run on any commonly available ESP32 development board.
 There are two possible ways to execute gdbstub with GDB: from IDF Monitor and as standalone application.
-gdbstub support ESP32, ESP32-S2 and ESP32-S3 chips.
+GDBStub is supported for all ESP chips.
+
+NOTE: On chips with an integrated USB Serial/JTAG Controller, it is reasonable to use OpenOCD + GDB for debugging.
 
 ### Configure the project
 

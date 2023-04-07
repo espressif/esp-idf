@@ -11,7 +11,8 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
                      "src/port/xtensa/xt_debugexception.S")
     list(APPEND priv_includes "src/port/xtensa/include")
 elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
-    list(APPEND srcs "src/port/riscv/gdbstub_riscv.c")
+    list(APPEND srcs "src/port/riscv/gdbstub_riscv.c"
+                     "src/port/riscv/rv_decode.c")
     list(APPEND priv_includes "src/port/riscv/include")
 endif()
 

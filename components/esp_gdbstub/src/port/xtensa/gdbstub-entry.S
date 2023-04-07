@@ -9,10 +9,11 @@
     .section .iram1, "ax"
 
     .global gdbstub_handle_uart_int
-    .global _xt_gdbstub_int
+    .global esp_gdbstub_int
+    .type   esp_gdbstub_int, @function
     .align  4
 
-_xt_gdbstub_int:
+esp_gdbstub_int:
 
     /* Allocate exception frame and save minimal context. */
     mov     a0, sp
