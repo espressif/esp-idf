@@ -156,7 +156,7 @@ def test_target_using_settarget_parameter(idf_py: IdfPyFunc, default_idf_env: En
     default_idf_env.update({'IDF_TARGET': ESP32_TARGET})
     idf_py('set-target', ESP32_TARGET)
     default_idf_env.pop('IDF_TARGET')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
 
 
 def test_target_using_sdkconfig(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
