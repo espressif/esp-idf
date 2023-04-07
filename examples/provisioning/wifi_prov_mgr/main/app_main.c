@@ -181,8 +181,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Connected with IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
         /* Signal main application to continue execution */
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
-#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
     } else if (event_base == PROTOCOMM_TRANSPORT_BLE_EVENT) {
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
         switch (event_id) {
             case PROTOCOMM_TRANSPORT_BLE_CONNECTED:
                 ESP_LOGI(TAG, "BLE transport: Connected!");
