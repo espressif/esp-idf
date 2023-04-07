@@ -412,7 +412,7 @@ build_pytest_test_apps_esp32h2:
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
-    BUILD_DIR: "@t/@w"
+    BUILD_DIR: "${BUILD_PATH}/@t/@w"
     BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
     BUILD_COMMAND_ARGS: ""
   artifacts:
