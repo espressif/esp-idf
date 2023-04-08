@@ -14,6 +14,7 @@
 #include "esp_check.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
+#include "esp_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
@@ -23,6 +24,12 @@
 
 #if !SOC_PMU_SUPPORTED
 #include "hal/rtc_hal.h"
+#endif
+
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+#include "esp_private/system_internal.h"
+#include "hal/clk_gate_ll.h"
+#include "hal/uart_hal.h"
 #endif
 
 #include "soc/rtc_periph.h"
@@ -557,6 +564,32 @@ static IRAM_ATTR void cpu_domain_dev_regs_restore(cpu_domain_dev_sleep_frame_t *
     }
 }
 
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+static void update_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
+{
+    *(frame_crc_ptr) = esp_crc32_le(0, (void *)frame_ptr, frame_check_size);
+}
+
+static void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
+{
+    if(*(frame_crc_ptr) != esp_crc32_le(0, (void *)(frame_ptr), frame_check_size)){
+        // resume uarts
+        for (int i = 0; i < SOC_UART_NUM; ++i) {
+#ifndef CONFIG_IDF_TARGET_ESP32
+            if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
+                continue;
+            }
+#endif
+            uart_ll_force_xon(i);
+        }
+
+        /* Since it is still in the critical now, use ESP_EARLY_LOG */
+        ESP_EARLY_LOGE(TAG, "Sleep retention frame is corrupted");
+        esp_restart_noos();
+    }
+}
+#endif
+
 extern RvCoreCriticalSleepFrame * rv_core_critical_regs_save(void);
 extern RvCoreCriticalSleepFrame * rv_core_critical_regs_restore(void);
 typedef uint32_t (* sleep_cpu_entry_cb_t)(uint32_t, uint32_t, uint32_t, bool);
@@ -566,9 +599,18 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
 {
     RvCoreCriticalSleepFrame * frame = rv_core_critical_regs_save();
     if ((frame->pmufunc & 0x3) == 0x1) {
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+        /* Minus 2 * sizeof(long) is for bypass `pmufunc` and `frame_crc` field */
+        update_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_FRMSZ - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
+#endif
         REG_WRITE(LIGHT_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
         return (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
     }
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    else {
+        validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_FRMSZ - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
+    }
+#endif
 
     return ESP_OK;
 }
@@ -588,7 +630,16 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
     cpu_domain_dev_regs_save(s_cpu_retention.retent.cache_config_frame);
     RvCoreNonCriticalSleepFrame *frame = rv_core_noncritical_regs_save();
 
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    /* Minus sizeof(long) is for bypass `frame_crc` field */
+    update_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+#endif
+
     esp_err_t err = do_cpu_retention(goto_sleep, wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+#endif
 
     rv_core_noncritical_regs_restore(frame);
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
