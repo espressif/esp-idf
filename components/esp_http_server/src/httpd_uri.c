@@ -275,6 +275,10 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd)
 
 esp_err_t httpd_uri(struct httpd_data *hd)
 {
+    if (!hd || !hd->hd_req || !hd->hd_req_aux) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     httpd_uri_t            *uri = NULL;
     httpd_req_t            *req = hd->hd_req;
     struct http_parser_url *res = &hd->hd_req_aux->url_parse_res;
@@ -326,10 +330,11 @@ esp_err_t httpd_uri(struct httpd_data *hd)
 #endif
 
     /* Invoke handler */
-    if (uri->handler(req) != ESP_OK) {
-        /* Handler returns error, this socket should be closed */
+    esp_err_t ret = uri->handler(req);
+    if (ret != ESP_OK && ret != ESP_ERR_NOT_FINISHED) {
         ESP_LOGW(TAG, LOG_FMT("uri handler execution failed"));
         return ESP_FAIL;
     }
-    return ESP_OK;
+
+    return ret;
 }

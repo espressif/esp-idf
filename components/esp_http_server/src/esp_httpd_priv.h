@@ -371,7 +371,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd);
  *  - ESP_OK    : if request packet deleted and resources cleaned.
  *  - ESP_FAIL  : otherwise.
  */
-esp_err_t httpd_req_delete(struct httpd_data *hd);
+esp_err_t httpd_req_delete(httpd_req_t *req);
 
 /**
  * @brief   For handling HTTP errors by invoking registered

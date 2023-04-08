@@ -619,6 +619,10 @@ static void parse_init(httpd_req_t *r, http_parser *parser, parser_data_t *data)
  */
 static esp_err_t httpd_parse_req(struct httpd_data *hd)
 {
+    if (!hd || !hd->hd_req) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     httpd_req_t *r = hd->hd_req;
     int blk_len,  offset;
     http_parser   parser = {};
@@ -691,30 +695,38 @@ static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
     memset(ra->resp_hdrs, 0, config->max_resp_headers * sizeof(struct resp_hdr));
 }
 
+#include "esp_debug_helpers.h"
+
 static void httpd_req_cleanup(httpd_req_t *r)
 {
     struct httpd_req_aux *ra = r->aux;
 
-    /* Check if the context has changed and needs to be cleared */
-    if ((r->ignore_sess_ctx_changes == false) && (ra->sd->ctx != r->sess_ctx)) {
-        httpd_sess_free_ctx(&ra->sd->ctx, ra->sd->free_ctx);
-    }
+    esp_backtrace_print(15);
 
-#if CONFIG_HTTPD_WS_SUPPORT
-    /* Close the socket when a WebSocket Close request is received */
-    if (ra->sd->ws_close) {
-        ESP_LOGD(TAG, LOG_FMT("Try closing WS connection at FD: %d"), ra->sd->fd);
-        httpd_sess_trigger_close(r->handle, ra->sd->fd);
-    }
-#endif
+    if (ra) {
+        /* Check if the context has changed and needs to be cleared */
+        if ((r->ignore_sess_ctx_changes == false) && (ra->sd->ctx != r->sess_ctx)) {
+            httpd_sess_free_ctx(&ra->sd->ctx, ra->sd->free_ctx);
+        }
 
-    /* Retrieve session info from the request into the socket database. */
-    ra->sd->ctx = r->sess_ctx;
-    ra->sd->free_ctx = r->free_ctx;
-    ra->sd->ignore_sess_ctx_changes = r->ignore_sess_ctx_changes;
+    #if CONFIG_HTTPD_WS_SUPPORT
+        /* Close the socket when a WebSocket Close request is received */
+        if (ra->sd->ws_close) {
+            ESP_LOGD(TAG, LOG_FMT("Try closing WS connection at FD: %d"), ra->sd->fd);
+            httpd_sess_trigger_close(r->handle, ra->sd->fd);
+        }
+    #endif
+
+        /* Retrieve session info from the request into the socket database. */
+        ra->sd->ctx = r->sess_ctx;
+        ra->sd->free_ctx = r->free_ctx;
+        ra->sd->ignore_sess_ctx_changes = r->ignore_sess_ctx_changes;
+
+        /* Clear out the request and request_aux structures */
+        ra->sd = NULL;
+    }
 
     /* Clear out the request and request_aux structures */
-    ra->sd = NULL;
     r->handle = NULL;
     r->aux = NULL;
     r->user_ctx = NULL;
@@ -762,6 +774,8 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     /* Associate the request to the socket */
     struct httpd_req_aux *ra = r->aux;
     ra->sd = sd;
+
+    ESP_LOGI("tt", "ra->sd %p fd %i", ra->sd, ra->sd->fd);
 
     /* Set defaults */
     ra->status = (char *)HTTPD_200;
@@ -827,7 +841,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
         hd->hd_req = NULL;
         hd->hd_req_aux = NULL;
 
-        return ESP_OK;
+        return ESP_ERR_NOT_FINISHED;
 
     } else if (ret != ESP_OK) {
         httpd_req_cleanup(r);
@@ -839,9 +853,12 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
 
 /* Function that resets the http request data
  */
-esp_err_t httpd_req_delete(struct httpd_data *hd)
+esp_err_t httpd_req_delete(httpd_req_t *r)
 {
-    httpd_req_t *r = hd->hd_req;
+    if (!r || !r->aux) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     struct httpd_req_aux *ra = r->aux;
 
     /* Finish off reading any pending/leftover data */

@@ -46,7 +46,7 @@ esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_p
 
 int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len)
 {
-    if (r == NULL || buf == NULL) {
+    if (!r || !r->aux || !buf ) {
         return HTTPD_SOCK_ERR_INVALID;
     }
 
@@ -55,6 +55,10 @@ int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len)
     }
 
     struct httpd_req_aux *ra = r->aux;
+    if (!ra->sd || !ra->sd->send_fn) {
+        return HTTPD_SOCK_ERR_INVALID;
+    }
+
     int ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in send_fn"));
@@ -65,6 +69,16 @@ int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len)
 
 static esp_err_t httpd_send_all(httpd_req_t *r, const char *buf, size_t buf_len)
 {
+    if (!r) {
+        ESP_LOGE(TAG, LOG_FMT("invalid arg: r"));
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!r->aux) {
+        ESP_LOGE(TAG, LOG_FMT("invalid arg: r->aux"));
+        return ESP_ERR_INVALID_ARG;
+    }
+
     struct httpd_req_aux *ra = r->aux;
     int ret;
 
@@ -300,7 +314,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
 
 esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len)
 {
-    if (r == NULL) {
+    if (r == NULL || r->aux == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -571,25 +585,27 @@ int httpd_req_to_sockfd(httpd_req_t *r)
 
 esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
 {
-    if (r == NULL) {
+    if (r == NULL || r->aux == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    // mark finished
+    // mark finished in the global sock database
     struct httpd_req_aux *ra = r->aux;
     ra->sd->is_req_unfinished = false;
+
+    // drains any remaining bytes in the socket
+    esp_err_t ret = httpd_req_delete(r);
 
     // free
     free(r->aux);
     free(r);
 
-    return ESP_OK;
+    return ret;
 }
 
 static int httpd_sock_err(const char *ctx, int sockfd)
 {
     int errval;
-    ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, errno);
 
     switch(errno) {
     case EAGAIN:
@@ -605,6 +621,9 @@ static int httpd_sock_err(const char *ctx, int sockfd)
     default:
         errval = HTTPD_SOCK_ERR_FAIL;
     }
+
+    ESP_LOGW(TAG, LOG_FMT("error in %s: %d (%s) (sockfd %d)"), ctx, errno, strerror(errno), sockfd);
+
     return errval;
 }
 

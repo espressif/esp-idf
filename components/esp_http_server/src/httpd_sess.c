@@ -174,7 +174,7 @@ struct sock_db *httpd_sess_get(struct httpd_data *hd, int sockfd)
 
     // Check if called inside a request handler, and the session sockfd in use is same as the parameter
     // => Just return the pointer to the sock_db corresponding to the request
-    if ((hd->hd_req_aux->sd) && (hd->hd_req_aux->sd->fd == sockfd)) {
+    if ((hd->hd_req_aux) && (hd->hd_req_aux->sd) && (hd->hd_req_aux->sd->fd == sockfd)) {
         return hd->hd_req_aux->sd;
     }
 
@@ -269,7 +269,7 @@ void *httpd_sess_get_ctx(httpd_handle_t handle, int sockfd)
     // request handler, in which case fetch the context from
     // the httpd_req_t structure
     struct httpd_data *hd = (struct httpd_data *) handle;
-    if (hd->hd_req_aux->sd == session) {
+    if (hd->hd_req_aux && hd->hd_req_aux->sd == session) {
         return hd->hd_req->sess_ctx;
     }
     return session->ctx;
@@ -286,7 +286,7 @@ void httpd_sess_set_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free
     // request handler, in which case set the context inside
     // the httpd_req_t structure
     struct httpd_data *hd = (struct httpd_data *) handle;
-    if (hd->hd_req_aux->sd == session) {
+    if (hd->hd_req_aux && hd->hd_req_aux->sd == session) {
         if (hd->hd_req->sess_ctx != ctx) {
             // Don't free previous context if it is in sockdb
             // as it will be freed inside httpd_req_cleanup()
@@ -424,14 +424,20 @@ esp_err_t httpd_sess_process(struct httpd_data *hd, struct sock_db *session)
     }
 
     ESP_LOGD(TAG, LOG_FMT("httpd_req_new"));
-    if (httpd_req_new(hd, session) != ESP_OK) {
-        return ESP_FAIL;
+    esp_err_t ret = httpd_req_new(hd, session);
+    if (ret != ESP_ERR_NOT_FINISHED) {
+
+        if (ret != ESP_OK) {
+            return ESP_FAIL;
+        }
+
+        ESP_LOGD(TAG, LOG_FMT("httpd_req_delete"));
+        if(httpd_req_delete(hd->hd_req) != ESP_OK) {
+            return ESP_FAIL;
+        }
     }
-    ESP_LOGD(TAG, LOG_FMT("httpd_req_delete"));
-    if (httpd_req_delete(hd) != ESP_OK) {
-        return ESP_FAIL;
-    }
-    ESP_LOGD(TAG, LOG_FMT("success"));
+
+    ESP_LOGD(TAG, LOG_FMT("async init"));
     session->lru_counter = ++hd->lru_counter;
     return ESP_OK;
 }

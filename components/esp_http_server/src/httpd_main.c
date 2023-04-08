@@ -244,7 +244,8 @@ static int httpd_process_session(struct sock_db *session, void *context)
 
     if (FD_ISSET(fd, ctx->fdset) || httpd_sess_pending(ctx->hd, session)) {
         ESP_LOGD(TAG, LOG_FMT("processing socket %d"), fd);
-        if (httpd_sess_process(ctx->hd, session) != ESP_OK) {
+        esp_err_t ret = httpd_sess_process(ctx->hd, session);
+        if (ret != ESP_OK && ret != ESP_ERR_NOT_FINISHED) {
             httpd_sess_delete(ctx->hd, session); // Delete session
         }
     }
@@ -468,10 +469,16 @@ static struct httpd_data *httpd_create(const httpd_config_t *config)
 
 static void httpd_delete(struct httpd_data *hd)
 {
+    /* Free memory httpd req aux data */
     struct httpd_req_aux *ra = hd->hd_req_aux;
+    free(ra->resp_hdrs);
+    free(ra);
+
+    /* Free memory of httpd req */
+    free(hd->hd_req);
+
     /* Free memory of httpd instance data */
     free(hd->err_handler_fns);
-    free(ra->resp_hdrs);
     free(hd->hd_sd);
 
     /* Free registered URI handlers */
