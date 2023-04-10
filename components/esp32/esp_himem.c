@@ -335,7 +335,7 @@ esp_err_t esp_himem_map(esp_himem_handle_t handle, esp_himem_rangehandle_t range
     }
 
     //Set out pointer
-    *out_ptr = (void *)(VIRT_HIMEM_RANGE_START + (range->block_start + range_offset) * CACHE_BLOCKSIZE);
+    *out_ptr = (void *)(VIRT_HIMEM_RANGE_START + (range->block_start + range_block) * CACHE_BLOCKSIZE);
     return ESP_OK;
 }
 
