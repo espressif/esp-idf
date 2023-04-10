@@ -25,7 +25,7 @@ MEMORY
   */
   iram_seg (RWX) :                  org = 0x40080400, len = 0xfc00
   /* 64k at the end of DRAM, after ROM bootloader stack */
-  dram_seg (RW) :                  	org = 0x3FFF0000, len = 0x10000
+  dram_seg (RW) :                  	org = 0x3FFF0000, len = 0x6000
 }
 
 /*  Default entry point:  */
