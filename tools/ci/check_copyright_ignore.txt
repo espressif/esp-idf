@@ -561,13 +561,10 @@ components/esp_system/port/public_compat/cache_err_int.h
 components/esp_system/port/public_compat/trax.h
 components/esp_system/port/soc/esp32/cache_err_int.h
 components/esp_system/port/soc/esp32/intr.c
-components/esp_system/port/soc/esp32/reset_reason.c
 components/esp_system/port/soc/esp32c3/apb_backup_dma.c
 components/esp_system/port/soc/esp32c3/cache_err_int.h
 components/esp_system/port/soc/esp32s2/cache_err_int.h
-components/esp_system/port/soc/esp32s2/reset_reason.c
 components/esp_system/port/soc/esp32s3/cache_err_int.h
-components/esp_system/port/soc/esp32s3/reset_reason.c
 components/esp_system/test/test_delay.c
 components/esp_system/test/test_reset_reason.c
 components/esp_system/test/test_stack_check.c
