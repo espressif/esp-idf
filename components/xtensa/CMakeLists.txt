@@ -49,6 +49,14 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
         list(APPEND srcs "xtensa_loadstore_handler.S")
     endif()
+
+    if(NOT CONFIG_FREERTOS_PORT)
+        # No RTOS provided. Use default bare metal stubs (to pass G0 build test)
+        list(APPEND srcs
+             "baremetal/xtensa_rtos_bm.S")
+        list(APPEND include_dirs
+             "baremetal")               # For "...h"
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
