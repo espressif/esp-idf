@@ -503,6 +503,42 @@ ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls);
 esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd);
 
 /**
+ * @brief       Sets the connection socket file descriptor for the esp_tls session
+ *
+ * @param[in]   tls          handle to esp_tls context
+ *
+ * @param[in]   sockfd       sockfd value to set.
+ *
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ *             - ESP_ERR_INVALID_ARG if (tls == NULL || sockfd < 0)
+ */
+esp_err_t esp_tls_set_conn_sockfd(esp_tls_t *tls, int sockfd);
+
+/**
+ * @brief       Gets the connection state for the esp_tls session
+ *
+ * @param[in]   tls          handle to esp_tls context
+ *
+ * @param[out]   conn_state   pointer to the connection state value.
+ *
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ *             - ESP_ERR_INVALID_ARG (Invalid arguments)
+ */
+esp_err_t esp_tls_get_conn_state(esp_tls_t *tls, esp_tls_conn_state_t *conn_state);
+
+/**
+ * @brief       Sets the connection state for the esp_tls session
+ *
+ * @param[in]   tls          handle to esp_tls context
+ *
+ * @param[in]   conn_state   connection state value to set.
+ *
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ *             - ESP_ERR_INVALID_ARG (Invalid arguments)
+ */
+esp_err_t esp_tls_set_conn_state(esp_tls_t *tls, esp_tls_conn_state_t conn_state);
+
+/**
  * @brief       Returns the ssl context
  *
  * @param[in]   tls          handle to esp_tls context
