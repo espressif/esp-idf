@@ -5,6 +5,8 @@ entries:
         panic (noflash)
         panic_handler (noflash)
         panic_arch (noflash)
+        cache_err_int:esp_cache_err_get_cpuid (noflash)
+        reset_reason:esp_reset_reason_get_hint (noflash)
 
     esp_err (noflash)
     esp_system_chip:esp_system_abort (noflash)
