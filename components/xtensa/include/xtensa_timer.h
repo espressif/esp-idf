@@ -56,7 +56,6 @@
 
 #include    "xtensa_rtos.h"     /* in case this wasn't included directly */
 
-#include    "freertos/FreeRTOSConfig.h"
 
 /*
 Select timer to use for periodic tick, and determine its interrupt number

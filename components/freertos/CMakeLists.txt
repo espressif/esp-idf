@@ -82,16 +82,13 @@ endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND srcs
-        "${kernel_dir}/portable/${arch}/xtensa_context.S"
         "${kernel_dir}/portable/${arch}/xtensa_init.c"
-        "${kernel_dir}/portable/${arch}/xtensa_overlay_os_hook.c"
-        "${kernel_dir}/portable/${arch}/xtensa_vectors.S")
+        "${kernel_dir}/portable/${arch}/xtensa_overlay_os_hook.c")
+
+    list(APPEND include_dirs
+         "${kernel_dir}/portable/xtensa/include/freertos")  # For #include "xtensa_...h"
 endif()
 
-
-if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
-    list(APPEND srcs "${kernel_dir}/portable/xtensa/xtensa_loadstore_handler.S")
-endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}

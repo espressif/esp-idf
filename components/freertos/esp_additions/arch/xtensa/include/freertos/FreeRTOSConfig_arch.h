@@ -11,7 +11,7 @@
 #include "sdkconfig.h"
 
 /* Required for configuration-dependent settings. */
-#include "freertos/xtensa_config.h"
+#include "xtensa_config.h"
 
 /* -------------------------------------------- Xtensa Additional Config  ----------------------------------------------
  * - Provide Xtensa definitions usually given by -D option when building with xt-make (see readme_xtensa.txt)

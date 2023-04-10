@@ -1,4 +1,10 @@
-
+/*
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
  *
