@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "unity.h"
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
+#include "linenoise/linenoise.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -41,10 +42,15 @@ static int do_cmd_quit(int argc, char **argv)
 {
     printf("ByeBye\r\n");
     s_repl->del(s_repl);
+
+    linenoiseHistoryFree(); // Free up memory
+
     return 0;
 }
 
 // Enter "quit" to exit REPL environment
+/* Marked as ignore since it cannot run as a normal unity test case
+   ran separately in test_console_repl  */
 TEST_CASE("esp console repl test", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
