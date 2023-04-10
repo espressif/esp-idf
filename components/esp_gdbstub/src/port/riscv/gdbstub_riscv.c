@@ -8,10 +8,8 @@
 #include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
 #include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
-static void init_regfile(esp_gdbstub_gdb_regfile_t *dst)
+static inline void init_regfile(esp_gdbstub_gdb_regfile_t *dst)
 {
     memset(dst, 0, sizeof(*dst));
 }
