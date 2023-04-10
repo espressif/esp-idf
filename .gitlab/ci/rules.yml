@@ -260,6 +260,13 @@
   - "components/driver/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
 
+.patterns-example_test-ccs811: &patterns-example_test-ccs811
+  # components
+  - "examples/system/console/advanced/components/**/*"
+  - "components/driver/i2c/**/*"
+  # tests
+  - "examples/peripherals/i2c/i2c_tools/**/*"
+
 # for jobs: UT_xx_SDSPI related
 .patterns-unit_test-sdio: &patterns-unit_test-sdio
   - "components/hal/sdio*.c"
@@ -1137,6 +1144,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1179,6 +1188,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1218,6 +1229,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1260,6 +1273,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1299,6 +1314,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1340,6 +1357,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1380,6 +1399,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1419,6 +1440,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1540,6 +1563,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -2339,6 +2364,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+
+.rules:test:example_test-esp32-ccs811:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
 
 .rules:test:example_test-esp32-ethernet:
   rules:
