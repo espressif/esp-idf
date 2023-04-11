@@ -10,6 +10,7 @@ Architecture:
 The whole SDIO slave peripheral consists of three parts: the registers (including the control registers of
 interrupts and shared registers), the sending FIFO and the receiving FIFO. A document ``esp_slave_protocol.rst``
 describes the functionality of the peripheral detailedly.
+
 The host can access only one of those parts at once, and the hardware functions of these parts are totally
 independent. Hence this driver is designed into these three independent parts. The shared registers are quite
 simple. As well as the interrupts: when a slave interrupt is written by the host, the slave gets an interrupt;
@@ -42,7 +43,8 @@ The driver of FIFOs works as below:
     The receiving driver sends a counting semaphore to the app for each buffer finished receiving. A task can only
     check the linked list and fetch one finished buffer for a received semaphore.
 
-2.  The sending driver is slightly different due to different hardware working styles.
+2.  The sending driver is slightly different due to different hardware working styles. (See README.md in the same folder
+    for the diagram how task and ISR work concurrently)
     (TODO: re-write this part if the stitch mode is released)
     The hardware has a cache, so that once a descriptor is loaded onto the linked-list, it cannot be modified
     until returned (used) by the hardware. This forbids us from loading descriptors onto the linked list during
