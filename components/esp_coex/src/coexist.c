@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,11 @@
 #include "soc/gpio_struct.h"
 #include "esp_attr.h"
 #ifdef CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/gpio.h"
+#include "esp_rom/include/esp32s3/rom/gpio.h"
 #endif
 #endif
 
-static const char* TAG = "coexist";
+//static const char* TAG = "coexist";
 
 const char *esp_coex_version_get(void)
 {
@@ -246,6 +246,41 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
 
     switch (wire_type)
     {
+#ifndef SOC_EXTERNAL_COEX_ADVANCE
+        case EXTERN_COEX_WIRE_4:
+        {
+            /*Input gpio pin setup --> GPIO_BT_PRIORITY_IDX：GPIO_BT_ACTIVE_IDX*/
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.in_pin0], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.in_pin0, GPIO_MODE_INPUT);
+
+            esp_rom_gpio_connect_in_signal(gpio_pin.in_pin0, GPIO_BT_ACTIVE_IDX, false);
+
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.in_pin1], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.in_pin1, GPIO_MODE_INPUT);
+
+            esp_rom_gpio_connect_in_signal(gpio_pin.in_pin1, GPIO_BT_PRIORITY_IDX, false);
+
+            /*Output gpio pin setup --> GPIO_WLAN_ACTIVE_IDX: 1 BT, 0 WiFi*/
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.out_pin0], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.out_pin0, GPIO_MODE_OUTPUT);
+            REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.out_pin0));
+
+            esp_rom_gpio_connect_out_signal(gpio_pin.out_pin0, GPIO_WLAN_ACTIVE_IDX, false, false);
+
+
+            REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin0), GPIO_PIN1_SYNC1_BYPASS, 2);
+            REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin0), GPIO_PIN1_SYNC2_BYPASS, 2);
+            REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin1), GPIO_PIN1_SYNC1_BYPASS, 2);
+            REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin1), GPIO_PIN1_SYNC2_BYPASS, 2);
+
+            esp_extern_coex_register_txline(gpio_pin.out_pin1);
+            int ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
+            if (ESP_OK != ret) {
+                return ESP_FAIL;
+            }
+            break;
+        }
+#endif
         case EXTERN_COEX_WIRE_3:
         {
 #if SOC_EXTERNAL_COEX_ADVANCE
@@ -424,7 +459,7 @@ esp_err_t esp_extern_coex_register_txline(uint32_t pin)
 
     ESP_LOGI(TAG, "external coex select output io %d as txline", esp_extern_coex_outpin);
 
-    gpio_matrix_out(esp_extern_coex_outpin, BB_DIAG9_IDX, false, false);
+    esp_rom_gpio_matrix_out(esp_extern_coex_outpin, BB_DIAG9_IDX, false, false);
 
     return ESP_OK;
 }
