@@ -43,7 +43,10 @@ else()
     list(APPEND serial_tool_cmd -b ${ESPBAUD})
 endif()
 
+# SERIAL_TOOL_ARGS is defined during the first cmake run
+# SERIAL_TOOL_EXTRA_ARGS is used for additional arguments from the command line during run-time
 list(APPEND serial_tool_cmd ${SERIAL_TOOL_ARGS})
+list(APPEND serial_tool_cmd $ENV{SERIAL_TOOL_EXTRA_ARGS})
 
 execute_process(COMMAND ${serial_tool_cmd}
     WORKING_DIRECTORY "${WORKING_DIRECTORY}"
