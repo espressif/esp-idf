@@ -3,28 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "esp_crypto_lock.h"
 #include "esp_private/periph_ctrl.h"
 #include "bignum_impl.h"
 #include "mbedtls/bignum.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include <sys/lock.h>
-static _lock_t mpi_lock;
-#else
-#include "esp_crypto_lock.h"
-#endif
 
 #include "hal/mpi_hal.h"
 
 
 void esp_mpi_enable_hardware_hw_op( void )
 {
-#if CONFIG_IDF_TARGET_ESP32
-    /* newlib locks lazy initialize on ESP-IDF */
-    _lock_acquire(&mpi_lock);
-#else
     esp_crypto_mpi_lock_acquire();
-#endif
 
     /* Enable RSA hardware */
     periph_module_enable(PERIPH_RSA_MODULE);
@@ -40,11 +29,7 @@ void esp_mpi_disable_hardware_hw_op( void )
     /* Disable RSA hardware */
     periph_module_disable(PERIPH_RSA_MODULE);
 
-#if CONFIG_IDF_TARGET_ESP32
-    _lock_release(&mpi_lock);
-#else
     esp_crypto_mpi_lock_release();
-#endif
 }
 
 size_t esp_mpi_hardware_words(size_t words)
