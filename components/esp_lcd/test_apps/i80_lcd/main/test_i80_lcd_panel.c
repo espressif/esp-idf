@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -13,6 +13,7 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_commands.h"
 #include "soc/soc_caps.h"
 #include "driver/gpio.h"
 #include "test_i80_board.h"
@@ -454,8 +455,21 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
 #undef TEST_IMG_SIZE
 }
 
-TEST_CASE("i80_io_skip_command_phase", "[lcd]")
+// TODO: support the test on I2S LCD (IDF-7202)
+#if !SOC_I2S_LCD_I80_VARIANT
+TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
 {
+    int x_start = 100;
+    int y_start = 100;
+    int x_end = 200;
+    int y_end = 200;
+    size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
+    void *color_data = malloc(color_size);
+    TEST_ASSERT_NOT_NULL(color_data);
+    uint8_t color_byte = esp_random() & 0xFF;
+    memset(color_data, color_byte, color_size);
+
+    printf("creating i80 bus and IO driver\r\n");
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
@@ -472,7 +486,7 @@ TEST_CASE("i80_io_skip_command_phase", "[lcd]")
             TEST_LCD_DATA7_GPIO,
         },
         .bus_width = 8,
-        .max_transfer_bytes = 100,
+        .max_transfer_bytes = color_size * 2,
     };
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_i80_config_t io_config = {
@@ -488,21 +502,64 @@ TEST_CASE("i80_io_skip_command_phase", "[lcd]")
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
     };
-
     TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 
-    uint8_t buf[4] = {0x01, 0x02, 0x03, 0x04};
-    // lcd_cmd = -1 to skip the command phase
-    TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, buf, 4));
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, -1, buf, 4));
+    printf("creating LCD panel\r\n");
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = TEST_LCD_RST_GPIO,
+        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .bits_per_pixel = 16,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
 
-    // use command phase
-    TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, 0x2C, buf, 4));
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, 0x2A, buf, 4));
+    // we don't use the panel handle in this test, creating the panel just for a quick initialization
+    printf("initialize LCD panel\r\n");
+    // turn off backlight
+    gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 0);
+    esp_lcd_panel_reset(panel_handle);
+    esp_lcd_panel_init(panel_handle);
+    esp_lcd_panel_invert_color(panel_handle, true);
+    // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
+    esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    // turn on display
+    esp_lcd_panel_disp_on_off(panel_handle, true);
+    // turn on backlight
+    gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
+    printf("set the flush window for only once\r\n");
+    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_CASET, (uint8_t[]) {
+        (x_start >> 8) & 0xFF,
+        x_start & 0xFF,
+        ((x_end - 1) >> 8) & 0xFF,
+        (x_end - 1) & 0xFF,
+    }, 4);
+    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RASET, (uint8_t[]) {
+        (y_start >> 8) & 0xFF,
+        y_start & 0xFF,
+        ((y_end - 1) >> 8) & 0xFF,
+        (y_end - 1) & 0xFF,
+    }, 4);
+    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RAMWR, NULL, 0);
+
+    printf("send colors to the fixed region in multiple steps\r\n");
+    const int steps = 10;
+    int color_size_per_step = color_size / steps;
+    for (int i = 0; i < steps; i++) {
+        TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));
+    }
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    // change to another color
+    color_byte = esp_random() & 0xFF;
+    memset(color_data, color_byte, color_size);
+    for (int i = 0; i < steps; i++) {
+        TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));
+    }
+
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
+    free(color_data);
 }
+#endif
