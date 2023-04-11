@@ -321,9 +321,9 @@ void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn
 ** Returns          void
 **
 *******************************************************************************/
-BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda, tBLE_ADDR_TYPE addr_type, tBTM_ADD_WHITELIST_CBACK *add_wl_cb)
+BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda, tBLE_ADDR_TYPE addr_type, tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
-    return btm_update_dev_to_white_list(add_remove, remote_bda, addr_type, add_wl_cb);
+    return btm_update_dev_to_white_list(add_remove, remote_bda, addr_type, update_wl_cb);
 }
 
 /*******************************************************************************
@@ -335,9 +335,9 @@ BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda, tBLE_A
 ** Returns          void
 **
 *******************************************************************************/
-void BTM_BleClearWhitelist(void)
+void BTM_BleClearWhitelist(tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
-   btm_ble_clear_white_list();
+   btm_ble_clear_white_list(update_wl_cb);
 }
 
 /*******************************************************************************
@@ -1273,7 +1273,7 @@ BOOLEAN BTM_BleSetBgConnType(tBTM_BLE_CONN_TYPE   bg_conn_type,
 void BTM_BleClearBgConnDev(void)
 {
     btm_ble_start_auto_conn(FALSE);
-    btm_ble_clear_white_list();
+    btm_ble_clear_white_list(NULL);
     gatt_reset_bgdev_list();
 }
 
