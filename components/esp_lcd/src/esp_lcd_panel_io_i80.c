@@ -29,6 +29,7 @@
 #include "esp_memory_utils.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
+#include "hal/cache_hal.h"
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
@@ -37,6 +38,9 @@
 #include "hal/lcd_ll.h"
 #include "hal/lcd_hal.h"
 #include "esp_cache.h"
+
+#define ALIGN_UP(size, align)    (((size) + (align) - 1) & ~((align) - 1))
+#define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
 
 static const char *TAG = "lcd_panel.io.i80";
 
@@ -469,9 +473,10 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->user_ctx = i80_device->user_ctx;
 
     if (esp_ptr_external_ram(color)) {
+        uint32_t dcache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA);
         // flush frame buffer from cache to the physical PSRAM
-        // note the esp_cache_msync function will check the alignment of the address and size, and error out if either of them is not matched
-        ESP_RETURN_ON_ERROR(esp_cache_msync((void *)color, color_size, 0), TAG, "flush cache buffer failed");
+        // note the esp_cache_msync function will check the alignment of the address and size, make sure they're aligned to current cache line size
+        esp_cache_msync((void *)ALIGN_DOWN((intptr_t)color, dcache_line_size), ALIGN_UP(color_size, dcache_line_size), 0);
     }
 
     // send transaction to trans_queue
