@@ -93,33 +93,10 @@ static inline void bootloader_hardware_init(void)
 
 static inline void bootloader_ana_reset_config(void)
 {
-    // TODO: IDF-5990 copied from C6, need update
-    // Have removed bootloader_ana_super_wdt_reset_config for now; can be evaluated later to see whether needs to add it back
-    /*
-      For origin chip & ECO1: only support swt reset;
-      For ECO2: fix brownout reset bug, support swt & brownout reset;
-      For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
-    */
-    uint8_t chip_version = efuse_hal_get_minor_chip_version();
-    switch (chip_version) {
-        case 0:
-        case 1:
-            //Disable BOR and GLITCH reset
-            bootloader_ana_bod_reset_config(false);
-            bootloader_ana_clock_glitch_reset_config(false);
-            break;
-        case 2:
-            //Enable BOR reset. Disable GLITCH reset
-            bootloader_ana_bod_reset_config(true);
-            bootloader_ana_clock_glitch_reset_config(false);
-            break;
-        case 3:
-        default:
-            //Enable BOR, and GLITCH reset
-            bootloader_ana_bod_reset_config(true);
-            bootloader_ana_clock_glitch_reset_config(true);
-            break;
-    }
+    //Enable super WDT reset.
+    bootloader_ana_super_wdt_reset_config(true);
+    //Enable BOD reset
+    bootloader_ana_bod_reset_config(true);
 }
 
 esp_err_t bootloader_init(void)
