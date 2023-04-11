@@ -12,7 +12,7 @@ async function runChecks() {
     await require("./mrDescriptionJiraLinks.js")();
 
     // Checks for documentation
-    require("./mrDocsTranslation.js")();
+    await require("./mrDocsTranslation.js")();
 
     // Checks for MR commits
     require("./mrCommitsTooManyCommits.js")();
