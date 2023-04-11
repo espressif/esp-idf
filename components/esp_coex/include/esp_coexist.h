@@ -28,6 +28,7 @@ typedef enum {
     EXTERN_COEX_WIRE_1 = 0,
     EXTERN_COEX_WIRE_2,
     EXTERN_COEX_WIRE_3,
+    EXTERN_COEX_WIRE_4,
     EXTERN_COEX_WIRE_NUM,
 } external_coex_wire_t;
 
