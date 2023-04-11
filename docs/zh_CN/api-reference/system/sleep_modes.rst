@@ -7,7 +7,18 @@
 概述
 --------
 
-{IDF_TARGET_NAME} 具有 Light-sleep 和 Deep-sleep 两种睡眠节能模式。
+{IDF_TARGET_NAME} 具有 Light-sleep 和 Deep-sleep 两种睡眠节能模式。根据应用所使用的功能，还有一些细分的子睡眠模式。关于这些睡眠模式和其子模式，参见 :ref:`sleep_modes`。另外，还可以配置一些断电选项来进一步减少功耗，请参见 :ref:`power_down_options` 。
+
+睡眠模式有多种唤醒源。这些唤醒源也可以组合在一起，此时任何一个唤醒源都可以触发唤醒。:ref:`api-reference-wakeup-source` 详细描述了这些唤醒源，以及配置 API。
+
+断电选项和唤醒源的配置不是必要的，并且可以在进入睡眠模式前的任意时候进行。
+
+最后，应用通过调用开始睡眠的 API 来使芯片进入其中一种睡眠模式，更多详情请参见 :ref:`enter_sleep`。当唤醒条件满足，芯片就会从睡眠中被唤醒。关于如何获取唤醒原因，请参见 :ref:`wakeup_cause` 。关于醒来后如何处理唤醒源，请参见 :ref:`disable_sleep_wakeup_source` 。
+
+.. _sleep_modes:
+
+睡眠节能模式
+----------------------
 
 在 Light-sleep 模式下，数字外设、CPU、以及大部分 RAM 都使用时钟门控，同时电源电压降低。退出该模式后，数字外设、CPU 和 RAM 恢复运行，内部状态保持不变。
 
@@ -20,23 +31,17 @@
         :SOC_RTC_FAST_MEM_SUPPORTED: - RTC 高速内存
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC 低速内存
 
-Light-sleep 和 Deep-sleep 模式有多种唤醒源。这些唤醒源也可以组合在一起，此时任何一个唤醒源都可以触发唤醒。通过 API ``esp_sleep_enable_X_wakeup`` 可启用唤醒源，通过 API :cpp:func:`esp_sleep_disable_wakeup_source` 可禁用唤醒源，详见下一小节。在系统进入 Light-sleep 或 Deep-sleep 模式前，可以在任意时刻配置唤醒源。
-
-此外，应用程序可以使用 API :cpp:func:`esp_sleep_pd_config` 强制 RTC 外设和 RTC 内存进入特定断电模式。
-
-配置唤醒源后，应用程序就可以使用 API :cpp:func:`esp_light_sleep_start` 或 :cpp:func:`esp_deep_sleep_start` 进入睡眠模式。此时，系统将按照被请求的唤醒源配置硬件，同时 RTC 控制器会给 CPU 和数字外设断电。
-
 .. only:: SOC_BT_SUPPORTED
 
     睡眠模式下的 Wi-Fi 和 Bluetooth 功能
-    -------------------------------------
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     在 Light-sleep 和 Deep-sleep 模式下，无线外设会被断电。因此，在进入这两种睡眠模式前，应用程序必须调用恰当的函数（:cpp:func:`esp_bluedroid_disable`、:cpp:func:`esp_bt_controller_disable` 或 :cpp:func:`esp_wifi_stop`）来禁用 Wi-Fi 和 Bluetooth。在 Light-sleep 或 Deep-sleep 模式下，即使不调用这些函数也无法连接 Wi-Fi 和 Bluetooth。
 
 .. only:: not SOC_BT_SUPPORTED
 
     睡眠模式下的 Wi-Fi 功能
-    --------------------------
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     在 Light-sleep 和 Deep-sleep 模式下，无线外设会被断电。因此，在进入这两种睡眠模式前，应用程序必须调用恰当的函数 (:cpp:func:`esp_wifi_stop`) 来禁用 Wi-Fi。在 Light-sleep 或 Deep-sleep 模式下，即使不调用此函数也无法连接 Wi-Fi。
 
@@ -46,6 +51,10 @@ Light-sleep 和 Deep-sleep 模式有多种唤醒源。这些唤醒源也可以�
 
 唤醒源
 ---------
+
+通过 API ``esp_sleep_enable_X_wakeup`` 可启用唤醒源。唤醒源在芯片被唤醒后并不会被禁用，若你不再需要某些唤醒源，可通过 API :cpp:func:`esp_sleep_disable_wakeup_source` 将其禁用，详见 :ref:`disable_sleep_wakeup_source`。
+
+以下是 {IDF_TARGET_NAME} 所支持的唤醒源。
 
 定时器
 ^^^^^^^^
@@ -162,9 +171,22 @@ UART 唤醒（仅适用于 Light-sleep 模式）
 
 可调用 :cpp:func:`esp_sleep_enable_uart_wakeup` 函数来启用此唤醒源。
 
+.. _disable_sleep_wakeup_source:
+
+禁用睡眠模式唤醒源
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+调用 API :cpp:func:`esp_sleep_disable_wakeup_source` 可以禁用给定唤醒源的触发器，从而禁用该唤醒源。此外，如果将参数设置为 ``ESP_SLEEP_WAKEUP_ALL``，该函数可用于禁用所有触发器。
+
+.. _power_down_options:
+
+断电选项
+--------------
+
+应用程序可以使用 API :cpp:func:`esp_sleep_pd_config` 强制 RTC 外设和 RTC 内存进入特定断电模式。在 Deep-sleep 模式下，你还可以通过隔离一些 IO 来进一步降低功耗。
 
 RTC 外设和内存断电
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 默认情况下，调用函数 :cpp:func:`esp_deep_sleep_start` 和 :cpp:func:`esp_light_sleep_start` 后，所有唤醒源不需要的 RTC 电源域都会被断电。可调用函数 :cpp:func:`esp_sleep_pd_config` 来修改这一设置。
 
@@ -181,7 +203,7 @@ RTC 外设和内存断电
     {IDF_TARGET_NAME} 中只有 RTC 高速内存，因此，如果程序中的某些值被标记为 ``RTC_DATA_ATTR``、``RTC_SLOW_ATTR`` 或 ``RTC_FAST_ATTR`` 属性，那么所有这些值都将被存入 RTC 高速内存，默认情况下保持供电。如果有需要，您也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
 
 Flash 断电
-----------
+^^^^^^^^^^
 
 默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后， flash **不会** 断电，因为在 sleep 过程中断电 flash 存在风险。具体而言，flash 断电需要时间，但是在此期间，系统有可能被唤醒，导致 flash 重新被上电。此时，断电尚未完成又重新上电的硬件行为有可能导致 flash 无法正常工作。
 
@@ -210,18 +232,8 @@ Flash 断电
         - Light sleep 时，ESP-IDF 没有提供保证 flash 一定会被断电的机制。
         - 不管用户的配置如何，函数 :cpp:func:`esp_deep_sleep_start` 都会强制断电 flash。
 
-进入 Light-sleep 模式
--------------------------
-
-函数 :cpp:func:`esp_light_sleep_start` 可用于在配置唤醒源后进入 Light-sleep 模式，也可用于在未配置唤醒源的情况下进入 Light-sleep 模式。在后一种情况中，芯片将一直处于睡眠模式，直到从外部被复位。
-
-进入 Deep-sleep 模式
----------------------------
-
-函数 :cpp:func:`esp_deep_sleep_start` 可用于在配置唤醒源后进入 Deep-sleep 模式，也可用于在未配置唤醒源的情况下进入 Deep-sleep 模式 模式。在后一种情况中，芯片将一直处于睡眠模式，直到从外部被复位。
-
-配置 IO
----------------
+配置 IO（仅适用于 Deep-sleep）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 一些 {IDF_TARGET_NAME} IO 在默认情况下启用内部上拉或下拉电阻。如果这些管脚在 Deep-sleep 模式下中受外部电路驱动，电流流经这些上下拉电阻时，可能会增加电流消耗。
 
@@ -243,12 +255,25 @@ Flash 断电
             - 如果未启用保持 (hold) 功能，RTC GPIO 将处于高阻态。
             - 如果启用保持功能，RTC GPIO 管脚将会在保持功能开启时处于锁存状态。
 
+.. _enter_sleep:
+
+进入睡眠模式
+----------------------
+
+应用程序通过 API :cpp:func:`esp_light_sleep_start` 或 :cpp:func:`esp_deep_sleep_start` 进入 Light-sleep 或 Deep-sleep 模式。此时，系统将按照被请求的唤醒源和断电选项配置有关的 RTC 控制器参数。
+
+
+允许在未配置唤醒源的情况下进入睡眠模式。在此情况下，芯片将一直处于睡眠模式，直到从外部被复位。
+
+
 UART 输出处理
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 在进入睡眠模式之前，调用函数 :cpp:func:`esp_deep_sleep_start` 会冲刷掉 UART FIFO 缓存。
 
 当使用函数 :cpp:func:`esp_light_sleep_start` 进入 Light-sleep 模式时，UART FIFO 将不会被冲刷。与之相反，UART 输出将被暂停，FIFO 中的剩余字符将在 Light-sleep 唤醒后被发送。
+
+.. _wakeup_cause:
 
 检查睡眠唤醒原因
 ---------------------------
@@ -263,11 +288,6 @@ UART 输出处理
 
     对于 ext1 唤醒源，可以调用函数 :cpp:func:`esp_sleep_get_ext1_wakeup_status` 来确认触发唤醒的触摸管脚。
 
-
-禁用睡眠模式唤醒源
----------------------------
-
-调用 API :cpp:func:`esp_sleep_disable_wakeup_source` 可以禁用给定唤醒源的触发器，从而禁用该唤醒源。此外，如果将参数设置为 ``ESP_SLEEP_WAKEUP_ALL``，该函数可用于禁用所有触发器。
 
 应用程序示例
 -------------------
