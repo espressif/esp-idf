@@ -50,6 +50,73 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
 
     If Wi-Fi connections need to be maintained, enable Wi-Fi Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This will allow the system to wake up from sleep automatically when required by the Wi-Fi driver, thereby maintaining a connection to the AP.
 
+.. only:: esp32s2 or esp32s3 or esp32c2 or esp32c3
+
+    Sub Sleep Modes
+    ^^^^^^^^^^^^^^^
+
+    Tables below list the sub sleep modes (columns), and the features they support (rows). Mode that support more features may consume more power during sleep mode. The sleep system automatically selects the mode that satisfies all the features required by the user while consuming least power.
+
+    Deep-sleep:
+
+    +-----------------------------------+----------------+--------------+-----------------+
+    |                                   | DSLP_ULTRA_LOW | DSLP_DEFAULT | DSLP_8MD256 /   |
+    |                                   |                |              | DSLP_ADC_TSENS  |
+    +===================================+================+==============+=================+
+    | ULP/Touch sensor (S2, S3 only)    | Y              | Y            | Y               |
+    +-----------------------------------+----------------+--------------+-----------------+
+    | RTC IO input/RTC mem at high temp |                | Y            | Y               |
+    +-----------------------------------+----------------+--------------+-----------------+
+    | ADC_TSEN_MONITOR                  |                |              | Y               |
+    +-----------------------------------+----------------+--------------+-----------------+
+    | 8MD256                            |                |              | Y               |
+    +-----------------------------------+----------------+--------------+-----------------+
+
+    Features:
+
+    1. 8MD256: Use 8MD256 as the clock source for RTC Slow. Controlled by Kconfig option `CONFIG_RTC_CLK_SRC_INT_8MD256`.
+
+    2. ADC_TSEN_MONITOR: Use ADC/Temperature Sensor in monitor mode (controlled by ULP). Enabled by :cpp:func:`ulp_adc_init` API or its higher level APIs. Only available for chips with monitor modes (S2 and S3).
+
+    3. RTC IO input/RTC mem at high temp: Use RTC IO as input pins, or use RTC memory in high temperature. The chip can go into the ultra low power mode when these features are disabled. Controlled by API :cpp:func:`rtc_sleep_enable_ultra_low`. (Experimental)
+
+    Light-sleep:
+
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+    |                                   | LSLP_DEFAULT | LSLP_ADC_TSENS | LSLP_8MD256 | LSLP_LEDC8M / |
+    |                                   |              |                |             | LSLP_XTAL_FPU |
+    +===================================+==============+================+=============+===============+
+    | ULP/Touch sensor (S2, S3 only)    | Y            | Y              | Y           | Y             |
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+    | RTC IO input/RTC mem at high temp | Y            | Y              | Y           | Y             |
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+    | ADC_TSEN_MONITOR                  |              | Y              | Y           | Y             |
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+    | 8MD256                            |              |                | Y           | Y             |
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+    | dig 8M                            |              |                |             | Y             |
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+    | XTAL                              |              |                |             | Y             |
+    +-----------------------------------+--------------+----------------+-------------+---------------+
+
+    Features: (See also the 8MD256 and ADC_TSEN_MONITOR feature for deep-sleep)
+
+    1. XTAL: Keep XTAL on during light-sleep. Controlled by `ESP_PD_DOMAIN_XTAL` power domain.
+
+    2. dig 8M: 8M RC clock source used by digital peripherals. Currently only LEDC will use this clock source during light-sleep. When LEDC selects this clock source, this feature is automatically enabled.
+
+    .. only:: esp32s2
+
+        {IDF_TARGET_NAME} uses the same power mode for LSLP_8MD256, LSLP_LEDC8M and LSLP_XTAL_FPU.
+
+    .. only:: esp32s3
+
+        Default mode of {IDF_TARGET_NAME} already supports the ADC_TSEN_MONITOR feature.
+
+    .. only:: esp32c2 or esp32c3
+
+        {IDF_TARGET_NAME} doesn't have ADC_TSEN_MONITOR mode. There is no LSLP_ADC_TSENS mode either.
+
 .. _api-reference-wakeup-source:
 
 Wakeup Sources
@@ -100,8 +167,8 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     :cpp:func:`esp_sleep_enable_ext0_wakeup` function can be used to enable this wakeup source.
 
-    .. warning:: 
-        
+    .. warning::
+
         After waking up from sleep, the IO pad used for wakeup will be configured as RTC IO. Therefore, before using this pad as digital GPIO, users need to reconfigure it using :cpp:func:`rtc_gpio_deinit` function.
 
 .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
