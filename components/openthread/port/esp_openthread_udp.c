@@ -425,9 +425,10 @@ otError otPlatUdpJoinMulticastGroup(otUdpSocket *socket, otNetifIdentifier netif
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(task != NULL, error = OT_ERROR_NO_BUFS);
-    memcpy(task->addr.addr, addr->mFields.m8, sizeof(task->addr.addr));
     task->is_join = true;
     task->netif_index = get_netif_index(netif_id);
+    task->addr.zone = task->netif_index;
+    memcpy(task->addr.addr, addr->mFields.m8, sizeof(task->addr.addr));
     tcpip_callback(udp_multicast_join_leave_task, task);
 
 exit:
@@ -441,9 +442,10 @@ otError otPlatUdpLeaveMulticastGroup(otUdpSocket *socket, otNetifIdentifier neti
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(task != NULL, error = OT_ERROR_NO_BUFS);
-    memcpy(task->addr.addr, addr->mFields.m8, sizeof(task->addr.addr));
     task->is_join = false;
     task->netif_index = get_netif_index(netif_id);
+    task->addr.zone = task->netif_index;
+    memcpy(task->addr.addr, addr->mFields.m8, sizeof(task->addr.addr));
     tcpip_callback(udp_multicast_join_leave_task, task);
 
 exit:
