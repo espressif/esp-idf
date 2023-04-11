@@ -187,7 +187,7 @@ examples/system/ulp_fsm/ulp_adc:
 
 examples/system/ulp_riscv/adc:
   enable:
-    - if: IDF_TARGET in ["esp32s3"]
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
 
