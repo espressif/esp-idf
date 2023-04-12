@@ -12,15 +12,6 @@ api-guides/esp-ble-mesh/ble-mesh-architecture
 api-guides/esp-ble-mesh/ble-mesh-faq
 api-guides/wifi-security
 api-guides/openthread
-api-reference/storage/vfs
-api-reference/storage/spiffs
-api-reference/storage/wear-levelling
-api-reference/storage/fatfs
-api-reference/storage/nvs_partition_gen
-api-reference/storage/nvs_flash
-api-reference/storage/sdmmc
-api-reference/storage/mass_mfg
-api-reference/storage/index
 api-reference/peripherals/sdio_slave
 api-reference/peripherals/adc_calibration
 api-reference/peripherals/sdmmc_host
