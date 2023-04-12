@@ -7,7 +7,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='test failed, IDF-6880')
 @pytest.mark.parametrize(
     'config',
     [
