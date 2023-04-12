@@ -17,6 +17,7 @@
 #include "driver/ledc.h"
 #include "soc/rtc.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "sdkconfig.h"
 
 static const char TAG[] = "rtc_power";
 
@@ -27,35 +28,41 @@ static void test_deepsleep(void)
     esp_deep_sleep_start();
 }
 
-TEST_CASE("Power Test: Deepsleep (with ADC/TSEN in monitor)", "[pm]")
+// Deepsleep (with 8MD256 or ADC/TSEN in monitor)
+TEST_CASE("Power Test: DSLP_8MD256", "[pm]")
 {
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
-
     esp_sleep_enable_adc_tsens_monitor(true);
-    test_deepsleep();
-}
-
-TEST_CASE("Power Test: Deepsleep (default)", "[pm]")
-{
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
 
     test_deepsleep();
 }
 
-TEST_CASE("Power Test: Deepsleep (ultra-low power)", "[pm]")
+#if !CONFIG_RTC_CLK_SRC_INT_8MD256
+// Deepsleep (default)
+TEST_CASE("Power Test: DSLP_DEFAULT", "[pm]")
 {
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
+    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+
+    test_deepsleep();
+}
+
+// Deepsleep (ultra-low power)
+TEST_CASE("Power Test: DSLP_ULTRA_LOW", "[pm]")
+{
+    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
 
     extern void rtc_sleep_enable_ultra_low(bool);
     rtc_sleep_enable_ultra_low(true);
+
     test_deepsleep();
 }
+#endif //!CONFIG_RTC_CLK_SRC_INT_8MD256
 
 static void test_lightsleep(void)
 {
     esp_sleep_enable_timer_wakeup(2000000);
+    int count = 5;
 
-    while (true) {
+    while (count--) {
         printf("Entering light sleep\n");
         /* To make sure the complete line is printed before entering sleep mode,
          * need to wait until UART TX FIFO is empty:
@@ -81,40 +88,54 @@ static void test_lightsleep(void)
     }
 }
 
-TEST_CASE("Power Test: Lightsleep (XTAL 40M)", "[pm]")
+// Lightsleep (XTAL 40M)
+TEST_CASE("Power Test: LSLP_XTAL_FPU", "[pm]")
 {
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
-
     esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+
     test_lightsleep();
 }
 
-TEST_CASE("Power Test: Lightsleep (8M by digital)", "[pm]")
+// Lightsleep (8M by digital)
+TEST_CASE("Power Test: LSLP_LEDC8M", "[pm]")
 {
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
-
     ledc_timer_config_t config = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .duty_resolution = LEDC_TIMER_12_BIT,
         .timer_num = 0,
-        .freq_hz = 2 * 1000,
+        .freq_hz = 200,
         .clk_cfg = LEDC_USE_RC_FAST_CLK,
     };
     ledc_timer_config(&config);
+
     test_lightsleep();
 }
 
-TEST_CASE("Power Test: Lightsleep (with ADC/TSEN in monitor)", "[pm]")
+// Lightsleep (8MD256)
+TEST_CASE("Power Test: LSLP_8MD256", "[pm]")
 {
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
+#if !CONFIG_RTC_CLK_SRC_INT_8MD256
+    TEST_FAIL_MESSAGE("This mode requires Kconfig option CONFIG_RTC_CLK_SRC_INT_8MD256 selected");
+#endif
 
+    test_lightsleep();
+}
+
+#if !CONFIG_RTC_CLK_SRC_INT_8MD256
+// Lightsleep (with ADC/TSEN in monitor)
+TEST_CASE("Power Test: LSLP_ADC_TSENS", "[pm]")
+{
     extern void esp_sleep_enable_adc_tsens_monitor(bool);
     esp_sleep_enable_adc_tsens_monitor(true);
+
     test_lightsleep();
 }
 
-TEST_CASE("Power Test: Lightsleep (default)", "[pm]")
+// Lightsleep (default)
+TEST_CASE("Power Test: LSLP_DEFAULT", "[pm]")
 {
-    rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
+    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+
     test_lightsleep();
 }
+#endif //!CONFIG_RTC_CLK_SRC_INT_8MD256
