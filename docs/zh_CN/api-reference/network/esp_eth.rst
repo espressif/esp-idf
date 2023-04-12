@@ -191,10 +191,11 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
 
     ::
 
-        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // 应用默认的 MAC 配置
-        mac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;   // 更改用于 MDC 信号的 GPIO
-        mac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO; // 更改用于 MDIO 信号的 GPIO
-        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);     // 创建 MAC 实例
+        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // 应用默认的通用 MAC 配置
+        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // 应用默认的供应商特定 MAC 配置
+        esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // 更改用于 MDC 信号的 GPIO
+        esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // 更改用于 MDIO 信号的 GPIO
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // 创建 MAC 实例
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // 应用默认的 PHY 配置
         phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // 根据开发板设计更改 PHY 地址
@@ -214,14 +215,14 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
 
     ::
 
-        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG(); // 应用默认的 MAC 配置
+        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // 应用默认的供应商特定 MAC 配置
 
         // ...
 
-        mac_config.interface = EMAC_DATA_INTERFACE_RMII; // 更改 EMAC 数据接口
-        mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT; //  配置 EMAC REF_CLK 模式
-        mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO; // 配置用于输入/输出 EMAC REF_CLK 的 GPIO 编号
-        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // 创建 MAC 实例
+        esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // 更改 EMAC 数据接口
+        esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // 配置 EMAC REF_CLK 模式
+        esp32_emac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO;          // 配置用于输入/输出 EMAC REF_CLK 的 GPIO 编号
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // 创建 MAC 实例
 
 
 SPI-Ethernet 模块
@@ -231,7 +232,7 @@ SPI-Ethernet 模块
 
 ::
 
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // 应用默认的 MAC 配置
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // 应用默认的通用 MAC 配置
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // 应用默认的 PHY 配置
     phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // 根据开发板设计更改 PHY 地址
     phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // 更改用于 PHY 复位的 GPIO
