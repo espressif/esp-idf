@@ -17,18 +17,30 @@ components/esp_hw_support/test_apps/etm:
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
+
 components/esp_hw_support/test_apps/mspi:
   disable:
     - if: IDF_TARGET != "esp32s3"
+
 components/esp_hw_support/test_apps/mspi_psram_with_dfs:
   disable:
     - if: IDF_TARGET != "esp32s3"
+
+components/esp_hw_support/test_apps/rtc_8md256:
+  disable:
+    - if: SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 != 1
 
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
     - if: IDF_TARGET in ["esp32c6", "esp32h2"]
       temporary: true
       reason: Unsupported on C6 for now. TODO IDF-5645
+
+components/esp_hw_support/test_apps/rtc_power_modes:
+  enable:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c2", "esp32c3"]
+      temporary: true
+      reason: the other targets are not tested yet
 
 components/esp_hw_support/test_apps/security_support/esp_hw_support_unity_tests:
   disable_test:
