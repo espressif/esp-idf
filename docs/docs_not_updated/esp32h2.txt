@@ -22,17 +22,6 @@ libraries-and-frameworks/libs-frameworks
 libraries-and-frameworks/index
 libraries-and-frameworks/cloud-frameworks
 versions
-api-reference/storage/vfs
-api-reference/storage/spiffs
-api-reference/storage/wear-levelling
-api-reference/storage/fatfs
-api-reference/storage/nvs_partition_gen
-api-reference/storage/nvs_flash
-api-reference/storage/partition
-api-reference/storage/sdmmc
-api-reference/storage/mass_mfg
-api-reference/storage/index
-api-reference/storage/nvs_partition_parse
 api-reference/peripherals/usb_host
 api-reference/peripherals/usb_device
 api-reference/peripherals/i2s
