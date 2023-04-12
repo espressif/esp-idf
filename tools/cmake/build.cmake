@@ -129,7 +129,12 @@ function(__build_set_lang_version)
         # Use latest supported versions.
         # Please update docs/en/api-guides/cplusplus.rst when changing this.
         set(c_std gnu17)
-        set(cxx_std gnu++23)
+        if(NOT ${env_idf_toolchain} STREQUAL "clang")
+            set(cxx_std gnu++23)
+        else()
+            # TODO: IDF-7241 - remove the exception for clang
+            set(cxx_std gnu++20)
+        endif()
     else()
         enable_language(C CXX)
         # Building for Linux target, fall back to an older version of the standard
