@@ -84,7 +84,11 @@ static size_t r_get_idx;
 TAILQ_HEAD(heap_trace_hash_list_struct_t, heap_trace_record_t);
 typedef struct heap_trace_hash_list_struct_t heap_trace_hash_list_t;
 
-static heap_trace_hash_list_t hash_map[(size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE]; // Buffer used for hashmap entries
+static
+#if CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM
+EXT_RAM_BSS_ATTR
+#endif
+heap_trace_hash_list_t hash_map[(size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE]; // Buffer used for hashmap entries
 static size_t total_hashmap_hits;
 static size_t total_hashmap_miss;
 

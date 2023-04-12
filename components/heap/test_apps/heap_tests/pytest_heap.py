@@ -80,7 +80,8 @@ def test_heap_8bit_access(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'heap_trace'
+        'heap_trace',
+        'heap_trace_hashmap'
     ]
 )
 def test_heap_trace_dump(dut: Dut) -> None:
