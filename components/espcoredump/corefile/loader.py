@@ -261,7 +261,7 @@ class EspCoreDumpLoader(EspCoreDumpVersion):
         for seg in core_elf.note_segments:
             for note_sec in seg.note_secs:
                 # Check for version info note
-                if note_sec.name == 'ESP_CORE_DUMP_INFO' \
+                if note_sec.name == b'ESP_CORE_DUMP_INFO' \
                         and note_sec.type == ESPCoreDumpElfFile.PT_INFO \
                         and exe_name:
                     exe_elf = ElfFile(exe_name)

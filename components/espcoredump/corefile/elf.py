@@ -284,6 +284,13 @@ class ElfNoteSegment(ElfSegment):
         super(ElfNoteSegment, self).__init__(addr, data, flags)
         self.type = ElfFile.PT_NOTE
         self.note_secs = NoteSections.parse(self.data)
+        for note in self.note_secs:
+            # note.name should include a terminating NUL byte, plus possible
+            # padding
+            #
+            # (note: construct.PaddingString can't parse this if there
+            # are non-zero padding bytes after the NUL, it also parses those.)
+            note.name = note.name.split(b'\x00')[0]
 
     @staticmethod
     def _type_str():  # type: () -> str
