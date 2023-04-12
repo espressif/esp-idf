@@ -288,7 +288,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /// Log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
 
 /**
- * In the future, we want to switch to C++20. We also want to become compatible with clang.
+ * In the future, we want to become compatible with clang.
  * Hence, we provide two versions of the following macros which are using variadic arguments.
  * The first one is using the GNU extension \#\#__VA_ARGS__. The second one is using the C++20 feature __VA_OPT__(,).
  * This allows users to compile their code with standard C++20 enabled instead of the GNU extension.

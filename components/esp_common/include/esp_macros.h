@@ -32,7 +32,7 @@ extern "C" {
  * - MACRO_ARGS(__VA_ARGS__) if __VA_ARGS__ was not empty
  * - MACRO_NO_ARGS() if __VA_ARGS__ was empty
  *
- * @note In the future, we want to switch to C++20. We also want to become compatible with clang. Hence, we provide two
+ * @note In the future, we want to become compatible with clang. Hence, we provide two
  * versions of the following macros which are using variadic arguments. One is using the GNU extension ##__VA_ARGS__.
  * The other is using the C++20 feature __VA_OPT__(,). This allows users to compile their code with standard C++20
  * enabled instead of the GNU extension. Below C++20, we haven't found any good alternative to using ##__VA_ARGS__.

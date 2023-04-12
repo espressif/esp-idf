@@ -23,14 +23,14 @@ esp-idf-cxx Component
 C++ language standard
 ---------------------
 
-By default, ESP-IDF compiles C++ code with C++20 language standard with GNU extensions (``-std=gnu++20``).
+By default, ESP-IDF compiles C++ code with C++23 language standard with GNU extensions (``-std=gnu++23``).
 
 To compile the source code of a certain component using a different language standard, set the desired compiler flag in the component CMakeLists.txt file:
 
 .. code-block:: cmake
 
     idf_component_register( ... )
-    target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2b)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++11)
 
 Use ``PUBLIC`` instead of ``PRIVATE`` if the public header files of the component also need to be compiled with the same language standard.
 
