@@ -48,11 +48,10 @@ menu "Memory"
             depends on !ESP32_TRAX
             help
                 Reserve parts of SRAM1 for app IRAM which was previously reserved for bootloader DRAM.
-                If booting an app on an older bootloader from before this option was introduced, the app may fail
-                to boot due to overlapping memory areas. If this is the case please test carefully before pushing out
-                any OTA updates.
+                If booting an app on an older bootloader from before this option was introduced, the app will fail
+                to boot due to not recognizing the new IRAM memory area.
 
-                The bootloader DRAM memory should be sufficient for any non-modified IDF bootloader.
+                If this is the case please test carefully before pushing out any OTA updates.
 
     endmenu
 

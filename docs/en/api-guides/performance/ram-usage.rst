@@ -149,20 +149,17 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
    The SRAM1 memory area is normally used for DRAM, but it is possible to use parts of it for IRAM with :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`. This memory would previously be reserved for DRAM data usage (e.g. bss) by the software bootloader and later added to the heap. After this option was introduced, the bootloader DRAM size was reduced to a value closer to what it normally actually needs.
 
-   When compiling with this config option, the linker will make sure that both the app's IRAM section and the bootloader's DRAM section is sufficiently large, and not overlapping. If the software bootloader was compiled before this option existed, then it is guaranteed that these two sections will not overlap. This would typically happen if you are doing an OTA update, where only the app would be updated.
+   This option depends on IDF being able to recognize that the new SRAM1 area is also a valid load address for an image segment. If the software bootloader was compiled before this option existed, then the bootloader will not be able to load an app which has code placed in this new extended IRAM area. This would typically happen if you are doing an OTA update, where only the app would be updated.
 
-   If the IRAM section were to overlap the bootloader's DRAM section then this would be detected during the bootup process and result in a failed boot:
+   If the IRAM section were to be placed in an invalid area then this would be detected during the bootup process and result in a failed boot:
 
    .. code-block:: text
 
-      E (204) esp_image: _dram_start = 0x3fff0000, _dram_end = 0x3fff1be0
-      E (208) esp_image: Segment 4 0x3fff14e0-0x3ffffffc invalid: overlaps bootloader data
+      E (204) esp_image: Segment 5 0x400845f8-0x400a126c invalid: bad load address range
 
    .. warning::
 
-      Apps compiled with :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`, may fail to boot if used together with a software bootloader compiled without the config option.
-
-   Currently the software bootloader compiled with security features enabled uses less than 16KB of DRAM, which means that even when allocating the entirety of this IRAM (40KB), there should still be some spare room. However, as this is not guaranteed, we recommended thoroughly testing before pushing an app update with this option enabled.
+      Apps compiled with :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`, may fail to boot if used together with a software bootloader compiled before this config option was introduced. If you are using an older bootloader and updating over OTA, please test carefully before pushing any update.
 
    Any memory which ends up not being used for static IRAM will be added to the heap.
 

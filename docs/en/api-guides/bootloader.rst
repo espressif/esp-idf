@@ -41,6 +41,12 @@ The bootloader does not support booting apps from older versions of ESP-IDF. Whe
 
     Bootloaders built from versions of ESP-IDF before V3.1 do not support MD5 checksums in the partition table binary. When using a bootloader from these ESP-IDF versions and building a new app, enable the config option :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`.
 
+
+    Before ESP-IDF V5.1
+    ^^^^^^^^^^^^^^^^^^^
+
+    Bootloaders built from versions of ESP-IDF prior to V5.1 do not support :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`. When using a bootloader from these ESP-IDF versions and building a new app you should not use this option.
+
 SPI Flash Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
 
