@@ -18,7 +18,11 @@ typedef struct {
     uint32_t dma_status;        ///< masked DMA interrupt status
 } sdmmc_event_t;
 
-void sdmmc_host_reset(void);
+#define SDMMC_HOST_CLOCK_UPDATE_CMD_TIMEOUT_US           1000 * 1000
+#define SDMMC_HOST_START_CMD_TIMEOUT_US                  1000 * 1000
+#define SDMMC_HOST_RESET_TIMEOUT_US                      5000 * 1000
+
+esp_err_t sdmmc_host_reset(void);
 
 esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg);
 

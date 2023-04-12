@@ -88,7 +88,6 @@ static esp_err_t mount_prepare_mem(const char *base_path,
     if (ff_diskio_get_drive(&pdrv) != ESP_OK || pdrv == FF_DRV_NOT_USED) {
         ESP_LOGD(TAG, "the maximum count of volumes is already mounted");
         return ESP_ERR_NO_MEM;
-
     }
 
     // not using ff_memalloc here, as allocation in internal RAM is preferred
