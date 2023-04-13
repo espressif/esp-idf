@@ -42,6 +42,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "esp32/clk.h"
+#include "esp_coexist.h"
 #include "esp_coexist_internal.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
@@ -91,7 +92,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010003
+#define OSI_VERSION              0x00010004
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* Types definition
@@ -178,6 +179,7 @@ struct osi_funcs_t {
     void (*_interrupt_l3_disable)(void);
     void (*_interrupt_l3_restore)(void);
     void *(* _customer_queue_create)(uint32_t queue_len, uint32_t item_size);
+    int (* _coex_version_get)(unsigned int *major, unsigned int *minor, unsigned int *patch);
     uint32_t _magic;
 };
 
@@ -310,6 +312,7 @@ static uint8_t coex_schm_curr_period_get_wrapper(void);
 static void * coex_schm_curr_phase_get_wrapper(void);
 static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary);
 static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
+static int coex_version_get_wrapper(unsigned int *major, unsigned int *minor, unsigned int *patch);
 static void bt_controller_deinit_internal(void);
 
 /* Local variable definition
@@ -377,6 +380,7 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._interrupt_l3_disable = interrupt_disable,
     ._interrupt_l3_restore = interrupt_restore,
     ._customer_queue_create = NULL,
+    ._coex_version_get = coex_version_get_wrapper,
     ._magic = OSI_MAGIC_VALUE,
 };
 
@@ -988,6 +992,30 @@ static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
 #else
     return -1;
 #endif
+}
+
+static int coex_version_get_wrapper(unsigned int *major, unsigned int *minor, unsigned int *patch)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    const char *ver_str = esp_coex_version_get();
+    if (ver_str != NULL) {
+        unsigned int _major = 0, _minor = 0, _patch = 0;
+        if (sscanf(ver_str, "%u.%u.%u", &_major, &_minor, &_patch) != 3) {
+            return -1;
+        }
+        if (major != NULL) {
+            *major = _major;
+        }
+        if (minor != NULL) {
+            *minor = _minor;
+        }
+        if (patch != NULL) {
+            *patch = _patch;
+        }
+        return 0;
+    }
+#endif
+    return -1;
 }
 
 bool esp_vhci_host_check_send_available(void)
