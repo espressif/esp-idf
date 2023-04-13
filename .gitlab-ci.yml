@@ -112,6 +112,7 @@ cache:
       - .cache/submodule_archives
     policy: pull
 
+
 .common_before_scripts: &common-before_scripts |
   source tools/ci/utils.sh
   is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
