@@ -33,6 +33,16 @@
 
 static const char *TAG = "vfs";
 
+/* Max number of VFS entries (registered filesystems) */
+#ifdef CONFIG_VFS_MAX_COUNT
+#define VFS_MAX_COUNT  CONFIG_VFS_MAX_COUNT
+#else
+/* If IO support is disabled, keep this defined to 1 to avoid compiler warnings in this file.
+ * The s_vfs array and the functions defined here will be removed by the linker, anyway.
+ */
+#define VFS_MAX_COUNT 1
+#endif
+
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
 #define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .has_pending_close = false, .has_pending_select = false, .vfs_index = -1, .local_fd = -1 }
 
@@ -40,7 +50,7 @@ typedef uint8_t local_fd_t;
 _Static_assert((1 << (sizeof(local_fd_t)*8)) >= MAX_FDS, "file descriptor type too small");
 
 typedef int8_t vfs_index_t;
-_Static_assert((1 << (sizeof(vfs_index_t)*8)) >= CONFIG_VFS_MAX_COUNT, "VFS index type too small");
+_Static_assert((1 << (sizeof(vfs_index_t)*8)) >= VFS_MAX_COUNT, "VFS index type too small");
 _Static_assert(((vfs_index_t) -1) < 0, "vfs_index_t must be a signed type");
 
 typedef struct {
@@ -59,7 +69,7 @@ typedef struct {
     fd_set errorfds;
 } fds_triple_t;
 
-static vfs_entry_t* s_vfs[CONFIG_VFS_MAX_COUNT] = { 0 };
+static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
 static size_t s_vfs_count = 0;
 
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
@@ -88,7 +98,7 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
         }
     }
     if (index == s_vfs_count) {
-        if (s_vfs_count >= CONFIG_VFS_MAX_COUNT) {
+        if (s_vfs_count >= VFS_MAX_COUNT) {
             free(entry);
             return ESP_ERR_NO_MEM;
         }
@@ -166,7 +176,7 @@ esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t
 
 esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 {
-    if (vfs_id < 0 || vfs_id >= CONFIG_VFS_MAX_COUNT || s_vfs[vfs_id] == NULL) {
+    if (vfs_id < 0 || vfs_id >= VFS_MAX_COUNT || s_vfs[vfs_id] == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     vfs_entry_t* vfs = s_vfs[vfs_id];
@@ -175,7 +185,7 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 
     _lock_acquire(&s_fd_table_lock);
     // Delete all references from the FD lookup-table
-    for (int j = 0; j < CONFIG_VFS_MAX_COUNT; ++j) {
+    for (int j = 0; j < VFS_MAX_COUNT; ++j) {
         if (s_fd_table[j].vfs_index == vfs_id) {
             s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
         }
