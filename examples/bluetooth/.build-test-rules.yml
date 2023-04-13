@@ -2,31 +2,31 @@
 
 examples/bluetooth/bluedroid/ble:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/bluedroid/ble_50:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/bluedroid/ble_50/multi-adv:
   enable:
-    - if: IDF_TARGET in ["esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -44,11 +44,11 @@ examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
 
 examples/bluetooth/bluedroid/coex/gattc_gatts_coex:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -58,7 +58,7 @@ examples/bluetooth/blufi:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -68,7 +68,7 @@ examples/bluetooth/esp_ble_mesh:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -78,7 +78,7 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -88,7 +88,7 @@ examples/bluetooth/esp_ble_mesh/ble_mesh_coex_test:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -138,23 +138,23 @@ examples/bluetooth/nimble:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/ble_l2cap_coc:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2", "esp32h4" ]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2" , "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2" , "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/ble_multi_adv:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32h4", "esp32s3"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
@@ -164,61 +164,61 @@ examples/bluetooth/nimble/ble_multi_adv:
 
 examples/bluetooth/nimble/ble_periodic_adv:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2", "esp32h4" ]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/ble_periodic_sync:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2", "esp32h4" ]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/ble_phy:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32h4", "esp32s3" ]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s3" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/ble_spp:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32h4", "esp32s3" ]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s3" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/blecent:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2", "esp32h4" ]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/blehr:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2", "esp32h4" ]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -228,17 +228,17 @@ examples/bluetooth/nimble/blemesh:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/bleprph:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2", "esp32h4" ]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -248,7 +248,7 @@ examples/bluetooth/nimble/bleprph_wifi_coex:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -258,6 +258,6 @@ examples/bluetooth/nimble/hci:
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: The runner doesn't support yet

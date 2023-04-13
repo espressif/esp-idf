@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-H4 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE SPP central example
 
@@ -108,7 +108,7 @@ I (487) NimBLE_SPP_BLE_CENT: BLE Host Task Started
 GAP procedure initiated: stop advertising.
 GAP procedure initiated: discovery; own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1 duration=forever
 GAP procedure initiated: connect; peer_addr_type=0 peer_addr=7c:df:a1:40:3e:fa scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
-Connection established 
+Connection established
 GATT procedure initiated: discover all services
 GATT procedure initiated: discover all characteristics; start_handle=1 end_handle=5
 GATT procedure initiated: discover all characteristics; start_handle=6 end_handle=9

@@ -63,8 +63,6 @@ void app_main(void)
     repl_config.prompt = "esp32c3>";
 #elif CONFIG_IDF_TARGET_ESP32S3
     repl_config.prompt = "esp32s3>";
-#elif CONFIG_IDF_TARGET_ESP32H4
-    repl_config.prompt = "esp32h4>";
 #else
     repl_config.prompt = "esp32>";
 #endif

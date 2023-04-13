@@ -298,9 +298,6 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 
     aFrame->mPsdu[-1] = aFrame->mLength; // lenth locates one byte before the psdu (esp_openthread_radio_tx_psdu);
 
-// TODO: remove this macro check when esp32h4 unsupported.
-#if !CONFIG_IDF_TARGET_ESP32H4
-    // esp32h4 do not support tx security
     if (otMacFrameIsSecurityEnabled(aFrame) && !aFrame->mInfo.mTxInfo.mIsSecurityProcessed) {
         otMacFrameSetFrameCounter(aFrame, s_mac_frame_counter++);
         if (otMacFrameIsKeyIdMode1(aFrame)) {
@@ -314,12 +311,10 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
         esp_ieee802154_set_transmit_security(&aFrame->mPsdu[-1], s_security_key, s_security_addr);
     }
 
-    // esp32h4 do not support transmit at
     if (aFrame->mInfo.mTxInfo.mTxDelay != 0) {
         esp_ieee802154_transmit_at(&aFrame->mPsdu[-1], aFrame->mInfo.mTxInfo.mCsmaCaEnabled,
                                    (aFrame->mInfo.mTxInfo.mTxDelayBaseTime + aFrame->mInfo.mTxInfo.mTxDelay));
     } else
-#endif
     {
         esp_ieee802154_transmit(&aFrame->mPsdu[-1], aFrame->mInfo.mTxInfo.mCsmaCaEnabled);
     }
@@ -342,22 +337,15 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
     return (otRadioCaps)(OT_RADIO_CAPS_ENERGY_SCAN |
-// TODO: remove this macro check when esp32h4 unsupported.
-#if !CONFIG_IDF_TARGET_ESP32H4
                         OT_RADIO_CAPS_TRANSMIT_SEC | OT_RADIO_CAPS_RECEIVE_TIMING | OT_RADIO_CAPS_TRANSMIT_TIMING |
-#endif
                         OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX);
 }
 
-// TODO: remove this macro check when esp32h4 unsupported.
-#if !CONFIG_IDF_TARGET_ESP32H4
-// esp32h4 do not support receive at
 otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel, uint32_t aStart, uint32_t aDuration)
 {
     esp_ieee802154_receive_at((aStart + aDuration));
     return OT_ERROR_NONE;
 }
-#endif
 
 bool otPlatRadioGetPromiscuous(otInstance *aInstance)
 {
