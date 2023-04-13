@@ -201,7 +201,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
-        1. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
+        2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
 When a timer is no longer needed by any channel, it can be deconfigured by calling the same function :cpp:func:`ledc_timer_config`. The configuration structure :cpp:type:`ledc_timer_config_t` passes in should be:
 

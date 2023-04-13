@@ -29,7 +29,7 @@
 #define REASON_FREQ_SWITCH      BIT(1)
 #define REASON_GDB_CALL         BIT(3)
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
 #define REASON_PRINT_BACKTRACE  BIT(2)
 #define REASON_TWDT_ABORT       BIT(4)
 #endif
@@ -66,7 +66,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
     } else {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
     }
-#elif CONFIG_IDF_TARGET_ESP32C3|| CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ARCH_RISCV
     WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
 #endif
 
@@ -147,7 +147,7 @@ static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) 
     } else {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
     }
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ARCH_RISCV
     WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
 #endif
 }
@@ -167,7 +167,7 @@ void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
     esp_crosscore_int_send(core_id, REASON_GDB_CALL);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
 void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
