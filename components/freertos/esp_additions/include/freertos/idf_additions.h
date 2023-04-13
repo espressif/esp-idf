@@ -201,7 +201,89 @@
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
-/* ---------------------- Queue ------------------------- */
+/* ---------------------------------- Tasks --------------------------------- */
+
+/**
+ * @brief Creates a pinned task where its stack has specific memory capabilities
+ *
+ * This function is similar to xTaskCreatePinnedToCore(), except that it allows
+ * the memory allocated for the task's stack to have specific capabilities
+ * (e.g., MALLOC_CAP_SPIRAM).
+ *
+ * However, the specified capabilities will NOT apply to the task's TCB as a TCB
+ * must always be in internal RAM.
+ *
+ * @param pvTaskCode Pointer to the task entry function
+ * @param pcName A descriptive name for the task
+ * @param usStackDepth The size of the task stack specified as the number of
+ * bytes
+ * @param pvParameters Pointer that will be used as the parameter for the task
+ * being created.
+ * @param uxPriority The priority at which the task should run.
+ * @param pvCreatedTask Used to pass back a handle by which the created task can
+ * be referenced.
+ * @param xCoreID Core to which the task is pinned to, or tskNO_AFFINITY if
+ * unpinned.
+ * @param uxMemoryCaps Memory capabilities of the task stack's memory (see
+ * esp_heap_caps.h)
+ * @return pdPASS if the task was successfully created and added to a ready
+ * list, otherwise an error code defined in the file projdefs.h
+ */
+    BaseType_t xTaskCreatePinnedToCoreWithCaps( TaskFunction_t pvTaskCode,
+                                                const char * const pcName,
+                                                const configSTACK_DEPTH_TYPE usStackDepth,
+                                                void * const pvParameters,
+                                                UBaseType_t uxPriority,
+                                                TaskHandle_t * const pvCreatedTask,
+                                                const BaseType_t xCoreID,
+                                                UBaseType_t uxMemoryCaps );
+
+/**
+ * @brief Creates a task where its stack has specific memory capabilities
+ *
+ * This function is similar to xTaskCreate(), except that it allows the memory
+ * allocated for the task's stack to have specific capabilities (e.g.,
+ * MALLOC_CAP_SPIRAM).
+ *
+ * However, the specified capabilities will NOT apply to the task's TCB as a TCB
+ * must always be in internal RAM.
+ *
+ * @note A task created using this function must only be deleted using
+ * vTaskDeleteWithCaps()
+ * @param pvTaskCode Pointer to the task entry function
+ * @param pcName A descriptive name for the task
+ * @param usStackDepth The size of the task stack specified as the number of
+ * bytes
+ * @param pvParameters Pointer that will be used as the parameter for the task
+ * being created.
+ * @param uxPriority The priority at which the task should run.
+ * @param pvCreatedTask Used to pass back a handle by which the created task can
+ * be referenced.
+ * @param uxMemoryCaps Memory capabilities of the task stack's memory (see
+ * esp_heap_caps.h)
+ * @return pdPASS if the task was successfully created and added to a ready
+ * list, otherwise an error code defined in the file projdefs.h
+ */
+    static inline BaseType_t xTaskCreateWithCaps( TaskFunction_t pvTaskCode,
+                                                  const char * const pcName,
+                                                  configSTACK_DEPTH_TYPE usStackDepth,
+                                                  void * const pvParameters,
+                                                  UBaseType_t uxPriority,
+                                                  TaskHandle_t * pvCreatedTask,
+                                                  UBaseType_t uxMemoryCaps )
+    {
+        return xTaskCreatePinnedToCoreWithCaps( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask, tskNO_AFFINITY, uxMemoryCaps );
+    }
+
+/**
+ * @brief Deletes a task previously created using xTaskCreateWithCaps() or
+ * xTaskCreatePinnedToCoreWithCaps()
+ *
+ * @param xTaskToDelete A handle to the task to be deleted
+ */
+    void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete );
+
+/* ---------------------------------- Queue --------------------------------- */
 
 /**
  * @brief Creates a queue with specific memory capabilities
@@ -229,7 +311,7 @@
  */
     void vQueueDeleteWithCaps( QueueHandle_t xQueue );
 
-/* -------------------- Semaphore ----------------------- */
+/* -------------------------------- Semaphore ------------------------------- */
 
 /** @cond */ /* Doxygen command to hide this from docs */
     SemaphoreHandle_t xSemaphoreCreateGenericWithCaps( UBaseType_t uxMaxCount,
@@ -323,7 +405,7 @@
  */
     void vSemaphoreDeleteWithCaps( SemaphoreHandle_t xSemaphore );
 
-/* ------------ Stream & Message Buffers ---------------- */
+/* ------------------------ Stream & Message Buffers ------------------------ */
 
 /** @cond */ /* Doxygen command to hide this from docs */
     StreamBufferHandle_t xStreamBufferGenericCreateWithCaps( size_t xBufferSizeBytes,
@@ -402,7 +484,7 @@
         vStreamBufferGenericDeleteWithCaps( ( StreamBufferHandle_t ) xMessageBuffer, pdTRUE );
     }
 
-/* ------------------ Event Groups ---------------------- */
+/* ------------------------------ Event Groups ------------------------------ */
 
 /**
  * @brief Creates an event group with specific memory capabilities
@@ -430,5 +512,5 @@
 #endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
 
 #ifdef __cplusplus
-    }
+}
 #endif
