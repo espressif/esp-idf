@@ -9,6 +9,7 @@
 #pragma once
 
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "soc/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
@@ -115,12 +116,16 @@ static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2
     clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
     clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
     clk_cal->sda_hold = half_cycle / 4;
-    clk_cal->sda_sample = half_cycle / 2 + clk_cal->scl_wait_high;
+    clk_cal->sda_sample = half_cycle / 2;
     clk_cal->setup = half_cycle;
     clk_cal->hold = half_cycle;
     //default we set the timeout value to about 10 bus cycles
     // log(20*half_cycle)/log(2) = log(half_cycle)/log(2) +  log(20)/log(2)
     clk_cal->tout = (int)(sizeof(half_cycle) * 8 - __builtin_clz(5 * half_cycle)) + 2;
+
+    /* Verify the assumptions made by the hardware */
+    HAL_ASSERT(clk_cal->scl_wait_high < clk_cal->sda_sample &&
+               clk_cal->sda_sample < clk_cal->scl_high);
 }
 
 /**
