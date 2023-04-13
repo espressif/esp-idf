@@ -97,6 +97,16 @@ static inline void brownout_ll_intr_enable(bool enable)
 }
 
 /**
+ * @brief Enable brownout hardware reset
+ *
+ * @param enable
+ */
+static inline void brownout_ll_ana_reset_enable(bool enable)
+{
+    RTCCNTL.brown_out.ana_rst_en = enable;
+}
+
+/**
  * @brief Clear interrupt bits.
  */
 __attribute__((always_inline))
