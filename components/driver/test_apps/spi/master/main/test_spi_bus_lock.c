@@ -33,7 +33,7 @@
 
 #endif
 
-// H4 and C2 will not support external flash.
+// H2 and C2 will not support external flash.
 #define TEST_FLASH_FREQ_MHZ      5
 
 typedef struct {

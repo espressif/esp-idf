@@ -188,25 +188,6 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 32 MHz
          - 支持动态调频（DFS）功能
 
-.. only:: esp32h2
-
-    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
-       :widths: 10 10 30
-       :header-rows: 1
-
-       * - 时钟名称
-         - 时钟频率
-         - 时钟功能
-       * - APB_CLK
-         - 96 MHz
-         - /
-       * - RC_FAST_CLK
-         - ~8 MHz
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
-       * - XTAL_CLK
-         - 32 MHz
-         - 支持动态调频（DFS）功能
-
 .. note::
 
     .. only:: SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
@@ -219,7 +200,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
-        2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
+        1. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
 
 
 .. _ledc-api-configure-channel:

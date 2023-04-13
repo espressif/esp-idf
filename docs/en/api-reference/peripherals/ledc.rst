@@ -189,25 +189,6 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 32 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32h2
-
-    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
-       :widths: 15 15 30
-       :header-rows: 1
-
-       * - Clock name
-         - Clock freq
-         - Clock capabilities
-       * - APB_CLK
-         - 96 MHz
-         - /
-       * - RC_FAST_CLK
-         - ~8 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
-       * - XTAL_CLK
-         - 32 MHz
-         - Dynamic Frequency Scaling compatible
-
 .. note::
 
     .. only:: SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
@@ -220,7 +201,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
-        2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
+        1. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
 
 .. _ledc-api-configure-channel:

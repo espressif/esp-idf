@@ -583,7 +583,7 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
  *
- * Master (C3, C2, H4) && Slave (C3, C2, H4):
+ * Master (C3, C2, H2) && Slave (C3, C2, H2):
  *      PIN | Master     | Slave      |
  *      ----| ---------  | ---------  |
  *      CS  | 10         | 10         |

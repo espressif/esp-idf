@@ -640,15 +640,6 @@ class ESP32H2DUT(IDFDUT):
         return targets.ESP32H2ROM
 
 
-class ESP32H4DUT(IDFDUT):
-    TARGET = 'esp32h4'
-    TOOLCHAIN_PREFIX = 'riscv32-esp-elf-'
-
-    @classmethod
-    def get_rom(cls):
-        return targets.ESP32H4ROM
-
-
 class ESP8266DUT(IDFDUT):
     TARGET = 'esp8266'
     TOOLCHAIN_PREFIX = 'xtensa-lx106-elf-'
@@ -659,7 +650,7 @@ class ESP8266DUT(IDFDUT):
 
 
 def get_target_by_rom_class(cls):
-    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C2DUT, ESP32C3DUT, ESP32C6DUT, ESP32H2DUT, ESP32H4DUT, ESP8266DUT, IDFQEMUDUT]:
+    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C2DUT, ESP32C3DUT, ESP32C6DUT, ESP32H2DUT, ESP8266DUT, IDFQEMUDUT]:
         if c.get_rom() == cls:
             return c.TARGET
     return None
