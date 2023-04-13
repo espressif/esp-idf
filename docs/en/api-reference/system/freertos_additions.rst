@@ -432,6 +432,8 @@ When implementing TLSP callbacks, users should note the following:
 
 .. ----------------------------------------------- IDF Additional API --------------------------------------------------
 
+.. _freertos-idf-additional-api:
+
 IDF Additional API
 ------------------
 

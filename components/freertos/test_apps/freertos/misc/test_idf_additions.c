@@ -14,6 +14,7 @@
 #include "freertos/idf_additions.h"
 #include "esp_memory_utils.h"
 #include "unity.h"
+#include "test_utils.h"
 
 /*
 Test ...Create...WithCaps() functions
@@ -32,6 +33,31 @@ Expected:
 */
 
 #define OBJECT_MEMORY_CAPS      (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+
+static void task_with_caps(void *arg)
+{
+    xTaskNotifyGive((TaskHandle_t)arg);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("IDF additions: Task creation with memory caps", "[freertos]")
+{
+    TaskHandle_t task_handle = NULL;
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    // Create a task with caps
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(task_with_caps, "task", 4096, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &task_handle, UNITY_FREERTOS_CPU, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
+    // Get the task's memory
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    // Wait for the created task to block
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // Delete the task
+    vTaskDeleteWithCaps(task_handle);
+}
 
 TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos]")
 {
