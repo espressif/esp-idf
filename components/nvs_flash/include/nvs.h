@@ -710,7 +710,7 @@ esp_err_t nvs_entry_find(const char *part_name,
  *             - ESP_ERR_INVALID_ARG if any of the parameters is NULL.
  *                  Note: don't release \c output_iterator in case ESP_ERR_INVALID_ARG has been returned
  */
-esp_err_t nvs_entry_find_in_handle(nvs_handle_t c_handle, nvs_type_t type, nvs_iterator_t *output_iterator);
+esp_err_t nvs_entry_find_in_handle(nvs_handle_t handle, nvs_type_t type, nvs_iterator_t *output_iterator);
 
 /**
  * @brief       Advances the iterator to next item matching the iterator criteria.

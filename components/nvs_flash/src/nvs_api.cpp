@@ -786,7 +786,7 @@ extern "C" esp_err_t nvs_entry_find(const char *part_name, const char *namespace
     return ESP_OK;
 }
 
-extern "C" esp_err_t nvs_entry_find_in_handle(nvs_handle_t c_handle, nvs_type_t type, nvs_iterator_t *output_iterator)
+extern "C" esp_err_t nvs_entry_find_in_handle(nvs_handle_t handle, nvs_type_t type, nvs_iterator_t *output_iterator)
 {
     if (output_iterator == nullptr) {
         return ESP_ERR_INVALID_ARG;
@@ -800,22 +800,22 @@ extern "C" esp_err_t nvs_entry_find_in_handle(nvs_handle_t c_handle, nvs_type_t 
 
     Lock lock;
     nvs::Storage *pStorage;
-    NVSHandleSimple *handle;
+    NVSHandleSimple *handle_obj;
 
-    auto err = nvs_find_ns_handle(c_handle, &handle);
+    auto err = nvs_find_ns_handle(handle, &handle_obj);
     if (err != ESP_OK) {
         *output_iterator = nullptr;
         return err;
     }
 
-    pStorage = handle->get_storage();
+    pStorage = handle_obj->get_storage();
     nvs_iterator_t it = create_iterator(pStorage, type);
     if (it == nullptr) {
         *output_iterator = nullptr;
         return ESP_ERR_NO_MEM;
     }
 
-    bool entryFound = handle->findEntryNs(it);
+    bool entryFound = handle_obj->findEntryNs(it);
     if (!entryFound) {
         free(it);
         *output_iterator = nullptr;
