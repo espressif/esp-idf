@@ -1667,7 +1667,9 @@ r_lld_ext_adv_dynamic_pti_get = 0x4000510c;
 r_lld_ext_adv_dynamic_aux_pti_process = 0x40005118;
 r_lld_ext_adv_dynamic_pti_process = 0x40005124;
 r_lld_adv_ext_pkt_prepare_set = 0x40005130;
+/*
 r_lld_adv_ext_chain_none_construct = 0x4000513c;
+*/
 r_lld_adv_ext_chain_connectable_construct = 0x40005148;
 /*
 r_lld_adv_ext_chain_scannable_construct = 0x40005154;
