@@ -137,12 +137,6 @@ static tGATT_STATUS gatts_check_attr_readability(tGATT_ATTR16 *p_attr,
         return GATT_READ_NOT_PERMIT;
     }
 
-    if ((perm & GATT_READ_AUTH_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_UNAUTHED) &&
-            !(sec_flag & BTM_SEC_FLAG_ENCRYPTED)) {
-        GATT_TRACE_ERROR( "GATT_INSUF_AUTHENTICATION\n");
-        return GATT_INSUF_AUTHENTICATION;
-    }
-
     if ((perm & GATT_READ_MITM_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED)) {
         GATT_TRACE_ERROR( "GATT_INSUF_AUTHENTICATION: MITM Required\n");
         return GATT_INSUF_AUTHENTICATION;
@@ -1167,8 +1161,7 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
                 if ((op_code == GATT_SIGN_CMD_WRITE) && !(perm & GATT_WRITE_SIGNED_PERM)) {
                     status = GATT_WRITE_NOT_PERMIT;
                     GATT_TRACE_DEBUG( "gatts_write_attr_perm_check - sign cmd write not allowed");
-                }
-                if ((op_code == GATT_SIGN_CMD_WRITE) && (sec_flag & GATT_SEC_FLAG_ENCRYPTED)) {
+                } else if ((op_code == GATT_SIGN_CMD_WRITE) && (sec_flag & GATT_SEC_FLAG_ENCRYPTED)) {
                     status = GATT_INVALID_PDU;
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - Error!! sign cmd write sent on a encypted link");
                 } else if (!(perm & GATT_WRITE_ALLOWED)) {
@@ -1176,10 +1169,7 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_WRITE_NOT_PERMIT");
                 }
                 /* require authentication, but not been authenticated */
-                else if ((perm & GATT_WRITE_AUTH_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_UNAUTHED)) {
-                    status = GATT_INSUF_AUTHENTICATION;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION");
-                } else if ((perm & GATT_WRITE_MITM_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED)) {
+				else if ((perm & GATT_WRITE_MITM_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED)) {
                     status = GATT_INSUF_AUTHENTICATION;
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION: MITM required");
                 } else if ((perm & GATT_WRITE_ENCRYPTED_PERM ) && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)) {
