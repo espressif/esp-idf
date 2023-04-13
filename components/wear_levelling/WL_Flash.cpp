@@ -153,7 +153,7 @@ esp_err_t WL_Flash::init()
                 WL_RESULT_CHECK(result);
                 result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
                 WL_RESULT_CHECK(result);
-                for (size_t i = 0; i < ((this->cfg.full_mem_size / this->cfg.sector_size)*this->cfg.wr_size); i++) {
+                for (size_t i = 0; i < ((this->cfg.full_mem_size / this->cfg.sector_size)); i++) {
                     bool pos_bits;
                     result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
                     WL_RESULT_CHECK(result);
@@ -187,7 +187,7 @@ esp_err_t WL_Flash::init()
             WL_RESULT_CHECK(result);
             result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
             WL_RESULT_CHECK(result);
-            for (size_t i = 0; i < ((this->cfg.full_mem_size / this->cfg.sector_size) * this->cfg.wr_size); i++) {
+            for (size_t i = 0; i < ((this->cfg.full_mem_size / this->cfg.sector_size)); i++) {
                 bool pos_bits;
                 result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
                 WL_RESULT_CHECK(result);
@@ -204,7 +204,7 @@ esp_err_t WL_Flash::init()
             WL_RESULT_CHECK(result);
             result = this->flash_drv->write(this->addr_state1, state_copy, sizeof(wl_state_t));
             WL_RESULT_CHECK(result);
-            for (size_t i = 0; i < ((this->cfg.full_mem_size / this->cfg.sector_size) * this->cfg.wr_size); i++) {
+            for (size_t i = 0; i < ((this->cfg.full_mem_size / this->cfg.sector_size)); i++) {
                 bool pos_bits;
                 result = this->flash_drv->read(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
 
