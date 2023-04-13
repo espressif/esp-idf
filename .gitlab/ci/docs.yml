@@ -3,6 +3,7 @@
   - "docs/**/*"
   - "**/*.rst"
   - "CONTRIBUTING.rst"
+  - "**/soc_caps.h"
 
 .patterns-docs-partial: &patterns-docs-partial
   - "components/**/*.h"
@@ -43,6 +44,9 @@
 
 .doc-rules:build:docs-partial:
   rules:
+    - <<: *if-dev-push
+      changes: *patterns-docs-full
+      when: never
     - <<: *if-dev-push
       changes: *patterns-docs-partial
 
