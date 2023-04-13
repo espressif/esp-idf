@@ -201,7 +201,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
-        1. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
+        2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
 
 .. _ledc-api-configure-channel:

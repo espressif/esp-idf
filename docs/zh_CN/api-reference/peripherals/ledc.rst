@@ -200,7 +200,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
-        1. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
+        2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
 
 
 .. _ledc-api-configure-channel:
