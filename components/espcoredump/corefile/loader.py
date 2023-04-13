@@ -271,10 +271,20 @@ class EspCoreDumpLoader(EspCoreDumpVersion):
                         'sha256' / Bytes(64)  # SHA256 as hex string
                     )
                     coredump_sha256 = coredump_sha256_struct.parse(note_sec.desc[:coredump_sha256_struct.sizeof()])
-                    if coredump_sha256.sha256 != app_sha256:
+
+                    logging.debug('App SHA256: {!r}'.format(app_sha256))
+                    logging.debug('Core dump SHA256: {!r}'.format(coredump_sha256))
+
+                    # Actual coredump SHA may be shorter than a full SHA256 hash
+                    # with NUL byte padding, according to the app's APP_RETRIEVE_LEN_ELF_SHA
+                    # length
+                    core_sha_trimmed = coredump_sha256.sha256.rstrip(b'\x00').decode()
+                    app_sha_trimmed = app_sha256[:len(core_sha_trimmed)].decode()
+
+                    if core_sha_trimmed != app_sha_trimmed:
                         raise ESPCoreDumpLoaderError(
-                            'Invalid application image for coredump: coredump SHA256({!r}) != app SHA256({!r}).'
-                            .format(coredump_sha256, app_sha256))
+                            'Invalid application image for coredump: coredump SHA256({}) != app SHA256({}).'
+                            .format(core_sha_trimmed, app_sha_trimmed))
                     if coredump_sha256.ver != self.version:
                         raise ESPCoreDumpLoaderError(
                             'Invalid application image for coredump: coredump SHA256 version({}) != app SHA256 version({}).'
