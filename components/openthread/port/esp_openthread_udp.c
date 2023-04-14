@@ -16,6 +16,7 @@
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
+#include "esp_openthread_netif_glue_priv.h"
 #include "esp_openthread_task_queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -322,6 +323,7 @@ static bool is_multicast(const otIp6Address *address)
 
 static void udp_send_task(void *ctx)
 {
+    err_t err = ERR_OK;
     udp_send_task_t *task = (udp_send_task_t *)ctx;
     struct pbuf *send_buf = NULL;
     uint16_t len = otMessageGetLength(task->message);
@@ -349,13 +351,23 @@ static void udp_send_task(void *ctx)
         task->pcb->flags |= UDP_FLAGS_MULTICAST_LOOP;
     }
     send_buf = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
-    otMessageRead(task->message, 0, send_buf->payload, len);
     VerifyOrExit(send_buf != NULL);
-    udp_sendto(task->pcb, send_buf, &task->peer_addr, task->peer_port);
+    otMessageRead(task->message, 0, send_buf->payload, len);
+
+    if (task->netif_index == get_netif_index(OT_NETIF_THREAD)) {
+        // If the input arguments indicated the netif is OT, directly send the message.
+        err = udp_sendto_if_src(task->pcb, send_buf, &task->peer_addr, task->peer_port, netif_get_by_index(task->netif_index), &task->source_addr);
+    } else {
+        // Otherwise, let Lwip to determine which netif will be used.
+        err = udp_sendto(task->pcb, send_buf, &task->peer_addr, task->peer_port);
+    }
 
 exit:
     if (send_buf) {
         pbuf_free(send_buf);
+    }
+    if (err != ERR_OK) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to Send UDP message, err: %d", err);
     }
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
     otMessageFree(task->message);
@@ -376,7 +388,6 @@ otError otPlatUdpSend(otUdpSocket *udp_socket, otMessage *message, const otMessa
 {
     udp_send_task_t *task = (udp_send_task_t *)malloc(sizeof(udp_send_task_t));
     otError error = OT_ERROR_NONE;
-
     VerifyOrExit(task != NULL, error = OT_ERROR_NO_BUFS);
     task->pcb = (struct udp_pcb *)udp_socket->mHandle;
     task->message = message;
@@ -395,6 +406,11 @@ otError otPlatUdpSend(otUdpSocket *udp_socket, otMessage *message, const otMessa
 
     if (is_link_local(&message_info->mPeerAddr) || is_multicast(&message_info->mPeerAddr)) {
         task->netif_index = get_netif_index(message_info->mIsHostInterface ? OT_NETIF_BACKBONE : OT_NETIF_THREAD);
+    }
+
+    if (is_openthread_internal_mesh_local_addr(&message_info->mPeerAddr)) {
+        // If the destination address is a openthread mesh local address, set the netif OT.
+        task->netif_index = get_netif_index(OT_NETIF_THREAD);
     }
     tcpip_callback(udp_send_task, task);
 
