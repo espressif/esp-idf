@@ -123,3 +123,11 @@ Flash Chips List:
 
 1. W25Q256
 2. GD25Q256
+
+.. important::
+
+    Over 16 MBytes space on flash mentioned above can be only used for `data saving`, like file system. If your data / instructions over 16 MBytes spaces need to be mapped to MMU (so as to be accessed by the CPU), please enable the config `IDF_EXPERIMENTAL_FEATURES` and `CONFIG_SPI_FLASH_32BIT_ADDRESS` and read the limitations following:
+
+    1. This option only valid for 4-line flash. Octal flash doesn't need this.
+    2. Only MMU on ESP chip that supports mapping to a range over 16MB memory supports this config. (Only ESP32S3 supports this up to now)
+    3. This option is experimental, which means it can't use on all flash chips stable, for more information, please contact Espressif Business support.
