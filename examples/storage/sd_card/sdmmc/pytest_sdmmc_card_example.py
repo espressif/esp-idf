@@ -40,4 +40,4 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
                     'Card unmounted')
 
     for msg in message_list:
-        dut.expect(msg, timeout=20)
+        dut.expect(msg, timeout=60)

@@ -513,6 +513,7 @@ pytest_examples_esp32h2_adc:
   needs:
     - build_pytest_examples_esp32h2
   tags: [ esp32h2, adc ]
+
 example_test_pytest_esp32s3_emmc:
   extends:
     - .pytest_examples_dir_template
