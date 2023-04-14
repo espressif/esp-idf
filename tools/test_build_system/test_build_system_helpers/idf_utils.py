@@ -97,23 +97,32 @@ def run_idf_py(*args: str,
         text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
 
 
-def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None,
-              check: bool = True) -> subprocess.CompletedProcess:
+def run_cmake(*cmake_args: str,
+              env: typing.Optional[EnvDict] = None,
+              check: bool = True,
+              workdir: typing.Optional[Union[Path,str]] = None) -> subprocess.CompletedProcess:
     """
     Run cmake command with given arguments, raise an exception on failure
     :param cmake_args: arguments to pass cmake
     :param env: environment variables to run the cmake with; if not set, the default environment is used
+    :param check: check process exits with a zero exit code, if false all retvals are accepted without failing the test
+    :param workdir: directory where to run cmake; if not set, the current directory is used
     """
     if not env:
         env = dict(**os.environ)
-    workdir = (Path(os.getcwd()) / 'build')
-    workdir.mkdir(parents=True, exist_ok=True)
+
+    if workdir:
+        build_dir = Path(workdir, 'build')
+    else:
+        build_dir = (Path(os.getcwd()) / 'build')
+
+    build_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = ['cmake'] + list(cmake_args)
 
-    logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
+    logging.debug('running {} in {}'.format(' '.join(cmd), build_dir))
     return subprocess.run(
-        cmd, env=env, cwd=workdir,
+        cmd, env=env, cwd=build_dir,
         check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, encoding='utf-8', errors='backslashreplace')
 

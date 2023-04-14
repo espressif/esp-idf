@@ -6,7 +6,8 @@ import re
 import shutil
 from pathlib import Path
 
-from test_build_system_helpers import IdfPyFunc, file_contains, run_cmake, run_cmake_and_build
+import pytest
+from test_build_system_helpers import EnvDict, IdfPyFunc, append_to_file, file_contains, run_cmake, run_cmake_and_build
 
 
 def test_build_custom_cmake_project(test_app_copy: Path) -> None:
@@ -47,3 +48,18 @@ def test_build_cmake_library_psram_strategies(idf_py: IdfPyFunc, test_app_copy: 
                 assert f'mfix-esp32-psram-cache-strategy={strategy.lower()}' in r, ('All commands in compile_commands.json '
                                                                                     'should use PSRAM cache workaround strategy')
         (test_app_copy / 'sdkconfig').unlink()
+
+
+@pytest.mark.usefixtures('test_app_copy')
+@pytest.mark.usefixtures('idf_copy')
+def test_defaults_for_unspecified_idf_build_process_args(default_idf_env: EnvDict) -> None:
+    logging.info('Defaults set properly for unspecified idf_build_process args')
+    idf_path = Path(default_idf_env.get('IDF_PATH'))
+    idf_as_lib_path = idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib'
+    append_to_file(idf_as_lib_path / 'CMakeLists.txt', '\n'.join(['idf_build_get_property(project_dir PROJECT_DIR)',
+                                                                  'message("Project directory: ${project_dir}")']))
+    ret = run_cmake('..',
+                    '-DCMAKE_TOOLCHAIN_FILE={}'.format(str(idf_path / 'tools' / 'cmake' / 'toolchain-esp32.cmake')),
+                    '-DTARGET=esp32',
+                    workdir=idf_as_lib_path)
+    assert 'Project directory: {}'.format(str(idf_as_lib_path)) in ret.stderr

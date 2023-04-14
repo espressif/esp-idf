@@ -57,7 +57,7 @@ Building a project with CMake library imported and PSRAM workaround, all files c
 Test for external libraries in custom CMake projects with ESP-IDF components linked | test_cmake.py::test_build_custom_cmake_project |
 Test for external libraries in custom CMake projects with PSRAM strategy $strat | test_cmake.py::test_build_cmake_library_psram_strategies |
 Cleaning Python bytecode | test_common.py::test_python_clean |
-Displays partition table when executing target partition_table | test_common.py::test_partition_table |
+Displays partition table when executing target partition_table | test_partition.py::test_partition_table |
 Make sure a full build never runs '/usr/bin/env python' or similar | test_common.py::test_python_interpreter_unix, test_common.py::test_python_interpreter_win |
 Handling deprecated Kconfig options | test_kconfig.py::test_kconfig_deprecated_options |
 Handling deprecated Kconfig options in sdkconfig.defaults | test_kconfig.py::test_kconfig_deprecated_options |
@@ -75,25 +75,25 @@ Fail on build time works | test_build.py::test_build_fail_on_build_time |
 Component properties are set | test_components.py::test_component_properties_are_set |
 should be able to specify multiple sdkconfig default files | test_sdkconfig.py::test_sdkconfig_multiple_default_files |
 Supports git worktree | |
-idf.py fallback to build system target | |
-Build fails if partitions don't fit in flash | |
-Warning is given if smallest partition is nearly full | |
+idf.py fallback to build system target | test_common.py::test_fallback_to_build_system_target |
+Build fails if partitions don't fit in flash | test_partition.py::test_partitions_dont_fit_in_flash |
+Warning is given if smallest partition is nearly full | test_partition.py::test_partition_nearly_full_warning |
 Flash size is correctly set in the bootloader image header | test_bootloader.py::test_bootloader_correctly_set_image_header |
-DFU build works | |
-UF2 build works | |
-Loadable ELF build works | |
-Defaults set properly for unspecified idf_build_process args | |
-Getting component overriden dir | |
-Overriding Kconfig | |
-Project components prioritized over EXTRA_COMPONENT_DIRS | |
-Components in EXCLUDE_COMPONENTS not passed to idf_component_manager | |
-Create project using idf.py and build it | |
-Create component using idf.py, create project using idf.py. | |
-Add the component to the created project and build the project. | |
-Check that command for creating new project will fail if the target folder is not empty. | |
-Check that command for creating new project will fail if the target path is file. | |
-Check docs command | |
-Deprecation warning check | |
+DFU build works | test_build.py::test_build_dfu |
+UF2 build works | test_build.py::test_build_uf2 |
+Loadable ELF build works | test_build.py::test_build_loadable_elf |
+Defaults set properly for unspecified idf_build_process args | test_cmake.py::test_defaults_for_unspecified_idf_build_process_args |
+Getting component overriden dir | test_components.py::test_component_overriden_dir |
+Overriding Kconfig | test_components.py::test_component_overriden_dir |
+Project components prioritized over EXTRA_COMPONENT_DIRS | test_components.py::test_components_prioritizer_over_extra_components_dir |
+Components in EXCLUDE_COMPONENTS not passed to idf_component_manager | test_components.py::test_exclude_components_not_passed |
+Create project using idf.py and build it | test_common.py::test_create_component_and_project_plus_build |
+Create component using idf.py, create project using idf.py. | test_common.py::test_create_component_and_project_plus_build |
+Add the component to the created project and build the project. | test_common.py::test_create_component_and_project_plus_build |
+Check that command for creating new project will fail if the target folder is not empty. | test_common.py::test_create_project |
+Check that command for creating new project will fail if the target path is file. | test_common.py::test_create_project |
+Check docs command | test_common.py::test_docs_command |
+Deprecation warning check | test_common.py::test_deprecation_warning |
 Save-defconfig checks | |
 test_build | |
 test_build_ulp_fsm | |
