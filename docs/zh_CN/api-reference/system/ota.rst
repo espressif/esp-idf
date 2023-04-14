@@ -102,7 +102,7 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 
 * ``ESP_OTA_IMG_VALID`` 由函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 设置。
 * 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能，``ESP_OTA_IMG_UNDEFINED`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
-* 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能，``ESP_OTA_IMG_NEW`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
+* 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，``ESP_OTA_IMG_NEW`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
 * ``ESP_OTA_IMG_INVALID`` 由函数 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 设置。
 * 如果应用程序的可操作性无法确认，发生重启（:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能），则设置 ``ESP_OTA_IMG_ABORTED``。
 * 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，选取的应用程序状态为 ``ESP_OTA_IMG_NEW``，则在启动加载器中设置 ``ESP_OTA_IMG_PENDING_VERIFY``。
