@@ -19,7 +19,6 @@
 #include "soc/efuse_reg.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
-#include "hal/efuse_ll.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -80,7 +79,7 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         }
         if (type == ESP_IMAGE_APPLICATION) {
             unsigned max_rev = img_hdr->max_chip_rev_full;
-            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_ll_get_disable_wafer_version_major())) {
+            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
                 ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
                          max_rev / 100, max_rev % 100,
                          major_rev, minor_rev);
