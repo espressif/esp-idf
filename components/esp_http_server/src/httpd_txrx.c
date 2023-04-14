@@ -554,6 +554,51 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     return ret;
 }
 
+esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
+{
+    if (r == NULL || out == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // alloc async req
+    httpd_req_t *async = malloc(sizeof(httpd_req_t));
+    if (async == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(async, r, sizeof(httpd_req_t));
+
+    // alloc async aux
+    async->aux = malloc(sizeof(struct httpd_req_aux));
+    if (async->aux == NULL) {
+        free(async);
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(async->aux, r->aux, sizeof(struct httpd_req_aux));
+
+    // mark socket as "in use"
+    struct httpd_req_aux *ra = r->aux;
+    ra->sd->for_async_req = true;
+
+    *out = async;
+
+    return ESP_OK;
+}
+
+esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
+{
+    if (r == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    struct httpd_req_aux *ra = r->aux;
+    ra->sd->for_async_req = false;
+
+    free(r->aux);
+    free(r);
+
+    return ESP_OK;
+}
+
 int httpd_req_to_sockfd(httpd_req_t *r)
 {
     if (r == NULL) {
