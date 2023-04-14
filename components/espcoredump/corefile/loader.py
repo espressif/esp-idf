@@ -88,7 +88,7 @@ class EspCoreDumpVersion(object):
 
     COREDUMP_SUPPORTED_TARGETS = XTENSA_CHIPS + RISCV_CHIPS
 
-    def __init__(self, version=None):  # type: (int) -> None
+    def __init__(self, version=None):  # type: (Optional[int]) -> None
         """Constructor for core dump version
         """
         super(EspCoreDumpVersion, self).__init__()
@@ -248,7 +248,7 @@ class EspCoreDumpLoader(EspCoreDumpVersion):
         else:
             raise NotImplementedError
 
-    def _extract_elf_corefile(self, exe_name=None, e_machine=ESPCoreDumpElfFile.EM_XTENSA):  # type: (str, int) -> None
+    def _extract_elf_corefile(self, exe_name=None, e_machine=ESPCoreDumpElfFile.EM_XTENSA):  # type: (Optional[str], int) -> None
         """
         Reads the ELF formatted core dump image and parse it
         """

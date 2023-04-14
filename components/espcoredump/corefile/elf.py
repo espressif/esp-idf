@@ -164,7 +164,6 @@ class ElfFile(object):
         sha256.update(elf_bytes)
         self.sha256 = sha256.digest()
 
-
     @staticmethod
     def _parse_string_table(byte_str, offset):  # type: (bytes, int) -> str
         section_name_str = byte_str[offset:]
