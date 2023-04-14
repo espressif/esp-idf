@@ -188,19 +188,26 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
     /* SPI mode could have been set to QIO during boot already,
        so test the SPI registers not the flash header */
-    uint32_t spi_ctrl = REG_READ(SPI_MEM_CTRL_REG(0));
-    if (spi_ctrl & SPI_MEM_FREAD_QIO) {
+    esp_rom_spiflash_read_mode_t spi_mode = bootloader_flash_get_spi_mode();
+    switch (spi_mode) {
+    case ESP_ROM_SPIFLASH_QIO_MODE:
         str = "QIO";
-    } else if (spi_ctrl & SPI_MEM_FREAD_QUAD) {
+        break;
+    case ESP_ROM_SPIFLASH_QOUT_MODE:
         str = "QOUT";
-    } else if (spi_ctrl & SPI_MEM_FREAD_DIO) {
+        break;
+    case ESP_ROM_SPIFLASH_DIO_MODE:
         str = "DIO";
-    } else if (spi_ctrl & SPI_MEM_FREAD_DUAL) {
+        break;
+    case ESP_ROM_SPIFLASH_DOUT_MODE:
         str = "DOUT";
-    } else if (spi_ctrl & SPI_MEM_FASTRD_MODE) {
+        break;
+    case ESP_ROM_SPIFLASH_FASTRD_MODE:
         str = "FAST READ";
-    } else {
+        break;
+    default:
         str = "SLOW READ";
+        break;
     }
     ESP_EARLY_LOGI(TAG, "SPI Mode       : %s", str);
 
