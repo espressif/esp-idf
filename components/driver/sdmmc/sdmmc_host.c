@@ -107,9 +107,31 @@ void sdmmc_host_reset(void)
 
 static void sdmmc_host_set_clk_div(int div)
 {
-    // Set frequency to 160MHz / div
-    // div = l + 1
-    // duty cycle = (h + 1)/(l + 1) (should be = 1/2)
+    /**
+     * Set frequency to 160MHz / div
+     *
+     * n: counter resets at div_factor_n.
+     * l: negedge when counter equals div_factor_l.
+     * h: posedge when counter equals div_factor_h.
+     *
+     * We set the duty cycle to 1/2
+     */
+#if CONFIG_IDF_TARGET_ESP32
+    assert (div > 1 && div <= 16);
+    int h = div - 1;
+    int l = div / 2 - 1;
+
+    SDMMC.clock.div_factor_h = h;
+    SDMMC.clock.div_factor_l = l;
+    SDMMC.clock.div_factor_n = h;
+
+    // Set phases for in/out clocks
+    // 180 degree phase on input and output clocks
+    SDMMC.clock.phase_dout = 4;
+    SDMMC.clock.phase_din = 4;
+    SDMMC.clock.phase_core = 0;
+
+#elif CONFIG_IDF_TARGET_ESP32S3
     assert (div > 1 && div <= 16);
     int l = div - 1;
     int h = div / 2 - 1;
@@ -130,7 +152,19 @@ static void sdmmc_host_set_clk_div(int div)
      */
     SDMMC.clock.phase_dout = 1;
     SDMMC.clock.phase_din = 0;
-    esp_rom_delay_us(1);
+#endif  //CONFIG_IDF_TARGET_ESP32S3
+
+    // Wait for the clock to propagate
+    esp_rom_delay_us(10);
+}
+
+static inline int s_get_host_clk_div(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    return SDMMC.clock.div_factor_h + 1;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    return SDMMC.clock.div_factor_l + 1;
+#endif
 }
 
 static void sdmmc_host_input_clk_disable(void)
@@ -261,7 +295,7 @@ esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz)
         return ESP_ERR_INVALID_ARG;
     }
 
-    int host_div = SDMMC.clock.div_factor_l + 1;
+    int host_div = s_get_host_clk_div();
     int card_div = slot == 0 ? SDMMC.clkdiv.div0 : SDMMC.clkdiv.div1;
     *real_freq_khz = sdmmc_host_calc_freq(host_div, card_div);
 

@@ -56,6 +56,7 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 52MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    host.max_freq_khz = SDMMC_FREQ_52M;
 
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Other fields will be initialized to zero
