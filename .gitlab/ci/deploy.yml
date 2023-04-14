@@ -40,6 +40,16 @@ push_to_github:
     - git remote add github git@github.com:espressif/esp-idf.git
     - tools/ci/push_to_github.sh
 
+deploy_update_SHA_in_esp-dockerfiles:
+  extends:
+    - .deploy_job_template
+    - .rules:ref:master-always
+    - .rules:tag:release
+  script:
+    - 'curl --header "PRIVATE-TOKEN: ${ESPCI_SCRIPTS_TOKEN}" -o create_MR_in_esp_dockerfile.sh $GITLAB_HTTP_SERVER/api/v4/projects/1260/repository/files/create_MR_in_esp_dockerfile%2Fcreate_MR_in_esp_dockerfile.sh/raw\?ref\=master'
+    - chmod +x create_MR_in_esp_dockerfile.sh
+    - ./create_MR_in_esp_dockerfile.sh
+
 deploy_test_result:
   extends:
     - .deploy_job_template
