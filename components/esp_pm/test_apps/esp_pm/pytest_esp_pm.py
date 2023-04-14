@@ -5,9 +5,9 @@ import pytest
 from pytest_embedded import Dut
 
 CONFIGS = [
-    pytest.param('default', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')]),
-    pytest.param('limits', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')]),
-    pytest.param('options', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')]),
+    pytest.param('default', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 support TBD')]),
+    pytest.param('limits', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 support TBD')]),
+    pytest.param('options', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 support TBD')]),
 ]
 
 
