@@ -23,7 +23,7 @@ set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}"
     CACHE STRING "C++ Compiler Base Flags"
     FORCE)
 
-remove_duplicated_flags("--target=xtensa-esp-elf -mcpu=esp32s3 ${CMAKE_ASM_FLAGS}"
+remove_duplicated_flags("--target=xtensa-esp-elf -mcpu=esp32s3 -Xassembler --longcalls ${CMAKE_ASM_FLAGS}"
                         UNIQ_CMAKE_ASM_FLAGS)
 set(CMAKE_ASM_FLAGS "${UNIQ_CMAKE_ASM_FLAGS}"
     CACHE STRING "Assembler Base Flags"
