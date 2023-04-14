@@ -123,6 +123,10 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
+
+#if CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/opi_flash.h"
+#endif
 static const char *TAG = "bootloader_flash";
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -408,6 +412,45 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
     }
     return spi_to_esp_err(rc);
 }
+
+#if CONFIG_SPI_FLASH_32BIT_ADDR_ENABLE
+void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t flash_mode)
+{
+    esp_rom_opiflash_spi0rd_t cache_rd = {};
+    switch (flash_mode) {
+    case ESP_ROM_SPIFLASH_DOUT_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 8;
+        cache_rd.cmd = CMD_FASTRD_DUAL_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+    case ESP_ROM_SPIFLASH_DIO_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 4;
+        cache_rd.cmd = CMD_FASTRD_DIO_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+    case ESP_ROM_SPIFLASH_QOUT_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 8;
+        cache_rd.cmd = CMD_FASTRD_QUAD_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+    case ESP_ROM_SPIFLASH_QIO_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 6;
+        cache_rd.cmd = CMD_FASTRD_QIO_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    cache_hal_disable(CACHE_TYPE_ALL);
+    esp_rom_opiflash_cache_mode_config(flash_mode, &cache_rd);
+    cache_hal_enable(CACHE_TYPE_ALL);
+}
+#endif
 
 #endif // BOOTLOADER_BUILD
 
@@ -754,4 +797,41 @@ bool IRAM_ATTR bootloader_flash_is_octal_mode_enabled(void)
 #else
     return false;
 #endif
+}
+
+esp_rom_spiflash_read_mode_t bootloader_flash_get_spi_mode(void)
+{
+    esp_rom_spiflash_read_mode_t spi_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+#if CONFIG_IDF_TARGET_ESP32
+    uint32_t spi_ctrl = REG_READ(SPI_CTRL_REG(0));
+    if (spi_ctrl & SPI_FREAD_QIO) {
+        spi_mode = ESP_ROM_SPIFLASH_QIO_MODE;
+    } else if (spi_ctrl & SPI_FREAD_QUAD) {
+        spi_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+    } else if (spi_ctrl & SPI_FREAD_DIO) {
+        spi_mode = ESP_ROM_SPIFLASH_DIO_MODE;
+    } else if (spi_ctrl & SPI_FREAD_DUAL) {
+        spi_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+    } else if (spi_ctrl & SPI_FASTRD_MODE) {
+        spi_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+    } else {
+        spi_mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
+    }
+#else
+    uint32_t spi_ctrl = REG_READ(SPI_MEM_CTRL_REG(0));
+    if (spi_ctrl & SPI_MEM_FREAD_QIO) {
+        spi_mode = ESP_ROM_SPIFLASH_QIO_MODE;
+    } else if (spi_ctrl & SPI_MEM_FREAD_QUAD) {
+        spi_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+    } else if (spi_ctrl & SPI_MEM_FREAD_DIO) {
+        spi_mode = ESP_ROM_SPIFLASH_DIO_MODE;
+    } else if (spi_ctrl & SPI_MEM_FREAD_DUAL) {
+        spi_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+    } else if (spi_ctrl & SPI_MEM_FASTRD_MODE) {
+        spi_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+    } else {
+        spi_mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
+    }
+#endif
+    return spi_mode;
 }

@@ -54,6 +54,13 @@ esp_err_t bootloader_flash_reset_chip(void);
  */
 bool bootloader_flash_is_octal_mode_enabled(void);
 
+/**
+ * @brief Get the spi flash working mode.
+ *
+ * @return The mode of flash working mode, see `esp_rom_spiflash_read_mode_t`
+ */
+esp_rom_spiflash_read_mode_t bootloader_flash_get_spi_mode(void);
+
 #ifdef __cplusplus
 }
 #endif
