@@ -560,6 +560,11 @@ flash 加密设置
    :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在更新 SPI 配置、更改波特率、基本的 flash 写入和使用 `get_security_info` 命令返回当前启用的安全功能摘要。默认在发布模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
    - 启用 :doc:`安全启动<secure-boot-v2>` 作为额外的保护层，防止攻击者在启动前有选择地破坏 flash 中某部分。
 
+Enable Flash Encryption Externally
+----------------------------------
+
+In the process mentioned above, flash encryption related eFuses which ultimately enable flash encryption are programmed through the firmware bootloader. Alternatively, all the eFuses can be programmed with the help of ``espefuse`` tool. Please refer :ref:`enable-flash-encryption-externally` for more details.
+
 可能出现的错误
 -----------------
 

@@ -20,6 +20,7 @@ API 指南
    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    :SOC_SPIRAM_SUPPORTED: external-ram
+   ../security/host-based-security-workflows
    fatal-errors
    ../security/flash-encryption
    :esp32s3: flash_psram_config
