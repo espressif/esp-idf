@@ -698,6 +698,36 @@ esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd)
     return ESP_OK;
 }
 
+esp_err_t esp_tls_set_conn_sockfd(esp_tls_t *tls, int sockfd)
+{
+    if (!tls || sockfd < 0) {
+        ESP_LOGE(TAG, "Invalid arguments passed");
+        return ESP_ERR_INVALID_ARG;
+    }
+    tls->sockfd = sockfd;
+    return ESP_OK;
+}
+
+esp_err_t esp_tls_get_conn_state(esp_tls_t *tls, esp_tls_conn_state_t *conn_state)
+{
+    if (!tls || !conn_state) {
+        ESP_LOGE(TAG, "Invalid arguments passed");
+        return ESP_ERR_INVALID_ARG;
+    }
+    *conn_state = tls->conn_state;
+    return ESP_OK;
+}
+
+esp_err_t esp_tls_set_conn_state(esp_tls_t *tls, esp_tls_conn_state_t conn_state)
+{
+    if (!tls || conn_state < ESP_TLS_INIT || conn_state > ESP_TLS_DONE) {
+        ESP_LOGE(TAG, "Invalid arguments passed");
+        return ESP_ERR_INVALID_ARG;
+    }
+    tls->conn_state = conn_state;
+    return ESP_OK;
+}
+
 esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tls_code, int *esp_tls_flags)
 {
     if (!h) {
