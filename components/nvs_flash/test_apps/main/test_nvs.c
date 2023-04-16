@@ -19,11 +19,17 @@
 
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "nvs_sec_provider.h"
 
 #include "unity.h"
+#include "memory_checks.h"
 
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "mbedtls/aes.h"
+#endif
+
+#ifdef CONFIG_SOC_HMAC_SUPPORTED
+#include "esp_hmac.h"
 #endif
 
 static const char* TAG = "test_nvs";
@@ -89,7 +95,58 @@ TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 
     nvs_flash_deinit();
 }
-#endif
+
+#ifdef CONFIG_SOC_HMAC_SUPPORTED
+/* TODO: This test does not run in CI as the runner assigned has
+ * flash encryption enabled by default. Enabling flash encryption
+ * 'selects' NVS encryption; a new runner needs to be setup
+ * for testing the HMAC NVS encryption scheme without flash encryption
+ * enabled for this test.
+ */
+TEST_CASE("test nvs encryption with HMAC-based scheme without toggling any config options", "[nvs_encr_hmac]")
+{
+    nvs_handle_t handle;
+
+    nvs_sec_cfg_t cfg = {};
+    nvs_sec_scheme_t *sec_scheme_handle = NULL;
+
+    nvs_sec_config_hmac_t sec_scheme_cfg = {};
+    hmac_key_id_t hmac_key = HMAC_KEY0;
+    sec_scheme_cfg.hmac_key_id = hmac_key;
+
+    TEST_ESP_OK(nvs_sec_provider_register_hmac(&sec_scheme_cfg, &sec_scheme_handle));
+
+    esp_err_t err = nvs_flash_read_security_cfg_v2(sec_scheme_handle, &cfg);
+    if (err != ESP_OK) {
+        if (err == ESP_ERR_NVS_SEC_HMAC_KEY_NOT_FOUND) {
+            TEST_ESP_OK(nvs_flash_generate_keys_v2(sec_scheme_handle, &cfg));
+        }
+        TEST_ESP_OK(err);
+    }
+
+    TEST_ESP_OK(nvs_flash_secure_init(&cfg));
+    memset(&cfg, 0x00, sizeof(nvs_sec_cfg_t));
+
+    int32_t foo = 0;
+
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_set_i32(handle, "foo", 0x12345678));
+    TEST_ESP_OK(nvs_commit(handle));
+    nvs_close(handle);
+
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_get_i32(handle, "foo", &foo));
+    nvs_close(handle);
+
+    TEST_ASSERT_EQUAL_INT32(foo, 0x12345678);
+
+    TEST_ESP_OK(nvs_sec_provider_deregister(sec_scheme_handle));
+
+    TEST_ESP_OK(nvs_flash_deinit());
+    TEST_ESP_OK(nvs_flash_erase());
+}
+#endif  // CONFIG_SOC_HMAC_SUPPORTED
+#endif  // !CONFIG_NVS_ENCRYPTION
 
 // test could have different output on host tests
 TEST_CASE("nvs deinit with open handle", "[nvs]")
@@ -334,29 +391,31 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
 #ifdef CONFIG_NVS_ENCRYPTION
 TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
 {
-    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
-        0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
-        0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
-        0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
-        /* Tweak key below*/
-        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
-        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
-        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
-        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22 };
+    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { /* Encryption key below*/
+                                          0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                                          0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                                          0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                                          0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+                                          /* Tweak key below*/
+                                          0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
+                                          0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
+                                          0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
+                                          0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22 };
+
 
     uint8_t ba_hex[16] = { 0x33,0x33,0x33,0x33,0x33,0x00,0x00,0x00,
-        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
+                           0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
 
     uint8_t ptxt_hex[32] = { 0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
-        0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
-        0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
-        0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44 };
+                             0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
+                             0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
+                             0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44 };
 
 
     uint8_t ctxt_hex[32] = { 0xe6,0x22,0x33,0x4f,0x18,0x4b,0xbc,0xe1,
-        0x29,0xa2,0x5b,0x2a,0xc7,0x6b,0x3d,0x92,
-        0xab,0xf9,0x8e,0x22,0xdf,0x5b,0xdd,0x15,
-        0xaf,0x47,0x1f,0x3d,0xb8,0x94,0x6a,0x85 };
+                             0x29,0xa2,0x5b,0x2a,0xc7,0x6b,0x3d,0x92,
+                             0xab,0xf9,0x8e,0x22,0xdf,0x5b,0xdd,0x15,
+                             0xaf,0x47,0x1f,0x3d,0xb8,0x94,0x6a,0x85 };
 
     mbedtls_aes_xts_context ectx[1];
     mbedtls_aes_xts_context dctx[1];
@@ -375,13 +434,13 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
 TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 {
     nvs_sec_cfg_t cfg, cfg2;
-
-    const esp_partition_t* key_part = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
-
+#if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
     if (!esp_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_key partition related tests");
     }
+
+    const esp_partition_t* key_part = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
 
     TEST_ESP_OK(esp_partition_erase_range(key_part, 0, key_part->size));
     TEST_ESP_ERR(ESP_ERR_NVS_KEYS_NOT_INITIALIZED, nvs_flash_read_security_cfg(key_part, &cfg));
@@ -389,13 +448,20 @@ TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
     TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
 
     TEST_ESP_OK(nvs_flash_read_security_cfg(key_part, &cfg2));
+#elif CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
+    nvs_sec_scheme_t *scheme_cfg = nvs_flash_get_default_security_scheme();
+    assert(scheme_cfg != NULL);
 
+    TEST_ESP_OK(nvs_flash_generate_keys_v2(scheme_cfg, &cfg));
+
+    TEST_ESP_OK(nvs_flash_read_security_cfg_v2(scheme_cfg, &cfg2));
+#endif
     TEST_ASSERT_TRUE(!memcmp(&cfg, &cfg2, sizeof(nvs_sec_cfg_t)));
 }
 
-
 TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
 {
+#if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
     if (!esp_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
     }
@@ -404,19 +470,23 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
 
     assert(key_part && "partition table must have an NVS Key partition");
 
+    ESP_ERROR_CHECK(esp_partition_erase_range(key_part, 0, key_part->size));
+#endif
+
     const esp_partition_t* nvs_partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
     assert(nvs_partition && "partition table must have an NVS partition");
 
-    ESP_ERROR_CHECK( esp_partition_erase_range(key_part, 0, key_part->size) );
-
     bool done = false;
 
     do {
-        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
-
         nvs_sec_cfg_t cfg;
-        esp_err_t err = nvs_flash_read_security_cfg(key_part, &cfg);
+        esp_err_t err = ESP_FAIL;
+
+#if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+        ESP_ERROR_CHECK(esp_partition_erase_range(nvs_partition, 0, nvs_partition->size));
+
+        err = nvs_flash_read_security_cfg(key_part, &cfg);
 
         if(err == ESP_ERR_NVS_KEYS_NOT_INITIALIZED) {
             uint8_t value[4096] = {[0 ... 4095] = 0xff};
@@ -430,6 +500,23 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
             ESP_ERROR_CHECK(err);
             done = true;
         }
+#elif CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
+        nvs_sec_scheme_t *scheme_cfg = nvs_flash_get_default_security_scheme();
+        assert(scheme_cfg != NULL);
+
+        err = nvs_flash_read_security_cfg_v2(scheme_cfg, &cfg);
+        if (err != ESP_OK) {
+            if (err == ESP_ERR_NVS_SEC_HMAC_KEY_NOT_FOUND) {
+                TEST_ESP_OK(nvs_flash_generate_keys_v2(scheme_cfg, &cfg));
+            } else {
+                ESP_ERROR_CHECK(err);
+            }
+        } else {
+            ESP_ERROR_CHECK(err);
+            done = true;
+        }
+#endif
+
         TEST_ESP_OK(nvs_flash_secure_init(&cfg));
 
         nvs_handle_t handle_1;
@@ -484,45 +571,59 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
 
 TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled", "[nvs_part_gen]")
 {
-
-    if (!esp_flash_encryption_enabled()) {
-        TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
-    }
-
     nvs_handle_t handle;
     nvs_sec_cfg_t xts_cfg;
-
-    extern const char nvs_key_start[] asm("_binary_encryption_keys_bin_start");
-    extern const char nvs_key_end[]   asm("_binary_encryption_keys_bin_end");
-
-    extern const char nvs_data_start[] asm("_binary_partition_encrypted_bin_start");
-
-    extern const char sample_bin_start[] asm("_binary_sample_bin_start");
-
-    const esp_partition_t* key_part = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+    esp_err_t err = ESP_FAIL;
 
     const esp_partition_t* nvs_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
 
-    assert(key_part && "partition table must have a KEY partition");
-    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == SPI_FLASH_SEC_SIZE);
-
     assert(nvs_part && "partition table must have an NVS partition");
     printf("\n nvs_part size:%" PRId32 "\n", nvs_part->size);
 
+    ESP_ERROR_CHECK(esp_partition_erase_range(nvs_part, 0, nvs_part->size));
+
+    extern const char sample_bin_start[] asm("_binary_sample_bin_start");
+
+#if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+    if (!esp_flash_encryption_enabled()) {
+        TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
+    }
+
+    extern const char nvs_key_start[] asm("_binary_encryption_keys_bin_start");
+    extern const char nvs_key_end[]   asm("_binary_encryption_keys_bin_end");
+    extern const char nvs_data_sch0_start[] asm("_binary_partition_encrypted_bin_start");
+
+    const esp_partition_t* key_part = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+
+    assert(key_part && "partition table must have a KEY partition");
+    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == SPI_FLASH_SEC_SIZE);
+
     ESP_ERROR_CHECK(esp_partition_erase_range(key_part, 0, key_part->size));
-    ESP_ERROR_CHECK( esp_partition_erase_range(nvs_part, 0, nvs_part->size) );
 
     for (int i = 0; i < key_part->size; i+= SPI_FLASH_SEC_SIZE) {
         ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, SPI_FLASH_SEC_SIZE) );
     }
 
     for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_start + i, SPI_FLASH_SEC_SIZE) );
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch0_start + i, SPI_FLASH_SEC_SIZE) );
     }
 
-    esp_err_t err = nvs_flash_read_security_cfg(key_part, &xts_cfg);
+    err = nvs_flash_read_security_cfg(key_part, &xts_cfg);
+#elif CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
+    extern const char nvs_data_sch1_start[]    asm("_binary_partition_encrypted_hmac_bin_start");
+
+    for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch1_start + i, SPI_FLASH_SEC_SIZE) );
+    }
+
+    nvs_sec_scheme_t *scheme_cfg = nvs_flash_get_default_security_scheme();
+    assert(scheme_cfg != NULL);
+
+    err = nvs_flash_read_security_cfg_v2(scheme_cfg, &xts_cfg);
+#endif
+
     ESP_ERROR_CHECK(err);
 
     TEST_ESP_OK(nvs_flash_secure_init(&xts_cfg));
@@ -583,4 +684,46 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     TEST_ESP_OK(nvs_flash_deinit());
 
 }
+
+#if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+TEST_CASE("test nvs encryption with Flash Encryption-based scheme with v2 apis", "[nvs]")
+{
+    nvs_handle_t handle;
+
+    nvs_sec_cfg_t cfg = {};
+    nvs_sec_scheme_t *sec_scheme_handle = NULL;
+    nvs_sec_config_flash_enc_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_FLASH_ENC_DEFAULT();
+
+    TEST_ESP_OK(nvs_sec_provider_register_flash_enc(&sec_scheme_cfg, &sec_scheme_handle));
+
+    esp_err_t err = nvs_flash_read_security_cfg_v2(sec_scheme_handle, &cfg);
+    if (err != ESP_OK) {
+        if (err == ESP_ERR_NVS_KEYS_NOT_INITIALIZED) {
+            TEST_ESP_OK(nvs_flash_generate_keys_v2(sec_scheme_handle, &cfg));
+        }
+        TEST_ESP_OK(err);
+    }
+
+    TEST_ESP_OK(nvs_flash_secure_init(&cfg));
+    memset(&cfg, 0x00, sizeof(nvs_sec_cfg_t));
+
+    int32_t foo = 0;
+
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_set_i32(handle, "foo", 0x12345678));
+    nvs_close(handle);
+
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_get_i32(handle, "foo", &foo));
+    nvs_close(handle);
+
+    TEST_ASSERT_EQUAL_INT32(foo, 0x12345678);
+
+    TEST_ESP_OK(nvs_sec_provider_deregister(sec_scheme_handle));
+
+    TEST_ESP_OK(nvs_flash_deinit());
+    TEST_ESP_OK(nvs_flash_erase());
+}
+#endif
+
 #endif
