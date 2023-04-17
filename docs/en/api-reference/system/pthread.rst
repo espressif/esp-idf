@@ -123,18 +123,23 @@ In IDF, POSIX *unnamed* semaphores are implemented. The accessible API is descri
 * `sem_getvalue() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_getvalue.html>`_
 
 Read/Write Locks
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
+The following API functions of the POSIX reader-writer locks specification are implemented:
 
-* ``pthread_rwlock_init()``
+* `pthread_rwlock_init() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_init.html>`_
+
   - The ``attr`` argument is not implemented and is ignored.
-* ``pthread_rwlock_destroy()``
-* ``pthread_rwlock_rdlock()``
-* ``pthread_rwlock_wrlock()``
-* ``pthread_rwlock_unlock()``
 
-Static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
+* `pthread_rwlock_destroy() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_destroy.html>`_
+* `pthread_rwlock_rdlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_rdlock.html>`_
+* `pthread_rwlock_tryrdlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_tryrdlock.html>`_
+* `pthread_rwlock_wrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_wrlock.html>`_
+* `pthread_rwlock_trywrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_trywrlock.html>`_
+* `pthread_rwlock_unlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_unlock.html>`_
 
-.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
+The static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
+
+.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs.
 
 Thread-Specific Data
 ^^^^^^^^^^^^^^^^^^^^
