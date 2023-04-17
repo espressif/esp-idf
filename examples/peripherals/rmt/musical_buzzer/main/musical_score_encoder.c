@@ -19,7 +19,7 @@ static size_t rmt_encode_musical_score(rmt_encoder_t *encoder, rmt_channel_handl
 {
     rmt_musical_score_encoder_t *score_encoder = __containerof(encoder, rmt_musical_score_encoder_t, base);
     rmt_encoder_handle_t copy_encoder = score_encoder->copy_encoder;
-    rmt_encode_state_t session_state = 0;
+    rmt_encode_state_t session_state = RMT_ENCODING_RESET;
     buzzer_musical_score_t *score = (buzzer_musical_score_t *)primary_data;
     uint32_t rmt_raw_symbol_duration = score_encoder->resolution / score->freq_hz / 2;
     rmt_symbol_word_t musical_score_rmt_symbol = {
