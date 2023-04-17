@@ -51,8 +51,8 @@ static size_t rmt_encode_dshot_esc(rmt_encoder_t *encoder, rmt_channel_handle_t 
     rmt_dshot_esc_encoder_t *dshot_encoder = __containerof(encoder, rmt_dshot_esc_encoder_t, base);
     rmt_encoder_handle_t bytes_encoder = dshot_encoder->bytes_encoder;
     rmt_encoder_handle_t copy_encoder = dshot_encoder->copy_encoder;
-    rmt_encode_state_t session_state = 0;
-    rmt_encode_state_t state = 0;
+    rmt_encode_state_t session_state = RMT_ENCODING_RESET;
+    rmt_encode_state_t state = RMT_ENCODING_RESET;
     size_t encoded_symbols = 0;
 
     // convert user data into dshot frame
@@ -76,7 +76,7 @@ static size_t rmt_encode_dshot_esc(rmt_encoder_t *encoder, rmt_channel_handle_t 
                                                 sizeof(rmt_symbol_word_t), &session_state);
         if (session_state & RMT_ENCODING_COMPLETE) {
             state |= RMT_ENCODING_COMPLETE;
-            dshot_encoder->state = 0; // switch to next state when current encoding session finished
+            dshot_encoder->state = RMT_ENCODING_RESET; // switch to next state when current encoding session finished
         }
         if (session_state & RMT_ENCODING_MEM_FULL) {
             state |= RMT_ENCODING_MEM_FULL;
@@ -102,7 +102,7 @@ static esp_err_t rmt_dshot_encoder_reset(rmt_encoder_t *encoder)
     rmt_dshot_esc_encoder_t *dshot_encoder = __containerof(encoder, rmt_dshot_esc_encoder_t, base);
     rmt_encoder_reset(dshot_encoder->bytes_encoder);
     rmt_encoder_reset(dshot_encoder->copy_encoder);
-    dshot_encoder->state = 0;
+    dshot_encoder->state = RMT_ENCODING_RESET;
     return ESP_OK;
 }
 

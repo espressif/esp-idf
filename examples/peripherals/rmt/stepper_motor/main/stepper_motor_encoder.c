@@ -31,7 +31,7 @@ static size_t rmt_encode_stepper_motor_curve(rmt_encoder_t *encoder, rmt_channel
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
     rmt_encoder_handle_t copy_encoder = motor_encoder->copy_encoder;
-    rmt_encode_state_t session_state = 0;
+    rmt_encode_state_t session_state = RMT_ENCODING_RESET;
     uint32_t points_num = *(uint32_t *)primary_data;
     size_t encoded_symbols = 0;
     if (motor_encoder->flags.is_accel_curve) {
@@ -125,7 +125,7 @@ static size_t rmt_encode_stepper_motor_uniform(rmt_encoder_t *encoder, rmt_chann
 {
     rmt_stepper_uniform_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_uniform_encoder_t, base);
     rmt_encoder_handle_t copy_encoder = motor_encoder->copy_encoder;
-    rmt_encode_state_t session_state = 0;
+    rmt_encode_state_t session_state = RMT_ENCODING_RESET;
     uint32_t target_freq_hz = *(uint32_t *)primary_data;
     uint32_t symbol_duration = motor_encoder->resolution / target_freq_hz / 2;
     rmt_symbol_word_t freq_sample = {

@@ -24,6 +24,7 @@ typedef struct rmt_encoder_t rmt_encoder_t;
  * @brief RMT encoding state
  */
 typedef enum {
+    RMT_ENCODING_RESET = 0,           /*!< The encoding session is in reset state */
     RMT_ENCODING_COMPLETE = (1 << 0), /*!< The encoding session is finished, the caller can continue with subsequent encoding */
     RMT_ENCODING_MEM_FULL = (1 << 1), /*!< The encoding artifact memory is full, the caller should return from current encoding session */
 } rmt_encode_state_t;
