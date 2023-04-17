@@ -75,8 +75,8 @@ static int get_version(int argc, char **argv)
         case CHIP_ESP32C3:
             model = "ESP32-C3";
             break;
-        case CHIP_ESP32H4:
-            model = "ESP32-H4";
+        case CHIP_ESP32H2:
+            model = "ESP32-H2";
             break;
         case CHIP_ESP32C2:
             model = "ESP32-C2";

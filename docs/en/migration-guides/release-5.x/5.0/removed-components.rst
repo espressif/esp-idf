@@ -57,4 +57,4 @@ The targets components are no longer necessary after refactoring and have been r
  * ``esp32s3``
  * ``esp32c2``
  * ``esp32c3``
- * ``esp32h4``
+ * ``esp32h2``
