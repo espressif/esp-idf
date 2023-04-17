@@ -286,6 +286,23 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
+ * @brief Configure I2S module clock divider
+ * @note mclk on ESP32 is shared by both TX and RX channel
+ *       mclk = sclk / (mclk_div + b/a)
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mclk_div integer part of the division from sclk to mclk
+ * @param a Denominator of decimal part
+ * @param b Numerator of decimal part
+ */
+static inline void i2s_ll_set_raw_mclk_div(i2s_dev_t *hw, uint32_t mclk_div, uint32_t a, uint32_t b)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, mclk_div);
+    hw->clkm_conf.clkm_div_b = b;
+    hw->clkm_conf.clkm_div_a = a;
+}
+
+/**
  * @brief Configure I2S TX module clock divider
  * @note mclk on ESP32 is shared by both TX and RX channel
  *
@@ -328,26 +345,12 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
         }
     }
 finish:
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, mclk_div);
-    hw->clkm_conf.clkm_div_b = numerator;
-    hw->clkm_conf.clkm_div_a = denominator;
-}
-
-/**
- * @brief Configure I2S module clock divider
- * @note mclk on ESP32 is shared by both TX and RX channel
- *       mclk = sclk / (mclk_div + b/a)
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param mclk_div integer part of the division from sclk to mclk
- * @param a Denominator of decimal part
- * @param b Numerator of decimal part
- */
-static inline void i2s_ll_set_raw_mclk_div(i2s_dev_t *hw, uint32_t mclk_div, uint32_t a, uint32_t b)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, mclk_div);
-    hw->clkm_conf.clkm_div_b = b;
-    hw->clkm_conf.clkm_div_a = a;
+    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
+     * Set to particular coefficients first then update to the target coefficients,
+     * otherwise the clock division might be inaccurate.
+     * The particular coefficients here is calculated from 44100 Hz with 2 slots & 16-bit width @ 160MHz sclk */
+    i2s_ll_set_raw_mclk_div(hw, 13, 48, 1);
+    i2s_ll_set_raw_mclk_div(hw, mclk_div, denominator, numerator);
 }
 
 /**

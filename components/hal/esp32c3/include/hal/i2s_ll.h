@@ -254,10 +254,12 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    hw->tx_clkm_div_conf.tx_clkm_div_x = x;
-    hw->tx_clkm_div_conf.tx_clkm_div_y = y;
-    hw->tx_clkm_div_conf.tx_clkm_div_z = z;
-    hw->tx_clkm_div_conf.tx_clkm_div_yn1 = yn1;
+    typeof(hw->tx_clkm_div_conf) div = {};
+    div.tx_clkm_div_x = x;
+    div.tx_clkm_div_y = y;
+    div.tx_clkm_div_z = z;
+    div.tx_clkm_div_yn1 = yn1;
+    hw->tx_clkm_div_conf.val = div.val;
 }
 
 /**
@@ -271,10 +273,12 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  */
 static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    hw->rx_clkm_div_conf.rx_clkm_div_x = x;
-    hw->rx_clkm_div_conf.rx_clkm_div_y = y;
-    hw->rx_clkm_div_conf.rx_clkm_div_z = z;
-    hw->rx_clkm_div_conf.rx_clkm_div_yn1 = yn1;
+    typeof(hw->rx_clkm_div_conf) div = {};
+    div.rx_clkm_div_x = x;
+    div.rx_clkm_div_y = y;
+    div.rx_clkm_div_z = z;
+    div.rx_clkm_div_yn1 = yn1;
+    hw->rx_clkm_div_conf.val = div.val;
 }
 
 /**
@@ -319,23 +323,25 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
         }
     }
 finish:
-    if (denominator == 0 || numerator == 0) {
-        hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
-        hw->tx_clkm_div_conf.tx_clkm_div_y = 0;
-        hw->tx_clkm_div_conf.tx_clkm_div_z = 0;
-    } else {
-        if (numerator > denominator / 2) {
-            hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / (denominator - numerator) - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % (denominator - numerator);
-            hw->tx_clkm_div_conf.tx_clkm_div_z = denominator - numerator;
-            hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 1;
-        } else {
-            hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / numerator - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % numerator;
-            hw->tx_clkm_div_conf.tx_clkm_div_z = numerator;
-            hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
-        }
+    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
+     * Set to particular coefficients first then update to the target coefficients,
+     * otherwise the clock division might be inaccurate.
+     * The particular coefficients here is calculated from 44100 Hz with 2 slots & 16-bit width @ 160MHz sclk */
+    i2s_ll_tx_set_raw_clk_div(hw, 47, 0, 1, 0);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, 13);
+
+    uint32_t div_x = 0;
+    uint32_t div_y = 0;
+    uint32_t div_z = 0;
+    uint32_t div_yn1 = 0;
+    /* If any of denominator and numerator is 0, set all the coefficients to 0 */
+    if (denominator && numerator) {
+        div_yn1 = numerator * 2 > denominator;
+        div_z = div_yn1 ? denominator - numerator : numerator;
+        div_x = denominator / div_z - 1;
+        div_y = denominator % div_z;
     }
+    i2s_ll_tx_set_raw_clk_div(hw, div_x, div_y, div_z, div_yn1);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, mclk_div);
 }
 
@@ -393,23 +399,25 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
         }
     }
 finish:
-    if (denominator == 0 || numerator == 0) {
-        hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
-        hw->rx_clkm_div_conf.rx_clkm_div_y = 0;
-        hw->rx_clkm_div_conf.rx_clkm_div_z = 0;
-    } else {
-        if (numerator > denominator / 2) {
-            hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / (denominator - numerator) - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % (denominator - numerator);
-            hw->rx_clkm_div_conf.rx_clkm_div_z = denominator - numerator;
-            hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 1;
-        } else {
-            hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / numerator - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % numerator;
-            hw->rx_clkm_div_conf.rx_clkm_div_z = numerator;
-            hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
-        }
+    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
+     * Set to particular coefficients first then update to the target coefficients,
+     * otherwise the clock division might be inaccurate.
+     * The particular coefficients here is calculated from 44100 Hz with 2 slots & 16-bit width @ 160MHz sclk */
+    i2s_ll_rx_set_raw_clk_div(hw, 47, 0, 1, 0);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, 13);
+
+    uint32_t div_x = 0;
+    uint32_t div_y = 0;
+    uint32_t div_z = 0;
+    uint32_t div_yn1 = 0;
+    /* If any of denominator and numerator is 0, set all the coefficients to 0 */
+    if (denominator && numerator) {
+        div_yn1 = numerator * 2 > denominator;
+        div_z = div_yn1 ? denominator - numerator : numerator;
+        div_x = denominator / div_z - 1;
+        div_y = denominator % div_z;
     }
+    i2s_ll_rx_set_raw_clk_div(hw, div_x, div_y, div_z, div_yn1);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, mclk_div);
 }
 
