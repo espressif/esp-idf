@@ -245,6 +245,14 @@ menu "LWIP"
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
             available, there is no need for sending discovery message to DHCP server and save some time.
 
+    config LWIP_DHCP_COARSE_TIMER_SECS
+        int "DHCP coarse timer interval(s)"
+        default 1
+        range 1 10
+        help
+            Set DHCP coarse interval in seconds.
+            A higher value will be less precise but cost less power consumption.
+
     menu "DHCP server"
 
         config LWIP_DHCPS_LEASE_UNIT
@@ -420,7 +428,13 @@ menu "LWIP"
             int "Maximum segment lifetime (MSL)"
             default 60000
             help
-                Set maximum segment lifetime in in milliseconds.
+                Set maximum segment lifetime in milliseconds.
+
+        config LWIP_TCP_FIN_WAIT_TIMEOUT
+            int "Maximum FIN segment lifetime"
+            default 20000
+            help
+                Set maximum segment lifetime in milliseconds.
 
         config LWIP_TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
