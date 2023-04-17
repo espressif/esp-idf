@@ -285,7 +285,7 @@ examples/peripherals/twai/twai_self_test:
 
 examples/peripherals/uart/uart_echo_rs485:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h4"
+    - if: INCLUDE_DEFAULT == 1
 
 examples/peripherals/usb:
   disable:

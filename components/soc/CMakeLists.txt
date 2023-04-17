@@ -13,13 +13,6 @@ set(includes "include" "${target}")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
-    if(target STREQUAL "esp32h4")
-        if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-            list(APPEND includes "${target}/include/rev1")
-        elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-            list(APPEND includes "${target}/include/rev2")
-        endif()
-    endif()
 endif()
 
 if(target STREQUAL "esp32")
