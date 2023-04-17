@@ -29,10 +29,10 @@ USUAL_TO_FORMAL = {
     'esp32s2': 'ESP32-S2',
     'esp32s3': 'ESP32-S3',
     'esp32c3': 'ESP32-C3',
-    'esp32h4': 'ESP32-H4',
     'esp32c2': 'ESP32-C2',
     'esp32c6': 'ESP32-C6',
     'esp32h2': 'ESP32-H2',
+    'esp32h4': 'ESP32-H4',
     'linux': 'Linux',
 }
 
@@ -41,10 +41,10 @@ FORMAL_TO_USUAL = {
     'ESP32-S2': 'esp32s2',
     'ESP32-S3': 'esp32s3',
     'ESP32-C3': 'esp32c3',
-    'ESP32-H4': 'esp32h4',
     'ESP32-C2': 'esp32c2',
     'ESP32-C6': 'esp32c6',
     'ESP32-H2': 'esp32h2',
+    'ESP32-H4': 'esp32h4',
     'Linux': 'linux',
 }
 
@@ -221,7 +221,7 @@ def check_test_scripts(
     # {
     #      app_dir: {
     #          'script_path': 'path/to/script',
-    #          'targets': ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32h4', 'esp32c2', 'linux'],
+    #          'targets': ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'linux'],
     #      }
     # }
     def check_enable_test(

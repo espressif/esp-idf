@@ -13,7 +13,7 @@ This example aims at understanding notification subscriptions and sending notifi
 
 To test this demo, any BLE scanner app can be used.
 
-A Python based utility `blehr_test.py` is also provided (which will run as a BLE GATT Client) and can be used to test this example.   
+A Python based utility `blehr_test.py` is also provided (which will run as a BLE GATT Client) and can be used to test this example.
 
 Note :
 

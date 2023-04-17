@@ -10,7 +10,7 @@ from test_build_system_helpers import IdfPyFunc, file_contains, run_cmake, run_c
 
 
 def test_build_custom_cmake_project(test_app_copy: Path) -> None:
-    for target in ['esp32', 'esp32s3', 'esp32c6', 'esp32h4']:
+    for target in ['esp32', 'esp32s3', 'esp32c6', 'esp32h2']:
         logging.info(f'Test build ESP-IDF as a library to a custom CMake projects for {target}')
         idf_path = Path(os.environ['IDF_PATH'])
         run_cmake_and_build(str(idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib'),

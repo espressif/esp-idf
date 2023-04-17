@@ -215,14 +215,6 @@ build_pytest_examples_esp32c2:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
 
-build_pytest_examples_esp32h4:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32h4
-  variables:
-    IDF_TARGET: esp32h4
-    TEST_DIR: examples
-
 build_pytest_examples_jtag:  # for all targets
   extends:
     - .build_pytest_jtag_template
@@ -649,14 +641,6 @@ build_examples_cmake_esp32c3:
     IDF_TARGET: esp32c3
     TEST_DIR: examples
 
-build_examples_cmake_esp32h4:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32h4
-  variables:
-    IDF_TARGET: esp32h4
-    TEST_DIR: examples
-
 build_examples_cmake_esp32c6:
   extends:
     - .build_cmake_template
@@ -728,13 +712,6 @@ build_clang_test_apps_esp32c6:
   allow_failure: true
   variables:
     IDF_TARGET: esp32c6
-
-build_clang_test_apps_esp32h4:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32h4
-  variables:
-    IDF_TARGET: esp32h4
 
 .test_build_system_template:
   stage: host_test

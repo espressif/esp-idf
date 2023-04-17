@@ -34,7 +34,7 @@ idf.py set-target <chip_name>
 
 ### Configure the project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig
