@@ -36,7 +36,7 @@ implement the bare minimum to control the root HCD port.
 
 #define ENUM_CTRL_TRANSFER_MAX_DATA_LEN             CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
 #define ENUM_DEV_ADDR                               1       //Device address used in enumeration
-#define ENUM_CONFIG_INDEX                           0       //Index of the first configuration of the device
+#define ENUM_CONFIG_INDEX                           0       //Index used to get the first configuration descriptor of the device
 #define ENUM_SHORT_DESC_REQ_LEN                     8       //Number of bytes to request when getting a short descriptor (just enough to get bMaxPacketSize0 or wTotalLength)
 #define ENUM_WORST_CASE_MPS_LS                      8       //The worst case MPS of EP0 for a LS device
 #define ENUM_WORST_CASE_MPS_FS                      64      //The worst case MPS of EP0 for a FS device
