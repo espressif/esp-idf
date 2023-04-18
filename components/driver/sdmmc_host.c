@@ -107,32 +107,53 @@ void sdmmc_host_reset(void)
 
 static void sdmmc_host_set_clk_div(int div)
 {
-    // Set frequency to 160MHz / div
-    // div = p + 1
-    // duty cycle = (h + 1)/(p + 1) (should be = 1/2)
+    /**
+     * Set frequency to 160MHz / div
+     *
+     * n: counter resets at div_factor_n.
+     * l: negedge when counter equals div_factor_l.
+     * h: posedge when counter equals div_factor_h.
+     *
+     * We set the duty cycle to 1/2
+     */
+#if CONFIG_IDF_TARGET_ESP32
     assert (div > 1 && div <= 16);
-    int p = div - 1;
+    int h = div - 1;
+    int l = div / 2 - 1;
+
+    SDMMC.clock.div_factor_h = h;
+    SDMMC.clock.div_factor_l = l;
+    SDMMC.clock.div_factor_n = h;
+
+    // Set phases for in/out clocks
+    // 180 degree phase on input and output clocks
+    SDMMC.clock.phase_dout = 4;
+    SDMMC.clock.phase_din = 4;
+    SDMMC.clock.phase_core = 0;
+
+#elif CONFIG_IDF_TARGET_ESP32S3
+    assert (div > 1 && div <= 16);
+    int l = div - 1;
     int h = div / 2 - 1;
 
-    SDMMC.clock.div_factor_p = p;
     SDMMC.clock.div_factor_h = h;
-    SDMMC.clock.div_factor_m = p;
+    SDMMC.clock.div_factor_l = l;
+    SDMMC.clock.div_factor_n = l;
 
     // Make sure 160 MHz source clock is used
 #if SOC_SDMMC_SUPPORT_XTAL_CLOCK
     SDMMC.clock.clk_sel = 1;
 #endif
-#if SOC_SDMMC_USE_GPIO_MATRIX
-    // 90 degree phase on input and output clocks
-    const int inout_clock_phase = 1;
-#else
-    // 180 degree phase on input and output clocks
-    const int inout_clock_phase = 4;
-#endif
-    // Set phases for in/out clocks
-    SDMMC.clock.phase_dout = inout_clock_phase;
-    SDMMC.clock.phase_din = inout_clock_phase;
+
     SDMMC.clock.phase_core = 0;
+    /* 90 deg. delay for cclk_out to satisfy large hold time for SDR12 (up to 25MHz) and SDR25 (up to 50MHz) modes.
+     * Whether this delayed clock will be used depends on use_hold_reg bit in CMD structure,
+     * determined when sending out the command.
+     */
+    SDMMC.clock.phase_dout = 1;
+    SDMMC.clock.phase_din = 0;
+#endif  //CONFIG_IDF_TARGET_ESP32S3
+
     // Wait for the clock to propagate
     esp_rom_delay_us(10);
 }
@@ -246,6 +267,9 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
     if (cmd.data_expected && cmd.rw && (SDMMC.wrtprt.cards & BIT(slot)) != 0) {
         return ESP_ERR_INVALID_STATE;
     }
+    /* Outputs should be synchronized to cclk_out */
+    cmd.use_hold_reg = 1;
+
     while (SDMMC.cmd.start_command == 1) {
         ;
     }
