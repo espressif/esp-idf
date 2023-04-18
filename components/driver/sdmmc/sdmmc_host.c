@@ -22,6 +22,7 @@
 #include "sdmmc_private.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "esp_clk_tree.h"
 #include "soc/sdmmc_periph.h"
 #include "hal/gpio_hal.h"
 
@@ -148,7 +149,7 @@ static void sdmmc_host_set_clk_div(int div)
     SDMMC.clock.div_factor_l = l;
     SDMMC.clock.div_factor_n = l;
 
-    // Make sure 160 MHz source clock is used
+    // Make sure SOC_MOD_CLK_PLL_F160M (160 MHz) source clock is used
 #if SOC_SDMMC_SUPPORT_XTAL_CLOCK
     SDMMC.clock.clk_sel = 1;
 #endif
@@ -223,6 +224,10 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
 
 void sdmmc_host_get_clk_dividers(const uint32_t freq_khz, int *host_div, int *card_div)
 {
+    uint32_t clk_src_freq_hz = 0;
+    esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    assert(clk_src_freq_hz == (160 * 1000 * 1000));
+
     // Calculate new dividers
     if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
         *host_div = 4;       // 160 MHz / 4 = 40 MHz
@@ -239,14 +244,14 @@ void sdmmc_host_get_clk_dividers(const uint32_t freq_khz, int *host_div, int *ca
          * if exceeded, combine with the card divider to keep reasonable precision (applies mainly to low frequencies)
          * effective frequency range: 400 kHz - 32 MHz (32.1 - 39.9 MHz cannot be covered with given divider scheme)
          */
-        *host_div = (2 * APB_CLK_FREQ) / (freq_khz * 1000);
+        *host_div = (clk_src_freq_hz) / (freq_khz * 1000);
         if (*host_div > 15 ) {
             *host_div = 2;
-            *card_div = APB_CLK_FREQ / (2 * freq_khz * 1000);
-            if ( (APB_CLK_FREQ % (2 * freq_khz * 1000)) > 0 ) {
+            *card_div = (clk_src_freq_hz / 2) / (2 * freq_khz * 1000);
+            if ( ((clk_src_freq_hz / 2) % (2 * freq_khz * 1000)) > 0 ) {
                 (*card_div)++;
             }
-        } else if ( ((2 * APB_CLK_FREQ) % (freq_khz * 1000)) > 0 ) {
+        } else if ((clk_src_freq_hz % (freq_khz * 1000)) > 0) {
             (*host_div)++;
         }
     }
@@ -254,7 +259,10 @@ void sdmmc_host_get_clk_dividers(const uint32_t freq_khz, int *host_div, int *ca
 
 static int sdmmc_host_calc_freq(const int host_div, const int card_div)
 {
-    return 2 * APB_CLK_FREQ / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
+    uint32_t clk_src_freq_hz = 0;
+    esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    assert(clk_src_freq_hz == (160 * 1000 * 1000));
+    return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }
 
 esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
