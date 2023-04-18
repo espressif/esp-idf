@@ -293,3 +293,89 @@ TEST_CASE("wrlock multiple writers wait", "[pthread][rwlock]")
     TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
     vQueueDelete(wait_queue);
 }
+
+TEST_CASE("tryrdlock invalid param", "[pthread][rwlock]")
+{
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_tryrdlock(NULL), EINVAL);
+
+    pthread_rwlock_t rwlock = 0;
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_tryrdlock(&rwlock), EINVAL);
+}
+
+TEST_CASE("tryrdlock fails on write-locked rwlock", "[pthread][rwlock]")
+{
+    pthread_rwlock_t rwlock;
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_init(&rwlock, NULL), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_wrlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_tryrdlock(&rwlock), EBUSY);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
+
+TEST_CASE("tryrdlock succeeds on read-locked rwlock", "[pthread][rwlock]")
+{
+    pthread_rwlock_t rwlock;
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_init(&rwlock, NULL), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_rdlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_tryrdlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
+
+TEST_CASE("tryrdlock lock statically initialized lock", "[pthread][rwlock]")
+{
+    pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_tryrdlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
+
+TEST_CASE("trywrlock invalid param", "[pthread][rwlock]")
+{
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_trywrlock(NULL), EINVAL);
+
+    pthread_rwlock_t rwlock = 0;
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_trywrlock(&rwlock), EINVAL);
+}
+
+TEST_CASE("trywrlock fails on write-locked rwlock", "[pthread][rwlock]")
+{
+    pthread_rwlock_t rwlock;
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_init(&rwlock, NULL), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_wrlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_trywrlock(&rwlock), EBUSY);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
+
+TEST_CASE("trywrlock fails on read-locked rwlock", "[pthread][rwlock]")
+{
+    pthread_rwlock_t rwlock;
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_init(&rwlock, NULL), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_rdlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_trywrlock(&rwlock), EBUSY);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
+
+TEST_CASE("trywrlock lock statically initialized lock", "[pthread][rwlock]")
+{
+    pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_trywrlock(&rwlock), 0);
+
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_unlock(&rwlock), 0);
+    TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
+}
