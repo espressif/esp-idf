@@ -205,7 +205,12 @@ Secure storage refers to the application specific data that can be stored in a s
 
 ESP-IDF provides "NVS (Non-volatile Storage)" management component which allows encrypted data partitions. This feature is tied with the platform :ref:`flash_enc-guide` feature described earlier.
 
-Please refer to the :ref:`NVS Encryption <nvs_encryption>` for detailed documentation on the working and instructions to enable this feature.
+.. only:: SOC_HMAC_SUPPORTED
+
+    This feature can also be used independent of the platform :ref:`flash_enc-guide` feature with the help of the {IDF_TARGET_NAME} HMAC peripheral.
+
+
+Please refer to the :doc:`NVS Encryption <../api-reference/storage/nvs_encryption>` for detailed documentation on the working and instructions to enable this feature.
 
 .. important::
 

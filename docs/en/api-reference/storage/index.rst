@@ -23,6 +23,7 @@ This section contains reference of the high-level storage APIs. They are based o
     fatfs
     mass_mfg.rst
     nvs_flash
+    nvs_encryption
     nvs_partition_gen.rst
     nvs_partition_parse.rst
     sdmmc
