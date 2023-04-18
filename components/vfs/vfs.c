@@ -33,7 +33,16 @@
 
 static const char *TAG = "vfs";
 
-#define VFS_MAX_COUNT   8   /* max number of VFS entries (registered filesystems) */
+/* Max number of VFS entries (registered filesystems) */
+#ifdef CONFIG_VFS_MAX_COUNT
+#define VFS_MAX_COUNT  CONFIG_VFS_MAX_COUNT
+#else
+/* If IO support is disabled, keep this defined to 1 to avoid compiler warnings in this file.
+ * The s_vfs array and the functions defined here will be removed by the linker, anyway.
+ */
+#define VFS_MAX_COUNT 1
+#endif
+
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
 #define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .has_pending_close = false, .has_pending_select = false, .vfs_index = -1, .local_fd = -1 }
 
