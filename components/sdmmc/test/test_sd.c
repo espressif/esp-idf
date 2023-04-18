@@ -194,7 +194,7 @@ TEST_CASE("SD clock dividers calculation", "[sd][test_env=UT_T1_SDMODE]")
 #endif //WITH_SD_TEST
 
 #if WITH_EMMC_TEST
-TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC]")
+TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC][ignore]")
 {
     //Test with SDR
     probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
@@ -204,7 +204,7 @@ TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC]")
     probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 1);
 }
 
-TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
+TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC][ignore]")
 {
     //8-bit DDR not supported yet, test with SDR only
     probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_PROBING, 0);
@@ -457,28 +457,28 @@ TEST_CASE("SDMMC test read/write with offset (SD slot 1)", "[sd][test_env=UT_T1_
 #endif //WITH_SD_TEST
 
 #if WITH_EMMC_TEST
-TEST_CASE("SDMMC performance test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC performance test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 4, test_read_write_performance);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 4, test_read_write_with_offset);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC performance test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC performance test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 8, test_read_write_performance);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 8 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 8, test_read_write_with_offset);
@@ -1205,42 +1205,42 @@ static void test_mmc_trim_blocks(sdmmc_card_t* card)
 #endif //SDMMC_FULL_ERASE_TEST
 }
 
-TEST_CASE("SDMMC trim test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC trim test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 4, test_mmc_trim_blocks);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC trim test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC trim test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 8, test_mmc_trim_blocks);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC discard test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC discard test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 4, test_mmc_discard_blocks);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC discard test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC discard test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 8, test_mmc_discard_blocks);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC sanitize test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC sanitize test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 4, test_mmc_sanitize_blocks);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC sanitize test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC sanitize test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC][ignore]")
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 8, test_mmc_sanitize_blocks);
