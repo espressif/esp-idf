@@ -149,6 +149,19 @@ typedef struct {
 } sdmmc_command_t;
 
 /**
+ * SD/MMC Host clock timing delay phases
+ *
+ * This will only take effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M.
+ * Driver will print out how long the delay is, in picosecond (ps).
+ */
+typedef enum {
+    SDMMC_DELAY_PHASE_0,            /*!< Delay phase 0 */
+    SDMMC_DELAY_PHASE_1,            /*!< Delay phase 1 */
+    SDMMC_DELAY_PHASE_2,            /*!< Delay phase 2 */
+    SDMMC_DELAY_PHASE_3,            /*!< Delay phase 3 */
+} sdmmc_delay_phase_t;
+
+/**
  * SD/MMC Host description
  *
  * This structure defines properties of SD/MMC host and functions
@@ -185,6 +198,8 @@ typedef struct {
     esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
+    sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
+    esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
 } sdmmc_host_t;
 
 /**
