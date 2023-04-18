@@ -681,17 +681,18 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     ESP_RETURN_ON_FALSE((uart_config->flow_ctrl < UART_HW_FLOWCTRL_MAX), ESP_FAIL, UART_TAG, "hw_flowctrl mode error");
     ESP_RETURN_ON_FALSE((uart_config->data_bits < UART_DATA_BITS_MAX), ESP_FAIL, UART_TAG, "data bit error");
     uart_module_enable(uart_num);
+    uart_sclk_t clk_src = (uart_config->source_clk) ? uart_config->source_clk : UART_SCLK_DEFAULT; // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
 #if SOC_UART_SUPPORT_RTC_CLK
-    if (uart_config->source_clk == UART_SCLK_RTC) {
+    if (clk_src == UART_SCLK_RTC) {
         periph_rtc_dig_clk8m_enable();
     }
 #endif
     uint32_t sclk_freq;
-    ESP_RETURN_ON_ERROR(uart_get_sclk_freq(uart_config->source_clk, &sclk_freq), UART_TAG, "Invalid src_clk");
+    ESP_RETURN_ON_ERROR(uart_get_sclk_freq(clk_src, &sclk_freq), UART_TAG, "Invalid src_clk");
 
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
-    uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_config->source_clk);
+    uart_hal_set_sclk(&(uart_context[uart_num].hal), clk_src);
     uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
