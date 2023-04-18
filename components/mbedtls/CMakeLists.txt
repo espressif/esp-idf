@@ -126,6 +126,12 @@ if(${IDF_TARGET} STREQUAL "linux")
 set(mbedtls_target_sources ${mbedtls_target_sources} "${COMPONENT_DIR}/port/net_sockets.c")
 endif()
 
+# While updating to MbedTLS release/v3.4.0, building mbedtls/library/psa_crypto.c
+# clang produces an unreachable-code warning.
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(mbedcrypto PRIVATE "-Wno-unreachable-code")
+endif()
+
 # net_sockets.c should only be compiled if BSD socket functions are available.
 # Do this by checking if lwip component is included into the build.
 idf_build_get_property(build_components BUILD_COMPONENTS)
