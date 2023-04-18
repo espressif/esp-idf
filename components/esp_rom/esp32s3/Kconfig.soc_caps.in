@@ -27,6 +27,10 @@ config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool
     default y
 
+config ESP_ROM_USB_OTG_NUM
+    int
+    default 3
+
 config ESP_ROM_USB_SERIAL_DEVICE_NUM
     int
     default 4

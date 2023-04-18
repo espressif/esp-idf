@@ -50,14 +50,46 @@ esp_err_t esp_usb_console_init(void);
  */
 ssize_t esp_usb_console_write_buf(const char* buf, size_t size);
 
+/**
+ * @brief Wait until all buffered USB CDC output is written
+ *
+ * @return ssize_t  Number of bytes written, or -1 if the driver is not initialized
+ */
 ssize_t esp_usb_console_flush(void);
 
+/**
+ * @brief Read data from USB CDC
+ *
+ * May read less data than requested.
+ *
+ * @param buf  Buffer to read data into
+ * @param buf_size  Size of the buffer
+ * @return ssize_t  Number of bytes written into the buffer, or -1 if the driver is not initialized
+ */
 ssize_t esp_usb_console_read_buf(char* buf, size_t buf_size);
 
+/**
+ * @brief Get the number of bytes available for reading from USB CDC
+ *
+ * @return ssize_t Number of bytes available, or -1 if the driver is not initialized
+ */
 ssize_t esp_usb_console_available_for_read(void);
 
+/**
+ * @brief Check if data can be written into USB CDC
+ *
+ * @return true if data can be written now without blocking
+ */
 bool esp_usb_console_write_available(void);
 
+/**
+ * @brief Set RX/TX callback functions to be called from ISR
+ *
+ * @param rx_cb  RX callback function
+ * @param tx_cb  TX callback function
+ * @param arg  callback-specific context pointer
+ * @return ESP_OK if the callbacks were set, ESP_ERR_INVALID_STATE if the driver is not initialized
+ */
 esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_t tx_cb, void* arg);
 
 #ifdef __cplusplus

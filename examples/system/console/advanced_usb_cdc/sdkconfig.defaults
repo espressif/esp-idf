@@ -1,6 +1,3 @@
-# Build for ESP32-S2 by default
-CONFIG_IDF_TARGET="esp32s2"
-
 # Enable USB console
 CONFIG_ESP_CONSOLE_USB_CDC=y
 
