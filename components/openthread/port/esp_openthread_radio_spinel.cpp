@@ -321,3 +321,32 @@ const char *otPlatRadioGetVersionString(otInstance *aInstance)
 }
 
 #endif // OPENTHREAD_CONFIG_DIAG_ENABLE
+
+uint64_t otPlatRadioGetNow(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return s_radio.GetNow();
+}
+
+#if OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
+uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return s_radio.GetCslAccuracy();
+
+}
+
+uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return s_radio.GetCslUncertainty();
+}
+#endif
+
+#if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
+otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics aLinkMetrics, const otShortAddress aShortAddress, const otExtAddress *aExtAddress)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return s_radio.ConfigureEnhAckProbing(aLinkMetrics, aShortAddress, *aExtAddress);
+}
+#endif
