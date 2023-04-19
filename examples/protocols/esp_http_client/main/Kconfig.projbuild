@@ -1,0 +1,7 @@
+menu "Example Configuration"
+    config EXAMPLE_HTTP_ENDPOINT
+        string "Example HTTP Endpoint"
+        default "httpbin.org"
+        help
+            Target endpoint host-name for the example to use.
+endmenu
