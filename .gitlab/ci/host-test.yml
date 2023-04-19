@@ -40,12 +40,6 @@ test_partition_table_on_host:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
 
-test_fatfs_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/fatfs/test_fatfs_host/
-    - make test
-
 test_ldgen_on_host:
   extends: .host_test_template
   script:

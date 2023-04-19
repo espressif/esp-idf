@@ -1021,11 +1021,6 @@ components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_winbond.h
-components/spi_flash/sim/SpiFlash.cpp
-components/spi_flash/sim/flash_mock.cpp
-components/spi_flash/sim/flash_mock_util.c
-components/spi_flash/sim/sdkconfig/sdkconfig.h
-components/spi_flash/sim/stubs/bsd/strlcpy.c
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
 components/spi_flash/spi_flash_chip_mxic.c
