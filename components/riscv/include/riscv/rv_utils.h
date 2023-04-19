@@ -132,7 +132,7 @@ FORCE_INLINE_ATTR void rv_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
     /* The code bellow sets breakpoint which will trigger `Breakpoint` exception
      * instead transfering control to debugger. */
     RV_WRITE_CSR(tselect, bp_num);
-    RV_WRITE_CSR(CSR_TCONTROL, TCONTROL_MTE);
+    RV_WRITE_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
     RV_WRITE_CSR(CSR_TDATA1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
     RV_WRITE_CSR(tdata2, bp_addr);
 }
