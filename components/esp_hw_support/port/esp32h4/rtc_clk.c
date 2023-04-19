@@ -10,7 +10,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
-#include "esp32h4/rom/ets_sys.h"
 #include "esp32h4/rom/rtc.h"
 #include "esp32h4/rom/uart.h"
 #include "esp32h4/rom/gpio.h"
@@ -216,7 +215,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         clk_ll_ahb_set_divider(1);
     }
 
-    ets_update_cpu_frequency(cpu_freq_mhz);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
     rtc_clk_apb_freq_update(rtc_clk_apb_freq_get());
 }
 
@@ -255,7 +254,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
     uint32_t src_freq_mhz = rtc_clk_select_root_clk(config->source);
     uint32_t div = src_freq_mhz / (config->freq_mhz);
     rtc_clk_cpu_freq_set(config->source, div);
-    ets_update_cpu_frequency(config->freq_mhz);
+    esp_rom_set_cpu_ticks_per_us(config->freq_mhz);
 }
 
 void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
@@ -335,7 +334,7 @@ void rtc_clk_cpu_set_to_default_config(void)
  */
 static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
-    ets_update_cpu_frequency(cpu_freq);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
     rtc_clk_cpu_freq_set(SOC_CPU_CLK_SRC_XTAL, div);
     /* no need to adjust the REF_TICK */
@@ -345,7 +344,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 
 void rtc_clk_cpu_freq_to_8m(void)
 {
-    ets_update_cpu_frequency(RTC_OSC_FREQ_RC8M);
+    esp_rom_set_cpu_ticks_per_us(RTC_OSC_FREQ_RC8M);
     rtc_clk_select_root_clk(SOC_CPU_CLK_SRC_RC_FAST);
     rtc_clk_apb_freq_update(rtc_clk_apb_freq_get());
 }
