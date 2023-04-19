@@ -199,6 +199,9 @@
   - "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"
   - ".gitmodules"
 
+.patterns-danger-npm: &patterns-danger-npm
+  - ".gitlab/dangerjs/package-lock.json"
+
 # for jobs: example_test*flash_encryption_wifi_high_traffic
 .patterns-example_test-ota-nightly_run: &patterns-example_test-ota-nightly_run
   - "examples/system/ota/**/*"
@@ -386,6 +389,13 @@
       when: manual
     - <<: *if-dev-push
       changes: *patterns-submodule
+
+.rules:patterns:dangerjs:
+  rules:
+    - <<: *if-label-upload_cache
+      when: manual
+    - <<: *if-dev-push
+      changes: *patterns-danger-npm
 
 .rules:dev:
   rules:
