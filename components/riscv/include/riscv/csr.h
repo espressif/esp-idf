@@ -155,6 +155,7 @@ extern "C" {
 #define TDATA1_MATCH     (1<<7)
 #define TDATA1_MATCH_V   (0xF)   /*R/W,Address match type :0 : Exact byte match  1 : NAPOT range match */
 #define TDATA1_MATCH_S   (7)
+#define TDATA1_HIT_S     (20)
 
 
 /* RISC-V CSR macros
