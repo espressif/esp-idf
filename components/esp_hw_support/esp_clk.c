@@ -44,11 +44,6 @@
 
 // g_ticks_us defined in ROMs for PRO and APP CPU
 extern uint32_t g_ticks_per_us_pro;
-#if SOC_CPU_CORES_NUM > 1
-#ifndef CONFIG_FREERTOS_UNICORE
-extern uint32_t g_ticks_per_us_app;
-#endif
-#endif
 
 static portMUX_TYPE s_esp_rtc_time_lock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -84,19 +79,6 @@ int IRAM_ATTR esp_clk_xtal_freq(void)
 {
     return rtc_clk_xtal_freq_get() * MHZ;
 }
-
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
-{
-    /* Update scale factors used by esp_rom_delay_us */
-    g_ticks_per_us_pro = ticks_per_us;
-#if SOC_CPU_CORES_NUM > 1
-#ifndef CONFIG_FREERTOS_UNICORE
-    g_ticks_per_us_app = ticks_per_us;
-#endif
-#endif
-}
-#endif
 
 uint64_t esp_rtc_get_time_us(void)
 {

@@ -32,8 +32,6 @@
 
 static const char *TAG = "fpga";
 
-extern void ets_update_cpu_frequency(uint32_t ticks_per_us);
-
 static void s_warn(void)
 {
     ESP_EARLY_LOGW(TAG, "Project configuration is for internal FPGA use, not all functions will work");
@@ -50,7 +48,7 @@ void bootloader_clock_configure(void)
 #else
     uint32_t apb_freq_hz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000;
 #endif // CONFIG_IDF_TARGET_ESP32S2
-    ets_update_cpu_frequency(apb_freq_hz / 1000000);
+    esp_rom_set_cpu_ticks_per_us(apb_freq_hz / 1000000);
 #ifdef RTC_APB_FREQ_REG
     REG_WRITE(RTC_APB_FREQ_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
 #endif
