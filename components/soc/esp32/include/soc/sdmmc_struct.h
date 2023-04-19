@@ -379,9 +379,9 @@ typedef volatile struct sdmmc_dev_s {
             uint32_t phase_dout: 3;         ///< phase of data output clock (0x0: 0, 0x1: 90, 0x4: 180, 0x6: 270)
             uint32_t phase_din: 3;          ///< phase of data input clock
             uint32_t phase_core: 3;         ///< phase of the clock to SDMMC peripheral
-            uint32_t div_factor_p: 4;       ///< controls clock period; it will be (div_factor_p + 1) / 160MHz
             uint32_t div_factor_h: 4;       ///< controls length of high pulse; it will be (div_factor_h + 1) / 160MHz
-            uint32_t div_factor_m: 4;       ///< should be equal to div_factor_p
+            uint32_t div_factor_l: 4;       ///< controls clock period; it will be (div_factor_l + 1) / 160MHz
+            uint32_t div_factor_n: 4;       ///< should be equal to div_factor_l
             uint32_t reserved21: 11;
         };
         uint32_t val;

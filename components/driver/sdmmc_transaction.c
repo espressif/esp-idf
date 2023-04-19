@@ -304,7 +304,6 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
     if (cmd->flags & SCF_RSP_CRC) {
         res.check_response_crc = 1;
     }
-    res.use_hold_reg = 1;
     if (cmd->data) {
         res.data_expected = 1;
         if ((cmd->flags & SCF_CMD_READ) == 0) {
