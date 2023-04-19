@@ -140,10 +140,6 @@ extern "C" {
    Trigger Module register fields (Debug specification)
  ********************************************************/
 
-/* tcontrol CSRs not recognized by toolchain currently */
-#define CSR_TCONTROL        0x7a5
-#define CSR_TDATA1          0x7a1
-
 #define TCONTROL_MTE     (1<<3)    /*R/W, Current M mode trigger enable bit*/
 #define TCONTROL_MPTE    (1<<7)    /*R/W, Previous M mode trigger enable bit*/
 

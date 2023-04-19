@@ -132,8 +132,8 @@ FORCE_INLINE_ATTR void rv_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
     /* The code bellow sets breakpoint which will trigger `Breakpoint` exception
      * instead transfering control to debugger. */
     RV_WRITE_CSR(tselect, bp_num);
-    RV_WRITE_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
-    RV_WRITE_CSR(CSR_TDATA1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
+    RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
+    RV_WRITE_CSR(tdata1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
     RV_WRITE_CSR(tdata2, bp_addr);
 }
 
@@ -144,8 +144,8 @@ FORCE_INLINE_ATTR void rv_utils_set_watchpoint(int wp_num,
                                                bool on_write)
 {
     RV_WRITE_CSR(tselect, wp_num);
-    RV_WRITE_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
-    RV_WRITE_CSR(CSR_TDATA1, TDATA1_USER               |
+    RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
+    RV_WRITE_CSR(tdata1, TDATA1_USER                   |
                          TDATA1_MACHINE                |
                          TDATA1_MATCH                  |
                          (on_read  ? TDATA1_LOAD  : 0) |
@@ -179,7 +179,7 @@ FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
     /* tdata1 is a WARL(write any read legal) register
      * We can just write 0 to it
      */
-    RV_WRITE_CSR(CSR_TDATA1, 0);
+    RV_WRITE_CSR(tdata1, 0);
 }
 
 FORCE_INLINE_ATTR void rv_utils_clear_watchpoint(int wp_num)
