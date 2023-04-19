@@ -166,7 +166,7 @@ static inline int wpa_auth_set_key(struct wpa_authenticator *wpa_auth,
     if (alg == WIFI_WPA_ALG_IGTK) {
 	if (key) {
 	    wpa_printf (MSG_DEBUG, "%s : igtk idx %d", __func__, idx);
-	    wifi_wpa_igtk_t *igtk = malloc(sizeof(wifi_wpa_igtk_t));
+	    wifi_wpa_igtk_t *igtk = os_malloc(sizeof(wifi_wpa_igtk_t));
 
 	    if (igtk != NULL) {
 		memcpy(&igtk->igtk[0], key, WPA_IGTK_LEN);
