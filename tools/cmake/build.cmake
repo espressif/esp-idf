@@ -129,7 +129,12 @@ function(__build_set_lang_version)
         # Use latest supported versions.
         # Please update docs/en/api-guides/cplusplus.rst when changing this.
         set(c_std gnu17)
-        set(cxx_std gnu++20)
+        if(NOT ${env_idf_toolchain} STREQUAL "clang")
+            set(cxx_std gnu++23)
+        else()
+            # TODO: IDF-7241 - remove the exception for clang
+            set(cxx_std gnu++20)
+        endif()
     else()
         enable_language(C CXX)
         # Building for Linux target, fall back to an older version of the standard
@@ -149,7 +154,7 @@ function(__build_set_lang_version)
                                 "${preferred_c_versions}. Please upgrade the host compiler.")
         endif()
 
-        set(preferred_cxx_versions gnu++20 gnu++2a gnu++17 gnu++14)
+        set(preferred_cxx_versions gnu++23 gnu++20 gnu++2a gnu++17 gnu++14)
         set(ver_found FALSE)
         foreach(cxx_version ${preferred_cxx_versions})
             check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
