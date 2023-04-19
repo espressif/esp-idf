@@ -480,6 +480,11 @@ menu "FreeRTOS"
 
     # Hidden or compatibility options
 
+    config FREERTOS_PORT
+        # This invisible config value indicates the FreeRTOS is selected as the current RTOS used by ESP-IDF
+        bool
+        default y
+
     config FREERTOS_NO_AFFINITY
         # This invisible config value sets the value of tskNO_AFFINITY in task.h.
         # Intended to be used as a constant from other Kconfig files.
