@@ -595,7 +595,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
     return 0;
 }
 
-static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
+static int pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
 {
     if (!mux) {
         return EINVAL;
@@ -632,7 +632,7 @@ static int pthread_mutex_init_if_static(pthread_mutex_t *mutex)
     return res;
 }
 
-int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
+int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return EINVAL;
@@ -644,7 +644,7 @@ int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
     return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, portMAX_DELAY);
 }
 
-int IRAM_ATTR pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout)
+int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout)
 {
     if (!mutex) {
         return EINVAL;
@@ -666,7 +666,7 @@ int IRAM_ATTR pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct times
     return res;
 }
 
-int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
+int pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return EINVAL;
@@ -678,7 +678,7 @@ int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
     return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, 0);
 }
 
-int IRAM_ATTR pthread_mutex_unlock(pthread_mutex_t *mutex)
+int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
     esp_pthread_mutex_t *mux;
 
