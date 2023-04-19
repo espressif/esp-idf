@@ -33,9 +33,7 @@ Heap allocation and free detection hooks allows you to be notified of every succ
 - Providing a definition of :cpp:func:`esp_heap_trace_alloc_hook` will allow you to be notified of every successful memory allocation operations
 - Providing a definition of :cpp:func:`esp_heap_trace_free_hook` will allow you to be notified of every memory free operations
 
-To activate the feature, navigate to ``Component config`` -> ``Heap Memory Debugging`` in the configuration menu and select ``Use allocation and free hooks`` option (see :ref:`CONFIG_HEAP_USE_HOOKS`).
-:cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` have weak declarations, it is not necessary to provide a declarations for both hooks.
-Since allocating and freeing memory is allowed even though strongly recommended against, :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` can potentially be called from ISR.
+To activate the feature, navigate to ``Component config`` -> ``Heap Memory Debugging`` in the configuration menu and select ``Use allocation and free hooks`` option (see :ref:`CONFIG_HEAP_USE_HOOKS`). :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` have weak declarations, it is not necessary to provide a declarations for both hooks. Since allocating and freeing memory is allowed even though strongly recommended against, :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` can potentially be called from ISR.
 
 .. _heap-corruption:
 
@@ -81,6 +79,31 @@ The example below shows how to register an allocation failure callback::
       esp_err_t error = heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
       ...
       void *ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
+      ...
+  }
+
+Memory Allocation and Free Hooks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to implement two function hooks to get notified of every successful allocation and free operations by enabling :ref:`CONFIG_HEAP_USE_HOOKS`. With this configuration enabled, you will be able to provide the definition of :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook`.
+
+Performing (or calling API functions performing) blocking operations or memory allocation / free operations in the hook functions is recommended against. In general, it is considered best practice to keep the implementation concise and leave the heavy computation outside of the hook functions.
+
+The example below shows how to define the allocation and free function hooks::
+
+  #include "esp_heap_caps.h"
+
+  void esp_heap_trace_alloc_hook(void* ptr, size_t size, uint32_t caps)
+  {
+    ...
+  }
+  void esp_heap_trace_free_hook(void* ptr)
+  {
+    ...
+  }
+
+  void app_main()
+  {
       ...
   }
 
@@ -452,6 +475,12 @@ Performance Impact
 Enabling heap tracing in menuconfig increases the code size of your program, and has a very small negative impact on performance of heap allocation/free operations even when heap tracing is not running.
 
 When heap tracing is running, heap allocation/free operations are substantially slower than when heap tracing is stopped. Increasing the depth of stack frames recorded for each allocation (see above) will also increase this performance impact.
+
+To mitigate the performance loss when the heap tracing is enabled and active, enable :ref:`CONFIG_HEAP_TRACE_HASH_MAP`. With this configuration enable, a hash map mechanism will be used to handle the heap trace records thus considerably improving the heap allocation/free execution time. The size of the hash map can be modified by setting the value of :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE`.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+  By default the hash map is placed into internal RAM. It can also be placed into external RAM if :ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` is enabled. In order to enable this configuration, make sure to enable :ref:`CONFIG_SPIRAM` and :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
 False-Positive Memory Leaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

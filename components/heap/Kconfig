@@ -84,10 +84,20 @@ menu "Heap memory debugging"
             the heap trace performances in adding retrieving and removing trace records will be
             enhanced.
 
+    config HEAP_TRACE_HASH_MAP_IN_EXT_RAM
+        bool "Place hash map in the bss section of the external RAM"
+        depends on HEAP_TRACE_HASH_MAP && SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+        default n
+        help
+            When enabled this configuration forces the hash map to be placed in the bss section
+            of the external RAM.
+
+            Note that this functionality can only be enabled when CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+            is enabled.
+
     config HEAP_TRACE_HASH_MAP_SIZE
         int "The number of entries in the hash map"
         depends on HEAP_TRACE_HASH_MAP
-        range 1 10000
         default 10
         help
             Defines the number of entries in the heap trace hashmap. The bigger this number is,
