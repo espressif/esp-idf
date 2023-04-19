@@ -97,7 +97,7 @@ Because some buffers can only be allocated in internal memory, a second configur
 
 .. _external_ram_config_bss:
 
-Allow .bss Segment to be Placed in External Memory
+Allow .bss Segment to Be Placed in External Memory
 --------------------------------------------------
 
 Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
@@ -116,7 +116,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
     .. _external_ram_config_noinit:
 
-    Allow .noinit Segment to be Placed in External Memory
+    Allow .noinit Segment to Be Placed in External Memory
     --------------------------------------------------------------
 
     Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the address space provided in external RAM will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
@@ -164,14 +164,14 @@ External RAM use has the following restrictions:
 
 .. only:: SOC_PSRAM_DMA_CAPABLE and not esp32s3
 
-    * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call. Note, although {IDF_TARGET_NAME} has hardware support for DMA to / from external RAM, this is not yet supported in ESP-IDF.
+    * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call. Note, although {IDF_TARGET_NAME} has hardware support for DMA to or from external RAM, this is not yet supported in ESP-IDF.
 
 .. only:: esp32s3
 
-    * Although {IDF_TARGET_NAME} has hardware support for DMA to / from external RAM, there are still limitations:
+    * Although {IDF_TARGET_NAME} has hardware support for DMA to or from external RAM, there are still limitations:
 
       - The bandwidth that DMA accesses external RAM is very limited, especially when CPU is trying to access the external RAM at the same time.
-      - You can configure :ref:`CONFIG_SPIRAM_SPEED` as 120 MHz for an Octal PSRAM. The bandwidth will be improved. However there are still restrictions for this option, see :ref:`All Supported PSRAM Modes and Speeds <flash-psram-combination>` for more details.
+      - You can configure :ref:`CONFIG_SPIRAM_SPEED` as 120 MHz for an octal PSRAM. The bandwidth will be improved. However there are still restrictions for this option. See :ref:`All Supported PSRAM Modes and Speeds <flash-psram-combination>` for more details.
 
 * External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
 
@@ -180,7 +180,7 @@ External RAM use has the following restrictions:
 The option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` can be used to allow placing task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
 
 
-Failure to initialize
+Failure to Initialize
 =====================
 
  By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`.
@@ -195,7 +195,7 @@ Failure to initialize
     Encryption
     ==========
 
-    It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted/decrypted by the external memory encryption hardware.
+    It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted or decrypted by the external memory encryption hardware.
 
     This feature is enabled whenever flash encryption is enabled. For more information on how to enable and how it works see :doc:`Flash Encryption </security/flash-encryption>`.
 

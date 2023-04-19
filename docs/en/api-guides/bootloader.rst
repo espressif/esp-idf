@@ -18,7 +18,7 @@ For a full description of the startup process including the ESP-IDF bootloader, 
 
 .. _bootloader-compatibility:
 
-Bootloader compatibility
+Bootloader Compatibility
 ------------------------
 
 It is recommended to update to newer :doc:`versions of ESP-IDF </versions>`: when they are released. The OTA (over the air) update process can flash new apps in the field but cannot flash a new bootloader. For this reason, the bootloader supports booting apps built from newer versions of ESP-IDF.
@@ -65,7 +65,7 @@ The default bootloader log level is "Info". By setting the :ref:`CONFIG_BOOTLOAD
 
 Reducing bootloader log verbosity can improve the overall project boot time by a small amount.
 
-Factory reset
+Factory Reset
 -------------
 
 Sometimes it is desirable to have a way for the device to fall back to a known-good state, in case of some problem with an update.
@@ -94,11 +94,16 @@ In addition, the following configuration options control the reset condition:
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    Sometimes an application needs to know if the Factory Reset has occurred. For this purpose, there is a function :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state`, which returns its status, after reading the status is reset to false. This feature reserves some RTC FAST memory (the same size as the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` feature).
+    If an application needs to know if the factory reset has occurred, users can call the function :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state`.
+    
+    - If the status is read as true, the function will return the status, indicating that the factory reset has occurred. The function then resets the status to false for subsequent factory reset judgement.
+    - If the status is read as false, the function will return the status, indicating that the factory reset has not occurred, or the memory where this status is stored is invalid.
+    
+    Note that this feature reserves some RTC FAST memory (the same size as the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` feature).
 
 .. only:: not SOC_RTC_FAST_MEM_SUPPORTED
 
-    Sometimes an application needs to know if the Factory Reset has occurred. The {IDF_TARGET_NAME} chip does not have RTC FAST memory, so there is no API to detect it. Instead, there is a workaround: you need an NVS partition that will be erased by bootloader while Factory Reset (add this partition to :ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET`). In this NVS partition, create a "factory_reset_state" token that will be increased in the application. If the "factory_reset_state" is 0 then the factory reset has occurred.
+    Sometimes an application needs to know if the factory reset has occurred. The {IDF_TARGET_NAME} chip does not have RTC FAST memory, so there is no API to detect it. Instead, there is a workaround: you need an NVS partition that will be erased by the bootloader if factory reset occurs (add this partition to :ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET`). In this NVS partition, create a "factory_reset_state" token that will be increased in the application. If the "factory_reset_state" is 0 then the factory reset has occurred.
 
 .. _bootloader_boot_from_test_firmware:
 
@@ -138,7 +143,7 @@ By default, the hardware RTC Watchdog timer remains running while the bootloader
 Bootloader Size
 ---------------
 
-{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64KB (0x10000 bytes)", esp32 = "48KB (0xC000 bytes)"}
+{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64 KB (0x10000 bytes)", esp32 = "48 KB (0xC000 bytes)"}
 {IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x12000", esp32 = "0xE000"}
 .. Above is calculated as 0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector
 
@@ -158,12 +163,12 @@ When Secure Boot V2 is enabled, there is also an absolute binary size limit of {
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    Fast boot from Deep Sleep
+    Fast Boot from Deep-Sleep
     -------------------------
 
-    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from deep sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
+    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from Deep-sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
 
-Custom bootloader
+Custom Bootloader
 -----------------
 
 The current bootloader implementation allows a project to extend it or modify it. There are two ways of doing it: by implementing hooks or by overriding it. Both ways are presented in :example:`custom_bootloader` folder in ESP-IDF examples:
