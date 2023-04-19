@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -47,7 +48,7 @@
 #define GATTS_TAG "GATTS_DEMO"
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
-#define GATTS_NOTIFY_LEN    490
+#define GATTS_NOTIFY_LEN    495
 static SemaphoreHandle_t gatts_semaphore;
 static bool can_send_notify = false;
 static uint8_t indicate_data[GATTS_NOTIFY_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a};
@@ -324,9 +325,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
 }
 
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
-    if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-        esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
-    }else{
+    if (param->exec_write.exec_write_flag != ESP_GATT_PREP_WRITE_EXEC){
         ESP_LOGI(GATTS_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
     }
     if (prepare_write_env->prepare_buf) {
@@ -378,7 +377,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_TEST_A);
         break;
     case ESP_GATTS_READ_EVT: {
-        ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
+        ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, conn_id %d, trans_id %" PRIu32 ", handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
         esp_gatt_rsp_t rsp;
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
         rsp.attr_value.handle = param->read.handle;
@@ -393,10 +392,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     }
     case ESP_GATTS_WRITE_EVT: {
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
-        ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep){
-            ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-            esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
             if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2){
                 uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
                 if (descr_value == 0x0001){
@@ -469,6 +465,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_MTU_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
+        is_connect = true;
         break;
     case ESP_GATTS_UNREG_EVT:
         break;
@@ -530,21 +527,11 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_STOP_EVT:
         break;
     case ESP_GATTS_CONNECT_EVT: {
-        is_connect = true;
-        esp_ble_conn_update_params_t conn_params = {0};
-        memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
-        /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
-        conn_params.latency = 0;
-        conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
-        conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms
-        conn_params.timeout = 400;    // timeout = 400*10ms = 4000ms
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:",
                  param->connect.conn_id,
                  param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
                  param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5]);
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
-        //start sent the update connection parameters to the peer device.
-        //esp_ble_gap_update_conn_params(&conn_params);
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
@@ -553,12 +540,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gap_start_advertising(&adv_params);
         break;
     case ESP_GATTS_CONF_EVT:
-        ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d", param->conf.status);
-#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
-        start_time = false;
-        current_time = 0;
-        write_len = 0;
-#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         break;
     case ESP_GATTS_OPEN_EVT:
     case ESP_GATTS_CANCEL_OPEN_EVT:
@@ -609,17 +590,15 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     } while (0);
 }
 
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 void throughput_server_task(void *param)
 {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     uint8_t sum = check_sum(indicate_data, sizeof(indicate_data) - 1);
     // Added the check sum in the last data value.
     indicate_data[GATTS_NOTIFY_LEN - 1] = sum;
-#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
     while(1) {
-#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
         if (!can_send_notify) {
             int res = xSemaphoreTake(gatts_semaphore, portMAX_DELAY);
             assert(res == pdTRUE);
@@ -635,25 +614,33 @@ void throughput_server_task(void *param)
                 } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                     vTaskDelay( 10 / portTICK_PERIOD_MS );
                 }
+            } else {
+                 vTaskDelay(300 / portTICK_PERIOD_MS);
             }
         }
-#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
-
-#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
-        uint32_t bit_rate = 0;
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-        if (start_time) {
-            current_time = esp_timer_get_time();
-            bit_rate = write_len * SECOND_TO_USECOND / (current_time - start_time);
-            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = %d Byte/s, = %d bit/s, time = %ds",
-                     bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
-        } else {
-            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = 0 Byte/s, = 0 bit/s");
-        }
-#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
     }
 }
+#endif
+
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
+void throughput_cal_task(void *param)
+{
+    while (1)
+    {
+        uint32_t bit_rate = 0;
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        if (is_connect && start_time) {
+            current_time = esp_timer_get_time();
+            bit_rate = write_len * SECOND_TO_USECOND / (current_time - start_time);
+            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time %d",
+                     bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+        }
+
+    }
+
+}
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
 void app_main(void)
 {
@@ -712,9 +699,17 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
+
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
     // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_server_task, "throughput_server_task", 4096, NULL, 15, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
+#endif
+
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
+    xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 14, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
+#endif
+
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     gatts_semaphore = xSemaphoreCreateBinary();
     if (!gatts_semaphore) {
