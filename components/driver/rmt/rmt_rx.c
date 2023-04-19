@@ -500,7 +500,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
     // sanity check
-    assert(offset > rx_chan->mem_off);
+    assert(offset >= rx_chan->mem_off);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
     // copy the symbols to user space
     size_t stream_symbols = offset - rx_chan->mem_off;
