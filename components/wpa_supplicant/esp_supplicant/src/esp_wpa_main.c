@@ -228,6 +228,11 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
     return ret;
 }
 
+static void wpa_sta_connected_cb(uint8_t *bssid)
+{
+    supplicant_sta_conn_handler(bssid);
+}
+
 static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
     switch (reason_code) {
@@ -250,6 +255,8 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 #ifdef CONFIG_OWE_STA
     owe_deinit();
 #endif /* CONFIG_OWE_STA */
+
+    supplicant_sta_disconn_handler();
 }
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
@@ -326,6 +333,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_sta_deinit     = wpa_deattach;
     wpa_cb->wpa_sta_rx_eapol   = wpa_sm_rx_eapol;
     wpa_cb->wpa_sta_connect    = wpa_sta_connect;
+    wpa_cb->wpa_sta_connected_cb    = wpa_sta_connected_cb;
     wpa_cb->wpa_sta_disconnected_cb = wpa_sta_disconnected_cb;
     wpa_cb->wpa_sta_in_4way_handshake = wpa_sta_in_4way_handshake;
 
