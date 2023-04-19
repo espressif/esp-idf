@@ -46,10 +46,6 @@ entries:
 archive: libesp_timer.a
 entries:
     if PM_SLP_IRAM_OPT = y:
-        # esp_timer_restart is called from task_wdt_timer_feed, so put it
-        # in IRAM if task_wdt_timer_feed itself is in IRAM.
-        if ESP_TASK_WDT_USE_ESP_TIMER = y:
-            esp_timer:esp_timer_restart (noflash)
         if ESP_TIMER_IMPL_TG0_LAC = y:
             esp_timer_impl_lac:esp_timer_impl_lock (noflash)
             esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
