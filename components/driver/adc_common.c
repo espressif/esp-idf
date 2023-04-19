@@ -21,6 +21,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_conf.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 #if SOC_DAC_SUPPORTED
 #include "driver/dac.h"
@@ -132,64 +133,28 @@ static esp_pm_lock_handle_t s_adc2_arbiter_lock;
                     ADC Common
 ---------------------------------------------------------------*/
 // ADC Power
-
-// This gets incremented when adc_power_acquire() is called, and decremented when
-// adc_power_release() is called. ADC is powered down when the value reaches zero.
-// Should be modified within critical section (ADC_ENTER/EXIT_CRITICAL).
-static int s_adc_power_on_cnt;
-
-static void adc_power_on_internal(void)
-{
-    /* Set the power always on to increase precision. */
-    adc_hal_set_power_manage(ADC_POWER_SW_ON);
-}
-
 void adc_power_acquire(void)
 {
-    ADC_POWER_ENTER();
-    s_adc_power_on_cnt++;
-    if (s_adc_power_on_cnt == 1) {
-        adc_power_on_internal();
-    }
-    ADC_POWER_EXIT();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
+    sar_periph_ctrl_adc_continuous_power_acquire();
 }
 
 void adc_power_on(void)
 {
-    ADC_POWER_ENTER();
-    adc_power_on_internal();
-    ADC_POWER_EXIT();
-}
-
-static void adc_power_off_internal(void)
-{
-#if CONFIG_IDF_TARGET_ESP32
-    adc_hal_set_power_manage(ADC_POWER_SW_OFF);
-#else
-    adc_hal_set_power_manage(ADC_POWER_BY_FSM);
-#endif
+    sar_periph_ctrl_adc_oneshot_power_acquire();
+    sar_periph_ctrl_adc_continuous_power_acquire();
 }
 
 void adc_power_release(void)
 {
-    ADC_POWER_ENTER();
-    s_adc_power_on_cnt--;
-    /* Sanity check */
-    if (s_adc_power_on_cnt < 0) {
-        ADC_POWER_EXIT();
-        ESP_LOGE(ADC_TAG, "%s called, but s_adc_power_on_cnt == 0", __func__);
-        abort();
-    } else if (s_adc_power_on_cnt == 0) {
-        adc_power_off_internal();
-    }
-    ADC_POWER_EXIT();
+    sar_periph_ctrl_adc_continuous_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
 }
 
 void adc_power_off(void)
 {
-    ADC_POWER_ENTER();
-    adc_power_off_internal();
-    ADC_POWER_EXIT();
+    sar_periph_ctrl_adc_continuous_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
 }
 
 esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
@@ -389,7 +354,7 @@ esp_err_t adc1_dma_mode_acquire(void)
     SARADC1_ACQUIRE();
     ESP_LOGD( ADC_TAG, "dma mode takes adc1 lock." );
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_continuous_power_acquire();
 
     SARADC1_ENTER();
     /* switch SARADC into DIG channel */
@@ -404,7 +369,7 @@ esp_err_t adc1_rtc_mode_acquire(void)
     /* Use locks to avoid digtal and RTC controller conflicts.
        for adc1, block until acquire the lock. */
     SARADC1_ACQUIRE();
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     SARADC1_ENTER();
     /* switch SARADC into RTC channel. */
@@ -419,7 +384,7 @@ esp_err_t adc1_lock_release(void)
     ADC_CHECK((uint32_t *)adc1_dma_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
     /* Use locks to avoid digtal and RTC controller conflicts. for adc1, block until acquire the lock. */
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
     SARADC1_RELEASE();
     return ESP_OK;
 }
@@ -460,7 +425,7 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 #if SOC_ULP_SUPPORTED
 void adc1_ulp_enable(void)
 {
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     SARADC1_ENTER();
     adc_ll_set_controller(ADC_NUM_1, ADC_LL_CTRL_ULP);
@@ -583,7 +548,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
         //try the lock, return if failed (wifi using).
         return ESP_ERR_TIMEOUT;
     }
-    adc_power_acquire();         //in critical section with whole rtc module
+    sar_periph_ctrl_adc_oneshot_power_acquire();         //in critical section with whole rtc module
 
     //avoid collision with other tasks
     adc2_init();   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
@@ -628,7 +593,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_IDF_TARGET_ESP32
     SARADC2_EXIT();
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
     SARADC2_RELEASE();
 
     *raw_out = adc_value;
@@ -659,7 +624,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
         return ESP_ERR_INVALID_ARG;
     }
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
     if (adc_unit & ADC_UNIT_1) {
         VREF_ENTER(1);
         adc_hal_vref_output(ADC_NUM_1, ch, true);

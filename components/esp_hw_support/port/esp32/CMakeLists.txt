@@ -16,7 +16,8 @@ if(NOT BOOTLOADER_BUILD)
                      "dport_access.c"
                      "esp_himem.c"
                      "spiram.c"
-                     "spiram_psram.c")
+                     "spiram_psram.c"
+                     "sar_periph_ctrl.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

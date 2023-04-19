@@ -39,6 +39,7 @@
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/i2s_platform.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 #include "sdkconfig.h"
 
@@ -1995,7 +1996,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 #if SOC_I2S_SUPPORTS_ADC
     /* If using built-in ADC, we need to enable ADC power manerge*/
     if (pre_alloc_i2s_obj->hal_cfg.mode & I2S_MODE_ADC_BUILT_IN) {
-        adc_power_acquire();
+        sar_periph_ctrl_adc_continuous_power_acquire();
     }
 #endif
     /* Enable module clock */

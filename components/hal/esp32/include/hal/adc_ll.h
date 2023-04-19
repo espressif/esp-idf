@@ -26,13 +26,6 @@ typedef enum {
 } adc_ll_num_t;
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
-    ADC_POWER_MAX,      /*!< For parameter check. */
-} adc_ll_power_t;
-
-typedef enum {
     ADC_RTC_DATA_OK = 0,
 } adc_ll_rtc_raw_data_t;
 
@@ -503,24 +496,6 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
-/**
- * Set ADC module power management.
- *
- * @param manage Set ADC power status.
- */
-static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
-{
-    /* Bit1  0:Fsm  1: SW mode
-       Bit0  0:SW mode power down  1: SW mode power on */
-    if (manage == ADC_POWER_SW_ON) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
-    } else if (manage == ADC_POWER_BY_FSM) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
-    } else if (manage == ADC_POWER_SW_OFF) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
-    }
-}
-
 /**
  * Set ADC module controller.
  * There are five SAR ADC controllers:
