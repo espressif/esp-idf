@@ -75,6 +75,15 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
     r |= (ip >= SOC_EXTRAM_DATA_LOW && ip < (SOC_EXTRAM_DATA_HIGH));
 #endif
 #endif
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
+     * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
+     * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
+     * Though this memory lies in the external memory vaddr, it is no different
+     * from the internal RAM in terms of hardware attributes. It is a part of
+     * the internal RAM when added to the heap and is byte-accessible .*/
+    r |= (ip >= SOC_DROM_LOW && ip < (SOC_DROM_LOW + 0x4000));
+#endif
     return r;
 }
 
@@ -87,6 +96,15 @@ inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
      * for single core configuration (where it gets added to system heap) following
      * additional check is required */
     r |= ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
+#endif
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
+     * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
+     * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
+     * Though this memory lies in the external memory vaddr, it is no different
+     * from the internal RAM in terms of hardware attributes and it is a part of
+     * the internal RAM when added to the heap.*/
+    r |= ((intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < (SOC_DROM_LOW + 0x4000));
 #endif
     return r;
 }
@@ -109,7 +127,18 @@ inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_drom(const void *p) {
-    return ((intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < SOC_DROM_HIGH);
+    uint32_t drom_start_addr = SOC_DROM_LOW;
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
+     * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
+     * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
+     * The drom_start_addr has to be moved by 0x4000 (16kB) to accomodate
+     * this addition. */
+    drom_start_addr += 0x4000;
+#endif
+
+    return ((intptr_t)p >= drom_start_addr && (intptr_t)p < SOC_DROM_HIGH);
+
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_dram(const void *p) {
