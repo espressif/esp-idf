@@ -170,7 +170,7 @@ Common priorities are:
         :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` host task has high priority (21).
         - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the priority is medium-high (15). This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
         - If using the :doc:`MQTT </api-reference/protocols/mqtt>` component, it creates a task with default priority 5 (:ref:`configurable<CONFIG_MQTT_TASK_PRIORITY>`, depends on :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` (also configurable runtime by ``task_prio`` field in the :cpp:class:`esp_mqtt_client_config_t`)
-        - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://espressif.github.io/esp-protocols/mdns/en/index.html#execution-speed>`__.
+        - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#execution-speed>`__.
 
 .. only :: not CONFIG_FREERTOS_UNICORE
 
