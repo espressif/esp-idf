@@ -141,8 +141,8 @@ J3
 12    IO16  I/O         GPIO16 [3]_
 13    IO4   I/O         GPIO4, ADC2_CH0, TOUCH_CH0
 14    IO0   I/O         GPIO0, ADC2_CH1, TOUCH_CH1, Boot
-16    IO2   I/O         GPIO2, ADC2_CH2, TOUCH_CH2
-17    IO15  I/O         GPIO15, ADC2_CH3, TOUCH_CH3, MTDO
+15    IO2   I/O         GPIO2, ADC2_CH2, TOUCH_CH2
+16    IO15  I/O         GPIO15, ADC2_CH3, TOUCH_CH3, MTDO
 17    D1    I/O         GPIO8, D1 [2]_
 18    D0    I/O         GPIO7, D0 [2]_
 19    CLK   I/O         GPIO6, CLK [2]_
