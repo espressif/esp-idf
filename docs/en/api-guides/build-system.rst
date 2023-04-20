@@ -354,6 +354,10 @@ To apply the compilation flags to a single source file, use the CMake `set_sourc
 
 This can be useful if there is upstream code that emits warnings.
 
+.. note::
+
+    CMake `set_source_files_properties`_ command is not applicable when the source files have been populated with help of the ``SRC_DIRS`` variable in ``idf_component_register``. See :ref:`cmake-file-globbing` for more details.
+
 When using these commands, place them after the call to ``idf_component_register`` in the component CMakeLists file.
 
 .. _component-configuration:
