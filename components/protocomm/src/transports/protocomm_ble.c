@@ -610,14 +610,15 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
         if (ret) {
             ESP_LOGE(TAG, "BLE stop failed");
         }
+        simple_ble_deinit();
 #else
 #ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
         /* Keep BT stack on, but terminate the connection after provisioning */
-	ret = simple_ble_disconnect();
-	if (ret) {
-	    ESP_LOGE(TAG, "BLE disconnect failed");
-	}
-	simple_ble_deinit();
+        ret = simple_ble_disconnect();
+        if (ret)
+        {
+            ESP_LOGE(TAG, "BLE disconnect failed");
+        }
 #endif  // CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
 #endif  // CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
 
