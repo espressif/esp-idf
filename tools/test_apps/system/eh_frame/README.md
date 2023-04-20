@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H4 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 |
+| ----------------- | -------- | -------- |
 
 # Building and running
 

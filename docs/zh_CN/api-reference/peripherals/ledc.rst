@@ -189,7 +189,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 32 MHz
          - 支持动态调频（DFS）功能
 
-.. only:: esp32h4
+.. only:: esp32h2
 
     .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
        :widths: 10 10 30

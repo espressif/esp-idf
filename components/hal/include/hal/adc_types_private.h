@@ -70,7 +70,7 @@ typedef enum {
  *        MONITOR_LOW: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
 typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     ADC_DIGI_MONITOR_DIS = 0,  /*!<Disable monitor. */
     ADC_DIGI_MONITOR_EN,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
                                /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */

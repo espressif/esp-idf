@@ -76,8 +76,6 @@
 #include "esp_private/mspi_timing_tuning.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
@@ -113,9 +111,6 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (382)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (133)
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
-#elif CONFIG_IDF_TARGET_ESP32H4
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #elif CONFIG_IDF_TARGET_ESP32C2

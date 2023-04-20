@@ -2,4 +2,4 @@
 
 examples/get-started/hello_world:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4"] # preview targets
+    - if: INCLUDE_DEFAULT == 1
