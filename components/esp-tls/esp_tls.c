@@ -74,6 +74,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_set_global_ca_store        esp_mbedtls_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
 #define _esp_tls_get_global_ca_store        esp_mbedtls_get_global_ca_store
 #define _esp_tls_free_global_ca_store       esp_mbedtls_free_global_ca_store                /*!< Callback function for freeing global ca store for TLS/SSL */
+#define _esp_tls_get_ciphersuites_list      esp_mbedtls_get_ciphersuites_list
 #elif CONFIG_ESP_TLS_USING_WOLFSSL /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #define _esp_create_ssl_handle              esp_create_wolfssl_handle
 #define _esp_tls_handshake                  esp_wolfssl_handshake
@@ -617,6 +618,10 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
     return _esp_tls_get_global_ca_store();
 }
 
+const int *esp_tls_get_ciphersuites_list(void)
+{
+    return _esp_tls_get_ciphersuites_list();
+}
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
