@@ -325,6 +325,8 @@
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY   (1)
 
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // AES-XTS key purpose not supported for this block
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
