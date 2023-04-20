@@ -541,6 +541,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 This option can be enabled for RISC-V targets only.
 
+        config COMPILER_DISABLE_DEFAULT_ERRORS
+            bool "Disable errors for default warnings"
+            default "y"
+            help
+                Enable this option if you do not want default warnings to be considered as errors,
+                especially when updating IDF.
+
+                This is a temporary flag that could help to allow upgrade while having
+                some time to address the warnings raised by those default warnings.
+                Alternatives are:
+                1) fix code (preferred),
+                2) remove specific warnings,
+                3) do not consider specific warnings as error.
+
         config COMPILER_DISABLE_GCC12_WARNINGS
             bool "Disable new warnings introduced in GCC 12"
             default "n"

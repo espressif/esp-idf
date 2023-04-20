@@ -201,6 +201,17 @@ if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
                                     "-Wno-dangling-reference")
 endif()
 
+if(CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS)
+    set(compiler_flags "-Wno-error")
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        list(APPEND compiler_flags "-Werror=all")
+    endif()
+
+    list(APPEND compile_options ${compiler_flags})
+    list(APPEND c_compile_options ${compiler_flags})
+    list(APPEND cxx_compile_options ${compiler_flags})
+endif()
+
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields")
