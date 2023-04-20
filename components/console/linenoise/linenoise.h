@@ -45,35 +45,33 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stddef.h>
+#include "../esp_linenoise.h"
 
-typedef struct linenoiseCompletions {
-  size_t len;
-  char **cvec;
-} linenoiseCompletions;
+typedef esp_linenoise_completions_t linenoiseCompletions;
+typedef esp_linenoise_completion_callback_t linenoiseCompletionCallback;
+typedef esp_linenoise_hints_callback_t linenoiseHintsCallback;
+typedef esp_linenoise_free_hints_callback_t linenoiseFreeHintsCallback;
 
-typedef void(linenoiseCompletionCallback)(const char *, linenoiseCompletions *);
-typedef char*(linenoiseHintsCallback)(const char *, int *color, int *bold);
-typedef void(linenoiseFreeHintsCallback)(void *);
 void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
 void linenoiseSetHintsCallback(linenoiseHintsCallback *);
 void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *);
 void linenoiseAddCompletion(linenoiseCompletions *, const char *);
 
-int linenoiseProbe(void);
-char *linenoise(const char *prompt);
-void linenoiseFree(void *ptr);
-int linenoiseHistoryAdd(const char *line);
-int linenoiseHistorySetMaxLen(int len);
-int linenoiseHistorySave(const char *filename);
-int linenoiseHistoryLoad(const char *filename);
-void linenoiseHistoryFree(void);
-void linenoiseClearScreen(void);
-void linenoiseSetMultiLine(int ml);
-void linenoiseSetDumbMode(int set);
-bool linenoiseIsDumbMode(void);
-void linenoisePrintKeyCodes(void);
-void linenoiseAllowEmpty(bool);
-int linenoiseSetMaxLineLen(size_t len);
+int   linenoiseProbe(void);
+char* linenoise(const char *prompt);
+void  linenoiseFree(void *ptr);
+int   linenoiseHistoryAdd(const char *line);
+int   linenoiseHistorySetMaxLen(int len);
+int   linenoiseHistorySave(const char *filename);
+int   linenoiseHistoryLoad(const char *filename);
+void  linenoiseHistoryFree(void);
+void  linenoiseClearScreen(void);
+void  linenoiseSetMultiLine(int ml);
+void  linenoiseSetDumbMode(int set);
+bool  linenoiseIsDumbMode(void);
+void  linenoisePrintKeyCodes(void);
+void  linenoiseAllowEmpty(bool);
+int   linenoiseSetMaxLineLen(size_t len);
 
 #ifdef __cplusplus
 }

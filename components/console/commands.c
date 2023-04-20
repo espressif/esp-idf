@@ -42,9 +42,6 @@ static SLIST_HEAD(cmd_list_, cmd_item_) s_cmd_list;
 /** run-time configuration options */
 static esp_console_config_t s_config;
 
-/** temporary buffer used for command line parsing */
-static char *s_tmp_line_buf;
-
 static const cmd_item_t *find_command_by_name(const char *name);
 
 esp_err_t esp_console_init(const esp_console_config_t *config)
@@ -52,27 +49,15 @@ esp_err_t esp_console_init(const esp_console_config_t *config)
     if (!config) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (s_tmp_line_buf) {
-        return ESP_ERR_INVALID_STATE;
-    }
     memcpy(&s_config, config, sizeof(s_config));
     if (s_config.hint_color == 0) {
         s_config.hint_color = ANSI_COLOR_DEFAULT;
-    }
-    s_tmp_line_buf = calloc(config->max_cmdline_length, 1);
-    if (s_tmp_line_buf == NULL) {
-        return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
 }
 
 esp_err_t esp_console_deinit(void)
 {
-    if (!s_tmp_line_buf) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    free(s_tmp_line_buf);
-    s_tmp_line_buf = NULL;
     cmd_item_t *it, *tmp;
     SLIST_FOREACH_SAFE(it, &s_cmd_list, next, tmp) {
         SLIST_REMOVE(&s_cmd_list, it, cmd_item_, next);
@@ -137,7 +122,7 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
     return ESP_OK;
 }
 
-void esp_console_get_completion(const char *buf, linenoiseCompletions *lc)
+void esp_console_get_completion(const char *buf, esp_linenoise_completions_t *lc)
 {
     size_t len = strlen(buf);
     if (len == 0) {
@@ -184,27 +169,32 @@ static const cmd_item_t *find_command_by_name(const char *name)
 
 esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
 {
-    if (s_tmp_line_buf == NULL) {
-        return ESP_ERR_INVALID_STATE;
+    char* tmp_line_buf = calloc(s_config.max_cmdline_length, 1);
+    if (tmp_line_buf == NULL) {
+        return ESP_ERR_NO_MEM;
     }
     char **argv = (char **) calloc(s_config.max_cmdline_args, sizeof(char *));
     if (argv == NULL) {
+        free(tmp_line_buf);
         return ESP_ERR_NO_MEM;
     }
-    strlcpy(s_tmp_line_buf, cmdline, s_config.max_cmdline_length);
+    strlcpy(tmp_line_buf, cmdline, s_config.max_cmdline_length);
 
-    size_t argc = esp_console_split_argv(s_tmp_line_buf, argv,
+    size_t argc = esp_console_split_argv(tmp_line_buf, argv,
                                          s_config.max_cmdline_args);
     if (argc == 0) {
+        free(tmp_line_buf);
         free(argv);
         return ESP_ERR_INVALID_ARG;
     }
     const cmd_item_t *cmd = find_command_by_name(argv[0]);
     if (cmd == NULL) {
+        free(tmp_line_buf);
         free(argv);
         return ESP_ERR_NOT_FOUND;
     }
     *cmd_ret = (*cmd->func)(argc, argv);
+    free(tmp_line_buf);
     free(argv);
     return ESP_OK;
 }

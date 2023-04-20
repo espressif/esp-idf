@@ -16,6 +16,7 @@ set(argtable_srcs argtable3/arg_cmd.c
 
 idf_component_register(SRCS "commands.c"
                             "esp_console_repl.c"
+                            "esp_linenoise.c"
                             "split_argv.c"
                             "linenoise/linenoise.c"
                             ${argtable_srcs}

@@ -12,9 +12,7 @@ extern "C" {
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
-
-// Forward declaration. Definition in linenoise/linenoise.h.
-typedef struct linenoiseCompletions linenoiseCompletions;
+#include "esp_linenoise.h"
 
 /**
  * @brief Parameters for console initialization
@@ -244,9 +242,9 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size);
  *   linenoiseSetCompletionCallback(&esp_console_get_completion);
  *
  * @param buf the string typed by the user
- * @param lc linenoiseCompletions to be filled in
+ * @param lc esp_linenoise_completions_t to be filled in
  */
-void esp_console_get_completion(const char *buf, linenoiseCompletions *lc);
+void esp_console_get_completion(const char *buf, esp_linenoise_completions_t *lc);
 
 /**
  * @brief Callback which provides command hints for linenoise library
