@@ -92,6 +92,12 @@ test_certificate_bundle_on_host:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
 
+test_gdbstub_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/esp_gdbstub/test_gdbstub_host
+    - make test
+
 
 test_idf_py:
   extends: .host_test_template
