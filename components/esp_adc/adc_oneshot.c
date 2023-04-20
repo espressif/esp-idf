@@ -17,6 +17,7 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"
@@ -112,7 +113,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     _lock_release(&s_ctx.mutex);
 #endif
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
     *ret_unit = unit;
@@ -209,7 +210,7 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     ESP_LOGD(TAG, "adc unit%"PRId32" is deleted", handle->unit_id);
     free(handle);
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To free the APB_SARADC periph if needed
