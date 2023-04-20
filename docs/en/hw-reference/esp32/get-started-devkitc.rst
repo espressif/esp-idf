@@ -67,10 +67,10 @@ The following figure and the table below describe the key components, interfaces
       - Reset button.
     * - Boot
       - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
-    * - USB-to-UART Bridge 
+    * - USB-to-UART Bridge
       - Single USB-UART bridge chip provides transfer rates of up to 3 Mbps.
     * - Micro USB Port
-      - USB interface. Power supply for the board as well as the communication interface between a computer and the ESP32-WROOM-32 module. 
+      - USB interface. Power supply for the board as well as the communication interface between a computer and the ESP32-WROOM-32 module.
     * - 5V Power On LED
       - Turns on when the USB or an external 5V power supply is connected to the board. For details see the schematics in `Related Documents`_.
     * - I/O
@@ -141,15 +141,15 @@ No.  Name  Type [1]_   Function
 12   IO16  I/O         GPIO16 [3]_
 13   IO4   I/O         GPIO4, ADC2_CH0, TOUCH_CH0
 14   IO0   I/O         GPIO0, ADC2_CH1, TOUCH_CH1, Boot
-16   IO2   I/O         GPIO2, ADC2_CH2, TOUCH_CH2
-17   IO15  I/O         GPIO15, ADC2_CH3, TOUCH_CH3, MTDO
+15   IO2   I/O         GPIO2, ADC2_CH2, TOUCH_CH2
+16   IO15  I/O         GPIO15, ADC2_CH3, TOUCH_CH3, MTDO
 17   D1    I/O         GPIO8, D1 [2]_
 18   D0    I/O         GPIO7, D0 [2]_
 19   CLK   I/O         GPIO6, CLK [2]_
 ===  ====  ==========  ===============================================
 
 .. [1] P: Power supply; I: Input; O: Output.
-.. [2] The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM. 
+.. [2] The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM.
 .. [3] The pins GPIO16 and GPIO17 are available for use only on the boards with the modules ESP32-WROOM and ESP32-SOLO-1. The boards with ESP32-WROVER modules have the pins reserved for internal use.
 
 Pin Layout
@@ -161,7 +161,7 @@ Pin Layout
 
     ESP32-DevKitC Pin Layout (click to enlarge)
 
-    
+
 Note on C15
 -----------
 
@@ -210,7 +210,7 @@ Related Documents
 * `ESP32-WROOM-DA Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
-* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
 
