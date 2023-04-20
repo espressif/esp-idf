@@ -39,6 +39,13 @@ void dumpBytes(const uint8_t *data, size_t count)
     }
 }
 
+bool memeq(void *a, size_t a_len, void *b, size_t b_len)
+{
+    if (a_len != b_len) {
+        return false;
+    }
+    return memcmp(a, b, a_len) == 0;
+}
 
 TEST_CASE("Page handles invalid CRC of variable length items", "[nvs][cur]")
 {
@@ -793,12 +800,12 @@ TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
     size_t buflen = 64;
     uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
     TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
-    CHECK(memcmp(buf, hexdata, buflen) == 0);
+    CHECK(memeq(buf, buflen, hexdata, sizeof(hexdata)));
 
     buflen = 64;
     uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
     TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
-    CHECK(memcmp(buf, base64data, buflen) == 0);
+    CHECK(memeq(buf, buflen, base64data, sizeof(base64data)));
 
     nvs::Page p;
     p.load(&part, 0);
@@ -822,7 +829,7 @@ TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
     /* Read the blob in new format and check the contents*/
     buflen = 64;
     TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
-    CHECK(memcmp(buf, base64data, buflen) == 0);
+    CHECK(memeq(buf, buflen, base64data, sizeof(base64data)));
 
     TEST_ESP_OK(nvs_flash_deinit_partition(part.get_partition_name()));
 }
@@ -886,21 +893,21 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
     size_t buflen = 64;
     int j;
     TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
-    CHECK(memcmp(buf, hexdata, buflen) == 0);
+    CHECK(memeq(buf, buflen, hexdata, sizeof(hexdata)));
 
     uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
     TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
-    CHECK(memcmp(buf, base64data, buflen) == 0);
+    CHECK(memeq(buf, buflen, base64data, sizeof(base64data)));
 
     buflen = 64;
     uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
     TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
-    CHECK(memcmp(buf, hexfiledata, buflen) == 0);
+    CHECK(memeq(buf, buflen, hexfiledata, sizeof(hexfiledata)));
 
     buflen = 64;
-    uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
+    const char strfiledata[64] = "abcdefghijklmnopqrstuvwxyz";
     TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
-    CHECK(memcmp(buf, strfiledata, buflen) == 0);
+    CHECK(strcmp(buf, strfiledata) == 0);
 
     char bin_data[5200];
     size_t bin_len = sizeof(bin_data);
@@ -908,8 +915,9 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
     ifstream file;
     file.open(filename);
     file.read(binfiledata,5200);
+    size_t binfile_len = file.gcount();
     TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
-    CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
+    CHECK(memeq(bin_data, bin_len, binfiledata, binfile_len));
 
     file.close();
 
@@ -971,21 +979,21 @@ static void check_nvs_part_gen_args_mfg(SpiFlashEmulator *spi_flash_emulator,
     buflen = 64;
     int j;
     TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
-    CHECK(memcmp(buf, hexdata, buflen) == 0);
+    CHECK(memeq(buf, buflen, hexdata, sizeof(hexdata)));
 
     uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
     TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
-    CHECK(memcmp(buf, base64data, buflen) == 0);
+    CHECK(memeq(buf, buflen, base64data, sizeof(base64data)));
 
     buflen = 64;
     uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
     TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
-    CHECK(memcmp(buf, hexfiledata, buflen) == 0);
+    CHECK(memeq(buf, buflen, hexfiledata, sizeof(hexfiledata)));
 
     buflen = 64;
-    uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
+    const char strfiledata[64] = "abcdefghijklmnopqrstuvwxyz";
     TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
-    CHECK(memcmp(buf, strfiledata, buflen) == 0);
+    CHECK(strcmp(buf, strfiledata) == 0);
 
     char bin_data[5200];
     size_t bin_len = sizeof(bin_data);
@@ -993,8 +1001,9 @@ static void check_nvs_part_gen_args_mfg(SpiFlashEmulator *spi_flash_emulator,
     ifstream file;
     file.open(filename);
     file.read(binfiledata,5200);
+    size_t binfile_len = file.gcount();
     TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
-    CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
+    CHECK(memeq(bin_data, bin_len, binfiledata, binfile_len));
 
     file.close();
 
