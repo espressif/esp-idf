@@ -13,6 +13,7 @@ from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, U
 
 import click
 import yaml
+from esp_idf_monitor import get_ansi_converter
 from idf_py_actions.errors import NoSerialPortFoundError
 
 from .constants import GENERATORS
@@ -193,7 +194,7 @@ def fit_text_in_terminal(out: str) -> str:
 
 class RunTool:
     def __init__(self, tool_name: str, args: List, cwd: str, env: Dict=None, custom_error_handler: FunctionType=None, build_dir: str=None,
-                 hints: bool=True, force_progression: bool=False, interactive: bool=False) -> None:
+                 hints: bool=True, force_progression: bool=False, interactive: bool=False, convert_output: bool=False) -> None:
         self.tool_name = tool_name
         self.args = args
         self.cwd = cwd
@@ -204,6 +205,7 @@ class RunTool:
         self.hints = hints
         self.force_progression = force_progression
         self.interactive = interactive
+        self.convert_output = convert_output
 
     def __call__(self) -> None:
         def quote_arg(arg: str) -> str:
@@ -303,6 +305,9 @@ class RunTool:
                         # and still can not decode it we can just ignore some bytes
                         return buffer.decode(errors='ignore')
 
+        # use ANSI color converter for Monitor on Windows
+        output_converter = get_ansi_converter(output_stream) if self.convert_output else output_stream
+
         try:
             with open(output_filename, 'w', encoding='utf8') as output_file:
                 while True:
@@ -325,8 +330,8 @@ class RunTool:
                         # print output in progression way but only the progression related (that started with '[') and if verbose flag is not set
                         print_progression(output)
                     else:
-                        output_stream.write(output)
-                        output_stream.flush()
+                        output_converter.write(output)
+                        output_converter.flush()
         except (RuntimeError, EnvironmentError) as e:
             yellow_print('WARNING: The exception {} was raised and we can\'t capture all your {} and '
                          'hints on how to resolve errors can be not accurate.'.format(e, output_stream.name.strip('<>')))
