@@ -466,6 +466,9 @@ if __name__ == '__main__':
             else:
                 check_dirs.add(p)
 
+        if 'tools/idf_py_actions/constants.py' in arg.paths or 'tools/ci/check_build_test_rules.py' in arg.paths:
+            check_all = True
+
         if check_all:
             check_dirs = {IDF_PATH}
             _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'unit-test-app'),
