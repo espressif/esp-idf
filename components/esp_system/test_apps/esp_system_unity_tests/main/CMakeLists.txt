@@ -2,7 +2,8 @@ set(requires "unity"
              "test_utils"
              "driver"
              "esp_timer"
-             "nvs_flash")
+             "nvs_flash"
+             "esp_psram")
 
 set(SRC  "test_app_main.c"
          "test_backtrace.c"
