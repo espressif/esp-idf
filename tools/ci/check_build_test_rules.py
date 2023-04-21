@@ -32,6 +32,7 @@ USUAL_TO_FORMAL = {
     'esp32c2': 'ESP32-C2',
     'esp32c6': 'ESP32-C6',
     'esp32h2': 'ESP32-H2',
+    'esp32h4': 'ESP32-H4',
     'linux': 'Linux',
 }
 
@@ -43,6 +44,7 @@ FORMAL_TO_USUAL = {
     'ESP32-C2': 'esp32c2',
     'ESP32-C6': 'esp32c6',
     'ESP32-H2': 'esp32h2',
+    'ESP32-H4': 'esp32h4',
     'Linux': 'linux',
 }
 
@@ -103,7 +105,7 @@ def check_readme(
             for part in support_string[0].split('\n', 1)[0].split('|')
             if part.strip()
         ]
-        return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:]]
+        return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:] if part in FORMAL_TO_USUAL]
 
     def check_enable_build(_app: App, _old_supported_targets: List[str]) -> bool:
         if _app.supported_targets == sorted(_old_supported_targets):
