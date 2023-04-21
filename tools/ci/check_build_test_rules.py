@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -467,6 +467,9 @@ if __name__ == '__main__':
                 check_dirs.add(os.path.dirname(p))
             else:
                 check_dirs.add(p)
+
+        if 'tools/idf_py_actions/constants.py' in arg.paths or 'tools/ci/check_build_test_rules.py' in arg.paths:
+            check_all = True
 
         if check_all:
             check_dirs = {IDF_PATH}
