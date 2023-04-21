@@ -184,6 +184,11 @@ if(CONFIG_COMPILER_DISABLE_GCC12_WARNINGS)
                                 "-Wno-use-after-free")
 endif()
 
+if(CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS)
+    list(APPEND compile_options "-Wno-error"
+                                "-Werror=all")
+endif()
+
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields"
