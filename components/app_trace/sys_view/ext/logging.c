@@ -18,7 +18,7 @@ int esp_sysview_vprintf(const char * format, va_list args)
     portENTER_CRITICAL(&s_log_mutex);
     size_t len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
     if (len > sizeof(log_buffer) - 1) {
-        log_buffer[sizeof(log_buffer - 1)] = 0;
+        log_buffer[sizeof(log_buffer) - 1] = 0;
     }
     SEGGER_SYSVIEW_Print(log_buffer);
     portEXIT_CRITICAL(&s_log_mutex);
