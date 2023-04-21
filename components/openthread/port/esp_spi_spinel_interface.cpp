@@ -51,7 +51,7 @@ esp_err_t SpiSpinelInterface::Init(const esp_openthread_spi_host_config_t &spi_c
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     ESP_RETURN_ON_ERROR(gpio_config(&io_conf), OT_PLAT_LOG_TAG, "fail to config spi gpio");
-    ESP_RETURN_ON_ERROR(gpio_install_isr_service(0), OT_PLAT_LOG_TAG, "fail to install gpio isr service");
+    gpio_install_isr_service(0); // The gpio isr service may has been installed.
     ESP_RETURN_ON_ERROR(gpio_isr_handler_add(spi_config.intr_pin, GpioIntrHandler, this), OT_PLAT_LOG_TAG,
                         "fail to add gpio isr handler");
     m_has_pending_device_frame = false;
