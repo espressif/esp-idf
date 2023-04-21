@@ -135,7 +135,6 @@ typedef struct vhci_host_callback {
 
 typedef struct {
     void *handle;
-    void *storage;
 } btdm_queue_item_t;
 
 typedef void (* osi_intr_handler)(void);
@@ -511,16 +510,10 @@ static void *semphr_create_wrapper(uint32_t max, uint32_t init)
     btdm_queue_item_t *semphr = heap_caps_calloc(1, sizeof(btdm_queue_item_t), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     assert(semphr);
 
-#if !CONFIG_SPIRAM_USE_MALLOC
+    /* IDF FreeRTOS guarantees that all dynamic memory allocation goes to internal RAM. */
     semphr->handle = (void *)xSemaphoreCreateCounting(max, init);
-#else
-
-    semphr->storage = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    assert(semphr->storage);
-
-    semphr->handle = (void *)xSemaphoreCreateCountingStatic(max, init, semphr->storage);
-#endif
     assert(semphr->handle);
+
     return semphr;
 }
 
@@ -535,11 +528,6 @@ static void semphr_delete_wrapper(void *semphr)
     if (semphr_item->handle) {
         vSemaphoreDelete(semphr_item->handle);
     }
-#ifdef CONFIG_SPIRAM_USE_MALLOC
-    if (semphr_item->storage) {
-        free(semphr_item->storage);
-    }
-#endif
 
     free(semphr);
 }
@@ -595,18 +583,9 @@ static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
     queue = (btdm_queue_item_t*)heap_caps_malloc(sizeof(btdm_queue_item_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     assert(queue);
 
-#if CONFIG_SPIRAM_USE_MALLOC
-
-    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    assert(queue->storage);
-
-    queue->handle = xQueueCreateStatic( queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
-    assert(queue->handle);
-
-#else
+    /* IDF FreeRTOS guarantees that all dynamic memory allocation goes to internal RAM. */
     queue->handle = xQueueCreate( queue_len, item_size);
     assert(queue->handle);
-#endif
 
     return queue;
 }
@@ -618,13 +597,6 @@ static void queue_delete_wrapper(void *queue)
         if(queue_item->handle){
             vQueueDelete(queue_item->handle);
         }
-
-#if CONFIG_SPIRAM_USE_MALLOC
-        if (queue_item->storage) {
-            free(queue_item->storage);
-        }
-#endif
-
         free(queue_item);
     }
 }
