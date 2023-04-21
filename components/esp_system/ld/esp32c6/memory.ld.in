@@ -91,9 +91,9 @@ MEMORY
    */
 #if CONFIG_ULP_COPROC_ENABLED
   lp_ram_seg(RW)  :                 org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                    len = 0x4000 - CONFIG_ULP_COPROC_RESERVE_MEM
+                                    len = 0x4000 - CONFIG_ULP_COPROC_RESERVE_MEM - ESP_BOOTLOADER_RESERVE_RTC
 #else
-  lp_ram_seg(RW)  :                 org = 0x50000000 , len = 0x4000
+  lp_ram_seg(RW)  :                 org = 0x50000000 , len = 0x4000 - ESP_BOOTLOADER_RESERVE_RTC
 #endif // CONFIG_ULP_COPROC_ENABLED
 
 }
