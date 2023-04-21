@@ -116,6 +116,8 @@ struct wpa_sm {
     u16 owe_group;
     struct wpabuf *owe_ie;
 #endif /* CONFIG_OWE_STA */
+    int (*wpa_sm_wps_disable)(void);
+    esp_err_t (*wpa_sm_wpa2_ent_disable)(void);
 };
 
 /**

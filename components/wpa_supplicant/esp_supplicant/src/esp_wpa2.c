@@ -817,6 +817,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void)
 {
     wifi_wpa2_param_t param;
     esp_err_t ret;
+    struct wpa_sm *sm = &gWpaSm;
 
     wpa2_api_lock();
 
@@ -833,6 +834,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void)
 
     if (ESP_OK == ret) {
         wpa2_set_state(WPA2_STATE_ENABLED);
+        sm->wpa_sm_wpa2_ent_disable = esp_wifi_sta_wpa2_ent_disable;
     } else {
         wpa_printf(MSG_ERROR, "failed to enable wpa2 ret=%d", ret);
     }
@@ -844,6 +846,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void)
 
 esp_err_t esp_wifi_sta_wpa2_ent_disable_fn(void *param)
 {
+    struct wpa_sm *sm = &gWpaSm;
     wpa_printf(MSG_INFO, "WPA2 ENTERPRISE VERSION: [%s] disable", WPA2_VERSION);
     esp_wifi_unregister_wpa2_cb_internal();
 
@@ -855,6 +858,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_disable_fn(void *param)
     eap_peer_unregister_methods();
 #endif
 
+    sm->wpa_sm_wpa2_ent_disable = NULL;
     return ESP_OK;
 }
 
