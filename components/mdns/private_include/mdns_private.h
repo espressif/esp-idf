@@ -385,6 +385,7 @@ typedef struct mdns_server_s {
     mdns_srv_item_t * services;
     SemaphoreHandle_t lock;
     QueueHandle_t action_queue;
+    SemaphoreHandle_t action_sema;
     mdns_tx_packet_t * tx_queue_head;
     mdns_search_once_t * search_once;
     esp_timer_handle_t timer_handle;
@@ -395,7 +396,6 @@ typedef struct {
     union {
         struct {
             char * hostname;
-            xTaskHandle calling_task;
         } hostname_set;
         char * instance;
         struct {
