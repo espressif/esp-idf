@@ -95,6 +95,12 @@ static inline BaseType_t xPortInIsrContext(void)
     return xPortCheckIfInISR();
 }
 
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+/* If enabled, users must provide an implementation of vPortCleanUpTCB() */
+extern void vPortCleanUpTCB ( void *pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
+#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+
 #ifdef __cplusplus
 }
 #endif

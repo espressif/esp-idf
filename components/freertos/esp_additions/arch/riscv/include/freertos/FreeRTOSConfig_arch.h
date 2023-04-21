@@ -25,9 +25,24 @@
 #define configMINIMAL_STACK_SIZE                       ( CONFIG_FREERTOS_IDLE_TASK_STACKSIZE + configSTACK_OVERHEAD_TOTAL )
 #define configMAX_API_CALL_INTERRUPT_PRIORITY          0
 
+/* ---------------- Amazon SMP FreeRTOS -------------------- */
+
+#if CONFIG_FREERTOS_SMP
+    #define configUSE_CORE_AFFINITY                  1
+
+/* This is always enabled to call IDF style idle hooks, by can be "--Wl,--wrap"
+ * if users enable CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK. */
+    #define configUSE_MINIMAL_IDLE_HOOK             1
+
+    /* IDF Newlib supports dynamic reentrancy. We provide our own __getreent()
+     * function. */
+    #define configNEWLIB_REENTRANT_IS_DYNAMIC       1
+#endif
+
 /* ----------------------- System -------------------------- */
 
 #define configUSE_NEWLIB_REENTRANT                   1
+
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    1
 
 /* ----------------------- Memory  ------------------------- */
@@ -48,6 +63,7 @@
 
 #define INCLUDE_xTaskDelayUntil              1
 #define INCLUDE_xTaskGetCurrentTaskHandle    1
+#define INCLUDE_uxTaskGetStackHighWaterMark2 1
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *

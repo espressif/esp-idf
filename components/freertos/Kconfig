@@ -154,6 +154,7 @@ menu "FreeRTOS"
         config FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
             bool "configENABLE_BACKWARD_COMPATIBILITY"
             default n
+            depends on !IDF_TARGET_LINUX
             help
                 Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
                 configENABLE_BACKWARD_COMPATIBILITY documentation for more details).

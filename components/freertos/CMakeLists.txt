@@ -42,18 +42,24 @@ set(include_dirs
                                              #      or #include "esp_private/freertos_idf_additions_priv.h"
     "esp_additions/arch/${arch}/include")    # For #include "freertos/FreeRTOSConfig_arch.h"
 
+if(CONFIG_FREERTOS_SMP)
+    list(APPEND include_dirs "${kernel_dir}/portable/${arch}/include/freertos") # Xtensa headers via #include "xx.h"
+endif()
+
 set(private_include_dirs
     "${kernel_dir}/portable/${arch}/include/freertos"
     "${kernel_dir}/portable/${arch}"
     "${kernel_dir}/include/freertos"   # FreeRTOS headers via #include "xxx.h"
+    "esp_additions"                    # For include "freertos_tasks_c_additions.h"
     .)
 
 set(private_requirements "")
 
 if(${target} STREQUAL "linux")
-    list(APPEND srcs
-        "${kernel_dir}/portable/${arch}/port_idf.c"
-        "${kernel_dir}/portable/${arch}/utils/wait_for_event.c")
+    list(APPEND srcs "${kernel_dir}/portable/${arch}/utils/wait_for_event.c")
+    if(NOT CONFIG_FREERTOS_SMP)
+        list(APPEND srcs "${kernel_dir}/portable/${arch}/port_idf.c")
+    endif()
 else()
     list(APPEND srcs
         "app_startup.c"
@@ -61,12 +67,8 @@ else()
         "port_common.c"
         "${kernel_dir}/portable/${arch}/portasm.S")
 
-    list(APPEND private_include_dirs
-        "esp_additions")    # For #include "freertos_tasks_c_additions.h"
-
     if(CONFIG_FREERTOS_SMP)
         set(ldfragments linker_smp.lf linker_common.lf)
-        list(APPEND include_dirs "${kernel_dir}/portable/${arch}/include/freertos") # Xtensa headers via #include "xx.h"
     else()
         list(APPEND srcs
             "${kernel_dir}/portable/port_systick.c"

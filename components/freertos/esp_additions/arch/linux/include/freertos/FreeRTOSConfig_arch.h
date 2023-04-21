@@ -29,10 +29,18 @@
 /* Currently not used in Linux POSIX simulator */
 #define configMAX_API_CALL_INTERRUPT_PRIORITY      0
 
+/* ---------------- Amazon SMP FreeRTOS -------------------- */
+
+#if CONFIG_FREERTOS_SMP
+    #define configUSE_MINIMAL_IDLE_HOOK              0   // Not implemented yet, TODO IDF-6654
+#endif
+
 /* ----------------------- System -------------------------- */
 
+/* On the Linux simulator, we use the system-provided libc */
 #define configUSE_NEWLIB_REENTRANT                   0
-#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    0
+
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    1
 
 /* ----------------------- Memory  ------------------------- */
 
@@ -46,6 +54,7 @@
 
 #define INCLUDE_xTaskGetCurrentTaskHandle    0                /* not defined in POSIX simulator */
 #define INCLUDE_vTaskDelayUntil              1
+#define INCLUDE_uxTaskGetStackHighWaterMark2 0
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *
