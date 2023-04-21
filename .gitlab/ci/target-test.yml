@@ -1239,13 +1239,6 @@ UT_006:
     - ESP32_IDF
     - EMMC
 
-UT_022:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T2_I2C
-    - psram
-
 UT_028:
   extends: .unit_test_esp32_template
   tags:
@@ -1317,12 +1310,6 @@ UT_C3_FLASH:
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
-
-UT_C3_I2C:
-  extends: .unit_test_esp32c3_template
-  tags:
-    - ESP32C3_IDF
-    - UT_T2_I2C
 
 UT_C3_SDSPI:
   extends:
