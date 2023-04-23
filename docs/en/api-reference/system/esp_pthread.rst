@@ -30,7 +30,7 @@ Example to tune the stack size of the pthread:
         cfg.stack_size = (4 * 1024);
         esp_pthread_set_cfg(&cfg);
 
-        pthread_create(&t1, NULL, thread_func);
+        pthread_create(&t1, NULL, thread_func, NULL);
     }
 
 The API can also be used for inheriting the settings across threads. For example:
@@ -49,7 +49,7 @@ The API can also be used for inheriting the settings across threads. For example
     {
         printf("In my_thread1\n");
         pthread_t t2;
-        pthread_create(&t2, NULL, my_thread2);
+        pthread_create(&t2, NULL, my_thread2, NULL);
 
         return NULL;
     }
@@ -63,7 +63,7 @@ The API can also be used for inheriting the settings across threads. For example
         cfg.inherit_cfg = true;
         esp_pthread_set_cfg(&cfg);
 
-        pthread_create(&t1, NULL, my_thread1);
+        pthread_create(&t1, NULL, my_thread1, NULL);
     }
 
 API Reference
