@@ -73,6 +73,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, cfg.slow_clk_dcap);
     REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
 
+    clk_ll_rc_fast_tick_conf();
+
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
