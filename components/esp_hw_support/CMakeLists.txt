@@ -27,8 +27,8 @@ if(NOT BOOTLOADER_BUILD)
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
                      "port/${target}/io_mux.c"
-                     "port/${target}/clk_tree.c"
-                     "port/clk_tree_common.c")
+                     "port/${target}/esp_clk_tree.c"
+                     "port/esp_clk_tree_common.c")
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")

@@ -22,7 +22,7 @@
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_continuous.h"
 #include "hal/adc_types.h"
@@ -523,7 +523,7 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
 #endif
 
     uint32_t clk_src_freq_hz = 0;
-    clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
 
     handle->hal_digi_ctrlr_cfg.adc_pattern_len = config->pattern_num;
     handle->hal_digi_ctrlr_cfg.sample_freq_hz = config->sample_freq_hz;

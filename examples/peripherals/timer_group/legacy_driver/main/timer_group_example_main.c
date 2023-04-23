@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/timer.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_log.h"
 
 #define TIMER_RESOLUTION_HZ   1000000 // 1MHz resolution
@@ -64,7 +64,7 @@ static void example_tg_timer_init(example_timer_user_data_t *user_data)
     int timer = user_data->timer_idx;
 
     uint32_t clk_src_hz = 0;
-    ESP_ERROR_CHECK(clk_tree_src_get_freq_hz((soc_module_clk_t)TIMER_SRC_CLK_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz));
+    ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)TIMER_SRC_CLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz));
     timer_config_t config = {
         .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = clk_src_hz / TIMER_RESOLUTION_HZ,

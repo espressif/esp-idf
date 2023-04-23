@@ -15,7 +15,7 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "esp_adc/adc_oneshot.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
@@ -102,7 +102,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         clk_src = init_config->clk_src;
     }
     uint32_t clk_src_freq_hz = 0;
-    ESP_GOTO_ON_ERROR(clk_tree_src_get_freq_hz(clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz), err, TAG, "clock source not supported");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz), err, TAG, "clock source not supported");
 
     adc_oneshot_hal_cfg_t config = {
         .unit = init_config->unit_id,

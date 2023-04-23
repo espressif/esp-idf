@@ -19,7 +19,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_heap_caps.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_log.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
@@ -100,7 +100,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     uint32_t clock_source_hz;
 // Test main clock source
 #if SOC_SPI_SUPPORT_CLK_PLL_F80M
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F80M, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F80M, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source PLL_80M = %ld\n", clock_source_hz);
     TEST_ASSERT((80 * 1000 * 1000) == clock_source_hz);
     for (int i = 0; i < TEST_CLK_TIMES; i++) {
@@ -109,7 +109,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 #endif
 
 #if SOC_SPI_SUPPORT_CLK_PLL_F48M
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F48M, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F48M, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source PLL_48M = %ld\n", clock_source_hz);
     TEST_ASSERT((48 * 1000 * 1000) == clock_source_hz);
     for (int i = 0; i < TEST_CLK_TIMES; i++) {
@@ -118,7 +118,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 #endif
 
 #if SOC_SPI_SUPPORT_CLK_AHB
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_AHB, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_AHB, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source AHB = %ld\n", clock_source_hz);
     TEST_ASSERT((48 * 1000 * 1000) == clock_source_hz);
     for (int i = 0; i < TEST_CLK_TIMES; i++) {
@@ -127,7 +127,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 #endif
 
 #if SOC_SPI_SUPPORT_CLK_PLL_F40M
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F40M, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F40M, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source PLL_40M = %ld\n", clock_source_hz);
     TEST_ASSERT((40 * 1000 * 1000) == clock_source_hz);
     for (int i = 0; i < TEST_CLK_TIMES; i++) {
@@ -136,7 +136,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 #endif
 
 #if SOC_SPI_SUPPORT_CLK_APB
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_APB, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_APB, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source APB = %ld\n", clock_source_hz);
     TEST_ASSERT((80 * 1000 * 1000) == clock_source_hz);
     for (int i = 0; i < TEST_CLK_TIMES; i++) {
@@ -146,7 +146,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test XTAL clock source
 #if SOC_SPI_SUPPORT_CLK_XTAL
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_XTAL, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source XTAL = %ld\n", clock_source_hz);
     if((40 * 1000 * 1000) == clock_source_hz){
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
@@ -162,7 +162,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test RC fast osc clock source
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
-    clk_tree_src_get_freq_hz(SPI_CLK_SRC_RC_FAST, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_RC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source RC_FAST = %ld\n", clock_source_hz);
     if((17500000) == clock_source_hz){
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
