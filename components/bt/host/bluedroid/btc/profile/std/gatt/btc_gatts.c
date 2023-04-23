@@ -498,6 +498,11 @@ esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *lengt
      return BTA_GetAttributeValue(attr_handle, length, value);
 }
 
+esp_gatt_status_t btc_gatts_show_local_database(void)
+{
+    BTA_GATTS_ShowLocalDatabase();
+    return ESP_GATT_OK;
+}
 
 static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_src)
 {
@@ -741,6 +746,9 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         BTA_GATTS_SendServiceChangeIndication(arg->send_service_change.gatts_if, remote_bda);
         break;
     }
+    case BTC_GATTS_ACT_SHOW_LOCAL_DATABASE:
+        BTA_GATTS_ShowLocalDatabase();
+        break;
     default:
         break;
     }

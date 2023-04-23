@@ -133,6 +133,9 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
     case BTA_GATTS_API_SEND_SERVICE_CHANGE_EVT:
         bta_gatts_send_service_change_indication((tBTA_GATTS_DATA *) p_msg);
         break;
+    case BTA_GATTS_API_SHOW_LOCAL_DATABASE_EVT:
+        bta_gatts_show_local_database();
+        break;
     default:
         break;
     }
