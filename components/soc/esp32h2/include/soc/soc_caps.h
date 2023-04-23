@@ -208,6 +208,7 @@
 #define SOC_I2C_NUM                 (2U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
