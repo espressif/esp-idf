@@ -19,7 +19,7 @@
 #include "driver/mcpwm_types_legacy.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_private/esp_clk.h"
 
 static const char *TAG = "mcpwm(legacy)";
@@ -225,7 +225,7 @@ esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, uint32_t resolution
 {
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     uint32_t clk_src_hz = 0;
-    clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
+    esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
 
     int pre_scale_temp = clk_src_hz / resolution;
     ESP_RETURN_ON_FALSE(pre_scale_temp >= 1, ESP_ERR_INVALID_ARG, TAG, "invalid resolution");
@@ -415,7 +415,7 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     mcpwm_hal_init(hal, &config);
 
     uint32_t clk_src_hz = 0;
-    clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
+    esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
     uint32_t group_resolution = mcpwm_group_get_resolution(mcpwm_num);
     uint32_t timer_resolution = mcpwm_timer_get_resolution(mcpwm_num, timer_num);
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
@@ -812,7 +812,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     mcpwm_hal_init(hal, &init_config);
 
     uint32_t clk_src_hz = 0;
-    clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
+    esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
     uint32_t group_resolution = mcpwm_group_get_resolution(mcpwm_num);
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
 

@@ -36,7 +36,7 @@
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/i2s_platform.h"
 #include "soc/lcd_periph.h"
@@ -608,7 +608,7 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
 {
     // get clock source frequency
     uint32_t src_clk_hz = 0;
-    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
 
     // I2S clock source is binary compatible with lcd_clock_source_t

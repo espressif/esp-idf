@@ -14,7 +14,7 @@
 #endif
 #include "esp_log.h"
 #include "esp_check.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
@@ -115,7 +115,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
                         "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
 
     if (do_clock_init) {
-        ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz(clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
+        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
 
 #if CONFIG_PM_ENABLE
         sprintf(group->pm_lock_name, "mcpwm_%d", group->group_id); // e.g. mcpwm_0

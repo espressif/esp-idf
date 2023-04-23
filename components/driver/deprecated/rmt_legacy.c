@@ -21,7 +21,7 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/rmt_periph.h"
 #include "soc/rmt_struct.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
 #include "hal/gpio_hal.h"
@@ -567,18 +567,18 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     if (rmt_param->flags & RMT_CHANNEL_FLAGS_AWARE_DFS) {
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
-        clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_XTAL, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
         rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_XTAL, 1, 0, 0);
 #elif SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK
-        clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_REF, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_REF, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
         rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_REF, 1, 0, 0);
 #else
 #error "No clock source is aware of DFS"
 #endif
     } else {
         // fallback to use default clock source
-        clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
         rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_DEFAULT, 1, 0, 0);
     }
     RMT_EXIT_CRITICAL();

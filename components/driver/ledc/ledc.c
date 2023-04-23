@@ -11,7 +11,7 @@
 #include "esp_check.h"
 #include "soc/gpio_periph.h"
 #include "soc/ledc_periph.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
 #include "hal/gpio_hal.h"
@@ -32,11 +32,11 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
 // Precision degree only affects RC_FAST, other clock sources' frequences are fixed values
 // For targets that do not support RC_FAST calibration, can only use its approx. value. Precision degree other than
-// APPROX will trigger LOGW during the call to `clk_tree_src_get_freq_hz`.
+// APPROX will trigger LOGW during the call to `esp_clk_tree_src_get_freq_hz`.
 #if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-#define LEDC_CLK_SRC_FREQ_PRECISION     CLK_TREE_SRC_FREQ_PRECISION_CACHED
+#define LEDC_CLK_SRC_FREQ_PRECISION     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED
 #else
-#define LEDC_CLK_SRC_FREQ_PRECISION     CLK_TREE_SRC_FREQ_PRECISION_APPROX
+#define LEDC_CLK_SRC_FREQ_PRECISION     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX
 #endif
 
 typedef enum {
@@ -317,7 +317,7 @@ static inline uint32_t ledc_auto_global_clk_divisor(int freq_hz, uint32_t precis
             continue;
         }
 
-        clk_tree_src_get_freq_hz((soc_module_clk_t)s_glb_clks[i], LEDC_CLK_SRC_FREQ_PRECISION, &clk_freq);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)s_glb_clks[i], LEDC_CLK_SRC_FREQ_PRECISION, &clk_freq);
         uint32_t div_param = ledc_calculate_divisor(clk_freq, freq_hz, precision);
 
         /* If the divisor is valid, we can return this value. */
@@ -339,7 +339,7 @@ static inline uint32_t ledc_auto_timer_specific_clk_divisor(ledc_mode_t speed_mo
     uint32_t clk_freq = 0;
 
     for (int i = 0; i < DIM(s_timer_specific_clks); i++) {
-        clk_tree_src_get_freq_hz((soc_module_clk_t)s_timer_specific_clks[i], LEDC_CLK_SRC_FREQ_PRECISION, &clk_freq);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)s_timer_specific_clks[i], LEDC_CLK_SRC_FREQ_PRECISION, &clk_freq);
         uint32_t div_param = ledc_calculate_divisor(clk_freq, freq_hz, precision);
 
         /* If the divisor is valid, we can return this value. */
@@ -356,7 +356,7 @@ static inline uint32_t ledc_auto_timer_specific_clk_divisor(ledc_mode_t speed_mo
      * to test APB. */
     if (speed_mode == LEDC_HIGH_SPEED_MODE && ret == LEDC_CLK_NOT_FOUND) {
         /* No divider was found yet, try with APB! */
-        clk_tree_src_get_freq_hz((soc_module_clk_t)LEDC_APB_CLK, LEDC_CLK_SRC_FREQ_PRECISION, &clk_freq);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)LEDC_APB_CLK, LEDC_CLK_SRC_FREQ_PRECISION, &clk_freq);
         uint32_t div_param = ledc_calculate_divisor(clk_freq, freq_hz, precision);
 
         if (!LEDC_IS_DIV_INVALID(div_param)) {
@@ -466,7 +466,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         }
 
         uint32_t src_clk_freq = 0;
-        clk_tree_src_get_freq_hz((soc_module_clk_t)clk_cfg, LEDC_CLK_SRC_FREQ_PRECISION, &src_clk_freq);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_cfg, LEDC_CLK_SRC_FREQ_PRECISION, &src_clk_freq);
         div_param = ledc_calculate_divisor(src_clk_freq, freq_hz, precision);
         if (LEDC_IS_DIV_INVALID(div_param)) {
             div_param = LEDC_CLK_NOT_FOUND;
@@ -775,7 +775,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clk_cfg);
     uint32_t precision = (0x1 << duty_resolution);
     uint32_t src_clk_freq = 0;
-    clk_tree_src_get_freq_hz((soc_module_clk_t)clk_cfg, LEDC_CLK_SRC_FREQ_PRECISION, &src_clk_freq);
+    esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_cfg, LEDC_CLK_SRC_FREQ_PRECISION, &src_clk_freq);
     portEXIT_CRITICAL(&ledc_spinlock);
     if (clock_divider == 0) {
         ESP_LOGW(LEDC_TAG, "LEDC timer not configured, call ledc_timer_config to set timer frequency");
