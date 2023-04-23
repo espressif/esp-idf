@@ -1279,6 +1279,17 @@ extern tGATT_STATUS GATTS_SetServiceChangeMode(UINT8 mode);
 *******************************************************************************/
 extern tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tuples, UINT16 num_tuples);
 
+/*******************************************************************************
+**
+** Function         GATTS_ShowLocalDatabase
+**
+** Description      This function print local service database.
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+extern tGATT_STATUS GATTS_ShowLocalDatabase(void);
+
 #ifdef __cplusplus
 
 }

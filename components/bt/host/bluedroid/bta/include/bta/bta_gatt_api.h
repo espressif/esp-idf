@@ -1542,6 +1542,16 @@ void BTA_GATTS_SendServiceChangeIndication(tBTA_GATTS_IF server_if, BD_ADDR remo
 extern void BTA_GATTS_Listen(tBTA_GATTS_IF server_if, BOOLEAN start,
                              BD_ADDR_PTR target_bda);
 
+/*******************************************************************************
+**
+** Function         BTA_GATTS_ShowLocalDatabase
+**
+** Description      print local service database.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_GATTS_ShowLocalDatabase(void);
 
 extern void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id);
 
