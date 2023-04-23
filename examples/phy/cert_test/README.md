@@ -115,7 +115,10 @@ I (191970) phy: BT TX TONE STOP!
 phy>
 ```
 
+## PHY Commands Format
+
+For BLE test, if you want to use `fcc_le_tx` and `rw_le_rx_per` legacy commands for tx/rx test, you need to enable `ESP_PHY_LEGACY_COMMANDS` in menuconfig, otherwise, the new format commands `esp_ble_tx` and `esp_ble_rx` are supported.
+
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
-

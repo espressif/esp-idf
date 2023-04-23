@@ -29,6 +29,11 @@ static phy_ble_rx_t     phy_ble_rx_args;
 static phy_bt_tx_tone_t phy_bt_tx_tone_args;
 #endif
 
+#if CONFIG_ESP_PHY_LEGACY_COMMANDS
+#define arg_int0(_a, _b, _c, _d) arg_int0(NULL, NULL, _c, _d)
+#define arg_int1(_a, _b, _c, _d) arg_int1(NULL, NULL, _c, _d)
+#endif
+
 static int esp_phy_tx_contin_en_func(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &phy_args);
@@ -487,7 +492,11 @@ void register_phy_cmd(void)
     phy_ble_tx_args.end       = arg_end(1);
 
     const esp_console_cmd_t esp_ble_tx_cmd = {
+#if CONFIG_ESP_PHY_NEW_COMMANDS
         .command = "esp_ble_tx",
+#elif CONFIG_ESP_PHY_LEGACY_COMMANDS
+        .command = "fcc_le_tx",
+#endif
         .help = "BLE TX command",
         .hint = NULL,
         .func = &esp_phy_ble_tx_func,
@@ -501,7 +510,11 @@ void register_phy_cmd(void)
     phy_ble_rx_args.end     = arg_end(1);
 
     const esp_console_cmd_t esp_ble_rx_cmd = {
+#if CONFIG_ESP_PHY_NEW_COMMANDS
         .command = "esp_ble_rx",
+#elif CONFIG_ESP_PHY_LEGACY_COMMANDS
+        .command = "rw_le_rx_per",
+#endif
         .help = "BLE RX command",
         .hint = NULL,
         .func = &esp_phy_ble_rx_func,
