@@ -60,7 +60,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
     :esp32:     - 速度模式 :cpp:type:`ledc_mode_t`
     :not esp32: - 速度模式（值必须为 ``LEDC_LOW_SPEED_MODE``）
     - 定时器索引 :cpp:type:`ledc_timer_t`
-    - PWM 信号频率
+    - PWM 信号频率（Hz）
     - PWM 占空比分辨率
     - 时钟源 :cpp:type:`ledc_clk_cfg_t`
 
@@ -221,6 +221,14 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
         2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
+
+当一个定时器不再被任何通道所需要时，可以通过调用相同的函数 :cpp:func:`ledc_timer_config` 来重置这个定时器。此时，函数入参的配置结构体需要指定：
+
+-  :cpp:member:`ledc_timer_config_t::speed_mode` 重置定时器的所属速度模式 （:cpp:type:`ledc_mode_t`）
+
+-  :cpp:member:`ledc_timer_config_t::timer_num` 重置定时器的索引 （:cpp:type:`ledc_timer_t`）
+
+-  :cpp:member:`ledc_timer_config_t::deconfigure` 将指定定时器重置必须配置此项为 true
 
 
 .. _ledc-api-configure-channel:

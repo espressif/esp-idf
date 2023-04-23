@@ -232,6 +232,21 @@ static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
 }
 
 /**
+ * @brief Get LEDC max duty
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
+ * @param max_duty Pointer to accept the max duty
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t *max_duty)
+{
+    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_res));
+}
+
+/**
  * @brief Update channel configure when select low speed mode
  *
  * @param hw Beginning address of the peripheral registers
@@ -243,22 +258,6 @@ static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
 static inline void ledc_ll_ls_channel_update(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
     hw->channel_group[speed_mode].channel[channel_num].conf0.para_up = 1;
-}
-
-/**
- * @brief Get LEDC max duty
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param max_duty Pointer to accept the max duty
- *
- * @return None
- */
-static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *max_duty)
-{
-    uint32_t timer_sel = hw->channel_group[speed_mode].channel[channel_num].conf0.timer_sel;
-    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_res));
 }
 
 /**
@@ -337,21 +336,6 @@ static inline void ledc_ll_set_duty_direction(ledc_dev_t *hw, ledc_mode_t speed_
 }
 
 /**
- * @brief Get LEDC duty change direction
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param duty_direction Pointer to accept the LEDC duty change direction, increase or decrease
- *
- * @return None
- */
-static inline void ledc_ll_get_duty_direction(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, ledc_duty_direction_t *duty_direction)
-{
-    *duty_direction = (ledc_duty_direction_t)(hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_duty_inc);
-}
-
-/**
  * @brief Set the number of increased or decreased times
  *
  * @param hw Beginning address of the peripheral registers
@@ -394,6 +378,25 @@ static inline void ledc_ll_set_duty_cycle(ledc_dev_t *hw, ledc_mode_t speed_mode
 static inline void ledc_ll_set_duty_scale(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_scale)
 {
     hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_scale = duty_scale;
+}
+
+/**
+ * @brief Function to set fade parameters all-in-one
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param dir LEDC duty change direction, increase or decrease
+ * @param cycle The duty cycles
+ * @param scale The step scale
+ * @param step The number of increased or decreased times
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
+{
+    uint32_t val = (dir << LEDC_CH0_GAMMA_DUTY_INC_S) | (cycle << LEDC_CH0_GAMMA_DUTY_CYCLE_S) | (scale << LEDC_CH0_GAMMA_SCALE_S) | (step << LEDC_CH0_GAMMA_DUTY_NUM_S);
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.val = val;
 }
 
 /**
@@ -469,7 +472,7 @@ static inline void ledc_ll_set_duty_range_rd_addr(ledc_dev_t *hw, ledc_mode_t sp
  *
  * @return None
  */
-static inline void ledc_ll_get_duty_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+static inline void ledc_ll_get_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
 {
     uint32_t val = hw->channel_gamma_group[speed_mode].channel[channel_num].rd_data.gamma_rd_data;
     *dir = (val & LEDC_CH0_GAMMA_DUTY_INC_M) >> LEDC_CH0_GAMMA_DUTY_INC_S;
