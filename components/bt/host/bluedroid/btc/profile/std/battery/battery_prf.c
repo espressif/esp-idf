@@ -112,12 +112,13 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
                   p_data->add_result.char_uuid.uu.uuid16);
         UINT16 char_uuid = p_data->add_result.char_uuid.uu.uuid16;
         UINT16 service_id = p_data->add_result.service_id;
-        if (char_uuid == GATT_UUID_BATTERY_LEVEL) {
-            bas_AddCharDescr(service_id, p_data->add_result.attr_id);
-        }
-        if (char_uuid == GATT_UUID_SYSTEM_ID | GATT_UUID_MODEL_NUMBER_STR | GATT_UUID_PNP_ID |
-                GATT_UUID_SERIAL_NUMBER_STR | GATT_UUID_FW_VERSION_STR | GATT_UUID_HW_VERSION_STR |
-                GATT_UUID_SW_VERSION_STR | GATT_UUID_MANU_NAME | GATT_UUID_IEEE_DATA) {
+        UINT16 uuid_len = p_data->add_result.char_uuid.len;
+
+        if (uuid_len == ESP_UUID_LEN_16) {
+            if (char_uuid == GATT_UUID_BATTERY_LEVEL) {
+                bas_AddCharDescr(service_id, p_data->add_result.attr_id);
+            }
+
             switch (char_uuid) {
             case GATT_UUID_SYSTEM_ID:
                 dis_cb.dis_attr[0].handle = service_id; break;
@@ -138,6 +139,8 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
             case GATT_UUID_PNP_ID:
                 dis_cb.dis_attr[8].handle = service_id; break;
             }
+            default:
+                break;
         }
     }
     break;
