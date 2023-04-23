@@ -248,13 +248,18 @@ def get_pytest_cases(
     # collect all cases
     os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
 
-    cases = []
+    cases = []  # type: List[PytestCase]
+    pytest_scripts = get_pytest_files(paths)
+    if not pytest_scripts:
+        print(f'WARNING: no pytest scripts found for target {target} under paths {", ".join(paths)}')
+        return cases
+
     for target in targets:
         collector = PytestCollectPlugin(target)
 
         with io.StringIO() as buf:
             with redirect_stdout(buf):
-                cmd = ['--collect-only', *get_pytest_files(paths), '--target', target, '-q']
+                cmd = ['--collect-only', *pytest_scripts, '--target', target, '-q']
                 if marker_expr:
                     cmd.extend(['-m', marker_expr])
                 if filter_expr:
