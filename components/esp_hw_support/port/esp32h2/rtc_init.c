@@ -22,6 +22,9 @@
 #include "esp_efuse_table.h"
 #include "i2c_pmu.h"
 #include "soc/clkrst_reg.h"
+#ifndef BOOTLOADER_BUILD
+#include "esp_private/sar_periph_ctrl.h"
+#endif
 
 void pmu_ctl(void);
 void dcdc_ctl(uint32_t mode);
@@ -132,6 +135,11 @@ void rtc_init(rtc_config_t cfg)
     }
     /* config dcdc frequency */
     REG_SET_FIELD(RTC_CNTL_DCDC_CTRL0_REG, RTC_CNTL_FSW_DCDC, RTC_CNTL_DCDC_FREQ_DEFAULT);
+
+#ifndef BOOTLOADER_BUILD
+    //initialise SAR related peripheral register settings
+    sar_periph_ctrl_init();
+#endif
 }
 
 void pmu_ctl(void)

@@ -22,6 +22,9 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_private/spi_flash_os.h"
+#ifndef BOOTLOADER_BUILD
+#include "esp_private/sar_periph_ctrl.h"
+#endif
 
 
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
@@ -194,6 +197,11 @@ void rtc_init(rtc_config_t cfg)
 
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+
+#ifndef BOOTLOADER_BUILD
+    //initialise SAR related peripheral register settings
+    sar_periph_ctrl_init();
+#endif
 }
 
 rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
