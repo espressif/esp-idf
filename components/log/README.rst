@@ -7,8 +7,8 @@ Overview
 The logging library provides two ways for setting log verbosity:
 
 - **At compile time**: in menuconfig, set the verbosity level using the option :ref:`CONFIG_LOG_DEFAULT_LEVEL`.
-- Optionally, also in menuconfig, set the maximum verbosity level using the option :ref:`CONFIG_LOG_MAXIMUM_LEVEL`. By default this is the same as the default level, but it can be set higher in order to compile more optional logs into the firmware.
-- **At runtime**: all logs for verbosity levels lower than :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. The function :cpp:func:`esp_log_level_set` can be used to set a logging level on a per module basis. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
+- Optionally, also in menuconfig, set the maximum verbosity level using the option :ref:`CONFIG_LOG_MAXIMUM_LEVEL`. By default, this is the same as the default level, but it can be set higher in order to compile more optional logs into the firmware.
+- **At runtime**: all logs for verbosity levels lower than :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. The function :cpp:func:`esp_log_level_set` can be used to set a logging level on a per-module basis. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
 
 There are the following verbosity levels:
 
@@ -86,3 +86,7 @@ Logging to Host via JTAG
 
 By default, the logging library uses the vprintf-like function to write formatted output to the dedicated UART. By calling a simple API, all log output may be routed to JTAG instead, making logging several times faster. For details, please refer to Section :ref:`app_trace-logging-to-host`.
 
+Thread Safety
+^^^^^^^^^^^^^
+
+The log string is first written into a memory buffer and then sent to the UART for printing. Log calls are thread-safe, i.e., logs of different threads do not conflict with each other.
