@@ -8,6 +8,36 @@
 #include "smp_int.h"
 
 #if (BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
+
+const char *const gatt_attr_name[] = {
+    "primary service",
+    "secondary service",
+    "included service",
+    "characteristic",
+};
+
+const char *const gatt_char_desc_name[] = {
+    "characteristic extended properties",
+    "characteristic user description",
+    "client characteristic configuration",
+    "server characteristic configuration",
+    "characteristic presentation format",
+    "characteristic aggregate format",
+};
+
+static const char *gatt_get_attr_name(UINT16 uuid)
+{
+    if (uuid >= GATT_UUID_PRI_SERVICE && uuid <= GATT_UUID_CHAR_DECLARE) {
+        return gatt_attr_name[uuid - GATT_UUID_PRI_SERVICE];
+    }
+
+    if (uuid >= GATT_UUID_CHAR_EXT_PROP && uuid <= GATT_UUID_CHAR_AGG_FORMAT) {
+        return gatt_char_desc_name[uuid - GATT_UUID_CHAR_EXT_PROP];
+    }
+
+    return "Unknown Attribute";
+}
+
 static void attr_uuid_to_bt_uuid(void *p_attr, tBT_UUID *p_uuid)
 {
     tGATT_ATTR16 *p_attr16 = (tGATT_ATTR16 *)p_attr;
@@ -164,5 +194,63 @@ tGATT_STATUS gatts_calculate_datebase_hash(BT_OCTET16 hash)
 
     osi_free(data_buf);
     return GATT_SUCCESS;
+}
+
+void gatts_show_local_database(void)
+{
+    UINT8 i;
+    tGATT_SVC_DB *p_db;
+    tGATT_ATTR16 *p_attr;
+
+    printf("\n================= GATTS DATABASE DUMP START =================\n");
+    for (i = 0; i < GATT_MAX_SR_PROFILES; i++) {
+        p_db = gatt_cb.sr_reg[i].p_db;
+        if (p_db && p_db->p_attr_list) {
+            p_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
+            while (p_attr) {
+                switch (p_attr->uuid) {
+                case GATT_UUID_PRI_SERVICE:
+                case GATT_UUID_SEC_SERVICE:
+                    // Service declaration
+                    printf("%s\n", gatt_get_attr_name(p_attr->uuid));
+                    printf("\tuuid %s\n", gatt_uuid_to_str(&p_attr->p_value->uuid));
+                    printf("\thandle %d\n", p_attr->handle);
+                    printf("\tend_handle %d\n",p_db->end_handle-1);
+                    break;
+                case GATT_UUID_INCLUDE_SERVICE:
+                    // Included service declaration
+                    printf("%s\n", gatt_get_attr_name(p_attr->uuid));
+                    printf("\tuuid %s\t", gatt_uuid_to_str(&p_attr->p_value->incl_handle.service_type));
+                    printf("\thandle %d\n", p_attr->p_value->incl_handle.s_handle);
+                    printf("\tend_handle %d\n", p_attr->p_value->incl_handle.e_handle);
+                    break;
+                case GATT_UUID_CHAR_DECLARE: {
+                    tBT_UUID char_uuid;
+                    tGATT_ATTR16 *p_char_val;
+                    p_char_val = (tGATT_ATTR16 *)p_attr->p_next;
+                    attr_uuid_to_bt_uuid((void *)p_char_val, &char_uuid);
+
+                    printf("%s\n", gatt_get_attr_name(p_attr->uuid));
+                    printf("\tuuid %s\n", gatt_uuid_to_str(&char_uuid));
+                    printf("\tdef_handle %d\n", p_attr->handle);
+                    printf("\tval_handle %d\n", p_attr->p_value->char_decl.char_val_handle);
+                    printf("\tperm 0x%04x, prop 0x%02x\n", p_char_val->permission, p_attr->p_value->char_decl.property);
+                    break;
+                }
+                case GATT_UUID_CHAR_EXT_PROP:
+                case GATT_UUID_CHAR_DESCRIPTION:
+                case GATT_UUID_CHAR_CLIENT_CONFIG:
+                case GATT_UUID_CHAR_SRVR_CONFIG:
+                case GATT_UUID_CHAR_PRESENT_FORMAT:
+                case GATT_UUID_CHAR_AGG_FORMAT:
+                    printf("%s\n", gatt_get_attr_name(p_attr->uuid));
+                    printf("\thandle %d\n", p_attr->handle);
+                    break;
+                }
+                p_attr = (tGATT_ATTR16 *) p_attr->p_next;
+            }
+        }
+    }
+    printf("================= GATTS DATABASE DUMP END =================\n");
 }
 #endif  /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */
