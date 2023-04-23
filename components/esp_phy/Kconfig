@@ -99,7 +99,7 @@ menu "PHY"
 
     config ESP_PHY_REDUCE_TX_POWER
         bool "Reduce PHY TX power when brownout reset"
-        depends on ESP_BROWNOUT_DET
+        depends on ESP32_BROWNOUT_DET || ESP32S2_BROWNOUT_DET || ESP32C3_BROWNOUT_DET || ESP32S3_BROWNOUT_DET
         default n
         help
             When brownout reset occurs, reduce PHY TX power to keep the code running.
