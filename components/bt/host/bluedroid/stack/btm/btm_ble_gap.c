@@ -1068,7 +1068,18 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *
 #else
 uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb)
 {
+    if((*own_bda_type == BLE_ADDR_RANDOM) || (*own_bda_type == BLE_ADDR_RANDOM_ID)) {
+        if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) != BTM_BLE_GAP_ADDR_BIT_RANDOM) {
+            BTM_TRACE_ERROR("No random address yet, please set random address and try\n");
+            if(cb) {
+                (* cb)(HCI_ERR_ESP_VENDOR_FAIL);
+            }
+            return BTM_ILLEGAL_VALUE;
+        }
+    }
+
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = *own_bda_type;
+
     return BTM_SUCCESS;
 }
 #endif
