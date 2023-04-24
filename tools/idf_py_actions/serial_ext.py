@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -156,14 +156,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
-        hints = False  # Temporarily disabled because of https://github.com/espressif/esp-idf/issues/9610
+        hints = not args.no_hints
 
         # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
         old_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         try:
-            RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True)()
+            RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True, convert_output=True)()
         finally:
             signal.signal(signal.SIGINT, old_handler)
 
