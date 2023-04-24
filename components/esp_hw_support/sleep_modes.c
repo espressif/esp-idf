@@ -87,6 +87,7 @@
 #include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_clock.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp_private/sleep_retention.h"
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
@@ -510,6 +511,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+        sleep_retention_do_system_retention(true);
+#endif
     }
 
     // TODO: IDF-7370
@@ -523,6 +527,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+    sleep_retention_do_system_retention(false);
+#endif
     sar_periph_ctrl_power_enable();
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
