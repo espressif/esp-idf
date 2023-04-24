@@ -17,12 +17,11 @@
 #include "ble_spp_server.h"
 #include "driver/uart.h"
 
-static const char *tag = "NimBLE_SPP_BLE_PRPH";
 static int ble_spp_server_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
 int gatt_svr_register(void);
 QueueHandle_t spp_common_uart_queue = NULL;
-int connection_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+static bool conn_handle_subs[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 static uint16_t ble_spp_svc_gatt_read_val_handle;
 
 void ble_store_config_init(void);
@@ -151,7 +150,6 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             ble_spp_server_print_conn_desc(&desc);
-            connection_handle[event->connect.conn_handle] = event->connect.conn_handle;
         }
         MODLOG_DFLT(INFO, "\n");
         if (event->connect.status != 0 || CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1) {
@@ -165,7 +163,7 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
         ble_spp_server_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
 
-        connection_handle[event->disconnect.conn.conn_handle] = -1;
+        conn_handle_subs[event->disconnect.conn.conn_handle] = false;
 
         /* Connection terminated; resume advertising. */
         ble_spp_server_advertise();
@@ -192,6 +190,19 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
                     event->mtu.conn_handle,
                     event->mtu.channel_id,
                     event->mtu.value);
+        return 0;
+
+    case BLE_GAP_EVENT_SUBSCRIBE:
+        MODLOG_DFLT(INFO, "subscribe event; conn_handle=%d attr_handle=%d "
+                    "reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
+                    event->subscribe.conn_handle,
+                    event->subscribe.attr_handle,
+                    event->subscribe.reason,
+                    event->subscribe.prev_notify,
+                    event->subscribe.cur_notify,
+                    event->subscribe.prev_indicate,
+                    event->subscribe.cur_indicate);
+        conn_handle_subs[event->subscribe.conn_handle] = true;
         return 0;
 
     default:
@@ -233,7 +244,7 @@ ble_spp_server_on_sync(void)
 
 void ble_spp_server_host_task(void *param)
 {
-    ESP_LOGI(tag, "BLE Host Task Started");
+    MODLOG_DFLT(INFO, "BLE Host Task Started");
     /* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();
 
@@ -245,15 +256,15 @@ static int  ble_svc_gatt_handler(uint16_t conn_handle, uint16_t attr_handle, str
 {
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
-        ESP_LOGI(tag, "Callback for read");
+        MODLOG_DFLT(INFO, "Callback for read");
         break;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
-        ESP_LOGI(tag, "Data received in write event,conn_handle = %x,attr_handle = %x", conn_handle, attr_handle);
+        MODLOG_DFLT(INFO, "Data received in write event,conn_handle = %x,attr_handle = %x", conn_handle, attr_handle);
         break;
 
     default:
-        ESP_LOGI(tag, "\nDefault Callback");
+        MODLOG_DFLT(INFO, "\nDefault Callback");
         break;
     }
     return 0;
@@ -271,7 +282,7 @@ static const struct ble_gatt_svc_def new_ble_svc_gatt_defs[] = {
                 .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_CHR_UUID16),
                 .access_cb = ble_svc_gatt_handler,
                 .val_handle = &ble_spp_svc_gatt_read_val_handle,
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY,
             }, {
                 0, /* No more characteristics */
             }
@@ -337,7 +348,7 @@ int gatt_svr_init(void)
 
 void ble_server_uart_task(void *pvParameters)
 {
-    ESP_LOGI(tag, "BLE server UART_task started\n");
+    MODLOG_DFLT(INFO, "BLE server UART_task started\n");
     uart_event_t event;
     int rc = 0;
     for (;;) {
@@ -347,19 +358,22 @@ void ble_server_uart_task(void *pvParameters)
             //Event of UART receving data
             case UART_DATA:
                 if (event.size) {
-                    static uint8_t ntf[1];
-                    ntf[0] = 90;
-                    for ( int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
-                        if (connection_handle[i] != -1) {
+                    uint8_t *ntf;
+                    ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    memset(ntf, 0x00, event.size);
+                    uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
+
+                    for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+                        /* Check if client has subscribed to notifications */
+                        if (conn_handle_subs[i]) {
                             struct os_mbuf *txom;
                             txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
-                            rc = ble_gatts_notify_custom(connection_handle[i],
-                                                         ble_spp_svc_gatt_read_val_handle,
+                            rc = ble_gatts_notify_custom(i, ble_spp_svc_gatt_read_val_handle,
                                                          txom);
-                            if ( rc == 0 ) {
-                                ESP_LOGI(tag, "Notification sent successfully");
+                            if (rc == 0) {
+                                MODLOG_DFLT(INFO, "Notification sent successfully");
                             } else {
-                                ESP_LOGI(tag, "Error in sending notification rc = %d", rc);
+                                MODLOG_DFLT(INFO, "Error in sending notification rc = %d", rc);
                             }
                         }
                     }
@@ -414,7 +428,7 @@ app_main(void)
 
     /* Initialize connection_handle array */
     for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
-        connection_handle[i] = -1;
+        conn_handle_subs[i] = false;
     }
 
     /* Initialize uart driver and start uart task */
