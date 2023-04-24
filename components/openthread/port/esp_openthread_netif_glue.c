@@ -68,9 +68,9 @@ static bool is_addr_locator(const otIp6Address *address)
     return address->mFields.m32[2] == 0xff000000 && address->mFields.m16[6] == 0xfe;
 }
 
-static bool is_openthread_internal_mesh_local_addr(const otIp6AddressInfo *address_info)
+bool is_openthread_internal_mesh_local_addr(const otIp6Address *address)
 {
-    return is_addr_locator(address_info->mAddress) && is_mesh_local_addr(address_info->mAddress);
+    return is_addr_locator(address) && is_mesh_local_addr(address);
 }
 
 static esp_err_t notify_packets_pending(void)
@@ -89,7 +89,7 @@ static void process_thread_address(const otIp6AddressInfo *address_info, bool is
     bool is_multicast = address_info->mAddress->mFields.m8[0] == 0xff;
     esp_ip6_addr_t addr;
 
-    if (is_openthread_internal_mesh_local_addr(address_info)) {
+    if (is_openthread_internal_mesh_local_addr(address_info->mAddress)) {
         return;
     }
 
