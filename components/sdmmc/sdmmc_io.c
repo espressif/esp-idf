@@ -93,6 +93,9 @@ esp_err_t sdmmc_init_io(sdmmc_card_t* card)
         card->is_sdio = 1;
 
         if (card->ocr & SD_IO_OCR_MEM_PRESENT) {
+            ESP_LOGD(TAG, "%s: Combination card", __func__);
+            card->is_mem = 1;
+        } else {
             ESP_LOGD(TAG, "%s: IO-only card", __func__);
             card->is_mem = 0;
         }
