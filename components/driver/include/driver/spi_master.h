@@ -384,6 +384,18 @@ void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dum
   */
 int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns);
 
+/**
+ * @brief Get max length (in bytes) of one transaction
+ *
+ * @param       host_id    SPI peripheral
+ * @param[out]  max_bytes  Max length of one transaction, in bytes
+ *
+ * @return
+ *        - ESP_OK:               On success
+ *        - ESP_ERR_INVALID_ARG:  Invalid argument
+ */
+esp_err_t spi_bus_get_max_transaction_len(spi_host_device_t host_id, size_t *max_bytes);
+
 #ifdef __cplusplus
 }
 #endif
