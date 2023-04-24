@@ -768,9 +768,6 @@ components/soc/esp32/include/soc/apb_ctrl_reg.h
 components/soc/esp32/include/soc/apb_ctrl_struct.h
 components/soc/esp32/include/soc/bb_reg.h
 components/soc/esp32/include/soc/boot_mode.h
-components/soc/esp32/include/soc/emac_dma_struct.h
-components/soc/esp32/include/soc/emac_ext_struct.h
-components/soc/esp32/include/soc/emac_mac_struct.h
 components/soc/esp32/include/soc/fe_reg.h
 components/soc/esp32/include/soc/flash_encryption_reg.h
 components/soc/esp32/include/soc/gpio_pins.h
