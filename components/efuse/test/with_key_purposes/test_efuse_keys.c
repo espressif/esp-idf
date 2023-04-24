@@ -60,10 +60,6 @@ TEST_CASE("Test efuse API blocks burning XTS and ECDSA keys into BLOCK9", "[efus
     purpose = ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;
     TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
 #endif
-#if SOC_ECDSA_SUPPORTED
-    purpose = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
-    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
-#endif
 }
 #endif // SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
@@ -156,9 +152,6 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif //#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
-#if SOC_ECDSA_SUPPORTED
-                purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
-#endif
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY)) {
                 printf("BLOCK9 can not have the %d purpose, use RESERVED instead\n", purpose);
                 purpose = ESP_EFUSE_KEY_PURPOSE_RESERVED;
