@@ -118,11 +118,17 @@ esp_err_t sleep_sys_periph_tg0_retention_init(void)
 
 esp_err_t sleep_sys_periph_iomux_retention_init(void)
 {
+#if CONFIG_IDF_TARGET_ESP32C6
     #define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_SPID_U - REG_IO_MUX_BASE) / 4) + 1)
     #define N_REGS_IOMUX_1()    (((GPIO_FUNC34_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
     #define N_REGS_IOMUX_2()    (((GPIO_FUNC124_IN_SEL_CFG_REG - GPIO_STATUS_NEXT_REG) / 4) + 1)
     #define N_REGS_IOMUX_3()    (((GPIO_PIN34_REG - DR_REG_GPIO_BASE) / 4) + 1)
-
+#elif CONFIG_IDF_TARGET_ESP32H2
+    #define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_SPID_U - REG_IO_MUX_BASE) / 4) + 1)
+    #define N_REGS_IOMUX_1()    (((GPIO_FUNC31_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
+    #define N_REGS_IOMUX_2()    (((GPIO_FUNC124_IN_SEL_CFG_REG - GPIO_STATUS_NEXT_REG) / 4) + 1)
+    #define N_REGS_IOMUX_3()    (((GPIO_PIN31_REG - DR_REG_GPIO_BASE) / 4) + 1)
+#endif
     const static sleep_retention_entries_config_t iomux_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), REG_IO_MUX_BASE,            REG_IO_MUX_BASE,            N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* io_mux */
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), GPIO_FUNC0_OUT_SEL_CFG_REG, GPIO_FUNC0_OUT_SEL_CFG_REG, N_REGS_IOMUX_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
