@@ -50,11 +50,18 @@ static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
     uint32_t transmitted;
     uint32_t received;
     uint32_t total_time_ms;
+    uint32_t loss;
+
     esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
     esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
-    uint32_t loss = (uint32_t)((1 - ((float)received) / transmitted) * 100);
+
+    if (transmitted > 0) {
+        loss = (uint32_t)((1 - ((float)received) / transmitted) * 100);
+    } else {
+        loss = 0;
+    }
     if (IP_IS_V4(&target_addr)) {
         printf("\n--- %s ping statistics ---\n", inet_ntoa(*ip_2_ip4(&target_addr)));
     } else {
