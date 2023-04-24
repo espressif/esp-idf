@@ -572,6 +572,16 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
  */
 esp_err_t esp_ble_gatts_send_service_change_indication(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda);
 
+/**
+ * @brief           Print local database (GATT service table)
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gatts_show_local_database(void);
+
 #ifdef __cplusplus
 }
 #endif

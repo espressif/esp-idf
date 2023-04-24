@@ -1769,4 +1769,10 @@ tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tupl
     return cmd_sent;
 }
 
+tGATT_STATUS GATTS_ShowLocalDatabase(void)
+{
+    gatts_show_local_database();
+    return GATT_SUCCESS;
+}
+
 #endif

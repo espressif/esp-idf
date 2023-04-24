@@ -30,6 +30,7 @@ typedef enum {
     BTC_GATTS_ACT_OPEN,
     BTC_GATTS_ACT_CLOSE,
     BTC_GATTS_ACT_SEND_SERVICE_CHANGE,
+    BTC_GATTS_ACT_SHOW_LOCAL_DATABASE,
 } btc_gatts_act_t;
 
 /* btc_ble_gatts_args_t */
@@ -164,6 +165,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg);
 void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_gatts_arg_deep_free(btc_msg_t *msg);
 esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value);
+esp_gatt_status_t btc_gatts_show_local_database(void);
 
 
 #endif /* __BTC_GATTS_H__ */

@@ -906,6 +906,22 @@ void bta_gatts_listen(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 
 /*******************************************************************************
 **
+** Function         bta_gatts_show_local_database
+**
+** Description      print loacl service database
+**
+** Returns          none.
+**
+*******************************************************************************/
+void bta_gatts_show_local_database (void)
+{
+    if (GATTS_ShowLocalDatabase()) {
+        APPL_TRACE_ERROR("%s failed", __func__);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         bta_gatts_request_cback
 **
 ** Description      GATTS attribute request callback.
