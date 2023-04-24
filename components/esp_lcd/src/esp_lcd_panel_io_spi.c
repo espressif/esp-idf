@@ -21,7 +21,6 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
-#include "esp_private/spi_common_internal.h"
 
 static const char *TAG = "lcd_panel.io.spi";
 
@@ -107,9 +106,13 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_panel_io->base.tx_color = panel_io_spi_tx_color;
     spi_panel_io->base.del = panel_io_spi_del;
     spi_panel_io->base.register_event_callbacks = panel_io_spi_register_event_callbacks;
-    spi_panel_io->spi_trans_max_bytes = spi_bus_get_attr((spi_host_device_t)bus)->max_transfer_sz;
+
+    size_t max_trans_bytes = 0;
+    ESP_GOTO_ON_ERROR(spi_bus_get_max_transaction_len((spi_host_device_t)bus, &max_trans_bytes), err, TAG, "get spi max transaction len failed");
+    spi_panel_io->spi_trans_max_bytes = max_trans_bytes;
+
     *ret_io = &(spi_panel_io->base);
-    ESP_LOGD(TAG, "new spi lcd panel io @%p", spi_panel_io);
+    ESP_LOGD(TAG, "new spi lcd panel io @%p, max_trans_bytes: %d", spi_panel_io, (int)max_trans_bytes);
 
     return ESP_OK;
 

@@ -111,6 +111,7 @@ We have two bits to control the interrupt:
 */
 
 #include <string.h>
+#include <sys/param.h>
 #include "esp_private/spi_common_internal.h"
 #include "driver/spi_master.h"
 
@@ -1027,4 +1028,21 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_transmit(spi_device_handle_t ha
     if (ret != ESP_OK) return ret;
 
     return spi_device_polling_end(handle, portMAX_DELAY);
+}
+
+esp_err_t spi_bus_get_max_transaction_len(spi_host_device_t host_id, size_t *max_bytes)
+{
+    SPI_CHECK(is_valid_host(host_id), "invalid host", ESP_ERR_INVALID_ARG);
+    if (bus_driver_ctx[host_id] == NULL || max_bytes == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    spi_host_t *host = bus_driver_ctx[host_id];
+    if (host->bus_attr->dma_enabled) {
+        *max_bytes = MIN(host->bus_attr->max_transfer_sz, (SPI_LL_DMA_MAX_BIT_LEN / 8));
+    } else {
+        *max_bytes = MIN(host->bus_attr->max_transfer_sz, (SPI_LL_CPU_MAX_BIT_LEN / 8));
+    }
+
+    return ESP_OK;
 }
