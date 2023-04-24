@@ -28,12 +28,6 @@
 #include "esp32c3/rom/uart.h"
 #include "esp32c3/rom/gpio.h"
 #include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/efuse.h"
-#include "esp32h4/rom/crc.h"
-#include "esp32h4/rom/uart.h"
-#include "esp32h4/rom/gpio.h"
-#include "esp32h4/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/efuse.h"
 #include "esp32c2/rom/crc.h"

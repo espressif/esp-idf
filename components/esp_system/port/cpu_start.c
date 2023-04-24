@@ -56,11 +56,6 @@
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "esp_memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rtc.h"
-#include "esp32h4/rom/cache.h"
-#include "esp32h4/rom/secure_boot.h"
-#include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
 #include "esp32c2/rom/cache.h"

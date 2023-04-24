@@ -73,7 +73,7 @@ openocd -c "set ESP_SEMIHOST_BASEDIR %IDF_PATH%/examples/storage/semihost_vfs/da
 
 The above command will set `ESP_SEMIHOST_BASEDIR` variable to `examples/storage/semihost_vfs/data` subdirectory of ESP-IDF. With that, it is not necessary to run OpenOCD from that specific directory.
 
-> Note: This feature is not available for RISC-V based SoCs (ESP32-C3, ESP32-H4). To set the semihosting base directory, change into the required directory before running `openocd` command.
+> Note: This feature is not available for RISC-V based SoCs (ESP32-C3, ESP32-H2). To set the semihosting base directory, change into the required directory before running `openocd` command.
 
 ## Example output
 

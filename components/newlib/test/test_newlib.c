@@ -139,7 +139,7 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
     TEST_ASSERT_FALSE(fn_in_rom(vfprintf));
 #endif // CONFIG_NEWLIB_NANO_FORMAT || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-#if (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4)) || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+#if (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2)) || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
     TEST_ASSERT(fn_in_rom(sscanf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(sscanf));
@@ -148,7 +148,7 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
     TEST_ASSERT(fn_in_rom(atoi));
     TEST_ASSERT(fn_in_rom(strtol));
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32H4)\
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) \
     || defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6)
     /* S3 and C3 always use these from ROM */
     TEST_ASSERT(fn_in_rom(atoi));

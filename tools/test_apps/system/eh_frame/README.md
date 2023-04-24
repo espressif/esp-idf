@@ -10,7 +10,7 @@ Thus, as soon as this example compiles we can considered it passed. However, it 
 In order to build and run the example, use the following commands:
 
 ```
-idf.py set-target <esp32c3/esp32h4/esp32c2>
+idf.py set-target <esp32c3/esp32c2>
 idf.py build
 idf.py flash monitor
 ```
