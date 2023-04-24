@@ -675,6 +675,27 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_get_dev_name
+**
+** Description      Gets local device name
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_get_dev_name (tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS status;
+    char *name = NULL;
+
+    status = BTM_ReadLocalDeviceName(&name);
+    if (p_data->get_name.p_cback) {
+        (*p_data->get_name.p_cback)(status, name);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_set_afh_channels
 **
 ** Description      Sets AFH channels
@@ -824,14 +845,14 @@ void bta_dm_ble_set_channels (tBTA_DM_MSG *p_data)
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.add_wl_cb);
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.update_wl_cb);
 #endif  ///BLE_INCLUDED == TRUE
 }
 
 void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleClearWhitelist();
+    BTM_BleClearWhitelist(p_data->white_list.update_wl_cb);
 #endif
 }
 

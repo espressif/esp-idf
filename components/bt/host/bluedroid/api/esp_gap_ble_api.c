@@ -383,6 +383,19 @@ esp_err_t esp_ble_gap_set_device_name(const char *name)
     return esp_bt_dev_set_device_name(name);
 }
 
+esp_err_t esp_ble_gap_get_device_name(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_GET_DEV_NAME;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type)
 {
     if(esp_bluedroid_get_status() != (ESP_BLUEDROID_STATUS_ENABLED)) {
