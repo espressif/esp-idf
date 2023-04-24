@@ -58,6 +58,7 @@ typedef enum {
     BTC_GAP_BLE_OOB_REQ_REPLY_EVT,
     BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST,
     BTC_GAP_BLE_SET_AFH_CHANNELS,
+    BTC_GAP_BLE_ACT_GET_DEV_NAME,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */

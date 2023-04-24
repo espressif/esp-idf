@@ -167,6 +167,7 @@ typedef enum {
     ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT,              /*!< When adding or removing whitelist complete, the event comes */
     ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT,  /*!< When updating duplicate exceptional list complete, the event comes */
     ESP_GAP_BLE_SET_CHANNELS_EVT,                           /*!< When setting BLE channels complete, the event comes */
+    ESP_GAP_BLE_GET_DEV_NAME_COMPLETE_EVT,                  /*!< When getting BT device name complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
 
@@ -603,6 +604,7 @@ typedef enum {
 typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
+    ESP_BLE_WHITELIST_CLEAR      = 0x02,    /*!< clear all device in whitelist */
 }esp_ble_wl_opration_t;
 
 typedef enum {
@@ -636,6 +638,13 @@ typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
  * @brief Gap callback parameters union
  */
 typedef union {
+    /**
+     * @brief ESP_GAP_BLE_GET_DEV_NAME_COMPLETE_EVT
+     */
+    struct ble_get_dev_name_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the get device name success status */
+        char *name;                                 /*!< Name of bluetooth device */
+    } get_dev_name_cmpl;                            /*!< Event parameter of ESP_GAP_BLE_GET_DEV_NAME_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT
      */
@@ -1033,7 +1042,17 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
 esp_err_t esp_ble_gap_set_device_name(const char *name);
 
 /**
- * @brief          This function is called to get local used address and adress type.
+ * @brief           Get device name of the local device
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_get_device_name(void);
+
+/**
+ * @brief          This function is called to get local used address and address type.
  *                 uint8_t *esp_bt_dev_get_address(void) get the public address
  *
  * @param[in]       local_used_addr - current local used ble address (six bytes)
