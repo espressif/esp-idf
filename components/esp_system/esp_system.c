@@ -61,23 +61,5 @@ void esp_restart(void)
     vTaskSuspendAll();
 #endif // CONFIG_FREERTOS_SMP
 
-    bool digital_reset_needed = false;
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#if CONFIG_IDF_TARGET_ESP32S2
-    if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
-        digital_reset_needed = true;
-    }
-#else
-    bool is_on = false;
-    if (esp_mprot_is_intr_ena_any(&is_on) != ESP_OK || is_on) {
-        digital_reset_needed = true;
-    } else if (esp_mprot_is_conf_locked_any(&is_on) != ESP_OK || is_on) {
-        digital_reset_needed = true;
-    }
-#endif
-#endif
-    if (digital_reset_needed) {
-        esp_restart_noos_dig();
-    }
     esp_restart_noos();
 }
