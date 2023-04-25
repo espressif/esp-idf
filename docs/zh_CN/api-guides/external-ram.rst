@@ -162,18 +162,23 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_STAR
 
  * flash cache 禁用时（比如，正在写入 flash），片外 RAM 将无法访问；同样，对片外 RAM 的读写操作也将导致 cache 访问异常。出于这个原因，ESP-IDF 不会在片外 RAM 中分配任务堆栈（详见下文）。
 
- * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。因此，当片外 RAM 启用时，与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
+.. only:: SOC_PSRAM_DMA_CAPABLE and not esp32s3
 
-.. only:: SOC_PSRAM_DMA_CAPABLE
+    * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。因此，当片外 RAM 启用时，与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但在 ESP-IDF 中，尚未提供软件支持。
 
-    注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但在 ESP-IDF 中，尚未提供软件支持。
+.. only:: esp32s3
+
+    注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但仍有以下限制：
+
+    - DMA 访问外部 RAM 的带宽十分有限，尤其是当 CPU 同时访问外部 RAM 时。
+    - 将八线 PSRAM 的 :ref:`CONFIG_SPIRAM_SPEED` 配置为 120 MHz 可提高带宽，但使用此选项仍有一定限制，更多信息请参见 :ref:`所有支持的 PSRAM 模式和速度 <flash-psram-combination>`。
 
 * 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据会挤出 flash cache，可能降低代码执行速度。
 
  * 一般来说，片外 RAM 不会用作任务堆栈存储器。:cpp:func:`xTaskCreate` 及类似函数始终会为堆栈和任务 TCB 分配片上储存器。
 
-
 可以使用 :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` 选项将任务堆栈放入片外存储器。这时，必须使用 :cpp:func:`xTaskCreateStatic` 指定从片外存储器分配的任务堆栈缓冲区，否则任务堆栈将会从片上存储器分配。
+
 
 初始化失败
 =====================
