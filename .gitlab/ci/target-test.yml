@@ -1132,14 +1132,6 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
-example_test_005:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-bt
-  tags:
-    - ESP32
-    - Example_WIFI_BT
-
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
   tags:
