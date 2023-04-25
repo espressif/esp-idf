@@ -106,14 +106,12 @@ def getDataset(dut:IdfDut) -> str:
 
 
 def reset_thread(dut:IdfDut) -> None:
-    dut.write(' ')
-    dut.write('state')
-    clean_buffer(dut)
-    wait(dut, 1)
+    dut.expect('>')
+    wait(dut, 3)
     dut.write('factoryreset')
     dut.expect('OpenThread attached to netif', timeout=20)
-    dut.write(' ')
-    dut.write('state')
+    dut.expect('>')
+    wait(dut, 3)
 
 
 # get the mleid address of the thread
