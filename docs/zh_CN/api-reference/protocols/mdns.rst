@@ -13,4 +13,4 @@ mDNS 是一种组播 UDP 服务，用来提供本地网络服务和主机发现�
 
 请点击如下链接，查看 mDNS 的相关文档：
 
-* `mDNS 文档 <https://espressif.github.io/esp-protocols/mdns/zh_CN/index.html>`__
+* `mDNS 文档 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/zh_CN/index.html>`__

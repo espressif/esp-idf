@@ -7,9 +7,11 @@ The ESP-IDF component `ASIO` has been moved from ESP-IDF since version v5.0 to a
 
 * `ASIO component on GitHub <https://github.com/espressif/esp-protocols/tree/master/components/asio>`__
 
+To add ASIO component in your project, please run `idf.py add-dependency espressif/asio`
+
 Hosted Documentation
 --------------------
 
 The documentation can be found on the link below:
 
-* `ASIO documentation (English) <https://espressif.github.io/esp-protocols/asio/index.html>`__
+* `ASIO documentation (English) <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`__
