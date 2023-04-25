@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <string.h>
 
@@ -9,12 +14,8 @@
 
 #include "catch.hpp"
 
-extern "C" void _spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
-
 TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
 {
-    _spi_flash_init(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
-
     FRESULT fr_result;
     BYTE pdrv;
     FATFS fs;
