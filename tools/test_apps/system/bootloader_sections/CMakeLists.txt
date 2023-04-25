@@ -3,6 +3,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+set(COMPONENTS main)
 project(test_build)
 
 add_custom_target(check_bootloader_sections ALL
