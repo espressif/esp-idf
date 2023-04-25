@@ -506,6 +506,11 @@ FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_reject(pmu_dev_t *hw)
     return (hw->hp_ext.int_raw.reject == 1);
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_clear_sw_intr_status(pmu_dev_t *hw)
+{
+    hw->hp_ext.int_clr.sw = 1;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_wakeup_intr_status(pmu_dev_t *hw)
 {
     hw->hp_ext.int_clr.wakeup = 1;

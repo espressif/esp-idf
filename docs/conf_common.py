@@ -104,9 +104,9 @@ FTDI_JTAG_DOCS = ['api-guides/jtag-debugging/configure-ft2232h-jtag.rst']
 USB_SERIAL_JTAG_DOCS = ['api-guides/jtag-debugging/configure-builtin-jtag.rst',
                         'api-guides/usb-serial-jtag-console.rst']
 
-ULP_DOCS = ['api-reference/system/ulp.rst',
-            'api-reference/system/ulp_macros.rst',
-            'api-reference/system/ulp_instruction_set.rst']
+ULP_FSM_DOCS = ['api-reference/system/ulp.rst',
+                'api-reference/system/ulp_macros.rst',
+                'api-reference/system/ulp_instruction_set.rst']
 
 RISCV_COPROC_DOCS = ['api-reference/system/ulp-risc-v.rst',]
 
@@ -183,7 +183,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
                             'SOC_ETM_SUPPORTED':ETM_DOCS,
                             'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
-                            'SOC_ULP_SUPPORTED':ULP_DOCS,
+                            'SOC_ULP_FSM_SUPPORTED':ULP_FSM_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
                             'SOC_DIG_SIGN_SUPPORTED':['api-reference/peripherals/ds.rst'],
                             'SOC_HMAC_SUPPORTED':['api-reference/peripherals/hmac.rst'],

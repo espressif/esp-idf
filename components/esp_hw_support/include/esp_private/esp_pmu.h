@@ -51,6 +51,9 @@ extern "C" {
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
 #define RTC_BT_TRIG_EN              PMU_BLE_SOC_WAKEUP_EN   //!< BT wakeup (light sleep only)
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
+#if SOC_LP_CORE_SUPPORTED
+#define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_EN   //!< LP core wakeup
+#endif //SOC_LP_CORE_SUPPORTED
 #define RTC_XTAL32K_DEAD_TRIG_EN    0 // TODO
 #define RTC_BROWNOUT_DET_TRIG_EN    0 // TODO
 
@@ -82,6 +85,9 @@ extern "C" {
 #define PMU_UART1_WAKEUP_EN         BIT(7)
 #define PMU_SDIO_WAKEUP_EN          BIT(8)
 #define PMU_BLE_SOC_WAKEUP_EN       BIT(10)
+#if SOC_LP_CORE_SUPPORTED
+#define PMU_LP_CORE_WAKEUP_EN       BIT(11)
+#endif //SOC_LP_CORE_SUPPORTED
 #define PMU_USB_WAKEUP_EN           BIT(14)
 
 
