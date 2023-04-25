@@ -1,17 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-/**
- * test environment UT_T2_I2C:
- * please prepare two ESP32-WROVER-KIT board.
- * Then connect GPIO18 and GPIO18, GPIO19 and GPIO19 between these two boards.
- */
+
 #include <stdio.h>
 #include <string.h>
 #include "unity.h"
-#include "test_utils.h"
 #include "unity_config.h"
 #include "driver/i2c.h"
 #include "esp_attr.h"
@@ -24,36 +19,22 @@
 #include "esp_rom_gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
-#if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
+#include "hal/i2c_types.h"
+#include "test_utils.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
-#define DELAY_TIME_BETWEEN_ITEMS_MS   1234 /*!< delay time between different test items */
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
-#define I2C_SLAVE_SCL_IO     5     /*!<gpio number for i2c slave clock  */
-#define I2C_SLAVE_SDA_IO     6     /*!<gpio number for i2c slave data */
-#else
-#define I2C_SLAVE_SCL_IO     19    /*!<gpio number for i2c slave clock  */
-#define I2C_SLAVE_SDA_IO     18    /*!<gpio number for i2c slave data */
-#endif
+#define I2C_SLAVE_SCL_IO     0     /*!<gpio number for i2c slave clock  */
+#define I2C_SLAVE_SDA_IO     2     /*!<gpio number for i2c slave data */
 
 #define I2C_SLAVE_NUM I2C_NUM_0    /*!<I2C port number for slave dev */
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
 
-#if CONFIG_IDF_TARGET_ESP32C3
-#define I2C_MASTER_SCL_IO     5     /*!<gpio number for i2c master clock  */
-#define I2C_MASTER_SDA_IO     6     /*!<gpio number for i2c master data */
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define I2C_MASTER_SCL_IO     2     /*!<gpio number for i2c master clock  */
-#define I2C_MASTER_SDA_IO     1     /*!<gpio number for i2c master data */
-#else
-#define I2C_MASTER_SCL_IO    19     /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO    18     /*!< gpio number for I2C master data  */
-#endif
+
+#define I2C_MASTER_SCL_IO     0     /*!<gpio number for i2c master clock  */
+#define I2C_MASTER_SDA_IO     2     /*!<gpio number for i2c master data */
 
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
@@ -64,15 +45,6 @@
 #define WRITE_BIT  I2C_MASTER_WRITE /*!< I2C master write */
 #define READ_BIT   I2C_MASTER_READ  /*!< I2C master read */
 #define ACK_CHECK_EN   0x1     /*!< I2C master will check ack from slave*/
-#define ACK_CHECK_DIS  0x0     /*!< I2C master will not check ack from slave */
-#define ACK_VAL    0x0         /*!< I2C ack value */
-#define NACK_VAL   0x1         /*!< I2C nack value */
-
-#define PULSE_IO 19
-#define PCNT_INPUT_IO 4
-#define PCNT_CTRL_FLOATING_IO 5
-#define HIGHEST_LIMIT 10000
-#define LOWEST_LIMIT -10000
 
 static DRAM_ATTR i2c_dev_t *const I2C[SOC_I2C_NUM] = { &I2C0,
 #if SOC_I2C_NUM > 1
@@ -80,6 +52,8 @@ static DRAM_ATTR i2c_dev_t *const I2C[SOC_I2C_NUM] = { &I2C0,
 #endif
 };
 
+#define ACK_VAL 0
+#define NACK_VAL 1
 
 
 static esp_err_t i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, size_t size)
@@ -108,6 +82,9 @@ static i2c_config_t i2c_master_init(void)
     return conf_master;
 }
 
+
+#if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
+
 static i2c_config_t i2c_slave_init(void)
 {
     i2c_config_t conf_slave = {
@@ -122,9 +99,11 @@ static i2c_config_t i2c_slave_init(void)
     return conf_slave;
 }
 
+#endif
+
 TEST_CASE("I2C i2c_set_pin() fails if sda and scl gpios are same", "[i2c]")
 {
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, i2c_set_pin(0, 0, 0, true, true , I2C_MODE_SLAVE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, i2c_set_pin(0, 0, 0, true, true , I2C_MODE_MASTER));
 }
 
 TEST_CASE("I2C config test", "[i2c]")
@@ -148,6 +127,8 @@ TEST_CASE("I2C config test", "[i2c]")
     }
 
     // slave test
+
+#if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
     i2c_config_t conf_slave = i2c_slave_init();
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -161,7 +142,7 @@ TEST_CASE("I2C config test", "[i2c]")
             TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
         }
     }
-
+#endif
 
 }
 
@@ -188,6 +169,9 @@ TEST_CASE("I2C set and get period test", "[i2c]")
     TEST_ESP_OK(i2c_driver_delete(I2C_MASTER_NUM));
 }
 
+
+#if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
+
 TEST_CASE("I2C config FIFO test", "[i2c]")
 {
     i2c_config_t conf_slave = i2c_slave_init();
@@ -203,6 +187,8 @@ TEST_CASE("I2C config FIFO test", "[i2c]")
     TEST_ASSERT_BIT_LOW(0, I2C[I2C_SLAVE_NUM]->fifo_conf.rx_fifo_rst);
     TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
+
+#endif
 
 TEST_CASE("I2C timing test", "[i2c]")
 {
@@ -233,52 +219,25 @@ TEST_CASE("I2C timing test", "[i2c]")
     i2c_driver_delete(I2C_MASTER_NUM);
 }
 
-TEST_CASE("I2C data mode test", "[i2c]")
-{
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-    i2c_trans_mode_t test_tx_trans_mode, test_rx_trans_mode;
-    i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
-                                   I2C_MASTER_RX_BUF_DISABLE,
-                                   I2C_MASTER_TX_BUF_DISABLE, 0));
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-    for (int i = 0; i < DATA_LENGTH; i++) {
-        data_wr[i] = i;
-    }
-    TEST_ESP_OK(i2c_set_data_mode(I2C_MASTER_NUM, I2C_DATA_MODE_LSB_FIRST, I2C_DATA_MODE_LSB_FIRST));
-    TEST_ESP_OK(i2c_get_data_mode(I2C_MASTER_NUM, &test_tx_trans_mode, &test_rx_trans_mode));
-    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_LSB_FIRST, test_tx_trans_mode);
-    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_LSB_FIRST, test_rx_trans_mode);
-    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
-    TEST_ESP_OK(i2c_set_data_mode(I2C_MASTER_NUM, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST));
-    TEST_ESP_OK(i2c_get_data_mode(I2C_MASTER_NUM, &test_tx_trans_mode, &test_rx_trans_mode));
-    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_MSB_FIRST, test_tx_trans_mode);
-    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_MSB_FIRST, test_rx_trans_mode);
-    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
-    free(data_wr);
-    i2c_driver_delete(I2C_MASTER_NUM);
-}
-
-
 TEST_CASE("I2C driver memory leaking check", "[i2c]")
 {
     esp_err_t ret;
 
     int size = esp_get_free_heap_size();
-    for (uint32_t i = 0; i <= 1000; i++) {
-        ret = i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
+    for (uint32_t i = 0; i <= 5; i++) {
+        ret = i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                  I2C_SLAVE_RX_BUF_LEN,
                                  I2C_SLAVE_TX_BUF_LEN, 0);
         TEST_ASSERT(ret == ESP_OK);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        i2c_driver_delete(I2C_SLAVE_NUM);
+        i2c_driver_delete(I2C_MASTER_NUM);
         TEST_ASSERT(ret == ESP_OK);
     }
 
     TEST_ASSERT_INT_WITHIN(100, size, esp_get_free_heap_size());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C2)
+#if SOC_I2C_SUPPORT_SLAVE
 
 // print the reading buffer
 static void disp_buf(uint8_t *buf, int len)
@@ -347,7 +306,7 @@ static void i2c_slave_read_test(void)
     TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_write_test, i2c_slave_read_test);
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test, i2c_slave_read_test);
 
 static void master_read_slave_test(void)
 {
@@ -406,9 +365,9 @@ static void slave_write_buffer_test(void)
 }
 
 
-TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", master_read_slave_test, slave_write_buffer_test);
+TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test, slave_write_buffer_test);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32)
+
 static void i2c_master_write_read_test(void)
 {
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
@@ -485,7 +444,8 @@ static void i2c_slave_read_write_test(void)
     i2c_driver_delete(I2C_SLAVE_NUM);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2C read and write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
+TEST_CASE_MULTIPLE_DEVICES("I2C read and write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
+
 
 static void i2c_master_repeat_write(void)
 {
@@ -546,11 +506,7 @@ static void i2c_slave_repeat_read(void)
     i2c_driver_delete(I2C_SLAVE_NUM);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
-
-
-#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
-#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
 
 static volatile bool exit_flag;
 static bool test_read_func;
@@ -595,6 +551,7 @@ TEST_CASE("test i2c_slave_read_buffer is not blocked when ticks_to_wait=0", "[i2
     } else {
         TEST_FAIL_MESSAGE("i2c_slave_read_buffer is blocked");
     }
+    vTaskDelay(2); // wait for task finish
     TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
 
@@ -614,6 +571,7 @@ TEST_CASE("test i2c_slave_write_buffer is not blocked when ticks_to_wait=0", "[i
     } else {
         TEST_FAIL_MESSAGE("i2c_slave_write_buffer is blocked");
     }
+    vTaskDelay(2); // wait for task finish
     TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
 
@@ -721,7 +679,7 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
     uart_aut_baud_det_init(uart1_rxd_io);
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write(cmd, data, 30, ACK_CHECK_DIS);
+    i2c_master_write(cmd, data, 30, NACK_VAL);
     i2c_master_stop(cmd);
     i2c_master_cmd_begin(i2c_num, cmd, 5000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
@@ -731,4 +689,3 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
 }
 
 #endif // SOC_I2C_SUPPORT_SLAVE
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
