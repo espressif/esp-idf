@@ -41,4 +41,18 @@ menu "Memory"
             This is possible due to handling of exceptions `LoadStoreError (3)` and `LoadStoreAlignmentError (9)`
             Each unaligned read/write access will incur a penalty of maximum of 167 CPU cycles.
 
+    menu "Non-backward compatible options"
+
+        config ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM
+            bool "Reserve parts of SRAM1 for app IRAM (WARNING, read help before enabling)"
+            depends on !ESP32_TRAX
+            help
+                Reserve parts of SRAM1 for app IRAM which was previously reserved for bootloader DRAM.
+                If booting an app on an older bootloader from before this option was introduced, the app will fail
+                to boot due to not recognizing the new IRAM memory area.
+
+                If this is the case please test carefully before pushing out any OTA updates.
+
+    endmenu
+
 endmenu # Memory
