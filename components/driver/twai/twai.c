@@ -16,7 +16,7 @@
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
@@ -428,7 +428,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     if (clk_src == 0) {
         clk_src = TWAI_CLK_SRC_DEFAULT;
     }
-    clk_tree_src_get_freq_hz(clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 
     //Check brp validation
     uint32_t brp = t_config->brp;

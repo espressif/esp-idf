@@ -87,10 +87,10 @@ Module Clocks
 API Usage
 ---------
 
-The clock tree driver provides an all-in-one API to get the frequency of the module clocks, :cpp:func:`clk_tree_src_get_freq_hz`. Users can call this function at any moment, with specifying the clock name (:cpp:enum:`soc_module_clk_t`) and the desired degree of precision of the returned frequency value (:cpp:enum:`clk_tree_src_freq_precision_t`).
+The clock tree driver provides an all-in-one API to get the frequency of the module clocks, :cpp:func:`esp_clk_tree_src_get_freq_hz`. Users can call this function at any moment, with specifying the clock name (:cpp:enum:`soc_module_clk_t`) and the desired degree of precision of the returned frequency value (:cpp:enum:`esp_clk_tree_src_freq_precision_t`).
 
 API Reference
 -------------
 
 .. include-build-file:: inc/clk_tree_defs.inc
-.. include-build-file:: inc/clk_tree.inc
+.. include-build-file:: inc/esp_clk_tree.inc

@@ -27,7 +27,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "clk_ctrl_os.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "gptimer_priv.h"
 
 static const char *TAG = "gptimer";
@@ -430,7 +430,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
 #endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
 
     // get clock source frequency
-    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz),
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz),
                         TAG, "get clock source frequency failed");
 
 #if CONFIG_PM_ENABLE

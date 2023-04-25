@@ -15,7 +15,7 @@
 #include "hal/timer_ll.h"
 #include "hal/check.h"
 #include "soc/timer_periph.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "soc/timer_group_reg.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -78,8 +78,8 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     uint32_t div = p_timer_obj[group_num][timer_num]->divider;
     // get clock source frequency
     uint32_t counter_src_hz = 0;
-    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)p_timer_obj[group_num][timer_num]->clk_src,
-                        CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz),
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)p_timer_obj[group_num][timer_num]->clk_src,
+                        ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz),
                         TIMER_TAG, "get clock source frequency failed");
     *time = (double)timer_val * div / counter_src_hz;
     return ESP_OK;

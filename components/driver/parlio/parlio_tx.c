@@ -33,7 +33,7 @@
 #include "driver/parlio_tx.h"
 #include "parlio_private.h"
 #include "esp_memory_utils.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_private/gdma.h"
 
 static const char *TAG = "parlio-tx";
@@ -238,7 +238,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
         periph_src_clk_hz = config->input_clk_src_freq_hz;
     } else {
         // get the internal clock source frequency
-        clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz);
+        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz);
     }
     ESP_RETURN_ON_FALSE(periph_src_clk_hz, ESP_ERR_INVALID_ARG, TAG, "invalid clock source frequency");
 

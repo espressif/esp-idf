@@ -10,7 +10,7 @@
 #include "esp_pm.h"
 #include "glitch_filter_priv.h"
 #include "hal/gpio_ll.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "esp_private/io_mux.h"
 
 static const char *TAG = "gpio-filter";
