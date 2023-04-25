@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -24,17 +24,16 @@
 #include "esp_pm.h"
 #endif
 
+#include "esp_private/periph_ctrl.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "soc/hwcrypto_periph.h"
-#include "soc/periph_defs.h"
-#include "soc/soc_caps.h"
-
 #include "bignum_impl.h"
 
-#include <mbedtls/bignum.h>
+#include "mbedtls/bignum.h"
 
+#include "hal/mpi_hal.h"
 
 /* Some implementation notes:
  *
@@ -65,7 +64,7 @@ static esp_pm_lock_handle_t s_pm_sleep_lock;
 static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
 {
     BaseType_t higher_woken;
-    esp_mpi_interrupt_clear();
+    mpi_hal_clear_interrupt();
 
     xSemaphoreGiveFromISR(op_complete_sem, &higher_woken);
     if (higher_woken) {
@@ -76,8 +75,8 @@ static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
 
 static esp_err_t esp_mpi_isr_initialise(void)
 {
-    esp_mpi_interrupt_clear();
-    esp_mpi_interrupt_enable(true);
+    mpi_hal_clear_interrupt();
+    mpi_hal_interrupt_enable(true);
     if (op_complete_sem == NULL) {
         op_complete_sem = xSemaphoreCreateBinary();
 
@@ -120,7 +119,7 @@ static int esp_mpi_wait_intr(void)
     esp_pm_lock_release(s_pm_sleep_lock);
 #endif  // CONFIG_PM_ENABLE
 
-    esp_mpi_interrupt_enable(false);
+    mpi_hal_interrupt_enable(false);
 
     return 0;
 }
@@ -208,8 +207,6 @@ cleanup:
 
 
 
-
-
 /* Z = (X * Y) mod M
 
    Not an mbedTLS function
@@ -226,7 +223,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     size_t y_words = bits_to_words(y_bits);
     size_t m_words = bits_to_words(m_bits);
     size_t z_words = bits_to_words(z_bits);
-    size_t hw_words = esp_mpi_hardware_words(MAX(x_words, MAX(y_words, m_words))); /* longest operand */
+    size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, MAX(y_words, m_words))); /* longest operand */
     mbedtls_mpi Rinv;
     mbedtls_mpi_uint Mprime;
 
@@ -241,7 +238,8 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
 
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, z_words));
 
-    esp_mpi_read_result_hw_op(Z, z_words);
+    /* Read back the result */
+    mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), z_words);
     Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
 
 cleanup:
@@ -273,6 +271,7 @@ static size_t mbedtls_mpi_msb( const mbedtls_mpi *X )
     }
     return 0;
 }
+
 
 /*
  * Montgomery exponentiation: Z = X ^ Y mod M  (HAC 14.94)
@@ -335,6 +334,7 @@ cleanup2:
 
 #endif //USE_MONT_EXPONENATIATION
 
+
 /*
  * Z = X ^ Y mod M
  *
@@ -358,7 +358,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     /* "all numbers must be the same length", so choose longest number
        as cardinal length of operation...
     */
-    size_t num_words = esp_mpi_hardware_words(MAX(m_words, MAX(x_words, y_words)));
+    size_t num_words = mpi_hal_calc_hardware_words(MAX(m_words, MAX(x_words, y_words)));
 
     if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
         return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
@@ -420,7 +420,9 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     }
 #endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
-    esp_mpi_read_result_hw_op(Z, m_words);
+    /* Read back the result */
+    mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), m_words);
+
     esp_mpi_disable_hardware_hw_op();
 #endif
 
@@ -479,7 +481,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     size_t x_words = bits_to_words(x_bits);
     size_t y_words = bits_to_words(y_bits);
     size_t z_words = bits_to_words(x_bits + y_bits);
-    size_t hw_words = esp_mpi_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
+    size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
 
     /* Short-circuit eval if either argument is 0 or 1.
 
@@ -534,7 +536,9 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     esp_mpi_enable_hardware_hw_op();
 
     esp_mpi_mul_mpi_hw_op(X, Y, hw_words);
-    esp_mpi_read_result_hw_op(Z, z_words);
+
+    /* Read back the result */
+    mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), z_words);
 
     esp_mpi_disable_hardware_hw_op();
 
@@ -612,34 +616,19 @@ cleanup:
     return ret;
 }
 
-/* Special-case of mbedtls_mpi_mult_mpi(), where we use hardware montgomery mod
-   multiplication to calculate an mbedtls_mpi_mult_mpi result where either
-   A or B are >2048 bits so can't use the standard multiplication method.
-
-   Result (number of words, based on A bits + B bits) must still be less than 4096 bits.
-
-   This case is simpler than the general case modulo multiply of
-   esp_mpi_mul_mpi_mod() because we can control the other arguments:
-
-   * Modulus is chosen with M=(2^num_bits - 1) (ie M=R-1), so output
-   * Mprime and Rinv are therefore predictable as follows:
-   isn't actually modulo anything.
-   Mprime 1
-   Rinv 1
-
-   (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
-*/
 
 static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words)
 {
     int ret;
-    size_t hw_words = esp_mpi_hardware_words(z_words);
+    size_t hw_words = mpi_hal_calc_hardware_words(z_words);
 
     esp_mpi_enable_hardware_hw_op();
 
     esp_mpi_mult_mpi_failover_mod_mult_hw_op(X, Y, hw_words );
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
-    esp_mpi_read_result_hw_op(Z, hw_words);
+
+    /* Read back the result */
+    mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), hw_words);
 
     Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
     /*

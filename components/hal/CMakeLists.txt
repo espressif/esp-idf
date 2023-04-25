@@ -1,3 +1,4 @@
+
 idf_build_get_property(target IDF_TARGET)
 
 # On Linux, there is currently no HAL, hence this simple component registration
@@ -115,6 +116,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_ECDSA_SUPPORTED)
         list(APPEND srcs "ecdsa_hal.c")
+    endif()
+
+    if(CONFIG_SOC_MPI_SUPPORTED)
+        list(APPEND srcs "mpi_hal.c")
     endif()
 
     if(CONFIG_SOC_SHA_SUPPORTED)

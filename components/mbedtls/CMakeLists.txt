@@ -220,9 +220,8 @@ endif()
 # The other port-specific files don't override internal mbedTLS functions, they just add new functions.
 
 if(CONFIG_MBEDTLS_HARDWARE_MPI)
-    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/esp_bignum.c"
-                                       "${COMPONENT_DIR}/port/${idf_target}/bignum.c"
-    )
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/bignum/esp_bignum.c"
+                                       "${COMPONENT_DIR}/port/bignum/bignum_alt.c")
 endif()
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA)
