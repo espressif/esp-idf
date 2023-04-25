@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -177,7 +177,7 @@ void app_main(void)
     const msc_host_driver_config_t msc_config = {
         .create_backround_task = true,
         .task_priority = 5,
-        .stack_size = 2048,
+        .stack_size = 4096,
         .callback = msc_event_cb,
     };
     ESP_ERROR_CHECK( msc_host_install(&msc_config) );

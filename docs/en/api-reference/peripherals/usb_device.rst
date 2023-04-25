@@ -24,6 +24,7 @@ Features
 - USB Serial Device (CDC-ACM)
 - Input and output streams through USB Serial Device
 - Other USB classes (MIDI, MSC, HID...) support directly via TinyUSB
+- USB Composite Device (MSC + CDC)
 - VBUS monitoring for self-powered devices
 
 Hardware USB Connection
@@ -53,6 +54,7 @@ On top of it the driver implements:
 - Customization of USB descriptors
 - Serial device support
 - Redirecting of standard streams through the Serial device
+- Storage Media (SPI-Flash and SD-Card) for USB Device MSC Class.
 - Encapsulated driver's task servicing the TinyUSB
 
 Configuration
@@ -221,3 +223,5 @@ The table below describes the code examples available in the directory :example:
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Human Interface Device
    * - :example:`peripherals/usb/device/tusb_msc`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Mass Storage Device
+   * - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice`
+     - How to set up {IDF_TARGET_NAME} chip to work as a Composite USB Device (MSC + CDC)

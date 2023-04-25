@@ -1,4 +1,4 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  idf: ">=4.4"
-  usb_host_msc: "^1.0.4"
+  espressif/esp_tinyusb: "^1.2"
+  idf: "^5.0"
