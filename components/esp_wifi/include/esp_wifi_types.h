@@ -779,35 +779,65 @@ typedef enum {
     WIFI_PHY_RATE_36M       = 0x0D, /**< 36 Mbps */
     WIFI_PHY_RATE_18M       = 0x0E, /**< 18 Mbps */
     WIFI_PHY_RATE_9M        = 0x0F, /**< 9 Mbps */
-    WIFI_PHY_RATE_MCS0_LGI  = 0x10, /**< MCS0 with long GI, 6.5 Mbps for 20MHz, 13.5 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS1_LGI  = 0x11, /**< MCS1 with long GI, 13 Mbps for 20MHz, 27 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS2_LGI  = 0x12, /**< MCS2 with long GI, 19.5 Mbps for 20MHz, 40.5 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS3_LGI  = 0x13, /**< MCS3 with long GI, 26 Mbps for 20MHz, 54 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS4_LGI  = 0x14, /**< MCS4 with long GI, 39 Mbps for 20MHz, 81 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS5_LGI  = 0x15, /**< MCS5 with long GI, 52 Mbps for 20MHz, 108 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS6_LGI  = 0x16, /**< MCS6 with long GI, 58.5 Mbps for 20MHz, 121.5 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS7_LGI  = 0x17, /**< MCS7 with long GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
+    /**< rate table and guard interval information for each MCS rate*/
+    /*
+     -----------------------------------------------------------------------------------------------------------
+            MCS RATE             |          HT20           |          HT40           |          HE20           |
+     WIFI_PHY_RATE_MCS0_LGI      |     6.5 Mbps (800ns)    |    13.5 Mbps (800ns)    |     8.1 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS1_LGI      |      13 Mbps (800ns)    |      27 Mbps (800ns)    |    16.3 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS2_LGI      |    19.5 Mbps (800ns)    |    40.5 Mbps (800ns)    |    24.4 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS3_LGI      |      26 Mbps (800ns)    |      54 Mbps (800ns)    |    32.5 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS4_LGI      |      39 Mbps (800ns)    |      81 Mbps (800ns)    |    48.8 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS5_LGI      |      52 Mbps (800ns)    |     108 Mbps (800ns)    |      65 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS6_LGI      |    58.5 Mbps (800ns)    |   121.5 Mbps (800ns)    |    73.1 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS7_LGI      |      65 Mbps (800ns)    |     135 Mbps (800ns)    |    81.3 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS8_LGI      |          -----          |          -----          |    97.5 Mbps (1600ns)   |
+     WIFI_PHY_RATE_MCS9_LGI      |          -----          |          -----          |   108.3 Mbps (1600ns)   |
+     -----------------------------------------------------------------------------------------------------------
+    */
+    WIFI_PHY_RATE_MCS0_LGI  = 0x10, /**< MCS0 with long GI */
+    WIFI_PHY_RATE_MCS1_LGI  = 0x11, /**< MCS1 with long GI */
+    WIFI_PHY_RATE_MCS2_LGI  = 0x12, /**< MCS2 with long GI */
+    WIFI_PHY_RATE_MCS3_LGI  = 0x13, /**< MCS3 with long GI */
+    WIFI_PHY_RATE_MCS4_LGI  = 0x14, /**< MCS4 with long GI */
+    WIFI_PHY_RATE_MCS5_LGI  = 0x15, /**< MCS5 with long GI */
+    WIFI_PHY_RATE_MCS6_LGI  = 0x16, /**< MCS6 with long GI */
+    WIFI_PHY_RATE_MCS7_LGI  = 0x17, /**< MCS7 with long GI */
 #if CONFIG_SOC_WIFI_HE_SUPPORT
-    WIFI_PHY_RATE_MCS8_LGI,         /**< MCS8 */
-    WIFI_PHY_RATE_MCS9_LGI,         /**< MCS9 */
+    WIFI_PHY_RATE_MCS8_LGI,         /**< MCS8 with long GI */
+    WIFI_PHY_RATE_MCS9_LGI,         /**< MCS9 with long GI */
 #endif
-    WIFI_PHY_RATE_MCS0_SGI,         /**< MCS0 with short GI, 7.2 Mbps for 20MHz, 15 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS1_SGI,         /**< MCS1 with short GI, 14.4 Mbps for 20MHz, 30 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS2_SGI,         /**< MCS2 with short GI, 21.7 Mbps for 20MHz, 45 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS3_SGI,         /**< MCS3 with short GI, 28.9 Mbps for 20MHz, 60 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS4_SGI,         /**< MCS4 with short GI, 43.3 Mbps for 20MHz, 90 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS5_SGI,         /**< MCS5 with short GI, 57.8 Mbps for 20MHz, 120 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS6_SGI,         /**< MCS6 with short GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS7_SGI,         /**< MCS7 with short GI, 72.2 Mbps for 20MHz, 150 Mbps for 40MHz */
+    /*
+     -----------------------------------------------------------------------------------------------------------
+            MCS RATE             |          HT20           |          HT40           |          HE20           |
+     WIFI_PHY_RATE_MCS0_SGI      |     7.2 Mbps (400ns)    |      15 Mbps (400ns)    |      8.6 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS1_SGI      |    14.4 Mbps (400ns)    |      30 Mbps (400ns)    |     17.2 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS2_SGI      |    21.7 Mbps (400ns)    |      45 Mbps (400ns)    |     25.8 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS3_SGI      |    28.9 Mbps (400ns)    |      60 Mbps (400ns)    |     34.4 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS4_SGI      |    43.3 Mbps (400ns)    |      90 Mbps (400ns)    |     51.6 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS5_SGI      |    57.8 Mbps (400ns)    |     120 Mbps (400ns)    |     68.8 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS6_SGI      |      65 Mbps (400ns)    |     135 Mbps (400ns)    |     77.4 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS7_SGI      |    72.2 Mbps (400ns)    |     150 Mbps (400ns)    |       86 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS8_SGI      |          -----          |          -----          |    103.2 Mbps (800ns)   |
+     WIFI_PHY_RATE_MCS9_SGI      |          -----          |          -----          |    114.7 Mbps (800ns)   |
+     -----------------------------------------------------------------------------------------------------------
+    */
+    WIFI_PHY_RATE_MCS0_SGI,         /**< MCS0 with short GI */
+    WIFI_PHY_RATE_MCS1_SGI,         /**< MCS1 with short GI */
+    WIFI_PHY_RATE_MCS2_SGI,         /**< MCS2 with short GI */
+    WIFI_PHY_RATE_MCS3_SGI,         /**< MCS3 with short GI */
+    WIFI_PHY_RATE_MCS4_SGI,         /**< MCS4 with short GI */
+    WIFI_PHY_RATE_MCS5_SGI,         /**< MCS5 with short GI */
+    WIFI_PHY_RATE_MCS6_SGI,         /**< MCS6 with short GI */
+    WIFI_PHY_RATE_MCS7_SGI,         /**< MCS7 with short GI */
 #if CONFIG_SOC_WIFI_HE_SUPPORT
-    WIFI_PHY_RATE_MCS8_SGI,         /**< MCS8 */
-    WIFI_PHY_RATE_MCS9_SGI,         /**< MCS9 */
+    WIFI_PHY_RATE_MCS8_SGI,         /**< MCS8 with short GI */
+    WIFI_PHY_RATE_MCS9_SGI,         /**< MCS9 with short GI */
 #endif
     WIFI_PHY_RATE_LORA_250K = 0x29, /**< 250 Kbps */
     WIFI_PHY_RATE_LORA_500K = 0x2A, /**< 500 Kbps */
     WIFI_PHY_RATE_MAX,
 } wifi_phy_rate_t;
-
 
 /** WiFi event declarations */
 typedef enum {
