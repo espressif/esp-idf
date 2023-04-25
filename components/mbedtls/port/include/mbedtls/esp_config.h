@@ -314,12 +314,36 @@
  * This is useful in non-threaded environments if you want to avoid blocking
  * for too long on ECC (and, hence, X.509 or SSL/TLS) operations.
  *
- * Uncomment this macro to enable restartable ECC computations.
+ * This option:
+ * - Adds xxx_restartable() variants of existing operations in the
+ *   following modules, with corresponding restart context types:
+ *   - ECP (for Short Weierstrass curves only): scalar multiplication (mul),
+ *     linear combination (muladd);
+ *   - ECDSA: signature generation & verification;
+ *   - PK: signature generation & verification;
+ *   - X509: certificate chain verification.
+ * - Adds mbedtls_ecdh_enable_restart() in the ECDH module.
+ * - Changes the behaviour of TLS 1.2 clients (not servers) when using the
+ *   ECDHE-ECDSA key exchange (not other key exchanges) to make all ECC
+ *   computations restartable:
+ *   - ECDH operations from the key exchange, only for Short Weierstrass
+ *     curves, only when MBEDTLS_USE_PSA_CRYPTO is not enabled.
+ *   - verification of the server's key exchange signature;
+ *   - verification of the server's certificate chain;
+ *   - generation of the client's signature if client authentication is used,
+ *     with an ECC key/certificate.
+ *
+ * \note  In the cases above, the usual SSL/TLS functions, such as
+ *        mbedtls_ssl_handshake(), can now return
+ *        MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS.
  *
  * \note  This option only works with the default software implementation of
  *        elliptic curve functionality. It is incompatible with
- *        MBEDTLS_ECP_ALT, MBEDTLS_ECDH_XXX_ALT, MBEDTLS_ECDSA_XXX_ALT
- *        and MBEDTLS_ECDH_LEGACY_CONTEXT.
+ *        MBEDTLS_ECP_ALT, MBEDTLS_ECDH_XXX_ALT, MBEDTLS_ECDSA_XXX_ALT.
+ *
+ * Requires: MBEDTLS_ECP_C
+ *
+ * Uncomment this macro to enable restartable ECC computations.
  */
 #ifdef CONFIG_MBEDTLS_ECP_RESTARTABLE
 #define MBEDTLS_ECP_RESTARTABLE
@@ -1105,6 +1129,19 @@
  */
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 
+/**
+ * \def MBEDTLS_SSL_RECORD_SIZE_LIMIT
+ *
+ * Enable support for RFC 8449 record_size_limit extension in SSL (TLS 1.3 only).
+ *
+ * \warning This extension is currently in development and must NOT be used except
+ *          for testing purposes.
+ *
+ * Requires: MBEDTLS_SSL_PROTO_TLS1_3
+ *
+ * Uncomment this macro to enable support for the record_size_limit extension
+ */
+//#define MBEDTLS_SSL_RECORD_SIZE_LIMIT
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_2
@@ -1262,21 +1299,21 @@
 #define MBEDTLS_SSL_TLS1_3_DEFAULT_NEW_SESSION_TICKETS 1
 
 /**
-* \def MBEDTLS_SSL_EARLY_DATA
-*
-* Enable support for RFC 8446 TLS 1.3 early data.
-*
-* Requires: MBEDTLS_SSL_SESSION_TICKETS and either
-*           MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED or
-*           MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
-*
-* Comment this to disable support for early data. If MBEDTLS_SSL_PROTO_TLS1_3
-* is not enabled, this option does not have any effect on the build.
-*
-* This feature is experimental, not completed and thus not ready for
-* production.
-*
-*/
+ * \def MBEDTLS_SSL_EARLY_DATA
+ *
+ * Enable support for RFC 8446 TLS 1.3 early data.
+ *
+ * Requires: MBEDTLS_SSL_SESSION_TICKETS and either
+ *           MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED or
+ *           MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
+ *
+ * Comment this to disable support for early data. If MBEDTLS_SSL_PROTO_TLS1_3
+ * is not enabled, this option does not have any effect on the build.
+ *
+ * This feature is experimental, not completed and thus not ready for
+ * production.
+ *
+ */
 //#define MBEDTLS_SSL_EARLY_DATA
 
 /**
@@ -2289,9 +2326,13 @@
  *           MBEDTLS_X509_CRT_PARSE_C MBEDTLS_X509_CRL_PARSE_C,
  *           MBEDTLS_BIGNUM_C, MBEDTLS_MD_C
  *
- * This module is required for the PKCS7 parsing modules.
+ * This module is required for the PKCS #7 parsing modules.
  */
-//#define MBEDTLS_PKCS7_C
+#ifdef CONFIG_MBEDTLS_PKCS7_C
+#define MBEDTLS_PKCS7_C
+#else
+#undef MBEDTLS_PKCS7_C
+#endif
 
 /**
  * \def MBEDTLS_PKCS12_C
