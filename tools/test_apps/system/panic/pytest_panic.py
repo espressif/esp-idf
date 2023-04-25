@@ -639,8 +639,10 @@ def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
         dut.expect_stack_dump()
 
 
+# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
+@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False)
 def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
