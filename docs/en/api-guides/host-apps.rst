@@ -38,7 +38,10 @@ This approach uses the `CMock <https://www.throwtheswitch.org/cmock>`_ framework
 POSIX/Linux Simulator Approach
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ is available on ESP-IDF as a preview target already. It is the base for the Linux target which is already available as a preview. Using this simulator, IDF components can be implemented on the host to make them available to IDF applications when running on host. Currently, only a limited number of components are ready to be built on Linux. Furthermore the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information if the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
+The `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ is available on ESP-IDF as a preview target already. Using this simulator, IDF components can be implemented on the host to make them available to IDF applications when running on host. Currently, only a limited number of components are ready to be built on Linux. Furthermore the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information if the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
+
+.. note::
+    The FreeRTOS POSIX/Linux simulator allows configuring the :ref:`amazon_smp_freertos` version. However, the simulation still runs in single-core mode. The main reason allowing Amazon SMP FreeRTOS is to provide API compatibility with IDF applications written for Amazon SMP FreeRTOS.
 
 Requirements
 ------------

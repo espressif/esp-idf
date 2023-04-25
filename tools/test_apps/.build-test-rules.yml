@@ -19,6 +19,10 @@ tools/test_apps/linux_compatible/hello_world_linux_compatible:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
 
+tools/test_apps/linux_compatible/linux_freertos:
+  enable:
+    - if: IDF_TARGET == "linux"
+
 tools/test_apps/linux_compatible/rmt_mock_build_test:
   enable:
     - if: IDF_TARGET == "linux"

@@ -40,9 +40,11 @@
 #include "stack_macros.h"
 
 #ifdef ESP_PLATFORM
+#if ( configUSE_NEWLIB_REENTRANT == 1 )
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
 #undef _REENT_INIT_PTR
 #define _REENT_INIT_PTR                 esp_reent_init
+#endif
 #endif
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified

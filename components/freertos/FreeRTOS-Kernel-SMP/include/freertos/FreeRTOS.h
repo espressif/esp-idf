@@ -73,8 +73,10 @@
 #endif
 
 #ifdef configNEWLIB_REENTRANT_IS_DYNAMIC
-    #if ( configUSE_NEWLIB_REENTRANT != 1 )
-        #error configUSE_NEWLIB_REENTRANT must be defined to 1 to enable configNEWLIB_REENTRANT_IS_DYNAMIC
+    #if configNEWLIB_REENTRANT_IS_DYNAMIC == 1
+        #if ( configUSE_NEWLIB_REENTRANT != 1 )
+            #error configUSE_NEWLIB_REENTRANT must be defined to 1 to enable configNEWLIB_REENTRANT_IS_DYNAMIC
+        #endif
     #endif
 #else /* configNEWLIB_REENTRANT_IS_DYNAMIC */
     #define configNEWLIB_REENTRANT_IS_DYNAMIC   0

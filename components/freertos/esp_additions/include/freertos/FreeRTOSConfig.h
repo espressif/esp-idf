@@ -108,8 +108,12 @@
 /* ----------------------- System -------------------------- */
 
 #define configMAX_TASK_NAME_LEN                        CONFIG_FREERTOS_MAX_TASK_NAME_LEN
+
+/* The distinciton between Amazon SMP FreeRTOS and IDF FreeRTOS is necessary because in IDF FreeRTOS,
+ * TLSP deletion callbacks can be added directly to the TCB, which is not allowed in Amazon SMP FreeRTOS.
+ * In the latter, the TLSP number is simply doubled to accomodate space for a deletion callback of each TLSP.
+ */
 #if CONFIG_FREERTOS_SMP
-/* Number of TLSP is doubled to store TLSP deletion callbacks */
     #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    ( CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS * 2 )
 #else /* CONFIG_FREERTOS_SMP */
     #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
@@ -189,7 +193,6 @@
 #define INCLUDE_xSemaphoreGetMutexHolder           1
 #define INCLUDE_xTaskGetHandle                     1
 #define INCLUDE_uxTaskGetStackHighWaterMark        1
-#define INCLUDE_uxTaskGetStackHighWaterMark2       1
 #define INCLUDE_eTaskGetState                      1
 #define INCLUDE_xTaskResumeFromISR                 1
 #define INCLUDE_xTimerPendFunctionCall             1
@@ -244,17 +247,8 @@
     #else
         #define configNUM_CORES                  2
     #endif /* CONFIG_FREERTOS_UNICORE */
-    #define configUSE_CORE_AFFINITY              1
     #define configRUN_MULTIPLE_PRIORITIES        1
     #define configUSE_TASK_PREEMPTION_DISABLE    1
-
-/* This is always enabled to call IDF style idle hooks, by can be "--Wl,--wrap"
- * if users enable CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK. */
-    #define configUSE_MINIMAL_IDLE_HOOK          1
-
-/* IDF Newlib supports dynamic reentrancy. We provide our own __getreent()
- * function. */
-    #define configNEWLIB_REENTRANT_IS_DYNAMIC    1
 #endif /* CONFIG_FREERTOS_SMP */
 
 /* -------------------------------------------------- IDF FreeRTOS -----------------------------------------------------
