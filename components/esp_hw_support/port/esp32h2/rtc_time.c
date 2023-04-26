@@ -12,6 +12,9 @@
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
+
 
 static const char *TAG = "rtc_time";
 
@@ -129,6 +132,15 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     while (true) {
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)) {
             cal_val = REG_GET_FIELD(TIMG_RTCCALICFG1_REG(0), TIMG_RTC_CALI_VALUE);
+
+            /*The Fosc CLK of calibration circuit is divided by 32 for ECO2.
+              So we need to multiply the frequency of the Fosc for ECO2 and above chips by 32 times.
+              And ensure that this modification will not affect ECO0 and ECO1.*/
+            if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
+                if (cal_clk == RTC_CAL_RC_FAST) {
+                    cal_val = cal_val >> 5;
+                }
+            }
             break;
         }
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT)) {
