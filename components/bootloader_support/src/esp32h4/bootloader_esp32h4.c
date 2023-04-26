@@ -85,7 +85,7 @@ static inline void bootloader_hardware_init(void)
 
 static inline void bootloader_ana_reset_config(void)
 {
-    //Enable WDT, BOR, and GLITCH reset
+    //Enable WDT, BOD, and GLITCH reset
     bootloader_ana_super_wdt_reset_config(true);
     bootloader_ana_bod_reset_config(true);
     bootloader_ana_clock_glitch_reset_config(true);
