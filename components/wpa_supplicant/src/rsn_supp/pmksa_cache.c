@@ -129,8 +129,8 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
     else if (wpa_key_mgmt_suite_b(akmp))
         rsn_pmkid_suite_b(kck, kck_len, aa, spa, entry->pmkid);
     else
-        rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid,
-                  wpa_key_mgmt_sha256(akmp));
+        rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid, akmp);
+
     os_get_reltime(&now);
     entry->expiration = now.sec + dot11RSNAConfigPMKLifetime;
     entry->reauth_time = now.sec + dot11RSNAConfigPMKLifetime *
