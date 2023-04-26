@@ -177,7 +177,7 @@ typedef struct {
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;               //!< RC_FAST clock divider (division is by clk_8m_div+1, i.e. 0 means ~20MHz frequency)
     uint32_t slow_clk_dcap : 8;                //!< RC_SLOW clock adjustment parameter (higher value leads to lower frequency)
-    uint32_t clk_8m_dfreq : 8;                 //!< RC_FAST clock adjustment parameter (higher value leads to higher frequency)
+    uint32_t clk_8m_dfreq : 10;                 //!< RC_FAST clock adjustment parameter (higher value leads to higher frequency)
     uint32_t rc32k_dfreq : 10;                 //!< Internal RC32K clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
