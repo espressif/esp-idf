@@ -251,7 +251,7 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ?
                                    I2S_TDM_SLOT0 : (uint32_t)slot_cfg->tdm.slot_mask);
     i2s_ll_tx_set_skip_mask(hal->dev, slot_cfg->tdm.skip_mask);
-    i2s_ll_tx_set_half_sample_bit(hal->dev, __builtin_popcount(slot_cfg->tdm.slot_mask) * slot_bit_width / 2);
+    i2s_ll_tx_set_half_sample_bit(hal->dev, total_slot * slot_bit_width / 2);
     i2s_ll_tx_set_bit_order(hal->dev, slot_cfg->tdm.bit_order_lsb);
     i2s_ll_tx_enable_left_align(hal->dev, slot_cfg->tdm.left_align);
     i2s_ll_tx_enable_big_endian(hal->dev, slot_cfg->tdm.big_endian);
@@ -284,7 +284,7 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     /* In mono mode, there only should be one slot enabled, other inactive slots will transmit same data as enabled slot */
     i2s_ll_rx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ?
                                    I2S_TDM_SLOT0 : (uint32_t)slot_cfg->tdm.slot_mask);
-    i2s_ll_rx_set_half_sample_bit(hal->dev, __builtin_popcount(slot_cfg->tdm.slot_mask) * slot_bit_width / 2);
+    i2s_ll_rx_set_half_sample_bit(hal->dev, total_slot * slot_bit_width / 2);
     i2s_ll_rx_set_bit_order(hal->dev, slot_cfg->tdm.bit_order_lsb);
     i2s_ll_rx_enable_left_align(hal->dev, slot_cfg->tdm.left_align);
     i2s_ll_rx_enable_big_endian(hal->dev, slot_cfg->tdm.big_endian);
