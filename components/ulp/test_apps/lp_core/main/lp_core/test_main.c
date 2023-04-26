@@ -17,13 +17,11 @@ volatile lp_core_test_command_reply_t main_cpu_reply = LP_CORE_COMMAND_INVALID;
 volatile lp_core_test_commands_t command_resp = LP_CORE_NO_COMMAND;
 volatile uint32_t test_data_in = 0;
 volatile uint32_t test_data_out = 0;
-volatile uint32_t counter = 0;
 
 volatile uint32_t incrementer = 0;
 
 void handle_commands(lp_core_test_commands_t cmd)
 {
-    counter++;
 
     switch (cmd) {
         case LP_CORE_READ_WRITE_TEST:
@@ -40,7 +38,6 @@ void handle_commands(lp_core_test_commands_t cmd)
             break;
 
         case LP_CORE_DELAY_TEST:
-            counter++;
             /* Echo the command ID back to the main CPU */
             command_resp = LP_CORE_DELAY_TEST;
 
