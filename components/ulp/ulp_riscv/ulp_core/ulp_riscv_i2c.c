@@ -10,6 +10,7 @@
 #include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 #include "hal/i2c_ll.h"
+#include "sdkconfig.h"
 
 #define I2C_CTRL_SLAVE_ADDR_MASK        (0xFF << 0)
 #define I2C_CTRL_SLAVE_REG_ADDR_MASK    (0xFF << 11)
@@ -30,7 +31,7 @@
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
 /* Read/Write timeout (number of iterationis) */
-#define ULP_RISCV_I2C_RW_TIMEOUT            500
+#define ULP_RISCV_I2C_RW_TIMEOUT            CONFIG_ULP_RISCV_I2C_RW_TIMEOUT
 
 /*
  * The RTC I2C controller follows the I2C command registers to perform read/write operations.
@@ -65,19 +66,19 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
             ((byte_num & 0xFF) << 0));      // Byte Num
 }
 
-static inline int32_t ulp_riscv_i2c_wait_for_interrupt(uint32_t timeout)
+static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
 {
     uint32_t status = 0;
     uint32_t to = 0;
 
-    while (to < timeout) {
+    while (1) {
         status = READ_PERI_REG(RTC_I2C_INT_ST_REG);
 
-        /* Return 0 if Tx or Rx data interrupt bits are set. -1 otherwise */
+        /* Return 0 if Tx or Rx data interrupt bits are set. */
         if ((status & RTC_I2C_TX_DATA_INT_ST) ||
             (status & RTC_I2C_RX_DATA_INT_ST)) {
             return 0;
-        /* In case of errors return immidiately */
+        /* In case of error status, break and return -1 */
 #if CONFIG_IDF_TARGET_ESP32S2
         } else if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -88,12 +89,17 @@ static inline int32_t ulp_riscv_i2c_wait_for_interrupt(uint32_t timeout)
             return -1;
         }
 
-        ulp_riscv_delay_cycles(ULP_RISCV_CYCLES_PER_MS);
-        to++;
+        if (ticks_to_wait > -1) {
+            /* If the ticks_to_wait value is not -1, keep track of ticks and
+             * break from the loop once the timeout is reached.
+             */
+            ulp_riscv_delay_cycles(1);
+            to++;
+            if (to >= ticks_to_wait) {
+                return -1;
+            }
+        }
     }
-
-    /* If we reach here, it is a timeout error */
-    return -1;
 }
 
 void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr)
@@ -169,10 +175,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
 
     for (i = 0; i < size; i++) {
-        /* Poll for RTC I2C Rx Data interrupt bit to be set.
-         * Set a loop timeout of 500 msec to bail in case of any driver
-         * and/or hardware errors.
-         */
+        /* Poll for RTC I2C Rx Data interrupt bit to be set */
         if(!ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT)) {
             /* Read the data
              *
@@ -253,10 +256,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
         }
 
-        /* Poll for RTC I2C Tx Data interrupt bit to be set.
-         * Set a loop timeout of 500 msec to bail in case of any driver
-         * and/or hardware errors.
-         */
+        /* Poll for RTC I2C Tx Data interrupt bit to be set */
         if (!ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT)) {
             /* Clear the Tx data interrupt bit */
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
