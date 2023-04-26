@@ -79,6 +79,18 @@ static void print_cipher_type(int pairwise_cipher, int group_cipher)
     case WIFI_CIPHER_TYPE_TKIP_CCMP:
         ESP_LOGI(TAG, "Pairwise Cipher \tWIFI_CIPHER_TYPE_TKIP_CCMP");
         break;
+    case WIFI_CIPHER_TYPE_AES_CMAC128:
+        ESP_LOGI(TAG, "Pairwise Cipher \tWIFI_CIPHER_TYPE_AES_CMAC128");
+        break;
+    case WIFI_CIPHER_TYPE_SMS4:
+        ESP_LOGI(TAG, "Pairwise Cipher \tWIFI_CIPHER_TYPE_SMS4");
+        break;
+    case WIFI_CIPHER_TYPE_GCMP:
+        ESP_LOGI(TAG, "Pairwise Cipher \tWIFI_CIPHER_TYPE_GCMP");
+        break;
+    case WIFI_CIPHER_TYPE_GCMP256:
+        ESP_LOGI(TAG, "Pairwise Cipher \tWIFI_CIPHER_TYPE_GCMP256");
+        break;
     default:
         ESP_LOGI(TAG, "Pairwise Cipher \tWIFI_CIPHER_TYPE_UNKNOWN");
         break;
@@ -102,6 +114,15 @@ static void print_cipher_type(int pairwise_cipher, int group_cipher)
         break;
     case WIFI_CIPHER_TYPE_TKIP_CCMP:
         ESP_LOGI(TAG, "Group Cipher \tWIFI_CIPHER_TYPE_TKIP_CCMP");
+        break;
+    case WIFI_CIPHER_TYPE_SMS4:
+        ESP_LOGI(TAG, "Group Cipher \tWIFI_CIPHER_TYPE_SMS4");
+        break;
+    case WIFI_CIPHER_TYPE_GCMP:
+        ESP_LOGI(TAG, "Group Cipher \tWIFI_CIPHER_TYPE_GCMP");
+        break;
+    case WIFI_CIPHER_TYPE_GCMP256:
+        ESP_LOGI(TAG, "Group Cipher \tWIFI_CIPHER_TYPE_GCMP256");
         break;
     default:
         ESP_LOGI(TAG, "Group Cipher \tWIFI_CIPHER_TYPE_UNKNOWN");
