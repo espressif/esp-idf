@@ -110,6 +110,7 @@ ENV_MARKERS = {
     'external_flash': 'external flash memory connected via VSPI (FSPI)',
     'sdcard_sdmode': 'sdcard running in SD mode',
     'sdcard_spimode': 'sdcard running in SPI mode',
+    'emmc': 'eMMC card',
     'MSPI_F8R8': 'runner with Octal Flash and Octal PSRAM',
     'MSPI_F4R8': 'runner with Quad Flash and Octal PSRAM',
     'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',

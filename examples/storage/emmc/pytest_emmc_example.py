@@ -9,10 +9,19 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.sdcard_sdmode
+@pytest.mark.esp32s3
+@pytest.mark.emmc
+@pytest.mark.parametrize(
+    'config',
+    [
+        '1line',
+        '4line',
+        '8line',
+    ],
+    indirect=True,
+)
 def test_examples_sd_card_sdmmc(dut: Dut) -> None:
-    dut.expect('example: Initializing SD card', timeout=20)
+    dut.expect('example: Initializing eMMC', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)
 
     # Provide enough time for possible SD card formatting
@@ -26,18 +35,12 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
 
     logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
 
-    message_list = ('Opening file /sdcard/hello.txt',
+    message_list = ('Opening file /eMMC/hello.txt',
                     'File written',
-                    'Renaming file /sdcard/hello.txt to /sdcard/foo.txt',
-                    'Reading file /sdcard/foo.txt',
+                    'Renaming file /eMMC/hello.txt to /eMMC/foo.txt',
+                    'Reading file /eMMC/foo.txt',
                     "Read from file: 'Hello {}!'".format(name),
-                    re.compile(str.encode('Formatting card, allocation unit size=\\S+')),
-                    'file doesnt exist, format done',
-                    'Opening file /sdcard/nihao.txt',
-                    'File written',
-                    'Reading file /sdcard/nihao.txt',
-                    "Read from file: 'Nihao {}!'".format(name),
                     'Card unmounted')
 
     for msg in message_list:
-        dut.expect(msg, timeout=60)
+        dut.expect(msg, timeout=10)
