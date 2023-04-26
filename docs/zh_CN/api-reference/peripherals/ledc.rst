@@ -1,5 +1,6 @@
 LED PWM 控制器
 ==============
+
 {IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
 
 :link_to_translation:`en:[English]`

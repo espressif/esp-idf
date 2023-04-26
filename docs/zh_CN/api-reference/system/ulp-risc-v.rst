@@ -150,11 +150,42 @@ ULP RISC-V 协处理器由定时器启动，调用 :cpp:func:`ulp_riscv_run` 即
 
 如需禁用定时器（有效防止 ULP 程序再次运行），请清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位，此项操作可在 ULP 代码或主程序中进行。
 
+ULP RISC-V 外设支持
+-------------------
+
+为了增强性能，ULP RISC-V 协处理器可以访问在低功耗 (RTC) 电源域中运行的外设。当主 CPU 处于睡眠模式时，ULP RISC-V 协处理器可与这些外设进行交互，并在满足唤醒条件时唤醒主 CPU。以下为所支持的外设类型。
+
+RTC I2C
+^^^^^^^^
+
+RTC I2C 控制器提供了在 RTC 电源域中作为 I2C 主机的功能。ULP RISC-V 协处理器可以使用该控制器对 I2C 从机设备进行读写操作。如要使用 RTC I2C 外设，需在初始化 ULP RISC-V 内核并在其进入睡眠模式之前，先在主内核上运行的应用程序中调用 :cpp:func:`ulp_riscv_i2c_master_init` 函数。
+
+初始化 RTC I2C 控制器之后，请务必先用 :cpp:func:`ulp_riscv_i2c_master_set_slave_addr` API 将 I2C 从机设备地址编入程序，再执行读写操作。
+
+.. note:: RTC I2C 外设首先将检查 :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API 是否将从机子寄存器地址编入程序。如未编入，I2C 外设将以 ``SENS_SAR_I2C_CTRL_REG[18:11]`` 作为后续读写操作的子寄存器地址。这可能会导致 RTC I2C 外设与某些无需对子寄存器进行配置的 I2C 设备或传感器不兼容。
+
+.. note:: 在主 CPU 访问 RTC I2C 外设和 ULP RISC-V 内核访问 RTC I2C 外设之间，未提供硬件原子操作的正确性保护，因此请勿让两个内核同时访问外设。
+
+如果基于 RTC I2C 的 ULP RISC-V 程序未按预期运行，可以进行以下完整性检查排查问题：
+
+ * SDA/SCL 管脚选择问题：SDA 管脚只能配置为 GPIO1 或 GPIO3，SCL 管脚只能配置为 GPIO0 或 GPIO2。请确保管脚配置正确。
+
+ * I2C 时序参数问题：RTC I2C 总线时序配置受到 I2C 标准总线规范限制，任何违反标准 I2C 总线规范的时序参数都会导致错误。了解有关时序参数的详细信息，请阅读 `标准 I2C 总线规范 <https://en.wikipedia.org/wiki/I%C2%B2C>`_。
+
+ * 如果 I2C 从机设备或传感器不需要子寄存器地址进行配置，它可能与 RTC I2C 外设不兼容。请参考前文注意事项。
+
+ * 如果 RTC 驱动程序在主 CPU 上运行时出现 `Write Failed!` 或 `Read Failed!` 的错误日志，检查是否出现以下情况：
+
+        * I2C 从机设备或传感器与乐鑫 SoC 上的标准 I2C 主机设备一起正常工作，说明 I2C 从机设备本身没有问题。
+        * 如果 RTC I2C 中断状态日志报告 `TIMEOUT` 错误或 `ACK` 错误，则通常表示 I2C 设备未响应 RTC I2C 控制器发出的 `START` 条件。如果 I2C 从机设备未正确连接到控制器管脚或处于异常状态，则可能会发生这种情况。在进行后续操作之前，请确保 I2C 从机设备状态良好且连接正确。
+        * 如果 RTC I2C 中断日志没有报告任何错误状态，则可能表示驱动程序接收 I2C 从机设备数据时速度较慢。这可能是由于 RTC I2C 控制器没有 TX/RX FIFO 来存储多字节数据，而是依赖于使用中断状态轮询机制来进行单字节传输。通过在外设的初始化配置参数中设置 SCL 低周期和 SCL 高周期，可以尽量提高外设 SCL 时钟的运行速度，在一定程度上缓解这一问题。
+
+* **您还可以检查在没有任何 ULP RISC-V 代码干扰和任何睡眠模式未被激活的情况下，RTC I2C 控制器是否仅在主 CPU 上正常工作。** RTC I2C 外设在此基本配置下应该正常工作，这样可以排除 ULP 或睡眠模式导致的潜在问题。
 
 调试 ULP RISC-V 程序
 ----------------------------------
 
-在对 ULP RISC-V 进行编程时，若程序未按预期运行，有时很难找出的原因。因为其内核的简单性，许多标准的调试方法如 JTAG 或 ``printf`` 无法使用。
+在对 ULP RISC-V 进行配置时，若程序未按预期运行，有时很难找出的原因。因为其内核的简单性，许多标准的调试方法如 JTAG 或 ``printf`` 无法使用。
 
 以下方法可以帮助您调试 ULP RISC-V 程序：
 
@@ -177,3 +208,4 @@ API 参考
 .. include-build-file:: inc/ulp_riscv.inc
 .. include-build-file:: inc/ulp_riscv_lock_shared.inc
 .. include-build-file:: inc/ulp_riscv_lock.inc
+.. include-build-file:: inc/ulp_riscv_i2c.inc

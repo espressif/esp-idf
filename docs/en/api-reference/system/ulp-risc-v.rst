@@ -153,12 +153,12 @@ To disable the timer (effectively preventing the ULP program from running again)
 ULP RISC-V Peripheral Support
 ------------------------------
 
-To enhance the capabilities of the ULP RISC-V coprocessor, it has access to peripherals which operate in the low-power (RTC) domain. The ULP RISC-V coprocessor can interact with these peripherals when the main CPU is in sleep-mode and can wakeup the main CPU once a wakeup condition is reached. The following peripherals are supported:
+To enhance the capabilities of the ULP RISC-V coprocessor, it has access to peripherals which operate in the low-power (RTC) domain. The ULP RISC-V coprocessor can interact with these peripherals when the main CPU is in sleep mode, and can wake up the main CPU once a wakeup condition is reached. The following peripherals are supported.
 
 RTC I2C
 ^^^^^^^^
 
-The RTC I2C controller provides I2C Master functionality in the RTC domain. The ULP RISC-V coprocessor can read from or write to I2C slave devices using this controller. To use the RTC I2C peripheral call the :cpp:func:`ulp_riscv_i2c_master_init` from your application running on the main core before initializing the ULP RISC-V core and going in to sleep.
+The RTC I2C controller provides I2C master functionality in the RTC domain. The ULP RISC-V coprocessor can read from or write to I2C slave devices using this controller. To use the RTC I2C peripheral, call the :cpp:func:`ulp_riscv_i2c_master_init` from your application running on the main core before initializing the ULP RISC-V core and going to sleep.
 
 Once the RTC I2C controller is initialized, the I2C slave device address must be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_addr` API before any read or write operation is performed.
 
@@ -168,19 +168,19 @@ Once the RTC I2C controller is initialized, the I2C slave device address must be
 
 In case your RTC I2C based ULP RISC-V program is not working as expected, the following sanity checks can help in debugging the issue:
 
- * Incorrect SDA/SCL pin selection: The SDA pin can only be setup as GPIO1 or GPIO3 and SCL pin can only be setup as GPIO0 or GPIO2. Make sure that the pin configuration is correct.
+ * Incorrect SDA/SCL pin selection: The SDA pin can only be set up as GPIO1 or GPIO3 and SCL pin can only be set up as GPIO0 or GPIO2. Make sure that the pin configuration is correct.
 
- * Incorrect I2C timing parameters: The RTC I2C bus timing configuration is limited by the I2C standard bus specification. Any timining parameters which violate the standard I2C bus specifications would result in an error. For details on the timing parameters, please read the standard I2C bus specifications.
+ * Incorrect I2C timing parameters: The RTC I2C bus timing configuration is limited by the I2C standard bus specification. Any timing parameters which violate the standard I2C bus specifications would result in an error. For details on the timing parameters, please read the `standard I2C bus specifications <https://en.wikipedia.org/wiki/I%C2%B2C>`_.
 
  * If the I2C slave device or sensor does not require a sub-register address to be programmed, it may not be compatible with the RTC I2C peripheral. Please refer the notes above.
 
- * If the RTC driver reports a `Write Failed!` or `Read Failed!` error log when run from the main CPU then make sure:
+ * If the RTC driver reports a `Write Failed!` or `Read Failed!` error log when running on the main CPU, then make sure:
 
         * The I2C slave device or sensor works correctly with the standard I2C master on Espressif SoCs. This would rule out any problems with the I2C slave device itself.
         * If the RTC I2C interrupt status log reports a `TIMEOUT` error or `ACK` error, it could typically mean that the I2C device did not respond to a `START` condition sent out by the RTC I2C controller. This could happen if the I2C slave device is not connected properly to the controller pins or if the I2C slave device is in a bad state. Make sure that the I2C slave device is in a good state and connected properly before continuing.
-        * If the RTC I2C interrupt log does not report any error status, it could mean that the driver is not fast enough in receiving data from the I2C slave device. This could happen as the RTC I2C controller does not have a Tx/Rx FIFO to store multiple bytes of data but rather, it depends on single byte transmissions using an interrupt status polling mechanism. This could be mitigated to some extent by making sure that the SCL clock of the peripheral is running with as fast as possible. This can be tweaked by configuring the SCL low period and SCL high period values in the initialization config parameters for the peripheral.
+        * If the RTC I2C interrupt log does not report any error status, it could mean that the driver is not fast enough in receiving data from the I2C slave device. This could happen as the RTC I2C controller does not have a TX/RX FIFO to store multiple bytes of data but rather, it depends on single byte transmissions using an interrupt status polling mechanism. This could be mitigated to some extent by making sure that the SCL clock of the peripheral is running as fast as possible. This can be tweaked by configuring the SCL low period and SCL high period values in the initialization config parameters for the peripheral.
 
-* Other methods of debugging problems would be to ensure that the RTC I2C controller is operational *only* from the main CPU *without* any ULP RISC-V code interfering and *without* any sleepmode being activated. This is the basic configuration under which the RTC I2C peripheral must work. This way you can rule out any potential issues due to the ULP or sleep modes.
+* Other methods of debugging problems would be to ensure that the RTC I2C controller is operational *only* on the main CPU *without* any ULP RISC-V code interfering and *without* any sleep mode being activated. This is the basic configuration under which the RTC I2C peripheral must work. This way you can rule out any potential issues due to the ULP or sleep modes.
 
 Debugging Your ULP RISC-V Program
 ----------------------------------

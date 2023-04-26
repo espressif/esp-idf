@@ -134,7 +134,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     :SOC_MCPWM_SUPPORTED: - MCPWM
 
 
-
 Light-sleep 外设下电
 -------------------------
 
