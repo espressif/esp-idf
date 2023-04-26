@@ -50,6 +50,8 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_sleep.h"
 
+#include "hal/efuse_hal.h"
+
 /* Macro definition
  ************************************************************************
  */
@@ -586,6 +588,7 @@ void controller_sleep_deinit(void)
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
+    uint32_t chip_version;
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
 
@@ -647,7 +650,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     /* Enable BT-related clocks */
     modem_clock_module_enable(PERIPH_BT_MODULE);
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, 249);
+    chip_version = efuse_hal_chip_revision();
+    if (chip_version == 0) {
+        modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, (160 - 1));
+    } else{
+        modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, (2 - 1));
+    }
     esp_phy_modem_init();
     esp_phy_enable();
     esp_btbb_enable();
