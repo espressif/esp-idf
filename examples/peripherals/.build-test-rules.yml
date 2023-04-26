@@ -45,9 +45,6 @@ examples/peripherals/i2s/i2s_adc_dac:
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: rtc timer is not supported
 
 examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
@@ -290,9 +287,3 @@ examples/peripherals/uart/uart_echo_rs485:
 examples/peripherals/usb:
   disable:
     - if: SOC_USB_PERIPH_NUM != 1
-
-examples/peripherals/wave_gen:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: the other targets are not tested yet
