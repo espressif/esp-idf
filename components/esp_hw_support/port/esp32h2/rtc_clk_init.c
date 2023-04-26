@@ -19,6 +19,7 @@
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "hal/clk_tree_ll.h"
 
 static const char *TAG = "rtc_clk_init";
 
@@ -38,6 +39,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, cfg.clk_8m_dfreq);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OC_SCK_DCAP, cfg.slow_clk_dcap);
     REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
+
+    clk_ll_rc_fast_tick_conf();
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);
