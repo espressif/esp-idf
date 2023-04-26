@@ -1497,9 +1497,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 #if (BTM_WBS_INCLUDED == TRUE)
         case BTA_AG_WBS_EVT:
         {
-            BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.value);
+            BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.num);
             memset(&param, 0, sizeof(esp_hf_cb_param_t));
-            param.wbs_rep.codec = p_data->val.value;
+            param.wbs_rep.codec = p_data->val.num;
             btc_hf_cb_to_app(ESP_HF_WBS_RESPONSE_EVT, &param);
             break;
         }
