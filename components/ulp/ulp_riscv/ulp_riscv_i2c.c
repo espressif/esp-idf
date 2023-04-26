@@ -15,6 +15,7 @@
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 
 static const char *RTCI2C_TAG = "ulp_riscv_i2c";
 
@@ -43,7 +44,7 @@ rtc_io_dev_t *rtc_io_dev = &RTCIO;
 #define MICROSEC_TO_RTC_FAST_CLK(period)    (period) * ((float)(SOC_CLK_RC_FAST_FREQ_APPROX) / (1000000.0))
 
 /* Read/Write timeout (number of iterations)*/
-#define ULP_RISCV_I2C_RW_TIMEOUT            500
+#define ULP_RISCV_I2C_RW_TIMEOUT            CONFIG_ULP_RISCV_I2C_RW_TIMEOUT
 
 static esp_err_t i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_io_num)
 {
@@ -233,13 +234,13 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
 #endif // CONFIG_IDF_TARGET_ESP32S2
 }
 
-static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(uint32_t timeout)
+static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
 {
     uint32_t status = 0;
     uint32_t to = 0;
-    esp_err_t ret = ESP_ERR_TIMEOUT;
+    esp_err_t ret = ESP_OK;
 
-    while (to < timeout) {
+    while (1) {
         status = READ_PERI_REG(RTC_I2C_INT_ST_REG);
 
         /* Return ESP_OK if Tx or Rx data interrupt bits are set. */
@@ -259,10 +260,17 @@ static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(uint32_t timeout)
             break;
         }
 
-        vTaskDelay(1);
-
-        /* Loop timeout. If this expires, we return ESP_ERR_TIMEOUT */
-        to++;
+        if (ticks_to_wait > -1) {
+            /* If the ticks_to_wait value is not -1, keep track of ticks and
+             * break from the loop once the timeout is reached.
+             */
+            vTaskDelay(1);
+            to++;
+            if (to >= ticks_to_wait) {
+                ret = ESP_ERR_TIMEOUT;
+                break;
+            }
+        }
     }
 
     return ret;
@@ -339,10 +347,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
 
     for (i = 0; i < size; i++) {
-        /* Poll for RTC I2C Rx Data interrupt bit to be set.
-         * Set a loop timeout of 500 iterations to bail in case of any driver
-         * and/or hardware errors.
-         */
+        /* Poll for RTC I2C Rx Data interrupt bit to be set */
         ret = ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT);
 
         if (ret == ESP_OK) {
@@ -426,10 +431,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
         }
 
-        /* Poll for RTC I2C Tx Data interrupt bit to be set.
-         * Set a loop timeout of 500 iterations to bail in case of any driver
-         * and/or hardware errors.
-         */
+        /* Poll for RTC I2C Tx Data interrupt bit to be set */
         ret = ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT);
 
         if (ret == ESP_OK) {
