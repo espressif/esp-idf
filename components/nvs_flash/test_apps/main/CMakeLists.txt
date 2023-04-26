@@ -1,0 +1,8 @@
+idf_component_register(SRC_DIRS "."
+                       PRIV_REQUIRES cmock test_utils nvs_flash bootloader_support spi_flash
+                       EMBED_TXTFILES encryption_keys.bin partition_encrypted.bin sample.bin
+                       WHOLE_ARCHIVE)
+
+if(CONFIG_NVS_ENCRYPTION)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC idf::mbedtls)
+endif()
