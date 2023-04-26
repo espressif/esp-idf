@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,8 +13,6 @@
 # check_environment() function below. If possible, avoid importing
 # any external libraries here - put in external script, or import in
 # their specific function instead.
-from __future__ import annotations
-
 import codecs
 import json
 import locale
@@ -281,7 +279,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
         SCOPES = ('default', 'global', 'shared')
 
-        def __init__(self, scope: Union['Scope', str]=None) -> None:
+        def __init__(self, scope: Union['Scope', str]=None) -> None:  # noqa: F821
             if scope is None:
                 self._scope = 'default'
             elif isinstance(scope, str) and scope in self.SCOPES:
@@ -468,25 +466,35 @@ def init_cli(verbose_output: List=None) -> Any:
                     for o, f in flash_items:
                         cmd += o + ' ' + flasher_path(f) + ' '
 
-                print('\n%s build complete. To flash, run this command:' % title)
+                flash_target = 'flash' if key == 'project' else f'{key}-flash'
+                print(f'{os.linesep}{title} build complete. To flash, run:')
+                print(f' idf.py {flash_target}')
+                if args.port:
+                    print('or')
+                    print(f' idf.py -p {args.port} {flash_target}')
+                print('or')
+                print(f' idf.py -p PORT {flash_target}')
 
-                print(
-                    '%s %s -p %s -b %s --before %s --after %s --chip %s %s write_flash %s' % (
-                        PYTHON,
-                        _safe_relpath('%s/components/esptool_py/esptool/esptool.py' % os.environ['IDF_PATH']),
-                        args.port or '(PORT)',
-                        args.baud,
-                        flasher_args['extra_esptool_args']['before'],
-                        flasher_args['extra_esptool_args']['after'],
-                        flasher_args['extra_esptool_args']['chip'],
-                        '--no-stub' if not flasher_args['extra_esptool_args']['stub'] else '',
-                        cmd.strip(),
-                    ))
-                print(
-                    "or run 'idf.py -p %s %s'" % (
-                        args.port or '(PORT)',
-                        key + '-flash' if key != 'project' else 'flash',
-                    ))
+                esptool_cmd = ['python -m esptool',
+                               '--chip {}'.format(flasher_args['extra_esptool_args']['chip']),
+                               f'-b {args.baud}',
+                               '--before {}'.format(flasher_args['extra_esptool_args']['before']),
+                               '--after {}'.format(flasher_args['extra_esptool_args']['after'])]
+
+                if not flasher_args['extra_esptool_args']['stub']:
+                    esptool_cmd += ['--no-stub']
+
+                if args.port:
+                    esptool_cmd += [f'-p {args.port}']
+
+                esptool_cmd += ['write_flash']
+
+                print('or')
+                print(' {}'.format(' '.join(esptool_cmd + [cmd.strip()])))
+
+                if os.path.exists(os.path.join(args.build_dir, 'flash_args')):
+                    print(f'or from the "{args.build_dir}" directory')
+                    print(' {}'.format(' '.join(esptool_cmd + ['@flash_args'])))
 
             if 'all' in actions or 'build' in actions:
                 print_flashing_message('Project', 'project')
