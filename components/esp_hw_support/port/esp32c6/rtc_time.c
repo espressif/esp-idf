@@ -218,7 +218,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    return lp_timer_hal_get_cycle_count(0);
+    return lp_timer_hal_get_cycle_count();
 }
 
 void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more

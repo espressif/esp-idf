@@ -80,6 +80,8 @@ elseif(ULP_COCPU_IS_LP_CORE)
     list(APPEND ULP_S_SOURCES
     "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
+    "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_memory_shared.c"
+    "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c")
 
@@ -87,8 +89,11 @@ elseif(ULP_COCPU_IS_LP_CORE)
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
+    target_link_options(${ULP_APP_NAME}
+        PRIVATE SHELL:-T ${IDF_PATH}/components/soc/${IDF_TARGET}/ld/${IDF_TARGET}.peripherals.ld)
     target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
-    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include")
+    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include"
+                                                       "${IDF_PATH}/components/ulp/lp_core/shared/include")
 
 else()
     foreach(ulp_s_source ${ULP_S_SOURCES})

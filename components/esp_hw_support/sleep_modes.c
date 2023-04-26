@@ -871,7 +871,7 @@ esp_err_t esp_light_sleep_start(void)
     esp_clk_private_lock();
 
 #if SOC_LP_TIMER_SUPPORTED
-    s_config.rtc_ticks_at_sleep_start = lp_timer_hal_get_cycle_count(0);
+    s_config.rtc_ticks_at_sleep_start = lp_timer_hal_get_cycle_count();
 #else
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 #endif
@@ -1006,7 +1006,7 @@ esp_err_t esp_light_sleep_start(void)
 
     // System timer has been stopped for the duration of the sleep, correct for that.
 #if SOC_LP_TIMER_SUPPORTED
-    uint64_t rtc_ticks_at_end = lp_timer_hal_get_cycle_count(0);
+    uint64_t rtc_ticks_at_end = lp_timer_hal_get_cycle_count();
 #else
     uint64_t rtc_ticks_at_end = rtc_time_get();
 #endif
@@ -1590,6 +1590,12 @@ static uint32_t get_power_down_flags(void)
             // On ESP32, forcing power up of RTC_PERIPH
             // prevents ULP timer and touch FSMs from working correctly.
             s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option = ESP_PD_OPTION_OFF;
+        }
+#endif //CONFIG_IDF_TARGET_ESP32
+#if SOC_LP_CORE_SUPPORTED
+        else if (s_config.wakeup_triggers &  RTC_LP_CORE_TRIG_EN) {
+            // Need to keep RTC_PERIPH on to allow lp core to wakeup during sleep (e.g. from lp timer)
+            s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option = ESP_PD_OPTION_ON;
         }
 #endif //CONFIG_IDF_TARGET_ESP32
     }
