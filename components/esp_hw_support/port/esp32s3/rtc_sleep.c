@@ -69,7 +69,6 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         .xtal_fpu = (sleep_flags & RTC_SLEEP_PD_XTAL) ? 0 : 1,
         .deep_slp_reject = 1,
         .light_slp_reject = 1,
-        .dbg_atten_monitor = RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT,
         .rtc_dbias_slp = RTC_CNTL_DBIAS_1V10
     };
 
@@ -77,30 +76,37 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         assert(sleep_flags & RTC_SLEEP_PD_XTAL);
         out_config->dig_dbias_slp = 0;  //not used
         //rtc voltage from high to low
-        if (sleep_flags & RTC_SLEEP_USE_ADC_TESEN_MONITOR) {
+        if ((sleep_flags & RTC_SLEEP_USE_ADC_TESEN_MONITOR) || (!(sleep_flags & RTC_SLEEP_PD_INT_8M))) {
             /*
-             * rtc voltage in sleep mode >= 1.1v
+             * rtc voltage in sleep mode >= 0.9v
+             * if 8MD256 select as RTC slow clock src, only need dbg_atten_slp set to 0
              * Support all features:
-             * - ADC/Temperature sensor in monitor mode (ULP) (also need pd_cur_monotor = 0)
+             * - 8MD256 as RTC slow clock src
+             * - ADC/Temperature sensor in monitor mode (ULP) (also need pd_cur_monitor = 0)
              * - RTC IO as input
              * - RTC Memory at high temperature
              * - ULP
              * - Touch sensor
-             * - 8MD256 as RTC slow clock src
              */
             out_config->rtc_regulator_fpu = 1;
             out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP;
         } else if (sleep_flags & RTC_SLEEP_NO_ULTRA_LOW) {
             /*
-             * rtc voltage in sleep need stable and not less than 0.7v (default mode):
-             * can't use ADC/Temperature sensor in monitor mode
+             * rtc voltage in sleep mode >= 0.7v (default mode):
+             * Support follow features:
+             * - RTC IO as input
+             * - RTC Memory at high temperature
+             * - ULP
+             * - Touch sensor
              */
             out_config->rtc_regulator_fpu = 1;
             out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT;
         } else {
             /*
              * rtc regulator not opened and rtc voltage is about 0.66v (ultra low power):
-               also can't use RTC IO as input, RTC memory can't work under high temperature
+             * Support follow features:
+             * - ULP
+             * - Touch sensor
              */
             out_config->rtc_regulator_fpu = 0;
             out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_DEEPSLEEP_ULTRA_LOW;
@@ -110,23 +116,36 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         //voltage from high to low
         if ((sleep_flags & RTC_SLEEP_DIG_USE_8M) || !(sleep_flags & RTC_SLEEP_PD_XTAL)) {
             /*
-             * digital voltage not less than 1.1v, rtc voltage not less than 1.1v to keep system stable
+             * digital voltage not less than 1.1v, rtc voltage is about 1.1v
              * Support all features:
              * - XTAL
              * - RC 8M used by digital system
-             * - ADC/Temperature sensor in monitor mode (ULP)
+             * - 8MD256 as RTC slow clock src (only need dbg_atten_slp to 0)
+             * - ADC/Temperature sensor in monitor mode (ULP) (also need pd_cur_monitor = 0)
              * - ULP
              * - Touch sensor
-             * - 8MD256 as RTC slow clock src
              */
             out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP;
             out_config->dig_dbias_slp = RTC_CNTL_DBIAS_1V10;
+         } else if (!(sleep_flags & RTC_SLEEP_PD_INT_8M)){
+            /*
+             * dbg_atten_slp need to set to 0.
+             * digital voltage is about 0.67v, rtc voltage is about 1.1v
+             * Support features:
+             * - 8MD256 as RTC slow clock src
+             * - ADC/Temperature sensor in monitor mode (ULP) (also need pd_cur_monitor = 0)
+             * - ULP
+             * - Touch sensor
+            */
+            out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP;
+            out_config->dig_dbias_slp = 0;
         } else {
             /*
-             * digital voltage not less than 0.6v
-             * if use RTC_SLEEP_USE_ADC_TESEN_MONITOR, rtc voltage need to be >= 0.9v(default voltage), others just use default rtc voltage.
-             * - not support XTAL
-             * - not support RC 8M in digital system
+             * digital voltage not less than 0.6v, rtc voltage is about 0.95v
+             * Support features:
+             * - ADC/Temperature sensor in monitor mode (ULP) (also need pd_cur_monitor = 0)
+             * - ULP
+             * - Touch sensor
             */
             out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT;
             out_config->dig_dbias_slp = RTC_CNTL_DBIAS_SLP;
@@ -192,12 +211,13 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, cfg.rtc_dbias_slp);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG_SLEEP, cfg.dig_dbias_slp);
 
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_MONITOR, cfg.dbg_atten_monitor);
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_MONITOR, cfg.bias_sleep_monitor);
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_DEEP_SLP, cfg.dbg_atten_slp);
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_DEEP_SLP, cfg.bias_sleep_slp);
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_MONITOR, cfg.pd_cur_monitor);
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_DEEP_SLP, cfg.pd_cur_slp);
+
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_MONITOR, RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_MONITOR, cfg.bias_sleep_monitor);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_MONITOR, cfg.pd_cur_monitor);
 
     if (cfg.deep_slp) {
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_PD_EN);
