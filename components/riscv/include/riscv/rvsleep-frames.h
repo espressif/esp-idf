@@ -7,6 +7,8 @@
 #ifndef __RVSLEEP_FRAMES_H__
 #define __RVSLEEP_FRAMES_H__
 
+#include "sdkconfig.h"
+
 /* Align a value up to nearest n-byte boundary, where n is a power of 2. */
 #define ALIGNUP(n, val) (((val) + (n) - 1) & -(n))
 
@@ -86,6 +88,9 @@ STRUCT_BEGIN
                                                              * to sleep or has just been awakened. We use the
                                                              * lowest 2 bits as indication infomation, 3 means
                                                              * being awakened, 1 means going to sleep */
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    STRUCT_FIELD (long, 4, RV_SLP_CSF_CTX_CRC,  frame_crc)  /* Used to check RvCoreCriticalSleepFrame integrity */
+#endif
 STRUCT_END(RvCoreCriticalSleepFrame)
 
 #if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
@@ -148,6 +153,9 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_OEN,        ugpio_oen)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_IN,         ugpio_in)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_OUT,        ugpio_out)
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    STRUCT_FIELD (long, 4, RV_SLP_NCSF_CTX_CRC,         frame_crc)        /* Used to check RvCoreNonCriticalSleepFrame integrity */
+#endif
 STRUCT_END(RvCoreNonCriticalSleepFrame)
 
 #endif /* #ifndef __RVSLEEP_FRAMES_H__ */
