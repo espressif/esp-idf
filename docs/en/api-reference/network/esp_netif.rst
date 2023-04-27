@@ -69,7 +69,7 @@ Data and event flow in the diagram
 
 * ``********``     Events aggregated in ESP-NETIF propagates to driver, user code and network stack
 
-* ``|``           User settings and runtime configuration
+* ``|``            User settings and runtime configuration
 
 ESP-NETIF interaction
 ---------------------
