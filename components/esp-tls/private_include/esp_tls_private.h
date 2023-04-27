@@ -26,6 +26,9 @@
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
 #endif
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+#include "psa/crypto.h"
+#endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
 #include "wolfssl/ssl.h"

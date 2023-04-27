@@ -2996,7 +2996,7 @@
 #endif
 
 /* This flag makes sure that we are not using
- * any functino that is deprecated by mbedtls */
+ * any function that is deprecated by mbedtls */
 #define MBEDTLS_DEPRECATED_REMOVED
 
 #endif /* ESP_CONFIG_H */
