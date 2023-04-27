@@ -20,6 +20,17 @@
 
 #define F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT 512
 
+#ifdef CONFIG_VFS_SUPPORT_DIR
+struct cached_data{
+#if FF_USE_LFN
+	char file_path[FILENAME_MAX+FF_LFN_BUF+1];
+#else
+	char file_path[FILENAME_MAX+FF_SFN_BUF+1];
+#endif
+	FILINFO fileinfo;
+};
+#endif
+
 typedef struct {
     char fat_drive[8];  /* FAT drive name */
     char base_path[ESP_VFS_PATH_MAX];   /* base path in VFS where partition is registered */
@@ -29,6 +40,10 @@ typedef struct {
     char tmp_path_buf[FILENAME_MAX+3];  /* temporary buffer used to prepend drive name to the path */
     char tmp_path_buf2[FILENAME_MAX+3]; /* as above; used in functions which take two path arguments */
     bool *o_append;  /* O_APPEND is stored here for each max_files entries (because O_APPEND is not compatible with FA_OPEN_APPEND) */
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    char dir_path[FILENAME_MAX]; /* variable to store path of opened directory*/
+    struct cached_data cached_fileinfo;
+#endif
     FIL files[0];   /* array with max_files entries; must be the final member of the structure */
 } vfs_fat_ctx_t;
 
@@ -93,6 +108,7 @@ static int fresult_to_errno(FRESULT fr);
 static vfs_fat_ctx_t* s_fat_ctxs[FF_VOLUMES] = { NULL };
 //backwards-compatibility with esp_vfs_fat_unregister()
 static vfs_fat_ctx_t* s_fat_ctx = NULL;
+
 
 static size_t find_context_index_by_path(const char* base_path)
 {
@@ -659,34 +675,13 @@ static inline mode_t get_stat_mode(bool is_dir)
             ((is_dir) ? S_IFDIR : S_IFREG);
 }
 
-static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
+static void update_stat_struct(struct stat *st, FILINFO *info)
 {
-    if (strcmp(path, "/") == 0) {
-        /* FatFS f_stat function does not work for the drive root.
-         * Just pretend that this is a directory.
-         */
-        memset(st, 0, sizeof(*st));
-        st->st_mode = get_stat_mode(true);
-        return 0;
-    }
-
-    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&fat_ctx->lock);
-    prepend_drive_to_path(fat_ctx, &path, NULL);
-    FILINFO info;
-    FRESULT res = f_stat(path, &info);
-    _lock_release(&fat_ctx->lock);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        return -1;
-    }
-
     memset(st, 0, sizeof(*st));
-    st->st_size = info.fsize;
-    st->st_mode = get_stat_mode((info.fattrib & AM_DIR) != 0);
-    fat_date_t fdate = { .as_int = info.fdate };
-    fat_time_t ftime = { .as_int = info.ftime };
+    st->st_size = info->fsize;
+    st->st_mode = get_stat_mode((info->fattrib & AM_DIR) != 0);
+    fat_date_t fdate = { .as_int = info->fdate };
+    fat_time_t ftime = { .as_int = info->ftime };
     struct tm tm = {
         .tm_mday = fdate.mday,
         .tm_mon = fdate.mon - 1,    /* unlike tm_mday, tm_mon is zero-based */
@@ -704,6 +699,42 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
     st->st_mtime = mktime(&tm);
     st->st_atime = 0;
     st->st_ctime = 0;
+}
+
+static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
+{
+    if (strcmp(path, "/") == 0) {
+        /* FatFS f_stat function does not work for the drive root.
+         * Just pretend that this is a directory.
+         */
+        memset(st, 0, sizeof(*st));
+        st->st_mode = get_stat_mode(true);
+        return 0;
+    }
+
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+
+    //If fileinfo is already cached by readdir for requested filename,
+    //then return the same info else obtain fileinfo with f_stat function
+    if (strcmp(path, fat_ctx->cached_fileinfo.file_path) == 0) {
+        update_stat_struct(st, &fat_ctx->cached_fileinfo.fileinfo);
+        memset(&fat_ctx->cached_fileinfo, 0 ,sizeof(FILINFO));
+        return 0;
+    }
+
+    memset(&fat_ctx->cached_fileinfo, 0 ,sizeof(fat_ctx->cached_fileinfo));
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &path, NULL);
+    FILINFO info;
+    FRESULT res = f_stat(path, &info);
+    _lock_release(&fat_ctx->lock);
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        return -1;
+    }
+
+    update_stat_struct(st, &info);
     return 0;
 }
 
@@ -826,6 +857,7 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    strlcpy(fat_ctx->dir_path, name, FILENAME_MAX);
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &name, NULL);
     vfs_fat_dir_t* fat_dir = ff_memalloc(sizeof(vfs_fat_dir_t));
@@ -863,6 +895,7 @@ static int vfs_fat_closedir(void* ctx, DIR* pdir)
 
 static struct dirent* vfs_fat_readdir(void* ctx, DIR* pdir)
 {
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     vfs_fat_dir_t* fat_dir = (vfs_fat_dir_t*) pdir;
     struct dirent* out_dirent;
     int err = vfs_fat_readdir_r(ctx, pdir, &fat_dir->cur_dirent, &out_dirent);
@@ -870,6 +903,19 @@ static struct dirent* vfs_fat_readdir(void* ctx, DIR* pdir)
         errno = err;
         return NULL;
     }
+
+    //Store the FILEINFO in the cached_fileinfo. If the stat function is invoked immediately afterward,
+    //the cached_fileinfo will provide the FILEINFO directly, as it was already obtained during the readdir operation.
+    //During directory size calculation, this optimization can reduce the computation time.
+    memset(&fat_ctx->cached_fileinfo, 0 ,sizeof(fat_ctx->cached_fileinfo));
+    if (strcmp(fat_ctx->dir_path, "/") == 0) {
+        snprintf(fat_ctx->cached_fileinfo.file_path, sizeof(fat_ctx->cached_fileinfo.file_path),
+                 "/%s", fat_dir->filinfo.fname);
+    } else {
+        snprintf(fat_ctx->cached_fileinfo.file_path, sizeof(fat_ctx->cached_fileinfo.file_path),
+                 "%s/%s", fat_ctx->dir_path, fat_dir->filinfo.fname);
+    }
+    fat_ctx->cached_fileinfo.fileinfo = fat_dir->filinfo;
     return out_dirent;
 }
 
