@@ -95,6 +95,10 @@ if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "${target}/twai_periph.c")
 endif()
 
+if(CONFIG_SOC_IEEE802154_SUPPORTED)
+    list(APPEND srcs "${target}/ieee802154_periph.c")
+endif()
+
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND srcs "${target}/usb_periph.c"
                      "${target}/usb_otg_periph.c")
