@@ -2,9 +2,6 @@
 
 examples/provisioning/wifi_prov_mgr:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
     - if: SOC_WIFI_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
