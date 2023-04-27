@@ -27,6 +27,7 @@
 #include "openthread/link.h"
 #include "openthread/platform/diag.h"
 #include "openthread/platform/radio.h"
+#include "openthread/platform/time.h"
 #include "utils/link_metrics.h"
 #include "utils/mac_frame.h"
 
@@ -493,7 +494,7 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCoun
 uint64_t otPlatRadioGetNow(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
-    return esp_timer_get_time();
+    return otPlatTimeGet();
 }
 
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
@@ -505,7 +506,7 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 
 static IRAM_ATTR uint16_t get_csl_phase()
 {
-    uint32_t cur_time = esp_timer_get_time();
+    uint32_t cur_time = otPlatTimeGet();
     uint32_t csl_period_us = s_csl_period * OT_US_PER_TEN_SYMBOLS;
     uint32_t diff = (csl_period_us - (cur_time % csl_period_us) + (s_csl_sample_time % csl_period_us)) % csl_period_us;
 
@@ -578,7 +579,7 @@ static void IRAM_ATTR convert_to_ot_frame(uint8_t *data, esp_ieee802154_frame_in
     radio_frame->mInfo.mRxInfo.mRssi = frame_info->rssi;
     radio_frame->mInfo.mRxInfo.mLqi = frame_info->lqi;
     radio_frame->mInfo.mRxInfo.mAckedWithFramePending = frame_info->pending;
-    radio_frame->mInfo.mRxInfo.mTimestamp = esp_timer_get_time();
+    radio_frame->mInfo.mRxInfo.mTimestamp = otPlatTimeGet();
 
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
     radio_frame->mInfo.mRxInfo.mTimestamp = frame_info->timestamp;
@@ -677,6 +678,8 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
         s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mAckedWithSecEnhAck = s_with_security_enh_ack;
         s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mAckFrameCounter = s_ack_frame_counter;
         s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mAckKeyId = s_ack_key_id;
+    } else {
+        s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mAckedWithSecEnhAck = false;
     }
     s_with_security_enh_ack = false;
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
