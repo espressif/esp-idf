@@ -11,8 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.generic
-def test_onewire_ds18b20_example(dut: Dut) -> None:
-    dut.expect_exact('onewire_rmt: RMT Tx channel created for 1-wire bus')
-    dut.expect_exact('onewire_rmt: RMT Rx channel created for 1-wire bus')
-    dut.expect_exact('example: 1-wire bus installed')
-    dut.expect_exact('example: 1-wire bus deleted')
+def test_onewire_example(dut: Dut) -> None:
+    dut.expect_exact('example: 1-Wire bus installed on GPIO')
+    dut.expect_exact('example: Device iterator created, start searching')
+    dut.expect_exact('example: Searching done')
