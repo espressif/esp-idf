@@ -206,3 +206,13 @@
 #endif
 
 #define OPENTHREAD_RADIO 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
+ *
+ * Define as 1 to support Thread 1.2 Link Metrics Subject feature.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
+#define OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE 1
+#endif
