@@ -212,7 +212,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd             = 1,   \
         .slp_mem_dbias   = 0x5, \
         .slp_logic_dbias = 0xc, \
-        .dbias           = 0xc \
+        .dbias           = 0xf \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x1a \
