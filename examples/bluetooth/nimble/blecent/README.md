@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-H4 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Central Example
 
@@ -31,7 +31,7 @@ This example aims at understanding BLE service discovery, connection, encryption
 
 To test this demo, use any BLE GATT server app that advertises support for the Alert Notification service (0x1811) and includes it in the GATT database.
 
-A Python based utility `blecent_test.py` is also provided (which will run as a BLE GATT server) and can be used to test this example.   
+A Python based utility `blecent_test.py` is also provided (which will run as a BLE GATT server) and can be used to test this example.
 
 Note :
 
@@ -55,7 +55,7 @@ See [Development Boards](https://www.espressif.com/en/products/devkits) for more
 
 ### Configure the Project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig

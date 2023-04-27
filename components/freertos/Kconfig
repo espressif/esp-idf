@@ -366,7 +366,7 @@ menu "FreeRTOS"
         config FREERTOS_TICK_SUPPORT_SYSTIMER
             bool
             default y if !FREERTOS_TICK_SUPPORT_CORETIMER
-            # ESP32-S3, ESP32-C3 and ESP32-H4 can use Systimer for FreeRTOS SysTick
+            # All targets except ESP32 and ESP32S2 can use Systimer for FreeRTOS SysTick
             # ESP32S2 also has SYSTIMER but it can not be used for the FreeRTOS SysTick because:
             # - It has only one counter, which already in use esp_timer.
             #   A counter for SysTick should be stall in debug mode but work esp_timer.

@@ -6,14 +6,6 @@ idf_build_get_property(python PYTHON)
 idf_build_get_property(idf_path IDF_PATH)
 
 set(chip_model ${target})
-# TODO: remove this if block when esp32h4 beta1 is no longer supported and we have h4 target in esptool
-if(target STREQUAL "esp32h4")
-    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-        set(chip_model esp32h2beta1)
-    elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-        set(chip_model esp32h2beta2)
-    endif()
-endif()
 
 set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")

@@ -137,26 +137,6 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .cs_setup = 1,\
 }
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/efuse.h"
-#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
-#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI1_HOST,\
-    .freq_mhz = DEFAULT_FLASH_SPEED, \
-    .cs_num = 0, \
-    .iomux = true, \
-    .input_delay_ns = 0,\
-}
-#else
-#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI1_HOST,\
-    .freq_mhz = DEFAULT_FLASH_SPEED, \
-    .cs_num = 0, \
-    .iomux = true, \
-    .input_delay_ns = 0,\
-    .auto_sus_en = true,\
-}
-#endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif
 
 static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)

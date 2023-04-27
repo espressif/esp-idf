@@ -1,7 +1,7 @@
 Analog to Digital Converter (ADC) Continuous Mode Driver
 ========================================================
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h4="one"}
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one"}
 
 Introduction
 ------------

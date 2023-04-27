@@ -60,11 +60,11 @@ menu "Example Configuration"
 
         config EXAMPLE_GPIO_WAKEUP_PIN
             int "Enable wakeup from GPIO"
-            default 0 if !IDF_TARGET_ESP32H4_BETA_VERSION_2
-            default 7 if IDF_TARGET_ESP32H4_BETA_VERSION_2
+            default 0 if !IDF_TARGET_ESP32H2
+            default 7 if IDF_TARGET_ESP32H2
             range 0 7 if IDF_TARGET_ESP32C6
-            range 0 5 if !IDF_TARGET_ESP32H4_BETA_VERSION_2
-            range 7 12 if IDF_TARGET_ESP32H4_BETA_VERSION_2
+            range 7 14 if IDF_TARGET_ESP32H2
+            range 0 5 if !IDF_TARGET_ESP32C6 && !IDF_TARGET_ESP32H2
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
             bool "Enable GPIO high-level wakeup"

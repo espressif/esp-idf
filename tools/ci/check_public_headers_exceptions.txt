@@ -106,7 +106,6 @@ components/esp_rom/include/esp32/rom/rtc.h
 components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s3/rom/rtc.h
-components/esp_rom/include/esp32h4/rom/rtc.h
 components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp_rom/include/esp32c6/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h

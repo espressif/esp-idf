@@ -189,25 +189,6 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 32 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32h4
-
-    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
-       :widths: 15 15 30
-       :header-rows: 1
-
-       * - Clock name
-         - Clock freq
-         - Clock capabilities
-       * - APB_CLK
-         - 96 MHz
-         - /
-       * - RC_FAST_CLK
-         - ~8 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
-       * - XTAL_CLK
-         - 32 MHz
-         - Dynamic Frequency Scaling compatible
-
 .. note::
 
     .. only:: SOC_CLK_RC_FAST_SUPPORT_CALIBRATION

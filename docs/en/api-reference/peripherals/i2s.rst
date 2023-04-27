@@ -70,11 +70,11 @@ Clock Source
 
 - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`: Default PLL clock.
 
-.. only:: not esp32h4
+.. only:: not esp32h2
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`: 160 MHz PLL clock.
 
-.. only:: esp32h4
+.. only:: esp32h2
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
 

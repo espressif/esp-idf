@@ -66,28 +66,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
-    config IDF_TARGET_ESP32H4
-        bool
-        default "y" if IDF_TARGET="esp32h4"
-        select FREERTOS_UNICORE
-        select IDF_TARGET_ARCH_RISCV
-
-    choice IDF_TARGET_ESP32H4_BETA_VERSION
-        prompt "ESP32-H4 beta version"
-        depends on IDF_TARGET_ESP32H4
-        default IDF_TARGET_ESP32H4_BETA_VERSION_2
-        help
-            Currently ESP32-H4 has several beta versions for internal use only.
-            Select the one that matches your chip model.
-
-        config IDF_TARGET_ESP32H4_BETA_VERSION_1
-            bool
-            prompt "ESP32-H4 beta1"
-        config IDF_TARGET_ESP32H4_BETA_VERSION_2
-            bool
-            prompt "ESP32-H4 beta2"
-    endchoice
-
     config IDF_TARGET_ESP32C2
         bool
         default "y" if IDF_TARGET="esp32c2"
@@ -116,10 +94,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0002 if IDF_TARGET_ESP32S2
         default 0x0005 if IDF_TARGET_ESP32C3
         default 0x0009 if IDF_TARGET_ESP32S3
-        default 0x000A if IDF_TARGET_ESP32H4_BETA_VERSION_1
         default 0x000C if IDF_TARGET_ESP32C2
         default 0x000D if IDF_TARGET_ESP32C6
-        default 0x000E if IDF_TARGET_ESP32H4_BETA_VERSION_2 # ESP32-TODO: IDF-3475
         default 0x0010 if IDF_TARGET_ESP32H2
         default 0xFFFF
 

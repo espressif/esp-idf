@@ -185,11 +185,6 @@ test_efuse_table_on_host_esp32c6:
   variables:
     IDF_TARGET: esp32c6
 
-test_efuse_table_on_host_esp32h4:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32h4
-
 test_espcoredump:
   extends: .host_test_template
   artifacts:
