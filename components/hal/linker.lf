@@ -8,8 +8,10 @@ entries:
     if IDF_TARGET_ESP32 = n && APP_BUILD_TYPE_PURE_RAM_APP = n:
         cache_hal (noflash)
     if SOC_GPSPI_SUPPORTED = y:
-        spi_hal_iram (noflash)
-        spi_slave_hal_iram (noflash)
+        if HAL_SPI_MASTER_FUNC_IN_IRAM = y:
+            spi_hal_iram (noflash)
+        if HAL_SPI_SLAVE_FUNC_IN_IRAM = y:
+            spi_slave_hal_iram (noflash)
     if UART_ISR_IN_IRAM = y || ESP_PANIC_HANDLER_IRAM = y:
         uart_hal_iram (noflash)
     else:
