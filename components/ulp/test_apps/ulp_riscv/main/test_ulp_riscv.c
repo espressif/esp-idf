@@ -321,7 +321,7 @@ static void do_ulp_wakeup_after_long_delay_deepsleep(void)
     do_ulp_wakeup_deepsleep(RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST, true);
 }
 
-/* Certain erroneous wake-up triggers happen only after a sleeping for a few seconds  */
+/* Certain erroneous wake-up triggers happen only after sleeping for a few seconds  */
 TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a long delay", "[ulp]",
         do_ulp_wakeup_after_long_delay_deepsleep,
         check_reset_reason_ulp_wakeup);

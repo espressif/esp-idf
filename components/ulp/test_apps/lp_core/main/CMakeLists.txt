@@ -3,7 +3,7 @@ set(lp_core_sources "lp_core/test_main.c")
 
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
-                       REQUIRES ulp unity
+                       REQUIRES ulp unity esp_timer
                        WHOLE_ARCHIVE)
 
 set(lp_core_app_name lp_core_test_app)
