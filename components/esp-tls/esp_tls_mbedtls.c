@@ -804,6 +804,11 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication");
         return ESP_ERR_INVALID_STATE;
     }
+
+    if (cfg->ciphersuites_list != NULL && cfg->ciphersuites_list[0] != 0) {
+        ESP_LOGD(TAG, "Set the ciphersuites list");
+        mbedtls_ssl_conf_ciphersuites(&tls->conf, cfg->ciphersuites_list);
+    }
     return ESP_OK;
 }
 
@@ -909,6 +914,11 @@ void esp_mbedtls_free_global_ca_store(void)
         free(global_cacert);
         global_cacert = NULL;
     }
+}
+
+const int *esp_mbedtls_get_ciphersuites_list(void)
+{
+    return mbedtls_ssl_list_ciphersuites();
 }
 
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT

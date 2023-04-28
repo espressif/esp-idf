@@ -192,6 +192,25 @@ SSL/TLS libraries and with all respective configurations set to default.
 
     * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
 
+TLS Ciphersuites
+------------------------------------
+ESP-TLS provides an ability to set a ciphersuites list in the client mode. TLS ciphersuites list helps to inform the server about the supported ciphersuites for the specific TLS connection (irrespective of the TLS stack configuration). If the server supports any ciphersuite from this list then the TLS connection shall succeed, otherwise it would fail.
+
+You can set ``ciphersuites_list`` in the :cpp:type:`esp_tls_cfg_t` structure during client connection as follows:
+
+.. code-block:: c
+
+    /* ciphersuites_list must end with 0 and must be available in the memory scope active during the entire TLS connection */
+    static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0};
+    esp_tls_cfg_t cfg = {
+        .ciphersuites_list = ciphersuites_list,
+    };
+
+ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you should call :cpp:func:`esp_tls_get_ciphersuites_list` to get ciphersuites list supported in the TLS stack and cross-check it against the supplied list.
+
+.. note::
+   This feature is supported only in the mbedTLS stack.
+
 API Reference
 -------------
 
