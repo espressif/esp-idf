@@ -4,61 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
-#include "esp_intr_alloc.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_private/systimer.h"
-#include "esp_private/periph_ctrl.h"
-#include "sdkconfig.h"
-#ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
-#include "soc/periph_defs.h"
-#include "hal/systimer_hal.h"
-#include "hal/systimer_ll.h"
-#endif
 
-#ifdef CONFIG_PM_TRACE
-#include "esp_private/pm_trace.h"
-#endif //CONFIG_PM_TRACE
+#if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+    #if CONFIG_FREERTOS_CORETIMER_0
+        #define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER0_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
+    #else /* CONFIG_FREERTOS_CORETIMER_1 */
+        #define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER1_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
+    #endif
+#else /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
+        #define SYSTICK_INTR_ID     (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
+#endif /* CONFIG_FREERTOS_SYSTICK_USES_CCOUNT */
 
 BaseType_t xPortSysTickHandler(void);
 
-#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
-extern void _frxt_tick_timer_init(void);
-extern void _xt_tick_divisor_init(void);
+/* --------------------------------------------- SYSTIMER Implementation -----------------------------------------------
+ * Implementation of a tick interrupt using the SYSTIMER perpiheral
+ * Todo: Abstract setup and operation in a separate SYSTIMER driver (IDF-6976)
+ * ------------------------------------------------------------------------------------------------------------------ */
 
-#ifdef CONFIG_FREERTOS_CORETIMER_0
-    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
-#endif
-#ifdef CONFIG_FREERTOS_CORETIMER_1
-    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
-#endif
+#if CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 
-/**
- * @brief Initialize CCONT timer to generate the tick interrupt
- *
- */
-void vPortSetupTimer(void)
-{
-    /* Init the tick divisor value */
-    _xt_tick_divisor_init();
-
-    _frxt_tick_timer_init();
-}
-
-
-#elif CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
+#include "soc/periph_defs.h"
+#include "hal/systimer_hal.h"
+#include "hal/systimer_ll.h"
+#include "esp_err.h"
+#include "esp_intr_alloc.h"
+#include "esp_private/systimer.h"
+#include "esp_private/periph_ctrl.h"
+#ifdef CONFIG_PM_TRACE
+#include "esp_private/pm_trace.h"
+#endif //CONFIG_PM_TRACE
 
 _Static_assert(SOC_CPU_CORES_NUM <= SOC_SYSTIMER_ALARM_NUM - 1, "the number of cores must match the number of core alarms in SYSTIMER");
 
 void SysTickIsrHandler(void *arg);
 
-static uint32_t s_handled_systicks[portNUM_PROCESSORS] = { 0 };
-
-#define SYSTICK_INTR_ID (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
+static uint32_t s_handled_systicks[configNUM_CORES] = { 0 };
 
 /**
  * @brief Set up the systimer peripheral to generate the tick interrupt
@@ -67,7 +53,7 @@ static uint32_t s_handled_systicks[portNUM_PROCESSORS] = { 0 };
  * It is done at the same time so SysTicks for both CPUs occur at the same time or very close.
  * Shifts a time of triggering interrupts for core 0 and core 1.
  */
-void vPortSetupTimer(void)
+void vSystimerSetup(void)
 {
     unsigned cpuid = xPortGetCoreID();
 #ifdef CONFIG_FREERTOS_CORETIMER_SYSTIMER_LVL3
@@ -124,7 +110,7 @@ void vPortSetupTimer(void)
  * The Systimer interrupt for SysTick works in periodic mode no need to calc the next alarm.
  * If a timer interrupt is ever serviced more than one tick late, it is necessary to process multiple ticks.
  */
-IRAM_ATTR void SysTickIsrHandler(void *arg)
+void SysTickIsrHandler(void *arg)
 {
     uint32_t cpuid = xPortGetCoreID();
     systimer_hal_context_t *systimer_hal = (systimer_hal_context_t *)arg;
@@ -155,11 +141,31 @@ IRAM_ATTR void SysTickIsrHandler(void *arg)
     ESP_PM_TRACE_EXIT(TICK, cpuid);
 #endif
 }
+#endif /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
 
-#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+/* ------------------------------------------------ Common Port Tick ---------------------------------------------------
+ * Tick related functions common across all ports
+ * ------------------------------------------------------------------------------------------------------------------ */
 
+/**
+ * @brief Initialize the tick interrupt timer
+ *
+ * - CCOUNT timer is used if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT is set
+ * - SYSTIMER is used if CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER is set
+ */
+void vPortSetupTimer(void)
+{
+    #if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+        extern void _frxt_tick_timer_init(void);
+        extern void _xt_tick_divisor_init(void);
+        /* Init the tick divisor value */
+        _xt_tick_divisor_init();
+        _frxt_tick_timer_init();
+    #else /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
+        vSystimerSetup();
+    #endif /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
+}
 
-extern void esp_vApplicationTickHook(void);
 /**
  * @brief Handler of SysTick
  *
@@ -176,29 +182,44 @@ BaseType_t xPortSysTickHandler(void)
     traceISR_ENTER(SYSTICK_INTR_ID);
 
     // Call IDF Tick Hook
+    extern void esp_vApplicationTickHook(void);
     esp_vApplicationTickHook();
 
     // Call FreeRTOS Increment tick function
     BaseType_t xSwitchRequired;
-#if ( configNUM_CORES > 1 )
-    /*
-    For SMP, xTaskIncrementTick() will internally enter a critical section. But only core 0 calls xTaskIncrementTick()
-    while core 1 should call xTaskIncrementTickOtherCores().
-    */
-    if (xPortGetCoreID() == 0) {
-        xSwitchRequired = xTaskIncrementTick();
-    } else {
-        xSwitchRequired = xTaskIncrementTickOtherCores();
-    }
-#else // configNUM_CORES > 1
-    /*
-    Vanilla (single core) FreeRTOS expects that xTaskIncrementTick() cannot be interrupted (i.e., no nested interrupts).
-    Thus we have to disable interrupts before calling it.
-    */
-    UBaseType_t uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-    xSwitchRequired = xTaskIncrementTick();
-    portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptStatus);
-#endif
+    #if CONFIG_FREERTOS_SMP
+        // Amazon SMP FreeRTOS requires that only core 0 calls xTaskIncrementTick()
+        #if ( configNUM_CORES > 1 )
+            if (portGET_CORE_ID() == 0) {
+                xSwitchRequired = xTaskIncrementTick();
+            } else {
+                xSwitchRequired = pdFALSE;
+            }
+        #else /* configNUM_CORES > 1 */
+            xSwitchRequired = xTaskIncrementTick();
+        #endif /* configNUM_CORES > 1 */
+    #else /* !CONFIG_FREERTOS_SMP */
+        #if ( configNUM_CORES > 1 )
+            /*
+            Multi-core IDF FreeRTOS requires that...
+                - core 0 calls xTaskIncrementTick()
+                - core 1 calls xTaskIncrementTickOtherCores()
+            */
+            if (xPortGetCoreID() == 0) {
+                xSwitchRequired = xTaskIncrementTick();
+            } else {
+                xSwitchRequired = xTaskIncrementTickOtherCores();
+            }
+        #else /* configNUM_CORES > 1 */
+            /*
+            Vanilla (single core) FreeRTOS expects that xTaskIncrementTick() cannot be interrupted (i.e., no nested
+            interrupts). Thus we have to disable interrupts before calling it.
+            */
+            UBaseType_t uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+            xSwitchRequired = xTaskIncrementTick();
+            portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptStatus);
+        #endif /* configNUM_CORES > 1 */
+    #endif /* !CONFIG_FREERTOS_SMP */
 
     // Check if yield is required
     if (xSwitchRequired != pdFALSE) {

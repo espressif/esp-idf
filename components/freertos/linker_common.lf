@@ -80,3 +80,15 @@ entries:
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
         port_common:vApplicationGetIdleTaskMemory (default)
         port_common:vApplicationGetTimerTaskMemory (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # port_systick.c
+    #   - Default: Place all functions in internal RAM.
+    #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
+    #     context (directly or indirectly).
+    # ------------------------------------------------------------------------------------------------------------------
+    port_systick(noflash_text)
+    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        if FREERTOS_SYSTICK_USES_SYSTIMER = y:
+            port_systick:vSystimerSetup (default)
+        port_systick:vPortSetupTimer (default)

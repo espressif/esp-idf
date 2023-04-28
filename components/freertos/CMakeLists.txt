@@ -65,16 +65,14 @@ else()
         "app_startup.c"
         "FreeRTOS-openocd.c"
         "port_common.c"
+        "port_systick.c"
         "${kernel_dir}/portable/${arch}/portasm.S")
 
     if(CONFIG_FREERTOS_SMP)
         set(ldfragments linker_smp.lf linker_common.lf)
     else()
         list(APPEND srcs
-            "${kernel_dir}/portable/port_systick.c"
             "esp_additions/freertos_v8_compat.c")
-
-        list(APPEND private_include_dirs "${kernel_dir}/portable/priv_include") # For port_systick.h on normal FreeRTOS
 
         set(ldfragments linker.lf linker_common.lf)
     endif()
