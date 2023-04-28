@@ -155,14 +155,14 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr)
 {
     ANA_CMPR_NULL_POINTER_CHECK(cmpr);
     /* Search the global object array to check if the input handle is valid */
-    ana_cmpr_unit_t unit = -1;
+    int unit = -1;
     for (int i = 0; i < SOC_ANA_CMPR_NUM; i++) {
         if (s_ana_cmpr[i] == cmpr) {
             unit = i;
             break;
         }
     }
-    ESP_RETURN_ON_FALSE(unit >= ANA_CMPR_UNIT_0, ESP_ERR_INVALID_ARG, TAG, "wrong analog comparator handle");
+    ESP_RETURN_ON_FALSE(unit != -1, ESP_ERR_INVALID_ARG, TAG, "wrong analog comparator handle");
     ESP_RETURN_ON_FALSE(!cmpr->is_enabled, ESP_ERR_INVALID_STATE, TAG, "this analog comparator unit not disabled yet");
 
     /* Delete the pm lock if the unit has */
