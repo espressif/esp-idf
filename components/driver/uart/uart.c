@@ -24,7 +24,7 @@
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
 #include "esp_private/periph_ctrl.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "clk_ctrl_os.h"
@@ -202,7 +202,7 @@ static void uart_module_disable(uart_port_t uart_num)
 
 esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t *out_freq_hz)
 {
-    return clk_tree_src_get_freq_hz((soc_module_clk_t)sclk, CLK_TREE_SRC_FREQ_PRECISION_CACHED, out_freq_hz);
+    return esp_clk_tree_src_get_freq_hz((soc_module_clk_t)sclk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, out_freq_hz);
 }
 
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)
@@ -527,7 +527,7 @@ esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_c
     uint32_t uart_baud = 0;
     uint32_t uart_div = 0;
     uart_get_baudrate(uart_num, &uart_baud);
-    clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_APB, CLK_TREE_SRC_FREQ_PRECISION_EXACT, &apb_clk_freq);
+    esp_clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_APB, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &apb_clk_freq);
     uart_div = apb_clk_freq / uart_baud;
 
     at_cmd.gap_tout = chr_tout * uart_div;

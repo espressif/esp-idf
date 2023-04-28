@@ -113,7 +113,7 @@ We have two bits to control the interrupt:
 #include <string.h>
 #include "esp_private/spi_common_internal.h"
 #include "driver/spi_master.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -363,7 +363,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     if (dev_config->clock_source) {
         clk_src = dev_config->clock_source;
     }
-    clk_tree_src_get_freq_hz(clk_src, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full

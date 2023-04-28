@@ -20,7 +20,7 @@
 #include "esp_timer.h"
 #include "driver/ledc.h"
 #include "soc/ledc_struct.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 
 #define PULSE_IO      5
 
@@ -551,7 +551,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     // Try a frequency that couldn't be exactly achieved, requires rounding
     uint32_t theoretical_freq = 9000;
     uint32_t clk_src_freq = 0;
-    clk_tree_src_get_freq_hz((soc_module_clk_t)TEST_DEFAULT_CLK_CFG, CLK_TREE_SRC_FREQ_PRECISION_EXACT, &clk_src_freq);
+    esp_clk_tree_src_get_freq_hz((soc_module_clk_t)TEST_DEFAULT_CLK_CFG, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &clk_src_freq);
     if (clk_src_freq == 80 * 1000 * 1000) {
         theoretical_freq = 8992;
     } else if (clk_src_freq == 96 * 1000 * 1000) {

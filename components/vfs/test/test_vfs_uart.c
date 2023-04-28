@@ -19,7 +19,7 @@
 #include "hal/uart_ll.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 
@@ -217,7 +217,7 @@ TEST_CASE("fcntl supported in UART VFS", "[vfs]")
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
     uint32_t clk_src_hz = 0;
-    TEST_ESP_OK(clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz));
+    TEST_ESP_OK(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz));
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,

@@ -27,7 +27,7 @@
 #include "hal/adc_hal_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 
 #if SOC_DAC_SUPPORTED
 #include "hal/dac_types.h"
@@ -281,7 +281,7 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     if (!clk_src_freq_hz) {
         //should never fail
-        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+        esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     }
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
@@ -440,7 +440,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     if (!clk_src_freq_hz) {
         //should never fail
-        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+        esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     }
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
@@ -753,7 +753,7 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     if (!clk_src_freq_hz) {
         //should never fail
-        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+        esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     }
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
@@ -823,7 +823,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     if (!clk_src_freq_hz) {
         //should never fail
-        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+        esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     }
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 

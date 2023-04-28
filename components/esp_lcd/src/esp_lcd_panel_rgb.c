@@ -26,7 +26,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"
@@ -920,7 +920,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
 {
     // get clock source frequency
     uint32_t src_clk_hz = 0;
-    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
     panel->src_clk_hz = src_clk_hz;
     lcd_ll_select_clk_src(panel->hal.dev, clk_src);

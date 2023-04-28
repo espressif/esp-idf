@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_private/clk_tree_common.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc.h"
@@ -14,11 +14,11 @@
 #include "sdkconfig.h"
 #include "esp_hw_log.h"
 
-static const char *TAG = "clk_tree_common";
+static const char *TAG = "esp_clk_tree_common";
 
-typedef struct clk_tree_calibrated_freq_t clk_tree_calibrated_freq_t;
+typedef struct esp_clk_tree_calibrated_freq_t esp_clk_tree_calibrated_freq_t;
 
-struct clk_tree_calibrated_freq_t {
+struct esp_clk_tree_calibrated_freq_t {
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
     uint32_t rc_fast_d256;
 #elif SOC_CLK_RC_FAST_SUPPORT_CALIBRATION // && !SOC_CLK_RC_FAST_D256_SUPPORTED
@@ -33,7 +33,7 @@ struct clk_tree_calibrated_freq_t {
 };
 
 // TODO: Better to implement a spinlock for the static variables
-static clk_tree_calibrated_freq_t s_calibrated_freq = {};
+static esp_clk_tree_calibrated_freq_t s_calibrated_freq = {};
 
 /* Number of cycles for RTC_SLOW_CLK calibration */
 #define RTC_SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
@@ -72,17 +72,17 @@ static uint32_t clk_tree_rtc_slow_calibration(uint32_t slowclk_cycles)
 }
 
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-uint32_t clk_tree_rc_fast_d256_get_freq_hz(clk_tree_src_freq_precision_t precision)
+uint32_t esp_clk_tree_rc_fast_d256_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
     switch (precision) {
-    case CLK_TREE_SRC_FREQ_PRECISION_APPROX:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX:
         return SOC_CLK_RC_FAST_D256_FREQ_APPROX;
-    case CLK_TREE_SRC_FREQ_PRECISION_CACHED:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         if (!s_calibrated_freq.rc_fast_d256) {
             s_calibrated_freq.rc_fast_d256 = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, DEFAULT_32K_CLK_CAL_CYCLES));
         }
         return s_calibrated_freq.rc_fast_d256;
-    case CLK_TREE_SRC_FREQ_PRECISION_EXACT:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
         s_calibrated_freq.rc_fast_d256 = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, DEFAULT_32K_CLK_CAL_CYCLES));
         return s_calibrated_freq.rc_fast_d256;
     default:
@@ -92,17 +92,17 @@ uint32_t clk_tree_rc_fast_d256_get_freq_hz(clk_tree_src_freq_precision_t precisi
 #endif
 
 #if SOC_CLK_XTAL32K_SUPPORTED
-uint32_t clk_tree_xtal32k_get_freq_hz(clk_tree_src_freq_precision_t precision)
+uint32_t esp_clk_tree_xtal32k_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
     switch (precision) {
-    case CLK_TREE_SRC_FREQ_PRECISION_APPROX:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX:
         return SOC_CLK_XTAL32K_FREQ_APPROX;
-    case CLK_TREE_SRC_FREQ_PRECISION_CACHED:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         if (!s_calibrated_freq.xtal32k) {
             s_calibrated_freq.xtal32k = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_XTAL, DEFAULT_32K_CLK_CAL_CYCLES));
         }
         return s_calibrated_freq.xtal32k;
-    case CLK_TREE_SRC_FREQ_PRECISION_EXACT:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
         s_calibrated_freq.xtal32k = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_XTAL, DEFAULT_32K_CLK_CAL_CYCLES));
         return s_calibrated_freq.xtal32k;
     default:
@@ -112,17 +112,17 @@ uint32_t clk_tree_xtal32k_get_freq_hz(clk_tree_src_freq_precision_t precision)
 #endif
 
 #if SOC_CLK_OSC_SLOW_SUPPORTED
-uint32_t clk_tree_osc_slow_get_freq_hz(clk_tree_src_freq_precision_t precision)
+uint32_t esp_clk_tree_osc_slow_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
     switch (precision) {
-    case CLK_TREE_SRC_FREQ_PRECISION_APPROX:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX:
         return SOC_CLK_OSC_SLOW_FREQ_APPROX;
-    case CLK_TREE_SRC_FREQ_PRECISION_CACHED:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         if (!s_calibrated_freq.osc_slow) {
             s_calibrated_freq.osc_slow = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_OSC_SLOW, DEFAULT_32K_CLK_CAL_CYCLES));
         }
         return s_calibrated_freq.osc_slow;
-    case CLK_TREE_SRC_FREQ_PRECISION_EXACT:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
         s_calibrated_freq.osc_slow = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_32K_OSC_SLOW, DEFAULT_32K_CLK_CAL_CYCLES));
         return s_calibrated_freq.osc_slow;
     default:
@@ -131,39 +131,39 @@ uint32_t clk_tree_osc_slow_get_freq_hz(clk_tree_src_freq_precision_t precision)
 }
 #endif
 
-uint32_t clk_tree_lp_slow_get_freq_hz(clk_tree_src_freq_precision_t precision)
+uint32_t esp_clk_tree_lp_slow_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
     switch (precision) {
-    case CLK_TREE_SRC_FREQ_PRECISION_CACHED:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED:
         // This returns calibrated (if CONFIG_xxx_RTC_CLK_CAL_CYCLES) value stored in RTC storage register
         return rtc_clk_freq_cal(clk_ll_rtc_slow_load_cal());
-    case CLK_TREE_SRC_FREQ_PRECISION_APPROX:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX:
         return clk_hal_lp_slow_get_freq_hz();
-    case CLK_TREE_SRC_FREQ_PRECISION_EXACT:
+    case ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT:
         return rtc_clk_freq_cal(clk_tree_rtc_slow_calibration(RTC_SLOW_CLK_CAL_CYCLES));
     default:
         return 0;
     }
 }
 
-uint32_t clk_tree_rc_fast_get_freq_hz(clk_tree_src_freq_precision_t precision)
+uint32_t esp_clk_tree_rc_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
 #if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-    if (precision == CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
+    if (precision == ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
         return SOC_CLK_RC_FAST_FREQ_APPROX;
     }
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
     // If RC_FAST_D256 clock exists, calibration on a slow freq clock is much faster (less slow clock cycles need to wait)
-    return clk_tree_rc_fast_d256_get_freq_hz(precision) << 8;
+    return esp_clk_tree_rc_fast_d256_get_freq_hz(precision) << 8;
 #else
     // Calibrate directly on the RC_FAST clock requires much more slow clock cycles to get an accurate freq value
-    if (precision != CLK_TREE_SRC_FREQ_PRECISION_CACHED || !s_calibrated_freq.rc_fast) {
+    if (precision != ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED || !s_calibrated_freq.rc_fast) {
         s_calibrated_freq.rc_fast = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_RC_FAST, DEFAULT_RC_FAST_CAL_CYCLES));
     }
     return s_calibrated_freq.rc_fast;
 #endif //SOC_CLK_RC_FAST_D256_SUPPORTED
 #else //!SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-    if (precision != CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
+    if (precision != ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
         // No way of getting exact rc_fast freq
         ESP_HW_LOGW(TAG, "unable to get the exact freq of rc_fast_clk, returning its approx. freq value");
     }
@@ -171,7 +171,7 @@ uint32_t clk_tree_rc_fast_get_freq_hz(clk_tree_src_freq_precision_t precision)
 #endif //SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 }
 
-uint32_t clk_tree_lp_fast_get_freq_hz(clk_tree_src_freq_precision_t precision)
+uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
     switch (clk_ll_rtc_fast_get_src()) {
     case SOC_RTC_FAST_CLK_SRC_XTAL_DIV:
@@ -181,7 +181,7 @@ uint32_t clk_tree_lp_fast_get_freq_hz(clk_tree_src_freq_precision_t precision)
         return clk_hal_xtal_get_freq_mhz() * MHZ >> 1;
 #endif
     case SOC_RTC_FAST_CLK_SRC_RC_FAST:
-        return clk_tree_rc_fast_get_freq_hz(precision) / clk_ll_rc_fast_get_divider();
+        return esp_clk_tree_rc_fast_get_freq_hz(precision) / clk_ll_rc_fast_get_divider();
 #if SOC_CLK_LP_FAST_SUPPORT_LP_PLL
     case SOC_RTC_FAST_CLK_SRC_LP_PLL:
         return clk_ll_lp_pll_get_freq_mhz() * MHZ;

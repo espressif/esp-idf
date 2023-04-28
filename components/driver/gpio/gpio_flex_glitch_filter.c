@@ -12,7 +12,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_glitch_filter_ll.h"
 #include "esp_pm.h"
-#include "clk_tree.h"
+#include "esp_clk_tree.h"
 
 static const char *TAG = "gpio-filter";
 
@@ -137,7 +137,7 @@ esp_err_t gpio_new_flex_glitch_filter(const gpio_flex_glitch_filter_config_t *co
 
     // set clock source
     uint32_t clk_freq_hz = 0;
-    ESP_GOTO_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq_hz),
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq_hz),
                       err, TAG, "get clock source frequency failed");
 
     // create pm_lock according to different clock source

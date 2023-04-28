@@ -7,7 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include "clk_ctrl_os.h"
 #include "soc/rtc.h"
-#include "esp_private/clk_tree_common.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_check.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -28,7 +28,7 @@ bool periph_rtc_dig_clk8m_enable(void)
     if (s_periph_ref_counts == 0) {
         rtc_dig_clk8m_enable();
 #if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-        s_rc_fast_freq = clk_tree_rc_fast_get_freq_hz(CLK_TREE_SRC_FREQ_PRECISION_EXACT);
+        s_rc_fast_freq = esp_clk_tree_rc_fast_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT);
         if (s_rc_fast_freq == 0) {
             rtc_dig_clk8m_disable();
             portEXIT_CRITICAL(&periph_spinlock);
