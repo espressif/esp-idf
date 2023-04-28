@@ -357,7 +357,7 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(env, _):  # type: (t
 @ttfw_idf.idf_example_test(env_tag='Example_EthKitV12', target=['esp32'])
 def test_examples_efuse_with_virt_secure_boot_v2(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     # only for ESP32 ECO3
-    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2.' + env.default_dut_cls.TARGET)
+    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2')
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     bin_size = os.path.getsize(binary_file)
@@ -418,7 +418,7 @@ def test_examples_efuse_with_virt_secure_boot_v2(env, _):  # type: (ttfw_idf.Tin
 @ttfw_idf.idf_example_test(env_tag='Example_EthKitV12', target=['esp32'])
 def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     # only for ESP32 ECO3
-    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2.' + env.default_dut_cls.TARGET)
+    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2')
 
     print(' - Erase flash')
     dut.erase_flash()
@@ -481,7 +481,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(env, _):  # type: (t
 
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32c3', 'esp32c2'])
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
-    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2.' + env.default_dut_cls.TARGET)
+    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2')
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     bin_size = os.path.getsize(binary_file)
@@ -545,7 +545,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(env, _):  # type: (ttfw
 
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32c3', 'esp32c2'])
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
-    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2.' + env.default_dut_cls.TARGET)
+    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2')
 
     print(' - Erase flash')
     dut.erase_flash()
@@ -677,7 +677,7 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(env, _):  # type: (ttfw_idf.TinyF
 @ttfw_idf.idf_example_test(env_tag='Example_EthKitV12', target=['esp32'])
 def test_examples_efuse_with_virt_sb_v2_and_fe(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     # only for ESP32 ECO3
-    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_sb_v2_and_fe.' + env.default_dut_cls.TARGET)
+    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_sb_v2_and_fe')
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     bin_size = os.path.getsize(binary_file)
@@ -757,7 +757,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(env, _):  # type: (ttfw_idf.TinyF
 
 @ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32c3', 'esp32c2'])
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
-    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_sb_v2_and_fe.' + env.default_dut_cls.TARGET)
+    dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_sb_v2_and_fe')
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     bin_size = os.path.getsize(binary_file)
