@@ -31,16 +31,30 @@ esp_flash_t *esp_flash_default_chip = NULL;
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
-#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_80MHZ
+#if defined CONFIG_ESPTOOLPY_FLASHFREQ_120M
+#define DEFAULT_FLASH_SPEED 120
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#define DEFAULT_FLASH_SPEED 80
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_60M
+#define DEFAULT_FLASH_SPEED 60
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_48M
+#define DEFAULT_FLASH_SPEED 48
 #elif defined CONFIG_ESPTOOLPY_FLASHFREQ_40M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_40MHZ
+#define DEFAULT_FLASH_SPEED 40
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_30M
+#define DEFAULT_FLASH_SPEED 30
 #elif defined CONFIG_ESPTOOLPY_FLASHFREQ_26M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_26MHZ
+#define DEFAULT_FLASH_SPEED 26
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_24M
+#define DEFAULT_FLASH_SPEED 24
 #elif defined CONFIG_ESPTOOLPY_FLASHFREQ_20M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_20MHZ
-#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_120M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_120MHZ
+#define DEFAULT_FLASH_SPEED 20
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_16M
+#define DEFAULT_FLASH_SPEED 16
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_15M
+#define DEFAULT_FLASH_SPEED 15
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_12M
+#define DEFAULT_FLASH_SPEED 12
 #else
 #error Flash frequency not defined! Check the ``CONFIG_ESPTOOLPY_FLASHFREQ_*`` options.
 #endif
@@ -65,7 +79,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #if CONFIG_IDF_TARGET_ESP32
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = false, \
     .input_delay_ns = 0,\
@@ -74,7 +88,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
@@ -84,7 +98,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #include "esp32s3/rom/efuse.h"
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
@@ -94,7 +108,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
@@ -103,7 +117,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #else
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
@@ -116,7 +130,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
@@ -124,7 +138,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #else
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
+    .freq_mhz = DEFAULT_FLASH_SPEED, \
     .cs_num = 0, \
     .iomux = true, \
     .input_delay_ns = 0,\
@@ -132,7 +146,6 @@ esp_flash_t *esp_flash_default_chip = NULL;
 }
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif
-
 
 static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)
 {
@@ -265,8 +278,11 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         .cs_num = dev_id,
         .iomux = use_iomux,
         .input_delay_ns = config->input_delay_ns,
-        .speed = config->speed,
+        .freq_mhz = config->freq_mhz,
     };
+
+    host_cfg.clock_src_freq = spi_flash_ll_get_source_clock_freq_mhz(host_cfg.host_id);
+
     err = memspi_host_init_pointers(host, &host_cfg);
     if (err != ESP_OK) {
         ret = err;
@@ -285,7 +301,7 @@ fail:
 
 esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
 {
-    if (chip==NULL) {
+    if (chip == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -333,6 +349,8 @@ esp_err_t esp_flash_init_default_chip(void)
         spi_timing_get_flash_timing_param(&cfg.timing_reg);
     }
     #endif // SOC_SPI_MEM_SUPPORT_TIME_TUNING
+
+    cfg.clock_src_freq = spi_flash_ll_get_source_clock_freq_mhz(cfg.host_id);
 
     //the host is already initialized, only do init for the data and load it to the host
     esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);

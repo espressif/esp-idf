@@ -127,6 +127,9 @@ void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
 int tlsf_check(tlsf_t tlsf);
 int tlsf_check_pool(pool_t pool);
 
+/* Used for heap tlsf in ROM IMPL */
+void tlsf_poison_fill_pfunc_set(void *pfunc);
+
 #if defined(__cplusplus)
 };
 #endif

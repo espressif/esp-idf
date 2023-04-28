@@ -113,7 +113,24 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from light sleep", "[ulp]")
     while (ulp_command_resp != RISCV_LIGHT_SLEEP_WAKEUP_TEST)
         ;
     gettimeofday(&end, NULL);
-    printf("Response time %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
+    printf("Response time 1st: %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
+
+    /* Verify test data */
+    TEST_ASSERT(ulp_command_resp == RISCV_LIGHT_SLEEP_WAKEUP_TEST);
+    TEST_ASSERT(ulp_main_cpu_reply == RISCV_COMMAND_OK);
+
+    /* Enter Light Sleep again */
+    TEST_ASSERT(esp_light_sleep_start() == ESP_OK);
+
+    /* Wait for wakeup from ULP RISC-V Coprocessor */
+    TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP);
+
+    /* Wait till we receive the correct command response */
+    gettimeofday(&start, NULL);
+    while (ulp_command_resp != RISCV_LIGHT_SLEEP_WAKEUP_TEST)
+        ;
+    gettimeofday(&end, NULL);
+    printf("Response time 2nd: %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
 
     /* Verify test data */
     TEST_ASSERT(ulp_command_resp == RISCV_LIGHT_SLEEP_WAKEUP_TEST);

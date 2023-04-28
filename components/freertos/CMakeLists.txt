@@ -113,17 +113,10 @@ else()
     endif()
 endif()
 
-# esp_timer is required by FreeRTOS when we use esp_timer_get_time() to do profiling
-# [refactor-todo]: make this an optional requirement depending on CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-# Note, many other components implicitly include esp_timer.h via freertos portmacro.h and some
-# components implicitly depend on esp_timer via freertos.
-set(required_components esp_timer)
-
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
                     PRIV_INCLUDE_DIRS  ${private_include_dirs}
                     LDFRAGMENTS linker.lf
-                    REQUIRES ${required_components}
                     PRIV_REQUIRES soc esp_pm)
 
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
@@ -165,4 +158,10 @@ endif()
 if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
     # [refactor-todo]: port.c esp_startup_start_app_common() calls esp_gdbstub_init()
     idf_component_optional_requires(PRIVATE esp_gdbstub)
+endif()
+
+if(CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER)
+    # [refactor-todo]: esp_timer is required by FreeRTOS when we use esp_timer_get_time() to do profiling
+    # Introduce a port wrapper function to avoid including esp_timer.h into the public header
+    idf_component_optional_requires(PUBLIC esp_timer)
 endif()

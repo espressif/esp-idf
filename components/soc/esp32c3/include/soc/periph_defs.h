@@ -68,8 +68,8 @@ typedef enum {
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
-    ETS_TWAI_INTR_SOURCE,                        /**< interrupt of can, level*/
-    ETS_USB_SERIAL_JTAG_INTR_SOURCE,                        /**< interrupt of USB, level*/
+    ETS_TWAI_INTR_SOURCE,                       /**< interrupt of can, level*/
+    ETS_USB_SERIAL_JTAG_INTR_SOURCE,            /**< interrupt of USJ, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller1, level*/

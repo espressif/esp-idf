@@ -22,13 +22,14 @@ class SerialReader(Reader):
     event queue, until stopped.
     """
 
-    def __init__(self, serial_instance, event_queue):
-        #  type: (serial.Serial, queue.Queue) -> None
+    def __init__(self, serial_instance, event_queue, reset):
+        #  type: (serial.Serial, queue.Queue, bool) -> None
         super(SerialReader, self).__init__()
         self.baud = serial_instance.baudrate
         self.serial = serial_instance
         self.event_queue = event_queue
         self.gdb_exit = False
+        self.reset = reset
         if not hasattr(self.serial, 'cancel_read'):
             # enable timeout for checking alive flag,
             # if cancel_read not available
@@ -49,13 +50,15 @@ class SerialReader(Reader):
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
             # Current state not reset the target!
             self.serial.open()
-            if not self.gdb_exit:
+            if not self.gdb_exit and self.reset:
                 self.serial.dtr = high     # Set dtr to reset state (affected by rts)
                 self.serial.rts = low      # Set rts/dtr to the reset state
                 self.serial.dtr = self.serial.dtr   # usbser.sys workaround
 
                 # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
                 time.sleep(MINIMAL_EN_LOW_DELAY)
+            elif not self.reset:
+                self.serial.setDTR(high)  # IO0=HIGH, default state
             self.gdb_exit = False
             self.serial.rts = high             # Set rts/dtr to the working state
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
@@ -73,6 +76,10 @@ class SerialReader(Reader):
                     while self.alive:  # so that exiting monitor works while waiting
                         try:
                             time.sleep(RECONNECT_DELAY)
+                            if not self.reset:
+                                self.serial.dtr = low      # Non reset state
+                                self.serial.rts = high     # IO0=HIGH
+                                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
                             self.serial.open()
                             break  # device connected
                         except serial.serialutil.SerialException:

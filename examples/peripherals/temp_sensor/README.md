@@ -3,9 +3,9 @@
 
 # Temperature Sensor Example
 
-The ESP32-S2/C3/S3 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.    
+The ESP32-S2/C3/S3 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.
 
-The conversion relationship is the first two columns of the table below. Among them, `offset = 0`(default) is the main measurement option, and other values are extended measurement options.  
+The conversion relationship is the first two columns of the table below. Among them, `offset = 0`(default) is the main measurement option, and other values are extended measurement options.
 
 | DAC level | offset | measure range(℃) | measure error(℃) |
 | :-------: | :----: | :--------------: | :--------------: |
@@ -37,18 +37,17 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 ## Example Output
 
 ```
-I (276) example: Initializing Temperature sensor
-I (276) temperature_sensor: temperature range [-10°C ~ 80°C], error < 1°C
-I (286) example: Temperature sensor started
-I (1286) example: Temperature out celsius 21.64
-I (2286) example: Temperature out celsius 21.64
-I (3286) example: Temperature out celsius 21.64
-I (4286) example: Temperature out celsius 22.08
-I (5286) example: Temperature out celsius 22.08
-I (6286) example: Temperature out celsius 22.08
-I (7286) example: Temperature out celsius 22.08
-I (8286) example: Temperature out celsius 22.08
-I (9286) example: Temperature out celsius 22.08
+I (0) cpu_start: Starting scheduler on APP CPU.
+I (303) example: Install temperature sensor, expected temp ranger range: 10~50 ℃
+I (303) temperature_sensor: Range [-10°C ~ 80°C], error < 1°C
+I (313) example: Enable temperature sensor
+I (323) example: Read temperature
+I (323) example: Temperature value 26.06 ℃
+I (1323) example: Temperature value 26.06 ℃
+I (2323) example: Temperature value 26.06 ℃
+I (3323) example: Temperature value 26.06 ℃
+I (4323) example: Temperature value 26.06 ℃
+I (5323) example: Temperature value 26.49 ℃
 
 ```
 

@@ -65,6 +65,13 @@ build_pytest_examples_esp32c3:
   script:
     - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
+build_pytest_examples_esp32c2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32c2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32c2 --size-info $SIZE_INFO_LOCATION -vv
+
 build_pytest_components_esp32:
   extends:
     - .build_pytest_template
@@ -92,6 +99,13 @@ build_pytest_components_esp32c3:
     - .rules:build:component_ut-esp32c3
   script:
     - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32c2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32c2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c2 --size-info $SIZE_INFO_LOCATION -vv
 
 build_non_test_components_apps:
   extends:
@@ -433,6 +447,11 @@ test_build_system_cmake_macos:
     - macos_shell
   variables:
     SHELL_TEST_SCRIPT: test_build_system_cmake.sh
+
+test_build_system_spaces:
+  extends: .test_build_system_template
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system_spaces.py
 
 build_docker:
   extends:

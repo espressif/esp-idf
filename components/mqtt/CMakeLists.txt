@@ -4,6 +4,7 @@ idf_component_register(SRCS "esp-mqtt/mqtt_client.c"
                             "esp-mqtt/lib/platform_esp32_idf.c"
                     INCLUDE_DIRS esp-mqtt/include
                     PRIV_INCLUDE_DIRS "esp-mqtt/lib/include"
+                    PRIV_REQUIRES lwip
                     )
 
 if(TEST_BUILD)

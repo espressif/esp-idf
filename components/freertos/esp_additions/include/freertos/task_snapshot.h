@@ -54,8 +54,9 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
  * 		 does not acquire any locks.
  * @param[in] pxTask Task's handle
  * @param[out] pxTaskSnapshot Snapshot of the task
+ * @return pdTRUE if operation was successful else pdFALSE
  */
-void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
+BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
 
 /**
  * @brief Fill an array of TaskSnapshot_t structures for every task in the system

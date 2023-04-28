@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <vector>
 #include "unity.h"
-#include "memory_checks.h"
 
 extern "C" void setUp()
 {

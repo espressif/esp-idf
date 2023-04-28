@@ -76,7 +76,6 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
-#include "esp_timer.h"              /* required for esp_timer_get_time. [refactor-todo] make this common between archs */
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
@@ -87,6 +86,11 @@
 #include <limits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/xtensa_api.h>
+
+/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

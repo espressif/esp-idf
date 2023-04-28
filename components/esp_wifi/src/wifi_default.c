@@ -236,6 +236,8 @@ esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif)
         if (s_wifi_netifs[i] == esp_netif) {
             s_wifi_netifs[i] = NULL;
         }
+    }
+    for (i = 0; i< MAX_WIFI_IFS; ++i) {
         // check if all netifs are cleared to delete default handlers
         if (s_wifi_netifs[i] != NULL) {
             break;

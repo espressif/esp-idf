@@ -19,7 +19,8 @@ static const uint8_t UUID_SPP[16] = {0x00, 0x00, 0x11, 0x01, 0x00, 0x00, 0x10, 0
                                     0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
                                     };
 static tSDP_UUID sdp_uuid;
-esp_err_t esp_spp_register_callback(esp_spp_cb_t *callback)
+
+esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 

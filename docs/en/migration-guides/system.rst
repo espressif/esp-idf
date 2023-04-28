@@ -60,6 +60,7 @@ ESP System
 ----------
 - The header files ``esp_random.h``, ``esp_mac.h`` and ``esp_chip_info.h``, which were all previously indirectly included via the header file ``esp_system.h``, must now be included directly. These headers are removed from ``esp_system.h``.
 - The header file ``eh_frame_parser.h`` must now be included with a ``esp_private`` prefix like ``#include "esp_private/eh_frame_parser.h"``.
+- The header file ``esp_int_wdt.h`` must now be included with a ``esp_private`` prefix like ``#include "esp_private/esp_int_wdt.h"``.
 
 SOC dependency
 --------------
@@ -77,3 +78,20 @@ ESP Timer
 ---------
 
 Removed the FRC2 based legacy implementation of esp_timer available on ESP32. The simpler and more efficient implementation based on the LAC timer is now the only option.
+
+ESP image
+---------
+
+Rename the image SPI speed enum definition.
+- Enum ``ESP_IMAGE_SPI_SPEED_80M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_1``.
+- Enum ``ESP_IMAGE_SPI_SPEED_40M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_2``.
+- Enum ``ESP_IMAGE_SPI_SPEED_26M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_3``.
+- Enum ``ESP_IMAGE_SPI_SPEED_20M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_4``.
+
+Task Watchdog Timers
+--------------------
+
+- The API for ``esp_task_wdt_init()`` has changed as follows
+
+    - Configuration is now passed as a configuration structure.
+    - The function will now handle subscribing of the idle tasks if configured to do so

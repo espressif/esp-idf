@@ -1,8 +1,10 @@
 set(srcs "port/os_xtensa.c"
+    "port/eloop.c"
     "src/ap/ap_config.c"
     "src/ap/ieee802_1x.c"
     "src/ap/wpa_auth.c"
     "src/ap/wpa_auth_ie.c"
+    "src/ap/sta_info.c"
     "src/common/sae.c"
     "src/common/wpa_common.c"
     "src/utils/bitfield.c"
@@ -22,6 +24,8 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/sha384-prf.c"
     "src/crypto/md4-internal.c"
     "src/crypto/sha1-tprf.c"
+    "src/eap_common/eap_wsc_common.c"
+    "src/common/ieee802_11_common.c"
     "src/eap_peer/chap.c"
     "src/eap_peer/eap.c"
     "src/eap_peer/eap_common.c"
@@ -51,21 +55,20 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_attr_process.c"
     "src/wps/wps_common.c"
     "src/wps/wps_dev_attr.c"
-    "src/wps/wps_enrollee.c"
-    "src/wps/wps_registrar.c"
-    "src/wps/wps_validate.c")
+    "src/wps/wps_enrollee.c")
 
 set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
+    "esp_supplicant/src/esp_common.c"
     "esp_supplicant/src/esp_wps.c"
     "esp_supplicant/src/esp_wpa3.c")
 if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
     set(esp_srcs ${esp_srcs} "esp_supplicant/src/esp_hostap.c")
 endif()
 
-if(CONFIG_WPA_MBEDTLS_CRYPTO)
-    set(tls_src "src/crypto/tls_mbedtls.c")
+if(CONFIG_WPA_MBEDTLS_TLS_CLIENT)
+    set(tls_src "esp_supplicant/src/crypto/tls_mbedtls.c")
 else()
     set(tls_src
     "src/tls/asn1.c"
@@ -75,24 +78,23 @@ else()
     "src/tls/pkcs8.c"
     "src/tls/bignum.c"
     "src/tls/rsa.c"
-    "src/tls/tls_internal.c"
+    "src/crypto/tls_internal.c"
     "src/tls/tlsv1_client.c"
     "src/tls/tlsv1_client_read.c"
     "src/tls/tlsv1_client_write.c"
     "src/tls/tlsv1_common.c"
     "src/tls/tlsv1_cred.c"
     "src/tls/tlsv1_record.c"
-    "src/tls/tlsv1_server.c"
-    "src/tls/tlsv1_server_read.c"
-    "src/tls/tlsv1_server_write.c"
+    "src/tls/tlsv1_client_ocsp.c"
     "src/tls/x509v3.c")
 endif()
 
 if(CONFIG_WPA_MBEDTLS_CRYPTO)
     set(crypto_src
-    "src/crypto/crypto_mbedtls.c"
-    "src/crypto/crypto_mbedtls-bignum.c"
-    "src/crypto/crypto_mbedtls-ec.c")
+    "esp_supplicant/src/crypto/crypto_mbedtls.c"
+    "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
+    "esp_supplicant/src/crypto/crypto_mbedtls-rsa.c"
+    "esp_supplicant/src/crypto/crypto_mbedtls-ec.c")
     # Add internal RC4 if RC4 is disabled in mbedtls
     if(CONFIG_MBEDTLS_RC4_DISABLED)
         set(crypto_src ${crypto_src} "src/crypto/rc4.c")
@@ -132,7 +134,6 @@ else()
     "src/crypto/crypto_internal-cipher.c"
     "src/crypto/crypto_internal-modexp.c"
     "src/crypto/crypto_internal-rsa.c"
-    "src/crypto/crypto_mbedtls-rsa.c"
     "src/crypto/crypto_internal.c"
     "src/crypto/des-internal.c"
     "src/crypto/md4-internal.c"
@@ -147,16 +148,18 @@ else()
     "src/crypto/sha256.c")
 endif()
 
-if(CONFIG_WPA_11KV_SUPPORT)
+if(CONFIG_WPA_11KV_SUPPORT OR CONFIG_WPA_11R_SUPPORT)
     set(roaming_src
-    "src/common/rrm.c"
-    "src/common/wnm_sta.c"
     "src/common/bss.c"
     "src/common/scan.c"
     "src/common/ieee802_11_common.c"
-    "esp_supplicant/src/esp_common.c"
-    "esp_supplicant/src/esp_scan.c"
-    )
+    "esp_supplicant/src/esp_scan.c")
+    if(CONFIG_WPA_11KV_SUPPORT)
+        set(roaming_src ${roaming_src} "src/common/rrm.c" "src/common/wnm_sta.c")
+    endif()
+    if(CONFIG_WPA_11R_SUPPORT)
+        set(roaming_src ${roaming_src} "src/rsn_supp/wpa_ft.c")
+    endif()
 else()
     set(roaming_src "")
 endif()
@@ -174,13 +177,28 @@ else()
     set(dpp_src "")
 endif()
 
-idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}"
-                            "${crypto_src}" "${mbo_src}" "${dpp_src}"
+if(CONFIG_WPA_WPS_SOFTAP_REGISTRAR)
+    set(wps_registrar_src
+    "src/ap/wps_hostapd.c"
+    "src/eap_server/eap_server.c"
+    "src/eap_server/eap_server_methods.c"
+    "src/eap_server/eap_server_wsc.c"
+    "src/ap/eap_user_db.c"
+    "src/eapol_auth/eapol_auth_sm.c"
+    "src/eap_server/eap_server_identity.c"
+    "esp_supplicant/src/esp_hostpad_wps.c"
+    "src/wps/wps_registrar.c")
+else()
+    set(wps_registrar_src "")
+endif()
+
+idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}"
+                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
-                    PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src
+                    PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
                     PRIV_REQUIRES mbedtls esp_timer)
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings)
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
     ESP_SUPPLICANT
@@ -190,17 +208,15 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_TTLS
     EAP_TLS
     EAP_PEAP
-    EAP_FAST
     USE_WPA2_TASK
-    CONFIG_WPS2
-    CONFIG_WPS_PIN
+    CONFIG_WPS
     USE_WPS_TASK
     ESPRESSIF_USE
     ESP32_WORKAROUND
     CONFIG_ECC
     CONFIG_IEEE80211W
     CONFIG_SHA256
-    CONFIG_WNM
+    CONFIG_NO_RADIUS
     )
 
 if(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
@@ -221,11 +237,28 @@ endif()
 if(CONFIG_ESP_WIFI_GMAC_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_GMAC)
 endif()
-
 if(CONFIG_WPA_MBO_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_MBO)
 endif()
 if(CONFIG_WPA_DPP_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_DPP)
+endif()
+if(CONFIG_WPA_11KV_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SUPPLICANT_TASK CONFIG_WNM CONFIG_RRM)
+endif()
+if(CONFIG_WPA_11R_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_IEEE80211R)
+endif()
+if(NOT CONFIG_WPA_MBEDTLS_TLS_CLIENT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TLS_INTERNAL_CLIENT
+                CONFIG_TLSV11 CONFIG_TLSV12 CONFIG_INTERNAL_SHA384 CONFIG_INTERNAL_SHA512 EAP_FAST)
+endif()
+if(CONFIG_WPA_MBEDTLS_CRYPTO)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_CRYPTO_MBEDTLS)
+else()
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_CRYPTO_INTERNAL)
+endif()
+if(CONFIG_WPA_WPS_SOFTAP_REGISTRAR)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_REGISTRAR)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)

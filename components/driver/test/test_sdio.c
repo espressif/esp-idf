@@ -10,6 +10,7 @@
 #include "test_utils.h"
 #include "param_test.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "driver/spi_common.h"
 #include "soc/soc_caps.h"
 #include "ccomp_timer.h"

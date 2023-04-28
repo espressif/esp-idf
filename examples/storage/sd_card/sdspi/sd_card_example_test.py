@@ -16,7 +16,7 @@ def test_examples_sd_card_sdspi(env, extra_data):  # type: (ttfw_idf.Env.Env, No
     dut.expect('Filesystem mounted', timeout=60)
 
     # These lines are matched separately because of ASCII color codes in the output
-    name = dut.expect(re.compile(r'Name: (\w+)'), timeout=20)[0]
+    name = dut.expect(re.compile(r'Name: (\w+)\r'), timeout=20)[0]
     _type = dut.expect(re.compile(r'Type: (\S+)'), timeout=20)[0]
     speed = dut.expect(re.compile(r'Speed: (\S+)'), timeout=20)[0]
     size = dut.expect(re.compile(r'Size: (\S+)'), timeout=20)[0]

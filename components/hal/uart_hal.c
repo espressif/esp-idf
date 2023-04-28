@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for UART (common part)
 #include "hal/uart_hal.h"
@@ -138,7 +130,7 @@ void uart_hal_set_loop_back(uart_hal_context_t *hal, bool loop_back_en)
 void uart_hal_init(uart_hal_context_t *hal, int uart_num)
 {
     // Set default clock source
-    uart_ll_set_sclk(hal->dev, UART_SCLK_APB);
+    uart_ll_set_sclk(hal->dev, UART_SCLK_DEFAULT);
     // Set default baud: 115200, use APB clock.
     const uint32_t baud_def = 115200;
     uart_ll_set_baudrate(hal->dev, baud_def);

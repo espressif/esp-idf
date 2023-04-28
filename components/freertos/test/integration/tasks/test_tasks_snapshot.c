@@ -138,7 +138,8 @@ TEST_CASE("Task snapshot: Iterate", "[freertos]")
     TaskHandle_t cur_task_handle = pxTaskGetNext(NULL);
     while (cur_task_handle != NULL) {
         // Get the task's snapshot
-        vTaskGetSnapshot(cur_task_handle, &task_snapshots[num_snapshots]);
+        BaseType_t Result = vTaskGetSnapshot(cur_task_handle, &task_snapshots[num_snapshots]);
+        TEST_ASSERT_EQUAL(pdTRUE, Result);
         num_snapshots++;
         cur_task_handle = pxTaskGetNext(cur_task_handle);
     }

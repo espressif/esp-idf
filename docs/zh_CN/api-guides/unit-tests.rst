@@ -301,12 +301,9 @@ Mocks
 
 要求
 ^^^^^^^^^^^^
-生成 Mock 需要满足如下要求：
+目前 Mock 只支持基于 Linux 主机的单元测试。生成 Mock 需要满足如下要求：
 
-.. list::
-    - 安装 ESP-IDF 及其所有要求
-    - 安装 ``ruby``
-    - 在 Linux 主机上需要安装 ``libbsd``，目前 Mock 只支持基于 Linux 主机的单元测试
+.. include:: inc/linux-host-requirements.rst
 
 
 对组件进行 Mock

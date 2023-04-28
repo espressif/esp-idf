@@ -20,11 +20,10 @@ extern "C" {
  * @brief Calibrate the offset of ADC. (Based on the pre-stored efuse or actual calibration)
  *
  * @param adc_n ADC unit to calibrate
- * @param channel Target channel if really do calibration
  * @param atten Attenuation to use
  * @return Always ESP_OK
  */
-extern esp_err_t adc_cal_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten);
+extern esp_err_t adc_cal_offset(adc_unit_t adc_n, adc_atten_t atten);
 
 #endif
 

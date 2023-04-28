@@ -17,7 +17,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
 #include "driver/touch_pad.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "hal/touch_sensor_types.h"
 #include "hal/touch_sensor_hal.h"

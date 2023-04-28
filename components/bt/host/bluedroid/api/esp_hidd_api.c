@@ -15,7 +15,7 @@
 
 #if (defined BTC_HD_INCLUDED && BTC_HD_INCLUDED == TRUE)
 
-esp_err_t esp_bt_hid_device_register_callback(esp_hd_cb_t *callback)
+esp_err_t esp_bt_hid_device_register_callback(esp_hd_cb_t callback)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 

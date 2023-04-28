@@ -55,6 +55,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hidd_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
@@ -66,7 +67,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/i2c.h \
     $(PROJECT_PATH)/components/driver/include/driver/i2s.h \
     $(PROJECT_PATH)/components/driver/include/driver/ledc.h \
-    $(PROJECT_PATH)/components/driver/include/driver/rmt.h \
     $(PROJECT_PATH)/components/driver/include/driver/rtc_io.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdio_slave.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdmmc_host.h \
@@ -75,8 +75,8 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/sigmadelta.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_master.h \
-    $(PROJECT_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_slave.h \
+    $(PROJECT_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/include/driver/uart.h \
@@ -86,13 +86,13 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy.h \
-    $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
+    $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
@@ -111,31 +111,30 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_netif.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_ip_addr.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_types.h \
-    $(PROJECT_PATH)/components/esp_netif/include/esp_netif.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_vfs_l2tap.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
     $(PROJECT_PATH)/components/esp_pm/include/$(IDF_TARGET)/pm.h \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
+    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
     $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
-    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
-    $(PROJECT_PATH)/components/esp_system/include/esp_int_wdt.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_now.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_smartconfig.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_default.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types.h \
-    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls_errors.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls.h \
     $(PROJECT_PATH)/components/fatfs/diskio/diskio_impl.h \
@@ -158,7 +157,6 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sigmadelta_types.h \
@@ -168,25 +166,25 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/touch_sensor_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
-    $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
+    $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_trace.h \
     $(PROJECT_PATH)/components/heap/include/multi_heap.h \
-    $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154.h \
+    $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \
     $(PROJECT_PATH)/components/log/include/esp_log.h \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     $(PROJECT_PATH)/components/mdns/include/mdns.h \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
-    $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
+    $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
+    $(PROJECT_PATH)/components/openthread/include/esp_openthread.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_border_router.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_lock.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_netif_glue.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_types.h \
-    $(PROJECT_PATH)/components/openthread/include/esp_openthread.h \
     $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
     $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
     $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
@@ -203,13 +201,13 @@ INPUT = \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
-    $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_partition.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb_types.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb_types.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_cdc_acm.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_config.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_console.h \
@@ -218,10 +216,10 @@ INPUT = \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_dev.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_eventfd.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_semihost.h \
-    $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
@@ -259,6 +257,8 @@ PREDEFINED             = \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
     configUSE_APPLICATION_TASK_TAG=1 \
     configTASKLIST_INCLUDE_COREID=1 \
+    portUSING_MPU_WRAPPERS=1 \
+    PRIVILEGED_FUNCTION= \
     "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 
 ## Do not complain about not having dot
@@ -282,6 +282,5 @@ QUIET = YES
 
 ## Enable Section Tags for conditional documentation
 ##
-ENABLED_SECTIONS += \
-    DOC_EXCLUDE_HEADER_SECTION \   ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
-    DOC_SINGLE_GROUP        ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.
+ENABLED_SECTIONS += DOC_EXCLUDE_HEADER_SECTION  ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
+ENABLED_SECTIONS += DOC_SINGLE_GROUP            ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.

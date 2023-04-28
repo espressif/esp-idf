@@ -4,7 +4,7 @@
   tags:
     - assign_test
   variables:
-    SUBMODULES_TO_FETCH: components/esptool_py/esptool
+    SUBMODULES_TO_FETCH: "none"
   artifacts:
     paths:
       - ${TEST_DIR}/test_configs

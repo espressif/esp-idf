@@ -29,11 +29,12 @@ from _pytest.python import Function
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
-from pytest_embedded.plugin import apply_count, parse_configuration
+from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
+from pytest_embedded_idf.dut import IdfDut
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
-PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp32c2']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
+PREVIEW_TARGETS = ['linux', 'esp32h2']
 DEFAULT_SDKCONFIG = 'default'
 
 
@@ -74,8 +75,25 @@ def session_tempdir() -> str:
     return _TEST_SESSION_TMPDIR
 
 
+@pytest.fixture()
+def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
+    def real_func() -> None:
+        res = dut.expect(r'Minimum free heap size: (\d+) bytes')
+        logging.info('\n------ heap size info ------\n'
+                     '[app_name] {}\n'
+                     '[config_name] {}\n'
+                     '[target] {}\n'
+                     '[minimum_free_heap_size] {} Bytes\n'
+                     '------ heap size end ------'.format(os.path.basename(dut.app.app_path),
+                                                          config,
+                                                          dut.target,
+                                                          res.group(1).decode('utf8')))
+
+    return real_func
+
+
 @pytest.fixture
-@parse_configuration
+@multi_dut_argument
 def config(request: FixtureRequest) -> str:
     return getattr(request, 'param', None) or DEFAULT_SDKCONFIG
 
@@ -91,7 +109,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 
 @pytest.fixture
-@apply_count
+@multi_dut_fixture
 def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
     """
     Check local build dir with the following priority:
@@ -137,7 +155,7 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
 
 
 @pytest.fixture(autouse=True)
-@apply_count
+@multi_dut_fixture
 def junit_properties(
     test_case_name: str, record_xml_attribute: Callable[[str, object], None]
 ) -> None:
@@ -195,16 +213,20 @@ class IdfPytestEmbedded:
         )
 
         self._failed_cases: List[
-            Tuple[str, bool]
-        ] = []  # (test_case_name, is_known_failure_cases)
+            Tuple[str, bool, bool]
+        ] = []  # (test_case_name, is_known_failure_cases, is_xfail)
 
     @property
     def failed_cases(self) -> List[str]:
-        return [case for case, is_known in self._failed_cases if not is_known]
+        return [case for case, is_known, is_xfail in self._failed_cases if not is_known and not is_xfail]
 
     @property
     def known_failure_cases(self) -> List[str]:
-        return [case for case, is_known in self._failed_cases if is_known]
+        return [case for case, is_known, _ in self._failed_cases if is_known]
+
+    @property
+    def xfail_cases(self) -> List[str]:
+        return [case for case, _, is_xfail in self._failed_cases if is_xfail]
 
     @staticmethod
     def _parse_known_failure_cases_file(
@@ -255,11 +277,6 @@ class IdfPytestEmbedded:
             if 'all_targets' in item_marker_names(item):
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
-            # FIXME: temporarily modify the s3 runner tag "generic" to "s3_generic" due to the deep sleep bug
-            if 'generic' in item_marker_names(item) and 'esp32s3' in item_marker_names(
-                item
-            ):
-                item.add_marker('generic_s3_fixme')
 
         # filter all the test cases with "--target"
         if self.target:
@@ -283,7 +300,8 @@ class IdfPytestEmbedded:
         if report.outcome == 'failed':
             test_case_name = item.funcargs.get('test_case_name', '')
             is_known_failure = self._is_known_failure(test_case_name)
-            self._failed_cases.append((test_case_name, is_known_failure))
+            is_xfail = report.keywords.get('xfail', False)
+            self._failed_cases.append((test_case_name, is_known_failure, is_xfail))
 
         return report
 
@@ -331,6 +349,10 @@ class IdfPytestEmbedded:
         if self.known_failure_cases:
             terminalreporter.section('Known failure cases', bold=True, yellow=True)
             terminalreporter.line('\n'.join(self.known_failure_cases))
+
+        if self.xfail_cases:
+            terminalreporter.section('xfail cases', bold=True, yellow=True)
+            terminalreporter.line('\n'.join(self.xfail_cases))
 
         if self.failed_cases:
             terminalreporter.section('Failed cases', bold=True, red=True)

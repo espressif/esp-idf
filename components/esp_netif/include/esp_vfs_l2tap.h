@@ -20,8 +20,12 @@ extern "C" {
 
 typedef void *l2tap_iodriver_handle;
 
+/**
+ * @brief L2Tap VFS config parameters
+ *
+ */
 typedef struct {
-    const char* base_path;
+    const char* base_path; /*!< vfs base path */
 } l2tap_vfs_config_t;
 
 typedef enum {
@@ -56,7 +60,7 @@ esp_err_t esp_vfs_l2tap_intf_unregister(const char *base_path);
 /**
  * @brief Filters received Ethernet L2 frames into L2 TAP infrastructure.
  *
- * @param eth_hdl handle of Ethernet driver at which the frame was received
+ * @param driver_handle handle of driver at which the frame was received
  * @param buff received L2 frame
  * @param size input length of the L2 frame which is set to 0 when frame is filtered into L2 TAP
  * @return esp_err_t

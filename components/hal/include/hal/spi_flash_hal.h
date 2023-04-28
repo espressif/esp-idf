@@ -70,13 +70,15 @@ typedef struct {
     };
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock, used for timing compensation.
-    esp_flash_speed_t speed;///< SPI flash clock speed to work at.
+    enum esp_flash_speed_s speed __attribute__((deprecated));      ///< SPI flash clock speed to work at. Replaced by freq_mhz
     spi_host_device_t host_id;            ///< SPI peripheral ID.
     int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
     bool octal_mode_en;     ///< Octal spi flash mode enable bit 1: enable, 0: disable.
     bool using_timing_tuning;               ///< System exist SPI0/1 timing tuning, using value from system directely if set to 1.
     esp_flash_io_mode_t default_io_mode;        ///< Default flash io mode.
+    int freq_mhz;         ///< SPI flash clock speed (MHZ).
+    int clock_src_freq;    ///< SPI flash clock source (MHZ).
 } spi_flash_hal_config_t;
 
 /**

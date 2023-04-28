@@ -9,7 +9,7 @@
 #include "includes.h"
 
 #include "common.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "crypto/sha1.h"
 #include "eap_peer/eap_tlv_common.h"
 #include "eap_peer/eap_methods.h"

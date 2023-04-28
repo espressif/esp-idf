@@ -189,7 +189,7 @@ class FatFSGen(unittest.TestCase):
 
     def test_fatfs16_detection(self) -> None:
         fatfs = fatfsgen.FATFS(size=16 * 1024 * 1024)
-        self.assertEqual(fatfs.state.fatfs_type, 16)
+        self.assertEqual(fatfs.state.boot_sector_state.fatfs_type, 16)
 
     def test_fatfs32_detection(self) -> None:
         self.assertRaises(NotImplementedError, fatfsgen.FATFS, size=256 * 1024 * 1024)

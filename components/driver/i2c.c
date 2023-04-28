@@ -213,7 +213,7 @@ static i2c_clk_alloc_t i2c_clk_alloc[I2C_SCLK_MAX] = {
 
 static i2c_obj_t *p_i2c_obj[I2C_NUM_MAX] = {0};
 static void i2c_isr_handler_default(void *arg);
-static void i2c_master_cmd_begin_static(i2c_port_t i2c_num);
+static void i2c_master_cmd_begin_static(i2c_port_t i2c_num, portBASE_TYPE* HPTaskAwoken);
 static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num);
 
 static void i2c_hw_disable(i2c_port_t i2c_num)
@@ -497,8 +497,17 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
 {
     i2c_obj_t *p_i2c = (i2c_obj_t *) arg;
     int i2c_num = p_i2c->i2c_num;
+    // Interrupt protection.
+    // On C3 and S3 targets, the I2C may trigger a spurious interrupt,
+    // in order to detect these false positive, check the I2C's hardware interrupt mask
+    uint32_t int_mask;
+    i2c_hal_get_intsts_mask(&(i2c_context[i2c_num].hal), &int_mask);
+    if (int_mask == 0) {
+        return;
+    }
     i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
     portBASE_TYPE HPTaskAwoken = pdFALSE;
+    portBASE_TYPE HPTaskAwokenCallee = pdFALSE;
     if (p_i2c->mode == I2C_MODE_MASTER) {
         if (p_i2c->status == I2C_STATUS_WRITE) {
             i2c_hal_master_handle_tx_event(&(i2c_context[i2c_num].hal), &evt_type);
@@ -507,19 +516,22 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
         }
         if (evt_type == I2C_INTR_EVENT_NACK) {
             p_i2c_obj[i2c_num]->status = I2C_STATUS_ACK_ERROR;
-            i2c_master_cmd_begin_static(i2c_num);
+            i2c_master_cmd_begin_static(i2c_num, &HPTaskAwokenCallee);
         } else if (evt_type == I2C_INTR_EVENT_TOUT) {
             p_i2c_obj[i2c_num]->status = I2C_STATUS_TIMEOUT;
-            i2c_master_cmd_begin_static(i2c_num);
+            i2c_master_cmd_begin_static(i2c_num, &HPTaskAwokenCallee);
         } else if (evt_type == I2C_INTR_EVENT_ARBIT_LOST) {
             p_i2c_obj[i2c_num]->status = I2C_STATUS_TIMEOUT;
-            i2c_master_cmd_begin_static(i2c_num);
+            i2c_master_cmd_begin_static(i2c_num, &HPTaskAwokenCallee);
         } else if (evt_type == I2C_INTR_EVENT_END_DET) {
-            i2c_master_cmd_begin_static(i2c_num);
+            i2c_master_cmd_begin_static(i2c_num, &HPTaskAwokenCallee);
         } else if (evt_type == I2C_INTR_EVENT_TRANS_DONE) {
             if (p_i2c->status != I2C_STATUS_ACK_ERROR && p_i2c->status != I2C_STATUS_IDLE) {
-                i2c_master_cmd_begin_static(i2c_num);
+                i2c_master_cmd_begin_static(i2c_num, &HPTaskAwokenCallee);
             }
+        } else {
+            // Do nothing if there is no proper event.
+            return;
         }
         i2c_cmd_evt_t evt = {
             .type = I2C_CMD_EVT_ALIVE
@@ -551,7 +563,7 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
     }
 #endif // SOC_I2C_SUPPORT_SLAVE
     //We only need to check here if there is a high-priority task needs to be switched.
-    if (HPTaskAwoken == pdTRUE) {
+    if (HPTaskAwoken == pdTRUE || HPTaskAwokenCallee == pdTRUE) {
         portYIELD_FROM_ISR();
     }
 }
@@ -620,6 +632,8 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
  **/
 static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 {
+// A workaround for avoiding cause timeout issue when using
+// hardware reset.
 #if !SOC_I2C_SUPPORT_HW_FSM_RST
     int scl_low_period, scl_high_period;
     int scl_start_hold, scl_rstart_setup;
@@ -1294,10 +1308,9 @@ static inline bool i2c_cmd_is_single_byte(const i2c_cmd_t *cmd) {
     return cmd->total_bytes == 1;
 }
 
-static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
+static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, portBASE_TYPE* HPTaskAwoken)
 {
     i2c_obj_t *p_i2c = p_i2c_obj[i2c_num];
-    portBASE_TYPE HPTaskAwoken = pdFALSE;
     i2c_cmd_evt_t evt = { 0 };
     if (p_i2c->cmd_link.head != NULL && p_i2c->status == I2C_STATUS_READ) {
         i2c_cmd_t *cmd = &p_i2c->cmd_link.head->cmd;
@@ -1310,21 +1323,25 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
             p_i2c->cmd_idx = 0;
         } else {
             p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
-            p_i2c->cmd_link.head->cmd.bytes_used = 0;
+            if (p_i2c->cmd_link.head != NULL) {
+                p_i2c->cmd_link.head->cmd.bytes_used = 0;
+            }
         }
     } else if ((p_i2c->status == I2C_STATUS_ACK_ERROR)
                || (p_i2c->status == I2C_STATUS_TIMEOUT)) {
+        assert(HPTaskAwoken != NULL);
         evt.type = I2C_CMD_EVT_DONE;
-        xQueueOverwriteFromISR(p_i2c->cmd_evt_queue, &evt, &HPTaskAwoken);
+        xQueueOverwriteFromISR(p_i2c->cmd_evt_queue, &evt, HPTaskAwoken);
         return;
     } else if (p_i2c->status == I2C_STATUS_DONE) {
         return;
     }
 
     if (p_i2c->cmd_link.head == NULL) {
+        assert(HPTaskAwoken != NULL);
         p_i2c->cmd_link.cur = NULL;
         evt.type = I2C_CMD_EVT_DONE;
-        xQueueOverwriteFromISR(p_i2c->cmd_evt_queue, &evt, &HPTaskAwoken);
+        xQueueOverwriteFromISR(p_i2c->cmd_evt_queue, &evt, HPTaskAwoken);
         // Return to the IDLE status after cmd_eve_done signal were send out.
         p_i2c->status = I2C_STATUS_IDLE;
         return;
@@ -1470,7 +1487,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     i2c_hal_disable_intr_mask(&(i2c_context[i2c_num].hal), I2C_LL_INTR_MASK);
     i2c_hal_clr_intsts_mask(&(i2c_context[i2c_num].hal), I2C_LL_INTR_MASK);
     //start send commands, at most 32 bytes one time, isr handler will process the remaining commands.
-    i2c_master_cmd_begin_static(i2c_num);
+    i2c_master_cmd_begin_static(i2c_num, NULL);
 
     // Wait event bits
     i2c_cmd_evt_t evt;

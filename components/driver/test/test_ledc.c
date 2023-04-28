@@ -23,6 +23,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "driver/ledc.h"
 #include "hal/ledc_ll.h"
 #include "driver/gpio.h"
@@ -421,10 +422,12 @@ static void setup_testbench(void)
     TEST_ESP_OK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
     TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
     TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
 }
 
 static void tear_testbench(void)
 {
+    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit));
     TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
     TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
 }
@@ -495,7 +498,7 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60][ignore]")
 }
 
 static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg_t clk_src, uint32_t duty_res,
-                                            uint32_t freq_hz)
+        uint32_t freq_hz)
 {
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,

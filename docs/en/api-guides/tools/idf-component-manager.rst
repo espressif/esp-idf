@@ -6,13 +6,6 @@ The IDF Component manager is a tool that downloads dependencies for any ESP-IDF 
 
 A list of components can be found on `<https://components.espressif.com/>`_
 
-Activating the Component Manager
-================================
-
-If CMake is started using ``idf.py`` or `ESP-IDF VSCode Extension <https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension>`_ then the component manager will be activated by default.
-
-If CMake is used directly or with some CMake-based IDE like CLion, it's necessary to set the ``IDF_COMPONENT_MANAGER`` environment variable to ``1`` to enable the component manager integration with the build system.
-
 Using with a project
 ====================
 
@@ -70,3 +63,8 @@ Defining dependencies in the manifest
       # # with relative or absolute path
       # some_local_component:
       #   path: ../../projects/component
+
+Disabling the Component Manager
+===============================
+
+The component manager can be explicitly disabled by setting ``IDF_COMPONENT_MANAGER`` environment variable to ``0``.

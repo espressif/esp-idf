@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import json
 import os
 import re
@@ -84,8 +86,18 @@ def action_extensions(base_actions, project_path):
                 print('Failed to close/kill {}'.format(target))
             processes[target] = None  # to indicate this has ended
 
-    def create_local_gdbinit(gdbinit, elf_file):
+    def is_gdb_with_python(gdb):
+        # execute simple python command to check is it supported
+        return subprocess.run([gdb, '--batch-silent', '--ex', 'python import os'], stderr=subprocess.DEVNULL).returncode == 0
+
+    def create_local_gdbinit(gdb, gdbinit, elf_file):
         with open(gdbinit, 'w') as f:
+            if is_gdb_with_python(gdb):
+                f.write('python\n')
+                f.write('import sys\n')
+                f.write(f'sys.path = {sys.path}\n')
+                f.write('import freertos_gdb\n')
+                f.write('end\n')
             if os.name == 'nt':
                 elf_file = elf_file.replace('\\','\\\\')
             f.write('file {}\n'.format(elf_file))
@@ -192,7 +204,7 @@ def action_extensions(base_actions, project_path):
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
         if gdbinit is None:
             gdbinit = os.path.join(local_dir, 'gdbinit')
-            create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc['app_elf']))
+            create_local_gdbinit(gdb, gdbinit, os.path.join(args.build_dir, project_desc['app_elf']))
 
         # this is a workaround for gdbgui
         # gdbgui is using shlex.split for the --gdb-args option. When the input is:
@@ -270,11 +282,7 @@ def action_extensions(base_actions, project_path):
         watch_openocd = Thread(target=_check_openocd_errors, args=(fail_if_openocd_failed, action, ctx, ))
         watch_openocd.start()
         processes['threads_to_join'].append(watch_openocd)
-        desc_path = os.path.join(args.build_dir, 'project_description.json')
-        if not os.path.exists(desc_path):
-            ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r') as f:
-            project_desc = json.load(f)
+        project_desc = get_project_desc(args, ctx)
 
         elf_file = os.path.join(args.build_dir, project_desc['app_elf'])
         if not os.path.exists(elf_file):
@@ -283,7 +291,7 @@ def action_extensions(base_actions, project_path):
         local_dir = project_desc['build_dir']
         if gdbinit is None:
             gdbinit = os.path.join(local_dir, 'gdbinit')
-            create_local_gdbinit(gdbinit, elf_file)
+            create_local_gdbinit(gdb, gdbinit, elf_file)
         args = [gdb, *get_gdb_args(gdbinit, project_desc)]
         if gdb_tui is not None:
             args += ['-tui']

@@ -77,7 +77,7 @@ typedef void (bt_hid_copy_cb_t)(btc_msg_t *msg, void *p_dest, void *p_src);
 
 static inline void btc_hd_cb_to_app(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
 {
-    esp_hd_cb_t *btc_hd_cb = (esp_hd_cb_t *)btc_profile_cb_get(BTC_PID_HD);
+    esp_hd_cb_t btc_hd_cb = (esp_hd_cb_t)btc_profile_cb_get(BTC_PID_HD);
     if (btc_hd_cb) {
         btc_hd_cb(event, param);
     }

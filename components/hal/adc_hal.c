@@ -33,11 +33,6 @@
  * For chips without RTC controller, Digital controller is used to trigger an ADC single read.
  */
 #include "esp_rom_sys.h"
-
-typedef enum {
-    ADC_EVENT_ADC1_DONE = BIT(0),
-    ADC_EVENT_ADC2_DONE = BIT(1),
-} adc_hal_event_t;
 #endif  //SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
 /*---------------------------------------------------------------
@@ -107,13 +102,6 @@ typedef enum {
 #endif
 
 
-#if SOC_ADC_ARBITER_SUPPORTED
-void adc_hal_arbiter_config(adc_arbiter_t *config)
-{
-    adc_ll_set_arbiter_work_mode(config->mode);
-    adc_ll_set_arbiter_priority(config->rtc_pri, config->dig_pri, config->pwdet_pri);
-}
-#endif  // #if SOC_ADC_ARBITER_SUPPORTED
 
 void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *config)
 {
@@ -144,10 +132,8 @@ void adc_hal_digi_init(adc_hal_dma_ctx_t *hal)
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, 1);
     i2s_ll_enable_builtin_adc(hal->dev, 1);
 #endif
-#if CONFIG_IDF_TARGET_ESP32C3
-    adc_ll_onetime_sample_enable(ADC_UNIT_1, false);
-    adc_ll_onetime_sample_enable(ADC_UNIT_2, false);
-#endif
+
+    adc_oneshot_ll_disable_all_unit();
 }
 
 void adc_hal_digi_deinit(adc_hal_dma_ctx_t *hal)
@@ -158,57 +144,6 @@ void adc_hal_digi_deinit(adc_hal_dma_ctx_t *hal)
     adc_ll_digi_clear_pattern_table(ADC_UNIT_2);
     adc_ll_digi_reset(hal->dev);
     adc_ll_digi_controller_clk_disable();
-}
-
-/*---------------------------------------------------------------
-                    Controller Setting
----------------------------------------------------------------*/
-static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t work_mode)
-{
-    if (unit == ADC_UNIT_1) {
-        switch (work_mode) {
-#if SOC_ULP_SUPPORTED
-            case ADC_HAL_ULP_MODE:
-                return ADC_LL_CTRL_ULP;
-#endif
-            case ADC_HAL_SINGLE_READ_MODE:
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-                return ADC_LL_CTRL_DIG;
-#elif SOC_ADC_RTC_CTRL_SUPPORTED
-                return ADC_LL_CTRL_RTC;
-#endif
-            case ADC_HAL_CONTINUOUS_READ_MODE:
-                return ADC_LL_CTRL_DIG;
-            default:
-                abort();
-        }
-    } else {
-        switch (work_mode) {
-#if SOC_ULP_SUPPORTED
-            case ADC_HAL_ULP_MODE:
-                return ADC_LL_CTRL_ULP;
-#endif
-#if !SOC_ADC_ARBITER_SUPPORTED                  //No ADC2 arbiter on ESP32
-            case ADC_HAL_SINGLE_READ_MODE:
-                return ADC_LL_CTRL_RTC;
-            case ADC_HAL_CONTINUOUS_READ_MODE:
-                return ADC_LL_CTRL_DIG;
-            case ADC_HAL_PWDET_MODE:
-                return ADC_LL_CTRL_PWDET;
-            default:
-                abort();
-#else
-            default:
-                return ADC_LL_CTRL_ARB;
-#endif
-        }
-    }
-}
-
-void adc_hal_set_controller(adc_unit_t unit, adc_hal_work_mode_t work_mode)
-{
-    adc_ll_controller_t ctrlr = get_controller(unit, work_mode);
-    adc_ll_set_controller(unit, ctrlr);
 }
 
 /*---------------------------------------------------------------
@@ -400,7 +335,7 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal)
     adc_ll_digi_dma_disable();
 }
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+
 /*---------------------------------------------------------------
                     Single Read
 ---------------------------------------------------------------*/
@@ -408,33 +343,11 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal)
  * For chips without RTC controller, Digital controller is used to trigger an ADC single read.
  */
 
-//--------------------INTR-------------------------------//
-static adc_ll_intr_t get_event_intr(adc_hal_event_t event)
-{
-    adc_ll_intr_t intr_mask = 0;
-    if (event & ADC_EVENT_ADC1_DONE) {
-        intr_mask |= ADC_LL_INTR_ADC1_DONE;
-    }
-    if (event & ADC_EVENT_ADC2_DONE) {
-        intr_mask |= ADC_LL_INTR_ADC2_DONE;
-    }
-    return intr_mask;
-}
-
-static void adc_hal_intr_clear(adc_hal_event_t event)
-{
-    adc_ll_intr_clear(get_event_intr(event));
-}
-
-static bool adc_hal_intr_get_raw(adc_hal_event_t event)
-{
-    return adc_ll_intr_get_raw(get_event_intr(event));
-}
-
-
 //--------------------Single Read-------------------------------//
-static void adc_hal_onetime_start(void)
+static void adc_hal_onetime_start(adc_unit_t adc_n)
 {
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    (void)adc_n;
     /**
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
      * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
@@ -453,208 +366,35 @@ static void adc_hal_onetime_start(void)
         delay = 0;
     }
 
-    adc_ll_onetime_start(false);
+    adc_oneshot_ll_start(false);
     esp_rom_delay_us(delay);
-    adc_ll_onetime_start(true);
+    adc_oneshot_ll_start(true);
 
     //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
-}
-
-static esp_err_t adc_hal_single_read(adc_unit_t adc_n, int *out_raw)
-{
-    if (adc_n == ADC_UNIT_1) {
-        *out_raw = adc_ll_adc1_read();
-    } else if (adc_n == ADC_UNIT_2) {
-        *out_raw = adc_ll_adc2_read();
-        if (adc_ll_analysis_raw_data(adc_n, *out_raw)) {
-            return ESP_ERR_INVALID_STATE;
-        }
-    }
-    return ESP_OK;
+#else
+    adc_oneshot_ll_start(adc_n);
+#endif
 }
 
 esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw)
 {
-    esp_err_t ret;
-    adc_hal_event_t event;
+    uint32_t event = (adc_n == ADC_UNIT_1) ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE;
+    adc_oneshot_ll_clear_event(event);
+    adc_oneshot_ll_disable_all_unit();
+    adc_oneshot_ll_enable(adc_n);
+    adc_oneshot_ll_set_channel(adc_n, channel);
 
-    if (adc_n == ADC_UNIT_1) {
-        event = ADC_EVENT_ADC1_DONE;
-    } else {
-        event = ADC_EVENT_ADC2_DONE;
+    adc_hal_onetime_start(adc_n);
+    while (adc_oneshot_ll_get_event(event) != true) {
+        ;
     }
-
-    adc_hal_intr_clear(event);
-    adc_ll_onetime_sample_enable(ADC_UNIT_1, false);
-    adc_ll_onetime_sample_enable(ADC_UNIT_2, false);
-    adc_ll_onetime_sample_enable(adc_n, true);
-    adc_ll_onetime_set_channel(adc_n, channel);
-
-    //Trigger single read.
-    adc_hal_onetime_start();
-    while (!adc_hal_intr_get_raw(event));
-    ret = adc_hal_single_read(adc_n, out_raw);
-    //HW workaround: when enabling periph clock, this should be false
-    adc_ll_onetime_sample_enable(adc_n, false);
-
-    return ret;
-}
-
-#else   // #if SOC_ADC_RTC_CTRL_SUPPORTED
-esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw)
-{
-    adc_ll_rtc_enable_channel(adc_n, channel);
-    adc_ll_rtc_start_convert(adc_n, channel);
-    while (adc_ll_rtc_convert_is_done(adc_n) != true);
-    *out_raw = adc_ll_rtc_get_convert_value(adc_n);
-
-    if ((int)adc_ll_rtc_analysis_raw_data(adc_n, (uint16_t)(*out_raw))) {
+    *out_raw = adc_oneshot_ll_get_raw_result(adc_n);
+    if (adc_oneshot_ll_raw_check_valid(adc_n, *out_raw) == false) {
         return ESP_ERR_INVALID_STATE;
     }
 
+    //HW workaround: when enabling periph clock, this should be false
+    adc_oneshot_ll_disable_all_unit();
+
     return ESP_OK;
 }
-#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-
-
-/*---------------------------------------------------------------
-                    ADC calibration setting
----------------------------------------------------------------*/
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-void adc_hal_calibration_init(adc_unit_t adc_n)
-{
-    adc_ll_calibration_init(adc_n);
-}
-
-static uint32_t s_previous_init_code[SOC_ADC_PERIPH_NUM] = {-1, -1};
-
-void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param)
-{
-    if (param != s_previous_init_code[adc_n]) {
-        adc_ll_set_calibration_param(adc_n, param);
-        s_previous_init_code[adc_n] = param;
-    }
-}
-
-#if SOC_ADC_RTC_CTRL_SUPPORTED
-static void cal_setup(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
-{
-    adc_hal_set_controller(adc_n, ADC_HAL_SINGLE_READ_MODE);    //Set controller
-
-    /* Enable/disable internal connect GND (for calibration). */
-    if (internal_gnd) {
-        adc_ll_rtc_disable_channel(adc_n);
-        adc_ll_set_atten(adc_n, 0, atten);  // Note: when disable all channel, HW auto select channel0 atten param.
-    } else {
-        adc_ll_rtc_enable_channel(adc_n, channel);
-        adc_ll_set_atten(adc_n, channel, atten);
-    }
-}
-
-static uint32_t read_cal_channel(adc_unit_t adc_n, int channel)
-{
-    adc_ll_rtc_start_convert(adc_n, channel);
-    while (adc_ll_rtc_convert_is_done(adc_n) != true);
-    return (uint32_t)adc_ll_rtc_get_convert_value(adc_n);
-}
-
-//For those RTC controller not supported chips, they use digital controller to do the single read. e.g.: esp32c3
-#elif SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-static void cal_setup(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
-{
-    adc_ll_onetime_sample_enable(ADC_UNIT_1, false);
-    adc_ll_onetime_sample_enable(ADC_UNIT_2, false);
-    /* Enable/disable internal connect GND (for calibration). */
-    if (internal_gnd) {
-        const int esp32c3_invalid_chan = (adc_n == ADC_UNIT_1)? 0xF: 0x1;
-        adc_ll_onetime_set_channel(adc_n, esp32c3_invalid_chan);
-    } else {
-        adc_ll_onetime_set_channel(adc_n, channel);
-    }
-    adc_ll_onetime_set_atten(atten);
-    adc_ll_onetime_sample_enable(adc_n, true);
-}
-
-static uint32_t read_cal_channel(adc_unit_t adc_n, int channel)
-{
-    adc_ll_intr_clear(ADC_LL_INTR_ADC1_DONE | ADC_LL_INTR_ADC2_DONE);
-    adc_ll_onetime_start(false);
-    esp_rom_delay_us(5);
-    adc_ll_onetime_start(true);
-
-    while(!adc_ll_intr_get_raw(ADC_LL_INTR_ADC1_DONE | ADC_LL_INTR_ADC2_DONE));
-
-    uint32_t read_val = -1;
-    if (adc_n == ADC_UNIT_1) {
-        read_val = adc_ll_adc1_read();
-    } else if (adc_n == ADC_UNIT_2) {
-        read_val = adc_ll_adc2_read();
-        if (adc_ll_analysis_raw_data(adc_n, read_val)) {
-            return -1;
-        }
-    }
-    return read_val;
-}
-#endif //Do single read via DIGI controller or RTC controller
-
-#define ADC_HAL_CAL_TIMES        (10)
-#define ADC_HAL_CAL_OFFSET_RANGE (4096)
-
-uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
-{
-    if (adc_n == ADC_UNIT_2) {
-        adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
-        adc_hal_arbiter_config(&config);
-    }
-
-    cal_setup(adc_n, channel, atten, internal_gnd);
-
-    adc_ll_calibration_prepare(adc_n, channel, internal_gnd);
-
-    uint32_t code_list[ADC_HAL_CAL_TIMES] = {0};
-    uint32_t code_sum = 0;
-    uint32_t code_h = 0;
-    uint32_t code_l = 0;
-    uint32_t chk_code = 0;
-
-    for (uint8_t rpt = 0 ; rpt < ADC_HAL_CAL_TIMES ; rpt ++) {
-        code_h = ADC_HAL_CAL_OFFSET_RANGE;
-        code_l = 0;
-        chk_code = (code_h + code_l) / 2;
-        adc_ll_set_calibration_param(adc_n, chk_code);
-        uint32_t self_cal = read_cal_channel(adc_n, channel);
-        while (code_h - code_l > 1) {
-            if (self_cal == 0) {
-                code_h = chk_code;
-            } else {
-                code_l = chk_code;
-            }
-            chk_code = (code_h + code_l) / 2;
-            adc_ll_set_calibration_param(adc_n, chk_code);
-            self_cal = read_cal_channel(adc_n, channel);
-            if ((code_h - code_l == 1)) {
-                chk_code += 1;
-                adc_ll_set_calibration_param(adc_n, chk_code);
-                self_cal = read_cal_channel(adc_n, channel);
-            }
-        }
-        code_list[rpt] = chk_code;
-        code_sum += chk_code;
-    }
-
-    code_l = code_list[0];
-    code_h = code_list[0];
-    for (uint8_t i = 0 ; i < ADC_HAL_CAL_TIMES ; i++) {
-        code_l = MIN(code_l, code_list[i]);
-        code_h = MAX(code_h, code_list[i]);
-    }
-
-    chk_code = code_h + code_l;
-    uint32_t ret = ((code_sum - chk_code) % (ADC_HAL_CAL_TIMES - 2) < 4)
-           ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
-           : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
-
-    adc_ll_calibration_finish(adc_n);
-    return ret;
-}
-#endif //SOC_ADC_CALIBRATION_V1_SUPPORTED

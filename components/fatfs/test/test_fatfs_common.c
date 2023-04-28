@@ -892,3 +892,30 @@ void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_
             (is_write)?"Wrote":"Read", file_size, buf_size, t_s * 1e3,
                     file_size / (1024.0f * 1024.0f * t_s));
 }
+
+void test_fatfs_info(const char* base_path, const char* filepath)
+{
+    // Empty FS
+    uint64_t total_bytes = 0;
+    uint64_t free_bytes = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_fat_info(base_path, &total_bytes, &free_bytes));
+    ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes=%llu", total_bytes, free_bytes);
+    TEST_ASSERT_NOT_EQUAL(0, total_bytes);
+
+    // FS with a file
+    FILE* f = fopen(filepath, "wb");
+    TEST_ASSERT_NOT_NULL(f);
+    TEST_ASSERT_TRUE(fputs(fatfs_test_hello_str, f) != EOF);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+    uint64_t free_bytes_new = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_fat_info(base_path, &total_bytes, &free_bytes_new));
+    ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes_new=%llu", total_bytes, free_bytes_new);
+    TEST_ASSERT_NOT_EQUAL(free_bytes, free_bytes_new);
+
+    // File removed
+    TEST_ASSERT_EQUAL(0, remove(filepath));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_fat_info(base_path, &total_bytes, &free_bytes_new));
+    ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes_after_delete=%llu", total_bytes, free_bytes_new);
+    TEST_ASSERT_EQUAL(free_bytes, free_bytes_new);
+}

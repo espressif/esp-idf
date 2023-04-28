@@ -239,6 +239,7 @@ extern bool btdm_deep_sleep_mem_init(void);
 extern void btdm_deep_sleep_mem_deinit(void);
 extern void btdm_ble_power_down_dma_copy(bool copy);
 extern uint8_t btdm_sleep_clock_sync(void);
+extern void sdk_config_extend_set_pll_track(bool enable);
 
 #if CONFIG_MAC_BB_PD
 extern void esp_mac_bb_power_down(void);
@@ -872,25 +873,21 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
     return ESP_OK;
 }
 
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_MAC_BB_PD
 static void IRAM_ATTR btdm_mac_bb_power_down_cb(void)
 {
     if (s_lp_cntl.mac_bb_pd && s_lp_stat.mac_bb_pd == 0) {
-#if (CONFIG_MAC_BB_PD)
         btdm_ble_power_down_dma_copy(true);
-#endif
         s_lp_stat.mac_bb_pd = 1;
     }
 }
 
 static void IRAM_ATTR btdm_mac_bb_power_up_cb(void)
 {
-#if (CONFIG_MAC_BB_PD)
     if (s_lp_cntl.mac_bb_pd && s_lp_stat.mac_bb_pd) {
         btdm_ble_power_down_dma_copy(false);
         s_lp_stat.mac_bb_pd = 0;
     }
-#endif
 }
 #endif
 
@@ -933,6 +930,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
+
+    sdk_config_extend_set_pll_track(false);
 
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_init();
@@ -978,7 +977,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         s_lp_cntl.no_light_sleep = 1;
 
         if (s_lp_cntl.enable) {
-#if (CONFIG_MAC_BB_PD)
+#if CONFIG_MAC_BB_PD
             if (!btdm_deep_sleep_mem_init()) {
                 err = ESP_ERR_NO_MEM;
                 goto error;
@@ -1016,16 +1015,16 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #if CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
         // check whether or not EXT_CRYS is working
-        if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32 kHz XTAL
             s_lp_cntl.no_light_sleep = 0;
         } else {
             ESP_LOGW(BT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
                  "light sleep mode will not be able to apply when bluetooth is enabled");
         }
-#elif (CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW)
+#elif CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW
         // check whether or not EXT_CRYS is working
-        if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // Internal 150 kHz RC oscillator
             ESP_LOGW(BTDM_LOG_TAG, "Internal 150kHz RC osciallator. The accuracy of this clock is a lot larger than 500ppm which is "
                  "required in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.");
@@ -1125,7 +1124,7 @@ error:
             s_btdm_slp_tmr = NULL;
         }
 
-#if (CONFIG_MAC_BB_PD)
+#if CONFIG_MAC_BB_PD
         if (s_lp_cntl.mac_bb_pd) {
             btdm_deep_sleep_mem_deinit();
             s_lp_cntl.mac_bb_pd = 0;
@@ -1171,7 +1170,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
     // deinit low power control resources
     do {
-#if (CONFIG_MAC_BB_PD)
+#if CONFIG_MAC_BB_PD
         btdm_deep_sleep_mem_deinit();
 #endif
 

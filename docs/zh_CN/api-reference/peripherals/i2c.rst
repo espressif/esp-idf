@@ -20,12 +20,18 @@ I2C 具有简单且制造成本低廉等优点，主要用于低速外围设备�
 I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备以下功能：
 
 - 在主机模式下读写字节
-- 支持从机模式
+
+.. only:: SOC_I2C_SUPPORT_SLAVE
+
+    - 支持从机模式
+    
 - 读取并写入寄存器，然后由主机读取/写入
 
 
 使用驱动程序
 ---------------
+
+{IDF_TARGET_I2C_ROLE:default="主机或从机", esp32c2="主机"}
 
 以下部分将指导您完成 I2C 驱动程序配置和工作的基本步骤：
 
@@ -34,7 +40,10 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 3. 根据是为主机还是从机配置驱动程序，选择合适的项目
 
    a) :ref:`i2c-api-master-mode` - 发起通信（主机模式）
-   b) :ref:`i2c-api-slave-mode` - 响应主机消息（从机模式）
+
+   .. only:: SOC_I2C_SUPPORT_SLAVE
+
+       b) :ref:`i2c-api-slave-mode` - 响应主机消息（从机模式）
 
 4. :ref:`i2c-api-interrupt-handling` - 配置 I2C 中断服务
 5. :ref:`i2c-api-customized-configuration` - 调整默认的 I2C 通信参数（如时序、位序等）
@@ -56,10 +65,13 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
     - 是否启用 {IDF_TARGET_NAME} 的内部上拉电阻
 
 - （仅限主机模式）设置 I2C **时钟速度**
-- （仅限从机模式）设置以下内容：
 
-    * 是否应启用 **10 位寻址模式**
-    * 定义 **从机地址**
+.. only:: SOC_I2C_SUPPORT_SLAVE
+
+    - （仅限从机模式）设置以下内容：
+
+        * 是否应启用 **10 位寻址模式**
+        * 定义 **从机地址**
 
 然后，初始化给定 I2C 端口的配置，请使用端口号和 :cpp:type:`i2c_config_t` 作为函数调用参数来调用 :cpp:func:`i2c_param_config` 函数。
 
@@ -78,20 +90,22 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
         // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
     };
 
-配置示例（从机）：
+.. only:: SOC_I2C_SUPPORT_SLAVE
 
-.. code-block:: c
+    配置示例（从机）：
 
-    int i2c_slave_port = I2C_SLAVE_NUM;
-    i2c_config_t conf_slave = {
-        .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .mode = I2C_MODE_SLAVE,
-        .slave.addr_10bit_en = 0,
-        .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
-    };
+    .. code-block:: c
+
+        int i2c_slave_port = I2C_SLAVE_NUM;
+        i2c_config_t conf_slave = {
+            .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
+            .sda_pullup_en = GPIO_PULLUP_ENABLE,
+            .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
+            .scl_pullup_en = GPIO_PULLUP_ENABLE,
+            .mode = I2C_MODE_SLAVE,
+            .slave.addr_10bit_en = 0,
+            .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
+        };
 
 在此阶段，:cpp:func:`i2c_param_config` 还将其他 I2C 配置参数设置为 I2C 总线协议规范中定义的默认值。有关默认值及修改默认值的详细信息，请参考 :ref:`i2c-api-customized-configuration`。
 
@@ -201,7 +215,11 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
 - 端口号，从 :cpp:type:`i2c_port_t` 中二选一
 - 主机或从机模式，从 :cpp:type:`i2c_mode_t` 中选择
-- （仅限从机模式）分配用于在从机模式下发送和接收数据的缓存区大小。I2C 是一个以主机为中心的总线，数据只能根据主机的请求从从机传输到主机。因此，从机通常有一个发送缓存区，供从应用程序写入数据使用。数据保留在发送缓存区中，由主机自行读取。
+
+.. only:: SOC_I2C_SUPPORT_SLAVE
+
+    - （仅限从机模式）分配用于在从机模式下发送和接收数据的缓存区大小。I2C 是一个以主机为中心的总线，数据只能根据主机的请求从从机传输到主机。因此，从机通常有一个发送缓存区，供从应用程序写入数据使用。数据保留在发送缓存区中，由主机自行读取。
+
 - 用于分配中断的标志（请参考 :component_file:`esp_hw_support/include/esp_intr_alloc.h` 中 ESP_INTR_FLAG_* 值）
 
 .. _i2c-api-master-mode:
@@ -278,28 +296,33 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
     i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | I2C_MASTER_READ, ACK_EN);
 
 
-.. _i2c-api-slave-mode:
+.. only:: SOC_I2C_SUPPORT_SLAVE
 
-从机模式下通信
-^^^^^^^^^^^^^^^^^^^^^^
+    .. _i2c-api-slave-mode:
 
-安装 I2C 驱动程序后， {IDF_TARGET_NAME} 即可与其他 I2C 设备通信。
+    从机模式下通信
+    ^^^^^^^^^^^^^^^^^^^^^^
 
-API 为从机提供以下功能：
+    安装 I2C 驱动程序后， {IDF_TARGET_NAME} 即可与其他 I2C 设备通信。
 
-- :cpp:func:`i2c_slave_read_buffer`
+    API 为从机提供以下功能：
 
-    当主机将数据写入从机时，从机将自动将其存储在接收缓存区中。从机应用程序可自行调用函数 :cpp:func:`i2c_slave_read_buffer`。如果接收缓存区中没有数据，此函数还具有一个参数用于指定阻塞时间。这将允许从机应用程序在指定的超时设定内等待数据到达缓存区。
+    - :cpp:func:`i2c_slave_read_buffer`
 
-- :cpp:func:`i2c_slave_write_buffer`
+        当主机将数据写入从机时，从机将自动将其存储在接收缓存区中。从机应用程序可自行调用函数 :cpp:func:`i2c_slave_read_buffer`。如果接收缓存区中没有数据，此函数还具有一个参数用于指定阻塞时间。这将允许从机应用程序在指定的超时设定内等待数据到达缓存区。
 
-    发送缓存区是用于存储从机要以 FIFO 顺序发送给主机的所有数据。在主机请求接收前，这些数据一直存储在发送缓存区。函数 :cpp:func:`i2c_slave_write_buffer` 有一个参数，用于指定发送缓存区已满时的块时间。这将允许从机应用程序在指定的超时设定内等待发送缓存区中足够的可用空间。
+    - :cpp:func:`i2c_slave_write_buffer`
 
-在 :example:`peripherals/i2c` 中可找到介绍如何使用这些功能的代码示例。
+        发送缓存区是用于存储从机要以 FIFO 顺序发送给主机的所有数据。在主机请求接收前，这些数据一直存储在发送缓存区。函数 :cpp:func:`i2c_slave_write_buffer` 有一个参数，用于指定发送缓存区已满时的块时间。这将允许从机应用程序在指定的超时设定内等待发送缓存区中足够的可用空间。
 
+    在 :example:`peripherals/i2c` 中可找到介绍如何使用这些功能的代码示例。
 
-.. _i2c-api-interrupt-handling:
+    .. _i2c-api-interrupt-handling:
 
+.. only:: not SOC_I2C_SUPPORT_SLAVE
+
+    .. _i2c-api-interrupt-handling:
+    
 中断处理
 ^^^^^^^^^^^
 

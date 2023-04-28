@@ -579,31 +579,6 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
  */
 esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
 
-#if CONFIG_IDF_TARGET_ESP32
-/**
- * @brief UART enable pattern detect function.
- *        Designed for applications like 'AT commands'.
- *        When the hardware detect a series of one same character, the interrupt will be triggered.
- * @note  This function only works for esp32. And this function is deprecated, please use
- *        uart_enable_pattern_det_baud_intr instead.
- *
- * @param uart_num UART port number.
- * @param pattern_chr character of the pattern.
- * @param chr_num number of the character, 8bit value.
- * @param chr_tout timeout of the interval between each pattern characters, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take this data as at_cmd char.
- * @param post_idle idle time after the last pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take the previous data as the last at_cmd char
- * @param pre_idle idle time before the first pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take this data as the first at_cmd char.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_FAIL Parameter error
- */
-esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle) __attribute__((deprecated));
-#endif
-
 /**
  * @brief UART enable pattern detect function.
  *        Designed for applications like 'AT commands'.
@@ -768,8 +743,7 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
  * be obtained from UART FIFO). Depending on the baud rate, a few characters
  * after that will also not be received. Note that when the chip enters and exits
  * light sleep mode, APB frequency will be changing. To make sure that UART has
- * correct baud rate all the time, select REF_TICK as UART clock source,
- * by setting use_ref_tick field in uart_config_t to true.
+ * correct baud rate all the time, select UART_SCLK_REF_TICK or UART_SCLK_XTAL as UART clock source in uart_config_t::source_clk.
  *
  * @note in ESP32, the wakeup signal can only be input via IO_MUX (i.e.
  *       GPIO3 should be configured as function_1 to wake up UART0,

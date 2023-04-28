@@ -673,6 +673,13 @@ if(CONFIG_BT_ENABLED)
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
 
     endif()
+
+    set_source_files_properties(
+        "host/bluedroid/bta/gatt/bta_gattc_act.c"
+        "host/bluedroid/bta/gatt/bta_gattc_cache.c"
+        "host/bluedroid/btc/profile/std/gatt/btc_gatt_util.c"
+        "host/bluedroid/btc/profile/std/gatt/btc_gatts.c"
+        PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
 endif()
 
 if(CONFIG_BT_NIMBLE_MESH)

@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any, List, Optional
+from typing import List, Optional, Union
 
 from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct
 
 from .exceptions import LowerCaseException, TooLongNameException
 from .fatfs_state import FATFSState
-from .utils import (DATETIME, FATFS_INCEPTION, MAX_EXT_SIZE, MAX_NAME_SIZE, SHORT_NAMES_ENCODING, build_date_entry,
-                    build_time_entry, is_valid_fatfs_name, pad_string)
+from .utils import (DATETIME, EMPTY_BYTE, FATFS_INCEPTION, MAX_EXT_SIZE, MAX_NAME_SIZE, SHORT_NAMES_ENCODING,
+                    FATDefaults, build_date_entry, build_time_entry, is_valid_fatfs_name, pad_string)
 
 
 class Entry:
@@ -45,12 +45,12 @@ class Entry:
         'DIR_Name' / PaddedString(MAX_NAME_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Name_ext' / PaddedString(MAX_EXT_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Attr' / Int8ul,
-        'DIR_NTRes' / Const(b'\x00'),
-        'DIR_CrtTimeTenth' / Const(b'\x00'),    # ignored by esp-idf fatfs library
-        'DIR_CrtTime' / Int16ul,                # ignored by esp-idf fatfs library
-        'DIR_CrtDate' / Int16ul,                # ignored by esp-idf fatfs library
-        'DIR_LstAccDate' / Int16ul,             # must be same as DIR_WrtDate
-        'DIR_FstClusHI' / Const(b'\x00\x00'),
+        'DIR_NTRes' / Const(EMPTY_BYTE),
+        'DIR_CrtTimeTenth' / Const(EMPTY_BYTE),  # ignored by esp-idf fatfs library
+        'DIR_CrtTime' / Int16ul,  # ignored by esp-idf fatfs library
+        'DIR_CrtDate' / Int16ul,  # ignored by esp-idf fatfs library
+        'DIR_LstAccDate' / Int16ul,  # must be same as DIR_WrtDate
+        'DIR_FstClusHI' / Const(2 * EMPTY_BYTE),
         'DIR_WrtTime' / Int16ul,
         'DIR_WrtDate' / Int16ul,
         'DIR_FstClusLO' / Int16ul,
@@ -63,7 +63,7 @@ class Entry:
                  fatfs_state: FATFSState) -> None:
         self.fatfs_state: FATFSState = fatfs_state
         self.id: int = entry_id
-        self.entry_address: int = parent_dir_entries_address + self.id * self.fatfs_state.entry_size
+        self.entry_address: int = parent_dir_entries_address + self.id * FATDefaults.ENTRY_SIZE
         self._is_alias: bool = False
         self._is_empty: bool = True
 
@@ -72,12 +72,14 @@ class Entry:
         return self._is_empty
 
     @staticmethod
-    def _parse_entry(entry_bytearray: Optional[bytearray]) -> dict:
-        return Entry.ENTRY_FORMAT_SHORT_NAME.parse(entry_bytearray)  # type: ignore
+    def _parse_entry(entry_bytearray: Union[bytearray, bytes]) -> dict:
+        entry_: dict = Entry.ENTRY_FORMAT_SHORT_NAME.parse(entry_bytearray)
+        return entry_
 
     @staticmethod
-    def _build_entry(**kwargs) -> Any:  # type: ignore
-        return Entry.ENTRY_FORMAT_SHORT_NAME.build(dict(**kwargs))
+    def _build_entry(**kwargs) -> bytes:  # type: ignore
+        entry_: bytes = Entry.ENTRY_FORMAT_SHORT_NAME.build(dict(**kwargs))
+        return entry_
 
     @staticmethod
     def _build_entry_long(names: List[bytes], checksum: int, order: int, is_last: bool, entity_type: int) -> bytes:
@@ -106,15 +108,26 @@ class Entry:
         return long_entry
 
     @property
-    def entry_bytes(self) -> Any:
-        return self.fatfs_state.binary_image[self.entry_address: self.entry_address + self.fatfs_state.entry_size]
+    def entry_bytes(self) -> bytes:
+        """
+        :returns: Bytes defining the entry belonging to the given instance.
+        """
+        start_: int = self.entry_address
+        entry_: bytes = self.fatfs_state.binary_image[start_: start_ + FATDefaults.ENTRY_SIZE]
+        return entry_
 
     @entry_bytes.setter
-    def entry_bytes(self, value: int) -> None:
-        self.fatfs_state.binary_image[self.entry_address: self.entry_address + self.fatfs_state.entry_size] = value
+    def entry_bytes(self, value: bytes) -> None:
+        """
+        :param value: new content of the entry
+        :returns: None
+
+        The setter sets the content of the entry in bytes.
+        """
+        self.fatfs_state.binary_image[self.entry_address: self.entry_address + FATDefaults.ENTRY_SIZE] = value
 
     def _clean_entry(self) -> None:
-        self.entry_bytes: bytes = self.fatfs_state.entry_size * b'\x00'
+        self.entry_bytes: bytes = FATDefaults.ENTRY_SIZE * EMPTY_BYTE
 
     def allocate_entry(self,
                        first_cluster_id: int,
@@ -173,7 +186,7 @@ class Entry:
             )
 
         start_address = self.entry_address
-        end_address = start_address + self.fatfs_state.entry_size
+        end_address = start_address + FATDefaults.ENTRY_SIZE
         if lfn_order in (self.SHORT_ENTRY, self.SHORT_ENTRY_LN):
             date_entry_: int = build_date_entry(*date)
             time_entry: int = build_time_entry(*time)
@@ -198,6 +211,13 @@ class Entry:
                                                                                                self.ATTR_LONG_NAME)
 
     def update_content_size(self, content_size: int) -> None:
+        """
+        :param content_size: the new size of the file content in bytes
+        :returns: None
+
+        This method parses the binary entry to the construct structure, updates the content size of the file
+        and builds new binary entry.
+        """
         parsed_entry = self._parse_entry(self.entry_bytes)
         parsed_entry.DIR_FileSize = content_size  # type: ignore
         self.entry_bytes = Entry.ENTRY_FORMAT_SHORT_NAME.build(parsed_entry)

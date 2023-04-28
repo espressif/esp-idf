@@ -67,7 +67,7 @@ extern "C" {
 #define SPI_TIMING_PSRAM_DTR_MODE                   CONFIG_SPIRAM_MODE_OCT
 #define SPI_TIMING_PSRAM_STR_MODE                   !CONFIG_SPIRAM_MODE_OCT
 //--------------------------------------PSRAM Module Clock --------------------------------------//
-#if CONFIG_ESP32S3_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
 #if CONFIG_SPIRAM_SPEED_40M
 #define SPI_TIMING_PSRAM_MODULE_CLOCK               40
 #elif CONFIG_SPIRAM_SPEED_80M
@@ -96,7 +96,7 @@ extern "C" {
  */
 #if (SPI_TIMING_FLASH_DTR_MODE || SPI_TIMING_PSRAM_DTR_MODE)
 #define SPI_TIMING_CORE_CLOCK_DIV                   2
-#else  //#if (SPI_TIMING_FLASH_STR_MODE && (SPI_TIMING_PSRAM_STR_MODE || !CONFIG_ESP32S3_SPIRAM_SUPPORT))
+#else  //#if (SPI_TIMING_FLASH_STR_MODE && (SPI_TIMING_PSRAM_STR_MODE))
 #define SPI_TIMING_CORE_CLOCK_DIV                   1
 #endif
 

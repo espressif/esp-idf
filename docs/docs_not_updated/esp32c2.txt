@@ -91,7 +91,6 @@ api-reference/peripherals/secure_element
 api-reference/peripherals/temp_sensor
 api-reference/peripherals/spi_slave_hd
 api-reference/peripherals/i2c
-api-reference/peripherals/dedic_gpio
 api-reference/peripherals/index
 api-reference/kconfig
 api-reference/network/esp_openthread
@@ -152,6 +151,7 @@ api-reference/bluetooth/esp_a2dp
 api-reference/bluetooth/esp_blufi
 api-reference/bluetooth/bt_le
 api-reference/bluetooth/esp_hf_defs
+api-reference/bluetooth/esp_hidd
 api-reference/bluetooth/esp_gap_bt
 api-reference/bluetooth/esp_gatt_defs
 api-reference/bluetooth/esp-ble-mesh

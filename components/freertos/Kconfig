@@ -1,482 +1,492 @@
 menu "FreeRTOS"
 
-    config FREERTOS_SMP
-        bool "Run the SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-        depends on IDF_TARGET_ESP32
-        default  "n"
-        help
-            This will cause the FreeRTOS component to compile with the SMP FreeRTOS kernel instead.
-            THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
+    menu "Kernel"
+        # Upstream FreeRTOS configurations go here
 
-    config FREERTOS_UNICORE
-        bool "Run FreeRTOS only on first core"
-        default "y" if IDF_TARGET_ESP32S2
-        select ESP_SYSTEM_SINGLE_CORE_MODE
-        help
-            This version of FreeRTOS normally takes control of all cores of
-            the CPU. Select this if you only want to start it on the first core.
-            This is needed when e.g. another process needs complete control
-            over the second core.
+        config FREERTOS_SMP
+            bool "Run the SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
+            depends on IDF_TARGET_ESP32
+            default  "n"
+            help
+                This will cause the FreeRTOS component to compile with the SMP FreeRTOS kernel instead.
+                THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
 
-            # This invisible config value sets the value of tskNO_AFFINITY in task.h.
-            # Intended to be used as a constant from other Kconfig files.
-            # Value is (32-bit) INT_MAX.
+        config FREERTOS_UNICORE
+            # Todo: Replace with CONFIG_NUM_CORES (IDF-4986)
+            bool "Run FreeRTOS only on first core"
+            default "y" if IDF_TARGET_ESP32S2
+            select ESP_SYSTEM_SINGLE_CORE_MODE
+            help
+                This version of FreeRTOS normally takes control of all cores of the CPU. Select this if you only want
+                to start it on the first core. This is needed when e.g. another process needs complete control over the
+                second core.
+
+        config FREERTOS_HZ
+            # Todo: Rename to CONFIG_FREERTOS_TICK_RATE_HZ (IDF-4986)
+            int "configTICK_RATE_HZ"
+            range 1 1000
+            default 100
+            help
+                Sets the FreeRTOS tick interrupt frequency in Hz (see configTICK_RATE_HZ documentation for more
+                details).
+
+        config FREERTOS_OPTIMIZED_SCHEDULER
+            # Todo: Not available in SMP FREERTOS (IDF-4986)
+            # Todo: Rename to CONFIG_FREERTOS_USE_PORT_OPTIMISED_TASK_SELECTION (IDF-4986)
+            bool "configUSE_PORT_OPTIMISED_TASK_SELECTION"
+            depends on FREERTOS_UNICORE
+            default y
+            help
+                Enables port specific task selection method. This option can will speed up the search of ready tasks
+                when scheduling (see configUSE_PORT_OPTIMISED_TASK_SELECTION documentation for more details).
+
+        choice FREERTOS_CHECK_STACKOVERFLOW
+            prompt "configCHECK_FOR_STACK_OVERFLOW"
+            default FREERTOS_CHECK_STACKOVERFLOW_CANARY
+            help
+                Enables FreeRTOS to check for stack overflows (see configCHECK_FOR_STACK_OVERFLOW documentation for
+                more details).
+
+                Note: If users do not provide their own ``vApplicationStackOverflowHook()`` function, a default
+                function will be provided by ESP-IDF.
+
+            config FREERTOS_CHECK_STACKOVERFLOW_NONE
+                bool "No checking"
+                help
+                    Do not check for stack overflows (configCHECK_FOR_STACK_OVERFLOW = 0)
+
+            config FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
+                bool "Check by stack pointer value (Method 1)"
+                help
+                    Check for stack overflows on each context switch by checking if the stack pointer is in a valid
+                    range. Quick but does not detect stack overflows that happened between context switches
+                    (configCHECK_FOR_STACK_OVERFLOW = 1)
+
+            config FREERTOS_CHECK_STACKOVERFLOW_CANARY
+                bool "Check using canary bytes (Method 2)"
+                help
+                    Places some magic bytes at the end of the stack area and on each context switch, check if these
+                    bytes are still intact. More thorough than just checking the pointer, but also slightly slower.
+                    (configCHECK_FOR_STACK_OVERFLOW = 2)
+        endchoice # FREERTOS_CHECK_STACKOVERFLOW
+
+        config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+            int "configNUM_THREAD_LOCAL_STORAGE_POINTERS"
+            range 1 256
+            default 1
+            help
+                Set the number of thread local storage pointers in each task (see
+                configNUM_THREAD_LOCAL_STORAGE_POINTERS documentation for more details).
+
+                Note: In ESP-IDF, this value must be at least 1. Index 0 is reserved for use by the pthreads API
+                thread-local-storage. Other indexes can be used for any desired purpose.
+
+        config FREERTOS_IDLE_TASK_STACKSIZE
+            int "configMINIMAL_STACK_SIZE (Idle task stack size)"
+            range 768 32768
+            default 1536
+            help
+                Sets the idle task stack size in bytes (see configMINIMAL_STACK_SIZE documentation for more details).
+
+                Note:
+
+                - ESP-IDF specifies stack sizes in bytes instead of words.
+                - The default size is enough for most use cases.
+                - The stack size may need to be increased above the default if the app installs idle or thread local
+                  storage cleanup hooks that use a lot of stack memory.
+                - Conversely, the stack size can be reduced to the minimum if non of the idle features are used.
+
+        config FREERTOS_USE_IDLE_HOOK
+            bool "configUSE_IDLE_HOOK"
+            default n
+            help
+                Enables the idle task application hook (see configUSE_IDLE_HOOK documentation for more details).
+
+                Note:
+
+                - The application must provide the hook function ``void vApplicationIdleHook( void );``
+                - ``vApplicationIdleHook()`` is called from FreeRTOS idle task(s)
+                - The FreeRTOS idle hook is NOT the same as the ESP-IDF Idle Hook, but both can be enabled
+                  simultaneously.
+
+        config FREERTOS_USE_MINIMAL_IDLE_HOOK
+            bool "Use FreeRTOS minimal idle hook"
+            depends on FREERTOS_SMP
+            default n
+            help
+                Enables the minimal idle task application hook (see configUSE_IDLE_HOOK documentation for more
+                details).
+
+                Note:
+
+                - The application must provide the hook function ``void vApplicationMinimalIdleHook( void );``
+                - ``vApplicationMinimalIdleHook()`` is called from FreeRTOS minimal idle task(s)
+
+        config FREERTOS_USE_TICK_HOOK
+            bool "configUSE_TICK_HOOK"
+            default n
+            help
+                Enables the tick hook (see configUSE_TICK_HOOK documentation for more details).
+
+                Note:
+
+                - The application must provide the hook function ``void vApplicationTickHook( void );``
+                - ``vApplicationTickHook()`` is called from FreeRTOS's tick handling function ``xTaskIncrementTick()``
+                - The FreeRTOS tick hook is NOT the same as the ESP-IDF Tick Interrupt Hook, but both can be enabled
+                  simultaneously.
+
+        config FREERTOS_MAX_TASK_NAME_LEN
+            int "configMAX_TASK_NAME_LEN"
+            range 1 256
+            default 16
+            help
+                Sets the maximum number of characters for task names (see configMAX_TASK_NAME_LEN documentation for
+                more details).
+
+                Note: For most uses, the default of 16 characters is sufficient.
+
+        config FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
+            bool "configENABLE_BACKWARD_COMPATIBILITY"
+            default n
+            help
+                Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
+                configENABLE_BACKWARD_COMPATIBILITY documentation for more details).
+
+        config FREERTOS_TIMER_TASK_PRIORITY
+            int "configTIMER_TASK_PRIORITY"
+            range 1 25
+            default 1
+            help
+                Sets the timer task's priority (see configTIMER_TASK_PRIORITY documentation for more details).
+
+        config FREERTOS_TIMER_TASK_STACK_DEPTH
+            int "configTIMER_TASK_STACK_DEPTH"
+            range 1536 32768
+            default 2048
+            help
+                Set the timer task's stack size (see configTIMER_TASK_STACK_DEPTH documentation for more details).
+
+        config FREERTOS_TIMER_QUEUE_LENGTH
+            int "configTIMER_QUEUE_LENGTH"
+            range 5 20
+            default 10
+            help
+                Set the timer task's command queue length (see configTIMER_QUEUE_LENGTH documentation for more
+                details).
+
+        config FREERTOS_QUEUE_REGISTRY_SIZE
+            int "configQUEUE_REGISTRY_SIZE"
+            range 0 20
+            default 0
+            help
+                Set the size of the queue registry (see configQUEUE_REGISTRY_SIZE documentation for more details).
+
+                Note: A value of 0 will disable queue registry functionality
+
+        config FREERTOS_USE_TRACE_FACILITY
+            bool "configUSE_TRACE_FACILITY"
+            default n
+            help
+                Enables additional structure members and functions to assist with execution visualization and tracing
+                (see configUSE_TRACE_FACILITY documentation for more details).
+
+        config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+            bool "configUSE_STATS_FORMATTING_FUNCTIONS"
+            depends on FREERTOS_USE_TRACE_FACILITY
+            default n
+            help
+                Set configUSE_TRACE_FACILITY and configUSE_STATS_FORMATTING_FUNCTIONS to 1 to include the
+                ``vTaskList()`` and ``vTaskGetRunTimeStats()`` functions in the build (see
+                configUSE_STATS_FORMATTING_FUNCTIONS documentation for more details).
+
+        config FREERTOS_VTASKLIST_INCLUDE_COREID
+            # Todo: Remove this once core affinity in stats is supported in SMP FreeRTOS (IDF-4986)
+            bool "Enable display of xCoreID in vTaskList"
+            depends on FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+            default n
+            help
+                If enabled, this will include an extra column when vTaskList is called to display the CoreID the task
+                is pinned to (0,1) or -1 if not pinned.
+
+        config FREERTOS_GENERATE_RUN_TIME_STATS
+            bool "configGENERATE_RUN_TIME_STATS"
+            default n
+            select FREERTOS_USE_TRACE_FACILITY
+            select FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+            help
+                Enables collection of run time statistics for each task (see configGENERATE_RUN_TIME_STATS
+                documentation for more details).
+
+                Note: The clock used for run time statistics can be configured in FREERTOS_RUN_TIME_STATS_CLK.
+
+        config FREERTOS_USE_TICKLESS_IDLE
+            # Todo: Currently not supported in SMP FreeRTOS yet (IDF-4986)
+            # Todo: Consider whether this option should still be exposed (IDF-4986)
+            bool "configUSE_TICKLESS_IDLE"
+            depends on PM_ENABLE
+            default n
+            help
+                If power management support is enabled, FreeRTOS will be able to put the system into light sleep mode
+                when no tasks need to run for a number of ticks. This number can be set using
+                FREERTOS_IDLE_TIME_BEFORE_SLEEP option. This feature is also known as "automatic light sleep".
+
+                Note that timers created using esp_timer APIs may prevent the system from entering sleep mode, even
+                when no tasks need to run. To skip unnecessary wake-up initialize a timer with the
+                "skip_unhandled_events" option as true.
+
+                If disabled, automatic light sleep support will be disabled.
+
+        config FREERTOS_IDLE_TIME_BEFORE_SLEEP
+            # Todo: Rename to CONFIG_FREERTOS_EXPECTED_IDLE_TIME_BEFORE_SLEEP (IDF-4986)
+            int "configEXPECTED_IDLE_TIME_BEFORE_SLEEP"
+            depends on FREERTOS_USE_TICKLESS_IDLE
+            default 3
+            range 2 4294967295
+            # Minimal value is 2 because of a check in FreeRTOS.h (search configEXPECTED_IDLE_TIME_BEFORE_SLEEP)
+            help
+                FreeRTOS will enter light sleep mode if no tasks need to run for this number of ticks.
+
+    endmenu # Kernel
+
+    menu "Port"
+        # ESP-IDF FreeRTOS port configurations go here (and HW configurations related to FreeRTOS)
+
+        config FREERTOS_TASK_FUNCTION_WRAPPER
+            bool "Wrap task functions"
+            depends on COMPILER_OPTIMIZATION_DEFAULT || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
+            default y
+            help
+                If enabled, all FreeRTOS task functions will be enclosed in a wrapper function. If a task function
+                mistakenly returns (i.e. does not delete), the call flow will return to the wrapper function. The
+                wrapper function will then log an error and abort the application. This option is also required for GDB
+                backtraces and C++ exceptions to work correctly inside top-level task functions.
+
+        config FREERTOS_WATCHPOINT_END_OF_STACK
+            bool "Enable stack overflow debug watchpoint"
+            default n
+            help
+                FreeRTOS can check if a stack has overflown its bounds by checking either the value of the stack
+                pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW for more
+                information.) These checks only happen on a context switch, and the situation that caused the stack
+                overflow may already be long gone by then. This option will use the last debug memory watchpoint to
+                allow breaking into the debugger (or panic'ing) as soon as any of the last 32 bytes on the stack of a
+                task are overwritten. The side effect is that using gdb, you effectively have one hardware watchpoint
+                less because the last one is overwritten as soon as a task switch happens.
+
+                Another consequence is that due to alignment requirements of the watchpoint, the usable stack size
+                decreases by up to 60 bytes. This is because the watchpoint region has to be aligned to its size and
+                the size for the stack watchpoint in IDF is 32 bytes.
+
+                This check only triggers if the stack overflow writes within 32 bytes near the end of the stack, rather
+                than overshooting further, so it is worth combining this approach with one of the other stack overflow
+                check methods.
+
+                When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached,
+                esp-idf will panic on an unhandled debug exception.
+
+        config FREERTOS_TLSP_DELETION_CALLBACKS
+            bool "Enable thread local storage pointers deletion callbacks"
+            depends on FREERTOS_SMP && (FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0)
+            default y
+            help
+                ESP-IDF provides users with the ability to free TLSP memory by registering TLSP deletion callbacks.
+                These callbacks are automatically called by FreeRTOS when a task is deleted. When this option is turned
+                on, the memory reserved for TLSPs in the TCB is doubled to make space for storing the deletion
+                callbacks. If the user does not wish to use TLSP deletion callbacks then this option could be turned
+                off to save space in the TCB memory.
+
+        config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+            # Todo: This is incompatible with SMP FreeRTOS. See if this can be deprecated (IDF-4986)
+            bool "Enable static task clean up hook"
+            default n
+            help
+                Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
+
+                Note: Users will need to provide a ``void vPortCleanUpTCB ( void *pxTCB )`` callback
+
+        config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
+            # Todo: Not supported on SMP FreeRTOS (IDF-4986)
+            bool "Check that mutex semaphore is given by owner task"
+            default y
+            help
+                If enabled, assert that when a mutex semaphore is given, the task giving the semaphore is the task
+                which is currently holding the mutex.
+
+        config FREERTOS_ISR_STACKSIZE
+            int "ISR stack size"
+            range 2096 32768 if ESP_COREDUMP_DATA_FORMAT_ELF
+            default 2096 if ESP_COREDUMP_DATA_FORMAT_ELF
+            range 1536 32768
+            default 1536
+            help
+                The interrupt handlers have their own stack. The size of the stack can be defined here. Each processor
+                has its own stack, so the total size occupied will be twice this.
+
+        config FREERTOS_INTERRUPT_BACKTRACE
+            # Todo: Consider removing this. Not sure when users will ever want it to be disabled (IDF-4986)
+            bool "Enable backtrace from interrupt to task context"
+            default y
+            help
+                If this option is enabled, interrupt stack frame will be modified to point to the code of the
+                interrupted task as its return address. This helps the debugger (or the panic handler) show a backtrace
+                from the interrupt to the task which was interrupted. This also works for nested interrupts: higher
+                level interrupt stack can be traced back to the lower level interrupt. This option adds 4 instructions
+                to the interrupt dispatching code.
+
+        config FREERTOS_FPU_IN_ISR
+            bool "Use float in Level 1 ISR"
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                When enabled, the usage of float type is allowed inside Level 1 ISRs. Note that usage of float types in
+                higher level interrupts is still not permitted.
+
+        config FREERTOS_TICK_SUPPORT_CORETIMER
+            bool
+            default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
+
+        config FREERTOS_TICK_SUPPORT_SYSTIMER
+            bool
+            default y if !FREERTOS_TICK_SUPPORT_CORETIMER
+            # ESP32-S3, ESP32-C3 and ESP32-H2 can use Systimer for FreeRTOS SysTick
+            # ESP32S2 also has SYSTIMER but it can not be used for the FreeRTOS SysTick because:
+            # - It has only one counter, which already in use esp_timer.
+            #   A counter for SysTick should be stall in debug mode but work esp_timer.
+            # - It is not possible to allocate two handlers for esp_timer and SysTick.
+
+        choice FREERTOS_CORETIMER
+            prompt "Tick timer source (Xtensa Only)"
+            default FREERTOS_CORETIMER_0 if FREERTOS_TICK_SUPPORT_CORETIMER
+            default FREERTOS_CORETIMER_SYSTIMER_LVL1 if FREERTOS_TICK_SUPPORT_SYSTIMER
+            help
+                FreeRTOS needs a timer with an associated interrupt to use as the main tick source to increase
+                counters, run timers and do pre-emptive multitasking with. There are multiple timers available to do
+                this, with different interrupt priorities.
+
+            config FREERTOS_CORETIMER_0
+                bool "Timer 0 (int 6, level 1)"
+                depends on FREERTOS_TICK_SUPPORT_CORETIMER
+                help
+                    Select this to use timer 0
+
+            config FREERTOS_CORETIMER_1
+                bool "Timer 1 (int 15, level 3)"
+                depends on FREERTOS_TICK_SUPPORT_CORETIMER
+                help
+                    Select this to use timer 1
+
+            config FREERTOS_CORETIMER_SYSTIMER_LVL1
+                bool "SYSTIMER 0 (level 1)"
+                depends on FREERTOS_TICK_SUPPORT_SYSTIMER
+                help
+                    Select this to use systimer with the 1 interrupt priority.
+
+            config FREERTOS_CORETIMER_SYSTIMER_LVL3
+                bool "SYSTIMER 0 (level 3)"
+                depends on FREERTOS_TICK_SUPPORT_SYSTIMER
+                help
+                    Select this to use systimer with the 3 interrupt priority.
+
+        endchoice # FREERTOS_CORETIMER
+
+        config FREERTOS_SYSTICK_USES_SYSTIMER
+            bool
+            default y if FREERTOS_CORETIMER_SYSTIMER_LVL1 || FREERTOS_CORETIMER_SYSTIMER_LVL3
+
+        config FREERTOS_SYSTICK_USES_CCOUNT
+            bool
+            default y if FREERTOS_CORETIMER_0 || FREERTOS_CORETIMER_1
+
+        choice FREERTOS_RUN_TIME_STATS_CLK
+            prompt "Choose the clock source for run time stats"
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS
+            default FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+            help
+                Choose the clock source for FreeRTOS run time stats. Options are CPU0's CPU Clock or the ESP Timer.
+                Both clock sources are 32 bits. The CPU Clock can run at a higher frequency hence provide a finer
+                resolution but will overflow much quicker. Note that run time stats are only valid until the clock
+                source overflows.
+
+            config FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+                bool "Use ESP TIMER for run time stats"
+                help
+                    ESP Timer will be used as the clock source for FreeRTOS run time stats. The ESP Timer runs at a
+                    frequency of 1MHz regardless of Dynamic Frequency Scaling. Therefore the ESP Timer will overflow in
+                    approximately 4290 seconds.
+
+            config FREERTOS_RUN_TIME_STATS_USING_CPU_CLK
+                # Todo: This should be disabled for multi-core due to different CCOUNTs (IDF-4986)
+                bool "Use CPU Clock for run time stats"
+                depends on FREERTOS_SYSTICK_USES_CCOUNT
+                help
+                    CPU Clock will be used as the clock source for the generation of run time stats. The CPU Clock has
+                    a frequency dependent on ESP_DEFAULT_CPU_FREQ_MHZ and Dynamic Frequency Scaling (DFS). Therefore
+                    the CPU Clock frequency can fluctuate between 80 to 240MHz. Run time stats generated using the CPU
+                    Clock represents the number of CPU cycles each task is allocated and DOES NOT reflect the amount of
+                    time each task runs for (as CPU clock frequency can change). If the CPU clock consistently runs at
+                    the maximum frequency of 240MHz, it will overflow in approximately 17 seconds.
+        endchoice # FREERTOS_RUN_TIME_STATS_CLK
+
+        config FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
+            bool "Place FreeRTOS functions into Flash"
+            default n
+            help
+                When enabled the selected Non-ISR FreeRTOS functions will be placed into Flash memory instead of IRAM.
+                This saves up to 8KB of IRAM depending on which functions are used.
+
+        config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
+            bool "Place task snapshot functions into flash"
+            default n
+            depends on FREERTOS_ENABLE_TASK_SNAPSHOT && !ESP_PANIC_HANDLER_IRAM
+            help
+                When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
+                will be placed in flash. Note that if enabled, these functions cannot be called when cache is disabled.
+
+        config FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+            # Todo: Check if we still need this (IDF-4986)
+            bool "Tests compliance with Vanilla FreeRTOS port*_CRITICAL calls"
+            default n
+            help
+                If enabled, context of port*_CRITICAL calls (ISR or Non-ISR) would be checked to be in compliance with
+                Vanilla FreeRTOS. e.g Calling port*_CRITICAL from ISR context would cause assert failure
+
+        config FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+            # Todo: Check if we still need this (IDF-4986)
+            bool "Halt when an SMP-untested function is called"
+            default y
+            help
+                Some functions in FreeRTOS have not been thoroughly tested yet when moving to the SMP implementation of
+                FreeRTOS. When this option is enabled, these functions will throw an ``assert()``.
+
+        config FREERTOS_ENABLE_TASK_SNAPSHOT
+            bool "Enable task snapshot functions"
+            default y
+            help
+                When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll, are
+                compiled and linked. Task snapshots are primarily used by GDB Stub and Core dump.
+
+    endmenu # Port
+
+    # Hidden or compatibility options
 
     config FREERTOS_NO_AFFINITY
+        # This invisible config value sets the value of tskNO_AFFINITY in task.h.
+        # Intended to be used as a constant from other Kconfig files.
+        # Value is (32-bit) INT_MAX.
         hex
-        default 0x7FFFFFFF
-
-    config FREERTOS_TICK_SUPPORT_CORETIMER
-        bool
-        default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
-
-    config FREERTOS_TICK_SUPPORT_SYSTIMER
-        bool
-        default y if !FREERTOS_TICK_SUPPORT_CORETIMER
-        # ESP32-S3, ESP32-C3 and ESP32-H2 can use Systimer for FreeRTOS SysTick
-        # ESP32S2 also has SYSTIMER but it can not be used for the FreeRTOS SysTick because:
-        # - It has only one counter, which already in use esp_timer.
-        #   A counter for SysTick should be stall in debug mode but work esp_timer.
-        # - It is not possible to allocate two handlers for esp_timer and SysTick.
-
-    choice FREERTOS_CORETIMER
-        prompt "Xtensa timer to use as the FreeRTOS tick source"
-        default FREERTOS_CORETIMER_0 if FREERTOS_TICK_SUPPORT_CORETIMER
-        default FREERTOS_CORETIMER_SYSTIMER_LVL1 if FREERTOS_TICK_SUPPORT_SYSTIMER
-        help
-            FreeRTOS needs a timer with an associated interrupt to use as
-            the main tick source to increase counters, run timers and do
-            pre-emptive multitasking with. There are multiple timers available
-            to do this, with different interrupt priorities. Check
-
-        config FREERTOS_CORETIMER_0
-            bool "Timer 0 (int 6, level 1)"
-            depends on FREERTOS_TICK_SUPPORT_CORETIMER
-            help
-                Select this to use timer 0
-
-        config FREERTOS_CORETIMER_1
-            bool "Timer 1 (int 15, level 3)"
-            depends on FREERTOS_TICK_SUPPORT_CORETIMER
-            help
-                Select this to use timer 1
-
-        config FREERTOS_CORETIMER_SYSTIMER_LVL1
-            bool "SYSTIMER 0 (level 1)"
-            depends on FREERTOS_TICK_SUPPORT_SYSTIMER
-            help
-                Select this to use systimer with the 1 interrupt priority.
-
-        config FREERTOS_CORETIMER_SYSTIMER_LVL3
-            bool "SYSTIMER 0 (level 3)"
-            depends on FREERTOS_TICK_SUPPORT_SYSTIMER
-            help
-                Select this to use systimer with the 3 interrupt priority.
-
-    endchoice
-
-    config FREERTOS_SYSTICK_USES_SYSTIMER
-        bool
-        default y if FREERTOS_CORETIMER_SYSTIMER_LVL1 || FREERTOS_CORETIMER_SYSTIMER_LVL3
-
-    config FREERTOS_SYSTICK_USES_CCOUNT
-        bool
-        default y if FREERTOS_CORETIMER_0 || FREERTOS_CORETIMER_1
-
-    config FREERTOS_OPTIMIZED_SCHEDULER
-        bool "Enable FreeRTOS pĺatform optimized scheduler"
-        depends on FREERTOS_UNICORE
-        default y
-        help
-            On most platforms there are instructions can speedup the ready task
-            searching. Enabling this option the FreeRTOS with this instructions
-            support will be built.
-
-    config FREERTOS_HZ
-        int "Tick rate (Hz)"
-        range 1 1000
-        default 100
-        help
-            Select the tick rate at which FreeRTOS does pre-emptive context switching.
-
-    config FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-        bool "Halt when an SMP-untested function is called"
-        default y
-        help
-            Some functions in FreeRTOS have not been thoroughly tested yet when moving to
-            the SMP implementation of FreeRTOS. When this option is enabled, these fuctions
-            will throw an assert().
-
-    choice FREERTOS_CHECK_STACKOVERFLOW
-        prompt "Check for stack overflow"
-        default FREERTOS_CHECK_STACKOVERFLOW_CANARY
-        help
-            FreeRTOS can check for stack overflows in threads and trigger an user function
-            called vApplicationStackOverflowHook when this happens.
-
-        config FREERTOS_CHECK_STACKOVERFLOW_NONE
-            bool "No checking"
-            help
-                Do not check for stack overflows (configCHECK_FOR_STACK_OVERFLOW=0)
-
-        config FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
-            bool "Check by stack pointer value"
-            help
-                Check for stack overflows on each context switch by checking if
-                the stack pointer is in a valid range. Quick but does not detect
-                stack overflows that happened between context switches
-                (configCHECK_FOR_STACK_OVERFLOW=1)
-
-        config FREERTOS_CHECK_STACKOVERFLOW_CANARY
-            bool "Check using canary bytes"
-            help
-                Places some magic bytes at the end of the stack area and on each
-                context switch, check if these bytes are still intact. More thorough
-                than just checking the pointer, but also slightly slower.
-                (configCHECK_FOR_STACK_OVERFLOW=2)
-    endchoice
-
-    config FREERTOS_WATCHPOINT_END_OF_STACK
-        bool "Set a debug watchpoint as a stack overflow check"
-        default n
-        help
-            FreeRTOS can check if a stack has overflown its bounds by checking either the value of
-            the stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW
-            for more information.) These checks only happen on a context switch, and the situation that caused
-            the stack overflow may already be long gone by then. This option will use the last debug memory
-            watchpoint to allow breaking into the debugger (or panic'ing) as soon as any
-            of the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you
-            effectively have one hardware watchpoint less because the last one is overwritten as soon as a task
-            switch happens.
-
-            Another consequence is that due to alignment requirements of the watchpoint, the usable stack size
-            decreases by up to 60 bytes. This is because the watchpoint region has to be aligned to its size and the
-            size for the stack watchpoint in IDF is 32 bytes.
-
-            This check only triggers if the stack overflow writes within 32 bytes near the end of the stack, rather
-            than overshooting further, so it is worth combining this approach with one of the other stack overflow
-            check methods.
-
-            When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf
-            will panic on an unhandled debug exception.
-
-    config FREERTOS_INTERRUPT_BACKTRACE
-        bool "Enable backtrace from interrupt to task context"
-        default y
-        help
-            If this option is enabled, interrupt stack frame will be modified to
-            point to the code of the interrupted task as its return address.
-            This helps the debugger (or the panic handler) show a backtrace from
-            the interrupt to the task which was interrupted. This also works for
-            nested interrupts: higer level interrupt stack can be traced back to the
-            lower level interrupt.
-            This option adds 4 instructions to the interrupt dispatching code.
-
-    config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
-        int "Number of thread local storage pointers"
-        range 1 256
-        default 1
-        help
-            FreeRTOS has the ability to store per-thread pointers in the task
-            control block. This controls the number of pointers available.
-
-            This value must be at least 1. Index 0 is reserved for use by the pthreads API
-            thread-local-storage. Other indexes can be used for any desired purpose.
-
-    config FREERTOS_IDLE_TASK_STACKSIZE
-        int "Idle Task stack size"
-        range 768 32768
-        default 1536
-        help
-            The idle task has its own stack, sized in bytes. The default size is enough for most uses. Size can be
-            reduced to 768 bytes if no (or simple) FreeRTOS idle hooks are used and pthread local storage or FreeRTOS
-            local storage cleanup callbacks are not used.
-
-            The stack size may need to be increased above the default if the app installs idle or thread local storage
-            cleanup hooks that use a lot of stack memory.
-
-    config FREERTOS_ISR_STACKSIZE
-        int "ISR stack size"
-        range 2096 32768 if ESP_COREDUMP_DATA_FORMAT_ELF
-        default 2096 if ESP_COREDUMP_DATA_FORMAT_ELF
-        range 1536 32768
-        default 1536
-        help
-            The interrupt handlers have their own stack. The size of the stack can be defined here.
-            Each processor has its own stack, so the total size occupied will be twice this.
-
-    config FREERTOS_USE_IDLE_HOOK
-        bool "Use FreeRTOS idle hook"
-        default n
-        help
-            - If enabled, configUSE_IDLE_HOOK will be defined as 1 in FreeRTOS.
-            - The application must provide the hook function ``void vApplicationIdleHook( void );``
-            - ``vApplicationIdleHook()`` is called from FreeRTOS idle task(s)
-            - The FreeRTOS idle hook is NOT the same as the ESP-IDF Idle Hook, but both can be enabled
-              simultaneously.
-
-    config FREERTOS_USE_MINIMAL_IDLE_HOOK
-        bool "Use FreeRTOS minimal idle hook"
-        depends on FREERTOS_SMP
-        default n
-        help
-            - The application must provide the hook function ``void vApplicationMinimalIdleHook( void );``
-            - ``vApplicationMinimalIdleHook()`` is called from FreeRTOS idle task(s)
-
-    config FREERTOS_USE_TICK_HOOK
-        bool "Use FreeRTOS tick hook"
-        default n
-        help
-            - If enabled, configUSE_TICK_HOOK will be defined as 1 in FreeRTOS.
-            - The application must provide the hook function ``void vApplicationTickHook( void );``
-            - ``vApplicationTickHook()`` is called from FreeRTOS's tick handling function ``xTaskIncrementTick()``
-            - The FreeRTOS tick hook is NOT the same as the ESP-IDF Tick Interrupt Hook, but both can be enabled
-              simultaneously.
-
-    config FREERTOS_MAX_TASK_NAME_LEN
-        int "Maximum task name length"
-        range 1 256
-        default 16
-        help
-            Changes the maximum task name length. Each task allocated will
-            include this many bytes for a task name. Using a shorter value
-            saves a small amount of RAM, a longer value allows more complex
-            names.
-
-            For most uses, the default of 16 is OK.
-
-    config FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
-        bool "Support legacy FreeRTOS API"
-        default n
-        help
-            This option enables the configENABLE_BACKWARD_COMPATIBILITY option, thus allowing the usage
-            of legacy function names and types present in versions prior to FreeRTOS v8.0.0.
+        default 0x7FFFFFFF if !FREERTOS_SMP
+        default 0xFFFFFFFF if FREERTOS_SMP
 
     config FREERTOS_SUPPORT_STATIC_ALLOCATION
-        # Always enabled.
-        # Kconfig option preserved for compatibility with code
-        # which checked for CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION.
+        # Always enabled. Kconfig option preserved for compatibility with code which checked for
+        # CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION.
+        # Todo: Check if we still need this (IDF-4986)
         bool
         default y
-
-    config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-        bool "Enable static task clean up hook"
-        default n
-        help
-            Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
-
-            Bear in mind that if this option is enabled you will need to implement the following function::
-
-                void vPortCleanUpTCB ( void *pxTCB ) {
-                    // place clean up code here
-                }
-
-    config FREERTOS_TIMER_TASK_PRIORITY
-        int "FreeRTOS timer task priority"
-        range 1 25
-        default 1
-        help
-            The timer service task (primarily) makes use of existing FreeRTOS features, allowing timer
-            functionality to be added to an application with minimal impact on the size of the application's
-            executable binary.
-
-            Use this constant to define the priority that the timer task will run at.
-
-    config FREERTOS_TIMER_TASK_STACK_DEPTH
-        int "FreeRTOS timer task stack size"
-        range 1536 32768
-        default 2048
-        help
-            The timer service task (primarily) makes use of existing FreeRTOS features, allowing timer
-            functionality to be added to an application with minimal impact on the size of the application's
-            executable binary.
-
-            Use this constant to define the size (in bytes) of the stack allocated for the timer task.
-
-    config FREERTOS_TIMER_QUEUE_LENGTH
-        int "FreeRTOS timer queue length"
-        range 5 20
-        default 10
-        help
-            FreeRTOS provides a set of timer related API functions. Many of these functions use a standard
-            FreeRTOS queue to send commands to the timer service task. The queue used for this purpose is
-            called the 'timer command queue'. The 'timer command queue' is private to the FreeRTOS timer
-            implementation, and cannot be accessed directly.
-
-            For most uses the default value of 10 is OK.
-
-    config FREERTOS_QUEUE_REGISTRY_SIZE
-        int "FreeRTOS queue registry size"
-        range 0 20
-        default 0
-        help
-            FreeRTOS uses the queue registry as a means for kernel aware debuggers to locate queues, semaphores,
-            and mutexes. The registry allows for a textual name to be associated with a queue for easy identification
-            within a debugging GUI. A value of 0 will disable queue registry functionality, and a value larger than 0
-            will specify the number of queues/semaphores/mutexes that the registry can hold.
-
-    config FREERTOS_USE_TRACE_FACILITY
-        bool "Enable FreeRTOS trace facility"
-        default n
-        help
-            If enabled, configUSE_TRACE_FACILITY will be defined as 1 in FreeRTOS.
-            This will allow the usage of trace facility functions such as
-            uxTaskGetSystemState().
-
-    config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
-        bool "Enable FreeRTOS stats formatting functions"
-        depends on FREERTOS_USE_TRACE_FACILITY
-        default n
-        help
-            If enabled, configUSE_STATS_FORMATTING_FUNCTIONS will be defined as 1 in
-            FreeRTOS. This will allow the usage of stats formatting functions such
-            as vTaskList().
-
-    config FREERTOS_VTASKLIST_INCLUDE_COREID
-        bool "Enable display of xCoreID in vTaskList"
-        depends on FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
-        default n
-        help
-            If enabled, this will include an extra column when vTaskList is called
-            to display the CoreID the task is pinned to (0,1) or -1 if not pinned.
-
-    config FREERTOS_GENERATE_RUN_TIME_STATS
-        bool "Enable FreeRTOS to collect run time stats"
-        default n
-        select FREERTOS_USE_TRACE_FACILITY
-        select FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
-        help
-            If enabled, configGENERATE_RUN_TIME_STATS will be defined as 1 in
-            FreeRTOS. This will allow FreeRTOS to collect information regarding the
-            usage of processor time amongst FreeRTOS tasks. Run time stats are
-            generated using either the ESP Timer or the CPU Clock as the clock
-            source (Note that run time stats are only valid until the clock source
-            overflows). The function vTaskGetRunTimeStats() will also be available
-            if FREERTOS_USE_STATS_FORMATTING_FUNCTIONS and
-            FREERTOS_USE_TRACE_FACILITY are enabled. vTaskGetRunTimeStats() will
-            display the run time of each task as a % of the total run time of all
-            CPUs (task run time / no of CPUs) / (total run time / 100 )
-
-
-    choice FREERTOS_RUN_TIME_STATS_CLK
-        prompt "Choose the clock source for run time stats"
-        depends on FREERTOS_GENERATE_RUN_TIME_STATS
-        default FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-        help
-            Choose the clock source for FreeRTOS run time stats. Options are CPU0's
-            CPU Clock or the ESP Timer. Both clock sources are 32 bits. The CPU
-            Clock can run at a higher frequency hence provide a finer resolution
-            but will overflow much quicker. Note that run time stats are only valid
-            until the clock source overflows.
-
-        config FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-            bool "Use ESP TIMER for run time stats"
-            help
-                ESP Timer will be used as the clock source for FreeRTOS run time stats.
-                The ESP Timer runs at a frequency of 1MHz regardless of Dynamic
-                Frequency Scaling. Therefore the ESP Timer will overflow in
-                approximately 4290 seconds.
-
-        config FREERTOS_RUN_TIME_STATS_USING_CPU_CLK
-            bool "Use CPU Clock for run time stats"
-            depends on FREERTOS_SYSTICK_USES_CCOUNT
-            help
-                CPU Clock will be used as the clock source for the generation of run
-                time stats. The CPU Clock has a frequency dependent on
-                ESP_DEFAULT_CPU_FREQ_MHZ and Dynamic Frequency Scaling (DFS).
-                Therefore the CPU Clock frequency can fluctuate between 80 to 240MHz.
-                Run time stats generated using the CPU Clock represents the number of
-                CPU cycles each task is allocated and DOES NOT reflect the amount of
-                time each task runs for (as CPU clock frequency can change). If the CPU
-                clock consistently runs at the maximum frequency of 240MHz, it will
-                overflow in approximately 17 seconds.
-
-    endchoice
-
-    config FREERTOS_USE_TICKLESS_IDLE
-        bool "Tickless idle support"
-        depends on PM_ENABLE
-        default n
-        help
-            If power management support is enabled, FreeRTOS will be able to put
-            the system into light sleep mode when no tasks need to run for a number
-            of ticks. This number can be set using FREERTOS_IDLE_TIME_BEFORE_SLEEP option.
-            This feature is also known as "automatic light sleep".
-
-            Note that timers created using esp_timer APIs may prevent the system from
-            entering sleep mode, even when no tasks need to run.
-            To skip unnecessary wake-up initialize a timer with the "skip_unhandled_events" option as true.
-
-            If disabled, automatic light sleep support will be disabled.
-
-    config FREERTOS_IDLE_TIME_BEFORE_SLEEP
-        int "Minimum number of ticks to enter sleep mode for"
-        depends on FREERTOS_USE_TICKLESS_IDLE
-        default 3
-        range 2 4294967295
-        # Minimal value is 2 because of a check in FreeRTOS.h (search configEXPECTED_IDLE_TIME_BEFORE_SLEEP)
-        help
-            FreeRTOS will enter light sleep mode if no tasks need to run for this number
-            of ticks.
-
-    config FREERTOS_TASK_FUNCTION_WRAPPER
-        bool "Enclose all task functions in a wrapper function"
-        depends on COMPILER_OPTIMIZATION_DEFAULT || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
-        default y
-        help
-            If enabled, all FreeRTOS task functions will be enclosed in a wrapper function.
-            If a task function mistakenly returns (i.e. does not delete), the call flow will
-            return to the wrapper function. The wrapper function will then log an error and
-            abort the application. This option is also required for GDB backtraces and C++
-            exceptions to work correctly inside top-level task functions.
-
-    config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-        bool "Check that mutex semaphore is given by owner task"
-        default y
-        help
-            If enabled, assert that when a mutex semaphore is given, the task giving the
-            semaphore is the task which is currently holding the mutex.
-
-    config FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-        bool "Tests compliance with Vanilla FreeRTOS port*_CRITICAL calls"
-        default n
-        help
-            If enabled, context of port*_CRITICAL calls (ISR or Non-ISR)
-            would be checked to be in compliance with Vanilla FreeRTOS.
-            e.g Calling port*_CRITICAL from ISR context would cause assert failure
-
-    config FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
-        bool "Place FreeRTOS functions into Flash"
-        default n
-        help
-            When enabled the selected Non-ISR FreeRTOS functions will be placed into Flash memory instead of IRAM.
-            This saves up to 8KB of IRAM depending on which functions are used.
 
     config FREERTOS_DEBUG_OCDAWARE
         bool
         help
             Hidden option, gets selected by CONFIG_ESP_DEBUG_OCDAWARE
 
-    config FREERTOS_FPU_IN_ISR
-        bool "Allow use of float inside Level 1 ISR (EXPERIMENTAL)"
-        depends on IDF_TARGET_ESP32
-        default n
-        help
-            When enabled, the usage of float type is allowed inside Level 1
-            ISRs.
-
-    config FREERTOS_ENABLE_TASK_SNAPSHOT
-        bool "Enable task snapshot functions"
-        default y
-        help
-            When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
-            are compiled and linked. Task snapshots are primarily used by GDB Stub and Core dump.
-
-    config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
-        bool "Place task snapshot functions into flash"
-        default n
-        depends on FREERTOS_ENABLE_TASK_SNAPSHOT && !ESP_PANIC_HANDLER_IRAM
-        help
-            When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
-            will be placed in flash. Note that if enabled, these functions cannot be called when cache is disabled.
-endmenu
+endmenu # FreeRTOS

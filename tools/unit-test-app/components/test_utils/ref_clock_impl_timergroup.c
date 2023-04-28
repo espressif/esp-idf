@@ -18,12 +18,14 @@ void ref_clock_init(void)
         .resolution_hz = 1000000, // Resolution is configured to 1MHz
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &ts_gptimer));
+    TEST_ESP_OK(gptimer_enable(ts_gptimer));
     TEST_ESP_OK(gptimer_start(ts_gptimer));
 }
 
 void ref_clock_deinit(void)
 {
     TEST_ESP_OK(gptimer_stop(ts_gptimer));
+    TEST_ESP_OK(gptimer_disable(ts_gptimer));
     TEST_ESP_OK(gptimer_del_timer(ts_gptimer));
     ts_gptimer = NULL;
 }

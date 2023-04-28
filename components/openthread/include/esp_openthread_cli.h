@@ -39,7 +39,6 @@ esp_err_t esp_openthread_cli_input(const char *line);
  */
 void esp_openthread_cli_create_task(void);
 
-
 #ifdef __cplusplus
 }
 #endif

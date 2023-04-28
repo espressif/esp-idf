@@ -31,6 +31,6 @@ VS Code IDE 快速入门
 Bugs 问题 & 功能请求
 =======================
 
-如果您在使用 VS Code 或其某些功能上遇到问题，建议您在 `论坛 <http://esp32.com/viewforum.php?f=40>`_ 或是 `GitHub Issue <https://github.com/espressif/vscode-esp-idf-extension/issues/new/choose>`_ 上提出您的问题，我们开发团队会对问题进行解答。
+如果您在使用 VS Code 或其某些功能上遇到问题，建议您在 `论坛 <https://esp32.com/viewforum.php?f=40>`_ 或是 `GitHub Issue <https://github.com/espressif/vscode-esp-idf-extension/issues/new/choose>`_ 上提出您的问题，我们开发团队会对问题进行解答。
 
 我们也欢迎您提出新的功能需求，正是由于用户要求新功能或是建议对现有功能进行改善，才成就我们今天所具备的大多数功能。欢迎您在 `Github <http://github.com/espressif/vscode-esp-idf-extension/issues/new/choose>`__ 上提出功能请求。

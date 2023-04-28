@@ -12,7 +12,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_random.h"
 #include "esp_attr.h"
-#include "nvs_flash.h"
+#include "esp_spi_flash.h"
 #include "test_rgb_board.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
@@ -137,7 +137,16 @@ TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_pane
     return false;
 }
 
-TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
+static void IRAM_ATTR test_disable_flash_cache(void)
+{
+    // disable flash cache
+    spi_flash_guard_get()->start();
+    esp_rom_delay_us(100000);
+    // enable flash cache
+    spi_flash_guard_get()->end();
+}
+
+TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
 {
     uint8_t *img = malloc(TEST_IMG_SIZE);
     TEST_ASSERT_NOT_NULL(img);
@@ -155,33 +164,11 @@ TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
     printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
 
     // read/write the SPI Flash by NVS APIs, the LCD driver should stay work
-    printf("initialize NVS flash\r\n");
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        TEST_ESP_OK(nvs_flash_erase());
-        // Retry nvs_flash_init
-        err = nvs_flash_init();
-    }
-    TEST_ESP_OK(err);
-    printf("open NVS storage\r\n");
-    nvs_handle_t my_handle;
-    TEST_ESP_OK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    TEST_ESP_OK(nvs_erase_all(my_handle));
-    int test_count;
-    for (int i = 0; i < 50; i++) {
-        printf("write %d to NVS partition\r\n", i);
-        TEST_ESP_OK(nvs_set_i32(my_handle, "test_count", i));
-        TEST_ESP_OK(nvs_commit(my_handle));
-        TEST_ESP_OK(nvs_get_i32(my_handle, "test_count", &test_count));
-        TEST_ASSERT_EQUAL(i, test_count);
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-    printf("close NVS storage\r\n");
-    nvs_close(my_handle);
-    TEST_ESP_OK(nvs_flash_deinit());
-
-    TEST_ASSERT(callback_calls > 50);
+    printf("disable the cache for a while\r\n");
+    test_disable_flash_cache();
+    printf("the RGB ISR handle should keep working while the flash cache is disabled\r\n");
+    printf("callback calls: %d\r\n", callback_calls);
+    TEST_ASSERT(callback_calls > 5);
 
     printf("delete RGB panel\r\n");
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));

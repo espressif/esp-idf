@@ -1054,7 +1054,7 @@ BOOLEAN btsnd_hcic_delete_stored_key (BD_ADDR bd_addr, BOOLEAN delete_all_flag)
     return (TRUE);
 }
 
-BOOLEAN btsnd_hcic_change_name (BD_NAME name)
+BOOLEAN btsnd_hcic_change_name (const UINT8 *name)
 {
     BT_HDR *p;
     UINT8 *pp;

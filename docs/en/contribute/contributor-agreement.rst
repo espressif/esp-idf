@@ -1,19 +1,15 @@
 Contributor Agreement
 =====================
 
-Individual Contributor Non-Exclusive License Agreement
-------------------------------------------------------
-
-including the Traditional Patent License OPTION
------------------------------------------------
+Individual Contributor Non-Exclusive License Agreement including the Traditional Patent License OPTION
+------------------------------------------------------------------------------------------------------
 
 Thank you for your interest in contributing to Espressif IoT Development
 Framework (esp-idf) ("We" or "Us").
 
 The purpose of this contributor agreement ("Agreement") is to clarify
 and document the rights granted by contributors to Us. To make this
-document effective, please follow the instructions at
-:idf_file:`CONTRIBUTING.rst`
+document effective, please follow the instructions in the :doc:`index`.
 
 1. DEFINITIONS
 ~~~~~~~~~~~~~~

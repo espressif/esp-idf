@@ -213,7 +213,9 @@ static void usbh_print_intf_desc(const usb_intf_desc_t *intf_desc)
     printf("\tbInterfaceNumber %d\n", intf_desc->bInterfaceNumber);
     printf("\tbAlternateSetting %d\n", intf_desc->bAlternateSetting);
     printf("\tbNumEndpoints %d\n", intf_desc->bNumEndpoints);
-    printf("\tbInterfaceClass 0x%x\n", intf_desc->bInterfaceProtocol);
+    printf("\tbInterfaceClass 0x%x\n", intf_desc->bInterfaceClass);
+    printf("\tbInterfaceSubClass 0x%x\n", intf_desc->bInterfaceSubClass);
+    printf("\tbInterfaceProtocol 0x%x\n", intf_desc->bInterfaceProtocol);
     printf("\tiInterface %d\n", intf_desc->iInterface);
 }
 

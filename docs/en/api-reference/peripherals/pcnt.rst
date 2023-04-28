@@ -25,6 +25,8 @@ Description of the PCNT functionality is divided into into the following section
 -  `Set Up Channel Actions <#set-up-channel-actions>`__ - covers how to configure the PCNT channel to behave on different signal edges and levels.
 -  `Watch Points <#watch-points>`__ - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
 -  `Register Event Callbacks <#register-event-callbacks>`__ - describes how to hook user specific code to the watch point event callback function.
+-  `Set Glitch Filter <#set-glitch-filter>`__ - describes how to enable and set the timing parameters for the internal glitch filter.
+-  `Enable and Disable Unit <#enable-and-disable-unit>`__ - describes how to enable and disable the PCNT unit.
 -  `Unit IO Control <#unit-io-control>`__ - describes IO control functions of PCNT unit, like enable glitch filter, start and stop unit, get and clear count value.
 -  `Power Management <#power-management>`__ - describes what functionality will prevent the chip from going into low power mode.
 -  `IRAM Safe <#iram-safe>`__ - describes tips on how to make the PCNT interrupt and IO control functions work better along with a disabled cache.
@@ -47,8 +49,8 @@ Unit allocation and initialization is done by calling a function :cpp:func:`pcnt
 
 If a previously created PCNT unit is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`pcnt_del_unit`. Which in return allows the underlying unit hardware to be used for other purposes. Before deleting a PCNT unit, one should ensure the following prerequisites:
 
-- The unit is in a stop state, in other words, the unit either is stopped by :cpp:func:`pcnt_unit_stop` or not started yet.
-- The unit ought to stop watching any "watch point". See `Watch Points <#watch-points>`__ for how to removing a watch point.
+- The unit is in the init state, in other words, the unit is either disabled by :cpp:func:`pcnt_unit_disable` or not enabled yet.
+- The attached PCNT channels are all removed by :cpp:func:`pcnt_del_channel`.
 
 .. code:: c
 
@@ -71,7 +73,7 @@ To install a PCNT channel, there's a configuration structure that needs to be gi
 -  :cpp:member:`pcnt_chan_config_t::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
 -  :cpp:member:`pcnt_chan_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
 
-Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e. channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT channels within the unit is recorded by :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT` for reference.
+Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e. channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT channels within the unit is recorded by :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT` for reference. Note that, when install a PCNT channel for a specific unit, one should ensure the unit is in the init state, otherwise this function will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 If a previously created PCNT channel is no longer needed, it's recommended to recycle the resources by calling :cpp:func:`pcnt_del_channel`. Which in return allows the underlying channel hardware to be used for other purposes.
 
@@ -109,7 +111,7 @@ Each PCNT unit can be configured to watch several different values that you're i
 
 The watch point can be added and removed by :cpp:func:`pcnt_unit_add_watch_point` and :cpp:func:`pcnt_unit_remove_watch_point`. The commonly used watch points are: **zero cross**, **maximum / minimum count** and other threshold values. The number of available watch point is limited, :cpp:func:`pcnt_unit_add_watch_point` will return error :c:macro:`ESP_ERR_NOT_FOUND` if it can't find any free hardware resource to save the watch point. User can't add the same watch point for multiple times, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`.
 
-It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remove_watch_point` to recycle the watch point resources. Be careful when you recycle the PCNT unit by :cpp:func:`pcnt_del_unit`, the using watch points must be removed from the unit in advance.
+It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remove_watch_point` to recycle the watch point resources.
 
 .. code:: c
 
@@ -132,6 +134,8 @@ In the callback function, the driver will fill in the event data of specific eve
 -  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` saves the watch point value that triggers the event.
 -  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` saves how the PCNT unit crosses the zero point in the latest time. The possible zero cross modes are listed in the :cpp:type:`pcnt_unit_zero_cross_mode_t`. Usually different zero cross mode means different **counting direction** and **counting step size**.
 
+Registering callback function will result in lazy installation of interrupt service, thus this function should only be called before the unit is enabled by :cpp:func:`pcnt_unit_enable`. Otherwise, it can return :c:macro:`ESP_ERR_INVALID_STATE` error.
+
 .. code:: c
 
     static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
@@ -150,17 +154,16 @@ In the callback function, the driver will fill in the event data of specific eve
     QueueHandle_t queue = xQueueCreate(10, sizeof(int));
     ESP_ERROR_CHECK(pcnt_unit_register_event_callbacks(pcnt_unit, &cbs, queue));
 
-Unit IO Control
-^^^^^^^^^^^^^^^
-
 Set Glitch Filter
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 The PCNT unit features filters to ignore possible short glitches in the signals. The parameters that can be configured for the glitch filter are listed in :cpp:type:`pcnt_glitch_filter_config_t`:
 
 -  :cpp:member:`pcnt_glitch_filter_config_t::max_glitch_ns` sets the maximum glitch width, in nano seconds. If a signal pulse's width is smaller than this value, then it will be treated as noise and won't increase/decrease the internal counter.
 
 User can enable the glitch filter for PCNT unit by calling :cpp:func:`pcnt_unit_set_glitch_filter` with the filter configuration provided above. Particularly, user can disable the glitch filter later by calling :cpp:func:`pcnt_unit_set_glitch_filter` with a `NULL` filter configuration.
+
+This function should be called when the the unit is in the init state. Otherwise, it will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 .. note::
 
@@ -173,10 +176,30 @@ User can enable the glitch filter for PCNT unit by calling :cpp:func:`pcnt_unit_
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
+Enable and Disable Unit
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Before doing IO control to the PCNT unit, user needs to enable it first, by calling :cpp:func:`pcnt_unit_enable`. Internally, this function will:
+
+* switch the PCNT driver state from **init** to **enable**.
+* enable the interrupt service if it has been lazy installed in :cpp:func:`pcnt_unit_register_event_callbacks`.
+* acquire a proper power management lock if it has been lazy installed in :cpp:func:`pcnt_unit_set_glitch_filter`. See also `Power management <#power-management>`__ for more information.
+
+On the contrary, calling :cpp:func:`pcnt_unit_disable` will do the opposite, that is, put the PCNT driver back to the **init** state, disable the interrupts service and release the power management lock.
+
+.. code::c
+
+    ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
+
+Unit IO Control
+^^^^^^^^^^^^^^^
+
 Start/Stop and Clear
 ~~~~~~~~~~~~~~~~~~~~
 
 Calling :cpp:func:`pcnt_unit_start` will make the PCNT unit start to work, increase or decrease counter according to pulse signals. On the contrary, calling :cpp:func:`pcnt_unit_stop` will stop the PCNT unit but retain current count value. Instead, clearing counter can only be done by calling :cpp:func:`pcnt_unit_clear_count`.
+
+Note, :cpp:func:`pcnt_unit_start` and :cpp:func:`pcnt_unit_stop` should be called when the unit has been enabled by :cpp:func:`pcnt_unit_enable`. Otherwise, it will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 .. code::c
 
@@ -202,7 +225,7 @@ Power Management
 
 When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the behavior of PCNT glitch filter and leading to valid signal being treated as noise.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever user enables the glitch filter by :cpp:func:`pcnt_unit_set_glitch_filter`, the driver will guarantee that the power management lock is acquired after the PCNT unit is started by :cpp:func:`pcnt_unit_start`. Likewise, the driver releases the lock after :cpp:func:`pcnt_unit_stop` is called. This requires that the :cpp:func:`pcnt_unit_start` and :cpp:func:`pcnt_unit_stop` should appear in pairs, otherwise the power management will be out of action.
+However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever user enables the glitch filter by :cpp:func:`pcnt_unit_set_glitch_filter`, the driver will guarantee that the power management lock is acquired after the PCNT unit is enabled by :cpp:func:`pcnt_unit_enable`. Likewise, the driver releases the lock after :cpp:func:`pcnt_unit_disable` is called.
 
 IRAM Safe
 ^^^^^^^^^
@@ -212,9 +235,7 @@ By default, the PCNT interrupt will be deferred when the Cache is disabled for r
 There's a Kconfig option :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` that will:
 
 1. Enable the interrupt being serviced even when cache is disabled
-
 2. Place all functions that used by the ISR into IRAM [2]_
-
 3. Place driver object into DRAM (in case it's mapped to PSRAM by accident)
 
 This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.

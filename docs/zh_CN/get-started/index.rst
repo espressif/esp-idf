@@ -142,8 +142,8 @@ IDE
 .. toctree::
     :maxdepth: 1
 
-    Eclipse Plugin <../get-started/eclipse-setup>
-    VSCode Extension <../get-started/vscode-setup>
+    Eclipse Plugin <eclipse-setup>
+    VSCode Extension <vscode-setup>
 
 手动安装
 ~~~~~~~~~~~~~~~~~~~
@@ -153,18 +153,12 @@ IDE
 .. toctree::
     :maxdepth: 1
 
-    Windows Installer <../get-started/windows-setup>
-    Linux and macOS <../get-started/linux-macos-setup>
+    Windows Installer <windows-setup>
+    Linux and macOS <linux-macos-setup>
 
 编译第一个工程
 ===================
 
-如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`get-started-first-steps` 编译第一个工程。
-
-.. toctree::
-   :hidden:
-
-   Windows <windows-setup>
-   Manual <linux-macos-setup>
+如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/

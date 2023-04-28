@@ -131,6 +131,12 @@ execute_process(
     OUTPUT_VARIABLE OPENTHREAD_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+string(TIMESTAMP OT_BUILD_TIMESTAMP " %Y-%m-%d %H:%M:%S UTC" UTC)
+string(CONCAT OT_FULL_VERSION_STRING
+       "openthread-esp32/"
+       "${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\; "
+       "${CONFIG_IDF_TARGET}\; ${OT_BUILD_TIMESTAMP}")
+
 idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
@@ -152,7 +158,12 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "OPENTHREAD_CONFIG_FILE=\"openthread-core-esp32x-${CONFIG_FILE_TYPE}-config.h\""
             "${device_type}"
         PRIVATE
-        "PACKAGE_VERSION=\"${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\"")
+        "PACKAGE_VERSION=\"${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\""
+        "OPENTHREAD_BUILD_DATETIME=\"${OT_BUILD_TIMESTAMP}\""
+        )
+    if(CONFIG_OPENTHREAD_RADIO)
+        file(WRITE ${CMAKE_BINARY_DIR}/rcp_version ${OT_FULL_VERSION_STRING})
+    endif()
 
     if(CONFIG_OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC)
         idf_component_get_property(openthread_port_lib openthread_port COMPONENT_LIB)
@@ -174,8 +185,21 @@ if(CONFIG_OPENTHREAD_ENABLED)
         endif()
 
     else()
-        add_prebuilt_library(openthread_port "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_port.a"
-                            REQUIRES openthread)
+        if(IDF_TARGET STREQUAL "esp32h2")
+            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+                add_prebuilt_library(openthread_port
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1/libopenthread_port.a"
+                    REQUIRES openthread)
+            endif()
+            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+                add_prebuilt_library(openthread_port
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2/libopenthread_port.a"
+                    REQUIRES openthread)
+            endif()
+        else()
+            add_prebuilt_library(openthread_port "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_port.a"
+                                REQUIRES openthread)
+        endif()
         add_prebuilt_library(openthread_br "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_br.a"
                             REQUIRES openthread)
 

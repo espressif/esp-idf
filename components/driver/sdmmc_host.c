@@ -718,6 +718,3 @@ static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width)
     }
     return ESP_OK;
 }
-
-/* Deprecared public function */
-esp_err_t sdmmc_host_pullup_en(int slot, int width) __attribute__((alias("sdmmc_host_pullup_en_internal")));

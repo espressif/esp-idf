@@ -77,8 +77,12 @@ def check_partition(ptype, subtype, partition_table_file, bin_file):  # type: (s
     smallest_size = min(p.size for p in partitions)
     if smallest_size >= bin_size:
         free_size = smallest_size - bin_size
-        print('{} binary size {:#x} bytes. Smallest {} partition is {:#x} bytes. {:#x} bytes ({}%) free.'.format(
-            bin_name, bin_size, ptype_str, smallest_size, free_size, round(free_size * 100 / smallest_size)))
+        free_size_relative = free_size / smallest_size
+        print('{} binary size {:#x} bytes. Smallest {} partition is {:#x} bytes. {:#x} bytes ({:.0%}) free.'.format(
+            bin_name, bin_size, ptype_str, smallest_size, free_size, free_size_relative))
+        free_size_relative_critical = 0.05
+        if free_size_relative < free_size_relative_critical:
+            print('Warning: The smallest {} partition is nearly full ({:.0%} free space left)!'.format(ptype_str, free_size_relative))
         return
 
     too_small_partitions = [p for p in partitions if p.size < bin_size]

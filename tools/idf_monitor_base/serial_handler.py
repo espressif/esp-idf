@@ -58,8 +58,8 @@ class SerialHandler:
     The class is responsible for buffering serial input and performing corresponding commands.
     """
     def __init__(self, last_line_part, serial_check_exit, logger, decode_panic, reading_panic, panic_buffer, target,
-                 force_line_print, start_cmd_sent, serial_instance, encrypted, elf_file):
-        # type: (bytes, bool, Logger, str, int, bytes,str, bool, bool, serial.Serial, bool, str) -> None
+                 force_line_print, start_cmd_sent, serial_instance, encrypted, reset, elf_file):
+        # type: (bytes, bool, Logger, str, int, bytes,str, bool, bool, serial.Serial, bool, bool, str) -> None
         self._last_line_part = last_line_part
         self._serial_check_exit = serial_check_exit
         self.logger = logger
@@ -71,6 +71,7 @@ class SerialHandler:
         self.start_cmd_sent = start_cmd_sent
         self.serial_instance = serial_instance
         self.encrypted = encrypted
+        self.reset = reset
         self.elf_file = elf_file
 
     def handle_serial_input(self, data, console_parser, coredump, gdb_helper, line_matcher,
@@ -192,10 +193,10 @@ class SerialHandler:
             console_reader.stop()
             serial_reader.stop()
         elif cmd == CMD_RESET:
-            self.serial_instance.setRTS(low)
+            self.serial_instance.setRTS(low)  # EN=LOW, chip in reset
             self.serial_instance.setDTR(self.serial_instance.dtr)  # usbser.sys workaround
             time.sleep(reset_delay)
-            self.serial_instance.setRTS(high)
+            self.serial_instance.setRTS(high)  # EN=HIGH, chip out of reset
             self.serial_instance.setDTR(self.serial_instance.dtr)  # usbser.sys workaround
             self.logger.output_enabled = True
         elif cmd == CMD_MAKE:

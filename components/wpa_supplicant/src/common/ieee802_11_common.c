@@ -6,9 +6,9 @@
  * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
+#include "common.h"
 #include "defs.h"
 #include "ieee802_11_defs.h"
 #include "ieee802_11_common.h"
@@ -37,6 +37,22 @@ const u8 * get_ie(const u8 *ies, size_t len, u8 eid)
 	return NULL;
 }
 
+int ieee802_11_ie_count(const u8 *ies, size_t ies_len)
+{
+	const struct element *elem;
+	int count = 0;
+
+	if (ies == NULL)
+		return 0;
+
+	for_each_element(elem, ies, ies_len)
+		count++;
+
+	return count;
+}
+
+
+
 const u8 * get_vendor_ie(const u8 *ies, size_t len, u32 vendor_type)
 {
 	const struct element *elem;
@@ -49,6 +65,7 @@ const u8 * get_vendor_ie(const u8 *ies, size_t len, u32 vendor_type)
 
 	return NULL;
 }
+
 
 size_t mbo_add_ie(u8 *buf, size_t len, const u8 *attr, size_t attr_len)
 {
@@ -184,6 +201,7 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
  */
 int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t len)
 {
+#ifdef CONFIG_RRM
 	const struct element *elem;
 
 	if (!start)
@@ -192,7 +210,6 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 	for_each_element(elem, start, len) {
 		u8 id = elem->id;
 		const u8 *pos = elem->data;
-
 		switch (id) {
 		case WLAN_EID_RRM_ENABLED_CAPABILITIES:
 			os_memcpy(wpa_s->rrm_ie, pos, 5);
@@ -207,7 +224,41 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 
 		}
 	}
+#endif
 	return 0;
+}
+
+struct wpabuf * ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len,
+					    u32 oui_type)
+{
+	struct wpabuf *buf;
+	const struct element *elem, *found = NULL;
+
+	for_each_element_id(elem, WLAN_EID_VENDOR_SPECIFIC, ies, ies_len) {
+		if (elem->datalen >= 4 &&
+				WPA_GET_BE32(elem->data) == oui_type) {
+			found = elem;
+			break;
+		}
+	}
+
+	if (!found)
+		return NULL; /* No specified vendor IE found */
+
+	buf = wpabuf_alloc(ies_len);
+	if (buf == NULL)
+		return NULL;
+
+	/*
+	 * There may be multiple vendor IEs in the message, so need to
+	 * concatenate their data fields.
+	 */
+	for_each_element_id(elem, WLAN_EID_VENDOR_SPECIFIC, ies, ies_len) {
+		if (elem->datalen >= 4 && WPA_GET_BE32(elem->data) == oui_type)
+			wpabuf_put_data(buf, elem->data + 4, elem->datalen - 4);
+	}
+
+	return buf;
 }
 
 int ieee802_11_ext_capab(const u8 *ie, unsigned int capab)

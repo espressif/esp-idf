@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 class FatalError(RuntimeError):
     """
     Wrapper class for runtime errors that aren't caused by bugs in idf.py or the build process.

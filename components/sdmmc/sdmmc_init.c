@@ -120,8 +120,8 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 
     /* Sanity check after switching the bus mode and frequency */
     SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);
-    /* TODO: this is CMD line only, add data checks for eMMC */
-    SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_check_csd);
+    /* Sanity check after eMMC switch to HS mode */
+    SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_check_ext_csd);
     /* TODO: add similar checks for SDIO */
 
     return ESP_OK;

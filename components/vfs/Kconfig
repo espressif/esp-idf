@@ -80,15 +80,6 @@ menu "Virtual file system"
             default 1
             help
                 Define maximum number of host filesystem mount points.
-
-        config VFS_SEMIHOSTFS_HOST_PATH_MAX_LEN
-            int "Host FS: Maximum path length for the host base directory"
-            default 128
-            help
-                Define maximum path length for the host base directory which is to be mounted.
-                If host path passed to esp_vfs_semihost_register() is longer than this value
-                it will be truncated.
-
     endmenu
 
 endmenu

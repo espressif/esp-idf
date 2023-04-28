@@ -25,7 +25,7 @@
     Open On-Chip Debugger v0.10.0-esp32-20201202-26-g05a036c2 (2021-03-15-17:18)
     Licensed under GNU GPL v2
     For bug reports, read
-        http://openocd.org/doc/doxygen/bugs.html
+        https://openocd.org/doc/doxygen/bugs.html
     Info : only one transport option; autoselect 'jtag'
     Warn : Transport "jtag" was already selected
     force hard breakpoints

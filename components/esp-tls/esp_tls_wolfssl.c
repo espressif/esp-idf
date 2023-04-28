@@ -115,6 +115,15 @@ static esp_err_t esp_load_wolfssl_verify_buffer(esp_tls_t *tls, const unsigned c
     }
 }
 
+void *esp_wolfssl_get_ssl_context(esp_tls_t *tls)
+{
+    if (tls == NULL) {
+        ESP_LOGE(TAG, "Invalid arguments");
+        return NULL;
+    }
+    return (void*)tls->priv_ssl;
+}
+
 esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
 {
 #ifdef CONFIG_ESP_DEBUG_WOLFSSL

@@ -11,9 +11,9 @@ ESP32-S2-DevKitM-1(U) is a general-purpose development board based on `ESP32-S2F
 ESP32-S2-DevKitM-1 is embedded with `ESP32-S2-MINI-1 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`__ module (on-board PCB antenna), while ESP32-S2-DevKitM-1U with `ESP32-S2-MINI-1U <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`__ module (external antenna connector).
 
 +----------------------+-----------------------+
-| |ESP32-S2-DevKitM-1| | |ESP32-S2-DevKitM-1U| | 
+| |ESP32-S2-DevKitM-1| | |ESP32-S2-DevKitM-1U| |
 +----------------------+-----------------------+
-|  ESP32-S2-DevKitM-1  |  ESP32-S2-DevKitM-1U  | 
+|  ESP32-S2-DevKitM-1  |  ESP32-S2-DevKitM-1U  |
 +----------------------+-----------------------+
 
 .. |ESP32-S2-DevKitM-1| image:: ../../../_static/esp32-s2-devkitm-1-v1-isometric.png
@@ -35,7 +35,7 @@ This section describes how to get started with ESP32-S2-DevKitM-1(U). It begins 
 Overview
 --------
 
-ESP32-S2-DevKitM-1(U) is entry-level development board equipped with either ESP32-S2-MINI-1 or ESP32-S2-MINI-1U module. Most of the I/O pins on the module are broken out to the pin headers on both sides for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-S2-DevKitM-1(U) on a breadboard. 
+ESP32-S2-DevKitM-1(U) is entry-level development board equipped with either ESP32-S2-MINI-1 or ESP32-S2-MINI-1U module. Most of the I/O pins on the module are broken out to the pin headers on both sides for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-S2-DevKitM-1(U) on a breadboard.
 
 Contents and Packaging
 ----------------------
@@ -45,7 +45,7 @@ Retail orders
 
 If you order a few samples, each ESP32-S2-DevKitM-1(U) comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 
 Wholesale Orders
@@ -74,7 +74,7 @@ Description of Components
 
     ESP32-S2-DevKitM-1U - front
 
-The key components of the board are described in a clockwise direction. 
+The key components of the board are described in a clockwise direction.
 
 .. list-table::
    :widths: 30 70
@@ -101,7 +101,7 @@ The key components of the board are described in a clockwise direction.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
    * - External Antenna Connector
-     - On **ESP32-S2-MINI-1U** module only. For connector dimensions, please refer to Section External Antenna Connector Dimensions in `ESP32-S2-MINI-1 & ESP32-S2-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`_. 
+     - On **ESP32-S2-MINI-1U** module only. For connector dimensions, please refer to Section External Antenna Connector Dimensions in `ESP32-S2-MINI-1 & ESP32-S2-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`_.
 
 Start Application Development
 -----------------------------
@@ -114,7 +114,7 @@ Required Hardware
 - ESP32-S2-DevKitM-1(U)
 
   + For ESP32-S2-DevKitM-1U, an antenna is also required.
-  
+
 - USB 2.0 cable (Standard-A to Micro-B)
 - Computer running Windows, Linux, or macOS
 
@@ -128,7 +128,7 @@ Software Setup
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an application example into your ESP32-S2-DevKitM-1(U).
 
 .. note::
-    
+
     ESP32-S2 series of chips only is only supported in ESP-IDF master or version v4.2 and higher.
 
 Hardware Reference
@@ -168,7 +168,7 @@ The two tables below provide the **Name** and **Function** of the pin headers on
 J1
 ^^^
 ===  ====  ==========  =============================================================
-No.  Name  Type [#]_    Function 
+No.  Name  Type [#]_    Function
 ===  ====  ==========  =============================================================
 1    3V3    P           3.3 V power supply
 2    0      I/O/T       RTC_GPIO0, GPIO0
@@ -221,7 +221,7 @@ No.  Name  Type   Function
 21   18    I/O/T  RTC_GPIO18, GPIO18, U1RXD, ADC2_CH7, DAC_2, CLK_OUT3, RGB LED
 ===  ====  =====  ========================================================
 
-.. [#] P: Power supply; I: Input; O: Output; T: High impedance. 
+.. [#] P: Power supply; I: Input; O: Output; T: High impedance.
 
 Pin Layout
 ^^^^^^^^^^^
@@ -232,7 +232,7 @@ Pin Layout
     :figclass: align-center
 
     ESP32-S2-DevKitM-1(U) Pin Layout (click to enlarge)
-    
+
 Hardware Revision Details
 =========================
 
@@ -245,6 +245,6 @@ Related Documents
 * `ESP32-S2-DevKitM-1(U) Dimensions <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Dimensions.pdf>`_ (PDF)
 * `ESP32-S2 Series Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ (PDF)
 * `ESP32-S2-MINI-1 & ESP32-S2-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`_ (PDF)
-* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 
 For other design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "ets_sys.h"
 #include "rsa_pss.h"
+#include "ecdsa.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,19 +78,25 @@ void ets_secure_boot_revoke_public_key_digest(int index);
 #define SIG_BLOCK_PADDING 4096
 #define ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC 0xE7
 
-/* Secure Boot V2 signature block
+/* Secure Boot V2 signature block (extended to support ECDSA)
 
    (Up to 3 in a signature sector are appended to the image)
  */
-struct ets_secure_boot_sig_block {
+struct __attribute((packed)) ets_secure_boot_sig_block {
     uint8_t magic_byte;
     uint8_t version;
     uint8_t _reserved1;
     uint8_t _reserved2;
     uint8_t image_digest[32];
-    ets_rsa_pubkey_t key;
-    uint8_t signature[384];
-    uint32_t block_crc;
+    struct {
+        struct {
+            uint8_t curve_id; /* ETS_ECDSA_CURVE_P192 / ETS_ECDSA_CURVE_P256 */
+            uint8_t point[64]; /* X followed by Y (both little-endian), plus zero bytes if P192 */
+        } key;
+        uint8_t signature[64]; /* r followed by s (both little-endian) */
+        uint8_t padding[1031];
+    } ecdsa;
+    uint32_t block_crc; /* note: crc covers all bytes in the structure before it, regardless of version field */
     uint8_t _padding[16];
 };
 

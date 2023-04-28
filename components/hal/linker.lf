@@ -16,12 +16,14 @@ entries:
     i2c_hal_iram (noflash)
     cpu_hal (noflash)
     soc_hal (noflash)
-    wdt_hal_iram (noflash)
+    if HAL_WDT_USE_ROM_IMPL = n:
+        wdt_hal_iram (noflash)
+    if SOC_SYSTIMER_SUPPORTED = y && HAL_SYSTIMER_USE_ROM_IMPL = n:
+        systimer_hal (noflash)
     if TWAI_ISR_IN_IRAM = y:
         twai_hal_iram (noflash)
     if IDF_TARGET_ESP32 = n:
         spi_flash_hal_gpspi (noflash)
-        systimer_hal (noflash)
     if GPTIMER_CTRL_FUNC_IN_IRAM = y:
         timer_hal_iram (noflash)
     if GPIO_CTRL_FUNC_IN_IRAM = y:

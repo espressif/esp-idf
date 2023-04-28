@@ -104,7 +104,7 @@ Application Example
             }
         }
 
-Simple HTTP server example
+Simple HTTP Server Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Check HTTP server example under :example:`protocols/http_server/simple` where handling of arbitrary content lengths, reading request headers and URL query parameters, and setting response headers is demonstrated.
@@ -152,11 +152,10 @@ Persistent Connections Example
 Check the example under :example:`protocols/http_server/persistent_sockets`.
 
 
-Websocket server
+Websocket Server
 ----------------
 
-HTTP server provides a simple websocket support if the feature is enabled in menuconfig, please see :ref:`CONFIG_HTTPD_WS_SUPPORT`.
-Please check the example under :example:`protocols/http_server/ws_echo_server`
+The HTTP server component provides websocket support. The websocket feature can be enabled in menuconfig using the :ref:`CONFIG_HTTPD_WS_SUPPORT` option. Please refer to the :example:`protocols/http_server/ws_echo_server` example which demonstrates usage of the websocket feature.
 
 
 API Reference

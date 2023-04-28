@@ -10,6 +10,7 @@
 #define BSS_H
 
 struct wpa_scan_res;
+struct wpa_supplicant;
 
 /**
  * struct wpa_bss - BSS table

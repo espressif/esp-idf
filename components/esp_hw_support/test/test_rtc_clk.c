@@ -43,11 +43,18 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rtc.h"
+#include "esp32c2/rom/rtc.h"
 #endif
 
+// ESP32C2 does not support SLOW_CLK_32K_XTAL, so no need to test related test cases
+// Please notice this when enabling the rtc_clk test for ESP32C2!
+#if !CONFIG_IDF_TARGET_ESP32C2
 extern void rtc_clk_select_rtc_slow_clk(void);
+#endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
@@ -67,32 +74,52 @@ static uint32_t calibrate_one(rtc_cal_sel_t cal_clk, const char* name)
 
 TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
 {
+#if !CONFIG_IDF_TARGET_ESP32C2
     rtc_clk_32k_enable(true);
+#endif
     rtc_clk_8m_enable(true, true);
 
     CALIBRATE_ONE(RTC_CAL_RTC_MUX);
     CALIBRATE_ONE(RTC_CAL_8MD256);
-    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
 
-    if (cal_32k == 0) {
-        printf("32K XTAL OSC has not started up");
+#if CONFIG_IDF_TARGET_ESP32C2
+    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(RTC_CAL_EXT_CLK);
+    if (cal_ext_slow_clk == 0) {
+        printf("EXT CLOCK by PIN has not started up");
     } else {
-        printf("switching to RTC_SLOW_FREQ_32K_XTAL: ");
-        rtc_clk_slow_freq_set(RTC_SLOW_FREQ_32K_XTAL);
+        printf("switching to SOC_RTC_SLOW_CLK_SRC_OSC_SLOW: ");
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
         printf("done\n");
 
         CALIBRATE_ONE(RTC_CAL_RTC_MUX);
         CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(RTC_CAL_EXT_CLK);
+    }
+#else
+    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+    if (cal_32k == 0) {
+        printf("32K XTAL OSC has not started up");
+    } else {
+        printf("switching to SOC_RTC_SLOW_CLK_SRC_XTAL32K: ");
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
+        printf("done\n");
+        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        CALIBRATE_ONE(RTC_CAL_8MD256);
         CALIBRATE_ONE(RTC_CAL_32K_XTAL);
     }
+#endif
 
-    printf("switching to RTC_SLOW_FREQ_8MD256: ");
-    rtc_clk_slow_freq_set(RTC_SLOW_FREQ_8MD256);
+    printf("switching to SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256: ");
+    rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
     printf("done\n");
 
     CALIBRATE_ONE(RTC_CAL_RTC_MUX);
     CALIBRATE_ONE(RTC_CAL_8MD256);
+#if CONFIG_IDF_TARGET_ESP32C2
+    CALIBRATE_ONE(RTC_CAL_EXT_CLK);
+#else
     CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+#endif
 }
 
 /* The following two are not unit tests, but are added here to make it easy to
@@ -158,7 +185,7 @@ TEST_CASE("Calculate 8M clock frequency", "[rtc_clk]")
     uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
     uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
     printf("RTC_FAST_CLK=%d Hz\n", rtc_fast_freq_hz);
-    TEST_ASSERT_INT32_WITHIN(650000, RTC_FAST_CLK_FREQ_APPROX, rtc_fast_freq_hz);
+    TEST_ASSERT_INT32_WITHIN(650000, SOC_CLK_RC_FAST_FREQ_APPROX, rtc_fast_freq_hz);
 }
 
 TEST_CASE("Test switching between PLL and XTAL", "[rtc_clk]")
@@ -195,12 +222,12 @@ void stop_rtc_external_quartz(void){
     gpio_ll_output_disable(&GPIO, pin_33);
 }
 
-static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_ms)
+static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay_ms)
 {
     int i = 0, fail = 0;
     uint32_t start_time;
     uint32_t end_time;
-    rtc_slow_freq_t selected_src_freq;
+    soc_rtc_slow_clk_src_t selected_src;
     stop_rtc_external_quartz();
 #ifdef CONFIG_RTC_CLK_SRC_EXT_CRYS
     uint32_t bootstrap_cycles = CONFIG_ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES;
@@ -224,10 +251,10 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
         rtc_clk_32k_bootstrap(bootstrap_cycles);
         esp_rom_delay_us(start_delay_ms * 1000);
         rtc_clk_select_rtc_slow_clk();
-        selected_src_freq = rtc_clk_slow_freq_get();
+        selected_src = rtc_clk_slow_src_get();
         end_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
         printf(" [time=%d] ", (end_time - start_time) - start_delay_ms);
-        if(selected_src_freq != required_src_freq){
+        if(selected_src != required_src){
             printf("FAIL. Time measurement...");
             fail = 1;
         } else {
@@ -300,8 +327,8 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=UT_T1_32kXTAL
 
 TEST_CASE("Test starting 'External 32kHz XTAL' on the board with it.", "[rtc_clk][test_env=UT_T1_32kXTAL]")
 {
-    start_freq(RTC_SLOW_FREQ_32K_XTAL, 200);
-    start_freq(RTC_SLOW_FREQ_32K_XTAL, 0);
+    start_freq(SOC_RTC_SLOW_CLK_SRC_XTAL32K, 200);
+    start_freq(SOC_RTC_SLOW_CLK_SRC_XTAL32K, 0);
 }
 
 TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_clk][test_env=UT_T1_no32kXTAL]")
@@ -314,8 +341,8 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
             "will switch to the internal RC circuit. If the switch to the internal RC circuit "
             "was successful then the test succeeded.\n");
 
-    start_freq(RTC_SLOW_FREQ_RTC, 200);
-    start_freq(RTC_SLOW_FREQ_RTC, 0);
+    start_freq(SOC_RTC_SLOW_CLK_SRC_RC_SLOW, 200);
+    start_freq(SOC_RTC_SLOW_CLK_SRC_RC_SLOW, 0);
 }
 
 #endif // !IDF_CI_BUILD || !CONFIG_SPIRAM_BANKSWITCH_ENABLE

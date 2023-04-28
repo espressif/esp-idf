@@ -20,8 +20,8 @@ extern "C" {
 
 // define the lowest tx power as LOWEST_PHY_TX_POWER
 #define PHY_TX_POWER_LOWEST LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 52)
-#define PHY_TX_POWER_OFFSET 44
-#define PHY_TX_POWER_NUM    5
+#define PHY_TX_POWER_OFFSET 2
+#define PHY_TX_POWER_NUM    14
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 #define PHY_CRC_ALGORITHM 1

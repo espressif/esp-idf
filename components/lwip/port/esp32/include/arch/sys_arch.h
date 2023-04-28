@@ -33,11 +33,14 @@
 #ifndef __SYS_ARCH_H__
 #define __SYS_ARCH_H__
 
+#ifdef __linux__
+#include "esp32_mock.h"
+#else
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
-#include "arch/vfs_lwip.h"
+#endif // __linux__
 
 #ifdef __cplusplus
 extern "C" {

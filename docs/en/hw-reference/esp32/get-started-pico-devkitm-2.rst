@@ -1,4 +1,4 @@
-ESP32-PICO-DevKitM-2 
+ESP32-PICO-DevKitM-2
 *********************
 
 :link_to_translation:`zh_CN:[中文]`
@@ -10,7 +10,7 @@ ESP32-PICO-DevKitM-2 is an ESP32-based development board produced by `Espressif 
 
 The core of this board is `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
 
-All the IO signals and system power on ESP32-PICO-MINI-02(02U) are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers. 
+All the IO signals and system power on ESP32-PICO-MINI-02(02U) are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers.
 
 .. note::
 
@@ -24,7 +24,7 @@ ESP32-PICO-DevKitM-2 provides the users with hardware for development of applica
     :alt: ESP32-PICO-DevKitM-2 (click to enlarge)
     :figclass: align-center
 
-    ESP32-PICO-DevKitM-2 Overview (click to enlarge) 
+    ESP32-PICO-DevKitM-2 Overview (click to enlarge)
 
 This guide covers:
 
@@ -52,11 +52,11 @@ The following figure and the table below describe the key components, interfaces
     :alt: ESP32-PICO-DevKitM-2 (click to enlarge)
     :figclass: align-center
 
-    ESP32-PICO-DevKitM-2 board layout - front (click to enlarge) 
+    ESP32-PICO-DevKitM-2 board layout - front (click to enlarge)
 
 Below is the description of the items identified in the figure starting from the top left corner and going clockwise.
 
-.. list-table:: 
+.. list-table::
    :widths: 10 25
    :header-rows: 1
 
@@ -106,7 +106,7 @@ Retail Orders
 
 If you order one or several samples of the board, each ESP32-PICO-DevKitM-2 development board comes in an individual package.
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 Wholesale Orders
 ------------------
@@ -129,7 +129,7 @@ The block diagram below shows the main components of ESP32-PICO-DevKitM-2 and th
     :alt: ESP32-PICO-DevKitM-2 (click to enlarge)
     :figclass: align-center
 
-    ESP32-PICO-DevKitM-2 Block Diagram (click to enlarge) 
+    ESP32-PICO-DevKitM-2 Block Diagram (click to enlarge)
 
 Power Supply Options
 --------------------
@@ -153,7 +153,7 @@ The two tables below provide the **Name** and **Function** of I/O header pins on
 Header J2
 """"""""""""
 
-.. list-table:: 
+.. list-table::
    :widths: 5 5 5 35
    :header-rows: 1
 
@@ -233,12 +233,12 @@ Header J2
      - VDD33 (3V3)
      - P
      - 3.3 V power supply
-       
+
 
 Header J3
 """""""""""""
 
-.. list-table:: 
+.. list-table::
    :widths: 5 5 5 35
    :header-rows: 1
 
@@ -318,7 +318,7 @@ Header J3
      - EXT_5V (5V)
      - P
      - 5V power supply
-                          
+
 
 .. _get-started-pico-devkitm-2-pin-notes:
 

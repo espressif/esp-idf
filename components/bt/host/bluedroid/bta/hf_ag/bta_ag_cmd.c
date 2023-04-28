@@ -612,7 +612,7 @@ static UINT8 bta_ag_parse_chld(tBTA_AG_SCB *p_scb, char *p_s)
     INT16   idx = -1;
     UNUSED(p_scb);
 
-    if (!isdigit(p_s[0])) {
+    if (!isdigit((unsigned char)p_s[0])) {
         return BTA_AG_INVALID_CHLD;
     }
 

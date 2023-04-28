@@ -237,7 +237,7 @@ BOOLEAN btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR conn_ad
 ** Returns          void
 **
 *******************************************************************************/
-void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
+void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_LEN],
                       UINT16 hci_handle, UINT8 link_role, tBT_TRANSPORT transport)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;

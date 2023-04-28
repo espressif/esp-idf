@@ -4,7 +4,7 @@
 
 .. only:: esp32
 
-	本指南为 `乐鑫 <https://espressif.com>`_ 公司 `{IDF_TARGET_NAME} <https://espressif.com/en/products/hardware/esp32/overview>`_ 官方应用开发框架 `ESP-IDF <https://github.com/espressif/esp-idf>`_ 的配套文档。
+	本指南为 `乐鑫 <https://espressif.com>`_ 公司 `{IDF_TARGET_NAME} <https://www.espressif.com/en/products/socs/esp32>`_ 官方应用开发框架 `ESP-IDF <https://github.com/espressif/esp-idf>`_ 的配套文档。
 
 	{IDF_TARGET_NAME} 芯片是一款 2.4 GHz Wi-Fi 和蓝牙双模芯片，内置 1 或 2 个 Xtensa® 32 位 LX6 处理器，运算能力最高可达 600 DMIPS。
 

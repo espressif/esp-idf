@@ -147,17 +147,17 @@ static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, bus_cfg->clkm_div - 1);
     //scl period
-    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 1;
-    hw->scl_high_period.scl_high_period = bus_cfg->scl_high;
+    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 2;
+    hw->scl_high_period.scl_high_period = bus_cfg->scl_high - 3;
     //sda sample
-    hw->sda_hold.sda_hold_time = bus_cfg->sda_hold;
-    hw->sda_sample.sda_sample_time = bus_cfg->sda_sample;
+    hw->sda_hold.sda_hold_time = bus_cfg->sda_hold - 1;
+    hw->sda_sample.sda_sample_time = bus_cfg->sda_sample - 1;
     //setup
-    hw->scl_rstart_setup.scl_rstart_setup_time = bus_cfg->setup;
-    hw->scl_stop_setup.scl_stop_setup_time = bus_cfg->setup;
+    hw->scl_rstart_setup.scl_rstart_setup_time = bus_cfg->setup - 1;
+    hw->scl_stop_setup.scl_stop_setup_time = bus_cfg->setup - 1;
     //hold
     hw->scl_start_hold.scl_start_hold_time = bus_cfg->hold - 1;
-    hw->scl_stop_hold.scl_stop_hold_time = bus_cfg->hold;
+    hw->scl_stop_hold.scl_stop_hold_time = bus_cfg->hold - 1;
     hw->to.time_out_value = bus_cfg->tout;
     hw->to.time_out_en = 1;
 }

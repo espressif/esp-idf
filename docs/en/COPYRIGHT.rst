@@ -73,13 +73,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `SEGGER SystemView`_ target-side library, Copyright (c) 2015-2017  SEGGER Microcontroller GmbH & Co. KG, is licensed under BSD 3-clause license.
 
-Build Tools
------------
-
-This is the list of licenses for tools included in this repository, which are used to build applications. The tools do not become part of the application (firmware), so their license does not affect licensing of the application.
-
-* :component:`esptool.py <esptool_py/esptool>` is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in :component_file:`LICENSE file<esptool_py/LICENSE>`.
-
 Documentation
 -------------
 
@@ -159,7 +152,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/
 .. _wpa_supplicant: https://w1.fi/wpa_supplicant/
-.. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
+.. _FreeBSD net80211: https://github.com/freebsd/freebsd-src/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
@@ -167,7 +160,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _cJSON: https://github.com/DaveGamble/cJSON
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
-.. _Mbed TLS: https://github.com/ARMmbed/mbedtls
+.. _Mbed TLS: https://github.com/Mbed-TLS/mbedtls
 .. _spiffs: https://github.com/pellepl/spiffs
 .. _asio: https://github.com/chriskohlhoff/asio
 .. _mqtt: https://github.com/espressif/esp-mqtt

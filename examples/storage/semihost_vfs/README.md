@@ -54,7 +54,7 @@ This example also requires [OpenOCD](https://docs.espressif.com/projects/esp-idf
 
 ### Overriding the base directory for semihosting
 
-When the example application calls `esp_vfs_semihost_register("/host", NULL)`, the path `/host` on the ESP target is mapped to the semihosting _base directory_. By default, this is the directory where OpenOCD program is started from. In the instructions above, OpenOCD is started in `data` subdirectory of the example project.
+When the example application calls `esp_vfs_semihost_register("/host")`, the path `/host` on the ESP target is mapped to the semihosting _base directory_. By default, this is the directory where OpenOCD program is started from. In the instructions above, OpenOCD is started in `data` subdirectory of the example project.
 
 When debugging with Xtensa based SoCs (ESP32, ESP32-S2, ESP32-S3) it is possible to override the semihosting base directory using an additional flag of `openocd` command. For example, on Linux and macOS:
 

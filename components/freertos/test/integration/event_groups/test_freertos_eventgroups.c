@@ -176,6 +176,7 @@ TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
         .on_alarm = on_timer_alarm_cb,
     };
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     //Test set bits
@@ -195,6 +196,7 @@ TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
     TEST_ASSERT_EQUAL(0, xEventGroupGetBits(eg));   //Check bits are cleared
 
     //Clean up
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
     vEventGroupDelete(eg);
     vSemaphoreDelete(done_sem);

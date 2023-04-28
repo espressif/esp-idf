@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import json
 import logging
 import os.path
+from typing import Any
 
 try:
     from esp_coredump import CoreDump
@@ -14,6 +16,19 @@ except ImportError:
                               '"python -m pip install esp-coredump"')
 
 from esp_coredump.cli_ext import parser
+
+
+def get_prefix_map_gdbinit_path(prog_path):  # type: (str) -> Any
+    build_dir = os.path.abspath(os.path.dirname(prog_path))
+    desc_path = os.path.abspath(os.path.join(build_dir, 'project_description.json'))
+    if not os.path.isfile(desc_path):
+        logging.warning('%s does not exist. Please build the app with "idf.py build"', desc_path)
+        return ''
+
+    with open(desc_path, 'r') as f:
+        project_desc = json.load(f)
+
+    return project_desc.get('debug_prefix_map_gdbinit')
 
 
 def main():  # type: () -> None
@@ -32,6 +47,8 @@ def main():  # type: () -> None
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     kwargs = {k: v for k, v in vars(args).items() if v is not None}
+    # pass the extra_gdbinit_file if the build is reproducible
+    kwargs['extra_gdbinit_file'] = get_prefix_map_gdbinit_path(kwargs['prog'])
 
     del(kwargs['debug'])
     del(kwargs['operation'])

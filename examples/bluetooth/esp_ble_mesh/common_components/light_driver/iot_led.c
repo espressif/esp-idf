@@ -58,10 +58,6 @@ static void iot_timer_start(gptimer_handle_t gptimer)
         .alarm_count = DUTY_SET_CYCLE / 1000 * GPTIMER_RESOLUTION_HZ,
         .flags.auto_reload_on_alarm = true,
     };
-    gptimer_event_callbacks_t cbs = {
-        .on_alarm = fade_timercb,
-    };
-    gptimer_register_event_callbacks(gptimer, &cbs, NULL);
     gptimer_set_alarm_action(gptimer, &alarm_config);
     gptimer_start(gptimer);
     g_hw_timer_started = true;
@@ -336,6 +332,11 @@ esp_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
             .resolution_hz = GPTIMER_RESOLUTION_HZ,
         };
         ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &g_light_config->gptimer));
+        gptimer_event_callbacks_t cbs = {
+            .on_alarm = fade_timercb,
+        };
+        ESP_ERROR_CHECK(gptimer_register_event_callbacks(g_light_config->gptimer, &cbs, NULL));
+        ESP_ERROR_CHECK(gptimer_enable(g_light_config->gptimer));
     } else {
         ESP_LOGE(TAG, "g_light_config has been initialized");
     }
@@ -349,8 +350,8 @@ esp_err_t iot_led_deinit(void)
         free(g_gamma_table);
     }
 
-
     if (g_light_config) {
+        gptimer_disable(g_light_config->gptimer);
         gptimer_del_timer(g_light_config->gptimer);
         free(g_light_config);
     }

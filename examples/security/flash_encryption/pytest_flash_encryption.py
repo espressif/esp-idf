@@ -4,22 +4,12 @@
 from __future__ import print_function
 
 import binascii
-import os
-import sys
 from collections import namedtuple
 from io import BytesIO
 
+import espsecure
 import pytest
 from pytest_embedded import Dut
-
-try:
-    import espsecure
-except ImportError:
-    idf_path = os.getenv('IDF_PATH')
-    if not idf_path or not os.path.exists(idf_path):
-        raise
-    sys.path.insert(0, os.path.join(idf_path, 'components', 'esptool_py', 'esptool'))
-    import espsecure
 
 
 # To prepare a test runner for this example:
@@ -33,6 +23,8 @@ except ImportError:
 @pytest.mark.esp32c3
 @pytest.mark.flash_encryption
 def test_examples_security_flash_encryption(dut: Dut) -> None:
+    # Erase the nvs_key partition
+    dut.serial.erase_partition('nvs_key')
     # calculate the expected ciphertext
     flash_addr = dut.app.partition_table['storage']['offset']
     plain_hex_str = '00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f'
@@ -72,7 +64,3 @@ def test_examples_security_flash_encryption(dut: Dut) -> None:
     ]
     for line in lines:
         dut.expect(line, timeout=2)
-
-
-if __name__ == '__main__':
-    test_examples_security_flash_encryption()

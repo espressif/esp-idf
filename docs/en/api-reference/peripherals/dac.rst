@@ -28,14 +28,17 @@ For other analog output options, see the :doc:`Sigma-delta Modulation module <si
 Application Example
 -------------------
 
-Setting DAC channel 1 ({IDF_TARGET_DAC_CH_1}) voltage to approx 0.78 of VDD_A voltage (VDD * 200 / 255). For VDD_A 3.3V, this is 2.59V::
+Setting DAC channel 1 ({IDF_TARGET_DAC_CH_1}) voltage to approx 0.78 of VDD_A voltage (VDD * 200 / 255). For VDD_A 3.3V, this is 2.59V.
 
-  #include <driver/dac.h>
+.. code:: c
 
-  ...
+    #include <driver/dac.h>
 
-      dac_output_enable(DAC_CHANNEL_1);
-      dac_output_voltage(DAC_CHANNEL_1, 200);
+    ...
+
+    dac_output_enable(DAC_CHANNEL_1);
+    dac_output_voltage(DAC_CHANNEL_1, 200);
+
 
 API Reference
 -------------

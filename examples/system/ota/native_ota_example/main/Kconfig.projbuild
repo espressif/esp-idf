@@ -1,5 +1,7 @@
 menu "Example Configuration"
 
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
     config EXAMPLE_FIRMWARE_UPG_URL
         string "Firmware Upgrade URL"
         default "https://192.168.2.106:8070/hello_world.bin"
@@ -24,7 +26,7 @@ menu "Example Configuration"
 
     config EXAMPLE_GPIO_DIAGNOSTIC
         int "Number of the GPIO input for diagnostic"
-        range 0 39
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
         default 4
         help
             Used to demonstrate how a rollback works.

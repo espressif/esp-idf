@@ -138,7 +138,7 @@ class PanicTestDut(IdfDut):
         """Extract the core dump from flash, run espcoredump on it"""
         coredump_file_name = os.path.join(self.logdir, 'coredump_data.bin')
         logging.info('Writing flash binary core dump to %s', coredump_file_name)
-        self.serial.dump_flash(coredump_file_name, partition='coredump')
+        self.serial.dump_flash(partition='coredump', output=coredump_file_name)
 
         output_file_name = os.path.join(self.logdir, 'coredump_flash_result.txt')
         self._call_espcoredump(

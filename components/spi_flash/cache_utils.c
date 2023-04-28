@@ -491,7 +491,7 @@ static IRAM_ATTR void esp_enable_cache_flash_wrap(bool icache, bool dcache)
     }
 }
 
-#if CONFIG_ESP32S2_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SPIRAM)
 static IRAM_ATTR void esp_enable_cache_spiram_wrap(bool icache, bool dcache)
 {
     uint32_t i_autoload, d_autoload;
@@ -569,7 +569,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
     }
-#ifdef CONFIG_ESP32S2_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SPIRAM)
     spiram_wrap_sizes[1] = dcache_wrap_size;
 #endif
     for (i = 0; i < 2; i++) {
@@ -627,7 +627,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
 #endif
 
-#ifdef CONFIG_ESP32S2_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SPIRAM)
     extern bool psram_support_wrap_size(uint32_t wrap_size);
     if (!psram_support_wrap_size(spiram_wrap_size)) {
         spiram_support_wrap = false;
@@ -646,7 +646,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         spi_flash_enable_wrap(flash_wrap_size);
         esp_enable_cache_flash_wrap((flash_wrap_sizes[0] > 0), (flash_wrap_sizes[1] > 0));
     }
-#if CONFIG_ESP32S2_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SPIRAM)
     extern esp_err_t psram_enable_wrap(uint32_t wrap_size);
     if (spiram_support_wrap && spiram_wrap_size > 0) {
         ESP_EARLY_LOGI(TAG, "SPIRAM wrap enabled, size = %d.", spiram_wrap_size);
@@ -740,7 +740,7 @@ static IRAM_ATTR void esp_enable_cache_flash_wrap(bool icache, bool dcache)
     }
 }
 
-#if CONFIG_ESP32S3_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM)
 static IRAM_ATTR void esp_enable_cache_spiram_wrap(bool icache, bool dcache)
 {
     uint32_t i_autoload, d_autoload;
@@ -818,7 +818,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
     }
-#ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM)
     spiram_wrap_sizes[1] = dcache_wrap_size;
 #endif
     for (i = 0; i < 2; i++) {
@@ -876,7 +876,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 #endif
 
 
-#ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM)
     extern bool psram_support_wrap_size(uint32_t wrap_size);
     if (!psram_support_wrap_size(spiram_wrap_size)) {
         spiram_support_wrap = false;
@@ -895,7 +895,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         spi_flash_enable_wrap(flash_wrap_size);
         esp_enable_cache_flash_wrap((flash_wrap_sizes[0] > 0), (flash_wrap_sizes[1] > 0));
     }
-#if CONFIG_ESP32S3_SPIRAM_SUPPORT
+#if (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM)
     extern esp_err_t psram_enable_wrap(uint32_t wrap_size);
     if (spiram_support_wrap && spiram_wrap_size > 0) {
         ESP_EARLY_LOGI(TAG, "SPIRAM wrap enabled, size = %d.", spiram_wrap_size);

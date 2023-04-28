@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-22 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,10 @@
 #define _ESP_TLS_ERRORS_H_
 
 #include "esp_err.h"
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
+#include "mbedtls/error.h"
+#endif
+/* For wolfSSL, errors are included through ssl.h which is included by default by esp_tls.h */
 
 #ifdef __cplusplus
 extern "C" {

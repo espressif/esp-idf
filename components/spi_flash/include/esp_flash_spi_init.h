@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -26,7 +18,7 @@ typedef struct {
     spi_host_device_t host_id;      ///< Bus to use
     int cs_io_num;                  ///< GPIO pin to output the CS signal
     esp_flash_io_mode_t io_mode;    ///< IO mode to read from the Flash
-    esp_flash_speed_t speed;        ///< Speed of the Flash clock
+    enum esp_flash_speed_s speed __attribute__((deprecated));        ///< Speed of the Flash clock. Replaced by freq_mhz
     int input_delay_ns;             ///< Input delay of the data pins, in ns. Set to 0 if unknown.
     /**
      * CS line ID, ignored when not `host_id` is not SPI1_HOST, or
@@ -34,6 +26,7 @@ typedef struct {
      * automatically assigned by the SPI bus lock.
      */
     int cs_id;
+    int freq_mhz;                   ///< The frequency of flash chip(MHZ)
 } esp_flash_spi_device_config_t;
 
 /**

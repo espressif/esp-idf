@@ -457,7 +457,8 @@ typedef struct {
 /**
 * @brief Create ESP32 Ethernet MAC instance
 *
-* @param config: Ethernet MAC configuration
+* @param esp32_config: EMAC specific configuration
+* @param config:       Ethernet MAC configuration
 *
 * @return
 *      - instance: create MAC instance successfully

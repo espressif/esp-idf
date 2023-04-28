@@ -37,8 +37,7 @@
 
 #pragma once
 
-
-#include "driver/rmt.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,8 +48,7 @@ extern "C" {
 #define LIGHT_DEFAULT_OFF 0
 
 /* LED strip configuration */
-#define RMT_TX_CHANNEL                  RMT_CHANNEL_0
-#define CONFIG_EXAMPLE_RMT_TX_GPIO      8
+#define CONFIG_EXAMPLE_STRIP_LED_GPIO   8
 #define CONFIG_EXAMPLE_STRIP_LED_NUMBER 1
 
 /**
@@ -65,7 +63,7 @@ void light_driver_set_power(bool power);
  *
  * @param power power on/off
 */
-int light_driver_init(bool power);
+void light_driver_init(bool power);
 
 #ifdef __cplusplus
 } // extern "C"

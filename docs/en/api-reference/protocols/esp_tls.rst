@@ -40,6 +40,8 @@ The ESP-TLS  component has a file :component_file:`esp-tls/esp_tls.h` which cont
 of the two SSL/TLS Libraries between mbedtls and wolfssl for its operation. API specific to mbedtls are present in :component_file:`esp-tls/private_include/esp_tls_mbedtls.h` and API
 specific to wolfssl are present in :component_file:`esp-tls/private_include/esp_tls_wolfssl.h`.
 
+.. _esp_tls_server_verification:
+
 TLS Server verification
 -----------------------
 

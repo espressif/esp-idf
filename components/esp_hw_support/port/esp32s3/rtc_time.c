@@ -36,10 +36,10 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
      * The following code emulates ESP32 behavior:
      */
     if (cal_clk == RTC_CAL_RTC_MUX) {
-        rtc_slow_freq_t slow_freq = rtc_clk_slow_freq_get();
-        if (slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
+        soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
+        if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             cal_clk = RTC_CAL_32K_XTAL;
-        } else if (slow_freq == RTC_SLOW_FREQ_8MD256) {
+        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
             cal_clk = RTC_CAL_8MD256;
         }
     } else if (cal_clk == RTC_CAL_INTERNAL_OSC) {
@@ -78,13 +78,13 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     uint32_t expected_freq;
     if (cal_clk == RTC_CAL_32K_XTAL) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(slowclk_cycles));
-        expected_freq = RTC_SLOW_CLK_FREQ_32K;
+        expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX;
     } else if (cal_clk == RTC_CAL_8MD256) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(slowclk_cycles));
-        expected_freq = RTC_SLOW_CLK_FREQ_8MD256;
+        expected_freq = SOC_CLK_RC_FAST_D256_FREQ_APPROX;
     } else {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
-        expected_freq = RTC_SLOW_CLK_FREQ_150K;
+        expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX;
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Start calibration */

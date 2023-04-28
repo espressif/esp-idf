@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,8 +22,8 @@ typedef struct {
     unsigned int bits_per_pixel;       /*!< Color depth, in bpp */
     struct {
         unsigned int reset_active_high: 1; /*!< Setting this if the panel reset is high level active */
-    } flags;
-    void *vendor_config; /* vendor specific configuration, optional, left as NULL if not used */
+    } flags;                               /*!< LCD panel config flags */
+    void *vendor_config; /*!< vendor specific configuration, optional, left as NULL if not used */
 } esp_lcd_panel_dev_config_t;
 
 /**

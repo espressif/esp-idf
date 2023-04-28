@@ -354,7 +354,7 @@ compare_scan_neighbor_results(struct wpa_supplicant *wpa_s, os_time_t age_secs,
 			struct os_reltime now;
 
 			if (os_get_reltime(&now) == 0 &&
-			    os_time_expired(&now, &target->last_update,
+			    os_reltime_expired(&now, &target->last_update,
 					       age_secs)) {
 				wpa_printf(MSG_DEBUG,
 					   "Candidate BSS is more than %jd seconds old",
@@ -546,7 +546,7 @@ static void wnm_add_cand_list(struct wpa_supplicant *wpa_s, struct wpabuf **buf)
 	 * list.
 	 */
 	os_get_reltime(&now);
-	if (os_time_expired(&now, &wpa_s->last_scan, 10))
+	if (os_reltime_expired(&now, &wpa_s->last_scan, 10))
 		return;
 
 	wpa_printf(MSG_DEBUG,
@@ -1010,7 +1010,7 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 			struct os_reltime now;
 
 			os_get_reltime(&now);
-			if (!os_time_expired(&now, &wpa_s->last_scan, 10)) {
+			if (!os_reltime_expired(&now, &wpa_s->last_scan, 10)) {
 				wpa_printf(MSG_DEBUG,
 					   "WNM: Try to use recent scan results");
 				if (wnm_scan_process(wpa_s, 0) > 0)

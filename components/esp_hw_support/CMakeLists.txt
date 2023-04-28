@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(requires soc bootloader_support)
-set(priv_requires efuse spi_flash)
+set(requires soc)
+set(priv_requires efuse spi_flash bootloader_support)
 
 set(srcs "compare_set.c" "cpu_util.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
@@ -12,6 +12,7 @@ if(NOT BOOTLOADER_BUILD)
                      "intr_alloc.c"
                      "mac_addr.c"
                      "periph_ctrl.c"
+                     "rtc_module.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
@@ -21,7 +22,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
-    list(APPEND priv_requires driver)
+    list(APPEND priv_requires driver esp_timer)
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")

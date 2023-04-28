@@ -77,6 +77,7 @@
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
@@ -87,7 +88,9 @@
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
 /*!< RTC */
-#define SOC_ADC_MAX_BITWIDTH                    (12)
+#define SOC_ADC_RTC_MIN_BITWIDTH                (12)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
+#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
@@ -150,8 +153,7 @@
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
 
-//ESP32-S3 support hardware FSM reset
-#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
+// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 //ESP32-S3 support hardware clear bus
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
@@ -206,7 +208,7 @@
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT         1  /*!< Support transmit specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP     1  /*!< Hardware support of auto-stop in loop mode */
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
-#define SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON  1  /*!< TX carrier can be modulated all the time */
+#define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_APB                   1  /*!< Support set APB as the RMT clock source */
@@ -262,11 +264,16 @@
 #define SOC_SPI_MAX_PRE_DIVIDER                     16
 #define SOC_SPI_SUPPORT_OCT                         1
 
+#define SOC_MEMSPI_SRC_FREQ_120M         1
+#define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED          1
+#define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED          1
+#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED          1
+
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
-#define SOC_TOUCH_VERSION_2                (1)  // Hardware version of touch sensor
+#define SOC_SYSTIMER_SUPPORTED             1
 #define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
@@ -284,6 +291,7 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
+#define SOC_TOUCH_VERSION_2               	(1)  // Hardware version of touch sensor
 #define SOC_TOUCH_SENSOR_NUM                (15) /*! 15 Touch channels */
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)  /* Sopport touch proximity channel number. */
 #define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1) /*Sopport touch proximity channel measure done interrupt type. */
@@ -359,6 +367,8 @@
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 
 #define SOC_PM_SUPPORT_TAGMEM_PD        (1)
+
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD      (1)
 
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 

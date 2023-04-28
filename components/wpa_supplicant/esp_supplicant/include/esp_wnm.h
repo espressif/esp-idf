@@ -36,11 +36,22 @@ enum btm_query_reason {
   * @param  cand_list: whether candidate list to be included from scan results available in supplicant's cache.
   *
   * @return
-  *    - 0: success else failure
+  *    - 0: success
+  *    - -1: AP does not support BTM
+  *    - -2: station not connected to AP
   */
 int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 					   const char *btm_candidates,
 					   int cand_list);
+
+/**
+  * @brief  Check bss trasition capability of connected AP
+  *
+  * @return
+  *    - true: AP supports BTM
+  *    - false: AP does not support BTM or station not connected to AP
+  */
+bool esp_wnm_is_btm_supported_connection(void);
 
 #ifdef __cplusplus
 }

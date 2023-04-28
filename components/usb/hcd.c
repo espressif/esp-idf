@@ -12,7 +12,6 @@
 #include "freertos/semphr.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
-#include "esp_timer.h"
 #include "esp_err.h"
 #include "esp_rom_gpio.h"
 #include "hal/usbh_hal.h"

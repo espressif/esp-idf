@@ -49,7 +49,7 @@ static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 #define BROWNOUT            "BROWN_OUT_RST"
 #define STORE_ERROR         "StoreProhibited"
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
 #define DEEPSLEEP           "DSLEEP"
 #define LOAD_STORE_ERROR    "Store access fault"
 #define RESET               "RTC_SW_CPU_RST"
@@ -216,8 +216,12 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog
 static void do_task_wdt(void)
 {
     setup_values();
-    esp_task_wdt_init(1, true);
-    esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = 1000,
+        .idle_core_mask = (1 << 0), // Watch core 0 idle
+        .trigger_panic = true,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
     while(1);
 }
 

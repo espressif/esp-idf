@@ -1,13 +1,6 @@
 Controller && VHCI
 ==================
 
-Overview
---------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
 Application Example
 -------------------
 

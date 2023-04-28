@@ -1,13 +1,6 @@
 SPP API
 ===============
 
-Overview
---------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
 Application Example
 -------------------
 

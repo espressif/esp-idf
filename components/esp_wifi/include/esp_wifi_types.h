@@ -249,7 +249,8 @@ typedef struct {
     uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
     uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
-    uint32_t reserved:29;         /**< Reserved for future feature set */
+    uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
+    uint32_t reserved:28;         /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.

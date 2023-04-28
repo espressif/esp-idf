@@ -40,7 +40,7 @@ if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
     NOT BOOTLOADER_BUILD)
     if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
         list(APPEND esptool_elf2image_args --secure-pad)
-    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
         list(APPEND esptool_elf2image_args --secure-pad-v2)
     endif()
 endif()
@@ -110,7 +110,7 @@ endif()
 
 if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
     set(secure_boot_version "1")
-elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
     set(secure_boot_version "2")
 endif()
 

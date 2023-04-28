@@ -9,5 +9,5 @@ if(NOT BOOTLOADER_BUILD)
     set(legacy_reqs soc)
 endif()
 
-idf_component_register(REQUIRES riscv "${legacy_reqs}"
+idf_component_register(REQUIRES "${legacy_reqs}"
                        REQUIRED_IDF_TARGETS esp32c2)

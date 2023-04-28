@@ -42,7 +42,7 @@ extern "C" {
 #define IPERF_REPORT_TASK_PRIORITY 6
 #define IPERF_REPORT_TASK_STACK 4096
 
-#define IPERF_UDP_TX_LEN (1472)
+#define IPERF_UDP_TX_LEN (1470)
 #define IPERF_UDP_RX_LEN (16 << 10)
 #define IPERF_TCP_TX_LEN (16 << 10)
 #define IPERF_TCP_RX_LEN (16 << 10)

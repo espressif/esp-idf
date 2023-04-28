@@ -74,7 +74,7 @@ After a successful build, we need to create a self-signed certificate and run a 
   (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted images received by the OTA client; others interpret the `0x1a`/`SUB` character in a binary as an escape sequence, i.e. end of file, and close the connection prematurely thus preventing the OTA client from receiving a complete image).
   * We recommend  using the `openssl` binary bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
   Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run openssl's http server command as above.
-  * Alternatively, use any windows based openssl with version `v1.1.1i` or greater built on the `Msys-x86_64` platform, or a simple python https server -- see `start_https_server` in the [example_test](simple_ota_example/example_test.py) script.
+  * Alternatively, use any windows based openssl with version `v1.1.1i` or greater built on the `Msys-x86_64` platform, or a simple python https server -- see `start_https_server` in the [example_test](simple_ota_example/pytest_simple_ota.py) script.
 
 ### Flash Certificate to "ESP-Dev-Board"
 
@@ -140,14 +140,14 @@ If you see this error, check that the configured (and actual) flash size is larg
 
 Make sure to run "idf.py erase-flash" after making changes to the partition table.
 
-### Local https server
+### Local HTTPS Server
 
 Running a local https server might be tricky in some cases (due to self signed certificates, or potential issues with `openssl s_server` on Windows). Here are some suggestions for alternatives:
 * Run a plain HTTP server to test the connection. (Note that using a plain http is **not secure** and should only be used for testing)
     - Execute `python -m http.server 8070` in the directory with the firmware image
     - Use http://<host-ip>:8070/<firmware-name> as the firmware upgrade URL
     - Enable *Allow HTTP for OTA* (`CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
-* Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
+* Start the HTTPS server using [example_test](simple_ota_example/pytest_simple_ota.py) with two or more parameters: `pytest_simple_ota.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
     - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`
     - `<PORT>` is the server's port, here `8070`
     - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file.
@@ -166,9 +166,10 @@ echo "" | openssl s_client -showcerts -connect raw.githubusercontent.com:443 | s
 
 Please note that URL used here is `raw.githubusercontent.com`. This URL allows raw access to files hosted on github.com repository. Additionally, command above copies last certificate from chain of certs as the CA root cert of server.
 
----
-**NOTE**
+### Using HTTPS Server in Production
 
-For examples using certificate bundle approach (e.g., `simple_ota_example`), it already has most common root certificates and hence there is no need to add any additional certs.
+Please refer to [ESP-TLS: TLS Server Verification](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/esp_tls.html#tls-server-verification) for more information on server verification. The root certificate (in PEM format) needs to be provided to the `cert_pem` member of the `esp_http_client_config_t` configuration.
 
----
+Note that the server-endpoint **root** certificate should be used for verification instead of any intermediate ones from the certificate chain. The reason being that the root certificate has the maximum validity and usually remains the same for a long period of time.
+
+Users can also use the `ESP x509 Certificate Bundle` feature for verification, which covers most of the trusted root certificates (using the `crt_bundle_attach` member of the `esp_http_client_config_t` configuration). There is no need to add any additional certificates. Please refer to the [simple_ota_example](simple_ota_example) for its usage.

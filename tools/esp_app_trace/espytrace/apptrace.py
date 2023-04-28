@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import print_function
 
 import os
@@ -7,12 +9,9 @@ try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
-try:
-    import SocketServer
-except ImportError:
-    import socketserver as SocketServer
 
 import os.path
+import socketserver as SocketServer
 import subprocess
 import tempfile
 import threading

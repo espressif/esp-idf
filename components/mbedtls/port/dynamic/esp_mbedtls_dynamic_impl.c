@@ -416,7 +416,16 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
     /**
      * The previous processing is just skipped, so "ssl->MBEDTLS_PRIVATE(in_msglen) = 0"
      */
-    if (!ssl->MBEDTLS_PRIVATE(in_msgtype)) {
+    if (!ssl->MBEDTLS_PRIVATE(in_msgtype)
+#if defined(MBEDTLS_SSL_SRV_C)
+        /**
+         * The ssl server read ClientHello manually without mbedtls_ssl_read_record(), so in_msgtype is not set and is zero.
+         * ClientHello has been processed and rx buffer should be freed.
+         * After processing ClientHello, the ssl state has been changed to MBEDTLS_SSL_SERVER_HELLO.
+         */
+        && !(ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(endpoint) == MBEDTLS_SSL_IS_SERVER && ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_SERVER_HELLO)
+#endif
+    ) {
         goto exit;
     }
 

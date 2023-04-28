@@ -25,7 +25,7 @@ In-depth design details of touch sensors and firmware development guidelines for
 
 .. only:: SOC_TOUCH_VERSION_1
 
-    For more information about testing touch sensors in various configurations, please check the `Guide for ESP32-Sense-Kit <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_en.md>`_.
+    For more information about testing touch sensors in various configurations, please check the `Guide for ESP32-Sense-Kit <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32/esp32-sense-kit/user_guide.html>`_.
 
 Functionality Overview
 ----------------------

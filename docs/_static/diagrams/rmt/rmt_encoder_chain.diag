@@ -1,0 +1,24 @@
+blockdiag rmt_encoder_chain {
+    orientation = portrait;
+    default_fontsize = 14;
+    node_width = 160;
+    node_height = 40;
+    span_width = 80;
+    span_height = 40;
+
+    new [label = "New", shape = "beginpoint"];
+    init [label = "Init"];
+    encoder_a [label = "Encoder A"];
+    encoder_b [label = "Encoder B"];
+    other_encoder [shape = "dots"];
+    yield [label = "Yield", shape = "endpoint"];
+
+    new -> init [folded];
+    init -> encoder_a [thick];
+    encoder_a <-> yield [folded, thick, color = "green", label = "full"];
+    encoder_a -> encoder_b [thick];
+    encoder_b <-> yield [color = "green", thick, label = "full"];
+    encoder_b -> other_encoder [style = "dotted"];
+    encoder_a, encoder_b -> init [thick, color = red, label = "reset"];
+    other_encoder -> init [thick, color = red, label = "finish"];
+}

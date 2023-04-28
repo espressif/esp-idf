@@ -1,6 +1,154 @@
 {
   "tools": [
     {
+      "description": "GDB for Xtensa",
+      "export_paths": [
+        [
+          "xtensa-esp-elf-gdb",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/binutils-gdb",
+      "install": "always",
+      "license": "GPL-3.0-or-later",
+      "name": "xtensa-esp-elf-gdb",
+      "supported_targets": [
+        "esp32",
+        "esp32s2",
+        "esp32s3"
+      ],
+      "version_cmd": [
+        "xtensa-esp-elf-gdb-no-python",
+        "--version"
+      ],
+      "version_regex": "GNU gdb \\(esp-gdb\\) ([a-z0-9.-_]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "c2bfb97c61fa3d2e3720aa1cc8163806a8bc712a173a374b60f6f5c061d33d3f",
+            "size": 26802753,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-x86_64-linux-gnu.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "849c523037499de4f49f0ddf96c8ede5d4f7e1a4673b1449141468502edb1141",
+            "size": 27074996,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-aarch64-linux-gnu.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "352622085efc9dca1d2f148920e297751bd2d5bfc83e1c5a417f5a9369f92a96",
+            "size": 25172145,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-arm-linux-gnueabi.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "482928dc7b54f85b1c92106c74141773270974744a4f7111deb5407411b97711",
+            "size": 23455642,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-arm-linux-gnueabihf.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "b4f61c82a41b5187dd59c2bb7371001b9d3bbac13dd66158a57097f4d7b951b0",
+            "size": 25841496,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-i586-linux-gnu.tar.gz"
+          },
+          "macos": {
+            "sha256": "18324682734ca2a23a45c5505f7bc1824336f88a4d59327d545083dc8a633bba",
+            "size": 36455524,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-x86_64-apple-darwin14.tar.gz"
+          },
+          "macos-arm64": {
+            "sha256": "18324682734ca2a23a45c5505f7bc1824336f88a4d59327d545083dc8a633bba",
+            "size": 36455524,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-x86_64-apple-darwin14.tar.gz"
+          },
+          "name": "11.1_20220318",
+          "status": "recommended",
+          "win32": {
+            "sha256": "b9f43a758d1bc3d9552c816033aaa439620459edb2b3618ef5bd4eadb1bb771b",
+            "size": 22423882,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-i686-w64-mingw32.zip"
+          },
+          "win64": {
+            "sha256": "b1bff9ee6b2a0025f33a9ddc97b92bab7578c11172c06e38a7483f98e157fb93",
+            "size": 21938075,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/xtensa-esp-elf-gdb-11.1_20220318-x86_64-w64-mingw32.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "GDB for RISC-V",
+      "export_paths": [
+        [
+          "riscv32-esp-elf-gdb",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/binutils-gdb",
+      "install": "always",
+      "license": "GPL-3.0-or-later",
+      "name": "riscv32-esp-elf-gdb",
+      "supported_targets": [
+        "esp32c3"
+      ],
+      "version_cmd": [
+        "riscv32-esp-elf-gdb-no-python",
+        "--version"
+      ],
+      "version_regex": "GNU gdb \\(esp-gdb\\) ([a-z0-9.-_]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "b34bab21a39a04d5d863ce3ed58a1836403fd0240875a14553ce78773443cb0b",
+            "size": 26558532,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-x86_64-linux-gnu.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "6c7392d91c5e3bdf00b2b1d998c370d48f4ff96c8fe7f2beb49df2aed65f455f",
+            "size": 26889510,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-aarch64-linux-gnu.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "af794c5ebc8651d717f307efa70d6a5d189f33f239c74d11ace8ddcb476f868a",
+            "size": 25408085,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-arm-linux-gnueabi.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "511b5caf0495eb8f5eaa0272eaed4828f05619d34b63460936db14e75310bfb0",
+            "size": 23658001,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-arm-linux-gnueabihf.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "71627a0416f3dc8ee1c8f6a0e263c648ecbef6bc497c5ed4f708290c5db0c37e",
+            "size": 25947586,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-i586-linux-gnu.tar.gz"
+          },
+          "macos": {
+            "sha256": "315676b51b51d2aa04e1d0c49008a74c44ff3a5c6298b4ab06ef5878318551e2",
+            "size": 36357845,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-x86_64-apple-darwin14.tar.gz"
+          },
+          "macos-arm64": {
+            "sha256": "315676b51b51d2aa04e1d0c49008a74c44ff3a5c6298b4ab06ef5878318551e2",
+            "size": 36357845,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-x86_64-apple-darwin14.tar.gz"
+          },
+          "name": "11.1_20220318",
+          "status": "recommended",
+          "win32": {
+            "sha256": "a87dec111437a3774d3c21665d0ed89a3040e5f423de00e710fe5557da8c4388",
+            "size": 22325998,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-i686-w64-mingw32.zip"
+          },
+          "win64": {
+            "sha256": "07672aa7ac944a99ab8d7caa5fb815565ad06e5cd9f455aeecf433640f7da354",
+            "size": 21474146,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v11.1_20220318/riscv32-esp-elf-gdb-11.1_20220318-x86_64-w64-mingw32.zip"
+          }
+        }
+      ]
+    },
+    {
       "description": "Toolchain for Xtensa (ESP32) based on GCC",
       "export_paths": [
         [
@@ -392,6 +540,11 @@
             "size": 8033639,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
           },
+          "linux-armhf": {
+            "sha256": "88967c086a6e71834282d9ae05841ee74dae1815f27807b25cdd3f7775a47101",
+            "size": 8033639,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
           "macos": {
             "sha256": "a35d9e7a0445247c7fc9dccd3fbc35682f0fafc28beeb10c94b59466317190c4",
             "size": 8872874,
@@ -456,6 +609,11 @@
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-amd64-2.28.51-esp-20191205.tar.gz"
           },
           "linux-armel": {
+            "sha256": "893b213c8f716d455a6efb2b08b6cf1bc34d08b78ee19c31e82ac44b1b45417e",
+            "size": 8034624,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
+          "linux-armhf": {
             "sha256": "893b213c8f716d455a6efb2b08b6cf1bc34d08b78ee19c31e82ac44b1b45417e",
             "size": 8034624,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
@@ -531,41 +689,46 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "97bf730372f9900b2dfb9206fccbcf92f5c7f3b502148b832e77451aa0f9e0e6",
-            "size": 43877847,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-linux-x86_64.tar.gz"
+            "sha256": "f3c654b2e226b9d43369e0bd8487c51618d4dbe5a1af929dd32af7e6ca432d60",
+            "size": 45998644,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-x86_64.tar.gz"
           },
           "linux-arm64": {
-            "sha256": "77620f99e9d5f39cf4a49294c6a68c89a978ecef144894618974b9958efe3c2a",
-            "size": 45139836,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-linux-aarch64.tar.gz"
+            "sha256": "74062efddeb935bce3d33694a4db534cef9a650f77a9a153a9f217d9dc385c75",
+            "size": 47458032,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-aarch64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "f8bd050c2745f0dcc4b7cef9738bbfef775950a10f5bd377abb0062835e669dc",
-            "size": 13759084,
-            "url": "https://dl.espressif.com/dl/cmake/cmake-3.20.3-Linux-armv7l.tar.gz"
+            "sha256": "aa6079237e16cc3b389479b2f7279d07e57f6aedad520e2b3014ef97fb906466",
+            "size": 19330381,
+            "url": "https://dl.espressif.com/dl/cmake/cmake-3.23.1-Linux-armv7l.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "aa6079237e16cc3b389479b2f7279d07e57f6aedad520e2b3014ef97fb906466",
+            "size": 19330381,
+            "url": "https://dl.espressif.com/dl/cmake/cmake-3.23.1-Linux-armv7l.tar.gz"
           },
           "macos": {
-            "sha256": "5f72dba3aa5f3800fb29ab6115ae0b31f10bdb2aad66204e14c98f6ac7e6b6ed",
-            "size": 66311879,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-macos-universal.tar.gz"
+            "sha256": "f794ed92ccb4e9b6619a77328f313497d7decf8fb7e047ba35a348b838e0e1e2",
+            "size": 70988516,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-macos-universal.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "5f72dba3aa5f3800fb29ab6115ae0b31f10bdb2aad66204e14c98f6ac7e6b6ed",
-            "size": 66311879,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-macos-universal.tar.gz"
+            "sha256": "f794ed92ccb4e9b6619a77328f313497d7decf8fb7e047ba35a348b838e0e1e2",
+            "size": 70988516,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-macos-universal.tar.gz"
           },
-          "name": "3.20.3",
+          "name": "3.23.1",
           "status": "recommended",
           "win32": {
-            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
-            "size": 36995168,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
+            "sha256": "9b509cc4eb7191dc128cfa3f2170036f9cbc7d9d5f93ff7fafc5b2d77b3b40dc",
+            "size": 39070972,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-windows-x86_64.zip"
           },
           "win64": {
-            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
-            "size": 36995168,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
+            "sha256": "9b509cc4eb7191dc128cfa3f2170036f9cbc7d9d5f93ff7fafc5b2d77b3b40dc",
+            "size": 39070972,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-windows-x86_64.zip"
           }
         }
       ]

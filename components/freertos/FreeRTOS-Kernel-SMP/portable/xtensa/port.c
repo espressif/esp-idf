@@ -17,16 +17,17 @@
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
 #include "xtensa/xtruntime.h"
+#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
+#include "esp_private/esp_int_wdt.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_task.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 #include "esp_rom_sys.h"
-#include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_heap_caps_init.h"
-#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
+#include "esp_freertos_hooks.h"
 #include "esp32/spiram.h"                   /* Required by esp_spiram_reserve_dma_pool() */
 #ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
@@ -188,27 +189,23 @@ static void main_task(void* args)
     }
 #endif
 
-    //Initialize task wdt if configured to do so
-#ifdef CONFIG_ESP_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
-#elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+    //Initialize TWDT if configured to do so
+#if CONFIG_ESP_TASK_WDT
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000,
+        .idle_core_mask = 0,
+#if CONFIG_ESP_TASK_WDT_PANIC
+        .trigger_panic = true,
 #endif
-
-    //Add IDLE 0 to task wdt
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
-    }
+    };
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    twdt_config.idle_core_mask |= (1 << 0);
 #endif
-    //Add IDLE 1 to task wdt
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
-    }
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    twdt_config.idle_core_mask |= (1 << 1);
 #endif
+    ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
+#endif // CONFIG_ESP_TASK_WDT
 
     app_main();
     vTaskDelete(NULL);
@@ -438,7 +435,9 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 #endif
 
 const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy25);
+#endif // ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;
 
 #if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
@@ -555,7 +554,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 }
 
 // -------------------- Co-Processor -----------------------
-#if XCHAL_CP_NUM > 0
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
 void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
 
@@ -577,7 +576,39 @@ void vPortCleanUpCoprocArea( void * pxTCB )
     /* If task has live floating point registers somewhere, release them */
     _xt_coproc_release( coproc_area, xCoreID );
 }
-#endif /* XCHAL_CP_NUM > 0 */
+#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+
+// ------- Thread Local Storage Pointers Deletion Callbacks -------
+
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+void vPortTLSPointersDelCb( void * pxTCB )
+{
+    /* Typecast pxTCB to StaticTask_t type to access TCB struct members.
+     * pvDummy15 corresponds to pvThreadLocalStoragePointers member of the TCB.
+     */
+    StaticTask_t *tcb = ( StaticTask_t * )pxTCB;
+
+    /* The TLSP deletion callbacks are stored at an offset of (configNUM_THREAD_LOCAL_STORAGE_POINTERS/2) */
+    TlsDeleteCallbackFunction_t *pvThreadLocalStoragePointersDelCallback = ( TlsDeleteCallbackFunction_t * )( &( tcb->pvDummy15[ ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ] ) );
+
+    /* We need to iterate over half the depth of the pvThreadLocalStoragePointers area
+     * to access all TLS pointers and their respective TLS deletion callbacks.
+     */
+    for( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ )
+    {
+        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL )    //If del cb is set
+        {
+            /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
+            if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
+                ESP_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
+                abort();
+            }
+
+            pvThreadLocalStoragePointersDelCallback[ x ]( x, tcb->pvDummy15[ x ] );   //Call del cb
+        }
+    }
+}
+#endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
 // -------------------- Tick Handler -----------------------
 
@@ -589,15 +620,14 @@ BaseType_t xPortSysTickHandler(void)
     portbenchmarkIntLatency();
     traceISR_ENTER(SYSTICK_INTR_ID);
     BaseType_t ret;
+    esp_vApplicationTickHook();
     if (portGET_CORE_ID() == 0) {
-        //Only Core 0 calls xTaskIncrementTick();
+        // FreeRTOS SMP requires that only core 0 calls xTaskIncrementTick()
         ret = xTaskIncrementTick();
     } else {
-        //Manually call the IDF tick hooks
-        esp_vApplicationTickHook();
         ret = pdFALSE;
     }
-    if(ret != pdFALSE) {
+    if (ret != pdFALSE) {
         portYIELD_FROM_ISR();
     } else {
         traceISR_EXIT();
@@ -626,13 +656,6 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
 }
 #endif
 
-#if  (  configUSE_TICK_HOOK > 0 )
-void vApplicationTickHook( void )
-{
-    esp_vApplicationTickHook();
-}
-#endif
-
 #if CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
 /*
 By default, the port uses vApplicationMinimalIdleHook() to run IDF style idle
@@ -655,13 +678,16 @@ void vApplicationMinimalIdleHook( void )
 /*
  * Hook function called during prvDeleteTCB() to cleanup any
  * user defined static memory areas in the TCB.
- * Currently, this hook function is used by the port to cleanup
- * the Co-processor save area for targets that support co-processors.
  */
 void vPortCleanUpTCB ( void *pxTCB )
 {
-#if XCHAL_CP_NUM > 0
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+    /* Call TLS pointers deletion callbacks */
+    vPortTLSPointersDelCb( pxTCB );
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
     /* Cleanup coproc save area */
     vPortCleanUpCoprocArea( pxTCB );
-#endif /* XCHAL_CP_NUM > 0 */
+#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 }

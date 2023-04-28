@@ -95,7 +95,7 @@ JTAG 调试
 
 如果您想使用单独的 JTAG 适配器，请确保其与 {IDF_TARGET_NAME} 的电平电压和 OpenOCD 软件都兼容。{IDF_TARGET_NAME} 使用的是业界标准的 JTAG 接口，它未使用（实际上也并不需要）TRST 信号脚。JTAG 使用的 IO 管脚由 VDD_3P3_RTC 电源管脚供电（通常连接到外部 3.3 V 的电源轨），因此 JTAG 硬件适配器的管脚需要能够在该电压范围内正常工作。
 
-在软件方面，OpenOCD 支持相当多数量的 JTAG 适配器，请参阅 `OpenOCD 支持的适配器列表 <http://openocd.org/doc/html/Debug-Adapter-Hardware.html>`_ （请注意这一列表并不完整），其中还列出了兼容 SWD 接口的适配器，但请注意，{IDF_TARGET_NAME} 目前并不支持 SWD。此外，硬编码为只支持特定产品线的 JTAG 适配器也无法在 {IDF_TARGET_NAME} 上工作，例如仅针对 STM32 系列产品的 ST-LINK 适配器。
+在软件方面，OpenOCD 支持相当多数量的 JTAG 适配器，请参阅 `OpenOCD 支持的适配器列表 <https://openocd.org/doc/html/Debug-Adapter-Hardware.html>`_ （请注意这一列表并不完整），其中还列出了兼容 SWD 接口的适配器，但请注意，{IDF_TARGET_NAME} 目前并不支持 SWD。此外，硬编码为只支持特定产品线的 JTAG 适配器也无法在 {IDF_TARGET_NAME} 上工作，例如仅针对 STM32 系列产品的 ST-LINK 适配器。
 
 保证 JTAG 正常工作需要连接的信号线包括：TDI、TDO、TCK、TMS 和 GND。一些 JTAG 适配器还需要 {IDF_TARGET_NAME} 提供一路电源到适配器的某个管脚上（比如 Vtar），用于设置适配器的工作电压。您也可以选择将 SRST 信号线连接到 {IDF_TARGET_NAME} 的 CH_PD 管脚上，但请注意，目前 OpenOCD 对该信号线提供的支持相当有限。
 
@@ -119,7 +119,7 @@ JTAG 调试
     Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
-        http://openocd.org/doc/doxygen/bugs.html
+        https://openocd.org/doc/doxygen/bugs.html
 
 您还可以检查 ``OPENOCD_SCRIPTS`` 环境变量的值，以确认 OpenOCD 配置文件的路径，Linux 和 macOS 用户可以在终端输入 ``echo $OPENOCD_SCRIPTS``，Windows 用户需要输入 ``echo %OPENOCD_SCRIPTS%``。如果终端输出了有效路径，则表明您已经正确安装 OpenOCD。
 

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 def action_extensions(base_actions, project_path):
     def some_callback(ut_apply_config_name, ctx, args):
         print('!!! From some subcommand')

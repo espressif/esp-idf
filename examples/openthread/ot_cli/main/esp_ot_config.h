@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * OpenThread Command Line Example
  *
@@ -10,7 +10,7 @@
  * Unless required by applicable law or agreed to in writing, this
  * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
  * CONDITIONS OF ANY KIND, either express or implied.
-*/
+ */
 
 #pragma once
 
@@ -36,7 +36,7 @@
                     .stop_bits = UART_STOP_BITS_1,            \
                     .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,    \
                     .rx_flow_ctrl_thresh = 0,                 \
-                    .source_clk = UART_SCLK_APB,              \
+                    .source_clk = UART_SCLK_DEFAULT,          \
                 },                                            \
             .rx_pin = 4,                                      \
             .tx_pin = 5,                                      \
@@ -57,7 +57,7 @@
                     .stop_bits = UART_STOP_BITS_1,              \
                     .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,      \
                     .rx_flow_ctrl_thresh = 0,                   \
-                    .source_clk = UART_SCLK_APB,                \
+                    .source_clk = UART_SCLK_DEFAULT,            \
                 },                                              \
             .rx_pin = UART_PIN_NO_CHANGE,                       \
             .tx_pin = UART_PIN_NO_CHANGE,                       \

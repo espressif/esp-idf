@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,10 +36,12 @@ void esp_clk_init(void);
  */
 void esp_perip_clk_init(void);
 
+#if !CONFIG_IDF_TARGET_ESP32C2
 /* Selects an external clock source (32 kHz) for RTC.
  * Only internal use in unit test.
  */
 void rtc_clk_select_rtc_slow_clk(void);
+#endif
 
 #ifdef __cplusplus
 }

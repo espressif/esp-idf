@@ -6,7 +6,7 @@ Migration of Protocol Components to ESP-IDF 5.0
 Mbed TLS
 --------
 
-For ESP-IDF v5.0, `Mbed TLS <https://github.com/ARMmbed/mbedtls>`_ has been updated from v2.x to v3.1.0.
+For ESP-IDF v5.0, `Mbed TLS <https://github.com/Mbed-TLS/mbedtls>`_ has been updated from v2.x to v3.1.0.
 
 The official guide for Mbed TLS to migrate from version 2.x to version 3.0 or greater can be found `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md>`__.
 
@@ -19,6 +19,7 @@ Most structure fields are now private
 - Direct access to fields of structures (``struct`` types) declared in public headers is no longer supported.
 - Appropriate accessor functions (getter/setter) must be used for the same. A temporary workaround would be to use ``MBEDTLS_PRIVATE`` macro (**not recommended**).
 - For more details, refer to the official guide `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md#most-structure-fields-are-now-private>`__.
+
 
 SSL
 ^^^
@@ -86,6 +87,7 @@ Names of variables holding different certs in :cpp:type:`httpd_ssl_config_t` str
     * :cpp:member:`httpd_ssl_config::cacert_pem` variable inherits role of `client_verify_cert_pem` variable
     * :cpp:member:`httpd_ssl_config::cacert_len` variable inherits role of `client_verify_cert_len` variable
 
+The return type of the :cpp:func:`httpd_ssl_stop` API has been changed to :cpp:type:`esp_err_t` from ``void``.
 
 ESP HTTPS OTA
 --------------
@@ -102,6 +104,19 @@ ESP-TLS
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+esp_tls_t structure is now private
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the esp-tls handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function please raise an issue on ESP-IDF.
+
+
+The list of newly added getter/setter function is as as follows:
+
+.. list::
+    * :cpp:func:`esp_tls_get_ssl_context` - Obtain the ssl context of the underlying ssl stack from the esp-tls handle.
+
+Function deprecations and recommended alternatives
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Following table summarizes the deprecated functions removed and their alternatives to be used from ESP-IDF v5.0 onwards.
 
 +-----------------------------------+----------------------------------------+
@@ -113,3 +128,11 @@ Following table summarizes the deprecated functions removed and their alternativ
 +-----------------------------------+----------------------------------------+
 
 - The function :cpp:func:`esp_tls_conn_http_new` has now been termed as deprecated. Please use the alternative function :cpp:func:`esp_tls_conn_http_new_sync` (or its asynchronous :cpp:func:`esp_tls_conn_http_new_async`). Note that the alternatives need an additional parameter :cpp:type:`esp_tls_t` which has to be initialized using the :cpp:func:`esp_tls_init` function.
+
+ESP HTTP SERVER
+-----------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``http_server.h`` header is no longer available in ``esp_http_server``. Please use ``esp_http_server.h`` instead.

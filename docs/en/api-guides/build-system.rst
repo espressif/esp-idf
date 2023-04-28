@@ -50,83 +50,10 @@ idf.py
 The ``idf.py`` command-line tool provides a front-end for easily managing your project builds. It manages the following tools:
 
 - CMake_, which configures the project to be built
-- A command-line build tool (either Ninja_ build or `GNU Make`)
+- Ninja_ which builds the project
 - `esptool.py`_ for flashing the target.
 
-The :ref:`getting started guide <get-started-configure>` contains a brief introduction to how to set up ``idf.py`` to configure, build, and flash projects.
-
-``idf.py`` should be run in an ESP-IDF "project" directory, i.e. one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
-
-Type ``idf.py --help`` for a list of commands. Here are a summary of the most useful ones:
-
-- ``idf.py set-target <target>`` sets the target (chip) for which the project is built. See :ref:`selecting-idf-target`.
-- ``idf.py menuconfig`` runs the "menuconfig" tool to configure the project.
-- ``idf.py build`` will build the project found in the current directory. This can involve multiple steps:
-
-  - Create the build directory if needed. The sub-directory ``build`` is used to hold build output, although this can be changed with the ``-B`` option.
-  - Run CMake_ as necessary to configure the project and generate build files for the main build tool.
-  - Run the main build tool (Ninja_ or `GNU Make`). By default, the build tool is automatically detected but it can be explicitly set by passing the ``-G`` option to ``idf.py``.
-
-  Building is incremental so if no source files or configuration has changed since the last build, nothing will be done.
-
-- ``idf.py clean`` will "clean" the project by deleting build output files from the build directory, forcing a "full rebuild" the next time the project is built. Cleaning doesn't delete CMake configuration output and some other files.
-- ``idf.py fullclean`` will delete the entire "build" directory contents. This includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes *all* files in the build directory, so use with care. Project configuration is not deleted.
-- ``idf.py flash`` will automatically build the project if necessary, and then flash it to the target. The ``-p`` and ``-b`` options can be used to set serial port name and flasher baud rate, respectively.
-- ``idf.py monitor`` will display serial output from the target. The ``-p`` option can be used to set the serial port name. Type ``Ctrl-]`` to exit the monitor. See :doc:`tools/idf-monitor` for more details about using the monitor.
-
-Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p COM4 clean flash monitor`` will clean the source tree, then build the project and flash it to the target before running the serial monitor.
-
-For commands that are not known to ``idf.py`` an attempt to execute them as a build system target will be made.
-
-The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ for bash, zsh and fish shells.
-
-In order to make `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
-
-To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-set-up-env>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options.
-
-The autocomplete support for PowerShell is planned in the future.
-
-.. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
-
-Advanced Commands
-^^^^^^^^^^^^^^^^^
-
-- ``idf.py app``, ``idf.py bootloader``, ``idf.py partition-table`` can be used to build only the app, bootloader, or partition table from the project as applicable.
-- There are matching commands ``idf.py app-flash``, etc. to flash only that single part of the project to the target.
-- ``idf.py -p PORT erase-flash`` will use esptool.py to erase the target's entire flash chip.
-- ``idf.py size`` prints some size information about the app. ``size-components`` and ``size-files`` are similar commands which print more detailed per-component or per-source-file information, respectively. If you define variable ``-DOUTPUT_JSON=1`` when running CMake (or ``idf.py``), the output will be formatted as JSON not as human readable text. See ``idf.py-size`` for more information.
-- ``idf.py reconfigure`` re-runs CMake_ even if it doesn't seem to need re-running. This isn't necessary during normal usage, but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. For example, ``idf.py -DNAME='VALUE' reconfigure`` can be used to set variable ``NAME`` in CMake cache to value ``VALUE``.
-- ``idf.py python-clean`` deletes generated Python byte code from the IDF directory which may cause issues when switching between IDF and Python versions. It is advised to run this target after switching versions of Python.
-- ``idf.py docs`` will open direct link to documentation for project's chip target and version in browser. To see all options use ``idf.py docs --help``
-
-The order of multiple ``idf.py`` commands on the same invocation is not important, they will automatically be executed in the correct order for everything to take effect (ie building before flashing, erasing before flashing, etc.).
-
-idf.py options
-^^^^^^^^^^^^^^
-
-To list all available root level options, run ``idf.py --help``. To list options that are specific for a subcommand, run ``idf.py <command> --help``, for example ``idf.py monitor --help``. Here is a list of some useful options:
-
-- ``-C <dir>`` allows overriding the project directory from the default current working directory.
-- ``-B <dir>`` allows overriding the build directory from the default ``build`` subdirectory of the project directory.
-- ``--ccache`` flag can be used to enable CCache_ when compiling source files, if the CCache_ tool is installed. This can dramatically reduce some build times.
-
-Note that some older versions of CCache may exhibit bugs on some platforms, so if files are not rebuilt as expected then try disabling CCache and build again. CCache can be enabled by default by setting the ``IDF_CCACHE_ENABLE`` environment variable to a non-zero value.
-
-- ``-v`` flag causes both ``idf.py`` and the build system to produce verbose build output. This can be useful for debugging build problems.
-- ``--cmake-warn-uninitialized`` (or ``-w``) will cause CMake to print uninitialized variable warnings inside the project directory (not for directories not found inside the project directory). This only controls CMake variable warnings inside CMake itself, not other types of build warnings. This option can also be set permanently by setting the ``IDF_CMAKE_WARN_UNINITIALIZED`` environment variable to a non-zero value.
-
-Start a new project
--------------------
-
-Use the command ``idf.py create-project`` for starting a new project. Execute ``idf.py create-project --help`` for more information.
-
-Example:
-
-.. code-block:: bash
-
-    idf.py create-project --path my_projects my_new_project
-
-This example will create a new project called my_new_project directly into the directory my_projects.
+You can read more about configuring the build system using ``idf.py`` :doc:`here <tools/idf-py>`.
 
 Using CMake Directly
 --------------------
@@ -386,20 +313,7 @@ There are other arguments that can be passed to ``idf_component_register``. Thes
 
 See `example component requirements`_ and  `example component CMakeLists`_ for more complete component ``CMakeLists.txt`` examples.
 
-Create a new component
-----------------------
-
-Use the command ``idf.py create-component`` for creating a new component. The new component will contain set of files necessary for building a component. You may include the component's header file into your project and use its functionality. For more information execute ``idf.py create-component --help``.
-
-Example:
-
-.. code-block:: bash
-
-    idf.py -C components create-component my_component
-
-The example will create a new component in the subdirectory `components` under the current working directory. For more information about components follow the documentation page :ref:`see above <component-directories>`.
-
-.. _component variables:
+.. _preset_component_variables:
 
 Preset Component Variables
 --------------------------
@@ -634,7 +548,7 @@ Common component requirements
 
 To avoid duplication, every component automatically requires some "common" IDF components even if they are not mentioned explicitly. Headers from these components can always be included.
 
-The list of common components is: cxx, newlib, freertos, esp_hw_support, heap, log, lwip, soc, hal, esp_rom, esp_common, esp_system.
+The list of common components is: cxx, newlib, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
 
 Including components in the build
 ----------------------------------
@@ -778,7 +692,7 @@ Browse the :idf_file:`/tools/cmake/project.cmake` file and supporting functions 
 Example Component CMakeLists
 ============================
 
-Because the build environment tries to set reasonable defaults that will work most of the time, component ``CMakeLists.txt`` can be very small or even empty (see `Minimal Component CMakeLists`_). However, overriding `component variables`_ is usually required for some functionality.
+Because the build environment tries to set reasonable defaults that will work most of the time, component ``CMakeLists.txt`` can be very small or even empty (see `Minimal Component CMakeLists`_). However, overriding `preset_component_variables`_ is usually required for some functionality.
 
 Here are some more advanced examples of component CMakeLists files.
 
@@ -1051,40 +965,9 @@ The build directory also contains a generated file ``flasher_args.json`` which c
 Building the Bootloader
 =======================
 
-The bootloader is built by default as part of ``idf.py build``, or can be built standalone via ``idf.py bootloader``.
-
 The bootloader is a special "subproject" inside :idf:`/components/bootloader/subproject`. It has its own project CMakeLists.txt file and builds separate .ELF and .BIN files to the main project. However it shares its configuration and build directory with the main project.
 
 The subproject is inserted as an external project from the top-level project, by the file :idf_file:`/components/bootloader/project_include.cmake`. The main build process runs CMake for the subproject, which includes discovering components (a subset of the main components) and generating a bootloader-specific config (derived from the main ``sdkconfig``).
-
-.. _selecting-idf-target:
-
-Selecting the Target
-====================
-
-ESP-IDF supports multiple targets (chips). A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
-
-To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
-
-    idf.py set-target esp32s2
-
-.. important::
-
-    ``idf.py set-target`` will clear the build directory and re-generate the ``sdkconfig`` file from scratch. The old ``sdkconfig`` file will be saved as ``sdkconfig.old``.
-
-.. note::
-
-    The behavior of ``idf.py set-target`` command is equivalent to:
-
-    1. clearing the build directory (``idf.py fullclean``)
-    2. removing the sdkconfig file (``mv sdkconfig sdkconfig.old``)
-    3. configuring the project with the new target (``idf.py -DIDF_TARGET=esp32 reconfigure``)
-
-It is also possible to pass the desired ``IDF_TARGET`` as an environment variable (e.g. ``export IDF_TARGET=esp32s2``) or as a CMake variable (e.g. ``-DIDF_TARGET=esp32s2`` argument to CMake or idf.py). Setting the environment variable is a convenient method if you mostly work with one type of the chip.
-
-To specify the _default_ value of ``IDF_TARGET`` for a given project, add ``CONFIG_IDF_TARGET`` value to ``sdkconfig.defaults``. For example, ``CONFIG_IDF_TARGET="esp32s2"``. This value will be used if ``IDF_TARGET`` is not specified by other method: using an environment variable, CMake variable, or ``idf.py set-target`` command.
-
-If the target has not been set by any of these methods, the build system will default to ``esp32`` target.
 
 .. _write-pure-component:
 
@@ -1133,7 +1016,7 @@ Importing a library might look like this for a hypothetical library ``foo`` to b
 
 For an actual example, take a look at :example:`build_system/cmake/import_lib`. Take note that what needs to be done in order to import the library may vary. It is recommended to read up on the library's documentation for instructions on how to import it from other projects. Studying the library's CMakeLists.txt and build structure can also be helpful.
 
-It is also possible to wrap a third-party library to be used as a component in this manner. For example, the :component:`mbedtls` component is a wrapper for Espressif's fork of `mbedtls <https://github.com/ARMmbed/mbedtls>`_. See its :component_file:`component CMakeLists.txt <mbedtls/CMakeLists.txt>`.
+It is also possible to wrap a third-party library to be used as a component in this manner. For example, the :component:`mbedtls` component is a wrapper for Espressif's fork of `mbedtls <https://github.com/Mbed-TLS/mbedtls>`_. See its :component_file:`component CMakeLists.txt <mbedtls/CMakeLists.txt>`.
 
 The CMake variable ``ESP_PLATFORM`` is set to 1 whenever the ESP-IDF build system is being used. Tests such as ``if (ESP_PLATFORM)`` can be used in generic CMake code if special IDF-specific logic is required.
 
@@ -1617,4 +1500,3 @@ Flashing from make
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/
-.. _CCache: https://ccache.dev/

@@ -25,7 +25,7 @@ Overview
 
     1. Provide overview where and how this API may be used.
     2. Where applicable include code snippets to illustrate functionality of particular functions.
-    3. To distinguish between sections, use the following `heading levels <http://www.sphinx-doc.org/en/stable/rest.html#sections>`_:
+    3. To distinguish between sections, use the following `heading levels <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#sections>`_:
 
         * ``#`` with overline, for parts
         * ``*`` with overline, for chapters

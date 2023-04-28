@@ -379,7 +379,7 @@ API Reference - Touch Slider
 .. include-build-file:: inc/touch_slider.inc
 
 
-API Reference - Touch Slider
+API Reference - Touch Matrix
 ----------------------------------
 
 .. include-build-file:: inc/touch_matrix.inc

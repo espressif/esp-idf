@@ -94,7 +94,6 @@
 /**
  * TO BE REMOVED
  * Check if adc support digital controller (DMA) mode.
- * @value
  *      - 1 : support;
  *      - 0 : not support;
  */
@@ -106,6 +105,7 @@
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
@@ -117,7 +117,9 @@
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (2000)
 
 /*!< RTC */
-#define SOC_ADC_MAX_BITWIDTH                    (12)
+#define SOC_ADC_RTC_MIN_BITWIDTH                (9)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
+#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
@@ -262,6 +264,11 @@
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192
 
+// Although ESP32 doesn't has memspi, but keep consistent with following chips.(This means SPI0/1)
+#define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
@@ -341,6 +348,7 @@
 /*-------------------------- Power Management CAPS ---------------------------*/
 #define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD        (1)
 
 /* ---------------------------- Compatibility ------------------------------- */
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED

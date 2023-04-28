@@ -8,15 +8,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "portmacro.h"
+#include "esp_private/esp_int_wdt.h"
 #include "esp_system.h"
 #include "esp_heap_caps_init.h"
-#include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_task.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_private/startup_internal.h"    /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
 #include "esp_log.h"
 #include "esp_memory_utils.h"
+#include "esp_freertos_hooks.h"
 #include "soc/dport_access.h"
 #include "sdkconfig.h"
 
@@ -102,27 +103,23 @@ static void main_task(void* args)
     }
 #endif
 
-    //Initialize task wdt if configured to do so
-#ifdef CONFIG_ESP_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
-#elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+    //Initialize TWDT if configured to do so
+#if CONFIG_ESP_TASK_WDT
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000,
+        .idle_core_mask = 0,
+#if CONFIG_ESP_TASK_WDT_PANIC
+        .trigger_panic = true,
 #endif
-
-    //Add IDLE 0 to task wdt
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
-    }
+    };
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    twdt_config.idle_core_mask |= (1 << 0);
 #endif
-    //Add IDLE 1 to task wdt
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
-    }
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    twdt_config.idle_core_mask |= (1 << 1);
 #endif
+    ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
+#endif // CONFIG_ESP_TASK_WDT
 
     app_main();
     vTaskDelete(NULL);
@@ -159,9 +156,24 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-    pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+
+    /* If the stack grows down then allocate the stack then the TCB so the stack
+     * does not grow into the TCB.  Likewise if the stack grows up then allocate
+     * the TCB then the stack. */
+    #if (portSTACK_GROWTH > 0)
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+    }
+    #else /* portSTACK_GROWTH */
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+    }
+    #endif /* portSTACK_GROWTH */
+
     assert(pxTCBBufferTemp != NULL);
     assert(pxStackBufferTemp != NULL);
     //Write back pointers
@@ -184,9 +196,24 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-    pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+
+    /* If the stack grows down then allocate the stack then the TCB so the stack
+     * does not grow into the TCB.  Likewise if the stack grows up then allocate
+     * the TCB then the stack. */
+    #if (portSTACK_GROWTH > 0)
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+    }
+    #else /* portSTACK_GROWTH */
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+    }
+    #endif /* portSTACK_GROWTH */
+
     assert(pxTCBBufferTemp != NULL);
     assert(pxStackBufferTemp != NULL);
     //Write back pointers

@@ -86,6 +86,7 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
         .on_alarm = on_timer_alarm_cb,
     };
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
     TEST_ESP_OK(gptimer_start(gptimer));
     TEST_ESP_OK(gptimer_get_intr_handle(gptimer, &intr_handle));
@@ -130,6 +131,7 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
     }
 
     TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
     vTaskDelete(counter_task);
     vSemaphoreDelete(isr_semaphore);

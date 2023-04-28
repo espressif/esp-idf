@@ -47,7 +47,7 @@ Retail orders
 
 If you order a few samples, each ESP32-S2-Saola-1 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 Wholesale Orders
 ^^^^^^^^^^^^^^^^
@@ -68,7 +68,7 @@ Description of Components
 
     ESP32-S2-Saola-1 - front
 
-The key components of the board are described in a clockwise direction. 
+The key components of the board are described in a clockwise direction.
 
 .. list-table::
    :widths: 30 70
@@ -115,7 +115,7 @@ Software Setup
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an application example into your ESP32-S2-Saola-1.
 
 .. note::
-    
+
     ESP32-S2 series of chips only supports ESP-IDF master or version v4.2 and higher.
 
 Hardware Reference
@@ -153,7 +153,7 @@ The two tables below provide the **Name** and **Function** of the pin headers on
 J2
 ^^^
 ===  ====  ==========  ======================================
-No.  Name  Type [#]_    Function 
+No.  Name  Type [#]_    Function
 ===  ====  ==========  ======================================
 1    3V3    P           3.3 V power supply
 2    IO0    I/O         GPIO0, Boot
@@ -206,7 +206,7 @@ No.  Name  Type   Function
 21   IO18  I/O    GPIO18, ADC2_CH7, DAC_2, RGB LED
 ===  ====  =====  ====================================
 
-.. [#] P: Power supply; I: Input; O: Output; T: High impedance. 
+.. [#] P: Power supply; I: Input; O: Output; T: High impedance.
 
 Pin Layout
 ^^^^^^^^^^^

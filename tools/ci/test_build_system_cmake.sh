@@ -254,7 +254,7 @@ function run_tests()
     # and therefore should rebuild
     assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/newlib_init.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
-    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/FreeRTOS-Kernel/portable/xtensa/xtensa_vectors.S.obj
+    assert_rebuilt esp-idf/esp_system/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp_system.dir/port/arch/xtensa/panic_handler_asm.S.obj
     mv sdkconfig.bak sdkconfig
 
     print_status "Updating project CMakeLists.txt triggers full recompile"
@@ -269,7 +269,7 @@ function run_tests()
     # similar to previous test
     assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/newlib_init.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
-    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/FreeRTOS-Kernel/portable/xtensa/xtensa_vectors.S.obj
+    assert_rebuilt esp-idf/esp_system/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp_system.dir/port/arch/xtensa/panic_handler_asm.S.obj
     mv sdkconfig.bak sdkconfig
 
     print_status "Can build with Ninja (no idf.py)"
@@ -518,7 +518,7 @@ function run_tests()
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -r build sdkconfig
-    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
+    echo "CONFIG_SPIRAM=y" >> sdkconfig.defaults
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
     # note: we do 'reconfigure' here, as we just need to run cmake
     idf.py -C $IDF_PATH/examples/build_system/cmake/import_lib -B `pwd`/build -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults" reconfigure
@@ -529,7 +529,7 @@ function run_tests()
     print_status "Test for external libraries in custom CMake projects with ESP-IDF components linked"
     mkdir build
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
-    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > $IDF_AS_LIB/sdkconfig
+    echo "CONFIG_SPIRAM=y" > $IDF_AS_LIB/sdkconfig
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> $IDF_AS_LIB/sdkconfig
     # note: we just need to run cmake
     (cd build && cmake $IDF_AS_LIB -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)
@@ -540,7 +540,7 @@ function run_tests()
         print_status "Test for external libraries in custom CMake projects with PSRAM strategy $strat"
         rm -r build sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
         stratlc=`echo $strat | tr A-Z a-z`
-        echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > sdkconfig.defaults
+        echo "CONFIG_SPIRAM=y" > sdkconfig.defaults
         echo "CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_$strat=y"  >> sdkconfig.defaults
         echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
         # note: we do 'reconfigure' here, as we just need to run cmake
@@ -814,6 +814,15 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     ( idf.py build 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
     mv sdkconfig.bak sdkconfig
 
+    print_status "Warning is given if smallest partition is nearly full"
+    clean_build_dir
+    cp ${IDF_PATH}/components/partition_table/partitions_singleapp.csv partitions.csv
+    ${SED} -i "s/factory,  app,  factory, ,        1M/factory,  app,  factory, ,        170K/" partitions.csv
+    echo "CONFIG_PARTITION_TABLE_CUSTOM=y" > sdkconfig
+    ( idf.py build 2>&1 | grep "partition is nearly full" ) || failure "No warning for nearly full smallest partition was given when the condition is fulfilled"
+    rm -f partitions.csv sdkconfig
+    ( idf.py build 2>&1 | grep "partition is nearly full" ) && failure "Warning for nearly full smallest partition was given when the condition is not fulfilled"
+
     print_status "Flash size is correctly set in the bootloader image header"
     # Build with the default 2MB setting
     rm sdkconfig
@@ -864,6 +873,13 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     print_status "Loadable ELF build works"
     echo "CONFIG_APP_BUILD_TYPE_ELF_RAM=y" > sdkconfig
+
+    # Set recommend configs to reduce memory footprint
+    echo "CONFIG_VFS_SUPPORT_TERMIOS=n" >> sdkconfig
+    echo "CONFIG_NEWLIB_NANO_FORMAT=y" >> sdkconfig
+    echo "CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y" >> sdkconfig
+    echo "CONFIG_ESP_ERR_TO_NAME_LOOKUP=n" >> sdkconfig
+
     idf.py reconfigure || failure "Couldn't configure for loadable ELF file"
     test -f build/flasher_args.json && failure "flasher_args.json should not be generated in a loadable ELF build"
     idf.py build || failure "Couldn't build a loadable ELF file"
@@ -883,15 +899,15 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     print_status "Getting component overriden dir"
     clean_build_dir
-    mkdir -p components/esp32
-    echo "idf_component_get_property(overriden_dir \${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)" >> components/esp32/CMakeLists.txt
-    echo "message(STATUS overriden_dir:\${overriden_dir})" >> components/esp32/CMakeLists.txt
-    (idf.py reconfigure | grep "overriden_dir:$IDF_PATH/components/esp32") || failure  "Failed to get overriden dir" # no registration, overrides registration as well
+    mkdir -p components/hal
+    echo "idf_component_get_property(overriden_dir \${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)" >> components/hal/CMakeLists.txt
+    echo "message(STATUS overriden_dir:\${overriden_dir})" >> components/hal/CMakeLists.txt
+    (idf.py reconfigure | grep "overriden_dir:$IDF_PATH/components/hal") || failure  "Failed to get overriden dir" # no registration, overrides registration as well
     print_status "Overriding Kconfig"
-    echo "idf_component_register(KCONFIG \${overriden_dir}/Kconfig)" >> components/esp32/CMakeLists.txt
-    echo "idf_component_get_property(kconfig \${COMPONENT_NAME} KCONFIG)" >> components/esp32/CMakeLists.txt
-    echo "message(STATUS kconfig:\${overriden_dir}/Kconfig)" >> components/esp32/CMakeLists.txt
-    (idf.py reconfigure | grep "kconfig:$IDF_PATH/components/esp32/Kconfig") || failure  "Failed to verify original `main` directory"
+    echo "idf_component_register(KCONFIG \${overriden_dir}/Kconfig)" >> components/hal/CMakeLists.txt
+    echo "idf_component_get_property(kconfig \${COMPONENT_NAME} KCONFIG)" >> components/hal/CMakeLists.txt
+    echo "message(STATUS kconfig:\${overriden_dir}/Kconfig)" >> components/hal/CMakeLists.txt
+    (idf.py reconfigure | grep "kconfig:$IDF_PATH/components/hal/Kconfig") || failure  "Failed to verify original `main` directory"
     rm -rf components
 
     print_status "Project components prioritized over EXTRA_COMPONENT_DIRS"

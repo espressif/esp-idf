@@ -66,7 +66,7 @@ static bdstr_t bdstr;
 
 static inline void btc_hh_cb_to_app(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
 {
-    esp_hh_cb_t *btc_hh_cb = (esp_hh_cb_t *)btc_profile_cb_get(BTC_PID_HH);
+    esp_hh_cb_t btc_hh_cb = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
     if (btc_hh_cb) {
         btc_hh_cb(event, param);
     }

@@ -127,7 +127,7 @@ Examples:
 Argument parsing
 ----------------
 
-For argument parsing, ``console`` component includes `argtable3 <http://www.argtable.org/>`_ library. Please see `tutorial <http://www.argtable.org/tutorial/>`_ for an introduction to `argtable3 <http://www.argtable.org/>`_. Github repository also includes `examples <https://github.com/argtable/argtable3/tree/master/examples>`_.
+For argument parsing, ``console`` component includes `argtable3 <https://www.argtable.org/>`_ library. Please see `tutorial <https://www.argtable.org/tutorial/>`_ for an introduction to `argtable3 <https://www.argtable.org/>`_. Github repository also includes `examples <https://github.com/argtable/argtable3/tree/master/examples>`_.
 
 
 Command registration and dispatching

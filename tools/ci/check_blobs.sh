@@ -47,7 +47,8 @@ popd > /dev/null
 pushd ${IDF_PATH}/components/esp_phy/lib > /dev/null
 phy_targets=$(find . -type d -name 'esp*' -exec basename {} \; | sort)
 for target in ${phy_targets}; do
-    for library in ${target}/*.a; do
+    libraries=$(find ${target} -name '*.a')
+    for library in ${libraries}; do
         check_lib_symbols ${library} ${illegal_symbols}
     done
 done

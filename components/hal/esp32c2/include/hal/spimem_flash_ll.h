@@ -30,15 +30,9 @@ extern "C" {
 #define spimem_flash_ll_get_hw(host_id)  (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
 #define spimem_flash_ll_hw_get_id(dev)   ((dev) == (void*)&SPIMEM1? SPI1_HOST: -1)
 
-typedef typeof(SPIMEM1.clock) spimem_flash_ll_clock_reg_t;
+#define SPIMEM_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (60)
 
-//Supported clock register values
-#define SPIMEM_FLASH_LL_CLKREG_VAL_5MHZ   ((spimem_flash_ll_clock_reg_t){.val=0x000F070F})   ///< Clock set to 5 MHz
-#define SPIMEM_FLASH_LL_CLKREG_VAL_10MHZ  ((spimem_flash_ll_clock_reg_t){.val=0x00070307})   ///< Clock set to 10 MHz
-#define SPIMEM_FLASH_LL_CLKREG_VAL_20MHZ  ((spimem_flash_ll_clock_reg_t){.val=0x00030103})   ///< Clock set to 20 MHz
-#define SPIMEM_FLASH_LL_CLKREG_VAL_26MHZ  ((spimem_flash_ll_clock_reg_t){.val=0x00020002})   ///< Clock set to 26 MHz
-#define SPIMEM_FLASH_LL_CLKREG_VAL_40MHZ  ((spimem_flash_ll_clock_reg_t){.val=0x00010001})   ///< Clock set to 40 MHz
-#define SPIMEM_FLASH_LL_CLKREG_VAL_80MHZ  ((spimem_flash_ll_clock_reg_t){.val=0x80000000})   ///< Clock set to 80 MHz
+typedef typeof(SPIMEM1.clock.val) spimem_flash_ll_clock_reg_t;
 
 /*------------------------------------------------------------------------------
  * Control
@@ -412,7 +406,7 @@ static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_i
  */
 static inline void spimem_flash_ll_set_clock(spi_mem_dev_t *dev, spimem_flash_ll_clock_reg_t *clock_val)
 {
-    dev->clock = *clock_val;
+    dev->clock.val = *clock_val;
 }
 
 /**
@@ -545,6 +539,41 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
 {
     dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
     dev->ctrl2.cs_setup_time = cs_setup_time - 1;
+}
+
+/**
+ * Get the spi flash source clock frequency. Used for calculating
+ * the divider parameters.
+ *
+ * @param None
+ *
+ * @return the frequency of spi flash clock source.(MHz)
+ */
+static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
+{
+    // Default is PLL120M, this is hard-coded.
+    // In the future, we can get the CPU clock source by calling interface.
+    // When PLL120M is selected, mspi clock is 60MHz.
+    return SPIMEM_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ;
+}
+
+/**
+ * Calculate spi_flash clock frequency division parameters for register.
+ *
+ * @param clkdiv frequency division factor
+ *
+ * @return Register setting for the given clock division factor.
+ */
+static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
+{
+    uint32_t div_parameter;
+    // See comments of `clock` in `spi_mem_struct.h`
+    if (clkdiv == 1) {
+        div_parameter = (1 << 31);
+    } else {
+        div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8 ) | (((clkdiv - 1) & 0xff) << 16));
+    }
+    return div_parameter;
 }
 
 #ifdef __cplusplus

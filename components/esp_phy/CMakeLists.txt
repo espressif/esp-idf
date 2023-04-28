@@ -36,13 +36,22 @@ endif()
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES nvs_flash driver efuse
+                    PRIV_REQUIRES nvs_flash driver efuse esp_timer
                     LDFRAGMENTS "${ldfragments}"
                     EMBED_FILES  ${embed_files}
                     )
 
 set(target_name "${idf_target}")
-target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+if(IDF_TARGET STREQUAL "esp32h2")
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev2\"")
+    endif()
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev1\"")
+    endif()
+else()
+    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+endif()
 
 # Override functions in PHY lib with the functions in 'phy_override.c'
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u include_esp_phy_override")

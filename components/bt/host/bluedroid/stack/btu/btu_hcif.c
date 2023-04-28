@@ -1598,6 +1598,11 @@ static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len)
     STREAM_TO_UINT16 (max_tx_lat, p);
     STREAM_TO_UINT16 (max_rx_lat, p);
 
+    UNUSED(status);
+    UNUSED(handle);
+    UNUSED(max_tx_lat);
+    UNUSED(max_rx_lat);
+
     HCI_TRACE_WARNING("hcif ssr evt: st 0x%x, hdl 0x%x, tx_lat %d rx_lat %d", status, handle, max_tx_lat, max_rx_lat);
 }
 #endif
@@ -1961,6 +1966,9 @@ static void btu_hcif_link_supv_to_changed_evt (UINT8 *p)
 
     STREAM_TO_UINT16(handle, p);
     STREAM_TO_UINT16(supv_to, p);
+
+    UNUSED(handle);
+    UNUSED(supv_to);
 
     HCI_TRACE_WARNING("hcif link supv_to changed: hdl 0x%x, supv_to %d", handle, supv_to);
 }

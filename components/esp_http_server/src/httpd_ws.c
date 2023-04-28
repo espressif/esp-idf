@@ -482,6 +482,25 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
         /* Now turn the frame to PONG */
         frame.type = HTTPD_WS_TYPE_PONG;
         return httpd_ws_send_frame(req, &frame);
+    } else if (aux->ws_type == HTTPD_WS_TYPE_CLOSE) {
+        ESP_LOGD(TAG, LOG_FMT("Got a WS CLOSE frame, Replying CLOSE..."));
+
+        /* Read the rest of the CLOSE frame and response */
+        /* Please refer to RFC6455 Section 5.5.1 for more details */
+        httpd_ws_frame_t frame;
+        uint8_t frame_buf[128] = { 0 };
+        memset(&frame, 0, sizeof(httpd_ws_frame_t));
+        frame.payload = frame_buf;
+
+        if (httpd_ws_recv_frame(req, &frame, 126) != ESP_OK) {
+            ESP_LOGD(TAG, LOG_FMT("Cannot receive the full CLOSE frame"));
+            return ESP_ERR_INVALID_STATE;
+        }
+
+        frame.len = 0;
+        frame.type = HTTPD_WS_TYPE_CLOSE;
+        frame.payload = NULL;
+        return httpd_ws_send_frame(req, &frame);
     }
 
     return ESP_OK;

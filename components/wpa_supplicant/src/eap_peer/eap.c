@@ -30,7 +30,7 @@
 #include "crypto/sha256.h"
 
 #include "utils/ext_password.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/eap_i.h"
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap.h"
@@ -296,11 +296,9 @@ int eap_peer_register_methods(void)
 		ret = eap_peer_mschapv2_register();
 #endif
 
-#ifndef USE_MBEDTLS_CRYPTO
 #ifdef EAP_FAST
 	if (ret == 0)
 		ret = eap_peer_fast_register();
-#endif
 #endif
 
 #ifdef EAP_PEAP
@@ -620,7 +618,7 @@ int eap_peer_config_init(
 			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
 			config_methods[allowed_method_count++].method = EAP_TYPE_TLS;
 		}
-#ifndef USE_MBEDTLS_CRYPTO
+#ifdef EAP_FAST
 		if (g_wpa_pac_file) {
 			//set EAP-FAST
 			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;

@@ -9,5 +9,5 @@ if(NOT BOOTLOADER_BUILD)
     set(legacy_reqs soc)
 endif()
 
-idf_component_register(REQUIRES xtensa "${legacy_reqs}"
+idf_component_register(REQUIRES "${legacy_reqs}"
                        REQUIRED_IDF_TARGETS esp32s3)

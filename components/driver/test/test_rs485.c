@@ -164,7 +164,7 @@ static void rs485_init(void)
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 120,
-        .source_clk = UART_SCLK_APB,
+        .source_clk = UART_SCLK_DEFAULT,
     };
     printf("RS485 port initialization...\r\n");
     TEST_ESP_OK(uart_wait_tx_idle_polling(UART_NUM1));

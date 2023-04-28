@@ -49,6 +49,10 @@ void heap_caps_enable_nonos_stack_heaps(void)
  */
 void heap_caps_init(void)
 {
+#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
+    extern void multi_heap_in_rom_init(void);
+    multi_heap_in_rom_init();
+#endif
     /* Get the array of regions that we can use for heaps
        (with reserved memory removed already.)
      */

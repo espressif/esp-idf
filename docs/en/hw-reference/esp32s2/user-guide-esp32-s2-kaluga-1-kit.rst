@@ -257,7 +257,7 @@ The contents are as follows:
     - Screws (x4)
     - Nuts (x4)
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 
 Wholesale Orders
@@ -393,4 +393,3 @@ Related Documents
 For other design documentation for the board, please contact us at sales@espressif.com.
 
 
-    

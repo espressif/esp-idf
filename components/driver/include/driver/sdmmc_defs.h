@@ -103,6 +103,9 @@
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
 #define MMC_R1_APP_CMD                  (1<<5)  /* app. commands supported */
 #define MMC_R1_SWITCH_ERROR             (1<<7)  /* switch command did not succeed */
+#define MMC_R1_CURRENT_STATE_POS        (9)
+#define MMC_R1_CURRENT_STATE_MASK       (0x1E00)/* card current state */
+#define MMC_R1_CURRENT_STATE_TRAN       (4)
 
 /* SPI mode R1 response type bits */
 #define SD_SPI_R1_IDLE_STATE            (1<<0)

@@ -12,7 +12,7 @@ from .fatfs_state import FATFSState
 from .long_filename_utils import (build_lfn_full_name, build_lfn_unique_entry_name_order,
                                   get_required_lfn_entries_count, split_name_to_lfn_entries,
                                   split_name_to_lfn_entry_blocks)
-from .utils import (DATETIME, MAX_EXT_SIZE, MAX_NAME_SIZE, build_lfn_short_entry_name, lfn_checksum,
+from .utils import (DATETIME, MAX_EXT_SIZE, MAX_NAME_SIZE, FATDefaults, build_lfn_short_entry_name, lfn_checksum,
                     required_clusters_count, split_content_into_sectors, split_to_name_and_extension)
 
 
@@ -51,7 +51,7 @@ class File:
         self.entry.update_content_size(len(content))
         # we assume that the correct amount of clusters is allocated
         current_cluster = self._first_cluster
-        for content_part in split_content_into_sectors(content, self.fatfs_state.sector_size):
+        for content_part in split_content_into_sectors(content, self.fatfs_state.boot_sector_state.sector_size):
             content_as_list = content_part
             if current_cluster is None:
                 raise FatalError('No free space left!')
@@ -88,7 +88,7 @@ class Directory:
         self.extension: str = extension
 
         self.fat: FAT = fat
-        self.size: int = size or self.fatfs_state.sector_size
+        self.size: int = size or self.fatfs_state.boot_sector_state.sector_size
 
         # if directory is root its parent is itself
         self.parent: Directory = parent or self
@@ -114,29 +114,30 @@ class Directory:
     def name_equals(self, name: str, extension: str) -> bool:
         return self.name == name and self.extension == extension
 
+    @property
+    def entries_count(self) -> int:
+        entries_count_: int = self.size // FATDefaults.ENTRY_SIZE
+        return entries_count_
+
     def create_entries(self, cluster: Cluster) -> List[Entry]:
         return [Entry(entry_id=i,
                       parent_dir_entries_address=cluster.cluster_data_address,
                       fatfs_state=self.fatfs_state)
-                for i in range(self.size // self.fatfs_state.entry_size)]
+                for i in range(self.entries_count)]
 
     def init_directory(self) -> None:
         self.entries = self.create_entries(self._first_cluster)
 
         # the root directory doesn't contain link to itself nor the parent
-        if not self.is_root:
-            self_dir_reference: Entry = self.find_free_entry() or self.chain_directory()
-            self_dir_reference.allocate_entry(first_cluster_id=self.first_cluster.id,
-                                              entity_name=self.CURRENT_DIRECTORY,
-                                              entity_extension='',
-                                              entity_type=self.ENTITY_TYPE)
-            self.first_cluster = self._first_cluster
-            parent_dir_reference: Entry = self.find_free_entry() or self.chain_directory()
-            parent_dir_reference.allocate_entry(first_cluster_id=self.parent.first_cluster.id,
-                                                entity_name=self.PARENT_DIRECTORY,
-                                                entity_extension='',
-                                                entity_type=self.parent.ENTITY_TYPE)
-            self.parent.first_cluster = self.parent.first_cluster
+        if self.is_root:
+            return
+        # if the directory is not root we initialize the reference to itself and to the parent directory
+        for dir_id, name_ in ((self, self.CURRENT_DIRECTORY), (self.parent, self.PARENT_DIRECTORY)):
+            new_dir_: Entry = self.find_free_entry() or self.chain_directory()
+            new_dir_.allocate_entry(first_cluster_id=dir_id.first_cluster.id,
+                                    entity_name=name_,
+                                    entity_extension='',
+                                    entity_type=dir_id.ENTITY_TYPE)
 
     def lookup_entity(self, object_name: str, extension: str):  # type: ignore
         for entity in self.entities:
@@ -144,12 +145,23 @@ class Directory:
                 return entity
         return None
 
+    @staticmethod
+    def _if_end_of_path(path_as_list: List[str]) -> bool:
+        """
+        :param path_as_list: path split into the list
+
+        :returns: True if the file is the leaf of the directory tree, False otherwise
+        The method is part of the base of recursion,
+        determines if the path is target file or directory in the tree folder structure.
+        """
+        return len(path_as_list) == 1
+
     def recursive_search(self, path_as_list, current_dir):  # type: ignore
         name, extension = split_to_name_and_extension(path_as_list[0])
         next_obj = current_dir.lookup_entity(name, extension)
         if next_obj is None:
             raise FileNotFoundError('No such file or directory!')
-        if len(path_as_list) == 1 and next_obj.name_equals(name, extension):
+        if self._if_end_of_path(path_as_list) and next_obj.name_equals(name, extension):
             return next_obj
         return self.recursive_search(path_as_list[1:], next_obj)
 
@@ -165,10 +177,16 @@ class Directory:
             current = current.next_cluster
         new_cluster: Cluster = self.fat.find_free_cluster()
         current.set_in_fat(new_cluster.id)
+        assert current is not new_cluster
         current.next_cluster = new_cluster
         self.entries += self.create_entries(new_cluster)
 
     def chain_directory(self) -> Entry:
+        """
+        :returns: First free entry
+
+        The method adds new Cluster to the Directory and returns first free entry.
+        """
         self._extend_directory()
         free_entry: Entry = self.find_free_entry()
         if free_entry is None:
@@ -299,7 +317,8 @@ class Directory:
         """
         entity_to_write: Entry = self.recursive_search(path, self)
         if isinstance(entity_to_write, File):
-            clusters_cnt: int = required_clusters_count(cluster_size=self.fatfs_state.sector_size, content=content)
+            clusters_cnt: int = required_clusters_count(cluster_size=self.fatfs_state.boot_sector_state.sector_size,
+                                                        content=content)
             self.fat.allocate_chain(entity_to_write.first_cluster, clusters_cnt)
             entity_to_write.write(content)
         else:

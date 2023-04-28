@@ -22,7 +22,7 @@ ESP-IDF 目前支持两个主机堆栈。基于 Bluedroid 的堆栈（默认）�
 
     请点击下方链接，查看 ESP32 蓝牙架构：
 
-      * `ESP32 蓝牙架构 (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
+      * `ESP32 蓝牙架构 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
 
 蓝牙 API 的示例代码存放于 ESP-IDF 示例项目的 :example:`bluetooth/bluedroid` 目录下。
 
@@ -34,4 +34,3 @@ ESP-IDF 目前支持两个主机堆栈。基于 Bluedroid 的堆栈（默认）�
 * :example_file:`GATT 客户端安全性示例 <bluetooth/bluedroid/ble/gatt_security_client/tutorial/Gatt_Security_Client_Example_Walkthrough.md>`
 * :example_file:`GATT 服务端安全性示例 <bluetooth/bluedroid/ble/gatt_security_server/tutorial/Gatt_Security_Server_Example_Walkthrough.md>`
 * :example_file:`GATT 客户端多连接示例 <bluetooth/bluedroid/ble/gattc_multi_connect/tutorial/Gatt_Client_Multi_Connection_Example_Walkthrough.md>`
-

@@ -50,7 +50,7 @@ typedef struct {
     int64_t ccomp;
 } ccomp_test_time_t;
 
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
 static uint8_t *flash_mem;
 #else
 static const uint8_t flash_mem[2 * CACHE_SIZE] = {0};
@@ -133,7 +133,7 @@ static ccomp_test_time_t perform_test_at_hit_rate(int hit_rate, const uint8_t *m
 
 static ccomp_test_time_t ccomp_test_ref_time(void)
 {
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
     uint8_t *mem = heap_caps_malloc(2 * CACHE_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT);
 #else
     uint8_t *mem = heap_caps_malloc(sizeof(flash_mem), MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT);
@@ -148,7 +148,7 @@ TEST_CASE("data cache hit rate sweep", "[test_utils][ccomp_timer]")
     ccomp_test_time_t t_ref;
     ccomp_test_time_t t_hr;
 
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
     flash_mem = heap_caps_malloc(2 * CACHE_SIZE, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
 #endif
 
@@ -171,7 +171,7 @@ TEST_CASE("data cache hit rate sweep", "[test_utils][ccomp_timer]")
         TEST_ASSERT(error <= 5.0f);
     }
 
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
     free(flash_mem);
 #endif
 }

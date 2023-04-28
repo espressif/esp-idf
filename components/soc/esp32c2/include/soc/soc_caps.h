@@ -35,8 +35,6 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
-#define SOC_RTC_FAST_MEM_SUPPORTED      0
-#define SOC_RTC_SLOW_MEM_SUPPORTED      0
 
 #define SOC_SHA_SUPPORTED               0 // This will be enabled with IDF-3830
 #define SOC_ECC_SUPPORTED               1
@@ -49,9 +47,10 @@
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
-#define SOC_ADC_PERIPH_NUM                      (2)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
+#define SOC_ADC_PERIPH_NUM                      (1U)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 0)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
+#define SOC_ADC_ATTEN_NUM                       (2)
 
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
@@ -64,10 +63,9 @@
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
 /*!< RTC */
-#define SOC_ADC_MAX_BITWIDTH                    (12)
-
-/*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
-#define SOC_APB_BACKUP_DMA              (1)
+#define SOC_ADC_RTC_MIN_BITWIDTH                (12)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
+#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
@@ -81,6 +79,8 @@
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
+
+#define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
@@ -118,7 +118,7 @@
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
 
-#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
+// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
 #define SOC_I2C_SUPPORT_XTAL        (1)
@@ -204,8 +204,13 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 
+#define SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
+#define SOC_SYSTIMER_SUPPORTED             1
 #define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
@@ -227,7 +232,7 @@
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   (1U)
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
@@ -263,9 +268,3 @@
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
-#define SOC_PM_SUPPORT_CPU_PD           (1)
-
-#define SOC_PM_SUPPORT_WIFI_PD          (1)
-
-#define SOC_PM_SUPPORT_BT_PD            (1)

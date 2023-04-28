@@ -1,26 +1,25 @@
 /*
  * TLSv1 client - write handshake message
- * Copyright (c) 2006-2011, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2006-2015, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
+#include "common.h"
 #include "crypto/md5.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"
+#include "crypto/tls.h"
 #include "crypto/random.h"
-#include "tls/tls.h"
-#include "tls/x509v3.h"
-#include "tls/tlsv1_common.h"
-#include "tls/tlsv1_record.h"
-#include "tls/tlsv1_client.h"
-#include "tls/tlsv1_client_i.h"
+#include "x509v3.h"
+#include "tlsv1_common.h"
+#include "tlsv1_record.h"
+#include "tlsv1_client.h"
+#include "tlsv1_client_i.h"
 
-#include "eap_peer/eap_i.h"
 
 static size_t tls_client_cert_chain_der_len(struct tlsv1_client *conn)
 {
@@ -49,11 +48,21 @@ u8 * tls_send_client_hello(struct tlsv1_client *conn, size_t *out_len)
 	struct os_time now;
 	size_t len, i;
 	u8 *ext_start;
+	u16 tls_version = tls_client_highest_ver(conn);
 
-	wpa_printf(MSG_DEBUG, "TLSv1: Send ClientHello");
+	if (!tls_version) {
+		wpa_printf(MSG_INFO, "TLSv1: No TLS version allowed");
+		return NULL;
+	}
+
+	wpa_printf(MSG_DEBUG, "TLSv1: Send ClientHello (ver %s)",
+		   tls_version_str(tls_version));
 	*out_len = 0;
 
 	os_get_time(&now);
+#ifdef TEST_FUZZ
+	now.sec = 0xfffefdfc;
+#endif /* TEST_FUZZ */
 	WPA_PUT_BE32(conn->client_random, now.sec);
 	if (random_get_bytes(conn->client_random + 4, TLS_RANDOM_LEN - 4)) {
 		wpa_printf(MSG_ERROR, "TLSv1: Could not generate "
@@ -83,7 +92,7 @@ u8 * tls_send_client_hello(struct tlsv1_client *conn, size_t *out_len)
 	pos += 3;
 	/* body - ClientHello */
 	/* ProtocolVersion client_version */
-	WPA_PUT_BE16(pos, TLS_VERSION);
+	WPA_PUT_BE16(pos, tls_version);
 	pos += 2;
 	/* Random random: uint32 gmt_unix_time, opaque random_bytes */
 	os_memcpy(pos, conn->client_random, TLS_RANDOM_LEN);
@@ -117,12 +126,16 @@ u8 * tls_send_client_hello(struct tlsv1_client *conn, size_t *out_len)
 		WPA_PUT_BE16(pos, TLS_EXT_SIGNATURE_ALGORITHMS);
 		pos += 2;
 		/* opaque extension_data<0..2^16-1> length */
-		WPA_PUT_BE16(pos, 4);
+		WPA_PUT_BE16(pos, 8);
 		pos += 2;
 		/* supported_signature_algorithms<2..2^16-2> length */
-		WPA_PUT_BE16(pos, 2);
+		WPA_PUT_BE16(pos, 6);
 		pos += 2;
 		/* supported_signature_algorithms */
+		*pos++ = TLS_HASH_ALG_SHA512;
+		*pos++ = TLS_SIGN_ALG_RSA;
+		*pos++ = TLS_HASH_ALG_SHA384;
+		*pos++ = TLS_SIGN_ALG_RSA;
 		*pos++ = TLS_HASH_ALG_SHA256;
 		*pos++ = TLS_SIGN_ALG_RSA;
 	}
@@ -132,6 +145,84 @@ u8 * tls_send_client_hello(struct tlsv1_client *conn, size_t *out_len)
 		os_memcpy(pos, conn->client_hello_ext,
 			  conn->client_hello_ext_len);
 		pos += conn->client_hello_ext_len;
+	}
+
+	if (conn->flags & TLS_CONN_REQUEST_OCSP) {
+		wpa_printf(MSG_DEBUG,
+			   "TLSv1: Add status_request extension for OCSP stapling");
+		/* ExtensionsType extension_type = status_request(5) */
+		WPA_PUT_BE16(pos, TLS_EXT_STATUS_REQUEST);
+		pos += 2;
+		/* opaque extension_data<0..2^16-1> length */
+		WPA_PUT_BE16(pos, 5);
+		pos += 2;
+
+		/*
+		 * RFC 6066, 8:
+		 * struct {
+		 *     CertificateStatusType status_type;
+		 *     select (status_type) {
+		 *         case ocsp: OCSPStatusRequest;
+		 *     } request;
+		 * } CertificateStatusRequest;
+		 *
+		 * enum { ocsp(1), (255) } CertificateStatusType;
+		 */
+		*pos++ = 1; /* status_type = ocsp(1) */
+
+		/*
+		 * struct {
+		 *     ResponderID responder_id_list<0..2^16-1>;
+		 *     Extensions  request_extensions;
+		 * } OCSPStatusRequest;
+		 *
+		 * opaque ResponderID<1..2^16-1>;
+		 * opaque Extensions<0..2^16-1>;
+		 */
+		WPA_PUT_BE16(pos, 0); /* responder_id_list(empty) */
+		pos += 2;
+		WPA_PUT_BE16(pos, 0); /* request_extensions(empty) */
+		pos += 2;
+
+		wpa_printf(MSG_DEBUG,
+			   "TLSv1: Add status_request_v2 extension for OCSP stapling");
+		/* ExtensionsType extension_type = status_request_v2(17) */
+		WPA_PUT_BE16(pos, TLS_EXT_STATUS_REQUEST_V2);
+		pos += 2;
+		/* opaque extension_data<0..2^16-1> length */
+		WPA_PUT_BE16(pos, 7);
+		pos += 2;
+
+		/*
+		 * RFC 6961, 2.2:
+		 * struct {
+		 *     CertificateStatusType status_type;
+		 *     uint16 request_length;
+		 *     select (status_type) {
+		 *         case ocsp: OCSPStatusRequest;
+		 *         case ocsp_multi: OCSPStatusRequest;
+		 *     } request;
+		 * } CertificateStatusRequestItemV2;
+		 *
+		 * enum { ocsp(1), ocsp_multi(2), (255) } CertificateStatusType;
+		 *
+		 * struct {
+		 * CertificateStatusRequestItemV2
+		 *     certificate_status_req_list<1..2^16-1>;
+		 * } CertificateStatusRequestListV2;
+		 */
+
+		/* certificate_status_req_list<1..2^16-1> */
+		WPA_PUT_BE16(pos, 5);
+		pos += 2;
+
+		/* CertificateStatusRequestItemV2 */
+		*pos++ = 2; /* status_type = ocsp_multi(2) */
+		/* OCSPStatusRequest as shown above for v1 */
+		WPA_PUT_BE16(pos, 0); /* responder_id_list(empty) */
+		pos += 2;
+		WPA_PUT_BE16(pos, 0); /* request_extensions(empty) */
+		pos += 2;
 	}
 
 	if (pos == ext_start + 2)
@@ -166,6 +257,11 @@ static int tls_write_client_certificate(struct tlsv1_client *conn,
 	struct x509_certificate *cert;
 
 	pos = *msgpos;
+	if (TLS_RECORD_HEADER_LEN + 1 + 3 + 3 > end - pos) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
+		return -1;
+	}
 
 	wpa_printf(MSG_DEBUG, "TLSv1: Send Certificate");
 	rhdr = pos;
@@ -186,7 +282,7 @@ static int tls_write_client_certificate(struct tlsv1_client *conn,
 	pos += 3;
 	cert = conn->cred ? conn->cred->cert : NULL;
 	while (cert) {
-		if (pos + 3 + cert->cert_len > end) {
+		if (3 + cert->cert_len > (size_t) (end - pos)) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Not enough buffer space "
 				   "for Certificate (cert_len=%lu left=%lu)",
 				   (unsigned long) cert->cert_len,
@@ -237,7 +333,7 @@ static int tls_write_client_certificate(struct tlsv1_client *conn,
 }
 
 
-static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
+static int tlsv1_key_x_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 {
 	/* ClientDiffieHellmanPublic */
 	u8 *csecret, *csecret_start, *dh_yc, *shared;
@@ -283,12 +379,12 @@ static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 		os_free(csecret);
 		return -1;
 	}
-	if(crypto_mod_exp(conn->dh_g, conn->dh_g_len,
-				                    csecret_start, csecret_len,
-				                    conn->dh_p, conn->dh_p_len,
-				                    dh_yc, &dh_yc_len)) {
-        tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
-			TLS_ALERT_INTERNAL_ERROR);
+	if (crypto_mod_exp(conn->dh_g, conn->dh_g_len,
+			   csecret_start, csecret_len,
+			   conn->dh_p, conn->dh_p_len,
+			   dh_yc, &dh_yc_len)) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
 		os_free(csecret);
 		os_free(dh_yc);
 		return -1;
@@ -297,9 +393,16 @@ static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Yc (client's public value)",
 		    dh_yc, dh_yc_len);
 
+	if (end - *pos < 2) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
+		os_free(csecret);
+		os_free(dh_yc);
+		return -1;
+	}
 	WPA_PUT_BE16(*pos, dh_yc_len);
 	*pos += 2;
-	if (*pos + dh_yc_len > end) {
+	if (dh_yc_len > (size_t) (end - *pos)) {
 		wpa_printf(MSG_DEBUG, "TLSv1: Not enough room in the "
 			   "message buffer for Yc");
 		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
@@ -324,12 +427,12 @@ static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 	}
 
 	/* shared = Ys^csecret mod p */
-	if(crypto_mod_exp(conn->dh_ys, conn->dh_ys_len,
-				                    csecret_start, csecret_len,
-				                    conn->dh_p, conn->dh_p_len,
-				                    shared, &shared_len)) {
-	    tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
-			  	  TLS_ALERT_INTERNAL_ERROR);
+	if (crypto_mod_exp(conn->dh_ys, conn->dh_ys_len,
+			   csecret_start, csecret_len,
+			   conn->dh_p, conn->dh_p_len,
+			   shared, &shared_len)) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
 		os_free(csecret);
 		os_free(shared);
 		return -1;
@@ -359,7 +462,7 @@ static int tlsv1_key_x_rsa(struct tlsv1_client *conn, u8 **pos, u8 *end)
 	size_t clen;
 	int res;
 
-	if (tls_derive_pre_master_secret(pre_master_secret) < 0 ||
+	if (tls_derive_pre_master_secret(conn, pre_master_secret) < 0 ||
 	    tls_derive_keys(conn, pre_master_secret,
 			    TLS_PRE_MASTER_SECRET_LEN)) {
 		wpa_printf(MSG_DEBUG, "TLSv1: Failed to derive keys");
@@ -431,8 +534,8 @@ static int tls_write_client_key_exchange(struct tlsv1_client *conn,
 	hs_length = pos;
 	pos += 3;
 	/* body - ClientKeyExchange */
-	if (keyx == TLS_KEY_X_DH_anon) {
-		if (tlsv1_key_x_anon_dh(conn, &pos, end) < 0)
+	if (keyx == TLS_KEY_X_DH_anon || keyx == TLS_KEY_X_DHE_RSA) {
+		if (tlsv1_key_x_dh(conn, &pos, end) < 0)
 			return -1;
 	} else {
 		if (tlsv1_key_x_rsa(conn, &pos, end) < 0)
@@ -464,7 +567,6 @@ static int tls_write_client_certificate_verify(struct tlsv1_client *conn,
 	u8 *pos, *rhdr, *hs_start, *hs_length, *signed_start;
 	size_t rlen, hlen, clen;
 	u8 hash[100], *hpos;
-	enum { SIGN_ALG_RSA, SIGN_ALG_DSA } alg = SIGN_ALG_RSA;
 
 	pos = *msgpos;
 
@@ -511,7 +613,7 @@ static int tls_write_client_certificate_verify(struct tlsv1_client *conn,
 		    0) {
 			conn->verify.sha256_cert = NULL;
 			tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
-				    TLS_ALERT_INTERNAL_ERROR);
+				  TLS_ALERT_INTERNAL_ERROR);
 			return -1;
 		}
 		conn->verify.sha256_cert = NULL;
@@ -537,21 +639,17 @@ static int tls_write_client_certificate_verify(struct tlsv1_client *conn,
 	} else {
 #endif /* CONFIG_TLSV12 */
 
-	if (alg == SIGN_ALG_RSA) {
-		hlen = MD5_MAC_LEN;
-		if (conn->verify.md5_cert == NULL ||
-		    crypto_hash_finish(conn->verify.md5_cert, hpos, &hlen) < 0)
-		{
-			tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
-				  TLS_ALERT_INTERNAL_ERROR);
-			conn->verify.md5_cert = NULL;
-			crypto_hash_finish(conn->verify.sha1_cert, NULL, NULL);
-			conn->verify.sha1_cert = NULL;
-			return -1;
-		}
-		hpos += MD5_MAC_LEN;
-	} else
-		crypto_hash_finish(conn->verify.md5_cert, NULL, NULL);
+	hlen = MD5_MAC_LEN;
+	if (conn->verify.md5_cert == NULL ||
+	    crypto_hash_finish(conn->verify.md5_cert, hpos, &hlen) < 0) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
+		conn->verify.md5_cert = NULL;
+		crypto_hash_finish(conn->verify.sha1_cert, NULL, NULL);
+		conn->verify.sha1_cert = NULL;
+		return -1;
+	}
+	hpos += MD5_MAC_LEN;
 
 	conn->verify.md5_cert = NULL;
 	hlen = SHA1_MAC_LEN;
@@ -564,8 +662,7 @@ static int tls_write_client_certificate_verify(struct tlsv1_client *conn,
 	}
 	conn->verify.sha1_cert = NULL;
 
-	if (alg == SIGN_ALG_RSA)
-		hlen += MD5_MAC_LEN;
+	hlen += MD5_MAC_LEN;
 
 #ifdef CONFIG_TLSV12
 	}
@@ -688,7 +785,7 @@ static int tls_write_client_finished(struct tlsv1_client *conn,
 		    crypto_hash_finish(conn->verify.sha256_client, hash, &hlen)
 		    < 0) {
 			tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
-				    TLS_ALERT_INTERNAL_ERROR);
+				  TLS_ALERT_INTERNAL_ERROR);
 			conn->verify.sha256_client = NULL;
 			return -1;
 		}
@@ -796,6 +893,7 @@ static u8 * tls_send_client_key_exchange(struct tlsv1_client *conn,
 	}
 
 	*out_len = pos - msg;
+
 	conn->state = SERVER_CHANGE_CIPHER_SPEC;
 
 	return msg;
@@ -826,7 +924,8 @@ static u8 * tls_send_change_cipher_spec(struct tlsv1_client *conn,
 
 	wpa_printf(MSG_DEBUG, "TLSv1: Session resumption completed "
 		   "successfully");
-
+	if (!conn->session_resumed && conn->use_session_ticket)
+		conn->session_resumed = 1;
 	conn->state = ESTABLISHED;
 
 	return msg;

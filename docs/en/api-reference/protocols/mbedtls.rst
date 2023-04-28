@@ -1,7 +1,7 @@
 Mbed TLS
 ========
 
-`Mbed TLS <https://github.com/ARMmbed/mbedtls>`_ is a C library that implements cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols. Its small code footprint makes it suitable for embedded systems.
+`Mbed TLS <https://github.com/Mbed-TLS/mbedtls>`_ is a C library that implements cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols. Its small code footprint makes it suitable for embedded systems.
 
 .. note:: ESP-IDF uses a `fork <https://github.com/espressif/mbedtls>`_ of Mbed TLS which includes a few patches (related to hardware routines of certain modules like ``bignum (MPI)`` and ``ECC``) over vanilla Mbed TLS.
 

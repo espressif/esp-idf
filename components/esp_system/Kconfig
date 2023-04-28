@@ -3,6 +3,12 @@ menu "ESP System Settings"
     # Insert chip-specific cpu config
     rsource "./port/soc/$IDF_TARGET/Kconfig.cpu"
 
+    orsource "./port/soc/$IDF_TARGET/Kconfig.cache"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.memory"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.tracemem"
+
     choice ESP_SYSTEM_PANIC
         prompt "Panic handler behaviour"
         default ESP_SYSTEM_PANIC_PRINT_REBOOT
@@ -110,6 +116,18 @@ menu "ESP System Settings"
             This option shall NOT be used for production.
 
     menu "Memory protection"
+
+        config ESP_SYSTEM_PMP_IDRAM_SPLIT
+            bool "Enable IRAM/DRAM split protection"
+            depends on SOC_CPU_IDRAM_SPLIT_USING_PMP
+            default "y"
+            help
+                If enabled, the CPU watches all the memory access and raises an exception in case
+                of any memory violation. This feature automatically splits
+                the SRAM memory, using PMP, into data and instruction segments and sets Read/Execute permissions
+                for the instruction part (below given splitting address) and Read/Write permissions
+                for the data part (above the splitting address). The memory protection is effective
+                on all access through the IRAM0 and DRAM0 buses.
 
         config ESP_SYSTEM_MEMPROT_DEPCHECK
             bool
@@ -366,6 +384,7 @@ menu "ESP System Settings"
 
     config ESP_INT_WDT
         bool "Interrupt watchdog"
+        default n if IDF_TARGET_ESP32C2 # add support in IDF-4114
         default y
         help
             This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
@@ -376,8 +395,8 @@ menu "ESP System Settings"
     config ESP_INT_WDT_TIMEOUT_MS
         int "Interrupt watchdog timeout (ms)"
         depends on ESP_INT_WDT
-        default 300 if !ESP32_SPIRAM_SUPPORT
-        default 800 if ESP32_SPIRAM_SUPPORT
+        default 300 if !(SPIRAM && IDF_TARGET_ESP32)
+        default 800 if (SPIRAM && IDF_TARGET_ESP32)
         range 10 10000
         help
             The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.

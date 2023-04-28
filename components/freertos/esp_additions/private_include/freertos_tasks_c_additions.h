@@ -162,14 +162,17 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask )
     return pxNextTCB;
 }
 
-void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
+BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
 {
-    configASSERT( portVALID_TCB_MEM(pxTask) );
-    configASSERT( pxTaskSnapshot != NULL );
+    if (portVALID_TCB_MEM(pxTask) == false || pxTaskSnapshot == NULL) {
+        return pdFALSE;
+    }
+
     TCB_t *pxTCB = (TCB_t *)pxTask;
     pxTaskSnapshot->pxTCB = pxTCB;
     pxTaskSnapshot->pxTopOfStack = (StackType_t *)pxTCB->pxTopOfStack;
     pxTaskSnapshot->pxEndOfStack = (StackType_t *)pxTCB->pxEndOfStack;
+    return pdTRUE;
 }
 
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArrayLength, UBaseType_t * const pxTCBSize )
@@ -237,3 +240,126 @@ const DRAM_ATTR uint8_t FreeRTOS_openocd_params[ESP_FREERTOS_DEBUG_TABLE_END]  =
 };
 
 #endif // configENABLE_FREERTOS_DEBUG_OCDAWARE == 1
+
+/* -------------------------------------------- FreeRTOS IDF API Additions ---------------------------------------------
+ * FreeRTOS related API that were added by IDF
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if CONFIG_FREERTOS_SMP
+_Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY");
+
+BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
+                                    const char * const pcName,
+                                    const uint32_t usStackDepth,
+                                    void * const pvParameters,
+                                    UBaseType_t uxPriority,
+                                    TaskHandle_t * const pxCreatedTask,
+                                    const BaseType_t xCoreID)
+{
+    BaseType_t ret;
+    #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
+        {
+            // Convert xCoreID into an affinity mask
+            UBaseType_t uxCoreAffinityMask;
+            if (xCoreID == tskNO_AFFINITY) {
+                uxCoreAffinityMask = tskNO_AFFINITY;
+            } else {
+                uxCoreAffinityMask = (1 << xCoreID);
+            }
+            ret = xTaskCreateAffinitySet(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, uxCoreAffinityMask, pxCreatedTask);
+        }
+    #else /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+        {
+            ret = xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask);
+        }
+    #endif /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+    return ret;
+}
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
+                                            const char * const pcName,
+                                            const uint32_t ulStackDepth,
+                                            void * const pvParameters,
+                                            UBaseType_t uxPriority,
+                                            StackType_t * const puxStackBuffer,
+                                            StaticTask_t * const pxTaskBuffer,
+                                            const BaseType_t xCoreID)
+{
+    TaskHandle_t ret;
+    #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
+        {
+            // Convert xCoreID into an affinity mask
+            UBaseType_t uxCoreAffinityMask;
+            if (xCoreID == tskNO_AFFINITY) {
+                uxCoreAffinityMask = tskNO_AFFINITY;
+            } else {
+                uxCoreAffinityMask = (1 << xCoreID);
+            }
+            ret = xTaskCreateStaticAffinitySet(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, uxCoreAffinityMask);
+        }
+    #else /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+        {
+            ret = xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer);
+        }
+    #endif /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+    return ret;
+}
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
+{
+    TaskHandle_t xTaskHandleTemp;
+    assert(xCoreID >= 0 && xCoreID < configNUM_CORES);
+    taskENTER_CRITICAL();
+    xTaskHandleTemp = (TaskHandle_t) pxCurrentTCBs[xCoreID];
+    taskEXIT_CRITICAL();
+    return xTaskHandleTemp;
+}
+
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
+{
+    assert(xCoreID >= 0 && xCoreID < configNUM_CORES);
+    return (TaskHandle_t) xIdleTaskHandle[xCoreID];
+}
+
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+    taskENTER_CRITICAL();
+    UBaseType_t uxCoreAffinityMask;
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+    TCB_t *pxTCB = prvGetTCBFromHandle( xTask );
+    uxCoreAffinityMask = pxTCB->uxCoreAffinityMask;
+#else
+    uxCoreAffinityMask = tskNO_AFFINITY;
+#endif
+    taskEXIT_CRITICAL();
+    BaseType_t ret;
+    // If the task is not pinned to a particular core, treat it as tskNO_AFFINITY
+    if (uxCoreAffinityMask & (uxCoreAffinityMask - 1)) {    // If more than one bit set
+        ret = tskNO_AFFINITY;
+    } else {
+        int index_plus_one = __builtin_ffs(uxCoreAffinityMask);
+        assert(index_plus_one >= 1);
+        ret = index_plus_one - 1;
+    }
+    return ret;
+}
+
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue, TlsDeleteCallbackFunction_t pvDelCallback)
+    {
+        // Verify that the offsets of pvThreadLocalStoragePointers and pvDummy15 match.
+        // pvDummy15 is part of the StaticTask_t struct and is used to access the TLSPs
+        // while deletion.
+        _Static_assert(offsetof( StaticTask_t, pvDummy15 ) == offsetof( TCB_t, pvThreadLocalStoragePointers ), "Offset of pvDummy15 must match the offset of pvThreadLocalStoragePointers");
+
+        //Set the local storage pointer first
+        vTaskSetThreadLocalStoragePointer( xTaskToSet, xIndex, pvValue );
+
+        //Set the deletion callback at an offset of configNUM_THREAD_LOCAL_STORAGE_POINTERS/2
+        vTaskSetThreadLocalStoragePointer( xTaskToSet, ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ), pvDelCallback );
+    }
+#endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
+
+#endif // CONFIG_FREERTOS_SMP

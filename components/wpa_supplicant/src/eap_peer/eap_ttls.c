@@ -12,7 +12,7 @@
 #include "utils/common.h"
 #include "crypto/ms_funcs.h"
 #include "crypto/sha1.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/chap.h"
 #include "eap_peer/eap.h"
 #include "eap_peer/eap_ttls.h"

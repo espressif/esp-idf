@@ -16,7 +16,6 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/portmacro.h"
 #include "freertos/xtensa_api.h"
 #include "esp_types.h"
@@ -28,6 +27,7 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
@@ -42,7 +42,6 @@
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
 #include "esp32/dport_access.h"
-#include "esp_timer.h"
 #include "esp_rom_sys.h"
 #include "esp32/rom/ets_sys.h"
 

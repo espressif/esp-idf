@@ -444,7 +444,7 @@ Start 子命令语法：
     6. 双击创建的端口，会打开此端口的视图。
     7. 单击 ``Start/Stop Streaming`` 按钮，数据将会被加载。
     8. 使用 ``Zoom Out``，``Zoom In`` 和 ``Zoom Fit`` 按钮来查看数据。
-    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <http://toem.de/index.php/projects/impulse>`_ 。
+    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <https://toem.de/index.php/projects/impulse>`_ 。
 
     .. note::
 
@@ -459,7 +459,7 @@ Gcov（源代码覆盖）
 Gcov 和 Gcovr 简介
 """"""""""""""""""""""""
 
-源代码覆盖率显示程序运行时间内执行的每一条程序执行路径的数量和频率。`Gcov <https://en.wikipedia.org/wiki/Gcov>`_ 是一款 GCC 工具，与编译器协同使用时，可生成日志文件，显示源文件每行的执行次数。`Gcovr <https://gcovr.com>`_ 是管理 Gcov 和生成代码覆盖率总结的工具。
+源代码覆盖率显示程序运行时间内执行的每一条程序执行路径的数量和频率。`Gcov <https://en.wikipedia.org/wiki/Gcov>`_ 是一款 GCC 工具，与编译器协同使用时，可生成日志文件，显示源文件每行的执行次数。`Gcovr <https://gcovr.com/>`_ 是管理 Gcov 和生成代码覆盖率总结的工具。
 
 一般来说，使用 Gcov 在主机上编译和运行程序会经过以下步骤：
 
@@ -553,7 +553,7 @@ GDB 可以用来在 :cpp:func:`esp_gcov_dump` 上设置断点，然后使用 ``g
 
 一旦代码覆盖数据被转储，``.gcno``、``.gcda`` 和源文件可以用来生成代码覆盖报告。该报告会显示源文件中每行被执行的次数。
 
-Gcov 和 Gcovr 都可以用来生成代码覆盖报告。安装 Xtensa 工具链时会一起安装 Gcov，但 Gcovr 可能需要单独安装。关于如何使用 Gcov 或 Gcovr，请参考 `Gcov 文档 <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ 和 `Gcovr 文档 <http://gcovr.com/>`_。
+Gcov 和 Gcovr 都可以用来生成代码覆盖报告。安装 Xtensa 工具链时会一起安装 Gcov，但 Gcovr 可能需要单独安装。关于如何使用 Gcov 或 Gcovr，请参考 `Gcov 文档 <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ 和 `Gcovr 文档 <https://gcovr.com/>`_。
 
 在工程中添加 Gcovr 构建目标
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -24,16 +24,15 @@ This section presents a guide for quickly placing code/data to RAM and RTC memor
 
 For this guide, suppose we have the following::
 
-    component
+    components
     └── my_component
-        └── CMakeLists.txt
-            ├── component.mk
-            ├── Kconfig
-            ├── src/
-            │   ├── my_src1.c
-            │   ├── my_src2.c
-            │   └── my_src3.c
-            └── my_linker_fragment_file.lf
+        ├── CMakeLists.txt
+        ├── Kconfig
+        ├── src/
+        │   ├── my_src1.c
+        │   ├── my_src2.c
+        │   └── my_src3.c
+        └── my_linker_fragment_file.lf
 
 - a component named ``my_component`` that is archived as library ``libmy_component.a`` during build
 - three source files archived under the library, ``my_src1.c``, ``my_src2.c`` and ``my_src3.c`` which are compiled as ``my_src1.o``, ``my_src2.o`` and ``my_src3.o``, respectively

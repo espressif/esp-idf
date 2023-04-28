@@ -1,19 +1,12 @@
 GATT SERVER API
 ===============
 
-Overview
---------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
 Application Example
 -------------------
 
 Check :example:`bluetooth/bluedroid/ble` folder in ESP-IDF examples, which contains the following demos and their tutorials:
 
-* This is a GATT sever demo and its tutorial. This demo creates a GATT service with an attribute table, which releases the user from adding attributes one by one. This is the recommended method of adding attributes. 
+* This is a GATT sever demo and its tutorial. This demo creates a GATT service with an attribute table, which releases the user from adding attributes one by one. This is the recommended method of adding attributes.
 
     - :example:`bluetooth/bluedroid/ble/gatt_server_service_table`
     - :example_file:`GATT Server Service Table Example Walkthrough <bluetooth/bluedroid/ble/gatt_server_service_table/tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md>`

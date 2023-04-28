@@ -285,4 +285,4 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 4.  Attach both ``openocd_log.txt`` and ``gdb_log.txt`` files to your issue report.
 
 
-.. _OpenOCD Manual: http://openocd.org/doc/html/index.html
+.. _OpenOCD Manual: https://openocd.org/doc/html/index.html

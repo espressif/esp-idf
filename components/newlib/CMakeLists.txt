@@ -53,3 +53,7 @@ if(CONFIG_NEWLIB_NANO_FORMAT)
 endif()
 
 add_subdirectory(port)
+
+# if lwip is included in the build, add it as a public requirement so that
+# #include <sys/socket.h> works without any special provisions.
+idf_component_optional_requires(PUBLIC lwip)

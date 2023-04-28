@@ -19,7 +19,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
 #include "driver/touch_pad.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_check.h"
 
@@ -266,12 +266,12 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
         uint16_t meas_cycle = 0;
         uint32_t wait_time_ms = 0;
         uint32_t wait_tick = 0;
-        uint32_t rtc_clk = rtc_clk_slow_freq_get_hz();
+        uint32_t rtc_clk_freq = rtc_clk_slow_freq_get_hz();
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
         touch_pad_get_meas_time(&sleep_time, &meas_cycle);
         //If the FSM mode is 'TOUCH_FSM_MODE_TIMER', The data will be ready after one measurement cycle
         //after this function is executed, otherwise, the "touch_value" by "touch_pad_read" is 0.
-        wait_time_ms = sleep_time / (rtc_clk / 1000) + meas_cycle / (RTC_FAST_CLK_FREQ_APPROX / 1000);
+        wait_time_ms = sleep_time / (rtc_clk_freq / 1000) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);
         wait_tick = wait_time_ms / portTICK_PERIOD_MS;
         vTaskDelay(wait_tick ? wait_tick : 1);
         s_touch_pad_init_bit |= (1 << touch_num);

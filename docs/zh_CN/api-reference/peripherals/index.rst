@@ -7,6 +7,7 @@
     :maxdepth: 1
 
     adc
+    clk_tree
     :SOC_DAC_SUPPORTED: dac
     gpio
     gptimer

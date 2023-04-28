@@ -259,26 +259,6 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
  */
 esp_err_t sdmmc_host_deinit(void);
 
-/**
- * @brief Enable the pull-ups of sd pins.
- *
- * This function is deprecated. Please set SDMMC_SLOT_FLAG_INTERNAL_PULLUP flag in
- * sdmmc_slot_config_t::flags instead.
- *
- * @note You should always place actual pullups on the lines instead of using
- * this function. Internal pullup resistance are high and not sufficient, may
- * cause instability in products. This is for debug or examples only.
- *
- * @param slot Slot to use, normally set it to 1.
- * @param width Bit width of your configuration, 1 or 4.
- *
- * @return
- *      - ESP_OK: if success
- *      - ESP_ERR_INVALID_ARG: if configured width larger than maximum the slot can
- *              support
- */
-esp_err_t sdmmc_host_pullup_en(int slot, int width) __attribute__((deprecated));
-
 #ifdef __cplusplus
 }
 #endif

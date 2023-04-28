@@ -48,7 +48,7 @@ static int esp_aes_gmac(const u8 *key, size_t key_len, const u8 *iv, size_t iv_l
 
 /*
  * This structure is used to set the cyrpto callback function for station to connect when in security mode.
- * These functions either call MbedTLS API's if USE_MBEDTLS_CRYPTO flag is set through Kconfig, or native
+ * These functions either call MbedTLS API's if CONFIG_CRYPTO_MBEDTLS flag is set through Kconfig, or native
  * API's otherwise. We recommend setting the flag since MbedTLS API's utilize hardware acceleration while
  * native API's are use software implementations.
  */

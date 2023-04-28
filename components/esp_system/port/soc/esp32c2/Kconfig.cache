@@ -1,0 +1,33 @@
+menu "Cache config"
+
+    choice ESP32C2_MMU_PAGE_SIZE
+        # TODO: IDF-3821
+        prompt "Cache page size"
+        default ESP32C2_MMU_PAGE_SIZE_64KB
+        help
+            Cache page size to be set on application startup
+
+        config ESP32C2_MMU_PAGE_SIZE_16KB
+            bool "16KB"
+        config ESP32C2_MMU_PAGE_SIZE_32KB
+            bool "32KB"
+        config ESP32C2_MMU_PAGE_SIZE_64KB
+            bool "64KB"
+    endchoice
+
+    config ESP32C2_INSTRUCTION_CACHE_WRAP
+        # TODO: IDF-4194
+        bool
+        prompt "Instruction cache wrap"
+        help
+            If enabled, instruction cache will use wrap mode to read spi flash.
+            The wrap length is fixed to 32B
+
+
+    config ESP32C2_MMU_PAGE_MODE
+        int
+        default 0 if ESP32C2_MMU_PAGE_SIZE_16KB
+        default 1 if ESP32C2_MMU_PAGE_SIZE_32KB
+        default 2 if ESP32C2_MMU_PAGE_SIZE_64KB
+
+endmenu

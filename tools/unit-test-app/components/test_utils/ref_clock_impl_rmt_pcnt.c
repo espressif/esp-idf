@@ -23,34 +23,21 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "freertos/FreeRTOS.h"
-#include "esp_intr_alloc.h"
-#include "esp_private/periph_ctrl.h"
-#include "driver/rmt.h"
 #include "driver/pulse_cnt.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/gpio_periph.h"
-#include "soc/soc_caps.h"
-#include "hal/rmt_types.h"
-#include "hal/rmt_hal.h"
-#include "hal/rmt_ll.h"
-#include "esp_rom_gpio.h"
-#include "esp_rom_sys.h"
+#include "driver/rmt_tx.h"
 
 #if !CONFIG_IDF_TARGET_ESP32
 #error "RMT+PCNT timestamp workaround is only for ESP32"
 #endif
 
-#define REF_CLOCK_RMT_CHANNEL  0  // RMT channel 0
-#define REF_CLOCK_GPIO         21 // GPIO used to combine RMT out signal with PCNT input signal
+#define REF_CLOCK_GPIO         0  // GPIO used to combine RMT out signal with PCNT input signal
 #define REF_CLOCK_PRESCALER_MS 30 // PCNT high threshold interrupt fired every 30ms
 
-static rmt_hal_context_t s_rmt_hal;
 static pcnt_unit_handle_t s_pcnt_unit;
 static pcnt_channel_handle_t s_pcnt_chan;
+static rmt_channel_handle_t s_rmt_chan;
+static rmt_encoder_handle_t s_rmt_encoder;
 static volatile uint32_t s_milliseconds;
-
-// RMTMEM address is declared in <target>.peripherals.ld
-extern rmt_mem_t RMTMEM;
 
 static bool on_reach_watch_point(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
 {
@@ -83,36 +70,45 @@ void ref_clock_init(void)
         .on_reach = on_reach_watch_point,
     };
     TEST_ESP_OK(pcnt_unit_register_event_callbacks(s_pcnt_unit, &cbs, NULL));
+    // enable pcnt
+    TEST_ESP_OK(pcnt_unit_enable(s_pcnt_unit));
     // start pcnt
     TEST_ESP_OK(pcnt_unit_start(s_pcnt_unit));
 
-    // Route RMT output to GPIO matrix
-    esp_rom_gpio_connect_out_signal(REF_CLOCK_GPIO, RMT_SIG_OUT0_IDX, false, false);
-
     // Initialize RMT
-    periph_module_enable(PERIPH_RMT_MODULE);
-    rmt_hal_init(&s_rmt_hal);
-
-    rmt_item32_t data = {
-        .duration0 = 1,
-        .level0 = 1,
-        .duration1 = 0,
-        .level1 = 0
+    rmt_tx_channel_config_t tx_chan_config = {
+        .clk_src = RMT_CLK_SRC_REF_TICK, // REF_TICK clock source
+        .gpio_num = REF_CLOCK_GPIO,
+        .mem_block_symbols = 64,
+        .resolution_hz = 10000, // channel resolution doesn't really matter, because we only utilize the carrier
+        .trans_queue_depth = 1,
+        .flags.io_loop_back = true,
     };
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_chan_config, &s_rmt_chan));
+    // set carrier configuration
+    rmt_carrier_config_t carrier_config = {
+        .duty_cycle = 0.5,
+        .frequency_hz = 500 * 1000, // 500 KHz
+    };
+    TEST_ESP_OK(rmt_apply_carrier(s_rmt_chan, &carrier_config));
+    // enable rmt channel
+    TEST_ESP_OK(rmt_enable(s_rmt_chan));
+    // create a copy encoder to copy the RMT symbol into RMT HW memory
+    rmt_copy_encoder_config_t encoder_config = {};
+    TEST_ESP_OK(rmt_new_copy_encoder(&encoder_config, &s_rmt_encoder));
 
-    rmt_ll_enable_periph_clock(s_rmt_hal.regs, true);
-    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_CLK_SRC_APB_F1M, 1, 1, 0); // select REF_TICK (1MHz)
-    rmt_ll_tx_set_channel_clock_div(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // channel clock = REF_TICK / 1 = 1MHz
-    rmt_ll_tx_fix_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, true); // enable idle output, idle level: 1
-    rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
-    rmt_ll_tx_set_carrier_high_low_ticks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, 1);  // set carrier to 1MHz / (1+1) = 500KHz, 50% duty cycle
-    rmt_ll_tx_set_carrier_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
-    rmt_ll_enable_mem_access_nonfifo(s_rmt_hal.regs, true);
-    rmt_ll_tx_reset_pointer(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
-    rmt_ll_tx_set_mem_blocks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
-    RMTMEM.chan[REF_CLOCK_RMT_CHANNEL].data32[0] = data;
-    rmt_ll_tx_enable_loop(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
-    rmt_ll_tx_start(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
+    // control the tx channel to output a fixed high level by constructing the following RMT symbol
+    // the carrier is modulated to the high level by default, which results in a 500KHz carrier on the `REF_CLOCK_GPIO`
+    rmt_symbol_word_t data = {
+        .level0 = 1,
+        .duration0 = 1,
+        .level1 = 1,
+        .duration1 = 0,
+    };
+    rmt_transmit_config_t trans_config = {
+        .loop_count = 0, // no loop
+    };
+    TEST_ESP_OK(rmt_transmit(s_rmt_chan, s_rmt_encoder, &data, sizeof(data), &trans_config));
 
     s_milliseconds = 0;
 }
@@ -121,13 +117,15 @@ void ref_clock_deinit(void)
 {
     // Deinitialize PCNT
     TEST_ESP_OK(pcnt_unit_stop(s_pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_disable(s_pcnt_unit));
     TEST_ESP_OK(pcnt_unit_remove_watch_point(s_pcnt_unit, REF_CLOCK_PRESCALER_MS * 1000));
     TEST_ESP_OK(pcnt_del_channel(s_pcnt_chan));
     TEST_ESP_OK(pcnt_del_unit(s_pcnt_unit));
 
     // Deinitialize RMT
-    rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
-    periph_module_disable(PERIPH_RMT_MODULE);
+    TEST_ESP_OK(rmt_disable(s_rmt_chan));
+    TEST_ESP_OK(rmt_del_channel(s_rmt_chan));
+    TEST_ESP_OK(rmt_del_encoder(s_rmt_encoder));
 }
 
 uint64_t ref_clock_get(void)

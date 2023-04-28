@@ -18,7 +18,7 @@
 #include "freertos/timers.h"
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
 

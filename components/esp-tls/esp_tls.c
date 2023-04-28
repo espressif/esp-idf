@@ -14,6 +14,7 @@
 
 #include <http_parser.h>
 #include "esp_tls.h"
+#include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
 #include <errno.h>
 static const char *TAG = "esp-tls";
@@ -39,6 +40,8 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_conn_delete                esp_mbedtls_conn_delete
 #define _esp_tls_net_init                   esp_mbedtls_net_init
 #define _esp_tls_get_client_session         esp_mbedtls_get_client_session
+#define _esp_tls_free_client_session        esp_mbedtls_free_client_session
+#define _esp_tls_get_ssl_context            esp_mbedtls_get_ssl_context
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
@@ -65,6 +68,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
 #define _esp_tls_set_global_ca_store        esp_wolfssl_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
 #define _esp_tls_free_global_ca_store       esp_wolfssl_free_global_ca_store                /*!< Callback function for freeing global ca store for TLS/SSL */
+#define _esp_tls_get_ssl_context            esp_wolfssl_get_ssl_context
 #else   /* ESP_TLS_USING_WOLFSSL */
 #error "No TLS stack configured"
 #endif
@@ -87,6 +91,18 @@ static ssize_t tcp_read(esp_tls_t *tls, char *data, size_t datalen)
 static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 {
     return send(tls->sockfd, data, datalen, 0);
+}
+
+ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
+{
+    return tls->read(tls, (char *)data, datalen);
+
+}
+
+ssize_t esp_tls_conn_write(esp_tls_t *tls, const void  *data, size_t datalen)
+{
+    return tls->write(tls, (char *)data, datalen);
+
 }
 
 /**
@@ -549,6 +565,11 @@ esp_tls_client_session_t *esp_tls_get_client_session(esp_tls_t *tls)
 {
     return _esp_tls_get_client_session(tls);
 }
+
+void esp_tls_free_client_session(esp_tls_client_session_t *client_session)
+{
+    _esp_tls_free_client_session(client_session);
+}
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
 
@@ -603,6 +624,11 @@ ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
     return _esp_tls_get_bytes_avail(tls);
 }
 
+void *esp_tls_get_ssl_context(esp_tls_t *tls)
+{
+    return _esp_tls_get_ssl_context(tls);
+}
+
 esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd)
 {
     if (!tls || !sockfd) {
@@ -627,6 +653,16 @@ esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tl
     }
     memset(h, 0, sizeof(esp_tls_last_error_t));
     return last_err;
+}
+
+esp_err_t esp_tls_get_error_handle(esp_tls_t *tls, esp_tls_error_handle_t *error_handle)
+{
+    if (!tls || !error_handle) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *error_handle = tls->error_handle;
+    return ESP_OK;
 }
 
 esp_err_t esp_tls_init_global_ca_store(void)

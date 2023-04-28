@@ -224,7 +224,7 @@ static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
             .parity = UART_PARITY_DISABLE,
             .stop_bits = UART_STOP_BITS_1,
             .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-            .source_clk = UART_SCLK_APB,
+            .source_clk = UART_SCLK_DEFAULT,
         };
         ESP_LOGI(TAG, "UART baud rate: %i", CONFIG_APPTRACE_UART_BAUDRATE);
         // We won't use a buffer for sending data.

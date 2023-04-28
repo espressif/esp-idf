@@ -122,6 +122,10 @@ typedef struct usb_transfer_s usb_transfer_t;
  */
 typedef void (*usb_transfer_cb_t)(usb_transfer_t *transfer);
 
+/**
+ * @brief USB transfer structure
+ *
+ */
 struct usb_transfer_s{
     uint8_t *const data_buffer;                     /**< Pointer to data buffer */
     const size_t data_buffer_size;                  /**< Size of the data buffer in bytes */

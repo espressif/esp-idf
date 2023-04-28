@@ -12,19 +12,38 @@ from construct import BitsInteger, BitStruct, Int16ul
 
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
+PAD_CHAR: int = 0x20
 FAT12: int = 12
 FAT16: int = 16
 FAT32: int = 32
+FULL_BYTE: bytes = b'\xff'
+EMPTY_BYTE: bytes = b'\x00'
+# redundant
 BYTES_PER_DIRECTORY_ENTRY: int = 32
 UINT32_MAX: int = (1 << 32) - 1
 MAX_NAME_SIZE: int = 8
 MAX_EXT_SIZE: int = 3
 DATETIME = Tuple[int, int, int]
-FATFS_INCEPTION: datetime = datetime(1980, 1, 1, 0, 0, 0, 0)
+FATFS_INCEPTION_YEAR: int = 1980
+
+FATFS_INCEPTION: datetime = datetime(FATFS_INCEPTION_YEAR, 1, 1, 0, 0, 0, 0)
+
+FATFS_MAX_HOURS = 24
+FATFS_MAX_MINUTES = 60
+FATFS_MAX_SECONDS = 60
+
+FATFS_MAX_DAYS = 31
+FATFS_MAX_MONTHS = 12
+FATFS_MAX_YEARS = 127
+
+FATFS_SECONDS_GRANULARITY: int = 2
 
 # long names are encoded to two bytes in utf-16
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
+
+ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
+ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
 def crc32(input_values: List[int], crc: int) -> int:
@@ -60,9 +79,13 @@ def generate_4bytes_random() -> int:
     return uuid.uuid4().int & 0xFFFFFFFF
 
 
-def pad_string(content: str, size: Optional[int] = None, pad: int = 0x20) -> str:
+def pad_string(content: str, size: Optional[int] = None, pad: int = PAD_CHAR) -> str:
     # cut string if longer and fill with pad character if shorter than size
     return content.ljust(size or len(content), chr(pad))[:size]
+
+
+def right_strip_string(content: str, pad: int = PAD_CHAR) -> str:
+    return content.rstrip(chr(pad))
 
 
 def build_lfn_short_entry_name(name: str, extension: str, order: int) -> str:
@@ -84,7 +107,7 @@ def lfn_checksum(short_entry_name: str) -> int:
 
 def convert_to_utf16_and_pad(content: str,
                              expected_size: int,
-                             pad: bytes = b'\xff',
+                             pad: bytes = FULL_BYTE,
                              terminator: bytes = b'\x00\x00') -> bytes:
     # we need to get rid of the Byte order mark 0xfeff or 0xfffe, fatfs does not use it
     bom_utf16: bytes = b'\xfe\xff'
@@ -103,29 +126,17 @@ def is_valid_fatfs_name(string: str) -> bool:
     return string == string.upper()
 
 
-def split_by_half_byte_12_bit_little_endian(value: int) -> DATETIME:
+def split_by_half_byte_12_bit_little_endian(value: int) -> Tuple[int, int, int]:
     value_as_bytes: bytes = Int16ul.build(value)
     return value_as_bytes[0] & 0x0f, value_as_bytes[0] >> 4, value_as_bytes[1] & 0x0f
 
 
+def merge_by_half_byte_12_bit_little_endian(v1: int, v2: int, v3: int) -> int:
+    return v1 | v2 << 4 | v3 << 8
+
+
 def build_byte(first_half: int, second_half: int) -> int:
     return (first_half << 4) | second_half
-
-
-def clean_first_half_byte(bytes_array: bytearray, address: int) -> None:
-    """
-    the function sets to zero first four bits of the byte.
-    E.g. 10111100 -> 10110000
-    """
-    bytes_array[address] &= 0xf0
-
-
-def clean_second_half_byte(bytes_array: bytearray, address: int) -> None:
-    """
-    the function sets to zero last four bits of the byte.
-    E.g. 10111100 -> 00001100
-    """
-    bytes_array[address] &= 0x0f
 
 
 def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
@@ -145,20 +156,20 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
                         default='fatfs_image.img',
                         help='Filename of the generated fatfs image')
     parser.add_argument('--partition_size',
-                        default=1024 * 1024,
+                        default=FATDefaults.SIZE,
                         help='Size of the partition in bytes')
     parser.add_argument('--sector_size',
-                        default=4096,
+                        default=FATDefaults.SECTOR_SIZE,
                         type=int,
-                        choices=[512, 1024, 2048, 4096],
+                        choices=ALLOWED_SECTOR_SIZES,
                         help='Size of the partition in bytes')
     parser.add_argument('--sectors_per_cluster',
                         default=1,
                         type=int,
-                        choices=[1, 2, 4, 8, 16, 32, 64, 128],
+                        choices=ALLOWED_SECTORS_PER_CLUSTER,
                         help='Number of sectors per cluster')
     parser.add_argument('--root_entry_count',
-                        default=512,
+                        default=FATDefaults.ROOT_ENTRIES_COUNT,
                         help='Number of entries in the root directory')
     parser.add_argument('--long_name_support',
                         action='store_true',
@@ -212,10 +223,10 @@ def build_date_entry(year: int, mon: int, mday: int) -> int:
 
     :returns: 16 bit integer number (7 bits for year, 4 bits for month and 5 bits for day of the month)
     """
-    assert year in range(1980, 2107)
-    assert mon in range(1, 13)
-    assert mday in range(1, 32)
-    return int.from_bytes(DATE_ENTRY.build(dict(year=year - 1980, month=mon, day=mday)), 'big')
+    assert year in range(FATFS_INCEPTION_YEAR, FATFS_INCEPTION_YEAR + FATFS_MAX_YEARS)
+    assert mon in range(1, FATFS_MAX_MONTHS + 1)
+    assert mday in range(1, FATFS_MAX_DAYS + 1)
+    return int.from_bytes(DATE_ENTRY.build(dict(year=year - FATFS_INCEPTION_YEAR, month=mon, day=mday)), 'big')
 
 
 def build_time_entry(hour: int, minute: int, sec: int) -> int:
@@ -226,7 +237,35 @@ def build_time_entry(hour: int, minute: int, sec: int) -> int:
 
     :returns: 16 bit integer number (5 bits for hour, 6 bits for minute and 5 bits for second)
     """
-    assert hour in range(0, 23)
-    assert minute in range(0, 60)
-    assert sec in range(0, 60)
-    return int.from_bytes(TIME_ENTRY.build(dict(hour=hour, minute=minute, second=sec // 2)), 'big')
+    assert hour in range(FATFS_MAX_HOURS)
+    assert minute in range(FATFS_MAX_MINUTES)
+    assert sec in range(FATFS_MAX_SECONDS)
+    return int.from_bytes(TIME_ENTRY.build(
+        dict(hour=hour, minute=minute, second=sec // FATFS_SECONDS_GRANULARITY)),
+        byteorder='big'
+    )
+
+
+class FATDefaults:
+    # FATFS defaults
+    SIZE: int = 1024 * 1024
+    RESERVED_SECTORS_COUNT: int = 1
+    FAT_TABLES_COUNT: int = 1
+    SECTORS_PER_CLUSTER: int = 1
+    SECTOR_SIZE: int = 0x1000
+    SECTORS_PER_FAT: int = 1
+    HIDDEN_SECTORS: int = 0
+    ENTRY_SIZE: int = 32
+    NUM_HEADS: int = 0xff
+    OEM_NAME: str = 'MSDOS5.0'
+    SEC_PER_TRACK: int = 0x3f
+    VOLUME_LABEL: str = 'Espressif'
+    FILE_SYS_TYPE: str = 'FAT'
+    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory
+    MEDIA_TYPE: int = 0xf8
+    SIGNATURE_WORD: bytes = b'\x55\xAA'
+
+    # wear levelling defaults
+    VERSION: int = 2
+    TEMP_BUFFER_SIZE: int = 32
+    UPDATE_RATE: int = 16

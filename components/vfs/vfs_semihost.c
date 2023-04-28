@@ -19,20 +19,10 @@
 #define CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS 1
 #endif
 
-#ifndef CONFIG_VFS_SEMIHOSTFS_HOST_PATH_MAX_LEN
-#define CONFIG_VFS_SEMIHOSTFS_HOST_PATH_MAX_LEN 128
-#endif
-
 const static char *TAG = "esp_semihost";
 
 
 /* Additional open flags */
-
-
-/* ESP-specific file open flag.
- * Indicates that path passed to open() is absolute host path.
- */
-#define ESP_O_SEMIHOST_ABSPATH  0x80000000
 
 /* There is no O_BINARY flag defined in newlib, as well as on Linux,
  * but we are leaving it to have the flags table identical to OpenOCD.
@@ -41,18 +31,18 @@ const static char *TAG = "esp_semihost";
 
 /* The table is identical to the one in OpenOCD semihosting_common.c */
 static const int open_modeflags[12] = {
-    O_RDONLY,
-    O_RDONLY | O_BINARY,
-    O_RDWR,
-    O_RDWR | O_BINARY,
-    O_WRONLY | O_CREAT | O_TRUNC,
-    O_WRONLY | O_CREAT | O_TRUNC | O_BINARY,
-    O_RDWR | O_CREAT | O_TRUNC,
-    O_RDWR | O_CREAT | O_TRUNC | O_BINARY,
-    O_WRONLY | O_CREAT | O_APPEND,
-    O_WRONLY | O_CREAT | O_APPEND | O_BINARY,
-    O_RDWR | O_CREAT | O_APPEND,
-    O_RDWR | O_CREAT | O_APPEND | O_BINARY
+	O_RDONLY,
+	O_RDONLY | O_BINARY,
+	O_RDWR,
+	O_RDWR   | O_BINARY,
+	O_WRONLY | O_CREAT | O_TRUNC,
+	O_WRONLY | O_CREAT | O_TRUNC  | O_BINARY,
+	O_RDWR   | O_CREAT | O_TRUNC,
+	O_RDWR   | O_CREAT | O_TRUNC  | O_BINARY,
+	O_WRONLY | O_CREAT | O_APPEND,
+	O_WRONLY | O_CREAT | O_APPEND | O_BINARY,
+	O_RDWR   | O_CREAT | O_APPEND,
+	O_RDWR   | O_CREAT | O_APPEND | O_BINARY
 };
 
 /**
@@ -77,7 +67,6 @@ static inline int get_o_mode(int flags) {
 
 typedef struct {
     char base_path[ESP_VFS_PATH_MAX + 1];                    /* base path in VFS where host semihosting dir is mounted */
-    char host_path[CONFIG_VFS_SEMIHOSTFS_HOST_PATH_MAX_LEN + 1]; /* host path to use as base dir for open files */
 } vfs_semihost_ctx_t;
 
 static vfs_semihost_ctx_t s_semhost_ctx[CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS];
@@ -85,11 +74,6 @@ static vfs_semihost_ctx_t s_semhost_ctx[CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS];
 static inline bool ctx_is_unused(const vfs_semihost_ctx_t* ctx)
 {
     return ctx->base_path[0] == 0;
-}
-
-static inline bool ctx_uses_abspath(const vfs_semihost_ctx_t* ctx)
-{
-    return ctx->host_path[0];
 }
 
 #define FAIL_IF_NO_DEBUGGER() \
@@ -100,7 +84,6 @@ static inline bool ctx_uses_abspath(const vfs_semihost_ctx_t* ctx)
         } \
     } while(0)
 
-#if __XTENSA__
 static esp_err_t vfs_semihost_drvinfo(vfs_semihost_ctx_t *ctx)
 {
     FAIL_IF_NO_DEBUGGER();
@@ -112,65 +95,25 @@ static esp_err_t vfs_semihost_drvinfo(vfs_semihost_ctx_t *ctx)
     }
     return ESP_OK;
 }
-#endif // __XTENSA__
 
 static int vfs_semihost_open(void* ctx, const char* path, int flags, int mode)
 {
     int ret_fd = -1;
-    char *host_path;
-    vfs_semihost_ctx_t *semi_ctx = ctx;
+
     FAIL_IF_NO_DEBUGGER();
 
-    ESP_LOGV(TAG, "%s: %p '%s 0x%x 0x%x'", __func__, semi_ctx, path, flags, mode);
+    if (path == NULL) {
+        errno = ENOENT;
+        return ret_fd;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s 0x%x 0x%x'", __func__, path, flags, mode);
 
     int o_mode = get_o_mode(flags);
     if (o_mode == -1) { /* if wrong flags - error */
         errno = EINVAL;
     } else {
-        if (ctx_uses_abspath(semi_ctx)) {
-            /* Create full absolute path on the host by concatenating host base
-             * path and file path relative to the filesystem root.
-             */
-            host_path = malloc(strlen(semi_ctx->host_path) + strlen(path) + 1);
-            if (host_path == NULL) { /* if no valid pointer - error and return */
-                errno = ENOMEM;
-                return -1;
-            }
-            strcpy(host_path, semi_ctx->host_path);
-            strcat(host_path, path);
-#ifdef __XTENSA__
-            /* By default, OpenOCD for Xtensa prepends ESP_SEMIHOST_BASEDIR to
-             * the path passed from the target. Adding this special flag to o_mode
-             * inhibits this behavior.
-             * This is not necessary for RISC-V since standard semihosting
-             * implementation is used there and paths aren't mangled on OpenOCD side.
-             */
-            if (ctx_uses_abspath(semi_ctx)) {
-                o_mode |= ESP_O_SEMIHOST_ABSPATH;
-            }
-#endif // __XTENSA__
-        } else {
-            host_path = (char *)path;
-            /* For Xtensa targets in OpenOCD there is additional logic related to
-             * semihosting paths handling that isn't there for other targets.
-             * When ESP_SEMIHOST_BASEDIR OpenOCD variable is not set, OpenOCD will
-             * by default prepend '.' to the path passed from the target.
-             * By contrast, for RISC-V there is no such logic and the path will be
-             * used as is, no matter whether it is absolute or relative.
-             * See esp_xtensa_semihosting_get_file_name in esp_xtensa_semihosting.c
-             * for details.
-             */
-#ifndef __XTENSA__
-            if (*host_path == '/') {
-                ++host_path;
-            }
-#endif // !__XTENSA__
-        }
-        /* everything is ready: syscall and cleanup */
-        ret_fd = semihosting_open(host_path, o_mode, mode);
-        if (ctx_uses_abspath(semi_ctx)) {
-            free(host_path);
-        }
+        ret_fd = semihosting_open(path, o_mode, mode);
     }
     return ret_fd;
 }
@@ -178,6 +121,11 @@ static int vfs_semihost_open(void* ctx, const char* path, int flags, int mode)
 static ssize_t vfs_semihost_write(void* ctx, int fd, const void * data, size_t size)
 {
     FAIL_IF_NO_DEBUGGER();
+
+    if (data == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
 
     ESP_LOGV(TAG, "%s: %d %u bytes", __func__, fd, size);
     return semihosting_write(fd, data, size);
@@ -187,10 +135,14 @@ static ssize_t vfs_semihost_read(void* ctx, int fd, void* data, size_t size)
 {
     FAIL_IF_NO_DEBUGGER();
 
+    if (data == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
     ESP_LOGV(TAG, "%s: %d %u bytes", __func__, fd, size);
     return semihosting_read(fd, data, size);
 }
-
 
 static int vfs_semihost_close(void* ctx, int fd)
 {
@@ -207,8 +159,10 @@ static off_t vfs_semihost_lseek(void* ctx, int fd, off_t offset, int mode)
     return semihosting_seek(fd, offset, mode);
 }
 
-esp_err_t esp_vfs_semihost_register(const char* base_path, const char* host_path)
+esp_err_t esp_vfs_semihost_register(const char* base_path)
 {
+    assert(base_path);
+
     const esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,
         .write_p = &vfs_semihost_write,
@@ -217,7 +171,7 @@ esp_err_t esp_vfs_semihost_register(const char* base_path, const char* host_path
         .read_p = &vfs_semihost_read,
         .lseek_p = &vfs_semihost_lseek,
     };
-    ESP_LOGD(TAG, "Register semihosting driver '%s' -> '%s'", base_path, host_path ? host_path : "null");
+    ESP_LOGD(TAG, "Register semihosting driver '%s'", base_path);
     if (!cpu_hal_is_debugger_attached()) {
         ESP_LOGE(TAG, "OpenOCD is not connected!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -235,19 +189,15 @@ esp_err_t esp_vfs_semihost_register(const char* base_path, const char* host_path
         return ESP_ERR_NO_MEM;
     }
     strlcpy(s_semhost_ctx[i].base_path, base_path, sizeof(s_semhost_ctx[i].base_path) - 1);
-    if (host_path) {
-        strlcpy(s_semhost_ctx[i].host_path, host_path, sizeof(s_semhost_ctx[i].host_path) - 1);
-    }
+
     ESP_LOGD(TAG, "Register semihosting driver %d %p", i, &s_semhost_ctx[i]);
 
     esp_err_t err;
-#if __XTENSA__
     /* Check for older OpenOCD versions */
     err = vfs_semihost_drvinfo(&s_semhost_ctx[i]); // define semihosting version
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Incompatible OpenOCD version detected. Please follow the getting started guides to install the required version.");
     }
-#endif // __XTENSA__
 
     err = esp_vfs_register(base_path, &vfs, &s_semhost_ctx[i]);
     if (err != ESP_OK) {
@@ -259,6 +209,8 @@ esp_err_t esp_vfs_semihost_register(const char* base_path, const char* host_path
 
 esp_err_t esp_vfs_semihost_unregister(const char* base_path)
 {
+    assert(base_path);
+
     ESP_LOGD(TAG, "Unregister semihosting driver @ '%s'", base_path);
     int i = 0;
     for (i = 0; i < CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS; i++) {
@@ -274,7 +226,6 @@ esp_err_t esp_vfs_semihost_unregister(const char* base_path)
         return ret;
     }
     s_semhost_ctx[i].base_path[0] = 0;
-    s_semhost_ctx[i].host_path[0] = 0;
     ESP_LOGD(TAG, "Unregistered semihosting driver @ '%s'", base_path);
     return ESP_OK;
 }

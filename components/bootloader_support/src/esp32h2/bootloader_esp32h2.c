@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,20 +109,20 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
     const char *str;
     switch (bootloader_hdr->spi_speed) {
-    case ESP_IMAGE_SPI_SPEED_40M:
-        str = "40MHz";
+    case ESP_IMAGE_SPI_SPEED_DIV_2:
+        str = "24MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_26M:
-        str = "26.7MHz";
+    case ESP_IMAGE_SPI_SPEED_DIV_3:
+        str = "16MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_20M:
-        str = "20MHz";
+    case ESP_IMAGE_SPI_SPEED_DIV_4:
+        str = "12MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_80M:
-        str = "80MHz";
+    case ESP_IMAGE_SPI_SPEED_DIV_1:
+        str = "48MHz";
         break;
     default:
-        str = "20MHz";
+        str = "12MHz";
         break;
     }
     ESP_LOGI(TAG, "SPI Speed      : %s", str);

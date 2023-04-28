@@ -29,6 +29,13 @@ class TooLongNameException(Exception):
     pass
 
 
+class NotInitialized(Exception):
+    """
+    Exception is raised when the user tries to access not initialized property
+    """
+    pass
+
+
 class WLNotInitialized(Exception):
     """
     Exception is raised when the user tries to write fatfs not initialized with wear levelling

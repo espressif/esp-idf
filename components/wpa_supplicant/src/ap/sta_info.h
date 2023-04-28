@@ -1,6 +1,6 @@
 /*
  * hostapd / Station table
- * Copyright (c) 2002-2011, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2017, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -42,36 +42,20 @@ struct sta_info {
 	struct sta_info *next; /* next entry in sta list */
 	struct sta_info *hnext; /* next entry in hash table list */
 	u8 addr[6];
-	u16 aid; /* STA's unique AID (1 .. 2007) or 0 if not yet assigned */
 	u32 flags; /* Bitfield of WLAN_STA_* */
-	u16 capability;
-	u16 listen_interval; /* or beacon_int for APs */
-	u8 supported_rates[WLAN_SUPP_RATES_MAX];
-	int supported_rates_len;
 
-	u16 auth_alg;
-
-	enum {
-		STA_NULLFUNC = 0, STA_DISASSOC, STA_DEAUTH, STA_REMOVE
-	} timeout_next;
-
+	/* IEEE 802.1X related data */
+	struct eapol_state_machine *eapol_sm;
 	struct wpa_state_machine *wpa_sm;
 
-#ifdef CONFIG_IEEE80211W
-	int sa_query_count; /* number of pending SA Query requests;
-			     * 0 = no SA Query in progress */
-	int sa_query_timed_out;
-	u8 *sa_query_trans_id; /* buffer of WLAN_SA_QUERY_TR_ID_LEN *
-				* sa_query_count octets of pending SA Query
-				* transaction identifiers */
-	struct os_time sa_query_start;
-#endif /* CONFIG_IEEE80211W */
+	char *identity; /* User-Name from RADIUS */
 
 #ifdef CONFIG_INTERWORKING
 #define GAS_DIALOG_MAX 8 /* Max concurrent dialog number */
 	struct gas_dialog_info *gas_dialog;
 	u8 gas_dialog_next;
 #endif /* CONFIG_INTERWORKING */
+	struct wpabuf *wps_ie; /* WPS IE from (Re)Association Request */
 
 #ifdef CONFIG_SAE
 	enum { SAE_INIT, SAE_COMMIT, SAE_CONFIRM } sae_state;
@@ -137,5 +121,16 @@ static inline int ap_sta_is_authorized(struct sta_info *sta)
 
 void ap_sta_deauth_cb(struct hostapd_data *hapd, struct sta_info *sta);
 void ap_sta_disassoc_cb(struct hostapd_data *hapd, struct sta_info *sta);
+void ap_sta_clear_disconnect_timeouts(struct hostapd_data *hapd,
+				      struct sta_info *sta);
+
+int ap_sta_flags_txt(u32 flags, char *buf, size_t buflen);
+void ap_sta_delayed_1x_auth_fail_disconnect(struct hostapd_data *hapd,
+					    struct sta_info *sta);
+int ap_sta_pending_delayed_1x_auth_fail_disconnect(struct hostapd_data *hapd,
+						   struct sta_info *sta);
+int ap_sta_re_add(struct hostapd_data *hapd, struct sta_info *sta);
+
+void ap_free_sta_pasn(struct hostapd_data *hapd, struct sta_info *sta);
 
 #endif /* STA_INFO_H */

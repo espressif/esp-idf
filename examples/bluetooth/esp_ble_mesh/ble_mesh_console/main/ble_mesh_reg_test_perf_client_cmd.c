@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/FreeRTOSConfig.h"
+#include "esp_timer.h"
 
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"

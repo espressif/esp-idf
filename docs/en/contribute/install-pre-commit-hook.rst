@@ -32,7 +32,7 @@ What's More?
 
 For detailed usage, please refer to the documentation of pre-commit_.
 
-.. _pre-commit: https://www.pre-commit.com/
+.. _pre-commit: https://pre-commit.com/
 
 Common Problems For Windows Users
 ---------------------------------

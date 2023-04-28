@@ -33,7 +33,7 @@ typedef struct {
     rtc_cntl_sleep_retent_t retent;
 } sleep_retention_t;
 
-static DRAM_ATTR sleep_retention_t s_retention;
+static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention;
 
 #if SOC_PM_SUPPORT_TAGMEM_PD
 
@@ -110,7 +110,7 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(bool enable)
             extern char _stext[], _etext[];
             uint32_t code_start = (uint32_t)_stext;
             uint32_t code_size = (uint32_t)(_etext - _stext);
-#if !CONFIG_ESP32S3_SPIRAM_SUPPORT
+#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32S3)
             extern char _rodata_start[], _rodata_reserved_end[];
             uint32_t data_start = (uint32_t)_rodata_start;
             uint32_t data_size = (uint32_t)(_rodata_reserved_end - _rodata_start);

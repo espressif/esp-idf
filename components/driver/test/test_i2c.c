@@ -31,7 +31,7 @@
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 #define DELAY_TIME_BETWEEN_ITEMS_MS   1234 /*!< delay time between different test items */
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2
 #define I2C_SLAVE_SCL_IO     5     /*!<gpio number for i2c slave clock  */
 #define I2C_SLAVE_SDA_IO     6     /*!<gpio number for i2c slave data */
 #else
@@ -43,7 +43,7 @@
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #define I2C_MASTER_SCL_IO     5     /*!<gpio number for i2c master clock  */
 #define I2C_MASTER_SDA_IO     6     /*!<gpio number for i2c master data */
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -658,13 +658,12 @@ TEST_CASE("I2C general API test", "[i2c]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP32C2)
 //Init uart baud rate detection
 static void uart_aut_baud_det_init(int rxd_io_num)
 {
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
-    esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT1_SCL_OUT_IDX, 0, 0);
+    esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT0_SCL_OUT_IDX, 0, 0);
     esp_rom_gpio_connect_in_signal(rxd_io_num, U1RXD_IN_IDX, 0);
     periph_module_enable(PERIPH_UART1_MODULE);
     /* Reset all the bits */
@@ -676,15 +675,22 @@ static void uart_aut_baud_det_init(int rxd_io_num)
 //Calculate I2C scl freq
 static void i2c_scl_freq_cal(void)
 {
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     const int i2c_source_clk_freq = 80000000;
     const float i2c_cource_clk_period = 0.0125;
+    int expt_cnt = 542;
+#else
+    const int i2c_source_clk_freq = 18000000; // Clock sorce: RTC
+    const float i2c_cource_clk_period = 0.056;
+    int expt_cnt = 540;
+#endif
     int edg_cnt = uart_ll_get_rxd_edge_cnt(&UART1);
     int pospulse_cnt = uart_ll_get_pos_pulse_cnt(&UART1);
     int negpulse_cnt = uart_ll_get_neg_pulse_cnt(&UART1);
     int high_period_cnt = uart_ll_get_high_pulse_cnt(&UART1);
     int low_period_cnt = uart_ll_get_low_pulse_cnt(&UART1);
-    if(edg_cnt != 542) {
-        printf("\nedg_cnt != 542, test fail\n");
+    if(edg_cnt != expt_cnt) {
+        printf("\nedg_cnt != %d, test fail\n", expt_cnt);
         return;
     }
     printf("\nDetected SCL frequency: %d Hz\n", i2c_source_clk_freq / ((pospulse_cnt + negpulse_cnt) / 2) );
@@ -697,7 +703,7 @@ static void i2c_scl_freq_cal(void)
 TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
 {
     //Use the UART baud rate detection function to detect the I2C SCL frequency.
-    const int i2c_num = 1;
+    const int i2c_num = 0;
     const int uart1_rxd_io = 5;
     i2c_config_t conf_master = {
         .mode = I2C_MODE_MASTER,
@@ -722,7 +728,5 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
     free(data);
     TEST_ESP_OK(i2c_driver_delete(i2c_num));
 }
-
-#endif // TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
 
 #endif // SOC_I2C_SUPPORT_SLAVE

@@ -147,7 +147,6 @@ examples/wifi/iperf/iperf_test.py
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
 tools/ble/lib_gatt.py
-tools/check_term.py
 tools/ci/check_artifacts_expire_time.py
 tools/ci/check_callgraph.py
 tools/ci/check_codeowners.py
@@ -218,7 +217,6 @@ tools/idf_py_actions/create_ext.py
 tools/idf_py_actions/debug_ext.py
 tools/idf_py_actions/dfu_ext.py
 tools/idf_py_actions/errors.py
-tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py

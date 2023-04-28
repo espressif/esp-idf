@@ -77,6 +77,46 @@ build:integration_test:
   included_in:
     - build:target_test
 
+# -------------
+# Special Cases
+# -------------
+"build:{0}-esp32s3":
+  matrix:
+    - *target_test
+  labels:
+    - build
+    - "{0}"
+    - target_test
+  patterns:
+    - build_components
+    - build_system
+    - build_target_test
+    - "{0}"
+    - "build-{0}"
+  included_in:
+    - "build:{0}"
+    - build:target_test
+
+"build:component_ut-esp32s3":
+  matrix:
+    - *target_test
+  labels:
+    - build
+    - component_ut
+    - unit_test
+    - target_test
+  patterns:
+    - build_components
+    - build_system
+    - build_target_test
+    - component_ut
+    - unit_test
+    - build-component_ut
+    - build-unit_test
+  included_in:
+    - "build:{0}"
+    - build:target_test
+
 ####################
 # Target Test Jobs #
 ####################
@@ -114,6 +154,27 @@ build:integration_test:
   included_in:
     - build:component_ut
     - "build:component_ut-{0}"
+    - build:target_test
+
+# due to the lack of runners, s3 tests will only be triggered by label
+"test:{0}-esp32s3":
+  matrix:
+    - *target_test
+  labels:
+    - "{0}_esp32s3"
+  included_in:
+    - "build:{0}"
+    - "build:{0}-esp32s3"
+    - build:target_test
+
+# overwrite the esp32s3 component ut again
+"test:component_ut-esp32s3": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
+  labels:
+    - "component_ut_esp32s3"
+    - "unit_test_esp32s3"
+  included_in:
+    - build:component_ut
+    - "build:component_ut-esp32s3"
     - build:target_test
 
 "test:integration_test":

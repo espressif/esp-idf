@@ -3,7 +3,7 @@ FAT Filesystem Support
 
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF uses the `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ library to work with FAT filesystems. FatFs resides in the ``fatfs`` component. Although the library can be used directly, many of its features can be accessed via VFS, using the C standard library and POSIX API functions.
+ESP-IDF uses the `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ library to work with FAT filesystems. FatFs resides in the ``fatfs`` component. Although the library can be used directly, many of its features can be accessed via VFS using the C standard library and POSIX API functions.
 
 Additionally, FatFs has been modified to support the runtime pluggable disk I/O layer. This allows mapping of FatFs drives to physical disks at runtime.
 
@@ -20,7 +20,7 @@ The function :cpp:func:`esp_vfs_fat_unregister_path` deletes the registration wi
 Most applications use the following workflow when working with ``esp_vfs_fat_`` functions:
 
 1. Call :cpp:func:`esp_vfs_fat_register` to specify:
-    - Path prefix where to mount the filesystem (e.g. ``"/sdcard"``, ``"/spiflash"``)
+    - Path prefix where to mount the filesystem (e.g., ``"/sdcard"``, ``"/spiflash"``)
     - FatFs drive number
     - A variable which will receive the pointer to the ``FATFS`` structure
 
@@ -30,28 +30,28 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 4. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. More details on the FatFs filenames are available `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
 
-5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, use the POSIX lseek function to perform it faster, the fast seek will not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
+5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, you can use the POSIX lseek function to perform it faster. The fast seek will not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
 
 6. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix (for example, ``"/hello.txt"``).
 
 7. Close all open files.
 
-8. Call the FatFs function ``f_mount`` for the same drive number, with NULL ``FATFS*`` argument, to unmount the filesystem.
+8. Call the FatFs function ``f_mount`` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
 
 9. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
 
 10. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
 
-The convenience functions ``esp_vfs_fat_sdmmc_mount``, ``esp_vfs_fat_sdspi_mount`` and ``esp_vfs_fat_sdcard_unmount`` wrap the steps described above and also handle SD card initialization. These two functions are described in the next section.
+The convenience functions ``esp_vfs_fat_sdmmc_mount``, ``esp_vfs_fat_sdspi_mount``, and ``esp_vfs_fat_sdcard_unmount`` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
 
 .. doxygenfunction:: esp_vfs_fat_register
 .. doxygenfunction:: esp_vfs_fat_unregister_path
 
 
-Using FatFs with VFS and SD cards
+Using FatFs with VFS and SD Cards
 ---------------------------------
 
-The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount` and :cpp:func:`esp_vfs_fat_sdcard_unmount`. These function perform Steps 1–3 and 7–9 respectively and handle SD card initialization, but provide only limited error handling. Developers are encouraged to check its source code and incorporate more advanced features into production applications.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount`. These functions perform Steps 1–3 and 7–9 respectively and handle SD card initialization, but provide only limited error handling. Developers are encouraged to check its source code and incorporate more advanced features into production applications.
 
 The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the filesystem and releases the resources acquired by :cpp:func:`esp_vfs_fat_sdmmc_mount`.
 
@@ -63,7 +63,7 @@ The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the file
 .. doxygenfunction:: esp_vfs_fat_sdcard_unmount
 
 
-Using FatFs with VFS in read-only mode
+Using FatFs with VFS in Read-Only Mode
 --------------------------------------
 
 The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_spiflash_mount_ro` and :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
@@ -72,12 +72,12 @@ The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the conve
 .. doxygenfunction:: esp_vfs_fat_spiflash_unmount_ro
 
 
-FatFS disk IO layer
+FatFS Disk IO Layer
 -------------------
 
 FatFs has been extended with API functions that register the disk I/O driver at runtime.
 
-They provide implementation of disk I/O functions for SD/MMC cards and can be registered for the given FatFs drive number using the function :cpp:func:`ff_diskio_register_sdmmc`.
+These APIs provide implementation of disk I/O functions for SD/MMC cards and can be registered for the given FatFs drive number using the function :cpp:func:`ff_diskio_register_sdmmc`.
 
 .. doxygenfunction:: ff_diskio_register
 .. doxygenstruct:: ff_diskio_impl_t
@@ -87,40 +87,41 @@ They provide implementation of disk I/O functions for SD/MMC cards and can be re
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
 
-FATFS partition generator
+FatFs Partition Generator
 -------------------------
 
-We provide a partition generator for FATFS (:component_file:`wl_fatfsgen.py<fatfs/wl_fatfsgen.py>`) which is integrated into the build system and could be easily used in the user project.
+We provide a partition generator for FatFs (:component_file:`wl_fatfsgen.py<fatfs/wl_fatfsgen.py>`) which is integrated into the build system and could be easily used in the user project.
 
 The tool is used to create filesystem images on a host and populate it with content of the specified host folder.
 
-The script is based on the partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) and except for generating partition also initializes wear levelling.
+The script is based on the partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`). Apart from generating partition, it can also initialize wear levelling.
 
-The latest version supports both short and long file names, FAT12 and FAT16. The long file names are limited to 255 characters, and can contain multiple period (".") characters within the filename and additional characters "+", ",", ";", "=", "[" and also "]". The long files name characters are encoded using utf-16, on the contrary to short file names encoded using utf-8.
+The latest version supports both short and long file names, FAT12, and FAT16. The long file names are limited to 255 characters, and can contain multiple period (".") characters within the filename and additional characters "+", ",", ";", "=", "[" and also "]". The characters in long file names are encoded using utf-16, and those in short file names are encoded using utf-8.
 
-Build system integration with FATFS partition generator
+
+Build System Integration with FatFs Partition Generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to invoke FATFS generator directly from the CMake build system by calling ``fatfs_create_spiflash_image``::
+It is possible to invoke FatFs generator directly from the CMake build system by calling ``fatfs_create_spiflash_image``::
 
     fatfs_create_spiflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
 
-If you prefer generating partition without wear levelling support you can use ``fatfs_create_rawflash_image``::
+If you prefer generating partition without wear levelling support, you can use ``fatfs_create_rawflash_image``::
 
     fatfs_create_rawflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
 
 ``fatfs_create_spiflash_image`` respectively ``fatfs_create_rawflash_image`` must be called from project's CMakeLists.txt.
 
-If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support), beware that it supports mounting only in read-only mode in the device.
+If you decide for any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support), beware that it supports mounting only in read-only mode in the device.
 
 
 The arguments of the function are as follows:
 
 1. partition - the name of the partition as defined in the partition table (e.g. :example_file:`storage/fatfsgen/partitions_example.csv`).
 
-2. base_dir - the directory that will be encoded to FATFS partition and optionally flashed into the device. Beware that you have to specified suitable size of the partition in the partition table.
+2. base_dir - the directory that will be encoded to FatFs partition and optionally flashed into the device. Beware that you have to specify the suitable size of the partition in the partition table.
 
-3. flag ``FLASH_IN_PROJECT`` - optionally, user can opt to have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash -p <PORT>`` by specifying ``FLASH_IN_PROJECT``.
+3. flag ``FLASH_IN_PROJECT`` - optionally, users can have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash -p <PORT>`` by specifying ``FLASH_IN_PROJECT``.
 
 For example::
 
@@ -129,3 +130,15 @@ For example::
 If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py`` or a custom build system target.
 
 For an example, see :example:`storage/fatfsgen`.
+
+
+FatFs Partition Analyzer
+------------------------
+
+We provide a partition analyzer for FatFs (:component_file:`fatfsparse.py<fatfs/fatfsparse.py>`). The tool is still in active progress and provides only restricted functionality. 
+
+It is only guaranteed that the tool is able to analyze images generated by FatFs partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) (without support for wear levelling and long names) and generate the folder structure on host with the same name as a FatFs volume label.
+
+Usage::
+
+    ./fatfsparse.py fatfs_image.img

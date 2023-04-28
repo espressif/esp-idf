@@ -18,12 +18,18 @@
 #include "esp_wifi_driver.h"
 #include "esp_wifi_types.h"
 
+struct hostapd_data *global_hapd;
+
+struct hostapd_data *hostapd_get_hapd_data(void)
+{
+    return global_hapd;
+}
+
 void *hostap_init(void)
 {
     struct wifi_ssid *ssid = esp_wifi_ap_get_prof_ap_ssid_internal();
     struct hostapd_data *hapd = NULL;
     struct wpa_auth_config *auth_conf;
-    u8 mac[6];
     u16 spp_attrubute = 0;
     u8 pairwise_cipher;
     wifi_pmf_config_t pmf_cfg;
@@ -40,6 +46,7 @@ void *hostap_init(void)
         os_free(hapd);
         return NULL;
     }
+    hapd->conf->max_num_sta = MAX_STA_COUNT;
 
     auth_conf = (struct wpa_auth_config *)os_zalloc(sizeof(struct  wpa_auth_config));
 
@@ -122,11 +129,12 @@ void *hostap_init(void)
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);
 
-    esp_wifi_get_macaddr_internal(WIFI_IF_AP, mac);
+    esp_wifi_get_macaddr_internal(WIFI_IF_AP, hapd->own_addr);
 
-    hapd->wpa_auth = wpa_init(mac, auth_conf, NULL);
+    hapd->wpa_auth = wpa_init(hapd->own_addr, auth_conf, NULL);
     esp_wifi_set_appie_internal(WIFI_APPIE_WPA, hapd->wpa_auth->wpa_ie, (uint16_t)hapd->wpa_auth->wpa_ie_len, 0);
     os_free(auth_conf);
+    global_hapd = hapd;
 
     return (void *)hapd;
 }
@@ -161,6 +169,7 @@ bool hostap_deinit(void *data)
 
     os_free(hapd);
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
+    global_hapd = NULL;
 
     return true;
 }

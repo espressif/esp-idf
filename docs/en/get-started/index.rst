@@ -142,8 +142,8 @@ IDE
 .. toctree::
     :maxdepth: 1
 
-    Eclipse Plugin <../get-started/eclipse-setup>
-    VSCode Extension <../get-started/vscode-setup>
+    Eclipse Plugin <eclipse-setup>
+    VSCode Extension <vscode-setup>
 
 Manual Installation
 ~~~~~~~~~~~~~~~~~~~
@@ -153,18 +153,12 @@ For the manual procedure, please select according to your operating system.
 .. toctree::
     :maxdepth: 1
 
-    Windows Installer <../get-started/windows-setup>
-    Linux and macOS <../get-started/linux-macos-setup>
+    Windows Installer <windows-setup>
+    Linux and macOS <linux-macos-setup>
 
 Build Your First Project
 ========================
 
-If you already have the ESP-IDF installed and not using IDE, you can build your first project from the command line following :ref:`get-started-first-steps`.
-
-.. toctree::
-   :hidden:
-
-   Windows <windows-setup>
-   Manual <linux-macos-setup>
+If you already have the ESP-IDF installed and not using IDE, you can build your first project from the command line following the :ref:`Start a Project on Windows <get-started-windows-first-steps>` or :ref:`Start a Project on Linux and macOS <get-started-linux-macos-first-steps>`.
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/

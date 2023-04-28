@@ -24,16 +24,15 @@
 
 假设用户有::
 
-    component
+    components
     └── my_component
-        └── CMakeLists.txt
-            ├── component.mk
-            ├── Kconfig
-            ├── src/
-            │   ├── my_src1.c
-            │   ├── my_src2.c
-            │   └── my_src3.c
-            └── my_linker_fragment_file.lf
+        ├── CMakeLists.txt
+        ├── Kconfig
+        ├── src/
+        │   ├── my_src1.c
+        │   ├── my_src2.c
+        │   └── my_src3.c
+        └── my_linker_fragment_file.lf
 
 - 名为 ``my_component`` 的组件，在构建过程中存储为 ``libmy_component.a`` 库文件
 - 库文件包含的三个源文件：``my_src1.c``、``my_src2.c`` 和 ``my_src3.c``，编译后分别为 ``my_src1.o``、``my_src2.o`` 和 ``my_src3.o``

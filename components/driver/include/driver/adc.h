@@ -93,7 +93,7 @@ typedef enum {
 
 /**
  * The default (max) bit width of the ADC of current version. You can also get the maximum bitwidth
- * by `SOC_ADC_MAX_BITWIDTH` defined in soc_caps.h.
+ * by `SOC_ADC_RTC_MAX_BITWIDTH` defined in soc_caps.h.
  */
 #define ADC_WIDTH_BIT_DEFAULT   (ADC_WIDTH_MAX-1)
 

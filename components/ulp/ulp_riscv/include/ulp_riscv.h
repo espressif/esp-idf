@@ -20,8 +20,12 @@ typedef enum {
     ULP_RISCV_WAKEUP_SOURCE_GPIO,
 } ulp_riscv_wakeup_source_t;
 
+/**
+ * @brief ULP riscv init parameters
+ *
+ */
 typedef struct {
-    ulp_riscv_wakeup_source_t wakeup_source;
+    ulp_riscv_wakeup_source_t wakeup_source; /*!< ULP wakeup source */
 } ulp_riscv_cfg_t;
 
 #define ULP_RISCV_DEFAULT_CONFIG()                      \

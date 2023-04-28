@@ -22,6 +22,8 @@
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "esp_netif.h"
+#include "sdkconfig.h"
+
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
 #endif

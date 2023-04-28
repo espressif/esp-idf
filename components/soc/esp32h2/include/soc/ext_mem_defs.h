@@ -27,7 +27,7 @@ extern "C" {
 #define ESP_CACHE_TEMP_ADDR             0x3C000000
 
 #define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
-#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
+#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) <= bus_name##_ADDRESS_HIGH)
 
 #define ADDRESS_IN_IRAM0(vaddr)            ADDRESS_IN_BUS(IRAM0, vaddr)
 #define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
@@ -86,16 +86,18 @@ extern "C" {
  */
 #define INVALID_PHY_PAGE 0xffff
 /**
- * Max MMU entry num.
- * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
- * 256 * 64KB, means MMU can map 16MB at most
+ * Max MMU available paddr page num.
+ * `MMU_MAX_PADDR_PAGE_NUM * MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * 256 * 64KB, means MMU can support 16MB paddr at most
  */
-#define MMU_MAX_ENTRY_NUM    256
+#define MMU_MAX_PADDR_PAGE_NUM    256
 /**
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
 #define MMU_VADDR_MASK    0x7fffff
+//MMU entry num
+#define MMU_ENTRY_NUM     128
 
 #define CACHE_ICACHE_LOW_SHIFT         0
 #define CACHE_ICACHE_HIGH_SHIFT        2

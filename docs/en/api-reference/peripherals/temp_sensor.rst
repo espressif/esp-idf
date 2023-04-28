@@ -30,13 +30,9 @@ Functional Overview
 -------------------
 
 -  `Resource Allocation <#resource-allocation>`__ - covers which parameters should be set up to get a temperature sensor handle and how to recycle the resources when temperature sensor finishes working.
-
--  `Start and Stop Temperature <#start-and-stop-temperature>`__ - covers how to start or stop the temperature sensor.
-
+-  `Enable and Disable Temperature Sensor <#enable-and-disable-temperature-sensor>`__ - covers how to enable and disable the temperature sensor.
 -  `Get Temperature Value <#get-temperature-value>`__ - covers how to get the real-time temperature value.
-
 -  `Power Management <#power-management>`__ - covers how temperature sensor is affected when changing power mode (i.e. light sleep).
-
 -  `Thread Safety <#thread-safety>`__ - covers how to make the driver to be thread safe.
 
 Resource Allocation
@@ -48,7 +44,6 @@ In order to install a built-in temperature sensor instance, the first thing is t
 :cpp:type:`temperature_sensor_config_t`:
 
 -  :cpp:member:`range_min`. The minimum value of testing range you have evaluated.
-
 -  :cpp:member:`range_max`. The maximum value of testing range you have evaluated.
 
 After the ranges are set, the structure could be passed to :cpp:func:`temperature_sensor_install`, which will instantiate the temperature sensor instance and return a handle.
@@ -61,7 +56,6 @@ Creating a Temperature Sensor Handle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Step1: Evaluate the testing range. In this example, the range is 20 °C ~ 50 °C.
-
 * Step2: Configure the range and obtain a handle
 
 .. code:: c
@@ -73,28 +67,27 @@ Creating a Temperature Sensor Handle
     };
     ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor, &temp_handle));
 
-Start and Stop Temperature
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Enable and Disable Temperature Sensor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Start the temperature sensor by calling :cpp:func:`temperature_sensor_start`. The temperature sensor will now measure the temperature.
-
-2. To stop the temperature sensor, please call :cpp:func:`temperature_sensor_stop`.
+1. Enable the temperature sensor by calling :cpp:func:`temperature_sensor_enable`. The internal temperature sensor circuit will start to work. The driver state will transit from init to enable.
+2. To Disable the temperature sensor, please call :cpp:func:`temperature_sensor_disable`.
 
 Get Temperature Value
 ^^^^^^^^^^^^^^^^^^^^^
 
-After the temperature sensor has been installed, you can get the temperature value by following the steps below.
-
-1. To get the current temperature, please call :cpp:func:`temperature_sensor_get_celsius`.
+After the temperature sensor is enabled by :cpp:func:`temperature_sensor_enable`, user can get the current temperature by calling :cpp:func:`temperature_sensor_get_celsius`.
 
 .. code:: c
 
-    ESP_ERROR_CHECK(temperature_sensor_start(temp_handle));
-    printf("Temperature sensor started\n");
+    // Enable temperature sensor
+    ESP_ERROR_CHECK(temperature_sensor_enable(temp_handle));
+    // Get converted sensor data
     float tsens_out;
     ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_handle, &tsens_out));
     printf("Temperature in %f °C\n", tsens_out);
-    ESP_ERROR_CHECK(temperature_sensor_stop(temp_handle));
+    // Disable the temperature sensor if it's not needed and save the power
+    ESP_ERROR_CHECK(temperature_sensor_disable(temp_handle));
 
 Power Management
 ^^^^^^^^^^^^^^^^
@@ -114,12 +107,12 @@ Unexpected Behaviors
 2. When installing the temperature sensor, the driver gives a 'the boundary you gave cannot meet the range of internal temperature sensor' error feedback. It is because the built-in temperature sensor has testing limit. The error due to setting :cpp:type:`temperature_sensor_config_t`:
 
     (1) Totally out of range, like 200 °C ~ 300 °C.
-    (2) Cross the boundary of each predefined measurement. like 40 °C ~ 110 °C. 
+    (2) Cross the boundary of each predefined measurement. like 40 °C ~ 110 °C.
 
 Application Example
 -------------------
 
-Temperature sensor reading example: :example:`peripherals/temp_sensor`.
+* Temperature sensor reading example: :example:`peripherals/temp_sensor`.
 
 API Reference
 ----------------------------------

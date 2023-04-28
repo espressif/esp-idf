@@ -1557,7 +1557,7 @@ void btm_ble_ltk_request(UINT16 handle, UINT8 rand[8], UINT16 ediv)
 {
     tBTM_CB *p_cb = &btm_cb;
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev_by_handle (handle);
-    BT_OCTET8 dummy_stk = {0};
+    BT_OCTET16 dummy_stk = {0};
 
     BTM_TRACE_DEBUG ("btm_ble_ltk_request");
 

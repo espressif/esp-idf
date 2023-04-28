@@ -67,10 +67,10 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
     /* fast clocks setup */
-    if (cfg.fast_freq == RTC_FAST_FREQ_8M) {
-        bool need_8md256 = cfg.slow_freq == RTC_SLOW_FREQ_8MD256;
+    if (cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_RC_FAST) {
+        bool need_8md256 = cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256;
         rtc_clk_8m_enable(true, need_8md256);
     }
-    rtc_clk_fast_freq_set(cfg.fast_freq);
-    rtc_clk_slow_freq_set(cfg.slow_freq);
+    rtc_clk_fast_src_set(cfg.fast_clk_src);
+    rtc_clk_slow_src_set(cfg.slow_clk_src);
 }

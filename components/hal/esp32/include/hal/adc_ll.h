@@ -6,19 +6,22 @@
 
 #pragma once
 
-#include "soc/adc_periph.h"
+#include <stdbool.h>
 #include "hal/adc_types.h"
+#include "hal/misc.h"
+#include "hal/assert.h"
+#include "soc/adc_periph.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
 #include "soc/syscon_struct.h"
 #include "soc/rtc_cntl_struct.h"
-#include <stdbool.h>
-#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
@@ -338,14 +341,31 @@ static inline void adc_ll_set_sar_clk_div(adc_unit_t adc_n, uint32_t div)
  * @param adc_n ADC unit.
  * @param bits Output data bits width option, see ``adc_bits_width_t``.
  */
-static inline void adc_ll_rtc_set_output_format(adc_unit_t adc_n, adc_bits_width_t bits)
+static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
+    uint32_t reg_val = 0;
+    switch (bits) {
+        case ADC_BITWIDTH_9:
+            reg_val = 0;
+            break;
+        case ADC_BITWIDTH_10:
+            reg_val = 1;
+            break;
+        case ADC_BITWIDTH_11:
+            reg_val = 2;
+            break;
+        case ADC_BITWIDTH_12:
+            reg_val = 3;
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
     if (adc_n == ADC_UNIT_1) {
-        SENS.sar_start_force.sar1_bit_width = bits;
-        SENS.sar_read_ctrl.sar1_sample_bit = bits;
+        SENS.sar_start_force.sar1_bit_width = reg_val;
+        SENS.sar_read_ctrl.sar1_sample_bit = reg_val;
     } else { // adc_n == ADC_UNIT_2
-        SENS.sar_start_force.sar2_bit_width = bits;
-        SENS.sar_read_ctrl2.sar2_sample_bit = bits;
+        SENS.sar_start_force.sar2_bit_width = reg_val;
+        SENS.sar_read_ctrl2.sar2_sample_bit = reg_val;
     }
 }
 
@@ -357,7 +377,7 @@ static inline void adc_ll_rtc_set_output_format(adc_unit_t adc_n, adc_bits_width
  * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_enable_channel(adc_unit_t adc_n, int channel)
+static inline void adc_oneshot_ll_set_channel(adc_unit_t adc_n, int channel)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_meas_start1.sar1_en_pad = (1 << channel); //only one channel is selected.
@@ -373,7 +393,7 @@ static inline void adc_ll_rtc_enable_channel(adc_unit_t adc_n, int channel)
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_rtc_disable_channel(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_meas_start1.sar1_en_pad = 0; //only one channel is selected.
@@ -388,9 +408,8 @@ static inline void adc_ll_rtc_disable_channel(adc_unit_t adc_n)
  * @note It may be block to wait conversion idle for ADC1.
  *
  * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_start_convert(adc_unit_t adc_n, int channel)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
 {
     if (adc_n == ADC_UNIT_1) {
         while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0) {}
@@ -403,20 +422,33 @@ static inline void adc_ll_rtc_start_convert(adc_unit_t adc_n, int channel)
 }
 
 /**
- * Check the conversion done flag for each ADCn for RTC controller.
+ * Clear the event for each ADCn for Oneshot mode
  *
- * @param adc_n ADC unit.
+ * @param event ADC event
+ */
+static inline void adc_oneshot_ll_clear_event(uint32_t event)
+{
+    //For compatibility
+}
+
+/**
+ * Check the event for each ADCn for Oneshot mode
+ *
+ * @param event ADC event
+ *
  * @return
  *      -true  : The conversion process is finish.
  *      -false : The conversion process is not finish.
  */
-static inline bool adc_ll_rtc_convert_is_done(adc_unit_t adc_n)
+static inline bool adc_oneshot_ll_get_event(uint32_t event)
 {
     bool ret = true;
-    if (adc_n == ADC_UNIT_1) {
+    if (event == ADC_LL_EVENT_ADC1_ONESHOT_DONE) {
         ret = (bool)SENS.sar_meas_start1.meas1_done_sar;
-    } else { // adc_n == ADC_UNIT_2
+    } else if (event == ADC_LL_EVENT_ADC2_ONESHOT_DONE) {
         ret = (bool)SENS.sar_meas_start2.meas2_done_sar;
+    } else {
+        HAL_ASSERT(false);
     }
     return ret;
 }
@@ -428,9 +460,9 @@ static inline bool adc_ll_rtc_convert_is_done(adc_unit_t adc_n)
  * @return
  *      - Converted value.
  */
-static inline int adc_ll_rtc_get_convert_value(adc_unit_t adc_n)
+static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
-    int ret_val = 0;
+    uint32_t ret_val = 0;
     if (adc_n == ADC_UNIT_1) {
         ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas_start1, meas1_data_sar);
     } else { // adc_n == ADC_UNIT_2
@@ -444,7 +476,7 @@ static inline int adc_ll_rtc_get_convert_value(adc_unit_t adc_n)
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_rtc_output_invert(adc_unit_t adc_n, bool inv_en)
+static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_read_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
@@ -457,20 +489,20 @@ static inline void adc_ll_rtc_output_invert(adc_unit_t adc_n, bool inv_en)
  * Analyze whether the obtained raw data is correct.
  *
  * @param adc_n ADC unit.
- * @param raw_data ADC raw data input (convert value).
+ * @param raw   ADC raw data input (convert value).
  * @return
- *      - 0: The data is correct to use.
+ *      - true: raw data is valid
  */
-static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_unit_t adc_n, uint16_t raw_data)
+static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw)
 {
-    /* ADC1 don't need check data */
-    return ADC_RTC_DATA_OK;
+    /* No arbiter, don't need check data */
+    return true;
 }
 
 /**
  * Set the attenuation of a particular channel on ADCn.
  */
-static inline void adc_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
+static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
@@ -493,6 +525,25 @@ static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t chann
     } else {
         return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
+}
+
+/**
+ * Enable oneshot conversion trigger
+ *
+ * @param adc_n  Not used, for compatibility
+ */
+static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
+{
+    (void)adc_n;
+    //For compatibility
+}
+
+/**
+ * Disable oneshot conversion trigger for all the ADC units
+ */
+static inline void adc_oneshot_ll_disable_all_unit(void)
+{
+    //For compatibility
 }
 
 /*---------------------------------------------------------------

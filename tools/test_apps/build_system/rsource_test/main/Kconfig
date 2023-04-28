@@ -1,1 +1,1 @@
-rsource "port/$IDF_TARGET/Kconfig"
+rsource "port/$IDF_TARGET/Kconfig.port"

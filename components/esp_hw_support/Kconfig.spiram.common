@@ -1,10 +1,6 @@
 # Common (non-chip-specific) SPIRAM options
 #
-# sourced into the "SPIRAM config" submenu for ESP32 or ESP32S2
-
-# invisible option selected by ${target}_SPIRAM_SUPPORT
-config SPIRAM
-    bool
+# sourced into the "SPIRAM config" submenu for a specific chip.
 
 config SPIRAM_BOOT_INIT
     bool "Initialize SPI RAM during startup"

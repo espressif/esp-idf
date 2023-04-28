@@ -137,10 +137,10 @@ static int do_ping_cmd(int argc, char **argv)
 
     /* set callback functions */
     esp_ping_callbacks_t cbs = {
+        .cb_args = NULL,
         .on_ping_success = cmd_ping_on_ping_success,
         .on_ping_timeout = cmd_ping_on_ping_timeout,
-        .on_ping_end = cmd_ping_on_ping_end,
-        .cb_args = NULL
+        .on_ping_end = cmd_ping_on_ping_end
     };
     esp_ping_handle_t ping;
     esp_ping_new_session(&config, &cbs, &ping);

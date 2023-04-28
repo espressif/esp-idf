@@ -30,9 +30,9 @@ if(CONFIG_SECURE_SIGNED_APPS)
     add_custom_target(gen_secure_boot_keys)
 
     if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
-        set(secure_apps_signing_scheme "1")
-    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
-        set(secure_apps_signing_scheme "2")
+        set(secure_apps_signing_version "1")
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+        set(secure_apps_signing_version "2")
     endif()
 
     if(CONFIG_SECURE_BOOT_V1_ENABLED)
@@ -64,10 +64,22 @@ if(CONFIG_SECURE_SIGNED_APPS)
             # If the signing key is not found, create a phony gen_secure_boot_signing_key target that
             # fails the build. fail_at_build_time causes a cmake run next time
             # (to pick up a new signing key if one exists, etc.)
-            fail_at_build_time(gen_secure_boot_signing_key
-                "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
-                "\tespsecure.py generate_signing_key --version ${secure_apps_signing_scheme} \
-                ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+            if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+                fail_at_build_time(gen_secure_boot_signing_key
+                    "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
+                    "\tespsecure.py generate_signing_key --version ${secure_apps_signing_version} \
+                    ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+            else()
+                if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS)
+                    set(scheme "ecdsa192")
+                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
+                    set(scheme "ecdsa256")
+                endif()
+                fail_at_build_time(gen_secure_boot_signing_key
+                    "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
+                    "\tespsecure.py generate_signing_key --version ${secure_apps_signing_version} \
+                    --scheme ${scheme} ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+            endif()
         else()
             add_custom_target(gen_secure_boot_signing_key)
         endif()

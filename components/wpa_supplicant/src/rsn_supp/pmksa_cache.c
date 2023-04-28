@@ -38,7 +38,7 @@ static void pmksa_cache_set_expiration(struct rsn_pmksa_cache *pmksa);
 
 static void _pmksa_cache_free_entry(struct rsn_pmksa_cache_entry *entry)
 {
-    wpa_bin_clear_free(entry, sizeof(*entry));
+    bin_clear_free(entry, sizeof(*entry));
 }
 
 

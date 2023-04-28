@@ -98,12 +98,20 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
         /* Generating the SHA of the public key components in the signature block */
         bootloader_sha256_handle_t sig_block_sha;
         sig_block_sha = bootloader_sha256_start();
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
         bootloader_sha256_data(sig_block_sha, &block->key, sizeof(block->key));
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+        bootloader_sha256_data(sig_block_sha, &block->ecdsa.key, sizeof(block->ecdsa.key));
+#endif
         bootloader_sha256_finish(sig_block_sha, key_digest);
 
         // Check we can verify the image using this signature and this key
         uint8_t temp_verified_digest[ESP_SECURE_BOOT_DIGEST_LEN];
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
         bool verified = ets_rsa_pss_verify(&block->key, block->signature, image_digest, temp_verified_digest);
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+        bool verified = ets_ecdsa_verify(&block->ecdsa.key.point[0], block->ecdsa.signature, block->ecdsa.key.curve_id, image_digest, temp_verified_digest);
+#endif
 
         if (!verified) {
             /* We don't expect this: the signature blocks before we enable secure boot should all be verifiable or invalid,

@@ -26,7 +26,7 @@ static uint8_t s_buf[512];
 void app_main(void)
 {
     // Register host FS at '/host'. On the host file will be written/read in the current semihosting dir of OpenOCD
-    esp_err_t ret = esp_vfs_semihost_register("/host", NULL);
+    esp_err_t ret = esp_vfs_semihost_register("/host");
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register semihost driver (%s)!", esp_err_to_name(ret));
         return;

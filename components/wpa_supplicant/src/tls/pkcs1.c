@@ -1,16 +1,18 @@
 /*
  * PKCS #1 (RSA Encryption)
- * Copyright (c) 2006-2009, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2006-2014, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
-#include "tls/rsa.h"
-#include "tls/pkcs1.h"
+#include "common.h"
+#include "crypto/crypto.h"
+#include "rsa.h"
+#include "asn1.h"
+#include "pkcs1.h"
 
 
 static int pkcs1_generate_encryption_block(u8 block_type, size_t modlen,
@@ -113,6 +115,11 @@ int pkcs1_v15_private_key_decrypt(struct crypto_rsa_key *key,
 		pos++;
 	if (pos == end)
 		return -1;
+	if (pos - out - 2 < 8) {
+		/* PKCS #1 v1.5, 8.1: At least eight octets long PS */
+		wpa_printf(MSG_INFO, "LibTomCrypt: Too short padding");
+		return -1;
+	}
 	pos++;
 
 	*outlen -= pos - out;
@@ -142,46 +149,41 @@ int pkcs1_decrypt_public_key(struct crypto_rsa_key *key,
 	 * BT = 00 or 01
 	 * PS = k-3-||D|| times (00 if BT=00) or (FF if BT=01)
 	 * k = length of modulus in octets
+	 *
+	 * Based on 10.1.3, "The block type shall be 01" for a signature.
 	 */
 
 	if (len < 3 + 8 + 16 /* min hash len */ ||
-	    plain[0] != 0x00 || (plain[1] != 0x00 && plain[1] != 0x01)) {
+	    plain[0] != 0x00 || plain[1] != 0x01) {
 		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
 			   "structure");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
 		return -1;
 	}
 
 	pos = plain + 3;
-	if (plain[1] == 0x00) {
-		/* BT = 00 */
-		if (plain[2] != 0x00) {
-			wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature "
-				   "PS (BT=00)");
-			return -1;
-		}
-		while (pos + 1 < plain + len && *pos == 0x00 && pos[1] == 0x00)
-			pos++;
-	} else {
-		/* BT = 01 */
-		if (plain[2] != 0xff) {
-			wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature "
-				   "PS (BT=01)");
-			return -1;
-		}
-		while (pos < plain + len && *pos == 0xff)
-			pos++;
+	/* BT = 01 */
+	if (plain[2] != 0xff) {
+		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature "
+			   "PS (BT=01)");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+		return -1;
 	}
+	while (pos < plain + len && *pos == 0xff)
+		pos++;
 
 	if (pos - plain - 2 < 8) {
 		/* PKCS #1 v1.5, 8.1: At least eight octets long PS */
 		wpa_printf(MSG_INFO, "LibTomCrypt: Too short signature "
 			   "padding");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
 		return -1;
 	}
 
 	if (pos + 16 /* min hash len */ >= plain + len || *pos != 0x00) {
 		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
 			   "structure (2)");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
 		return -1;
 	}
 	pos++;
@@ -190,6 +192,148 @@ int pkcs1_decrypt_public_key(struct crypto_rsa_key *key,
 	/* Strip PKCS #1 header */
 	os_memmove(plain, pos, len);
 	*plain_len = len;
+
+	return 0;
+}
+
+
+int pkcs1_v15_sig_ver(struct crypto_public_key *pk,
+		      const u8 *s, size_t s_len,
+		      const struct asn1_oid *hash_alg,
+		      const u8 *hash, size_t hash_len)
+{
+	int res;
+	u8 *decrypted;
+	size_t decrypted_len;
+	const u8 *pos, *end, *next, *da_end;
+	struct asn1_hdr hdr;
+	struct asn1_oid oid;
+
+	decrypted = os_malloc(s_len);
+	if (decrypted == NULL)
+		return -1;
+	decrypted_len = s_len;
+	res = crypto_public_key_decrypt_pkcs1(pk, s, s_len, decrypted,
+					      &decrypted_len);
+	if (res < 0) {
+		wpa_printf(MSG_INFO, "PKCS #1: RSA decrypt failed");
+		os_free(decrypted);
+		return -1;
+	}
+	wpa_hexdump(MSG_DEBUG, "Decrypted(S)", decrypted, decrypted_len);
+
+	/*
+	 * PKCS #1 v1.5, 10.1.2:
+	 *
+	 * DigestInfo ::= SEQUENCE {
+	 *     digestAlgorithm DigestAlgorithmIdentifier,
+	 *     digest Digest
+	 * }
+	 *
+	 * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+	 *
+	 * Digest ::= OCTET STRING
+	 *
+	 */
+	if (asn1_get_next(decrypted, decrypted_len, &hdr) < 0 ||
+	    !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #1: Expected SEQUENCE (DigestInfo)");
+		os_free(decrypted);
+		return -1;
+	}
+	wpa_hexdump(MSG_MSGDUMP, "PKCS #1: DigestInfo",
+		    hdr.payload, hdr.length);
+
+	pos = hdr.payload;
+	end = pos + hdr.length;
+
+	/*
+	 * X.509:
+	 * AlgorithmIdentifier ::= SEQUENCE {
+	 *     algorithm            OBJECT IDENTIFIER,
+	 *     parameters           ANY DEFINED BY algorithm OPTIONAL
+	 * }
+	 */
+
+	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
+	    !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #1: Expected SEQUENCE (AlgorithmIdentifier)");
+		os_free(decrypted);
+		return -1;
+	}
+	wpa_hexdump(MSG_MSGDUMP, "PKCS #1: DigestAlgorithmIdentifier",
+		    hdr.payload, hdr.length);
+	da_end = hdr.payload + hdr.length;
+
+	if (asn1_get_oid(hdr.payload, hdr.length, &oid, &next)) {
+		wpa_printf(MSG_DEBUG,
+			   "PKCS #1: Failed to parse digestAlgorithm");
+		os_free(decrypted);
+		return -1;
+	}
+	wpa_hexdump(MSG_MSGDUMP, "PKCS #1: Digest algorithm parameters",
+		    next, da_end - next);
+
+	/*
+	 * RFC 5754: The correct encoding for the SHA2 algorithms would be to
+	 * omit the parameters, but there are implementation that encode these
+	 * as a NULL element. Allow these two cases and reject anything else.
+	 */
+	if (da_end > next &&
+	    (asn1_get_next(next, da_end - next, &hdr) < 0 ||
+	     !asn1_is_null(&hdr) ||
+	     hdr.payload + hdr.length != da_end)) {
+		wpa_printf(MSG_DEBUG,
+			   "PKCS #1: Unexpected digest algorithm parameters");
+		os_free(decrypted);
+		return -1;
+	}
+
+	if (!asn1_oid_equal(&oid, hash_alg)) {
+		char txt[100], txt2[100];
+		asn1_oid_to_str(&oid, txt, sizeof(txt));
+		asn1_oid_to_str(hash_alg, txt2, sizeof(txt2));
+		wpa_printf(MSG_DEBUG,
+			   "PKCS #1: Hash alg OID mismatch: was %s, expected %s",
+			   txt, txt2);
+		os_free(decrypted);
+		return -1;
+	}
+
+	/* Digest ::= OCTET STRING */
+	pos = da_end;
+
+	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
+	    !asn1_is_octetstring(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #1: Expected OCTETSTRING (Digest)");
+		os_free(decrypted);
+		return -1;
+	}
+	wpa_hexdump(MSG_MSGDUMP, "PKCS #1: Decrypted Digest",
+		    hdr.payload, hdr.length);
+
+	if (hdr.length != hash_len ||
+	    os_memcmp_const(hdr.payload, hash, hdr.length) != 0) {
+		wpa_printf(MSG_INFO, "PKCS #1: Digest value does not match calculated hash");
+		os_free(decrypted);
+		return -1;
+	}
+
+	os_free(decrypted);
+
+	if (hdr.payload + hdr.length != decrypted + decrypted_len) {
+		wpa_printf(MSG_INFO,
+			   "PKCS #1: Extra data after signature - reject");
+
+		wpa_hexdump(MSG_DEBUG, "PKCS #1: Extra data",
+			    hdr.payload + hdr.length,
+			    decrypted + decrypted_len - hdr.payload -
+			    hdr.length);
+		return -1;
+	}
 
 	return 0;
 }

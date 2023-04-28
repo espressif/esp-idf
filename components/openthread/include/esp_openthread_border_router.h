@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,18 @@ esp_err_t esp_openthread_border_router_deinit(void);
  *
  */
 esp_netif_t *esp_openthread_get_backbone_netif(void);
+
+/**
+ * @brief   Registers the callback for RCP failure.
+ *
+ */
+void esp_openthread_register_rcp_failure_handler(esp_openthread_rcp_failure_handler handler);
+
+/**
+ * @brief   Deinitializes the conneciton to RCP.
+ *
+ */
+void esp_openthread_rcp_deinit(void);
 
 #ifdef __cplusplus
 }

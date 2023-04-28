@@ -142,6 +142,7 @@ test_fatfsgen_on_host:
     - cd components/fatfs/test_fatfsgen/
     - ./test_fatfsgen.py
     - ./test_wl_fatfsgen.py
+    - ./test_fatfsparse.py
 
 test_multi_heap_on_host:
   extends: .host_test_template
@@ -433,3 +434,12 @@ test_gen_soc_caps_kconfig:
   script:
     - cd ${IDF_PATH}/tools/gen_soc_caps_kconfig/
     - ./test/test_gen_soc_caps_kconfig.py
+
+test_pytest_qemu:
+  extends:
+    - .host_test_template
+    - .before_script_pytest
+  image: $QEMU_IMAGE
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py . --target esp32 -m qemu -vv
+    - pytest --target esp32 -m qemu --embedded-services idf,qemu

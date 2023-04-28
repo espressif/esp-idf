@@ -1025,6 +1025,14 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_ERR_INVALID_ARG, TAG, "I2S%d has not installed yet", i2s_num);
 
+    /* Acquire the lock before stop i2s, otherwise reading/writing operation will stuck on receiving the message queue from interrupt */
+    if (p_i2s[i2s_num]->dir & I2S_MODE_TX) {
+        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, portMAX_DELAY);
+    }
+    if (p_i2s[i2s_num]->dir & I2S_MODE_RX) {
+        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
+    }
+
     /* Stop I2S */
     i2s_stop(i2s_num);
 
@@ -1063,19 +1071,15 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     if (need_realloc) {
         esp_err_t ret = ESP_OK;
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            xSemaphoreTake(p_i2s[i2s_num]->tx->mux, portMAX_DELAY);
             p_i2s[i2s_num]->tx->buf_size = buf_size;
             ret = i2s_realloc_dma_buffer(i2s_num, p_i2s[i2s_num]->tx);
             xQueueReset(p_i2s[i2s_num]->tx->queue);
-            xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
             ESP_RETURN_ON_ERROR(ret, TAG, "I2S%d tx DMA buffer malloc failed", i2s_num);
         }
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
             p_i2s[i2s_num]->rx->buf_size = buf_size;
             ret = i2s_realloc_dma_buffer(i2s_num, p_i2s[i2s_num]->rx);
             xQueueReset(p_i2s[i2s_num]->rx->queue);
-            xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
             ESP_RETURN_ON_ERROR(ret, TAG, "I2S%d rx DMA buffer malloc failed", i2s_num);
         }
     }
@@ -1084,6 +1088,13 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
     /* I2S start */
     i2s_start(i2s_num);
+
+    if (p_i2s[i2s_num]->dir & I2S_MODE_TX) {
+        xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
+    }
+    if (p_i2s[i2s_num]->dir & I2S_MODE_RX) {
+        xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
+    }
 
     return ESP_OK;
 }
@@ -1107,6 +1118,13 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg)
 {
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_FAIL, TAG, "i2s has not installed yet");
 
+    if (p_i2s[i2s_num]->dir & I2S_MODE_TX) {
+        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, portMAX_DELAY);
+    }
+    if (p_i2s[i2s_num]->dir & I2S_MODE_RX) {
+        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
+    }
+
     i2s_stop(i2s_num);
     I2S_ENTER_CRITICAL(i2s_num);
     if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
@@ -1117,6 +1135,14 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg)
     }
     I2S_EXIT_CRITICAL(i2s_num);
     i2s_start(i2s_num);
+
+    if (p_i2s[i2s_num]->dir & I2S_MODE_TX) {
+        xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
+    }
+    if (p_i2s[i2s_num]->dir & I2S_MODE_RX) {
+        xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
+    }
+
     return ESP_OK;
 }
 #endif
@@ -1126,13 +1152,14 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsampl
 {
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_FAIL, TAG, "i2s has not installed yet");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM), ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
+    xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
     i2s_stop(i2s_num);
-    i2s_pdm_rx_slot_config_t *slot_cfg = (i2s_pdm_rx_slot_config_t*)p_i2s[i2s_num];
-    i2s_pdm_rx_clk_config_t *clk_cfg = (i2s_pdm_rx_clk_config_t*)p_i2s[i2s_num];
+    i2s_pdm_rx_slot_config_t *slot_cfg = (i2s_pdm_rx_slot_config_t*)p_i2s[i2s_num]->slot_cfg;
+    i2s_pdm_rx_clk_config_t *clk_cfg = (i2s_pdm_rx_clk_config_t*)p_i2s[i2s_num]->clk_cfg;
     clk_cfg->dn_sample_mode = downsample;
     i2s_ll_rx_set_pdm_dsr(p_i2s[i2s_num]->hal.dev, downsample);
-
-    // i2s will start in 'i2s_set_clk'
+    i2s_start(i2s_num);
+    xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
     return i2s_set_clk(i2s_num, clk_cfg->sample_rate_hz, slot_cfg->data_bit_width, slot_cfg->slot_mode);
 }
 #endif
@@ -1143,14 +1170,15 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_FAIL, TAG, "i2s has not installed yet");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) && (p_i2s[i2s_num]->dir & I2S_DIR_TX),
                         ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
+    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, portMAX_DELAY);
     i2s_stop(i2s_num);
-
     i2s_pdm_tx_clk_config_t *clk_cfg = (i2s_pdm_tx_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
     i2s_pdm_tx_slot_config_t *slot_cfg = (i2s_pdm_tx_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
     clk_cfg->up_sample_fp = upsample_cfg->fp;
     clk_cfg->up_sample_fs = upsample_cfg->fs;
     i2s_ll_tx_set_pdm_fpfs(p_i2s[i2s_num]->hal.dev, upsample_cfg->fp, upsample_cfg->fs);
-    // i2s will start in 'i2s_set_clk'
+    i2s_start(i2s_num);
+    xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
     return i2s_set_clk(i2s_num, clk_cfg->sample_rate_hz, slot_cfg->data_bit_width, slot_cfg->slot_mode);
 }
 #endif

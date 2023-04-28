@@ -65,9 +65,9 @@
 #include <xtensa/xtensa_context.h>
 #include "soc/soc_caps.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_private/esp_int_wdt.h"
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_int_wdt.h"
 #ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
 #endif

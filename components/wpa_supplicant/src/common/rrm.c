@@ -10,6 +10,7 @@
 
 #include "utils/common.h"
 #include "utils/bitfield.h"
+#include "utils/eloop.h"
 #include "common/ieee802_11_defs.h"
 #include "common/ieee802_11_common.h"
 #include "wpa_supplicant_i.h"

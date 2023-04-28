@@ -36,12 +36,11 @@ else()
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include
-                        PRIV_REQUIRES spi_flash
+                        PRIV_REQUIRES spi_flash esp_timer
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
                                     # [refactor-todo] requires "driver" for headers:
-                                    # - rtc_cntl.h
                                     # - spi_common_internal.h
                                     pthread bootloader_support efuse driver
                         LDFRAGMENTS "linker.lf" "app.lf")
@@ -94,4 +93,12 @@ idf_component_optional_requires(PRIVATE app_update)
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)
+endif()
+
+if(CONFIG_VFS_SUPPORT_IO)
+    idf_component_optional_requires(PRIVATE vfs)
+endif()
+
+if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
+    idf_component_optional_requires(PRIVATE esp_wifi)
 endif()

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -493,7 +493,7 @@ bool spi_timing_is_tuned(void)
 void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
 {
     // Get clock configuration directly from system.
-    out_timing_config->clock_config.spimem.val = spi_timing_config_get_flash_clock_reg();
+    out_timing_config->clock_config.spimem = spi_timing_config_get_flash_clock_reg();
 
     // Get extra dummy length here. Therefore, no matter what freq, or mode.
     // If it needs tuning, it will return correct extra dummy len. If no tuning, it will return 0.

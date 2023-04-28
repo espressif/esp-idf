@@ -95,7 +95,7 @@ if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
                 "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
             VERBATIM)
     endif()
-elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
     add_custom_command(TARGET partition-table POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "Partition table built:"
     VERBATIM)

@@ -1,15 +1,6 @@
 menu "Example Configuration"
 
-    config EXAMPLE_GPIO_RANGE_MIN
-        int
-        default 0
-
-    config EXAMPLE_GPIO_RANGE_MAX
-        int
-        default 33 if IDF_TARGET_ESP32
-        default 46 if IDF_TARGET_ESP32S2
-        default 19 if IDF_TARGET_ESP32C3
-        default 48 if IDF_TARGET_ESP32S3
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
 
     config EXAMPLE_ENC28J60_SPI_HOST
         int "SPI Host Number"
@@ -20,7 +11,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ENC28J60_SCLK_GPIO
         int "SPI SCLK GPIO number"
-        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 14 if IDF_TARGET_ESP32
         default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         default 6 if IDF_TARGET_ESP32C3
@@ -29,7 +20,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ENC28J60_MOSI_GPIO
         int "SPI MOSI GPIO number"
-        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 13 if IDF_TARGET_ESP32
         default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         default 7 if IDF_TARGET_ESP32C3
@@ -38,7 +29,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ENC28J60_MISO_GPIO
         int "SPI MISO GPIO number"
-        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
         default 12 if IDF_TARGET_ESP32
         default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         default 2 if IDF_TARGET_ESP32C3
@@ -47,7 +38,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ENC28J60_CS_GPIO
         int "SPI CS GPIO number"
-        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 15 if IDF_TARGET_ESP32
         default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
@@ -62,7 +53,7 @@ menu "Example Configuration"
 
     config EXAMPLE_ENC28J60_INT_GPIO
         int "Interrupt GPIO number"
-        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
         default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             Set the GPIO number used by ENC28J60 interrupt.

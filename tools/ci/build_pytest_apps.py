@@ -13,30 +13,31 @@ import sys
 from collections import defaultdict
 from typing import List
 
-from idf_ci_utils import IDF_PATH, get_pytest_cases
+from idf_ci_utils import IDF_PATH, PytestCase, get_pytest_cases
 
 try:
     from build_apps import build_apps
     from find_apps import find_builds_for_app
-    from find_build_apps import BuildItem, config_rules_from_str, setup_logging
+    from find_build_apps import BuildItem, CMakeBuildSystem, config_rules_from_str, setup_logging
 except ImportError:
     sys.path.append(os.path.join(IDF_PATH, 'tools'))
 
     from build_apps import build_apps
     from find_apps import find_builds_for_app
-    from find_build_apps import BuildItem, config_rules_from_str, setup_logging
+    from find_build_apps import BuildItem, CMakeBuildSystem, config_rules_from_str, setup_logging
 
 
 def main(args: argparse.Namespace) -> None:
-    pytest_cases = []
+    pytest_cases: List[PytestCase] = []
     for path in args.paths:
-        pytest_cases += get_pytest_cases(path, args.target)
+        pytest_cases += get_pytest_cases(path, args.target, args.marker_expr)
 
     paths = set()
     app_configs = defaultdict(set)
     for case in pytest_cases:
-        paths.add(case.app_path)
-        app_configs[case.app_path].add(case.config)
+        for app in case.apps:
+            paths.add(app.path)
+            app_configs[app.path].add(app.config)
 
     app_dirs = list(paths)
     if not app_dirs:
@@ -50,15 +51,16 @@ def main(args: argparse.Namespace) -> None:
     config_rules = config_rules_from_str(args.config or [])
     for app_dir in app_dirs:
         app_dir = os.path.realpath(app_dir)
-        build_items += find_builds_for_app(
-            app_path=app_dir,
-            work_dir=app_dir,
-            build_dir='build_@t_@w',
-            build_log=f'{app_dir}/build_@t_@w/build.log',
-            target_arg=args.target,
-            build_system='cmake',
-            config_rules=config_rules,
-        )
+        if args.target in CMakeBuildSystem.supported_targets(app_dir):
+            build_items += find_builds_for_app(
+                app_path=app_dir,
+                work_dir=app_dir,
+                build_dir='build_@t_@w',
+                build_log=f'{app_dir}/build_@t_@w/build.log',
+                target_arg=args.target,
+                build_system='cmake',
+                config_rules=config_rules,
+            )
 
     modified_build_items = []
     # auto clean up the binaries if no flag --preserve-all
@@ -92,7 +94,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Build all the pytest apps under specified paths. Will auto remove those non-test apps binaries'
     )
-    parser.add_argument('--target', required=True, help='Build apps for given target.')
+    parser.add_argument(
+        '-t', '--target', required=True, help='Build apps for given target.'
+    )
+    parser.add_argument(
+        '-m',
+        '--marker-expr',
+        default='not host_test',  # host_test apps would be built and tested under the same job
+        help='only build tests matching given mark expression. For example: -m "host_test and generic".',
+    )
     parser.add_argument(
         '--config',
         default=['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default'],

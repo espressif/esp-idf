@@ -109,6 +109,9 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
 开始使用 ESP-IDF
 ========================
 
+.. _get-started-windows-first-steps:
+
+.. include:: windows-start-project.rst
 .. include:: start-project.rst
 
 相关文档

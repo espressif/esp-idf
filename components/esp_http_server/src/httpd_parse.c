@@ -753,6 +753,12 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
              sd->ws_handler != NULL ? "Yes" : "No",
              sd->ws_close ? "Yes" : "No");
     if (sd->ws_handshake_done && sd->ws_handler != NULL) {
+        if (sd->ws_close == true) {
+            /* WS was marked as close state, do not deal with this socket */
+            ESP_LOGD(TAG, LOG_FMT("WS was marked close"));
+            return ESP_OK;
+        }
+
         ret = httpd_ws_get_frame_type(r);
         ESP_LOGD(TAG, LOG_FMT("New WS request from existing socket, ws_type=%d"), ra->ws_type);
 

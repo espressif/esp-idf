@@ -32,9 +32,8 @@ def _prepare_source_files(env_dict, list_separator):
         source "var2"
         source "var3"
 
-    The character used to delimit paths in COMPONENT_KCONFIGS* variables is determined based on
-    presence of 'IDF_CMAKE' variable in the env_dict.
-    GNU Make build system uses a space, CMake build system uses a semicolon.
+    The character used to delimit paths in COMPONENT_KCONFIGS* variables is set using --list-separator option.
+    Space separated lists are currently only used by the documentation build system (esp-docs).
     """
 
     def _dequote(var):

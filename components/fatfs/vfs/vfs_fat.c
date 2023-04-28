@@ -84,6 +84,7 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length);
 static int vfs_fat_ftruncate(void* ctx, int fd, off_t length);
 static int vfs_fat_utime(void* ctx, const char *path, const struct utimbuf *times);
 #endif // CONFIG_VFS_SUPPORT_DIR
+static int fresult_to_errno(FRESULT fr);
 
 static vfs_fat_ctx_t* s_fat_ctxs[FF_VOLUMES] = { NULL };
 //backwards-compatibility with esp_vfs_fat_unregister()
@@ -200,6 +201,37 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     free(fat_ctx->o_append);
     free(fat_ctx);
     s_fat_ctxs[ctx] = NULL;
+    return ESP_OK;
+}
+
+esp_err_t esp_vfs_fat_info(const char* base_path,
+                           uint64_t* out_total_bytes,
+                           uint64_t* out_free_bytes)
+{
+    size_t ctx = find_context_index_by_path(base_path);
+    if (ctx == FF_VOLUMES) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    char* path = s_fat_ctxs[ctx]->fat_drive;
+
+    FATFS* fs;
+    DWORD free_clusters;
+    int res = f_getfree(path, &free_clusters, &fs);
+    if (res != FR_OK) {
+        ESP_LOGE(TAG, "Failed to get number of free clusters (%d)", res);
+        errno = fresult_to_errno(res);
+        return ESP_FAIL;
+    }
+    uint64_t total_sectors = ((uint64_t)(fs->n_fatent - 2)) * fs->csize;
+    uint64_t free_sectors = ((uint64_t)free_clusters) * fs->csize;
+
+    // Assuming the total size is < 4GiB, should be true for SPI Flash
+    if (out_total_bytes != NULL) {
+        *out_total_bytes = total_sectors * fs->ssize;
+    }
+    if (out_free_bytes != NULL) {
+        *out_free_bytes = free_sectors * fs->ssize;
+    }
     return ESP_OK;
 }
 

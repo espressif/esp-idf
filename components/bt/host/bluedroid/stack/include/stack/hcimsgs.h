@@ -498,7 +498,7 @@ BOOLEAN btsnd_hcic_delete_stored_key (BD_ADDR bd_addr, BOOLEAN delete_all_flag);
 /* Delete Stored Key */
 
 /* Change Local Name */
-BOOLEAN btsnd_hcic_change_name(BD_NAME name);
+BOOLEAN btsnd_hcic_change_name (const UINT8 *name);
 
 #define HCIC_PARAM_SIZE_CHANGE_NAME     BD_NAME_LEN
 

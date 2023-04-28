@@ -66,8 +66,58 @@ extern "C" {
  *
  * If the syscall is recognized, the return value is zero.
  */
-#define SEMIHOSTING_SYS_DRVINFO 0xE0
+#define ESP_SEMIHOSTING_SYS_DRV_INFO                0x100
 
+/* 0x101...0x104 used by RiscV for custom semihosting calls */
+
+/* Other Espressif extension sys calls */
+#define ESP_SEMIHOSTING_SYS_SEEK                    0x105	/* custom lseek with whence */
+/* not implemented yet */
+#define ESP_SEMIHOSTING_SYS_MKDIR                   0x106
+#define ESP_SEMIHOSTING_SYS_OPENDIR                 0x107
+#define ESP_SEMIHOSTING_SYS_READDIR                 0x108
+#define ESP_SEMIHOSTING_SYS_READDIR_R               0x109
+#define ESP_SEMIHOSTING_SYS_SEEKDIR                 0x10A
+#define ESP_SEMIHOSTING_SYS_TELLDIR                 0x10B
+#define ESP_SEMIHOSTING_SYS_CLOSEDIR                0x10C
+#define ESP_SEMIHOSTING_SYS_RMDIR                   0x10D
+#define ESP_SEMIHOSTING_SYS_ACCESS                  0x10E
+#define ESP_SEMIHOSTING_SYS_TRUNCATE                0x10F
+#define ESP_SEMIHOSTING_SYS_UTIME                   0x110
+#define ESP_SEMIHOSTING_SYS_FSTAT                   0x111
+#define ESP_SEMIHOSTING_SYS_STAT                    0x112
+#define ESP_SEMIHOSTING_SYS_FSYNC                   0x113
+#define ESP_SEMIHOSTING_SYS_LINK                    0x114
+#define ESP_SEMIHOSTING_SYS_UNLINK                  0x115
+
+/*  Semihosting version bumped to 2. Changelog;
+    1 - Memory based approach with 2 registers implemented as defined in the ARM standard.
+    2 - User defined syscall numbers located between 0x100-0x1FF
+    3 - The break instruction operands updated to (1, 14)
+    4 - Absolute path support is dropped
+*/
+#define SEMIHOSTING_DRV_VERSION 2
+
+/**
+ * @brief Perform semihosting call and retrieve errno
+ *
+ * @param id    semihosting call number
+ * @param data  data block to pass to the host; number of items and their
+ *              meaning depends on the semihosting call. See the spec for
+ *              details.
+ * @param[out] out_errno  output, errno value from the host. Only set if
+ *                        the return value is negative.
+ * @return   return value from the host
+ */
+static inline long semihosting_call(long id, long *data, int *out_errno)
+{
+    long ret = semihosting_call_noerrno(id, data);
+    if (ret < 0) {
+        const int semihosting_sys_errno = SEMIHOSTING_SYS_ERRNO;
+        *out_errno = (int) semihosting_call_noerrno(semihosting_sys_errno, NULL);
+    }
+    return ret;
+}
 
 static inline int semihosting_open(const char *path, int open_mode, int mode)
 {
@@ -126,7 +176,7 @@ static inline off_t semihosting_seek(int fd, off_t offset, int mode)
 {
     int host_errno = 0;
     long args[] = {fd, offset, mode, 0};
-    off_t ret = (off_t) semihosting_call(SEMIHOSTING_SYS_SEEK, args, &host_errno);
+    off_t ret = (off_t) semihosting_call(ESP_SEMIHOSTING_SYS_SEEK, args, &host_errno);
     if (ret == -1) {
         errno = host_errno;
     }
@@ -138,9 +188,9 @@ static inline int semihosting_ver_info(void)
     int host_errno = 0;
     struct {
         int version;
-    } ver_info = { 1 };
+    } ver_info = { SEMIHOSTING_DRV_VERSION };
     long args[] = {(long) &ver_info, sizeof(ver_info), 0, 0};
-    int ret = (int) semihosting_call(SEMIHOSTING_SYS_DRVINFO, args, &host_errno);
+    int ret = (int) semihosting_call(ESP_SEMIHOSTING_SYS_DRV_INFO, args, &host_errno);
     (void) host_errno;  /* errno not set by this call */
     return ret;
 }

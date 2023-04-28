@@ -10,7 +10,7 @@
 
 #include "common.h"
 #include "crypto/sha1.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/eap_defs.h"
 #include "eap_peer/eap_tlv_common.h"
 #include "eap_peer/eap_fast_common.h"

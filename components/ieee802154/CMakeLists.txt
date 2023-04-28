@@ -12,7 +12,18 @@ if(CONFIG_IEEE802154_ENABLED)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${ieee802154_lib}>
                             $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a)
     else()
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
+        if(IDF_TARGET STREQUAL "esp32h2")
+            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+                target_link_libraries(${COMPONENT_LIB} INTERFACE
+                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1")
+            endif()
+            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+                target_link_libraries(${COMPONENT_LIB} INTERFACE
+                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2")
+            endif()
+        else()
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
+        endif()
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> lib802154.a libphy.a libbtbb.a
                             $<TARGET_FILE:${esp_phy_lib}>)
     endif()

@@ -1,4 +1,6 @@
 #include "no_warn_host.h"
+#include <stdlib.h>     // For abort()
+#include <stdio.h>      // For printf()
 #include "lwip/opt.h"
 #include "lwip/stats.h"
 #include "lwip/mem.h"

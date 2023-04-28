@@ -38,3 +38,7 @@ config ESP_ROM_HAS_ERASE_0_REGION_BUG
 config ESP_ROM_GET_CLK_FREQ
     bool
     default y
+
+config ESP_ROM_HAS_HAL_WDT
+    bool
+    default y

@@ -9,7 +9,7 @@ ESP-IDF provides several kinds of programming interfaces:
 
 * C functions, structures, enums, type definitions and preprocessor macros declared in public header files of ESP-IDF components. Various pages in the API Reference section of the programming guide contain descriptions of these functions, structures and types.
 * Build system functions, predefined variables and options. These are documented in the :ref:`build system guide<cmake_buildsystem_api>`.
-* `Kconfig <kconfig>`_ options can can be used in code and in the build system (CMakeLists.txt) files.
+* :doc:`Kconfig <kconfig>` options can can be used in code and in the build system (CMakeLists.txt) files.
 * :doc:`Host tools <../api-guides/tools/index>` and their command line parameters are also part of ESP-IDF interface.
 
 ESP-IDF consists of components written specifically for ESP-IDF as well as third-party libraries. In some cases, an ESP-IDF-specific wrapper is added to the third-party library, providing an interface that is either simpler or better integrated with the rest of ESP-IDF facilities. In other cases, the original API of the third-party library is presented to the application developers.
@@ -96,7 +96,7 @@ It is not recommended to reference these components directly in custom projects 
 API Stability
 -------------
 
-ESP-IDF uses `Semantic Versioning <http://semver.org/>`_ as explained in the :ref:`versions page<versioning-scheme>`.
+ESP-IDF uses `Semantic Versioning <https://semver.org/>`_ as explained in the :ref:`versions page<versioning-scheme>`.
 
 Minor and bugfix releases of ESP-IDF guarantee compatibility with previous releases. The sections below explain different aspects and limitations to compatibility.
 
@@ -109,7 +109,7 @@ The following changes are allowed between minor versions and do not break source
 
 * Deprecating functions (using the ``deprecated`` attribute) and header files (using a preprocessor ``#warning``). Deprecations are listed in ESP-IDF relese notes. It is recommended to update the source code to use the newer functions or files that replace the deprecated ones, however this is not mandatory. Deprecated functions and files can be removed in major versions of ESP-IDF.
 * Renaming components, moving source and header files between components — provided that the build system ensures that correct files are still found.
-* Renaming Kconfig options. Kconfig system `renaming mechanism <configuration-options-compatibility>`_ ensures that the original Kconfig option names can still be used by the application in ``sdkconfig`` file, CMake files and source code.
+* Renaming Kconfig options. Kconfig system :ref:`renaming mechanism <configuration-options-compatibility>` ensures that the original Kconfig option names can still be used by the application in ``sdkconfig`` file, CMake files and source code.
 
 Lack of binary compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -132,7 +132,7 @@ While we try to make upgrading to a new ESP-IDF version easy, there are parts of
 * Changes made to mitigate security issues or to replace insecure default behaviors with a secure ones.
 * Features which were never functional. For example, if it was never possible to use a certain function or an enumeration value, it may get renamed (as part of fixing it) or removed. This includes software features which depend on non-functional chip hardware features.
 * Unexpected or undefined behavior (for example, due to missing validation of argument ranges) that is not documented explicitly may be fixed/changed.
-* Location of `Kconfig <kconfig>`_ options in menuconfig.
+* Location of :doc:`Kconfig <kconfig>` options in menuconfig.
 * Location and names of example projects.
 
 .. _designated initializers: https://en.cppreference.com/w/c/language/struct_initialization

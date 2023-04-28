@@ -34,12 +34,12 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
    ESP-IDF V2.1 之前的版本
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	与新版本相比，ESP-IDF V2.1 之前的版本构建的引导加载程序对硬件的配置更少。使用这些早期 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS`。
+	与新版本相比，ESP-IDF V2.1 之前的版本构建的引导加载程序对硬件的配置更少。使用这些早期 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS`。
 
    ESP-IDF V3.1 之前的版本
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
+	ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
 
 配置 SPI Flash
 ^^^^^^^^^^^^^^^^^^^^^^^

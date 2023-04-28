@@ -11,6 +11,8 @@
 #include "common.h"
 #include "crypto.h"
 #include "sha256_i.h"
+#include "sha384_i.h"
+#include "sha512_i.h"
 #include "sha1_i.h"
 #include "md5_i.h"
 

@@ -68,7 +68,7 @@ if BLE_MESH
 
     config BLE_MESH_FREERTOS_STATIC_ALLOC
         bool "Enable FreeRTOS static allocation"
-        depends on FREERTOS_SUPPORT_STATIC_ALLOCATION && (ESP32_SPIRAM_SUPPORT || ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+        depends on FREERTOS_SUPPORT_STATIC_ALLOCATION && ((IDF_TARGET_ESP32 && SPIRAM) || ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY) # NOERROR
         default n
         help
             Enable this option to use FreeRTOS static allocation APIs for BLE Mesh,
@@ -85,7 +85,7 @@ if BLE_MESH
 
         config BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
             bool "External SPIRAM"
-            depends on ESP32_SPIRAM_SUPPORT
+            depends on IDF_TARGET_ESP32 && SPIRAM
             help
                 If enabled, BLE Mesh allocates dynamic memory from external SPIRAM for
                 FreeRTOS objects, i.e. mutex, queue, and task stack. External SPIRAM

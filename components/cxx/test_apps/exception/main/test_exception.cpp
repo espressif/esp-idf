@@ -5,7 +5,7 @@
  */
 #include <stdexcept>
 #include "unity.h"
-#include "memory_checks.h"
+#include "unity_test_utils.h"
 
 /* Note: When first exception (in system) is thrown this test produces memory leaks report (~300 bytes):
    - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
@@ -25,12 +25,12 @@
 
 extern "C" void setUp()
 {
-    test_utils_record_free_mem();
+    unity_utils_record_free_mem();
 }
 
 extern "C" void tearDown()
 {
-    test_utils_finish_and_evaluate_leaks(LEAKS, LEAKS);
+    unity_utils_evaluate_leaks_direct(LEAKS);
 }
 
 TEST_CASE("c++ exceptions work", "[cxx] [exceptions]")

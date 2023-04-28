@@ -509,9 +509,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
         :scale: 40 %
         :align: center
 
-    .. wavedrom does not support rendering pdflatex till now(1.3.1), so we use the png here
-
-    .. image:: /../_static/miso_timing_waveform.png
+    .. wavedrom:: /../_static/diagrams/spi/miso_timing_waveform.json
 
     The maximum allowed frequency is dependent on:
 

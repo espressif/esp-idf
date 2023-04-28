@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 #if SOC_XT_WDT_SUPPORTED
 
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "hal/xt_wdt_hal.h"
 #include "hal/xt_wdt_ll.h"
 #include "soc/rtc.h"

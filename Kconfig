@@ -200,6 +200,48 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 If enabled, this disables the linking of binary libraries in the application build. Note
                 that after enabling this Wi-Fi/Bluetooth will not work.
 
+        config APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+            bool "App compatible with bootloaders before ESP-IDF v2.1"
+            select APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                Bootloaders before ESP-IDF v2.1 did less initialisation of the
+                system clock. This setting needs to be enabled to build an app
+                which can be booted by these older bootloaders.
+
+                If this setting is enabled, the app can be booted by any bootloader
+                from IDF v1.0 up to the current version.
+
+                If this setting is disabled, the app can only be booted by bootloaders
+                from IDF v2.1 or newer.
+
+                Enabling this setting adds approximately 1KB to the app's IRAM usage.
+
+        config APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            bool "App compatible with bootloader and partition table before ESP-IDF v3.1"
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                Partition tables before ESP-IDF V3.1 do not contain an MD5 checksum
+                field, and the bootloader before ESP-IDF v3.1 cannot read a partition
+                table that contains an MD5 checksum field.
+
+                Enable this option only if your app needs to boot on a bootloader and/or
+                partition table that was generated from a version *before* ESP-IDF v3.1.
+
+                If this option and Flash Encryption are enabled at the same time, and any
+                data partitions in the partition table are marked Encrypted, then the
+                partition encrypted flag should be manually verified in the app before accessing
+                the partition (see CVE-2021-27926).
+
+        config APP_INIT_CLK
+            bool
+            depends on IDF_TARGET_ESP32
+            default y if APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+            default y if APP_BUILD_TYPE_ELF_RAM
+
+
     endmenu # Build type
 
     source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
@@ -276,6 +318,26 @@ mainmenu "Espressif IoT Development Framework Configuration"
                     If assertions are disabled, -DNDEBUG is added to CPPFLAGS.
 
         endchoice # assertions
+
+        choice COMPILER_FLOAT_LIB_FROM
+            prompt "Compiler float lib source"
+            default COMPILER_FLOAT_LIB_FROM_RVFPLIB if ESP_ROM_HAS_RVFPLIB
+            default COMPILER_FLOAT_LIB_FROM_GCCLIB
+            help
+                In the soft-fp part of libgcc, riscv version is written in C,
+                and handles all edge cases in IEEE754, which makes it larger
+                and performance is slow.
+
+                RVfplib is an optimized RISC-V library for FP arithmetic on 32-bit
+                integer processors, for single and double-precision FP.
+                RVfplib is "fast", but it has a few exceptions from IEEE 754 compliance.
+
+            config COMPILER_FLOAT_LIB_FROM_GCCLIB
+                bool "libgcc"
+            config COMPILER_FLOAT_LIB_FROM_RVFPLIB
+                depends on ESP_ROM_HAS_RVFPLIB
+                bool "librvfp"
+        endchoice # COMPILER_FLOAT_LIB_FROM
 
         config COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             int
@@ -416,7 +478,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 If enabled, RTL files will be produced during compilation. These files
                 can be used by other tools, for example to calculate call graphs.
-
 
     endmenu # Compiler Options
 

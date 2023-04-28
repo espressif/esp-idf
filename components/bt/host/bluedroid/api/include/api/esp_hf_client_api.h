@@ -583,7 +583,7 @@ esp_err_t esp_hf_client_send_dtmf(char code);
  *                               vendorID: A string representation of the hex value of the vendor ID from the manufacturer, without the 0x prefix.
  *                               productID: A string representation of the hex value of the product ID from the manufacturer, without the 0x prefix.
  *                               version: The revision of the software
- *                  features: A base-10 representation of a bit field. such as ESP_HF_CLIENT_XAPL_FEAT_BATTERY_REPORT
+ * @param[in]       features: A base-10 representation of a bit field. such as ESP_HF_CLIENT_XAPL_FEAT_BATTERY_REPORT
  *
  * @return
  *                  - ESP_OK: Feature enable request is sent to lower layer
@@ -601,7 +601,7 @@ esp_err_t esp_hf_client_send_xapl(char *information, uint32_t features);
  *
  *
  * @param[in]       bat_level: Battery Level: value between 0 and 9
- *                  docked: Dock State: false = undocked, true = docked
+ * @param[in]       docked: Dock State: false = undocked, true = docked
  *
  * @return
  *                  - ESP_OK: battery level is sent to lower layer

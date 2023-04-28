@@ -6,12 +6,12 @@ import os
 from datetime import datetime
 from typing import Any, List, Optional
 
+from fatfsgen_utils.boot_sector import BootSector
 from fatfsgen_utils.fat import FAT
-from fatfsgen_utils.fatfs_parser import FATFSParser
 from fatfsgen_utils.fatfs_state import FATFSState
 from fatfsgen_utils.fs_object import Directory
-from fatfsgen_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FAT32, FATFS_INCEPTION, generate_4bytes_random,
-                                  get_args_for_partition_generator, pad_string, read_filesystem)
+from fatfsgen_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FATFS_INCEPTION, FATDefaults,
+                                  get_args_for_partition_generator, read_filesystem)
 
 
 class FATFS:
@@ -22,32 +22,32 @@ class FATFS:
 
     def __init__(self,
                  binary_image_path: Optional[str] = None,
-                 size: int = 1024 * 1024,
-                 reserved_sectors_cnt: int = 1,
-                 fat_tables_cnt: int = 1,
-                 sectors_per_cluster: int = 1,
-                 sector_size: int = 0x1000,
-                 sectors_per_fat: int = 1,
-                 hidden_sectors: int = 0,
+                 size: int = FATDefaults.SIZE,
+                 reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
+                 fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
+                 sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
+                 sector_size: int = FATDefaults.SECTOR_SIZE,
+                 sectors_per_fat: int = FATDefaults.SECTORS_PER_FAT,
+                 hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
                  long_names_enabled: bool = False,
                  use_default_datetime: bool = True,
-                 entry_size: int = 32,
-                 num_heads: int = 0xff,
-                 oem_name: str = 'MSDOS5.0',
-                 sec_per_track: int = 0x3f,
-                 volume_label: str = 'Espressif',
-                 file_sys_type: str = 'FAT',
-                 root_entry_count: int = 512,
+                 num_heads: int = FATDefaults.NUM_HEADS,
+                 oem_name: str = FATDefaults.OEM_NAME,
+                 sec_per_track: int = FATDefaults.SEC_PER_TRACK,
+                 volume_label: str = FATDefaults.VOLUME_LABEL,
+                 file_sys_type: str = FATDefaults.FILE_SYS_TYPE,
+                 root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
                  explicit_fat_type: int = None,
-                 media_type: int = 0xf8) -> None:
+                 media_type: int = FATDefaults.MEDIA_TYPE) -> None:
 
+        # root directory bytes should be aligned by sector size
         assert (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
+        # number of bytes in the root dir must be even multiple of BPB_BytsPerSec
         assert ((root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size) % 2 == 0
 
         root_dir_sectors_cnt: int = (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size
 
-        self.state: FATFSState = FATFSState(entry_size=entry_size,
-                                            sector_size=sector_size,
+        self.state: FATFSState = FATFSState(sector_size=sector_size,
                                             explicit_fat_type=explicit_fat_type,
                                             reserved_sectors_cnt=reserved_sectors_cnt,
                                             root_dir_sectors_cnt=root_dir_sectors_cnt,
@@ -68,10 +68,11 @@ class FATFS:
             read_filesystem(binary_image_path) if binary_image_path else self.create_empty_fatfs())
         self.state.binary_image = binary_image
 
-        self.fat: FAT = FAT(fatfs_state=self.state, reserved_sectors_cnt=self.state.reserved_sectors_cnt)
+        self.fat: FAT = FAT(boot_sector_state=self.state.boot_sector_state, init_=True)
 
+        root_dir_size = self.state.boot_sector_state.root_dir_sectors_cnt * self.state.boot_sector_state.sector_size
         self.root_directory: Directory = Directory(name='A',  # the name is not important, must be string
-                                                   size=self.state.root_dir_sectors_cnt * self.state.sector_size,
+                                                   size=root_dir_size,
                                                    fat=self.fat,
                                                    cluster=self.fat.clusters[1],
                                                    fatfs_state=self.state)
@@ -107,33 +108,9 @@ class FATFS:
         self.root_directory.write_to_file(path_from_root, content)
 
     def create_empty_fatfs(self) -> Any:
-        sectors_count = self.state.size // self.state.sector_size
-        volume_uuid = generate_4bytes_random()
-        return (
-            FATFSParser.BOOT_SECTOR_HEADER.build(
-                dict(BS_OEMName=pad_string(self.state.oem_name, size=FATFSParser.MAX_OEM_NAME_SIZE),
-                     BPB_BytsPerSec=self.state.sector_size,
-                     BPB_SecPerClus=self.state.sectors_per_cluster,
-                     BPB_RsvdSecCnt=self.state.reserved_sectors_cnt,
-                     BPB_NumFATs=self.state.fat_tables_cnt,
-                     BPB_RootEntCnt=self.state.entries_root_count,
-                     BPB_TotSec16=0x00 if self.state.fatfs_type == FAT32 else sectors_count,
-                     BPB_Media=self.state.media_type,
-                     BPB_FATSz16=self.state.sectors_per_fat_cnt,
-                     BPB_SecPerTrk=self.state.sec_per_track,
-                     BPB_NumHeads=self.state.num_heads,
-                     BPB_HiddSec=self.state.hidden_sectors,
-                     BPB_TotSec32=sectors_count if self.state.fatfs_type == FAT32 else 0x00,
-                     BS_VolID=volume_uuid,
-                     BS_VolLab=pad_string(self.state.volume_label, size=FATFSParser.MAX_VOL_LAB_SIZE),
-                     BS_FilSysType=pad_string(self.state.file_sys_type, size=FATFSParser.MAX_FS_TYPE_SIZE)
-                     )
-            )
-            + (self.state.sector_size - FATFSParser.BOOT_HEADER_SIZE) * b'\x00'
-            + self.state.sectors_per_fat_cnt * self.state.fat_tables_cnt * self.state.sector_size * b'\x00'
-            + self.state.root_dir_sectors_cnt * self.state.sector_size * b'\x00'
-            + self.state.data_sectors * self.state.sector_size * b'\xff'
-        )
+        boot_sector_ = BootSector(boot_sector_state=self.state.boot_sector_state)
+        boot_sector_.generate_boot_sector()
+        return boot_sector_.binary_image
 
     def write_filesystem(self, output_path: str) -> None:
         with open(output_path, 'wb') as output:
@@ -145,10 +122,10 @@ class FATFS:
                                         is_dir: bool = False) -> None:
         """
         Given path to folder and folder name recursively encodes folder into binary image.
-        Used by method generate
+        Used by method generate.
         """
-        real_path = os.path.join(folder_path, folder_relative_path)
-        smaller_path = folder_relative_path
+        real_path: str = os.path.join(folder_path, folder_relative_path)
+        lower_path: str = folder_relative_path
 
         folder_relative_path = folder_relative_path.upper()
 
@@ -175,7 +152,7 @@ class FATFS:
             # sorting files for better testability
             dir_content = list(sorted(os.listdir(real_path)))
             for path in dir_content:
-                self._generate_partition_from_folder(os.path.join(smaller_path, path), folder_path=folder_path)
+                self._generate_partition_from_folder(os.path.join(lower_path, path), folder_path=folder_path)
 
     def generate(self, input_directory: str) -> None:
         """

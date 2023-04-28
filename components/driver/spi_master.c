@@ -456,11 +456,6 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     return ESP_OK;
 }
 
-int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o)
-{
-    return spi_ll_master_cal_clock(fapb, hz, duty_cycle, reg_o);
-}
-
 int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
 {
     return spi_hal_master_cal_clock(fapb, hz, duty_cycle);

@@ -26,7 +26,6 @@
 #include "esp_spi_flash.h"
 #include "esp_flash_internal.h"
 #include "esp_newlib.h"
-#include "esp_vfs_dev.h"
 #include "esp_timer.h"
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
@@ -41,7 +40,9 @@
 
 /***********************************************/
 // Headers for other components init functions
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "esp_coexist_internal.h"
+#endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
@@ -58,8 +59,12 @@
 #include "esp_private/pm_impl.h"
 #endif
 
-#include "esp_pthread.h"
+#if CONFIG_VFS_SUPPORT_IO
+#include "esp_vfs_dev.h"
 #include "esp_vfs_console.h"
+#endif
+
+#include "esp_pthread.h"
 #include "esp_private/esp_clk.h"
 
 #include "esp_private/brownout.h"

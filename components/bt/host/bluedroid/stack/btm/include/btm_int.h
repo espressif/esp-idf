@@ -1023,7 +1023,7 @@ BOOLEAN btm_lookup_eir(BD_ADDR_PTR p_rem_addr);
 */
 void         btm_acl_free(void);
 void         btm_acl_init (void);
-void         btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
+void         btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_LEN],
                               UINT16 hci_handle, UINT8 link_role, tBT_TRANSPORT transport);
 void         btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport);
 void         btm_acl_device_down (void);

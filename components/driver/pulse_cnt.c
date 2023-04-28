@@ -72,9 +72,9 @@ typedef struct {
 } pcnt_watch_point_t;
 
 typedef enum {
-    PCNT_FSM_STOP,
-    PCNT_FSM_START,
-} pcnt_lifecycle_fsm_t;
+    PCNT_UNIT_FSM_INIT,
+    PCNT_UNIT_FSM_ENABLE,
+} pcnt_unit_fsm_t;
 
 struct pcnt_unit_t {
     pcnt_group_t *group;                                  // which group the pcnt unit belongs to
@@ -89,7 +89,7 @@ struct pcnt_unit_t {
 #if CONFIG_PM_ENABLE
     char pm_lock_name[PCNT_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
-    pcnt_lifecycle_fsm_t fsm; // access to fsm should be protect by spinlock, as fsm can also accessed from ISR handler
+    pcnt_unit_fsm_t fsm;      // record PCNT unit's driver state
     pcnt_watch_cb_t on_reach; // user registered callback function
     void *user_data;          // user data registered by user, which would be passed to the right callback function
 };
@@ -152,8 +152,6 @@ static void pcnt_unregister_from_group(pcnt_unit_t *unit)
 static esp_err_t pcnt_destory(pcnt_unit_t *unit)
 {
     if (unit->pm_lock) {
-        // if pcnt_unit_start and pcnt_unit_stop are not called the same number of times, deleting pm_lock will return invalid state
-        // which in return also reflects an invalid state of PCNT driver
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(unit->pm_lock), TAG, "delete pm lock failed");
     }
     if (unit->intr) {
@@ -206,7 +204,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     portEXIT_CRITICAL(&group->spinlock);
 
     unit->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    unit->fsm = PCNT_FSM_STOP;
+    unit->fsm = PCNT_UNIT_FSM_INIT;
     for (int i = 0; i < PCNT_LL_WATCH_EVENT_MAX; i++) {
         unit->watchers[i].event_id = PCNT_LL_WATCH_EVENT_INVALID; // invalid all watch point
     }
@@ -224,22 +222,13 @@ err:
 esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
 {
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
-    bool valid_state = true;
-    portENTER_CRITICAL(&unit->spinlock);
-    valid_state = unit->fsm == PCNT_FSM_STOP;
-    portEXIT_CRITICAL(&unit->spinlock);
-    ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "can't delete unit as it's not stop yet");
-
     for (int i = 0; i < SOC_PCNT_CHANNELS_PER_UNIT; i++) {
         ESP_RETURN_ON_FALSE(!unit->channels[i], ESP_ERR_INVALID_STATE, TAG, "channel %d still in working", i);
-    }
-    for (int i = 0; i < PCNT_LL_WATCH_EVENT_MAX; i++) {
-        ESP_RETURN_ON_FALSE(unit->watchers[i].event_id == PCNT_LL_WATCH_EVENT_INVALID, ESP_ERR_INVALID_STATE, TAG,
-                            "watch point %d still in working", unit->watchers[i].watch_point_value);
     }
 
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
@@ -253,6 +242,8 @@ esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch
     pcnt_group_t *group = NULL;
     uint32_t glitch_filter_thres = 0;
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // glitch filter should be set only when unit is in init state
+    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
     group = unit->group;
     if (config) {
         glitch_filter_thres = esp_clk_apb_freq() / 1000000 * config->max_glitch_ns / 1000;
@@ -281,56 +272,66 @@ esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch
     return ESP_OK;
 }
 
-esp_err_t pcnt_unit_start(pcnt_unit_handle_t unit)
+esp_err_t pcnt_unit_enable(pcnt_unit_handle_t unit)
 {
-    pcnt_group_t *group = NULL;
-    ESP_RETURN_ON_FALSE_ISR(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    group = unit->group;
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
 
     // acquire power manager lock
     if (unit->pm_lock) {
-        ESP_RETURN_ON_ERROR_ISR(esp_pm_lock_acquire(unit->pm_lock), TAG, "acquire APB_FREQ_MAX lock failed");
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(unit->pm_lock), TAG, "acquire pm_lock failed");
     }
     // enable interupt service
     if (unit->intr) {
-        ESP_RETURN_ON_ERROR_ISR(esp_intr_enable(unit->intr), TAG, "enable interrupt service failed");
+        ESP_RETURN_ON_ERROR(esp_intr_enable(unit->intr), TAG, "enable interrupt service failed");
     }
+
+    unit->fsm = PCNT_UNIT_FSM_ENABLE;
+    return ESP_OK;
+}
+
+esp_err_t pcnt_unit_disable(pcnt_unit_handle_t unit)
+{
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "unit not in enable state");
+
+    // disable interrupt service
+    if (unit->intr) {
+        ESP_RETURN_ON_ERROR(esp_intr_disable(unit->intr), TAG, "disable interrupt service failed");
+    }
+    // release power manager lock
+    if (unit->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(unit->pm_lock), TAG, "release APB_FREQ_MAX lock failed");
+    }
+
+    unit->fsm = PCNT_UNIT_FSM_INIT;
+    return ESP_OK;
+}
+
+esp_err_t pcnt_unit_start(pcnt_unit_handle_t unit)
+{
+    ESP_RETURN_ON_FALSE_ISR(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(unit->fsm == PCNT_UNIT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "unit not enabled yet");
+    pcnt_group_t *group = unit->group;
 
     // all PCNT units share the same register to control counter
     portENTER_CRITICAL_SAFE(&group->spinlock);
     pcnt_ll_start_count(group->hal.dev, unit->unit_id);
     portEXIT_CRITICAL_SAFE(&group->spinlock);
 
-    portENTER_CRITICAL_SAFE(&unit->spinlock);
-    unit->fsm = PCNT_FSM_START;
-    portEXIT_CRITICAL_SAFE(&unit->spinlock);
-
     return ESP_OK;
 }
 
 esp_err_t pcnt_unit_stop(pcnt_unit_handle_t unit)
 {
-    pcnt_group_t *group = NULL;
     ESP_RETURN_ON_FALSE_ISR(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    group = unit->group;
+    ESP_RETURN_ON_FALSE_ISR(unit->fsm == PCNT_UNIT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "unit not enabled yet");
+    pcnt_group_t *group = unit->group;
 
     // all PCNT units share the same register to control counter
     portENTER_CRITICAL_SAFE(&group->spinlock);
     pcnt_ll_stop_count(group->hal.dev, unit->unit_id);
     portEXIT_CRITICAL_SAFE(&group->spinlock);
-
-    portENTER_CRITICAL_SAFE(&unit->spinlock);
-    unit->fsm = PCNT_FSM_STOP;
-    portEXIT_CRITICAL_SAFE(&unit->spinlock);
-
-    // disable interrupt service
-    if (unit->intr) {
-        ESP_RETURN_ON_ERROR_ISR(esp_intr_disable(unit->intr), TAG, "disable interrupt service failed");
-    }
-    // release power manager lock
-    if (unit->pm_lock) {
-        ESP_RETURN_ON_ERROR_ISR(esp_pm_lock_release(unit->pm_lock), TAG, "release APB_FREQ_MAX lock failed");
-    }
 
     return ESP_OK;
 }
@@ -361,9 +362,10 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value)
 
 esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt_event_callbacks_t *cbs, void *user_data)
 {
-    pcnt_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(unit && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    group = unit->group;
+    // unit event callbacks should be registered in init state
+    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
+    pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
@@ -520,6 +522,7 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
     pcnt_chan_t *channel = NULL;
     pcnt_group_t *group = NULL;
     ESP_GOTO_ON_FALSE(unit && config && ret_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, err, TAG, "unit not in init state");
     group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;

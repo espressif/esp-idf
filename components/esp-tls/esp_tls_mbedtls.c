@@ -14,9 +14,11 @@
 
 #include <http_parser.h>
 #include "esp_tls_mbedtls.h"
+#include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
 #include <errno.h>
 #include "esp_log.h"
+#include "esp_check.h"
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
@@ -139,6 +141,15 @@ exit:
 
 }
 
+void *esp_mbedtls_get_ssl_context(esp_tls_t *tls)
+{
+    if (tls == NULL) {
+        ESP_LOGE(TAG, "Invalid arguments");
+        return NULL;
+    }
+    return (void*)&tls->ssl;
+}
+
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
 esp_tls_client_session_t *esp_mbedtls_get_client_session(esp_tls_t *tls)
 {
@@ -162,6 +173,14 @@ esp_tls_client_session_t *esp_mbedtls_get_client_session(esp_tls_t *tls)
     }
 
     return client_session;
+}
+
+void esp_mbedtls_free_client_session(esp_tls_client_session_t *client_session)
+{
+    if (client_session) {
+        mbedtls_ssl_session_free(&(client_session->saved_session));
+        free(client_session);
+    }
 }
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 

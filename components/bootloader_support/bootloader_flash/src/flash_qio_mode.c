@@ -11,8 +11,8 @@
 #include "bootloader_flash_priv.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "esp_rom_efuse.h"
 #include "esp_rom_spiflash.h"
+#include "esp_rom_efuse.h"
 #include "flash_qio_mode.h"
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
@@ -99,6 +99,23 @@ void bootloader_enable_qio_mode(void)
 #endif
 }
 
+static void s_flash_set_qio_pins(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    int wp_pin = bootloader_flash_get_wp_pin();
+    esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
+#elif CONFIG_IDF_TARGET_ESP32C2
+    // ESP32C2 doesn't support configure mspi pins. So the second
+    // parameter is set to 0, means that chip uses default SPI pins
+    // and wp_gpio_num parameter(the first parameter) is ignored.
+    esp_rom_spiflash_select_qio_pins(0, 0);
+#else
+    esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), esp_rom_efuse_get_flash_gpio_info());
+#endif
+}
+
+
 static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_fn,
                                  bootloader_flash_write_status_fn_t write_status_fn,
                                  uint8_t status_qio_bit)
@@ -138,20 +155,7 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
 
     esp_rom_spiflash_config_readmode(mode);
 
-#if !CONFIG_IDF_TARGET_ESP32C2
-    //IDF-3914
-    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32
-    int wp_pin = bootloader_flash_get_wp_pin();
-    esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
-#elif CONFIG_IDF_TARGET_ESP32C2
-    //IDF-3914
-    esp_rom_spiflash_select_qio_pins(0, 0);
-#else
-    esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), spiconfig);
-#endif
+    s_flash_set_qio_pins();
     return ESP_OK;
 }
 

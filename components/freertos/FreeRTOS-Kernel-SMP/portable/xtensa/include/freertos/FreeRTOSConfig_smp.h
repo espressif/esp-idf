@@ -164,7 +164,17 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 #define configMAX_TASK_NAME_LEN                         CONFIG_FREERTOS_MAX_TASK_NAME_LEN
 
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+/* If thread local storage pointer deletion callbacks are registered
+ * then we double the storage space reserved for the thread local
+ * storage pointers in the task TCB. The first half of the storage area
+ * is used to store the TLS pointers themselves while the second half
+ * is used to store the respective deletion callbacks.
+ */
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS         ( CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS * 2 )
+#else
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS         CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+#endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 #define configSTACK_DEPTH_TYPE                          uint32_t
 #define configUSE_NEWLIB_REENTRANT                      1
 #define configENABLE_BACKWARD_COMPATIBILITY             0
@@ -188,7 +198,11 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #else
 #define configUSE_IDLE_HOOK                             0
 #endif
+#if CONFIG_FREERTOS_USE_TICK_HOOK
 #define configUSE_TICK_HOOK                             1
+#else
+#define configUSE_TICK_HOOK                             0
+#endif
 #if CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE
 #define configCHECK_FOR_STACK_OVERFLOW                  0
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
@@ -275,8 +289,6 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 #ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
 #define configTASKLIST_INCLUDE_COREID                   1
 #endif
-
-#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     1
 
 #ifndef __ASSEMBLER__
 #if CONFIG_APPTRACE_SV_ENABLE

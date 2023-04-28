@@ -6,80 +6,98 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_err.h"
 #include "esp_task_wdt.h"
 
-#define TWDT_TIMEOUT_S          3
-#define TASK_RESET_PERIOD_S     2
+#define TWDT_TIMEOUT_MS         3000
+#define TASK_RESET_PERIOD_MS    2000
+#define MAIN_DELAY_MS           10000
 
-/*
- * Macro to check the outputs of TWDT functions and trigger an abort if an
- * incorrect code is returned.
- */
-#define CHECK_ERROR_CODE(returned, expected) ({                        \
-            if(returned != expected){                                  \
-                printf("TWDT ERROR\n");                                \
-                abort();                                               \
-            }                                                          \
-})
+static volatile bool run_loop;
+static esp_task_wdt_user_handle_t func_a_twdt_user_hdl;
+static esp_task_wdt_user_handle_t func_b_twdt_user_hdl;
 
-static TaskHandle_t task_handles[portNUM_PROCESSORS];
-
-//Callback for user tasks created in app_main()
-void reset_task(void *arg)
+static void func_a(void)
 {
-    //Subscribe this task to TWDT, then check if it is subscribed
-    CHECK_ERROR_CODE(esp_task_wdt_add(NULL), ESP_OK);
-    CHECK_ERROR_CODE(esp_task_wdt_status(NULL), ESP_OK);
+    esp_task_wdt_reset_user(func_a_twdt_user_hdl);
+}
 
-    while(1){
-        //reset the watchdog every 2 seconds
-        CHECK_ERROR_CODE(esp_task_wdt_reset(), ESP_OK);  //Comment this line to trigger a TWDT timeout
-        vTaskDelay(pdMS_TO_TICKS(TASK_RESET_PERIOD_S * 1000));
+static void func_b(void)
+{
+    esp_task_wdt_reset_user(func_b_twdt_user_hdl);
+}
+
+void task_func(void *arg)
+{
+    // Subscribe this task to TWDT, then check if it is subscribed
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+
+    // Subscribe func_a and func_b as users of the the TWDT
+    ESP_ERROR_CHECK(esp_task_wdt_add_user("func_a", &func_a_twdt_user_hdl));
+    ESP_ERROR_CHECK(esp_task_wdt_add_user("func_b", &func_b_twdt_user_hdl));
+
+    printf("Subscribed to TWDT\n");
+
+    while (run_loop) {
+        // Reset the task and each user periodically
+        /*
+        Note: Comment out any one of the calls below to trigger the TWDT
+        */
+        esp_task_wdt_reset();
+        func_a();
+        func_b();
+
+        vTaskDelay(pdMS_TO_TICKS(TASK_RESET_PERIOD_MS));
     }
+
+    // Unsubscribe this task, func_a, and func_b
+    ESP_ERROR_CHECK(esp_task_wdt_delete_user(func_a_twdt_user_hdl));
+    ESP_ERROR_CHECK(esp_task_wdt_delete_user(func_b_twdt_user_hdl));
+    ESP_ERROR_CHECK(esp_task_wdt_delete(NULL));
+
+    printf("Unsubscribed from TWDT\n");
+
+    // Notify main task of deletion
+    xTaskNotifyGive((TaskHandle_t)arg);
+    vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
-    printf("Initialize TWDT\n");
-    //Initialize or reinitialize TWDT
-    CHECK_ERROR_CODE(esp_task_wdt_init(TWDT_TIMEOUT_S, false), ESP_OK);
+#if !CONFIG_ESP_TASK_WDT
+    // If the TWDT was not initialized automatically on startup, manually intialize it now
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = TWDT_TIMEOUT_MS,
+        .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,    // Bitmask of all cores
+        .trigger_panic = false,
+    };
+    ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
+    printf("TWDT initialized\n");
+#endif // CONFIG_ESP_TASK_WDT
 
-    //Subscribe Idle Tasks to TWDT if they were not subscribed at startup
-#ifndef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
-#endif
-#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1 && !CONFIG_FREERTOS_UNICORE
-    esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(1));
-#endif
+    // Create a task
+    run_loop = true;
+    xTaskCreatePinnedToCore(task_func, "task", 2048, xTaskGetCurrentTaskHandle(), 10, NULL, 0);
 
-    //Create user tasks and add them to watchdog
-    for(int i = 0; i < portNUM_PROCESSORS; i++){
-        xTaskCreatePinnedToCore(reset_task, "reset task", 1024, NULL, 10, &task_handles[i], i);
-    }
+    // Let the created task run for a while
+    printf("Delay for %d seconds\n", MAIN_DELAY_MS/1000);
+    vTaskDelay(pdMS_TO_TICKS(MAIN_DELAY_MS));
 
-    printf("Delay for 10 seconds\n");
-    vTaskDelay(pdMS_TO_TICKS(10000));   //Delay for 10 seconds
+    // Stop the created task
+    run_loop = false;
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    printf("Unsubscribing and deleting tasks\n");
-    //Delete and unsubscribe Users Tasks from Task Watchdog, then unsubscribe idle task
-    for(int i = 0; i < portNUM_PROCESSORS; i++){
-        vTaskDelete(task_handles[i]);   //Delete user task first (prevents the resetting of an unsubscribed task)
-        CHECK_ERROR_CODE(esp_task_wdt_delete(task_handles[i]), ESP_OK);     //Unsubscribe task from TWDT
-        CHECK_ERROR_CODE(esp_task_wdt_status(task_handles[i]), ESP_ERR_NOT_FOUND);  //Confirm task is unsubscribed
-
-        //unsubscribe idle task
-        CHECK_ERROR_CODE(esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(i)), ESP_OK);     //Unsubscribe Idle Task from TWDT
-        CHECK_ERROR_CODE(esp_task_wdt_status(xTaskGetIdleTaskHandleForCPU(i)), ESP_ERR_NOT_FOUND);      //Confirm Idle task has unsubscribed
-    }
-
-
-    //Deinit TWDT after all tasks have unsubscribed
-    CHECK_ERROR_CODE(esp_task_wdt_deinit(), ESP_OK);
-    CHECK_ERROR_CODE(esp_task_wdt_status(NULL), ESP_ERR_INVALID_STATE);     //Confirm TWDT has been deinitialized
-
-    printf("Complete\n");
+#if !CONFIG_ESP_TASK_WDT
+    // If we manually initialized the TWDT, deintialize it now
+    ESP_ERROR_CHECK(esp_task_wdt_deinit());
+    printf("TWDT deinitialized\n");
+#endif // CONFIG_ESP_TASK_WDT
+    printf("Example complete\n");
 }

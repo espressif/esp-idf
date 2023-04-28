@@ -229,11 +229,12 @@ Technically, you can add ``export.sh`` to your shell's profile directly; however
 .. _get-started-build:
 .. _get-started-configure:
 .. _get-started-connect:
-.. _get-started-first-steps:
+.. _get-started-linux-macos-first-steps:
 
 Step 5. First Steps on ESP-IDF
 ==============================
 
+.. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
 Tip: Updating ESP-IDF
@@ -264,7 +265,7 @@ Related Documents
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/
-.. _ccache: https://ccache.samba.org/
+.. _ccache: https://ccache.dev/
 .. _homebrew: https://brew.sh/
 .. _MacPorts: https://www.macports.org/install.php
 .. _Catalina 10.15 release notes: https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes

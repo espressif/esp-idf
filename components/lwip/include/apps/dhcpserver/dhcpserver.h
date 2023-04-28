@@ -7,6 +7,7 @@
 #define __DHCPS_H__
 
 #include "sdkconfig.h"
+#include <stdbool.h>
 #include "lwip/ip_addr.h"
 #include "lwip/err.h"
 

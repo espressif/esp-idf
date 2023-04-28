@@ -1,0 +1,29 @@
+{
+  "signal": [
+    {
+      "name": "SCLK",
+      "wave": "p...",
+      "node": ".ad..."
+    },
+    {
+      "name": "MISO",
+      "wave": "x3x.",
+      "node": ".b...",
+      "phase": -1.8
+    },
+    {
+      "name": "MISO delayed",
+      "wave": "x3x.",
+      "node": ".c.",
+      "phase": -2.4
+    }
+  ],
+  "edge": [
+    "a|->b input delay",
+    "b|->c gpio delay",
+    "c-|>d setup slack"
+  ],
+  "config": {
+    "hscale": 3
+  }
+}

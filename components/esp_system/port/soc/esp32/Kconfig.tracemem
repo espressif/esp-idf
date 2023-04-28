@@ -1,0 +1,39 @@
+menu "Trace memory"
+
+    config ESP32_MEMMAP_TRACEMEM
+        bool
+        default "n"
+
+    config ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        bool
+        default "n"
+
+    config ESP32_TRAX
+        bool "Use TRAX tracing feature"
+        default "n"
+        select ESP32_MEMMAP_TRACEMEM
+        help
+            The ESP32 contains a feature which allows you to trace the execution path the processor
+            has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+            of memory that can't be used for general purposes anymore. Disable this if you do not know
+            what this is.
+
+    config ESP32_TRAX_TWOBANKS
+        bool "Reserve memory for tracing both pro as well as app cpu execution"
+        default "n"
+        depends on ESP32_TRAX && !FREERTOS_UNICORE
+        select ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        help
+            The ESP32 contains a feature which allows you to trace the execution path the processor
+            has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+            of memory that can't be used for general purposes anymore. Disable this if you do not know
+            what this is.
+
+            # Memory to reverse for trace, used in linker script
+    config ESP32_TRACEMEM_RESERVE_DRAM
+        hex
+        default 0x8000 if ESP32_MEMMAP_TRACEMEM && ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        default 0x4000 if ESP32_MEMMAP_TRACEMEM && !ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        default 0x0
+
+endmenu  # Trace memory

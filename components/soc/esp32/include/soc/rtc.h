@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/rtc_periph.h"
+#include "soc/clk_tree_defs.h"
 
 #define MHZ (1000000)
 
@@ -59,55 +60,14 @@ typedef enum {
 } rtc_xtal_freq_t;
 
 /**
- * @brief CPU frequency values
- */
-typedef enum {
-    RTC_CPU_FREQ_XTAL = 0,      //!< Main XTAL frequency
-    RTC_CPU_FREQ_80M = 1,       //!< 80 MHz
-    RTC_CPU_FREQ_160M = 2,      //!< 160 MHz
-    RTC_CPU_FREQ_240M = 3,      //!< 240 MHz
-    RTC_CPU_FREQ_2M = 4,        //!< 2 MHz
-} rtc_cpu_freq_t;
-
-/**
- * @brief CPU clock source
- */
-typedef enum {
-    RTC_CPU_FREQ_SRC_XTAL,  //!< XTAL
-    RTC_CPU_FREQ_SRC_PLL,   //!< PLL (480M or 320M)
-    RTC_CPU_FREQ_SRC_8M,    //!< Internal 8M RTC oscillator
-    RTC_CPU_FREQ_SRC_APLL   //!< APLL
-} rtc_cpu_freq_src_t;
-
-/**
  * @brief CPU clock configuration structure
  */
 typedef struct rtc_cpu_freq_config_s {
-    rtc_cpu_freq_src_t source;      //!< The clock from which CPU clock is derived
+    soc_cpu_clk_src_t source;       //!< The clock from which CPU clock is derived
     uint32_t source_freq_mhz;       //!< Source clock frequency
     uint32_t div;                   //!< Divider, freq_mhz = source_freq_mhz / div
     uint32_t freq_mhz;              //!< CPU clock frequency
 } rtc_cpu_freq_config_t;
-
-/**
- * @brief RTC SLOW_CLK frequency values
- */
-typedef enum {
-    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 150 kHz RC oscillator
-    RTC_SLOW_FREQ_32K_XTAL = 1, //!< External 32 kHz XTAL
-    RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 8 MHz RC oscillator, divided by 256
-} rtc_slow_freq_t;
-
-/**
- * @brief RTC FAST_CLK frequency values
- */
-typedef enum {
-    RTC_FAST_FREQ_XTALD4 = 0,   //!< Main XTAL, divided by 4
-    RTC_FAST_FREQ_8M = 1,       //!< Internal 8 MHz RC oscillator
-} rtc_fast_freq_t;
-
-/* With the default value of CK8M_DFREQ, 8M clock frequency is 8.5 MHz +/- 7% */
-#define RTC_FAST_CLK_FREQ_APPROX 8500000
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
@@ -122,13 +82,13 @@ typedef enum {
  * Initialization parameters for rtc_clk_init
  */
 typedef struct rtc_clk_config_s {
-    rtc_xtal_freq_t xtal_freq : 8;      //!< Main XTAL frequency
-    uint32_t cpu_freq_mhz : 10;         //!< CPU frequency to set, in MHz
-    rtc_fast_freq_t fast_freq : 1;      //!< RTC_FAST_CLK frequency to set
-    rtc_slow_freq_t slow_freq : 2;      //!< RTC_SLOW_CLK frequency to set
-    uint32_t clk_8m_div : 3;            //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-    uint32_t slow_clk_dcap : 8;         //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
-    uint32_t clk_8m_dfreq : 8;          //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
+    rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
+    uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
+    soc_rtc_fast_clk_src_t fast_clk_src : 1;   //!< RTC_FAST_CLK clock source to choose
+    soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
+    uint32_t clk_8m_div : 3;                   //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
+    uint32_t slow_clk_dcap : 8;                //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
+    uint32_t clk_8m_dfreq : 8;                 //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
 /**
@@ -137,8 +97,8 @@ typedef struct rtc_clk_config_s {
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = RTC_XTAL_FREQ_AUTO, \
     .cpu_freq_mhz = 80, \
-    .fast_freq = RTC_FAST_FREQ_8M, \
-    .slow_freq = RTC_SLOW_FREQ_RTC, \
+    .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
+    .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_8m_div = 0, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
@@ -281,22 +241,22 @@ void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32
 
 /**
  * @brief Select source for RTC_SLOW_CLK
- * @param slow_freq clock source (one of rtc_slow_freq_t values)
+ * @param slow_freq clock source (one of soc_rtc_slow_clk_src_t values)
  */
-void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq);
+void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t slow_freq);
 
 /**
  * @brief Get the RTC_SLOW_CLK source
- * @return currently selected clock source (one of rtc_slow_freq_t values)
+ * @return currently selected clock source (one of soc_rtc_slow_clk_src_t values)
  */
-rtc_slow_freq_t rtc_clk_slow_freq_get(void);
+soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void);
 
 /**
  * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
  *
- * - if RTC_SLOW_FREQ_RTC is selected, returns ~150000
- * - if RTC_SLOW_FREQ_32K_XTAL is selected, returns 32768
- * - if RTC_SLOW_FREQ_8MD256 is selected, returns ~33000
+ * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns ~150000
+ * - if SOC_RTC_SLOW_CLK_SRC_XTAL32K is selected, returns 32768
+ * - if SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 is selected, returns ~33000
  *
  * rtc_clk_cal function can be used to get more precise value by comparing
  * RTC_SLOW_CLK frequency to the frequency of main XTAL.
@@ -307,22 +267,15 @@ uint32_t rtc_clk_slow_freq_get_hz(void);
 
 /**
  * @brief Select source for RTC_FAST_CLK
- * @param fast_freq clock source (one of rtc_fast_freq_t values)
+ * @param fast_freq clock source (one of soc_rtc_fast_clk_src_t values)
  */
-void rtc_clk_fast_freq_set(rtc_fast_freq_t fast_freq);
+void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t fast_freq);
 
 /**
  * @brief Get the RTC_FAST_CLK source
- * @return currently selected clock source (one of rtc_fast_freq_t values)
+ * @return currently selected clock source (one of soc_rtc_fast_clk_src_t values)
  */
-rtc_fast_freq_t rtc_clk_fast_freq_get(void);
-
-/**
- * @brief Get CPU frequency config corresponding to a rtc_cpu_freq_t value
- * @param cpu_freq CPU frequency enumeration value
- * @param[out] out_config  Output, CPU frequency configuration structure
- */
- void rtc_clk_cpu_freq_to_config(rtc_cpu_freq_t cpu_freq, rtc_cpu_freq_config_t* out_config);
+soc_rtc_fast_clk_src_t rtc_clk_fast_src_get(void);
 
  /**
   * @brief Get CPU frequency config for a given frequency
@@ -486,6 +439,11 @@ void rtc_dig_clk8m_enable(void);
 void rtc_dig_clk8m_disable(void);
 
 /**
+ * @brief Get whether the rtc digital 8M clock is enabled
+ */
+bool rtc_dig_8m_enabled(void);
+
+/**
  * @brief Calculate the real clock value after the clock calibration
  *
  * @param cal_val Average slow clock period in microseconds, fixed point value as returned from `rtc_clk_cal`
@@ -515,41 +473,9 @@ typedef struct rtc_sleep_config_s {
     uint32_t lslp_meminf_pd : 1;        //!< remove all peripheral force power up flags
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
+    uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
+    uint32_t light_slp_reject : 1;      //!< enable light sleep reject
 } rtc_sleep_config_t;
-
-/**
- * Default initializer for rtc_sleep_config_t
- *
- * This initializer sets all fields to "reasonable" values (e.g. suggested for
- * production use) based on a combination of RTC_SLEEP_PD_x flags.
- *
- * @param RTC_SLEEP_PD_x flags combined using bitwise OR
- */
-#define is_dslp(pd_flags)   ((pd_flags) & RTC_SLEEP_PD_DIG)
-#define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
-    .lslp_mem_inf_fpu = 0, \
-    .rtc_mem_inf_fpu = 0, \
-    .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0, \
-    .rtc_fastmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_FAST_MEM) ? 1 : 0, \
-    .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0, \
-    .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0, \
-    .wifi_pd_en = 0, \
-    .int_8m_pd_en = is_dslp(sleep_flags) ? 1 : ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
-    .rom_mem_pd_en = 0, \
-    .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
-    .wdt_flashboot_mod_en = 0, \
-    .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
-                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
-                   : RTC_CNTL_DBIAS_0V90, \
-    .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
-                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
-                   : RTC_CNTL_DBIAS_0V90, \
-    .lslp_meminf_pd = 1, \
-    .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
-    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
-};
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
 #define RTC_SLEEP_PD_RTC_PERIPH         BIT(1)  //!< Power down RTC peripherals
@@ -560,6 +486,21 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_PD_XTAL               BIT(6)  //!< Power down main XTAL
 #define RTC_SLEEP_PD_INT_8M             BIT(7)  //!< Power down Internal 8M oscillator
 
+//These flags are not power domains, but will affect some sleep parameters
+#define RTC_SLEEP_DIG_USE_8M            BIT(16)
+#define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
+#define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
+
+/**
+ * Default initializer for rtc_sleep_config_t
+ *
+ * This initializer sets all fields to "reasonable" values (e.g. suggested for
+ * production use) based on a combination of RTC_SLEEP_PD_x flags.
+ *
+ * @param RTC_SLEEP_PD_x flags combined using bitwise OR
+ */
+void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_config);
+
 /* Various delays to be programmed into power control state machines */
 #define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (500)
 #define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (1)
@@ -567,6 +508,9 @@ typedef struct rtc_sleep_config_s {
 #define RTC_CNTL_WAKEUP_DELAY_CYCLES        (7)
 #define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
 #define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
+
+#define RTC_CNTL_CK8M_WAIT_DEFAULT          20
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT        5
 
 /**
  * @brief Prepare the chip to enter sleep mode
@@ -614,6 +558,12 @@ void rtc_sleep_set_wakeup_time(uint64_t t);
 #define RTC_TOUCH_TRIG_EN   BIT(8)  //!< Touch wakeup
 #define RTC_ULP_TRIG_EN     BIT(9)  //!< ULP wakeup
 #define RTC_BT_TRIG_EN      BIT(10) //!< BT wakeup (light sleep only)
+
+/**
+ * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
+ * esp32 only supports GPIO and SDIO sleep reject sources
+ */
+#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN | RTC_SDIO_TRIG_EN)
 
 /**
  * @brief Enter deep or light sleep mode
@@ -732,6 +682,45 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
 void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
 
+// -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
+// **WARNING**: The following are only for backwards compatibility.
+// Please use the declarations in soc/clk_tree_defs.h instead.
+/**
+ * @brief CPU clock source
+ */
+typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
+#define RTC_CPU_FREQ_SRC_XTAL SOC_CPU_CLK_SRC_XTAL  //!< XTAL
+#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (480M or 320M)
+#define RTC_CPU_FREQ_SRC_8M SOC_CPU_CLK_SRC_RC_FAST //!< Internal 8M RTC oscillator
+#define RTC_CPU_FREQ_SRC_APLL SOC_CPU_CLK_SRC_APLL  //!< APLL
+
+/**
+ * @brief RTC SLOW_CLK frequency values
+ */
+typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
+#define RTC_SLOW_FREQ_RTC SOC_RTC_SLOW_CLK_SRC_RC_SLOW         //!< Internal 150 kHz RC oscillator
+#define RTC_SLOW_FREQ_32K_XTAL SOC_RTC_SLOW_CLK_SRC_XTAL32K    //!< External 32 kHz XTAL
+#define RTC_SLOW_FREQ_8MD256 SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 //!< Internal 8 MHz RC oscillator, divided by 256
+
+/**
+ * @brief RTC FAST_CLK frequency values
+ */
+typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
+#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 4
+#define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 8 MHz RC oscillator
+
+/* Alias of frequency related macros */
+#define RTC_FAST_CLK_FREQ_APPROX    SOC_CLK_RC_FAST_FREQ_APPROX
+#define RTC_FAST_CLK_FREQ_8M        SOC_CLK_RC_FAST_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_150K      SOC_CLK_RC_SLOW_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_8MD256    SOC_CLK_RC_FAST_D256_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_32K       SOC_CLK_XTAL32K_FREQ_APPROX
+
+/* Alias of deprecated function names */
+#define rtc_clk_slow_freq_set(slow_freq) rtc_clk_slow_src_set(slow_freq)
+#define rtc_clk_slow_freq_get() rtc_clk_slow_src_get()
+#define rtc_clk_fast_freq_set(fast_freq) rtc_clk_fast_src_set(fast_freq)
+#define rtc_clk_fast_freq_get() rtc_clk_fast_src_get()
 
 #ifdef __cplusplus
 }

@@ -37,9 +37,8 @@ static const u8 * crypto_rsa_parse_integer(const u8 *pos, const u8 *end,
 		return NULL;
 
 	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_INTEGER) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected INTEGER - found class %d "
-			   "tag 0x%x", hdr.class, hdr.tag);
+	    !asn1_is_integer(&hdr)) {
+		asn1_unexpected(&hdr, "RSA: Expected INTEGER");
 		return NULL;
 	}
 
@@ -84,12 +83,8 @@ crypto_rsa_import_public_key(const u8 *buf, size_t len)
 	 * }
 	 */
 
-	if (asn1_get_next(buf, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected SEQUENCE "
-			   "(public key) - found class %d tag 0x%x",
-			   hdr.class, hdr.tag);
+	if (asn1_get_next(buf, len, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr, "RSA: Expected SEQUENCE (public key)");
 		goto error;
 	}
 	pos = hdr.payload;
@@ -191,12 +186,8 @@ crypto_rsa_import_private_key(const u8 *buf, size_t len)
 	 *
 	 * Version ::= INTEGER -- shall be 0 for this version of the standard
 	 */
-	if (asn1_get_next(buf, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected SEQUENCE "
-			   "(public key) - found class %d tag 0x%x",
-			   hdr.class, hdr.tag);
+	if (asn1_get_next(buf, len, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr, "RSA: Expected SEQUENCE (public key)");
 		goto error;
 	}
 	pos = hdr.payload;

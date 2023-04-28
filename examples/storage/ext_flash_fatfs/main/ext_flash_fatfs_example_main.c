@@ -21,7 +21,32 @@
 #include "esp_system.h"
 #include "soc/spi_pins.h"
 
+// h2 and c2 will not support external flash
+#define EXAMPLE_FLASH_FREQ_MHZ      40
+
 static const char *TAG = "example";
+
+// Pin mapping
+// ESP32 (VSPI)
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define HOST_ID  SPI3_HOST
+#define PIN_MOSI SPI3_IOMUX_PIN_NUM_MOSI
+#define PIN_MISO SPI3_IOMUX_PIN_NUM_MISO
+#define PIN_CLK  SPI3_IOMUX_PIN_NUM_CLK
+#define PIN_CS   SPI3_IOMUX_PIN_NUM_CS
+#define PIN_WP   SPI3_IOMUX_PIN_NUM_WP
+#define PIN_HD   SPI3_IOMUX_PIN_NUM_HD
+#define SPI_DMA_CHAN SPI_DMA_CH_AUTO
+#else // Other chips (SPI2/HSPI)
+#define HOST_ID  SPI2_HOST
+#define PIN_MOSI SPI2_IOMUX_PIN_NUM_MOSI
+#define PIN_MISO SPI2_IOMUX_PIN_NUM_MISO
+#define PIN_CLK  SPI2_IOMUX_PIN_NUM_CLK
+#define PIN_CS   SPI2_IOMUX_PIN_NUM_CS
+#define PIN_WP   SPI2_IOMUX_PIN_NUM_WP
+#define PIN_HD   SPI2_IOMUX_PIN_NUM_HD
+#define SPI_DMA_CHAN SPI_DMA_CH_AUTO
+#endif
 
 // Handle of the wear levelling library instance
 static wl_handle_t s_wl_handle = WL_INVALID_HANDLE;
@@ -33,7 +58,6 @@ static esp_flash_t* example_init_ext_flash(void);
 static const esp_partition_t* example_add_partition(esp_flash_t* ext_flash, const char* partition_label);
 static void example_list_data_partitions(void);
 static bool example_mount_fatfs(const char* partition_label);
-static void example_get_fatfs_usage(size_t* out_total_bytes, size_t* out_free_bytes);
 
 void app_main(void)
 {
@@ -56,9 +80,9 @@ void app_main(void)
     }
 
     // Print FAT FS size information
-    size_t bytes_total, bytes_free;
-    example_get_fatfs_usage(&bytes_total, &bytes_free);
-    ESP_LOGI(TAG, "FAT FS: %d kB total, %d kB free", bytes_total / 1024, bytes_free / 1024);
+    uint64_t bytes_total, bytes_free;
+    esp_vfs_fat_info(base_path, &bytes_total, &bytes_free);
+    ESP_LOGI(TAG, "FAT FS: %lld kB total, %lld kB free", bytes_total / 1024, bytes_free / 1024);
 
     // Create a file in FAT FS
     ESP_LOGI(TAG, "Opening file");
@@ -92,19 +116,19 @@ void app_main(void)
 static esp_flash_t* example_init_ext_flash(void)
 {
     const spi_bus_config_t bus_config = {
-        .mosi_io_num = VSPI_IOMUX_PIN_NUM_MOSI,
-        .miso_io_num = VSPI_IOMUX_PIN_NUM_MISO,
-        .sclk_io_num = VSPI_IOMUX_PIN_NUM_CLK,
-        .quadhd_io_num = VSPI_IOMUX_PIN_NUM_HD,
-        .quadwp_io_num = VSPI_IOMUX_PIN_NUM_WP,
+        .mosi_io_num = PIN_MOSI,
+        .miso_io_num = PIN_MISO,
+        .sclk_io_num = PIN_CLK,
+        .quadhd_io_num = PIN_HD,
+        .quadwp_io_num = PIN_WP,
     };
 
     const esp_flash_spi_device_config_t device_config = {
-        .host_id = VSPI_HOST,
+        .host_id = HOST_ID,
         .cs_id = 0,
-        .cs_io_num = VSPI_IOMUX_PIN_NUM_CS,
+        .cs_io_num = PIN_CS,
         .io_mode = SPI_FLASH_DIO,
-        .speed = ESP_FLASH_40MHZ,
+        .freq_mhz = EXAMPLE_FLASH_FREQ_MHZ,
     };
 
     ESP_LOGI(TAG, "Initializing external SPI Flash");
@@ -115,7 +139,8 @@ static esp_flash_t* example_init_ext_flash(void)
     );
 
     // Initialize the SPI bus
-    ESP_ERROR_CHECK(spi_bus_initialize(VSPI_HOST, &bus_config, 1));
+    ESP_LOGI(TAG, "DMA CHANNEL: %d", SPI_DMA_CHAN);
+    ESP_ERROR_CHECK(spi_bus_initialize(HOST_ID, &bus_config, SPI_DMA_CHAN));
 
     // Add device to the SPI bus
     esp_flash_t* ext_flash;
@@ -172,22 +197,4 @@ static bool example_mount_fatfs(const char* partition_label)
         return false;
     }
     return true;
-}
-
-static void example_get_fatfs_usage(size_t* out_total_bytes, size_t* out_free_bytes)
-{
-    FATFS *fs;
-    size_t free_clusters;
-    int res = f_getfree("0:", &free_clusters, &fs);
-    assert(res == FR_OK);
-    size_t total_sectors = (fs->n_fatent - 2) * fs->csize;
-    size_t free_sectors = free_clusters * fs->csize;
-
-    // assuming the total size is < 4GiB, should be true for SPI Flash
-    if (out_total_bytes != NULL) {
-        *out_total_bytes = total_sectors * fs->ssize;
-    }
-    if (out_free_bytes != NULL) {
-        *out_free_bytes = free_sectors * fs->ssize;
-    }
 }
