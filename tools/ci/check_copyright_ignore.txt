@@ -1571,15 +1571,6 @@ examples/system/sysview_tracing_heap_log/example_test.py
 examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c
 examples/system/task_watchdog/example_test.py
 examples/system/task_watchdog/main/task_watchdog_example_main.c
-examples/system/ulp_fsm/ulp/example_test.py
-examples/system/ulp_fsm/ulp/main/ulp_example_main.c
-examples/system/ulp_fsm/ulp_adc/example_test.py
-examples/system/ulp_fsm/ulp_adc/main/ulp_adc_example_main.c
-examples/system/ulp_riscv/ds18b20_onewire/main/ulp/main.c
-examples/system/ulp_riscv/ds18b20_onewire/main/ulp_riscv_ds18b20_example_main.c
-examples/system/ulp_riscv/gpio/example_test.py
-examples/system/ulp_riscv/gpio/main/ulp/main.c
-examples/system/ulp_riscv/gpio/main/ulp_riscv_example_main.c
 examples/system/unit_test/components/testable/include/testable.h
 examples/system/unit_test/components/testable/mean.c
 examples/system/unit_test/components/testable/test/test_mean.c

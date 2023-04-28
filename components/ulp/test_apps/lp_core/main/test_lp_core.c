@@ -10,6 +10,7 @@
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
 #include "lp_core_test_app_set_timer_wakeup.h"
+#include "lp_core_test_app_gpio.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "test_shared.h"
@@ -27,6 +28,9 @@ extern const uint8_t lp_core_main_counter_bin_end[]   asm("_binary_lp_core_test_
 
 extern const uint8_t lp_core_main_set_timer_wakeup_bin_start[] asm("_binary_lp_core_test_app_set_timer_wakeup_bin_start");
 extern const uint8_t lp_core_main_set_timer_wakeup_bin_end[]   asm("_binary_lp_core_test_app_set_timer_wakeup_bin_end");
+
+extern const uint8_t lp_core_main_gpio_bin_start[] asm("_binary_lp_core_test_app_gpio_bin_start");
+extern const uint8_t lp_core_main_gpio_bin_end[]   asm("_binary_lp_core_test_app_gpio_bin_end");
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
@@ -283,4 +287,20 @@ TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
     printf("LP core ran %"PRIu32" times in %"PRIi64" ms, expected it to run approx %"PRIu32" times\n", ulp_set_timer_wakeup_counter, test_duration/1000, expected_run_count);
 
     TEST_ASSERT_INT_WITHIN_MESSAGE(5, expected_run_count, ulp_set_timer_wakeup_counter, "LP Core did not wake up the expected number of times");
+}
+
+TEST_CASE("LP core gpio tests", "[ulp]")
+{
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
+        .lp_timer_sleep_duration_us = LP_TIMER_TEST_SLEEP_DURATION_US,
+    };
+
+    load_and_start_lp_core_firmware(&cfg, lp_core_main_gpio_bin_start, lp_core_main_gpio_bin_end);
+
+    while(!ulp_gpio_test_finished) {
+    }
+
+    TEST_ASSERT_TRUE(ulp_gpio_test_succeeded);
 }
