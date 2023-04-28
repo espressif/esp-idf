@@ -423,7 +423,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     /* Connect DMA descriptor as a circle */
     for (int i = 0; i < num; i++) {
         /* Link to the next descriptor */
-        handle->dma.desc[i]->empty = (uint32_t)((i < (num - 1)) ? (handle->dma.desc[i + 1]) : handle->dma.desc[0]);
+        STAILQ_NEXT(handle->dma.desc[i], qe) = (i < (num - 1)) ? (handle->dma.desc[i + 1]) : handle->dma.desc[0];
     }
     if (handle->dir == I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(handle->controller->hal.dev, bufsize);
@@ -1088,8 +1088,8 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
             /* If the next descriptor is not the first descriptor, keep load to the first descriptor
              * otherwise all descriptor has been loaded, break directly, the dma buffer position
              * will remain at the end of the last dma buffer */
-            if (desc_ptr->empty != (uint32_t)tx_handle->dma.desc[0]) {
-                desc_ptr = (lldesc_t *)desc_ptr->empty;
+            if (STAILQ_NEXT(desc_ptr, qe) != tx_handle->dma.desc[0]) {
+                desc_ptr = STAILQ_NEXT(desc_ptr, qe);
                 tx_handle->dma.curr_ptr =  (void *)desc_ptr;
                 tx_handle->dma.rw_pos = 0;
             } else {
