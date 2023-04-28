@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table ab312e31f6976fdf923a9809093323fd
+// md5_digest_table 7bd417676a69ed11f4908b6146efeaeb
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -80,6 +80,23 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP_CALIB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH4[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH5[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH6[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
@@ -179,6 +196,23 @@ extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH4[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH5[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH6[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
