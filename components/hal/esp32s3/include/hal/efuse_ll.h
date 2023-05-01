@@ -120,6 +120,21 @@ __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_cod
     EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
 }
 
+__attribute__((always_inline)) static inline void efuse_ll_set_dac_num(uint8_t val)
+{
+    EFUSE.dac_conf.dac_num = val;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint8_t val)
+{
+    EFUSE.dac_conf.dac_clk_div = val;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16_t val)
+{
+    EFUSE.wr_tim_conf1.pwr_on_num = val;
+}
+
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
     EFUSE.wr_tim_conf2.pwr_off_num = value;
