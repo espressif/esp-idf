@@ -16,7 +16,7 @@ async function runChecks() {
 
     // Checks for MR commits
     require("./mrCommitsTooManyCommits.js")();
-    require("./mrCommitsCommitMessage.js")();
+    await require("./mrCommitsCommitMessage.js")();
     require("./mrCommitsEmail.js")();
 
     // Checks for MR code

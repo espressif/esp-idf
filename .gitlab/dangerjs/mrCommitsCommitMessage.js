@@ -6,7 +6,7 @@
  * @dangerjs WARN
  */
 
-module.exports = function () {
+module.exports = async function () {
     const mrCommits = danger.gitlab.commits;
 
     const detectRegexes = [
@@ -60,11 +60,19 @@ module.exports = function () {
         }
     }
 
-	// Create report
-	if (partMessages.length) {
-		partMessages.sort();
-		let dangerMessage = `\nSome issues found for the commit messages in this MR:\n${partMessages.join('\n')}
+    // Create report
+    if (partMessages.length) {
+        partMessages.sort();
+        let dangerMessage = `\nSome issues found for the commit messages in this MR:\n${partMessages.join(
+            "\n"
+        )}
 		\nPlease consider updating these commit messages. It is recommended to follow this [commit messages guide](https://gitlab.espressif.cn:6688/espressif/esp-idf/-/wikis/dev-proc/Commit-messages)`;
-		warn(dangerMessage);
-	}
+
+        // Create AI generated suggestion for git commit message based of gitDiff and current commit messages
+        const AImessageSuggestion =
+            await require("./aiGenerateGitMessage.js")();
+        dangerMessage += AImessageSuggestion;
+
+        warn(dangerMessage);
+    }
 };
