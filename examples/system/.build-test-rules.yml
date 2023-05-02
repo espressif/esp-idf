@@ -92,19 +92,23 @@ examples/system/light_sleep:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: lack of runners
 
 examples/system/ota/otatool:
   disable:
@@ -114,21 +118,21 @@ examples/system/ota/otatool:
 
 examples/system/ota/pre_encrypted_ota:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
 
