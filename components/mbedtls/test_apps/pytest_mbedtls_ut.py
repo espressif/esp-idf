@@ -67,3 +67,10 @@ def test_mbedtls_psram(dut: Dut) -> None:
 )
 def test_mbedtls_psram_esp32(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32h2
+@pytest.mark.ecdsa_efuse
+@pytest.mark.parametrize('config', ['ecdsa_sign',], indirect=True)
+def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='efuse_key')

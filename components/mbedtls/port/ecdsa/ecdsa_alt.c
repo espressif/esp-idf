@@ -140,6 +140,7 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
             .curve = curve,
             .k_mode = ECDSA_K_USE_TRNG,
             .sha_mode = ECDSA_Z_USER_PROVIDED,
+            .efuse_key_blk = d->MBEDTLS_PRIVATE(n),
         };
 
         ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);
