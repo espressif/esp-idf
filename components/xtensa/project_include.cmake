@@ -12,7 +12,7 @@ else()
         OUTPUT_VARIABLE dump_machine
     )
 endif()
-message("Compiler supported targets: ${dump_machine}")
+message(STATUS "Compiler supported targets: ${dump_machine}")
 
 if(NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Generic" AND ${dump_machine} MATCHES xtensa))
     message(FATAL_ERROR "Internal error, toolchain has not been set correctly by project "
