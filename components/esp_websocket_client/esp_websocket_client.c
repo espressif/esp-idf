@@ -355,7 +355,13 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
 
     esp_transport_set_default_port(ssl, WEBSOCKET_SSL_DEFAULT_PORT);
     esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
-    if (config->use_global_ca_store == true) {
+    if (config->crt_bundle_attach != NULL) {
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        esp_transport_ssl_crt_bundle_attach(ssl, config->crt_bundle_attach);
+#else //CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig: Please enable MBEDTLS_CERTIFICATE_BUNDLE option");
+#endif
+    } else if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {
         if (!config->cert_len) {
