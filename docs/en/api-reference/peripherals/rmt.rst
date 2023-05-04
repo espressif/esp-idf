@@ -518,7 +518,7 @@ Application Examples
 * RMT transactions in queue: :example:`peripherals/rmt/musical_buzzer`
 * RMT based stepper motor with S-curve algorithm: : :example:`peripherals/rmt/stepper_motor`
 * RMT infinite loop for driving DShot ESC: :example:`peripherals/rmt/dshot_esc`
-* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire_ds18b20`
+* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire`
 
 API Reference
 -------------
