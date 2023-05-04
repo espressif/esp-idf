@@ -54,7 +54,7 @@ esp_err_t esp_external_coex_set_work_mode(esp_extern_coex_work_mode_t work_mode)
 
     if(EXTERNAL_COEX_FOLLOWER_ROLE == work_mode) {
         g_external_coex_follower_pti_val.pti_val1 = 8;
-        g_external_coex_follower_pti_val.pti_val2 = 13;
+        g_external_coex_follower_pti_val.pti_val2 = 12;
     }
 
     return ESP_OK;
@@ -157,12 +157,20 @@ bool is_legal_external_coex_gpio(external_coex_wire_t wire_type, esp_external_co
     }
 }
 
-esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0, uint32_t in_pin1, uint32_t out_pin0)
+esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0, uint32_t in_pin1, uint32_t out_pin0, uint32_t out_pin1)
 {
     esp_external_coex_set_work_mode(EXTERNAL_COEX_LEADER_ROLE);
     esp_external_coex_gpio_set_t gpio_pin;
 
     switch (wire_type) {
+        case EXTERN_COEX_WIRE_4:
+        {
+            gpio_pin.in_pin0  = in_pin0;
+            gpio_pin.in_pin1  = in_pin1;
+            gpio_pin.out_pin0 = out_pin0;
+            gpio_pin.out_pin1 = out_pin1;
+            break;
+        }
         case EXTERN_COEX_WIRE_3:
         {
             gpio_pin.in_pin0  = in_pin0;
@@ -193,12 +201,20 @@ esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_t
     return esp_enable_extern_coex_gpio_pin(wire_type, gpio_pin);
 }
 
-esp_err_t esp_external_coex_follower_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0, uint32_t out_pin0, uint32_t out_pin1)
+esp_err_t esp_external_coex_follower_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0, uint32_t in_pin1, uint32_t out_pin0, uint32_t out_pin1)
 {
     esp_external_coex_set_work_mode(EXTERNAL_COEX_FOLLOWER_ROLE);
     esp_external_coex_gpio_set_t gpio_pin;
 
     switch (wire_type) {
+        case EXTERN_COEX_WIRE_4:
+        {
+            gpio_pin.in_pin0  = in_pin0;
+            gpio_pin.in_pin1  = in_pin1;
+            gpio_pin.out_pin0 = out_pin0;
+            gpio_pin.out_pin1 = out_pin1;
+            break;
+        }
         case EXTERN_COEX_WIRE_3:
         {
             gpio_pin.in_pin0  = in_pin0;
@@ -238,7 +254,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         ESP_LOGE(TAG, "Configure external coex with unexpected gpio pin!!!\n");
         return ESP_ERR_INVALID_ARG;
     }
-    phy_coex_force_rx_ant();
+    phy_coex_force_rx_ant(); //  TO DO: esp32h2 /esp32c6 remove and add a common forece rx API
 
     esp_coex_external_params(g_external_coex_params, g_external_coex_follower_pti_val.pti_val1,
                     g_external_coex_follower_pti_val.pti_val2);
@@ -246,41 +262,79 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
 
     switch (wire_type)
     {
-#ifndef SOC_EXTERNAL_COEX_ADVANCE
         case EXTERN_COEX_WIRE_4:
         {
+#if SOC_EXTERNAL_COEX_ADVANCE
+        if(EXTERNAL_COEX_LEADER_ROLE == g_external_coex_params.work_mode) {
+#endif
             /*Input gpio pin setup --> GPIO_BT_PRIORITY_IDX：GPIO_BT_ACTIVE_IDX*/
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.in_pin0], PIN_FUNC_GPIO);
             gpio_set_direction(gpio_pin.in_pin0, GPIO_MODE_INPUT);
 
+#if SOC_EXTERNAL_COEX_ADVANCE
+            esp_rom_gpio_connect_in_signal(gpio_pin.in_pin0, EXTERN_ACTIVE_I_IDX, false);
+#else
             esp_rom_gpio_connect_in_signal(gpio_pin.in_pin0, GPIO_BT_ACTIVE_IDX, false);
-
+#endif
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.in_pin1], PIN_FUNC_GPIO);
             gpio_set_direction(gpio_pin.in_pin1, GPIO_MODE_INPUT);
 
+#if SOC_EXTERNAL_COEX_ADVANCE
+            esp_rom_gpio_connect_in_signal(gpio_pin.in_pin1, EXTERN_PRIORITY_I_IDX, false);
+#else
             esp_rom_gpio_connect_in_signal(gpio_pin.in_pin1, GPIO_BT_PRIORITY_IDX, false);
+#endif
 
             /*Output gpio pin setup --> GPIO_WLAN_ACTIVE_IDX: 1 BT, 0 WiFi*/
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.out_pin0], PIN_FUNC_GPIO);
             gpio_set_direction(gpio_pin.out_pin0, GPIO_MODE_OUTPUT);
             REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.out_pin0));
 
+#if SOC_EXTERNAL_COEX_ADVANCE
+            esp_rom_gpio_connect_out_signal(gpio_pin.out_pin0, EXTERN_ACTIVE_O_IDX, false, false);
+#else
             esp_rom_gpio_connect_out_signal(gpio_pin.out_pin0, GPIO_WLAN_ACTIVE_IDX, false, false);
-
-
+#endif
+#ifndef SOC_EXTERNAL_COEX_ADVANCE
+            esp_extern_coex_register_txline(gpio_pin.out_pin1); // For leader mode, set wifi txline
+#endif
             REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin0), GPIO_PIN1_SYNC1_BYPASS, 2);
             REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin0), GPIO_PIN1_SYNC2_BYPASS, 2);
             REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin1), GPIO_PIN1_SYNC1_BYPASS, 2);
             REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin1), GPIO_PIN1_SYNC2_BYPASS, 2);
+#if SOC_EXTERNAL_COEX_ADVANCE
+        }
+        else if(EXTERNAL_COEX_FOLLOWER_ROLE == g_external_coex_params.work_mode) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.in_pin0], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.in_pin0, GPIO_MODE_INPUT);
+            esp_rom_gpio_connect_in_signal(gpio_pin.in_pin0, EXTERN_ACTIVE_I_IDX, false);
 
-            esp_extern_coex_register_txline(gpio_pin.out_pin1);
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.in_pin1], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.in_pin1, GPIO_MODE_INPUT);
+            esp_rom_gpio_connect_in_signal(gpio_pin.in_pin1, EXTERN_PRIORITY_I_IDX, false);
+
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.out_pin0], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.out_pin0, GPIO_MODE_OUTPUT);
+            REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.out_pin0));
+            esp_rom_gpio_connect_out_signal(gpio_pin.out_pin0, EXTERN_ACTIVE_O_IDX, false, false);
+
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.out_pin1], PIN_FUNC_GPIO);
+            gpio_set_direction(gpio_pin.out_pin1, GPIO_MODE_OUTPUT);
+            REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.out_pin1));
+            esp_rom_gpio_connect_out_signal(gpio_pin.out_pin1, EXTERN_PRIORITY_O_IDX, false, false);
+
+            REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin0), GPIO_PIN1_SYNC1_BYPASS, 2);
+            REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.in_pin0), GPIO_PIN1_SYNC2_BYPASS, 2);
+        }
+#else
+#endif
             int ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
             if (ESP_OK != ret) {
                 return ESP_FAIL;
             }
             break;
         }
-#endif
+
         case EXTERN_COEX_WIRE_3:
         {
 #if SOC_EXTERNAL_COEX_ADVANCE

@@ -170,7 +170,7 @@ esp_err_t esp_disable_extern_coex_gpio_pin();
  * @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0,
-                uint32_t in_pin1, uint32_t out_pin0);
+                uint32_t in_pin1, uint32_t out_pin0, uint32_t out_pin1);
 
 /**
  * @brief Configure follower work mode, gpio pin correspondly and finally enable external coex,
@@ -179,7 +179,7 @@ esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_t
  * @param gpio_pin : gpio pin number to select.
  * @return : ESP_OK - success, other - failed
  */
-esp_err_t esp_external_coex_follower_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0,
+esp_err_t esp_external_coex_follower_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0, uint32_t in_pin1,
                 uint32_t out_pin0, uint32_t out_pin1);
 
 /**
