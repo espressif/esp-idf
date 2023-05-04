@@ -1244,7 +1244,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         {
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
-            if (p_data->open.status == BTA_AG_SUCCESS)
+            if (p_data->open.hdr.status == BTA_AG_SUCCESS)
             {
                 bdcpy(hf_local_param[idx].btc_hf_cb.connected_bda.address, p_data->open.bd_addr);
                 hf_local_param[idx].btc_hf_cb.connection_state  = ESP_HF_CONNECTION_STATE_CONNECTED;
@@ -1255,7 +1255,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                 hf_local_param[idx].btc_hf_cb.connection_state  = ESP_HF_CONNECTION_STATE_DISCONNECTED;
             } else {
                 BTC_TRACE_WARNING("%s: AG open failed, but another device connected. status=%d state=%d connected device=%s", __FUNCTION__,
-                                    p_data->open.status, hf_local_param[idx].btc_hf_cb.connection_state,
+                                    p_data->open.hdr.status, hf_local_param[idx].btc_hf_cb.connection_state,
                                     bdaddr_to_string(&hf_local_param[idx].btc_hf_cb.connected_bda, bdstr, sizeof(bdstr)));
                 break;
             }
@@ -1272,7 +1272,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             if (hf_local_param[idx].btc_hf_cb.connection_state  == ESP_HF_CONNECTION_STATE_DISCONNECTED)
                 bdsetany(hf_local_param[idx].btc_hf_cb.connected_bda.address);
 
-            if (p_data->open.status != BTA_AG_SUCCESS)
+            if (p_data->open.hdr.status != BTA_AG_SUCCESS)
                 btc_queue_advance();
             break;
         }
