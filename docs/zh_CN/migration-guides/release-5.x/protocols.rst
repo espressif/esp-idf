@@ -112,7 +112,7 @@ ESP-TLS
 私有化 ``esp_tls_t`` 结构体
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-更新后，:cpp:type:`esp_tls_t` 已完全私有化，用户无法直接访问其内部结构。之前需要通过 ESP-TLS 句柄获得的必要数据，现在可由对应的 getter/setter 函数获取。如需特定功能的 getter/setter 函数，请在 ESP-IDF 的 `Issue 板块 <https://github.com/espressif/esp-adf/issues>`__ 提出。
+更新后，:cpp:type:`esp_tls_t` 已完全私有化，用户无法直接访问其内部结构。之前需要通过 ESP-TLS 句柄获得的必要数据，现在可由对应的 getter/setter 函数获取。如需特定功能的 getter/setter 函数，请在 ESP-IDF 的 `Issue 板块 <https://github.com/espressif/esp-idf/issues>`__ 提出。
 
 
 下列为新增的 getter/setter 函数：
