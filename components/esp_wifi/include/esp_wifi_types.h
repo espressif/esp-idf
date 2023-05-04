@@ -317,7 +317,7 @@ typedef struct {
     uint32_t transition_disable:1;            /**< Whether to enable transition disable feature */
     uint32_t reserved:26;                     /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
-    wifi_sae_pk_mode_t sae_pk_mode;           /**< SAE-PK mode */
+    wifi_sae_pk_mode_t sae_pk_mode;           /**< Configuration for SAE-PK (Public Key) Authentication method */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
                                                    Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
     uint32_t he_dcm_set:1;                                        /**< Whether DCM max.constellation for transmission and reception is set. */
