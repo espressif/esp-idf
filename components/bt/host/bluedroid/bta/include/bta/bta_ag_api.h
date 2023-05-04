@@ -333,8 +333,6 @@ typedef struct
 typedef struct
 {
     tBTA_AG_HDR         hdr;
-    UINT16              handle;
-    tBTA_AG_STATUS      status;
 } tBTA_AG_REGISTER;
 
 /* data associated with BTA_AG_OPEN_EVT */
@@ -343,7 +341,6 @@ typedef struct
     tBTA_AG_HDR         hdr;
     BD_ADDR             bd_addr;
     tBTA_SERVICE_ID     service_id;
-    tBTA_AG_STATUS      status;
 } tBTA_AG_OPEN;
 
 /* data associated with BTA_AG_CLOSE_EVT */
