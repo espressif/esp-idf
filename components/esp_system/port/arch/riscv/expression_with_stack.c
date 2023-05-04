@@ -9,35 +9,50 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
+#include "sdkconfig.h"
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+#include "esp_private/hw_stack_guard.h"
+#endif
 
-static portMUX_TYPE shared_stack_spinlock = portMUX_INITIALIZER_UNLOCKED;
-static void *current_task_stack = NULL;
-
-extern void esp_shared_stack_invoke_function(shared_stack_function function, void *stack);
-
-static StackType_t *esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
+static StackType_t *esp_shared_stack_setup_context(StaticTask_t *tcb, void **sp_min, void **sp_max, StackType_t *stack, size_t stack_size)
 {
     //We need also to tweak current task stackpointer to avoid erroneous
     //stack overflow indication, so fills the stack with freertos known pattern:
     memset(stack, 0xa5U, stack_size * sizeof(StackType_t));
 
-    StaticTask_t *current = (StaticTask_t *)xTaskGetCurrentTaskHandle();
-    //Then put the fake stack inside of TCB:
-    current_task_stack = current->pxDummy6;
-    current->pxDummy6 = (void *)stack;
-
-    StackType_t *top_of_stack = stack + stack_size;
-
-    //Align stack to a 16byte boundary, as required by CPU specific:
-    top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 16) & ~0xf));
+    //Align stack to a 16-byte boundary, as required by CPU specific:
+    StackType_t *top_of_stack = (StackType_t *) ALIGNUP(0x10, (uint32_t) (stack + stack_size));
     StackType_t *adjusted_top_of_stack = top_of_stack - RV_STK_FRMSZ;
+
+    //Then put the fake stack inside of TCB:
+    *sp_min = tcb->pxDummy6;
+    tcb->pxDummy6 = (void *)stack;
+
+    *sp_max = tcb->pxDummy8;
+    tcb->pxDummy8 = adjusted_top_of_stack;
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
     vPortSetStackWatchpoint(stack);
 #endif
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    esp_hw_stack_guard_monitor_stop();
+    esp_hw_stack_guard_set_bounds((uint32_t) tcb->pxDummy6, (uint32_t) tcb->pxDummy8);
+#endif
     return ((StackType_t *)adjusted_top_of_stack);
 }
 
+static void esp_shared_stack_restore_context(StaticTask_t *tcb, void *sp_min, void *sp_max) {
+    tcb->pxDummy6 = sp_min;
+    tcb->pxDummy8 = sp_max;
+
+#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
+    vPortSetStackWatchpoint(sp_min);
+#endif
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    esp_hw_stack_guard_set_bounds((uint32_t) sp_min, (uint32_t) sp_max);
+    esp_hw_stack_guard_monitor_start();
+#endif
+}
 
 void esp_execute_shared_stack_function(SemaphoreHandle_t lock, void *stack, size_t stack_size, shared_stack_function function)
 {
@@ -46,21 +61,33 @@ void esp_execute_shared_stack_function(SemaphoreHandle_t lock, void *stack, size
     assert(stack_size > 0 && stack_size >= CONFIG_ESP_MINIMAL_SHARED_STACK_SIZE);
     assert(function);
 
+    static portMUX_TYPE shared_stack_spinlock = portMUX_INITIALIZER_UNLOCKED;
+    StaticTask_t *tcb = (StaticTask_t *)xTaskGetCurrentTaskHandle();
+    void *sp_min = NULL;
+    void *sp_max = (void *) UINTPTR_MAX;
+
     xSemaphoreTake(lock, portMAX_DELAY);
+
     portENTER_CRITICAL(&shared_stack_spinlock);
-    stack = esp_switch_stack_setup(stack, stack_size);
+    stack = esp_shared_stack_setup_context(tcb, &sp_min, &sp_max, stack, stack_size);
+    __asm__ volatile ("mv   t0, sp      \n"     /* save current SP */
+                      "mv   sp, %0      \n"     /* set shared stack as new SP */
+                      "addi sp, sp, -16 \n"     /* allocate memory for previous SP */
+                      "sw   t0, 0(sp)   \n"     /* store previous SP in a safe place */
+                      :: "r"(stack));
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    esp_hw_stack_guard_monitor_start();
+#endif
     portEXIT_CRITICAL(&shared_stack_spinlock);
 
-    esp_shared_stack_invoke_function(function, stack);
+    function();
 
     portENTER_CRITICAL(&shared_stack_spinlock);
-    StaticTask_t *current = (StaticTask_t *)xTaskGetCurrentTaskHandle();
-
-    //Restore current task stack:
-    current->pxDummy6 = (StackType_t *)current_task_stack;
-#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    vPortSetStackWatchpoint(current->pxDummy6);
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    esp_hw_stack_guard_monitor_stop();
 #endif
+    __asm__ volatile ("lw   sp, 0(sp)");        /* restore real SP of current task */
+    esp_shared_stack_restore_context(tcb, sp_min, sp_max);
     portEXIT_CRITICAL(&shared_stack_spinlock);
 
     xSemaphoreGive(lock);

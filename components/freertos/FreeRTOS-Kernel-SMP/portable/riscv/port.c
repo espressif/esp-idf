@@ -41,6 +41,17 @@
 #endif //CONFIG_PM_TRACE
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+/**
+ * offsetof() can not be used in asm code. Then we need make sure that
+ * PORT_OFFSET_PX_STACK and PORT_OFFSET_PX_END_OF_STACK have expected values.
+ * Macro used in the portasm.S instead of variables to save at least 4 instruction calls
+ * which accessing DRAM memory. This optimization saves CPU time in the interrupt handling.
+ */
+
+_Static_assert(offsetof( StaticTask_t, pxDummy6 ) == PORT_OFFSET_PX_STACK);
+_Static_assert(offsetof( StaticTask_t, pxDummy8 ) == PORT_OFFSET_PX_END_OF_STACK);
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  *
@@ -51,7 +62,7 @@ volatile UBaseType_t uxInterruptNesting = 0;
 portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
 portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 volatile BaseType_t xPortSwitchFlag = 0;
-__attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
+__attribute__((aligned(16))) StackType_t xIsrStack[configISR_STACK_SIZE];
 StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
 
 // Variables used for IDF style critical sections. These are orthogonal to FreeRTOS critical sections

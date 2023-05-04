@@ -89,6 +89,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         //     return PCR_BT_BASEBAND_EN;
         // case PERIPH_BT_LC_MODULE:
         //     return PCR_BT_LC_EN;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_CLK_EN;
         default:
             return 0;
     }
@@ -189,6 +191,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         //     return PCR_BT_BASEBAND_EN;
         // case PERIPH_BT_LC_MODULE:
         //     return PCR_BT_LC_EN;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_RST_EN;
         default:
             return 0;
     }
@@ -263,6 +267,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_TSENS_CLK_CONF_REG;
         case PERIPH_REGDMA_MODULE:
             return PCR_REGDMA_CONF_REG;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_CONF_REG;
     default:
         return 0;
     }
@@ -330,6 +336,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_TSENS_CLK_CONF_REG;
         case PERIPH_REGDMA_MODULE:
             return PCR_REGDMA_CONF_REG;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_CONF_REG;
     default:
         return 0;
     }

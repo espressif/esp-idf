@@ -24,6 +24,8 @@ void test_int_wdt(void);
 
 void test_task_wdt_cpu0(void);
 
+void test_hw_stack_guard_cpu0(void);
+
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 void test_panic_extram_stack(void);
 #endif
