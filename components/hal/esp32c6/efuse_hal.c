@@ -16,12 +16,20 @@
 
 uint32_t efuse_hal_get_major_chip_version(void)
 {
+#ifdef CONFIG_ESP_REV_NEW_CHIP_TEST
+    return CONFIG_ESP_REV_MIN_FULL / 100;
+#else
     return efuse_ll_get_chip_wafer_version_major();
+#endif
 }
 
 uint32_t efuse_hal_get_minor_chip_version(void)
 {
+#ifdef CONFIG_ESP_REV_NEW_CHIP_TEST
+    return CONFIG_ESP_REV_MIN_FULL % 100;
+#else
     return efuse_ll_get_chip_wafer_version_minor();
+#endif
 }
 
 /******************* eFuse control functions *************************/

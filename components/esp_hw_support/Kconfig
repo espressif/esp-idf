@@ -3,6 +3,15 @@ menu "Hardware Settings"
     menu "Chip revision"
         # Insert chip-specific HW config
         orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+
+        config ESP_REV_NEW_CHIP_TEST
+            bool "Internal test mode"
+            depends on IDF_CI_BUILD
+            default n
+            help
+                For internal chip testing, a small number of new versions chips didn't
+                update the version field in eFuse, you can enable this option to force the
+                software recognize the chip version based on the rev selected in menuconfig.
     endmenu
 
     orsource "./port/$IDF_TARGET/Kconfig.spiram"
