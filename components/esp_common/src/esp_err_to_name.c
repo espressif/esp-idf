@@ -129,7 +129,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_INVALID_MAC),                            /*   267 0x10b MAC address was invalid */
 #   endif
 #   ifdef      ESP_ERR_NOT_FINISHED
-    ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c There are items remained to retrieve */
+    ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c Operation has not fully completed */
 #   endif
     // components/nvs_flash/include/nvs.h
 #   ifdef      ESP_ERR_NVS_BASE
