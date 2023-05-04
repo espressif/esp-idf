@@ -30,6 +30,8 @@ The following standard APIs are implemented in ESP-IDF.
 
 Refer to standard POSIX Threads documentation, or pthread.h, for details about the standard arguments and behaviour of each function. Differences or limitations compared to the standard APIs are noted below.
 
+.. _posix_thread_api:
+
 Thread APIs
 ^^^^^^^^^^^
 
