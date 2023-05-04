@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,6 +107,21 @@ void esp_sha_acquire_hardware(void);
  */
 void esp_sha_release_hardware(void);
 
+
+/**
+ * @brief Sets the initial hash value for SHA512/t.
+ *
+ * @note Is generated according to the algorithm described in the TRM,
+ * chapter SHA-Accelerator
+ *
+ * @note The engine must be locked until the value is used for an operation
+ * or read out. Else you risk another operation overwriting it.
+ *
+ * @param t
+ *
+ * @return 0 if successful
+ */
+int esp_sha_512_t_init_hash(uint16_t t);
 
 #ifdef __cplusplus
 }
