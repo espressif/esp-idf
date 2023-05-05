@@ -60,6 +60,18 @@ if(${target} STREQUAL "linux")
     if(NOT CONFIG_FREERTOS_SMP)
         list(APPEND srcs "${kernel_dir}/portable/${arch}/port_idf.c")
     endif()
+
+    # Check if we need to address the FreeRTOS EINTR coexistence with linux system calls
+    # if we're building without lwIP, we need to use linux system select which will receive
+    # EINTR event on every FreeRTOS interrupt, we workaround this problem by wrapping select()
+    # to bypass and silence the EINTR events
+    set(BYPASS_EINTR_ISSUE 0)
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    if(NOT "lwip" IN_LIST build_components)
+        set(BYPASS_EINTR_ISSUE 1)
+        list(APPEND srcs esp_additions/arch/linux/FreeRTOSSimulator_wrappers.c)
+    endif()
+
 else()
     list(APPEND srcs
         "app_startup.c"
@@ -99,6 +111,9 @@ idf_component_register(SRCS "${srcs}"
 if(${target} STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
     target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)
+    if(BYPASS_EINTR_ISSUE)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=select")
+    endif()
 else()
     idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 

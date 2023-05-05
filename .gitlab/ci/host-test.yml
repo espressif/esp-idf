@@ -282,8 +282,8 @@ test_sockets_on_host:
     - grep "Socket unable to connect" test.log
     # test the udp-client example with lwip sockets
     - cd ${IDF_PATH}/examples/protocols/sockets/udp_client
-    - echo 'CONFIG_EXAMPLE_IPV4_ADDR="127.0.0.1"' >> sdkconfig.defaults
     - idf.py --preview set-target linux
+    - cat sdkconfig.ci.linux > sdkconfig
     - idf.py build
     - timeout 5 ./build/udp_client.elf >test.log || true
     - grep "Message sent" test.log

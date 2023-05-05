@@ -3,7 +3,7 @@ menu "Example Connection Configuration"
     config EXAMPLE_CONNECT_LWIP_TAPIF
         bool "connect using lwip to linux tap interface"
         depends on IDF_TARGET_LINUX && ESP_NETIF_TCPIP_LWIP
-        default n
+        default y
 
     if EXAMPLE_CONNECT_LWIP_TAPIF
         config EXAMPLE_CONNECT_IPV4
@@ -18,24 +18,28 @@ menu "Example Connection Configuration"
             help
                 Set to true to setup link local address and wait until it's valid
 
+        config EXAMPLE_CONNECT_WAIT_FOR_IP
+            bool "run DHCP and wait for IP"
+            default y
+
         config EXAMPLE_CONNECT_TAPIF_IP_ADDR
             string "Static IP address"
             default "192.168.5.100"
-            depends on EXAMPLE_CONNECT_IPV4
+            depends on EXAMPLE_CONNECT_IPV4 && !EXAMPLE_CONNECT_WAIT_FOR_IP
             help
                 Set static IP address.
 
         config EXAMPLE_CONNECT_TAPIF_NETMASK
             string "Static netmask address"
             default "255.255.255.0"
-            depends on EXAMPLE_CONNECT_IPV4
+            depends on EXAMPLE_CONNECT_IPV4 && !EXAMPLE_CONNECT_WAIT_FOR_IP
             help
                 Set static netmask address.
 
         config EXAMPLE_CONNECT_TAPIF_GW
             string "Static gateway address"
             default "192.168.5.1"
-            depends on EXAMPLE_CONNECT_IPV4
+            depends on EXAMPLE_CONNECT_IPV4 && !EXAMPLE_CONNECT_WAIT_FOR_IP
             help
                 Set static gateway address.
 
