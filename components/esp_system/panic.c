@@ -428,6 +428,7 @@ void esp_panic_handler(panic_info_t *info)
 #else /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
     disable_all_wdts();
     panic_print_str("CPU halted.\r\n");
+    esp_system_reset_modules_on_exit();
     while (1);
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
 #endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */
