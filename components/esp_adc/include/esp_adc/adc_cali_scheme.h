@@ -22,6 +22,7 @@ extern "C" {
 ---------------------------------------------------------------*/
 typedef struct {
     adc_unit_t unit_id;         ///< ADC unit
+    adc_channel_t chan;         ///< ADC channel, for chips with SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED, calibration can be per channel
     adc_atten_t atten;          ///< ADC attenuation
     adc_bitwidth_t bitwidth;    ///< ADC raw output bitwidth
 } adc_cali_curve_fitting_config_t;

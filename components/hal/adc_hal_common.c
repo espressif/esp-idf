@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,7 +204,6 @@ uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool inte
 
     adc_ll_calibration_finish(adc_n);
     return ret;
-    return 0;
 }
 #endif  //#if SOC_ADC_SELF_HW_CALI_SUPPORTED
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED

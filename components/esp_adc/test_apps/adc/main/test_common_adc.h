@@ -71,11 +71,11 @@ extern "C" {
 #define ADC_TEST_HIGH_VAL        3400
 #define ADC_TEST_HIGH_THRESH     200
 
-#elif CONFIG_IDF_TARGET_ESP32C6  // TODO: IDF-5312
-#define ADC_TEST_LOW_VAL         2144
-#define ADC_TEST_LOW_THRESH      200
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      15
 
-#define ADC_TEST_HIGH_VAL        4081
+#define ADC_TEST_HIGH_VAL        3350
 #define ADC_TEST_HIGH_VAL_DMA    4081
 #define ADC_TEST_HIGH_THRESH     200
 
@@ -114,13 +114,17 @@ extern adc_digi_iir_filter_coeff_t g_test_filter_coeff[TEST_FILTER_COEFF_NUMS];
 /**
  * @brief Initialise ADC Calibration
  *
- * @param[out] out_handle    ADC calibration handle
+ * @param[in]  unit         ADC unit
+ * @param[in]  channel      ADC channel
+ * @param[in]  atten        ADC attenuation
+ * @param[in]  bitwidth     ADC bit width
+ * @param[out] out_handle   ADC calibration handle
  *
  * @return
  *        - True  Calibration success
  *        - False Calibration fail
  */
-bool test_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle);
+bool test_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle);
 
 /**
  * @brief De-initialise ADC Calibration

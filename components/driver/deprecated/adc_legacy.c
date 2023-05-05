@@ -947,6 +947,12 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
              * update this when bringing up the calibration on that chip
              */
             adc_calc_hw_calibration_code(i, j);
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+            /* Load the channel compensation from efuse */
+            for (int k = 0; k < SOC_ADC_CHANNEL_NUM(i); k++) {
+                adc_load_hw_calibration_chan_compens(i, k, j);
+            }
+#endif
         }
     }
 }

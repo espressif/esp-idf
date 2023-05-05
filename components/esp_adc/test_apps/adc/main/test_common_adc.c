@@ -39,7 +39,7 @@ adc_digi_iir_filter_coeff_t g_test_filter_coeff[TEST_FILTER_COEFF_NUMS] = {
 /*---------------------------------------------------------------
         ADC Calibration
 ---------------------------------------------------------------*/
-bool test_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle)
+bool test_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle)
 {
     esp_err_t ret = ESP_FAIL;
     adc_cali_handle_t handle = NULL;
@@ -49,6 +49,7 @@ bool test_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_bitwidth_
     ESP_LOGI(TAG, "calibration scheme version is %s", "Curve Fitting");
     adc_cali_curve_fitting_config_t cali_config = {
         .unit_id = unit,
+        .chan = channel,
         .atten = atten,
         .bitwidth = bitwidth,
     };
