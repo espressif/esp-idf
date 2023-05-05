@@ -179,6 +179,13 @@ menu "OpenThread"
         help
             Select this option to acquire NAT64 address from dns servers.
 
+    config OPENTHREAD_DNS_SERVER_ADDR
+        string "DNS server address (IPv4)"
+        depends on OPENTHREAD_DNS64_CLIENT
+        default "8.8.8.8"
+        help
+            Set the DNS server IPv4 address.
+
     config OPENTHREAD_UART_BUFFER_SIZE
         int "The uart received buffer size of openthread"
         depends on OPENTHREAD_ENABLED
