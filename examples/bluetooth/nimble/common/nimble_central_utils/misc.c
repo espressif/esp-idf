@@ -88,7 +88,7 @@ print_conn_desc(const struct ble_gap_conn_desc *desc)
                 desc->sec_state.bonded);
 }
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
+#if MYNEWT_VAL(BLE_EXT_ADV)
 void
 print_addr(const void *addr, const char *name)
 {

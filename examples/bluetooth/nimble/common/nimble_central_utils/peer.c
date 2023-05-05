@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -701,6 +701,38 @@ peer_add(uint16_t conn_handle)
 
     return 0;
 }
+
+void
+peer_traverse_all(peer_traverse_fn *trav_cb, void *arg)
+{
+    struct peer *peer;
+
+    if (!trav_cb) {
+        return;
+    }
+
+    SLIST_FOREACH(peer, &peers, next) {
+        if (trav_cb(peer, arg)) {
+            return;
+        }
+    }
+}
+
+#if MYNEWT_VAL(ENC_ADV_DATA)
+int
+peer_set_addr(uint16_t conn_handle, uint8_t *peer_addr)
+{
+    struct peer *peer;
+
+    peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        return BLE_HS_ENOTCONN;
+    }
+
+    memcpy(&peer->peer_addr, peer_addr, PEER_ADDR_VAL_SIZE);
+    return 0;
+}
+#endif
 
 static void
 peer_free_mem(void)
