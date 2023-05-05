@@ -14,6 +14,8 @@
 #include "esp_rom_sys.h"
 #include "esp_adc/adc_oneshot.h"
 #include "test_common_adc.h"
+#include "esp_adc/adc_continuous.h"
+#include "esp_adc/adc_filter.h"
 
 const __attribute__((unused)) static char *TAG = "TEST_ADC";
 
@@ -127,3 +129,40 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     TEST_ESP_OK(gptimer_del_timer(timer));
     TEST_ESP_OK(adc_oneshot_del_unit(isr_test_ctx.adc_handle));
 }
+
+#if SOC_ADC_DMA_SUPPORTED
+#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+TEST_CASE("ADC filter exhausted allocation", "[adc_oneshot]")
+{
+    adc_continuous_handle_t handle = NULL;
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = 1024,
+        .conv_frame_size = 1024,
+    };
+    TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
+
+    adc_iir_filter_handle_t filter_hdl[SOC_ADC_DIGI_IIR_FILTER_NUM + 1] = {};
+    adc_continuous_iir_filter_config_t filter_config = {
+        .unit = ADC_UNIT_1,
+        .channel = ADC_CHANNEL_0,
+        .coeff = ADC_DIGI_IIR_FILTER_COEFF_2,
+    };
+    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+#if SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
+        //On these chips, the unit and the filter_id should be the same
+        filter_config.unit = i;
+#endif
+        TEST_ESP_OK(adc_new_continuous_iir_filter(handle, &filter_config, &filter_hdl[i]));
+    }
+
+    filter_config.unit = ADC_UNIT_1;
+    TEST_ASSERT(adc_new_continuous_iir_filter(handle, &filter_config, &filter_hdl[SOC_ADC_DIGI_IIR_FILTER_NUM]) == ESP_ERR_NOT_FOUND);
+
+    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+        TEST_ESP_OK(adc_del_continuous_iir_filter(filter_hdl[i]));
+    }
+
+    TEST_ESP_OK(adc_continuous_deinit(handle));
+}
+#endif  //#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+#endif  //#if SOC_ADC_DMA_SUPPORTED
