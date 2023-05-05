@@ -109,8 +109,8 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO8 and GPIO9 are strapping pins. For more infomation, please refer to `ESP8684 datasheet <https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf>`_.
+    - Strapping pin: GPIO8 and GPIO9 are strapping pins. For more information, please refer to `ESP8684 datasheet <https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf>`_.
     - SPI0/1: GPIO12-17 are usually used for SPI flash and not recommended for other uses.
-    - RTC: GPIO0-5 can be used when in Deep-sleep mode.
+    - RTC: GPIO0-5 can be used to wake up the chip from Deep-sleep mode. Other GPIOs can only wake up the chip from Light-sleep mode. For more information, please refer to Section :ref:`Wakeup Sources<api-reference-wakeup-source>`.
 
 ---

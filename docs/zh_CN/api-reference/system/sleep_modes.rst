@@ -42,6 +42,8 @@ Light-sleep 和 Deep-sleep 模式有多种唤醒源。这些唤醒源也可以�
 
 如需保持 Wi-Fi 连接，请启用 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式（请参阅 :doc:`电源管理 API <power_management>`）。在这两种模式下，Wi-Fi 驱动程序发出请求时，系统将自动从睡眠中被唤醒，从而保持与 AP 的连接。
 
+.. _api-reference-wakeup-source:
+
 唤醒源
 ---------
 
