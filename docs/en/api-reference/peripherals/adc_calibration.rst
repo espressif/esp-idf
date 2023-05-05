@@ -80,16 +80,27 @@ For those users who use their custom ADC calibration schemes, you could either m
         ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
 
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
     ADC Calibration Curve Fitting Scheme
     ````````````````````````````````````
 
     {IDF_TARGET_NAME} supports :c:macro:`ADC_CALI_SCHEME_VER_CURVE_FITTING` scheme. To create this scheme, set up :cpp:type:`adc_cali_curve_fitting_config_t` first.
 
-    -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
-    -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
-    -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`, the ADC raw result bitwidth.
+
+    .. only:: not esp32c6
+
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`, this member is kept here for extensibility. The calibration scheme only differs by attenuation, there's no difference among different channels.
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`, the ADC raw result bitwidth.
+
+    .. only:: esp32c6
+
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`, the ADC channel that your ADC raw results are from. The calibration scheme not only differs by attenuation but also related to the channels.
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
+        -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`, the ADC raw result bitwidth.
 
     After setting up the configuration structure, call :cpp:func:`adc_cali_create_scheme_curve_fitting` to create a Curve Fitting calibration scheme handle. This function may fail due to reasons such as :c:macro:`ESP_ERR_INVALID_ARG` or :c:macro:`ESP_ERR_NO_MEM`. Especially, when the function return :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not burnt on your board.
 

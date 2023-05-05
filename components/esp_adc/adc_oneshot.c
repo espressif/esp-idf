@@ -173,7 +173,7 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
     adc_hal_calibration_init(handle->unit_id);
     adc_set_hw_calibration_code(handle->unit_id, atten);
-#endif
+#endif  // SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool valid = false;
     valid = adc_oneshot_hal_convert(&(handle->hal), out_raw);
     sar_periph_ctrl_adc_oneshot_power_release();

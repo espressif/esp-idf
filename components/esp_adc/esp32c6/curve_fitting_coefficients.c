@@ -14,10 +14,9 @@
  * For each item, first element is the Coefficient, second element is the Multiple. (Coefficient / Multiple) is the real coefficient.
  *
  * @note {0,0} stands for unused item
- * @note In case of the overflow, these coeffcients are recorded as Absolute Value
+ * @note In case of the overflow, these coefficients are recorded as Absolute Value
  * @note For atten0 ~ 2, error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2); For atten3, error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
  * @note Above formula is rewritten from the original documentation, please note that the coefficients are re-ordered.
- * @note ADC1 and ADC2 use same coeffients
  */
 const uint64_t adc1_error_coef_atten[4][5][2] = {
                                                 {{487166399931449,   1e16}, {6436483033201,   1e16}, {30410131806, 1e16}, {0, 0}, {0, 0}},   //atten0

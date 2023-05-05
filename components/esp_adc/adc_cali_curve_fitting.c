@@ -16,6 +16,7 @@
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
 #include "curve_fitting_coefficients.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
 #include "esp_efuse_rtc_calib.h"
@@ -55,6 +56,7 @@ typedef struct {
 
 typedef struct {
     adc_unit_t unit_id;                            ///< ADC unit
+    adc_channel_t chan;                            ///< ADC channel
     adc_atten_t atten;                             ///< ADC attenuation
     cali_chars_first_step_t chars_first_step;      ///< Calibration first step characteristics
     cali_chars_second_step_t chars_second_step;    ///< Calibration second step characteristics
@@ -100,6 +102,7 @@ esp_err_t adc_cali_create_scheme_curve_fitting(const adc_cali_curve_fitting_conf
     //Set second step calibration context
     calc_second_step_coefficients(config, chars);
     chars->unit_id = config->unit_id;
+    chars->chan = config->chan;
     chars->atten = config->atten;
 
     *ret_handle = scheme;
@@ -132,6 +135,16 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
     //pointers are checked in the upper layer
 
     cali_chars_curve_fitting_t *ctx = arg;
+
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+    int chan_compensation = adc_get_hw_calibration_chan_compens(ctx->unit_id, ctx->chan, ctx->atten);
+    raw -= chan_compensation;
+    /* Limit the range */
+    int max_val = (1L << SOC_ADC_RTC_MAX_BITWIDTH) - 1;
+    raw = raw <= 0 ? 0 :
+          raw > max_val ? max_val : raw;
+#endif  // SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+
     uint64_t v_cali_1 = (uint64_t)raw * ctx->chars_first_step.coeff_a / coeff_a_scaling + ctx->chars_first_step.coeff_b;
     int32_t error = get_reading_error(v_cali_1, &(ctx->chars_second_step), ctx->atten);
 
@@ -173,8 +186,9 @@ static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, ca
 static void calc_second_step_coefficients(const adc_cali_curve_fitting_config_t *config, cali_chars_curve_fitting_t *ctx)
 {
     ctx->chars_second_step.term_num = (config->atten == 3) ? 5 : 3;
-#if CONFIG_IDF_TARGET_ESP32C3
-    //On esp32c3, ADC1 and ADC2 share the second step coefficients
+#if CONFIG_IDF_TARGET_ESP32C3 || SOC_ADC_PERIPH_NUM == 1
+    // On esp32c3, ADC1 and ADC2 share the second step coefficients
+    // And if the target only has 1 ADC peripheral, just use the ADC1 directly
     ctx->chars_second_step.coeff = &adc1_error_coef_atten;
     ctx->chars_second_step.sign = &adc1_error_sign;
 #else

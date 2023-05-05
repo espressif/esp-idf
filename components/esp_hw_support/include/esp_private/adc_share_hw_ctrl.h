@@ -45,6 +45,28 @@ void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten);
  * @param atten Attenuation to use
  */
 void adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten);
+
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+/**
+ * @brief Load the channel compensation of the ADC HW calibration from eFuse to a static array
+ *
+ * @param adc_n ADC unit to compensation
+ * @param chan  ADC channel to compensation
+ * @param atten Attenuation to use
+ */
+void adc_load_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten);
+
+/**
+ * @brief Get the channel compensation of the ADC HW calibration from the static array
+ *        that have been loaded from eFuse
+ *
+ * @param adc_n ADC unit to compensation
+ * @param chan  ADC channel to compensation
+ * @param atten Attenuation to use
+ * @return The channel compensation
+ */
+int adc_get_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten);
+#endif  // SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
 
