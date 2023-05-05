@@ -46,7 +46,7 @@ void *hostap_init(void)
         os_free(hapd);
         return NULL;
     }
-    hapd->conf->max_num_sta = MAX_STA_COUNT;
+    hapd->conf->max_num_sta = esp_wifi_ap_get_max_sta_conn();
 
     auth_conf = (struct wpa_auth_config *)os_zalloc(sizeof(struct  wpa_auth_config));
 
