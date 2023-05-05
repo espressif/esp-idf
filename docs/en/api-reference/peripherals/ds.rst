@@ -50,6 +50,8 @@ The APIs :cpp:func:`esp_ds_sign` and :cpp:func:`esp_ds_start_sign` calculate a p
     To create signatures of arbitrary messages, the input is normally a hash of the actual message, padded up to the required length.
     An API to do this is planned in the future.
 
+.. _configure-the-ds-peripheral:
+
 Configure the DS peripheral for a TLS connection
 ------------------------------------------------
 
