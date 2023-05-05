@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#define PEER_ADDR_VAL_SIZE                                  6
+
 /** Misc. */
 void print_bytes(const uint8_t *bytes, int len);
 void print_mbuf(const struct os_mbuf *om);
@@ -60,8 +62,9 @@ typedef int peer_traverse_fn(const struct peer *peer, void *arg);
 
 struct peer {
     SLIST_ENTRY(peer) next;
-
     uint16_t conn_handle;
+
+    uint8_t peer_addr[PEER_ADDR_VAL_SIZE];
 
     /** List of discovered GATT services. */
     struct peer_svc_list svcs;
@@ -95,8 +98,9 @@ int peer_add(uint16_t conn_handle);
 int peer_init(int max_peers, int max_svcs, int max_chrs, int max_dscs);
 struct peer *
 peer_find(uint16_t conn_handle);
-
-
+#if MYNEWT_VAL(ENC_ADV_DATA)
+int peer_set_addr(uint16_t conn_handle, uint8_t *peer_addr);
+#endif
 #ifdef __cplusplus
 }
 #endif

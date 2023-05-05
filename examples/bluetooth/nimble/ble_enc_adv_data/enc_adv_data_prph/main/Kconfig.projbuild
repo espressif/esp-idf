@@ -1,0 +1,64 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_USE_IO_TYPE
+        prompt "I/O Capability"
+        default BLE_SM_IO_CAP_NO_IO
+        help
+            I/O capability of device.
+
+        config BLE_SM_IO_CAP_DISP_ONLY
+            bool "DISPLAY ONLY"
+        config BLE_SM_IO_CAP_DISP_YES_NO
+            bool "DISPLAY YESNO"
+        config BLE_SM_IO_CAP_KEYBOARD_ONLY
+            bool "KEYBOARD ONLY"
+        config BLE_SM_IO_CAP_NO_IO
+            bool "Just works"
+        config BLE_SM_IO_CAP_KEYBOARD_DISP
+            bool "Both KEYBOARD & DISPLAY"
+    endchoice
+
+    config EXAMPLE_IO_TYPE
+        int
+        default 0 if BLE_SM_IO_CAP_DISP_ONLY
+        default 1 if BLE_SM_IO_CAP_DISP_YES_NO
+        default 2 if BLE_SM_IO_CAP_KEYBOARD_ONLY
+        default 3 if BLE_SM_IO_CAP_NO_IO
+        default 4 if BLE_SM_IO_CAP_KEYBOARD_DISP
+
+    config EXAMPLE_BONDING
+        bool
+        default n
+        prompt "Use Bonding"
+        help
+            Use this option to enable/disable bonding.
+
+    config EXAMPLE_USE_SC
+        bool
+        depends on BT_NIMBLE_SM_SC
+        default n
+        prompt "Use Secure Connection feature"
+        help
+            Use this option to enable/disable Security Manager Secure Connection 4.2 feature.
+
+    config EXAMPLE_RANDOM_ADDR
+        bool
+        prompt "Advertise RANDOM Address"
+        help
+            Use this option to advertise a random address instead of public address
+
+    config EXAMPLE_RESOLVE_PEER_ADDR
+        bool
+        prompt "Enable resolving peer address"
+        help
+            Use this option to enable resolving peer's address.
+
+    config EXAMPLE_ENC_ADV_DATA
+        bool
+        prompt "Enable encrypted advertising data feature support"
+        default y
+        select BT_NIMBLE_ENC_ADV_DATA
+        help
+            This option enables support of encrypted advertising data.
+
+endmenu

@@ -142,6 +142,12 @@ examples/bluetooth/nimble:
       temporary: true
       reason: The runner doesn't support yet
 
+examples/bluetooth/nimble/ble_enc_adv_data:
+  enable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+      temporary: true
+      reason: the other targets are not tested yet
+
 examples/bluetooth/nimble/ble_htp:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32h4", "esp32s3"]

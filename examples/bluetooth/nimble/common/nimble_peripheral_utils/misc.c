@@ -41,3 +41,22 @@ addr_str(const void *addr)
 
     return buf;
 }
+
+void
+print_mbuf(const struct os_mbuf *om)
+{
+    int colon, i;
+
+    colon = 0;
+    while (om != NULL) {
+        if (colon) {
+            MODLOG_DFLT(DEBUG, ":");
+        } else {
+            colon = 1;
+        }
+        for (i = 0; i < om->om_len; i++) {
+            MODLOG_DFLT(DEBUG, "%s0x%02x", i != 0 ? ":" : "", om->om_data[i]);
+        }
+        om = SLIST_NEXT(om, om_next);
+    }
+}

@@ -571,6 +571,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_hs_mqueue.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_periodic_sync.c"
                     "host/nimble/nimble/nimble/host/src/ble_att.c"
+                    "host/nimble/nimble/nimble/host/src/ble_ead.c"
+                    "host/nimble/nimble/nimble/host/src/ble_aes_ccm.c"
                     "host/nimble/nimble/nimble/host/src/ble_gattc.c"
                     "host/nimble/nimble/nimble/host/src/ble_store.c"
                     "host/nimble/nimble/nimble/host/src/ble_sm_lgcy.c"
