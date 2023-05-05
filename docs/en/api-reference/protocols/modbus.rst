@@ -29,6 +29,6 @@ Please refer to the ``README.md`` documents of each specific example for details
 Protocol References
 -------------------
 
-    -      -  For the detailed protocol specifications, see `The Modbus Organization <https://modbus.org/specs.php>`_.
+    - For the detailed protocol specifications, see `The Modbus Organization <https://modbus.org/specs.php>`_.
 
 

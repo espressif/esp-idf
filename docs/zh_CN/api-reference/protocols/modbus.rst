@@ -3,7 +3,7 @@ ESP-Modbus
 :link_to_translation:`en:[English]`
 
 乐鑫的 ESP-Modbus 库 (esp-modbus) 支持基于 RS485、Wi-Fi 和以太网接口的 Modbus 通信。
-自 ESP-IDF v5.0 版本以来， 组件 ``freemodbus`` 已被移动到单独的存储库中:
+自 ESP-IDF v5.0 版本以来， 组件 ``freemodbus`` 已被移动到单独的代码仓库中:
 
 * `GitHub 上的 ESP-Modbus 组件 <https://github.com/espressif/esp-modbus>`__
 
