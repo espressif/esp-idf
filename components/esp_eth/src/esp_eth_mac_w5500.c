@@ -229,12 +229,22 @@ static esp_err_t w5500_verify_id(emac_w5500_t *emac)
 {
     esp_err_t ret = ESP_OK;
     uint8_t version = 0;
-    ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_VERSIONR, &version, sizeof(version)), err, TAG, "read VERSIONR failed");
-    // W5500 doesn't have chip ID, we check the version number instead
-    ESP_GOTO_ON_FALSE(version == W5500_CHIP_VERSION, ESP_ERR_INVALID_VERSION, err, TAG, "invalid chip version, expected 0x%x, actual 0x%x", W5500_CHIP_VERSION, version);
 
-err:
-    return ret;
+    ESP_LOGD(TAG, "Waiting W5500 to start & verify version...");
+    uint32_t to = 0;
+    for (to = 0; to < emac->sw_reset_timeout_ms / 10; to++) {
+        ret = w5500_read(emac, W5500_REG_VERSIONR, &version, sizeof(version));
+        if (ret != ESP_OK) {
+            ESP_LOGD(TAG, "Poll VERSIONR failed, retrying...");
+            vTaskDelay(pdMS_TO_TICKS(10));
+            continue;
+        } else if (version == W5500_CHIP_VERSION) {
+            return ESP_OK;
+        }
+    }
+
+    ESP_LOGE(TAG, "W5500 version mismatched, expected 0x%02x, got 0x%02x", W5500_CHIP_VERSION, version);
+    return ESP_ERR_INVALID_VERSION;
 }
 
 static esp_err_t w5500_setup_default(emac_w5500_t *emac)
