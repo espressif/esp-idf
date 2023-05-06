@@ -333,7 +333,7 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
 
     dma_chan->sram_alignment = sram_alignment;
     dma_chan->psram_alignment = psram_alignment;
-    ESP_LOGD(TAG, "%s channel (%d,%d), (%zu:%zu) bytes aligned, burst %s", dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX ? "tx" : "rx",
+    ESP_LOGD(TAG, "%s channel (%d,%d), (%u:%u) bytes aligned, burst %s", dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX ? "tx" : "rx",
              group->group_id, pair->pair_id, sram_alignment, psram_alignment, en_burst ? "enabled" : "disabled");
 err:
     return ret;
