@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -429,7 +429,7 @@ esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
     if (atomic_load(&handle->is_cyclic)) {
         /* Break the DMA descriptor chain to stop the DMA first */
         for (int i = 0; i < handle->cfg.desc_num; i++) {
-            handle->desc[i]->empty = 0;
+            STAILQ_NEXT(handle->desc[i], qe) = NULL;
         }
     }
     /* Wait for the previous DMA stop */
@@ -438,7 +438,7 @@ esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
     /* Link all descriptors as a ring */
     for (int i = 0; i < handle->cfg.desc_num; i++) {
         memset(handle->bufs[i], 0, handle->cfg.buf_size);
-        handle->desc[i]->empty = (uint32_t)(i < handle->cfg.desc_num - 1 ? handle->desc[i + 1] : handle->desc[0]);
+        STAILQ_NEXT(handle->desc[i], qe) = (i < handle->cfg.desc_num - 1) ? handle->desc[i + 1] : handle->desc[0];
     }
     dac_dma_periph_dma_trans_start((uint32_t)handle->desc[0]);
     atomic_store(&handle->is_running, true);
@@ -453,7 +453,7 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
 
     /* Break the DMA descriptor chain to stop the DMA first */
     for (int i = 0; i < handle->cfg.desc_num; i++) {
-        handle->desc[i]->empty = 0;
+        STAILQ_NEXT(handle->desc[i], qe) = NULL;
     }
     /* Wait for the previous DMA stop */
     while (atomic_load(&handle->is_running)) {}
@@ -526,7 +526,7 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
     if (atomic_load(&handle->is_cyclic)) {
         /* Break the DMA descriptor chain to stop the DMA first */
         for (int i = 0; i < handle->cfg.desc_num; i++) {
-            handle->desc[i]->empty = 0;
+            STAILQ_NEXT(handle->desc[i], qe) = NULL;
         }
     }
     /* Wait for the previous DMA stop */
@@ -542,12 +542,12 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
         size_t load_bytes = s_dac_load_data_into_buf(handle, handle->bufs[i], handle->cfg.buf_size, buf, buf_size / split);
         lldesc_config(handle->desc[i], LLDESC_HW_OWNED, 1, 0, load_bytes);
         /* Link to the next descriptor */
-        handle->desc[i]->empty = (uint32_t)(i < handle->cfg.desc_num - 1 ? handle->desc[i + 1] :0);
+        STAILQ_NEXT(handle->desc[i], qe) = (i < handle->cfg.desc_num - 1) ? handle->desc[i + 1] : NULL;
         buf_size -= load_bytes / DAC_16BIT_ALIGN_COEFF;
         buf += load_bytes / DAC_16BIT_ALIGN_COEFF;
     }
     /* Link the tail to the head as a ring */
-    handle->desc[i-1]->empty = (uint32_t)(handle->desc[0]);
+    STAILQ_NEXT(handle->desc[i-1], qe) = handle->desc[0];
 
     dac_dma_periph_dma_trans_start((uint32_t)handle->desc[0]);
     atomic_store(&handle->is_running, true);
@@ -610,7 +610,7 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, siz
         xQueueReset(handle->desc_pool);
         /* Break the chain if DMA still running */
         for (int i = 0; i < handle->cfg.desc_num; i++) {
-            handle->desc[i]->empty = 0;
+            STAILQ_NEXT(handle->desc[i], qe) = NULL;
             xQueueSend(handle->desc_pool, &handle->desc[i], 0);
         }
         STAILQ_INIT(&handle->head);
