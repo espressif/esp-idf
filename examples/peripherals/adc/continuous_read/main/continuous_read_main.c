@@ -20,14 +20,14 @@
 #define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_0
 #define EXAMPLE_ADC_BIT_WIDTH               SOC_ADC_DIGI_MAX_BITWIDTH
 
-#if CONFIG_IDF_TARGET_ESP32
-#define EXAMPLE_ADC_OUTPUT_TYPE ADC_DIGI_OUTPUT_FORMAT_TYPE1
-#define EXAMPLE_ADC_GET_CHANNEL(p_data) ((p_data)->type1.channel)
-#define EXAMPLE_ADC_GET_DATA(p_data) ((p_data)->type1.data)
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#define EXAMPLE_ADC_OUTPUT_TYPE             ADC_DIGI_OUTPUT_FORMAT_TYPE1
+#define EXAMPLE_ADC_GET_CHANNEL(p_data)     ((p_data)->type1.channel)
+#define EXAMPLE_ADC_GET_DATA(p_data)        ((p_data)->type1.data)
 #else
-#define EXAMPLE_ADC_OUTPUT_TYPE ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#define EXAMPLE_ADC_GET_CHANNEL(p_data) ((p_data)->type2.channel)
-#define EXAMPLE_ADC_GET_DATA(p_data) ((p_data)->type2.data)
+#define EXAMPLE_ADC_OUTPUT_TYPE             ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#define EXAMPLE_ADC_GET_CHANNEL(p_data)     ((p_data)->type2.channel)
+#define EXAMPLE_ADC_GET_DATA(p_data)        ((p_data)->type2.data)
 #endif
 
 #define EXAMPLE_READ_LEN                    256
