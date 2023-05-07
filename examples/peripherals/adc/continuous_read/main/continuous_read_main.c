@@ -32,7 +32,12 @@
 
 #define EXAMPLE_READ_LEN                    256
 
+#if CONFIG_IDF_TARGET_ESP32
+static adc_channel_t channel[2] = {ADC_CHANNEL_6, ADC_CHANNEL_7};
+#else
 static adc_channel_t channel[2] = {ADC_CHANNEL_2, ADC_CHANNEL_3};
+#endif
+
 
 static TaskHandle_t s_task_handle;
 static const char *TAG = "EXAMPLE";
