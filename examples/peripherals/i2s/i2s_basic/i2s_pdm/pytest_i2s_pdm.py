@@ -9,7 +9,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
-# @pytest.mark.esp32h2  IDF-6808
+@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

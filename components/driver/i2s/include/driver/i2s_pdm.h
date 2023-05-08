@@ -44,7 +44,8 @@ extern "C" {
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
-    .dn_sample_mode = I2S_PDM_DSR_8S \
+    .dn_sample_mode = I2S_PDM_DSR_8S, \
+    .bclk_div = 8, \
 }
 
 /**
@@ -69,6 +70,8 @@ typedef struct {
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
     /* Particular fields */
     i2s_pdm_dsr_t           dn_sample_mode;     /*!< Down-sampling rate mode */
+    uint32_t                bclk_div;           /*!< The division from mclk to bclk. The typical and minimum value is I2S_PDM_RX_BCLK_DIV_MIN.
+                                                 *   It will be set to I2S_PDM_RX_BCLK_DIV_MIN by default if it is smaller than I2S_PDM_RX_BCLK_DIV_MIN */
 } i2s_pdm_rx_clk_config_t;
 
 /**
@@ -165,7 +168,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
 #if SOC_I2S_SUPPORTS_PDM_TX
 #if SOC_I2S_HW_VERSION_2
 /**
- * @brief PDM style in 2 slots(TX)
+ * @brief PDM style in 2 slots(TX) for codec line mode
  * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
@@ -184,9 +187,33 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .sd_dither = 0, \
     .sd_dither2 = 1, \
 }
+
+/**
+ * @brief PDM style in 1 slots(TX) for DAC line mode
+ * @note The noise might be different with different configurations, this macro provides a set of configurations
+ *       that have relatively high SNR (Signal Noise Ratio), you can also adjust them to fit your case.
+ * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .sd_prescale = 0, \
+    .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
+    .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
+    .lp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
+    .sinc_scale = I2S_PDM_SIG_SCALING_MUL_1, \
+    .line_mode = ((mono_or_stereo) == I2S_SLOT_MODE_MONO ? \
+                 I2S_PDM_TX_ONE_LINE_DAC : I2S_PDM_TX_TWO_LINE_DAC), \
+    .hp_en = true, \
+    .hp_cut_off_freq_hz = 35.5, \
+    .sd_dither = 0, \
+    .sd_dither2 = 1, \
+}
 #else // SOC_I2S_HW_VERSION_2
 /**
- * @brief PDM style in 2 slots(TX)
+ * @brief PDM style in 2 slots(TX) for codec line mode
  * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
@@ -204,7 +231,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
 #endif // SOC_I2S_HW_VERSION_2
 
 /**
- * @brief i2s default pdm tx clock configuration
+ * @brief i2s default pdm tx clock configuration for codec line mode
  * @note TX PDM can only be set to the following two up-sampling rate configurations:
  *       1: fp = 960, fs = sample_rate_hz / 100, in this case, Fpdm = 128*48000
  *       2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate_hz
@@ -218,6 +245,27 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .up_sample_fp = 960, \
     .up_sample_fs = 480, \
+    .bclk_div = 8, \
+}
+
+/**
+ * @brief i2s default pdm tx clock configuration for DAC line mode
+ * @note TX PDM can only be set to the following two up-sampling rate configurations:
+ *       1: fp = 960, fs = sample_rate_hz / 100, in this case, Fpdm = 128*48000
+ *       2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate_hz
+ *       If the pdm receiver do not care the pdm serial clock, it's recommended set Fpdm = 128*48000.
+ *       Otherwise, the second configuration should be adopted.
+ * @note The noise might be different with different configurations, this macro provides a set of configurations
+ *       that have relatively high SNR (Signal Noise Ratio), you can also adjust them to fit your case.
+ * @param rate sample rate (not suggest to exceed 48000 Hz, otherwise more glitches and noise may appear)
+ */
+#define I2S_PDM_TX_CLK_DAC_DEFAULT_CONFIG(rate) { \
+    .sample_rate_hz = rate, \
+    .clk_src = I2S_CLK_SRC_DEFAULT, \
+    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .up_sample_fp = 960, \
+    .up_sample_fs = (rate) / 100, \
+    .bclk_div = 13, \
 }
 
 /*
@@ -275,6 +323,8 @@ typedef struct {
     /* Particular fields */
     uint32_t                up_sample_fp;       /*!< Up-sampling param fp */
     uint32_t                up_sample_fs;       /*!< Up-sampling param fs, not allowed to be greater than 480 */
+    uint32_t                bclk_div;           /*!< The division from mclk to bclk. The minimum value is I2S_PDM_TX_BCLK_DIV_MIN.
+                                                 *   It will be set to I2S_PDM_TX_BCLK_DIV_MIN by default if it is smaller than I2S_PDM_TX_BCLK_DIV_MIN */
 } i2s_pdm_tx_clk_config_t;
 
 /**
