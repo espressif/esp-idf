@@ -62,7 +62,7 @@ TEST_CASE("test sscanf function", "[newlib]")
     TEST_ASSERT_EQUAL(42, fourty_two);
     TEST_ASSERT_EQUAL(2147483647, int_max);
     TEST_ASSERT_EQUAL_UINT32(2147483648UL, int_max_plus_one);
-    TEST_ASSERT_EQUAL(0x40010000, iram_ptr);
+    TEST_ASSERT_EQUAL(0x40010000, (UNITY_UINT32)iram_ptr);
     TEST_ASSERT_EQUAL(0x40020000, irom_ptr);
     TEST_ASSERT_EQUAL('Q', department);
     TEST_ASSERT_TRUE(1.0f / inv_fine_structure_constant > 136 && 1.0f / inv_fine_structure_constant < 138);
