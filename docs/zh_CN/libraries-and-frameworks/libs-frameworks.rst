@@ -88,13 +88,13 @@ ESP-Protocols
 
 ESP-Protocols 组件：
 
-* `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ 使用 AT 命令或 PPP 协议与 GSM/LTE 调制解调器连接，详情请参阅 `esp_modem 文档 <https://espressif.github.io/esp-protocols/esp_modem/index.html>`_。
+* `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ 使用 AT 命令或 PPP 协议与 GSM/LTE 调制解调器连接，详情请参阅 `esp_modem 文档 <https://docs.espressif.com/projects/esp-protocols/esp_modem/docs/latest/index.html>`_。
 
-* `mdns <https://components.espressif.com/component/espressif/mdns>`_ (mDNS) 是一种组播 UDP 服务，用于提供本地网络服务与主机发现，详情请参阅 `mdns 文档 <https://espressif.github.io/esp-protocols/mdns/en/index.html>`_。
+* `mdns <https://components.espressif.com/component/espressif/mdns>`_ (mDNS) 是一种组播 UDP 服务，用于提供本地网络服务与主机发现，详情请参阅 `mdns 文档 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/zh_CN/index.html>`_。
 
 * `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ 是 ESP-IDF 的托管组件，可在 ESP32 上实现 WebSocket 协议客户端，详情请参阅 `esp_websocket_client 文档 <https://docs.espressif.com/projects/esp-protocols/esp_websocket_client/docs/latest/index.html>`_。有关 WebSocket 协议客户端，请参阅 `WebSocket_protocol_client <https://datatracker.ietf.org/doc/html/rfc6455>`_。
 
-* `asio <https://components.espressif.com/component/espressif/asio>`_ 是一个跨平台的 C++ 库，请参阅 `<https://think-async.com/Asio/>`_。该库基于现代 C++ 提供一致的异步模型，请参阅 `asio 文档 <https://espressif.github.io/esp-protocols/asio/index.html>`_。
+* `asio <https://components.espressif.com/component/espressif/asio>`_ 是一个跨平台的 C++ 库，请参阅 `<https://think-async.com/Asio/>`_。该库基于现代 C++ 提供一致的异步模型，请参阅 `asio 文档 <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_。
 
 ESP-BSP
 ----------------------------------------
