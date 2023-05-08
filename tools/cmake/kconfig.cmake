@@ -191,7 +191,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/tools/kconfig_new/confgen.py")
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
-                ADDITIONAL_MAKE_CLEAN_FILES "${sdkconfig_header}" "${sdkconfig_cmake}")
+                ADDITIONAL_CLEAN_FILES "${sdkconfig_header}" "${sdkconfig_cmake}")
 
     idf_build_set_property(SDKCONFIG_HEADER ${sdkconfig_header})
     idf_build_set_property(SDKCONFIG_JSON ${sdkconfig_json})

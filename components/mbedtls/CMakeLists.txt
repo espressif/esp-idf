@@ -69,7 +69,7 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
 
     target_add_binary_data(${COMPONENT_LIB} ${crt_bundle} BINARY)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${crt_bundle}")
 endif()
 
