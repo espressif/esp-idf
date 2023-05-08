@@ -8,6 +8,8 @@ mDNS 是一种组播 UDP 服务，用来提供本地网络服务和主机发现�
 
 * GitHub 上 `mDNS 组件 <https://github.com/espressif/esp-protocols/tree/master/components/mdns>`__
 
+运行 `idf.py add-dependency espressif/mdns`，在项目中添加 mDNS 组件。
+
 托管的文档
 --------------------
 
