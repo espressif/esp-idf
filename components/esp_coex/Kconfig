@@ -17,7 +17,7 @@ menu "Wireless Coexistence"
     config ESP_COEX_EXTERNAL_COEXIST_ENABLE
         bool "External Coexistence"
         default n
-        depends on (!(BT_ENABLED||NIMBLE_ENABLED)&&(!IDF_TARGET_ESP32)&&(!IDF_TARGET_ESP32C6)) #JIRA FCC52
+        depends on (!(BT_ENABLED||NIMBLE_ENABLED)&&(!IDF_TARGET_ESP32))
         help
             If enabled, HW External coexistence arbitration is managed by GPIO pins.
             It can support three types of wired combinations so far which are 1-wired/2-wired/3-wired.
