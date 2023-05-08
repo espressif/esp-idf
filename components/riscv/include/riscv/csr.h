@@ -49,6 +49,9 @@ extern "C" {
 #define CSR_PMACFG0  0xBC0
 #define CSR_PMAADDR0 0xBD0
 
+#define CSR_PMACFG(i)  (CSR_PMACFG0 + (i))
+#define CSR_PMAADDR(i)  (CSR_PMAADDR0 + (i))
+
 #define PMA_EN    BIT(0)
 #define PMA_R     BIT(4)
 #define PMA_W     BIT(3)
