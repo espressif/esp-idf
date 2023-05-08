@@ -2045,6 +2045,16 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl)
     return ret;
 }
 
+unsigned int hcd_pipe_get_num_urbs(hcd_pipe_handle_t pipe_hdl)
+{
+    unsigned int ret;
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
+    HCD_ENTER_CRITICAL();
+    ret = pipe->num_urb_pending + pipe->num_urb_done;
+    HCD_EXIT_CRITICAL();
+    return ret;
+}
+
 esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;

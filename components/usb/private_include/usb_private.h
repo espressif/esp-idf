@@ -50,12 +50,24 @@ struct urb_s{
 };
 typedef struct urb_s urb_t;
 
+/**
+ * @brief Processing request source
+ *
+ * Enum to indicate which layer of the USB Host stack requires processing. The main handling loop should then call that
+ * layer's processing function (i.e., xxx_process()).
+ */
 typedef enum {
-    USB_NOTIF_SOURCE_USBH = 0x01,
-    USB_NOTIF_SOURCE_HUB = 0x02,
-} usb_notif_source_t;
+    USB_PROC_REQ_SOURCE_USBH = 0x01,
+    USB_PROC_REQ_SOURCE_HUB = 0x02,
+} usb_proc_req_source_t;
 
-typedef bool (*usb_notif_cb_t)(usb_notif_source_t source, bool in_isr, void *context);
+/**
+ * @brief Processing request callback
+ *
+ * Callback function provided to each layer of the USB Host stack so that each layer can request calls to their
+ * processing function.
+ */
+typedef bool (*usb_proc_req_cb_t)(usb_proc_req_source_t source, bool in_isr, void *context);
 
 // --------------------------------------------------- Allocation ------------------------------------------------------
 
