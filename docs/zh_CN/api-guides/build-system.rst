@@ -926,7 +926,7 @@ ExternalProject 的依赖与构建清理
 
 对于外部项目的构建，CMake 会有一些不同寻常的行为：
 
-- `ADDITIONAL_MAKE_CLEAN_FILES`_ 仅在使用 Make 构建系统时有效。如果使用 Ninja_ 或 IDE 自带的构建系统，执行项目清理时，这些文件不会被删除。
+- `ADDITIONAL_MAKE_CLEAN_FILES`_ 仅在使用 Make 或 Ninja_ 构建系统时有效。如果使用 IDE 自带的构建系统，执行项目清理时，这些文件不会被删除。
 - ExternalProject_ 会在 clean 运行后自动重新运行配置和构建命令。
 - 可以采用以下两种方法来配置外部构建命令：
 
