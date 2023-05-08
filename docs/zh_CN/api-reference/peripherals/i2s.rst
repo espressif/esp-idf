@@ -140,7 +140,7 @@ ESP32-H2    I2S 0     I2S 0     无        I2S 0     无         无
     PDM 模式 (TX)
     ^^^^^^^^^^^^^
 
-    在 PDM（Pulse-density Modulation，脉冲密度调制）模式下，TX 通道可以将 PCM 数据转换为 PDM 格式，该格式始终有左右两个声道。PDM TX 只在 I2S0 中受支持，且只支持 16 位宽的采样数据。PDM TX 至少需要一个 CLK 管脚用于时钟信号，一个 DOUT 管脚用于数据信号（即下图中的 WS 和 SD 信号。BCK 信号为内部位采样时钟，在 PDM 设备之间不需要）。PDM 模式允许用户配置上采样参数 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp`。上采样率可以通过公式 ``up_sample_rate = fp / fs`` 来计算，在 PDM TX 中有以下两种上采样模式：
+    在 PDM（Pulse-density Modulation，脉冲密度调制）模式下，TX 通道可以将 PCM 数据转换为 PDM 格式，该格式始终有左右两个声道。PDM TX 只在 I2S0 中受支持，且只支持 16 位宽的采样数据。PDM TX 至少需要一个 CLK 管脚用于时钟信号，一个 DOUT 管脚用于数据信号（即下图中的 WS 和 SD 信号。BCK 信号为内部位采样时钟，在 PDM 设备之间不需要）。PDM 模式允许用户配置上采样参数 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` 和 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`，上采样率可以通过公式 ``up_sample_rate = i2s_pdm_tx_clk_config_t::up_sample_fp / i2s_pdm_tx_clk_config_t::up_sample_fs`` 来计算。在 PDM TX 中有以下两种上采样模式：
 
     - **固定时钟频率模式**：在这种模式下，上采样率将根据采样率的变化而变化。设置 ``fp = 960``、 ``fs = sample_rate / 100``，则 CLK 管脚上的时钟频率 (Fpdm) 将固定为 ``128 * 48 KHz = 6.144 MHz``。注意此频率不等于采样率 (Fpcm)。
     - **固定上采样率模式**：在这种模式下，上采样率固定为 2。设置 ``fp = 960``、 ``fs = 480``，则 CLK 管脚上的时钟频率 (Fpdm) 将为 ``128 * sample_rate``。
