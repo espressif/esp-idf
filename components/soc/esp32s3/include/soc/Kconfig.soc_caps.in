@@ -1187,7 +1187,7 @@ config SOC_SPI_MEM_SUPPORT_OPI_MODE
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_TIME_TUNING
+config SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     bool
     default y
 
@@ -1196,6 +1196,14 @@ config SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
     default y
 
 config SOC_SPI_MEM_SUPPORT_WRAP
+    bool
+    default y
+
+config SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+    bool
+    default y
+
+config SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
     bool
     default y
 

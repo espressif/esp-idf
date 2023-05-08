@@ -364,12 +364,12 @@ esp_err_t esp_flash_init_default_chip(void)
 
 
     // For chips need time tuning, get value directely from system here.
-    #if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (spi_timing_is_tuned()) {
         cfg.using_timing_tuning = 1;
         spi_timing_get_flash_timing_param(&cfg.timing_reg);
     }
-    #endif // SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    #endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
     cfg.clock_src_freq = spi_flash_ll_get_source_clock_freq_mhz(cfg.host_id);
 

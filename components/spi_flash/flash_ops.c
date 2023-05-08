@@ -287,13 +287,3 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
     return s_mspi_io_num_default[io];
 #endif // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
 }
-
-#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-
-IRAM_ATTR void spi_flash_set_clock_src(soc_periph_mspi_clk_src_t clk_src)
-{
-    cache_hal_freeze(CACHE_TYPE_INSTRUCTION);
-    spimem_flash_ll_set_clock_source(clk_src);
-    cache_hal_unfreeze(CACHE_TYPE_INSTRUCTION);
-}
-#endif // SOC_MEMSPI_CLOCK_IS_INDEPENDENT

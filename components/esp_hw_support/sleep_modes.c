@@ -59,8 +59,8 @@
 #include "esp_private/sleep_modem.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/mspi_timing_tuning.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -500,15 +500,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
-    // Turn down mspi clock speed
-#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    //turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
-#endif
-
-    // Set mspi clock to a low-power one.
-#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-    spi_flash_set_clock_src(MSPI_CLK_SRC_ROM_DEFAULT);
-#endif
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
@@ -686,15 +679,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
 
-    // Set mspi clock to ROM default one.
-#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-    spi_flash_set_clock_src(MSPI_CLK_SRC_DEFAULT);
-#endif
-
-    // Speed up mspi clock freq
-#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    //restore MSPI speed
     mspi_timing_change_speed_mode_cache_safe(false);
-#endif
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
