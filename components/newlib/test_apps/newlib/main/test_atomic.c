@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -56,7 +56,7 @@ static void test_flow(const char* name, test_f func)
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_op);
     }
     for (int i = 0; i < TEST_TIMES; i++) {
-        ESP_LOGI(TAG, "%s: %d ops", name, t_flight_sorted[i]-s_t_ref);
+        ESP_LOGI(TAG, "%s: %" PRIu32 " ops", name, t_flight_sorted[i]-s_t_ref);
     }
 }
 
