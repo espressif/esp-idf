@@ -187,8 +187,8 @@ typedef struct {
     //Constant members do no change after installation thus do not require a critical section
     struct {
         hcd_port_handle_t root_port_hdl;
-        usb_notif_cb_t notif_cb;
-        void *notif_cb_arg;
+        usb_proc_req_cb_t proc_req_cb;
+        void *proc_req_cb_arg;
     } constant;
 } hub_driver_t;
 
@@ -223,7 +223,7 @@ const char *HUB_DRIVER_TAG = "HUB";
  *
  * - This callback is called from the context of the HCD, so any event handling should be deferred to hub_process()
  * - Under the current HCD implementation, this callback should only be ever be called in an ISR
- * - This callback needs to call the notification to ensure hub_process() gets a chance to run
+ * - This callback needs to call proc_req_cb to ensure that hub_process() gets a chance to run
  *
  * @param port_hdl HCD port handle
  * @param port_event HCD port event
@@ -237,7 +237,7 @@ static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port
  * @brief HCD pipe callback for the default pipe of the device under enumeration
  *
  * - This callback is called from the context of the HCD, so any event handling should be deferred to hub_process()
- * - This callback needs to call the notification to ensure hub_process() gets a chance to run
+ * - This callback needs to call proc_req_cb to ensure that hub_process() gets a chance to run
  *
  * @param pipe_hdl HCD pipe handle
  * @param pipe_event Pipe event
@@ -251,7 +251,7 @@ static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t
  * @brief USBH Hub driver request callback
  *
  * - This callback is called from the context of the USBH, so so any event handling should be deferred to hub_process()
- * - This callback needs to call the notification to ensure hub_process() gets a chance to run
+ * - This callback needs to call proc_req_cb to ensure that hub_process() gets a chance to run
  *
  * @param port_hdl HCD port handle
  * @param hub_req Hub driver request
@@ -756,7 +756,7 @@ static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port
     p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ROOT_EVENT;
     HUB_DRIVER_EXIT_CRITICAL_SAFE();
     assert(in_isr); //Currently, this callback should only ever be called from an ISR context
-    return p_hub_driver_obj->constant.notif_cb(USB_NOTIF_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.notif_cb_arg);;
+    return p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.proc_req_cb_arg);;
 }
 
 static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr)
@@ -765,7 +765,7 @@ static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t
     HUB_DRIVER_ENTER_CRITICAL_SAFE();
     p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
     HUB_DRIVER_EXIT_CRITICAL_SAFE();
-    return p_hub_driver_obj->constant.notif_cb(USB_NOTIF_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.notif_cb_arg);
+    return p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.proc_req_cb_arg);
 }
 
 static void usbh_hub_req_callback(hcd_port_handle_t port_hdl, usbh_hub_req_t hub_req, void *arg)
@@ -788,7 +788,7 @@ static void usbh_hub_req_callback(hcd_port_handle_t port_hdl, usbh_hub_req_t hub
     }
     HUB_DRIVER_EXIT_CRITICAL();
 
-    p_hub_driver_obj->constant.notif_cb(USB_NOTIF_SOURCE_HUB, false, p_hub_driver_obj->constant.notif_cb_arg);
+    p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
 }
 
 // ---------------------- Handlers -------------------------
@@ -953,8 +953,8 @@ esp_err_t hub_install(hub_config_t *hub_config)
     hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_NONE;
     hub_driver_obj->single_thread.enum_ctrl.urb = enum_urb;
     hub_driver_obj->constant.root_port_hdl = port_hdl;
-    hub_driver_obj->constant.notif_cb = hub_config->notif_cb;
-    hub_driver_obj->constant.notif_cb_arg = hub_config->notif_cb_arg;
+    hub_driver_obj->constant.proc_req_cb = hub_config->proc_req_cb;
+    hub_driver_obj->constant.proc_req_cb_arg = hub_config->proc_req_cb_arg;
     HUB_DRIVER_ENTER_CRITICAL();
     if (p_hub_driver_obj != NULL) {
         HUB_DRIVER_EXIT_CRITICAL();

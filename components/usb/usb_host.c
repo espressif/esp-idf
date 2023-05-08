@@ -19,6 +19,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "esp_heap_caps.h"
 #include "hub.h"
 #include "usbh.h"
+#include "hcd.h"
 #include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 
@@ -43,18 +44,17 @@ static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
             }                                                               \
 })
 
-#define PROCESS_PENDING_FLAG_USBH       0x01
-#define PROCESS_PENDING_FLAG_HUB        0x02
-#define PROCESS_PENDING_FLAG_EVENT      0x04
+#define PROCESS_REQUEST_PENDING_FLAG_USBH       0x01
+#define PROCESS_REQUEST_PENDING_FLAG_HUB        0x02
 
-typedef struct endpoint_s endpoint_t;
+typedef struct ep_wrapper_s ep_wrapper_t;
 typedef struct interface_s interface_t;
 typedef struct client_s client_t;
 
-struct endpoint_s {
+struct ep_wrapper_s {
     //Dynamic members require a critical section
     struct {
-        TAILQ_ENTRY(endpoint_s) tailq_entry;
+        TAILQ_ENTRY(ep_wrapper_s) tailq_entry;
         union {
             struct {
                 uint32_t pending: 1;
@@ -62,12 +62,11 @@ struct endpoint_s {
             };
         } flags;
         uint32_t num_urb_inflight;
-        hcd_pipe_event_t last_event;
+        usbh_ep_event_t last_event;
     } dynamic;
     //Constant members do no change after claiming the interface thus do not require a critical section
     struct {
-        hcd_pipe_handle_t pipe_hdl;
-        const usb_ep_desc_t *ep_desc;
+        usbh_ep_handle_t ep_hdl;
         interface_t *intf_obj;
     } constant;
 };
@@ -82,7 +81,7 @@ struct interface_s {
         const usb_intf_desc_t *intf_desc;
         usb_device_handle_t dev_hdl;
         client_t *client_obj;
-        endpoint_t *endpoints[0];
+        ep_wrapper_t *endpoints[0];
     } constant;
 };
 
@@ -90,8 +89,8 @@ struct client_s {
     //Dynamic members require a critical section
     struct {
         TAILQ_ENTRY(client_s) tailq_entry;
-        TAILQ_HEAD(tailhead_pending_ep, endpoint_s) pending_ep_tailq;
-        TAILQ_HEAD(tailhead_idle_ep, endpoint_s) idle_ep_tailq;
+        TAILQ_HEAD(tailhead_pending_ep, ep_wrapper_s) pending_ep_tailq;
+        TAILQ_HEAD(tailhead_idle_ep, ep_wrapper_s) idle_ep_tailq;
         TAILQ_HEAD(tailhead_done_ctrl_xfers, urb_s) done_ctrl_xfer_tailq;
         union {
             struct {
@@ -260,16 +259,16 @@ static void send_event_msg_to_clients(const usb_host_client_event_msg_t *event_m
 
 // ------------------- Library Related ---------------------
 
-static bool notif_callback(usb_notif_source_t source, bool in_isr, void *arg)
+static bool proc_req_callback(usb_proc_req_source_t source, bool in_isr, void *arg)
 {
     HOST_ENTER_CRITICAL_SAFE();
-    //Store notification source
+    //Store the processing request source
     switch (source) {
-        case USB_NOTIF_SOURCE_USBH:
-            p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_PENDING_FLAG_USBH;
+        case USB_PROC_REQ_SOURCE_USBH:
+            p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_REQUEST_PENDING_FLAG_USBH;
             break;
-        case USB_NOTIF_SOURCE_HUB:
-            p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_PENDING_FLAG_HUB;
+        case USB_PROC_REQ_SOURCE_HUB:
+            p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_REQUEST_PENDING_FLAG_HUB;
             break;
     }
     bool yield = _unblock_lib(in_isr);
@@ -333,19 +332,19 @@ static void dev_event_callback(usb_device_handle_t dev_hdl, usbh_event_t usbh_ev
 
 // ------------------- Client Related ----------------------
 
-static bool pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr)
+static bool endpoint_callback(usbh_ep_handle_t ep_hdl, usbh_ep_event_t ep_event, void *user_arg, bool in_isr)
 {
-    endpoint_t *ep_obj = (endpoint_t *)user_arg;
-    client_t *client_obj = (client_t *)ep_obj->constant.intf_obj->constant.client_obj;
+    ep_wrapper_t *ep_wrap = (ep_wrapper_t *)user_arg;
+    client_t *client_obj = (client_t *)ep_wrap->constant.intf_obj->constant.client_obj;
 
     HOST_ENTER_CRITICAL_SAFE();
     //Store the event to be handled later. Note that we allow overwriting of events because more severe will halt the pipe prevent any further events.
-    ep_obj->dynamic.last_event = pipe_event;
+    ep_wrap->dynamic.last_event = ep_event;
     //Add the EP to the client's pending list if it's not in the list already
-    if (!ep_obj->dynamic.flags.pending) {
-        ep_obj->dynamic.flags.pending = 1;
-        TAILQ_REMOVE(&client_obj->dynamic.idle_ep_tailq, ep_obj, dynamic.tailq_entry);
-        TAILQ_INSERT_TAIL(&client_obj->dynamic.pending_ep_tailq, ep_obj, dynamic.tailq_entry);
+    if (!ep_wrap->dynamic.flags.pending) {
+        ep_wrap->dynamic.flags.pending = 1;
+        TAILQ_REMOVE(&client_obj->dynamic.idle_ep_tailq, ep_wrap, dynamic.tailq_entry);
+        TAILQ_INSERT_TAIL(&client_obj->dynamic.pending_ep_tailq, ep_wrap, dynamic.tailq_entry);
     }
     bool yield = _unblock_client(client_obj, in_isr);
     HOST_EXIT_CRITICAL_SAFE();
@@ -376,7 +375,16 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     TAILQ_INIT(&host_lib_obj->mux_protected.client_tailq);
     host_lib_obj->constant.event_sem = event_sem;
     host_lib_obj->constant.mux_lock = mux_lock;
-    //Setup the USB PHY if necessary (USB PHY driver will also enable the underlying Host Controller)
+
+    /*
+    Install each layer of the Host stack (listed below) from the lowest layer to the highest
+    - USB PHY
+    - HCD
+    - USBH
+    - Hub
+    */
+
+    //Install USB PHY (if necessary). USB PHY driver will also enable the underlying Host Controller
     if (!config->skip_phy_setup) {
         //Host Library defaults to internal PHY
         usb_phy_config_t phy_config = {
@@ -392,26 +400,34 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
              goto phy_err;
          }
     }
+
+    //Install HCD
+    hcd_config_t hcd_config = {
+        .intr_flags = config->intr_flags
+    };
+    ret = hcd_install(&hcd_config);
+    if (ret != ESP_OK) {
+        goto hcd_err;
+    }
+
     //Install USBH
     usbh_config_t usbh_config = {
-        .notif_cb = notif_callback,
-        .notif_cb_arg = NULL,
+        .proc_req_cb = proc_req_callback,
+        .proc_req_cb_arg = NULL,
         .ctrl_xfer_cb = ctrl_xfer_callback,
         .ctrl_xfer_cb_arg = NULL,
         .event_cb = dev_event_callback,
         .event_cb_arg = NULL,
-        .hcd_config = {
-            .intr_flags = config->intr_flags,
-        },
     };
     ret = usbh_install(&usbh_config);
     if (ret != ESP_OK) {
         goto usbh_err;
     }
+
     //Install Hub
     hub_config_t hub_config = {
-        .notif_cb = notif_callback,
-        .notif_cb_arg = NULL,
+        .proc_req_cb = proc_req_callback,
+        .proc_req_cb_arg = NULL,
     };
     ret = hub_install(&hub_config);
     if (ret != ESP_OK) {
@@ -438,6 +454,8 @@ assign_err:
 hub_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
+    ESP_ERROR_CHECK(hcd_uninstall());
+hcd_err:
     if (host_lib_obj->constant.phy_handle) {
         ESP_ERROR_CHECK(usb_del_phy(host_lib_obj->constant.phy_handle));
     }
@@ -466,19 +484,28 @@ esp_err_t usb_host_uninstall(void)
 
     //Stop the root hub
     ESP_ERROR_CHECK(hub_root_stop());
-    //Uninstall Hub and USBH
-    ESP_ERROR_CHECK(hub_uninstall());
-    ESP_ERROR_CHECK(usbh_uninstall());
 
+    //Unassign the host library object
     HOST_ENTER_CRITICAL();
     host_lib_t *host_lib_obj = p_host_lib_obj;
     p_host_lib_obj = NULL;
     HOST_EXIT_CRITICAL();
 
+    /*
+    Uninstall each layer of the Host stack (listed below) from the highest layer to the lowest
+    - Hub
+    - USBH
+    - HCD
+    - USB PHY
+    */
+    ESP_ERROR_CHECK(hub_uninstall());
+    ESP_ERROR_CHECK(usbh_uninstall());
+    ESP_ERROR_CHECK(hcd_uninstall());
     //If the USB PHY was setup, then delete it
     if (host_lib_obj->constant.phy_handle) {
         ESP_ERROR_CHECK(usb_del_phy(host_lib_obj->constant.phy_handle));
     }
+
     //Free memory objects
     vSemaphoreDelete(host_lib_obj->constant.mux_lock);
     vSemaphoreDelete(host_lib_obj->constant.event_sem);
@@ -508,10 +535,10 @@ esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_f
     p_host_lib_obj->dynamic.flags.handling_events = 1;
     while (process_pending_flags) {
         HOST_EXIT_CRITICAL();
-        if (process_pending_flags & PROCESS_PENDING_FLAG_USBH) {
+        if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_USBH) {
             ESP_ERROR_CHECK(usbh_process());
         }
-        if (process_pending_flags & PROCESS_PENDING_FLAG_HUB) {
+        if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_HUB) {
             ESP_ERROR_CHECK(hub_process());
         }
         HOST_ENTER_CRITICAL();
@@ -569,33 +596,34 @@ static void _handle_pending_ep(client_t *client_obj)
     //Handle each EP on the pending list
     while (!TAILQ_EMPTY(&client_obj->dynamic.pending_ep_tailq)) {
         //Get the next pending EP.
-        endpoint_t *ep_obj = TAILQ_FIRST(&client_obj->dynamic.pending_ep_tailq);
-        TAILQ_REMOVE(&client_obj->dynamic.pending_ep_tailq, ep_obj, dynamic.tailq_entry);
-        TAILQ_INSERT_TAIL(&client_obj->dynamic.idle_ep_tailq, ep_obj, dynamic.tailq_entry);
-        ep_obj->dynamic.flags.pending = 0;
-        hcd_pipe_event_t last_event = ep_obj->dynamic.last_event;
+        ep_wrapper_t *ep_wrap = TAILQ_FIRST(&client_obj->dynamic.pending_ep_tailq);
+        TAILQ_REMOVE(&client_obj->dynamic.pending_ep_tailq, ep_wrap, dynamic.tailq_entry);
+        TAILQ_INSERT_TAIL(&client_obj->dynamic.idle_ep_tailq, ep_wrap, dynamic.tailq_entry);
+        ep_wrap->dynamic.flags.pending = 0;
+        usbh_ep_event_t last_event = ep_wrap->dynamic.last_event;
         uint32_t num_urb_dequeued = 0;
 
         HOST_EXIT_CRITICAL();
         //Handle pipe event
         switch (last_event) {
-            case HCD_PIPE_EVENT_ERROR_XFER:
-            case HCD_PIPE_EVENT_ERROR_URB_NOT_AVAIL:
-            case HCD_PIPE_EVENT_ERROR_OVERFLOW:
-            case HCD_PIPE_EVENT_ERROR_STALL:
-                //The pipe is now stalled. Flush all pending URBs
-                ESP_ERROR_CHECK(hcd_pipe_command(ep_obj->constant.pipe_hdl, HCD_PIPE_CMD_FLUSH));
+            case USBH_EP_EVENT_ERROR_XFER:
+            case USBH_EP_EVENT_ERROR_URB_NOT_AVAIL:
+            case USBH_EP_EVENT_ERROR_OVERFLOW:
+            case USBH_EP_EVENT_ERROR_STALL:
+                //The endpoint is now stalled. Flush all pending URBs
+                ESP_ERROR_CHECK(usbh_ep_command(ep_wrap->constant.ep_hdl, USBH_EP_CMD_FLUSH));
                 //All URBs in this pipe are now retired waiting to be dequeued. Fall through to dequeue them
                 __attribute__((fallthrough));
-            case HCD_PIPE_EVENT_URB_DONE: {
+            case USBH_EP_EVENT_URB_DONE: {
                 //Dequeue all URBs and run their transfer callback
-                urb_t *urb = hcd_urb_dequeue(ep_obj->constant.pipe_hdl);
+                urb_t *urb;
+                usbh_ep_dequeue_urb(ep_wrap->constant.ep_hdl, &urb);
                 while (urb != NULL) {
                     //Clear the transfer's inflight flag to indicate the transfer is no longer inflight
                     urb->usb_host_inflight = false;
                     urb->transfer.callback(&urb->transfer);
                     num_urb_dequeued++;
-                    urb = hcd_urb_dequeue(ep_obj->constant.pipe_hdl);
+                    usbh_ep_dequeue_urb(ep_wrap->constant.ep_hdl, &urb);
                 }
                 break;
             }
@@ -606,8 +634,8 @@ static void _handle_pending_ep(client_t *client_obj)
         HOST_ENTER_CRITICAL();
 
         //Update the endpoint's number of URB's inflight
-        assert(num_urb_dequeued <= ep_obj->dynamic.num_urb_inflight);
-        ep_obj->dynamic.num_urb_inflight -= num_urb_dequeued;
+        assert(num_urb_dequeued <= ep_wrap->dynamic.num_urb_inflight);
+        ep_wrap->dynamic.num_urb_inflight -= num_urb_dequeued;
     }
 }
 
@@ -920,52 +948,53 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
 
 // ----------------------- Private -------------------------
 
-static esp_err_t endpoint_alloc(usb_device_handle_t dev_hdl, const usb_ep_desc_t *ep_desc, interface_t *intf_obj, endpoint_t **ep_obj_ret)
+static esp_err_t ep_wrapper_alloc(usb_device_handle_t dev_hdl, const usb_ep_desc_t *ep_desc, interface_t *intf_obj, ep_wrapper_t **ep_wrap_ret)
 {
-    endpoint_t *ep_obj = heap_caps_calloc(1, sizeof(endpoint_t), MALLOC_CAP_DEFAULT);
-    if (ep_obj == NULL) {
+    ep_wrapper_t *ep_wrap = heap_caps_calloc(1, sizeof(ep_wrapper_t), MALLOC_CAP_DEFAULT);
+    if (ep_wrap == NULL) {
         return ESP_ERR_NO_MEM;
     }
     esp_err_t ret;
+    usbh_ep_handle_t ep_hdl;
     usbh_ep_config_t ep_config = {
-        .ep_desc = ep_desc,
-        .pipe_cb = pipe_callback,
-        .pipe_cb_arg = (void *)ep_obj,
-        .context = (void *)ep_obj,
+        .bInterfaceNumber = intf_obj->constant.intf_desc->bInterfaceNumber,
+        .bAlternateSetting = intf_obj->constant.intf_desc->bAlternateSetting,
+        .bEndpointAddress = ep_desc->bEndpointAddress,
+        .ep_cb = endpoint_callback,
+        .ep_cb_arg = (void *)ep_wrap,
+        .context = (void *)ep_wrap,
     };
-    hcd_pipe_handle_t pipe_hdl;
-    ret = usbh_ep_alloc(dev_hdl, &ep_config, &pipe_hdl);
+    ret = usbh_ep_alloc(dev_hdl, &ep_config, &ep_hdl);
     if (ret != ESP_OK) {
-        goto ep_alloc_err;
+        goto alloc_err;
     }
-    //Initialize endpoint object
-    ep_obj->constant.pipe_hdl = pipe_hdl;
-    ep_obj->constant.ep_desc = ep_desc;
-    ep_obj->constant.intf_obj = intf_obj;
+    //Initialize endpoint wrapper item
+    ep_wrap->constant.ep_hdl = ep_hdl;
+    ep_wrap->constant.intf_obj = intf_obj;
     //Write back result
-    *ep_obj_ret = ep_obj;
+    *ep_wrap_ret = ep_wrap;
     ret = ESP_OK;
     return ret;
 
-ep_alloc_err:
-    heap_caps_free(ep_obj);
+alloc_err:
+    heap_caps_free(ep_wrap);
     return ret;
 }
 
-static void endpoint_free(usb_device_handle_t dev_hdl, endpoint_t *ep_obj)
+static void ep_wrapper_free(usb_device_handle_t dev_hdl, ep_wrapper_t *ep_wrap)
 {
-    if (ep_obj == NULL) {
+    if (ep_wrap == NULL) {
         return;
     }
     //Free the underlying endpoint
-    ESP_ERROR_CHECK(usbh_ep_free(dev_hdl, ep_obj->constant.ep_desc->bEndpointAddress));
-    //Free the endpoint object
-    heap_caps_free(ep_obj);
+    ESP_ERROR_CHECK(usbh_ep_free(ep_wrap->constant.ep_hdl));
+    //Free the endpoint wrapper item
+    heap_caps_free(ep_wrap);
 }
 
 static interface_t *interface_alloc(client_t *client_obj, usb_device_handle_t dev_hdl, const usb_intf_desc_t *intf_desc)
 {
-    interface_t *intf_obj = heap_caps_calloc(1, sizeof(interface_t) + (sizeof(endpoint_t *) * intf_desc->bNumEndpoints), MALLOC_CAP_DEFAULT);
+    interface_t *intf_obj = heap_caps_calloc(1, sizeof(interface_t) + (sizeof(ep_wrapper_t *) * intf_desc->bNumEndpoints), MALLOC_CAP_DEFAULT);
     if (intf_obj == NULL) {
         return NULL;
     }
@@ -1011,18 +1040,18 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
             ret = ESP_ERR_NOT_FOUND;
             goto ep_alloc_err;
         }
-        //Allocate the endpoint
-        endpoint_t *ep_obj;
-        ret = endpoint_alloc(dev_hdl, ep_desc, intf_obj, &ep_obj);
+        //Allocate the endpoint wrapper item
+        ep_wrapper_t *ep_wrap;
+        ret = ep_wrapper_alloc(dev_hdl, ep_desc, intf_obj, &ep_wrap);
         if (ret != ESP_OK) {
             goto ep_alloc_err;
         }
         //Fill the interface object with the allocated endpoints
-        intf_obj->constant.endpoints[i] = ep_obj;
+        intf_obj->constant.endpoints[i] = ep_wrap;
     }
     //Add interface object to client (safe because we have already taken the mutex)
     TAILQ_INSERT_TAIL(&client_obj->mux_protected.interface_tailq, intf_obj, mux_protected.tailq_entry);
-    //Add each endpoint to the client's endpoint list
+    //Add each endpoint wrapper item to the client's endpoint list
     HOST_ENTER_CRITICAL();
     for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
         TAILQ_INSERT_TAIL(&client_obj->dynamic.idle_ep_tailq, intf_obj->constant.endpoints[i], dynamic.tailq_entry);
@@ -1035,7 +1064,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
 
 ep_alloc_err:
     for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
-        endpoint_free(dev_hdl, intf_obj->constant.endpoints[i]);
+        ep_wrapper_free(dev_hdl, intf_obj->constant.endpoints[i]);
         intf_obj->constant.endpoints[i] = NULL;
     }
     interface_free(intf_obj);
@@ -1061,12 +1090,13 @@ static esp_err_t interface_release(client_t *client_obj, usb_device_handle_t dev
     }
 
     //Check that all endpoints in the interface are in a state to be freed
+    //Todo: Check that each EP is halted before allowing them to be freed (IDF-7273)
     HOST_ENTER_CRITICAL();
     bool can_free = true;
     for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
-        endpoint_t *ep_obj = intf_obj->constant.endpoints[i];
+        ep_wrapper_t *ep_wrap = intf_obj->constant.endpoints[i];
         //Endpoint must not be on the pending list and must not have inflight URBs
-        if (ep_obj->dynamic.num_urb_inflight != 0 || ep_obj->dynamic.flags.pending) {
+        if (ep_wrap->dynamic.num_urb_inflight != 0 || ep_wrap->dynamic.flags.pending) {
             can_free = false;
             break;
         }
@@ -1076,7 +1106,7 @@ static esp_err_t interface_release(client_t *client_obj, usb_device_handle_t dev
         ret = ESP_ERR_INVALID_STATE;
         goto exit;
     }
-    //Proceed to remove all endpoint objects from list
+    //Proceed to remove all endpoint wrapper items from the list
     for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
         TAILQ_REMOVE(&client_obj->dynamic.idle_ep_tailq, intf_obj->constant.endpoints[i], dynamic.tailq_entry);
     }
@@ -1087,7 +1117,7 @@ static esp_err_t interface_release(client_t *client_obj, usb_device_handle_t dev
 
     //Free each endpoint in the interface
         for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
-        endpoint_free(dev_hdl, intf_obj->constant.endpoints[i]);
+        ep_wrapper_free(dev_hdl, intf_obj->constant.endpoints[i]);
         intf_obj->constant.endpoints[i] = NULL;
     }
     //Free the interface object itself
@@ -1167,13 +1197,14 @@ esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_de
 esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
 {
     esp_err_t ret;
-    endpoint_t *ep_obj = NULL;
-    ret = usbh_ep_get_context(dev_hdl, bEndpointAddress, (void **)&ep_obj);
+    usbh_ep_handle_t ep_hdl;
+
+    ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
         goto exit;
     }
-    assert(ep_obj != NULL);
-    ret = hcd_pipe_command(ep_obj->constant.pipe_hdl, HCD_PIPE_CMD_HALT);
+    ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_HALT);
+
 exit:
     return ret;
 }
@@ -1181,13 +1212,14 @@ exit:
 esp_err_t usb_host_endpoint_flush(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
 {
     esp_err_t ret;
-    endpoint_t *ep_obj = NULL;
-    ret = usbh_ep_get_context(dev_hdl, bEndpointAddress, (void **)&ep_obj);
+    usbh_ep_handle_t ep_hdl;
+
+    ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
         goto exit;
     }
-    assert(ep_obj != NULL);
-    ret = hcd_pipe_command(ep_obj->constant.pipe_hdl, HCD_PIPE_CMD_FLUSH);
+    ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_FLUSH);
+
 exit:
     return ret;
 }
@@ -1195,72 +1227,19 @@ exit:
 esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
 {
     esp_err_t ret;
-    endpoint_t *ep_obj = NULL;
-    ret = usbh_ep_get_context(dev_hdl, bEndpointAddress, (void **)&ep_obj);
+    usbh_ep_handle_t ep_hdl;
+
+    ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
         goto exit;
     }
-    assert(ep_obj != NULL);
-    ret = hcd_pipe_command(ep_obj->constant.pipe_hdl, HCD_PIPE_CMD_CLEAR);
+    ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_CLEAR);
+
 exit:
     return ret;
 }
 
 // ------------------------------------------------ Asynchronous I/O ---------------------------------------------------
-
-// ----------------------- Private -------------------------
-
-static bool transfer_check(usb_transfer_t *transfer, usb_transfer_type_t type, int mps, bool is_in)
-{
-    if (transfer->callback == NULL) {
-        ESP_LOGE(USB_HOST_TAG, "Transfer callback is NULL");
-        return false;
-    }
-    //Check that the total transfer length does not exceed data buffer size
-    if (transfer->num_bytes > transfer->data_buffer_size) {
-        ESP_LOGE(USB_HOST_TAG, "Transfer num_bytes > data_buffer_size");
-        return false;
-    }
-    if (type == USB_TRANSFER_TYPE_CTRL) {
-        //Check that num_bytes and wLength are set correctly
-        usb_setup_packet_t *setup_pkt = (usb_setup_packet_t *)transfer->data_buffer;
-        if (transfer->num_bytes != sizeof(usb_setup_packet_t) + setup_pkt->wLength) {
-            ESP_LOGE(USB_HOST_TAG, "Control transfer num_bytes wLength mismatch");
-            return false;
-        }
-    } else if (type == USB_TRANSFER_TYPE_ISOCHRONOUS) {
-        //Check that there is at least one isochronous packet descriptor
-        if (transfer->num_isoc_packets <= 0) {
-            ESP_LOGE(USB_HOST_TAG, "ISOC transfer has 0 packet descriptors");
-            return false;
-        }
-        //Check that sum of all packet lengths add up to transfer length
-        //If IN, check that each packet length is integer multiple of MPS
-        int total_num_bytes = 0;
-        bool mod_mps_all_zero = true;
-        for (int i = 0; i < transfer->num_isoc_packets; i++) {
-            total_num_bytes += transfer->isoc_packet_desc[i].num_bytes;
-            if (transfer->isoc_packet_desc[i].num_bytes % mps != 0) {
-                mod_mps_all_zero = false;
-            }
-        }
-        if (transfer->num_bytes != total_num_bytes) {
-            ESP_LOGE(USB_HOST_TAG, "ISOC transfer num_bytes not equal to total num_bytes of all packets");
-            return false;
-        }
-        if (is_in && !mod_mps_all_zero) {
-            ESP_LOGE(USB_HOST_TAG, "ISOC IN transfer all packets num_bytes must be integer multiple of MPS");
-            return false;
-        }
-    } else {
-        //Check that IN transfers are integer multiple of MPS
-        if (is_in && (transfer->num_bytes % mps != 0)) {
-            ESP_LOGE(USB_HOST_TAG, "IN transfer num_bytes must be integer multiple of MPS");
-            return false;
-        }
-    }
-    return true;
-}
 
 // ----------------------- Public --------------------------
 
@@ -1290,39 +1269,34 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
     //Check that transfer and target endpoint are valid
     HOST_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   //Target device must be set
     HOST_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) != 0, ESP_ERR_INVALID_ARG);
-    endpoint_t *ep_obj = NULL;
+
+    usbh_ep_handle_t ep_hdl;
+    ep_wrapper_t *ep_wrap = NULL;
     urb_t *urb_obj = __containerof(transfer, urb_t, transfer);
     esp_err_t ret;
-    ret = usbh_ep_get_context(transfer->device_handle, transfer->bEndpointAddress, (void **)&ep_obj);
+
+    ret = usbh_ep_get_handle(transfer->device_handle, transfer->bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
         goto err;
     }
-    assert(ep_obj != NULL);
-    HOST_CHECK(transfer_check(transfer,
-                              USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
-                              USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
-                              transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK), ESP_ERR_INVALID_ARG);
+    ep_wrap = usbh_ep_get_context(ep_hdl);
+    assert(ep_wrap != NULL);
     //Check that we are not submitting a transfer already inflight
     HOST_CHECK(!urb_obj->usb_host_inflight, ESP_ERR_NOT_FINISHED);
     urb_obj->usb_host_inflight = true;
     HOST_ENTER_CRITICAL();
-    ep_obj->dynamic.num_urb_inflight++;
+    ep_wrap->dynamic.num_urb_inflight++;
     HOST_EXIT_CRITICAL();
-    //Check if pipe is in a state to enqueue URBs
-    if (hcd_pipe_get_state(ep_obj->constant.pipe_hdl) != HCD_PIPE_STATE_ACTIVE) {
-        ret = ESP_ERR_INVALID_STATE;
-        goto hcd_err;
-    }
-    ret = hcd_urb_enqueue(ep_obj->constant.pipe_hdl, urb_obj);
+
+    ret = usbh_ep_enqueue_urb(ep_hdl, urb_obj);
     if (ret != ESP_OK) {
-        goto hcd_err;
+        goto submit_err;
     }
-    ret = ESP_OK;
     return ret;
 
-hcd_err:
+submit_err:
     HOST_ENTER_CRITICAL();
-    ep_obj->dynamic.num_urb_inflight--;
+    ep_wrap->dynamic.num_urb_inflight--;
     HOST_EXIT_CRITICAL();
     urb_obj->usb_host_inflight = false;
 err:
@@ -1332,17 +1306,12 @@ err:
 esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer)
 {
     HOST_CHECK(client_hdl != NULL && transfer != NULL, ESP_ERR_INVALID_ARG);
-
     //Check that control transfer is valid
     HOST_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   //Target device must be set
-    usb_device_handle_t dev_hdl = transfer->device_handle;
-    bool xfer_is_in = ((usb_setup_packet_t *)transfer->data_buffer)->bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN;
-    usb_device_info_t dev_info;
-    ESP_ERROR_CHECK(usbh_dev_get_info(dev_hdl, &dev_info));
-    HOST_CHECK(transfer_check(transfer, USB_TRANSFER_TYPE_CTRL, dev_info.bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
     //Control transfers must be targeted at EP 0
     HOST_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
 
+    usb_device_handle_t dev_hdl = transfer->device_handle;
     urb_t *urb_obj = __containerof(transfer, urb_t, transfer);
     //Check that we are not submitting a transfer already inflight
     HOST_CHECK(!urb_obj->usb_host_inflight, ESP_ERR_NOT_FINISHED);

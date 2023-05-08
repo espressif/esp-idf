@@ -22,8 +22,8 @@ extern "C" {
  * @brief Hub driver configuration
  */
 typedef struct {
-    usb_notif_cb_t notif_cb;            /**< Notification callback */
-    void *notif_cb_arg;                 /**< Notification callback argument */
+    usb_proc_req_cb_t proc_req_cb;      /**< Processing request callback */
+    void *proc_req_cb_arg;              /**< Processing request callback argument */
 } hub_config_t;
 
 // ---------------------------------------------- Hub Driver Functions -------------------------------------------------
@@ -77,7 +77,7 @@ esp_err_t hub_root_stop(void);
  * @brief Hub driver's processing function
  *
  * Hub driver handling function that must be called repeatdly to process the Hub driver's events. If blocking, the
- * caller can block on the notification callback of source USB_NOTIF_SOURCE_HUB to run this function.
+ * caller can block on the notification callback of source USB_PROC_REQ_SOURCE_HUB to run this function.
  *
  * @return esp_err_t
  */
