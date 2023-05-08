@@ -8,7 +8,7 @@ The ESP-IDF component `mDNS` has been moved from ESP-IDF since version v5.0 to a
 
 * `mDNS component on GitHub <https://github.com/espressif/esp-protocols/tree/master/components/mdns>`__
 
-To add mDNS component in your project, please run `idf.py add-dependency espressif/mdns`
+To add mDNS component in your project, please run `idf.py add-dependency espressif/mdns`.
 
 Hosted Documentation
 --------------------
