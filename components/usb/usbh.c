@@ -786,7 +786,7 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl)
     bool call_proc_req_cb = false;
     if (dev_obj->dynamic.ref_count == 0) {
         //Sanity check.
-        assert(dev_obj->dynamic.num_ctrl_xfers_inflight == 0);  //There cannot be any control transfer inflight
+        assert(dev_obj->dynamic.num_ctrl_xfers_inflight == 0);  //There cannot be any control transfer in-flight
         assert(!dev_obj->dynamic.flags.waiting_free);   //This can only be set when ref count reaches 0
         if (dev_obj->dynamic.flags.is_gone) {
             //Device is already gone so it's port is already disabled. Trigger the USBH process to free the device

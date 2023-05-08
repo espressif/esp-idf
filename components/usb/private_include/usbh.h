@@ -319,7 +319,7 @@ esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
  * - A client should call this function to allocate all endpoints in an interface that the client has claimed.
  * - A client must allocate an endpoint using this function before attempting to communicate with it
  * - Once the client allocates an endpoint, the client is now owns/manages the endpoint. No other client should use or
- * deallocte the endpoint.
+ * deallocate the endpoint.
  *
  * @note This function can block
  * @note Default endpoints (EP0) are owned by the USBH. For control transfers, use usbh_dev_submit_ctrl_urb() instead
@@ -489,7 +489,7 @@ esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_
  * @note Must call in sequence
  * @param dev_hdl Device handle
  * @param str_desc Pointer to string descriptor
- * @param select Select which string descriptor. 0/1/2 for Manufacturer/Product/Serial Number string descriptors respecitvely
+ * @param select Select which string descriptor. 0/1/2 for Manufacturer/Product/Serial Number string descriptors respectively
  * @return esp_err_t
  */
 esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select);
