@@ -47,12 +47,6 @@ entries:
     app_startup (default)           # Place functions (but not Data and BSS) to flash
 
     # ------------------------------------------------------------------------------------------------------------------
-    # FreeRTOS-openocd.c
-    # Placement Rules: All functions/data in internal RAM as they are called/used by OpenOCD
-    # ------------------------------------------------------------------------------------------------------------------
-    FreeRTOS-openocd (noflash)
-
-    # ------------------------------------------------------------------------------------------------------------------
     # heap_idf.c
     # Placement Rules:
     #   - Default: Place all functions in internal RAM.
