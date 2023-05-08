@@ -359,8 +359,12 @@ SECTIONS
      *
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
      */
+    ALIGNED_SYMBOL(4, __preinit_array_start)
+    KEEP (*(.preinit_array))
+    __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors SORT(.ctors.*)))
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors.*)))
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors))
     __init_array_end = ABSOLUTE(.);
 
     /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */

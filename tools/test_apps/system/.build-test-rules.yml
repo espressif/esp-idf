@@ -61,6 +61,14 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
+tools/test_apps/system/init_array:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - esp_system
+  depends_filepatterns:
+    - tools/tools.json
+
 tools/test_apps/system/log:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
