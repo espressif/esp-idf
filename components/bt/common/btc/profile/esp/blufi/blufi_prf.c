@@ -281,6 +281,7 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
     data_len = info_len + 3;
     p = data = osi_malloc(data_len);
     if (data == NULL) {
+        BTC_TRACE_ERROR("%s no mem\n", __func__);
         return;
     }
 
@@ -413,6 +414,7 @@ static void btc_blufi_send_error_info(uint8_t state)
     data_len = 1;
     p = data = osi_malloc(data_len);
     if (data == NULL) {
+        BTC_TRACE_ERROR("%s no mem\n", __func__);
         return;
     }
 
@@ -688,6 +690,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
         dst->wifi_conn_report.extra_info = osi_calloc(sizeof(esp_blufi_extra_info_t));
         if (dst->wifi_conn_report.extra_info == NULL) {
+            BTC_TRACE_ERROR("%s no mem line %d\n", __func__, __LINE__);
             return;
         }
 
@@ -702,6 +705,9 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->wifi_conn_report.extra_info->sta_ssid, src_info->sta_ssid, src_info->sta_ssid_len);
                 dst->wifi_conn_report.extra_info->sta_ssid_len = src_info->sta_ssid_len;
                 dst->wifi_conn_report.extra_info_len += (dst->wifi_conn_report.extra_info->sta_ssid_len + 2);
+            } else {
+                BTC_TRACE_ERROR("%s no mem line %d\n", __func__, __LINE__);
+                return;
             }
         }
         if (src_info->sta_passwd) {
@@ -710,6 +716,9 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->wifi_conn_report.extra_info->sta_passwd, src_info->sta_passwd, src_info->sta_passwd_len);
                 dst->wifi_conn_report.extra_info->sta_passwd_len = src_info->sta_passwd_len;
                 dst->wifi_conn_report.extra_info_len += (dst->wifi_conn_report.extra_info->sta_passwd_len + 2);
+            } else {
+                 BTC_TRACE_ERROR("%s no mem line %d\n", __func__, __LINE__);
+                 return;
             }
         }
         if (src_info->softap_ssid) {
@@ -718,6 +727,9 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->wifi_conn_report.extra_info->softap_ssid, src_info->softap_ssid, src_info->softap_ssid_len);
                 dst->wifi_conn_report.extra_info->softap_ssid_len = src_info->softap_ssid_len;
                 dst->wifi_conn_report.extra_info_len += (dst->wifi_conn_report.extra_info->softap_ssid_len + 2);
+            } else {
+                 BTC_TRACE_ERROR("%s no mem line %d\n", __func__, __LINE__);
+                 return;
             }
         }
         if (src_info->softap_passwd) {
@@ -726,6 +738,9 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->wifi_conn_report.extra_info->softap_passwd, src_info->softap_passwd, src_info->softap_passwd_len);
                 dst->wifi_conn_report.extra_info->softap_passwd_len = src_info->softap_passwd_len;
                 dst->wifi_conn_report.extra_info_len += (dst->wifi_conn_report.extra_info->softap_passwd_len + 2);
+            } else {
+                 BTC_TRACE_ERROR("%s no mem line %d\n", __func__, __LINE__);
+                 return;
             }
         }
         if (src_info->softap_authmode_set) {
@@ -768,6 +783,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         dst->wifi_list.list = (esp_blufi_ap_record_t *)osi_malloc(sizeof(esp_blufi_ap_record_t) * src->wifi_list.apCount);
         if (dst->wifi_list.list == NULL) {
+            BTC_TRACE_ERROR("%s no mem line %d\n", __func__, __LINE__);
             break;
         }
         memcpy(dst->wifi_list.list, list, sizeof(esp_blufi_ap_record_t) * src->wifi_list.apCount);

@@ -214,16 +214,21 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
             }
 
             esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
-            gatt_rsp->attr_value.len = param->write.len;
-            gatt_rsp->attr_value.handle = param->write.handle;
-            gatt_rsp->attr_value.offset = param->write.offset;
-            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-            memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
-            if (response_err != ESP_OK){
-               ESP_LOGE(BT_BLE_COEX_TAG, "Send response error");
+            if (gatt_rsp) {
+                gatt_rsp->attr_value.len = param->write.len;
+                gatt_rsp->attr_value.handle = param->write.handle;
+                gatt_rsp->attr_value.offset = param->write.offset;
+                gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+                memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
+                if (response_err != ESP_OK){
+                    ESP_LOGE(BT_BLE_COEX_TAG, "Send response error\n");
+                }
+                free(gatt_rsp);
+            } else {
+                ESP_LOGE(BT_BLE_COEX_TAG, "%s, malloc failed", __func__);
+                status = ESP_GATT_NO_RESOURCES;
             }
-            free(gatt_rsp);
             if (status != ESP_GATT_OK){
                 return;
             }

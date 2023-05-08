@@ -205,12 +205,14 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                      &count);
             if (status != ESP_GATT_OK){
                 ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
+                break;
             }
 
             if (count > 0){
                 char_elem_result = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
                 }else{
                     status = esp_ble_gattc_get_char_by_uuid( gattc_if,
                                                              p_data->search_cmpl.conn_id,
@@ -219,8 +221,11 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                              remote_filter_char_uuid,
                                                              char_elem_result,
                                                              &count);
-                    if (status != ESP_GATT_OK){
+                    if (status != ESP_GATT_OK) {
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        free(char_elem_result);
+                        char_elem_result = NULL;
+                        break;
                     }
 
                     /*  Every service has only one char in our 'throughput_server' demo, so we use first 'char_elem_result' */
@@ -231,6 +236,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 }
                 /* free char_elem_result */
                 free(char_elem_result);
+                char_elem_result = NULL;
             }else{
                 ESP_LOGE(GATTC_TAG, "no char found");
             }

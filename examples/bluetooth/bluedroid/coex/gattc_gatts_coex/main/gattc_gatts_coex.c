@@ -388,7 +388,8 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             if (count > 0) {
                 char_elem_result = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result) {
-                    ESP_LOGE(COEX_TAG, "gattc no mem");
+                    ESP_LOGE(COEX_TAG, "gattc no mem\n");
+                    break;
                 }else {
                     status = esp_ble_gattc_get_char_by_uuid( gattc_if,
                                                              p_data->search_cmpl.conn_id,
@@ -398,7 +399,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                              char_elem_result,
                                                              &count);
                     if (status != ESP_GATT_OK) {
-                        ESP_LOGE(COEX_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        ESP_LOGE(COEX_TAG, "esp_ble_gattc_get_char_by_uuid error\n");
+                        free(char_elem_result);
+                        char_elem_result = NULL;
+                        break;
                     }
 
                     /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
@@ -409,8 +413,9 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 }
                 /* free char_elem_result */
                 free(char_elem_result);
+                char_elem_result = NULL;
             } else {
-                ESP_LOGE(COEX_TAG, "no char found");
+                ESP_LOGE(COEX_TAG, "no char found\n");
             }
         }
          break;
@@ -434,7 +439,8 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             if (count > 0) {
                 descr_elem_result = malloc(sizeof(esp_gattc_descr_elem_t) * count);
                 if (!descr_elem_result) {
-                    ESP_LOGE(COEX_TAG, "malloc error, gattc no mem");
+                    ESP_LOGE(COEX_TAG, "malloc error, gattc no mem\n");
+                    break;
                 } else {
                     ret_status = esp_ble_gattc_get_descr_by_char_handle( gattc_if,
                                                                          gattc_profile_tab[GATTC_PROFILE_C_APP_ID].conn_id,
@@ -443,7 +449,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                          descr_elem_result,
                                                                          &count);
                     if (ret_status != ESP_GATT_OK) {
-                        ESP_LOGE(COEX_TAG, "esp_ble_gattc_get_descr_by_char_handle error");
+                        ESP_LOGE(COEX_TAG, "esp_ble_gattc_get_descr_by_char_handle error\n");
+                        free(descr_elem_result);
+                        descr_elem_result = NULL;
+                        break;
                     }
                     /* Every char has only one descriptor in our 'ESP_GATTS_DEMO' demo, so we used first 'descr_elem_result' */
                     if (count > 0 && descr_elem_result[0].uuid.len == ESP_UUID_LEN_16 && descr_elem_result[0].uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG) {
@@ -462,9 +471,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
                     /* free descr_elem_result */
                     free(descr_elem_result);
+                    descr_elem_result = NULL;
                 }
             } else {
-                ESP_LOGE(COEX_TAG, "decsr not found");
+                ESP_LOGE(COEX_TAG, "decsr not found\n");
             }
 
         }
@@ -541,16 +551,21 @@ static void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *
             }
 
             esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
-            gatt_rsp->attr_value.len = param->write.len;
-            gatt_rsp->attr_value.handle = param->write.handle;
-            gatt_rsp->attr_value.offset = param->write.offset;
-            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-            memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
-            if (response_err != ESP_OK) {
-               ESP_LOGE(COEX_TAG, "Send response error");
+            if (gatt_rsp) {
+                gatt_rsp->attr_value.len = param->write.len;
+                gatt_rsp->attr_value.handle = param->write.handle;
+                gatt_rsp->attr_value.offset = param->write.offset;
+                gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+                memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
+                if (response_err != ESP_OK) {
+                    ESP_LOGE(COEX_TAG, "Send response error\n");
+                }
+                free(gatt_rsp);
+            } else {
+                ESP_LOGE(COEX_TAG, "%s, malloc failed", __func__);
+                status = ESP_GATT_NO_RESOURCES;
             }
-            free(gatt_rsp);
             if (status != ESP_GATT_OK) {
                 return;
             }

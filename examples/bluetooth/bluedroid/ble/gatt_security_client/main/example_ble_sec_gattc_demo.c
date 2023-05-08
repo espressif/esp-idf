@@ -227,11 +227,13 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                         &count);
             if (ret_status != ESP_GATT_OK){
                 ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error, %d", __LINE__);
+                break;
             }
             if (count > 0){
                 char_elem_result = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
                 }else{
                     ret_status = esp_ble_gattc_get_all_char(gattc_if,
                                                             gl_profile_tab[PROFILE_A_APP_ID].conn_id,
@@ -242,6 +244,9 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                             offset);
                     if (ret_status != ESP_GATT_OK){
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_all_char error, %d", __LINE__);
+                        free(char_elem_result);
+                        char_elem_result = NULL;
+                        break;
                     }
                     if (count > 0){
 
@@ -259,6 +264,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                     }
                 }
                 free(char_elem_result);
+                char_elem_result = NULL;
             }
         }
 
@@ -281,11 +287,13 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                         &count);
             if (ret_status != ESP_GATT_OK){
                 ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error, %d", __LINE__);
+                break;
             }
             if (count > 0){
                 descr_elem_result = malloc(sizeof(esp_gattc_descr_elem_t) * count);
                 if (!descr_elem_result){
                     ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
+                    break;
                 }else{
                     ret_status = esp_ble_gattc_get_all_descr(gattc_if,
                                                              gl_profile_tab[PROFILE_A_APP_ID].conn_id,
@@ -295,6 +303,9 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                              offset);
                 if (ret_status != ESP_GATT_OK){
                     ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_all_descr error, %d", __LINE__);
+                    free(descr_elem_result);
+                    descr_elem_result = NULL;
+                    break;
                 }
 
                     for (int i = 0; i < count; ++i)
@@ -314,6 +325,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                     }
                 }
                 free(descr_elem_result);
+                descr_elem_result = NULL;
             }
 
         break;

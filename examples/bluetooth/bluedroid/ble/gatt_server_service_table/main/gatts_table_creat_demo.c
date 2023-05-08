@@ -311,6 +311,7 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
             free(gatt_rsp);
         }else{
             ESP_LOGE(GATTS_TABLE_TAG, "%s, malloc failed", __func__);
+            status = ESP_GATT_NO_RESOURCES;
         }
     }
     if (status != ESP_GATT_OK){
