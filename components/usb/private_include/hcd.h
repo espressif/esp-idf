@@ -116,12 +116,12 @@ typedef enum {
 /**
  * @brief Port handle type
  */
-typedef void * hcd_port_handle_t;
+typedef void *hcd_port_handle_t;
 
 /**
  * @brief Pipe handle type
  */
-typedef void * hcd_pipe_handle_t;
+typedef void *hcd_pipe_handle_t;
 
 /**
  * @brief Port event callback type

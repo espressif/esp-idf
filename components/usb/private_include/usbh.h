@@ -25,7 +25,7 @@ extern "C" {
 /**
  * @brief Handle of a allocated endpoint
  */
-typedef struct usbh_ep_handle_s * usbh_ep_handle_t;
+typedef struct usbh_ep_handle_s *usbh_ep_handle_t;
 
 // ----------------------- Events --------------------------
 
