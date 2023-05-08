@@ -619,7 +619,7 @@ static void _handle_pending_ep(client_t *client_obj)
                 urb_t *urb;
                 usbh_ep_dequeue_urb(ep_wrap->constant.ep_hdl, &urb);
                 while (urb != NULL) {
-                    //Clear the transfer's inflight flag to indicate the transfer is no longer inflight
+                    //Clear the transfer's in-flight flag to indicate the transfer is no longer in-flight
                     urb->usb_host_inflight = false;
                     urb->transfer.callback(&urb->transfer);
                     num_urb_dequeued++;
@@ -633,7 +633,7 @@ static void _handle_pending_ep(client_t *client_obj)
         }
         HOST_ENTER_CRITICAL();
 
-        //Update the endpoint's number of URB's inflight
+        //Update the endpoint's number of URB's in-flight
         assert(num_urb_dequeued <= ep_wrap->dynamic.num_urb_inflight);
         ep_wrap->dynamic.num_urb_inflight -= num_urb_dequeued;
     }
@@ -778,7 +778,7 @@ esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, Tic
             TAILQ_REMOVE(&client_obj->dynamic.done_ctrl_xfer_tailq, urb, tailq_entry);
             client_obj->dynamic.num_done_ctrl_xfer--;
             HOST_EXIT_CRITICAL();
-            //Clear the transfer's inflight flag to indicate the transfer is no longer inflight
+            //Clear the transfer's in-flight flag to indicate the transfer is no longer in-flight
             urb->usb_host_inflight = false;
             //Call the transfer's callback
             urb->transfer.callback(&urb->transfer);
@@ -1095,7 +1095,7 @@ static esp_err_t interface_release(client_t *client_obj, usb_device_handle_t dev
     bool can_free = true;
     for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
         ep_wrapper_t *ep_wrap = intf_obj->constant.endpoints[i];
-        //Endpoint must not be on the pending list and must not have inflight URBs
+        //Endpoint must not be on the pending list and must not have in-flight URBs
         if (ep_wrap->dynamic.num_urb_inflight != 0 || ep_wrap->dynamic.flags.pending) {
             can_free = false;
             break;
@@ -1281,7 +1281,7 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
     }
     ep_wrap = usbh_ep_get_context(ep_hdl);
     assert(ep_wrap != NULL);
-    //Check that we are not submitting a transfer already inflight
+    //Check that we are not submitting a transfer already in-flight
     HOST_CHECK(!urb_obj->usb_host_inflight, ESP_ERR_NOT_FINISHED);
     urb_obj->usb_host_inflight = true;
     HOST_ENTER_CRITICAL();
@@ -1313,7 +1313,7 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
 
     usb_device_handle_t dev_hdl = transfer->device_handle;
     urb_t *urb_obj = __containerof(transfer, urb_t, transfer);
-    //Check that we are not submitting a transfer already inflight
+    //Check that we are not submitting a transfer already in-flight
     HOST_CHECK(!urb_obj->usb_host_inflight, ESP_ERR_NOT_FINISHED);
     urb_obj->usb_host_inflight = true;
     //Save client handle into URB
