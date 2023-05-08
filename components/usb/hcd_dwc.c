@@ -229,7 +229,7 @@ typedef struct {
  * @brief Object representing a pipe in the HCD layer
  */
 struct pipe_obj {
-    //URB queueing related
+    //URB queuing related
     TAILQ_HEAD(tailhead_urb_pending, urb_s) pending_urb_tailq;
     TAILQ_HEAD(tailhead_urb_done, urb_s) done_urb_tailq;
     int num_urb_pending;
@@ -264,7 +264,7 @@ struct pipe_obj {
         struct {
             uint32_t waiting_halt: 1;
             uint32_t pipe_cmd_processing: 1;
-            uint32_t has_urb: 1;            //Indicates there is at least one URB either pending, inflight, or done
+            uint32_t has_urb: 1;            //Indicates there is at least one URB either pending, in-flight, or done
             uint32_t persist: 1;            //indicates that this pipe should persist through a run-time port reset
             uint32_t reset_lock: 1;         //Indicates that this pipe is undergoing a run-time reset
             uint32_t reserved27: 27;
