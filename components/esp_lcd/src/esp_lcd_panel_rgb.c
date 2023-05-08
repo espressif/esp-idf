@@ -866,7 +866,7 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
 {
     int panel_id = panel->panel_id;
     // check validation of GPIO number
-    bool valid_gpio = (panel_config->pclk_gpio_num >= 0);
+    bool valid_gpio = true;
     if (panel_config->de_gpio_num < 0) {
         // Hsync and Vsync are required in HV mode
         valid_gpio = valid_gpio && (panel_config->hsync_gpio_num >= 0) && (panel_config->vsync_gpio_num >= 0);
@@ -896,10 +896,13 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
         esp_rom_gpio_connect_out_signal(panel_config->vsync_gpio_num,
                                         lcd_periph_signals.panels[panel_id].vsync_sig, false, false);
     }
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->pclk_gpio_num], PIN_FUNC_GPIO);
-    gpio_set_direction(panel_config->pclk_gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(panel_config->pclk_gpio_num,
-                                    lcd_periph_signals.panels[panel_id].pclk_sig, false, false);
+    // PCLK may not be necessary in some cases (i.e. VGA output)
+    if (panel_config->pclk_gpio_num >= 0) {
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->pclk_gpio_num], PIN_FUNC_GPIO);
+        gpio_set_direction(panel_config->pclk_gpio_num, GPIO_MODE_OUTPUT);
+        esp_rom_gpio_connect_out_signal(panel_config->pclk_gpio_num,
+                                        lcd_periph_signals.panels[panel_id].pclk_sig, false, false);
+    }
     // DE signal might not be necessary for some RGB LCD
     if (panel_config->de_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->de_gpio_num], PIN_FUNC_GPIO);

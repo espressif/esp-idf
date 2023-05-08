@@ -126,7 +126,7 @@ typedef struct {
     int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */
     int vsync_gpio_num;           /*!< GPIO used for VSYNC signal */
     int de_gpio_num;              /*!< GPIO used for DE signal, set to -1 if it's not used */
-    int pclk_gpio_num;            /*!< GPIO used for PCLK signal */
+    int pclk_gpio_num;            /*!< GPIO used for PCLK signal, set to -1 if it's not used */
     int disp_gpio_num;            /*!< GPIO used for display control signal, set to -1 if it's not used */
     int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
     struct {
