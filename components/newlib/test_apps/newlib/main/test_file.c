@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,17 +10,6 @@
 #include <errno.h>
 #include "esp_vfs.h"
 #include "unity.h"
-#include "unity_fixture.h"
-
-TEST_GROUP(file);
-
-TEST_SETUP(file)
-{
-}
-
-TEST_TEAR_DOWN(file)
-{
-}
 
 /* This test checks that st_blksize value set in struct stat correctly affects the
  * FILE structure:
@@ -53,7 +42,7 @@ static ssize_t blksize_test_write(void* ctx, int fd, const void * data, size_t s
     return size;
 }
 
-TEST(file, blksize)
+TEST_CASE("file - blksize", "[newlib_file]")
 {
     FILE* f;
     blksize_test_ctx_t ctx = {};
@@ -86,9 +75,4 @@ TEST(file, blksize)
     fclose(f);
 
     TEST_ESP_OK(esp_vfs_unregister("/test"));
-}
-
-TEST_GROUP_RUNNER(file)
-{
-    RUN_TEST_CASE(file, blksize)
 }

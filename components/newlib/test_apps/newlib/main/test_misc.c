@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,27 +13,11 @@
 #include <sys/param.h>
 #include <stdlib.h>
 #include "unity.h"
-#include "unity_fixture.h"
 
-// unity_fixture_malloc_overrides.h defines 'free' as 'unity_free',
-// which can only handle pointers allocated with 'unity_malloc'.
-// This test allocates memory via 'posix_memalign' so calling 'free'
-// for these pointers causes the heap guards check to fail.
-#undef free
 
-TEST_GROUP(misc);
-
-TEST_SETUP(misc)
+TEST_CASE("misc - posix_memalign", "[newlib_misc]")
 {
-}
-
-TEST_TEAR_DOWN(misc)
-{
-}
-
-TEST(misc, posix_memalign)
-{
-    void* outptr;
+    void* outptr = NULL;
     int ret;
 
     ret = posix_memalign(&outptr, 4, 0);
@@ -59,12 +43,12 @@ TEST(misc, posix_memalign)
     free(outptr);
 }
 
-TEST(misc, sysconf)
+TEST_CASE("misc - sysconf", "[newlib_misc]")
 {
     TEST_ASSERT_NOT_EQUAL(-1, sysconf(_SC_NPROCESSORS_ONLN));
 }
 
-TEST(misc, realpath)
+TEST_CASE("misc - realpath", "[newlib_misc]")
 {
     char out[PATH_MAX];
 
@@ -85,11 +69,4 @@ TEST(misc, realpath)
     TEST_ASSERT_NOT_NULL(out_new);
     TEST_ASSERT_EQUAL_STRING("/abc/def", out_new);
     free(out_new);
-}
-
-TEST_GROUP_RUNNER(misc)
-{
-    RUN_TEST_CASE(misc, posix_memalign)
-    RUN_TEST_CASE(misc, sysconf)
-    RUN_TEST_CASE(misc, realpath)
 }
