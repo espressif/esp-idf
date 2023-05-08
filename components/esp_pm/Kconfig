@@ -124,12 +124,19 @@ menu "Power Management"
             context of the necessary hardware for FreeRTOS to run, it will need at least 4.55 KB free heap
             at sleep time. Otherwise sleep will not power down the peripherals.
 
-            Note: Please use this option with caution, the current IDF does not support the retention of
+            Note1: Please use this option with caution, the current IDF does not support the retention of
             all peripherals. When the digital peripherals are powered off and a sleep and wake-up is completed,
             the peripherals that have not saved the running context are equivalent to performing a reset.
             !!! Please confirm the peripherals used in your application and their sleep retention support status
             before enabling this option, peripherals sleep retention driver support status is tracked in
             power_management.rst
+
+            Note2: When this option is enabled simultaneously with FREERTOS_USE_TICKLESS_IDLE, since the UART will
+            be powered down, the uart FIFO will be flushed before sleep to avoid data loss, however, this has the
+            potential to block the sleep process and cause the wakeup time to be skipped, which will cause the tick
+            of freertos to not be compensated correctly when returning from sleep and cause the system to crash.
+            To avoid this, you can use ESP_PM_NO_LIGHT_SLEEP to protect your UART transmission, fflush the stdout
+            after printing, or increase FREERTOS_IDLE_TIME_BEFORE_SLEEP threshold in menuconfig.
 
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool
