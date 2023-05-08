@@ -1063,6 +1063,14 @@ config SOC_COEX_HW_PTI
     bool
     default y
 
+config SOC_EXTERNAL_COEX_ADVANCE
+    bool
+    default n
+
+config SOC_EXTERNAL_COEX_LEADER_TX_LINE
+    bool
+    default y
+
 config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     bool
     default y
