@@ -271,6 +271,9 @@ menu "FreeRTOS"
             # Minimal value is 2 because of a check in FreeRTOS.h (search configEXPECTED_IDLE_TIME_BEFORE_SLEEP)
             help
                 FreeRTOS will enter light sleep mode if no tasks need to run for this number of ticks.
+                You can enable PM_PROFILING feature in esp_pm components and dump the sleep status with
+                esp_pm_dump_locks, if the proportion of rejected sleeps is too high, please increase
+                this value to improve scheduling efficiency
 
     endmenu # Kernel
 
