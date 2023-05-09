@@ -99,7 +99,7 @@
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
-#define FAST_CLK_SRC_CAL_CYCLES     (2000)  /* ~ 127.4 us */
+#define FAST_CLK_SRC_CAL_CYCLES     (2048)  /* ~ 127.4 us */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (212)
@@ -150,7 +150,7 @@
 static esp_deep_sleep_cb_t s_dslp_cb[MAX_DSLP_HOOKS]={0};
 
 /**
- * Internal structure which holds all requested deep sleep parameters
+ * Internal structure which holds all requested sleep parameters
  */
 typedef struct {
     struct {
@@ -179,6 +179,8 @@ typedef struct {
     uint64_t rtc_ticks_at_sleep_start;
 } sleep_config_t;
 
+
+static uint32_t s_lightsleep_cnt = 0;
 
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
 
@@ -689,7 +691,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 
     // re-enable UART output
     resume_uarts();
-
+    s_lightsleep_cnt++;
     return result;
 }
 
@@ -889,8 +891,13 @@ esp_err_t esp_light_sleep_start(void)
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #else
-    s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
-    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+#if CONFIG_PM_ENABLE
+    if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0)
+#endif
+    {
+        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+    }
 #endif
 
     /*
@@ -902,7 +909,12 @@ esp_err_t esp_light_sleep_start(void)
      */
 
 #if SOC_PMU_SUPPORTED
-    s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+#if CONFIG_PM_ENABLE
+    if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0)
+#endif
+    {
+        s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+    }
     int sleep_time_sw_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out;
     int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(pd_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
     s_config.sleep_time_adjustment = sleep_time_sw_adjustment + sleep_time_hw_adjustment;
