@@ -52,6 +52,7 @@ typedef struct {
         .i2c_pin_cfg.sda_pullup_en = true,      \
         .i2c_pin_cfg.scl_pullup_en = true,      \
 
+#if CONFIG_IDF_TARGET_ESP32S3
 /* Nominal I2C bus timing parameters for I2C fast mode. Max SCL freq of 400 KHz. */
 #define ULP_RISCV_I2C_FAST_MODE_CONFIG()        \
         .i2c_timing_cfg.scl_low_period = 1.4,   \
@@ -59,7 +60,17 @@ typedef struct {
         .i2c_timing_cfg.sda_duty_period = 1,    \
         .i2c_timing_cfg.scl_start_period = 2,   \
         .i2c_timing_cfg.scl_stop_period = 1.3,  \
-        .i2c_timing_cfg.i2c_trans_timeout = 20, \
+        .i2c_timing_cfg.i2c_trans_timeout = 20,
+#elif CONFIG_IDF_TARGET_ESP32S2
+/* Nominal I2C bus timing parameters for I2C fast mode. Max SCL freq on S2 is about 233 KHz due to timing constraints. */
+#define ULP_RISCV_I2C_FAST_MODE_CONFIG()        \
+        .i2c_timing_cfg.scl_low_period = 2,     \
+        .i2c_timing_cfg.scl_high_period = 0.7,  \
+        .i2c_timing_cfg.sda_duty_period = 1.7,  \
+        .i2c_timing_cfg.scl_start_period = 2.4, \
+        .i2c_timing_cfg.scl_stop_period = 1.3,  \
+        .i2c_timing_cfg.i2c_trans_timeout = 20,
+#endif
 
 /* Nominal I2C bus timing parameters for I2C standard mode. Max SCL freq of 100 KHz. */
 #define ULP_RISCV_I2C_STANDARD_MODE_CONFIG()    \
