@@ -18,8 +18,6 @@ esp-idf-cxx Component
 
 `esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ component provides higher-level C++ APIs for some of the ESP-IDF features. This component is available from the `IDF Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`_.
 
-.. _cplusplus_multithreading:
-
 C++ language standard
 ---------------------
 
@@ -34,12 +32,18 @@ To compile the source code of a certain component using a different language sta
 
 Use ``PUBLIC`` instead of ``PRIVATE`` if the public header files of the component also need to be compiled with the same language standard.
 
+.. _cplusplus_multithreading:
+
 Multithreading
 --------------
 
 C++ threads, mutexes, and condition variables are supported. C++ threads are built on top of pthreads, which in turn wrap FreeRTOS tasks.
 
 See :example:`cxx/pthread` for an example of creating threads in C++.
+
+.. note::
+
+    The destructor of `std::jthread <https://en.cppreference.com/w/cpp/thread/jthread>`_ can only safely be called from a task that has been created by :ref:`the IDF implementation of pthread_create() <posix_thread_api>` or by the `C++ threading library API <https://en.cppreference.com/w/cpp/thread>`_.
 
 .. _cplusplus_exceptions:
 
