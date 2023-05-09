@@ -123,43 +123,51 @@ TEST_CASE("test asctime", "[newlib]")
     TEST_ASSERT_EQUAL_STRING(buf, time_str);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 static bool fn_in_rom(void *fn)
 {
     const int fnaddr = (int)fn;
     return (fnaddr >= SOC_IROM_MASK_LOW && fnaddr < SOC_IROM_MASK_HIGH);
 }
 
+/* Older chips have newlib nano in rom as well, but this is not linked in due to us now using 64 bit time_t
+   and the ROM code was compiled for 32 bit.
+ */
+#define PRINTF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2))
+#define SSCANF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_ESP32C2)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-#if CONFIG_NEWLIB_NANO_FORMAT || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+#if PRINTF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT  && !CONFIG_NEWLIB_NANO_FORMAT)
     TEST_ASSERT(fn_in_rom(vfprintf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(vfprintf));
-#endif // CONFIG_NEWLIB_NANO_FORMAT || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+#endif // PRINTF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT  && !CONFIG_NEWLIB_NANO_FORMAT)
 
-#if (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2)) || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+#if SSCANF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT && !CONFIG_NEWLIB_NANO_FORMAT)
     TEST_ASSERT(fn_in_rom(sscanf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(sscanf));
-#endif // (CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_x) || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+#endif //  SSCANF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT && !CONFIG_NEWLIB_NANO_FORMAT)
 
-#if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
-    TEST_ASSERT(fn_in_rom(atoi));
-    TEST_ASSERT(fn_in_rom(strtol));
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) \
-    || defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6)
-    /* S3 and C3 always use these from ROM */
-    TEST_ASSERT(fn_in_rom(atoi));
-    TEST_ASSERT(fn_in_rom(strtol));
+#if defined(CONFIG_IDF_TARGET_ESP32)
+
+#if defined(CONFIG_SPIRAM_CACHE_WORKAROUND)
+    TEST_ASSERT_FALSE(fn_in_rom(atoi));
+    TEST_ASSERT_FALSE(fn_in_rom(strtol));
 #else
+    TEST_ASSERT(fn_in_rom(atoi));
+    TEST_ASSERT(fn_in_rom(strtol));
+#endif //CONFIG_SPIRAM_CACHE_WORKAROUND
+
+#elif CONFIG_IDF_TARGET_ESP32S2
     /* S2 do not have these in ROM */
     TEST_ASSERT_FALSE(fn_in_rom(atoi));
     TEST_ASSERT_FALSE(fn_in_rom(strtol));
-#endif // defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
+#else
+    TEST_ASSERT(fn_in_rom(atoi));
+    TEST_ASSERT(fn_in_rom(strtol));
+#endif // defined(CONFIG_IDF_TARGET_ESP32)
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 
 #ifndef CONFIG_NEWLIB_NANO_FORMAT
 TEST_CASE("test 64bit int formats", "[newlib]")
