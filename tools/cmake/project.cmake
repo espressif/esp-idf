@@ -583,7 +583,7 @@ macro(project project_name)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
-        ADDITIONAL_MAKE_CLEAN_FILES
+        ADDITIONAL_CLEAN_FILES
         "${mapfile}" "${project_elf_src}")
 
     idf_build_get_property(idf_path IDF_PATH)

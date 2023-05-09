@@ -57,7 +57,7 @@ function(fatfs_create_partition_image partition base_dir)
             --sector_size "${fatfs_sector_size}"
             )
         set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
-            ADDITIONAL_MAKE_CLEAN_FILES
+            ADDITIONAL_CLEAN_FILES
             ${image_file})
 
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
