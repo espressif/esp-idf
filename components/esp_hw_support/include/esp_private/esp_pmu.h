@@ -235,6 +235,12 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp);
 uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp);
 
 /**
+ * @brief   Finish sleep process settings and get sleep reject status
+ * @return  return sleep reject status
+ */
+bool pmu_sleep_finish(void);
+
+/**
  * @brief Initialize PMU related power/clock/digital parameters and functions
  */
 void pmu_init(void);
