@@ -45,9 +45,6 @@ examples/peripherals/i2s/i2s_adc_dac:
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: rtc timer is not supported
 
 examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
