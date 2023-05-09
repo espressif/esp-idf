@@ -134,6 +134,14 @@ do {                                                                            
     hf_local_param[idx].btc_hf_cb.num_active = 0;  \
     hf_local_param[idx].btc_hf_cb.num_held = 0;
 
+#define CHECK_HF_IDX(idx)                                            \
+do {                                                                 \
+    if ((idx < 0) || (idx >= BTC_HF_NUM_CB)) {                       \
+        BTC_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);  \
+        return;                                                      \
+    }                                                                \
+} while (0)
+
 /************************************************************************************
 **                                Static Function
 ************************************************************************************/
@@ -1213,19 +1221,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
     tBTA_AG *p_data = (tBTA_AG *)msg->arg;
     esp_hf_cb_param_t  param;
     bdstr_t bdstr;
-    int idx;
-
-    if (p_data == NULL) {
-        idx = BTC_HF_INVALID_IDX;
-    } else {
-        idx = p_data->hdr.handle - 1;
-    }
+    int idx = BTC_HF_INVALID_IDX;
 
     BTC_TRACE_DEBUG("%s: event = %s", __FUNCTION__, dump_hf_event(event));
-    if ((idx < 0) || (idx >= BTC_HF_NUM_CB)) {
-        BTC_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);
-        return;
-    }
 
     switch (event) {
         case BTA_AG_ENABLE_EVT:
@@ -1234,6 +1232,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_REGISTER_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             hf_local_param[idx].btc_hf_cb.handle = p_data->reg.hdr.handle;
             BTC_TRACE_DEBUG("%s: BTA_AG_REGISTER_EVT," "hf_local_param[%d].btc_hf_cb.handle = %d",
                             __FUNCTION__, idx, hf_local_param[idx].btc_hf_cb.handle);
@@ -1242,7 +1242,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_OPEN_EVT:
         {
-            if (p_data->open.status == BTA_AG_SUCCESS)
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            if (p_data->open.hdr.status == BTA_AG_SUCCESS)
             {
                 bdcpy(hf_local_param[idx].btc_hf_cb.connected_bda.address, p_data->open.bd_addr);
                 hf_local_param[idx].btc_hf_cb.connection_state  = ESP_HF_CONNECTION_STATE_CONNECTED;
@@ -1253,7 +1255,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                 hf_local_param[idx].btc_hf_cb.connection_state  = ESP_HF_CONNECTION_STATE_DISCONNECTED;
             } else {
                 BTC_TRACE_WARNING("%s: AG open failed, but another device connected. status=%d state=%d connected device=%s", __FUNCTION__,
-                                    p_data->open.status, hf_local_param[idx].btc_hf_cb.connection_state,
+                                    p_data->open.hdr.status, hf_local_param[idx].btc_hf_cb.connection_state,
                                     bdaddr_to_string(&hf_local_param[idx].btc_hf_cb.connected_bda, bdstr, sizeof(bdstr)));
                 break;
             }
@@ -1270,13 +1272,15 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             if (hf_local_param[idx].btc_hf_cb.connection_state  == ESP_HF_CONNECTION_STATE_DISCONNECTED)
                 bdsetany(hf_local_param[idx].btc_hf_cb.connected_bda.address);
 
-            if (p_data->open.status != BTA_AG_SUCCESS)
+            if (p_data->open.hdr.status != BTA_AG_SUCCESS)
                 btc_queue_advance();
             break;
         }
 
         case BTA_AG_CONN_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             clock_gettime(CLOCK_MONOTONIC, &(hf_local_param[idx].btc_hf_cb.connected_timestamp));
             BTC_TRACE_DEBUG("%s: BTA_AG_CONN_EVT, idx = %d ", __FUNCTION__, idx);
             hf_local_param[idx].btc_hf_cb.peer_feat = p_data->conn.peer_feat;
@@ -1298,6 +1302,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_CLOSE_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             hf_local_param[idx].btc_hf_cb.connected_timestamp.tv_sec = 0;
             hf_local_param[idx].btc_hf_cb.connection_state  = ESP_HF_CONNECTION_STATE_DISCONNECTED;
             BTC_TRACE_DEBUG("%s: BTA_AG_CLOSE_EVT," "hf_local_param[%d].btc_hf_cb.handle = %d", __FUNCTION__,
@@ -1319,6 +1325,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AUDIO_OPEN_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             do {
                 memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED;
@@ -1330,6 +1338,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AUDIO_MSBC_OPEN_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             do {
                 memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
@@ -1340,6 +1350,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         }
         case BTA_AG_AUDIO_CLOSE_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             do {
                 memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_DISCONNECTED;
@@ -1351,6 +1363,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AT_BVRA_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             do {
                 memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.vra_rep.value = p_data->val.num;
@@ -1468,6 +1482,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         case BTA_AG_AT_BINP_EVT:
         case BTA_AG_AT_BTRH_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             tBTA_AG_RES_DATA ag_res;
             memset(&ag_res, 0, sizeof(ag_res));
             ag_res.ok_flag = BTA_AG_OK_ERROR;
@@ -1478,6 +1494,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AT_BAC_EVT:
         {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
             BTC_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
 #if (BTM_WBS_INCLUDED == TRUE)
             /* If the peer supports mSBC and the BTC prefferred codec is also mSBC, then
@@ -1497,9 +1515,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 #if (BTM_WBS_INCLUDED == TRUE)
         case BTA_AG_WBS_EVT:
         {
-            BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.value);
+            BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.num);
             memset(&param, 0, sizeof(esp_hf_cb_param_t));
-            param.wbs_rep.codec = p_data->val.value;
+            param.wbs_rep.codec = p_data->val.num;
             btc_hf_cb_to_app(ESP_HF_WBS_RESPONSE_EVT, &param);
             break;
         }
