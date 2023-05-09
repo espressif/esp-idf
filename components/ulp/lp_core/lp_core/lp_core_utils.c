@@ -41,3 +41,10 @@ void ulp_lp_core_delay_us(uint32_t us)
         /* nothing to do */
     }
 }
+
+void ulp_lp_core_halt(void)
+{
+    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
+
+    while(1);
+}

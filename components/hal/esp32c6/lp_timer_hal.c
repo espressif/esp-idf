@@ -23,11 +23,14 @@ void IRAM_ATTR lp_timer_hal_set_alarm_target(uint8_t timer_id, uint64_t value)
     lp_timer_ll_set_target_enable(lp_timer_context.dev, timer_id, true);
 }
 
-uint64_t IRAM_ATTR lp_timer_hal_get_cycle_count(uint8_t timer_id)
+uint64_t IRAM_ATTR lp_timer_hal_get_cycle_count(void)
 {
+    /* Shifts current count to buffer 0, and the value in buffer 0 to buffer 1 */
     lp_timer_ll_counter_snapshot(lp_timer_context.dev);
-    uint32_t lo = lp_timer_ll_get_counter_value_low(lp_timer_context.dev, timer_id);
-    uint32_t hi = lp_timer_ll_get_counter_value_high(lp_timer_context.dev, timer_id);
+
+    uint32_t lo = lp_timer_ll_get_counter_value_low(lp_timer_context.dev, 0);
+    uint32_t hi = lp_timer_ll_get_counter_value_high(lp_timer_context.dev, 0);
+
     lp_timer_counter_value_t result = {
         .lo = lo,
         .hi = hi

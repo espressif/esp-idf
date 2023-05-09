@@ -28,9 +28,8 @@ void lp_timer_hal_set_alarm_target(uint8_t timer_id, uint64_t value);
 /**
  * @brief get current counter value
  *
- * @param timer_id timer num of lp_timer, 0 or 1 for esp32c6
  */
-uint64_t lp_timer_hal_get_cycle_count(uint8_t timer_id);
+uint64_t lp_timer_hal_get_cycle_count(void);
 
 /**
  * @brief clear alarm interrupt status
