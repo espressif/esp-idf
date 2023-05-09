@@ -1,0 +1,2 @@
+# Test all chips with nano off, nano on is tested in options config
+CONFIG_NEWLIB_NANO_FORMAT=n

@@ -549,16 +549,14 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
 
 #endif // !_USE_LONG_TIME_T
 
-// IDF-6962 following test cases don't pass on C2
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) && defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
 
 extern int64_t s_microseconds_offset;
 static const uint64_t s_start_timestamp  = 1606838354;
 
 
-static RTC_NOINIT_ATTR uint64_t s_saved_time;
-static RTC_NOINIT_ATTR uint64_t s_time_in_reboot;
+static __NOINIT_ATTR uint64_t s_saved_time;
+static __NOINIT_ATTR uint64_t s_time_in_reboot;
 
 typedef enum {
     TYPE_REBOOT_ABORT = 0,
@@ -579,6 +577,9 @@ static void print_counters(void)
 
 static void set_initial_condition(type_reboot_t type_reboot, int error_time)
 {
+    s_saved_time = 0;
+    s_time_in_reboot = 0;
+
     print_counters();
 
     struct timeval tv = { .tv_sec = s_start_timestamp, .tv_usec = 0, };
@@ -651,4 +652,3 @@ TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & High-r
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have - big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp3, check_time);
 #endif // CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER && CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
