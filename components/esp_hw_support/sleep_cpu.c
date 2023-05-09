@@ -22,7 +22,9 @@
 #include "esp_private/sleep_cpu.h"
 #include "sdkconfig.h"
 
-#if !SOC_PMU_SUPPORTED
+#if SOC_PMU_SUPPORTED
+#include "esp_private/esp_pmu.h"
+#else
 #include "hal/rtc_hal.h"
 #endif
 
@@ -683,7 +685,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
     }
 #endif
 
-    return ESP_OK;
+    return pmu_sleep_finish();
 }
 
 esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),
