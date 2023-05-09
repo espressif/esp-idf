@@ -29,6 +29,29 @@
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 
+void IRAM_ATTR esp_system_reset_modules_on_exit(void)
+{
+    // Flush any data left in UART FIFOs before reset the UART peripheral
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
+    esp_rom_uart_tx_wait_idle(2);
+
+    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
+                            DPORT_WIFIBB_RST | DPORT_FE_RST | DPORT_WIFIMAC_RST | DPORT_BTBB_RST |
+                            DPORT_BTMAC_RST  | DPORT_SDIO_RST | DPORT_SDIO_HOST_RST | DPORT_EMAC_RST |
+                            DPORT_MACPWR_RST | DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+    DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
+
+    // Reset timer, spi, uart, mcpwm
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
+                            //UART TX FIFO cannot be reset correctly on ESP32, so reset the UART memory by DPORT here.
+                            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_SPI2_RST | DPORT_SPI3_RST |
+                            DPORT_SPI_DMA_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST |
+                            DPORT_UART_MEM_RST | DPORT_PWM0_RST | DPORT_PWM1_RST);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+}
+
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
@@ -73,11 +96,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
 
-    // Flush any data left in UART FIFOs
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
-    esp_rom_uart_tx_wait_idle(2);
-
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     if (esp_ptr_external_ram(esp_cpu_get_sp())) {
         // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
@@ -101,25 +119,8 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_WIFIBB_RST    | \
-                                                   DPORT_FE_RST        | \
-                                                   DPORT_WIFIMAC_RST   | \
-                                                   DPORT_BTBB_RST      | \
-                                                   DPORT_BTMAC_RST     | \
-                                                   DPORT_SDIO_RST      | \
-                                                   DPORT_SDIO_HOST_RST | \
-                                                   DPORT_EMAC_RST      | \
-                                                   DPORT_MACPWR_RST    | \
-                                                   DPORT_RW_BTMAC_RST  | \
-                                                   DPORT_RW_BTLP_RST);
-    DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
-
-    // Reset timer/spi/uart
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
-            //UART TX FIFO cannot be reset correctly on ESP32, so reset the UART memory by DPORT here.
-            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_SPI2_RST | DPORT_SPI3_RST | DPORT_SPI_DMA_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST | DPORT_UART_MEM_RST);
-    DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+    // reset necessary peripheral modules
+    esp_system_reset_modules_on_exit();
 
     // Set CPU back to XTAL source, same as hard reset. PLL keeps on to match the behavior with chips.
     rtc_clk_cpu_set_to_default_config();
@@ -139,7 +140,7 @@ void IRAM_ATTR esp_restart_noos(void)
         esp_cpu_unstall(0);
         esp_rom_software_reset_cpu(1);
     }
-    while(true) {
+    while (true) {
         ;
     }
 }
