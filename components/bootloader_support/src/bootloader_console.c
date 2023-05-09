@@ -23,16 +23,22 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 
-#ifdef CONFIG_ESP_CONSOLE_NONE
-void bootloader_console_init(void)
+//
+// None
+//
+#if CONFIG_ESP_CONSOLE_IS_NONE_ENABLED
+void bootloader_console_init_none(void)
 {
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
 }
-#endif // CONFIG_ESP_CONSOLE_NONE
+#endif // CONFIG_ESP_CONSOLE_IS_NONE_ENABLED
 
-#ifdef CONFIG_ESP_CONSOLE_UART
-void bootloader_console_init(void)
+//
+// UART
+//
+#if CONFIG_ESP_CONSOLE_IS_UART_ENABLED
+void bootloader_console_init_uart(void)
 {
     const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
 
@@ -79,13 +85,16 @@ void bootloader_console_init(void)
 #endif
     esp_rom_uart_set_clock_baudrate(uart_num, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 }
-#endif // CONFIG_ESP_CONSOLE_UART
+#endif // CONFIG_ESP_CONSOLE_IS_UART_ENABLED
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
+//
+// Usb CDC
+//
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 /* Buffer for CDC data structures. No RX buffer allocated. */
 static char s_usb_cdc_buf[ESP_ROM_CDC_ACM_WORK_BUF_MIN];
 
-void bootloader_console_init(void)
+void bootloader_console_init_usb_cdc(void)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     /* ESP32-S2 specific patch to set the correct serial number in the descriptor.
@@ -98,11 +107,33 @@ void bootloader_console_init(void)
     esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
 }
-#endif //CONFIG_ESP_CONSOLE_USB_CDC
+#endif // CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 
-#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-void bootloader_console_init(void)
+//
+// Usb Serial/JTAG
+//
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
+void bootloader_console_init_usb_serial_jtag(void)
 {
     esp_rom_uart_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
 }
-#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
+
+//
+// Init All
+//
+void bootloader_console_init(void)
+{
+#if CONFIG_ESP_CONSOLE_IS_NONE_ENABLED
+    bootloader_console_init_none();
+#endif
+#if CONFIG_ESP_CONSOLE_IS_UART_ENABLED
+    bootloader_console_init_uart();
+#endif
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
+    bootloader_console_init_usb_cdc();
+#endif
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
+    bootloader_console_init_usb_serial_jtag();
+#endif
+}

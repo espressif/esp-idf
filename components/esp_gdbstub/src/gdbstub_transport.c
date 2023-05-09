@@ -13,6 +13,7 @@
 #include "hal/uart_ll.h"
 #endif
 
+// note: we only interact with usb serial jtag if it is enabled as the primary console
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 int esp_gdbstub_getchar(void)

@@ -227,42 +227,54 @@ menu "ESP System Settings"
             - On chips with an USB serial/JTAG debug controller, selecting the option
               for that redirects output to the CDC/ACM (serial port emulation) component
               of that device.
+
         config ESP_CONSOLE_UART_DEFAULT
             bool "Default: UART0"
+
         config ESP_CONSOLE_USB_CDC
             bool "USB CDC"
             # && !TINY_USB is because the ROM CDC driver is currently incompatible with TinyUSB.
-            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
+            depends on SOC_USB_OTG_SUPPORTED  && !TINY_USB
+
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
             select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32C3  #ESPTOOL-252
             depends on SOC_USB_SERIAL_JTAG_SUPPORTED
+
         config ESP_CONSOLE_UART_CUSTOM
             bool "Custom UART"
+
         config ESP_CONSOLE_NONE
             bool "None"
     endchoice
 
     choice ESP_CONSOLE_SECONDARY
-        depends on SOC_USB_SERIAL_JTAG_SUPPORTED
         prompt "Channel for console secondary output"
-        default ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+        default ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG if SOC_USB_SERIAL_JTAG_SUPPORTED
+        default ESP_CONSOLE_SECONDARY_NONE
         help
-            This secondary option supports output through other specific port like USB_SERIAL_JTAG
-            when UART0 port as a primary is selected but not connected. This secondary output currently only supports
-            non-blocking mode without using REPL. If you want to output in blocking mode with REPL or
-            input through this secondary port, please change the primary config to this port
-            in `Channel for console output` menu.
+            This secondary output currently only supports non-blocking mode without using REPL.
+            If you want to output in blocking mode with REPL or input through this secondary port,
+            please change the primary config to this port in `Channel for console output` menu.
+
         config ESP_CONSOLE_SECONDARY_NONE
             bool "No secondary console"
+
+        config ESP_CONSOLE_SECONDARY_UART_DEFAULT
+            bool "Default: UART0"
+            depends on !ESP_CONSOLE_UART_DEFAULT && !ESP_CONSOLE_UART_CUSTOM
+
+        config ESP_CONSOLE_SECONDARY_USB_CDC
+            bool "USB CDC"
+            depends on SOC_USB_OTG_SUPPORTED && !ESP_CONSOLE_USB_CDC && !TINY_USB
+
         config ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-            bool "USB_SERIAL_JTAG PORT"
-            depends on !ESP_CONSOLE_USB_SERIAL_JTAG
-            help
-                This option supports output through USB_SERIAL_JTAG port when the UART0 port is not connected.
-                The output currently only supports non-blocking mode without using the console.
-                If you want to output in blocking mode with REPL or input through USB_SERIAL_JTAG port,
-                please change the primary config to ESP_CONSOLE_USB_SERIAL_JTAG above.
+            bool "USB Serial/JTAG Controller"
+            depends on SOC_USB_SERIAL_JTAG_SUPPORTED && !ESP_CONSOLE_USB_SERIAL_JTAG
+
+        config ESP_CONSOLE_SECONDARY_UART_CUSTOM
+            bool "Custom UART"
+            depends on !ESP_CONSOLE_UART_DEFAULT && !ESP_CONSOLE_UART_CUSTOM
     endchoice
 
     config ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
@@ -271,9 +283,41 @@ menu "ESP System Settings"
         default y if ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 
     config ESP_CONSOLE_UART
-        # Internal option, indicates that console UART is used (and not USB, for example)
+        # Internal option, if primary uart is enabled
         bool
         default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
+
+    config ESP_CONSOLE_SECONDARY_UART
+        # Internal option, if secondary uart is enabled
+        bool
+        default y if ESP_CONSOLE_SECONDARY_UART_DEFAULT || ESP_CONSOLE_SECONDARY_UART_CUSTOM
+
+    config ESP_CONSOLE_IS_UART_ENABLED
+        # Internal option, indicates that either the primary or secondary
+        # Uart Console is enabled
+        bool
+        default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
+        default y if ESP_CONSOLE_SECONDARY_UART_DEFAULT || ESP_CONSOLE_SECONDARY_UART_CUSTOM
+
+    config ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
+        # Internal option, indicates that either the primary or secondary
+        # Usb Serial/JTAG Console is enabled
+        bool
+        default y if ESP_CONSOLE_USB_SERIAL_JTAG
+        default y if ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+
+    config ESP_CONSOLE_IS_USB_CDC_ENABLED
+        # Internal option, indicates that either the primary or secondary
+        # USB CDC Console is enabled
+        bool
+        default y if ESP_CONSOLE_USB_CDC
+        default y if ESP_CONSOLE_SECONDARY_USB_CDC
+
+    config ESP_CONSOLE_IS_NONE_ENABLED
+        # Internal option, indicates that neither
+        # the primary nor secondary are enabled
+        bool
+        default y if ESP_CONSOLE_NONE && ESP_CONSOLE_SECONDARY_NONE
 
     config ESP_CONSOLE_MULTIPLE_UART
         bool
@@ -281,7 +325,7 @@ menu "ESP System Settings"
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"
-        depends on ESP_CONSOLE_UART_CUSTOM && ESP_CONSOLE_MULTIPLE_UART
+        depends on (ESP_CONSOLE_UART_CUSTOM || ESP_CONSOLE_SECONDARY_UART_CUSTOM) && ESP_CONSOLE_MULTIPLE_UART
         default ESP_CONSOLE_UART_CUSTOM_NUM_0
         help
             This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.
@@ -300,7 +344,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_UART_NUM
         int
-        default 0 if ESP_CONSOLE_UART_DEFAULT
+        default 0 if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_SECONDARY_UART_DEFAULT
         default 0 if !ESP_CONSOLE_MULTIPLE_UART
         default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
@@ -326,7 +370,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_UART_RX_GPIO
         int "UART RX on GPIO#"
-        depends on ESP_CONSOLE_UART_CUSTOM
+        depends on ESP_CONSOLE_UART_CUSTOM || ESP_CONSOLE_SECONDARY_UART_CUSTOM
         range 0 46
         default 3 if IDF_TARGET_ESP32
         default 19 if IDF_TARGET_ESP32C2
@@ -347,8 +391,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_UART_BAUDRATE
         int
-        prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
-        depends on ESP_CONSOLE_UART
+        prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM || ESP_CONSOLE_SECONDARY_UART_CUSTOM
         default 74880 if (IDF_TARGET_ESP32C2 && XTAL_FREQ_26)
         default 115200
         range 1200 4000000 if !PM_ENABLE
@@ -368,7 +411,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_USB_CDC_RX_BUF_SIZE
         int "Size of USB CDC RX buffer"
-        depends on ESP_CONSOLE_USB_CDC
+        depends on ESP_CONSOLE_IS_USB_CDC_ENABLED
         default 64
         range 4 16384
         help
@@ -377,7 +420,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
         bool "Enable esp_rom_printf / ESP_EARLY_LOG via USB CDC"
-        depends on ESP_CONSOLE_USB_CDC
+        depends on ESP_CONSOLE_IS_USB_CDC_ENABLED
         default n
         help
             If enabled, esp_rom_printf and ESP_EARLY_LOG output will also be sent over USB CDC.

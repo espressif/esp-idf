@@ -726,6 +726,7 @@ int esp_pm_impl_get_cpu_freq(pm_mode_t mode)
 
 void esp_pm_impl_init(void)
 {
+// Note: we only interact with the primary console
 #if defined(CONFIG_ESP_CONSOLE_UART)
     //This clock source should be a source which won't be affected by DFS
     uart_sclk_t clk_source = UART_SCLK_DEFAULT;

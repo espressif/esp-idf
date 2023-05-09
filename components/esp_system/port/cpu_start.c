@@ -214,10 +214,10 @@ void IRAM_ATTR call_start_cpu1(void)
 
     bootloader_init_mem();
 
-#if CONFIG_ESP_CONSOLE_NONE
+#if CONFIG_ESP_CONSOLE_IS_NONE_ENABLED
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
-#else // CONFIG_ESP_CONSOLE_NONE
+#else // CONFIG_ESP_CONSOLE_IS_NONE_ENABLED
     esp_rom_install_uart_printf();
     esp_rom_uart_set_as_console(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
@@ -677,7 +677,7 @@ void IRAM_ATTR call_start_cpu0(void)
     core_intr_matrix_clear();
 
 #ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
-#ifdef CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_IS_UART_ENABLED
     uint32_t clock_hz = esp_clk_apb_freq();
 #if ESP_ROM_UART_CLK_IS_XTAL
     clock_hz = esp_clk_xtal_freq(); // From esp32-s3 on, UART clock source is selected to XTAL in ROM

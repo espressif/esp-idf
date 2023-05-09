@@ -58,7 +58,7 @@
 #include "esp_gdbstub.h"
 #endif
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 #include "hal/usb_serial_jtag_ll.h"
 #endif
 
@@ -71,7 +71,7 @@ static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
-#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_IS_UART_ENABLED
 static uart_hal_context_t s_panic_uart = { .dev = CONFIG_ESP_CONSOLE_UART_NUM == 0 ? &UART0 :&UART1 };
 
 static void panic_print_char_uart(const char c)
@@ -80,18 +80,18 @@ static void panic_print_char_uart(const char c)
     while (!uart_hal_get_txfifo_len(&s_panic_uart));
     uart_hal_write_txfifo(&s_panic_uart, (uint8_t *) &c, 1, &sz);
 }
-#endif // CONFIG_ESP_CONSOLE_UART
+#endif // CONFIG_ESP_CONSOLE_IS_UART_ENABLED
 
 
-#if CONFIG_ESP_CONSOLE_USB_CDC
-static void panic_print_char_usb_cdc(const char c)
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
+void panic_print_char_usb_cdc(const char c)
 {
     esp_usb_console_write_buf(&c, 1);
     /* result ignored */
 }
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
+#endif // CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 //Timeout; if there's no host listening, the txfifo won't ever
 //be writable after the first packet.
 
@@ -109,18 +109,17 @@ static void panic_print_char_usb_serial_jtag(const char c)
         s_usbserial_timeout = 0;
     }
 }
-#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 
 void panic_print_char(const char c)
 {
-#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_IS_UART_ENABLED
     panic_print_char_uart(c);
 #endif
-#if CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
     panic_print_char_usb_cdc(c);
 #endif
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
     panic_print_char_usb_serial_jtag(c);
 #endif
 }
@@ -178,7 +177,7 @@ void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms)
 {
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 #if SOC_TIMER_GROUPS >= 2
-	// IDF-3825
+    // IDF-3825
     wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 #endif
 
