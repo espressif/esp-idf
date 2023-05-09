@@ -11,8 +11,8 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct emac_ext_dev_t {
-    union {
+typedef struct emac_ext_dev_s {
+    volatile union {
         struct {
             uint32_t div_num : 4;
             uint32_t h_div_num : 4;
@@ -21,7 +21,7 @@ typedef volatile struct emac_ext_dev_t {
         };
         uint32_t val;
     } ex_clkout_conf;
-    union {
+    volatile union {
         struct {
             uint32_t div_num_10m : 6;
             uint32_t h_div_num_10m : 6;
@@ -32,7 +32,7 @@ typedef volatile struct emac_ext_dev_t {
         };
         uint32_t val;
     } ex_oscclk_conf;
-    union {
+    volatile union {
         struct {
             uint32_t ext_en : 1;
             uint32_t int_en : 1;
@@ -44,7 +44,7 @@ typedef volatile struct emac_ext_dev_t {
         };
         uint32_t val;
     } ex_clk_ctrl;
-    union {
+    volatile union {
         struct {
             uint32_t int_revmii_rx_clk_sel : 1;
             uint32_t ext_revmii_rx_clk_sel : 1;
@@ -61,7 +61,7 @@ typedef volatile struct emac_ext_dev_t {
         };
         uint32_t val;
     } ex_phyinf_conf;
-    union {
+    volatile union {
         struct {
             uint32_t ram_pd_en : 2;
             uint32_t reserved2 : 30;
