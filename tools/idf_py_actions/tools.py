@@ -134,46 +134,57 @@ def debug_print_idf_version() -> None:
     print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
-def generate_hints(*filenames: str) -> Generator:
-    """Getting output files and printing hints on how to resolve errors based on the output."""
+def load_hints() -> Any:
+    """Helper function to load hints yml file"""
     with open(os.path.join(os.path.dirname(__file__), 'hints.yml'), 'r') as file:
         hints = yaml.safe_load(file)
+    return hints
+
+
+def generate_hints_buffer(output: str, hints: list) -> Generator:
+    """Helper function to process hints within a string buffer"""
+    for hint in hints:
+        variables_list = hint.get('variables')
+        hint_list, hint_vars, re_vars = [], [], []
+        match: Optional[Match[str]] = None
+        try:
+            if variables_list:
+                for variables in variables_list:
+                    hint_vars = variables['hint_variables']
+                    re_vars = variables['re_variables']
+                    regex = hint['re'].format(*re_vars)
+                    if re.compile(regex).search(output):
+                        try:
+                            hint_list.append(hint['hint'].format(*hint_vars))
+                        except KeyError as e:
+                            red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
+                            sys.exit(1)
+            else:
+                match = re.compile(hint['re']).search(output)
+        except KeyError as e:
+            red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
+            sys.exit(1)
+        except re.error as e:
+            red_print('{} from hints.yml have {} problem. Check hints.yml file.'.format(hint['re'], e))
+            sys.exit(1)
+        if hint_list:
+            for message in hint_list:
+                yield ' '.join(['HINT:', message])
+        elif match:
+            extra_info = ', '.join(match.groups()) if hint.get('match_to_output', '') else ''
+            try:
+                yield ' '.join(['HINT:', hint['hint'].format(extra_info)])
+            except KeyError:
+                raise KeyError("Argument 'hint' missing in {}. Check hints.yml file.".format(hint))
+
+
+def generate_hints(*filenames: str) -> Generator:
+    """Getting output files and printing hints on how to resolve errors based on the output."""
+    hints = load_hints()
     for file_name in filenames:
         with open(file_name, 'r') as file:
             output = ' '.join(line.strip() for line in file if line.strip())
-        for hint in hints:
-            variables_list = hint.get('variables')
-            hint_list, hint_vars, re_vars = [], [], []
-            match: Optional[Match[str]] = None
-            try:
-                if variables_list:
-                    for variables in variables_list:
-                        hint_vars = variables['hint_variables']
-                        re_vars = variables['re_variables']
-                        regex = hint['re'].format(*re_vars)
-                        if re.compile(regex).search(output):
-                            try:
-                                hint_list.append(hint['hint'].format(*hint_vars))
-                            except KeyError as e:
-                                red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
-                                sys.exit(1)
-                else:
-                    match = re.compile(hint['re']).search(output)
-            except KeyError as e:
-                red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
-                sys.exit(1)
-            except re.error as e:
-                red_print('{} from hints.yml have {} problem. Check hints.yml file.'.format(hint['re'], e))
-                sys.exit(1)
-            if hint_list:
-                for message in hint_list:
-                    yield ' '.join(['HINT:', message])
-            elif match:
-                extra_info = ', '.join(match.groups()) if hint.get('match_to_output', '') else ''
-                try:
-                    yield ' '.join(['HINT:', hint['hint'].format(extra_info)])
-                except KeyError:
-                    raise KeyError("Argument 'hint' missing in {}. Check hints.yml file.".format(hint))
+            yield from generate_hints_buffer(output, hints)
 
 
 def fit_text_in_terminal(out: str) -> str:
@@ -236,8 +247,10 @@ class RunTool:
             return
 
         if stderr_output_file and stdout_output_file:
-            for hint in generate_hints(stderr_output_file, stdout_output_file):
-                yellow_print(hint)
+            # hints in interactive mode were already processed, don't print them again
+            if not self.interactive:
+                for hint in generate_hints(stderr_output_file, stdout_output_file):
+                    yellow_print(hint)
             raise FatalError('{} failed with exit code {}, output of the command is in the {} and {}'.format(self.tool_name, process.returncode,
                              stderr_output_file, stdout_output_file))
 
@@ -308,6 +321,10 @@ class RunTool:
         # use ANSI color converter for Monitor on Windows
         output_converter = get_ansi_converter(output_stream) if self.convert_output else output_stream
 
+        # used in interactive mode to print hints after matched line
+        hints = load_hints()
+        last_line = ''
+
         try:
             with open(output_filename, 'w', encoding='utf8') as output_file:
                 while True:
@@ -317,6 +334,7 @@ class RunTool:
                         output = await read_stream()
                     if not output:
                         break
+
                     output_noescape = delete_ansi_escape(output)
                     # Always remove escape sequences when writing the build log.
                     output_file.write(output_noescape)
@@ -332,6 +350,14 @@ class RunTool:
                     else:
                         output_converter.write(output)
                         output_converter.flush()
+
+                        # process hints for last line and print them right away
+                        if self.interactive:
+                            last_line += output
+                            if last_line[-1] == '\n':
+                                for hint in generate_hints_buffer(last_line, hints):
+                                    yellow_print(hint)
+                                last_line = ''
         except (RuntimeError, EnvironmentError) as e:
             yellow_print('WARNING: The exception {} was raised and we can\'t capture all your {} and '
                          'hints on how to resolve errors can be not accurate.'.format(e, output_stream.name.strip('<>')))
