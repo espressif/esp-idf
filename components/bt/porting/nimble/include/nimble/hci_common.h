@@ -34,8 +34,8 @@
 extern "C" {
 #endif
 
-#define BLE_HCI_MAX_DATA_LEN (MYNEWT_VAL(BLE_TRANSPORT_EVT_SIZE) - \
-                              sizeof(struct ble_hci_ev))
+#define BLE_HCI_MAX_DATA_LEN    (MYNEWT_VAL(BLE_TRANSPORT_EVT_SIZE) - \
+                                 sizeof(struct ble_hci_ev))
 
 /* Generic command header */
 struct ble_hci_cmd {
@@ -490,20 +490,20 @@ struct ble_hci_le_rd_resolv_list_size_rp {
 } __attribute__((packed));
 
 #define BLE_HCI_OCF_LE_RD_PEER_RESOLV_ADDR          (0x002B)
-struct ble_hci_le_rd_peer_recolv_addr_cp {
+struct ble_hci_le_rd_peer_resolv_addr_cp {
     uint8_t peer_addr_type;
     uint8_t peer_id_addr[6];
 } __attribute__((packed));
-struct ble_hci_le_rd_peer_recolv_addr_rp {
+struct ble_hci_le_rd_peer_resolv_addr_rp {
     uint8_t rpa[6];
 } __attribute__((packed));
 
 #define BLE_HCI_OCF_LE_RD_LOCAL_RESOLV_ADDR         (0x002C)
-struct ble_hci_le_rd_local_recolv_addr_cp {
+struct ble_hci_le_rd_local_resolv_addr_cp {
     uint8_t peer_addr_type;
     uint8_t peer_id_addr[6];
 } __attribute__((packed));
-struct ble_hci_le_rd_local_recolv_addr_rp {
+struct ble_hci_le_rd_local_resolv_addr_rp {
     uint8_t rpa[6];
 } __attribute__((packed));
 
@@ -1129,8 +1129,9 @@ struct ble_hci_le_subrate_req_cp {
     uint16_t supervision_tmo;
 } __attribute__((packed));
 
-/* --- Vendor specific commands (OGF 0x00FF) */
-#define BLE_HCI_OCF_VS_RD_STATIC_ADDR                 (0x0001)
+/* --- Vendor specific commands (OGF 0x003F) */
+/* Read Random Static Address */
+#define BLE_HCI_OCF_VS_RD_STATIC_ADDR                   (MYNEWT_VAL(BLE_HCI_VS_OCF_OFFSET) + (0x0001))
 struct ble_hci_vs_rd_static_addr_rp {
     uint8_t addr[6];
 } __attribute__((packed));
@@ -1520,8 +1521,8 @@ struct ble_hci_ev_auth_pyld_tmo {
 
 #define BLE_HCI_EVCODE_SAM_STATUS_CHG       (0x58)
 
-#define BLE_HCI_EVCODE_VENDOR_DEBUG         (0xFF)
-struct ble_hci_ev_vendor_debug {
+#define BLE_HCI_EVCODE_VS_DEBUG             (0xFF)
+struct ble_hci_ev_vs_debug {
     uint8_t id;
     uint8_t data[0];
 } __attribute__((packed));
@@ -1959,7 +1960,9 @@ struct ble_hci_ev_le_subev_subrate_change {
 #elif MYNEWT_VAL(BLE_VERSION) == 52
 #define BLE_HCI_VER_BCS BLE_HCI_VER_BCS_5_2
 #define BLE_LMP_VER_BCS BLE_LMP_VER_BCS_5_2
-
+#elif MYNEWT_VAL(BLE_VERSION) == 53
+#define BLE_HCI_VER_BCS BLE_HCI_VER_BCS_5_3
+#define BLE_LMP_VER_BCS BLE_LMP_VER_BCS_5_3
 #endif
 
 #define BLE_HCI_DATA_HDR_SZ                 4
@@ -1967,7 +1970,8 @@ struct ble_hci_ev_le_subev_subrate_change {
 #define BLE_HCI_DATA_PB(handle_pb_bc)       (((handle_pb_bc) & 0x3000) >> 12)
 #define BLE_HCI_DATA_BC(handle_pb_bc)       (((handle_pb_bc) & 0xc000) >> 14)
 
-struct hci_data_hdr {
+struct hci_data_hdr
+{
     uint16_t hdh_handle_pb_bc;
     uint16_t hdh_len;
 };
