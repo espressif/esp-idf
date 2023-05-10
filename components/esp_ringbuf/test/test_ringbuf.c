@@ -1019,6 +1019,7 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
 }
 #endif
 
+#if !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
 /* -------------------------- Test ring buffer IRAM ------------------------- */
 
 static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
@@ -1044,3 +1045,4 @@ TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[esp_ring
 {
     TEST_ASSERT( iram_ringbuf_test() );
 }
+#endif /* !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH */
