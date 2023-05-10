@@ -267,23 +267,23 @@ menu "Memory Settings"
         help
                 Dynamic memory size of block 2
 
-    config BT_NIMBLE_ACL_BUF_COUNT
+    config BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT
         int "ACL Buffer count"
         depends on BT_NIMBLE_ENABLED
         default 24
         help
-            The number of ACL data buffers.
+            The number of ACL data buffers allocated for host.
 
-    config BT_NIMBLE_ACL_BUF_SIZE
-        int "ACL Buffer size"
+    config BT_NIMBLE_TRANSPORT_ACL_SIZE
+        int "Transport ACL Buffer size"
         depends on BT_NIMBLE_ENABLED
         default 255
         help
             This is the maximum size of the data portion of HCI ACL data packets.
             It does not include the HCI data header (of 4 bytes)
 
-    config BT_NIMBLE_HCI_EVT_BUF_SIZE
-        int "HCI Event Buffer size"
+    config BT_NIMBLE_TRANSPORT_EVT_SIZE
+        int "Transport Event Buffer size"
         depends on BT_NIMBLE_ENABLED
         default 257 if BT_NIMBLE_EXT_ADV
         default 70
@@ -292,8 +292,8 @@ menu "Memory Settings"
             extended advertising, packets can be fragmented. 257 bytes is the
             maximum size of a packet.
 
-    config BT_NIMBLE_HCI_EVT_HI_BUF_COUNT
-        int "High Priority HCI Event Buffer count"
+    config BT_NIMBLE_TRANSPORT_EVT_COUNT
+        int "Transport Event Buffer count"
         depends on BT_NIMBLE_ENABLED
         default 30
         help
@@ -302,8 +302,8 @@ menu "Memory Settings"
             are no free high-priority event buffers then host will try to allocate a
             low-priority buffer instead
 
-    config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
-        int "Low Priority HCI Event Buffer count"
+    config BT_NIMBLE_TRANSPORT_EVT_DISCARD_COUNT
+        int "Discardable Transport Event Buffer count"
         depends on BT_NIMBLE_ENABLED
         default 8
         help
