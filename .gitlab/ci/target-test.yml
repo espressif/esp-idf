@@ -97,6 +97,22 @@ pytest_examples_esp32_jtag:
     SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
+pytest_examples_esp32_ccs811:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-ccs811
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ccs811 ]
+
+pytest_examples_esp32_sdio:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-sdio
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, sdio_master_slave ]
+
 pytest_examples_esp32s2_generic:
   extends:
     - .pytest_examples_dir_template
@@ -1106,12 +1122,6 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
-.example_test_003:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_SDIO
-
 example_test_005:
   extends:
     - .example_test_esp32_template
@@ -1119,12 +1129,6 @@ example_test_005:
   tags:
     - ESP32
     - Example_WIFI_BT
-
-example_test_007:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_I2C_CCS811_SENSOR
 
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template

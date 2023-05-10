@@ -246,6 +246,7 @@
   - "components/driver/include/driver/sdio*.h"
   - "components/driver/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
+  - "examples/peripherals/sdio/**/*"
 
 # for jobs: component_ut_pytest_sdio related
 .patterns-component_ut-sdio: &patterns-component_ut-sdio
@@ -258,6 +259,13 @@
   - "components/driver/include/driver/sdio*.h"
   - "components/driver/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
+
+.patterns-example_test-ccs811: &patterns-example_test-ccs811
+  # components
+  - "examples/system/console/advanced/components/**/*"
+  - "components/driver/i2c/**/*"
+  # tests
+  - "examples/peripherals/i2c/i2c_tools/**/*"
 
 # for jobs: UT_xx_SDSPI related
 .patterns-unit_test-sdio: &patterns-unit_test-sdio
@@ -509,9 +517,6 @@
 .if-label-example_test_esp32s3: &if-label-example_test_esp32s3
   if: '$BOT_LABEL_EXAMPLE_TEST_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32s3(?:,[^,\n\r]+)*$/i'
 
-.if-label-fuzzer_test: &if-label-fuzzer_test
-  if: '$BOT_LABEL_FUZZER_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*fuzzer_test(?:,[^,\n\r]+)*$/i'
-
 .if-label-host_test: &if-label-host_test
   if: '$BOT_LABEL_HOST_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*host_test(?:,[^,\n\r]+)*$/i'
 
@@ -523,9 +528,6 @@
 
 .if-label-integration_test_wifi: &if-label-integration_test_wifi
   if: '$BOT_LABEL_INTEGRATION_TEST_WIFI || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test_wifi(?:,[^,\n\r]+)*$/i'
-
-.if-label-iperf_stress_test: &if-label-iperf_stress_test
-  if: '$BOT_LABEL_IPERF_STRESS_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*iperf_stress_test(?:,[^,\n\r]+)*$/i'
 
 .if-label-lan8720: &if-label-lan8720
   if: '$BOT_LABEL_LAN8720 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*lan8720(?:,[^,\n\r]+)*$/i'
@@ -568,9 +570,6 @@
 
 .if-label-unit_test_esp32s3: &if-label-unit_test_esp32s3
   if: '$BOT_LABEL_UNIT_TEST_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s3(?:,[^,\n\r]+)*$/i'
-
-.if-label-weekend_test: &if-label-weekend_test
-  if: '$BOT_LABEL_WEEKEND_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*weekend_test(?:,[^,\n\r]+)*$/i'
 
 .if-label-windows: &if-label-windows
   if: '$BOT_LABEL_WINDOWS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*windows(?:,[^,\n\r]+)*$/i'
@@ -889,7 +888,6 @@
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-target_test
-    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -916,7 +914,6 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
     - <<: *if-label-target_test
-    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -1121,7 +1118,6 @@
     - <<: *if-label-example_test_esp32h2
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
-    - <<: *if-label-iperf_stress_test
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
@@ -1135,6 +1131,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1163,7 +1161,6 @@
     - <<: *if-label-build
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
-    - <<: *if-label-iperf_stress_test
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
@@ -1177,6 +1174,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1217,6 +1216,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1259,6 +1260,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1298,6 +1301,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1339,6 +1344,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1379,6 +1386,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
+    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1418,6 +1427,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1505,7 +1516,6 @@
     - <<: *if-label-integration_test
     - <<: *if-label-integration_test_ble
     - <<: *if-label-integration_test_wifi
-    - <<: *if-label-iperf_stress_test
     - <<: *if-label-lan8720
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
@@ -1516,7 +1526,6 @@
     - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
-    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -1539,6 +1548,8 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -2338,6 +2349,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
+
+.rules:test:example_test-esp32-ccs811:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ccs811
 
 .rules:test:example_test-esp32-ethernet:
   rules:
