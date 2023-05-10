@@ -559,7 +559,7 @@ static void send_offer(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 
     end = add_msg_type(&m->options[4], DHCPOFFER);
     end = add_offer_options(dhcps, end);
-    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPOFFER, &end)
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPOFFER, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -637,7 +637,7 @@ static void send_nak(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     create_msg(dhcps, m);
 
     end = add_msg_type(&m->options[4], DHCPNAK);
-    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPNAK, &end)
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPNAK, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -714,7 +714,7 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 
     end = add_msg_type(&m->options[4], DHCPACK);
     end = add_offer_options(dhcps, end);
-    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPACK, &end)
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPACK, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
