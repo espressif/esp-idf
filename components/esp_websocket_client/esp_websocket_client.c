@@ -759,6 +759,22 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client)
     return ESP_OK;
 }
 
+esp_err_t esp_websocket_client_setPingInterval(esp_websocket_client_handle_t client, size_t ping_interval_sec)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (client->config == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (ping_interval_sec == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    client->config->ping_interval_sec = ping_interval_sec;
+
+    return ESP_OK;
+}
+
 static int esp_websocket_client_send_close(esp_websocket_client_handle_t client, int code, const char *additional_data, int total_len, TickType_t timeout)
 {
     uint8_t *close_status_data = NULL;

@@ -155,6 +155,20 @@ esp_err_t esp_websocket_client_start(esp_websocket_client_handle_t client);
 esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client);
 
 /**
+ * @brief       Sets the ping interval for the WebSocket connection
+ *
+ * This API sets the ping interval for the WebSocket connection. If the ping
+ * interval is set to 0, an error will be returned with ESP_ERR_INVALID_ARG.
+ *
+ * @param[in] client The client
+ *
+ * @param[in] ping_interval_sec The ping interval in seconds
+ *
+ * @return esp_err_t
+ */
+esp_err_t esp_websocket_client_setPingInterval(esp_websocket_client_handle_t client, size_t ping_interval_sec);
+
+/**
  * @brief      Destroy the WebSocket connection and free all resources.
  *             This function must be the last function to call for an session.
  *             It is the opposite of the esp_websocket_client_init function and must be called with the same handle as input that a esp_websocket_client_init call returned.
