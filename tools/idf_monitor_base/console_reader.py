@@ -30,6 +30,15 @@ class ConsoleReader(StoppableThread):
     def run(self):
         # type: () -> None
         self.console.setup()
+        if os.name == 'posix':
+            # Use non-blocking busy read to avoid using unsecure TIOCSTI from console.cancel().
+            # TIOCSTI is not supported on kernels newer than 6.2.
+            import termios
+            new = termios.tcgetattr(self.console.fd)
+            # new[6] - 'cc': a list of the tty special characters
+            new[6][termios.VMIN] = 0  # minimum bytes to read
+            new[6][termios.VTIME] = 2  # timer of 0.1 second granularity
+            termios.tcsetattr(self.console.fd, termios.TCSANOW, new)
         try:
             while self.alive:
                 try:
@@ -53,7 +62,7 @@ class ConsoleReader(StoppableThread):
                     c = self.console.getkey()
                 except KeyboardInterrupt:
                     c = '\x03'
-                if c is not None:
+                if c:
                     ret = self.parser.parse(c)
                     if ret is not None:
                         (tag, cmd) = ret
@@ -65,22 +74,3 @@ class ConsoleReader(StoppableThread):
 
         finally:
             self.console.cleanup()
-
-    def _cancel(self):
-        # type: () -> None
-        if os.name == 'posix' and not self.test_mode:
-            # this is the way cancel() is implemented in pyserial 3.3 or newer,
-            # older pyserial (3.1+) has cancellation implemented via 'select',
-            # which does not work when console sends an escape sequence response
-            #
-            # even older pyserial (<3.1) does not have this method
-            #
-            # on Windows there is a different (also hacky) fix, applied above.
-            #
-            # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
-            # TODO: introduce some workaround to make it work there.
-            #
-            # Note: This would throw exception in testing mode when the stdin is connected to PTY.
-            import fcntl
-            import termios
-            fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
