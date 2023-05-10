@@ -28,6 +28,73 @@
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
+/* ---------------------------------- Tasks --------------------------------- */
+
+    BaseType_t xTaskCreatePinnedToCoreWithCaps( TaskFunction_t pvTaskCode,
+                                                const char * const pcName,
+                                                const configSTACK_DEPTH_TYPE usStackDepth,
+                                                void * const pvParameters,
+                                                UBaseType_t uxPriority,
+                                                TaskHandle_t * const pvCreatedTask,
+                                                const BaseType_t xCoreID,
+                                                UBaseType_t uxMemoryCaps )
+    {
+        TaskHandle_t xHandle;
+        StaticTask_t * pxTaskBuffer;
+        StackType_t * pxStack;
+
+        /* Allocate memory for the task's TCB. We use pvPortMalloc() here as the
+         * TCB must be in internal memory. */
+        pxTaskBuffer = pvPortMalloc( sizeof( StaticTask_t ) );
+
+        /* Allocate memory for the task's stack using the provided memory caps
+         * */
+        pxStack = heap_caps_malloc( usStackDepth, ( uint32_t ) uxMemoryCaps );
+
+        if( ( pxTaskBuffer == NULL ) || ( pxStack == NULL ) )
+        {
+            goto err;
+        }
+
+        /* Create the task using static creation API*/
+        xHandle = xTaskCreateStaticPinnedToCore( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxStack, pxTaskBuffer, xCoreID );
+
+        if( xHandle == NULL )
+        {
+            /* Failed to create task */
+            goto err;
+        }
+        else if( pvCreatedTask != NULL )
+        {
+            /* Task created successfully. Return the task handle */
+            *pvCreatedTask = xHandle;
+        }
+
+        return pdPASS;
+
+err:
+        heap_caps_free( pxStack );
+        vPortFree( pxTaskBuffer );
+        return pdFAIL;
+    }
+
+    void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
+    {
+        BaseType_t xResult;
+        StaticTask_t * pxTaskBuffer;
+        StackType_t * puxStackBuffer;
+
+        xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
+        configASSERT( xResult == pdTRUE );
+
+        /* Delete the task */
+        vTaskDelete( xTaskToDelete );
+
+        /* Free the memory buffers */
+        heap_caps_free( puxStackBuffer );
+        vPortFree( pxTaskBuffer );
+    }
+
 /* ---------------------------------- Queue --------------------------------- */
 
     QueueHandle_t xQueueCreateWithCaps( UBaseType_t uxQueueLength,

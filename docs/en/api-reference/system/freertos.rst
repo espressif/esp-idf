@@ -118,10 +118,15 @@ FreeRTOS Additions
 
 ESP-IDF provides some supplemental features to FreeRTOS such as Ring Buffers, ESP-IDF style Tick and Idle Hooks, and TLSP deletion callbacks. See :doc:`freertos_additions` for more details.
 
+.. _freertos-heap:
+
 FreeRTOS Heap
 -------------
 
 Vanilla FreeRTOS provides its own `selection of heap implementations <https://www.freertos.org/a00111.html>`_. However, ESP-IDF already implements its own heap (see :doc:`/api-reference/system/mem_alloc`), thus ESP-IDF does not make use of the heap implementations provided by Vanilla FreeRTOS. All FreeRTOS ports in ESP-IDF map FreeRTOS memory allocation/free calls (e.g., ``pvPortMalloc()`` and ``pvPortFree()``) to ESP-IDF heap API (i.e., :cpp:func:`heap_caps_malloc` and :cpp:func:`heap_caps_free`). However, the FreeRTOS ports ensure that all dynamic memory allocated by FreeRTOS is placed in internal memory.
 
 .. note::
-    If users wish to place FreeRTOS objects in external memory, users should allocate those objects manually using :cpp:func:`heap_caps_malloc`, then create the object using the object's ``...CreateStatic()`` function.
+    If users wish to place FreeRTOS tasks/objects in external memory, users can use the following methods:
+
+    - Allocate the task/object using one of the ``...CreateWithCaps()`` API such as :cpp:func:`xTaskCreateWithCaps` and :cpp:func:`xQueueCreateWithCaps` (see :ref:`freertos-idf-additional-api` for more details).
+    - Manually allocate external memory for those objects using :cpp:func:`heap_caps_malloc`, then create the objects from the allocated memory using on of the ``...CreateStatic()`` FreeRTOS functions.
