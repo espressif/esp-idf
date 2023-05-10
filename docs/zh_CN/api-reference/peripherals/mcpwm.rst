@@ -440,6 +440,22 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 - :cpp:member:`mcpwm_dead_time_config_t::posedge_delay_ticks` 和 :cpp:member:`mcpwm_dead_time_config_t::negedge_delay_ticks` 设置 PWM 波形上升沿和下降沿上的延迟时间，以 Tick 为单位。若将这两个参数设置为 0，则代表绕过死区模块。死区的 Tick 分辨率与通过 :cpp:func:`mcpwm_operator_connect_timer` 连接操作器的定时器相同。
 - :cpp:member:`mcpwm_dead_time_config_t::invert_output` 设置是否在应用死区后取反信号，以控制延迟边沿的极性。
 
+.. warning::
+
+    由于硬件限制，同一种 delay 模块（`posedge delay` 或者 `negedge delay`）不能同时被应用在不同的 MCPWM 生成器中。例如，以下配置是无效的：
+
+    .. code:: c
+
+        mcpwm_dead_time_config_t dt_config = {
+            .posedge_delay_ticks = 10,
+        };
+        // 给 generator A 叠加上升沿 delay
+        mcpwm_generator_set_dead_time(mcpwm_gen_a, mcpwm_gen_a, &dt_config);
+        // NOTE: 下面的操作是无效的，不能将同一种 delay 应用于不同的 generator 上
+        mcpwm_generator_set_dead_time(mcpwm_gen_b, mcpwm_gen_b, &dt_config);
+
+    然而，您可以为生成器 A 设置 `posedge delay`，为生成器 B 设置 `negedge delay`。另外，您也可以为生成器 A 同时设置 `posedge delay` 和 `negedge delay`，而让生成器 B 绕过死区模块。
+
 .. note::
 
     也可以通过设置 :ref:`mcpwm-generator-actions-on-events` 来生成所需的死区，通过不同的比较器来控制边沿位置。但是，如果需要使用经典的基于边沿延迟并附带极性控制的死区，则应使用死区子模块。

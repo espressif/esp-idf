@@ -591,6 +591,23 @@ static void redfedb_only_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle
     TEST_ESP_OK(mcpwm_generator_set_dead_time(genb, genb, &dead_time_config));
 }
 
+static void invalid_reda_redb_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
+{
+    mcpwm_dead_time_config_t dead_time_config = {
+        .posedge_delay_ticks = 10,
+    };
+    // generator_a adds delay on the posedge
+    TEST_ESP_OK(mcpwm_generator_set_dead_time(gena, gena, &dead_time_config));
+    // generator_b adds delay on the posedge as well, which is not allowed
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_generator_set_dead_time(genb, genb, &dead_time_config));
+    // bypass the delay module for generator_a
+    dead_time_config.posedge_delay_ticks = 0;
+    TEST_ESP_OK(mcpwm_generator_set_dead_time(gena, gena, &dead_time_config));
+    // now generator_b can add delay on the posedge
+    dead_time_config.posedge_delay_ticks = 10;
+    TEST_ESP_OK(mcpwm_generator_set_dead_time(genb, genb, &dead_time_config));
+}
+
 TEST_CASE("mcpwm_generator_deadtime_classical_configuration", "[mcpwm]")
 {
     printf("Active High Complementary\r\n");
@@ -613,6 +630,9 @@ TEST_CASE("mcpwm_generator_deadtime_classical_configuration", "[mcpwm]")
 
     printf("Bypass A, RED + FED on B\r\n");
     mcpwm_deadtime_test_template(1000000, 500, 350, 350, 0, 2, redfedb_only_set_generator_actions, redfedb_only_set_dead_time);
+
+    printf("Can't apply one delay module to multiple generators\r\n");
+    mcpwm_deadtime_test_template(1000000, 500, 350, 350, 0, 2, redfedb_only_set_generator_actions, invalid_reda_redb_set_dead_time);
 }
 
 TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
