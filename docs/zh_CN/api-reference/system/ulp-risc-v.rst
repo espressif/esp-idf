@@ -2,7 +2,7 @@ ULP RISC-V 协处理器编程
 ==================================
 :link_to_translation:`en:[English]`
 
-ULP RISC-V 协处理器是 ULP 的一种变体，用于 {IDF_TARGET_NAME}。与 ULP FSM 类似，ULP RISC-V 协处理器可以在主处理器处于低功耗模式时执行传感器读数等任务。其与 ULP FSM 的主要区别在于，ULP RISC-V 可以通过标准 GNU 工具使用 C 语言进行编程。ULP RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
+ULP RISC-V 协处理器是 ULP 的一种变体，用于 {IDF_TARGET_NAME}。与 ULP FSM 类似，ULP RISC-V 协处理器可以在主 CPU 处于低功耗模式时执行传感器读数等任务。其与 ULP FSM 的主要区别在于，ULP RISC-V 可以通过标准 GNU 工具使用 C 语言进行编程。ULP RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
 
 安装 ULP RISC-V 工具链
 -----------------------------------
@@ -18,7 +18,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
 要将 ULP RISC-V 代码编译为某组件的一部分，必须执行以下步骤：
 
-1. ULP RISC-V 代码以 C 语言或汇编语言编写（必须使用 `.S` 扩展名)，必须放在组件目录中一个独立的目录中，例如 `ulp/`。
+1. ULP RISC-V 代码以 C 语言或汇编语言编写（必须使用 `.S` 扩展名），必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
 .. note:: 当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前该步骤需用于 ULP FSM。如何正确添加 ULP 源文件，请见以下步骤。
 
@@ -68,7 +68,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
     int some_function()
     {
-        //read the measurement count for use it later.
+        //读取测量计数，后续需使用
         int temp = measurement_count;
 
         ...do something.
@@ -138,7 +138,7 @@ ULP 中的所有硬件指令都不支持互斥，所以 Lock API 需通过一种
 ULP RISC-V 程序流
 -----------------------
 
-{IDF_TARGET_RTC_CLK_FRE:default="150kHz", esp32s2="90kHz", esp32s3="136kHz"}
+{IDF_TARGET_RTC_CLK_FRE:default="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz"}
 
 ULP RISC-V 协处理器由定时器启动，调用 :cpp:func:`ulp_riscv_run` 即可启动定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 90 kHz RC 振荡器产生）。Tick 数值使用 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器设置。启用 ULP 时，使用 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 设置定时器 Tick 数值。
 
@@ -198,9 +198,10 @@ RTC I2C 控制器提供了在 RTC 电源域中作为 I2C 主机的功能。ULP R
 应用示例
 --------------------
 
-* 主处理器处于 Deep-sleep 状态时，ULP RISC-V 协处理器轮询 GPIO：:example:`system/ulp_riscv/gpio`。
-* ULP RISC-V 协处理器使用 bit-banged UART 驱动程序打印: :example:`system/ulp_riscv/uart_print`.
-* 主处理器处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部温度传感器：:example:`system/ulp_riscv/ds18b20_onewire`。
+* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器轮询 GPIO：:example:`system/ulp_riscv/gpio`。
+* ULP RISC-V 协处理器使用 bit-banged UART 驱动程序打印：:example:`system/ulp_riscv/uart_print`.
+* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部温度传感器：:example:`system/ulp_riscv/ds18b20_onewire`。
+* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部 I2C 温度和湿度传感器 (BMP180)，达到阈值时唤醒主 CPU：:example:`system/ulp_riscv/i2c`.
 
 API 参考
 -------------

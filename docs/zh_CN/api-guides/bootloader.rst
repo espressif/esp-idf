@@ -41,6 +41,12 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 	ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
 
+   ESP-IDF V5.1 之前的版本
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   ESP-IDF V5.1 之前的版本构建的引导加载程序不支持 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，不应使用该选项。
+
+
 配置 SPI Flash
 ^^^^^^^^^^^^^^^^^^^^^^^
 
