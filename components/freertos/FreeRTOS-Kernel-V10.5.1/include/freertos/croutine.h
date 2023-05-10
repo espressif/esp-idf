@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.5.1
+ * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
