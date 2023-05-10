@@ -9,7 +9,7 @@
 
 ESP_PYTHON=python
 
-for p_cmd in python python3
+for p_cmd in python3 python
 do
     echo "Checking \"$p_cmd\" ..."
 

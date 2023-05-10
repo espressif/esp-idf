@@ -4,7 +4,7 @@
 
 set -x ESP_PYTHON python
 
-for p_cmd in python python3;
+for p_cmd in python3 python;
     echo "Checking \"$p_cmd\" ..."
 
     set res ($p_cmd -c "import sys; print(sys.version_info.major)")
