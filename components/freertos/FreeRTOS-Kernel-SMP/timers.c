@@ -534,6 +534,30 @@
     }
 /*-----------------------------------------------------------*/
 
+    #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+        BaseType_t xTimerGetStaticBuffer( TimerHandle_t xTimer,
+                                          StaticTimer_t ** ppxTimerBuffer )
+        {
+            BaseType_t xReturn;
+            Timer_t * pxTimer = xTimer;
+
+            configASSERT( ppxTimerBuffer != NULL );
+
+            if( ( pxTimer->ucStatus & tmrSTATUS_IS_STATICALLY_ALLOCATED ) != 0 )
+            {
+                *ppxTimerBuffer = ( StaticTimer_t * ) pxTimer;
+                xReturn = pdTRUE;
+            }
+            else
+            {
+                xReturn = pdFALSE;
+            }
+
+            return xReturn;
+        }
+    #endif /* configSUPPORT_STATIC_ALLOCATION */
+/*-----------------------------------------------------------*/
+
     const char * pcTimerGetName( TimerHandle_t xTimer ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
     {
         Timer_t * pxTimer = xTimer;

@@ -379,6 +379,55 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 /*-----------------------------------------------------------*/
 
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+
+    BaseType_t xQueueGenericGetStaticBuffers( QueueHandle_t xQueue,
+                                              uint8_t ** ppucQueueStorage,
+                                              StaticQueue_t ** ppxStaticQueue )
+    {
+        BaseType_t xReturn;
+        Queue_t * const pxQueue = xQueue;
+
+        configASSERT( pxQueue );
+        configASSERT( ppxStaticQueue );
+
+        #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+        {
+            /* Check if the queue was statically allocated. */
+            if( pxQueue->ucStaticallyAllocated == ( uint8_t ) pdTRUE )
+            {
+                if( ppucQueueStorage != NULL )
+                {
+                    *ppucQueueStorage = ( uint8_t * ) pxQueue->pcHead;
+                }
+
+                *ppxStaticQueue = ( StaticQueue_t * ) pxQueue;
+                xReturn = pdTRUE;
+            }
+            else
+            {
+                xReturn = pdFALSE;
+            }
+        }
+        #else /* configSUPPORT_DYNAMIC_ALLOCATION */
+        {
+            /* Queue must have been statically allocated. */
+            if( ppucQueueStorage != NULL )
+            {
+                *ppucQueueStorage = ( uint8_t * ) pxQueue->pcHead;
+            }
+
+            *ppxStaticQueue = ( StaticQueue_t * ) pxQueue;
+            xReturn = pdTRUE;
+        }
+        #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
+
+        return xReturn;
+    }
+
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+/*-----------------------------------------------------------*/
+
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
     QueueHandle_t xQueueGenericCreate( const UBaseType_t uxQueueLength,

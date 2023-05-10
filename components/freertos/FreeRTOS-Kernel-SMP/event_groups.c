@@ -665,6 +665,42 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 }
 /*-----------------------------------------------------------*/
 
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    BaseType_t xEventGroupGetStaticBuffer( EventGroupHandle_t xEventGroup,
+                                           StaticEventGroup_t ** ppxEventGroupBuffer )
+    {
+        BaseType_t xReturn;
+        EventGroup_t * pxEventBits = xEventGroup;
+
+        configASSERT( pxEventBits );
+        configASSERT( ppxEventGroupBuffer );
+
+        #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+        {
+            /* Check if the event group was statically allocated. */
+            if( pxEventBits->ucStaticallyAllocated == ( uint8_t ) pdTRUE )
+            {
+                *ppxEventGroupBuffer = ( StaticEventGroup_t * ) pxEventBits;
+                xReturn = pdTRUE;
+            }
+            else
+            {
+                xReturn = pdFALSE;
+            }
+        }
+        #else /* configSUPPORT_DYNAMIC_ALLOCATION */
+        {
+            /* Event group must have been statically allocated. */
+            *ppxEventGroupBuffer = ( StaticEventGroup_t * ) pxEventBits;
+            xReturn = pdTRUE;
+        }
+        #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
+
+        return xReturn;
+    }
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+/*-----------------------------------------------------------*/
+
 /* For internal use only - execute a 'set bits' command that was pended from
  * an interrupt. */
 portTIMER_CALLBACK_ATTRIBUTE
