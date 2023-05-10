@@ -27,6 +27,15 @@ void efuse_hal_get_mac(uint8_t *mac);
 uint32_t efuse_hal_chip_revision(void);
 
 /**
+ * @brief Is flash encryption currently enabled in hardware?
+ *
+ * Flash encryption is enabled if the FLASH_CRYPT_CNT efuse has an odd number of bits set.
+ *
+ * @return true if flash encryption is enabled.
+ */
+bool efuse_hal_flash_encryption_enabled(void);
+
+/**
  * @brief Returns major chip version
  */
 uint32_t efuse_hal_get_major_chip_version(void);
