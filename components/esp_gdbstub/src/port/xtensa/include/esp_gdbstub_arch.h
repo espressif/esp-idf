@@ -7,7 +7,15 @@
 #pragma once
 #include <stdint.h>
 #include "freertos/xtensa_context.h"
-#include "gdbstub_target_config.h"
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#define GDBSTUB_EXTRA_TIE_SIZE 0
+#elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
+#define GDBSTUB_EXTRA_TIE_SIZE 1
+#else
+#error "Unknown Xtensa chip"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
