@@ -37,7 +37,10 @@ uint32_t efuse_hal_get_minor_chip_version(void)
 void efuse_hal_set_timing(uint32_t apb_freq_hz)
 {
     (void) apb_freq_hz;
-    // keep the default values, no need to change it
+    efuse_ll_set_dac_num(0xFF);
+    efuse_ll_set_dac_clk_div(0x28);
+    efuse_ll_set_pwr_on_num(0x3000);
+    efuse_ll_set_pwr_off_num(0x190);
 }
 
 void efuse_hal_read(void)
