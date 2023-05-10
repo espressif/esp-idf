@@ -98,27 +98,27 @@ static void init_ulp_program(void)
 
 static void update_pulse_count(void)
 {
-    const char* namespace = "plusecnt";
+    const char* nvs_namespace = "plusecnt";
     const char* count_key = "count";
 
     ESP_ERROR_CHECK( nvs_flash_init() );
     nvs_handle_t handle;
-    ESP_ERROR_CHECK( nvs_open(namespace, NVS_READWRITE, &handle));
+    ESP_ERROR_CHECK( nvs_open(nvs_namespace, NVS_READWRITE, &handle));
     uint32_t pulse_count = 0;
     esp_err_t err = nvs_get_u32(handle, count_key, &pulse_count);
     assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
-    printf("Read pulse count from NVS: %5"PRIu32"\n", pulse_count);
+    printf("Read pulse count from NVS: %5" PRIu32"\n", pulse_count);
 
     /* ULP program counts signal edges, convert that to the number of pulses */
     uint32_t pulse_count_from_ulp = (ulp_edge_count & UINT16_MAX) / 2;
     /* In case of an odd number of edges, keep one until next time */
     ulp_edge_count = ulp_edge_count % 2;
-    printf("Pulse count from ULP: %5"PRIu32"\n", pulse_count_from_ulp);
+    printf("Pulse count from ULP: %5" PRIu32"\n", pulse_count_from_ulp);
 
     /* Save the new pulse count to NVS */
     pulse_count += pulse_count_from_ulp;
     ESP_ERROR_CHECK(nvs_set_u32(handle, count_key, pulse_count));
     ESP_ERROR_CHECK(nvs_commit(handle));
     nvs_close(handle);
-    printf("Wrote updated pulse count to NVS: %5"PRIu32"\n", pulse_count);
+    printf("Wrote updated pulse count to NVS: %5" PRIu32"\n", pulse_count);
 }
