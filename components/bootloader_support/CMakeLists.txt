@@ -164,7 +164,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
     target_add_binary_data(${COMPONENT_LIB} "${secure_boot_verification_key}" "BINARY"
         RENAME_TO signature_verification_key_bin)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${secure_boot_verification_key}")
 endif()
 
