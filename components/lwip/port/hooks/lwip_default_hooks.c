@@ -41,7 +41,17 @@ const ip6_addr_t *__weak lwip_hook_nd6_get_gw(struct netif *netif, const ip6_add
     LWIP_UNUSED_ARG(netif);
     LWIP_UNUSED_ARG(dest);
 
-    return 0;
+    return NULL;
+}
+#endif
+
+#ifdef CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR_DEFAULT
+const ip_addr_t *__weak lwip_hook_ip6_select_source_address(struct netif *netif, const ip6_addr_t *dest)
+{
+    LWIP_UNUSED_ARG(netif);
+    LWIP_UNUSED_ARG(dest);
+
+    return NULL;
 }
 #endif
 
