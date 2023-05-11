@@ -35,3 +35,16 @@ In other words, there are three kinds of code:
 3. Low priority code: inside flash/psram and disabled during erasing. This kind of code should be forbidden from executed to avoid affecting the flash erasing, by setting a lower task priority than the erasing task.
 
 Regarding the flash suspend feature usage, and corresponding response time delay, please also see this example :example:`system/flash_suspend` .
+
+.. note::
+
+    The flash auto suspend feature relies heavily on strict timing. You can see it as a kind of optimisation plan, which means that you cannot use it in every situation, like high requirement of real-time system or triggering interrupt very frequently (e.g. lcd flush, bluetooth, wifi, etc.). You should take following steps to evaluate what kind of ISR can be used together with flash suspend.
+
+    .. wavedrom:: /../_static/diagrams/spi_flash/flash_auto_suspend_timing.json
+
+    As you can see from the diagram. Two key values should be noted.
+
+    1. ISR time: The ISR time cannot be very long, at least not larger than the value you set in `IWDT`. But it will significantly lengthen the erase/write completion times.
+    2. ISR interval: The ISR cannot be triggered very often. The most important time is the `ISR interval minus ISR time`(from point b to point c in the diagram). During this time, SPI1 will send resume to restart the operation, but it needs a time `tsus` for preparation, and the typical value of `tsus` is about **40us**. If SPI1 cannot resume the operation but another suspend comes, it will cause CPU starve and `TWDT` may be triggered.
+
+    Furthermore, the flash suspend might be delayed. If CPU and the cache operation accesses to flash via SPI0 very frequently and SPI1 sending suspend command is also very frequently, it will influence the efficiency of MSPI data transfer. So, we have a "lock" inside to prevent this. When SPI1 send suspend command, then SPI0 will take over memory SPI bus and take the "lock". After SPI0 finishes sending data, SPI0 will still take the memory SPI bus until the "lock" delay period time finishes. During this "lock" delay period, if there is any other SPI0 transaction, then start SPI0 transaction and "lock" delay period start again. Otherwise, SPI0 will release the memory bus and start SPI0/1 arbitration.
