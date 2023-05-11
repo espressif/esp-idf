@@ -475,7 +475,7 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
  *
  * @param manage Set ADC power status.
  */
-static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
+static inline void adc_ll_digi_set_power_manage(adc_ll_power_t manage)
 {
     /* Bit1  0:Fsm  1: SW mode
        Bit0  0:SW mode power down  1: SW mode power on */

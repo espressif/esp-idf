@@ -20,6 +20,7 @@
 #include "freertos/ringbuf.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
@@ -396,7 +397,7 @@ esp_err_t adc_digi_start(void)
         ESP_LOGE(ADC_TAG, "The driver is already started");
         return ESP_ERR_INVALID_STATE;
     }
-    adc_power_acquire();
+    sar_periph_ctrl_adc_continuous_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
     s_adc_digi_ctx->driver_start_flag = 1;
@@ -466,7 +467,7 @@ esp_err_t adc_digi_stop(void)
     if (s_adc_digi_ctx->use_adc1) {
         adc_lock_release(ADC_UNIT_1);
     }
-    adc_power_release();
+    sar_periph_ctrl_adc_continuous_power_release();
 
     return ESP_OK;
 }

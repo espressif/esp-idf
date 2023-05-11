@@ -19,6 +19,7 @@
 #include "sys/lock.h"
 #include "driver/gpio.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "adc1_private.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
@@ -348,7 +349,7 @@ esp_err_t adc1_dma_mode_acquire(void)
     SARADC1_ACQUIRE();
     ESP_LOGD( ADC_TAG, "dma mode takes adc1 lock." );
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_continuous_power_acquire();
 
     SARADC1_ENTER();
     /* switch SARADC into DIG channel */
@@ -363,7 +364,7 @@ esp_err_t adc1_rtc_mode_acquire(void)
     /* Use locks to avoid digtal and RTC controller conflicts.
        for adc1, block until acquire the lock. */
     SARADC1_ACQUIRE();
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     SARADC1_ENTER();
     /* switch SARADC into RTC channel. */
@@ -378,7 +379,7 @@ esp_err_t adc1_lock_release(void)
     ADC_CHECK((uint32_t *)adc1_dma_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
     /* Use locks to avoid digtal and RTC controller conflicts. for adc1, block until acquire the lock. */
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
     SARADC1_RELEASE();
     return ESP_OK;
 }
@@ -419,7 +420,7 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 #if SOC_ULP_SUPPORTED
 void adc1_ulp_enable(void)
 {
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     SARADC1_ENTER();
     adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_ULP);
@@ -555,7 +556,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
         return ESP_ERR_TIMEOUT;
     }
 #endif
-    adc_power_acquire();         //in critical section with whole rtc module
+    sar_periph_ctrl_adc_oneshot_power_acquire();         //in critical section with whole rtc module
 
     //avoid collision with other tasks
     adc2_init();   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
@@ -601,7 +602,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_IDF_TARGET_ESP32
     SARADC2_EXIT();
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
 #if CONFIG_IDF_TARGET_ESP32
     adc_lock_release(ADC_UNIT_2);
 #endif
@@ -629,7 +630,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
         return ESP_ERR_INVALID_ARG;
     }
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
     if (adc_unit == ADC_UNIT_1) {
         VREF_ENTER(1);
         adc_hal_vref_output(ADC_UNIT_1, ch, true);
@@ -718,7 +719,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
         }
     }
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
     if (adc_unit == ADC_UNIT_1) {
         RTC_ENTER_CRITICAL();
         adc_hal_vref_output(ADC_UNIT_1, channel, true);
@@ -770,7 +771,7 @@ int adc1_get_raw(adc1_channel_t channel)
     }
 
     periph_module_enable(PERIPH_SARADC_MODULE);
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
     adc_ll_digi_clk_sel(0);
 
     adc_atten_t atten = s_atten1_single[channel];
@@ -783,7 +784,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_hal_convert(ADC_UNIT_1, channel, &raw_out);
     ADC_REG_LOCK_EXIT();
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
     periph_module_disable(PERIPH_SARADC_MODULE);
     adc_lock_release(ADC_UNIT_1);
 
@@ -821,7 +822,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     }
 
     periph_module_enable(PERIPH_SARADC_MODULE);
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
     adc_ll_digi_clk_sel(0);
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
@@ -837,7 +838,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     ret = adc_hal_convert(ADC_UNIT_2, channel, raw_out);
     ADC_REG_LOCK_EXIT();
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
     periph_module_disable(PERIPH_SARADC_MODULE);
     adc_lock_release(ADC_UNIT_2);
 

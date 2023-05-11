@@ -10,7 +10,8 @@ set(srcs "rtc_clk_init.c"
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_hmac.c"
                      "esp_crypto_lock.c"
-                     "esp_ds.c")
+                     "esp_ds.c"
+                     "sar_periph_ctrl.c")
 
     # init constructor for wifi
     list(APPEND srcs "adc2_init_cal.c")
