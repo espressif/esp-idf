@@ -7,8 +7,3 @@ components/hal/test_apps/ecc:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: C2 ECC peripheral has a bug in ECC point verification, if value of K is zero the verification fails
-
-components/hal/test_apps/mpi:
-  disable:
-    - if: SOC_MPI_SUPPORTED != 1
-      reason: Hardware MPI support not available for such targets.

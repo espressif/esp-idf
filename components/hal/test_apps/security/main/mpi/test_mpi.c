@@ -8,14 +8,15 @@
 
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
-#include "unity.h"
+#include "memory_checks.h"
+#include "unity_fixture.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #define ESP_MPI_USE_MONT_EXP
 #endif
 
 #include "hal/mpi_hal.h"
-#include "test_params.h"
+#include "mpi_params.h"
 
 #define _DEBUG_ 0
 
@@ -81,6 +82,7 @@ static void mpi_mul_mpi_mod_hw_op(void)
 
         TEST_ASSERT_EQUAL_HEX32_ARRAY_MESSAGE(test_cases_Z_p[i], Z_p, test_cases_Z_words[i], "Result");
         printf("PASS\n");
+        free(Z_p);
     }
     esp_mpi_disable_hardware_hw_op();
 }
@@ -131,15 +133,36 @@ static void mpi_exp_mpi_mod_hw_op(void)
 
         TEST_ASSERT_EQUAL_HEX32_ARRAY_MESSAGE(exp_test_cases_Z_p[i], Z_p, exp_test_cases_m_words[i], "Result");
         printf("PASS\n");
+        free(Z_p);
     }
 }
 
-TEST_CASE("Test MPI multiplication", "[mpi][hal]")
+TEST_GROUP(mpi);
+
+TEST_SETUP(mpi)
+{
+    test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
+}
+
+TEST_TEAR_DOWN(mpi)
+{
+    test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
+                                         test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
+}
+
+TEST(mpi, mpi_multiplication)
 {
     mpi_mul_mpi_mod_hw_op();
 }
 
-TEST_CASE("Test MPI exponentiation", "[mpi][hal]")
+TEST(mpi, mpi_exponentiation)
 {
     mpi_exp_mpi_mod_hw_op();
+}
+
+TEST_GROUP_RUNNER(mpi)
+{
+    RUN_TEST_CASE(mpi, mpi_multiplication);
+    RUN_TEST_CASE(mpi, mpi_exponentiation);
 }
