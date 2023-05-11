@@ -215,12 +215,17 @@ typedef struct {
 /**
  * @brief Set dead time for MCPWM generator
  *
+ * @note Due to a hardware limitation, you can't set rising edge delay for both MCPWM generator 0 and 1 at the same time,
+ *       otherwise, there will be a conflict inside the dead time module. The same goes for the falling edge setting.
+ *       But you can set both the rising edge and falling edge delay for the same MCPWM generator.
+ *
  * @param[in] in_generator MCPWM generator, before adding the dead time
  * @param[in] out_generator MCPWM generator, after adding the dead time
  * @param[in] config MCPWM dead time configuration
  * @return
  *      - ESP_OK: Set dead time for MCPWM generator successfully
  *      - ESP_ERR_INVALID_ARG: Set dead time for MCPWM generator failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Set dead time for MCPWM generator failed because of invalid state (e.g. delay module is already in use by other generator)
  *      - ESP_FAIL: Set dead time for MCPWM generator failed because of other error
  */
 esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_gen_handle_t out_generator, const mcpwm_dead_time_config_t *config);
