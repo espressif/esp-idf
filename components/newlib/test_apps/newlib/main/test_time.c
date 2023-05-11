@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,6 +164,7 @@ TEST_CASE("test adjtime function", "[newlib]")
     TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
     // the correction will be equal to (1_000_000us >> 6) = 15_625 us.
+
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec >= 15600);
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec <= 15650);
 }
@@ -367,7 +368,7 @@ void test_posix_timers_clock (void)
 #ifdef CONFIG_RTC_CLK_SRC_EXT_CRYS
     printf("External (crystal) Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());
 #else
-    printf("Internal Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());
+    printf("Internal Frequency = %" PRIu32 " Hz\n", rtc_clk_slow_freq_get_hz());
 #endif
 
     TEST_ASSERT(clock_settime(CLOCK_REALTIME, NULL) == -1);
@@ -468,6 +469,9 @@ TEST_CASE("test time_t wide 64 bits", "[newlib]")
     ESP_LOGI("TAG", "sizeof(time_t): %d (%d-bit)", sizeof(time_t), sizeof(time_t)*8);
     TEST_ASSERT_EQUAL(8, sizeof(time_t));
 
+    // mktime takes current timezone into account, this test assumes it's UTC+0
+    setenv("TZ", "UTC+0", 1);
+    tzset();
     struct tm tm = {4, 14, 3, 19, 0, 138, 0, 0, 0};
     struct timeval timestamp = { mktime(&tm), 0 };
 #if !CONFIG_NEWLIB_NANO_FORMAT
@@ -488,6 +492,9 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
     static char origin_buffer[32];
     char strftime_buf[64];
 
+    // mktime takes current timezone into account, this test assumes it's UTC+0
+    setenv("TZ", "UTC+0", 1);
+    tzset();
     int year = 2018;
     struct tm tm = {0, 14, 3, 19, 0, year - 1900, 0, 0, 0};
     time_t t = mktime(&tm);
@@ -548,8 +555,8 @@ extern int64_t s_microseconds_offset;
 static const uint64_t s_start_timestamp  = 1606838354;
 
 
-static RTC_NOINIT_ATTR uint64_t s_saved_time;
-static RTC_NOINIT_ATTR uint64_t s_time_in_reboot;
+static __NOINIT_ATTR uint64_t s_saved_time;
+static __NOINIT_ATTR uint64_t s_time_in_reboot;
 
 typedef enum {
     TYPE_REBOOT_ABORT = 0,
@@ -570,6 +577,9 @@ static void print_counters(void)
 
 static void set_initial_condition(type_reboot_t type_reboot, int error_time)
 {
+    s_saved_time = 0;
+    s_time_in_reboot = 0;
+
     print_counters();
 
     struct timeval tv = { .tv_sec = s_start_timestamp, .tv_usec = 0, };

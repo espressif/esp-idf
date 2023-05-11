@@ -13,7 +13,6 @@
 #include "esp_pthread.h"
 #include "freertos/portmacro.h"
 #include "unity.h"
-#include "unity_fixture.h"
 
 /* non-static to prevent optimization */
 atomic_ullong g_atomic64;
@@ -22,17 +21,7 @@ atomic_ushort g_atomic16;
 atomic_uchar  g_atomic8;
 
 
-TEST_GROUP(stdatomic);
-
-TEST_SETUP(stdatomic)
-{
-}
-
-TEST_TEAR_DOWN(stdatomic)
-{
-}
-
-TEST(stdatomic, test_64bit_atomics_fetch_op)
+TEST_CASE("stdatomic - test_64bit_atomics", "[newlib_stdatomic]")
 {
     unsigned long long x64 = 0;
     g_atomic64 = 0;  // calls atomic_store
@@ -53,7 +42,7 @@ TEST(stdatomic, test_64bit_atomics_fetch_op)
 #endif
 }
 
-TEST(stdatomic, test_32bit_atomics_fetch_op)
+TEST_CASE("stdatomic - test_32bit_atomics", "[newlib_stdatomic]")
 {
     unsigned int x32 = 0;
     g_atomic32 = 0;
@@ -74,7 +63,7 @@ TEST(stdatomic, test_32bit_atomics_fetch_op)
 #endif
 }
 
-TEST(stdatomic, test_16bit_atomics_fetch_op)
+TEST_CASE("stdatomic - test_16bit_atomics", "[newlib_stdatomic]")
 {
     unsigned int x16 = 0;
     g_atomic16 = 0;
@@ -95,7 +84,7 @@ TEST(stdatomic, test_16bit_atomics_fetch_op)
 #endif
 }
 
-TEST(stdatomic, test_8bit_atomics_fetch_op)
+TEST_CASE("stdatomic - test_8bit_atomics", "[newlib_stdatomic]")
 {
     unsigned int x8 = 0;
     g_atomic8 = 0;
@@ -117,7 +106,7 @@ TEST(stdatomic, test_8bit_atomics_fetch_op)
 }
 
 #ifndef __clang__
-TEST(stdatomic, test_64bit_atomics_op_fetch)
+TEST_CASE("stdatomic - test_64bit_atomics", "[newlib_stdatomic]")
 {
     unsigned long long x64 = 0;
     g_atomic64 = 0;  // calls atomic_store
@@ -133,7 +122,7 @@ TEST(stdatomic, test_64bit_atomics_op_fetch)
     TEST_ASSERT_EQUAL_HEX64(0xDDDDDDDDDDDDDDDDULL, g_atomic64);  // calls atomic_load
 }
 
-TEST(stdatomic, test_32bit_atomics_op_fetch)
+TEST_CASE("stdatomic - test_32bit_atomics", "[newlib_stdatomic]")
 {
     unsigned int x32 = 0;
     g_atomic32 = 0;
@@ -149,7 +138,7 @@ TEST(stdatomic, test_32bit_atomics_op_fetch)
     TEST_ASSERT_EQUAL_HEX32(0xDDDDDDDDU, g_atomic32);
 }
 
-TEST(stdatomic, test_16bit_atomics_op_fetch)
+TEST_CASE("stdatomic - test_16bit_atomics", "[newlib_stdatomic]")
 {
     unsigned int x16 = 0;
     g_atomic16 = 0;
@@ -165,7 +154,7 @@ TEST(stdatomic, test_16bit_atomics_op_fetch)
     TEST_ASSERT_EQUAL_HEX16(0xDDDD, g_atomic16);
 }
 
-TEST(stdatomic, test_8bit_atomics_op_fetch)
+TEST_CASE("stdatomic - test_8bit_atomics", "[newlib_stdatomic]")
 {
     unsigned int x8 = 0;
     g_atomic8 = 0;
@@ -184,7 +173,7 @@ TEST(stdatomic, test_8bit_atomics_op_fetch)
 #endif // #ifndef __clang__
 
 
-#define TEST_EXCLUSION(n) TEST(stdatomic, test_ ## n ## bit_exclusion)       \
+#define TEST_EXCLUSION(n) TEST_CASE("stdatomic - test_" #n "bit_exclusion", "[newlib_stdatomic]") \
 {                                                                            \
     g_atomic ## n = 0;                                                       \
     pthread_t thread1;                                                       \
@@ -242,7 +231,7 @@ static void *test_thread_##NAME (void *arg)                                  \
   return NULL;                                                               \
 }                                                                            \
                                                                              \
-TEST(stdatomic, test_ ##NAME)                                                \
+TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                  \
 {                                                                            \
   pthread_t thread_id1;                                                      \
   pthread_t thread_id2;                                                      \
@@ -330,97 +319,3 @@ TEST_RACE_OPERATION (long_double_preinc, long double, ++, , 0, (2*ITER_COUNT))
 TEST_RACE_OPERATION (complex_long_double_sub, _Complex long double, , -= 1, 0, -(2*ITER_COUNT))
 TEST_RACE_OPERATION (long_double_postdec, long double, , --, 0, -(2*ITER_COUNT))
 TEST_RACE_OPERATION (long_double_predec, long double, --, , 0, -(2*ITER_COUNT))
-
-
-TEST_GROUP_RUNNER(stdatomic)
-{
-    RUN_TEST_CASE(stdatomic, test_64bit_atomics_fetch_op)
-    RUN_TEST_CASE(stdatomic, test_32bit_atomics_fetch_op)
-    RUN_TEST_CASE(stdatomic, test_16bit_atomics_fetch_op)
-    RUN_TEST_CASE(stdatomic, test_8bit_atomics_fetch_op)
-
-#ifndef __clang__
-    RUN_TEST_CASE(stdatomic, test_64bit_atomics_op_fetch)
-    RUN_TEST_CASE(stdatomic, test_32bit_atomics_op_fetch)
-    RUN_TEST_CASE(stdatomic, test_16bit_atomics_op_fetch)
-    RUN_TEST_CASE(stdatomic, test_8bit_atomics_op_fetch)
-#endif
-
-    RUN_TEST_CASE(stdatomic, test_64bit_exclusion)
-    RUN_TEST_CASE(stdatomic, test_32bit_exclusion)
-    RUN_TEST_CASE(stdatomic, test_16bit_exclusion)
-    RUN_TEST_CASE(stdatomic, test_8bit_exclusion)
-
-    RUN_TEST_CASE(stdatomic, test_uint8_add)
-    RUN_TEST_CASE(stdatomic, test_uint8_add_3);
-    RUN_TEST_CASE(stdatomic, test_uint8_postinc);
-    RUN_TEST_CASE(stdatomic, test_uint8_preinc);
-    RUN_TEST_CASE(stdatomic, test_uint8_sub);
-    RUN_TEST_CASE(stdatomic, test_uint8_sub_3);
-    RUN_TEST_CASE(stdatomic, test_uint8_postdec);
-    RUN_TEST_CASE(stdatomic, test_uint8_predec);
-    RUN_TEST_CASE(stdatomic, test_uint8_mul);
-
-    RUN_TEST_CASE(stdatomic, test_uint16_add);
-    RUN_TEST_CASE(stdatomic, test_uint16_add_3);
-    RUN_TEST_CASE(stdatomic, test_uint16_postinc);
-    RUN_TEST_CASE(stdatomic, test_uint16_preinc);
-    RUN_TEST_CASE(stdatomic, test_uint16_sub);
-    RUN_TEST_CASE(stdatomic, test_uint16_sub_3);
-    RUN_TEST_CASE(stdatomic, test_uint16_postdec);
-    RUN_TEST_CASE(stdatomic, test_uint16_predec);
-    RUN_TEST_CASE(stdatomic, test_uint16_mul);
-
-    RUN_TEST_CASE(stdatomic, test_uint32_add);
-    RUN_TEST_CASE(stdatomic, test_uint32_add_3);
-    RUN_TEST_CASE(stdatomic, test_uint32_postinc);
-    RUN_TEST_CASE(stdatomic, test_uint32_preinc);
-    RUN_TEST_CASE(stdatomic, test_uint32_sub);
-    RUN_TEST_CASE(stdatomic, test_uint32_sub_3);
-    RUN_TEST_CASE(stdatomic, test_uint32_postdec);
-    RUN_TEST_CASE(stdatomic, test_uint32_predec);
-    RUN_TEST_CASE(stdatomic, test_uint32_mul);
-
-    RUN_TEST_CASE(stdatomic, test_uint64_add);
-    RUN_TEST_CASE(stdatomic, test_uint64_add_3);
-    RUN_TEST_CASE(stdatomic, test_uint64_add_neg);
-    RUN_TEST_CASE(stdatomic, test_uint64_sub);
-    RUN_TEST_CASE(stdatomic, test_uint64_sub_3);
-    RUN_TEST_CASE(stdatomic, test_uint64_sub_neg);
-    RUN_TEST_CASE(stdatomic, test_uint64_postinc);
-    RUN_TEST_CASE(stdatomic, test_uint64_postinc_neg);
-    RUN_TEST_CASE(stdatomic, test_uint64_preinc);
-    RUN_TEST_CASE(stdatomic, test_uint64_preinc_neg);
-    RUN_TEST_CASE(stdatomic, test_uint64_postdec);
-    RUN_TEST_CASE(stdatomic, test_uint64_postdec_neg);
-    RUN_TEST_CASE(stdatomic, test_uint64_predec);
-    RUN_TEST_CASE(stdatomic, test_uint64_predec_neg);
-    RUN_TEST_CASE(stdatomic, test_uint64_mul);
-
-    RUN_TEST_CASE(stdatomic, test_float_add);
-    RUN_TEST_CASE(stdatomic, test_complex_float_add);
-    RUN_TEST_CASE(stdatomic, test_float_postinc);
-    RUN_TEST_CASE(stdatomic, test_float_preinc);
-    RUN_TEST_CASE(stdatomic, test_float_sub);
-    RUN_TEST_CASE(stdatomic, test_complex_float_sub);
-    RUN_TEST_CASE(stdatomic, test_float_postdec);
-    RUN_TEST_CASE(stdatomic, test_float_predec);
-
-    RUN_TEST_CASE(stdatomic, test_double_add);
-    RUN_TEST_CASE(stdatomic, test_complex_double_add);
-    RUN_TEST_CASE(stdatomic, test_double_postinc);
-    RUN_TEST_CASE(stdatomic, test_double_preinc);
-    RUN_TEST_CASE(stdatomic, test_double_sub);
-    RUN_TEST_CASE(stdatomic, test_complex_double_sub);
-    RUN_TEST_CASE(stdatomic, test_double_postdec);
-    RUN_TEST_CASE(stdatomic, test_double_predec);
-
-    RUN_TEST_CASE(stdatomic, test_long_double_add);
-    RUN_TEST_CASE(stdatomic, test_complex_long_double_add);
-    RUN_TEST_CASE(stdatomic, test_long_double_postinc);
-    RUN_TEST_CASE(stdatomic, test_long_double_preinc);
-    RUN_TEST_CASE(stdatomic, test_long_double_sub);
-    RUN_TEST_CASE(stdatomic, test_complex_long_double_sub);
-    RUN_TEST_CASE(stdatomic, test_long_double_postdec);
-    RUN_TEST_CASE(stdatomic, test_long_double_predec);
-}
