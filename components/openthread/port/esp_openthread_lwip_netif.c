@@ -15,6 +15,7 @@
 #include "lwip/esp_netif_net_stack.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
+#include "lwip_default_hooks.h"
 #include "openthread/error.h"
 #include "openthread/ip6.h"
 #include "openthread/link.h"
@@ -142,4 +143,26 @@ static err_t openthread_netif_init(struct netif *netif)
     netif_set_link_up(netif);
 
     return ERR_OK;
+}
+
+const ip_addr_t *lwip_hook_ip6_select_source_address(struct netif *netif, const ip6_addr_t *dest)
+{
+    const ip6_addr_t *cur_addr;
+    uint8_t idx = 0;
+    // Only process with ot netif.
+    if (!(netif->name[0] == 'o' && netif->name[1] == 't')) {
+        return NULL;
+    }
+    // Currently, prefer the address with the same prefix of the destination address.
+    // If no address found, return NULL for selection source address using the default algorithm.
+    for (idx = 0; idx < LWIP_IPV6_NUM_ADDRESSES; idx++) {
+        if (!ip6_addr_isvalid(netif_ip6_addr_state(netif, idx))) {
+            continue;
+        }
+        cur_addr = netif_ip6_addr(netif, idx);
+        if (ip6_addr_netcmp_zoneless(cur_addr, dest)) {
+            return netif_ip_addr6(netif, idx);
+        }
+    }
+    return NULL;
 }
