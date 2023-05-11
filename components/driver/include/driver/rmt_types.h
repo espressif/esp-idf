@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "hal/rmt_types.h"
+#include "hal/gpio_types.h" // for gpio_num_t
 
 #ifdef __cplusplus
 extern "C" {
