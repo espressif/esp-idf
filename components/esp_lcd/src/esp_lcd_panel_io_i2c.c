@@ -22,7 +22,7 @@
 
 static const char *TAG = "lcd_panel.io.i2c";
 
-#define CMD_HANDLER_BUFFER_SIZE I2C_LINK_RECOMMENDED_SIZE(7)    // only 7 operations will be queued in the handler ATTOW
+#define CMD_HANDLER_BUFFER_SIZE I2C_LINK_RECOMMENDED_SIZE(2)    // only 2 operations will be queued in the handler ATTOW
 #define BYTESHIFT(VAR, IDX) (((VAR) >> ((IDX) * 8)) & 0xFF)
 
 static esp_err_t panel_io_i2c_del(esp_lcd_panel_io_t *io);
