@@ -413,9 +413,9 @@ FORCE_INLINE_ATTR void esp_cpu_intr_edge_ack(int intr_num)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
 #ifdef __XTENSA__
-    xthal_set_intclear(1 << intr_num);
+    xthal_set_intclear((unsigned) (1 << intr_num));
 #else
-    rv_utils_intr_edge_ack(intr_num);
+    rv_utils_intr_edge_ack((unsigned) intr_num);
 #endif
 }
 
