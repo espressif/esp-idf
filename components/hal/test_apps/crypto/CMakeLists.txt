@@ -6,4 +6,4 @@ set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/unit-test-app/components")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-project(security_test)
+project(crypto_test)

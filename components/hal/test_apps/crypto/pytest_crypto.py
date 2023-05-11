@@ -7,5 +7,5 @@ from pytest_embedded import Dut
 
 @pytest.mark.supported_targets
 @pytest.mark.generic
-def test_security(dut: Dut) -> None:
+def test_crypto(dut: Dut) -> None:
     dut.expect('main_task: Returned from app_main()')

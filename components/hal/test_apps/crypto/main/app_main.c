@@ -23,7 +23,11 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(hmac);
 #endif
 
+#if CONFIG_SOC_DIG_SIGN_SUPPORTED
+    RUN_TEST_GROUP(ds);
 #endif
+
+#endif /* CONFIG_IDF_ENV_FPGA */
 }
 
 void app_main(void)
