@@ -21,7 +21,7 @@ static uint8_t peer_addr[6];
 
 void ble_store_config_init(void);
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
 #define COC_BUF_COUNT         (3 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 #define L2CAP_COC_UUID         0x1812
@@ -137,12 +137,12 @@ blecent_l2cap_coc_mem_init(void)
                            COC_BUF_COUNT);
     assert(rc == 0);
 }
-#endif // #if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#endif // #if  MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
 /**
  * Called when service discovery of the specified peer has completed.
  */
-#if !CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) < 1
 static void
 blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
 {
@@ -405,7 +405,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
             conn_handle_coc = event->connect.conn_handle;
             disc_cb = blecent_l2cap_coc_on_disc_complete;
 #else
@@ -514,7 +514,7 @@ app_main(void)
     ble_hs_cfg.sync_cb = blecent_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
     blecent_l2cap_coc_mem_init();
 #endif
 
