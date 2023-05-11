@@ -53,6 +53,7 @@ enum {
     BTA_DM_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_DM),
     BTA_DM_API_DISABLE_EVT,
     BTA_DM_API_SET_NAME_EVT,
+    BTA_DM_API_GET_NAME_EVT,
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BTA_DM_API_CONFIG_EIR_EVT,
 #endif
@@ -228,6 +229,11 @@ typedef struct {
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
 } tBTA_DM_API_SET_NAME;
 
+typedef struct {
+    BT_HDR              hdr;
+    tBTA_GET_DEV_NAME_CBACK *p_cback;
+} tBTA_DM_API_GET_NAME;
+
 /* data type for BTA_DM_API_CONFIG_EIR_EVT */
 typedef struct {
     BT_HDR              hdr;
@@ -271,7 +277,7 @@ typedef struct {
     BOOLEAN   add_remove;
     BD_ADDR   remote_addr;
     tBLE_ADDR_TYPE addr_type;
-    tBTA_ADD_WHITELIST_CBACK *add_wl_cb;
+    tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
 
 typedef struct {
@@ -1014,6 +1020,7 @@ typedef union {
     tBTA_DM_API_ENABLE  enable;
 
     tBTA_DM_API_SET_NAME set_name;
+    tBTA_DM_API_GET_NAME get_name;
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
@@ -1507,6 +1514,7 @@ extern void bta_dm_search_sm_disable( void );
 extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
+extern void bta_dm_get_dev_name (tBTA_DM_MSG *p_data);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 #endif
