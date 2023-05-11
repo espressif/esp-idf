@@ -10,8 +10,8 @@ from pytest_embedded import Dut
     'config',
     [
         pytest.param('default', marks=[pytest.mark.supported_targets]),
+        pytest.param('options', marks=[pytest.mark.supported_targets]),
         pytest.param('single_core_esp32', marks=[pytest.mark.esp32]),
-        pytest.param('single_core_esp32s2', marks=[pytest.mark.esp32s2]),
         pytest.param('psram_esp32', marks=[pytest.mark.esp32]),
         pytest.param('release_esp32', marks=[pytest.mark.esp32]),
         pytest.param('release_esp32c2', marks=[pytest.mark.esp32c2]),
