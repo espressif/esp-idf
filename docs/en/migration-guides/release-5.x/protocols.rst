@@ -112,7 +112,7 @@ Breaking Changes (Summary)
 ``esp_tls_t`` Structure is Now Private
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the ESP-TLS handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function, please raise an `issue <https://github.com/espressif/esp-adf/issues>`__ on ESP-IDF.
+The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the ESP-TLS handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function, please raise an `issue <https://github.com/espressif/esp-idf/issues>`__ on ESP-IDF.
 
 
 The list of newly added getter/setter function is as as follows:
