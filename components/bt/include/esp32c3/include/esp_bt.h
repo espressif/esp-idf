@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02212090
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02302140
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -66,7 +66,7 @@ typedef enum {
     ESP_BT_SLEEP_CLOCK_NONE            = 0,   /*!< Sleep clock not configured */
     ESP_BT_SLEEP_CLOCK_MAIN_XTAL       = 1,   /*!< SoC main crystal */
     ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL    = 2,   /*!< External 32.768kHz crystal */
-    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 150kHz RC oscillator */
+    ESP_BT_SLEEP_CLOCK_RTC_SLOW        = 3,   /*!< Internal 136kHz RC oscillator */
     ESP_BT_SLEEP_CLOCK_FPGA_32K        = 4,   /*!< Hardwired 32KHz clock temporarily used for FPGA */
 } esp_bt_sleep_clock_t;
 
@@ -136,6 +136,12 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define DUPL_SCAN_CACHE_REFRESH_PERIOD CONFIG_BT_CTRL_DUPL_SCAN_CACHE_REFRESH_PERIOD
 #endif
 
+#ifdef CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#else
+#define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX  0
+#endif
+
 #ifdef CONFIG_BT_CTRL_AGC_RECORRECT_EN
 #define BT_CTRL_AGC_RECORRECT_EN  CONFIG_BT_CTRL_AGC_RECORRECT_EN
 #else
@@ -148,20 +154,31 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_CODED_AGC_RECORRECT        0
 #endif
 
-#ifdef CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
-#define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#if defined (CONFIG_BT_BLE_50_FEATURES_SUPPORTED) || defined (CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT)
+#ifdef CONFIG_BT_BLE_50_FEATURES_SUPPORTED
+#define BT_CTRL_50_FEATURE_SUPPORT   (CONFIG_BT_BLE_50_FEATURES_SUPPORTED)
+#endif // CONFIG_BT_BLE_50_FEATURES_SUPPORTED
+#ifdef CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT
+#define BT_CTRL_50_FEATURE_SUPPORT   (CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT)
+#endif // CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT
 #else
-#define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX  0
-#endif
+#if defined (CONFIG_BT_BLUEDROID_ENABLED) || defined (CONFIG_BT_NIMBLE_ENABLED)
+#define BT_CTRL_50_FEATURE_SUPPORT (0)
+#else
+#define BT_CTRL_50_FEATURE_SUPPORT (1)
+#endif // (CONFIG_BT_BLUEDROID_ENABLED) || (CONFIG_BT_NIMBLE_ENABLED)
+#endif // (CONFIG_BT_BLE_50_FEATURES_SUPPORTED) || (CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT)
 
 #define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
 
-
 #define CFG_MASK_BIT_SCAN_DUPLICATE_OPTION    (1<<0)
 
-#define CFG_NASK      CFG_MASK_BIT_SCAN_DUPLICATE_OPTION
-
-#define BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0                      (0x01010000)
+#define CFG_MASK      CFG_MASK_BIT_SCAN_DUPLICATE_OPTION
+#if CONFIG_IDF_TARGET_ESP32C3
+#define BLE_HW_TARGET_CODE_CHIP_ECO0                      (0x01010000)
+#else // CONFIG_IDF_TARGET_ESP32S3
+#define BLE_HW_TARGET_CODE_CHIP_ECO0                      (0x02010000)
+#endif
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
@@ -184,18 +201,19 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .txant_dft = CONFIG_BT_CTRL_TX_ANTENNA_INDEX_EFF,                      \
     .rxant_dft = CONFIG_BT_CTRL_RX_ANTENNA_INDEX_EFF,                      \
     .txpwr_dft = CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL_EFF,                    \
-    .cfg_mask = CFG_NASK,                                                  \
+    .cfg_mask = CFG_MASK,                                                  \
     .scan_duplicate_mode = SCAN_DUPLICATE_MODE,                            \
     .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                      \
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, \
-    .hw_target_code = BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0,                \
+    .hw_target_code = BLE_HW_TARGET_CODE_CHIP_ECO0,                        \
     .slave_ce_len_min = SLAVE_CE_LEN_MIN_DEFAULT,                          \
     .hw_recorrect_en = AGC_RECORRECT_EN,                                   \
     .cca_thresh = CONFIG_BT_CTRL_HW_CCA_VAL,                               \
     .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,      \
     .dup_list_refresh_period = DUPL_SCAN_CACHE_REFRESH_PERIOD,             \
+    .ble_50_feat_supp  = BT_CTRL_50_FEATURE_SUPPORT,                       \
 }
 
 #else
@@ -260,11 +278,12 @@ typedef struct {
     uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
     uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
     uint32_t hw_target_code;                /*!< hardware target */
-    uint8_t slave_ce_len_min;
+    uint8_t slave_ce_len_min;               /*!< slave minimum ce length*/
     uint8_t hw_recorrect_en;
     uint8_t cca_thresh;                     /*!< cca threshold*/
     uint16_t scan_backoff_upperlimitmax;    /*!< scan backoff upperlimitmax value */
     uint16_t dup_list_refresh_period;       /*!< duplicate scan list refresh time */
+    bool ble_50_feat_supp;                  /*!< BLE 5.0 feature support */
 } esp_bt_controller_config_t;
 
 /**
