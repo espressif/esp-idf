@@ -37,7 +37,7 @@ function(__ldgen_process_template template output)
     file(GENERATE OUTPUT ${build_dir}/ldgen_libraries INPUT ${build_dir}/ldgen_libraries.in)
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${build_dir}/ldgen_libraries.in"
         "${build_dir}/ldgen_libraries")
 
