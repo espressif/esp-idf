@@ -9,12 +9,13 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "test_params.h"
+#include "ecc_params.h"
 #include "soc/soc_caps.h"
 #include "hal/ecc_hal.h"
 #include "hal/clk_gate_ll.h"
 
-#include "unity.h"
+#include "memory_checks.h"
+#include "unity_fixture.h"
 
 #define _DEBUG_                             0
 #define SOC_ECC_SUPPORT_POINT_MULT          1
@@ -43,6 +44,21 @@ static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len
 static void ecc_enable_and_reset(void)
 {
     periph_ll_enable_clk_clear_rst(PERIPH_ECC_MODULE);
+}
+
+
+TEST_GROUP(ecc);
+
+TEST_SETUP(ecc)
+{
+    test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
+}
+
+TEST_TEAR_DOWN(ecc)
+{
+    test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
+                                         test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
 }
 
 #if SOC_ECC_SUPPORT_POINT_MULT
@@ -126,7 +142,7 @@ static void test_ecc_point_mul_inner(bool verify_first)
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(y_mul_le, y_res_le, 24, "Y coordinate of P192 point multiplication ");
 }
 
-TEST_CASE("ECC point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1)
 {
     test_ecc_point_mul_inner(false);
 }
@@ -148,7 +164,7 @@ static int ecc_point_verify(const uint8_t *x_le, const uint8_t *y_le, uint8_t le
    return ecc_hal_read_verify_result();
 }
 
-TEST_CASE("ECC point verification on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_point_verification_on_SECP192R1_and_SECP256R1)
 {
     int res;
     uint8_t x_le[32];
@@ -183,7 +199,7 @@ TEST_CASE("ECC point verification on SECP192R1 and SECP256R1", "[ecc][hal]")
 #endif
 
 #if SOC_ECC_SUPPORT_POINT_MULT && SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
-TEST_CASE("ECC point verification and multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_point_verification_and_multiplication_on_SECP192R1_and_SECP256R1)
 {
     test_ecc_point_mul_inner(true);
 }
@@ -208,7 +224,7 @@ static void ecc_point_inv_mul(const uint8_t *num_le, const uint8_t *deno_le, uin
     ecc_hal_read_mul_result(zero, res_le, len);
 }
 
-TEST_CASE("ECC inverse multiplication (or mod division) using SECP192R1 and SECP256R1 order of curve", "[ecc][hal]")
+TEST(ecc, ecc_inverse_multiplication_or_mod_division_using_SECP192R1_and_SECP256R1_order_of_curve)
 {
     uint8_t res[32] = {0};
     ecc_point_inv_mul(ecc256_num, ecc256_den, 32, res);
@@ -277,7 +293,7 @@ static void test_ecc_jacob_mul_inner(bool verify_first)
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(ecc_p192_jacob_mul_res_z_le, z_res_le, 24, "Z coordinate of P192 point jacobian multiplication ");
 }
 
-TEST_CASE("ECC jacobian point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_jacobian_point_multiplication_on_SECP192R1_and_SECP256R1)
 {
     test_ecc_jacob_mul_inner(false);
 }
@@ -301,7 +317,7 @@ static int ecc_jacob_verify(const uint8_t *x_le, const uint8_t *y_le, const uint
    return ecc_hal_read_verify_result();
 }
 
-TEST_CASE("ECC jacobian point verification on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_jacobian_point_verification_on_SECP192R1_and_SECP256R1)
 {
     int res;
     /* P256 */
@@ -315,7 +331,7 @@ TEST_CASE("ECC jacobian point verification on SECP192R1 and SECP256R1", "[ecc][h
 #endif
 
 #if SOC_ECC_SUPPORT_JACOB_POINT_MULT && SOC_ECC_SUPPORT_JACOB_POINT_VERIFY
-TEST_CASE("ECC point verification and Jacobian point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_point_verification_and_jacobian_point_multiplication_on_SECP192R1_and_SECP256R1)
 {
     test_ecc_jacob_mul_inner(true);
 }
@@ -341,7 +357,7 @@ static void ecc_point_addition(uint8_t *px_le, uint8_t *py_le, uint8_t *qx_le, u
     ecc_hal_read_point_add_result(x_res_le, y_res_le, z_res_le, len, jacob_output);
 }
 
-TEST_CASE("ECC point addition on SECP192R1 and SECP256R1", "[ecc][hal]")
+TEST(ecc, ecc_point_addition_on_SECP192R1_and_SECP256R1)
 {
     uint8_t scalar_le[32] = {0};
     uint8_t x_le[32] = {0};
@@ -414,7 +430,7 @@ static void ecc_mod_op(ecc_mode_t mode, const uint8_t *a, const uint8_t *b, uint
 #endif
 
 #if SOC_ECC_SUPPORT_MOD_ADD
-TEST_CASE("ECC mod addition using SECP192R1 and SECP256R1 order of curve", "[ecc][hal]")
+TEST(ecc, ecc_mod_addition_using_SECP192R1_and_SECP256R1_order_of_curve)
 {
     uint8_t res[32] = {0};
     ecc_mod_op(ECC_MODE_MOD_ADD, ecc256_x, ecc256_y, 32, res);
@@ -426,7 +442,7 @@ TEST_CASE("ECC mod addition using SECP192R1 and SECP256R1 order of curve", "[ecc
 #endif
 
 #if SOC_ECC_SUPPORT_MOD_SUB
-TEST_CASE("ECC mod subtraction using SECP192R1 and SECP256R1 order of curve", "[ecc][hal]")
+TEST(ecc, ecc_mod_subtraction_using_SECP192R1_and_SECP256R1_order_of_curve)
 {
     uint8_t res[32] = {0};
     ecc_mod_op(ECC_MODE_MOD_SUB, ecc256_x, ecc256_y, 32, res);
@@ -438,7 +454,7 @@ TEST_CASE("ECC mod subtraction using SECP192R1 and SECP256R1 order of curve", "[
 #endif
 
 #if SOC_ECC_SUPPORT_MOD_MUL
-TEST_CASE("ECC mod multiplication using SECP192R1 and SECP256R1 order of curve", "[ecc][hal]")
+TEST(ecc, ecc_mod_multiplication_using_SECP192R1_and_SECP256R1_order_of_curve)
 {
     uint8_t res[32] = {0};
     ecc_mod_op(ECC_MODE_MOD_MUL, ecc256_x, ecc256_y, 32, res);
@@ -448,3 +464,51 @@ TEST_CASE("ECC mod multiplication using SECP192R1 and SECP256R1 order of curve",
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(ecc192_mul_res, res, 24, "P192 mod multiplication");
 }
 #endif
+
+TEST_GROUP_RUNNER(ecc)
+{
+#if SOC_ECC_SUPPORT_POINT_MULT
+    RUN_TEST_CASE(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
+    RUN_TEST_CASE(ecc, ecc_point_verification_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_POINT_MULT && SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
+    RUN_TEST_CASE(ecc, ecc_point_verification_and_multiplication_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_POINT_DIVISION
+    RUN_TEST_CASE(ecc, ecc_inverse_multiplication_or_mod_division_using_SECP192R1_and_SECP256R1_order_of_curve);
+#endif
+
+#if SOC_ECC_SUPPORT_JACOB_POINT_MULT
+    RUN_TEST_CASE(ecc, ecc_jacobian_point_multiplication_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_JACOB_POINT_VERIFY
+    RUN_TEST_CASE(ecc, ecc_jacobian_point_verification_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_JACOB_POINT_MULT && SOC_ECC_SUPPORT_JACOB_POINT_VERIFY
+    RUN_TEST_CASE(ecc, ecc_point_verification_and_jacobian_point_multiplication_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_POINT_ADDITION
+    RUN_TEST_CASE(ecc, ecc_point_addition_on_SECP192R1_and_SECP256R1);
+#endif
+
+#if SOC_ECC_SUPPORT_MOD_ADD
+    RUN_TEST_CASE(ecc, ecc_mod_addition_using_SECP192R1_and_SECP256R1_order_of_curve);
+#endif
+
+#if SOC_ECC_SUPPORT_MOD_SUB
+    RUN_TEST_CASE(ecc, ecc_mod_subtraction_using_SECP192R1_and_SECP256R1_order_of_curve);
+#endif
+
+#if SOC_ECC_SUPPORT_MOD_MUL
+    RUN_TEST_CASE(ecc, ecc_mod_multiplication_using_SECP192R1_and_SECP256R1_order_of_curve);
+#endif
+
+}

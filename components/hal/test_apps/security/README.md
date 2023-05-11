@@ -12,6 +12,21 @@ This contains tests for the following features of the security peripherals:
     - MPI Multiplication
     - MPI Modular Exponentiation
 
+- ECC peripheral
+    - ECC Point multiplication for P192 and P256 curve
+    - ECC Point verification for P192 and P256 curve
+    - ECC Point verify and multiply for P192 and P256 curve
+    - ECC Inverse multiplication for P192 and P256
+
+    If the hardware supports extended work modes then it also tests:
+    - ECC Jacobian multiplication for P192 and P256 curve
+    - ECC Jacobian verification for P192 and P256 curve
+    - ECC Point verification and Jacobian multiplication for P192 and P256 curve
+    - ECC Point addition for P192 and P256 curve
+    - Mod addition
+    - Mod subtraction
+    - Mod multiplication
+
 # Building
 
 ```bash

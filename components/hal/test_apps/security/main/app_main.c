@@ -9,7 +9,13 @@
 
 static void run_all_tests(void)
 {
+#if CONFIG_SOC_MPI_SUPPORTED
     RUN_TEST_GROUP(mpi);
+#endif
+
+#if CONFIG_SOC_ECC_SUPPORTED
+    RUN_TEST_GROUP(ecc);
+#endif
 }
 
 void app_main(void)
