@@ -55,8 +55,6 @@
   - "tools/test_build_system/**/*"
 
 .patterns-custom_test: &patterns-custom_test
-  - "components/espcoredump/**/*"
-
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
