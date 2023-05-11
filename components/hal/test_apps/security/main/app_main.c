@@ -16,6 +16,14 @@ static void run_all_tests(void)
 #if CONFIG_SOC_ECC_SUPPORTED
     RUN_TEST_GROUP(ecc);
 #endif
+
+#if CONFIG_IDF_ENV_FPGA
+
+#if CONFIG_SOC_HMAC_SUPPORTED
+    RUN_TEST_GROUP(hmac);
+#endif
+
+#endif
 }
 
 void app_main(void)

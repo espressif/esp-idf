@@ -27,6 +27,24 @@ This contains tests for the following features of the security peripherals:
     - Mod subtraction
     - Mod multiplication
 
+- HMAC periperhal
+    - HMAC 'downstream' JTAG Enable mode
+    - HMAC 'downstream' JTAG Disable
+    - HMAC 'upstream' MAC generation with zeroes
+    - HMAC 'upstream' MAC generation from data
+
+
+> **_NOTE:_** The verification tests for the HMAC peripherals would get exercised in only in an FPGA environment.
+# Burning the HMAC key
+
+The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+
+```bash
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 hmac_key.bin HMAC_DOWN_JTAG
+
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 hmac_key.bin HMAC_UP
+```
+
 # Building
 
 ```bash
