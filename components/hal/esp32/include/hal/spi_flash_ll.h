@@ -400,6 +400,16 @@ static inline void spi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup_t
 }
 
 /**
+ * @brief Set lock for SPI0 so that spi0 can request new cache request after a cache transfer.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spi_flash_ll_set_pe_bit(spi_dev_t *dev)
+{
+    // Not supported on esp32
+}
+
+/**
  * Get the spi flash source clock frequency. Used for calculating
  * the divider parameters.
  *

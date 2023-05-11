@@ -97,26 +97,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .input_delay_ns = 0,\
     .cs_setup = 1,\
 }
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI1_HOST,\
-    .freq_mhz = DEFAULT_FLASH_SPEED, \
-    .cs_num = 0, \
-    .iomux = true, \
-    .input_delay_ns = 0,\
-    .cs_setup = 1,\
-}
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/efuse.h"
-#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI1_HOST,\
-    .freq_mhz = DEFAULT_FLASH_SPEED, \
-    .cs_num = 0, \
-    .iomux = true, \
-    .input_delay_ns = 0,\
-    .cs_setup = 1,\
-}
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#else // Other target
 #if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
@@ -137,7 +118,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .cs_setup = 1,\
 }
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
-#endif
+#endif // Other target
 
 static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)
 {

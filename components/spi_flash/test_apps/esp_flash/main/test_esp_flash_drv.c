@@ -459,55 +459,6 @@ static void test_flash_erase_not_trigger_wdt(const esp_partition_t *part)
 
 TEST_CASE_MULTI_FLASH_LONG("Test erasing flash chip not triggering WDT", test_flash_erase_not_trigger_wdt);
 
-
-#if CONFIG_SPI_FLASH_AUTO_SUSPEND
-void esp_test_for_suspend(void)
-{
-    /*clear content in cache*/
-#if !CONFIG_IDF_TARGET_ESP32C3
-    Cache_Invalidate_DCache_All();
-#endif
-    Cache_Invalidate_ICache_All();
-    ESP_LOGI(TAG, "suspend test begins:");
-    printf("run into test suspend function\n");
-    printf("print something when flash is erasing:\n");
-    printf("aaaaa bbbbb zzzzz fffff qqqqq ccccc\n");
-}
-
-static volatile bool task_erase_end, task_suspend_end = false;
-void task_erase_large_region(void *arg)
-{
-    esp_partition_t *part = (esp_partition_t *)arg;
-    test_erase_large_region(part);
-    task_erase_end = true;
-    vTaskDelete(NULL);
-}
-
-void task_request_suspend(void *arg)
-{
-    vTaskDelay(2);
-    ESP_LOGI(TAG, "flash go into suspend");
-    esp_test_for_suspend();
-    task_suspend_end = true;
-    vTaskDelete(NULL);
-}
-
-static void test_flash_suspend_resume(const esp_partition_t* part)
-{
-    xTaskCreatePinnedToCore(task_request_suspend, "suspend", 2048, (void *)"test_for_suspend", UNITY_FREERTOS_PRIORITY + 3, NULL, 0);
-    xTaskCreatePinnedToCore(task_erase_large_region, "test", 2048, (void *)part, UNITY_FREERTOS_PRIORITY + 2, NULL, 0);
-    while (!task_erase_end || !task_suspend_end) {
-    }
-    vTaskDelay(200);
-}
-
-TEST_CASE("SPI flash suspend and resume test", "[esp_flash][test_env=UT_T1_Flash_Suspend]")
-{
-    flash_test_func(test_flash_suspend_resume, 1 /* first index reserved for main flash */ );
-}
-
-#endif //CONFIG_SPI_FLASH_AUTO_SUSPEND
-
 static void test_write_protection(const esp_partition_t* part)
 {
     esp_flash_t* chip = part->flash_chip;

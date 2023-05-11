@@ -238,7 +238,14 @@ typedef volatile struct spi_mem_dev_s {
     union {
         struct {
             uint32_t flash_sus:     1;                  /*The status of flash suspend  only used in SPI1.*/
-            uint32_t reserved1:    31;                  /*reserved*/
+            uint32_t wait_pesr_cmd_2b:1;
+            uint32_t hpm_dly_128:   1;
+            uint32_t res_dly_128:   1;
+            uint32_t dp_dly_128:    1;
+            uint32_t per_dly_128:   1;
+            uint32_t pes_dly_128:   1;
+            uint32_t spi0_lock_en:  1;
+            uint32_t reserved1:    24;                  /*reserved*/
         };
         uint32_t val;
     } sus_status;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,16 @@ static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
     dev->cmd.update = 1;
     while (dev->cmd.update);
     dev->cmd.usr = 1;
+}
+
+/**
+ * In user mode, it is set to indicate that program/erase operation will be triggered.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void gpspi_flash_ll_set_pe_bit(spi_dev_t *dev)
+{
+    // Not supported on GPSPI
 }
 
 /**

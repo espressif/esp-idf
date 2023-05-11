@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -209,6 +201,7 @@ static esp_err_t spi_flash_command_winbond_program_4B(esp_flash_t *chip, const v
         .address = address,
         .mosi_len = length,
         .mosi_data = buffer,
+        .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
     };
     return chip->host->driver->common_command(chip->host, &t);
 }
@@ -220,6 +213,7 @@ esp_err_t spi_flash_command_winbond_erase_sector_4B(esp_flash_t *chip, uint32_t 
         .command = (addr_4b? CMD_SECTOR_ERASE_4B: CMD_SECTOR_ERASE),
         .address_bitlen = (addr_4b? 32: 24),
         .address = start_address,
+        .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
     };
     return chip->host->driver->common_command(chip->host, &t);
 }
@@ -231,6 +225,7 @@ esp_err_t spi_flash_command_erase_block_4B(esp_flash_t *chip, uint32_t start_add
         .command = (addr_4b? CMD_LARGE_BLOCK_ERASE_4B: CMD_LARGE_BLOCK_ERASE),
         .address_bitlen = (addr_4b? 32: 24),
         .address = start_address,
+        .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
     };
     return chip->host->driver->common_command(chip->host, &t);
 }

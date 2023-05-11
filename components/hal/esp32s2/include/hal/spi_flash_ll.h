@@ -65,6 +65,7 @@ typedef union  {
 #define spi_flash_ll_set_dummy_out(dev, en, lev)             gpspi_flash_ll_set_dummy_out((spi_dev_t*)dev, en, lev)
 #define spi_flash_ll_set_hold(dev, hold_n)                   gpspi_flash_ll_set_hold((spi_dev_t*)dev, hold_n)
 #define spi_flash_ll_set_cs_setup(dev, cs_setup_time)        gpspi_flash_ll_set_cs_setup((spi_dev_t*)dev, cs_setup_time)
+#define spi_flash_ll_set_pe_bit(dev)                         gpspi_flash_ll_set_pe_bit((spi_dev_t*)dev)
 
 #else
 
@@ -94,6 +95,7 @@ typedef union  {
 #define spi_flash_ll_set_dummy_out(dev, en, lev)             spimem_flash_ll_set_dummy_out((spi_mem_dev_t*)dev, en, lev)
 #define spi_flash_ll_set_hold(dev, hold_n)                   spimem_flash_ll_set_hold((spi_mem_dev_t*)dev, hold_n)
 #define spi_flash_ll_set_cs_setup(dev, cs_setup_time)        spimem_flash_ll_set_cs_setup((spi_mem_dev_t*)dev, cs_setup_time)
+#define spi_flash_ll_set_pe_bit(dev)                         spimem_flash_ll_set_pe_bit((spi_mem_dev_t*)dev)
 
 #endif
 

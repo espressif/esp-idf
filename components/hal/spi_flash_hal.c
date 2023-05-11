@@ -103,6 +103,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         .cs_hold = cfg->cs_hold,
         .cs_setup = cfg->cs_setup,
         .base_io_mode = cfg->default_io_mode,
+        .freq_mhz = cfg->freq_mhz,
     };
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (cfg->using_timing_tuning) {

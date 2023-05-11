@@ -170,6 +170,9 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
     spi_flash_ll_set_buffer_data(dev, trans->mosi_data, trans->mosi_len);
 
     spi_flash_ll_set_miso_bitlen(dev, trans->miso_len * 8);
+    if ((trans->flags & SPI_FLASH_TRANS_FLAG_PE_CMD) != 0) {
+        spi_flash_ll_set_pe_bit(dev);
+    }
     spi_flash_ll_user_start(dev);
     host->driver->poll_cmd_done(host);
     if (trans->miso_len > 0) {
