@@ -43,6 +43,15 @@ bool esp_ptr_byte_accessible(const void *p)
 #if CONFIG_SPIRAM
     r |= esp_psram_check_ptr_addr(p);
 #endif
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
+     * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
+     * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
+     * Though this memory lies in the external memory vaddr, it is no different
+     * from the internal RAM in terms of hardware attributes. It is a part of
+     * the internal RAM when added to the heap and is byte-accessible .*/
+    r |= (ip >= SOC_DROM_LOW && ip < (SOC_DROM_LOW + 0x4000));
+#endif
     return r;
 }
 
