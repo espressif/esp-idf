@@ -246,6 +246,13 @@ menu "mbedTLS"
 
                 See mbedTLS documentation for required API and more details.
 
+        config MBEDTLS_PKCS7_C
+            bool "Enable PKCS #7"
+            default y
+            depends on MBEDTLS_X509_CRL_PARSE_C
+            help
+                Enable PKCS #7 core for using PKCS #7-formatted signatures.
+
         menu "DTLS-based configurations"
             depends on MBEDTLS_SSL_PROTO_DTLS
 
@@ -351,6 +358,7 @@ menu "mbedTLS"
     config MBEDTLS_ECP_RESTARTABLE
         bool "Enable mbedTLS ecp restartable"
         select MBEDTLS_ECDH_LEGACY_CONTEXT
+        depends on MBEDTLS_ECP_C
         default n
         help
             Enable "non-blocking" ECC operations that can return early and be resumed.
