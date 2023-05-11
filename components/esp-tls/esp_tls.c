@@ -141,12 +141,24 @@ esp_tls_t *esp_tls_init(void)
     return tls;
 }
 
-static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int port, struct sockaddr_storage *address, int* fd)
+static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int port, esp_tls_addr_family_t addr_family, struct sockaddr_storage *address, int* fd)
 {
     struct addrinfo *address_info;
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+
+    switch (addr_family) {
+        case ESP_TLS_AF_INET:
+            hints.ai_family = AF_INET;
+            break;
+        case ESP_TLS_AF_INET6:
+            hints.ai_family = AF_INET6;
+            break;
+        default:
+            hints.ai_family = AF_UNSPEC;
+            break;
+    }
+
     hints.ai_socktype = SOCK_STREAM;
 
     char *use_host = strndup(host, hostlen);
@@ -283,7 +295,9 @@ static inline esp_err_t tcp_connect(const char *host, int hostlen, int port, con
 {
     struct sockaddr_storage address;
     int fd;
-    esp_err_t ret = esp_tls_hostname_to_fd(host, hostlen, port, &address, &fd);
+
+    esp_tls_addr_family_t addr_family = (cfg != NULL) ? cfg->addr_family : ESP_TLS_AF_UNSPEC;
+    esp_err_t ret = esp_tls_hostname_to_fd(host, hostlen, port, addr_family, &address, &fd);
     if (ret != ESP_OK) {
         ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
         return ret;
