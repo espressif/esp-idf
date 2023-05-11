@@ -46,7 +46,7 @@ void ulp_lp_core_delay_us(uint32_t us);
  *       before halting.
  *
  */
-__attribute__((noreturn))  void ulp_lp_core_halt(void);
+__attribute__((__noreturn__))  void ulp_lp_core_halt(void);
 
 #ifdef __cplusplus
 }

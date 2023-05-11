@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-void __attribute__((noreturn)) panic_restart(void);
+void __attribute__((__noreturn__)) panic_restart(void);
 
 #ifdef __cplusplus
 }
