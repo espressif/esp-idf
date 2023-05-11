@@ -53,7 +53,7 @@ void ulp_riscv_rescue_from_monitor(void);
  * put the ULP in monitor mode and triggers a reset.
  *
  */
-void __attribute__((noreturn)) ulp_riscv_halt(void);
+void __attribute__((__noreturn__)) ulp_riscv_halt(void);
 
 #define ulp_riscv_shutdown ulp_riscv_halt
 
