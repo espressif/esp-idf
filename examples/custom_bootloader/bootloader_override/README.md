@@ -23,7 +23,7 @@ idf.py flash
 
 This custom bootloader does not do more than the older bootloader, it only prints an extra message on start up:
 ```
-[boot] Custom bootloader has been initialized correctly.
+[boot] Custom bootloader message defined in the KConfig file.
 ```
 
 ## Organisation of this example
