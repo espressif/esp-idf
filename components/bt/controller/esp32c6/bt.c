@@ -167,7 +167,9 @@ static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
 static uint32_t osi_random_wrapper(void);
 static void esp_reset_rpa_moudle(void);
-
+static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
+static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                              const uint8_t *our_priv_key, uint8_t *out_dhkey);
 /* Local variable definition
  ***************************************************************************
  */
@@ -218,8 +220,8 @@ struct ext_funcs_t ext_funcs_ro = {
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
-    ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
-    ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
+    ._ecc_gen_key_pair = esp_ecc_gen_key_pair,
+    ._ecc_gen_dh_key = esp_ecc_gen_dh_key,
     ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
@@ -333,6 +335,25 @@ static int task_create_wrapper(void *task_func, const char *name, uint32_t stack
 static void task_delete_wrapper(void *task_handle)
 {
     vTaskDelete(task_handle);
+}
+
+static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv)
+{
+    int rc = -1;
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    rc = ble_sm_alg_gen_key_pair(pub, priv);
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    return rc;
+}
+
+static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                              const uint8_t *our_priv_key, uint8_t *out_dhkey)
+{
+    int rc = -1;
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    rc = ble_sm_alg_gen_dhkey(peer_pub_key_x, peer_pub_key_y, our_priv_key, out_dhkey);
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    return rc;
 }
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
