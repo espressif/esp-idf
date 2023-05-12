@@ -567,7 +567,7 @@ static void IRAM_ATTR rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
 
 static size_t IRAM_ATTR rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
 {
-    rmt_encode_state_t encode_state = 0;
+    rmt_encode_state_t encode_state = RMT_ENCODING_RESET;
     rmt_encoder_handle_t encoder = t->encoder;
     size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_bytes, &encode_state);
     if (encode_state & RMT_ENCODING_COMPLETE) {
