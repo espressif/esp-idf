@@ -191,4 +191,17 @@ int hci_uart_close(int port_num)
     return 0;
 }
 
+int hci_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
+{
+    int port_num = hci_uart.port;
+    int32_t baud_rate = hci_uart.cfg.baud_rate;
+    uint8_t data_bits = hci_uart.cfg.data_bits;
+    uint8_t stop_bits = hci_uart.cfg.stop_bits;
+    uart_parity_t parity = hci_uart.cfg.parity;
+    uart_hw_flowcontrol_t flow_ctl = hci_uart.cfg.flow_ctrl;
+    hci_uart_close(port_num);
+    hci_uart_config(port_num, baud_rate, data_bits, stop_bits, parity, flow_ctl);
+    ESP_ERROR_CHECK(uart_set_pin(port_num, tx_pin, rx_pin, rts_pin, cts_pin));
+    return 0;
+}
 #endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
