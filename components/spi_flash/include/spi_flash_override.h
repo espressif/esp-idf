@@ -30,8 +30,8 @@ typedef enum {
     SPI_FLASH_HPM_CMD_NEEDED,      // Means that in the certain condition, flash needs to enter the high performance mode by command.
     SPI_FLASH_HPM_DUMMY_NEEDED,    // Means that in the certain condition, flash needs to enter the high performance mode by adjusting dummy.
     SPI_FLASH_HPM_WRITE_SR_NEEDED, // Means that in the certain condition, flash needs to enter the high performance mode by writing status register.
-    SPI_FLASH_HPM_UNNEEDED,           // Means that flash doesn't need to enter the high performance mode.
-    SPI_FLASH_HPM_BEYOND_LIMIT,       // Means that flash has no capability to meet that condition.
+    SPI_FLASH_HPM_UNNEEDED,        // Means that flash doesn't need to enter the high performance mode.
+    SPI_FLASH_HPM_BEYOND_LIMIT,    // Means that flash has no capability to meet that condition.
 } spi_flash_requirement_t;
 
 typedef void (*spi_flash_hpm_enable_fn_t)(void);
