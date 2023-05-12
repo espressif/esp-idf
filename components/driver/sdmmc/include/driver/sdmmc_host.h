@@ -46,7 +46,9 @@ extern "C" {
     .io_int_enable = sdmmc_host_io_int_enable, \
     .io_int_wait = sdmmc_host_io_int_wait, \
     .command_timeout_ms = 0, \
-    .get_real_freq = &sdmmc_host_get_real_freq \
+    .get_real_freq = &sdmmc_host_get_real_freq, \
+    .input_delay_phase = SDMMC_DELAY_PHASE_0, \
+    .set_input_delay = &sdmmc_host_set_input_delay \
 }
 
 /**
@@ -290,6 +292,25 @@ esp_err_t sdmmc_host_deinit(void);
  *      - ESP_ERR_INVALID_ARG on real_freq_khz == NULL or invalid slot number used
  */
 esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz);
+
+/**
+ * @brief set input delay
+ *
+ * @note ESP32 doesn't support this feature, you will get an `ESP_ERR_NOT_SUPPORTED`
+ *
+ * - This API sets delay when the SDMMC Host samples the signal from the SD Slave.
+ * - This API will check if the given `delay_phase` is valid or not.
+ * - This API will print out the delay time, in picosecond (ps)
+ *
+ * @param slot         slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param delay_phase  delay phase, this API will convert the phase into picoseconds and print it out
+ *
+ * @return
+ *        - ESP_OK:                ON success.
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument.
+ *        - ESP_ERR_NOT_SUPPORTED: ESP32 doesn't support this feature.
+ */
+esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase);
 
 #ifdef __cplusplus
 }
