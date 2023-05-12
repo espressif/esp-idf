@@ -17,6 +17,12 @@
 extern "C" {
 #endif
 
+#if CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
+#define HEAP_IRAM_ATTR
+#else
+#define HEAP_IRAM_ATTR IRAM_ATTR
+#endif
+
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
@@ -63,7 +69,7 @@ esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callb
  * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
  * You should refrain from doing heavy work, logging, flash writes, or any locking.
  */
-__attribute__((weak)) IRAM_ATTR void esp_heap_trace_alloc_hook(void* ptr, size_t size, uint32_t caps);
+__attribute__((weak)) HEAP_IRAM_ATTR void esp_heap_trace_alloc_hook(void* ptr, size_t size, uint32_t caps);
 
 /**
  * @brief callback called after every free
@@ -71,7 +77,7 @@ __attribute__((weak)) IRAM_ATTR void esp_heap_trace_alloc_hook(void* ptr, size_t
  * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
  * You should refrain from doing heavy work, logging, flash writes, or any locking.
  */
-__attribute__((weak)) IRAM_ATTR void esp_heap_trace_free_hook(void* ptr);
+__attribute__((weak)) HEAP_IRAM_ATTR void esp_heap_trace_free_hook(void* ptr);
 #endif
 
 /**

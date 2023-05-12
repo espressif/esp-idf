@@ -142,6 +142,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Disabling :ref:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` prevents spi_slave interrupts from being serviced while writing to flash, will save some IRAM.
     - Setting :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` to disable assertion for HAL component will save some IRAM especially for HAL code who calls `HAL_ASSERT` a lot and resides in IRAM.
     - Refer to sdkconfig menu ``Auto-detect flash chips`` and you can disable flash drivers which you don't need to save some IRAM.
+    - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not (incorrectly) used from ISRs, this option is safe to enable in all configuration.
 
 .. only:: esp32
 

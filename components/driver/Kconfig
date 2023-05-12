@@ -85,10 +85,15 @@ menu "Driver Configurations"
         config SPI_MASTER_ISR_IN_IRAM
             bool "Place SPI master ISR function into IRAM"
             default y
+            depends on !HEAP_PLACE_FUNCTION_INTO_FLASH
             select PERIPH_CTRL_FUNC_IN_IRAM
             select HAL_SPI_MASTER_FUNC_IN_IRAM
             help
                 Place the SPI master ISR in to IRAM to avoid possible cache miss.
+
+                Enabling this configuration is possible only when HEAP_PLACE_FUNCTION_INTO_FLASH
+                is disabled since the spi master uses can allocate transactions buffers into DMA
+                memory section using the heap component API that ipso facto has to be placed in IRAM.
 
                 Also you can forbid the ISR being disabled during flash writing
                 access, by add ESP_INTR_FLAG_IRAM when initializing the driver.
