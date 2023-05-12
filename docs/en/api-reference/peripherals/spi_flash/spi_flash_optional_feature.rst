@@ -28,17 +28,24 @@ Some features are not supported on all ESP chips and Flash chips. You can check 
 Auto Suspend & Resume
 ---------------------
 
-.. only:: esp32c3
-
-    You can refer to :ref:`auto-suspend` for more information about this feature. The support list is as follows.
+The support list is as follows.
 
 ESP Chips List:
 
 1. ESP32C3
+2. ESP32C2
+3. ESP32S3
 
 Flash Chips List:
 
 1. XM25QxxC series.
+2. GD25QxxE series.
+
+.. only:: esp32c3 or esp32c2 or esp32s3
+
+    .. attention::
+
+        There are multiple limitations about the auto-suspend feature, please do read :ref:`auto-suspend` for more information before you enable this feature.
 
 Flash unique ID
 ---------------
