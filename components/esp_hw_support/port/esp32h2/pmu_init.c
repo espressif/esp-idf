@@ -15,6 +15,7 @@
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_pmu.h"
+#include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
 
 // TODO: IDF-6267
@@ -204,6 +205,8 @@ void pmu_init()
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_RTC_REG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_DIG_REG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_TRX, 0);
+
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_0P8, 8);  // fix low temp issue, need to increase this internal voltage
 
     WRITE_PERI_REG(PMU_POWER_PD_TOP_CNTL_REG, 0);
     WRITE_PERI_REG(PMU_POWER_PD_HPAON_CNTL_REG, 0);
