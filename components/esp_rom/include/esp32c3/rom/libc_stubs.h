@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _ROM_LIBC_STUBS_H_
 #define _ROM_LIBC_STUBS_H_
 
@@ -77,7 +69,7 @@ struct syscall_stub_table
     void (*_retarget_lock_release_recursive)(_LOCK_T lock);
     int (*_printf_float)(struct _reent *data, void *pdata, FILE * fp, int (*pfunc) (struct _reent *, FILE *, const char *, size_t len), va_list * ap);
     int (*_scanf_float) (struct _reent *rptr, void *pdata, FILE *fp, va_list *ap);
-    void (*__assert_func) (const char *file, int line, const char * func, const char *failedexpr) __attribute__((noreturn));
+    void (*__assert_func) (const char *file, int line, const char * func, const char *failedexpr) __attribute__((__noreturn__));
     void (*__sinit) (struct _reent *r);
     void (*_cleanup_r) (struct _reent* r);
 };
