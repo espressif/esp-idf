@@ -139,6 +139,7 @@ extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t handle, int power_level);
 extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 extern int ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_count_info_t * npl_info);
+extern void bt_track_pll_cap(void);
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _nimble_bss_start;
@@ -226,6 +227,7 @@ struct ext_funcs_t ext_funcs_ro = {
     ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
     ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
     ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
+    ._esp_bt_track_pll_cap = bt_track_pll_cap,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
 
