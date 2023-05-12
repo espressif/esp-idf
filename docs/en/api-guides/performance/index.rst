@@ -19,6 +19,6 @@ Guides
 .. toctree::
    :maxdepth: 2
 
-    Execution Speed <speed>
-    Binary Size <size>
-    RAM Usage <ram-usage>
+   speed
+   size
+   ram-usage
