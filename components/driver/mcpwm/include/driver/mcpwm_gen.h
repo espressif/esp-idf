@@ -59,6 +59,7 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen);
  * @note The force level will be applied to the generator immediately, regardless any other events that would change the generator's behaviour.
  * @note If the `hold_on` is true, the force level will retain forever, until user removes the force level by setting the force level to `-1`.
  * @note If the `hold_on` is false, the force level can be overridden by the next event action.
+ * @note The force level set by this function can be inverted by GPIO matrix or dead-time module. So the level set here doesn't equal to the final output level.
  *
  * @param[in] gen MCPWM generator handle, allocated by `mcpwm_new_generator()`
  * @param[in] level GPIO level to be applied to MCPWM generator, specially, -1 means to remove the force level

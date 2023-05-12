@@ -77,6 +77,56 @@ TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_operator(oper));
 }
 
+// mcpwm_generator_set_force_level acts before the dead time module
+// so the value output on the generator is a combined result
+TEST_CASE("mcpwm_force_level_and_dead_time", "[mcpwm]")
+{
+    printf("create operator and generators\r\n");
+    mcpwm_oper_handle_t oper = NULL;
+    mcpwm_operator_config_t operator_config = {
+        .group_id = 0,
+    };
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+
+    mcpwm_gen_handle_t gen_a = NULL;
+    mcpwm_gen_handle_t gen_b = NULL;
+    const int gen_a_gpio = 0;
+    const int gen_b_gpio = 2;
+    mcpwm_generator_config_t generator_config = {
+        .gen_gpio_num = gen_a_gpio,
+        .flags.io_loop_back = true, // loop back for test
+    };
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
+    generator_config.gen_gpio_num = gen_b_gpio;
+    generator_config.flags.invert_pwm = true; // Inversion add to the GPIO matrix
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
+
+    mcpwm_dead_time_config_t dt_config = {
+        .posedge_delay_ticks = 5,
+    };
+    ESP_ERROR_CHECK(mcpwm_generator_set_dead_time(gen_a, gen_a, &dt_config));
+    dt_config = (mcpwm_dead_time_config_t) {
+        .negedge_delay_ticks = 5,
+        .flags.invert_output = true, // Inversion applied by the dead time module
+    };
+    ESP_ERROR_CHECK(mcpwm_generator_set_dead_time(gen_b, gen_b, &dt_config));
+
+    printf("add force level to the generator, hold on");
+    for (int i = 0; i < 10; i++) {
+        TEST_ESP_OK(mcpwm_generator_set_force_level(gen_b, 0, true));
+        vTaskDelay(pdMS_TO_TICKS(10));
+        TEST_ASSERT_EQUAL(0, gpio_get_level(gen_b_gpio));
+        TEST_ESP_OK(mcpwm_generator_set_force_level(gen_b, 1, true));
+        vTaskDelay(pdMS_TO_TICKS(10));
+        TEST_ASSERT_EQUAL(1, gpio_get_level(gen_b_gpio));
+    }
+
+    printf("delete generator and operator\r\n");
+    TEST_ESP_OK(mcpwm_del_generator(gen_a));
+    TEST_ESP_OK(mcpwm_del_generator(gen_b));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+}
+
 TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
 {
     printf("create mcpwm timer\r\n");
