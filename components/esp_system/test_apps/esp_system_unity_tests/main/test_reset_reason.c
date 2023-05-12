@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <inttypes.h>
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_task_wdt.h"
@@ -338,7 +339,7 @@ static int fibonacci(int n, void* func(void))
     uint32_t base, start;
     RSR(WINDOWBASE, base);
     RSR(WINDOWSTART, start);
-    printf("WINDOWBASE = %-2d   WINDOWSTART = 0x%x\n", base, start);
+    printf("WINDOWBASE = %-2"PRIi32"   WINDOWSTART = 0x%"PRIx32"\n", base, start);
     if (n <= 1) {
         StackType_t *last_addr_stack = esp_cpu_get_sp();
         StackType_t *used_stack = (StackType_t *) (start_addr_stack - last_addr_stack);
