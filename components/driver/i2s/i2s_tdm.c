@@ -93,6 +93,7 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
 
 static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_config_t *slot_cfg)
 {
+    ESP_RETURN_ON_FALSE(slot_cfg->slot_mask, ESP_ERR_INVALID_ARG, TAG, "At least one channel should be enabled");
     /* Update the total slot num and active slot num */
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(slot_cfg->slot_mask);
     uint32_t max_slot_num = 32 - __builtin_clz(slot_cfg->slot_mask);
