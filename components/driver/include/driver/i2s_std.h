@@ -145,7 +145,7 @@ extern "C" {
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = true, \
-    .left_align = false, \
+    .left_align = true, \
     .big_endian = false, \
     .bit_order_lsb = false \
 }
@@ -164,7 +164,7 @@ extern "C" {
     .ws_width = 1, \
     .ws_pol = true, \
     .bit_shift = true, \
-    .left_align = false, \
+    .left_align = true, \
     .big_endian = false, \
     .bit_order_lsb = false \
 }
@@ -182,7 +182,7 @@ extern "C" {
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = false, \
-    .left_align = false, \
+    .left_align = true, \
     .big_endian = false, \
     .bit_order_lsb = false \
 }
