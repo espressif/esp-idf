@@ -157,9 +157,9 @@ typedef struct {
 
 ESP_STATIC_ASSERT(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
 
-volatile typedef struct emac_mac_dev_t *emac_mac_soc_regs_t;
-volatile typedef struct emac_dma_dev_t *emac_dma_soc_regs_t;
-volatile typedef struct emac_ext_dev_t *emac_ext_soc_regs_t;
+typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
+typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;
+typedef struct emac_ext_dev_s *emac_ext_soc_regs_t;
 
 typedef struct {
     emac_mac_soc_regs_t mac_regs;
