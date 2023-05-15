@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,12 +79,18 @@ esp_err_t sdmmc_host_reset(void)
     SDMMC.ctrl.fifo_reset = 1;
 
     // Wait for the reset bits to be cleared by hardware
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
     int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
     while (SDMMC.ctrl.controller_reset || SDMMC.ctrl.fifo_reset || SDMMC.ctrl.dma_reset) {
-        if (esp_timer_get_time() - t0 > SDMMC_HOST_RESET_TIMEOUT_US) {
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_HOST_RESET_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
-        vTaskDelay(1);
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
     }
 
     return ESP_OK;
@@ -195,13 +201,14 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
 
         ESP_RETURN_ON_ERROR(sdmmc_host_start_command(slot, cmd_val, 0), TAG, "sdmmc_host_start_command returned 0x%x", err_rc_);
 
+        int64_t yield_delay_us = 100 * 1000; // initially 100ms
         int64_t t0 = esp_timer_get_time();
+        int64_t t1 = 0;
         while (true) {
-
-            if (esp_timer_get_time() - t0 > SDMMC_HOST_CLOCK_UPDATE_CMD_TIMEOUT_US) {
+            t1 = esp_timer_get_time();
+            if (t1 - t0  > SDMMC_HOST_CLOCK_UPDATE_CMD_TIMEOUT_US) {
                 return ESP_ERR_TIMEOUT;
             }
-
             // Sending clock update command to the CIU can generate HLE error.
             // According to the manual, this is okay and we must retry the command.
             if (SDMMC.rintsts.hle) {
@@ -215,8 +222,10 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
                 repeat = false;
                 break;
             }
-
-            vTaskDelay(1);
+            if (t1 - t0 > yield_delay_us) {
+                yield_delay_us *= 2;
+                vTaskDelay(1);
+            }
         }
     }
 
@@ -401,12 +410,18 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
     /* Outputs should be synchronized to cclk_out */
     cmd.use_hold_reg = 1;
 
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
     int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
     while (SDMMC.cmd.start_command == 1) {
-        if (esp_timer_get_time() - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
-        vTaskDelay(1);
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
     }
     SDMMC.cmdarg = arg;
     cmd.card_num = slot;
@@ -866,7 +881,7 @@ static void sdmmc_isr(void* arg) {
 
     uint32_t sdio_pending = SDMMC.mintsts.sdio;
     if (sdio_pending) {
-        // disable the interrupt (no need to clear here, this is done in sdmmc_host_io_wait_int)
+        // disable the interrupt (no need to clear here, this is done in sdmmc_host_io_int_wait)
         SDMMC.intmask.sdio &= ~sdio_pending;
         xSemaphoreGiveFromISR(s_io_intr_event, &higher_priority_task_awoken);
     }
