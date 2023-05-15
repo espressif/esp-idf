@@ -125,7 +125,7 @@ class Page(object):
         self.page_buf[start_idx:end_idx] = self.bitmap_array
 
     def encrypt_entry(self, data_arr, tweak_arr, encr_key):
-        # Encrypt 32 bytes of data using AES-XTS encryption
+        # Encrypt 32 bytes of data using XTS-AES encryption
         backend = default_backend()
         plain_text = codecs.decode(data_arr, 'hex')
         tweak = codecs.decode(tweak_arr, 'hex')
@@ -761,7 +761,7 @@ def decrypt_data(data_input, decr_key, page_num, entry_no, entry_size):
     if type(data_input) == bytes:
         data_input = data_input.decode()
 
-    # Decrypt 32 bytes of data using AES-XTS decryption
+    # Decrypt 32 bytes of data using XTS-AES decryption
     backend = default_backend()
     plain_text = codecs.decode(data_input, 'hex')
     tweak = codecs.decode(tweak_val, 'hex')
