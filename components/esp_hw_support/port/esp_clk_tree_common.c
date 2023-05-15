@@ -152,6 +152,10 @@ uint32_t esp_clk_tree_rc_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
     if (precision == ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
         return SOC_CLK_RC_FAST_FREQ_APPROX;
     }
+// Re-evaluate this when H2 ECO2 is back IDF-7229
+#if CONFIG_IDF_TARGET_ESP32H2
+    ESP_HW_LOGW(TAG, "RC_FAST(FOSC) clock calibration is expected to have significant hardware change in the near future, don't use it for mass production. Upgrade IDF version to support the updated hardware.");
+#endif
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
     // If RC_FAST_D256 clock exists, calibration on a slow freq clock is much faster (less slow clock cycles need to wait)
     return esp_clk_tree_rc_fast_d256_get_freq_hz(precision) << 8;
