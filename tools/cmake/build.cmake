@@ -127,9 +127,10 @@ function(__build_set_lang_version)
     if(NOT IDF_TARGET STREQUAL "linux")
         # Building for chip targets: we use a known version of the toolchain.
         # Use latest supported versions.
-        # Please update docs/en/api-guides/cplusplus.rst when changing this.
+        # Please update docs/en/api-guides/cplusplus.rst and
+        # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
         set(c_std gnu17)
-        set(cxx_std gnu++20)
+        set(cxx_std gnu++2b)
     else()
         enable_language(C CXX)
         # Building for Linux target, fall back to an older version of the standard
@@ -149,7 +150,7 @@ function(__build_set_lang_version)
                                 "${preferred_c_versions}. Please upgrade the host compiler.")
         endif()
 
-        set(preferred_cxx_versions gnu++20 gnu++2a gnu++17 gnu++14)
+        set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
         set(ver_found FALSE)
         foreach(cxx_version ${preferred_cxx_versions})
             check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
