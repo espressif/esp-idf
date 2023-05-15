@@ -203,6 +203,10 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK
+    bool
+    default y
+
 config SOC_GDMA_GROUPS
     int
     default 1

@@ -132,7 +132,7 @@ TEST_CASE("ECC point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
 }
 #endif
 
-#if SOC_ECC_SUPPORT_POINT_VERIFY
+#if SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
 static int ecc_point_verify(const uint8_t *x_le, const uint8_t *y_le, uint8_t len)
 {
     ecc_enable_and_reset();
@@ -182,7 +182,7 @@ TEST_CASE("ECC point verification on SECP192R1 and SECP256R1", "[ecc][hal]")
 }
 #endif
 
-#if SOC_ECC_SUPPORT_POINT_MULT && SOC_ECC_SUPPORT_POINT_VERIFY
+#if SOC_ECC_SUPPORT_POINT_MULT && SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
 TEST_CASE("ECC point verification and multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
 {
     test_ecc_point_mul_inner(true);
