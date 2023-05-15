@@ -102,7 +102,7 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
 }
 
-FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(int intr_num)
+FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
 {
     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
 }
