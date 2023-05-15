@@ -174,8 +174,11 @@ Declaration of the entry point symbol comes from the generated header file menti
 Application Examples
 --------------------
 
-* ULP FSM Coprocessor counts pulses on an IO while main CPU is in deep sleep: :example:`system/ulp_fsm/ulp`.
-* ULP FSM Coprocessor polls ADC in while main CPU is in deep sleep: :example:`system/ulp_fsm/ulp_adc`.
+.. list::
+
+    * ULP FSM Coprocessor counts pulses on an IO while main CPU is in deep sleep: :example:`system/ulp_fsm/ulp`.
+    :esp32: * ULP FSM Coprocessor polls ADC in while main CPU is in deep sleep: :example:`system/ulp_fsm/ulp_adc`.
+
 
 API Reference
 -------------
