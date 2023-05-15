@@ -18,6 +18,7 @@ extern "C" {
 #define PSRAM_SIZE_8MB                  (8 * 1024 * 1024)
 #define PSRAM_SIZE_16MB                 (16 * 1024 * 1024)
 #define PSRAM_SIZE_32MB                 (32 * 1024 * 1024)
+#define PSRAM_SIZE_64MB                 (64 * 1024 * 1024)
 
 
 /*
