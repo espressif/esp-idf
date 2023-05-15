@@ -47,6 +47,7 @@ struct wpa_state_machine {
 	Boolean AuthenticationRequest;
 	Boolean ReAuthenticationRequest;
 	Boolean Disconnect;
+	u16 disconnect_reason; /* specific reason code to use with Disconnect */
 	int TimeoutCtr;
 	int GTimeoutCtr;
 	Boolean TimeoutEvt;

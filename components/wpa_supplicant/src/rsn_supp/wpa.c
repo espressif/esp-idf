@@ -2747,14 +2747,16 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
         sm->ap_rsnxe_len = len;
     }
 
-    sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
+    if (sm->ap_rsnxe != NULL) {
+        sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
 #ifdef CONFIG_SAE_PK
-    const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
-    if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
-            sae_pk_valid_password((const char*)pw)) {
-        sm->sae_pk = true;
-    }
+        const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
+        if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
+                sae_pk_valid_password((const char*)pw)) {
+            sm->sae_pk = true;
+        }
 #endif /* CONFIG_SAE_PK */
+    }
     return 0;
 }
 
