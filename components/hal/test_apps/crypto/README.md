@@ -41,6 +41,12 @@ This contains tests for the following features of the crypto peripherals:
     - Digital Signature Blocking Operation
     - Digital Signature Invalid Data
 
+- ECDSA peripheral
+    - ECDSA P192 signature generation
+    - ECDSA P256 signature generation
+    - ECDSA P192 signature verification
+    - ECDSA P256 signature verification
+
 > **_NOTE:_** The verification tests for the HMAC and Digital Signature peripherals would get exercised in only in an FPGA environment.
 # Burning the HMAC key
 
@@ -62,6 +68,16 @@ espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 ds_key1.bin HMAC_DOWN_DIGITAL_SIGNAT
 espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE --no-read-protect --no-write-protect --do-not-confirm
 
 espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE --no-read-protect --no-write-protect --do-not-confirm
+```
+
+# Burning the ECDSA keys
+
+The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY1` and `BLOCK_KEY2` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+
+```bash
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 ecdsa192_priv_key.pem ECDSA_KEY --no-read-protect --no-write-protect --do-not-confirm
+
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 ecdsa256_priv_key.pem ECDSA_KEY --no-read-protect --no-write-protect --do-not-confirm
 ```
 
 # Building

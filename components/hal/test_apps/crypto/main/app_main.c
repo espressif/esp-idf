@@ -27,6 +27,10 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(ds);
 #endif
 
+#if CONFIG_SOC_ECDSA_SUPPORTED
+    RUN_TEST_GROUP(ecdsa)
+#endif
+
 #endif /* CONFIG_IDF_ENV_FPGA */
 }
 

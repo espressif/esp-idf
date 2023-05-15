@@ -16,6 +16,10 @@ if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
    list(APPEND srcs "ds/test_ds.c")
 endif()
 
+if(CONFIG_SOC_ECDSA_SUPPORTED)
+   list(APPEND srcs "ecdsa/test_ecdsa.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        REQUIRES test_utils unity
                        WHOLE_ARCHIVE)
