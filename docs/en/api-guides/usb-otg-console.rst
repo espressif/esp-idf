@@ -67,14 +67,14 @@ Once the initial upload is done, the application will start up and a USB CDC por
 Initial upload using the ROM download mode, over USB CDC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Press {IDF_TARGET_NAME} into download mode. To do this, keep GPIO0 low while toggling reset. On many development boards, the "Boot" button is connected to GPIO0, and you can press "Reset" button while holding "Boot".
+* Place {IDF_TARGET_NAME} into download mode. To do this, keep GPIO0 low while toggling reset. On many development boards, the "Boot" button is connected to GPIO0, and you can press "Reset" button while holding "Boot".
 * A serial port will appear in the system. On most operating systems (Windows 8 and later, Linux, macOS) driver installation is not required. Find the port name using Device Manager (Windows) or by listing ``/dev/ttyACM*`` devices on Linux or ``/dev/cu*`` devices on macOS.
 * Run ``idf.py flash -p PORT`` to upload the application, with ``PORT`` determined in the previous step
 
 Initial upload using the ROM download mode, over USB DFU
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Press {IDF_TARGET_NAME} into download mode. To do this, keep GPIO0 low while toggling reset. On many development boards, the "Boot" button is connected to GPIO0, and you can press "Reset" button while holding "Boot".
+* Place {IDF_TARGET_NAME} into download mode. To do this, keep GPIO0 low while toggling reset. On many development boards, the "Boot" button is connected to GPIO0, and you can press "Reset" button while holding "Boot".
 * Run ``idf.py dfu-flash``.
 
 See :ref:`api_guide_dfu_flash` for details about DFU flashing.
