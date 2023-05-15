@@ -174,7 +174,9 @@ static void dns_clear_servers(bool keep_fallback)
 static void netif_send_garp(void *arg)
 {
     struct netif *netif = arg;
-    etharp_gratuitous(netif);
+    if (!ip4_addr_cmp(netif_ip4_addr(netif), IP4_ADDR_ANY4)) {  // Send GARP requests only if we have a valid IP
+        etharp_gratuitous(netif);
+    }
     sys_timeout(CONFIG_LWIP_GARP_TMR_INTERVAL*1000, netif_send_garp, netif);
 }
 
