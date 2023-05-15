@@ -220,8 +220,19 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&usbjtag_config, &repl_config, &repl));
 #endif
 
+    /* Use either WiFi console commands or menuconfig options to connect to WiFi/Ethernet
+     *
+     * Please disable `Provide wifi connect commands` in `Example Connection Configuration`
+     * to connect immediately using configured interface and settings (WiFi/Ethernet).
+     */
+#if defined(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
     /* register wifi connect commands */
     example_register_wifi_connect_commands();
+#elif defined(CONFIG_EXAMPLE_CONNECT_WIFI) || defined(CONFIG_EXAMPLE_CONNECT_ETHERNET)
+    /* automatic connection per menuconfig */
+    ESP_ERROR_CHECK(example_connect());
+#endif
+
     /* register command `ping` */
     register_ping();
     /* register command `quit` */
