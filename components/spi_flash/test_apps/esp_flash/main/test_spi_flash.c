@@ -1,27 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
 #include <sys/param.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 
-#include <unity.h>
-#include <spi_flash_mmap.h>
-#include <esp_attr.h>
+#include "unity.h"
+#include "spi_flash_mmap.h"
+#include "esp_attr.h"
 #include "esp_intr_alloc.h"
-#include "test_utils.h"
 #include "ccomp_timer.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
 #include "esp_timer.h"
-
+#include "esp_partition.h"
 #include "bootloader_flash.h"   //for bootloader_flash_xmc_startup
-
+#include "test_utils.h"
 #include "sdkconfig.h"
 
+extern const esp_partition_t *get_test_data_partition(void);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-// TODO: SPI_FLASH IDF-4025
 struct flash_test_ctx {
     uint32_t offset;
     bool fail;
@@ -45,44 +48,44 @@ static void flash_test_task(void *arg)
     struct flash_test_ctx *ctx = (struct flash_test_ctx *) arg;
     vTaskDelay(100 / portTICK_PERIOD_MS);
     const uint32_t sector = start / SPI_FLASH_SEC_SIZE + ctx->offset;
-    printf("t%d\n", sector);
-    printf("es%d\n", sector);
+    printf("t%ld\n", sector);
+    printf("es%ld\n", sector);
     if (esp_flash_erase_region(NULL, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE) != ESP_OK) {
         ctx->fail = true;
         printf("Erase failed\r\n");
         xSemaphoreGive(ctx->done);
         vTaskDelete(NULL);
     }
-    printf("ed%d\n", sector);
+    printf("ed%ld\n", sector);
 
     vTaskDelay(0 / portTICK_PERIOD_MS);
 
     uint32_t val = 0xabcd1234;
     for (uint32_t offset = 0; offset < SPI_FLASH_SEC_SIZE; offset += 4) {
         if (esp_flash_write(NULL, (const uint8_t *) &val, sector * SPI_FLASH_SEC_SIZE + offset, 4) != ESP_OK) {
-            printf("Write failed at offset=%d\r\n", offset);
+            printf("Write failed at offset=%ld\r\n", offset);
             ctx->fail = true;
             break;
         }
     }
-    printf("wd%d\n", sector);
+    printf("wd%ld\n", sector);
 
     vTaskDelay(0 / portTICK_PERIOD_MS);
 
     uint32_t val_read;
     for (uint32_t offset = 0; offset < SPI_FLASH_SEC_SIZE; offset += 4) {
         if (esp_flash_read(NULL, (uint8_t *) &val_read, sector * SPI_FLASH_SEC_SIZE + offset, 4) != ESP_OK) {
-            printf("Read failed at offset=%d\r\n", offset);
+            printf("Read failed at offset=%ld\r\n", offset);
             ctx->fail = true;
             break;
         }
         if (val_read != val) {
-            printf("Read invalid value=%08x at offset=%d\r\n", val_read, offset);
+            printf("Read invalid value=%08lx at offset=%ld\r\n", val_read, offset);
             ctx->fail = true;
             break;
         }
     }
-    printf("td%d\n", sector);
+    printf("td%ld\n", sector);
     xSemaphoreGive(ctx->done);
     vTaskDelete(NULL);
 }
@@ -115,135 +118,6 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
     }
     vSemaphoreDelete(done);
 }
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-// TODO ESP32-S3 IDF-2021
-
-static const char TAG[] = "test_spi_flash";
-
-typedef struct {
-    uint32_t us_start;
-    size_t len;
-    const char* name;
-} time_meas_ctx_t;
-
-static void time_measure_start(time_meas_ctx_t* ctx)
-{
-    ctx->us_start = esp_timer_get_time();
-    ccomp_timer_start();
-}
-
-static uint32_t time_measure_end(time_meas_ctx_t* ctx)
-{
-    uint32_t c_time_us = ccomp_timer_stop();
-    uint32_t time_us = esp_timer_get_time() - ctx->us_start;
-
-    ESP_LOGI(TAG, "%s: compensated: %.2lf kB/s, typical: %.2lf kB/s", ctx->name, ctx->len / (c_time_us/1000.), ctx->len / (time_us/1000.));
-    return ctx->len * 1000 / (c_time_us / 1000);
-}
-
-#define TEST_TIMES      20
-#define TEST_SECTORS    4
-
-static uint32_t measure_erase(const esp_partition_t* part)
-{
-    const int total_len = SPI_FLASH_SEC_SIZE * TEST_SECTORS;
-    time_meas_ctx_t time_ctx = {.name = "erase", .len = total_len};
-
-    time_measure_start(&time_ctx);
-    esp_err_t err = esp_flash_erase_region(NULL, part->address, total_len);
-    TEST_ESP_OK(err);
-    return time_measure_end(&time_ctx);
-}
-
-// should called after measure_erase
-static uint32_t measure_write(const char* name, const esp_partition_t* part, const uint8_t* data_to_write, int seg_len)
-{
-    const int total_len = SPI_FLASH_SEC_SIZE;
-    time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
-
-    time_measure_start(&time_ctx);
-    for (int i = 0; i < TEST_TIMES; i ++) {
-        // Erase one time, but write 100 times the same data
-        size_t len = total_len;
-        int offset = 0;
-
-        while (len) {
-            int len_write = MIN(seg_len, len);
-            esp_err_t err = esp_flash_write(NULL, data_to_write + offset, part->address + offset, len_write);
-            TEST_ESP_OK(err);
-
-            offset += len_write;
-            len -= len_write;
-        }
-    }
-    return time_measure_end(&time_ctx);
-}
-
-static uint32_t measure_read(const char* name, const esp_partition_t* part, uint8_t* data_read, int seg_len)
-{
-    const int total_len = SPI_FLASH_SEC_SIZE;
-    time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
-
-    time_measure_start(&time_ctx);
-    for (int i = 0; i < TEST_TIMES; i ++) {
-        size_t len = total_len;
-        int offset = 0;
-
-        while (len) {
-            int len_read = MIN(seg_len, len);
-            esp_err_t err = esp_flash_read(NULL, data_read + offset, part->address + offset, len_read);
-            TEST_ESP_OK(err);
-
-            offset += len_read;
-            len -= len_read;
-        }
-    }
-    return time_measure_end(&time_ctx);
-}
-
-#define MEAS_WRITE(n)   (measure_write("write in "#n"-byte chunks", part, data_to_write, n))
-#define MEAS_READ(n)    (measure_read("read in "#n"-byte chunks", part, data_read, n))
-
-TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
-{
-    const esp_partition_t *part = get_test_data_partition();
-
-    const int total_len = SPI_FLASH_SEC_SIZE;
-    uint8_t *data_to_write = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    uint8_t *data_read = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-
-    srand(777);
-    for (int i = 0; i < total_len; i++) {
-        data_to_write[i] = rand();
-    }
-
-    uint32_t erase_1 = measure_erase(part);
-    uint32_t speed_WR_4B = MEAS_WRITE(4);
-    uint32_t speed_RD_4B = MEAS_READ(4);
-    uint32_t erase_2 = measure_erase(part);
-    uint32_t speed_WR_2KB = MEAS_WRITE(2048);
-    uint32_t speed_RD_2KB = MEAS_READ(2048);
-
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
-
-#define LOG_DATA(suffix) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_LEGACY_"#suffix, "%d", speed_##suffix)
-#define LOG_ERASE(var) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE", "%d", var)
-
-    LOG_DATA(WR_4B);
-    LOG_DATA(RD_4B);
-    LOG_DATA(WR_2KB);
-    LOG_DATA(RD_2KB);
-
-    // Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
-    LOG_ERASE(erase_1);
-    LOG_ERASE(erase_2);
-
-    free(data_to_write);
-    free(data_read);
-}
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 //  TODO: This test is disabled on S3 with legacy impl - IDF-3505
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
@@ -323,14 +197,14 @@ TEST_CASE("rom unlock will not erase QE bit", "[spi_flash]")
 {
     esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
     uint32_t status;
-    printf("dev_id: %08X \n", legacy_chip->device_id);
+    printf("dev_id: %08lx \n", legacy_chip->device_id);
 
     if (((legacy_chip->device_id >> 16) & 0xff) != 0x9D) {
         TEST_IGNORE_MESSAGE("This test is only for ISSI chips. Ignore.");
     }
     bootloader_flash_unlock();
     esp_rom_spiflash_read_status(legacy_chip, &status);
-    printf("status: %08x\n", status);
+    printf("status: %08lx\n", status);
 
     TEST_ASSERT(status & 0x40);
 }
@@ -353,5 +227,3 @@ TEST_CASE("bootloader_flash_xmc_startup can be called when cache disabled", "[sp
 {
     test_xmc_startup();
 }
-
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

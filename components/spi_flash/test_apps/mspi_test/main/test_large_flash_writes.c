@@ -13,14 +13,14 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#include <unity.h>
-#include <test_utils.h>
-#include <spi_flash_mmap.h>
-#include <esp_log.h>
+#include "unity.h"
+#include "spi_flash_mmap.h"
+#include "esp_log.h"
 #include "esp_rom_spiflash.h"
 #include "esp_private/cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_flash.h"
+#include "esp_partition.h"
 
 static const uint8_t large_const_buffer[16400] = {
     203, // first byte
@@ -34,6 +34,15 @@ static const uint8_t large_const_buffer[16400] = {
 };
 
 static void test_write_large_buffer(const uint8_t *source, size_t length);
+
+const esp_partition_t *get_test_data_partition(void)
+{
+    /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
+    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_ANY, "flash_test");
+    TEST_ASSERT_NOT_NULL(result); /* means partition table set wrong */
+    return result;
+}
 
 TEST_CASE("Test flash write large const buffer", "[spi_flash][esp_flash]")
 {

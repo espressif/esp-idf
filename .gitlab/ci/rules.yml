@@ -2803,19 +2803,6 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
 
-.rules:test:unit_test-esp32c3-flash_multi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-target_test
-    - <<: *if-label-unit_test
-    - <<: *if-label-unit_test_esp32c3
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
-
 .rules:test:unit_test-esp32c3-sdio:
   rules:
     - <<: *if-revert-branch

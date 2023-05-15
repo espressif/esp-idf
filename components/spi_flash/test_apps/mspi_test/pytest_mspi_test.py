@@ -5,49 +5,50 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        'release',
-        'flash_qio',
-        'verify',
-        'special',
-    ],
-    indirect=True,
-)
-def test_esp_flash(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='esp_flash')
-
-
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        'rom_impl',
-    ],
-    indirect=True,
-)
-def test_esp_flash_rom(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='esp_flash')
-
-
 @pytest.mark.esp32
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c2
-@pytest.mark.flash_multi
+@pytest.mark.esp32c6
+@pytest.mark.esp32h2
+@pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
     [
         'release',
+        'special',
     ],
     indirect=True,
 )
-def test_esp_flash_multi(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='esp_flash_multi', timeout=120)
+def test_mspi_bus(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'xip_psram',
+    ],
+    indirect=True,
+)
+def test_mspi_bus_xip_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram',
+    ],
+    indirect=True,
+)
+def test_mspi_bus_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
