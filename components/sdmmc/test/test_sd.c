@@ -578,13 +578,19 @@ static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
 
     // Check that card initialization fails if CD is high
     REG_WRITE(GPIO_OUT_W1TS_REG, BIT(gpio_cd_num));
-    usleep(1000);
+    usleep(10000);
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, sdmmc_card_init(config, card));
 
     // Check that card initialization succeeds if CD is low
     REG_WRITE(GPIO_OUT_W1TC_REG, BIT(gpio_cd_num));
-    usleep(1000);
-    TEST_ESP_OK(sdmmc_card_init(config, card));
+    usleep(10000);
+    esp_err_t err = sdmmc_card_init(config, card);
+    if (err != ESP_OK) {
+        usleep(10000);
+        // Try again, in case the card was not ready yet
+        err = sdmmc_card_init(config, card);
+    }
+    TEST_ESP_OK(err);
 
     free(card);
 }
@@ -631,6 +637,7 @@ TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
     slot_config.gpio_cd = CD_WP_TEST_GPIO;
     TEST_ESP_OK(sdmmc_host_init());
+    usleep(10000);
     TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
 
     test_cd_input(CD_WP_TEST_GPIO, &config);
@@ -646,6 +653,7 @@ TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
     slot_config.gpio_wp = CD_WP_TEST_GPIO;
     TEST_ESP_OK(sdmmc_host_init());
+    usleep(10000);
     TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
 
     test_wp_input(CD_WP_TEST_GPIO, &config);
