@@ -98,9 +98,14 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } >dram_seg
 
-  .dram0.data :
+  .dram0.bootdesc : ALIGN(0x10)
   {
     _data_start = ABSOLUTE(.);
+    *(.data_bootloader_desc .data_bootloader_desc.*)               /* Should be the first.  Bootloader version info.        DO NOT PUT ANYTHING BEFORE IT! */
+  } > dram_seg
+
+  .dram0.data :
+  {
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)

@@ -19,6 +19,7 @@
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
 #include "hal/efuse_hal.h"
+#include "esp_bootloader_desc.h"
 
 static const char *TAG = "boot";
 
@@ -92,10 +93,13 @@ void bootloader_enable_random(void)
 
 void bootloader_print_banner(void)
 {
-    ESP_EARLY_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
-#ifndef CONFIG_APP_REPRODUCIBLE_BUILD
-    ESP_EARLY_LOGI(TAG, "compile time " __DATE__ " " __TIME__);
+    if (CONFIG_BOOTLOADER_LOG_LEVEL >= ESP_LOG_INFO) {
+        const esp_bootloader_desc_t *desc = esp_bootloader_get_description();
+        ESP_EARLY_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", desc->idf_ver);
+#ifdef CONFIG_BOOTLOADER_COMPILE_TIME_DATE
+        ESP_EARLY_LOGI(TAG, "compile time %s", desc->date_time);
 #endif
+    }
 
 #if CONFIG_FREERTOS_UNICORE
 #if (SOC_CPU_CORES_NUM > 1)

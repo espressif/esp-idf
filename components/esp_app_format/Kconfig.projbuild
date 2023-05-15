@@ -3,6 +3,7 @@ menu "Application manager"
     config APP_COMPILE_TIME_DATE
         bool "Use time/date stamp for app"
         default y
+        depends on !APP_REPRODUCIBLE_BUILD
         help
             If set, then the app will be built with the current time/date stamp. It is stored in the app description
             structure. If not set, time/date stamp will be excluded from app image. This can be useful for getting the

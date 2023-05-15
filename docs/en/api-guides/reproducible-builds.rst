@@ -45,7 +45,7 @@ ESP-IDF achieves reproducible builds using the following measures:
     - Path to the build directory is replaced with ``/IDF_BUILD``
     - Paths to components are replaced with ``/COMPONENT_NAME_DIR`` (where ``NAME`` is the name of the component)
 
-- Build date and time are not included into the :ref:`application  metadata structure<app_image_format_application_description>` if :ref:`CONFIG_APP_REPRODUCIBLE_BUILD` is enabled.
+- Build date and time are not included into the :ref:`application  metadata structure<app-image-format-application-description>` and :ref:`bootloader metadata structure<image-format-bootloader-description>` if :ref:`CONFIG_APP_REPRODUCIBLE_BUILD` is enabled.
 - ESP-IDF build system ensures that source file lists, component lists and other sequences are sorted before passing them to CMake. Various other parts of the build system, such as the linker script generator also perform sorting to ensure that same output is produced regardless of the environment.
 
 Reproducible builds and debugging
