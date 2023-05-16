@@ -3,8 +3,6 @@ components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
 components/esp_netif/test_apps/component_ut_test.py
-components/espcoredump/corefile/gdb.py
-components/espcoredump/test/test_espcoredump.py
 components/lwip/weekend_test/net_suite_test.py
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py

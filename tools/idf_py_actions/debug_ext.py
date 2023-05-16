@@ -12,7 +12,7 @@ import time
 from base64 import b64decode
 from textwrap import indent
 from threading import Thread
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from click import INT
 from click.core import Context
@@ -68,6 +68,18 @@ source {connect}
 def get_openocd_arguments(target: str) -> str:
     default_args = OPENOCD_TAGET_CONFIG_DEFAULT.format(target=target)
     return str(OPENOCD_TAGET_CONFIG.get(target, default_args))
+
+
+def chip_rev_to_int(chip_rev: Optional[str]) -> Union[int, None]:
+    # The chip rev will be derived from the elf file if none are returned.
+    # The chip rev must be supplied for coredump files generated with idf versions less than 5.1 in order to load
+    # rom elf file.
+    if not chip_rev or not all(c.isdigit() or c == '.' for c in chip_rev):
+        return None
+    if '.' not in chip_rev:
+        chip_rev += '.0'
+    major, minor = map(int, chip_rev.split('.'))
+    return major * 100 + minor
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Dict:
@@ -137,6 +149,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                                   args: PropertyDict,
                                   gdb_timeout_sec: int = None,
                                   core: str = None,
+                                  chip_rev: str = None,
                                   save_core: str = None) -> CoreDump:
 
         ensure_build_directory(args, ctx.info_name)
@@ -146,6 +159,20 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         coredump_to_flash = coredump_to_flash_config.rstrip().endswith('y') if coredump_to_flash_config else False
 
         prog = os.path.join(project_desc['build_dir'], project_desc['app_elf'])
+        args.port = args.port or get_default_serial_port()
+
+        espcoredump_kwargs = dict()
+
+        espcoredump_kwargs['port'] = args.port
+        espcoredump_kwargs['baud'] = args.baud
+        espcoredump_kwargs['gdb_timeout_sec'] = gdb_timeout_sec
+        espcoredump_kwargs['chip_rev'] = chip_rev_to_int(chip_rev)
+
+        # for reproducible builds
+        extra_gdbinit_file = project_desc.get('debug_prefix_map_gdbinit', None)
+
+        if extra_gdbinit_file:
+            espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
 
         espcoredump_kwargs: Dict[str, Any] = dict()
         core_format = None
@@ -527,8 +554,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                       args: PropertyDict,
                       gdb_timeout_sec: int,
                       core: str = None,
+                      chip_rev: str = None,
                       save_core: str = None) -> None:
         espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, gdb_timeout_sec=gdb_timeout_sec, core=core,
+                                                chip_rev=chip_rev,
                                                 save_core=save_core)
 
         espcoredump.info_corefile()
@@ -537,8 +566,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                        ctx: Context,
                        args: PropertyDict,
                        core: str = None,
+                       chip_rev: str = None,
                        save_core: str = None) -> None:
-        espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, core=core, save_core=save_core)
+        espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, core=core, chip_rev=chip_rev, save_core=save_core)
 
         espcoredump.dbg_corefile()
 
@@ -546,6 +576,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         {
             'names': ['--core', '-c'],
             'help': 'Path to core dump file (if skipped core dump will be read from flash)',
+        },
+        {
+            'names': ['--chip-rev'],
+            'help': 'Specify the chip revision (e.g., 0.1). If provided, the corresponding ROM ELF file will be used '
+                    'for decoding the core dump, improving stack traces. This is only needed for core dumps from IDF '
+                    '<v5.1. Newer versions already contain chip revision information.',
         },
         {
             'names': ['--save-core', '-s'],

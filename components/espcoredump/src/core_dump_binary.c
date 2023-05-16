@@ -10,6 +10,7 @@
 #include "core_dump_binary.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
+#include "hal/efuse_hal.h"
 
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
 
@@ -175,6 +176,7 @@ esp_err_t esp_core_dump_write_binary(core_dump_write_config_t *write_cfg)
     hdr.data_len  = data_len;
     hdr.version   = COREDUMP_VERSION_BIN_CURRENT;
     hdr.tcb_sz    = tcb_sz;
+    hdr.chip_rev  = efuse_hal_chip_revision();
     err = write_cfg->write(write_cfg->priv, &hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write core dump header error=%d!", err);

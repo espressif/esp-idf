@@ -13,6 +13,7 @@
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
 #include "esp_core_dump_common.h"
+#include "hal/efuse_hal.h"
 
 #ifdef CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 #include "esp_app_desc.h"
@@ -608,6 +609,7 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     dump_hdr.tasks_num = 0; // unused in ELF format
     dump_hdr.tcb_sz = 0; // unused in ELF format
     dump_hdr.mem_segs_num = 0; // unused in ELF format
+    dump_hdr.chip_rev = efuse_hal_chip_revision();
     err = write_cfg->write(write_cfg->priv,
                            (void*)&dump_hdr,
                            sizeof(core_dump_header_t));
