@@ -295,6 +295,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_ll_hw_cmd_t cmd, int cmd_idx)
 {
     hw->command[cmd_idx].val = cmd.val;
@@ -497,6 +498,7 @@ static inline void i2c_ll_get_tout(i2c_dev_t *hw, int *timeout)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_trans_start(i2c_dev_t *hw)
 {
     hw->ctr.trans_start = 1;
@@ -850,6 +852,7 @@ static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = UINT32_MAX;
@@ -863,6 +866,7 @@ static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_enable_rx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = UINT32_MAX;
