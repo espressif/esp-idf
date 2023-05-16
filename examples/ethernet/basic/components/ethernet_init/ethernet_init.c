@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -69,6 +69,11 @@ static esp_eth_handle_t eth_init_internal(esp_eth_mac_t **mac_out, esp_eth_phy_t
     // Update vendor specific MAC config based on board configuration
     esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
     esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
+#if CONFIG_EXAMPLE_USE_SPI_ETHERNET
+    // The DMA is shared resource between EMAC and the SPI. Therefore, adjust
+    // EMAC DMA burst length when SPI Ethernet is used along with EMAC.
+    esp32_emac_config.dma_burst_len = ETH_DMA_BURST_LEN_4;
+#endif // CONFIG_EXAMPLE_USE_SPI_ETHERNET
     // Create new ESP32 Ethernet MAC instance
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     // Create new PHY instance based on board configuration
@@ -175,7 +180,9 @@ static esp_eth_handle_t eth_init_spi(spi_eth_module_config_t *spi_eth_module_con
         .mode = 0,
         .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
         .queue_size = 20,
-        .spics_io_num = spi_eth_module_config->spi_cs_gpio
+        .spics_io_num = spi_eth_module_config->spi_cs_gpio,
+        .input_delay_ns = 20
+
     };
     // Init vendor specific MAC config to default, and create new SPI Ethernet MAC instance
     // and new PHY instance based on board configuration
