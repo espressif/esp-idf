@@ -1,7 +1,7 @@
 ESP-IDF Frontend - idf.py
 *************************
 
-:link_to_translation:`zh_CN:中文版`
+:link_to_translation:`zh_CN:[中文]`
 
 The ``idf.py`` command-line tool provides a front-end for easily managing your project builds, deployment and debugging, and more. It manages several tools, for example:
 
