@@ -8,6 +8,7 @@
 #include "esp_check.h"
 #include "esp_openthread_border_router.h"
 #include "esp_openthread_common_macro.h"
+#include "esp_openthread_dns64.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_task_queue.h"
@@ -25,6 +26,10 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
     esp_openthread_lock_acquire(portMAX_DELAY);
     ESP_RETURN_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread instance");
+#if CONFIG_OPENTHREAD_DNS64_CLIENT
+    ESP_RETURN_ON_ERROR(esp_openthread_dns64_client_init(), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread dns64 client");
+#endif
     esp_openthread_lock_release();
 
     return ESP_OK;
