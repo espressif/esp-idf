@@ -31,6 +31,23 @@ void ulp_lp_core_wakeup_main_processor(void);
  */
 void ulp_lp_core_delay_us(uint32_t us);
 
+
+/**
+ * @brief Finishes the ULP program and powers down the ULP
+ *        until next wakeup.
+ *
+ * @note This function does not return. After called it will
+ *       fully reset the ULP.
+ *
+ * @note The program will automatically call this function when
+ *       returning from main().
+ *
+ * @note To stop the ULP from waking up, call ulp_lp_core_lp_timer_disable()
+ *       before halting.
+ *
+ */
+__attribute__((noreturn))  void ulp_lp_core_halt(void);
+
 #ifdef __cplusplus
 }
 #endif
