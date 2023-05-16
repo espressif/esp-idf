@@ -73,12 +73,25 @@ typedef struct {
 typedef bool (*gdma_event_callback_t)(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
 /**
+ * @brief Type of GDMA descriptor error callback
+ * @param dma_chan GDMA channel handle, created from `gdma_new_channel`
+ * @param user_data User registered data from `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`
+ *
+ * @return Whether a task switch is needed after the callback function returns,
+ *         this is usually due to the callback wakes up some high priority task.
+ *
+ */
+typedef bool (*gdma_descr_err_callback_t)(gdma_channel_handle_t dma_chan, void *user_data);
+
+
+/**
  * @brief Group of supported GDMA TX callbacks
  * @note The callbacks are all running under ISR environment
  *
  */
 typedef struct {
     gdma_event_callback_t on_trans_eof; /*!< Invoked when TX engine meets EOF descriptor */
+    gdma_descr_err_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
 } gdma_tx_event_callbacks_t;
 
 /**
@@ -88,6 +101,7 @@ typedef struct {
  */
 typedef struct {
     gdma_event_callback_t on_recv_eof; /*!< Invoked when RX engine meets EOF descriptor */
+    gdma_descr_err_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
 } gdma_rx_event_callbacks_t;
 
 /**

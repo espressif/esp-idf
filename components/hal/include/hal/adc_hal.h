@@ -186,7 +186,7 @@ bool adc_hal_check_event(adc_hal_dma_ctx_t *hal, uint32_t mask);
 #endif
 
 /**
- * @brief Get the ADC reading result
+ * @brief Get the ADC reading result. Call adc_hal_read_desc_finish after using the descriptor.
  *
  * @param      hal           Context of the HAL
  * @param      eof_desc_addr The last descriptor that is finished by HW. Should be got from DMA
@@ -195,6 +195,14 @@ bool adc_hal_check_event(adc_hal_dma_ctx_t *hal, uint32_t mask);
  * @return                   See ``adc_hal_dma_desc_status_t``
  */
 adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
+
+/**
+ * @brief Finishes reading the current descriptor and frees it for repeated usage by DMA.
+ *
+ * @param      hal           Context of the HAL
+ */
+void adc_hal_read_desc_finish(adc_hal_dma_ctx_t *hal);
+
 
 /**
  * @brief Clear interrupt
