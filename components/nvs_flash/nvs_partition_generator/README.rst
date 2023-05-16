@@ -32,11 +32,11 @@ Each line of a CSV file should contain 4 parameters, separated by a comma. The t
     * - 1
       - Key
       - Key of the data. The data can be accessed later from an application using this key.
-      - 
+      -
     * - 2
       - Type
       - Supported values are ``file``, ``data``, and ``namespace``.
-      - 
+      -
     * - 3
       - Encoding
       - Supported values are: ``u8``, ``i8``, ``u16``, ``i16``, ``u32``, ``i32``, ``u64``, ``i64``, ``string``, ``hex2bin``, ``base64``, and ``binary``. This specifies how actual data values are encoded in the resulting binary file. The difference between the ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
@@ -45,7 +45,7 @@ Each line of a CSV file should contain 4 parameters, separated by a comma. The t
       - Value
       - Data value
       - ``Encoding`` and ``Value`` cells for the ``namespace`` field type should be empty. ``Encoding`` and ``Value`` of ``namespace`` are fixed and are not configurable. Any values in these cells are ignored.
-      
+
 .. note:: The first line of the CSV file should always be the column header and it is not configurable.
 
 Below is an example dump of such a CSV file::
@@ -79,12 +79,12 @@ By default, binary blobs are allowed to span over multiple pages and are written
 Encryption Support
 -------------------
 
-The NVS Partition Generator utility also allows you to create an encrypted binary file. The utility uses the AES-XTS encryption. Please refer to :ref:`nvs_encryption` for more details.
+The NVS Partition Generator utility also allows you to create an encrypted binary file. The utility uses the XTS-AES encryption. Please refer to :ref:`nvs_encryption` for more details.
 
 
 Decryption Support
 -------------------
-This utility allows you to decrypt an encrypted NVS binary file. The utility uses an NVS binary file encrypted using AES-XTS encryption. Please refer to :ref:`nvs_encryption` for more details. 
+This utility allows you to decrypt an encrypted NVS binary file. The utility uses an NVS binary file encrypted using XTS-AES encryption. Please refer to :ref:`nvs_encryption` for more details.
 
 Running the Utility
 -------------------
@@ -98,25 +98,25 @@ Running the Utility
 +-----+------------+----------------------------------------------------------------------+
 | No. | Parameter  |                           Description                                |
 +=====+============+======================================================================+
-| 1   | -h, --help |        Show this help message and exit                               |                                                 
+| 1   | -h, --help |        Show this help message and exit                               |
 +-----+------------+----------------------------------------------------------------------+
 
 **Commands**::
 
-  	Run nvs_partition_gen.py {command} -h for additional help   
-      
+  	Run nvs_partition_gen.py {command} -h for additional help
+
 +-----+--------------+--------------------------------------------------------------------+
 | No. | Parameter    |                           Description                              |
 +=====+==============+====================================================================+
-| 1   | generate     |      Generate NVS partition                                        |                                            
+| 1   | generate     |      Generate NVS partition                                        |
 +-----+--------------+--------------------------------------------------------------------+
-| 2   | generate-key |      Generate keys for encryption                                  |                                              
+| 2   | generate-key |      Generate keys for encryption                                  |
 +-----+--------------+--------------------------------------------------------------------+
-| 3   |  encrypt     |      Generate NVS encrypted partition                              |                                     
+| 3   |  encrypt     |      Generate NVS encrypted partition                              |
 +-----+--------------+--------------------------------------------------------------------+
 | 4   |  decrypt     |      Decrypt NVS encrypted partition                               |
 +-----+--------------+--------------------------------------------------------------------+
-                    
+
 To Generate NVS Partition (Default):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -124,17 +124,17 @@ To Generate NVS Partition (Default):
 
     python nvs_partition_gen.py generate [-h] [--version {1,2}] [--outdir OUTDIR]
                                              input output size
-        
+
 **Positional Arguments**:
-       
+
 +--------------+----------------------------------------------------------------------+
 | Parameter    |                           Description                                |
 +==============+======================================================================+
-| input        |        Path to CSV file to parse                                     |                                   
+| input        |        Path to CSV file to parse                                     |
 +--------------+----------------------------------------------------------------------+
-| output       |        Path to output NVS binary file                                |                                            
+| output       |        Path to output NVS binary file                                |
 +--------------+----------------------------------------------------------------------+
-| size         |        Size of NVS partition in bytes (must be multiple of 4096)     |                                              
+| size         |        Size of NVS partition in bytes (must be multiple of 4096)     |
 +--------------+----------------------------------------------------------------------+
 
 **Optional Arguments**:
@@ -142,16 +142,16 @@ To Generate NVS Partition (Default):
 +-----------------+--------------------------------------------------------------------+
 | Parameter       |                           Description                              |
 +=================+====================================================================+
-| -h, --help      |     Show this help message and exit                                |                                             
+| -h, --help      |     Show this help message and exit                                |
 +-----------------+--------------------------------------------------------------------+
 | --version {1,2} |     Set multipage blob version                                     |
 |                 |     Version 1 - Multipage blob support disabled                    |
 |                 |     Version 2 - Multipage blob support enabled                     |
-|                 |     Default: Version 2                                             |                                                     
-|                 |                                                                    |                                                     
+|                 |     Default: Version 2                                             |
+|                 |                                                                    |
 +-----------------+--------------------------------------------------------------------+
-| --outdir OUTDIR |     Output directory to store files created                        |                                                      
-|                 |     (Default: current directory)                                   |                                                     
+| --outdir OUTDIR |     Output directory to store files created                        |
+|                 |     (Default: current directory)                                   |
 +-----------------+--------------------------------------------------------------------+
 
 You can run the utility to generate NVS partition using the command below. A sample CSV file is provided with the utility::
@@ -166,15 +166,15 @@ To Generate Only Encryption Key Partition:
 
     python nvs_partition_gen.py generate-key [-h] [--keyfile KEYFILE]
                                                  [--outdir OUTDIR]
-        
+
 **Optional Arguments**:
 
 .. list-table::
     :widths: 30 70
     :header-rows: 1
-      
+
     * - Parameter
-      - Description 
+      - Description
     * - -h, --help
       - Show this help message and exit
     * - --keyfile KEYFILE
@@ -185,7 +185,7 @@ To Generate Only Encryption Key Partition:
 You can run the utility to generate only the encryption key partition using the command below::
 
     python nvs_partition_gen.py generate-key
-    
+
 To Generate Encrypted NVS Partition:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -195,17 +195,17 @@ To Generate Encrypted NVS Partition:
                                             [--keyfile KEYFILE] [--inputkey INPUTKEY]
                                             [--outdir OUTDIR]
                                             input output size
-        
+
 **Positional Arguments**:
 
 +--------------+----------------------------------------------------------------------+
 | Parameter    |                           Description                                |
 +==============+======================================================================+
-| input        |        Path to CSV file to parse                                     |                                                   
+| input        |        Path to CSV file to parse                                     |
 +--------------+----------------------------------------------------------------------+
-| output       |        Path to output NVS binary file                                |                          
+| output       |        Path to output NVS binary file                                |
 +--------------+----------------------------------------------------------------------+
-| size         |        Size of NVS partition in bytes (must be multiple of 4096)     |                                               
+| size         |        Size of NVS partition in bytes (must be multiple of 4096)     |
 +--------------+----------------------------------------------------------------------+
 
 **Optional Arguments**:
@@ -213,42 +213,42 @@ To Generate Encrypted NVS Partition:
 +---------------------+--------------------------------------------------------------------+
 | Parameter           |                           Description                              |
 +=====================+====================================================================+
-| -h, --help          |     Show this help message and exit                                |                                                     
-|                     |                                                                    |                                                     
+| -h, --help          |     Show this help message and exit                                |
+|                     |                                                                    |
 +---------------------+--------------------------------------------------------------------+
 | --version {1,2}     |     Set multipage blob version                                     |
 |                     |     Version 1 - Multipage blob support disabled                    |
 |                     |     Version 2 - Multipage blob support enabled                     |
-|                     |     Default: Version 2                                             | 
+|                     |     Default: Version 2                                             |
 +---------------------+--------------------------------------------------------------------+
-| --keygen            |     Generates key for encrypting NVS partition                     |                                                            
-+---------------------+--------------------------------------------------------------------+ 
-| --keyfile KEYFILE   |     Path to output encryption keys file                            |                                              
-+---------------------+--------------------------------------------------------------------+  
-| --inputkey INPUTKEY |     File having key for encrypting NVS partition                   |                                                    
-+---------------------+--------------------------------------------------------------------+ 
-| --outdir OUTDIR     |     Output directory to store files created                        |                                                      
-|                     |     (Default: current directory)                                   |                                                     
-+---------------------+--------------------------------------------------------------------+     
+| --keygen            |     Generates key for encrypting NVS partition                     |
++---------------------+--------------------------------------------------------------------+
+| --keyfile KEYFILE   |     Path to output encryption keys file                            |
++---------------------+--------------------------------------------------------------------+
+| --inputkey INPUTKEY |     File having key for encrypting NVS partition                   |
++---------------------+--------------------------------------------------------------------+
+| --outdir OUTDIR     |     Output directory to store files created                        |
+|                     |     (Default: current directory)                                   |
++---------------------+--------------------------------------------------------------------+
 
 You can run the utility to encrypt NVS partition using the command below. A sample CSV file is provided with the utility:
 
 - Encrypt by allowing the utility to generate encryption keys::
 
     python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen
-    
-.. note:: Encryption key of the following format ``<outdir>/keys/keys-<timestamp>.bin`` is created.  
+
+.. note:: Encryption key of the following format ``<outdir>/keys/keys-<timestamp>.bin`` is created.
 
 - Encrypt by allowing the utility to generate encryption keys and store it in provided custom filename::
 
-    python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen --keyfile sample_keys.bin  
-    
-.. note:: Encryption key of the following format ``<outdir>/keys/sample_keys.bin`` is created. 
+    python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen --keyfile sample_keys.bin
+
+.. note:: Encryption key of the following format ``<outdir>/keys/sample_keys.bin`` is created.
 .. note:: This newly created file having encryption keys in ``keys/`` directory is compatible with NVS key-partition structure. Refer to :ref:`nvs_key_partition` for more details.
 
 - Encrypt by providing the encryption keys as input binary file::
 
-    python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --inputkey sample_keys.bin 
+    python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --inputkey sample_keys.bin
 
 To Decrypt Encrypted NVS Partition:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,17 +256,17 @@ To Decrypt Encrypted NVS Partition:
 **Usage**::
 
     python nvs_partition_gen.py decrypt [-h] [--outdir OUTDIR] input key output
-        
+
 **Positional Arguments**:
 
 +--------------+----------------------------------------------------------------------+
 | Parameter    |                           Description                                |
 +==============+======================================================================+
-| input        |        Path to encrypted NVS partition file to parse                 |                                                 
+| input        |        Path to encrypted NVS partition file to parse                 |
 +--------------+----------------------------------------------------------------------+
-| key          |        Path to file having keys for decryption                       |                                                   
+| key          |        Path to file having keys for decryption                       |
 +--------------+----------------------------------------------------------------------+
-| output       |        Path to output decrypted binary file                          |                                                 
+| output       |        Path to output decrypted binary file                          |
 +--------------+----------------------------------------------------------------------+
 
 **Optional Arguments**:
@@ -274,11 +274,11 @@ To Decrypt Encrypted NVS Partition:
 +---------------------+--------------------------------------------------------------------+
 | Parameter           |                           Description                              |
 +=====================+====================================================================+
-| -h, --help          |     Show this help message and exit                                |                                     
-+---------------------+--------------------------------------------------------------------+ 
-| --outdir OUTDIR     |     Output directory to store files created                        |                                                      
-|                     |     (Default: current directory)                                   |                                                     
-+---------------------+--------------------------------------------------------------------+     
+| -h, --help          |     Show this help message and exit                                |
++---------------------+--------------------------------------------------------------------+
+| --outdir OUTDIR     |     Output directory to store files created                        |
+|                     |     (Default: current directory)                                   |
++---------------------+--------------------------------------------------------------------+
 
 You can run the utility to decrypt encrypted NVS partition using the command below::
 
@@ -294,7 +294,7 @@ Multipage Blob Support Disabled (Version 1):
 
 You can run the utility in this format by setting the version parameter to 1, as shown below. A sample CSV file is provided with the utility::
 
-   python nvs_partition_gen.py generate sample_singlepage_blob.csv sample.bin 0x3000 --version 1 
+   python nvs_partition_gen.py generate sample_singlepage_blob.csv sample.bin 0x3000 --version 1
 
 
 Multipage Blob Support Enabled (Version 2):
@@ -302,7 +302,7 @@ Multipage Blob Support Enabled (Version 2):
 
 You can run the utility in this format by setting the version parameter to 2, as shown below. A sample CSV file is provided with the utility::
 
-   python nvs_partition_gen.py generate sample_multipage_blob.csv sample.bin 0x4000 --version 2 
+   python nvs_partition_gen.py generate sample_multipage_blob.csv sample.bin 0x4000 --version 2
 
 .. note::  *Minimum NVS Partition Size needed is 0x3000 bytes.*
 
