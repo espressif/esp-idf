@@ -1,20 +1,9 @@
-#
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+ # SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ #
+ # SPDX-License-Identifier: Apache-2.0
 
 CC=gcc
-CFLAGS=-W -fasynchronous-unwind-tables -I. -I../include/ -std=c99 -g -DCONFIG_ESP_SYSTEM_USE_EH_FRAME -m32
+CFLAGS=-W -fasynchronous-unwind-tables -I. -I../port/include/x86/ -I../include/ -I../include/esp_private -std=c99 -g -m32
 LDFLAGS=-Wl,--eh-frame-hdr -m32 -g -Tlinker.ld -no-pie
 OBJECTS=objs/eh_frame_parser.o objs/main.o
 HEADERS=eh_frame_parser_impl.h
