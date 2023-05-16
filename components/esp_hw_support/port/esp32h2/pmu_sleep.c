@@ -22,16 +22,15 @@
 
 void pmu_sleep_enable_regdma_backup(void)
 {
-    assert(PMU_instance()->hal);
-    /* entry 0 is used by pmu HP_SLEEP and HP_ACTIVE states switching.
-     * entry 1, 2, 3 is reserved, not used yet! */
-    pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
+    /* ESP32H2 does not have PMU HP_AON power domain. because the registers
+     * of PAU REGDMA is included to PMU TOP power domain, cause the contents
+     * of PAU REGDMA registers will be lost when the TOP domain is powered down
+     * during light sleep, so we does not need to enable REGDMA backup here.
+     * We will use the software to trigger REGDMA to backup or restore. */
 }
 
 void pmu_sleep_disable_regdma_backup(void)
 {
-    assert(PMU_instance()->hal);
-    pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
 }
 
 uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)

@@ -68,6 +68,7 @@
 #define SOC_APM_SUPPORTED               1
 #define SOC_PMU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
+#define SOC_PAU_SUPPORTED               1
 #define SOC_CLK_TREE_SUPPORTED          1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
@@ -453,8 +454,10 @@
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
+#define SOC_PM_PAU_LINK_NUM             (4)
 #define SOC_PM_CPU_RETENTION_BY_SW      (1)
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
+#define SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
