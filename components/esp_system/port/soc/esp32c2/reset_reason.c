@@ -34,7 +34,7 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         return ESP_RST_DEEPSLEEP;
 
     case RESET_REASON_CORE_MWDT0:
-        return ESP_RST_TASK_WDT;
+        return ESP_RST_INT_WDT;
 
     case RESET_REASON_CORE_RTC_WDT:
     case RESET_REASON_SYS_RTC_WDT:
