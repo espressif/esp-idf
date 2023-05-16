@@ -12,23 +12,22 @@
 #include <string.h>
 #include <sys/param.h>
 
-#include <unity.h>
-#include <test_utils.h>
-#include <spi_flash_mmap.h>
+#include "unity.h"
+#include "spi_flash_mmap.h"
 #include "esp_private/cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_spiflash.h"
 #include "esp_flash.h"
+#include "esp_partition.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 // Used for rom_fix function
 #include "esp32/rom/spi_flash.h"
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-// TODO: SPI_FLASH IDF-4025
+extern const esp_partition_t *get_test_data_partition(void);
 
 #define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
@@ -144,7 +143,7 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+
 static void IRAM_ATTR fix_rom_func(void)
 {
     uint32_t freqdiv = 0;
@@ -281,7 +280,7 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
 #define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)
@@ -305,7 +304,6 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
 #endif
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 
 #ifdef CONFIG_SPIRAM
 
@@ -386,5 +384,3 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
 }
 
 #endif // CONFIG_SPIRAM
-
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

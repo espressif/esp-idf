@@ -56,6 +56,7 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
             TEST_ASSERT_EQUAL(!do_disable, result);
         }
     }
+    vTaskDelay(10);
 
     vQueueDelete(result_queue);
 }
@@ -66,6 +67,11 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
 // This needs to sufficiently large array, otherwise it may end up in
 // DRAM (e.g. size <= 8 bytes && ARCH == RISCV)
 static const uint32_t s_in_rodata[8] = { 0x12345678, 0xfedcba98 };
+
+static void reset_after_invalid_cache(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+}
 
 static void IRAM_ATTR cache_access_test_func(void* arg)
 {
@@ -79,7 +85,7 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
     uint32_t v2 = src[1];
     bool cache_enabled = spi_flash_cache_enabled();
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    printf("%d %x %x\n", cache_enabled, v1, v2);
+    printf("%d %lx %lx\n", cache_enabled, v1, v2);
     vTaskDelete(NULL);
 }
 
@@ -93,21 +99,26 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
 #define CACHE_ERROR_REASON "Cache error,SW_CPU"
 #endif
 
+
 // These tests works properly if they resets the chip with the
 // "Cache disabled but cached memory region accessed" reason and the correct CPU is logged.
-TEST_CASE("invalid access to cache raises panic (PRO CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]")
+static void invalid_access_to_cache_pro_cpu(void)
 {
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 0);
     vTaskDelay(1000/portTICK_PERIOD_MS);
 }
 
+TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (PRO CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_pro_cpu, reset_after_invalid_cache);
+
 #ifndef CONFIG_FREERTOS_UNICORE
 
-TEST_CASE("invalid access to cache raises panic (APP CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]")
+static void invalid_access_to_cache_app_cpu(void)
 {
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 1);
     vTaskDelay(1000/portTICK_PERIOD_MS);
 }
+
+TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (APP CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_app_cpu, reset_after_invalid_cache);
 
 #endif // !CONFIG_FREERTOS_UNICORE
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
