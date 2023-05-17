@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 # Check placements in this test app for main
@@ -27,6 +16,7 @@ argparser = argparse.ArgumentParser()
 
 argparser.add_argument('objdump')
 argparser.add_argument('elf')
+argparser.add_argument('--no-rtc', action='store_true')
 
 args = argparser.parse_args()
 
@@ -68,7 +58,8 @@ assert sym1_end % 12 == 0, '_sym1_end is not aligned as specified in linker frag
 print('check placement pass: _sym1_start < func1 < __sym1_end and alignments checked')
 
 # src1:func2 (rtc) - explicit mapping for func2 using 'rtc' scheme
-check_location('func2', '.rtc.text')
+if not args.no_rtc:
+    check_location('func2', '.rtc.text')
 
 # src1 (default) - only func3 in src1 remains that has not been
 # mapped using a different scheme

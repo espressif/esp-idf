@@ -1,5 +1,0 @@
-menu "RSOURCE test"
-    config RSOURCE_EXTRA_CONFIG
-        bool "rsource extra config"
-        default y
-endmenu
