@@ -139,6 +139,13 @@ void esp_openthread_platform_update(esp_openthread_mainloop_context_t *mainloop)
  */
 esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop);
 
+/**
+ * @brief This function set the OpenThread storage name
+ *
+ * @param[in]    name   The OpenThread storage name.
+ *
+ */
+void esp_openthread_set_storage_name(const char *name);
 #ifdef __cplusplus
 } // end of extern "C"
 #endif
