@@ -59,8 +59,8 @@ The flow chart of BluFi
 
         Phone <- {IDF_TARGET_NAME} [label="Advertising"];
         Phone -> {IDF_TARGET_NAME} [label="Create GATT connection"];
-        Phone <- {IDF_TARGET_NAME} [label="Negotiate key procedure"];
         Phone -> {IDF_TARGET_NAME} [label="Negotiate key procedure"];
+        Phone <- {IDF_TARGET_NAME} [label="Negotiate key procedure"];
         Phone -> {IDF_TARGET_NAME} [label="CTRL: Set {IDF_TARGET_NAME} to Phone Security mode"];
         Phone -> {IDF_TARGET_NAME} [label="DATA: SSID"];
         Phone -> {IDF_TARGET_NAME} [label="DATA: Password"];
