@@ -8,7 +8,7 @@ import sys
 from asyncio.subprocess import Process
 from io import open
 from types import FunctionType
-from typing import Any, Dict, List, Match, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, Union
 
 import click
 import yaml
@@ -107,7 +107,7 @@ def debug_print_idf_version() -> None:
     print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
-def print_hints(*filenames: str) -> None:
+def generate_hints(*filenames: str) -> Generator:
     """Getting output files and printing hints on how to resolve errors based on the output."""
     with open(os.path.join(os.path.dirname(__file__), 'hints.yml'), 'r') as file:
         hints = yaml.safe_load(file)
@@ -140,14 +140,13 @@ def print_hints(*filenames: str) -> None:
                 sys.exit(1)
             if hint_list:
                 for message in hint_list:
-                    yellow_print('HINT:', message)
+                    yield ' '.join(['HINT:', message])
             elif match:
                 extra_info = ', '.join(match.groups()) if hint.get('match_to_output', '') else ''
                 try:
-                    yellow_print(' '.join(['HINT:', hint['hint'].format(extra_info)]))
-                except KeyError as e:
-                    red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
-                    sys.exit(1)
+                    yield ' '.join(['HINT:', hint['hint'].format(extra_info)])
+                except KeyError:
+                    raise KeyError("Argument 'hint' missing in {}. Check hints.yml file.".format(hint))
 
 
 def fit_text_in_terminal(out: str) -> str:
@@ -210,7 +209,8 @@ class RunTool:
             return
 
         if stderr_output_file and stdout_output_file:
-            print_hints(stderr_output_file, stdout_output_file)
+            for hint in generate_hints(stderr_output_file, stdout_output_file):
+                yellow_print(hint)
             raise FatalError('{} failed with exit code {}, output of the command is in the {} and {}'.format(self.tool_name, process.returncode,
                              stderr_output_file, stdout_output_file))
 

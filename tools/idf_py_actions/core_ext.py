@@ -18,8 +18,8 @@ from click.core import Context
 from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARGETS, URL_TO_DOC
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, get_target, idf_version,
-                                  merge_action_lists, print_hints, run_target)
+from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, generate_hints, get_target,
+                                  idf_version, merge_action_lists, run_target, yellow_print)
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
@@ -42,7 +42,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         """
 
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
-            print_hints(stdout, stderr)
+            for hint in generate_hints(stdout, stderr):
+                yellow_print(hint)
 
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
