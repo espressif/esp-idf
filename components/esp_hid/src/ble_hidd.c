@@ -832,12 +832,14 @@ static esp_err_t esp_ble_hidd_dev_battery_set(void *devp, uint8_t level)
         return ESP_OK;
     }
 
-    ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if, dev->conn_id, dev->bat_level_handle, 1, &dev->bat_level, dev->bat_ccc.indicate_enable);
-    if (ret) {
-        ESP_LOGE(TAG, "esp_ble_gatts_send_indicate failed: %d", ret);
-        return ESP_FAIL;
+    if (dev->bat_ccc.notify_enable) {
+        ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if, dev->conn_id, dev->bat_level_handle, 1, &dev->bat_level, false);
+        if (ret) {
+            ESP_LOGE(TAG, "esp_ble_gatts_send_notify failed: %d", ret);
+            return ESP_FAIL;
+        }
     }
-    WAIT_CB(dev);
+
     return ESP_OK;
 }
 
