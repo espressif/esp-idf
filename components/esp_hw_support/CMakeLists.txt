@@ -30,6 +30,7 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_modem.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
+                     "sar_periph_ctrl_common.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c")

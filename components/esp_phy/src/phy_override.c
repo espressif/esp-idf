@@ -8,6 +8,9 @@
 #include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
+#include "freertos/FreeRTOS.h"
+
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.
@@ -57,4 +60,18 @@ void phy_set_pwdet_power(bool en)
     } else {
         sar_periph_ctrl_pwdet_power_release();
     }
+}
+
+void phy_set_tsens_power(bool en)
+{
+    if (en) {
+        temperature_sensor_power_acquire();
+    } else {
+        temperature_sensor_power_release();
+    }
+}
+
+int16_t phy_get_tsens_value(void)
+{
+    return temp_sensor_get_raw_value(NULL);
 }
