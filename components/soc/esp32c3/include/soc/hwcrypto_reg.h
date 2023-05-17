@@ -8,6 +8,7 @@
 #define __HWCRYPTO_REG_H__
 
 #include "soc.h"
+#include "soc/xts_aes_reg.h"
 
 /* registers for RSA acceleration via Multiple Precision Integer ops */
 #define RSA_MEM_M_BLOCK_BASE          ((DR_REG_RSA_BASE)+0x000)
@@ -135,19 +136,6 @@
 #define HMAC_WR_JTAG_REG               ((DR_REG_HMAC_BASE) + 0xFC)
 
 #define HMAC_DATE_REG                  ((DR_REG_HMAC_BASE) + 0xF8)
-
-
-/* XTS-AES registers */
-#define AES_XTS_PLAIN_BASE        ((DR_REG_AES_XTS_BASE) + 0x00)
-#define AES_XTS_SIZE_REG          ((DR_REG_AES_XTS_BASE) + 0x40)
-#define AES_XTS_DESTINATION_REG   ((DR_REG_AES_XTS_BASE) + 0x44)
-#define AES_XTS_PHYSICAL_ADDR_REG ((DR_REG_AES_XTS_BASE) + 0x48)
-
-#define AES_XTS_TRIGGER_REG       ((DR_REG_AES_XTS_BASE) + 0x4C)
-#define AES_XTS_RELEASE_REG       ((DR_REG_AES_XTS_BASE) + 0x50)
-#define AES_XTS_DESTROY_REG       ((DR_REG_AES_XTS_BASE) + 0x54)
-#define AES_XTS_STATE_REG         ((DR_REG_AES_XTS_BASE) + 0x58)
-#define AES_XTS_DATE_REG          ((DR_REG_AES_XTS_BASE) + 0x5C)
 
 /* Digital Signature registers and memory blocks */
 #define DS_C_BASE                 ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x000 )
