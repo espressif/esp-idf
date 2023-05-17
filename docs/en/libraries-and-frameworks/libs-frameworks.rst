@@ -88,13 +88,13 @@ ESP-Protocols
 
 ESP-Protocols components:
 
-* `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ enables connectivity with GSM/LTE modems using AT commands or PPP protocol, see the `esp_modem documentation <https://espressif.github.io/esp-protocols/esp_modem/index.html>`_.
+* `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ enables connectivity with GSM/LTE modems using AT commands or PPP protocol, see the `esp_modem documentation <https://docs.espressif.com/projects/esp-protocols/esp_modem/docs/latest/index.html>`_.
 
-* `mdns <https://components.espressif.com/component/espressif/mdns>`_ (mDNS) is a multicast UDP service that is used to provide local network service and host discovery, see the `mdns documentation <https://espressif.github.io/esp-protocols/mdns/en/index.html>`_.
+* `mdns <https://components.espressif.com/component/espressif/mdns>`_ (mDNS) is a multicast UDP service that is used to provide local network service and host discovery, see the `mdns documentation <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html>`_.
 
-* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for `esp-idf` that contains implementation of [WebSocket protocol client](https://datatracker.ietf.org/doc/html/rfc6455) for ESP32, see the `esp_websocket_client documentation <https://espressif.github.io/esp-protocols/esp_websocket_client/index.html>`_.
+* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for `esp-idf` that contains implementation of [WebSocket protocol client](https://datatracker.ietf.org/doc/html/rfc6455) for ESP32, see the `esp_websocket_client documentation <https://docs.espressif.com/projects/esp-protocols/esp_websocket_client/docs/latest/index.html>`_.
 
-* `asio <https://components.espressif.com/component/espressif/asio>`_ is a cross-platform C++ library, see https://think-async.com/Asio/. It provides a consistent asynchronous model using a modern C++ approach. , see the `asio documentation <https://espressif.github.io/esp-protocols/asio/index.html>`_.
+* `asio <https://components.espressif.com/component/espressif/asio>`_ is a cross-platform C++ library, see https://think-async.com/Asio/. It provides a consistent asynchronous model using a modern C++ approach. , see the `asio documentation <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_.
 
 ESP-BSP
 -------
