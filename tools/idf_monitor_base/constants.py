@@ -19,6 +19,9 @@ CTRL_X = '\x18'
 CTRL_L = '\x0c'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
+# VT100 escape sequences
+CONSOLE_STATUS_QUERY = b'\x1b[5n'
+
 # Command parsed from console inputs
 CMD_STOP = 1
 CMD_RESET = 2

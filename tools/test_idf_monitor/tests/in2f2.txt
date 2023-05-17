@@ -1,5 +1,5 @@
 D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1[0m
-D (59342) vfs: esp_vfs_select starts with nfds = 55[0m
+[5nD (59342) vfs: esp_vfs_select starts with nfds = 55[0m
 D (59343) vfs: FDs in readfds =[0m
 D (59343) vfs: 54[0m
 D (59355) vfs: calling socket_select with the following FDs[0m
