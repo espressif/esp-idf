@@ -296,9 +296,9 @@ static esp_err_t dm9051_setup_default(emac_dm9051_t *emac)
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_WCR, 0x00), err, TAG, "write WCR failed");
     /* stop transmitting, enable appending pad, crc for packets */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_TCR, 0x00), err, TAG, "write TCR failed");
-    /* stop receiving, no promiscuous mode, no runt packet(size < 64bytes), not all multicast packets*/
+    /* stop receiving, no promiscuous mode, no runt packet(size < 64bytes), receive all multicast packets */
     /* discard long packet(size > 1522bytes) and crc error packet, enable watchdog */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RCR, RCR_DIS_LONG | RCR_DIS_CRC), err, TAG, "write RCR failed");
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RCR, RCR_DIS_LONG | RCR_DIS_CRC | RCR_ALL_MCAST), err, TAG, "write RCR failed");
     /* retry late collision packet, at most two transmit command can be issued before transmit complete */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_TCR2, TCR2_RLCP), err, TAG, "write TCR2 failed");
     /* enable auto transmit */
@@ -314,12 +314,8 @@ static esp_err_t dm9051_setup_default(emac_dm9051_t *emac)
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RLENCR, 0x00), err, TAG, "write RLENCR failed");
     /* 3K-byte for TX and 13K-byte for RX */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MEMSCR, 0x00), err, TAG, "write MEMSCR failed");
-    /* reset tx and rx memory pointer */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX | MPTRCR_RST_TX), err, TAG, "write MPTRCR failed");
     /* clear network status: wakeup event, tx complete */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_NSR, NSR_WAKEST | NSR_TX2END | NSR_TX1END), err, TAG, "write NSR failed");
-    /* clear interrupt status */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_ISR, ISR_CLR_STATUS), err, TAG, "write ISR failed");
     return ESP_OK;
 err:
     return ret;
@@ -351,6 +347,10 @@ static esp_err_t emac_dm9051_start(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    /* reset tx and rx memory pointer */
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX | MPTRCR_RST_TX), err, TAG, "write MPTRCR failed");
+    /* clear interrupt status */
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_ISR, ISR_CLR_STATUS), err, TAG, "write ISR failed");
     /* enable only Rx related interrupts as others are processed synchronously */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_IMR, IMR_PAR | IMR_PRI), err, TAG, "write IMR failed");
     /* enable rx */
@@ -486,16 +486,11 @@ err:
 static esp_err_t emac_dm9051_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
-    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    uint8_t nsr = 0;
-    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_NSR, &nsr), err, TAG, "read NSR failed");
     switch (link) {
     case ETH_LINK_UP:
-        ESP_GOTO_ON_FALSE(nsr & NSR_LINKST, ESP_ERR_INVALID_STATE, err, TAG, "phy is not link up");
         ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "dm9051 start failed");
         break;
     case ETH_LINK_DOWN:
-        ESP_GOTO_ON_FALSE(!(nsr & NSR_LINKST), ESP_ERR_INVALID_STATE, err, TAG, "phy is not link down");
         ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "dm9051 stop failed");
         break;
     default:
@@ -510,16 +505,11 @@ err:
 static esp_err_t emac_dm9051_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
 {
     esp_err_t ret = ESP_OK;
-    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    uint8_t nsr = 0;
-    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_NSR, &nsr), err, TAG, "read NSR failed");
     switch (speed) {
     case ETH_SPEED_10M:
-        ESP_GOTO_ON_FALSE(nsr & NSR_SPEED, ESP_ERR_INVALID_STATE, err, TAG, "phy speed is not at 10Mbps");
         ESP_LOGD(TAG, "working in 10Mbps");
         break;
     case ETH_SPEED_100M:
-        ESP_GOTO_ON_FALSE(!(nsr & NSR_SPEED), ESP_ERR_INVALID_STATE, err, TAG, "phy speed is not at 100Mbps");
         ESP_LOGD(TAG, "working in 100Mbps");
         break;
     default:
@@ -534,17 +524,12 @@ err:
 static esp_err_t emac_dm9051_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
 {
     esp_err_t ret = ESP_OK;
-    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    uint8_t ncr = 0;
-    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_NCR, &ncr), err, TAG, "read NCR failed");
     switch (duplex) {
     case ETH_DUPLEX_HALF:
         ESP_LOGD(TAG, "working in half duplex");
-        ESP_GOTO_ON_FALSE(!(ncr & NCR_FDX), ESP_ERR_INVALID_STATE, err, TAG, "phy is not at half duplex");
         break;
     case ETH_DUPLEX_FULL:
         ESP_LOGD(TAG, "working in full duplex");
-        ESP_GOTO_ON_FALSE(ncr & NCR_FDX, ESP_ERR_INVALID_STATE, err, TAG, "phy is not at full duplex");
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown duplex");
@@ -560,7 +545,7 @@ static esp_err_t emac_dm9051_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     uint8_t rcr = 0;
-    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPDRL, &rcr), err, TAG, "read RCR failed");
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_RCR, &rcr), err, TAG, "read RCR failed");
     if (enable) {
         rcr |= RCR_PRMSC;
     } else {

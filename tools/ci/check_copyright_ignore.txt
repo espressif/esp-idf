@@ -417,7 +417,6 @@ components/esp32/include/rom/spi_flash.h
 components/esp32/include/rom/tbconsole.h
 components/esp32/include/rom/tjpgd.h
 components/esp32/include/rom/uart.h
-components/esp_eth/src/dm9051.h
 components/esp_eth/src/ksz8851.h
 components/esp_eth/src/w5500.h
 components/esp_eth/test_apps/component_ut_test.py
