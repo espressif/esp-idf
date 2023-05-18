@@ -39,7 +39,8 @@ extern "C" {
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 #define SPI_LL_GET_HW(ID) ((ID)==0? &SPI1:((ID)==1? &SPI2 : &SPI3))
 
-#define SPI_LL_DATA_MAX_BIT_LEN (1 << 24)
+#define SPI_LL_DMA_MAX_BIT_LEN    (1 << 24)    //reg len: 24 bits
+#define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 
 /**
  * The data structure holding calculated clock configuration. Since the
