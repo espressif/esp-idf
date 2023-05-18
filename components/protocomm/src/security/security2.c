@@ -27,6 +27,8 @@
 
 static const char *TAG = "security2";
 
+ESP_EVENT_DEFINE_BASE(PROTOCOMM_SECURITY_SESSION_EVENT);
+
 #define SALT_LEN                    (16)
 #define PUBLIC_KEY_LEN              (384)
 #define CLIENT_PROOF_LEN            (64)
@@ -81,11 +83,17 @@ static esp_err_t handle_session_command0(session_t *cur_session,
 
     if (in->sc0->client_pubkey.len != PUBLIC_KEY_LEN) {
         ESP_LOGE(TAG, "Invalid public key length");
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
+        }
         return ESP_ERR_INVALID_ARG;
     }
 
     if (in->sc0->client_username.len <= 0) {
         ESP_LOGE(TAG, "Invalid username");
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
+        }
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -214,6 +222,9 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     if (esp_srp_exchange_proofs(cur_session->srp_hd, cur_session->username, cur_session->username_len, (char * ) in->sc1->client_proof.data, device_proof) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to authenticate client proof!");
         free(device_proof);
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post credential mismatch event");
+        }
         return ESP_FAIL;
     }
     hexdump("Device proof", device_proof, CLIENT_PROOF_LEN);
@@ -265,6 +276,9 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     resp->sec2 = out;
 
     cur_session->state = SESSION_STATE_DONE;
+    if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_SETUP_OK, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post secure session setup success event");
+    }
     ESP_LOGD(TAG, "Secure session established successfully");
     return ESP_OK;
 }
