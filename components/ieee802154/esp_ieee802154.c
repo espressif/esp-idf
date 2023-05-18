@@ -38,7 +38,7 @@ uint8_t esp_ieee802154_get_channel(void)
     return ieee802154_pib_get_channel();
 }
 
-esp_err_t esp_ieee802154_set_channnel(uint8_t channel)
+esp_err_t esp_ieee802154_set_channel(uint8_t channel)
 {
     ieee802154_pib_set_channel(channel);
     return ESP_OK;

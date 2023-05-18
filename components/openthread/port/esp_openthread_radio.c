@@ -287,7 +287,7 @@ otError otPlatRadioSleep(otInstance *aInstance)
 
 otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 {
-    esp_ieee802154_set_channnel(aChannel);
+    esp_ieee802154_set_channel(aChannel);
     esp_ieee802154_receive();
 
     return OT_ERROR_NONE;
@@ -295,7 +295,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 
 otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 {
-    esp_ieee802154_set_channnel(aFrame->mChannel);
+    esp_ieee802154_set_channel(aFrame->mChannel);
 
     aFrame->mPsdu[-1] = aFrame->mLength; // lenth locates one byte before the psdu (esp_openthread_radio_tx_psdu);
 
