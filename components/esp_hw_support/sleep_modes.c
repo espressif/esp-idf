@@ -439,6 +439,8 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
         regi2c_analog_cali_reg_read();
 #endif
     }
+
+    // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
     }

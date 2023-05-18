@@ -41,3 +41,5 @@ entries:
     if SOC_MEMSPI_SRC_FREQ_120M = y:
         mspi_timing_tuning (noflash)
         mspi_timing_config (noflash)
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        sar_periph_ctrl (noflash)
