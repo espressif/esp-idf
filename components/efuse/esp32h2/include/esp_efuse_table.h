@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 910e196e9c9c5c052f1c57710fe3977c
+// md5_digest_table 35c27f867ff30c0bcddad78a296ab037
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -68,6 +68,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[];
 #define ESP_EFUSE_WR_DIS_MAC_FACTORY ESP_EFUSE_WR_DIS_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[];
@@ -168,6 +171,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_HYS_EN_PAD1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC[];
 #define ESP_EFUSE_MAC_FACTORY ESP_EFUSE_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RXIQ_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RXIQ_0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RXIQ_1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
