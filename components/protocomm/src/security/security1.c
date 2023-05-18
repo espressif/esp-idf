@@ -42,6 +42,13 @@
 
 static const char* TAG = "security1";
 
+/*NOTE: As both the security schemes share the events,
+ * we need to define the event base only once.
+ */
+#ifndef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+ESP_EVENT_DEFINE_BASE(PROTOCOMM_SECURITY_SESSION_EVENT);
+#endif
+
 #define PUBLIC_KEY_LEN  32
 #define SZ_RANDOM       16
 
@@ -127,6 +134,9 @@ static esp_err_t handle_session_command1(session_t *cur_session,
                                  sizeof(cur_session->device_pubkey)) != 0) {
         ESP_LOGE(TAG, "Key mismatch. Close connection");
         mbedtls_aes_free(&cur_session->ctx_aes);
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post credential mismatch event");
+        }
         return ESP_FAIL;
     }
 
@@ -178,6 +188,10 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     resp->sec1 = out;
 
     cur_session->state = SESSION_STATE_DONE;
+    if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_SETUP_OK, NULL, 0, portMAX_DELAY) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post secure session setup success event");
+    }
+
     ESP_LOGD(TAG, "Secure session established successfully");
     return ESP_OK;
 }
@@ -202,6 +216,9 @@ static esp_err_t handle_session_command0(session_t *cur_session,
 
     if (in->sc0->client_pubkey.len != PUBLIC_KEY_LEN) {
         ESP_LOGE(TAG, "Invalid public key length");
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
+        }
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -194,6 +194,20 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                 break;
         }
 #endif
+    } else if (event_base == PROTOCOMM_SECURITY_SESSION_EVENT) {
+        switch (event_id) {
+            case PROTOCOMM_SECURITY_SESSION_SETUP_OK:
+                ESP_LOGI(TAG, "Secured session established!");
+                break;
+            case PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS:
+                ESP_LOGE(TAG, "Received invalid security parameters for establishing secure session!");
+                break;
+            case PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH:
+                ESP_LOGE(TAG, "Received incorrect username and/or PoP for establishing secure session!");
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -289,6 +303,7 @@ void app_main(void)
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
     ESP_ERROR_CHECK(esp_event_handler_register(PROTOCOMM_TRANSPORT_BLE_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 #endif
+    ESP_ERROR_CHECK(esp_event_handler_register(PROTOCOMM_SECURITY_SESSION_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
