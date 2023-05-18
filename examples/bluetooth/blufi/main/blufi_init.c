@@ -10,8 +10,8 @@
 #include "esp_log.h"
 #include "esp_blufi.h"
 #include "blufi_example.h"
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_bt.h"
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #endif
@@ -67,13 +67,6 @@ esp_err_t esp_blufi_host_deinit(void)
         return ESP_FAIL;
     }
 
-    ESP_ERROR_CHECK(esp_bt_controller_disable());
-    ret = esp_bt_controller_deinit();
-    if (ret) {
-        BLUFI_ERROR("%s deinit bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
-        return ESP_FAIL;
-    }
-
     return ESP_OK;
 
 }
@@ -115,6 +108,44 @@ esp_err_t esp_blufi_host_and_cb_init(esp_blufi_callbacks_t *example_callbacks)
 }
 
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
+esp_err_t esp_blufi_controller_init() {
+    esp_err_t ret = ESP_OK;
+#if CONFIG_IDF_TARGET_ESP32
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
+
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ret = esp_bt_controller_init(&bt_cfg);
+    if (ret) {
+        BLUFI_ERROR("%s initialize bt controller failed: %s\n", __func__, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+    if (ret) {
+        BLUFI_ERROR("%s enable bt controller failed: %s\n", __func__, esp_err_to_name(ret));
+        return ret;
+    }
+    return ret;
+}
+
+esp_err_t esp_blufi_controller_deinit() {
+    esp_err_t ret = ESP_OK;
+    ret = esp_bt_controller_disable();
+    if (ret) {
+        BLUFI_ERROR("%s disable bt controller failed: %s\n", __func__, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret) {
+        BLUFI_ERROR("%s deinit bt controller failed: %s\n", __func__, esp_err_to_name(ret));
+        return ret;
+    }
+
+    return ret;
+}
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 void ble_store_config_init(void);
@@ -205,7 +236,7 @@ esp_err_t esp_blufi_host_deinit(void)
 
     ret = nimble_port_stop();
     if (ret == 0) {
-        nimble_port_deinit();
+        esp_nimble_deinit();
     }
 
     return ret;
