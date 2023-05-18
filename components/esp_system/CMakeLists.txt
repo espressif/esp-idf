@@ -110,7 +110,9 @@ endif()
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
 idf_component_optional_requires(PRIVATE esp_gdbstub)
 
-idf_component_optional_requires(PRIVATE esp_app_format)
+if(NOT CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT)
+    idf_component_optional_requires(PRIVATE esp_app_format)
+endif()
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)

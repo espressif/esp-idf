@@ -92,7 +92,7 @@ class PanicTestDut(IdfDut):
         """Expect method for ELF SHA256 line"""
         elf_sha256 = sha256(self.app.elf_file)
         elf_sha256_len = int(
-            self.app.sdkconfig.get('CONFIG_APP_RETRIEVE_LEN_ELF_SHA', '16')
+            self.app.sdkconfig.get('CONFIG_APP_RETRIEVE_LEN_ELF_SHA', '9')
         )
         self.expect_exact('ELF file SHA256: ' + elf_sha256[0:elf_sha256_len])
 
