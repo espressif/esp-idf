@@ -43,3 +43,6 @@ entries:
         mspi_timing_config (noflash)
         if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY = y:
             mspi_timing_by_mspi_delay (noflash)
+
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        sar_periph_ctrl (noflash)

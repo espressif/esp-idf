@@ -44,6 +44,7 @@ typedef enum {
  *
  * @param[in] mode  See `sar_ctrl_ll_power_t`
  */
+__attribute__((always_inline))
 static inline void sar_ctrl_ll_set_power_mode_from_pwdet(sar_ctrl_ll_power_t mode)
 {
     if (mode == SAR_CTRL_LL_POWER_FSM) {
