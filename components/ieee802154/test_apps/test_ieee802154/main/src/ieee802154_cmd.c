@@ -1,8 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+
 #include <stdio.h>
 #include <string.h>
 #include "esp_system.h"
@@ -119,7 +120,7 @@ static int process_channel(int argc, char **argv)
         ESP_LOGI(TAG, "current channel: %d", channel);
     } else if (channel_args.set_channel->count) {
         uint8_t channel = channel_args.set_channel->ival[0];
-        esp_ieee802154_set_channnel(channel);
+        esp_ieee802154_set_channel(channel);
         ESP_LOGI(TAG, "set channel: %d", channel);
     } else {
         ESP_LOGE(TAG, "no valid arguments");
