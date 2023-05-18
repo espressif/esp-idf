@@ -26,6 +26,7 @@
  * 1. Some flash chips send A3H to enable the HPM.
  * 2. Some flash chips write HPF bit in status register.
  * 3. Some flash chips adjust dummy cycles.
+ * 4. Some flash chips do nothing.
  ******************************************************************************/
 
 #if CONFIG_ESPTOOLPY_FLASHFREQ_120M
@@ -251,6 +252,38 @@ static void spi_flash_turn_high_performance_write_hpf_bit_5(void)
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 }
 
+//-----------------For flash chips which enter HPM with doing nothing-----------------------//
+
+/**
+ * @brief Probe the chip whether to write status register to enable HPM mode. Take a GD chip as an example:
+ * This chip (GD25LQ255E) supports maximum frequency to 133MHz by default. So, we don't need to do any extra
+ * thing.
+ */
+static esp_err_t spi_flash_hpm_probe_chip_with_doing_nothing(uint32_t flash_id)
+{
+    esp_err_t ret = ESP_OK;
+    switch (flash_id) {
+    /* The flash listed here should enter the HPM by doing nothing */
+    // GD25LQ255E.
+    case 0xC86019:
+        break;
+    default:
+        ret = ESP_ERR_NOT_FOUND;
+        break;
+    }
+    return ret;
+}
+
+static spi_flash_requirement_t spi_flash_hpm_chip_hpm_requirement_check_with_doing_nothing(uint32_t flash_id, uint32_t freq_mhz, int voltage_mv, int temperautre)
+{
+    // voltage and temperature are not been used now, to be completed in the future.
+    (void)voltage_mv;
+    (void)temperautre;
+    spi_flash_requirement_t chip_cap = SPI_FLASH_HPM_UNNEEDED;
+    ESP_EARLY_LOGD(HPM_TAG, "HPM by default, chip caps is %d", chip_cap);
+    return chip_cap;
+}
+
 //-----------------------generic functions-------------------------------------//
 
 /**
@@ -271,6 +304,7 @@ const spi_flash_hpm_info_t __attribute__((weak)) spi_flash_hpm_enable_list[] = {
     { "command",    spi_flash_hpm_probe_chip_with_cmd,     spi_flash_hpm_chip_hpm_requirement_check_with_cmd,        spi_flash_enable_high_performance_send_cmd,       spi_flash_high_performance_check_hpf_bit_5,  spi_flash_hpm_get_dummy_generic },
     { "dummy",   spi_flash_hpm_probe_chip_with_dummy,     spi_flash_hpm_chip_hpm_requirement_check_with_dummy,    spi_flash_turn_high_performance_reconfig_dummy,   spi_flash_high_performance_check_dummy_sr,  spi_flash_hpm_get_dummy_xmc},
     { "write sr3-bit5", spi_flash_hpm_probe_chip_with_write_hpf_bit_5, spi_flash_hpm_chip_hpm_requirement_check_with_write_hpf_bit_5, spi_flash_turn_high_performance_write_hpf_bit_5, spi_flash_high_performance_check_hpf_bit_5, spi_flash_hpm_get_dummy_generic},
+    { "noting-to-do", spi_flash_hpm_probe_chip_with_doing_nothing, spi_flash_hpm_chip_hpm_requirement_check_with_doing_nothing, NULL, NULL, spi_flash_hpm_get_dummy_generic},
     // default: do nothing, but keep the dummy get function. The first item with NULL as its probe will be the fallback.
     { "NULL",  NULL,                        NULL,              NULL,                            NULL,                             spi_flash_hpm_get_dummy_generic},
 };
