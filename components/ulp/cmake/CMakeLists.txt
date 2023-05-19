@@ -83,7 +83,8 @@ elseif(ULP_COCPU_IS_LP_CORE)
     "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_memory_shared.c"
     "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c")
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")

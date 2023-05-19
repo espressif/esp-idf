@@ -42,7 +42,8 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     list(APPEND srcs
         "lp_core/lp_core.c"
         "lp_core/shared/ulp_lp_core_memory_shared.c"
-        "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
+        "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+        "lp_core/lp_core_i2c.c")
 
     list(APPEND includes
         "lp_core/include"

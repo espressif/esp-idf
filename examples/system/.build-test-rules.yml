@@ -90,6 +90,10 @@ examples/system/light_sleep:
       temporary: true
       reason: target(s) not supported yet
 
+examples/system/lp_core/lp_i2c:
+  enable:
+    - if: SOC_LP_I2C_SUPPORTED == 1
+
 examples/system/ota/advanced_https_ota:
   disable:
     - if: IDF_TARGET == "esp32h2"
