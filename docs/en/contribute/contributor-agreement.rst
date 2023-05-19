@@ -1,19 +1,14 @@
 Contributor Agreement
 =====================
 
-Individual Contributor Non-Exclusive License Agreement
-------------------------------------------------------
+Individual Contributor Non-Exclusive License Agreement including the Traditional Patent License OPTION
+------------------------------------------------------------------------------------------------------
 
-including the Traditional Patent License OPTION
------------------------------------------------
-
-Thank you for your interest in contributing to Espressif IoT Development
-Framework (esp-idf) ("We" or "Us").
+Thank you for your interest in contributing to this Espressif project hosted on GitHub ("We" or "Us").
 
 The purpose of this contributor agreement ("Agreement") is to clarify
 and document the rights granted by contributors to Us. To make this
-document effective, please follow the instructions at 
-:idf_file:`CONTRIBUTING.rst`
+document effective, please follow the instructions in the :doc:`index`.
 
 1. DEFINITIONS
 ~~~~~~~~~~~~~~
@@ -27,7 +22,7 @@ Agreement or sign the Entity version of this document.
 and/or documentation) including any modifications or additions to an
 existing work, Submitted by You to Us, in which You own the Copyright.
 If You do not own the Copyright in the entire work of authorship, please
-contact Us at angus@espressif.com.
+contact Us by submitting a comment on GitHub.
 
 **"Copyright"** means all rights protecting works of authorship owned or
 controlled by You, including copyright, moral and neighboring rights, as
