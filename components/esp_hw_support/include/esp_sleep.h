@@ -417,7 +417,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
  *
  * This function does not return.
  */
-void esp_deep_sleep_start(void) __attribute__((noreturn));
+void esp_deep_sleep_start(void) __attribute__((__noreturn__));
 
 /**
  * @brief Enter light sleep with the configured wakeup options
@@ -455,7 +455,7 @@ esp_err_t esp_light_sleep_start(void);
  *
  * @param time_in_us  deep-sleep time, unit: microsecond
  */
-void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
+void esp_deep_sleep(uint64_t time_in_us) __attribute__((__noreturn__));
 
 
 /**

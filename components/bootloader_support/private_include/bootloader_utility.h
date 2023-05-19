@@ -45,7 +45,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
  * @param[in] bs Bootloader state structure.
  * @param[in] start_index The index from which the search for images begins.
  */
-__attribute__((noreturn)) void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index);
+__attribute__((__noreturn__)) void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index);
 
 #ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
 /**
@@ -65,7 +65,7 @@ void bootloader_utility_load_boot_image_from_deep_sleep(void);
  *
  * It is not recommended to call this function from an app (if called, the app will abort).
  */
-__attribute__((noreturn)) void bootloader_reset(void);
+__attribute__((__noreturn__)) void bootloader_reset(void);
 
 /**
  * @brief Do any cleanup before exiting the bootloader, before starting the app or resetting

@@ -486,7 +486,6 @@ components/esp_rom/include/esp32c3/rom/crc.h
 components/esp_rom/include/esp32c3/rom/digital_signature.h
 components/esp_rom/include/esp32c3/rom/esp_flash.h
 components/esp_rom/include/esp32c3/rom/hmac.h
-components/esp_rom/include/esp32c3/rom/libc_stubs.h
 components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
 components/esp_rom/include/esp32c3/rom/sha.h
@@ -515,7 +514,6 @@ components/esp_rom/include/esp32s3/rom/bigint.h
 components/esp_rom/include/esp32s3/rom/crc.h
 components/esp_rom/include/esp32s3/rom/digital_signature.h
 components/esp_rom/include/esp32s3/rom/hmac.h
-components/esp_rom/include/esp32s3/rom/libc_stubs.h
 components/esp_rom/include/esp32s3/rom/opi_flash.h
 components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
@@ -555,7 +553,6 @@ components/esp_system/include/esp_expression_with_stack.h
 components/esp_system/include/esp_freertos_hooks.h
 components/esp_system/include/esp_int_wdt.h
 components/esp_system/include/esp_private/dbg_stubs.h
-components/esp_system/include/esp_private/panic_internal.h
 components/esp_system/port/public_compat/brownout.h
 components/esp_system/port/public_compat/cache_err_int.h
 components/esp_system/port/public_compat/trax.h
