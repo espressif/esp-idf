@@ -63,3 +63,22 @@ def test_defaults_for_unspecified_idf_build_process_args(default_idf_env: EnvDic
                     '-DTARGET=esp32',
                     workdir=idf_as_lib_path)
     assert 'Project directory: {}'.format(str(idf_as_lib_path)) in ret.stderr
+
+
+def test_build_example_on_host(default_idf_env: EnvDict) -> None:
+    logging.info('Test if it can build the example to run on host')
+    idf_path = Path(default_idf_env.get('IDF_PATH'))
+    idf_as_lib_path = Path(idf_path, 'examples', 'build_system', 'cmake', 'idf_as_lib')
+    try:
+        target = 'esp32'
+        run_cmake('..',
+                  f'-DCMAKE_TOOLCHAIN_FILE={idf_path}/tools/cmake/toolchain-{target}.cmake',
+                  f'-DTARGET={target}',
+                  '-GNinja',
+                  workdir=idf_as_lib_path)
+
+        run_cmake('--build',
+                  '.',
+                  workdir=idf_as_lib_path)
+    finally:
+        shutil.rmtree(idf_as_lib_path / 'build', ignore_errors=True)

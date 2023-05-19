@@ -126,3 +126,10 @@ def test_exclude_components_not_passed(idf_py: IdfPyFunc, test_app_copy: Path) -
     ret = idf_py('reconfigure', check=False)
     assert ret.returncode == 2, 'Reconfigure should have failed due to invalid syntax in idf_component.yml'
     idf_py('-DEXCLUDE_COMPONENTS=to_be_excluded', 'reconfigure')
+
+
+def test_version_in_component_cmakelist(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Use IDF version variables in component CMakeLists.txt file')
+    replace_in_file((test_app_copy / 'main' / 'CMakeLists.txt'), '# placeholder_before_idf_component_register',
+                    '\n'.join(['if (NOT IDF_VERSION_MAJOR)', ' message(FATAL_ERROR "IDF version not set")', 'endif()']))
+    idf_py('reconfigure')

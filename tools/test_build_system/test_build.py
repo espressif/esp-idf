@@ -3,6 +3,7 @@
 
 import logging
 import os
+import stat
 import sys
 import textwrap
 from pathlib import Path
@@ -178,3 +179,25 @@ def test_build_loadable_elf(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     idf_py('reconfigure')
     assert (test_app_copy / 'build' / 'flasher_args.json').exists(), 'flasher_args.json should be generated in a loadable ELF build'
     idf_py('build')
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='Windows does not support stat commands')
+def test_build_with_crlf_files(idf_py: IdfPyFunc, test_app_copy: Path, idf_copy: Path) -> None:
+    def change_files_to_crlf(path: Path) -> None:
+        for root, _, files in os.walk(path):
+            for filename in files:
+                file_path = os.path.join(root, filename)
+                # Do not modify .git directory and executable files, as Linux will fail to execute them
+                if '.git' in file_path or os.stat(file_path).st_mode & stat.S_IEXEC:
+                    continue
+                with open(file_path, 'rb') as f:
+                    data = f.read()
+                    crlf_data = data.replace(b'\n', b'\r\n')
+                with open(file_path, 'wb') as f:
+                    f.write(crlf_data)
+
+    logging.info('Can still build if all text files are CRLFs')
+    change_files_to_crlf(test_app_copy)
+    change_files_to_crlf(idf_copy)
+    idf_py('build')
+    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
