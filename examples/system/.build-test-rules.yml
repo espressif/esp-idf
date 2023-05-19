@@ -217,6 +217,10 @@ examples/system/ulp/ulp_riscv/i2c:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
 
+examples/system/ulp/ulp_riscv/touch:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+
 examples/system/ulp/ulp_riscv/uart_print:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
