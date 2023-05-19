@@ -70,6 +70,7 @@
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_LP_AON_SUPPORTED            1
+#define SOC_LP_I2C_SUPPORTED            1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -216,6 +217,12 @@
 
 #define SOC_I2C_SUPPORT_XTAL        (1)
 #define SOC_I2C_SUPPORT_RTC         (1)
+
+/*-------------------------- LP_I2C CAPS -------------------------------------*/
+// ESP32-C6 has 1 LP_I2C
+#define SOC_LP_I2C_NUM              (1U)
+
+#define SOC_LP_I2C_FIFO_LEN         (16) /*!< LP_I2C hardware FIFO depth */
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)

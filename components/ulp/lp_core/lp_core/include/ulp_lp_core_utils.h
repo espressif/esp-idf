@@ -23,7 +23,6 @@ extern "C" {
  */
 void ulp_lp_core_wakeup_main_processor(void);
 
-
 /**
  * @brief Makes the co-processor busy wait for a certain number of microseconds
  *
@@ -31,6 +30,12 @@ void ulp_lp_core_wakeup_main_processor(void);
  */
 void ulp_lp_core_delay_us(uint32_t us);
 
+/**
+ * @brief Makes the co-processor busy wait for a certain number of cycles
+ *
+ * @param cycles Number of cycles to busy-wait for
+ */
+void ulp_lp_core_delay_cycles(uint32_t cycles);
 
 /**
  * @brief Finishes the ULP program and powers down the ULP
