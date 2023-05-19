@@ -877,6 +877,7 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
  *
  * @param manage Set ADC power status.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_power_manage(adc_ll_power_t manage)
 {
     if (manage == ADC_LL_POWER_SW_ON) {
