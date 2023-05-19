@@ -269,7 +269,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
 #ifdef CONFIG_WPS_REGISTRAR
-static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, u8 *ies, u8 ies_len, bool *pmf_enable)
+static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, u8 *ies, u8 ies_len, bool *pmf_enable, int subtype)
 {
     struct wpabuf *wps_ie = ieee802_11_vendor_ie_concat(ies, ies_len, WPS_DEV_OUI_WFA);
     int wps_type = esp_wifi_get_wps_type_internal();
@@ -284,7 +284,10 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 
     if (sta_info->eapol_sm) {
         wpa_printf(MSG_DEBUG, "considering station " MACSTR " for WPS", MAC2STR(sta_info->addr));
-        return 1;
+        if (esp_send_assoc_resp(hapd, sta_info, sta_info->addr, WLAN_STATUS_SUCCESS, true, subtype) != WLAN_STATUS_SUCCESS) {
+            wpa_printf(MSG_ERROR, "failed to send assoc response " MACSTR, MAC2STR(sta_info->addr));
+            return -1;
+        }
     }
 
     return 0;
@@ -293,30 +296,40 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 
 static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 *rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype)
 {
-    struct sta_info *sta_info;
+    struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
 
     if (!hapd) {
-        return 0;
+        goto fail;
     }
 
     if (*sta && !esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
        ap_free_sta(hapd, *sta);
     }
+
     sta_info = ap_sta_add(hapd, bssid);
     if (!sta_info) {
         wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
-	return 0;
+        goto fail;
     }
 #ifdef CONFIG_WPS_REGISTRAR
-    if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable)) {
-        *sta = sta_info;
-        return true;
+    if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {
+        if (sta_info->eapol_sm) {
+            *sta = sta_info;
+            return true;
+        }
+    } else {
+        goto fail;
     }
 #endif
     if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype)) {
         *sta = sta_info;
         return true;
+    }
+
+fail:
+    if (sta_info) {
+        ap_free_sta(hapd, sta_info);
     }
 
     return false;
