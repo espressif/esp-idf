@@ -1,4 +1,5 @@
-.. include:: ../../../en/api-guides/performance/speed.rst
+速度优化
+=========
 
 :link_to_translation:`en:[English]`
 
