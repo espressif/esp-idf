@@ -201,6 +201,13 @@ menu "OpenThread"
         help
             Select this option to enable link metrics feature
 
+    config OPENTHREAD_MACFILTER_ENABLE
+        bool "Enable mac filter feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable mac filter feature
+
     config OPENTHREAD_CSL_ENABLE
         bool "Enable CSL feature"
         depends on OPENTHREAD_ENABLED
