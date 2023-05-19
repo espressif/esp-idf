@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include <sys/param.h>
 
+#include "soc/soc_caps.h"
 #include "soc/uart_reg.h"
 #include "soc/periph_defs.h"
 #include "esp_attr.h"
@@ -474,14 +475,14 @@ static void handle_M_command(const unsigned char *cmd, int len)
 void update_breakpoints(void)
 {
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
-    for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         if (bp_list[i] != 0) {
             esp_cpu_set_breakpoint(i, (const void *)bp_list[i]);
         } else {
             esp_cpu_clear_breakpoint(i);
         }
     }
-    for (size_t i = 0; i < GDB_WP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_WATCHPOINTS_NUM; i++) {
         if (wp_list[i] != 0) {
             esp_cpu_set_watchpoint(i, (void *)wp_list[i], wp_size[i], wp_access[i]);
         } else {
@@ -489,7 +490,7 @@ void update_breakpoints(void)
         }
     }
 #else  // CONFIG_IDF_TARGET_ARCH_XTENSA
-#if (GDB_BP_SIZE != GDB_WP_SIZE)
+#if (SOC_CPU_BREAKPOINTS_NUM != SOC_CPU_WATCHPOINTS_NUM)
 #error "riscv have a common number of BP and WP"
 #endif
     /*
@@ -497,19 +498,19 @@ void update_breakpoints(void)
      * Instead we have common registers which could be configured as BP or WP.
      */
     size_t i = 0;
-    for (size_t b = 0; b < GDB_BP_SIZE; b++) {
+    for (size_t b = 0; b < SOC_CPU_BREAKPOINTS_NUM; b++) {
         if (bp_list[b] != 0) {
             esp_cpu_set_breakpoint(i, (const void *)bp_list[b]);
             i++;
         }
     }
-    for (size_t w = 0; w < GDB_WP_SIZE && i < GDB_WP_SIZE; w++) {
+    for (size_t w = 0; w < SOC_CPU_WATCHPOINTS_NUM && i < SOC_CPU_WATCHPOINTS_NUM; w++) {
         if (wp_list[w] != 0) {
             esp_cpu_set_watchpoint(i, (void *)wp_list[w], wp_size[w], wp_access[w]);
             i++;
         }
     }
-    for (; i < GDB_BP_SIZE; i++) {
+    for (; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         esp_cpu_clear_breakpoint(i);
     }
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA
@@ -521,20 +522,20 @@ static void handle_Z0_command(const unsigned char *cmd, int len)
     cmd++; /* skip 'Z' */
     cmd++; /* skip '0' */
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    if (bp_count >= GDB_BP_SIZE) {
+    if (bp_count >= SOC_CPU_BREAKPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
     bool add_bp = true;
     /* Check if bp already exist */
-    for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         if (bp_list[i] == addr) {
             add_bp = false;
             break;
         }
     }
     if (true == add_bp) {
-        for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+        for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
             if (bp_list[i] == 0) {
                 bp_list[i] = (uint32_t)addr;
                 bp_count++;
@@ -553,7 +554,7 @@ static void handle_z0_command(const unsigned char *cmd, int len)
     cmd++; /* skip 'z' */
     cmd++; /* skip '0' */
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         if (bp_list[i] == addr) {
             bp_list[i] = 0;
             bp_count--;
@@ -572,7 +573,7 @@ static void handle_Z2_command(const unsigned char *cmd, int len)
     cmd++;
     uint32_t size = esp_gdbstub_gethex(&cmd, -1);
 
-    if (wp_count >= GDB_WP_SIZE) {
+    if (wp_count >= SOC_CPU_WATCHPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
@@ -591,7 +592,7 @@ static void handle_Z3_command(const unsigned char *cmd, int len)
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
     cmd++;
     uint32_t size = esp_gdbstub_gethex(&cmd, -1);
-    if (wp_count >= GDB_WP_SIZE) {
+    if (wp_count >= SOC_CPU_WATCHPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
@@ -610,7 +611,7 @@ static void handle_Z4_command(const unsigned char *cmd, int len)
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
     cmd++;
     uint32_t size = esp_gdbstub_gethex(&cmd, -1);
-    if (wp_count >= GDB_WP_SIZE) {
+    if (wp_count >= SOC_CPU_WATCHPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
@@ -627,7 +628,7 @@ static void handle_zx_command(const unsigned char *cmd, int len)
     cmd++; /* skip 'z' */
     cmd++; /* skip 'x' */
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    for (size_t i = 0; i < GDB_WP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_WATCHPOINTS_NUM; i++) {
         if (wp_list[i] == addr) {
             wp_access[i] = 0;
             wp_list[i] = 0;
