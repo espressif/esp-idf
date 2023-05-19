@@ -989,8 +989,19 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
             MACADDR_COPY(peer_record[peer_num].peer_nmi, temp->peer_nmi);
             p_ndl = nan_find_ndl(0, temp->peer_nmi);
             if (p_ndl) {
-                peer_record[peer_num].ndp_id = p_ndl->ndp_id;
-                MACADDR_COPY(peer_record[peer_num].peer_ndi, p_ndl->peer_ndi);
+                if (p_ndl->own_role == ESP_NAN_PUBLISH) {
+                    if (p_ndl->publisher_id == own_svc_id) {
+                        peer_record[peer_num].ndp_id = p_ndl->ndp_id;
+                        MACADDR_COPY(peer_record[peer_num].peer_ndi, p_ndl->peer_ndi);
+                    }
+                } else if (p_ndl->own_role == ESP_NAN_SUBSCRIBE) {
+                    struct peer_svc_info *peer_info = NULL;
+                    peer_info = nan_find_peer_svc(own_svc_id, temp->svc_id, temp->peer_nmi);
+                    if (peer_info && peer_info->svc_id == p_ndl->publisher_id) {
+                        peer_record[peer_num].ndp_id = p_ndl->ndp_id;
+                        MACADDR_COPY(peer_record[peer_num].peer_ndi, p_ndl->peer_ndi);
+                    }
+                }
             } else {
                 peer_record[peer_num].ndp_id = 0;
                 MACADDR_COPY(peer_record[peer_num].peer_ndi, null_mac);

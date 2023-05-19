@@ -702,8 +702,7 @@ typedef struct {
     char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< Service info shared in Publish frame */
     uint8_t single_replied_event:1;                 /**< Give single Replied event or every time */
     uint8_t datapath_reqd:1;                        /**< NAN Datapath required for the service */
-    uint8_t fsd_reqd:1;                             /**< Further Service Discovery required */
-    uint8_t reserved:5;                             /**< Reserved */
+    uint8_t reserved:6;                             /**< Reserved */
 } wifi_nan_publish_cfg_t;
 
 /**
