@@ -26,6 +26,9 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
     static pau_hal_context_t pau_hal = { .dev = NULL };
     static pau_context_t pau_context = { .hal = &pau_hal };
 
+    /* periph_module_enable don not need to be put in iram because it is
+     * called before the flash is powered off and will not be called again. */
+
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
         periph_module_enable(PERIPH_REGDMA_MODULE);
@@ -62,6 +65,13 @@ void pau_regdma_trigger_modem_link_restore(void)
 #if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
 void IRAM_ATTR pau_regdma_set_system_link_addr(void *link_addr)
 {
+    /* ESP32H2 use software to trigger REGDMA to restore instead of PMU,
+     * because regdma has power bug, so we need to manually set the clock
+     * for regdma before using it after the chip wakes up. We use
+     * pau_hal_clock_configure because periph_module_enable will consume
+     * a relatively large amount of memory space. */
+
+    pau_hal_regdma_clock_configure(PAU_instance()->hal, true);
     pau_hal_set_regdma_system_link_addr(PAU_instance()->hal, link_addr);
 }
 

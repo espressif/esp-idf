@@ -100,6 +100,15 @@ void pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_rest
  */
 void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal);
 
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+/**
+ * @brief Enable or disable PAU module clock
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
