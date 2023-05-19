@@ -7,7 +7,9 @@
 // The HAL layer for PAU (ESP32-H2 specific part)
 
 #include "soc/soc.h"
+#include "soc/pcr_struct.h"
 #include "esp_attr.h"
+#include "hal/misc.h"
 #include "hal/pau_hal.h"
 #include "hal/pau_types.h"
 
@@ -56,4 +58,10 @@ void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal)
     pau_ll_set_regdma_entry_link_backup_start_disable(hal->dev);
     pau_ll_select_regdma_entry_link(hal->dev, 0); /* restore link select to default */
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+}
+
+void IRAM_ATTR pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.regdma_conf, regdma_rst_en, !enable);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.regdma_conf, regdma_clk_en, enable);
 }
