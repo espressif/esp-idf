@@ -31,6 +31,34 @@
 
 extern int _bss_end;
 
+void IRAM_ATTR esp_system_reset_modules_on_exit(void)
+{
+    // Flush any data left in UART FIFOs before reset the UART peripheral
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
+    esp_rom_uart_tx_wait_idle(2);
+
+    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
+    SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
+                      SYSTEM_WIFIBB_RST | SYSTEM_FE_RST | SYSTEM_WIFIMAC_RST | SYSTEM_SDIO_RST |
+                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST | SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
+    REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
+
+    // Reset timer, systimer, spi, uart, mcpwm
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
+                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST |
+                      SYSTEM_PWM0_RST | SYSTEM_PWM1_RST);
+    REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
+
+    // Reset dma
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
+    REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
+
+    SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
+    CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
+}
+
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
@@ -62,10 +90,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
-
-    // Flush any data left in UART FIFOs
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     if (esp_ptr_external_ram(esp_cpu_get_sp())) {
@@ -101,25 +125,8 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-                      SYSTEM_WIFIBB_RST | SYSTEM_FE_RST | SYSTEM_WIFIMAC_RST |
-                      SYSTEM_SDIO_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
-    REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
-
-    // Reset timer/spi/uart
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
-    REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-
-    // Reset dma
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
-    REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
-
-    SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
-    CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
+    // reset necessary peripheral modules
+    esp_system_reset_modules_on_exit();
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
 #if !CONFIG_IDF_ENV_FPGA

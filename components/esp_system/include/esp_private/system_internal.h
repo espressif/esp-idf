@@ -84,6 +84,11 @@ int64_t esp_system_get_time(void);
  */
 uint32_t esp_system_get_time_resolution(void);
 
+/**
+ * @brief Before the system exit (e.g. panic, brownout, restart, etc.), this function is to be called to reset all necessary peripherals.
+ */
+void esp_system_reset_modules_on_exit(void);
+
 #ifdef __cplusplus
 }
 #endif

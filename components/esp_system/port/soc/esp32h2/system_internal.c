@@ -27,6 +27,29 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 
+void IRAM_ATTR esp_system_reset_modules_on_exit(void)
+{
+    // Flush any data left in UART FIFOs before reset the UART peripheral
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
+
+    // Reset timer/spi/uart
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
+                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
+    SET_PERI_REG_MASK(SYSTEM_MODEM_RST_EN_REG,
+                      SYSTEM_IEEE802154BB_RST | SYSTEM_IEEE802154MAC_RST |
+                      SYSTEM_BT_RST | SYSTEM_BTMAC_RST |
+                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST
+                     );
+    REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
+    REG_WRITE(SYSTEM_MODEM_RST_EN_REG, 0);
+
+    // Reset dma
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
+    REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
+}
+
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
@@ -68,9 +91,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
 
-    // Flush any data left in UART FIFOs
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
     // Disable cache
     Cache_Disable_ICache();
 
@@ -82,22 +102,6 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
-    // Reset timer/spi/uart
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
-    SET_PERI_REG_MASK(SYSTEM_MODEM_RST_EN_REG,
-                      SYSTEM_IEEE802154BB_RST | SYSTEM_IEEE802154MAC_RST |
-                      SYSTEM_BT_RST | SYSTEM_BTMAC_RST |
-                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST
-                      );
-    REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-    REG_WRITE(SYSTEM_MODEM_RST_EN_REG, 0);
-
-    // Reset dma
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
-    REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
 #if !CONFIG_IDF_ENV_FPGA
