@@ -23,6 +23,7 @@
 esp_ipc_isr_waiting_for_finish_cmd:
     /* waiting for the finish command */
 .check_finish_cmd:
+    memw
     l32i    a3, a2, 0
     beqz    a3, .check_finish_cmd
     ret
