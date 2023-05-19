@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "esp_timer.h"
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_sd";
@@ -138,8 +139,19 @@ esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card)
     /* Wait for the card to be ready for data transfers */
     uint32_t status = 0;
     uint32_t count = 0;
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
-        // TODO: add some timeout here
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_INIT_WAIT_DATA_READY_TIMEOUT_US) {
+            ESP_LOGE(TAG, "init wait data ready - timeout");
+            return ESP_ERR_TIMEOUT;
+        }
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
         esp_err_t err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
             return err;

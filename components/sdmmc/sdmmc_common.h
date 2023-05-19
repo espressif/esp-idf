@@ -30,6 +30,9 @@
 #define SDMMC_GO_IDLE_DELAY_MS              20
 #define SDMMC_IO_SEND_OP_COND_DELAY_MS      10
 
+#define SDMMC_INIT_WAIT_DATA_READY_TIMEOUT_US  (5000 * 1000)
+#define SDMMC_READY_FOR_DATA_TIMEOUT_US        (5000 * 1000)
+
 /* These delay values are mostly useful for cases when CD pin is not used, and
  * the card is removed. In this case, SDMMC peripheral may not always return
  * CMD_DONE / DATA_DONE interrupts after signaling the error. These timeouts work
