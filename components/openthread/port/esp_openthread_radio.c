@@ -300,7 +300,9 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     aFrame->mPsdu[-1] = aFrame->mLength; // lenth locates one byte before the psdu (esp_openthread_radio_tx_psdu);
 
     if (otMacFrameIsSecurityEnabled(aFrame) && !aFrame->mInfo.mTxInfo.mIsSecurityProcessed) {
-        otMacFrameSetFrameCounter(aFrame, s_mac_frame_counter++);
+        if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx) {
+            otMacFrameSetFrameCounter(aFrame, s_mac_frame_counter++);
+        }
         if (otMacFrameIsKeyIdMode1(aFrame)) {
             s_transmit_frame.mInfo.mTxInfo.mAesKey = &s_current_key;
             if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx) {
