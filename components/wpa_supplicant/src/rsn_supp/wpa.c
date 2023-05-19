@@ -110,6 +110,12 @@ wifi_cipher_type_t cipher_type_map_supp_to_public(unsigned wpa_cipher)
     case WPA_CIPHER_SMS4:
         return WIFI_CIPHER_TYPE_SMS4;
 
+    case WPA_CIPHER_GCMP:
+        return WIFI_CIPHER_TYPE_GCMP;
+
+    case WPA_CIPHER_GCMP_256:
+        return WIFI_CIPHER_TYPE_GCMP256;
+
     default:
         return WIFI_CIPHER_TYPE_UNKNOWN;
     }
