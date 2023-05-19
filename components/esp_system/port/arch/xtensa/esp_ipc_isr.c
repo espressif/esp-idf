@@ -54,6 +54,7 @@ typedef enum {
 #define IPC_ISR_EXIT_CRITICAL()  portEXIT_CRITICAL_SAFE(&s_ipc_isr_mux)
 
 static void esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ipc_isr_wait_t wait_for);
+static void esp_ipc_isr_wait_for_end();
 
 
 /* Initializing IPC_ISR */
@@ -142,6 +143,8 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
         const uint32_t cpu_id = xPortGetCoreID();
         if (--s_count_of_nested_calls[cpu_id] == 0) {
             esp_ipc_isr_finish_cmd = 1;
+            // Make sure end flag is cleared and esp_ipc_isr_waiting_for_finish_cmd is done.
+            esp_ipc_isr_wait_for_end();
             IPC_ISR_EXIT_CRITICAL();
 #if CONFIG_FREERTOS_SMP
             portRESTORE_INTERRUPTS(s_stored_interrupt_level);
@@ -191,7 +194,7 @@ static void IRAM_ATTR esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* a
     const uint32_t cpu_id = xPortGetCoreID();
 
     // waiting for the end of the previous call
-    while (!esp_ipc_isr_end_fl) {};
+    esp_ipc_isr_wait_for_end();
 
     esp_ipc_func = func;
     esp_ipc_func_arg = arg;
@@ -213,8 +216,13 @@ static void IRAM_ATTR esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* a
         while (!esp_ipc_isr_start_fl) {};
     } else {
         // IPC_ISR_WAIT_FOR_END
-        while (!esp_ipc_isr_end_fl) {};
+        esp_ipc_isr_wait_for_end();
     }
+}
+
+static void IRAM_ATTR esp_ipc_isr_wait_for_end()
+{
+    while (!esp_ipc_isr_end_fl) {};
 }
 
 /* End private functions*/
