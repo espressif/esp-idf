@@ -1083,6 +1083,10 @@ config SOC_PM_SUPPORT_CPU_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_MODEM_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_XTAL32K_PD
     bool
     default y
@@ -1108,6 +1112,10 @@ config SOC_PM_PAU_LINK_NUM
     default 4
 
 config SOC_PM_CPU_RETENTION_BY_SW
+    bool
+    default y
+
+config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
 
