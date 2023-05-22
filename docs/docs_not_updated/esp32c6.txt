@@ -1,14 +1,5 @@
-api-guides/coexist
-api-guides/wifi
-api-guides/esp-wifi-mesh
-api-guides/wifi-security
 api-guides/openthread
 api-reference/network
 api-reference/network/esp_openthread
-api-reference/network/esp_dpp
-api-reference/network/esp_now
-api-reference/network/esp-wifi-mesh
-api-reference/network/esp_smartconfig
-api-reference/network/esp_wifi
 api-reference/network/index
 api-reference/protocols/esp_spi_slave_protocol
