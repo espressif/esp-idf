@@ -1077,7 +1077,7 @@ config SOC_PM_SUPPORT_BT_WAKEUP
 
 config SOC_PM_SUPPORT_CPU_PD
     bool
-    default n
+    default y
 
 config SOC_PM_SUPPORT_XTAL32K_PD
     bool
@@ -1092,6 +1092,10 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     default y
 
 config SOC_PM_SUPPORT_VDDSDIO_PD
+    bool
+    default y
+
+config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
 
