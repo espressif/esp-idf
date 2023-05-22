@@ -167,6 +167,10 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
+config SOC_LP_TIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_CLK_TREE_SUPPORTED
     bool
     default y
@@ -723,14 +727,6 @@ config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 
-config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
-    int
-    default 128
-
-config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
-    int
-    default 108
-
 config SOC_RTCIO_PIN_COUNT
     int
     default 0
@@ -923,6 +919,14 @@ config SOC_SYSTIMER_SUPPORT_ETM
     bool
     default y
 
+config SOC_LP_TIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_LP_TIMER_BIT_WIDTH_HI
+    int
+    default 16
+
 config SOC_TIMER_GROUPS
     int
     default 2
@@ -1067,21 +1071,13 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
-config SOC_PM_SUPPORT_WIFI_WAKEUP
-    bool
-    default y
-
 config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y
 
 config SOC_PM_SUPPORT_CPU_PD
     bool
-    default y
-
-config SOC_PM_SUPPORT_BT_PD
-    bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_XTAL32K_PD
     bool
@@ -1096,10 +1092,6 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     default y
 
 config SOC_PM_SUPPORT_VDDSDIO_PD
-    bool
-    default y
-
-config SOC_PM_CPU_RETENTION_BY_RTCCNTL
     bool
     default y
 

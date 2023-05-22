@@ -658,4 +658,4 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
     esp_deep_sleep_start();
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2) TODO: IDF-5349
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2) TODO: IDF-6268

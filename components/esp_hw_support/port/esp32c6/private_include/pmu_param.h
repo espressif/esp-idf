@@ -107,7 +107,7 @@ typedef struct {
             .vdd_spi_pd_en = ((pd_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 0,   \
             .wifi_pd_en    = ((pd_flags) & PMU_SLEEP_PD_MODEM)   ? 1 : 0,   \
             .cpu_pd_en     = ((pd_flags) & PMU_SLEEP_PD_CPU)     ? 1 : 0,   \
-            .aon_pd_en     = ((pd_flags) & PMU_SLEEP_PD_AON)     ? 1 : 0,   \
+            .aon_pd_en     = ((pd_flags) & PMU_SLEEP_PD_HP_AON)  ? 1 : 0,   \
             .top_pd_en     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,   \
             .mem_pd_en     = 0,                                             \
             .mem_dslp      = 0                                              \

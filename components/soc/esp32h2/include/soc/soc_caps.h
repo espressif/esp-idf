@@ -67,6 +67,7 @@
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
 #define SOC_PMU_SUPPORTED               1
+#define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_CLK_TREE_SUPPORTED          1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
@@ -298,15 +299,6 @@
 #define SOC_PARLIO_TX_CLK_SUPPORT_GATING     1  /*!< Support gating TX clock */
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
 
-// TODO: IDF-6267 (Copy from esp32c6, need check)
-/*-------------------------- RTC CAPS --------------------------------------*/
-#define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
-#define SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM        (108)
-#define SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
-#define SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
-
-#define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
-
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated LP_IO subsystem on ESP32-H2. LP functions are still supported
  * for hold, wake & 32kHz crystal functions - via LP_AON registers */
@@ -394,6 +386,10 @@
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
+/*-------------------------- LP_TIMER CAPS ----------------------------------*/
+#define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
+#define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
@@ -457,15 +453,12 @@
 
 // TODO: IDF-6270 (Copy from esp32c6, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
-#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-#define SOC_PM_SUPPORT_CPU_PD           (1)
-#define SOC_PM_SUPPORT_BT_PD            (1)
+#define SOC_PM_SUPPORT_CPU_PD           (0)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-#define SOC_PM_CPU_RETENTION_BY_RTCCNTL  (1)
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/

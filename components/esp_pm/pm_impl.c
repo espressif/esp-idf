@@ -274,7 +274,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const int apb_clk_freq = MAX(soc_apb_clk_freq, modem_apb_clk_freq);
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
 #else
-    int apb_max_freq = MIN(max_freq_mhz, 80); /* CPU frequency in APB_MAX mode */
+    int apb_max_freq = MIN(max_freq_mhz, APB_CLK_FREQ / MHZ); /* CPU frequency in APB_MAX mode */
 #endif
 
     apb_max_freq = MAX(apb_max_freq, min_freq_mhz);
