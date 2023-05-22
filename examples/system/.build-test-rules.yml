@@ -90,12 +90,6 @@ examples/system/ipc/ipc_isr:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/light_sleep:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: target(s) not supported yet
-
 examples/system/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1
