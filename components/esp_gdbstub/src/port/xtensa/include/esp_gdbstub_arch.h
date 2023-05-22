@@ -85,17 +85,6 @@ typedef struct {
 
 } esp_gdbstub_gdb_regfile_t;
 
-
-// Amount of HW breakpoints used in GDB
-#ifndef GDB_BP_SIZE
-#define GDB_BP_SIZE 2
-#endif  // GDB_BP_SIZE
-
-// Amount of HW watchpoints used in GDB
-#ifndef GDB_WP_SIZE
-#define GDB_WP_SIZE 2
-#endif  // GDB_WP_SIZE
-
 #ifdef __cplusplus
 }
 #endif
