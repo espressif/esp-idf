@@ -23,9 +23,9 @@
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 // LOOP @<address, name> rx:<recieved events no.> dr:<dropped events no.>
-#define LOOP_DUMP_FORMAT              "LOOP @%p,%s rx:%u dr:%u\n"
+#define LOOP_DUMP_FORMAT              "LOOP @%p,%s rx:%" PRIu32 " dr:%" PRIu32 "\n"
  // handler @<address> ev:<base, id> inv:<times invoked> time:<runtime>
-#define HANDLER_DUMP_FORMAT           "  HANDLER @%p ev:%s,%s inv:%u time:%lld us\n"
+#define HANDLER_DUMP_FORMAT           "  HANDLER @%p ev:%s,%s inv:%" PRIu32 " time:%lld us\n"
 
 #define PRINT_DUMP_INFO(dst, sz, ...)  do { \
                                             int cb = snprintf(dst, sz, __VA_ARGS__); \
@@ -144,8 +144,19 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_n
 
     xSemaphoreTake(loop->profiling_mutex, portMAX_DELAY);
 
-    handler->invoked++;
-    handler->time += diff;
+    // At this point handler may be already unregistered.
+    // This happens in "handler instance can unregister itself" test case.
+    // To prevent memory corruption error it's necessary to check if pointer is still valid.
+    esp_event_loop_node_t* loop_node;
+    esp_event_handler_node_t* handler_node;
+    SLIST_FOREACH(loop_node, &(loop->loop_nodes), next) {
+        SLIST_FOREACH(handler_node, &(loop_node->handlers), next) {
+            if(handler_node == handler) {
+                handler->invoked++;
+                handler->time += diff;
+            }
+        }
+    }
 
     xSemaphoreGive(loop->profiling_mutex);
 #endif
@@ -986,7 +997,7 @@ esp_err_t esp_event_dump(FILE* file)
                 SLIST_FOREACH(id_node_it, &(base_node_it->id_nodes), next) {
                     SLIST_FOREACH(handler_it, &(id_node_it->handlers), next) {
                         memset(id_str_buf, 0, sizeof(id_str_buf));
-                        snprintf(id_str_buf, sizeof(id_str_buf), "%d", id_node_it->id);
+                        snprintf(id_str_buf, sizeof(id_str_buf), "%" PRIi32, id_node_it->id);
 
                         PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler_ctx->handler, base_node_it->base ,
                                         id_str_buf, handler_it->invoked, handler_it->time);
