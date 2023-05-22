@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
 #include "hal/assert.h"
@@ -86,11 +88,27 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
 {
     //GAHBCFG register
     usb_dwc_ll_gahbcfg_en_dma_mode(hal->dev);
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-    usb_dwc_ll_gahbcfg_set_hbstlen(hal->dev, 1);    //Use INCR AHB burst. See the ESP32-S2 and later chip ERRATA.
-#elif CONFIG_IDF_TARGET_ESP32S3
-    usb_dwc_ll_gahbcfg_set_hbstlen(hal->dev, 0);    //Do not use USB burst INCR mode for the ESP32-S3, to avoid interference with other peripherals.
-#endif
+    int hbstlen = 0;    //Use AHB burst SINGLE by default
+#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+    /*
+    Hardware errata workaround for the ESP32-S2 ECO0 (see ESP32-S2 Errata Document section 4.0 for full details).
+
+    ESP32-S2 ECO0 has a hardware errata where the AHB bus arbiter may generate incorrect arbitration signals leading to
+    the DWC_OTG corrupting the DMA transfers of other peripherals (or vice versa) on the same bus. The peripherals that
+    share the same bus with DWC_OTG include I2C and SPI (see ESP32-S2 Errata Document for more details). To workaround
+    this, the DWC_OTG's AHB should use INCR mode to prevent change of arbitration during a burst operation, thus
+    avoiding this errata.
+
+    Note: Setting AHB burst to INCR increases the likeliness of DMA underruns on other peripherals sharing the same bus
+    arbiter as the DWC_OTG (e.g., I2C and SPI) as change of arbitration during the burst operation is not permitted.
+    Users should keep this limitation in mind when the DWC_OTG transfers large data payloads (e.g., 512 MPS transfers)
+    while this workaround is enabled.
+    */
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+        hbstlen = 1;    //Set AHB burst to INCR to workaround hardware errata
+    }
+#endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+    usb_dwc_ll_gahbcfg_set_hbstlen(hal->dev, hbstlen);  //Set AHB burst mode
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_dwc_ll_gusbcfg_dis_srp_cap(hal->dev);       //Disable SRP
