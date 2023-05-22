@@ -78,20 +78,8 @@ static void calibrate_ocode(void)
 
 void esp_ocode_calib_init(void)
 {
-    bool ignore_major = efuse_ll_get_disable_blk_version_major();
-    uint32_t blk_version = efuse_hal_blk_version();
-
-    uint8_t ocode_scheme_ver = 0;
-    if(blk_version == 0 && !ignore_major) {
-        ESP_HW_LOGE(TAG, "Invalid blk_version\n");
-        abort();
-    }
-    if(blk_version > 0) {
-        ocode_scheme_ver = 1;
-    }
-
-    if (ocode_scheme_ver == 1) {
-        set_ocode_by_efuse(ocode_scheme_ver);
+    if (efuse_hal_blk_version() >= 1) {
+        set_ocode_by_efuse(1);
     } else {
         calibrate_ocode();
     }

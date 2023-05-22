@@ -19,10 +19,8 @@
 
 int esp_efuse_rtc_calib_get_ver(void)
 {
-    uint32_t blk_ver = efuse_hal_blk_version();
-
     uint32_t cali_version = 0;
-    if (blk_ver > 0) {
+    if (efuse_hal_blk_version() >= 1) {
         cali_version = ESP_EFUSE_ADC_CALIB_VER;
     } else {
         ESP_LOGW("eFuse", "calibration efuse version does not match, set default version to 0");
