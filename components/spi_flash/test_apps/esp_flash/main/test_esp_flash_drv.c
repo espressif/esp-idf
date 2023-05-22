@@ -33,18 +33,6 @@
 #include "esp_private/spi_flash_os.h"
 #include "ccomp_timer.h"
 
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c2/rom/cache.h"
-#endif
-
 #define FUNC_SPI    1
 
 static uint8_t sector_buf[4096];
