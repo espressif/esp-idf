@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -306,6 +307,13 @@ static inline int esp_intr_flags_to_level(int flags)
 {
     return __builtin_ffs((flags & ESP_INTR_FLAG_LEVELMASK) >> 1) + 1;
 }
+
+/**
+ * @brief Dump the status of allocated interrupts
+ * @param stream  The stream to dump to, if NULL then stdout is used
+ * @return ESP_OK on success
+ */
+esp_err_t esp_intr_dump(FILE *stream);
 
 /**@}*/
 
