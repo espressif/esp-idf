@@ -131,7 +131,7 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     // for bypass reserved power domain
     const pmu_hp_power_domain_t pmu_hp_domains[] = {
         PMU_HP_PD_TOP,
-        PMU_HP_PD_AON,
+        PMU_HP_PD_HP_AON,
         PMU_HP_PD_CPU,
         PMU_HP_PD_WIFI
     };

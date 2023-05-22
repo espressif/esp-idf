@@ -96,7 +96,11 @@ extern "C" {
 #define PMU_SLEEP_PD_MODEM          BIT(2)
 #define PMU_SLEEP_PD_HP_PERIPH      BIT(3)
 #define PMU_SLEEP_PD_CPU            BIT(4)
-#define PMU_SLEEP_PD_AON            BIT(5)
+
+#if SOC_PM_SUPPORT_HP_AON_PD
+#define PMU_SLEEP_PD_HP_AON         BIT(5)
+#endif
+
 #define PMU_SLEEP_PD_MEM_G0         BIT(6)
 #define PMU_SLEEP_PD_MEM_G1         BIT(7)
 #define PMU_SLEEP_PD_MEM_G2         BIT(8)

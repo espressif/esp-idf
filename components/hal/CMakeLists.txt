@@ -236,7 +236,6 @@ if(NOT BOOTLOADER_BUILD)
 
         list(REMOVE_ITEM srcs
                 "esp32h2/rtc_cntl_hal.c"
-                "esp32h2/pmu_hal.c" # TODO: IDF-6267
                 )
     endif()
 endif()
