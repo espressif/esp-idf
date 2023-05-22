@@ -46,8 +46,9 @@ typedef struct {
 
 typedef struct parlio_tx_unit_t {
     int unit_id;           // unit id
-    size_t data_width;     // data width
+    parlio_dir_t dir;
     parlio_group_t *group; // group handle
+    size_t data_width;     // data width
     intr_handle_t intr;    // allocated interrupt handle
     esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
@@ -70,44 +71,6 @@ typedef struct parlio_tx_unit_t {
 } parlio_tx_unit_t;
 
 static void parlio_tx_default_isr(void *args);
-
-static esp_err_t parlio_tx_register_to_group(parlio_tx_unit_t *unit)
-{
-    parlio_group_t *group = NULL;
-    int unit_id = -1;
-    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
-        group = parlio_acquire_group_handle(i);
-        ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no memory for group (%d)", i);
-        portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_PARLIO_TX_UNITS_PER_GROUP; j++) {
-            if (group->tx_units[j] == NULL) {
-                group->tx_units[j] = unit;
-                unit_id = j;
-                break;
-            }
-        }
-        portEXIT_CRITICAL(&group->spinlock);
-        if (unit_id < 0) {
-            // didn't find a free unit slot in the group
-            parlio_release_group_handle(group);
-        } else {
-            unit->unit_id = unit_id;
-            unit->group = group;
-            break;
-        }
-    }
-    ESP_RETURN_ON_FALSE(unit_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free tx unit");
-    return ESP_OK;
-}
-
-static void parlio_tx_unregister_to_group(parlio_tx_unit_t *unit, parlio_group_t *group)
-{
-    portENTER_CRITICAL(&group->spinlock);
-    group->tx_units[unit->unit_id] = NULL;
-    portEXIT_CRITICAL(&group->spinlock);
-    // the tx unit has a reference of the group, release it now
-    parlio_release_group_handle(group);
-}
 
 static esp_err_t parlio_tx_create_trans_queue(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
@@ -159,7 +122,7 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
     }
     if (tx_unit->group) {
         // de-register from group
-        parlio_tx_unregister_to_group(tx_unit, tx_unit->group);
+        parlio_unregister_unit_from_group((parlio_unit_base_handle_t)tx_unit);
     }
     free(tx_unit->dma_nodes);
     free(tx_unit);
@@ -185,6 +148,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
             esp_rom_gpio_connect_out_signal(config->data_gpio_nums[i],
                                             parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->data_gpio_nums[i]], PIN_FUNC_GPIO);
+
         }
     }
     // Note: the valid signal will override TXD[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG]
@@ -232,12 +196,10 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
 static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
     parlio_hal_context_t *hal = &tx_unit->group->hal;
-    // parlio_ll_clock_source_t and parlio_clock_source_t are binary compatible if the clock source is from internal
-    parlio_ll_clock_source_t clk_src = (parlio_ll_clock_source_t)(config->clk_src);
+    parlio_clock_source_t clk_src = config->clk_in_gpio_num >= 0 ? PARLIO_CLK_SRC_EXTERNAL : config->clk_src;
     uint32_t periph_src_clk_hz = 0;
     // if the source clock is input from the GPIO, then we're in the slave mode
-    if (config->clk_in_gpio_num >= 0) {
-        clk_src = PARLIO_LL_CLK_SRC_PAD;
+    if (clk_src == PARLIO_CLK_SRC_EXTERNAL) {
         periph_src_clk_hz = config->input_clk_src_freq_hz;
     } else {
         // get the internal clock source frequency
@@ -246,7 +208,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     ESP_RETURN_ON_FALSE(periph_src_clk_hz, ESP_ERR_INVALID_ARG, TAG, "invalid clock source frequency");
 
 #if CONFIG_PM_ENABLE
-    if (clk_src != PARLIO_LL_CLK_SRC_PAD) {
+    if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
         // XTAL and PLL clock source will be turned off in light sleep, so we need to create a NO_LIGHT_SLEEP lock
         sprintf(tx_unit->pm_lock_name, "parlio_tx_%d_%d", tx_unit->group->group_id, tx_unit->unit_id); // e.g. parlio_tx_0_0
         esp_err_t ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, tx_unit->pm_lock_name, &tx_unit->pm_lock);
@@ -318,13 +280,13 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
         unit->dma_nodes[i].next = (i == dma_nodes_num - 1) ? NULL : &(unit->dma_nodes[i+1]);
     }
     unit->max_transfer_bits = config->max_transfer_size * 8;
-
+    unit->dir = PARLIO_DIR_TX;
     unit->data_width = data_width;
     //create transaction queue
     ESP_GOTO_ON_ERROR(parlio_tx_create_trans_queue(unit, config), err, TAG, "create transaction queue failed");
 
     // register the unit to a group
-    ESP_GOTO_ON_ERROR(parlio_tx_register_to_group(unit), err, TAG, "register unit to group failed");
+    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group((parlio_unit_base_handle_t)unit), err, TAG, "register unit to group failed");
     parlio_group_t *group = unit->group;
     parlio_hal_context_t *hal = &group->hal;
     // select the clock source

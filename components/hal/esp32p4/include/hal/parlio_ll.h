@@ -199,6 +199,7 @@ static inline void parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
  * @param dev Parallel IO register base address
  * @param en True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
@@ -227,6 +228,7 @@ static inline void parlio_ll_rx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_
  * @param dev Parallel IO register base address
  * @param en True to start, False to stop
  */
+__attribute__((always_inline))
 static inline void parlio_ll_rx_start(parl_io_dev_t *dev, bool en)
 {
     dev->rx_start_cfg.rx_start = en;
