@@ -19,8 +19,7 @@ from esp_docs.conf_docs import *  # noqa: F403,F401
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
 
-BT_DOCS = ['api-guides/blufi.rst',
-           'api-reference/bluetooth/bt_le.rst',
+BT_DOCS = ['api-reference/bluetooth/bt_le.rst',
            'api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
            'api-reference/bluetooth/esp_bt_main.rst',
@@ -30,7 +29,6 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_gatt_defs.rst',
            'api-reference/bluetooth/esp_gatts.rst',
            'api-reference/bluetooth/esp_gattc.rst',
-           'api-reference/bluetooth/esp_blufi.rst',
            'api-reference/bluetooth/index.rst',
            'api-reference/bluetooth/nimble/index.rst']
 
@@ -55,6 +53,9 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_spp.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst',
                    'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
+
+BLUFI_DOCS = ['api-guides/blufi.rst',
+              'api-reference/bluetooth/esp_blufi.rst']
 
 WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
@@ -167,6 +168,7 @@ ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_BLE_SUPPORTED':BLE_DOCS,
                             'SOC_BLE_MESH_SUPPORTED':BLE_MESH_DOCS,
+                            'SOC_BLUFI_SUPPORTED':BLUFI_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
