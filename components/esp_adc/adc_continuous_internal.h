@@ -84,6 +84,7 @@ struct adc_continuous_ctx_t {
     RingbufHandle_t                 ringbuf_hdl;                //RX ringbuffer handler
     void*                           ringbuf_storage;            //Ringbuffer storage buffer
     void*                           ringbuf_struct;             //Ringbuffer structure buffer
+    size_t                          ringbuf_size;               //Ringbuffer size
     intptr_t                        rx_eof_desc_addr;           //eof descriptor address of RX channel
     adc_fsm_t                       fsm;                        //ADC continuous mode driver internal states
     bool                            use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
@@ -94,6 +95,9 @@ struct adc_continuous_ctx_t {
     adc_continuous_evt_cbs_t        cbs;                        //Callbacks
     void                            *user_data;                 //User context
     esp_pm_lock_handle_t            pm_lock;                    //For power management
+    struct {
+        uint32_t flush_pool: 1;     //Flush the internal pool when the pool is full. With this flag, the `on_pool_ovf` event will not happen.
+    } flags;
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
     adc_iir_filter_t                *iir_filter[SOC_ADC_DIGI_IIR_FILTER_NUM];  //ADC IIR filter context
 #endif

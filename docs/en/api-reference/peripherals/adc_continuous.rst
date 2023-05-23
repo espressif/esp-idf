@@ -52,6 +52,7 @@ To create an ADC continuous mode driver handle, set up the required configuratio
 
 -  :cpp:member:`adc_continuous_handle_cfg_t::max_store_buf_size` set the maximum size (in bytes) of the pool that the driver saves ADC conversion result into. If this pool is full, new conversion results will be lost.
 -  :cpp:member:`adc_continuous_handle_cfg_t::conv_frame_size` set the size of the ADC conversion frame, in bytes.
+-  :cpp:member:`adc_continuous_handle_cfg_t::flags` set the flags that can change the driver behaviour.
 
 
 After setting up above configurations for the ADC, call :cpp:func:`adc_continuous_new_handle` with the prepared :cpp:type:`adc_continuous_handle_cfg_t`. This function may fail due to various errors such as invalid argumemts, insufficient memory, etc.

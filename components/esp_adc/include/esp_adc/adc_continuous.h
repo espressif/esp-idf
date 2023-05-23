@@ -54,6 +54,9 @@ typedef struct adc_continuous_ctx_t *adc_continuous_handle_t;
 typedef struct {
     uint32_t max_store_buf_size;    ///< Max length of the conversion Results that driver can store, in bytes.
     uint32_t conv_frame_size;       ///< Conversion frame size, in bytes. This should be in multiples of `SOC_ADC_DIGI_DATA_BYTES_PER_CONV`.
+    struct {
+        uint32_t flush_pool: 1;     ///< Flush the internal pool when the pool is full.
+    } flags;                        ///< Driver flags
 } adc_continuous_handle_cfg_t;
 
 /**
