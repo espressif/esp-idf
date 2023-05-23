@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,12 @@
 extern "C" {
 #endif
 
-#define SUPPORT_BTDM            1
-#define SUPPORT_WIFI            1
+#define SUPPORT_BTDM            0
+#define SUPPORT_BTBB            0
+#define SUPPORT_WIFI            0
+#define SUPPORT_USB_DWCOTG      0
+#define SUPPORT_COEXIST         0
+#define SUPPORT_MBEDTLS         0
 
 /* Structure and functions for returning ROM global layout
  *
@@ -24,10 +28,8 @@ typedef struct {
     void *dram0_rtos_reserved_start;
     void *stack_sentry;
     void *stack;
-    void *stack_sentry_app;
-    void *stack_app;
 
-    /* BTDM data */
+#if SUPPORT_BTDM
     void *data_start_btdm;
     void *data_end_btdm;
     void *bss_start_btdm;
@@ -38,6 +40,12 @@ typedef struct {
     void *data_end_interface_btdm;
     void *bss_start_interface_btdm;
     void *bss_end_interface_btdm;
+#endif
+
+#if SUPPORT_BTBB
+    void *dram_start_btbbrom;
+    void *dram_end_btbbrom;
+#endif
 
     /* Other DRAM ranges */
 #if SUPPORT_BTDM || SUPPORT_WIFI
@@ -64,11 +72,20 @@ typedef struct {
     void *bss_start_interface_pp;
     void *bss_end_interface_pp;
 #endif
-    void *dram_start_usbdev_rom;
-    void *dram_end_usbdev_rom;
+
+#if SUPPORT_USB_DWCOTG
+    void *dram_start_usb_dwcotg_rom;
+    void *dram_end_usb_dwcotg_rom;
+#else
+    //Two reserved members are defined here, so the structure will not be broken,
+    //please keep in mind that there is no memory can be released between
+    //dram_start_usb_reserved_rom ~ dram_end_usb_reserved_rom.
+    void *dram_start_usb_reserved_rom;
+    void *dram_end_usb_reserved_rom;
+#endif
+
     void *dram_start_uart_rom;
     void *dram_end_uart_rom;
-
 } ets_rom_layout_t;
 
 extern const ets_rom_layout_t * const ets_rom_layout_p;
