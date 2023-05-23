@@ -455,6 +455,85 @@ static inline void ieee802154_ll_disable_coex(void)
     IEEE802154.pti.hw_ack_pti = 1;
 }
 
+static inline void ieee802154_ll_clear_debug_cnt(uint32_t clear_bits)
+{
+    IEEE802154.debug_cnt_clr.val = clear_bits;
+}
+
+static inline uint32_t ieee802154_ll_get_sfd_timeout_cnt(void)
+{
+    return IEEE802154.debug_sfd_timeout_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_crc_error_cnt(void)
+{
+    return IEEE802154.debug_crc_error_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_ed_abort_cnt(void)
+{
+    return IEEE802154.debug_ed_abort_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_cca_fail_cnt(void)
+{
+    return IEEE802154.debug_cca_fail_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_fliter_fail_cnt(void)
+{
+    return IEEE802154.debug_rx_filter_fail_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_no_rss_detect_cnt(void)
+{
+    return IEEE802154.debug_no_rss_detect_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_abort_coex_cnt(void)
+{
+    return IEEE802154.debug_rx_abort_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_restart_cnt(void)
+{
+    return IEEE802154.debug_rx_restart_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_tx_ack_abort_coex_cnt(void)
+{
+    return IEEE802154.debug_tx_ack_abort_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_ed_scan_coex_cnt(void)
+{
+    return IEEE802154.debug_ed_scan_break_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_ack_abort_coex_cnt(void)
+{
+    return IEEE802154.debug_rx_ack_abort_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_ack_timeout_cnt(void)
+{
+    return IEEE802154.debug_rx_ack_timeout_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_tx_break_coex_cnt(void)
+{
+    return IEEE802154.debug_tx_break_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_tx_security_error_cnt(void)
+{
+    return IEEE802154.debug_tx_security_error_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_cca_busy_cnt(void)
+{
+    return IEEE802154.debug_cca_busy_cnt;
+}
 #endif
 
 #ifdef __cplusplus
