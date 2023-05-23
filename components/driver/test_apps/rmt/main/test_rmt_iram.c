@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,17 +78,14 @@ static void test_rmt_tx_iram_safe(size_t mem_block_symbols, bool with_dma)
     TEST_ESP_OK(rmt_del_encoder(led_strip_encoder));
 }
 
-TEST_CASE("rmt_tx_iram_safe_no_dma", "[rmt]")
+TEST_CASE("rmt tx iram safe", "[rmt]")
 {
     test_rmt_tx_iram_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false);
+#if SOC_RMT_SUPPORT_DMA
+    test_rmt_tx_iram_safe(1024, true);
+#endif
 }
 
-#if SOC_RMT_SUPPORT_DMA
-TEST_CASE("rmt_tx_iram_safe_with_dma", "[rmt]")
-{
-    test_rmt_tx_iram_safe(1024, true);
-}
-#endif
 
 
 static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
@@ -169,14 +166,10 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
     TEST_ESP_OK(rmt_del_channel(rx_channel));
 }
 
-TEST_CASE("rmt_rx_iram_safe_no_dma", "[rmt]")
+TEST_CASE("rmt rx iram safe", "[rmt]")
 {
     test_rmt_rx_iram_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
-}
-
 #if SOC_RMT_SUPPORT_DMA
-TEST_CASE("rmt_rx_iram_safe_with_dma", "[rmt]")
-{
     test_rmt_rx_iram_safe(128, true, RMT_CLK_SRC_DEFAULT);
-}
 #endif
+}

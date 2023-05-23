@@ -520,6 +520,17 @@ Application Examples
 * RMT infinite loop for driving DShot ESC: :example:`peripherals/rmt/dshot_esc`
 * RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire`
 
+FAQ
+---
+
+* Why the RMT encoder results in more data than expected?
+
+The RMT encoding takes place in the ISR context. If your RMT encoding session takes a long time (e.g. by logging debug information) or the encoding session is deferred somehow because of interrupt latency, then it's possible the transmitting becomes **faster** than the encoding. Which in result, the encoder can't prepare the next data in time, leading to the transmitter sending the previous data again. There's no way to ask the transmitter to stop and wait. You can mitigate the issue by combining the following ways:
+
+    - increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`, in steps of {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}
+    - place the encoding function in the IRAM
+    - Enables the :cpp:member:`rmt_tx_channel_config_t::with_dma` if it's available for your chip
+
 API Reference
 -------------
 

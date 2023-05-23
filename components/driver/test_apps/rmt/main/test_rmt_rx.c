@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,18 +185,14 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ESP_OK(rmt_del_encoder(nec_encoder));
 }
 
-TEST_CASE("rmt_rx_nec_carrier_no_dma", "[rmt]")
+TEST_CASE("rmt rx nec with carrier", "[rmt]")
 {
     // test width different clock sources
     rmt_clock_source_t clk_srcs[] = SOC_RMT_CLKS;
     for (size_t i = 0; i < sizeof(clk_srcs) / sizeof(clk_srcs[0]); i++) {
         test_rmt_rx_nec_carrier(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, clk_srcs[i]);
     }
-}
-
 #if SOC_RMT_SUPPORT_DMA
-TEST_CASE("rmt_rx_nec_carrier_with_dma", "[rmt]")
-{
     test_rmt_rx_nec_carrier(128, true, RMT_CLK_SRC_DEFAULT);
-}
 #endif
+}
