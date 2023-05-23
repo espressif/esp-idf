@@ -456,6 +456,7 @@ static IRAM_ATTR void isr_handle_tx_abort(void)
         break;
     case IEEE802154_TX_ABORT_BY_TX_COEX_BREAK:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA);
+        IEEE802154_TX_BREAK_COEX_NUMS_UPDATE();
         esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_COEXIST);
         next_operation();
         break;
@@ -628,6 +629,7 @@ esp_err_t ieee802154_mac_init(void)
     esp_err_t ret = ESP_OK;
     modem_clock_module_mac_reset(PERIPH_IEEE802154_MODULE); // reset ieee802154 MAC
     ieee802154_pib_init();
+    IEEE802154_TXRX_STATISTIC_CLEAR();
 
     ieee802154_ll_enable_events(IEEE802154_EVENT_MASK);
 #if !CONFIG_IEEE802154_TEST
@@ -682,6 +684,7 @@ IEEE802154_STATIC void start_ed(uint32_t duration)
 
 IEEE802154_STATIC void tx_init(const uint8_t *frame)
 {
+    IEEE802154_TX_NUMS_UPDATE();
     s_tx_frame = (uint8_t *)frame;
     stop_current_operation();
     ieee802154_pib_update();
