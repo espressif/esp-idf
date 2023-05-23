@@ -1450,7 +1450,7 @@ Currently, the ESP-IDF supports the following protocol modes:
     LR Compatibility
     *************************
 
-    Since LR is Espressif-unique Wi-Fi mode, only ESP32 series chips devices (except esp32c2) can transmit and receive the LR data. In other words, the ESP32 series chips devices (except esp32c2) should NOT transmit the data in LR data rate if the connected device does not support LR. The application can achieve this by configuring suitable Wi-Fi mode. If the negotiated mode supports LR, the ESP32 series chips devices (except esp32c2) may transmit data in LR rate. Otherwise, ESP32 series chips devices (except esp32c2) will transmit all data in traditional Wi-Fi data rate.
+    Since LR is Espressif-unique Wi-Fi mode, only ESP32 chip series devices (except ESP32-C2) can transmit and receive the LR data. In other words, the ESP32 chip series devices (except ESP32-C2) should NOT transmit the data in LR data rate if the connected device does not support LR. The application can achieve this by configuring a suitable Wi-Fi mode. If the negotiated mode supports LR, the ESP32 chip series devices (except ESP32-C2) may transmit data in LR rate. Otherwise, ESP32 chip series devices (except ESP32-C2) will transmit all data in the traditional Wi-Fi data rate.
 
     The following table depicts the Wi-Fi mode negotiation:
 
@@ -1504,7 +1504,7 @@ Currently, the ESP-IDF supports the following protocol modes:
 
     - For LR-enabled AP of {IDF_TARGET_NAME}, it is incompatible with traditional 802.11 mode, because the beacon is sent in LR mode.
     - For LR-enabled station of {IDF_TARGET_NAME} whose mode is NOT LR-only mode, it is compatible with traditional 802.11 mode.
-    - If both station and AP are ESP32 series chips devices (except esp32c2) and both of them have enabled LR mode, the negotiated mode supports LR.
+    - If both station and AP are ESP32 series chips devices (except ESP32-C2) and both of them have enabled LR mode, the negotiated mode supports LR.
 
     If the negotiated Wi-Fi mode supports both traditional 802.11 mode and LR mode, it is the Wi-Fi driver's responsibility to automatically select the best data rate in different Wi-Fi modes and the application can ignore it.
 
@@ -1710,7 +1710,7 @@ Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and 
     - {IDF_TARGET_NAME} as FTM Initiator in station mode.
     - {IDF_TARGET_NAME} as FTM Responder in AP mode.
 
-    Distance measurement using RTT is not accurate, and factors such as RF interference, multi-path travel, antenna orientation, and lack of calibration increase these inaccuracies. For better results, it is suggested to perform FTM between two ESP32 series chips devices (except esp32c2) as station and AP.
+    Distance measurement using RTT is not accurate, and factors such as RF interference, multi-path travel, antenna orientation, and lack of calibration increase these inaccuracies. For better results, it is suggested to perform FTM between two ESP32 chip series devices (except ESP32-C2) as station and AP.
 
     Refer to ESP-IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to set up and perform FTM.
 
