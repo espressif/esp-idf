@@ -215,8 +215,62 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
     free(result);
 }
 
+
+#define ADC_FLUSH_TEST_SIZE    64
+
+TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignore]")
+{
+    adc_continuous_handle_t handle = NULL;
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = ADC_FLUSH_TEST_SIZE,
+        .conv_frame_size = ADC_FLUSH_TEST_SIZE,
+        .flags.flush_pool = true,
+    };
+    TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
+
+    adc_continuous_config_t dig_cfg = {
+        .sample_freq_hz = 50 * 1000,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
+    };
+    adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
+    adc_pattern[0].atten = ADC_ATTEN_DB_11;
+    adc_pattern[0].channel = ADC1_TEST_CHAN0;
+    adc_pattern[0].unit = ADC_UNIT_1;
+    adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
+    dig_cfg.adc_pattern = adc_pattern;
+    dig_cfg.pattern_num = 1;
+    TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
+
+    uint8_t result[ADC_FLUSH_TEST_SIZE] = {0};
+    uint32_t ret_num = 0;
+    TEST_ESP_OK(adc_continuous_start(handle));
+
+    while (1) {
+        TEST_ESP_OK(adc_continuous_read(handle, result, ADC_FLUSH_TEST_SIZE, &ret_num, ADC_MAX_DELAY));
+        printf("ret_num: 0d%"PRIu32" bytes\n", ret_num);
+        TEST_ASSERT(ret_num == ADC_FLUSH_TEST_SIZE);
+
+        for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
+            adc_digi_output_data_t *p = (void*)&result[i];
+    #if (SOC_ADC_DIGI_RESULT_BYTES == 2)
+            printf("ADC1, Channel: %d, Value: %d\n", p->type1.channel, p->type1.data);
+    #else
+            printf("ADC1, Channel: %d, Value: %d\n", p->type2.channel, p->type2.data);
+    #endif
+        }
+        /**
+         * With this delay, check the read out data to be the newest data
+         */
+        vTaskDelay(2000);
+    }
+
+    TEST_ESP_OK(adc_continuous_stop(handle));
+    TEST_ESP_OK(adc_continuous_deinit(handle));
+}
+
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
-TEST_CASE("ADC filter exhausted allocation", "[adc_oneshot]")
+TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {

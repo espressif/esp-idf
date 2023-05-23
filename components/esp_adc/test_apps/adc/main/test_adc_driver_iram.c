@@ -185,7 +185,7 @@ static bool IRAM_ATTR NOINLINE_ATTR s_conv_done_cb(adc_continuous_handle_t handl
     return false;
 }
 
-TEST_CASE("ADC continuous work with ISR and Flash", "[adc_oneshot]")
+TEST_CASE("ADC continuous work with ISR and Flash", "[adc_continuous]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
