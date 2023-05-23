@@ -5,8 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
+@pytest.mark.supported_targets
 @pytest.mark.generic
-def test_ecc(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+def test_crypto(dut: Dut) -> None:
+    dut.expect('main_task: Returned from app_main()')
