@@ -10,7 +10,7 @@ RF 共存
 
 {IDF_TARGET_NAME} 支持的共存场景
 ------------------------------------
-.. only:: esp32c3 or esp32s3 or esp32
+.. only:: esp32c3 or esp32s3 or esp32 or esp32c6
 
   .. table:: 表 1  Wi-Fi 和 BLE 共存支持功能
 
@@ -122,7 +122,7 @@ RF 共存
   Wi-Fi、BT、BLE 三者对于 RF 的使用，主要是按照时间片来划分的。在一个共存周期内，按照 Wi-Fi、BT、BLE 的顺序划分时间片。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，同理，BT/BLE 在自己的时间片内会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
   Wi-Fi、BLE 二者对于 RF 的使用，主要是按照时间片来划分的。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，在 Bluetooth 的时间片内，BLE 会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
@@ -130,7 +130,7 @@ RF 共存
 .. list::
 
   :esp32: 1) IDLE 状态：BT 和 BLE 共存由 Bluetooth 模块控制。
-  :esp32c3 or esp32s3: 1) IDLE 状态：RF 模块由 Bluetooth 模块控制。
+  :esp32c3 or esp32s3 or esp32c6: 1) IDLE 状态：RF 模块由 Bluetooth 模块控制。
   #) CONNECTED 状态：共存周期以目标信标传输时间 (Target Beacon Transmission Time, TBTT) 点为起始点，周期大于 100 ms。
   #) SCAN 状态：Wi-Fi 时间片以及共存周期都比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
   #) CONNECTING 状态：Wi-Fi 时间片比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。

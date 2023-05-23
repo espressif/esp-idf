@@ -98,7 +98,7 @@ Config ESP-NOW Rate
 
 .. only:: esp32c6
 
-    Call :cpp:func:`esp_now_set_peer_rate_config()` to config ESPNOW rate of each peer. Make sure that the peer is added before config rate. This API should be called after :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_now_add_peer()`.
+    Call :cpp:func:`esp_now_set_peer_rate_config()` to configure ESP-NOW rate of each peer. Make sure that the peer is added before configuring the rate. This API should be called after :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_now_add_peer()`.
 
     .. note::
 

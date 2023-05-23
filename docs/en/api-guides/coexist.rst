@@ -10,7 +10,7 @@ Overview
 
 Supported Coexistence Scenario for {IDF_TARGET_NAME}
 ---------------------------------------------------------------------
-.. only:: esp32c3 or esp32s3 or esp32
+.. only:: esp32c3 or esp32s3 or esp32 or esp32c6
 
   .. table:: Supported Features of Wi-Fi and BLE Coexistence
 
@@ -122,7 +122,7 @@ Coexistence Period and Time Slice
   Wi-Fi, BT, and BLE have their fixed time slice to use the RF. A coexistence period is divided into 3 time slices in the order of Wi-Fi, BT, and BLE. In the Wi-Fi slice, Wi-Fi's request to the coexistence arbitration module will have higher priority. Similarly, BT/BLE can enjoy higher priority at their own time slices. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
 
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
   Wi-Fi and BLE have their fixed time slice to use the RF. In the Wi-Fi time slice, Wi-Fi will send a higher priority request to the coexistence arbitration module. Similarly, BLE can enjoy higher priority at their own time slice. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
 
@@ -130,7 +130,7 @@ Coexistence Period and Time Slice
 .. list::
 
   :esp32: 1) IDLE status: the coexistence of BT and BLE is controlled by Bluetooth module.
-  :esp32c3 or esp32s3: 1) IDLE status: RF module is controlled by Bluetooth module.
+  :esp32c3 or esp32s3 or esp32c6: 1) IDLE status: RF module is controlled by Bluetooth module.
   #) CONNECTED status: the coexistence period starts at the Target Beacon Transmission Time (TBTT) and is more than 100 ms.
   #) SCAN status: Wi-Fi slice and coexistence period are longer than in the CONNECTED status. To ensure Bluetooth performance, the Bluetooth time slice will also be adjusted accordingly.
   #) CONNECTING status: Wi-Fi slice is longer than in the CONNECTED status. To ensure Bluetooth performance, the Bluetooth time slice will also be adjusted accordingly.
