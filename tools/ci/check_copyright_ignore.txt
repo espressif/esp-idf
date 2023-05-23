@@ -485,7 +485,6 @@ components/esp_rom/include/esp32c3/rom/crc.h
 components/esp_rom/include/esp32c3/rom/digital_signature.h
 components/esp_rom/include/esp32c3/rom/esp_flash.h
 components/esp_rom/include/esp32c3/rom/hmac.h
-components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
 components/esp_rom/include/esp32c3/rom/sha.h
 components/esp_rom/include/esp32c3/rom/tjpgd.h
@@ -514,7 +513,6 @@ components/esp_rom/include/esp32s3/rom/crc.h
 components/esp_rom/include/esp32s3/rom/digital_signature.h
 components/esp_rom/include/esp32s3/rom/hmac.h
 components/esp_rom/include/esp32s3/rom/opi_flash.h
-components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
 components/esp_rom/include/esp32s3/rom/sha.h
 components/esp_rom/include/esp32s3/rom/tjpgd.h
