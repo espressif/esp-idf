@@ -31,8 +31,6 @@ This example aims at understanding BLE service discovery, connection, encryption
 
 To test this demo, use any BLE GATT server app that advertises support for the Alert Notification service (0x1811) and includes it in the GATT database.
 
-A Python based utility `blecent_test.py` is also provided (which will run as a BLE GATT server) and can be used to test this example.
-
 Note :
 
 * To install the dependency packages needed, please refer to the top level [README file](../../../README.md#running-test-python-script-ttfw).
@@ -134,62 +132,6 @@ GAP procedure initiated: terminate connection; conn_handle=0 hci_reason=19
 disconnect; reason=534
 ```
 
-## Running Python Utility
-
-```
-python blecent_test.py
-```
-
-## Python Utility Output
-
-This is this output seen on the python side on successful connection:
-
-```
-discovering adapter...
-bluetooth adapter discovered
-powering on adapter...
-bluetooth adapter powered on
-Advertising started
-GATT Data created
-GATT Application registered
-Advertising data created
-Advertisement registered
-Read Request received
- 	SupportedNewAlertCategoryCharacteristic
-	Value: 	 [dbus.Byte(2)]
-Write Request received
- 	AlertNotificationControlPointCharacteristic
-	Current value: 	 [dbus.Byte(0)]
-	New value: 	 [dbus.Byte(99), dbus.Byte(100)]
-
-Notify Started
-New value on write: 	 [dbus.Byte(1), dbus.Byte(0)]
-	Value on read: 	 [dbus.Byte(1), dbus.Byte(0)]
-
-Notify Stopped
-
-exiting from test...
-GATT Data removed
-GATT Application unregistered
-Advertising data removed
-Advertisement unregistered
-Stop Advertising status:  True
-disconnecting device...
-device disconnected
-powering off adapter...
-bluetooth adapter powered off
-Service discovery passed
-	Service Discovery Status: 0
-Read passed
-	SupportedNewAlertCategoryCharacteristic
-	Read Status: 0
-Write passed
-	AlertNotificationControlPointCharacteristic
-	Write Status: 0
-Subscribe passed
-	ClientCharacteristicConfigurationDescriptor
-	Subscribe Status: 0
-```
 
 ## Troubleshooting
 

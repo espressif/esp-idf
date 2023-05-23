@@ -2345,19 +2345,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
-.rules:test:example_test-esp32-bt:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-bt
-
 .rules:test:example_test-esp32-ccs811:
   rules:
     - <<: *if-revert-branch
