@@ -180,9 +180,7 @@ static esp_eth_handle_t eth_init_spi(spi_eth_module_config_t *spi_eth_module_con
         .mode = 0,
         .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
         .queue_size = 20,
-        .spics_io_num = spi_eth_module_config->spi_cs_gpio,
-        .input_delay_ns = 20
-
+        .spics_io_num = spi_eth_module_config->spi_cs_gpio
     };
     // Init vendor specific MAC config to default, and create new SPI Ethernet MAC instance
     // and new PHY instance based on board configuration
