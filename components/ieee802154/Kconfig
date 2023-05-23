@@ -159,4 +159,11 @@ menu "IEEE 802.15.4"
         default 10
         help
             set the record abort table size
+
+    config IEEE802154_TXRX_STATISTIC
+        bool "Enable record tx/rx packets information for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record the tx and rx
 endmenu  # IEEE 802.15.4
