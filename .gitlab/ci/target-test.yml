@@ -101,7 +101,7 @@ pytest_examples_esp32_jtag:
 pytest_examples_esp32_ccs811:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-ccs811
+    - .rules:test:example_test-esp32
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, ccs811 ]
