@@ -71,7 +71,7 @@ typedef struct {
     uint16_t duty_cycle_pos;        ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
     uint16_t cs_ena_pretrans;       ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
     uint8_t cs_ena_posttrans;       ///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
-    int clock_speed_hz;             ///< Clock speed, divisors of the SPI `clock_source`, in Hz
+    int clock_speed_hz;             ///< SPI clock speed in Hz. Derived from `clock_source`.
     int input_delay_ns;             /**< Maximum data valid time of slave. The time required between SCLK and MISO
         valid, including the possible clock delay from slave to master. The driver uses this value to give an extra
         delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
