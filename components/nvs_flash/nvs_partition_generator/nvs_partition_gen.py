@@ -18,11 +18,13 @@ import os
 import random
 import struct
 import sys
+import textwrap
 import zlib
 from io import open
 
 try:
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes, hmac
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 except ImportError:
     print('The cryptography package is not installed.'
@@ -42,6 +44,13 @@ def reverse_hexbytes(addr_tmp):
     reversed_bytes = ''.join(reversed(addr))
 
     return reversed_bytes
+
+
+def desc_format(*args):
+    desc = ''
+    for arg in args:
+        desc += textwrap.fill(replace_whitespace=False, text=arg) + '\n'
+    return desc
 
 
 """ Class for standard NVS page structure """
@@ -842,16 +851,63 @@ def generate_key(args):
         distutils.dir_util.mkpath(keys_outdir)
     keys_outdir, output_keyfile = set_target_filepath(keys_outdir, args.keyfile)
 
-    key = ''.join(random.choice('0123456789abcdef') for _ in range(128)).strip()
-    encr_key_bytes = codecs.decode(key, 'hex')
-    key_len = len(encr_key_bytes)
-
     keys_buf = bytearray(b'\xff') * page_max_size
-    keys_buf[0:key_len] = encr_key_bytes
-    crc_data = keys_buf[0:key_len]
-    crc_data = bytes(crc_data)
-    crc = zlib.crc32(crc_data, 0xFFFFFFFF)
-    struct.pack_into('<I', keys_buf, key_len,  crc & 0xFFFFFFFF)
+    key = ''
+
+    if args.key_protect_hmac:
+        HMAC_EKEY_SEED_ELEMENT = b'\x5A\x5A\xBE\xAE'
+        HMAC_TKEY_SEED_ELEMENT = b'\xA5\xA5\xDE\xCE'
+        hmac_key = b''
+
+        if args.kp_hmac_keygen:
+            hmac_key_str = ''.join(random.choice('0123456789abcdef') for _ in range(64)).strip()
+            hmac_key = codecs.decode(hmac_key_str, 'hex')
+            hmac_keyfile = ''
+
+            if args.kp_hmac_keyfile:
+                hmac_keyfile = args.kp_hmac_keyfile
+            else:
+                hmac_keyfile = 'hmac-' + args.keyfile
+
+            hmac_keyfile = set_target_filepath(keys_outdir, hmac_keyfile)[1]
+            with open(hmac_keyfile, 'wb') as hmac_key_file:
+                hmac_key_file.write(hmac_key)
+        else:
+            if not args.kp_hmac_inputkey:
+                raise RuntimeError('HMAC Key input file (HMAC-based encryption scheme) missing!')
+
+            with open(args.kp_hmac_inputkey, 'rb') as input_keys_file:
+                hmac_key = input_keys_file.read()
+
+        ekey_seed = HMAC_EKEY_SEED_ELEMENT * 8
+        h_e = hmac.HMAC(hmac_key, hashes.SHA256())
+        h_e.update(ekey_seed)
+        e_key = h_e.finalize()
+
+        tkey_seed = HMAC_TKEY_SEED_ELEMENT * 8
+        h_t = hmac.HMAC(hmac_key, hashes.SHA256())
+        h_t.update(tkey_seed)
+        t_key = h_t.finalize()
+
+        encr_key_bytes = e_key + t_key
+        key_len = len(encr_key_bytes)
+        key = f"{int.from_bytes(encr_key_bytes, 'big'):x}"
+
+        keys_buf[0:key_len] = encr_key_bytes
+        crc_data = keys_buf[0:key_len]
+        crc_data = bytes(crc_data)
+        crc = zlib.crc32(crc_data, 0xFFFFFFFF)
+        struct.pack_into('<I', keys_buf, key_len,  crc & 0xFFFFFFFF)
+    else:
+        key = ''.join(random.choice('0123456789abcdef') for _ in range(128)).strip()
+        encr_key_bytes = codecs.decode(key, 'hex')
+        key_len = len(encr_key_bytes)
+
+        keys_buf[0:key_len] = encr_key_bytes
+        crc_data = keys_buf[0:key_len]
+        crc_data = bytes(crc_data)
+        crc = zlib.crc32(crc_data, 0xFFFFFFFF)
+        struct.pack_into('<I', keys_buf, key_len,  crc & 0xFFFFFFFF)
 
     with open(output_keyfile, 'wb') as output_keys_file:
         output_keys_file.write(keys_buf)
@@ -918,101 +974,126 @@ def generate(args, is_encr_enabled=False, encr_key=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='\nESP NVS partition generation utility', formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description=desc_format('ESP NVS partition generation utility'), formatter_class=argparse.RawTextHelpFormatter)
     subparser = parser.add_subparsers(title='Commands',
                                       dest='command',
-                                      help='\nRun nvs_partition_gen.py {command} -h for additional help\n\n')
+                                      help=desc_format('Run nvs_partition_gen.py {command} -h for additional help'))
 
     parser_gen = subparser.add_parser('generate',
-                                      help='Generate NVS partition',
+                                      help=desc_format('Generate NVS partition'),
                                       formatter_class=argparse.RawTextHelpFormatter)
     parser_gen.set_defaults(func=generate)
     parser_gen.add_argument('input',
                             default=None,
-                            help='Path to CSV file to parse')
+                            help=desc_format('Path to CSV file to parse'))
     parser_gen.add_argument('output',
                             default=None,
-                            help='Path to output NVS binary file')
+                            help=desc_format('Path to output NVS binary file'))
     parser_gen.add_argument('size',
                             default=None,
-                            help='Size of NVS partition in bytes\
-                            \n(must be multiple of 4096)')
+                            help=desc_format('Size of NVS partition in bytes (must be multiple of 4096)'))
     parser_gen.add_argument('--version',
                             choices=[1,2],
                             default=2,
                             type=int,
-                            help='''Set multipage blob version.\
-                            \nVersion 1 - Multipage blob support disabled.\
-                            \nVersion 2 - Multipage blob support enabled.\
-                            \nDefault: Version 2''')
+                            help=desc_format(
+                                'Set multipage blob version.',
+                                'Version 1 - Multipage blob support disabled.',
+                                'Version 2 - Multipage blob support enabled.',
+                                'Default: Version 2'))
     parser_gen.add_argument('--outdir',
                             default=os.getcwd(),
-                            help='Output directory to store files created\
-                            \n(Default: current directory)')
+                            help=desc_format('Output directory to store files created (Default: current directory)'))
     parser_gen_key = subparser.add_parser('generate-key',
-                                          help='Generate keys for encryption',
+                                          help=desc_format('Generate keys for encryption'),
                                           formatter_class=argparse.RawTextHelpFormatter)
     parser_gen_key.set_defaults(func=generate_key)
+    parser_gen_key.add_argument('--key_protect_hmac',
+                                action='store_true',
+                                help=desc_format(
+                                    'If set, the NVS encryption key protection scheme based on HMAC',
+                                    'peripheral is used; else the default scheme based on Flash Encryption',
+                                    'is used'))
+    parser_gen_key.add_argument('--kp_hmac_keygen',
+                                action='store_true',
+                                help=desc_format('Generate the HMAC key for HMAC-based encryption scheme'))
+    parser_gen_key.add_argument('--kp_hmac_keyfile',
+                                default=None,
+                                help=desc_format('Path to output HMAC key file'))
+    parser_gen_key.add_argument('--kp_hmac_inputkey',
+                                default=None,
+                                help=desc_format('File having the HMAC key for generating the NVS encryption keys'))
     parser_gen_key.add_argument('--keyfile',
                                 default=None,
-                                help='Path to output encryption keys file')
+                                help=desc_format('Path to output encryption keys file'))
     parser_gen_key.add_argument('--outdir',
                                 default=os.getcwd(),
-                                help='Output directory to store files created.\
-                                \n(Default: current directory)')
+                                help=desc_format('Output directory to store files created. (Default: current directory)'))
     parser_encr = subparser.add_parser('encrypt',
-                                       help='Generate NVS encrypted partition',
+                                       help=desc_format('Generate NVS encrypted partition'),
                                        formatter_class=argparse.RawTextHelpFormatter)
     parser_encr.set_defaults(func=encrypt)
     parser_encr.add_argument('input',
                              default=None,
-                             help='Path to CSV file to parse')
+                             help=desc_format('Path to CSV file to parse'))
     parser_encr.add_argument('output',
                              default=None,
-                             help='Path to output NVS binary file')
+                             help=desc_format('Path to output NVS binary file'))
     parser_encr.add_argument('size',
                              default=None,
-                             help='Size of NVS partition in bytes\
-                             \n(must be multiple of 4096)')
+                             help=desc_format('Size of NVS partition in bytes (must be multiple of 4096)'))
     parser_encr.add_argument('--version',
                              choices=[1,2],
                              default=2,
                              type=int,
-                             help='''Set multipage blob version.\
-                             \nVersion 1 - Multipage blob support disabled.\
-                             \nVersion 2 - Multipage blob support enabled.\
-                             \nDefault: Version 2''')
+                             help=desc_format(
+                                 'Set multipage blob version.',
+                                 'Version 1 - Multipage blob support disabled.',
+                                 'Version 2 - Multipage blob support enabled.',
+                                 'Default: Version 2'))
     parser_encr.add_argument('--keygen',
                              action='store_true',
-                             default=False,
-                             help='Generates key for encrypting NVS partition')
+                             help=desc_format('Generates key for encrypting NVS partition'))
     parser_encr.add_argument('--keyfile',
                              default=None,
-                             help='Path to output encryption keys file')
+                             help=desc_format('Path to output encryption keys file'))
     parser_encr.add_argument('--inputkey',
                              default=None,
-                             help='File having key for encrypting NVS partition')
+                             help=desc_format('File having key for encrypting NVS partition'))
     parser_encr.add_argument('--outdir',
                              default=os.getcwd(),
-                             help='Output directory to store files created.\
-                             \n(Default: current directory)')
+                             help=desc_format('Output directory to store files created. (Default: current directory)'))
+    parser_encr.add_argument('--key_protect_hmac',
+                             action='store_true',
+                             help=desc_format(
+                                 'If set, the NVS encryption key protection scheme based on HMAC',
+                                 'peripheral is used; else the default scheme based on Flash Encryption',
+                                 'is used'))
+    parser_encr.add_argument('--kp_hmac_keygen',
+                             action='store_true',
+                             help=desc_format('Generate the HMAC key for HMAC-based encryption scheme'))
+    parser_encr.add_argument('--kp_hmac_keyfile',
+                             default=None,
+                             help=desc_format('Path to output HMAC key file'))
+    parser_encr.add_argument('--kp_hmac_inputkey',
+                             default=None,
+                             help=desc_format('File having the HMAC key for generating the NVS encryption keys'))
     parser_decr = subparser.add_parser('decrypt',
-                                       help='Decrypt NVS encrypted partition',
+                                       help=desc_format('Decrypt NVS encrypted partition'),
                                        formatter_class=argparse.RawTextHelpFormatter)
     parser_decr.set_defaults(func=decrypt)
     parser_decr.add_argument('input',
                              default=None,
-                             help='Path to encrypted NVS partition file to parse')
+                             help=desc_format('Path to encrypted NVS partition file to parse'))
     parser_decr.add_argument('key',
                              default=None,
-                             help='Path to file having keys for decryption')
+                             help=desc_format('Path to file having keys for decryption'))
     parser_decr.add_argument('output',
                              default=None,
                              help='Path to output decrypted binary file')
     parser_decr.add_argument('--outdir',
                              default=os.getcwd(),
-                             help='Output directory to store files created.\
-                             \n(Default: current directory)')
+                             help=desc_format('Output directory to store files created. (Default: current directory)'))
     args = parser.parse_args()
 
     args.func(args)

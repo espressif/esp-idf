@@ -141,6 +141,7 @@ build:integration_test:
       - flash_multi
       - ecdsa
       - ccs811    # pytest*ccs811*
+      - nvs_encr_hmac
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"

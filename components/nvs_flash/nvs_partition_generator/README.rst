@@ -6,20 +6,22 @@ NVS Partition Generator Utility
 Introduction
 ------------
 
-The utility :component_file:`nvs_flash/nvs_partition_generator/nvs_partition_gen.py` creates a binary file based on key-value pairs provided in a CSV file. The binary file is compatible with NVS architecture defined in :doc:`Non-Volatile Storage </api-reference/storage/nvs_flash>`. This utility is ideally suited for generating a binary blob, containing data specific to ODM/OEM, which can be flashed externally at the time of device manufacturing. This allows manufacturers to generate many instances of the same application firmware with customized parameters for each device, such as a serial number.
+The utility :component_file:`nvs_flash/nvs_partition_generator/nvs_partition_gen.py` creates a binary file, compatible with the NVS architecture defined in :doc:`Non-Volatile Storage </api-reference/storage/nvs_flash>`, based on the key-value pairs provided in a CSV file.
+
+This utility is ideally suited for generating a binary blob, containing data specific to ODM/OEM, which can be flashed externally at the time of device manufacturing. This allows manufacturers to generate many instances of the same application firmware with customized parameters for each device, such as a serial number.
 
 Prerequisites
 -------------
 
 To use this utility in encryption mode, install the following packages:
-    - cryptography package
+    - ``cryptography``
 
-All the required packages are included in `requirements.txt` in the root of the esp-idf directory.
+All the required packages are included in `requirements.txt` in the root of the ESP-IDF directory.
 
 CSV File Format
----------------
+~~~~~~~~~~~~~~~
 
-Each line of a CSV file should contain 4 parameters, separated by a comma. The table below provides the description for each of these parameters.
+Each line of a CSV file should contain 4 parameters, separated by a comma. The table below describes each of these parameters.
 
 .. list-table::
     :widths: 10 20 35 35
@@ -73,18 +75,14 @@ When a namespace entry is encountered in a CSV file, each following entry will b
 Multipage Blob Support
 ----------------------
 
-By default, binary blobs are allowed to span over multiple pages and are written in the format mentioned in Section :ref:`structure_of_entry`. If you intend to use an older format, the utility provides an option to disable this feature.
+By default, binary blobs are allowed to span over multiple pages and are written in the format mentioned in Section :ref:`structure_of_entry`. If you intend to use the older format, the utility provides an option to disable this feature.
 
 
-Encryption Support
--------------------
+Encryption-Decryption Support
+-----------------------------
 
-The NVS Partition Generator utility also allows you to create an encrypted binary file. The utility uses the XTS-AES encryption. Please refer to :ref:`nvs_encryption` for more details.
+The NVS Partition Generator utility also allows you to create an encrypted binary file and decrypt an encrypted one. The utility uses the XTS-AES encryption. Please refer to :doc:`NVS Encryption <nvs_encryption>` for more details.
 
-
-Decryption Support
--------------------
-This utility allows you to decrypt an encrypted NVS binary file. The utility uses an NVS binary file encrypted using XTS-AES encryption. Please refer to :ref:`nvs_encryption` for more details.
 
 Running the Utility
 -------------------
@@ -95,141 +93,173 @@ Running the Utility
 
 **Optional Arguments**:
 
-+-----+------------+----------------------------------------------------------------------+
-| No. | Parameter  |                           Description                                |
-+=====+============+======================================================================+
-| 1   | -h, --help |        Show this help message and exit                               |
-+-----+------------+----------------------------------------------------------------------+
++-----+------------------------+---------------------------------------------------------------+
+| No. | Parameter              | Description                                                   |
++=====+========================+===============================================================+
+| 1   | ``-h`` \ ``--help``    | Show the help message and exit                                |
++-----+------------------------+---------------------------------------------------------------+
 
 **Commands**::
 
   	Run nvs_partition_gen.py {command} -h for additional help
 
-+-----+--------------+--------------------------------------------------------------------+
-| No. | Parameter    |                           Description                              |
-+=====+==============+====================================================================+
-| 1   | generate     |      Generate NVS partition                                        |
-+-----+--------------+--------------------------------------------------------------------+
-| 2   | generate-key |      Generate keys for encryption                                  |
-+-----+--------------+--------------------------------------------------------------------+
-| 3   |  encrypt     |      Generate NVS encrypted partition                              |
-+-----+--------------+--------------------------------------------------------------------+
-| 4   |  decrypt     |      Decrypt NVS encrypted partition                               |
-+-----+--------------+--------------------------------------------------------------------+
++-----+---------------------+---------------------------------------------------------------+
+| No. | Parameter           | Description                                                   |
++=====+=====================+===============================================================+
+| 1   | ``generate``        | Generate NVS partition                                        |
++-----+---------------------+---------------------------------------------------------------+
+| 2   | ``generate-key``    | Generate keys for encryption                                  |
++-----+---------------------+---------------------------------------------------------------+
+| 3   | ``encrypt``         | Generate NVS encrypted partition                              |
++-----+---------------------+---------------------------------------------------------------+
+| 4   | ``decrypt``         | Decrypt NVS encrypted partition                               |
++-----+---------------------+---------------------------------------------------------------+
 
-To Generate NVS Partition (Default):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Generate NVS Partition (Default)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Usage**::
 
-    python nvs_partition_gen.py generate [-h] [--version {1,2}] [--outdir OUTDIR]
-                                             input output size
+    python nvs_partition_gen.py generate [-h] [--version {1,2}] [--outdir OUTDIR] input output size
 
 **Positional Arguments**:
 
-+--------------+----------------------------------------------------------------------+
-| Parameter    |                           Description                                |
-+==============+======================================================================+
-| input        |        Path to CSV file to parse                                     |
-+--------------+----------------------------------------------------------------------+
-| output       |        Path to output NVS binary file                                |
-+--------------+----------------------------------------------------------------------+
-| size         |        Size of NVS partition in bytes (must be multiple of 4096)     |
-+--------------+----------------------------------------------------------------------+
++--------------+---------------------------------------------------------------+
+| Parameter    | Description                                                   |
++==============+===============================================================+
+| ``input``    | Path to CSV file to parse                                     |
++--------------+---------------------------------------------------------------+
+| ``output``   | Path to output NVS binary file                                |
++--------------+---------------------------------------------------------------+
+| ``size``     | Size of NVS partition in bytes (must be multiple of 4096)     |
++--------------+---------------------------------------------------------------+
 
 **Optional Arguments**:
 
-+-----------------+--------------------------------------------------------------------+
-| Parameter       |                           Description                              |
-+=================+====================================================================+
-| -h, --help      |     Show this help message and exit                                |
-+-----------------+--------------------------------------------------------------------+
-| --version {1,2} |     Set multipage blob version                                     |
-|                 |     Version 1 - Multipage blob support disabled                    |
-|                 |     Version 2 - Multipage blob support enabled                     |
-|                 |     Default: Version 2                                             |
-|                 |                                                                    |
-+-----------------+--------------------------------------------------------------------+
-| --outdir OUTDIR |     Output directory to store files created                        |
-|                 |     (Default: current directory)                                   |
-+-----------------+--------------------------------------------------------------------+
++------------------------+----------------------------------------------------------------------+
+| Parameter              | Description                                                          |
++========================+======================================================================+
+| ``-h`` \ ``--help``    | Show the help message and exit                                       |
++------------------------+----------------------------------------------------------------------+
+| ``--version {1,2}``    | Set multipage blob version (Default: Version 2)                      |
+|                        |                                                                      |
+|                        | Version 1 - Multipage blob support disabled                          |
+|                        |                                                                      |
+|                        | Version 2 - Multipage blob support enabled                           |
++------------------------+----------------------------------------------------------------------+
+| ``--outdir OUTDIR``    | Output directory to store file created (Default: current directory)  |
++------------------------+----------------------------------------------------------------------+
 
 You can run the utility to generate NVS partition using the command below. A sample CSV file is provided with the utility::
 
     python nvs_partition_gen.py generate sample_singlepage_blob.csv sample.bin 0x3000
 
 
-To Generate Only Encryption Key Partition:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Generate Encryption Keys Partition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Usage**::
 
-    python nvs_partition_gen.py generate-key [-h] [--keyfile KEYFILE]
-                                                 [--outdir OUTDIR]
+    python nvs_partition_gen.py generate-key [-h] [--key_protect_hmac] [--kp_hmac_keygen]
+                                                  [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
+                                                  [--keyfile KEYFILE] [--outdir OUTDIR]
+
 
 **Optional Arguments**:
 
-.. list-table::
-    :widths: 30 70
-    :header-rows: 1
-
-    * - Parameter
-      - Description
-    * - -h, --help
-      - Show this help message and exit
-    * - --keyfile KEYFILE
-      - Path to output encryption key partition file
-    * - --outdir OUTDIR
-      - Output directory to store file created (Default: current directory)
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| Parameter                                   | Description                                                                       |
++=============================================+===================================================================================+
+| ``-h`` \ ``--help``                         | Show the help message and exit                                                    |
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| ``--key_protect_hmac``                      | If set, the NVS encryption key protection scheme based on HMAC                    |
+|                                             | peripheral is used; else the default scheme based on Flash Encryption             |
+|                                             | is used                                                                           |
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| ``--kp_hmac_keygen``                        | Generate the HMAC key for HMAC-based encryption scheme                            |
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| ``--kp_hmac_keyfile KP_HMAC_KEYFILE``       | Path to output HMAC key file                                                      |
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| ``--kp_hmac_inputkey KP_HMAC_INPUTKEY``     | File having the HMAC key for generating the NVS encryption keys                   |
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| ``--keyfile KEYFILE``                       | Path to output encryption keys file                                               |
++---------------------------------------------+-----------------------------------------------------------------------------------+
+| ``--outdir OUTDIR``                         | Output directory to store files created. (Default: current directory)             |
++---------------------------------------------+-----------------------------------------------------------------------------------+
 
 You can run the utility to generate only the encryption key partition using the command below::
 
     python nvs_partition_gen.py generate-key
 
-To Generate Encrypted NVS Partition:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For generating encryption key for the HMAC-based scheme, the following commands can be used:
+
+- Generate the HMAC key and the NVS encryption keys::
+
+    python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_keygen
+
+.. note:: Encryption key of the format ``<outdir>/keys/keys-<timestamp>.bin`` and HMAC key of the format ``<outdir>/keys/hmac-keys-<timestamp>.bin`` are created.
+
+- Generate the NVS encryption keys, given the HMAC-key::
+
+    python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_inputkey testdata/sample_hmac_key.bin
+
+.. note:: You can provide the custom filename for the HMAC key as well as the encryption key as a parameter.
+
+Generate Encrypted NVS Partition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Usage**::
 
         python nvs_partition_gen.py encrypt [-h] [--version {1,2}] [--keygen]
-                                            [--keyfile KEYFILE] [--inputkey INPUTKEY]
-                                            [--outdir OUTDIR]
+                                            [--keyfile KEYFILE] [--inputkey INPUTKEY] [--outdir OUTDIR]
+                                            [--key_protect_hmac] [--kp_hmac_keygen]
+                                            [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
                                             input output size
+
 
 **Positional Arguments**:
 
-+--------------+----------------------------------------------------------------------+
-| Parameter    |                           Description                                |
-+==============+======================================================================+
-| input        |        Path to CSV file to parse                                     |
-+--------------+----------------------------------------------------------------------+
-| output       |        Path to output NVS binary file                                |
-+--------------+----------------------------------------------------------------------+
-| size         |        Size of NVS partition in bytes (must be multiple of 4096)     |
-+--------------+----------------------------------------------------------------------+
++--------------+---------------------------------------------------------------+
+| Parameter    | Description                                                   |
++==============+===============================================================+
+| ``input``    | Path to CSV file to parse                                     |
++--------------+---------------------------------------------------------------+
+| ``output``   | Path to output NVS binary file                                |
++--------------+---------------------------------------------------------------+
+| ``size``     | Size of NVS partition in bytes (must be multiple of 4096)     |
++--------------+---------------------------------------------------------------+
 
 **Optional Arguments**:
 
-+---------------------+--------------------------------------------------------------------+
-| Parameter           |                           Description                              |
-+=====================+====================================================================+
-| -h, --help          |     Show this help message and exit                                |
-|                     |                                                                    |
-+---------------------+--------------------------------------------------------------------+
-| --version {1,2}     |     Set multipage blob version                                     |
-|                     |     Version 1 - Multipage blob support disabled                    |
-|                     |     Version 2 - Multipage blob support enabled                     |
-|                     |     Default: Version 2                                             |
-+---------------------+--------------------------------------------------------------------+
-| --keygen            |     Generates key for encrypting NVS partition                     |
-+---------------------+--------------------------------------------------------------------+
-| --keyfile KEYFILE   |     Path to output encryption keys file                            |
-+---------------------+--------------------------------------------------------------------+
-| --inputkey INPUTKEY |     File having key for encrypting NVS partition                   |
-+---------------------+--------------------------------------------------------------------+
-| --outdir OUTDIR     |     Output directory to store files created                        |
-|                     |     (Default: current directory)                                   |
-+---------------------+--------------------------------------------------------------------+
++---------------------------------------------+-------------------------------------------------------------------------------+
+| Parameter                                   | Description                                                                   |
++=============================================+===============================================================================+
+| ``-h`` \ ``--help``                         | Show the help message and exit                                                |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--version {1,2}``                         | Set multipage blob version (Default: Version 2)                               |
+|                                             |                                                                               |
+|                                             | Version 1 - Multipage blob support disabled                                   |
+|                                             |                                                                               |
+|                                             | Version 2 - Multipage blob support enabled                                    |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--keygen``                                | Generates key for encrypting NVS partition                                    |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--keyfile KEYFILE``                       | Path to output encryption keys file                                           |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--inputkey INPUTKEY``                     | File having key for encrypting NVS partition                                  |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--outdir OUTDIR``                         | Output directory to store file created (Default: current directory)           |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--key_protect_hmac``                      | If set, the NVS encryption key protection scheme based on HMAC                |
+|                                             | peripheral is used; else the default scheme based on Flash Encryption         |
+|                                             | is used                                                                       |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--kp_hmac_keygen``                        | Generate the HMAC key for HMAC-based encryption scheme                        |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--kp_hmac_keyfile KP_HMAC_KEYFILE``       | Path to output HMAC key file                                                  |
++---------------------------------------------+-------------------------------------------------------------------------------+
+| ``--kp_hmac_inputkey KP_HMAC_INPUTKEY``     | File having the HMAC key for generating the NVS encryption keys               |
++---------------------------------------------+-------------------------------------------------------------------------------+
 
 You can run the utility to encrypt NVS partition using the command below. A sample CSV file is provided with the utility:
 
@@ -237,21 +267,38 @@ You can run the utility to encrypt NVS partition using the command below. A samp
 
     python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen
 
-.. note:: Encryption key of the following format ``<outdir>/keys/keys-<timestamp>.bin`` is created.
+  .. note:: Encryption key of the format ``<outdir>/keys/keys-<timestamp>.bin`` is created.
+
+  - To generate an encrypted partition using the HMAC-based scheme, the above command can be used alongwith some additional parameters.
+
+    - Encrypt by allowing the utility to generate encryption keys and the HMAC-key::
+
+        python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen --key_protect_hmac --kp_hmac_keygen
+
+    .. note:: Encryption key of the format ``<outdir>/keys/keys-<timestamp>.bin`` and HMAC key of the format ``<outdir>/keys/hmac-keys-<timestamp>.bin`` are created.
+
+    - Encrypt by allowing the utility to generate encryption keys with user-provided HMAC-key::
+
+        python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen --key_protect_hmac --kp_hmac_inputkey testdata/sample_hmac_key.bin
+
+  .. note:: You can provide the custom filename for the HMAC key as well as the encryption key as a parameter.
 
 - Encrypt by allowing the utility to generate encryption keys and store it in provided custom filename::
 
     python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen --keyfile sample_keys.bin
 
-.. note:: Encryption key of the following format ``<outdir>/keys/sample_keys.bin`` is created.
-.. note:: This newly created file having encryption keys in ``keys/`` directory is compatible with NVS key-partition structure. Refer to :ref:`nvs_key_partition` for more details.
+.. note::
+
+    - Encryption key of the format ``<outdir>/keys/sample_keys.bin`` is created.
+
+    - This newly created file having encryption keys in ``keys/`` directory is compatible with NVS key-partition structure. Refer to :ref:`nvs_encr_key_partition` for more details.
 
 - Encrypt by providing the encryption keys as input binary file::
 
     python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --inputkey sample_keys.bin
 
-To Decrypt Encrypted NVS Partition:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Decrypt Encrypted NVS Partition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Usage**::
 
@@ -259,26 +306,25 @@ To Decrypt Encrypted NVS Partition:
 
 **Positional Arguments**:
 
-+--------------+----------------------------------------------------------------------+
-| Parameter    |                           Description                                |
-+==============+======================================================================+
-| input        |        Path to encrypted NVS partition file to parse                 |
-+--------------+----------------------------------------------------------------------+
-| key          |        Path to file having keys for decryption                       |
-+--------------+----------------------------------------------------------------------+
-| output       |        Path to output decrypted binary file                          |
-+--------------+----------------------------------------------------------------------+
++--------------+---------------------------------------------------------------+
+| Parameter    | Description                                                   |
++==============+===============================================================+
+| ``input``    | Path to encrypted NVS partition file to parse                 |
++--------------+---------------------------------------------------------------+
+| ``key``      | Path to file having keys for decryption                       |
++--------------+---------------------------------------------------------------+
+| ``output``   | Path to output decrypted binary file                          |
++--------------+---------------------------------------------------------------+
 
 **Optional Arguments**:
 
-+---------------------+--------------------------------------------------------------------+
-| Parameter           |                           Description                              |
-+=====================+====================================================================+
-| -h, --help          |     Show this help message and exit                                |
-+---------------------+--------------------------------------------------------------------+
-| --outdir OUTDIR     |     Output directory to store files created                        |
-|                     |     (Default: current directory)                                   |
-+---------------------+--------------------------------------------------------------------+
++------------------------+----------------------------------------------------------------------+
+| Parameter              | Description                                                          |
++========================+======================================================================+
+| ``-h`` / ``--help``    | Show the help message and exit                                       |
++------------------------+----------------------------------------------------------------------+
+| ``--outdir OUTDIR``    | Output directory to store file created (Default: current directory)  |
++------------------------+----------------------------------------------------------------------+
 
 You can run the utility to decrypt encrypted NVS partition using the command below::
 
@@ -289,24 +335,26 @@ You can also provide the format version number:
     - Multipage Blob Support Enabled (Version 2)
 
 
-Multipage Blob Support Disabled (Version 1):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Multipage Blob Support Disabled (Version 1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can run the utility in this format by setting the version parameter to 1, as shown below. A sample CSV file is provided with the utility::
+You can run the utility in this format by setting the version parameter to 1, as shown below. A sample CSV file for the same is provided with the utility::
 
    python nvs_partition_gen.py generate sample_singlepage_blob.csv sample.bin 0x3000 --version 1
 
 
-Multipage Blob Support Enabled (Version 2):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Multipage Blob Support Enabled (Version 2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can run the utility in this format by setting the version parameter to 2, as shown below. A sample CSV file is provided with the utility::
+You can run the utility in this format by setting the version parameter to 2, as shown below. A sample CSV file for the same is provided with the utility::
 
    python nvs_partition_gen.py generate sample_multipage_blob.csv sample.bin 0x4000 --version 2
 
-.. note::  *Minimum NVS Partition Size needed is 0x3000 bytes.*
+.. note::
 
-.. note::  *When flashing the binary onto the device, make sure it is consistent with the application's sdkconfig.*
+    - Minimum NVS Partition Size needed is 0x3000 bytes.
+
+    - When flashing the binary onto the device, make sure it is consistent with the application's sdkconfig.
 
 
 Caveats

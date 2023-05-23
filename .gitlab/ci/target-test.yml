@@ -410,6 +410,14 @@ pytest_examples_esp32c3_flash_encryption:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
+pytest_examples_esp32c3_nvs_encr_hmac:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-nvs_encr_hmac
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, nvs_encr_hmac ]
+
 pytest_examples_esp32s2_usb_device:
   extends:
     - .pytest_examples_dir_template
@@ -843,6 +851,14 @@ pytest_components_esp32c3_flash_encryption:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_encryption ]
+
+pytest_components_esp32c3_nvs_encr_hmac:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-nvs_encr_hmac
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, nvs_encr_hmac ]
 
 pytest_components_esp32c3_flash_multi:
   extends:
