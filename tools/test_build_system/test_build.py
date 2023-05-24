@@ -128,3 +128,15 @@ def test_build_with_sdkconfig_build_abspath(idf_py: IdfPyFunc, test_app_copy: Pa
     build_path = test_app_copy / 'build_tmp'
     sdkconfig_path = build_path / 'sdkconfig'
     idf_py('-D', f'SDKCONFIG={sdkconfig_path}', '-B', str(build_path), 'build')
+
+
+def test_build_fail_on_build_time(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Fail on build time works')
+    append_to_file(test_app_copy / 'CMakeLists.txt', '\n'.join(['',
+                                                                'if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/hello.txt")',
+                                                                'fail_at_build_time(test_file "hello.txt does not exists")',
+                                                                'endif()']))
+    ret = idf_py('build', check=False)
+    assert ret.returncode != 0, 'Build should fail if requirements are not satisfied'
+    (test_app_copy / 'hello.txt').touch()
+    idf_py('build')

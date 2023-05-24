@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import json
 import logging
 import os
 import re
@@ -12,8 +13,7 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
-from test_build_system_helpers import IdfPyFunc, find_python, get_snapshot, replace_in_file, run_idf_py
+from test_build_system_helpers import EnvDict, IdfPyFunc, find_python, get_snapshot, replace_in_file, run_idf_py
 
 
 def get_subdirs_absolute_paths(path: Path) -> List[str]:
@@ -78,14 +78,13 @@ def test_idf_copy(idf_copy: Path, idf_py: IdfPyFunc) -> None:
 
 def test_idf_build_with_env_var_sdkconfig_defaults(
     test_app_copy: Path,
-    idf_py: IdfPyFunc,
-    monkeypatch: MonkeyPatch,
+    default_idf_env: EnvDict
 ) -> None:
     with open(test_app_copy / 'sdkconfig.test', 'w') as fw:
         fw.write('CONFIG_BT_ENABLED=y')
 
-    monkeypatch.setenv('SDKCONFIG_DEFAULTS', 'sdkconfig.test')
-    idf_py('build')
+    default_idf_env['SDKCONFIG_DEFAULTS'] = 'sdkconfig.test'
+    run_idf_py('build', env=default_idf_env)
 
     with open(test_app_copy / 'sdkconfig') as fr:
         assert 'CONFIG_BT_ENABLED=y' in fr.read()
@@ -93,12 +92,11 @@ def test_idf_build_with_env_var_sdkconfig_defaults(
 
 @pytest.mark.usefixtures('test_app_copy')
 @pytest.mark.test_app_copy('examples/system/efuse')
-def test_efuse_symmary_cmake_functions(
-    idf_py: IdfPyFunc,
-    monkeypatch: MonkeyPatch
+def test_efuse_summary_cmake_functions(
+    default_idf_env: EnvDict
 ) -> None:
-    monkeypatch.setenv('IDF_CI_BUILD', '1')
-    output = idf_py('efuse-summary')
+    default_idf_env['IDF_CI_BUILD'] = '1'
+    output = run_idf_py('efuse-summary', env=default_idf_env)
     assert 'FROM_CMAKE: MAC: 00:00:00:00:00:00' in output.stdout
     assert 'FROM_CMAKE: WR_DIS: 0' in output.stdout
 
@@ -158,3 +156,50 @@ def test_python_interpreter_win(test_app_copy: Path) -> None:
     # python is loaded from env:$PATH, but since false interpreter is provided there, python needs to be specified as argument
     # if idf.py is reconfigured during it's execution, it would load a false interpreter
     run_idf_py('reconfigure', env=env_dict, python=python)
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_invoke_confserver(idf_py: IdfPyFunc) -> None:
+    logging.info('Confserver can be invoked by idf.py')
+    idf_py('confserver', input_str='{"version": 1}')
+
+
+def test_ccache_used_to_build(test_app_copy: Path) -> None:
+    logging.info('Check ccache is used to build')
+    (test_app_copy / 'ccache').touch(mode=0o755)
+    env_dict = dict(**os.environ)
+    env_dict['PATH'] = str(test_app_copy) + os.pathsep + env_dict['PATH']
+    # Disable using ccache automatically
+    if 'IDF_CCACHE_ENABLE' in env_dict:
+        env_dict.pop('IDF_CCACHE_ENABLE')
+
+    ret = run_idf_py('--ccache', 'reconfigure', env=env_dict)
+    assert 'ccache will be used' in ret.stdout
+    run_idf_py('fullclean', env=env_dict)
+    ret = run_idf_py('reconfigure', env=env_dict)
+    assert 'ccache will be used' not in ret.stdout
+    ret = run_idf_py('--no-ccache', 'reconfigure', env=env_dict)
+    assert 'ccache will be used' not in ret.stdout
+
+
+def test_toolchain_prefix_in_description_file(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Toolchain prefix is set in project description file')
+    idf_py('reconfigure')
+    data = json.load(open(test_app_copy / 'build' / 'project_description.json', 'r'))
+    assert 'monitor_toolprefix' in data
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_subcommands_with_options(idf_py: IdfPyFunc, default_idf_env: EnvDict) -> None:
+    logging.info('Can set options to subcommands: print_filter for monitor')
+    idf_path = Path(default_idf_env.get('IDF_PATH'))
+    # try - finally block is here used to backup and restore idf_monitor.py
+    # since we need to handle only one file, this souluton is much faster than using idf_copy fixture
+    monitor_backup = (idf_path / 'tools' / 'idf_monitor.py').read_text()
+    try:
+        (idf_path / 'tools' / 'idf_monitor.py').write_text('import sys;print(sys.argv[1:])')
+        idf_py('build')
+        ret = idf_py('monitor', '--print-filter=*:I', '-p', 'tty.fake')
+        assert "'--print_filter', '*:I'" in ret.stdout
+    finally:
+        (idf_path / 'tools' / 'idf_monitor.py').write_text(monitor_backup)

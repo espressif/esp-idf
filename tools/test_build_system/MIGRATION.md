@@ -50,7 +50,7 @@ idf.py fails if IDF_TARGET settings don't match in sdkconfig, CMakeCache.txt, an
 Setting EXTRA_COMPONENT_DIRS works | test_components.py::test_component_extra_dirs |
 Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed | test_components.py::test_component_nonexistent_extra_dirs_not_allowed |
 Component names may contain spaces | test_components.py::test_component_names_contain_spaces |
-sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET | |
+sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET | test_sdkconfig.py::test_sdkconfig_contains_all_files |
 Test if it can build the example to run on host | |
 Test build ESP-IDF as a library to a custom CMake projects for all targets | test_cmake.py::test_build_custom_cmake_project |
 Building a project with CMake library imported and PSRAM workaround, all files compile with workaround | test_cmake.py::test_build_cmake_library_psram_workaround |
@@ -63,22 +63,22 @@ Handling deprecated Kconfig options | test_kconfig.py::test_kconfig_deprecated_o
 Handling deprecated Kconfig options in sdkconfig.defaults | test_kconfig.py::test_kconfig_deprecated_options |
 Can have multiple deprecated Kconfig options map to a single new option | test_kconfig.py::test_kconfig_multiple_and_target_specific_options |
 Can have target specific deprecated Kconfig options | test_kconfig.py::test_kconfig_multiple_and_target_specific_options |
-Confserver can be invoked by idf.py | |
-Check ccache is used to build | |
-Custom bootloader overrides original | |
-Empty directory not treated as a component | |
-If a component directory is added to COMPONENT_DIRS, its subdirectories are not added | |
-If a component directory is added to COMPONENT_DIRS, its sibling directories are not added | |
-toolchain prefix is set in project description file | |
-Can set options to subcommands: print_filter for monitor | |
-Fail on build time works | |
-Component properties are set | |
-should be able to specify multiple sdkconfig default files | |
+Confserver can be invoked by idf.py | test_common.py::test_invoke_confserver |
+Check ccache is used to build | test_common.py::test_ccache_used_to_build |
+Custom bootloader overrides original | test_bootloader.py::test_bootloader_custom_overrides_original |
+Empty directory not treated as a component | test_components.py::test_component_can_not_be_empty_dir |
+If a component directory is added to COMPONENT_DIRS, its subdirectories are not added | test_components.py::test_component_subdirs_not_added_to_component_dirs |
+If a component directory is added to COMPONENT_DIRS, its sibling directories are not added | test_components.py::test_component_sibling_dirs_not_added_to_component_dirs |
+toolchain prefix is set in project description file | test_common.py::test_toolchain_prefix_in_description_file |
+Can set options to subcommands: print_filter for monitor | test_common.py::test_subcommands_with_options |
+Fail on build time works | test_build.py::test_build_fail_on_build_time |
+Component properties are set | test_components.py::test_component_properties_are_set |
+should be able to specify multiple sdkconfig default files | test_sdkconfig.py::test_sdkconfig_multiple_default_files |
 Supports git worktree | |
 idf.py fallback to build system target | |
 Build fails if partitions don't fit in flash | |
 Warning is given if smallest partition is nearly full | |
-Flash size is correctly set in the bootloader image header | |
+Flash size is correctly set in the bootloader image header | test_bootloader.py::test_bootloader_correctly_set_image_header |
 DFU build works | |
 UF2 build works | |
 Loadable ELF build works | |
