@@ -30,6 +30,7 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
+#include "driver/gpio.h"
 
 static const char *tag = "NimBLE_BLE_PRPH";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
@@ -122,6 +123,9 @@ bleprph_advertise(void)
     memset(&adv_params, 0, sizeof adv_params);
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+    adv_params.itvl_min = (CONFIG_EXAMPLE_ADVERTISE_INTERVAL*1000/625);
+    adv_params.itvl_max = (CONFIG_EXAMPLE_ADVERTISE_INTERVAL*1000/625);
+
     rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
                            &adv_params, bleprph_gap_event, NULL);
     if (rc != 0) {
@@ -415,6 +419,14 @@ app_main(void)
     ble_store_config_init();
 
     nimble_port_freertos_init(bleprph_host_task);
+
+    #if CONFIG_IDF_TARGET_ESP32C3
+    gpio_sleep_set_direction(20, GPIO_MODE_INPUT);
+    gpio_sleep_set_pull_mode(20, GPIO_PULLUP_ONLY);
+    #elif CONFIG_IDF_TARGET_ESP32S3
+    gpio_sleep_set_direction(44, GPIO_MODE_INPUT);
+    gpio_sleep_set_pull_mode(44, GPIO_PULLUP_ONLY);
+    #endif
 
     /* Initialize command line interface to accept input from user */
     rc = scli_init();

@@ -57,6 +57,13 @@ menu "Example Configuration"
         default 20 if EXAMPLE_MIN_CPU_FREQ_20M
         default 10 if EXAMPLE_MIN_CPU_FREQ_10M
 
+    config EXAMPLE_ADVERTISE_INTERVAL
+        int "BLE Advertise interval"
+        range 0 5000
+        default 100
+        help
+            Wake up interval for BLE advertising. Unit: 1 microsecond.
+
     choice EXAMPLE_USE_IO_TYPE
         prompt "I/O Capability"
         default BLE_SM_IO_CAP_NO_IO
