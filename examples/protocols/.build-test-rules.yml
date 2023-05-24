@@ -100,10 +100,6 @@ examples/protocols/l2tap:
       temporary: true
       reason: lack of runners
 
-examples/protocols/modbus:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-
 examples/protocols/mqtt/ssl:
   disable_test:
     - if: IDF_TARGET != "esp32"
