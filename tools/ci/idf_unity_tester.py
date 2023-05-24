@@ -334,6 +334,8 @@ class MultiDevCaseTester(BaseTester):
             if reset:
                 for dev_res in self.group:
                     dev_res.dut.serial.hard_reset()
+                # delay a few seconds to make sure the duts are ready.
+                time.sleep(5)
             for sub_case in case.subcases:
                 if isinstance(sub_case['index'], str):
                     index = int(sub_case['index'], 10)
