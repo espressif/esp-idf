@@ -10,6 +10,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "esp_check.h"
 #include "esp_types.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
@@ -98,6 +99,8 @@ static portMUX_TYPE twai_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define TWAI_EXIT_CRITICAL()        portEXIT_CRITICAL(&twai_spinlock)
 
 static twai_hal_context_t twai_context;
+
+static const char *TWAI_TAG = "twai";
 
 /* -------------------- Interrupt and Alert Handlers ------------------------ */
 
@@ -446,7 +449,8 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
 
     //Allocate GPIO and Interrupts
     twai_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_TWAI_INTR_SOURCE, g_config->intr_flags, twai_intr_handler_main, NULL, &p_twai_obj->isr_handle));
+    ret = esp_intr_alloc(ETS_TWAI_INTR_SOURCE, g_config->intr_flags, twai_intr_handler_main, NULL, &p_twai_obj->isr_handle);
+    ESP_GOTO_ON_ERROR(ret, late_err, TWAI_TAG, "Could not allocate an interrupt for TWAI");
 
 #ifdef CONFIG_PM_ENABLE
     ESP_ERROR_CHECK(esp_pm_lock_acquire(p_twai_obj->pm_lock));     //Acquire pm_lock to keep APB clock at 80MHz
@@ -455,6 +459,9 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
 
 err:
     twai_free_driver_obj(p_twai_obj_dummy);
+    return ret;
+late_err:
+    twai_driver_uninstall();
     return ret;
 }
 
@@ -473,7 +480,7 @@ esp_err_t twai_driver_uninstall(void)
     p_twai_obj = NULL;
     TWAI_EXIT_CRITICAL();
 
-    ESP_ERROR_CHECK(esp_intr_free(p_twai_obj_dummy->isr_handle));  //Free interrupt
+    esp_intr_free(p_twai_obj_dummy->isr_handle);  //Free interrupt
 
 #ifdef CONFIG_PM_ENABLE
     //Release and delete power management lock
