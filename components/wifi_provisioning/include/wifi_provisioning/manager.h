@@ -201,7 +201,7 @@ typedef enum wifi_prov_security {
      * + proof of possession (pop) based authentication
      * + AES-CTR encryption
      */
-    WIFI_PROV_SECURITY_1,
+    WIFI_PROV_SECURITY_1 = 1,
 #endif
 #ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
     /**
@@ -209,7 +209,7 @@ typedef enum wifi_prov_security {
      *  SRP6a based authentication and key exchange
      *  + AES-GCM encryption/decryption
      */
-    WIFI_PROV_SECURITY_2
+    WIFI_PROV_SECURITY_2 = 2
 #endif
 } wifi_prov_security_t;
 
