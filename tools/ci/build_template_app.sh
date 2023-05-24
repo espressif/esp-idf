@@ -62,7 +62,7 @@ build_stage2() {
         --build-log ${BUILD_LOG_CMAKE} \
         --size-file size.json \
         --collect-size-info size_info.txt \
-        --default-build-targets esp32,esp32s2,esp32s3,esp32c2,esp32c3
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3
         # add esp32h2 back after IDF-5541
 }
 
@@ -77,7 +77,7 @@ build_stage1() {
         --build-log ${BUILD_LOG_CMAKE} \
         --size-file size.json \
         --collect-size-info size_info.txt \
-        --default-build-targets esp32,esp32s2,esp32s3,esp32c2,esp32c3,esp32h2
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32h2
 }
 
 # Default arguments

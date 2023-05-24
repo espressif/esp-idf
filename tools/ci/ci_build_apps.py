@@ -169,7 +169,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--config',
         default=['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default'],
-        action='append',
+        nargs='+',
         help='Adds configurations (sdkconfig file names) to build. This can either be '
         'FILENAME[=NAME] or FILEPATTERN. FILENAME is the name of the sdkconfig file, '
         'relative to the project directory, to be used. Optional NAME can be specified, '
@@ -204,17 +204,15 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--collect-size-info',
-        type=argparse.FileType('w'),
         help='If specified, the test case name and size info json will be written to this file',
     )
     parser.add_argument(
         '--collect-app-info',
-        type=argparse.FileType('w'),
         help='If specified, the test case name and app info json will be written to this file',
     )
     parser.add_argument(
         '--ignore-warning-str',
-        action='append',
+        nargs='+',
         help='Ignore the warning string that match the specified regex in the build output. '
         'Can be specified multiple times.',
     )
