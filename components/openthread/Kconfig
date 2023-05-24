@@ -255,4 +255,11 @@ menu "OpenThread"
         default n
         help
             Select this option to set rx on when sleep in CSL feature, only for debug
+
+    config OPENTHREAD_DUA_ENABLE
+        bool "Enable Domain Unicast Address feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Only used for Thread1.2 certification
 endmenu
