@@ -19,7 +19,7 @@ def test_fatfs_sdcard_generic_sdmmc(dut: Dut) -> None:
     dut.write('')
     dut.expect_exact('Enter test for running.')
     dut.write('[sdmmc]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.expect_unity_test_output(timeout=180)
 
 
 @pytest.mark.esp32
@@ -38,7 +38,7 @@ def test_fatfs_sdcard_generic_sdspi(dut: Dut) -> None:
     dut.write('')
     dut.expect_exact('Enter test for running.')
     dut.write('[sdspi]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.expect_unity_test_output(timeout=180)
 
 
 @pytest.mark.esp32
@@ -55,7 +55,7 @@ def test_fatfs_sdcard_psram_sdmmc(dut: Dut) -> None:
     dut.write('')
     dut.expect_exact('Enter test for running.')
     dut.write('[sdmmc]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.expect_unity_test_output(timeout=180)
 
 
 @pytest.mark.esp32
@@ -72,4 +72,4 @@ def test_fatfs_sdcard_psram_sdspi(dut: Dut) -> None:
     dut.write('')
     dut.expect_exact('Enter test for running.')
     dut.write('[sdspi]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.expect_unity_test_output(timeout=180)

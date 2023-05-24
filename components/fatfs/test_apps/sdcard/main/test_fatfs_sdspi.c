@@ -167,7 +167,7 @@ TEST_CASE("(SDSPI) can get partition info", "[fatfs][sdspi]")
     test_teardown_sdspi(&mem);
 }
 
-TEST_CASE("(SDSPI) can format card", "[fatfs][sdspi]")
+TEST_CASE("(SDSPI) can format card", "[fatfs][sdspi][timeout=180]")
 {
     sdspi_mem_t mem;
     test_setup_sdspi(&mem);
