@@ -75,6 +75,9 @@ If you need to obtain time with one second resolution, use the following method:
     time(&now);
     // Set timezone to China Standard Time
     setenv("TZ", "CST-8", 1);
+
+    /* According to the posix standard localtime/mktime should use timezone information as though localtime/mktime() calls tzset(),
+       but this is not the case in older versions of Newlib. We manually call tzset to ensure the timezone info is updated*/
     tzset();
 
     localtime_r(&now, &timeinfo);
