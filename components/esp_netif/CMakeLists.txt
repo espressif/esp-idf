@@ -51,7 +51,17 @@ idf_component_register(SRCS "${srcs}"
                     LDFRAGMENTS linker.lf)
 
 if(CONFIG_ESP_NETIF_L2_TAP OR CONFIG_ESP_NETIF_BRIDGE_EN)
-    idf_component_optional_requires(PRIVATE esp_eth vfs)
+    set(optional_requires "")
+    if(CONFIG_ESP_NETIF_L2_TAP)
+        list(APPEND optional_requires "vfs")
+    endif()
+
+    if(CONFIG_ESP_NETIF_BRIDGE_EN)
+        list(APPEND optional_requires "esp_wifi")
+    endif()
+
+    list(APPEND optional_requires "esp_eth")
+    idf_component_optional_requires(PRIVATE "${optional_requires}")
 endif()
 
 
