@@ -39,14 +39,6 @@
     - build_system
     - downloadable-tools
 
-"build:windows":
-  labels:
-    - build
-    - windows
-  patterns:
-    - build_system
-    - windows
-
 "build:macos":
   labels:
     - build
