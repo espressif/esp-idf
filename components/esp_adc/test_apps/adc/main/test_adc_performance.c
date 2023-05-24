@@ -324,7 +324,7 @@ static float test_adc_oneshot_std(adc_atten_t atten, bool is_performance_test)
     //-------------ADC Calibration Init---------------//
     bool do_calibration = false;
     adc_cali_handle_t cali_handle = NULL;
-    do_calibration = test_adc_calibration_init(ADC_UNIT_1, atten, ADC_BITWIDTH_DEFAULT, &cali_handle);
+    do_calibration = test_adc_calibration_init(ADC_UNIT_1, channel, atten, ADC_BITWIDTH_DEFAULT, &cali_handle);
     if (!do_calibration) {
         ESP_LOGW(TAG, "calibration fail, jump calibration\n");
     }
@@ -420,7 +420,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
     bool do_calibration = false;
     adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
     for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
 
     if (!do_calibration) {

@@ -122,6 +122,10 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     _lock_release(&s_ctx.mutex);
 #endif
 
+    if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
+        sar_periph_ctrl_adc_oneshot_power_acquire();
+    }
+
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
     *ret_unit = unit;
     return ESP_OK;
@@ -167,16 +171,14 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
     }
     portENTER_CRITICAL(&rtc_spinlock);
 
-    sar_periph_ctrl_adc_oneshot_power_acquire();
     adc_oneshot_hal_setup(&(handle->hal), chan);
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
     adc_hal_calibration_init(handle->unit_id);
     adc_set_hw_calibration_code(handle->unit_id, atten);
-#endif
+#endif  // SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool valid = false;
     valid = adc_oneshot_hal_convert(&(handle->hal), out_raw);
-    sar_periph_ctrl_adc_oneshot_power_release();
 
     portEXIT_CRITICAL(&rtc_spinlock);
     adc_lock_release(handle->unit_id);
@@ -192,7 +194,6 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
 
-    sar_periph_ctrl_adc_oneshot_power_acquire();
     adc_oneshot_hal_setup(&(handle->hal), chan);
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
@@ -200,7 +201,6 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
     adc_set_hw_calibration_code(handle->unit_id, atten);
 #endif
     adc_oneshot_hal_convert(&(handle->hal), out_raw);
-    sar_periph_ctrl_adc_oneshot_power_release();
 
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 
@@ -210,6 +210,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    adc_ulp_mode_t ulp_mode = handle->ulp_mode;
     bool success_free = s_adc_unit_free(handle->unit_id);
     ESP_RETURN_ON_FALSE(success_free, ESP_ERR_NOT_FOUND, TAG, "adc%"PRId32" isn't in use", handle->unit_id + 1);
 
@@ -219,6 +220,10 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 
     ESP_LOGD(TAG, "adc unit%"PRId32" is deleted", handle->unit_id);
     free(handle);
+
+    if (ulp_mode == ADC_ULP_MODE_DISABLE) {
+        sar_periph_ctrl_adc_oneshot_power_release();
+    }
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To free the APB_SARADC periph if needed

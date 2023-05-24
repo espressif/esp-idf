@@ -96,6 +96,20 @@ void IRAM_ATTR adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 {
     adc_hal_set_calibration_param(adc_n, s_adc_cali_param[adc_n][atten]);
 }
+
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+static int s_adc_cali_chan_compens[SOC_ADC_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
+void adc_load_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
+{
+    int version = esp_efuse_rtc_calib_get_ver();
+    s_adc_cali_chan_compens[chan][atten] = esp_efuse_rtc_calib_get_chan_compens(version, adc_n, chan, atten);
+}
+
+int IRAM_ATTR adc_get_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
+{
+    return s_adc_cali_chan_compens[chan][atten];
+}
+#endif  // SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
 

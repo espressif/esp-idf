@@ -639,10 +639,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_4 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fourth 32 bits of the first part of system data.
+        /** temp_calib : R; bitpos: [8:0]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t sys_data_part1_4:32;
+        uint32_t temp_calib:9;
+        /** ocode : R; bitpos: [16:9]; default: 0;
+         *  ADC OCode
+         */
+        uint32_t ocode:8;
+        /** adc1_init_code_atten0 : R; bitpos: [26:17]; default: 0;
+         *  ADC1 init code at atten0
+         */
+        uint32_t adc1_init_code_atten0:10;
+        /** adc1_init_code_atten1 : R; bitpos: [31:27]; default: 0;
+         *  ADC1 init code at atten1
+         */
+        uint32_t adc1_init_code_atten1:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -652,10 +664,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fifth 32 bits of the first part of system data.
+        /** adc1_init_code_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  ADC1 init code at atten1
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_init_code_atten1_1:5;
+        /** adc1_init_code_atten2 : R; bitpos: [14:5]; default: 0;
+         *  ADC1 init code at atten2
+         */
+        uint32_t adc1_init_code_atten2:10;
+        /** adc1_init_code_atten3 : R; bitpos: [24:15]; default: 0;
+         *  ADC1 init code at atten3
+         */
+        uint32_t adc1_init_code_atten3:10;
+        /** adc1_cal_vol_atten0 : R; bitpos: [31:25]; default: 0;
+         *  ADC1 calibration voltage at atten0
+         */
+        uint32_t adc1_cal_vol_atten0:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -665,10 +689,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of the first part of system data.
+        /** adc1_cal_vol_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  ADC1 calibration voltage at atten0
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_cal_vol_atten0_1:3;
+        /** adc1_cal_vol_atten1 : R; bitpos: [12:3]; default: 0;
+         *  ADC1 calibration voltage at atten1
+         */
+        uint32_t adc1_cal_vol_atten1:10;
+        /** adc1_cal_vol_atten2 : R; bitpos: [22:13]; default: 0;
+         *  ADC1 calibration voltage at atten2
+         */
+        uint32_t adc1_cal_vol_atten2:10;
+        /** adc1_cal_vol_atten3 : R; bitpos: [31:23]; default: 0;
+         *  ADC1 calibration voltage at atten3
+         */
+        uint32_t adc1_cal_vol_atten3:9;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -678,10 +714,42 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of the first part of system data.
+        /** adc1_cal_vol_atten3_1 : R; bitpos: [0]; default: 0;
+         *  ADC1 calibration voltage at atten3
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_cal_vol_atten3_1:1;
+        /** adc1_init_code_atten0_ch0 : R; bitpos: [4:1]; default: 0;
+         *  ADC1 init code at atten0 ch0
+         */
+        uint32_t adc1_init_code_atten0_ch0:4;
+        /** adc1_init_code_atten0_ch1 : R; bitpos: [8:5]; default: 0;
+         *  ADC1 init code at atten0 ch1
+         */
+        uint32_t adc1_init_code_atten0_ch1:4;
+        /** adc1_init_code_atten0_ch2 : R; bitpos: [12:9]; default: 0;
+         *  ADC1 init code at atten0 ch2
+         */
+        uint32_t adc1_init_code_atten0_ch2:4;
+        /** adc1_init_code_atten0_ch3 : R; bitpos: [16:13]; default: 0;
+         *  ADC1 init code at atten0 ch3
+         */
+        uint32_t adc1_init_code_atten0_ch3:4;
+        /** adc1_init_code_atten0_ch4 : R; bitpos: [20:17]; default: 0;
+         *  ADC1 init code at atten0 ch4
+         */
+        uint32_t adc1_init_code_atten0_ch4:4;
+        /** adc1_init_code_atten0_ch5 : R; bitpos: [24:21]; default: 0;
+         *  ADC1 init code at atten0 ch5
+         */
+        uint32_t adc1_init_code_atten0_ch5:4;
+        /** adc1_init_code_atten0_ch6 : R; bitpos: [28:25]; default: 0;
+         *  ADC1 init code at atten0 ch6
+         */
+        uint32_t adc1_init_code_atten0_ch6:4;
+        /** reserved_2_253 : R; bitpos: [31:29]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_253:3;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;
