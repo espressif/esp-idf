@@ -221,13 +221,16 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
     // with non-iram interrupts and the scheduler disabled. None of these CPUs will
     // touch external RAM or flash this way, so we can safely disable caches.
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
+#if SOC_IDCACHE_PER_CORE
+    //only needed if cache(s) is per core
     spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
+#endif
 }
 
 void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 {
     const int cpuid = xPortGetCoreID();
-    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
+
 #ifndef NDEBUG
     // Sanity check: flash operation ends on the same CPU as it has started
     assert(cpuid == s_flash_op_cpu);
@@ -238,7 +241,11 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 
     // Re-enable cache on both CPUs. After this, cache (flash and external RAM) should work again.
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+#if SOC_IDCACHE_PER_CORE
+    //only needed if cache(s) is per core
+    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
     spi_flash_restore_cache(other_cpuid, s_flash_op_cache_state[other_cpuid]);
+#endif
 
     if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
         // Signal to spi_flash_op_block_task that flash operation is complete
