@@ -8,10 +8,10 @@ This file is used in CI generate binary files for different kinds of apps
 import argparse
 import os
 import sys
+import typing as t
 import unittest
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional, Set
 
 import yaml
 from idf_build_apps import LOGGER, App, build_apps, find_apps, setup_logging
@@ -20,25 +20,28 @@ from idf_ci_utils import IDF_PATH, PytestApp, get_pytest_cases, get_ttfw_app_pat
 
 CI_ENV_VARS = {
     'EXTRA_CFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
-                    '-Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes',
+    '-Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes',
     'EXTRA_CXXFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
-                      '-Werror=unused-but-set-variable -Werror=unused-function',
+    '-Werror=unused-but-set-variable -Werror=unused-function',
     'LDGEN_CHECK_MAPPING': '1',
 }
 
 
 def get_pytest_apps(
-    paths: List[str],
+    paths: t.List[str],
     target: str,
-    config_rules_str: List[str],
+    config_rules_str: t.List[str],
     marker_expr: str,
     filter_expr: str,
     preserve_all: bool = False,
-    extra_default_build_targets: Optional[List[str]] = None,
-) -> List[App]:
+    extra_default_build_targets: t.Optional[t.List[str]] = None,
+    modified_components: t.Optional[t.List[str]] = None,
+    modified_files: t.Optional[t.List[str]] = None,
+    ignore_app_dependencies_filepatterns: t.Optional[t.List[str]] = None,
+) -> t.List[App]:
     pytest_cases = get_pytest_cases(paths, target, marker_expr, filter_expr)
 
-    _paths: Set[str] = set()
+    _paths: t.Set[str] = set()
     test_related_app_configs = defaultdict(set)
     for case in pytest_cases:
         for app in case.apps:
@@ -52,6 +55,9 @@ def get_pytest_apps(
             else:
                 if not case.nightly_run:
                     test_related_app_configs[app.path].add(app.config)
+
+    if not extra_default_build_targets:
+        extra_default_build_targets = []
 
     app_dirs = list(_paths)
     if not app_dirs:
@@ -68,9 +74,12 @@ def get_pytest_apps(
         build_log_path='build_log.txt',
         size_json_path='size.json',
         check_warnings=True,
+        manifest_rootpath=IDF_PATH,
         manifest_files=[str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')],
         default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
-        manifest_rootpath=IDF_PATH,
+        modified_components=modified_components,
+        modified_files=modified_files,
+        ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
     )
 
     for app in apps:
@@ -85,12 +94,15 @@ def get_pytest_apps(
 
 
 def get_cmake_apps(
-    paths: List[str],
+    paths: t.List[str],
     target: str,
-    config_rules_str: List[str],
+    config_rules_str: t.List[str],
     preserve_all: bool = False,
-    extra_default_build_targets: Optional[List[str]] = None,
-) -> List[App]:
+    extra_default_build_targets: t.Optional[t.List[str]] = None,
+    modified_components: t.Optional[t.List[str]] = None,
+    modified_files: t.Optional[t.List[str]] = None,
+    ignore_app_dependencies_filepatterns: t.Optional[t.List[str]] = None,
+) -> t.List[App]:
     ttfw_app_dirs = get_ttfw_app_paths(paths, target)
 
     apps = find_apps(
@@ -103,9 +115,12 @@ def get_cmake_apps(
         size_json_path='size.json',
         check_warnings=True,
         preserve=False,
+        manifest_rootpath=IDF_PATH,
         manifest_files=[str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')],
         default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
-        manifest_rootpath=IDF_PATH,
+        modified_components=modified_components,
+        modified_files=modified_files,
+        ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
     )
 
     apps_for_build = []
@@ -130,7 +145,7 @@ APPS_BUILD_PER_JOB = 30
 
 
 def main(args: argparse.Namespace) -> None:
-    extra_default_build_targets: List[str] = []
+    extra_default_build_targets: t.List[str] = []
     if args.default_build_test_rules:
         with open(args.default_build_test_rules) as fr:
             configs = yaml.safe_load(fr)
@@ -148,6 +163,9 @@ def main(args: argparse.Namespace) -> None:
             args.filter_expr,
             args.preserve_all,
             extra_default_build_targets,
+            args.modified_components,
+            args.modified_files,
+            args.ignore_app_dependencies_filepatterns,
         )
     else:
         LOGGER.info('build apps. will skip pytest apps with pytest scripts')
@@ -157,6 +175,9 @@ def main(args: argparse.Namespace) -> None:
             args.config,
             args.preserve_all,
             extra_default_build_targets,
+            args.modified_components,
+            args.modified_files,
+            args.ignore_app_dependencies_filepatterns,
         )
 
     LOGGER.info('Found %d apps after filtering', len(apps))
@@ -175,21 +196,27 @@ def main(args: argparse.Namespace) -> None:
                 if abs_extra_preserve_dir == abs_app_dir or abs_extra_preserve_dir in abs_app_dir.parents:
                     app.preserve = True
 
-    sys.exit(
-        build_apps(
-            apps,
-            parallel_count=args.parallel_count,
-            parallel_index=args.parallel_index,
-            dry_run=False,
-            build_verbose=args.build_verbose,
-            keep_going=True,
-            collect_size_info=args.collect_size_info,
-            collect_app_info=args.collect_app_info,
-            ignore_warning_strs=args.ignore_warning_str,
-            ignore_warning_file=args.ignore_warning_file,
-            copy_sdkconfig=args.copy_sdkconfig,
-        )
+    res = build_apps(
+        apps,
+        parallel_count=args.parallel_count,
+        parallel_index=args.parallel_index,
+        dry_run=False,
+        build_verbose=args.build_verbose,
+        keep_going=True,
+        collect_size_info='size_info.txt',
+        collect_app_info='list_job_@p.txt',
+        ignore_warning_strs=args.ignore_warning_str,
+        ignore_warning_file=args.ignore_warning_file,
+        copy_sdkconfig=args.copy_sdkconfig,
+        modified_components=args.modified_components,
+        modified_files=args.modified_files,
+        ignore_app_dependencies_filepatterns=args.ignore_app_dependencies_filepatterns,
     )
+
+    if isinstance(res, tuple):
+        sys.exit(res[0])
+    else:
+        sys.exit(res)
 
 
 if __name__ == '__main__':
@@ -249,8 +276,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--ignore-warning-str',
         nargs='+',
-        help='Ignore the warning string that match the specified regex in the build output. '
-        'Can be specified multiple times.',
+        help='Ignore the warning string that match the specified regex in the build output. space-separated list',
     )
     parser.add_argument(
         '--ignore-warning-file',
@@ -298,6 +324,30 @@ if __name__ == '__main__':
         help='by default this script would set the build flags exactly the same as the CI ones. '
         'Set this flag to use your local build flags.',
     )
+    parser.add_argument(
+        '--modified-components',
+        nargs='*',
+        default=None,
+        help='space-separated list which specifies the modified components. app with `depends_components` set in the '
+        'corresponding manifest files would only be built if depends on any of the specified components.',
+    )
+    parser.add_argument(
+        '--modified-files',
+        nargs='*',
+        default=None,
+        help='space-separated list which specifies the modified files. app with `depends_filepatterns` set in the '
+        'corresponding manifest files would only be built if any of the specified file pattern matches any of the '
+        'specified modified files.',
+    )
+    parser.add_argument(
+        '-if',
+        '--ignore-app-dependencies-filepatterns',
+        nargs='*',
+        default=None,
+        help='space-separated list which specifies the file patterns used for ignoring checking the app dependencies. '
+        'The `depends_components` and `depends_filepatterns` set in the manifest files will be ignored when any of the '
+        'specified file patterns matches any of the modified files. Must be used together with --modified-files',
+    )
 
     arguments = parser.parse_args()
 
@@ -308,6 +358,37 @@ if __name__ == '__main__':
         for _k, _v in CI_ENV_VARS.items():
             os.environ[_k] = _v
             LOGGER.info(f'env var {_k} set to "{_v}"')
+
+    if os.getenv('IS_MR_PIPELINE') == '0' or os.getenv('BUILD_AND_TEST_ALL_APPS') == '1':
+        # if it's not MR pipeline or env var BUILD_AND_TEST_ALL_APPS=1,
+        # remove component dependency related arguments
+        if 'modified_components' in arguments:
+            arguments.modified_components = None
+        if 'modified_files' in arguments:
+            arguments.modified_files = None
+
+    # file patterns to tigger full build
+    if 'modified_components' in arguments and not arguments.ignore_app_dependencies_filepatterns:
+        arguments.ignore_app_dependencies_filepatterns = [
+            # tools
+            'tools/cmake/**/*',
+            'tools/tools.json',
+            # components
+            'components/cxx/**/*',
+            'components/esp_common/**/*',
+            'components/esp_hw_support/**/*',
+            'components/esp_rom/**/*',
+            'components/esp_system/**/*',
+            'components/esp_timer/**/*',
+            'components/freertos/**/*',
+            'components/hal/**/*',
+            'components/heap/**/*',
+            'components/log/**/*',
+            'components/newlib/**/*',
+            'components/riscv/**/*',
+            'components/soc/**/*',
+            'components/xtensa/**/*',
+        ]
 
     main(arguments)
 

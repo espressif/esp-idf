@@ -374,6 +374,7 @@
 #########
 # Rules #
 #########
+### Branches ###
 .rules:protected:
   rules:
     - <<: *if-protected
@@ -382,6 +383,30 @@
   rules:
     - <<: *if-protected-no_label
 
+.rules:dev:
+  rules:
+    - <<: *if-trigger
+    - <<: *if-dev-push
+
+.rules:mr:
+  rules:
+    - <<: *if-dev-push
+
+.rules:tag:release:
+  rules:
+    - <<: *if-tag-release
+
+.rules:ref:master-schedule:
+  rules:
+    - <<: *if-ref-master
+    - <<: *if-schedule
+
+.rules:ref:master-always:
+  rules:
+    - <<: *if-ref-master
+      when: always
+
+### Patterns ###
 .rules:patterns:python-cache:
   rules:
     - *if-schedule
@@ -403,25 +428,6 @@
       when: manual
     - <<: *if-dev-push
       changes: *patterns-danger-npm
-
-.rules:dev:
-  rules:
-    - <<: *if-trigger
-    - <<: *if-dev-push
-
-.rules:tag:release:
-  rules:
-    - <<: *if-tag-release
-
-.rules:ref:master-schedule:
-  rules:
-    - <<: *if-ref-master
-    - <<: *if-schedule
-
-.rules:ref:master-always:
-  rules:
-    - <<: *if-ref-master
-      when: always
 
 .rules:patterns:clang_tidy:
   rules:

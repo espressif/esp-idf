@@ -39,6 +39,7 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
 
 .pytest_examples_dir_template:
   extends: .pytest_template
