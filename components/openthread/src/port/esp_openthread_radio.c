@@ -273,7 +273,7 @@ otError otPlatRadioEnable(otInstance *aInstance)
 
 otError otPlatRadioDisable(otInstance *aInstance)
 {
-    esp_ieee802154_disable();
+    // radio will be disabled in esp_openthread_radio_deinit()
 
     return OT_ERROR_NONE;
 }
