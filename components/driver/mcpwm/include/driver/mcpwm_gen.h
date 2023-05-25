@@ -59,6 +59,7 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen);
  * @note The force level will be applied to the generator immediately, regardless any other events that would change the generator's behaviour.
  * @note If the `hold_on` is true, the force level will retain forever, until user removes the force level by setting the force level to `-1`.
  * @note If the `hold_on` is false, the force level can be overridden by the next event action.
+ * @note The force level set by this function can be inverted by GPIO matrix or dead-time module. So the level set here doesn't equal to the final output level.
  *
  * @param[in] gen MCPWM generator handle, allocated by `mcpwm_new_generator()`
  * @param[in] level GPIO level to be applied to MCPWM generator, specially, -1 means to remove the force level
@@ -215,12 +216,17 @@ typedef struct {
 /**
  * @brief Set dead time for MCPWM generator
  *
+ * @note Due to a hardware limitation, you can't set rising edge delay for both MCPWM generator 0 and 1 at the same time,
+ *       otherwise, there will be a conflict inside the dead time module. The same goes for the falling edge setting.
+ *       But you can set both the rising edge and falling edge delay for the same MCPWM generator.
+ *
  * @param[in] in_generator MCPWM generator, before adding the dead time
  * @param[in] out_generator MCPWM generator, after adding the dead time
  * @param[in] config MCPWM dead time configuration
  * @return
  *      - ESP_OK: Set dead time for MCPWM generator successfully
  *      - ESP_ERR_INVALID_ARG: Set dead time for MCPWM generator failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Set dead time for MCPWM generator failed because of invalid state (e.g. delay module is already in use by other generator)
  *      - ESP_FAIL: Set dead time for MCPWM generator failed because of other error
  */
 esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_gen_handle_t out_generator, const mcpwm_dead_time_config_t *config);

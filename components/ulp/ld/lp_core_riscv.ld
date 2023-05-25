@@ -11,7 +11,7 @@ MEMORY
 {
     /*first 128byte for exception/interrupt vectors*/
     vector_table(RX) :   ORIGIN = 0x50000000, LENGTH = 0x80
-    ram(RWX) :           ORIGIN = 0x50000080, LENGTH = CONFIG_ULP_COPROC_RESERVE_MEM - 0x80
+    ram(RWX) :           ORIGIN = 0x50000080, LENGTH = CONFIG_ULP_COPROC_RESERVE_MEM - 0x80 - CONFIG_ULP_SHARED_MEM
 }
 
 SECTIONS

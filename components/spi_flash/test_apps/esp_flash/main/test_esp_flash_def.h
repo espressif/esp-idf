@@ -126,6 +126,19 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
     printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
 
+#define LOG_DATA(bus, suffix, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus#suffix, "%ld, flash_chip: %s", speed_##suffix, chip)
+#define LOG_ERASE(bus, var, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus"ERASE", "%ld, flash_chip: %s", var, chip)
+
+// Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
+#define LOG_PERFORMANCE(bus, chip) do {\
+            LOG_DATA(bus, WR_4B, chip); \
+            LOG_DATA(bus, RD_4B, chip); \
+            LOG_DATA(bus, WR_2KB, chip); \
+            LOG_DATA(bus, RD_2KB, chip); \
+            LOG_ERASE(bus, erase_1, chip); \
+            LOG_ERASE(bus, erase_2, chip); \
+        } while (0)
+
 
 #if defined(CONFIG_SPIRAM)
 //SPI1 CS1 occupied by PSRAM
@@ -145,6 +158,7 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 
 #if BYPASS_MULTIPLE_CHIP
 #define TEST_CASE_MULTI_FLASH   TEST_CASE_MULTI_FLASH_IGNORE
+#define TEST_CASE_MULTI_FLASH_LONG   TEST_CASE_MULTI_FLASH_IGNORE
 #else
 #if CONFIG_FREERTOS_SMP // IDF-5260
 #define TEST_CASE_MULTI_FLASH(STR, FUNC_TO_RUN) \

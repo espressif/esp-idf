@@ -816,6 +816,9 @@ void esp_phy_load_cal_and_init(void)
 #endif
 
     ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_close_rf));
+#if !CONFIG_IDF_TARGET_ESP32
+    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_xpd_tsens));
+#endif
 
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }

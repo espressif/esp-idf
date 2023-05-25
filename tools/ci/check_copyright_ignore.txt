@@ -486,7 +486,6 @@ components/esp_rom/include/esp32c3/rom/crc.h
 components/esp_rom/include/esp32c3/rom/digital_signature.h
 components/esp_rom/include/esp32c3/rom/esp_flash.h
 components/esp_rom/include/esp32c3/rom/hmac.h
-components/esp_rom/include/esp32c3/rom/libc_stubs.h
 components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
 components/esp_rom/include/esp32c3/rom/sha.h
@@ -504,7 +503,6 @@ components/esp_rom/include/esp32s3/rom/bigint.h
 components/esp_rom/include/esp32s3/rom/crc.h
 components/esp_rom/include/esp32s3/rom/digital_signature.h
 components/esp_rom/include/esp32s3/rom/hmac.h
-components/esp_rom/include/esp32s3/rom/libc_stubs.h
 components/esp_rom/include/esp32s3/rom/opi_flash.h
 components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
@@ -533,7 +531,6 @@ components/esp_system/include/esp_expression_with_stack.h
 components/esp_system/include/esp_freertos_hooks.h
 components/esp_system/include/esp_int_wdt.h
 components/esp_system/include/esp_private/dbg_stubs.h
-components/esp_system/include/esp_private/panic_internal.h
 components/esp_system/port/public_compat/brownout.h
 components/esp_system/port/public_compat/cache_err_int.h
 components/esp_system/port/public_compat/trax.h
@@ -719,7 +716,6 @@ components/mqtt/host_test/mocks/include/freertos/portmacro.h
 components/mqtt/host_test/mocks/include/machine/endian.h
 components/mqtt/host_test/mocks/include/sys/queue.h
 components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
-components/nvs_flash/include/nvs_flash.h
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
@@ -999,7 +995,6 @@ components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
 components/spi_flash/spi_flash_chip_mxic.c
-components/spi_flash/spi_flash_chip_winbond.c
 components/spi_flash/test/test_esp_flash.c
 components/spi_flash/test/test_flash_encryption.c
 components/spi_flash/test/test_mmap.c
@@ -1425,6 +1420,7 @@ examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
 examples/protocols/http_server/advanced_tests/main/include/tests.h
 examples/protocols/http_server/advanced_tests/main/main.c
 examples/protocols/http_server/advanced_tests/main/tests.c
+examples/protocols/http_server/async_handlers/main/main.c
 examples/protocols/http_server/captive_portal/example_test.py
 examples/protocols/http_server/captive_portal/main/dns_server.c
 examples/protocols/http_server/captive_portal/main/include/dns_server.h
@@ -1623,7 +1619,6 @@ tools/ldgen/test/data/linker_script.ld
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
 tools/test_apps/build_system/embed_test/main/test_main.c
-tools/test_apps/build_system/ldalign_test/check_alignment.py
 tools/test_apps/build_system/ldalign_test/main/test_main.c
 tools/test_apps/build_system/ldgen_test/check_placements.py
 tools/test_apps/build_system/ldgen_test/main/src1.c

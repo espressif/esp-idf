@@ -26,10 +26,12 @@
 
 #include "sdkconfig.h"
 
+#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 #if __has_include("esp_app_desc.h")
 #define WITH_ELF_SHA256
 #include "esp_app_desc.h"
 #endif
+#endif // CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
@@ -332,11 +334,9 @@ void esp_panic_handler(panic_info_t *info)
 
 #ifdef WITH_ELF_SHA256
     panic_print_str("\r\nELF file SHA256: ");
-    char sha256_buf[65];
-    esp_app_get_elf_sha256(sha256_buf, sizeof(sha256_buf));
-    panic_print_str(sha256_buf);
+    panic_print_str(esp_app_get_elf_sha256_str());
     panic_print_str("\r\n");
-#endif
+#endif // WITH_ELF_SHA256
 
     panic_print_str("\r\n");
 

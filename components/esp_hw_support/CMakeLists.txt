@@ -12,6 +12,10 @@ set(requires soc)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support)
 
+if(${target} STREQUAL "esp32c6")
+    list(APPEND priv_requires hal)
+endif()
+
 set(srcs "cpu.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_clk.c"
@@ -26,6 +30,7 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_modem.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
+                     "sar_periph_ctrl_common.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c")

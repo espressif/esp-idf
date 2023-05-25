@@ -29,7 +29,7 @@ extern portMUX_TYPE rtc_spinlock;
 void sar_periph_ctrl_init(void)
 {
     //Put SAR control mux to FSM state
-    sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_ON);
+    sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_FSM);
 
     //Add other periph power control initialisation here
 }

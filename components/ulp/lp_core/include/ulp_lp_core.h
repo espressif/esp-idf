@@ -16,16 +16,19 @@ extern "C" {
 #endif
 
 
-typedef enum {
-    ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,  // LP core is started by HP core (1 single wakeup)
-} ulp_lp_core_wakeup_source_t;
+#define ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU    BIT(0) // Started by HP core (1 single wakeup)
+#define ULP_LP_CORE_WAKEUP_SOURCE_LP_UART   BIT(1) // Enable wake-up by a certain number of LP UART RX pulses
+#define ULP_LP_CORE_WAKEUP_SOURCE_LP_IO     BIT(2) // Enable wake-up by LP IO interrupt
+#define ULP_LP_CORE_WAKEUP_SOURCE_ETM       BIT(3) // Enable wake-up by ETM event
+#define ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER  BIT(4) // Enable wake-up by LP timer
 
 /**
  * @brief ULP LP core init parameters
  *
  */
 typedef struct {
-    ulp_lp_core_wakeup_source_t wakeup_source;
+    uint32_t wakeup_source;                 // Wakeup source flags
+    uint32_t lp_timer_sleep_duration_us;    // Sleep duration when ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER is specified.
 } ulp_lp_core_cfg_t;
 
 /**
@@ -47,6 +50,12 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg);
  */
 esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_size_bytes);
 
+/**
+ * @brief Puts the ulp to sleep and disables all wakeup sources.
+ *        To restart the ULP call ulp_lp_core_run() with the desired
+ *        wake up trigger.
+ */
+void ulp_lp_core_stop(void);
 
 #ifdef __cplusplus
 }

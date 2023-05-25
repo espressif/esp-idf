@@ -41,6 +41,12 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 	ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
 
+   ESP-IDF V5.1 之前的版本
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   ESP-IDF V5.1 之前的版本构建的引导加载程序不支持 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，不应使用该选项。
+
+
 配置 SPI Flash
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -108,13 +114,15 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 实现该测试应用固件需要为测试应用创建一个完全独立的 ESP-IDF 项目（ESP-IDF 中的每个项目仅构建一个应用）。该测试应用可以独立于主项目进行开发和测试，然后在生成测试时作为一个预编译 .bin 文件集成到主项目的测试应用程序分区的地址。
 
-为了使主项目的引导加载程序支持这个功能，请设置 :ref:`CONFIG_BOOTLOADER_APP_TEST` 并配置以下两个选项：
+要在主项目的引导加载程序中支持这个功能，请设置 :ref:`CONFIG_BOOTLOADER_APP_TEST` 并配置以下三个选项：
 
-- :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - 设置启动 TEST 分区的管脚编号。选中的管脚将被配置为启用了内部上拉的输入。要触发测试应用，必须在重置时将此管脚 拉低。
+- :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - 设置启动 TEST 分区的管脚编号，该管脚将被配置为输入并启用内部上拉。要触发测试应用，必须在重置时将此管脚拉低或拉高（可配置）。
 
-   当管脚输入被释放（则被拉高）并将设备重新启动后，正常配置的应用程序将启动（工厂或任意 OTA 应用分区槽）。
+   释放管脚输入并重启设备后，将重新启用默认的启动顺序，即启动工厂分区或任意 OTA 应用分区槽。
 
-- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - 设置 GPIO 电平保持的时间（默认为 5 秒）。设备重置后，管脚在设定的时间内必须持续保持低电平，然后才会执行出厂重置或引导测试分区（如适用）。
+- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - 设置 GPIO 电平保持的时间，默认为 5 秒。设备重置后，管脚电平必须保持该设定的时间，才能执行恢复出厂设置或引导测试分区（如适用）。
+
+- :ref:`CONFIG_BOOTLOADER_APP_TEST_PIN_LEVEL` - 配置应在 GPIO 的高电平还是低电平上触发测试分区启动。若 GPIO 有内部上拉，则该功能在采样管脚前就会被启用。关于管脚内部上拉的详细信息，请参考 {IDF_TARGET_NAME} 数据规格书。
 
 回滚
 --------

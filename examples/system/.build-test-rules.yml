@@ -60,12 +60,6 @@ examples/system/gcov:
       temporary: true
       reason: lack of runners
 
-examples/system/gdbstub:
-  disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: target esp32c2, esp32h2 is not supported yet
-
 examples/system/heap_task_tracking:
   disable:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
@@ -89,6 +83,10 @@ examples/system/light_sleep:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: target(s) not supported yet
+
+examples/system/lp_core/lp_i2c:
+  enable:
+    - if: SOC_LP_I2C_SUPPORTED == 1
 
 examples/system/ota/advanced_https_ota:
   disable:

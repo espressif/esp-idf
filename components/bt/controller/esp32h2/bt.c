@@ -167,7 +167,9 @@ static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
 static uint32_t osi_random_wrapper(void);
 static void esp_reset_rpa_moudle(void);
-
+static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
+static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                              const uint8_t *our_priv_key, uint8_t *out_dhkey);
 /* Local variable definition
  ***************************************************************************
  */
@@ -218,8 +220,8 @@ struct ext_funcs_t ext_funcs_ro = {
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
-    ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
-    ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
+    ._ecc_gen_key_pair = esp_ecc_gen_key_pair,
+    ._ecc_gen_dh_key = esp_ecc_gen_dh_key,
     ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
@@ -333,6 +335,25 @@ static int task_create_wrapper(void *task_func, const char *name, uint32_t stack
 static void task_delete_wrapper(void *task_handle)
 {
     vTaskDelete(task_handle);
+}
+
+static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv)
+{
+    int rc = -1;
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    rc = ble_sm_alg_gen_key_pair(pub, priv);
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    return rc;
+}
+
+static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                              const uint8_t *our_priv_key, uint8_t *out_dhkey)
+{
+    int rc = -1;
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    rc = ble_sm_alg_gen_dhkey(peer_pub_key_x, peer_pub_key_y, our_priv_key, out_dhkey);
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    return rc;
 }
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
@@ -562,32 +583,6 @@ void controller_sleep_deinit(void)
 #endif //CONFIG_PM_ENABLE
 }
 
-#define REG_MODEM_SYSCON_BASE                   0x600A5400
-#define REG_MODEM_LPCON_BASE                    0x600AD000
-#define DR_REG_MODEM_SYSCON_BASE                REG_MODEM_SYSCON_BASE
-
-#define MODEM_SYSCON_CLK_CONF_REG               (DR_REG_MODEM_SYSCON_BASE + 0x4)
-#define MODEM_SYSCON_CLK_CONF1_REG              (DR_REG_MODEM_SYSCON_BASE + 0x10)
-
-#define MODEM_LPCON_CLK_CONF_REG                (REG_MODEM_LPCON_BASE + 0x0008)
-#define MODEM_LPCON_CLK_CONF_FORCE_ON_REG       (REG_MODEM_LPCON_BASE + 0x000C)
-#include "hal/clk_tree_ll.h"
-
-static void enable_chip_clk(void)
-{
-    WRITE_PERI_REG(MODEM_SYSCON_CLK_CONF_REG,0xFFFFFFFF);
-    WRITE_PERI_REG(MODEM_SYSCON_CLK_CONF1_REG,0xFFFFFFFF);
-    WRITE_PERI_REG(MODEM_LPCON_CLK_CONF_REG ,0xFFFFFFFF);
-    // SET BIT for BLE RTC clk
-    SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG,PMU_HP_SLEEP_XPD_XTAL32K);
-    // REG_SET_FIELD(LP_CLKRST_LPPERI_REG,LP_CLKRST_LP_SEL_XTAL32K,1);
-    // REG_SET_FIELD(LP_CLKRST_LPPERI_REG,LP_CLKRST_LP_BLETIMER_DIV_NUM,0);
-
-    /* For chip */
-    WRITE_PERI_REG(MODEM_LPCON_CLK_CONF_REG ,0xFFFFFFFF);
-    WRITE_PERI_REG(MODEM_LPCON_CLK_CONF_FORCE_ON_REG ,0xFFFFFFFF);
-}
-
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
@@ -611,8 +606,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "register extend functions failed");
         return ret;
     }
-
-    enable_chip_clk();
 
     /* Initialize the function pointers for OS porting */
     npl_freertos_funcs_init();
@@ -653,9 +646,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_NIMBLE_ENABLED
 
     /* Enable BT-related clocks */
-    // modem_clock_module_enable(PERIPH_BT_MODULE);
-    // modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, 249);
-    // esp_phy_modem_init();
+    modem_clock_module_enable(PERIPH_BT_MODULE);
+    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, 249);
     esp_phy_enable();
     esp_btbb_enable();
     s_ble_active = true;
@@ -697,9 +689,8 @@ free_controller:
     ble_controller_deinit();
     esp_btbb_disable();
     esp_phy_disable();
-    // esp_phy_modem_deinit();
-    // modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
-    // modem_clock_module_disable(PERIPH_BT_MODULE);
+    modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+    modem_clock_module_disable(PERIPH_BT_MODULE);
 #if CONFIG_BT_NIMBLE_ENABLED
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
 #endif // CONFIG_BT_NIMBLE_ENABLED
@@ -728,9 +719,8 @@ esp_err_t esp_bt_controller_deinit(void)
         esp_phy_disable();
         s_ble_active = false;
     }
-    // esp_phy_modem_deinit();
-    // modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
-    // modem_clock_module_disable(PERIPH_BT_MODULE);
+    modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+    modem_clock_module_disable(PERIPH_BT_MODULE);
 
     ble_controller_deinit();
 

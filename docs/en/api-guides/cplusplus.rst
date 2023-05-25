@@ -136,13 +136,14 @@ ESP-IDF expects the application entry point, ``app_main``, to be defined with C 
     {
     }
 
+.. _cplusplus_designated_initializers:
 
 Designated initializers
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Many of the ESP-IDF components use :ref:`configuration structures <api_reference_config_structures>` as arguments to the initialization functions. ESP-IDF examples written in C routinely use `designated initializers <https://en.cppreference.com/w/c/language/struct_initialization>`_ to fill these structures in a readable and a maintainable way.
 
-C and C++ languages have different rules with regards to the designated initializers. For example, C++ language version C++20, currently the default in ESP-IDF, does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
+C and C++ languages have different rules with regards to the designated initializers. For example, C++ language version C++23, currently the default in ESP-IDF, does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
 
 
 iostream

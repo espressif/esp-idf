@@ -1,6 +1,11 @@
 App Image Format
 ================
 
+.. _app-image-structures:
+
+Application Image Structures
+----------------------------
+
 An application image consists of the following structures:
 
 1. The :cpp:type:`esp_image_header_t` structure describes the mode of SPI flash and the count of memory segments.
@@ -77,7 +82,7 @@ You can also see the information on segments in the ESP-IDF logs while your appl
 
 6. If the option :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to RSA or ECDSA (V2) then the application image will have an additional signature sector of 4K size. For more details on the format of this signature sector, please refer to :ref:`signature-block-format`.
 
-.. _app_image_format_application_description:
+.. _app-image-format-application-description:
 
 Application Description
 -----------------------

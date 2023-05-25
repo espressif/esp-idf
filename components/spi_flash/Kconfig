@@ -147,17 +147,24 @@ menu "SPI Flash driver"
         help
             Defines how many ticks will be before returning to continue a erasing.
 
+    config SPI_FLASH_SUSPEND_QVL_SUPPORTED
+        # Internally usage
+        bool
+        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
+        default n
+
     config SPI_FLASH_AUTO_SUSPEND
         bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_ROM_IMPL
+        depends on SPI_FLASH_SUSPEND_QVL_SUPPORTED && !SPI_FLASH_ROM_IMPL
         help
-            This option is default n before ESP32-C3, because it needs bootloader support.
+            This option is default n because it can't be used in every situation. You need to
+            evaluate this feature through suspend part in `SPI Flash API` document.
 
             CAUTION: If you want to OTA to an app with this feature turned on, please make
             sure the bootloader has the support for it. (later than IDF v4.3)
 
-            Auto-suspend feature only supported by XMC chip.
+            Auto-suspend feature only supported by specific flash chips.
             If you are using an official module, please contact Espressif Business support.
             Also reading auto suspend part in `SPI Flash API` document before you enable this function.
 

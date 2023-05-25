@@ -25,12 +25,14 @@ int __wrap_select (int fd, fd_set * rfds, fd_set * wfds, fd_set *efds, struct ti
 {
     int ret;
     struct timeval *tv = tval;
+    struct timeval timeval_local = {};
     int64_t start = 0;
     int64_t timeout_us = 0;
     if (tv != NULL) {
         start = get_us();
         timeout_us = tval->tv_sec * 1000000 + tval->tv_usec;
-        struct timeval timeval_local = { .tv_sec = tval->tv_sec, .tv_usec = tval->tv_usec };
+        timeval_local.tv_sec = tval->tv_sec;
+        timeval_local.tv_usec = tval->tv_usec;
         tv = &timeval_local;  // this (tv != NULL) indicates that we should handle timeouts
     }
     while ((ret = __real_select(fd, rfds, wfds, efds, tv)) < 0 && errno == EINTR) {

@@ -38,6 +38,8 @@ set(extra_components_which_shouldnt_be_included
     driver
     # esp_app_format is dependency of bootloader_support, app_update
     esp_app_format
+    # esp_bootloader_format is dependency of bootloader_support, app_update
+    esp_bootloader_format
     # [refactor-todo]: efuse is a dependency of esp_hw_support, esp_system.
     #   Figure out if these components can exist without a dependency on efuse.
     #   If not, see if esp_hw_support can provide minimal efuse component replacement in G1 build.

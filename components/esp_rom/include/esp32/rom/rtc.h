@@ -217,7 +217,7 @@ static inline void rtc_suppress_rom_log(void)
   *
   * @return None
   */
-void __attribute__((noreturn)) software_reset(void);
+void __attribute__((__noreturn__)) software_reset(void);
 
 /**
   * @brief Software Reset digital core.

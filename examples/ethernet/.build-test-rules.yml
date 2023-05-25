@@ -1,23 +1,13 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/ethernet/enc28j60:
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2" #Depends on IDF-6245
-      temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
-
 examples/ethernet/eth2ap:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
+      reason: esp32h2 is not supported
 
 examples/ethernet/iperf:
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32c2", "esp32s2", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners

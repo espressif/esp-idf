@@ -51,7 +51,7 @@ uint8_t esp_ieee802154_get_channel(void);
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
  */
-esp_err_t esp_ieee802154_set_channnel(uint8_t channel);
+esp_err_t esp_ieee802154_set_channel(uint8_t channel);
 
 /**
  * @brief  Get the transmit power.

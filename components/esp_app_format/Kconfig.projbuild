@@ -3,6 +3,7 @@ menu "Application manager"
     config APP_COMPILE_TIME_DATE
         bool "Use time/date stamp for app"
         default y
+        depends on !APP_REPRODUCIBLE_BUILD
         help
             If set, then the app will be built with the current time/date stamp. It is stored in the app description
             structure. If not set, time/date stamp will be excluded from app image. This can be useful for getting the
@@ -38,12 +39,14 @@ menu "Application manager"
 
     config APP_RETRIEVE_LEN_ELF_SHA
         int "The length of APP ELF SHA is stored in RAM(chars)"
-        default 16
+        default 9
         range 8 64
         help
-            At startup, the app will read this many hex characters from the embedded APP ELF SHA-256 hash value
-            and store it in static RAM. This ensures the app ELF SHA-256 value is always available
-            if it needs to be printed by the panic handler code.
-            Changing this value will change the size of a static buffer, in bytes.
+            At startup, the app will read the embedded APP ELF SHA-256 hash value from flash
+            and convert it into a string and store it in a RAM buffer.
+            This ensures the panic handler and core dump will be able to print this string
+            even when cache is disabled.
+            The size of the buffer is APP_RETRIEVE_LEN_ELF_SHA plus the null terminator.
+            Changing this value will change the size of this buffer, in bytes.
 
 endmenu # "Application manager"

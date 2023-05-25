@@ -84,6 +84,22 @@ menu "Log output"
         default 4 if LOG_MAXIMUM_LEVEL_DEBUG
         default 5 if LOG_MAXIMUM_LEVEL_VERBOSE
 
+    config LOG_MASTER_LEVEL
+        bool "Enable global master log level"
+        default "n"
+        help
+            Enables an additional global "master" log level check that occurs
+            before a log tag cache lookup. This is useful if you want to
+            compile in a lot of logs that are selectable at runtime, but avoid the
+            performance hit during periods where you don't want log output. Examples
+            include remote log forwarding, or disabling logs during a time-critical
+            or CPU-intensive section and re-enabling them later. Results in
+            larger program size depending on number of logs compiled in.
+
+            If enabled, defaults to LOG_DEFAULT_LEVEL and can be set using
+            esp_log_set_level_master().
+            This check takes precedence over ESP_LOG_LEVEL_LOCAL.
+
     config LOG_COLORS
         bool "Use ANSI terminal colors in log output"
         default "y"

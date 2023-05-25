@@ -76,7 +76,7 @@ Non-IRAM-Safe Interrupt Handlers
 If the ``ESP_INTR_FLAG_IRAM`` flag is not set when registering, the interrupt handler will not get executed when the caches are disabled. Once the caches are restored, the non-IRAM-safe interrupts will be re-enabled. After this moment, the interrupt handler will run normally again. This means that as long as caches are disabled, users won't see the corresponding hardware event happening.
 
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2 or esp32s3
 
    .. include:: auto_suspend.inc
 

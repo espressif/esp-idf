@@ -137,10 +137,6 @@ extern "C" {
    Trigger Module register fields (Debug specification)
  ********************************************************/
 
-/* tcontrol CSRs not recognized by toolchain currently */
-#define CSR_TCONTROL        0x7a5
-#define CSR_TDATA1          0x7a1
-
 #define TCONTROL_MTE     (1<<3)    /*R/W, Current M mode trigger enable bit*/
 #define TCONTROL_MPTE    (1<<7)    /*R/W, Previous M mode trigger enable bit*/
 
@@ -152,6 +148,7 @@ extern "C" {
 #define TDATA1_MATCH     (1<<7)
 #define TDATA1_MATCH_V   (0xF)   /*R/W,Address match type :0 : Exact byte match  1 : NAPOT range match */
 #define TDATA1_MATCH_S   (7)
+#define TDATA1_HIT_S     (20)
 
 
 /* RISC-V CSR macros

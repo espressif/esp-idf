@@ -1075,7 +1075,6 @@ struct ble_hci_le_enh_read_transmit_power_level_cp {
     uint8_t phy;
 } __attribute__((packed));
 struct ble_hci_le_enh_read_transmit_power_level_rp {
-    uint8_t status;
     uint16_t conn_handle;
     uint8_t phy;
     uint8_t curr_tx_power_level;
