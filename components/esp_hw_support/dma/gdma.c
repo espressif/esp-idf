@@ -386,6 +386,7 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     pair = dma_chan->pair;
     group = pair->group;
     gdma_tx_channel_t *tx_chan = __containerof(dma_chan, gdma_tx_channel_t, base);
+    uint32_t intrMask = GDMA_LL_EVENT_TX_EOF;
 
 #if CONFIG_GDMA_ISR_IRAM_SAFE
     if (cbs->on_trans_eof) {
@@ -399,12 +400,17 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     // lazy install interrupt service
     ESP_GOTO_ON_ERROR(gdma_install_tx_interrupt(tx_chan), err, TAG, "install interrupt service failed");
 
+    // Always enable EOF interrupt, only enable descriptor error interrupt if callback is given
+    if (cbs->on_descr_err != NULL)
+        intrMask |= GDMA_LL_EVENT_TX_DESC_ERROR;
+
     // enable/disable GDMA interrupt events for TX channel
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_TX_EOF, cbs->on_trans_eof != NULL);
+    gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, intrMask, cbs->on_trans_eof != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
     tx_chan->on_trans_eof = cbs->on_trans_eof;
+    tx_chan->on_descr_err = cbs->on_descr_err;
     tx_chan->user_data = user_data;
 
     ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
@@ -422,6 +428,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     pair = dma_chan->pair;
     group = pair->group;
     gdma_rx_channel_t *rx_chan = __containerof(dma_chan, gdma_rx_channel_t, base);
+    uint32_t intrMask = GDMA_LL_EVENT_RX_SUC_EOF;
 
 #if CONFIG_GDMA_ISR_IRAM_SAFE
     if (cbs->on_recv_eof) {
@@ -435,12 +442,17 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     // lazy install interrupt service
     ESP_GOTO_ON_ERROR(gdma_install_rx_interrupt(rx_chan), err, TAG, "install interrupt service failed");
 
+    // Always enable EOF interrupt, only enable descriptor error interrupt if callback is given
+    if (cbs->on_descr_err != NULL)
+        intrMask |= GDMA_LL_EVENT_RX_DESC_ERROR;
+
     // enable/disable GDMA interrupt events for RX channel
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_SUC_EOF, cbs->on_recv_eof != NULL);
+    gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, intrMask, cbs->on_recv_eof != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
     rx_chan->on_recv_eof = cbs->on_recv_eof;
+    rx_chan->on_descr_err = cbs->on_descr_err;
     rx_chan->user_data = user_data;
 
     ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
@@ -726,6 +738,13 @@ static void IRAM_ATTR gdma_default_rx_isr(void *args)
             }
         }
     }
+    if (intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) {
+        if (rx_chan && rx_chan->on_descr_err) {
+            if (rx_chan->on_descr_err(&rx_chan->base, rx_chan->user_data)) {
+                need_yield = true;
+            }
+        }
+    }
 
     if (need_yield) {
         portYIELD_FROM_ISR();
@@ -753,7 +772,13 @@ static void IRAM_ATTR gdma_default_tx_isr(void *args)
             }
         }
     }
-
+    if (intr_status & GDMA_LL_EVENT_TX_DESC_ERROR) {
+        if (tx_chan && tx_chan->on_descr_err) {
+            if (tx_chan->on_descr_err(&tx_chan->base, tx_chan->user_data)) {
+                need_yield = true;
+            }
+        }
+    }
     if (need_yield) {
         portYIELD_FROM_ISR();
     }
