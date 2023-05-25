@@ -3,26 +3,14 @@ SPI 从机驱动程序
 
 :link_to_translation:`en:[English]`
 
-SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 SPI 外设。
+SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 GP-SPI 外设。
 
-
-{IDF_TARGET_NAME} 中 SPI 外设概述
------------------------------------------------
-
-{IDF_TARGET_MAX_SLAVE_PERIPH_NUM:default="2", esp32c3="1", esp32c2="1", esp32c6="1", esp32h2="1"}
-
-{IDF_TARGET_NAME} 集成了 {IDF_TARGET_MAX_SLAVE_PERIPH_NUM} 个通用的 SPI 控制器。该控制器具有与之同名的独立总线信号。
-
-.. only:: esp32
-
-    .. note::
-
-        在 ESP32 中，HSPI 为 SPI2，VSPI 为 SPI3。
+有关 GP-SPI 硬件相关信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *SPI 控制器* [`PDF <{IDF_TARGET_TRM_CN_URL}#spi>`__]。
 
 术语
 -----------
 
-下表为 SPI 主机驱动的相关术语。
+下表为 SPI 从机驱动的相关术语。
 
 .. list-table::
    :widths: 30 70
