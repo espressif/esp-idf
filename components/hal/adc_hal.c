@@ -257,7 +257,7 @@ static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *d
             n++;
         }
     }
-    desc[n-1].next = NULL;
+    desc[n-1].next = desc;
 }
 
 void adc_hal_digi_start(adc_hal_dma_ctx_t *hal, uint8_t *data_buf)
@@ -326,6 +326,11 @@ adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, con
     *len = eof_len;
 
     return ADC_HAL_DMA_DESC_VALID;
+}
+
+void adc_hal_read_desc_finish(adc_hal_dma_ctx_t *hal) {
+    // Allow DMA to re-use descriptor.
+    hal->cur_desc_ptr->dw0.owner = 1;
 }
 
 void adc_hal_digi_clr_intr(adc_hal_dma_ctx_t *hal, uint32_t mask)
