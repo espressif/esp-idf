@@ -39,7 +39,25 @@ static const char *TAG = "rtc_time";
 #define TIMG_RTC_CALI_CLK_SEL_RC_FAST 1
 #define TIMG_RTC_CALI_CLK_SEL_32K     2
 
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
+/**
+ * @brief Clock calibration function used by rtc_clk_cal
+ *
+ * Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
+ * This feature counts the number of XTAL clock cycles within a given number of
+ * RTC_SLOW_CLK cycles.
+ *
+ * Slow clock calibration feature has two modes of operation: one-off and cycling.
+ * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
+ * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
+ * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
+ * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
+ * enabled using TIMG_RTC_CALI_START bit.
+ *
+ * @param cal_clk which clock to calibrate
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
+static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
@@ -101,15 +119,6 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, 1);
         while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)
                && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
-    }
-
-    /*The Fosc CLK of calibration circuit is divided by 32 for ECO2.
-      So we need to divide the calibrate cycles of the FOSC for ECO1 and above chips by 32 to
-      avoid excessive calibration time.*/
-    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
-        if (cal_clk == RTC_CAL_RC_FAST) {
-            slowclk_cycles = slowclk_cycles >> 5;
-        }
     }
 
     /* Prepare calibration */
@@ -200,6 +209,16 @@ static bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slowclk_cy
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+
+    /*The Fosc CLK of calibration circuit is divided by 32 for ECO2.
+      So we need to divide the calibrate cycles of the FOSC for ECO1 and above chips by 32 to
+      avoid excessive calibration time.*/
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
+        if (cal_clk == RTC_CAL_RC_FAST) {
+            slowclk_cycles = slowclk_cycles >> 5;
+        }
+    }
+
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
 
     if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid(xtal_freq, slowclk_cycles, xtal_cycles)) {
