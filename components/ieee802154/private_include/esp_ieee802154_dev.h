@@ -177,6 +177,18 @@ uint8_t ieee802154_get_recent_lqi(void);
  */
 ieee802154_state_t ieee802154_get_state(void);
 
+/**
+ * @brief  The callback of IEEE 802.15.4 sleep.
+ *
+ */
+void ieee802154_sleep_cb(void);
+
+/**
+ * @brief  The callback of IEEE 802.15.4 wakeup.
+ *
+ */
+void ieee802154_wakeup_cb(void);
+
 /** The following three functions are only used for internal test. **/
 /**
  * @brief  The clear channel assessment done.

@@ -21,7 +21,6 @@
 
 esp_err_t esp_ieee802154_enable(void)
 {
-
     ieee802154_enable();
     esp_phy_enable();
     esp_btbb_enable();
@@ -330,6 +329,16 @@ int8_t esp_ieee802154_get_recent_rssi(void)
 uint8_t esp_ieee802154_get_recent_lqi(void)
 {
     return ieee802154_get_recent_lqi();
+}
+
+void esp_ieee802154_sleep_cb(void)
+{
+    ieee802154_sleep_cb();
+}
+
+void esp_ieee802154_wakeup_cb(void)
+{
+    ieee802154_wakeup_cb();
 }
 
 __attribute__((weak)) void esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
