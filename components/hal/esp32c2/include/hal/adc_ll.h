@@ -248,42 +248,6 @@ static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit
 }
 
 /**
- * Set monitor mode of adc digital controller.
- *
- * @note If the channel info is not supported, the monitor function will not be enabled.
- * @param adc_n ADC unit.
- * @param is_larger true:  If ADC_OUT >  threshold, Generates monitor interrupt.
- *                  false: If ADC_OUT <  threshold, Generates monitor interrupt.
- */
-static inline void adc_ll_digi_monitor_set_mode(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *cfg)
-{
-    if (idx == ADC_DIGI_MONITOR_IDX0) {
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_high = cfg->h_threshold;
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_low = cfg->l_threshold;
-    } else { // ADC_DIGI_MONITOR_IDX1
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_high = cfg->h_threshold;
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_low = cfg->l_threshold;
-    }
-}
-
-/**
- * Enable/disable monitor of adc digital controller.
- *
- * @note If the channel info is not supported, the monitor function will not be enabled.
- * @param adc_n ADC unit.
- */
-static inline void adc_ll_digi_monitor_disable(adc_digi_monitor_idx_t idx)
-{
-    if (idx == ADC_DIGI_MONITOR_IDX0) {
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_channel = 0xF;
-    } else { // ADC_DIGI_MONITOR_IDX1
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_channel = 0xF;
-    }
-}
-
-/**
  * Reset adc digital controller.
  */
 static inline void adc_ll_digi_reset(void)

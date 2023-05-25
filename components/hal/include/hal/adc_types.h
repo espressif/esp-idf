@@ -117,6 +117,25 @@ typedef enum {
 } adc_digi_iir_filter_coeff_t;
 
 /*---------------------------------------------------------------
+                        ADC Monitor
+---------------------------------------------------------------*/
+/**
+ * @brief ADC monitor (continuous mode) ID
+ */
+typedef enum {
+    ADC_MONITOR_0,          ///< The monitor index 0.
+    ADC_MONITOR_1,          ///< The monitor index 1.
+} adc_monitor_id_t;
+
+/**
+ * @brief Monitor config/event mode type
+ */
+typedef enum {
+    ADC_MONITOR_MODE_HIGH = 0,      ///< ADC raw_result > threshold value, monitor interrupt will be generated.
+    ADC_MONITOR_MODE_LOW,           ///< ADC raw_result < threshold value, monitor interrupt will be generated.
+} adc_monitor_mode_t;
+
+/*---------------------------------------------------------------
                     Output Format
 ---------------------------------------------------------------*/
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
@@ -204,6 +223,7 @@ typedef struct {
 } adc_digi_output_data_t;
 
 #endif
+
 
 #if CONFIG_IDF_TARGET_ESP32S2
 /**
