@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 910e196e9c9c5c052f1c57710fe3977c
+// md5_digest_table 35c27f867ff30c0bcddad78a296ab037
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -181,6 +181,18 @@ static const esp_efuse_desc_t WR_DIS_MAC[] = {
 
 static const esp_efuse_desc_t WR_DIS_MAC_EXT[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of MAC_EXT,
+};
+
+static const esp_efuse_desc_t WR_DIS_RXIQ_VERSION[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of RXIQ_VERSION,
+};
+
+static const esp_efuse_desc_t WR_DIS_RXIQ_0[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of RXIQ_0,
+};
+
+static const esp_efuse_desc_t WR_DIS_RXIQ_1[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of RXIQ_1,
 };
 
 static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
@@ -484,6 +496,18 @@ static const esp_efuse_desc_t MAC_EXT[] = {
     {EFUSE_BLK1, 48, 16}, 	 // [] Stores the extended bits of MAC address,
 };
 
+static const esp_efuse_desc_t RXIQ_VERSION[] = {
+    {EFUSE_BLK1, 64, 3}, 	 // [] RF Calibration data. RXIQ version,
+};
+
+static const esp_efuse_desc_t RXIQ_0[] = {
+    {EFUSE_BLK1, 67, 7}, 	 // [] RF Calibration data. RXIQ data 0,
+};
+
+static const esp_efuse_desc_t RXIQ_1[] = {
+    {EFUSE_BLK1, 74, 7}, 	 // [] RF Calibration data. RXIQ data 1,
+};
+
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
     {EFUSE_BLK1, 114, 3}, 	 // [],
 };
@@ -517,7 +541,7 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
 };
 
 static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
-    {EFUSE_BLK2, 130, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
+    {EFUSE_BLK2, 130, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2. 1: RF Calibration data in BLOCK1,
 };
 
 static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
@@ -775,6 +799,21 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[] = {
     &WR_DIS_MAC_EXT[0],    		// [] wr_dis of MAC_EXT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_VERSION[] = {
+    &WR_DIS_RXIQ_VERSION[0],    		// [] wr_dis of RXIQ_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_0[] = {
+    &WR_DIS_RXIQ_0[0],    		// [] wr_dis of RXIQ_0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_1[] = {
+    &WR_DIS_RXIQ_1[0],    		// [] wr_dis of RXIQ_1
     NULL
 };
 
@@ -1153,6 +1192,21 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_RXIQ_VERSION[] = {
+    &RXIQ_VERSION[0],    		// [] RF Calibration data. RXIQ version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RXIQ_0[] = {
+    &RXIQ_0[0],    		// [] RF Calibration data. RXIQ data 0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RXIQ_1[] = {
+    &RXIQ_1[0],    		// [] RF Calibration data. RXIQ data 1
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
     &WAFER_VERSION_MINOR[0],    		// []
     NULL
@@ -1194,7 +1248,7 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
-    &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2
+    &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2. 1: RF Calibration data in BLOCK1
     NULL
 };
 

@@ -486,14 +486,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_1 : RO; bitpos: [13:0]; default: 0;
-         *  Reserved.
+        /** rxiq_version : R; bitpos: [2:0]; default: 0;
+         *  RF Calibration data. RXIQ version
          */
-        uint32_t mac_reserved_1:14;
-        /** mac_reserved_0 : RO; bitpos: [31:14]; default: 0;
-         *  Reserved.
+        uint32_t rxiq_version:3;
+        /** rxiq_0 : R; bitpos: [9:3]; default: 0;
+         *  RF Calibration data. RXIQ data 0
          */
-        uint32_t mac_reserved_0:18;
+        uint32_t rxiq_0:7;
+        /** rxiq_1 : R; bitpos: [16:10]; default: 0;
+         *  RF Calibration data. RXIQ data 1
+         */
+        uint32_t rxiq_1:7;
+        /** reserved_1_81 : R; bitpos: [31:17]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_81:15;
     };
     uint32_t val;
 } efuse_rd_mac_sys_2_reg_t;
@@ -617,7 +625,7 @@ typedef union {
          */
         uint32_t reserved_2_128:2;
         /** blk_version_minor : R; bitpos: [4:2]; default: 0;
-         *  BLK_VERSION_MINOR of BLOCK2
+         *  BLK_VERSION_MINOR of BLOCK2. 1: RF Calibration data in BLOCK1
          */
         uint32_t blk_version_minor:3;
         /** blk_version_major : R; bitpos: [6:5]; default: 0;

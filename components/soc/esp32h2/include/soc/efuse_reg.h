@@ -612,20 +612,34 @@ extern "C" {
  *  BLOCK1 data register $n.
  */
 #define EFUSE_RD_MAC_SYS_2_REG (DR_REG_EFUSE_BASE + 0x4c)
-/** EFUSE_MAC_RESERVED_1 : RO; bitpos: [13:0]; default: 0;
- *  Reserved.
+/** EFUSE_RXIQ_VERSION : R; bitpos: [2:0]; default: 0;
+ *  RF Calibration data. RXIQ version
  */
-#define EFUSE_MAC_RESERVED_1    0x00003FFFU
-#define EFUSE_MAC_RESERVED_1_M  (EFUSE_MAC_RESERVED_1_V << EFUSE_MAC_RESERVED_1_S)
-#define EFUSE_MAC_RESERVED_1_V  0x00003FFFU
-#define EFUSE_MAC_RESERVED_1_S  0
-/** EFUSE_MAC_RESERVED_0 : RO; bitpos: [31:14]; default: 0;
- *  Reserved.
+#define EFUSE_RXIQ_VERSION    0x00000007U
+#define EFUSE_RXIQ_VERSION_M  (EFUSE_RXIQ_VERSION_V << EFUSE_RXIQ_VERSION_S)
+#define EFUSE_RXIQ_VERSION_V  0x00000007U
+#define EFUSE_RXIQ_VERSION_S  0
+/** EFUSE_RXIQ_0 : R; bitpos: [9:3]; default: 0;
+ *  RF Calibration data. RXIQ data 0
  */
-#define EFUSE_MAC_RESERVED_0    0x0003FFFFU
-#define EFUSE_MAC_RESERVED_0_M  (EFUSE_MAC_RESERVED_0_V << EFUSE_MAC_RESERVED_0_S)
-#define EFUSE_MAC_RESERVED_0_V  0x0003FFFFU
-#define EFUSE_MAC_RESERVED_0_S  14
+#define EFUSE_RXIQ_0    0x0000007FU
+#define EFUSE_RXIQ_0_M  (EFUSE_RXIQ_0_V << EFUSE_RXIQ_0_S)
+#define EFUSE_RXIQ_0_V  0x0000007FU
+#define EFUSE_RXIQ_0_S  3
+/** EFUSE_RXIQ_1 : R; bitpos: [16:10]; default: 0;
+ *  RF Calibration data. RXIQ data 1
+ */
+#define EFUSE_RXIQ_1    0x0000007FU
+#define EFUSE_RXIQ_1_M  (EFUSE_RXIQ_1_V << EFUSE_RXIQ_1_S)
+#define EFUSE_RXIQ_1_V  0x0000007FU
+#define EFUSE_RXIQ_1_S  10
+/** EFUSE_RESERVED_1_81 : R; bitpos: [31:17]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_81    0x00007FFFU
+#define EFUSE_RESERVED_1_81_M  (EFUSE_RESERVED_1_81_V << EFUSE_RESERVED_1_81_S)
+#define EFUSE_RESERVED_1_81_V  0x00007FFFU
+#define EFUSE_RESERVED_1_81_S  17
 
 /** EFUSE_RD_MAC_SYS_3_REG register
  *  BLOCK1 data register $n.
@@ -762,7 +776,7 @@ extern "C" {
 #define EFUSE_RESERVED_2_128_V  0x00000003U
 #define EFUSE_RESERVED_2_128_S  0
 /** EFUSE_BLK_VERSION_MINOR : R; bitpos: [4:2]; default: 0;
- *  BLK_VERSION_MINOR of BLOCK2
+ *  BLK_VERSION_MINOR of BLOCK2. 1: RF Calibration data in BLOCK1
  */
 #define EFUSE_BLK_VERSION_MINOR    0x00000007U
 #define EFUSE_BLK_VERSION_MINOR_M  (EFUSE_BLK_VERSION_MINOR_V << EFUSE_BLK_VERSION_MINOR_S)
