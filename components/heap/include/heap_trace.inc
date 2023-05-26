@@ -68,9 +68,31 @@ static IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
     TEST_STACK(7);
     TEST_STACK(8);
     TEST_STACK(9);
+    TEST_STACK(10);
+    TEST_STACK(11);
+    TEST_STACK(12);
+    TEST_STACK(13);
+    TEST_STACK(14);
+    TEST_STACK(15);
+    TEST_STACK(16);
+    TEST_STACK(17);
+    TEST_STACK(18);
+    TEST_STACK(19);
+    TEST_STACK(20);
+    TEST_STACK(21);
+    TEST_STACK(22);
+    TEST_STACK(23);
+    TEST_STACK(24);
+    TEST_STACK(25);
+    TEST_STACK(26);
+    TEST_STACK(27);
+    TEST_STACK(28);
+    TEST_STACK(29);
+    TEST_STACK(30);
+    TEST_STACK(31);
 }
 
-_Static_assert(STACK_DEPTH >= 0 && STACK_DEPTH <= 10, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-10");
+_Static_assert(STACK_DEPTH >= 0 && STACK_DEPTH <= 32, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-32");
 
 
 typedef enum {
