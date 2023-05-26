@@ -397,6 +397,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_TWT_FULL
     ERR_TBL_IT(ESP_ERR_WIFI_TWT_FULL),                          /* 12311 0x3017 no available flow id */
 #   endif
+#   ifdef      ESP_ERR_WIFI_TWT_SETUP_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_WIFI_TWT_SETUP_TIMEOUT),                 /* 12312 0x3018 Timeout of receiving twt setup response
+                                                                                frame, timeout times can be set during
+                                                                                twt setup */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */

@@ -214,6 +214,17 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
     assert(refs >= 0);
 }
 
+void IRAM_ATTR modem_clock_wifi_mac_reset(void)
+{
+#if SOC_WIFI_SUPPORTED
+    modem_clock_context_t *ctx = MODEM_CLOCK_instance();
+    portENTER_CRITICAL_SAFE(&ctx->lock);
+    //TODO: IDF-5713
+    modem_syscon_ll_reset_wifimac(ctx->hal->syscon_dev);
+    portEXIT_CRITICAL_SAFE(&ctx->lock);
+#endif
+}
+
 #define WIFI_CLOCK_DEPS       (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_COEXIST))
 #define BLE_CLOCK_DEPS        (BIT(MODEM_CLOCK_BLE_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_BLE_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
 #define IEEE802154_CLOCK_DEPS (BIT(MODEM_CLOCK_802154_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_BLE_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))

@@ -22,18 +22,10 @@ extern "C" {
   *            - e.g. TWT Wake Interval Mantissa = 512,  TWT Wake Interval Exponent = 12, then TWT Wake Interval is 2097.152 ms
   *                   Nominal Minimum Wake Duration = 255, then TWT Wake Duration is 65.28 ms
   *
-  * @attention  Support at most 4 TWT agreements, otherwise ESP_ERR_WIFI_TWT_FULL will be returned.
+  * @attention  Support at most 8 TWT agreements, otherwise ESP_ERR_WIFI_TWT_FULL will be returned.
   *             Support sleep time up to (1 << 35) us.
   *
-  * @param[in]     setup_cmd   Indicates the type of TWT command
-  * @param[in]     trigger     true: a trigger-enabled TWT, false: a non-trigger-enabled TWT
-  * @param[in]     flow_type   0: an announced TWT, 1: an unannounced TWT
-  * @param[in]     min_wake_dura  Nominal Minimum Wake Duration, indicates the minimum amount of time, in unit of 256 us, that the TWT requesting STA expects that it needs to be awake. The value range is [1, 255].
-  * @param[in]     wake_invl_expn  TWT Wake Interval Exponent. The value range is [0, 31].
-  * @param[in]     wake_invl_mant  TWT Wake Interval Mantissa. The value range is [1, 65535].
-  * @param[in/out]    flow_id  When set up an individual TWT agreement, the flow id will be assigned by AP after a successful agreement setup.
-  *                            flow_id is allowed to be NULL. flow_id could be specified to a value in the range of [0, 7], but it might be changed by AP in the response.
-  *                            When change TWT parameters of the existing TWT agreement, flow_id should be an existing one. The value range is [0, 7].
+  * @param[in/out]   setup_config pointer to itwt setup config structure.
   *
   * @return
   *    - ESP_OK: succeed
@@ -44,7 +36,7 @@ extern "C" {
   *    - ESP_ERR_WIFI_TWT_FULL: no available flow id
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
-esp_err_t esp_wifi_sta_itwt_setup(wifi_twt_setup_cmds_t setup_cmd, bool trigger, int flow_type, int min_wake_dura, int wake_invl_expn, int wake_invl_mant, int *flow_id);
+esp_err_t esp_wifi_sta_itwt_setup(wifi_twt_setup_config_t *setup_config);
 
 /**
   * @brief     Tear down individual TWT agreements
