@@ -143,7 +143,7 @@ Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used t
 
             * For the HMAC-based scheme -
 
-                - Set the scheme (see :cpp:enum:`nvs_sec_scheme_id_t`) and the scheme-specific data (to :cpp:enum:`hmac_key_id_t`) with the :cpp:type:`nvs_sec_scheme_t` struct and register the HMAC-based scheme with the API :cpp:func:`nvs_sec_provider_register_hmac`.
+                - Set the scheme-specific config data with :cpp:type:`nvs_sec_config_hmac_t` and register the HMAC-based scheme with the API :cpp:func:`nvs_sec_provider_register_hmac` which will also populate the scheme-specific handle (see :cpp:type:`nvs_sec_scheme_t`).
                 - Populate the :cpp:type:`nvs_sec_cfg_t` struct using the :cpp:func:`nvs_flash_read_security_cfg_v2` or :cpp:func:`nvs_flash_generate_keys_v2` API functions.
 
             .. code-block:: c
