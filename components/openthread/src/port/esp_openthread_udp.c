@@ -305,6 +305,9 @@ otError otPlatUdpConnect(otUdpSocket *udp_socket)
     };
 
     task.addr = map_openthread_addr_to_lwip_addr(&udp_socket->mPeerName.mAddress);
+    if (ip_addr_isany_val(task.addr) && task.port == 0) {
+        return OT_ERROR_NONE;
+    }
     tcpip_callback(udp_connect_task, &task);
     wait_for_task_notification();
 
