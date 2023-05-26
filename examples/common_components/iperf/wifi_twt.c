@@ -38,6 +38,8 @@ typedef struct {
     struct arg_int *wakeinvlman; //setup
     struct arg_int *minwakedur;  //setup
     struct arg_int *flowid;
+    struct arg_int *twtid;
+    struct arg_int *setup_timeout_time_ms;
     struct arg_int *suspend_time_ms;
     struct arg_int *all_twt;
     struct arg_end *end;
@@ -71,16 +73,50 @@ static int wifi_cmd_itwt(int argc, char **argv)
 
     esp_err_t err = ESP_OK;
     if (itwt_args.setup->count) {
-        // setup command, trigger, flow type, min wake duration, wake interval exponent, wake interval mantissa
-        wifi_twt_setup_cmds_t setup = (itwt_args.setup->ival[0] <= TWT_DEMAND) ? itwt_args.setup->ival[0] : TWT_REQUEST;
-        bool trigger = itwt_args.trigger->count ? (itwt_args.trigger->ival[0] ? true : false) : true;
-        uint8_t flowtype = itwt_args.flowtype->count ? ((itwt_args.flowtype->ival[0] == 0) ? 0 : 1) : 0;
-        int minwakedur = itwt_args.minwakedur->count ? itwt_args.minwakedur->ival[0] : 255;
-        int wakeinvlexp = itwt_args.wakeinvlexp->count ? itwt_args.wakeinvlexp->ival[0] : 10;
-        int wakeinvlman = itwt_args.wakeinvlman->count ? itwt_args.wakeinvlman->ival[0] : 512;
-        int flow_id = 0;
-        err = esp_wifi_sta_itwt_setup(setup, trigger, flowtype, minwakedur, wakeinvlexp, wakeinvlman, &flow_id);
-        ESP_LOGI(TAG, "(itwt)setup, trigger:%d, %s, flow_id:%d, err:0x%x", trigger, flowtype ? "unannounce" : "announced", flow_id, err);
+        if (itwt_args.wakeinvlman->count) {
+            if (itwt_args.wakeinvlman->ival[0] < 0 || itwt_args.wakeinvlman->ival[0] > 65535) {
+                ESP_LOGE(TAG, "(itwt)expect [0, 65535], wake_invl_mant: %d", itwt_args.wakeinvlman->ival[0]);
+                return 1;
+            }
+        }
+        if (itwt_args.wakeinvlexp->count) {
+            if (itwt_args.wakeinvlexp->ival[0] < 0 || itwt_args.wakeinvlexp->ival[0] > 31) {
+                ESP_LOGE(TAG, "(itwt)expect [0, 31], wake_invl_expn: %d", itwt_args.wakeinvlexp->ival[0]);
+                return 1;
+            }
+        }
+        if (itwt_args.minwakedur->count) {
+            if (itwt_args.minwakedur->ival[0] < 0 || itwt_args.minwakedur->ival[0] > 255) {
+                ESP_LOGE(TAG, "(itwt)expect [0, 255], min_wake_dura: %d", itwt_args.minwakedur->ival[0]);
+                return 1;
+            }
+        }
+        if (itwt_args.twtid->count) {
+            if (itwt_args.twtid->ival[0] < 0 || itwt_args.twtid->ival[0] > 32767) {
+                ESP_LOGE(TAG, "(itwt)expect [0, 32767], twt id: %d", itwt_args.twtid->ival[0]);
+                return 1;
+            }
+        }
+        if (itwt_args.setup_timeout_time_ms->count) {
+            if (itwt_args.setup_timeout_time_ms->ival[0] < 0 || itwt_args.setup_timeout_time_ms->ival[0] > 65535) {
+                ESP_LOGE(TAG, "(itwt)expect [0, 65535], setup timeout time: %d", itwt_args.setup_timeout_time_ms->ival[0]);
+                return 1;
+            }
+        }
+        wifi_twt_setup_config_t setup_config = {
+            .setup_cmd = (itwt_args.setup->ival[0] <= TWT_DEMAND) ? itwt_args.setup->ival[0] : TWT_REQUEST,
+            .flow_id = 0,
+            .twt_id = itwt_args.twtid->count ? itwt_args.twtid->ival[0] : 0,
+            .flow_type = itwt_args.flowtype->count ? ((itwt_args.flowtype->ival[0] == 0) ? 0 : 1) : 0,
+            .min_wake_dura = itwt_args.minwakedur->count ? itwt_args.minwakedur->ival[0] : 255,
+            .wake_invl_expn = itwt_args.wakeinvlexp->count ? itwt_args.wakeinvlexp->ival[0] : 10,
+            .wake_invl_mant = itwt_args.wakeinvlman->count ? itwt_args.wakeinvlman->ival[0] : 512,
+            .trigger = itwt_args.trigger->count ? (itwt_args.trigger->ival[0] ? 1 : 0) : 1,
+            .timeout_time_ms =  itwt_args.setup_timeout_time_ms->count ? itwt_args.setup_timeout_time_ms->ival[0] : 5000,
+        };
+        err = esp_wifi_sta_itwt_setup(&setup_config);
+        ESP_LOGI(TAG, "(itwt)setup, trigger:%d, %s, flow_id:%d, err:0x%x",
+                 setup_config.trigger, setup_config.flow_type ? "unannounce" : "announced", setup_config.flow_id, err);
     }
     if (itwt_args.teardown->count) {
         // teardown a given flow id, all_twt has a high priority
@@ -146,6 +182,8 @@ void register_wifi_itwt(void)
     itwt_args.wakeinvlman = arg_int0("m", NULL, "<wakeinvlman>", "Wake Interval Mantissa");
     itwt_args.flowid = arg_int0("i", NULL, "<flow_id>", "Flow ID");
     itwt_args.suspend_time_ms = arg_int0("s", NULL, "<suspend_time_ms>", "time of suspending iTWT agreements, unit ms");
+    itwt_args.twtid = arg_int0("w", NULL, "<twt_id>", "TWT ID");
+    itwt_args.setup_timeout_time_ms = arg_int0("u", NULL, "<setup_timeout_time_ms>", "iTWT setup timeout time, unit ms");
     itwt_args.all_twt = arg_int0("a", NULL, "<all_twt>", "All TWT");
     itwt_args.end = arg_end(1);
     const esp_console_cmd_t itwt_cmd = {
