@@ -120,11 +120,11 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
 
     if (is_p256) {
         conf.curve = ECDSA_CURVE_SECP256R1;
-        conf.efuse_key_blk = 5;
+        conf.efuse_key_blk = 6;
         len = 32;
     } else {
         conf.curve = ECDSA_CURVE_SECP192R1;
-        conf.efuse_key_blk = 6;
+        conf.efuse_key_blk = 5;
         len = 24;
     }
 

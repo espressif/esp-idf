@@ -531,10 +531,10 @@ TEST(ds, digital_signature_invalid_data)
 
 TEST_GROUP_RUNNER(ds)
 {
-    RUN_TEST_CASE(ds, digital_siganture_parameter_encryption);
-    RUN_TEST_CASE(ds, digital_siganture_wrong_hmac_key_purpose);
-    RUN_TEST_CASE(ds, digital_siganture_blocking_wrong_hmac_key_purpose);
-    RUN_TEST_CASE(ds, digital_siganture_operation);
-    RUN_TEST_CASE(ds, digital_siganture_blocking_operation);
-    RUN_TEST_CASE(ds, digital_siganture_invalid_data);
+    RUN_TEST_CASE(ds, digital_signature_parameter_encryption);
+    RUN_TEST_CASE(ds, digital_signature_wrong_hmac_key_purpose);
+    RUN_TEST_CASE(ds, digital_signature_blocking_wrong_hmac_key_purpose);
+    RUN_TEST_CASE(ds, digital_signature_operation);
+    RUN_TEST_CASE(ds, digital_signature_blocking_operation);
+    RUN_TEST_CASE(ds, digital_signature_invalid_data);
 }
