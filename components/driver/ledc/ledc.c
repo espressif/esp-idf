@@ -675,7 +675,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period*/
-    /*   set channel duty and hpoint value, duty range is (0 ~ ((2 ** duty_resolution) - 1)), max hpoint value is 0xfffff*/
+    /*   set channel duty and hpoint value, duty range is (0 ~ (2 ** duty_resolution)), max hpoint value is 0xfffff*/
     ledc_set_duty_with_hpoint(speed_mode, ledc_channel, duty, hpoint);
     /*update duty settings*/
     ledc_update_duty(speed_mode, ledc_channel);

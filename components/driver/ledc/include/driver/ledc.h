@@ -88,7 +88,7 @@ typedef struct {
     ledc_cb_event_t event;              /**< Event name */
     uint32_t speed_mode;                /**< Speed mode of the LEDC channel group */
     uint32_t channel;                   /**< LEDC channel (0 - LEDC_CHANNEL_MAX-1) */
-    uint32_t duty;                      /**< LEDC current duty of the channel, the range of duty is [0, (2**duty_resolution) - 1] */
+    uint32_t duty;                      /**< LEDC current duty of the channel, the range of duty is [0, (2**duty_resolution)] */
 } ledc_cb_param_t;
 
 /**
@@ -217,7 +217,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num);
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution) - 1]
+ * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution)]
  * @param hpoint Set the LEDC hpoint value(max: 0xfffff)
  *
  * @return
@@ -248,7 +248,7 @@ int ledc_get_hpoint(ledc_mode_t speed_mode, ledc_channel_t channel);
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution) - 1]
+ * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution)]
  *
  * @return
  *     - ESP_OK Success
@@ -278,7 +278,7 @@ uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param duty Set the start of the gradient duty, the range of duty setting is [0, (2**duty_resolution) - 1]
+ * @param duty Set the start of the gradient duty, the range of duty setting is [0, (2**duty_resolution)]
  * @param fade_direction Set the direction of the gradient
  * @param step_num Set the number of the gradient
  * @param duty_cycle_num Set how many LEDC tick each time the gradient lasts
@@ -384,7 +384,7 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode. ,
  * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
+ * @param target_duty Target duty of fading [0, (2**duty_resolution)]
  * @param scale Controls the increase or decrease step scale.
  * @param cycle_num increase or decrease the duty every cycle_num cycles
  *
@@ -407,7 +407,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode. ,
  * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
+ * @param target_duty Target duty of fading [0, (2**duty_resolution)]
  * @param max_fade_time_ms The maximum time of the fading ( ms ).
  *
  * @return
@@ -478,7 +478,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel);
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution) - 1]
+ * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution)]
  * @param hpoint Set the LEDC hpoint value(max: 0xfffff)
  *
  */
@@ -491,7 +491,7 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
+ * @param target_duty Target duty of fading [0, (2**duty_resolution)]
  * @param max_fade_time_ms The maximum time of the fading ( ms ).
  * @param fade_mode choose blocking or non-blocking mode
  * @return
@@ -509,7 +509,7 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
- * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
+ * @param target_duty Target duty of fading [0, (2**duty_resolution)]
  * @param scale Controls the increase or decrease step scale.
  * @param cycle_num increase or decrease the duty every cycle_num cycles
  * @param fade_mode choose blocking or non-blocking mode
