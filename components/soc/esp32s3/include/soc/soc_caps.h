@@ -445,7 +445,7 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
 #define SOC_EFUSE_DIS_ICACHE 1
-#define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // AES-XTS key purpose not supported for this block
+#define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES key purpose not supported for this block
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
@@ -477,9 +477,11 @@
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_OPI_MODE                      (1)
-#define SOC_SPI_MEM_SUPPORT_TIME_TUNING                   (1)
+#define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
 #define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE          (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
+#define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
+#define SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM             (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
@@ -493,6 +495,8 @@
 #define SOC_SDMMC_NUM_SLOTS        2
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
+/* Supported host clock delay phase number */
+#define SOC_SDMMC_DELAY_PHASE_NUM    4
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
@@ -511,6 +515,7 @@
 #define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
 #define SOC_BLE_50_SUPPORTED            (1)    /*!< Support Bluetooth 5.0 */
 #define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (1)   /*!< Support BLE device privacy mode */
+#define SOC_BLUFI_SUPPORTED             (1)    /*!< Support BLUFI */
 
 /*-------------------------- ULP CAPS ----------------------------------------*/
 #define SOC_ULP_HAS_ADC                     (1)    /* ADC can be accessed from ULP */

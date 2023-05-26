@@ -1,4 +1,5 @@
 set(srcs "test_app_main.c"
+         "test_spi_flash.c"
          "test_esp_flash_drv.c")
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,

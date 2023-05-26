@@ -1,5 +1,15 @@
 #!/usr/bin/env pwsh
+
+param(
+    [Switch]$h
+)
+
 $IDF_PATH = $PSScriptRoot
+
+if($h){
+python "$IDF_PATH/tools/install_util.py" print_help ps1
+Exit
+}
 
 $TARGETS = (python "$IDF_PATH/tools/install_util.py" extract targets "$args")
 

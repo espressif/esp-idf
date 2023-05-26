@@ -59,8 +59,8 @@
 #include "esp_private/sleep_modem.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/mspi_timing_tuning.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -99,7 +99,7 @@
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
-#define FAST_CLK_SRC_CAL_CYCLES     (2000)  /* ~ 127.4 us */
+#define FAST_CLK_SRC_CAL_CYCLES     (2048)  /* ~ 127.4 us */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (212)
@@ -150,7 +150,7 @@
 static esp_deep_sleep_cb_t s_dslp_cb[MAX_DSLP_HOOKS]={0};
 
 /**
- * Internal structure which holds all requested deep sleep parameters
+ * Internal structure which holds all requested sleep parameters
  */
 typedef struct {
     struct {
@@ -179,6 +179,8 @@ typedef struct {
     uint64_t rtc_ticks_at_sleep_start;
 } sleep_config_t;
 
+
+static uint32_t s_lightsleep_cnt = 0;
 
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
 
@@ -439,6 +441,8 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
         regi2c_analog_cali_reg_read();
 #endif
     }
+
+    // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
     }
@@ -500,15 +504,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
-    // Turn down mspi clock speed
-#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    //turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
-#endif
-
-    // Set mspi clock to a low-power one.
-#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-    spi_flash_set_clock_src(MSPI_CLK_SRC_ROM_DEFAULT);
-#endif
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
@@ -686,15 +683,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
 
-    // Set mspi clock to ROM default one.
-#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-    spi_flash_set_clock_src(MSPI_CLK_SRC_DEFAULT);
-#endif
-
-    // Speed up mspi clock freq
-#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    //restore MSPI speed
     mspi_timing_change_speed_mode_cache_safe(false);
-#endif
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
@@ -703,7 +693,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 
     // re-enable UART output
     resume_uarts();
-
+    s_lightsleep_cnt++;
     return result;
 }
 
@@ -871,7 +861,7 @@ esp_err_t esp_light_sleep_start(void)
     esp_clk_private_lock();
 
 #if SOC_LP_TIMER_SUPPORTED
-    s_config.rtc_ticks_at_sleep_start = lp_timer_hal_get_cycle_count(0);
+    s_config.rtc_ticks_at_sleep_start = lp_timer_hal_get_cycle_count();
 #else
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 #endif
@@ -903,8 +893,13 @@ esp_err_t esp_light_sleep_start(void)
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #else
-    s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
-    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+#if CONFIG_PM_ENABLE
+    if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0)
+#endif
+    {
+        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+    }
 #endif
 
     /*
@@ -916,7 +911,12 @@ esp_err_t esp_light_sleep_start(void)
      */
 
 #if SOC_PMU_SUPPORTED
-    s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+#if CONFIG_PM_ENABLE
+    if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0)
+#endif
+    {
+        s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+    }
     int sleep_time_sw_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out;
     int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(pd_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
     s_config.sleep_time_adjustment = sleep_time_sw_adjustment + sleep_time_hw_adjustment;
@@ -1006,7 +1006,7 @@ esp_err_t esp_light_sleep_start(void)
 
     // System timer has been stopped for the duration of the sleep, correct for that.
 #if SOC_LP_TIMER_SUPPORTED
-    uint64_t rtc_ticks_at_end = lp_timer_hal_get_cycle_count(0);
+    uint64_t rtc_ticks_at_end = lp_timer_hal_get_cycle_count();
 #else
     uint64_t rtc_ticks_at_end = rtc_time_get();
 #endif
@@ -1590,6 +1590,12 @@ static uint32_t get_power_down_flags(void)
             // On ESP32, forcing power up of RTC_PERIPH
             // prevents ULP timer and touch FSMs from working correctly.
             s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option = ESP_PD_OPTION_OFF;
+        }
+#endif //CONFIG_IDF_TARGET_ESP32
+#if SOC_LP_CORE_SUPPORTED
+        else if (s_config.wakeup_triggers &  RTC_LP_CORE_TRIG_EN) {
+            // Need to keep RTC_PERIPH on to allow lp core to wakeup during sleep (e.g. from lp timer)
+            s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option = ESP_PD_OPTION_ON;
         }
 #endif //CONFIG_IDF_TARGET_ESP32
     }

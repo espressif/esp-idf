@@ -121,6 +121,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_continuous.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_oneshot.h \
     $(PROJECT_PATH)/components/esp_app_format/include/esp_app_desc.h \
+    $(PROJECT_PATH)/components/esp_bootloader_format/include/esp_bootloader_desc.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
@@ -234,6 +235,7 @@ INPUT = \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
+    $(PROJECT_PATH)/components/nvs_sec_provider/include/nvs_sec_provider.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_border_router.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_lock.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_netif_glue.h \

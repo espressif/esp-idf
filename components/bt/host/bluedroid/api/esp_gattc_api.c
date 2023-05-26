@@ -447,6 +447,41 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gattc_read_multiple_variable(esp_gatt_if_t gattc_if,
+                                      uint16_t conn_id, esp_gattc_multi_t *read_multi,
+                                      esp_gatt_auth_req_t auth_req)
+{
+    btc_msg_t msg = {0};
+    btc_ble_gattc_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, p_tcb->peer_bda)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTC;
+    msg.act = BTC_GATTC_ACT_READ_MULTIPLE_VARIABLE_CHAR;
+    arg.read_multiple.conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
+    arg.read_multiple.num_attr = read_multi->num_attr;
+    arg.read_multiple.auth_req = auth_req;
+
+    if (read_multi->num_attr > 0) {
+        memcpy(arg.read_multiple.handles, read_multi->handles, sizeof(uint16_t)*read_multi->num_attr);
+    } else {
+        LOG_ERROR("%s(), the num_attr should not be 0.", __func__);
+        return ESP_FAIL;
+    }
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
 
 esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
                                          uint16_t conn_id, uint16_t handle,

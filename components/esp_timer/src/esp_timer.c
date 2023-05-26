@@ -200,18 +200,30 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!is_initialized() || timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
     int64_t alarm = esp_timer_get_time() + timeout_us;
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+    esp_err_t err;
+
     timer_list_lock(dispatch_method);
-    timer->alarm = alarm;
-    timer->period = 0;
+
+    /* Check if the timer is armed once the list is locked.
+     * Otherwise another task may arm the timer inbetween the check
+     * and us locking the list, resulting in us inserting the
+     * timer to s_timers a second time. This will create a loop
+     * in s_timers. */
+    if (timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        timer->alarm = alarm;
+        timer->period = 0;
 #if WITH_PROFILING
-    timer->times_armed++;
+        timer->times_armed++;
 #endif
-    esp_err_t err = timer_insert(timer, false);
+        err = timer_insert(timer, false);
+    }
     timer_list_unlock(dispatch_method);
     return err;
 }
@@ -221,20 +233,27 @@ esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t 
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!is_initialized() || timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
     period_us = MAX(period_us, esp_timer_impl_get_min_period_us());
     int64_t alarm = esp_timer_get_time() + period_us;
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+    esp_err_t err;
     timer_list_lock(dispatch_method);
-    timer->alarm = alarm;
-    timer->period = period_us;
+
+    /* Check if the timer is armed once the list is locked to avoid a data race */
+    if (timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        timer->alarm = alarm;
+        timer->period = period_us;
 #if WITH_PROFILING
-    timer->times_armed++;
-    timer->times_skipped = 0;
+        timer->times_armed++;
+        timer->times_skipped = 0;
 #endif
-    esp_err_t err = timer_insert(timer, false);
+        err = timer_insert(timer, false);
+    }
     timer_list_unlock(dispatch_method);
     return err;
 }
@@ -244,10 +263,22 @@ esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!is_initialized() || !timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    return timer_remove(timer);
+    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+    esp_err_t err;
+
+    timer_list_lock(dispatch_method);
+
+    /* Check if the timer is armed once the list is locked to avoid a data race */
+    if (!timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        err = timer_remove(timer);
+    }
+    timer_list_unlock(dispatch_method);
+    return err;
 }
 
 esp_err_t esp_timer_delete(esp_timer_handle_t timer)
@@ -255,22 +286,27 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (timer_armed(timer)) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    // A case for the timer with ESP_TIMER_ISR:
-    // This ISR timer was removed from the ISR list in esp_timer_stop() or in timer_process_alarm() -> LIST_REMOVE(it, list_entry)
-    // and here this timer will be added to another the TASK list, see below.
-    // We do this because we want to free memory of the timer in a task context instead of an isr context.
+
     int64_t alarm = esp_timer_get_time();
+    esp_err_t err;
     timer_list_lock(ESP_TIMER_TASK);
-    timer->flags &= ~FL_ISR_DISPATCH_METHOD;
-    timer->event_id = EVENT_ID_DELETE_TIMER;
-    timer->alarm = alarm;
-    timer->period = 0;
-    timer_insert(timer, false);
+
+    /* Check if the timer is armed once the list is locked to avoid a data race */
+    if (timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        // A case for the timer with ESP_TIMER_ISR:
+        // This ISR timer was removed from the ISR list in esp_timer_stop() or in timer_process_alarm() -> LIST_REMOVE(it, list_entry)
+        // and here this timer will be added to another the TASK list, see below.
+        // We do this because we want to free memory of the timer in a task context instead of an isr context.
+        timer->flags &= ~FL_ISR_DISPATCH_METHOD;
+        timer->event_id = EVENT_ID_DELETE_TIMER;
+        timer->alarm = alarm;
+        timer->period = 0;
+        err = timer_insert(timer, false);
+    }
     timer_list_unlock(ESP_TIMER_TASK);
-    return ESP_OK;
+    return err;
 }
 
 static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer, bool without_update_alarm)

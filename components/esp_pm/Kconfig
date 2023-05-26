@@ -93,6 +93,20 @@ menu "Power Management"
             This option is invisible to users, and it is only used for ci testing,
             enabling it in the application will increase the sleep and wake-up time overhead
 
+    config PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL
+        int "Calibrate the RTC_FAST/SLOW clock every N times of light sleep"
+        default 1
+        depends on PM_ENABLE
+        range 1 128
+        help
+            The value of this option determines the calibration interval of the RTC_FAST/SLOW clock during sleep when
+            power management is enabled. When it is configured as N, the RTC_FAST/SLOW clock will be calibrated
+            every N times of lightsleep.
+            Decreasing this value will increase the time the chip is in the active state, thereby increasing the
+            average power consumption of the chip.
+            Increasing this value can reduce the average power consumption, but when the external environment changes
+            drastically and the chip RTC_FAST/SLOW oscillator frequency drifts, it may cause system instability.
+
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
         depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6

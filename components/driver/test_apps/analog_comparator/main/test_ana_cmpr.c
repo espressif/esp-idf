@@ -37,7 +37,7 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
     /* Disable the unit */
     TEST_ESP_OK(ana_cmpr_disable(cmpr));
     /* Try to delete the unit with a wrong handle */
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_del_unit((void *)&cmpr));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ana_cmpr_del_unit((void *)&cmpr));
     /* Delete the unit */
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 

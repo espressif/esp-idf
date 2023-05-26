@@ -11,6 +11,7 @@
 #include "nvs_partition_manager.hpp"
 #include "nvs_partition.hpp"
 #include "mbedtls/aes.h"
+#include "mbedtls/md.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -1567,12 +1568,24 @@ TEST_CASE("test decrypt functionality for encrypted data", "[nvs_part_gen]")
     status = system("python ../nvs_partition_generator/nvs_partition_gen.py encrypt ../nvs_partition_generator/sample_multipage_blob.csv partition_encrypted.bin 0x5000 --inputkey ../nvs_partition_generator/testdata/sample_encryption_keys.bin --outdir ../nvs_partition_generator");
     CHECK(status == 0);
 
+    //encrypting data from sample_multipage_blob.csv (hmac-based scheme)
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py encrypt ../nvs_partition_generator/sample_multipage_blob.csv partition_encrypted_hmac.bin 0x5000 --keygen --key_protect_hmac --kp_hmac_inputkey ../nvs_partition_generator/testdata/sample_hmac_key.bin --outdir ../nvs_partition_generator");
+    CHECK(status == 0);
+
     //decrypting data from partition_encrypted.bin
     status = system("python ../nvs_partition_generator/nvs_partition_gen.py decrypt ../nvs_partition_generator/partition_encrypted.bin ../nvs_partition_generator/testdata/sample_encryption_keys.bin ../nvs_partition_generator/partition_decrypted.bin");
     CHECK(status == 0);
 
     status = system("diff ../nvs_partition_generator/partition_decrypted.bin ../nvs_partition_generator/partition_encoded.bin");
     CHECK(status == 0);
+
+    //decrypting data from partition_encrypted_hmac.bin
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py decrypt ../nvs_partition_generator/partition_encrypted_hmac.bin ../nvs_partition_generator/testdata/sample_encryption_keys_hmac.bin ../nvs_partition_generator/partition_decrypted_hmac.bin");
+    CHECK(status == 0);
+
+    status = system("diff ../nvs_partition_generator/partition_decrypted_hmac.bin ../nvs_partition_generator/partition_encoded.bin");
+    CHECK(status == 0);
+
     CHECK(WEXITSTATUS(status) == 0);
 
 
@@ -1754,6 +1767,201 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
             CHECK(WEXITSTATUS(status) == 0);
         }
     }
+
+}
+
+static void compute_nvs_keys_with_hmac(nvs_sec_cfg_t *cfg, void *hmac_key)
+{
+    unsigned char key_bytes[32] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+                                    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+                                    0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20 };
+    if (hmac_key != NULL){
+        memcpy(key_bytes, hmac_key, 32);
+    }
+
+    unsigned char ekey_seed[32], tkey_seed[32];
+
+    for (unsigned int i = 0; i < sizeof(ekey_seed); i+=4) {
+        ekey_seed[i]     = 0x5A;
+        ekey_seed[i + 1] = 0x5A;
+        ekey_seed[i + 2] = 0xBE;
+        ekey_seed[i + 3] = 0xAE;
+    }
+
+    for (unsigned int i = 0; i < sizeof(tkey_seed); i+=4) {
+        tkey_seed[i]     = 0xA5;
+        tkey_seed[i + 1] = 0xA5;
+        tkey_seed[i + 2] = 0xDE;
+        tkey_seed[i + 3] = 0xCE;
+    }
+
+    const mbedtls_md_type_t alg = MBEDTLS_MD_SHA256;
+
+    mbedtls_md_context_t ctx;
+    mbedtls_md_init(&ctx);
+
+    const mbedtls_md_info_t *info = mbedtls_md_info_from_type(alg);
+    mbedtls_md_setup(&ctx, info, 1);
+    mbedtls_md_hmac_starts(&ctx, key_bytes, sizeof(key_bytes));
+
+    mbedtls_md_hmac_update(&ctx, ekey_seed, sizeof(ekey_seed));
+    mbedtls_md_hmac_finish(&ctx, cfg->eky);
+
+    mbedtls_md_hmac_reset(&ctx);
+    mbedtls_md_hmac_update(&ctx, tkey_seed, sizeof(tkey_seed));
+    mbedtls_md_hmac_finish(&ctx, cfg->tky);
+
+    assert(memcmp(cfg->eky, cfg->tky, NVS_KEY_SIZE));
+
+    mbedtls_md_free(&ctx);
+}
+
+TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using keygen (user-provided HMAC-key)", "[nvs_part_gen]")
+{
+    int childpid = fork();
+    int status;
+
+    if (childpid == 0) {
+        exit(execlp("cp", " cp",
+                    "-rf",
+                    "../nvs_partition_generator/testdata",
+                    ".", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+        childpid = fork();
+
+        if (childpid == 0) {
+            exit(execlp("rm", " rm",
+                        "-rf",
+                        "../nvs_partition_generator/keys", NULL));
+        } else {
+            CHECK(childpid > 0);
+            waitpid(childpid, &status, 0);
+            CHECK(WEXITSTATUS(status) == 0);
+
+            childpid = fork();
+            if (childpid == 0) {
+                exit(execlp("python", "python",
+                            "../nvs_partition_generator/nvs_partition_gen.py",
+                            "encrypt",
+                            "../nvs_partition_generator/sample_multipage_blob.csv",
+                            "partition_encrypted_using_keygen_hmac.bin",
+                            "0x4000",
+                            "--keygen",
+                            "--key_protect_hmac",
+                            "--kp_hmac_inputkey",
+                            "../nvs_partition_generator/testdata/sample_hmac_key.bin",
+                            "--outdir",
+                            "../nvs_partition_generator", NULL));
+
+            } else {
+                CHECK(childpid > 0);
+                waitpid(childpid, &status, 0);
+                CHECK(WEXITSTATUS(status) == 0);
+
+            }
+        }
+    }
+
+    SpiFlashEmulator emu("../nvs_partition_generator/partition_encrypted_using_keygen_hmac.bin");
+
+    nvs_sec_cfg_t cfg;
+    compute_nvs_keys_with_hmac(&cfg, NULL);
+
+    check_nvs_part_gen_args(&emu, NVS_DEFAULT_PART_NAME, 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
+
+}
+
+TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using keygen (dynamically generated HMAC-key)", "[nvs_part_gen]")
+{
+    int childpid = fork();
+    int status;
+
+    if (childpid == 0) {
+        exit(execlp("cp", " cp",
+                    "-rf",
+                    "../nvs_partition_generator/testdata",
+                    ".", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+        childpid = fork();
+
+        if (childpid == 0) {
+            exit(execlp("rm", " rm",
+                        "-rf",
+                        "../nvs_partition_generator/keys", NULL));
+        } else {
+            CHECK(childpid > 0);
+            waitpid(childpid, &status, 0);
+            CHECK(WEXITSTATUS(status) == 0);
+
+            childpid = fork();
+            if (childpid == 0) {
+                exit(execlp("python", "python",
+                            "../nvs_partition_generator/nvs_partition_gen.py",
+                            "encrypt",
+                            "../nvs_partition_generator/sample_multipage_blob.csv",
+                            "partition_encrypted_using_keygen_hmac.bin",
+                            "0x4000",
+                            "--keygen",
+                            "--key_protect_hmac",
+                            "--kp_hmac_keygen",
+                            "--outdir",
+                            "../nvs_partition_generator", NULL));
+
+            } else {
+                CHECK(childpid > 0);
+                waitpid(childpid, &status, 0);
+                CHECK(WEXITSTATUS(status) == 0);
+
+            }
+        }
+    }
+
+
+    DIR *dir;
+    struct dirent *file;
+    char *filename;
+    char *files;
+    char *file_ext;
+    char *hmac_key_file;
+
+    dir = opendir("../nvs_partition_generator/keys");
+    while ((file = readdir(dir)) != NULL) {
+        filename = file->d_name;
+        file_ext = NULL;
+        files = strrchr(filename, '.');
+        if (files != NULL) {
+            file_ext = files + 1;
+            if (strncmp(file_ext, "bin", 3) != 0) {
+                continue;
+            }
+        }
+        if (strstr(filename, "hmac") != NULL) {
+            hmac_key_file = filename;
+        }
+    }
+
+    std::string hmac_key_path = std::string("../nvs_partition_generator/keys/") + std::string(hmac_key_file);
+    SpiFlashEmulator emu("../nvs_partition_generator/partition_encrypted_using_keygen_hmac.bin");
+
+    char hmac_key_buf[32];
+    FILE *fp;
+    fp = fopen(hmac_key_path.c_str(), "rb");
+    fread(hmac_key_buf, sizeof(hmac_key_buf), 1, fp);
+    fclose(fp);
+
+    nvs_sec_cfg_t cfg;
+    compute_nvs_keys_with_hmac(&cfg, hmac_key_buf);
+
+    check_nvs_part_gen_args(&emu, NVS_DEFAULT_PART_NAME, 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
 
 }
 
@@ -1969,6 +2177,221 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
 }
+
+TEST_CASE("check and read data from partition generated via manufacturing utility with encryption enabled using new generated key (user-provided HMAC-key)", "[mfg_gen]")
+{
+    int childpid = fork();
+    int status;
+
+    if (childpid == 0) {
+        exit(execlp("bash", " bash",
+                    "-c",
+                    "rm -rf ../../../tools/mass_mfg/host_test | \
+                    cp -rf ../../../tools/mass_mfg/testdata mfg_testdata | \
+                    cp -rf ../nvs_partition_generator/testdata . | \
+                    mkdir -p ../../../tools/mass_mfg/host_test", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+        childpid = fork();
+        if (childpid == 0) {
+            exit(execlp("python", "python",
+                        "../../../tools/mass_mfg/mfg_gen.py",
+                        "generate",
+                        "../../../tools/mass_mfg/samples/sample_config.csv",
+                        "../../../tools/mass_mfg/samples/sample_values_multipage_blob.csv",
+                        "Test",
+                        "0x4000",
+                        "--version",
+                        "2",
+                        "--keygen",
+                        "--key_protect_hmac",
+                        "--kp_hmac_inputkey",
+                        "mfg_testdata/sample_hmac_key.bin",
+                        "--outdir",
+                        "../../../tools/mass_mfg/host_test",NULL));
+
+        } else {
+            CHECK(childpid > 0);
+            waitpid(childpid, &status, 0);
+            CHECK(WEXITSTATUS(status) == 0);
+
+            childpid = fork();
+            if (childpid == 0) {
+                exit(execlp("python", "python",
+                            "../nvs_partition_generator/nvs_partition_gen.py",
+                            "encrypt",
+                            "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
+                            "../nvs_partition_generator/Test-1-partition-encrypted-hmac.bin",
+                            "0x4000",
+                            "--version",
+                            "2",
+                            "--keygen",
+                            "--key_protect_hmac",
+                            "--kp_hmac_inputkey",
+                            "mfg_testdata/sample_hmac_key.bin", NULL));
+
+            } else {
+                CHECK(childpid > 0);
+                waitpid(childpid, &status, 0);
+                CHECK(WEXITSTATUS(status) == 0);
+
+            }
+
+        }
+
+    }
+
+    SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
+
+    nvs_sec_cfg_t cfg;
+    compute_nvs_keys_with_hmac(&cfg, NULL);
+
+    check_nvs_part_gen_args_mfg(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
+
+    SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted-hmac.bin");
+
+    check_nvs_part_gen_args_mfg(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
+
+
+    childpid = fork();
+    if (childpid == 0) {
+        exit(execlp("bash", " bash",
+                    "-c",
+                    "rm -rf ../../../tools/mass_mfg/host_test | \
+                    rm -rf mfg_testdata | \
+                    rm -rf testdata", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+    }
+
+}
+
+TEST_CASE("check and read data from partition generated via manufacturing utility with encryption enabled using new generated key (dynamically generated HMAC-key)", "[mfg_gen]")
+{
+    int childpid = fork();
+    int status;
+
+    if (childpid == 0) {
+        exit(execlp("bash", " bash",
+                    "-c",
+                    "rm -rf ../../../tools/mass_mfg/host_test | \
+                    cp -rf ../../../tools/mass_mfg/testdata mfg_testdata | \
+                    cp -rf ../nvs_partition_generator/testdata . | \
+                    mkdir -p ../../../tools/mass_mfg/host_test", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+        childpid = fork();
+        if (childpid == 0) {
+            exit(execlp("python", "python",
+                        "../../../tools/mass_mfg/mfg_gen.py",
+                        "generate-key",
+                        "--outdir",
+                        "../../../tools/mass_mfg/host_test",
+                        "--key_protect_hmac",
+                        "--kp_hmac_keygen",
+                        "--kp_hmac_keyfile",
+                        "hmac_key_host_test.bin",
+                        "--keyfile",
+                        "encr_keys_host_test.bin", NULL));
+
+        } else {
+            CHECK(childpid > 0);
+            waitpid(childpid, &status, 0);
+            CHECK(WEXITSTATUS(status) == 0);
+
+            childpid = fork();
+            if (childpid == 0) {
+                exit(execlp("python", "python",
+                            "../../../tools/mass_mfg/mfg_gen.py",
+                            "generate",
+                            "../../../tools/mass_mfg/samples/sample_config.csv",
+                            "../../../tools/mass_mfg/samples/sample_values_multipage_blob.csv",
+                            "Test",
+                            "0x4000",
+                            "--outdir",
+                            "../../../tools/mass_mfg/host_test",
+                            "--version",
+                            "2",
+                            "--inputkey",
+                            "../../../tools/mass_mfg/host_test/keys/encr_keys_host_test.bin", NULL));
+
+            } else {
+                CHECK(childpid > 0);
+                waitpid(childpid, &status, 0);
+                CHECK(WEXITSTATUS(status) == 0);
+
+                childpid = fork();
+                if (childpid == 0) {
+                    exit(execlp("python", "python",
+                                "../nvs_partition_generator/nvs_partition_gen.py",
+                                "encrypt",
+                                "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
+                                "../nvs_partition_generator/Test-1-partition-encrypted-hmac.bin",
+                                "0x4000",
+                                "--version",
+                                "2",
+                                "--inputkey",
+                                "../../../tools/mass_mfg/host_test/keys/encr_keys_host_test.bin", NULL));
+
+                } else {
+                    CHECK(childpid > 0);
+                    waitpid(childpid, &status, 0);
+                    CHECK(WEXITSTATUS(status) == 0);
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
+
+    char hmac_key_buf[32];
+    FILE *fp;
+
+    fp = fopen("../../../tools/mass_mfg/host_test/keys/hmac_key_host_test.bin", "rb");
+    fread(hmac_key_buf, sizeof(hmac_key_buf), 1, fp);
+
+    fclose(fp);
+
+    nvs_sec_cfg_t cfg;
+    compute_nvs_keys_with_hmac(&cfg, hmac_key_buf);
+
+    check_nvs_part_gen_args_mfg(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
+
+    SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted-hmac.bin");
+
+    check_nvs_part_gen_args_mfg(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
+
+    childpid = fork();
+    if (childpid == 0) {
+        exit(execlp("bash", " bash",
+                    "-c",
+                    "rm -rf keys | \
+                    rm -rf mfg_testdata | \
+                    rm -rf testdata | \
+                    rm -rf ../../../tools/mass_mfg/host_test", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+    }
+
+}
+
 #endif
 
 /* Add new tests above */

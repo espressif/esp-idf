@@ -1187,7 +1187,7 @@ config SOC_SPI_MEM_SUPPORT_OPI_MODE
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_TIME_TUNING
+config SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     bool
     default y
 
@@ -1196,6 +1196,14 @@ config SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
     default y
 
 config SOC_SPI_MEM_SUPPORT_WRAP
+    bool
+    default y
+
+config SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+    bool
+    default y
+
+config SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
     bool
     default y
 
@@ -1214,6 +1222,10 @@ config SOC_SDMMC_NUM_SLOTS
 config SOC_SDMMC_SUPPORT_XTAL_CLOCK
     bool
     default y
+
+config SOC_SDMMC_DELAY_PHASE_NUM
+    int
+    default 4
 
 config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     bool
@@ -1260,6 +1272,10 @@ config SOC_BLE_50_SUPPORTED
     default y
 
 config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y
+
+config SOC_BLUFI_SUPPORTED
     bool
     default y
 

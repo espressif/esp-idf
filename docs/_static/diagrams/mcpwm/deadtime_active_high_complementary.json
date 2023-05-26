@@ -3,7 +3,7 @@
     {
       "name": "origin",
       "wave": "0...1.....0...",
-      "node": "....a.....b..."
+      "node": "....a.e...b..."
     },
     {
       "name": "pwm_A",
@@ -13,12 +13,13 @@
     {
       "name": "pwm_B",
       "wave": "1...0......1..",
-      "node": "...........d.."
+      "node": "......f....d.."
     }
   ],
   "edge": [
     "a|->c RED",
-    "b|->d FED"
+    "b|->d FED",
+    "e<->f Invert"
   ],
   "head": {
     "text": "Active High, Complementary"

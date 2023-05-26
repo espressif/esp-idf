@@ -5,11 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
+@pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -17,6 +13,7 @@ from pytest_embedded import Dut
         'release',
         'flash_qio',
         'verify',
+        'special',
     ],
     indirect=True,
 )

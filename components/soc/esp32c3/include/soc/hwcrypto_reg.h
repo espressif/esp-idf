@@ -137,7 +137,7 @@
 #define HMAC_DATE_REG                  ((DR_REG_HMAC_BASE) + 0xF8)
 
 
-/* AES-XTS registers */
+/* XTS-AES registers */
 #define AES_XTS_PLAIN_BASE        ((DR_REG_AES_XTS_BASE) + 0x00)
 #define AES_XTS_SIZE_REG          ((DR_REG_AES_XTS_BASE) + 0x40)
 #define AES_XTS_DESTINATION_REG   ((DR_REG_AES_XTS_BASE) + 0x44)

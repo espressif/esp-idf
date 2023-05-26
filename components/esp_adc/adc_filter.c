@@ -21,8 +21,8 @@ static portMUX_TYPE s_filter_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 
 #if SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
-static atomic_bool s_adc_filter_claimed[SOC_ADC_PERIPH_NUM] = {ATOMIC_VAR_INIT(false),
-#if (SOC_ADC_PERIPH_NUM >= 2)
+static atomic_bool s_adc_filter_claimed[SOC_ADC_DIGI_IIR_FILTER_NUM] = {ATOMIC_VAR_INIT(false),
+#if (SOC_ADC_DIGI_IIR_FILTER_NUM >= 2)
 ATOMIC_VAR_INIT(false)
 #endif
 };
@@ -59,16 +59,18 @@ static esp_err_t s_adc_filter_claim(adc_continuous_handle_t handle, adc_iir_filt
 {
     (void)unit;
     assert(handle && filter_ctx);
+
+    portENTER_CRITICAL(&s_filter_spinlock);
     for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
-        portENTER_CRITICAL(&s_filter_spinlock);
         bool found = !handle->iir_filter[i];
-        handle->iir_filter[i] = filter_ctx;
-        filter_ctx->filter_id = i;
-        portEXIT_CRITICAL(&s_filter_spinlock);
         if (found) {
+            handle->iir_filter[i] = filter_ctx;
+            filter_ctx->filter_id = i;
+            portEXIT_CRITICAL(&s_filter_spinlock);
             return ESP_OK;
         }
     }
+    portEXIT_CRITICAL(&s_filter_spinlock);
 
     return ESP_ERR_NOT_FOUND;
 }

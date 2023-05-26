@@ -5,13 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file DWARF Exception Frames parser header
- *
- * This file describes the frame types for x86, required for
- * parsing `eh_frame` and `eh_frame_hdr`.
- */
-
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE
 #include <stdio.h>
@@ -22,8 +15,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <ucontext.h>
-#include "../include/esp_private/eh_frame_parser.h"
-#include "eh_frame_parser_impl.h"
+#include "esp_private/eh_frame_parser.h"
+#include "libunwind.h"
 
 /**
  * @brief Index of x86 registers in `greg_t` structure.
@@ -55,6 +48,36 @@
 #define NUMBER_OF_ITERATION     (2 * NUMBER_TO_TEST + 2 + 1)
 
 /**
+ * @brief Macro for testing calls to libunwind when UNW_ESUCCESS must be returned.
+ */
+#define UNW_CHECK(call) do { if ((err = (call)) != UNW_ESUCCESS) { \
+                                printf("\e[31m\e[1mLibunwind error code %d on line %d\e[0m\r\n", err, __LINE__); \
+                                exit(1); \
+                             } \
+                        } while(0)
+
+/**
+ * @brief Macro for testing if the given condition is true. To be used with libunwind when
+ *        the result is not necessarily UNW_ESUCCESS.
+ */
+#define UNW_CHECK_TRUE(cond)    do { \
+                                    if (!(cond)) { \
+                                        printf("\e[31m\e[1mLibunwind error on line %d\e[0m\r\n", __LINE__); \
+                                        exit(1); \
+                                    } \
+                                } while(0)
+
+/**
+ * @brief Macro for checking if a PC returned by libunwind is part of the given function
+ */
+#define UNW_CHECK_PC(pc, funname) do { \
+                                    if (!is_pc_in_function((pc), (funname))) { \
+                                        printf("\e[31m\e[1mPC %04lx should have been of function %s\e[0m\r\n", (pc), (funname)); \
+                                        exit(1); \
+                                    } \
+                                  } while (0)
+
+/**
  * @brief Define a simple linked list type and initialize one.
  */
 struct list_t {
@@ -70,6 +93,10 @@ static struct list_t head = { 0 };
 bool is_odd(uint32_t n);
 bool is_even(uint32_t n);
 void browse_list(struct list_t* l);
+int analyse_callstack();
+int inner_function1(void);
+int inner_function2(void);
+void test1(void);
 
 /**
  * @brief Structure defining a function of our program.
@@ -100,7 +127,27 @@ struct functions_info funs[] = {
         .name = "is_even",
         .start = (uintptr_t) &is_even,
         .end = 0
-    }
+    },
+    {
+        .name = "analyse_callstack",
+        .start = (uintptr_t) &analyse_callstack,
+        .end = 0
+    },
+    {
+        .name = "inner_function1",
+        .start = (uintptr_t) &inner_function1,
+        .end = 0
+    },
+    {
+        .name = "inner_function2",
+        .start = (uintptr_t) &inner_function2,
+        .end = 0
+    },
+    {
+        .name = "test1",
+        .start = (uintptr_t) &test1,
+        .end = 0
+    },
 };
 
 /**
@@ -167,7 +214,7 @@ void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp) {
 /**
  * @brief Handler called when SIGSEV signal is sent to the program.
  *
- * @param signal Signal received byt the program. Shall be SIGSEGV.
+ * @param signal Signal received by the program. Shall be SIGSEGV.
  * @param info Structure containing info about the error itself. Ignored.
  * @param ucontext Context of the program when the error occurred. This
  *                 is used to retrieve the CPU registers value.
@@ -269,7 +316,7 @@ bool is_odd(uint32_t n) {
 }
 
 /**
- * @brief Initiliaze the global `funs` array.
+ * @brief Initialize the global `funs` array.
  */
 static inline void initialize_functions_info(void)
 {
@@ -278,9 +325,13 @@ static inline void initialize_functions_info(void)
          * with the following instructions:
          * leave (0xc9)
          * ret (0xc3)
+         * or
+         * pop ebp (0x5d)
+         * ret (0xc3)
          * Thus, we will look for these instructions. */
         uint8_t* instructions = (uint8_t*) funs[i].start;
-        while (instructions[0] != 0xc9 || instructions[1] != 0xc3)
+        while ((instructions[0] != 0xc9 || instructions[1] != 0xc3) &&
+               (instructions[0] != 0x5d || instructions[1] != 0xc3) )
             instructions++;
         instructions += 1;
         funs[i].end = (uintptr_t) instructions;
@@ -288,10 +339,9 @@ static inline void initialize_functions_info(void)
 }
 
 /**
- * Call the previous functions to create a complex call stack and fail.
+ * Test the eh_frame_parser for backtracing
  */
-int main (int argc, char** argv)
-{
+void test2(void) {
     /* Initialize the structure holding information about the signal to override. */
     struct sigaction sig = {
         .sa_mask = 0,
@@ -300,18 +350,68 @@ int main (int argc, char** argv)
         .sa_sigaction = signal_handler
     };
 
-    /* Look for the functions end functions. */
-    initialize_functions_info();
-
     /* Override default SIGSEV signal callback. */
     int res = sigaction(SIGSEGV, &sig, NULL);
     if (res) {
         perror("Could not override SIGSEV signal");
-        return 1;
+        exit(1);
     }
 
     /* Trigger the segmentation fault with a complex backtrace. */
     is_even(NUMBER_TO_TEST);
+}
 
+/**
+ * Test the libunwind implementation in ESP-IDF
+ * Let's create some nested function calls to make unwinding more interesting.
+ * Important: the stack must still be alive when analyzing it, thus it must be done
+ * within the nested functions.
+ */
+int analyse_callstack() {
+    unw_context_t ucp = { 0 };
+    unw_cursor_t cur = { 0 };
+    unw_word_t pc = 0;
+    int err = UNW_ESUCCESS;
+
+    UNW_CHECK(unw_getcontext(&ucp));
+    UNW_CHECK(unw_init_local(&cur, &ucp));
+    UNW_CHECK(unw_get_reg(&cur, UNW_X86_EIP, &pc));
+    /* This PC must be inside analyse_callstack */
+    UNW_CHECK_PC(pc, "analyse_callstack");
+    /* unw_step returns a positive value on success */
+    UNW_CHECK_TRUE(unw_step(&cur) > 0);
+    UNW_CHECK(unw_get_reg(&cur, UNW_X86_EIP, &pc));
+    UNW_CHECK_PC(pc, "inner_function2");
+    UNW_CHECK_TRUE(unw_step(&cur) > 0);
+    UNW_CHECK(unw_get_reg(&cur, UNW_X86_EIP, &pc));
+    UNW_CHECK_PC(pc, "inner_function1");
+    /* unw_step returns if the frame is last one */
+    UNW_CHECK_TRUE(unw_step(&cur) >= 0);
+    UNW_CHECK(unw_get_reg(&cur, UNW_X86_EIP, &pc));
+    UNW_CHECK_PC(pc, "test1");
+
+    return UNW_ESUCCESS;
+}
+
+int __attribute__((noinline)) inner_function2(void) {
+    return analyse_callstack();
+}
+
+int __attribute__((noinline)) inner_function1(void) {
+    return inner_function2();
+}
+
+void __attribute__((noinline)) test1() {
+    (void) inner_function1();
+}
+
+/**
+ * Call the previous tests within the main. If the first test fails, it will exit by itself.
+ */
+int main(int argc, char** argv)
+{
+    initialize_functions_info();
+    test1();
+    test2();
     return 0;
 }

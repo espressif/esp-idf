@@ -60,6 +60,7 @@ typedef enum {
     ESP_GATTC_SET_ASSOC_EVT           = 44,       /*!< When the ble gattc set the associated address complete, the event comes */
     ESP_GATTC_GET_ADDR_LIST_EVT       = 45,       /*!< When the ble get gattc address list in cache finish, the event comes */
     ESP_GATTC_DIS_SRVC_CMPL_EVT       = 46,       /*!< When the ble discover service complete, the event comes */
+    ESP_GATTC_READ_MULTI_VAR_EVT      = 47,       /*!< When read multiple variable characteristic complete, the event comes */
 } esp_gattc_cb_event_t;
 
 
@@ -651,6 +652,23 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
                                       uint16_t conn_id, esp_gattc_multi_t *read_multi,
                                       esp_gatt_auth_req_t auth_req);
 
+/**
+ * @brief           This function is called to read multiple variable length characteristic or
+ *                  characteristic descriptors.
+ *
+ * @param[in]       gattc_if: Gatt client access interface.
+ * @param[in]       conn_id : connection ID.
+ * @param[in]       read_multi : pointer to the read multiple parameter.
+ * @param[in]       auth_req : authenticate request type
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - other: failed
+ *
+ */
+esp_err_t esp_ble_gattc_read_multiple_variable(esp_gatt_if_t gattc_if,
+                                      uint16_t conn_id, esp_gattc_multi_t *read_multi,
+                                      esp_gatt_auth_req_t auth_req);
 
 /**
  * @brief           This function is called to read a characteristics descriptor.

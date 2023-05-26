@@ -34,7 +34,7 @@ To compile using ESP-IDF you will need to get the following packages. The comman
 
 - Ubuntu and Debian::
 
-    sudo apt-get install git wget flex bison gperf python3 python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
 - CentOS 7 & 8::
 

@@ -149,7 +149,7 @@ if(CONFIG_APP_BUILD_GENERATE_BINARIES)
 endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    APPEND PROPERTY ADDITIONAL_CLEAN_FILES
     "${build_dir}/${unsigned_project_binary}"
     )
 
@@ -182,7 +182,7 @@ if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
         add_dependencies(gen_project_binary gen_signed_project_binary)
 
         set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+            APPEND PROPERTY ADDITIONAL_CLEAN_FILES
             "${build_dir}/${PROJECT_BIN}"
             )
     else()

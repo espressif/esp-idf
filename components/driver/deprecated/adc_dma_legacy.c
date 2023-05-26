@@ -207,7 +207,9 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     }
 
     //malloc dma descriptor
-    s_adc_digi_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * INTERNAL_BUF_NUM, MALLOC_CAP_DMA);
+    uint32_t dma_desc_num_per_frame = (init_config->conv_num_each_intr + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    uint32_t dma_desc_max_num = dma_desc_num_per_frame * INTERNAL_BUF_NUM;
+    s_adc_digi_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * dma_desc_max_num, MALLOC_CAP_DMA);
     if (!s_adc_digi_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -310,7 +312,8 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 #elif CONFIG_IDF_TARGET_ESP32
         .dev = (void *)I2S_LL_GET_HW(s_adc_digi_ctx->i2s_host),
 #endif
-        .desc_max_num = INTERNAL_BUF_NUM,
+        .eof_desc_num = INTERNAL_BUF_NUM,
+        .eof_step = dma_desc_num_per_frame,
         .dma_chan = dma_chan,
         .eof_num = init_config->conv_num_each_intr / SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     };
@@ -367,15 +370,16 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
     portBASE_TYPE taskAwoken = 0;
     BaseType_t ret;
     adc_hal_dma_desc_status_t status = false;
-    dma_descriptor_t *current_desc = NULL;
+    uint8_t *finished_buffer = NULL;
+    uint32_t finished_size = 0;
 
     while (1) {
-        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &current_desc);
+        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &finished_buffer, &finished_size);
         if (status != ADC_HAL_DMA_DESC_VALID) {
             break;
         }
 
-        ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, current_desc->buffer, current_desc->dw0.length, &taskAwoken);
+        ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
         if (ret == pdFALSE) {
             //ringbuffer overflow
             adc_digi_ctx->ringbuf_overflow_flag = 1;

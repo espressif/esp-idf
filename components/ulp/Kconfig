@@ -49,7 +49,27 @@ menu "Ultra Low Power (ULP) Co-processor"
             help
                 The accuracy of the bitbanged UART driver is limited, it is not
                 recommend to increase the value above 19200.
+
+        config ULP_RISCV_I2C_RW_TIMEOUT
+            int
+            prompt "Set timeout for ULP RISC-V I2C transaction timeout in ticks."
+            default 500
+            range -1 4294967295
+            help
+                Set the ULP RISC-V I2C read/write timeout. Set this value to -1
+                if the ULP RISC-V I2C read and write APIs should wait forever.
+                Please note that the tick rate of the ULP co-processor would be
+                different than the OS tick rate of the main core and therefore
+                can have different timeout value depending on which core the API
+                is invoked on.
     endmenu
 
+    config ULP_SHARED_MEM
+        depends on ULP_COPROC_TYPE_LP_CORE
+        hex
+        default 0x8
+        help
+            Size of the shared memory defined in ulp_lp_core_memory_shared.c.
+            Size should be kept in-sync with the size of the struct defined there.
 
 endmenu  # Ultra Low Power (ULP) Co-processor

@@ -4,26 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
-#include "esp_err.h"
-#include "esp_log.h"
-#include <stdlib.h>
-#include "esp_netif.h"
-#include <fcntl.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_netif.h"
+
+// Use linux system sockets to connect to tap interface
+#define LWIP_HDR_LINUX_SYS_SOCKETS_H
+#include <sys/socket.h>
+#include <fcntl.h>
+
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <lwip/sys.h>
 #include "errno.h"
 
-#define LWIP_HDR_LINUX_SYS_SOCKETS_H
-
 #include <linux/if.h>
 #include <linux/if_tun.h>
-#include <esp_netif_net_stack.h>
 
 #define DEVTAP "/dev/net/tun"
 #define DEVTAP_NAME "tap0"

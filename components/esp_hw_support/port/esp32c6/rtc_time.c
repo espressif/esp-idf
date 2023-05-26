@@ -103,6 +103,15 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
                && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
     }
 
+    /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
+      So we need to divide the calibrate cycles of the FOSC for ECO1 and above chips by 32 to
+      avoid excessive calibration time.*/
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        if (cal_clk == RTC_CAL_RC_FAST) {
+            slowclk_cycles = slowclk_cycles >> 5;
+        }
+    }
+
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cali_clk_sel);
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
@@ -218,7 +227,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    return lp_timer_hal_get_cycle_count(0);
+    return lp_timer_hal_get_cycle_count();
 }
 
 void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more

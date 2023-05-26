@@ -317,6 +317,17 @@ static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev)
 }
 
 /**
+ * In user mode, it is set to indicate that program/erase operation will be triggered.
+ * This function is combined with `spimem_flash_ll_user_start`. The pe_bit will be cleared automatically once the operation done.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_set_pe_bit(spi_mem_dev_t *dev)
+{
+    dev->cmd.flash_pe = 1;
+}
+
+/**
  * Check whether the host is idle to perform new commands.
  *
  * @param dev Beginning address of the peripheral registers.

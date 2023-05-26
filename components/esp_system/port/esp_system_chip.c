@@ -11,7 +11,7 @@
 #include "esp_private/rtc_clk.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/system_internal.h"
-#include "esp_private/spi_flash_os.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -33,9 +33,15 @@ void IRAM_ATTR esp_restart_noos_dig(void)
         esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
 
-#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-    spi_flash_set_clock_src(MSPI_CLK_SRC_ROM_DEFAULT);
-#endif
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    /**
+     * Turn down MSPI speed
+     *
+     * We set MSPI clock to a high speed one before, ROM doesn't have such high speed clock source option.
+     * This function will change clock source to a ROM supported one when system restarts.
+     */
+    mspi_timing_change_speed_mode_cache_safe(true);
+#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_set_to_default_config();

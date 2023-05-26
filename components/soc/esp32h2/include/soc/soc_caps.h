@@ -380,7 +380,7 @@
 #define SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED         1
-#define SOC_MEMSPI_CLOCK_IS_INDEPENDENT           1
+#define SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT   1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
@@ -415,7 +415,7 @@
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 #define SOC_EFUSE_DIS_ICACHE 1
-#define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // AES-XTS and ECDSA key purposes not supported for this block
+#define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES and ECDSA key purposes not supported for this block
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

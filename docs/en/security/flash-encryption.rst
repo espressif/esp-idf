@@ -184,7 +184,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Auto Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3. Firmware bootloader uses RNG (random) module to generate an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two `BLOCK_KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Firmware bootloader uses RNG (random) module to generate an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two `BLOCK_KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -228,7 +228,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
-  3. Firmware bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEY0` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the RELEASE mode.
+  3. Firmware bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEY0` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the RELEASE mode.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -283,7 +283,7 @@ To test flash encryption process, take the following steps:
     - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**Development mode** by default).
     :esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default). Note that for the ESP32 target, the choice is only available when :ref:`CONFIG_ESP32_REV_MIN` level is set to 3 (ESP32 V3).
     :not esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default).
-    :esp32s2 or esp32s3 or esp32c2: - Set :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
+    :esp32s2 or esp32s3 or esp32c2: - Set :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
     - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
@@ -348,13 +348,13 @@ To use a host generated key, take the following steps:
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-      If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+      If :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
       .. code-block:: bash
 
           espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
-      else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
+      else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
       .. code-block:: bash
 
@@ -369,13 +369,13 @@ To use a host generated key, take the following steps:
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-      If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+      If :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
       .. code-block:: bash
 
           espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
-      else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
+      else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
 
       .. code-block:: bash
 
@@ -721,7 +721,7 @@ You can also use the following SPI flash API functions:
 - :cpp:func:`esp_flash_read` to read raw (encrypted) data which will not be decrypted
 - :cpp:func:`esp_flash_read_encrypted` to read and decrypt data
 
-Data stored using the Non-Volatile Storage (NVS) API is always stored and read decrypted from the perspective of flash encryption. It is up to the library to provide encryption feature if required. Refer to :ref:`NVS Encryption <nvs_encryption>` for more details.
+Data stored using the Non-Volatile Storage (NVS) API is always stored and read decrypted from the perspective of flash encryption. It is up to the library to provide encryption feature if required. Refer to :doc:`NVS Encryption <../api-reference/storage/nvs_encryption>` for more details.
 
 
 Writing to Encrypted Flash
@@ -809,7 +809,7 @@ Key Points About Flash Encryption
 
   - Flash access is transparent via the flash cache mapping feature of {IDF_TARGET_NAME} - any flash regions which are mapped to the address space will be transparently decrypted when read.
 
-    Some data partitions might need to remain unencrypted for ease of access or might require the use of flash-friendly update algorithms which are ineffective if the data is encrypted. NVS partitions for non-volatile storage cannot be encrypted since the NVS library is not directly compatible with flash encryption. For details, refer to :ref:`NVS Encryption <nvs_encryption>`.
+    Some data partitions might need to remain unencrypted for ease of access or might require the use of flash-friendly update algorithms which are ineffective if the data is encrypted. NVS partitions for non-volatile storage cannot be encrypted since the NVS library is not directly compatible with flash encryption. For details, refer to :doc:`NVS Encryption <../api-reference/storage/nvs_encryption>`.
 
   - If flash encryption might be used in future, the programmer must keep it in mind and take certain precautions when writing code that :ref:`uses encrypted flash <reading-writing-content>`.
 
@@ -834,7 +834,7 @@ Flash encryption protects firmware against unauthorised readout and modification
     - Flash encryption is only as strong as the key. For this reason, we recommend keys are generated on the device during first boot (default behaviour). If generating keys off-device, ensure proper procedure is followed and don't share the same key between all production devices.
     - Not all data is stored encrypted. If storing data on flash, check if the method you are using (library, API, etc.) supports flash encryption.
     - Flash encryption does not prevent an attacker from understanding the high-level layout of the flash. This is because the same AES key is used for every pair of adjacent 16 byte AES blocks. When these adjacent 16 byte blocks contain identical content (such as empty or padding areas), these blocks will encrypt to produce matching pairs of encrypted blocks. This may allow an attacker to make high-level comparisons between encrypted devices (i.e. to tell if two devices are probably running the same firmware version).
-    :esp32: - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain two identical 16 byte sequences. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient). :ref:`NVS Encryption <nvs_encryption>` deals with this and is suitable for many uses.
+    :esp32: - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain two identical 16 byte sequences. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient). :doc:`NVS Encryption <../api-reference/storage/nvs_encryption>` deals with this and is suitable for many uses.
     - Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot-v2>`.
 
 .. _flash-encryption-and-secure-boot:

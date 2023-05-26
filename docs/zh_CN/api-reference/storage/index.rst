@@ -23,6 +23,7 @@
    fatfs
    mass_mfg.rst
    nvs_flash
+   nvs_encryption
    nvs_partition_gen.rst
    nvs_partition_parse.rst
    sdmmc

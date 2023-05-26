@@ -177,7 +177,7 @@ static void esp_gf128mul_x_ble( unsigned char r[16],
 }
 
 /*
- * AES-XTS buffer encryption/decryption
+ * XTS-AES buffer encryption/decryption
  */
 int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
                        int mode,

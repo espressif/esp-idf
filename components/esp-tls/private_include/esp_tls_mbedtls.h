@@ -136,3 +136,8 @@ mbedtls_x509_crt *esp_mbedtls_get_global_ca_store(void);
  * Callback function for freeing global ca store for TLS/SSL using mbedtls
  */
 void esp_mbedtls_free_global_ca_store(void);
+
+/**
+ * Internal Callback for esp_tls_get_ciphersuites_list
+ */
+const int *esp_mbedtls_get_ciphersuites_list(void);

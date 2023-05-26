@@ -51,7 +51,9 @@ typedef int sdspi_dev_handle_t;
     .io_int_enable = &sdspi_host_io_int_enable, \
     .io_int_wait = &sdspi_host_io_int_wait, \
     .command_timeout_ms = 0, \
-    .get_real_freq = &sdspi_host_get_real_freq \
+    .get_real_freq = &sdspi_host_get_real_freq, \
+    .input_delay_phase = SDMMC_DELAY_PHASE_0, \
+    .set_input_delay = NULL \
 }
 
 /**

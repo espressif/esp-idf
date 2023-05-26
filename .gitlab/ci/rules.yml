@@ -55,8 +55,6 @@
   - "tools/test_build_system/**/*"
 
 .patterns-custom_test: &patterns-custom_test
-  - "components/espcoredump/**/*"
-
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
@@ -321,6 +319,15 @@
   - "components/hal/**/*"
   - "components/efuse/**/*"
   - "components/mbedtls/port/ecdsa/*"
+
+.patterns-component_ut-nvs_encr_hmac: &patterns-component_ut-nvs_encr_hmac
+  - "components/nvs_flash/**/*"
+  - "components/nvs_sec_provider/**/*"
+
+.patterns-example_test-nvs_encr_hmac: &patterns-example_test-nvs_encr_hmac
+  - "components/nvs_flash/**/*"
+  - "components/nvs_sec_provider/**/*"
+  - "examples/security/nvs_encryption_hmac/**/*"
 
 ##############
 # if anchors #
@@ -630,6 +637,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -665,6 +674,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -698,6 +709,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
@@ -733,6 +746,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -766,6 +781,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
@@ -801,6 +818,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -835,6 +854,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -868,6 +889,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
@@ -1148,6 +1171,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1191,6 +1216,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1232,6 +1259,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -1276,6 +1305,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1317,6 +1348,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -1360,6 +1393,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1402,6 +1437,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1443,6 +1480,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -1547,6 +1586,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -1564,6 +1605,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -1999,6 +2042,19 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
 
+.rules:test:component_ut-esp32c3-nvs_encr_hmac:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-nvs_encr_hmac
+
 .rules:test:component_ut-esp32c3-sdio:
   rules:
     - <<: *if-revert-branch
@@ -2347,19 +2403,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
-.rules:test:example_test-esp32-bt:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-bt
-
 .rules:test:example_test-esp32-ccs811:
   rules:
     - <<: *if-revert-branch
@@ -2502,6 +2545,19 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
+
+.rules:test:example_test-esp32c3-nvs_encr_hmac:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
 
 .rules:test:example_test-esp32c3-sdio:
   rules:
@@ -2804,19 +2860,6 @@
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-dev-push
       changes: *patterns-unit_test
-
-.rules:test:unit_test-esp32c3-flash_multi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-target_test
-    - <<: *if-label-unit_test
-    - <<: *if-label-unit_test_esp32c3
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
 
 .rules:test:unit_test-esp32c3-sdio:
   rules:

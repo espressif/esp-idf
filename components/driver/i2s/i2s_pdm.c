@@ -30,6 +30,7 @@ static const char *TAG = "i2s_pdm";
   ---------------------------------------------------------------*/
 
 #if SOC_I2S_SUPPORTS_PDM_TX
+#define I2S_PDM_TX_BCLK_DIV_MIN    8  /*!< The minimum bclk_div for PDM TX mode */
 static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_pdm_tx_clk_config_t *clk_cfg, i2s_hal_clock_info_t *clk_info)
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
@@ -38,7 +39,7 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     // Over sampling ratio (integer, mostly should be 1 or 2)
     uint32_t over_sample_ratio = pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
     clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * over_sample_ratio;
-    clk_info->bclk_div = 8;
+    clk_info->bclk_div = clk_cfg->bclk_div < I2S_PDM_TX_BCLK_DIV_MIN ? I2S_PDM_TX_BCLK_DIV_MIN : clk_cfg->bclk_div;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
@@ -318,13 +319,14 @@ err:
   ---------------------------------------------------------------*/
 
 #if SOC_I2S_SUPPORTS_PDM_RX
+#define I2S_PDM_RX_BCLK_DIV_MIN    8  /*!< The minimum bclk_div for PDM RX mode */
 static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_pdm_rx_clk_config_t *clk_cfg, i2s_hal_clock_info_t *clk_info)
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_pdm_rx_clk_config_t *pdm_rx_clk = (i2s_pdm_rx_clk_config_t *)clk_cfg;
 
     clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * (pdm_rx_clk->dn_sample_mode == I2S_PDM_DSR_16S ? 2 : 1);
-    clk_info->bclk_div = 8;
+    clk_info->bclk_div = clk_cfg->bclk_div < I2S_PDM_RX_BCLK_DIV_MIN ? I2S_PDM_RX_BCLK_DIV_MIN : clk_cfg->bclk_div;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;

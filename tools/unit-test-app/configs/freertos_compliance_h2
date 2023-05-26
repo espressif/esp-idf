@@ -1,4 +1,0 @@
-# This config is split between targets since different component needs to be included
-CONFIG_IDF_TARGET="esp32h2"
-TEST_COMPONENTS=spi_flash
-CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE=y

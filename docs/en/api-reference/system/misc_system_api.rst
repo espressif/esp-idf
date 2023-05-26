@@ -111,7 +111,7 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
 Custom MAC Address in eFuse
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp__mac_get_custom`. Users can also use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp__mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
+When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. Users can also use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp_efuse_mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
 
 .. only:: esp32
 

@@ -41,6 +41,7 @@
 #define MXIC_ID                0xC2
 #define GD_Q_ID_HIGH           0xC8
 #define GD_Q_ID_MID            0x40
+#define GD_LQ_ID_MID           0x60
 #define GD_Q_ID_LOW            0x16
 
 #define ESP_BOOTLOADER_SPIFLASH_BP_MASK_ISSI    (BIT7 | BIT5 | BIT4 | BIT3 | BIT2)
@@ -120,6 +121,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp32/rom/cache.h"
 #endif
 #include "esp_rom_spiflash.h"
+#include "esp_rom_sys.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
@@ -466,6 +468,11 @@ FORCE_INLINE_ATTR bool is_gd_q_chip(const esp_rom_spiflash_chip_t* chip)
     return BYTESHIFT(chip->device_id, 2) == GD_Q_ID_HIGH && BYTESHIFT(chip->device_id, 1) == GD_Q_ID_MID && BYTESHIFT(chip->device_id, 0) >= GD_Q_ID_LOW;
 }
 
+FORCE_INLINE_ATTR bool is_gd_lq_chip(const esp_rom_spiflash_chip_t* chip)
+{
+    return BYTESHIFT(chip->device_id, 2) == GD_Q_ID_HIGH && BYTESHIFT(chip->device_id, 1) == GD_LQ_ID_MID && BYTESHIFT(chip->device_id, 0) >= GD_Q_ID_LOW;
+}
+
 FORCE_INLINE_ATTR bool is_mxic_chip(const esp_rom_spiflash_chip_t* chip)
 {
     return BYTESHIFT(chip->device_id, 2) == MXIC_ID;
@@ -493,7 +500,7 @@ esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
         */
         sr1_bit_num = 8;
         new_status = status & (~ESP_BOOTLOADER_SPIFLASH_BP_MASK_ISSI);
-    } else if (is_gd_q_chip(&g_rom_flashchip)) {
+    } else if (is_gd_q_chip(&g_rom_flashchip) || is_gd_lq_chip(&g_rom_flashchip)) {
         /* The GD chips behaviour is to clear all bits in SR1 and clear bits in SR2 except QE bit.
            Use 01H to write SR1 and 31H to write SR2.
         */
@@ -552,6 +559,7 @@ IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
     uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
     uint32_t old_user_reg = SPIFLASH.user.val;
     uint32_t old_user1_reg = SPIFLASH.user1.val;
+    uint32_t old_user2_reg = SPIFLASH.user2.val;
 #if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
 #else
@@ -598,6 +606,7 @@ IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
     SPIFLASH.ctrl.val = old_ctrl_reg;
     SPIFLASH.user.val = old_user_reg;
     SPIFLASH.user1.val = old_user1_reg;
+    SPIFLASH.user2.val = old_user2_reg;
 
     uint32_t ret = SPIFLASH.data_buf[0];
     if (miso_len < 32) {

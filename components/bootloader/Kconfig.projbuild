@@ -1,5 +1,7 @@
 menu "Bootloader config"
 
+    orsource "../esp_bootloader_format/Kconfig.bootloader"
+
     config BOOTLOADER_OFFSET_IN_FLASH
         hex
         default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
@@ -774,6 +776,7 @@ menu "Security features"
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
         default N
         select SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE
+        select NVS_ENCRYPTION
         help
             If this option is set, flash contents will be encrypted by the bootloader on first boot.
 
@@ -784,11 +787,11 @@ menu "Security features"
             before enabling.
 
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
-        bool "Size of generated AES-XTS key"
+        bool "Size of generated XTS-AES key"
         default SECURE_FLASH_ENCRYPTION_AES128
         depends on SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS && SECURE_FLASH_ENC_ENABLED
         help
-            Size of generated AES-XTS key.
+            Size of generated XTS-AES key.
 
             - AES-128 uses a 256-bit key (32 bytes) derived from 128 bits (16 bytes) burned in half Efuse key block.
               Internally, it calculates SHA256(128 bits)

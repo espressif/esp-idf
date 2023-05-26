@@ -41,12 +41,7 @@ static inline uint32_t calculate_duration(uint32_t target, uint32_t now)
 
 uint64_t otPlatTimeGet(void)
 {
-    struct timeval tv_now;
-
-    int err = gettimeofday(&tv_now, NULL);
-    assert(err == 0);
-
-    return (uint64_t)tv_now.tv_sec * US_PER_S + tv_now.tv_usec;
+    return (uint64_t)esp_timer_get_time();
 }
 
 void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
@@ -68,7 +63,7 @@ void otPlatAlarmMilliStop(otInstance *aInstance)
 
 uint32_t inline otPlatAlarmMilliGetNow(void)
 {
-    return esp_timer_get_time() / US_PER_MS;
+    return otPlatTimeGet() / US_PER_MS;
 }
 
 void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
@@ -89,7 +84,7 @@ void otPlatAlarmMicroStop(otInstance *aInstance)
 
 uint32_t inline otPlatAlarmMicroGetNow(void)
 {
-    return esp_timer_get_time();
+    return otPlatTimeGet();
 }
 
 esp_err_t esp_openthread_alarm_init(void)

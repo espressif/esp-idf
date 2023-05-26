@@ -18,10 +18,10 @@ This code tests the interaction between PSRAM and SPI flash routines.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "test_utils.h"
 #include "esp_heap_caps.h"
 #include "spi_flash_mmap.h"
 #include "esp_partition.h"
-#include "test_utils.h"
 #include "soc/soc.h"
 
 #if CONFIG_SPIRAM
@@ -95,7 +95,6 @@ TEST_CASE("Spiram cache flush on mmap", "[spiram]")
     TEST_ASSERT(err[0]==0);
     TEST_ASSERT(err[1]==0);
 }
-
 
 #define CYCLES 1024
 

@@ -1,0 +1,138 @@
+menu "SDMMC Test Board Configuration"
+
+    choice SDMMC_BOARD
+        prompt "Board type"
+        help
+            Select development board used for running the test.
+
+        config SDMMC_BOARD_ESP32_WROVER_KIT
+            bool "ESP32 WROVER-KIT"
+            depends on IDF_TARGET_ESP32
+
+        config SDMMC_BOARD_ESP32_EMMC_TEST
+            bool "ESP32 eMMC Test Board v1"
+            depends on IDF_TARGET_ESP32
+
+        config SDMMC_BOARD_ESP32S2_S3_USB_OTG
+            bool "ESP32-S2/S3 USB-OTG"
+            depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+        config SDMMC_BOARD_ESP32S3_EMMC_TEST
+            bool "ESP32-S3 eMMC Test Board v1"
+            depends on IDF_TARGET_ESP32S3
+
+        config SDMMC_BOARD_ESP32S3_EYE
+            bool "ESP32-S3 EYE v2.1"
+            depends on IDF_TARGET_ESP32S3
+
+        config SDMMC_BOARD_ESP32C3_BREAKOUT
+            bool "ESP32-C3 breakout board"
+            depends on IDF_TARGET_ESP32C3
+
+        config SDMMC_BOARD_CUSTOM_SD
+            depends on SOC_SDMMC_HOST_SUPPORTED
+            bool "Custom SD (choose pins)"
+
+        config SDMMC_BOARD_CUSTOM_SPI
+            bool "Custom SPI (choose pins)"
+
+        menu "Custom pins"
+            if SDMMC_BOARD_CUSTOM_SD
+
+                # just a dummy option to prevent the Kconfig checker from complaining
+                # about the option name prefix
+                config SDMMC_BOARD_CUSTOM_DUMMY
+                    int
+
+                choice SDMMC_BOARD_CUSTOM_BUS_WIDTH
+                    prompt "Bus width"
+
+                    config SDMMC_BOARD_CUSTOM_4BIT
+                        bool "4-bit"
+
+                    config SDMMC_BOARD_CUSTOM_1BIT
+                        bool "1-bit"
+                endchoice
+
+                config SDMMC_BOARD_CUSTOM_BUS_WIDTH
+                    int
+                    default 4 if SDMMC_BOARD_CUSTOM_4BIT
+                    default 1
+
+                if SOC_SDMMC_USE_GPIO_MATRIX
+
+                    config SDMMC_BOARD_CUSTOM_CMD
+                        int "CMD GPIO"
+                        default 1
+
+                    config SDMMC_BOARD_CUSTOM_CLK
+                        int "CLK GPIO"
+                        default 2
+
+                    config SDMMC_BOARD_CUSTOM_D0
+                        int "D0 GPIO"
+                        default 3
+
+                    if SDMMC_BOARD_CUSTOM_4BIT
+
+                        config SDMMC_BOARD_CUSTOM_D1
+                            int
+                            prompt "D1 GPIO" if SDMMC_BOARD_CUSTOM_4BIT
+                            default 4 if SDMMC_BOARD_CUSTOM_4BIT
+                            default -1
+
+                        config SDMMC_BOARD_CUSTOM_D2
+                            int
+                            prompt "D2 GPIO" if SDMMC_BOARD_CUSTOM_4BIT
+                            default 5 if SDMMC_BOARD_CUSTOM_4BIT
+                            default -1
+
+                        config SDMMC_BOARD_CUSTOM_D3
+                            int
+                            prompt "D3 GPIO" if SDMMC_BOARD_CUSTOM_4BIT
+                            default 6 if SDMMC_BOARD_CUSTOM_4BIT
+                            default -1
+
+                    endif # SDMMC_BOARD_CUSTOM_4BIT
+
+                endif # SOC_SDMMC_USE_GPIO_MATRIX
+
+            endif # SDMMC_BOARD_CUSTOM_SD
+
+            if SDMMC_BOARD_CUSTOM_SPI
+
+                config SDMMC_BOARD_CUSTOM_MISO
+                    int "MISO GPIO"
+                    default 1
+
+                config SDMMC_BOARD_CUSTOM_MOSI
+                    int "MOSI GPIO"
+                    default 2
+
+                config SDMMC_BOARD_CUSTOM_SCK
+                    int "SCK GPIO"
+                    default 3
+
+                config SDMMC_BOARD_CUSTOM_CS
+                    int "CS GPIO"
+                    default 4
+
+            endif # SDMMC_BOARD_CUSTOM_SPI
+
+            config SDMMC_BOARD_CUSTOM_CD
+                int "Card Detect GPIO"
+                default -1
+
+            config SDMMC_BOARD_CUSTOM_WP
+                int "Write Protect GPIO"
+                default -1
+
+            config SDMMC_BOARD_CUSTOM_UNUSED
+                int "GPIO not routed on the board"
+                default -1
+
+        endmenu
+
+    endchoice # SDMMC_BOARD
+
+endmenu

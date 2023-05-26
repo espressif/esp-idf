@@ -211,3 +211,26 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
         logging.info("Failed the test for \"https_request using global ca_store\"")
         raise
     logging.info("Passed the test for \"https_request using global ca_store\"")
+
+    # Check for connection using specified server supported ciphersuites
+    logging.info("Testing for \"https_request using server supported ciphersuites\"")
+    try:
+        dut.expect('https_request using server supported ciphersuites', timeout=20)
+        dut.expect(['Connection established...',
+                    'Reading HTTP response...',
+                    'HTTP/1.1 200 OK',
+                    'connection closed'], expect_all=True)
+    except Exception:
+        logging.info("Failed the test for \"https_request using server supported ciphersuites\"")
+        raise
+    logging.info("Passed the test for \"https_request using server supported ciphersuites\"")
+
+    # Check for connection using specified server unsupported ciphersuites
+    logging.info("Testing for \"https_request using server unsupported ciphersuites\"")
+    try:
+        dut.expect('https_request using server unsupported ciphersuites', timeout=20)
+        dut.expect('Connection failed...', timeout=30)
+    except Exception:
+        logging.info("Failed the test for \"https_request using server unsupported ciphersuites\"")
+        raise
+    logging.info("Passed the test for \"https_request using server unsupported ciphersuites\"")

@@ -15,7 +15,7 @@
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
-int esp_gdbstub_getchar()
+int esp_gdbstub_getchar(void)
 {
     uint8_t c;
     // retry the read until we succeed
@@ -39,6 +39,12 @@ void esp_gdbstub_flush(void)
     usb_serial_jtag_ll_txfifo_flush();
 }
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+int esp_gdbstub_getfifo(void)
+{
+    return 0; // TODO: IDF-7264
+}
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 #else // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
@@ -98,6 +104,7 @@ void esp_gdbstub_flush(void)
     }
 }
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 int esp_gdbstub_getfifo(void)
 {
     esp_gdbstub_uart_init();
@@ -115,5 +122,5 @@ int esp_gdbstub_getfifo(void)
     uart_ll_clr_intsts_mask(gdb_uart, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
     return doDebug;
 }
-
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG

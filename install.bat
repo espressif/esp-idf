@@ -1,7 +1,7 @@
 @echo off
 if defined MSYSTEM (
 	echo This .bat file is for Windows CMD.EXE shell only.
-	goto end
+	goto :end
 )
 
 :: Missing requirements check
@@ -16,6 +16,11 @@ if not "%MISSING_REQUIREMENTS%" == "" goto :error_missing_requirements
 :: Infer IDF_PATH from script location
 set IDF_PATH=%~dp0
 set IDF_PATH=%IDF_PATH:~0,-1%
+
+:: Print help if requested
+if /I "%1" == "/?" goto :help
+if /I "%1" == "-h" goto :help
+if /I "%1" == "--help" goto :help
 
 for /f "delims=" %%i in ('python.exe "%IDF_PATH%\tools\install_util.py" extract targets "%*"') do set TARGETS=%%i
 
@@ -42,6 +47,10 @@ goto :end
     echo Please use the Windows Tool installer for setting up your environment.
     echo Download link: https://dl.espressif.com/dl/esp-idf/
     echo For more details please visit our website: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html
+    goto :end
+
+:help
+    python.exe "%IDF_PATH%\tools\install_util.py" print_help bat
     goto :end
 
 :end

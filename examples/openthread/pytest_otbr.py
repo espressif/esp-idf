@@ -112,9 +112,9 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
             rx_nums = ocf.ot_ping(br, cli_mleid_addr, 5)[1]
             assert rx_nums == 5
     finally:
-        br.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
         for cli in cli_list:
-            cli.write('factoryreset')
+            ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
 
 
@@ -141,7 +141,7 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
 @pytest.mark.esp32h2
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=0, reruns_delay=1)
 @pytest.mark.parametrize(
     'config, count, app_path, target', [
         ('rcp|cli_h2|br', 3,
@@ -169,18 +169,19 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
         interface_name = ocf.get_host_interface_name()
-        command = 'ifconfig ' + interface_name
+        command = 'ifconfig ' + interface_name + ' | grep inet6 | grep global'
         out_bytes = subprocess.check_output(command, shell=True, timeout=5)
         out_str = out_bytes.decode('utf-8')
-        host_global_unicast_addr = re.findall(r'inet6 ((?:\w+:){7}\w+)  prefixlen 64  scopeid 0x0<global>', str(out_str))
+        onlinkprefix = ocf.get_onlinkprefix(br)
+        host_global_unicast_addr = re.findall(r'\W+(%s(?:\w+:){3}\w+)\W+' % onlinkprefix, str(out_str))
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
             txrx_nums = ocf.ot_ping(cli, str(ip_addr), 5)
             rx_nums = rx_nums + int(txrx_nums[1])
         assert rx_nums != 0
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
 
 
@@ -209,7 +210,7 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
     formBasicWiFiThreadNetwork(br, cli)
     try:
         assert ocf.is_joined_wifi_network(br)
-        br.write('bbr')
+        ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
         assert ocf.thread_is_joined_group(cli)
         interface_name = ocf.get_host_interface_name()
@@ -219,8 +220,8 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
 
 
@@ -249,9 +250,9 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
     formBasicWiFiThreadNetwork(br, cli)
     try:
         assert ocf.is_joined_wifi_network(br)
-        br.write('bbr')
+        ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
-        cli.write('udp open')
+        ocf.execute_command(cli, 'udp open')
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         myudp = ocf.udp_parameter('INET6', '::', 5090, 'ff04::125', False, 15.0, b'')
@@ -263,14 +264,14 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
                 assert False
         for num in range(0, 3):
             command = 'udp send ff04::125 5090 hello' + str(num)
-            cli.write(command)
+            ocf.execute_command(cli, command)
             cli.expect('Done', timeout=5)
             ocf.wait(cli, 0.5)
         while udp_mission.is_alive():
             time.sleep(1)
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
     assert b'hello' in myudp.udp_bytes
 
@@ -307,18 +308,18 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
         assert 'myTest' not in str(out_str)
         hostname = 'myTest'
         command = 'srp client host name ' + hostname
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
         print('cli_global_unicast_addr', cli_global_unicast_addr)
         command = 'srp client host address ' + str(cli_global_unicast_addr)
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         port = '12348'
         command = 'srp client service add my-service _testyyy._udp ' + port
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
-        cli.write('srp client autostart enable')
+        ocf.execute_command(cli, 'srp client autostart enable')
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         command = 'avahi-browse -rt _testyyy._udp'
@@ -326,8 +327,8 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
         print('avahi-browse:\n', str(out_str))
         assert 'myTest' in str(out_str)
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
 
 
@@ -359,41 +360,42 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         assert ocf.is_joined_wifi_network(br)
         br_global_unicast_addr = ocf.get_global_unicast_addr(br, br)
         command = 'dns config ' + br_global_unicast_addr
-        ocf.clean_buffer(cli)
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 1)
         command = 'dns resolve FA000123.default.service.arpa.'
         ocf.clean_buffer(cli)
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Error', timeout=15)
         domain_name = ocf.get_domain()
         print('domain name is: ', domain_name)
         command = 'dns resolve ' + domain_name + '.default.service.arpa.'
-        ocf.clean_buffer(cli)
-        cli.write(command)
+
+        ocf.execute_command(cli, command)
         cli.expect('TTL', timeout=10)
         cli.expect('Done', timeout=10)
-        ocf.clean_buffer(cli)
-        cli.write('dns browse _testxxx._udp.default.service.arpa')
-        tmp = cli.expect(pexpect.TIMEOUT, timeout=5)
+
+        command = 'dns browse _testxxx._udp.default.service.arpa'
+        tmp = ocf.get_ouput_string(cli, command, 5)
         assert 'Port:12347' not in str(tmp)
         ocf.host_publish_service()
         ocf.wait(cli, 5)
-        ocf.clean_buffer(cli)
-        cli.write('dns browse _testxxx._udp.default.service.arpa')
-        tmp = cli.expect(pexpect.TIMEOUT, timeout=5)
+
+        command = 'dns browse _testxxx._udp.default.service.arpa'
+        tmp = ocf.get_ouput_string(cli, command, 5)
         assert 'response for _testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
-        ocf.clean_buffer(cli)
-        cli.write('dns service testxxx _testxxx._udp.default.service.arpa.')
+
+        command = 'dns browse _testxxx._udp.default.service.arpa'
+        tmp = ocf.get_ouput_string(cli, command, 5)
+        ocf.execute_command(cli, 'dns service testxxx _testxxx._udp.default.service.arpa.')
         tmp = cli.expect(pexpect.TIMEOUT, timeout=5)
         assert 'response for testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
     finally:
         ocf.host_close_service()
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
 
 
@@ -427,8 +429,8 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), 5)[1]
         assert rx_nums != 0
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
 
 
@@ -457,9 +459,9 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     formBasicWiFiThreadNetwork(br, cli)
     try:
         assert ocf.is_joined_wifi_network(br)
-        br.write('bbr')
+        ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
-        cli.write('udp open')
+        ocf.execute_command(cli, 'udp open')
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         host_ipv4_address = ocf.get_host_ipv4_address()
@@ -473,14 +475,14 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
                 assert False
         for num in range(0, 3):
             command = 'udp send ' + host_ipv4_address + ' 5090 hello' + str(num)
-            cli.write(command)
+            ocf.execute_command(cli, command)
             cli.expect('Done', timeout=5)
             ocf.wait(cli, 0.5)
         while udp_mission.is_alive():
             time.sleep(1)
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
     assert b'hello' in myudp.udp_bytes
 
@@ -510,9 +512,9 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     formBasicWiFiThreadNetwork(br, cli)
     try:
         assert ocf.is_joined_wifi_network(br)
-        br.write('bbr')
+        ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
-        cli.write('tcpsockclient open')
+        ocf.execute_command(cli, 'tcpsockclient open')
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         host_ipv4_address = ocf.get_host_ipv4_address()
@@ -526,19 +528,19 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
             if (time.time() - start_time) > 10:
                 assert False
         command = 'tcpsockclient connect ' + connect_address + ' 12345'
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Successfully connected', timeout=10)
         start_time = time.time()
         while not mytcp.recv_flag:
             if (time.time() - start_time) > 10:
                 assert False
         command = 'tcpsockclient send hello'
-        cli.write(command)
+        ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         while tcp_mission.is_alive():
             time.sleep(1)
     finally:
-        br.write('factoryreset')
-        cli.write('factoryreset')
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
     assert b'hello' in mytcp.tcp_bytes

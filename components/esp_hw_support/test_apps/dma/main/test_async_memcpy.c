@@ -14,11 +14,13 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "ccomp_timer.h"
 #include "esp_async_memcpy.h"
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
+
+#define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
+    printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
 
 #define ALIGN_UP(addr, align) (((addr) + (align)-1) & ~((align)-1))
 #define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))

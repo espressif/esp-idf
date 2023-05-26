@@ -150,6 +150,16 @@ static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
 }
 
 /**
+ * In user mode, it is set to indicate that program/erase operation will be triggered.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void gpspi_flash_ll_set_pe_bit(spi_dev_t *dev)
+{
+    // Not supported on GPSPI
+}
+
+/**
  * Check whether the host is idle to perform new commands.
  *
  * @param dev Beginning address of the peripheral registers.

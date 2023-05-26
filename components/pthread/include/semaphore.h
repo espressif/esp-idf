@@ -51,7 +51,7 @@ int sem_post(sem_t *sem);
  * * It is possible, though unlikely, that the task is preempted directly after the timeout calculation,
  *   delaying timeout of the following blocking operating system call by the duration of the preemption.
  */
-int sem_timedwait(sem_t * restrict semaphore, const struct timespec *restrict abstime);
+int sem_timedwait(sem_t *semaphore, const struct timespec *abstime);
 
 /**
  * This is a POSIX function, please refer to the POSIX specification for a detailed description.
@@ -66,7 +66,7 @@ int sem_wait(sem_t *sem);
 /**
  * This is a POSIX function, please refer to the POSIX specification for a detailed description.
  */
-int sem_getvalue(sem_t *restrict sem, int *restrict sval);
+int sem_getvalue(sem_t *sem, int *sval);
 
 #ifdef __cplusplus
 }

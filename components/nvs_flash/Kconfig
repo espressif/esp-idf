@@ -2,13 +2,13 @@ menu "NVS"
 
     config NVS_ENCRYPTION
         bool "Enable NVS encryption"
-        default y
-        depends on SECURE_FLASH_ENC_ENABLED
+        depends on SECURE_FLASH_ENC_ENABLED || SOC_HMAC_SUPPORTED
+        default y if SECURE_FLASH_ENC_ENABLED
         help
-            This option enables encryption for NVS. When enabled, AES-XTS is used to encrypt
+            This option enables encryption for NVS. When enabled, XTS-AES is used to encrypt
             the complete NVS data, except the page headers. It requires XTS encryption keys
-            to be stored in an encrypted partition. This means enabling flash encryption is
-            a pre-requisite for this feature.
+            to be stored in an encrypted partition (enabling flash encryption is mandatory here)
+            or to be derived from an HMAC key burnt in eFuse.
 
     config NVS_COMPATIBLE_PRE_V4_3_ENCRYPTION_FLAG
         bool "NVS partition encrypted flag compatible with ESP-IDF before v4.3"

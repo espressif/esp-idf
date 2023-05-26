@@ -1085,6 +1085,9 @@ void btm_create_sync_callback(UINT8 status);
 void btm_set_phy_callback(UINT8 status);
 void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_phy, uint8_t rx_phy);
 #endif
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+void btm_ble_periodic_adv_sync_trans_complete(UINT16 op_code, UINT8 hci_status, UINT16 conn_handle);
+#endif
 /* Internal functions provided by btm_sco.c
 ********************************************
 */

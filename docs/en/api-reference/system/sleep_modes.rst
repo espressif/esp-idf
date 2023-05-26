@@ -42,6 +42,8 @@ Once wakeup sources are configured, the application can enter sleep mode using :
 
 If Wi-Fi connections need to be maintained, enable Wi-Fi Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This will allow the system to wake up from sleep automatically when required by the Wi-Fi driver, thereby maintaining a connection to the AP.
 
+.. _api-reference-wakeup-source:
+
 Wakeup Sources
 --------------
 

@@ -13,6 +13,7 @@
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_app_desc.h"
+#include "esp_bootloader_desc.h"
 #include "esp_flash_partitions.h"
 #include "soc/soc_caps.h"
 
@@ -250,6 +251,23 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
  *  - or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc);
+
+/**
+ * @brief Returns the description structure of the bootloader.
+ *
+ * @param[in] bootloader_partition Pointer to bootloader partition.
+ *                                 If NULL, then the current bootloader is used (the default location).
+ *                                 offset = CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
+ *                                 size = CONFIG_PARTITION_TABLE_OFFSET - CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
+ * @param[out] desc     Structure of info about bootloader.
+ * @return
+ *  - ESP_OK                Successful.
+ *  - ESP_ERR_NOT_FOUND     Description structure is not found in the bootloader image. Magic byte is incorrect.
+ *  - ESP_ERR_INVALID_ARG   Arguments is NULL.
+ *  - ESP_ERR_INVALID_SIZE  Read would go out of bounds of the partition.
+ *  - or one of error codes from lower-level flash driver.
+ */
+esp_err_t esp_ota_get_bootloader_description(const esp_partition_t *bootloader_partition, esp_bootloader_desc_t *desc);
 
 /**
  * @brief Returns number of ota partitions provided in partition table.

@@ -813,6 +813,40 @@ esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send
 esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func);
 
 /**
+ * @brief   Start an asynchronous request. This function can be called
+ *          in a request handler to get a request copy that can be used on a async thread.
+ *
+ * @note
+ * - This function is necessary in order to handle multiple requests simultaneously.
+ * See examples/async_requests for example usage.
+ * - You must call httpd_req_async_handler_complete() when you are done with the request.
+ *
+ * @param[in]   r       The request to create an async copy of
+ * @param[out]  out     A newly allocated request which can be used on an async thread
+ *
+ * @return
+ *  - ESP_OK : async request object created
+ */
+esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out);
+
+/**
+ * @brief   Mark an asynchronous request as completed. This will
+ *  - free the request memory
+ *  - relinquish ownership of the underlying socket, so it can be reused.
+ *  - allow the http server to close our socket if needed (lru_purge_enable)
+ *
+ * @note If async requests are not marked completed, eventually the server
+ * will no longer accept incoming connections. The server will log a
+ * "httpd_accept_conn: error in accept (23)" message if this happens.
+ *
+ * @param[in]   r   The request to mark async work as completed
+ *
+ * @return
+ *  - ESP_OK : async request was marked completed
+ */
+esp_err_t httpd_req_async_handler_complete(httpd_req_t *r);
+
+/**
  * @brief   Get the Socket Descriptor from the HTTP request
  *
  * This API will return the socket descriptor of the session for

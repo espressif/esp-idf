@@ -58,7 +58,9 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 {
     esp_err_t ret = ESP_OK;
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)(handle->mode_info);
-    ESP_RETURN_ON_FALSE(std_cfg->slot_cfg.data_bit_width != I2S_DATA_BIT_WIDTH_24BIT ||
+    i2s_data_bit_width_t real_slot_bit = (int)std_cfg->slot_cfg.slot_bit_width < (int)std_cfg->slot_cfg.data_bit_width ?
+                                         std_cfg->slot_cfg.data_bit_width : std_cfg->slot_cfg.slot_bit_width;
+    ESP_RETURN_ON_FALSE(real_slot_bit != I2S_DATA_BIT_WIDTH_24BIT ||
                         (clk_cfg->mclk_multiple % 3 == 0), ESP_ERR_INVALID_ARG, TAG,
                         "The 'mclk_multiple' should be the multiple of 3 while using 24-bit data width");
 

@@ -72,6 +72,15 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     assert(tls != NULL);
     int ret;
     esp_err_t esp_ret = ESP_FAIL;
+
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d\n", (int) status);
+        return esp_ret;
+    }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ctr_drbg_init(&tls->ctr_drbg);
@@ -220,6 +229,13 @@ ssize_t esp_mbedtls_read(esp_tls_t *tls, char *data, size_t datalen)
 {
 
     ssize_t ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+    while (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+        ESP_LOGD(TAG, "got session ticket in TLS 1.3 connection, retry read");
+        ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
+    }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+
     if (ret < 0) {
         if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
             return 0;
@@ -788,6 +804,11 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication");
         return ESP_ERR_INVALID_STATE;
     }
+
+    if (cfg->ciphersuites_list != NULL && cfg->ciphersuites_list[0] != 0) {
+        ESP_LOGD(TAG, "Set the ciphersuites list");
+        mbedtls_ssl_conf_ciphersuites(&tls->conf, cfg->ciphersuites_list);
+    }
     return ESP_OK;
 }
 
@@ -893,6 +914,11 @@ void esp_mbedtls_free_global_ca_store(void)
         free(global_cacert);
         global_cacert = NULL;
     }
+}
+
+const int *esp_mbedtls_get_ciphersuites_list(void)
+{
+    return mbedtls_ssl_list_ciphersuites();
 }
 
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT

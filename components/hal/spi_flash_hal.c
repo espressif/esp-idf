@@ -70,7 +70,7 @@ static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk
     return apb_period_n / apbclk_n;
 }
 
-#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 static inline int extra_dummy_under_timing_tuning(const spi_flash_hal_config_t *cfg)
 {
     bool main_flash = (cfg->host_id == SPI1_HOST && cfg->cs_num == 0);
@@ -88,7 +88,7 @@ static inline int extra_dummy_under_timing_tuning(const spi_flash_hal_config_t *
 
     return extra_dummy;
 }
-#endif //SOC_SPI_MEM_SUPPORT_TIME_TUNING
+#endif //SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
@@ -103,13 +103,14 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         .cs_hold = cfg->cs_hold,
         .cs_setup = cfg->cs_setup,
         .base_io_mode = cfg->default_io_mode,
+        .freq_mhz = cfg->freq_mhz,
     };
-#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (cfg->using_timing_tuning) {
         data_out->extra_dummy = extra_dummy_under_timing_tuning(cfg);
         data_out->clock_conf = cfg->clock_config;
     } else
-#endif // SOC_SPI_MEM_SUPPORT_TIME_TUNING
+#endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     {
         data_out->extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, APB_CLK_FREQ/get_flash_clock_divider(cfg));
         data_out->clock_conf = (spi_flash_ll_clock_reg_t)spi_flash_cal_clock(cfg);

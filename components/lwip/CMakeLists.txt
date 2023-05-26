@@ -13,6 +13,7 @@ set(include_dirs
     port/freertos/include/
     port/${target}/include
     port/${target}/include/arch
+    port/${target}/include/sys
     )
 
 set(srcs
@@ -142,6 +143,9 @@ if(NOT ${target} STREQUAL "linux")
     else()
         list(APPEND srcs "port/${target}/no_vfs_syscalls.c")
     endif()
+else()
+    # This wraps some posix IO functions to conditionally pass control to lwip
+    list(APPEND srcs "port/${target}/vfs_lwip.c")
 endif()
 
 if(CONFIG_LWIP_ICMP)
@@ -206,4 +210,13 @@ if(${target} STREQUAL "linux")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
     target_link_libraries(${COMPONENT_LIB} PRIVATE Threads::Threads)
+    set(WRAP_FUNCTIONS      select
+                            read
+                            fcntl
+                            write
+                            close)
+    foreach(wrap ${WRAP_FUNCTIONS})
+                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
+                target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __wrap_${wrap}")
+    endforeach()
 endif()

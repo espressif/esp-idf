@@ -447,16 +447,6 @@
 #endif
 
 /**
- * @def OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
- *
- * Define as 1 to set the ahead time for CSL transmit timing.
- *
- */
-#ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 20000
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_MAC_CSL_DEBUG_ENABLE
  *
  * Define as 1 to enable support Thread 1.2 CSL debug.
@@ -467,6 +457,16 @@
 #endif
 
 #endif // CONFIG_OPENTHREAD_CSL_ENABLE
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+ *
+ * Define as 1 to set the ahead time for CSL transmit timing.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 20000
+#endif
 
 #if CONFIG_OPENTHREAD_LINK_METRICS
 

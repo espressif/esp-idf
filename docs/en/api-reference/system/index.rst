@@ -7,6 +7,7 @@ System API
     :maxdepth: 1
 
     app_image_format
+    bootloader_image_format
     app_trace
     esp_function_with_shared_stack
     chip_revision

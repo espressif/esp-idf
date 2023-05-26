@@ -410,6 +410,14 @@ pytest_examples_esp32c3_flash_encryption:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
+pytest_examples_esp32c3_nvs_encr_hmac:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-nvs_encr_hmac
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, nvs_encr_hmac ]
+
 pytest_examples_esp32s2_usb_device:
   extends:
     - .pytest_examples_dir_template
@@ -844,6 +852,14 @@ pytest_components_esp32c3_flash_encryption:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
+pytest_components_esp32c3_nvs_encr_hmac:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-nvs_encr_hmac
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, nvs_encr_hmac ]
+
 pytest_components_esp32c3_flash_multi:
   extends:
     - .pytest_components_dir_template
@@ -1132,14 +1148,6 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
-example_test_005:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-bt
-  tags:
-    - ESP32
-    - Example_WIFI_BT
-
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
   tags:
@@ -1253,24 +1261,12 @@ UT_033:
     - UT_T2_Ethernet
     - psram
 
-UT_034:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_ESP_FLASH
-
 UT_035:
   extends: .unit_test_esp32s2_template
   parallel: 16
   tags:
     - ESP32S2_IDF
     - UT_T1_1
-
-UT_038:
-  extends: .unit_test_esp32s2_template
-  tags:
-    - ESP32S2_IDF
-    - UT_T1_ESP_FLASH
 
 UT_S2_SDSPI:
   extends:
@@ -1288,28 +1284,12 @@ UT_C2:
     - UT_T1_1
     - xtal_40mhz
 
-UT_C2_FLASH:
-  extends:
-    - .unit_test_esp32c2_template
-  tags:
-    - ESP32C2_IDF
-    - UT_T1_ESP_FLASH
-    - xtal_40mhz
-
 UT_C3:
   extends: .unit_test_esp32c3_template
   parallel: 11
   tags:
     - ESP32C3_IDF
     - UT_T1_1
-
-UT_C3_FLASH:
-  extends:
-    - .unit_test_esp32c3_template
-    - .rules:test:unit_test-esp32c3-flash_multi
-  tags:
-    - ESP32C3_IDF
-    - UT_T1_ESP_FLASH
 
 UT_C3_SDSPI:
   extends:
@@ -1339,12 +1319,6 @@ UT_S3:
   tags:
     - ESP32S3_IDF
     - UT_T1_1
-
-UT_S3_FLASH:
-  extends: .unit_test_esp32s3_template
-  tags:
-    - ESP32S3_IDF
-    - UT_T1_ESP_FLASH
 
 
 UT_S3_QUAD_PSRAM:

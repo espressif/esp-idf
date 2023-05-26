@@ -102,6 +102,9 @@
     .global rtos_int_enter
     .global rtos_int_exit
     .global _global_interrupt_handler
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    .global gdbstub_handle_debug_int
+#endif
 
     .section .exception_vectors.text
     /* This is the vector table. MTVEC points here.
@@ -170,15 +173,26 @@ _panic_handler:
      * have an pseudo excause */
     mv    a0, sp
     csrr  a1, mcause
+
     /* Branches instructions don't accept immediates values, so use t1 to
      * store our comparator */
     li    t0, 0x80000000
     bgeu  a1, t0, _call_panic_handler
     sw    a1, RV_STK_MCAUSE(sp)
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    li    t0, 3
+    beq   a1, t0, _call_gdbstub_handler
+#endif
     /* exception_from_panic never returns */
     jal panic_from_exception
     /* We arrive here if the exception handler has returned. */
     j _return_from_exception
+
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+_call_gdbstub_handler:
+    call  gdbstub_handle_debug_int
+    j     _return_from_exception
+#endif
 
 _call_panic_handler:
     /* Remove highest bit from mcause (a1) register and save it in the

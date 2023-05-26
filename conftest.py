@@ -124,6 +124,7 @@ ENV_MARKERS = {
     'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
     'ccs811': 'Runner with CCS811 connected',
     'ethernet_w5500': 'SPI Ethernet module with two W5500',
+    'nvs_encr_hmac': 'Runner with test HMAC key programmed in efuse',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
