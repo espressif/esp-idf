@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
+import importlib
 import json
 import os
 import re
@@ -8,6 +9,7 @@ import subprocess
 import sys
 from asyncio.subprocess import Process
 from io import open
+from pkgutil import iter_modules
 from types import FunctionType
 from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, Union
 
@@ -165,16 +167,50 @@ def debug_print_idf_version() -> None:
     print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
-def load_hints() -> Any:
+def load_hints() -> Dict:
     """Helper function to load hints yml file"""
-    with open(os.path.join(os.path.dirname(__file__), 'hints.yml'), 'r') as file:
-        hints = yaml.safe_load(file)
+    hints: Dict = {
+        'yml': [],
+        'modules': []
+    }
+
+    current_module_dir = os.path.dirname(__file__)
+    with open(os.path.join(current_module_dir, 'hints.yml'), 'r') as file:
+        hints['yml'] = yaml.safe_load(file)
+
+    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
+    if not os.path.exists(hint_modules_dir):
+        return hints
+
+    sys.path.append(hint_modules_dir)
+    for _, name, _ in iter_modules([hint_modules_dir]):
+        # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
+        # If the module doesn't have the function 'generate_hint', it will raise an exception
+        try:
+            hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
+        except ModuleNotFoundError:
+            red_print(f'Failed to import "{name}" from "{hint_modules_dir}" as a module')
+            raise SystemExit(1)
+        except AttributeError:
+            red_print('Module "{}" does not have function generate_hint.'.format(name))
+            raise SystemExit(1)
+
     return hints
 
 
-def generate_hints_buffer(output: str, hints: list) -> Generator:
+def generate_hints_buffer(output: str, hints: Dict) -> Generator:
     """Helper function to process hints within a string buffer"""
-    for hint in hints:
+    # Call modules for possible hints with unchanged output. Note that
+    # hints in hints.yml expect new line trimmed, but modules should
+    # get the output unchanged. Please see tools/idf_py_actions/hints.yml
+    for generate_hint in hints['modules']:
+        module_hint = generate_hint(output)
+        if module_hint:
+            yield module_hint
+
+    # hints expect new lines trimmed
+    output = ' '.join(line.strip() for line in output.splitlines() if line.strip())
+    for hint in hints['yml']:
         variables_list = hint.get('variables')
         hint_list, hint_vars, re_vars = [], [], []
         match: Optional[Match[str]] = None
@@ -214,8 +250,7 @@ def generate_hints(*filenames: str) -> Generator:
     hints = load_hints()
     for file_name in filenames:
         with open(file_name, 'r') as file:
-            output = ' '.join(line.strip() for line in file if line.strip())
-            yield from generate_hints_buffer(output, hints)
+            yield from generate_hints_buffer(file.read(), hints)
 
 
 def fit_text_in_terminal(out: str) -> str:
