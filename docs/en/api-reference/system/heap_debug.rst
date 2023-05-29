@@ -362,7 +362,7 @@ To gather and analyze heap trace, do the following on the host:
     target remote :3333
 
     mon reset halt
-    flushregs
+    maintenance flush register-cache
 
     tb heap_trace_start
     commands

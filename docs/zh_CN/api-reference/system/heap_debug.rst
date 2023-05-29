@@ -362,7 +362,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
     target remote :3333
 
     mon reset halt
-    flushregs
+    maintenance flush register-cache
 
     tb heap_trace_start
     commands
