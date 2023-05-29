@@ -127,6 +127,14 @@
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
 #define SLEEP_TIMER_ALARM_TO_SLEEP_TICKS    (16)
 
+#if SOC_PM_SUPPORT_TOP_PD
+// IDF console uses 8 bits data mode without parity, so each char occupy 8(data)+1(start)+1(stop)=10bits
+#define UART_FLUSH_US_PER_CHAR              (10*1000*1000 / CONFIG_ESP_CONSOLE_UART_BAUDRATE)
+#define CONCATENATE_HELPER(x, y)            (x##y)
+#define CONCATENATE(x, y)                   CONCATENATE_HELPER(x, y)
+#define CONSOLE_UART_DEV                    (&CONCATENATE(UART, CONFIG_ESP_CONSOLE_UART_NUM))
+#endif
+
 #define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
@@ -481,19 +489,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     bool deep_sleep = (mode == ESP_SLEEP_MODE_DEEP_SLEEP);
     bool should_skip_sleep = false;
 
-    if (deep_sleep) {
-        flush_uarts();
-    } else {
-#if SOC_PM_SUPPORT_TOP_PD
-        if (pd_flags & PMU_SLEEP_PD_TOP) {
-            flush_uarts();
-        } else
-#endif
-        {
-            suspend_uarts();
-        }
-    }
-
 #if SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256
     //Keep the RTC8M_CLK on if RTC clock is rc_fast_d256.
     bool rtc_using_8md256 = (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
@@ -515,6 +510,18 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
+
+    // Deep sleep UART prepare
+    /* flush_uart should be as late as possible, because the later the flush,
+    the shorter the time overhead of entering sleep caused by blocking,
+    and blocking after frequency switching can also reduce the power consumption
+    during the active state.*/
+
+    /* ext/gpio deepsleep wakeup prepare will change GPIO configure,
+       we need to flush uart before it */
+    if (deep_sleep) {
+        flush_uarts();
+    }
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     // Configure pins for external wakeup
@@ -611,6 +618,28 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         if (timer_wakeup_prepare() != ESP_OK) {
             result = ESP_ERR_SLEEP_REJECT;
             should_skip_sleep = true;
+        }
+    }
+
+    // Light sleep UART prepare
+    if (!deep_sleep) {
+#if SOC_PM_SUPPORT_TOP_PD
+        if (pd_flags & PMU_SLEEP_PD_TOP) {
+            if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
+                // s_config.sleep_duration here has been compensated in timer_wakeup_prepare,
+                // +2 is for cover the last charactor flush time and timer alarm to sleep request time(no more than 80us)
+                (s_config.sleep_duration < (UART_LL_FIFO_DEF_LEN - uart_ll_get_txfifo_len(CONSOLE_UART_DEV) + 2) * UART_FLUSH_US_PER_CHAR)) {
+                result = ESP_ERR_SLEEP_REJECT;
+                should_skip_sleep = true;
+            } else {
+                /* Only flush the uart_num configured to console, the transmission integrity of
+                   other uarts is guaranteed by the UART driver */
+                esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+            }
+        } else
+#endif
+        {
+            suspend_uarts();
         }
     }
 
@@ -1143,8 +1172,7 @@ static esp_err_t timer_wakeup_prepare(void)
 
 #if SOC_LP_TIMER_SUPPORTED
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-    // When pd_top is supported, light_sleep will flush uart, and the sleep overhead time will become an unpredictable value,
-    // here is the last timer wake-up validity check
+    // Last timer wake-up validity check
     if ((sleep_duration == 0) || \
         (target_wakeup_tick < lp_timer_hal_get_cycle_count() + SLEEP_TIMER_ALARM_TO_SLEEP_TICKS)) {
         // Treat too short sleep duration setting as timer reject
@@ -1155,6 +1183,8 @@ static esp_err_t timer_wakeup_prepare(void)
 #else
     rtc_hal_set_wakeup_timer(target_wakeup_tick);
 #endif
+
+    s_config.sleep_duration = sleep_duration;
     return ESP_OK;
 }
 
