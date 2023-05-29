@@ -76,12 +76,14 @@ struct gdma_tx_channel_t {
     gdma_channel_t base; // GDMA channel, base class
     void *user_data;     // user registered DMA event data
     gdma_event_callback_t on_trans_eof; // TX EOF callback
+    gdma_event_callback_t on_descr_err; // Descriptor error callback
 };
 
 struct gdma_rx_channel_t {
     gdma_channel_t base; // GDMA channel, base class
     void *user_data;     // user registered DMA event data
-    gdma_event_callback_t on_recv_eof; // RX EOF callback
+    gdma_event_callback_t on_recv_eof;  // RX EOF callback
+    gdma_event_callback_t on_descr_err; // Descriptor error callback
 };
 
 #ifdef __cplusplus

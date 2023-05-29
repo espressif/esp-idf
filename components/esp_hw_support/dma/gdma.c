@@ -391,6 +391,9 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     if (cbs->on_trans_eof) {
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_eof), ESP_ERR_INVALID_ARG, err, TAG, "on_trans_eof not in IRAM");
     }
+    if (cbs->on_descr_err) {
+        ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG, err, TAG, "on_descr_err not in IRAM");
+    }
     if (user_data) {
         ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
     }
@@ -402,9 +405,11 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     // enable/disable GDMA interrupt events for TX channel
     portENTER_CRITICAL(&pair->spinlock);
     gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_TX_EOF, cbs->on_trans_eof != NULL);
+    gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_TX_DESC_ERROR, cbs->on_descr_err != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
     tx_chan->on_trans_eof = cbs->on_trans_eof;
+    tx_chan->on_descr_err = cbs->on_descr_err;
     tx_chan->user_data = user_data;
 
     ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
@@ -427,6 +432,9 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     if (cbs->on_recv_eof) {
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_eof), ESP_ERR_INVALID_ARG, err, TAG, "on_recv_eof not in IRAM");
     }
+    if (cbs->on_descr_err) {
+        ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG, err, TAG, "on_descr_err not in IRAM");
+    }
     if (user_data) {
         ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
     }
@@ -438,9 +446,11 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     // enable/disable GDMA interrupt events for RX channel
     portENTER_CRITICAL(&pair->spinlock);
     gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_SUC_EOF, cbs->on_recv_eof != NULL);
+    gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_DESC_ERROR, cbs->on_descr_err != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
     rx_chan->on_recv_eof = cbs->on_recv_eof;
+    rx_chan->on_descr_err = cbs->on_descr_err;
     rx_chan->user_data = user_data;
 
     ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
@@ -726,6 +736,13 @@ static void IRAM_ATTR gdma_default_rx_isr(void *args)
             }
         }
     }
+    if (intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) {
+        if (rx_chan && rx_chan->on_descr_err) {
+            if (rx_chan->on_descr_err(&rx_chan->base, NULL, rx_chan->user_data)) {
+                need_yield = true;
+            }
+        }
+    }
 
     if (need_yield) {
         portYIELD_FROM_ISR();
@@ -753,7 +770,13 @@ static void IRAM_ATTR gdma_default_tx_isr(void *args)
             }
         }
     }
-
+    if (intr_status & GDMA_LL_EVENT_TX_DESC_ERROR) {
+        if (tx_chan && tx_chan->on_descr_err) {
+            if (tx_chan->on_descr_err(&tx_chan->base, NULL, tx_chan->user_data)) {
+                need_yield = true;
+            }
+        }
+    }
     if (need_yield) {
         portYIELD_FROM_ISR();
     }
