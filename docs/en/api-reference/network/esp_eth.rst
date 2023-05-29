@@ -197,10 +197,11 @@ Ethernet driver is implemented in an Object-Oriented style. Any operation on MAC
 
     ::
 
-        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default MAC configuration
-        mac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;   // alter the GPIO used for MDC signal
-        mac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO; // alter the GPIO used for MDIO signal
-        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);     // create MAC instance
+        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // apply default common MAC configuration
+        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
+        esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
+        esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
         phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
@@ -220,14 +221,14 @@ Ethernet driver is implemented in an Object-Oriented style. Any operation on MAC
 
     ::
 
-        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG(); // apply default MAC configuration
+        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
 
         // ...
 
-        mac_config.interface = EMAC_DATA_INTERFACE_RMII; // alter EMAC Data Interface
-        mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT; // select EMAC REF_CLK mode
-        mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO; // select GPIO number used to input/output EMAC REF_CLK
-        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+        esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // alter EMAC Data Interface
+        esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // select EMAC REF_CLK mode
+        esp32_emac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO;          // select GPIO number used to input/output EMAC REF_CLK
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
 
 SPI-Ethernet Module
@@ -237,7 +238,7 @@ SPI-Ethernet Module
 
 ::
 
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default MAC configuration
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default common MAC configuration
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
     phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
     phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset

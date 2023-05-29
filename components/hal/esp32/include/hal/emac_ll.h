@@ -241,7 +241,7 @@ static inline void emac_ll_set_back_off_limit(emac_mac_dev_t *mac_regs, uint32_t
 
 static inline void emac_ll_deferral_check_enable(emac_mac_dev_t *mac_regs, bool enable)
 {
-    mac_regs->gmacconfig.padcrcstrip = enable;
+    mac_regs->gmacconfig.deferralcheck = enable;
 }
 
 static inline void emac_ll_set_preamble_length(emac_mac_dev_t *mac_regs, uint32_t len)
