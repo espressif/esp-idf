@@ -37,7 +37,7 @@ The full history of releases can be found on the GitHub repository `Releases pag
 Which Version Should I Start With?
 ----------------------------------
 
-- For production purposes, use the `current stable version`_. Stable versions have been manually tested, and are updated with "bugfix releases" which fix bugs without changing other functionality (see `Versioning Scheme`_ for more details). Every stable release version can be found on the `Releases page`_.
+- For production purposes, use the `current stable version`_. Stable versions have been manually tested, and are updated with "bugfix releases" which fix bugs without changing other functionality (see `Versioning Scheme`_ for more details). Every stable release version can be found on the `Releases page`_. Also refer to `Compatibility Between ESP-IDF Releases and Revisions of Espressif SoCs <https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md>`_ to make sure the ESP-IDF version you selected is compatible with the chip revision you are going to produce with.
 
 - For prototyping, experimentation or for developing new ESP-IDF features, use the `latest version (master branch in Git) <https://docs.espressif.com/projects/esp-idf/en/latest/>`_. The latest version in the master branch has all the latest features and has passed automated testing, but has not been completely manually tested ("bleeding edge").
 

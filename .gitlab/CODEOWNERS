@@ -56,6 +56,7 @@
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
+/COMPATIBILITY*.md                    @esp-idf-codeowners/peripherals
 /CONTRIBUTING.md                      @esp-idf-codeowners/docs
 /Kconfig                              @esp-idf-codeowners/build-config
 /README*.md                           @esp-idf-codeowners/docs
