@@ -85,7 +85,7 @@ static esp_err_t phy_external_iopins_configure(const usb_phy_ext_io_conf_t *ext_
         {ext_io_conf->vmo_io_num, usb_otg_periph_signal.extphy_vmo_out, true},
     };
 
-    return phy_iopins_configure(usb_periph_iopins, sizeof(usb_periph_iopins)/sizeof(usb_iopin_dsc_t));
+    return phy_iopins_configure(usb_periph_iopins, sizeof(usb_periph_iopins) / sizeof(usb_iopin_dsc_t));
 }
 
 static esp_err_t phy_otg_iopins_configure(const usb_phy_otg_io_conf_t *otg_io_conf)
@@ -103,7 +103,7 @@ static esp_err_t phy_otg_iopins_configure(const usb_phy_otg_io_conf_t *otg_io_co
         {otg_io_conf->chrgvbus_io_num, usb_otg_periph_signal.srp_chrgvbus_out, true},
         {otg_io_conf->dischrgvbus_io_num, usb_otg_periph_signal.srp_dischrgvbus_out, true},
     };
-    return phy_iopins_configure(usb_periph_iopins, sizeof(usb_periph_iopins)/sizeof(usb_iopin_dsc_t));
+    return phy_iopins_configure(usb_periph_iopins, sizeof(usb_periph_iopins) / sizeof(usb_iopin_dsc_t));
 }
 
 esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
@@ -114,17 +114,17 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
 
     handle->otg_mode = mode;
     if (mode == USB_OTG_MODE_HOST) {
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_IDDIG_IN_IDX, false);     //connected connector is A side
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_IDDIG_IN_IDX, false);     // connected connector is A side
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_SRP_BVALID_IN_IDX, false);
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);  //receiving a valid Vbus from host
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_AVALID_IN_IDX, false);     //HIGH to force USB host mode
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);  // receiving a valid Vbus from host
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_AVALID_IN_IDX, false);     // HIGH to force USB host mode
         if (handle->target == USB_PHY_TARGET_INT) {
             usb_phy_hal_int_load_conf_host(&(handle->hal_context));
         }
     } else if (mode == USB_OTG_MODE_DEVICE) {
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_IDDIG_IN_IDX, false);      //connected connector is mini-B side
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_SRP_BVALID_IN_IDX, false);     //HIGH to force USB device mode
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);  //receiving a valid Vbus from device
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_IDDIG_IN_IDX, false);      // connected connector is mini-B side
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_SRP_BVALID_IN_IDX, false);     // HIGH to force USB device mode
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);  // receiving a valid Vbus from device
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_AVALID_IN_IDX, false);
     }
 
@@ -160,37 +160,37 @@ esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
 
     esp_err_t ret = ESP_OK;
     switch (action) {
-        case USB_PHY_ACTION_HOST_ALLOW_CONN:
-            if (handle->target == USB_PHY_TARGET_INT) {
-                usb_phy_hal_int_mimick_disconn(&(handle->hal_context), false);
-            } else {
-                if (!handle->iopins) {
-                    ret = ESP_FAIL;
-                    ESP_LOGE(USBPHY_TAG, "no I/O pins provided for connection");
-                    break;
-                }
-                /*
-                Allow for connections on the external PHY by connecting the VP and VM signals to the external PHY.
-                */
-                esp_rom_gpio_connect_in_signal(handle->iopins->vp_io_num, USB_EXTPHY_VP_IDX, false);
-                esp_rom_gpio_connect_in_signal(handle->iopins->vm_io_num, USB_EXTPHY_VM_IDX, false);
+    case USB_PHY_ACTION_HOST_ALLOW_CONN:
+        if (handle->target == USB_PHY_TARGET_INT) {
+            usb_phy_hal_int_mimick_disconn(&(handle->hal_context), false);
+        } else {
+            if (!handle->iopins) {
+                ret = ESP_FAIL;
+                ESP_LOGE(USBPHY_TAG, "no I/O pins provided for connection");
+                break;
             }
-            break;
+            /*
+            Allow for connections on the external PHY by connecting the VP and VM signals to the external PHY.
+            */
+            esp_rom_gpio_connect_in_signal(handle->iopins->vp_io_num, USB_EXTPHY_VP_IDX, false);
+            esp_rom_gpio_connect_in_signal(handle->iopins->vm_io_num, USB_EXTPHY_VM_IDX, false);
+        }
+        break;
 
-        case USB_PHY_ACTION_HOST_FORCE_DISCONN:
-            if (handle->target == USB_PHY_TARGET_INT) {
-                usb_phy_hal_int_mimick_disconn(&(handle->hal_context), true);
-            } else {
-                /*
-                Disable connections on the external PHY by connecting the VP and VM signals to the constant LOW signal.
-                */
-                esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VP_IDX, false);
-                esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VM_IDX, false);
-            }
-            break;
+    case USB_PHY_ACTION_HOST_FORCE_DISCONN:
+        if (handle->target == USB_PHY_TARGET_INT) {
+            usb_phy_hal_int_mimick_disconn(&(handle->hal_context), true);
+        } else {
+            /*
+            Disable connections on the external PHY by connecting the VP and VM signals to the constant LOW signal.
+            */
+            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VP_IDX, false);
+            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VM_IDX, false);
+        }
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     return ret;
