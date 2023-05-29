@@ -556,6 +556,7 @@ typedef struct {
     UINT16  video_mtu;          /* AVDTP video transport channel MTU at L2CAP */
     UINT16  video_flush_to;     /* AVDTP video transport channel flush timeout */
     BOOLEAN avrc_group;         /* TRUE, to accept AVRC 1.3 group nevigation command */
+    BOOLEAN avrc_br;            /* FALSE, does not support browsing channel */
     UINT8   num_co_ids;         /* company id count in p_meta_co_ids */
     tBTA_AV_CODE  rc_pass_rsp;  /* the default response code for pass through commands */
     const UINT32 *p_meta_co_ids;/* the metadata Get Capabilities response for company id */

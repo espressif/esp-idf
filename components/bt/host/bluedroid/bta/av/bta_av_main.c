@@ -585,10 +585,10 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                                 (UINT8)(bta_av_cb.sec_mask & (~BTA_SEC_AUTHORIZE)), BTA_ID_AV);
                 if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {
                     bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target\n", NULL,
-                                p_bta_av_cfg->avrc_src_tg_cat, BTA_ID_AV);
+                                p_bta_av_cfg->avrc_src_tg_cat, BTA_ID_AV, p_bta_av_cfg->avrc_br);
                 } else {
                     bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target\n", NULL,
-                                p_bta_av_cfg->avrc_snk_tg_cat, BTA_ID_AV);
+                                p_bta_av_cfg->avrc_snk_tg_cat, BTA_ID_AV, p_bta_av_cfg->avrc_br);
                 }
 #endif
             }
@@ -721,10 +721,10 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     /* create an SDP record as AVRC CT. */
                     if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {
                         bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, "AV Remote Control Controller\n", NULL,
-                                    p_bta_av_cfg->avrc_src_ct_cat, BTA_ID_AV);
+                                    p_bta_av_cfg->avrc_src_ct_cat, BTA_ID_AV, p_bta_av_cfg->avrc_br);
                     } else {
                         bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, "AV Remote Control Controller\n", NULL,
-                                    p_bta_av_cfg->avrc_snk_ct_cat, BTA_ID_AV);
+                                    p_bta_av_cfg->avrc_snk_ct_cat, BTA_ID_AV, p_bta_av_cfg->avrc_br);
                     }
 #endif
                 }
