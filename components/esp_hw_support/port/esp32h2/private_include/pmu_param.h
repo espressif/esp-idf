@@ -172,38 +172,36 @@ typedef struct {
     .hp_sys = {                                             \
         .analog = {                                         \
             .xpd_bias        = 0x0,                         \
-            .dbg_atten       = 0x0,                         \
             .pd_cur          = 1,                           \
             .bias_sleep      = 1,                           \
-            .slp_mem_xpd     = 1,                           \
-            .slp_logic_xpd   = 1,                           \
-            .slp_mem_dbias   = 0x4,                         \
-            .slp_logic_dbias = 0x4,                         \
-            .xpd             = 0,                           \
+            .slp_mem_xpd     = 0,                           \
+            .slp_logic_xpd   = 0,                           \
+            .slp_mem_dbias   = 0,                           \
+            .slp_logic_dbias = 0,                           \
+            .xpd             = 1,                           \
             .dbias           = 0,                           \
-            .drv_b           = 0                            \
+            .drv_b           = 0xFFFFF8                     \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_ACTIVE] = {                         \
         .analog = {                                         \
             .slp_xpd       = 0,                             \
-            .slp_dbias     = 0xc,                           \
+            .slp_dbias     = 0x0,                           \
             .xpd           = 1,                             \
-            .dbias         = 0x1a,                          \
+            .dbias         = 0xe,                           \
             .drv_b         = 0x0                            \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
             .xpd_bias      = 0,                             \
-            .dbg_atten     = 0x0,                           \
             .pd_cur        = 1,                             \
             .bias_sleep    = 1,                             \
             .xpd           = 0,                             \
-            .dbias         = 0x1c,                          \
+            .dbias         = 0,                             \
             .slp_xpd       = 1,                             \
-            .slp_dbias     = 0x3,                           \
-            .drv_b         = 0x0                            \
+            .slp_dbias     = 0x5,                           \
+            .drv_b         = 0x7                            \
         }                                                   \
     }                                                       \
 }
@@ -294,8 +292,6 @@ typedef struct pmu_sleep_machine_constant {
     } lp;
     struct {
         uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
-        uint16_t    clock_domain_sync_time_us;  /* The Slow OSC clock domain synchronizes time with the Fast OSC domain, at least 4 slow clock cycles (unit: microsecond) */
-        uint16_t    system_dfs_up_work_time_us; /* System DFS up scaling work time (unit: microsecond) */
         uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
         uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
@@ -318,13 +314,11 @@ typedef struct pmu_sleep_machine_constant {
     },                                          \
     .hp = {                                     \
         .min_slp_time_us                = 450,  \
-        .clock_domain_sync_time_us      = 150,  \
-        .system_dfs_up_work_time_us     = 124,  \
         .analog_wait_time_us            = 154,  \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
-        .regdma_s2a_work_time_us        = 430,  \
-        .regdma_a2s_work_time_us        = 338,  \
+        .regdma_s2a_work_time_us        = 0,    \
+        .regdma_a2s_work_time_us        = 0,    \
         .xtal_wait_stable_time_us       = 250,  \
         .pll_wait_stable_time_us        = 1     \
     }                                           \
