@@ -1083,7 +1083,7 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
    * - Reserved
      - 40 ~ 45
      - 40 ~ 45
-     - 
+     -
    * - PEER_INITIATED
      - 46
      - 46
@@ -2172,10 +2172,11 @@ Generally, following steps can be taken to configure the multiple antennas:
 
  - Configure which GPIOs are connected to the antenna_selects. For example, if four antennas are supported and GPIO20/GPIO21 are connected to antenna_select[0]/antenna_select[1], the configurations look like::
 
-     wifi_ant_gpio_config_t config = {
-         { .gpio_select = 1, .gpio_num = 20 },
-         { .gpio_select = 1, .gpio_num = 21 }
+     wifi_ant_gpio_config_t ant_gpio_config = {
+         .gpio_cfg[0] = { .gpio_select = 1, .gpio_num = 20 },
+         .gpio_cfg[1] = { .gpio_select = 1, .gpio_num = 21 }
      };
+     
  - Configure which antennas are enabled and how RX/TX use the enabled antennas. For example, if antenna1 and antenna3 are enabled, the RX needs to select the better antenna automatically and uses antenna1 as its default antenna, the TX always selects the antenna3. The configuration looks like::
 
      wifi_ant_config_t config = {
