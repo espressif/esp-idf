@@ -49,6 +49,7 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 
 Power Management Locks
 ----------------------
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, or 240 MHz", esp32s3="80 MHz, 160 MHz, or 240 MHz", esp32c2="80 MHz or 120 MHz", esp32c3="80 MHz or 160 MHz", esp32c6="80 MHz or 160 MHz"}
 
 Applications have the ability to acquire/release locks in order to control the power management algorithm. When an application acquires a lock, the power management algorithm operation is restricted in a way described below. When the lock is released, such restrictions are removed.
 
@@ -63,7 +64,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
   * - Lock
     - Description
   * - ``ESP_PM_CPU_FREQ_MAX``
-    - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+    - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to {IDF_TARGET_MAX_CPU_FREQ}.
   * - ``ESP_PM_APB_FREQ_MAX``
     - Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
   * - ``ESP_PM_NO_LIGHT_SLEEP``
@@ -74,14 +75,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
 
 The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`.
 
-.. only:: esp32
-
-   .. include:: inc/power_management_esp32.rst
-
-.. only:: not esp32
-
-   .. include:: inc/power_management_esp32s2_and_later.rst
-
+.. include:: inc/power_management_{IDF_TARGET_PATH_NAME}.rst
 
 If none of the locks are acquired, and light sleep is enabled in a call to :cpp:func:`esp_pm_configure`, the system will go into light sleep mode. The duration of light sleep will be determined by:
 
