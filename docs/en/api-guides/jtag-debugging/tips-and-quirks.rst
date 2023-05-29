@@ -112,7 +112,7 @@ On startup, debugger is issuing sequence of commands to reset the chip and halt 
 
 * ``set remote hardware-watchpoint-limit {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM}`` — Restrict GDB to using available hardware watchpoints supported by the chip, {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} for {IDF_TARGET_NAME}. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
-* ``flushregs`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``flushregs`` is a way to force GDB to get new state from the target.
+* ``maintenance flush register-cache`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``maintenance flush register-cache`` is a way to force GDB to get new state from the target.
 * ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
 * ``c`` — resume the program. It will then stop at breakpoint inserted at ``app_main``.
 

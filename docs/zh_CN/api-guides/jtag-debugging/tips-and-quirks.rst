@@ -112,7 +112,7 @@ GDB 具有 FreeRTOS 支持的 Python 扩展模块。在系统要求满足的情�
 
 * ``set remote hardware-watchpoint-limit {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM}`` — 限制 GDB 使用芯片支持的硬件观察点数量，{IDF_TARGET_NAME} 支持 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个观察点。更多详细信息，请查阅 `GDB 配置远程目标 <https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html>`_ 。
 * ``mon reset halt`` — 复位芯片并使 CPU 停止运行。
-* ``flushregs`` — monitor (``mon``) 命令无法通知 GDB 目标状态已经更改，GDB 会假设在 ``mon reset halt`` 之前所有的任务堆栈仍然有效。实际上，复位后目标状态将发生变化。执行 ``flushregs`` 是一种强制 GDB 从目标获取最新状态的方法。
+* ``maintenance flush register-cache`` — monitor (``mon``) 命令无法通知 GDB 目标状态已经更改，GDB 会假设在 ``mon reset halt`` 之前所有的任务堆栈仍然有效。实际上，复位后目标状态将发生变化。执行 ``maintenance flush register-cache`` 是一种强制 GDB 从目标获取最新状态的方法。
 * ``thb app_main`` — 在 ``app_main`` 处插入一个临时的硬件断点，如果有需要，可以将其替换为其他函数名。
 * ``c`` — 恢复程序运行，它将会在 ``app_main`` 的断点处停止运行。
 
