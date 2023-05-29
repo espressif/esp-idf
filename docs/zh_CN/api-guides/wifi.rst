@@ -2057,9 +2057,9 @@ Wi-Fi 多根天线配置
 
  - 配置 antenna_selects 连接哪些 GPIOs，例如，如果支持四根天线，且 GPIO20/GPIO21 连接到 antenna_select[0]/antenna_select[1]，配置如下所示::
 
-     wifi_ant_gpio_config_t config = {
-         { .gpio_select = 1, .gpio_num = 20 },
-         { .gpio_select = 1, .gpio_num = 21 }
+     wifi_ant_gpio_config_t ant_gpio_config = {
+         .gpio_cfg[0] = { .gpio_select = 1, .gpio_num = 20 },
+         .gpio_cfg[1] = { .gpio_select = 1, .gpio_num = 21 }
      };
  - 配置使能哪些天线、以及接收/发送数据如何使用使能的天线，例如，如果使能了天线 1 和天线 3，接收数据需要自动选择较好的天线，并将天线 1 作为默认天线，发送数据始终选择天线 3。配置如下所示::
 
