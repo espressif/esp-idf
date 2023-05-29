@@ -205,7 +205,7 @@ sys_sem_free(sys_sem_t *sem)
 err_t
 sys_mbox_new(sys_mbox_t *mbox, int size)
 {
-  *mbox = mem_malloc(sizeof(struct sys_mbox_s));
+  *mbox = malloc(sizeof(struct sys_mbox_s));
   if (*mbox == NULL){
     LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox\n"));
     return ERR_MEM;
@@ -517,7 +517,7 @@ sys_thread_sem_free(void* data) // destructor for TLS semaphore
 sys_sem_t*
 sys_thread_sem_init(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)mem_malloc(sizeof(sys_sem_t*));
+  sys_sem_t *sem = (sys_sem_t*)malloc(sizeof(sys_sem_t*));
 
   if (!sem){
     ESP_LOGE(TAG, "thread_sem_init: out of memory");
