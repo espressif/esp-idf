@@ -126,16 +126,26 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!is_initialized() || timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
     timer_list_lock();
-    timer->alarm = esp_timer_get_time() + timeout_us;
-    timer->period = 0;
+    esp_err_t err;
+    /* Check if the timer is armed once the list is locked.
+     * Otherwise another task may arm the timer inbetween the check
+     * and us locking the list, resulting in us inserting the
+     * timer to s_timers a second time. This will create a loop
+     * in s_timers. */
+    if (timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        timer->alarm = esp_timer_get_time() + timeout_us;
+        timer->period = 0;
 #if WITH_PROFILING
-    timer->times_armed++;
+        timer->times_armed++;
 #endif
-    esp_err_t err = timer_insert(timer);
+        err = timer_insert(timer);
+    }
     timer_list_unlock();
     return err;
 }
@@ -145,17 +155,24 @@ esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t 
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!is_initialized() || timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
     timer_list_lock();
     period_us = MAX(period_us, esp_timer_impl_get_min_period_us());
-    timer->alarm = esp_timer_get_time() + period_us;
-    timer->period = period_us;
+    esp_err_t err;
+
+    /* Check if the timer is armed once the list is locked to avoid a data race */
+    if (timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        timer->alarm = esp_timer_get_time() + period_us;
+        timer->period = period_us;
 #if WITH_PROFILING
-    timer->times_armed++;
+        timer->times_armed++;
 #endif
-    esp_err_t err = timer_insert(timer);
+        err = timer_insert(timer);
+    }
     timer_list_unlock();
     return err;
 }
@@ -165,10 +182,21 @@ esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!is_initialized() || !timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    return timer_remove(timer);
+    esp_err_t err;
+
+    timer_list_lock();
+
+    /* Check if the timer is armed once the list is locked to avoid a data race */
+    if (!timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        err = timer_remove(timer);
+    }
+    timer_list_unlock();
+    return err;
 }
 
 esp_err_t esp_timer_delete(esp_timer_handle_t timer)
@@ -176,16 +204,20 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (timer_armed(timer)) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    esp_err_t err;
     timer_list_lock();
-    timer->event_id = EVENT_ID_DELETE_TIMER;
-    timer->alarm = esp_timer_get_time();
-    timer->period = 0;
-    timer_insert(timer);
+
+    /* Check if the timer is armed once the list is locked to avoid a data race */
+    if (timer_armed(timer)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        timer->event_id = EVENT_ID_DELETE_TIMER;
+        timer->alarm = esp_timer_get_time();
+        timer->period = 0;
+        err = timer_insert(timer);
+    }
     timer_list_unlock();
-    return ESP_OK;
+    return err;
 }
 
 static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer)
