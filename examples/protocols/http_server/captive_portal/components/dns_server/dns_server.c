@@ -1,23 +1,22 @@
-/* Captive Portal Example
-
-    This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-    Unless required by applicable law or agreed to in writing, this
-    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-    CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <sys/param.h>
 #include <inttypes.h>
 
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_check.h"
 #include "esp_netif.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
+#include "dns_server.h"
 
 #define DNS_PORT (53)
 #define DNS_MAX_LEN (256)
@@ -57,6 +56,14 @@ typedef struct __attribute__((__packed__))
     uint32_t ip_addr;
 } dns_answer_t;
 
+// DNS server handle
+struct dns_server_handle {
+    bool started;
+    TaskHandle_t task;
+    int num_of_entries;
+    dns_entry_pair_t entry[];
+};
+
 /*
     Parse the name from the packet from the DNS name format to a regular .-seperated name
     returns the pointer to the next part of the packet
@@ -90,7 +97,7 @@ static char *parse_dns_name(char *raw_name, char *parsed_name, size_t parsed_nam
 }
 
 // Parses the DNS request and prepares a DNS response with the IP of the softAP
-static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t dns_reply_max_len)
+static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t dns_reply_max_len, dns_server_handle_t h)
 {
     if (req_len > dns_reply_max_len) {
         return -1;
@@ -126,8 +133,8 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     char *cur_qd_ptr = dns_reply + sizeof(dns_header_t);
     char name[128];
 
-    // Respond to all questions with the ESP32's IP address
-    for (int i = 0; i < qd_count; i++) {
+    // Respond to all questions based on configured rules
+    for (int qd_i = 0; qd_i < qd_count; qd_i++) {
         char *name_end_ptr = parse_dns_name(cur_qd_ptr, name, sizeof(name));
         if (name_end_ptr == NULL) {
             ESP_LOGE(TAG, "Failed to parse DNS question: %s", cur_qd_ptr);
@@ -141,6 +148,25 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
         ESP_LOGD(TAG, "Received type: %d | Class: %d | Question for: %s", qd_type, qd_class, name);
 
         if (qd_type == QD_TYPE_A) {
+            esp_ip4_addr_t ip = { .addr = IPADDR_ANY };
+            // Check the configured rules to decide whether to answer this question or not
+            for (int i = 0; i < h->num_of_entries; ++i) {
+                // check if the name either corresponds to the entry, or if we should answer to all queries ("*")
+                if (strcmp(h->entry[i].name, "*") == 0 || strcmp(h->entry[i].name, name) == 0) {
+                    if (h->entry[i].if_key) {
+                        esp_netif_ip_info_t ip_info;
+                        esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey(h->entry[i].if_key), &ip_info);
+                        ip.addr = ip_info.ip.addr;
+                        break;
+                    } else if (h->entry->ip.addr != IPADDR_ANY) {
+                        ip.addr = h->entry[i].ip.addr;
+                        break;
+                    }
+                }
+            }
+            if (ip.addr == IPADDR_ANY) {    // no rule applies, continue with another question
+                continue;
+            }
             dns_answer_t *answer = (dns_answer_t *)cur_ans_ptr;
 
             answer->ptr_offset = htons(0xC000 | (cur_qd_ptr - dns_reply));
@@ -148,12 +174,10 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
             answer->class = htons(qd_class);
             answer->ttl = htonl(ANS_TTL_SEC);
 
-            esp_netif_ip_info_t ip_info;
-            esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"), &ip_info);
-            ESP_LOGD(TAG, "Answer with PTR offset: 0x%" PRIX16 " and IP 0x%" PRIX32, ntohs(answer->ptr_offset), ip_info.ip.addr);
+            ESP_LOGD(TAG, "Answer with PTR offset: 0x%" PRIX16 " and IP 0x%" PRIX32, ntohs(answer->ptr_offset), ip.addr);
 
-            answer->addr_len = htons(sizeof(ip_info.ip.addr));
-            answer->ip_addr = ip_info.ip.addr;
+            answer->addr_len = htons(sizeof(ip.addr));
+            answer->ip_addr = ip.addr;
         }
     }
     return reply_len;
@@ -169,8 +193,9 @@ void dns_server_task(void *pvParameters)
     char addr_str[128];
     int addr_family;
     int ip_protocol;
+    dns_server_handle_t handle = pvParameters;
 
-    while (1) {
+    while (handle->started) {
 
         struct sockaddr_in dest_addr;
         dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -193,7 +218,7 @@ void dns_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket bound, port %d", DNS_PORT);
 
-        while (1) {
+        while (handle->started) {
             ESP_LOGI(TAG, "Waiting for data");
             struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
@@ -218,7 +243,7 @@ void dns_server_task(void *pvParameters)
                 rx_buffer[len] = 0;
 
                 char reply[DNS_MAX_LEN];
-                int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN);
+                int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
                 ESP_LOGI(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
                 if (reply_len <= 0) {
@@ -242,7 +267,24 @@ void dns_server_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void start_dns_server(void)
+dns_server_handle_t start_dns_server(dns_server_config_t *config)
 {
-    xTaskCreate(dns_server_task, "dns_server", 4096, NULL, 5, NULL);
+    dns_server_handle_t handle = calloc(1, sizeof(struct dns_server_handle) + config->num_of_entries * sizeof(dns_entry_pair_t));
+    ESP_RETURN_ON_FALSE(handle, NULL, TAG, "Failed to allocate dns server handle");
+
+    handle->started = true;
+    handle->num_of_entries = config->num_of_entries;
+    memcpy(handle->entry, config->item, config->num_of_entries * sizeof(dns_entry_pair_t));
+
+    xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, &handle->task);
+    return handle;
+}
+
+void stop_dns_server(dns_server_handle_t handle)
+{
+    if (handle) {
+        handle->started = false;
+        vTaskDelete(handle->task);
+        free(handle);
+    }
 }
