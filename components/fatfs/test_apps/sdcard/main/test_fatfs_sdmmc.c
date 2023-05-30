@@ -92,7 +92,7 @@ TEST_CASE("Mount fails cleanly without card inserted", "[fatfs][ignore]")
     HEAP_SIZE_CHECK(heap_size, 0);
 }
 
-TEST_CASE("(SD) can format partition", "[fatfs][sdmmc]")
+TEST_CASE("(SD) can format partition", "[fatfs][sdmmc][timeout=180]")
 {
     sdmmc_card_t *card = NULL;
     test_setup_sdmmc(&card);
