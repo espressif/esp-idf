@@ -10,6 +10,7 @@ else()
     execute_process(
         COMMAND ${CMAKE_C_COMPILER} -dumpmachine
         OUTPUT_VARIABLE dump_machine
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 endif()
 message(STATUS "Compiler supported targets: ${dump_machine}")
