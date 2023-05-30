@@ -6,11 +6,12 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='cannot pass')   # IDF-6809
 @pytest.mark.generic
 def test_base_mac_address(dut: Dut) -> None:
+    def get_hex_r(num_bytes: int) -> str:
+        return r', '.join((r'0x([0-9a-f]{1,2})',) * num_bytes)
+    hex_r = get_hex_r(6)
     dut.expect_exact('BASE_MAC: Base MAC Address read from EFUSE BLK0')
-    hex_r = r', '.join((r'0x([0-9a-f]{1,2})',) * 6)
     mac_m = dut.expect(r'BASE_MAC: Using "' + hex_r + r'" as base MAC address', timeout=5).groups()
 
     def get_expected_mac_string(increment: int, target: str) -> str:
@@ -40,8 +41,18 @@ def test_base_mac_address(dut: Dut) -> None:
         dut.expect_exact('WIFI_STA MAC: ' + get_expected_mac_string(0, dut.target), timeout=2)
         dut.expect_exact('SoftAP MAC: ' + get_expected_mac_string(1, dut.target))
 
-    if dut.target != 'esp32s2':
+    if dut.target != 'esp32s2' and dut.target != 'esp32h2':
         if sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT'):
             dut.expect_exact('BT MAC: ' + get_expected_mac_string(2, dut.target))
         dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(3, dut.target))
         dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
+    elif dut.target == 'esp32h2':
+        dut.expect_exact('BT MAC: ' + get_expected_mac_string(0, dut.target))
+        dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
+
+    if sdkconfig.get('SOC_IEEE802154_SUPPORTED'):
+        mac_ext_m = dut.expect(r'MAC_EXT: ' + get_hex_r(2), timeout=5).groups()
+        mac_ext = ['0x{}'.format(m.decode('utf8')) for m in mac_ext_m]
+        mac = ['0x{}'.format(m.decode('utf8')) for m in mac_m]
+        expected_eui64 = f'{mac[0]}, {mac[1]}, {mac[2]}, {mac_ext[0]}, {mac_ext[1]}, {mac[3]}, {mac[4]}, {mac[5]}'
+        dut.expect_exact(r'IEEE802154: ' + expected_eui64, timeout=5)
