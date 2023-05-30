@@ -312,6 +312,13 @@ test_docs:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_docs.py
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./test_sphinx_idf_extensions.py
 
+test_sbom:
+  extends:
+    - .host_test_template
+    - .rules:patterns:sbom
+  script:
+    - python ${IDF_PATH}/tools/test_sbom/test_submodules.py
+
 test_autocomplete:
   extends: .host_test_template
   image: $CI_DOCKER_REGISTRY/linux-shells:1
