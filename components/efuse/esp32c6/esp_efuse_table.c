@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 7bd417676a69ed11f4908b6146efeaeb
+// md5_digest_table fd5a35cea89bfad954e834bc92bed385
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -549,7 +549,8 @@ static const esp_efuse_desc_t MAC[] = {
 };
 
 static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 48, 16}, 	 // [] Stores the extended bits of MAC address,
+    {EFUSE_BLK1, 56, 8}, 	 // [] Stores the extended bits of MAC address,
+    {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address,
 };
 
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
@@ -1363,6 +1364,7 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
     &MAC_EXT[0],    		// [] Stores the extended bits of MAC address
+    &MAC_EXT[1],    		// [] Stores the extended bits of MAC address
     NULL
 };
 
