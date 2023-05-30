@@ -25,7 +25,8 @@
 
 #if !defined CONFIG_IDF_TARGET_ESP32S3
   #if (defined CONFIG_IDF_TARGET_ESP32C6 || defined CONFIG_IDF_TARGET_ESP32H2)
-    #define RNG_CPU_WAIT_CYCLE_NUM (80 * 12) // higher frequency because we are reading bytes instead of words
+    #define RNG_CPU_WAIT_CYCLE_NUM (80 * 16) // Keep the byte sampling frequency in the ~62KHz range which has been
+                                             // tested.
   #else
     #define RNG_CPU_WAIT_CYCLE_NUM (80 * 32 * 2) /* extra factor of 2 is precautionary */
   #endif
