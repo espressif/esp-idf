@@ -19,16 +19,16 @@
 #endif
 
 #if defined CONFIG_IDF_TARGET_ESP32S3
-#define APB_CYCLE_WAIT_NUM (1778) /* If APB clock is 80 MHz, maximum sampling frequency is around 45 KHz*/
+#define APB_CYCLE_WAIT_NUM (1778) /* If APB clock is 80 MHz, the maximum sampling frequency is around 45 KHz*/
                                   /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
 #elif defined CONFIG_IDF_TARGET_ESP32C6
-#define APB_CYCLE_WAIT_NUM (160 * 5) /* We want to have a maximum sampling frequency below 50KHz for
-                                      * 32-bit samples. But on ESP32C6, we only read one byte at a time,
-                                      * hence, the wait time is 4 times lower. The current value translates
-                                      * to a sampling frequency of 50 KHz for reading 32 bit samples,
+#define APB_CYCLE_WAIT_NUM (160 * 16) /* On ESP32C6, we only read one byte at a time, then XOR the value with
+                                      * an asynchronous timer (see code below).
+                                      * The current value translates to a sampling frequency of around 62.5 KHz
+                                      * for reading 8 bit samples, which is the rate at which the RNG was tested,
                                       * plus additional overhead for the calculation, making it slower. */
 #elif defined CONFIG_IDF_TARGET_ESP32H2
-#define APB_CYCLE_WAIT_NUM (160 * 3) /* Same reasoning as for ESP32C6, but the CPU frequency on ESP32H2 is
+#define APB_CYCLE_WAIT_NUM (96 * 16) /* Same reasoning as for ESP32C6, but the CPU frequency on ESP32H2 is
                                       * 96MHz instead of 160 MHz */
 #else
 #define APB_CYCLE_WAIT_NUM (16)
