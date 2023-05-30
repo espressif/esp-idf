@@ -2,6 +2,26 @@
 # All the relative URL paths are intended to be GitHub ones
 # For Espressif's public projects please use '../../espressif/proj', not a '../proj'
 #
+# Submodules SBOM information
+# ---------------------------
+# Submodules, which are used directly and not forked into espressif namespace should
+# contain SBOM information here. Other submodules should have the SBOM manifest file
+# included in the root of their project's repository.
+#
+# The sbom-hash entry records the submodule's checkout SHA as presented in git-tree
+# commit object. For example spiffs submodule
+#
+# $ git ls-tree HEAD components/spiffs/spiffs
+# 160000 commit 0dbb3f71c5f6fae3747a9d935372773762baf852	components/spiffs/spiffs
+#
+# The hash can be also obtained with git submodule command
+#
+# $ git submodule status components/spiffs/spiffs
+# 0dbb3f71c5f6fae3747a9d935372773762baf852 components/spiffs/spiffs (0.2-255-g0dbb3f71c5f6)
+#
+# The submodule SHA recorded here has to match with SHA, which is presented in git-tree.
+# This is checked by CI. Also please don't forget to update the submodule version
+# if you are changing the sbom-hash. This is important for SBOM generation.
 
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
@@ -14,6 +34,12 @@
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
 	url = ../../kmackay/micro-ecc.git
+	sbom-version = 1.0
+	sbom-cpe = cpe:2.3:a:micro-ecc_project:micro-ecc:{}:*:*:*:*:*:*:*
+	sbom-supplier = Person: Ken MacKay
+	sbom-url = https://github.com/kmackay/micro-ecc
+	sbom-description = A small and fast ECDH and ECDSA implementation for 8-bit, 32-bit, and 64-bit processors
+	sbom-hash = d037ec89546fad14b5c4d5456c2e23a71e554966
 
 [submodule "components/coap/libcoap"]
 	path = components/coap/libcoap
@@ -30,10 +56,21 @@
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
 	url = ../../pellepl/spiffs.git
+	sbom-version = 0.2-255-g0dbb3f71c5f6
+	sbom-supplier = Person: Peter Andersson
+	sbom-url = https://github.com/pellepl/spiffs
+	sbom-description = Wear-leveled SPI flash file system for embedded devices
+	sbom-hash = 0dbb3f71c5f6fae3747a9d935372773762baf852
 
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
 	url = ../../DaveGamble/cJSON.git
+	sbom-version = 1.7.15
+	sbom-cpe = cpe:2.3:a:cjson_project:cjson:{}:*:*:*:*:*:*:*
+	sbom-supplier = Person: Dave Gamble
+	sbom-url = https://github.com/DaveGamble/cJSON
+	sbom-description = Ultralightweight JSON parser in ANSI C
+	sbom-hash = d348621ca93571343a56862df7de4ff3bc9b5667
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
@@ -58,10 +95,21 @@
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
 	url = ../../protobuf-c/protobuf-c.git
+	sbom-version = 1.4.0
+	sbom-cpe = cpe:2.3:a:protobuf-c_project:protobuf-c:{}:*:*:*:*:*:*:*
+	sbom-supplier = Organization: protobuf-c community <https://groups.google.com/g/protobuf-c>
+	sbom-url = https://github.com/protobuf-c/protobuf-c
+	sbom-description = Protocol Buffers implementation in C
+	sbom-hash = f224ab2eeb648a818eb20687d7150a285442c907
 
 [submodule "components/unity/unity"]
 	path = components/unity/unity
 	url = ../../ThrowTheSwitch/Unity.git
+	sbom-version = v2.4.3-51-g7d2bf62b7e6a
+	sbom-supplier = Organization: ThrowTheSwitch community <http://www.throwtheswitch.org>
+	sbom-url = https://github.com/ThrowTheSwitch/Unity
+	sbom-description = Simple Unit Testing for C
+	sbom-hash = 7d2bf62b7e6afaf38153041a9d53c21aeeca9a25
 
 [submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
 	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
@@ -90,6 +138,11 @@
 [submodule "components/cmock/CMock"]
 	path = components/cmock/CMock
 	url = ../../ThrowTheSwitch/CMock.git
+	sbom-version = v2.5.2-2-geeecc49ce8af
+	sbom-supplier = Organization: ThrowTheSwitch community <http://www.throwtheswitch.org>
+	sbom-url = https://github.com/ThrowTheSwitch/CMock
+	sbom-description = CMock - Mock/stub generator for C
+	sbom-hash = eeecc49ce8af123cf8ad40efdb9673e37b56230f
 
 [submodule "components/openthread/openthread"]
 	path = components/openthread/openthread
