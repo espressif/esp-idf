@@ -18,7 +18,7 @@
 #include "esp_memory_utils.h"
 #include "sys/queue.h"
 
-static const char* TAG = "heaptrace";
+static __attribute__((unused)) const char* TAG = "heaptrace";
 
 #define STACK_DEPTH CONFIG_HEAP_TRACING_STACK_DEPTH
 
