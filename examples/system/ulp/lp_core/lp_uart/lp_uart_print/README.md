@@ -1,13 +1,13 @@
 | Supported Targets | ESP32-C6 |
 | ----------------- | -------- |
 
-# LP UART Echo Example
+# LP UART Print Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 ## Overview
 
-This example demonstrates the usage of the LP UART driver from the LP core by reading data written to a serial console and echoing it back while the main core is in deepsleep.
+This example demonstrates how to use print statements from a program running on the LP core.
 
 ## How to use example
 
@@ -19,10 +19,11 @@ To run this example, you should have an ESP32-C6 based development board and a h
 
 **Note:** The following pin assignments are used by default.
 
-|                         | Rx    | Tx    |
-| ----------------------- | ------| ------|
-| ESP32-C6                | GPIO4 | GPIO5 |
-| Host machine            | Tx    | Rx    |
+
+|                         | Tx    |
+| ----------------------- | ------|
+| ESP32-C6                | GPIO5 |
+| Host machine            | Rx    |
 
 ### Build and Flash
 
@@ -47,7 +48,19 @@ LP core loaded with firmware and running successfully
 Entering deep sleep...
 ```
 
-The log output from the serial monitor connected to the LP core would be blank. Type using a keyboard and the monitor should echo the characters being typed.
+The log output from the serial monitor connected to the LP core should display output as below -
+
+```bash
+Hello from the LP core!!
+This program has run 1 times
+**************************
+Hello from the LP core!!
+This program has run 2 times
+**************************
+Hello from the LP core!!
+This program has run 3 times
+**************************
+```
 
 ## Troubleshooting
 
