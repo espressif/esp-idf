@@ -156,6 +156,7 @@ static const char* s_mode_names[] = {
         "APB_MAX",
         "CPU_MAX"
 };
+static uint32_t s_light_sleep_counts, s_light_sleep_reject_counts;
 #endif // WITH_PROFILING
 
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
@@ -612,7 +613,13 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
             /* Enter sleep */
             ESP_PM_TRACE_ENTER(SLEEP, core_id);
             int64_t sleep_start = esp_timer_get_time();
-            esp_light_sleep_start();
+            if (esp_light_sleep_start() != ESP_OK){
+#ifdef WITH_PROFILING
+                s_light_sleep_reject_counts++;
+            } else {
+                s_light_sleep_counts++;
+#endif
+            }
             int64_t slept_us = esp_timer_get_time() - sleep_start;
             ESP_PM_TRACE_EXIT(SLEEP, core_id);
 
@@ -652,6 +659,9 @@ void esp_pm_impl_dump_stats(FILE* out)
     pm_time_t last_mode_change_time = s_last_mode_change_time;
     pm_mode_t cur_mode = s_mode;
     pm_time_t now = pm_get_time();
+    bool light_sleep_en = s_light_sleep_en;
+    uint32_t light_sleep_counts = s_light_sleep_counts;
+    uint32_t light_sleep_reject_counts = s_light_sleep_reject_counts;
     portEXIT_CRITICAL_ISR(&s_switch_lock);
 
     time_in_mode[cur_mode] += now - last_mode_change_time;
@@ -659,7 +669,7 @@ void esp_pm_impl_dump_stats(FILE* out)
     fprintf(out, "\nMode stats:\n");
     fprintf(out, "%-8s  %-10s  %-10s  %-10s\n", "Mode", "CPU_freq", "Time(us)", "Time(%)");
     for (int i = 0; i < PM_MODE_COUNT; ++i) {
-        if (i == PM_MODE_LIGHT_SLEEP && !s_light_sleep_en) {
+        if (i == PM_MODE_LIGHT_SLEEP && !light_sleep_en) {
             /* don't display light sleep mode if it's not enabled */
             continue;
         }
@@ -669,6 +679,10 @@ void esp_pm_impl_dump_stats(FILE* out)
                 "",                                     //Empty space to align columns
                 time_in_mode[i],
                 (int) (time_in_mode[i] * 100 / now));
+    }
+    if (light_sleep_en){
+        fprintf(out, "\nSleep stats:\n");
+        fprintf(out, "light_sleep_counts:%ld  light_sleep_reject_counts:%ld\n", light_sleep_counts, light_sleep_reject_counts);
     }
 }
 #endif // WITH_PROFILING
