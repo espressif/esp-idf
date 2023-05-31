@@ -138,3 +138,9 @@ examples/bluetooth/nimble/hci:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: the other targets are not tested yet
+
+examples/bluetooth/nimble/power_save:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
