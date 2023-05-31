@@ -260,7 +260,8 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
     UINT16              service = 0;
     UINT16              browse = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
     bool                status = true;
-    UINT8               temp[4];
+    // Buffer capable to hold 2, 4 and 16-byte UUIDs
+    UINT8               temp[LEN_UUID_128];
     UINT8*              p_temp = temp;
     UINT32              sdp_handle = 0;
 
@@ -274,17 +275,25 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
 
     if (rec->hdr.bt_uuid.len == 16) {
         memcpy(&service, &rec->hdr.bt_uuid.uuid.uuid128[2], sizeof(service));
+        UINT8_TO_BE_STREAM(p_temp, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
+        ARRAY_TO_BE_STREAM(p_temp, rec->hdr.bt_uuid.uuid.uuid128, LEN_UUID_128);
     } else if (rec->hdr.bt_uuid.len == 2) {
         memcpy(&service, &rec->hdr.bt_uuid.uuid.uuid16, sizeof(service));
+        UINT8_TO_BE_STREAM(p_temp, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
+        UINT16_TO_BE_STREAM(p_temp, rec->hdr.bt_uuid.uuid.uuid16);
     } else if (rec->hdr.bt_uuid.len == 4) {
         memcpy(&service, &rec->hdr.bt_uuid.uuid.uuid16, sizeof(service));
+        UINT8_TO_BE_STREAM(p_temp, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
+        UINT32_TO_BE_STREAM(p_temp, rec->hdr.bt_uuid.uuid.uuid32);
     } else {
         SDP_DeleteRecord(sdp_handle);
         sdp_handle = 0;
         return sdp_handle;
     }
     /* add service class */
-    status &= SDP_AddServiceClassIdList(sdp_handle, 1, &service);
+    status &= SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST,
+                                DATA_ELE_SEQ_DESC_TYPE, (UINT32) (p_temp - temp), temp);
+
     memset( protoList, 0 , 2*sizeof(tSDP_PROTOCOL_ELEM) );
 
     /* add protocol list, including RFCOMM scn */
