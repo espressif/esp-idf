@@ -22,6 +22,25 @@ Wi-Fi 驱动程序
     - 支持多个天线
     - 支持获取信道状态信息
 
+.. only:: esp32c6
+
+    - 支持 4 个虚拟接口，即 STA、AP、Sniffer 和 reserved。
+    - 支持仅 station 模式、仅 AP 模式、station/AP 共存模式
+    - 支持使用 IEEE 802.11b、IEEE 802.11g、IEEE 802.11n、IEEE 802.11ax 和 API 配置协议模式
+    - 支持 WPA/WPA2/WPA3/WPA2-企业版/WPA3-企业版/WAPI/WPS 和 DPP
+    - 支持 AMSDU、AMPDU、HT40、QoS 以及其它主要功能
+    - 支持 Modem-sleep
+    - 支持乐鑫专属协议，可实现 **1 km** 数据通信量
+    - 空中数据传输最高可达 20 MBit/s TCP 吞吐量和 30 MBit/s UDP 吞吐量
+    - 支持 Sniffer
+    - 支持快速扫描和全信道扫描
+    - 支持多个天线
+    - 支持获取信道状态信息
+    - 支持 TWT
+    - 支持下行 MU-MIMO
+    - 支持 OFDMA
+    - 支持 BSS Color
+
 .. only:: esp32c2
 
     - 支持 3 个虚拟接口，即STA、AP 和 Sniffer。
@@ -1289,7 +1308,7 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息
         - beacon 间隔。值为 100 ~ 60000 ms，默认值为 100 ms。如果该值不在上述范围，AP 默认取 100 ms。
 
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c6
 
     .. list-table::
       :header-rows: 1
@@ -1371,7 +1390,34 @@ Wi-Fi 协议模式
 
           **此模式是乐鑫的专利模式，可以达到 1 公里视线范围。请确保 station 和 AP 同时连接至 ESP 设备。**
 
+.. only:: esp32c6
 
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 55
+
+      * - 协议模式
+        - 描述
+      * - 802.11b
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B)，将 station/AP 设置为仅 802.11b 模式。
+      * - 802.11bg
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G)，将 station/AP 设置为 802.11bg 模式。
+      * - 802.11g
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) 和 esp_wifi_config_11b_rate(ifx, true)，将 station/AP 设置为 802.11g 模式。
+      * - 802.11bgn
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N)，将 station/AP 设置为 802.11bgn 模式。
+      * - 802.11gn
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) 和 esp_wifi_config_11b_rate(ifx, true)，将 station/AP 设置为 802.11gn 模式。
+      * - 802.11 BGNLR
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR)，将 station/AP 设置为 802.11bgn 和 LR 模式。
+      * - 802.11bgnax
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX)，将 station/AP 设置为 802.11bgnax 模式。
+      * - 802.11 BGNAXLR
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX|WIFI_PROTOCOL_LR)，将 station/AP 设置为 802.11bgnax 和 LR 模式。
+      * - 802.11 LR
+        - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR)，将 station/AP 设置为 LR 模式。
+
+          **此模式是乐鑫的专利模式，可以达到 1 公里视线范围。请确保 station 和 AP 同时连接至 ESP 设备。**
 
 .. only:: esp32c2
 
@@ -1394,7 +1440,7 @@ Wi-Fi 协议模式
 
 
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6
 
     长距离 (LR)
     +++++++++++++++++++++++++
@@ -1404,27 +1450,53 @@ Wi-Fi 协议模式
     LR 兼容性
     *************************
 
-    由于 LR 是乐鑫的独有 Wi-Fi 模式，只有 {IDF_TARGET_NAME} 设备才能传输和接收 LR 数据。也就是说，如果连接的设备不支持 LR，{IDF_TARGET_NAME} 设备则不会以 LR 数据速率传输数据。可通过配置适当的 Wi-Fi 模式使您的应用程序实现这一功能。如果协商的模式支持 LR，{IDF_TARGET_NAME} 可能会以 LR 速率传输数据，否则，{IDF_TARGET_NAME} 将以传统 Wi-Fi 数据速率传输所有数据。
+    由于 LR 是乐鑫的独有 Wi-Fi 模式，只有 ESP32 芯片系列设备（除了ESP32-C2）才能传输和接收 LR 数据。也就是说，如果连接的设备不支持 LR， ESP32 芯片系列设备（除了ESP32-C2）则不会以 LR 数据速率传输数据。可通过配置适当的 Wi-Fi 模式使您的应用程序实现这一功能。如果协商的模式支持 LR， ESP32 芯片系列设备（除了ESP32-C2）可能会以 LR 速率传输数据，否则， ESP32 芯片系列设备（除了ESP32-C2）将以传统 Wi-Fi 数据速率传输所有数据。
 
     下表是 Wi-Fi 模式协商：
 
-    +-------+-----+----+---+-------+------+-----+----+
-    | APSTA | BGN | BG | B | BGNLR | BGLR | BLR | LR |
-    +=======+=====+====+===+=======+======+=====+====+
-    | BGN   | BGN | BG | B | BGN   | BG   | B   | -  |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BG    | BG  | BG | B | BG    | BG   | B   | -  |
-    +-------+-----+----+---+-------+------+-----+----+
-    | B     | B   | B  | B | B     | B    | B   | -  |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BGNLR | -   | -  | - | BGNLR | BGLR | BLR | LR |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BGLR  | -   | -  | - | BGLR  | BGLR | BLR | LR |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BLR   | -   | -  | - | BLR   | BLR  | BLR | LR |
-    +-------+-----+----+---+-------+------+-----+----+
-    | LR    | -   | -  | - | LR    | LR   | LR  | LR |
-    +-------+-----+----+---+-------+------+-----+----+
+    .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+
+        +-------+-----+----+---+-------+------+-----+----+
+        |AP\STA | BGN | BG | B | BGNLR | BGLR | BLR | LR |
+        +=======+=====+====+===+=======+======+=====+====+
+        | BGN   | BGN | BG | B | BGN   | BG   | B   | -  |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BG    | BG  | BG | B | BG    | BG   | B   | -  |
+        +-------+-----+----+---+-------+------+-----+----+
+        | B     | B   | B  | B | B     | B    | B   | -  |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BGNLR | -   | -  | - | BGNLR | BGLR | BLR | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BGLR  | -   | -  | - | BGLR  | BGLR | BLR | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BLR   | -   | -  | - | BLR   | BLR  | BLR | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+        | LR    | -   | -  | - | LR    | LR   | LR  | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+    
+    .. only:: esp32c6
+
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | AP\STA  | BGNAX | BGN | BG | B | BGNAXLR | BGNLR | BGLR | BLR | LR |
+        +=========+=======+=====+====+===+=========+=======+======+=====+====+
+        | BGNAX   | BGAX  | BGN | BG | B | BGAX    | BGN   | BG   | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGN     | BGN   | BGN | BG | B | BGN     | BGN   | BG   | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BG      | BG    | BG  | BG | B | BG      | BG    | BG   | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | B       | B     | B   | B  | B | B       | B     | B    | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGNAXLR | -     | -   | -  | - | BGAXLR  | BGNLR | BGLR | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGNLR   | -     | -   | -  | - | BGNLR   | BGNLR | BGLR | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGLR    | -     | -   | -  | - | BGLR    | BGLR  | BGLR | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BLR     | -     | -   | -  | - | BLR     | BLR   | BLR  | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | LR      | -     | -   | -  | - | LR      | LR    | LR   | LR  | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
 
     上表中，行是 AP 的 Wi-Fi 模式，列是 station 的 Wi-Fi 模式。"-" 表示 AP 和 station 的 Wi-Fi 模式不兼容。
 
@@ -1432,7 +1504,7 @@ Wi-Fi 协议模式
 
     - 对于已使能 LR 的 {IDF_TARGET_NAME} AP，由于以 LR 模式发送 beacon，因此与传统的 802.11 模式不兼容。
     - 对于已使能 LR 且并非仅 LR 模式的 {IDF_TARGET_NAME} station，与传统 802.11 模式兼容。
-    - 如果 station 和 AP 都是 {IDF_TARGET_NAME} 设备，并且两者都使能 LR 模式，则协商的模式支持 LR。
+    - 如果 station 和 AP 都是 ESP32 芯片系列设备（除了ESP32-C2），并且两者都使能 LR 模式，则协商的模式支持 LR。
 
     如果协商的 Wi-Fi 模式同时支持传统的 802.11 模式和 LR 模式，则 Wi-Fi 驱动程序会在不同的 Wi-Fi 模式下自动选择最佳数据速率，应用程序无需任何操作。
 
@@ -1464,7 +1536,6 @@ Wi-Fi 协议模式
     - AP 和 station 都是乐鑫设备。
     - 需要长距离 Wi-Fi 连接和数据传输。
     - 数据吞吐量要求非常小，例如远程设备控制等。
-
 
 Wi-Fi 国家/地区代码
 +++++++++++++++++++++++++
@@ -1639,7 +1710,7 @@ WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入�
     - {IDF_TARGET_NAME} 在 station 模式下为 FTM 发起方。
     - {IDF_TARGET_NAME} 在 AP 模式下为 FTM 响应方。
 
-    使用 RTT 的距离测量并不准确，RF 干扰、多径传播、天线方向和缺乏校准等因素会增加这些不准确度。为了获得更好的结果，建议在两个 {IDF_TARGET_NAME} 设备之间执行 FTM，这两个设备可分别设置为 station 和 AP 模式。
+    使用 RTT 的距离测量并不准确，RF 干扰、多径传播、天线方向和缺乏校准等因素会增加这些不准确度。为了获得更好的结果，建议在两个 ESP32 芯片系列设备(除了ESP32-C2)之间执行 FTM，这两个设备可分别设置为 station 和 AP 模式。
 
     请参考 IDF 示例 :idf_file:`examples/wifi/ftm/README.md` 了解设置和执行 FTM 的详细步骤。
 
@@ -1879,6 +1950,50 @@ AP 睡眠
           - 15575346
 
     使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`。
+
+.. only:: esp32c6
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - 类型/吞吐量
+          - 实验室空气状况
+          - 屏蔽箱
+          - 测试工具
+          - IDF 版本 (commit ID)
+        * - 原始 802.11 数据包接收数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - 原始 802.11 数据包发送数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - UDP 接收数据
+          - 30 MBit/s
+          - 45 MBit/s
+          - iperf example
+          - 420ebd20
+        * - UDP 发送数据
+          - 30 MBit/s
+          - 40 MBit/s
+          - iperf example
+          - 420ebd20
+        * - TCP 接收数据
+          - 20 MBit/s
+          - 30 MBit/s
+          - iperf example
+          - 420ebd20
+        * - TCP 发送数据
+          - 20 MBit/s
+          - 31 MBit/s
+          - iperf example
+          - 420ebd20
+
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c6`。
 
 .. only:: esp32s3
 
@@ -2140,7 +2255,7 @@ Wi-Fi 多根天线配置
 Wi-Fi HT20/40
 -------------------------
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6
 
     {IDF_TARGET_NAME} 支持 Wi-Fi 带宽 HT20 或 HT40，不支持 HT20/40 共存，调用函数 :cpp:func:`esp_wifi_set_bandwidth()` 可改变 station/AP 的默认带宽。{IDF_TARGET_NAME} station 和 AP 的默认带宽为 HT40。
 
@@ -2208,7 +2323,7 @@ Wi-Fi 分片
 
     支持 Wi-Fi 接收分片，但不支持 Wi-Fi 发送分片。
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
     {IDF_TARGET_NAME} 支持 Wi-Fi 接收和发送分片。
 
@@ -2327,6 +2442,17 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
 
  - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
     如果使能该选项，一些 LWIP 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 13 kB。
+
+.. only:: esp32c6
+
+    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
+        如果使能该选项，一些 Wi-Fi 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 13 kB。
+
+    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
+        如果使能该选项，一些 Wi-Fi 接收数据功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 7 kB。
+
+ - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
+    如果使能该选项，一些 LWIP 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 14 kB。
 
 .. only:: esp32s2
 
@@ -2668,6 +2794,65 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 44.5
           - 44.2
 
+.. only:: esp32c6
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15
+
+        * - 等级
+          - Iperf
+          - 默认
+          - 最小
+        * - 可用内存 (KB)
+          - 223
+          - 276
+          - 299
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 20
+          - 8
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 40
+          - 16
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 40
+          - 16
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 32
+          - 16
+          - 6
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 40
+          - 16
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 40
+          - 16
+          - 6
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+        * - TCP 发送数据吞吐量 (Mbit/s)
+          - 30.5
+          - 25.9
+          - 16.4
+        * - TCP 接收数据吞吐量 (Mbit/s)
+          - 27.8
+          - 21.6
+          - 14.3
+        * - UDP 发送数据吞吐量 (Mbit/s)
+          - 37.8
+          - 36.1
+          - 34.6
+        * - UDP 接收数据吞吐量 (Mbit/s)
+          - 41.5
+          - 36.8
+          - 36.7
+
 .. only:: esp32c2
 
      .. list-table::
@@ -2824,6 +3009,12 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
         以上结果使用华硕 RT-N66U 路由器，在屏蔽箱中进行单流测试得出。
         {IDF_TARGET_NAME} 的 CPU 为单核，频率为 160 MHz，flash 为 QIO 模式，频率为 80 MHz。
 
+.. only:: esp32c6
+
+    .. note::
+        以上结果使用小米 AX6000 路由器，在屏蔽箱中进行单流测试得出。
+        {IDF_TARGET_NAME} 的 CPU 为单核，频率为 160 MHz，flash 为 QIO 模式，频率为 80 MHz。
+
 .. only:: esp32c2
 
     .. note::
@@ -2868,7 +3059,7 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
      - **最小等级**
         {IDF_TARGET_NAME} 的最小配置等级。协议栈只使用运行所需的内存。适用于对性能没有要求，而应用程序需要大量内存的场景。
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
     **等级：**
 
