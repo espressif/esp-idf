@@ -122,7 +122,7 @@ cache:
     export IDF_MIRROR_PREFIX_MAP=
   fi
 
-  if echo "$CI_MERGE_REQUEST_LABELS" | egrep "^([^,\n\r]+,)*include_nightly_run(,[^,\n\r]+)*$"; then
+  if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)include_nightly_run(,|$)"; then
     export INCLUDE_NIGHTLY_RUN="1"
   fi
 
