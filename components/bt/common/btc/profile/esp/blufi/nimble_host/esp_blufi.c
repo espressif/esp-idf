@@ -432,7 +432,7 @@ void esp_blufi_send_notify(void *arg)
         return;
     }
     int rc = 0;
-    rc = ble_gatts_notify_custom(blufi_env.conn_id, gatt_values[1].val_handle, om);
+    rc = ble_gattc_notify_custom(conn_handle, gatt_values[1].val_handle, om);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error in sending notification");
     }
