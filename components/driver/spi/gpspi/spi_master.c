@@ -725,10 +725,11 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             // We stay in the ISR to deal with those transactions of desired device, otherwise nothing will be done, check whether we need to resume some other tasks, or just quit the ISR
             resume_task = spi_bus_lock_bg_check_dev_acq(lock, &desired_dev);
         }
-        // sanity check
-        assert(desired_dev);
 
         if (!resume_task) {
+            // sanity check
+            assert(desired_dev);
+
             bool dev_has_req = spi_bus_lock_bg_check_dev_req(desired_dev);
             if (dev_has_req) {
                 device_to_send = host->device[spi_bus_lock_get_dev_id(desired_dev)];
