@@ -97,3 +97,5 @@ managed_components
 
 # pytest log
 pytest_embedded_log/
+list_job_*.txt
+size_info.txt

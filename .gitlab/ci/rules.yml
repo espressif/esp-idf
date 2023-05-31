@@ -166,9 +166,6 @@
 
   - "tools/split_paths_by_spaces.py"
 
-.patterns-windows: &patterns-windows
-  - "tools/windows/**/*"
-
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
 
@@ -260,13 +257,6 @@
   - "components/driver/include/driver/sdio*.h"
   - "components/driver/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
-
-.patterns-example_test-ccs811: &patterns-example_test-ccs811
-  # components
-  - "examples/system/console/advanced/components/**/*"
-  - "components/driver/i2c/**/*"
-  # tests
-  - "examples/peripherals/i2c/i2c_tools/**/*"
 
 # for jobs: UT_xx_SDSPI related
 .patterns-unit_test-sdio: &patterns-unit_test-sdio
@@ -374,6 +364,7 @@
 #########
 # Rules #
 #########
+### Branches ###
 .rules:protected:
   rules:
     - <<: *if-protected
@@ -382,6 +373,30 @@
   rules:
     - <<: *if-protected-no_label
 
+.rules:dev:
+  rules:
+    - <<: *if-trigger
+    - <<: *if-dev-push
+
+.rules:mr:
+  rules:
+    - <<: *if-dev-push
+
+.rules:tag:release:
+  rules:
+    - <<: *if-tag-release
+
+.rules:ref:master-schedule:
+  rules:
+    - <<: *if-ref-master
+    - <<: *if-schedule
+
+.rules:ref:master-always:
+  rules:
+    - <<: *if-ref-master
+      when: always
+
+### Patterns ###
 .rules:patterns:python-cache:
   rules:
     - *if-schedule
@@ -403,25 +418,6 @@
       when: manual
     - <<: *if-dev-push
       changes: *patterns-danger-npm
-
-.rules:dev:
-  rules:
-    - <<: *if-trigger
-    - <<: *if-dev-push
-
-.rules:tag:release:
-  rules:
-    - <<: *if-tag-release
-
-.rules:ref:master-schedule:
-  rules:
-    - <<: *if-ref-master
-    - <<: *if-schedule
-
-.rules:ref:master-always:
-  rules:
-    - <<: *if-ref-master
-      when: always
 
 .rules:patterns:clang_tidy:
   rules:
@@ -587,9 +583,6 @@
 
 .if-label-unit_test_esp32s3: &if-label-unit_test_esp32s3
   if: '$BOT_LABEL_UNIT_TEST_ESP32S3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s3(?:,[^,\n\r]+)*$/i'
-
-.if-label-windows: &if-label-windows
-  if: '$BOT_LABEL_WINDOWS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*windows(?:,[^,\n\r]+)*$/i'
 
 .rules:build:
   rules:
@@ -1136,57 +1129,6 @@
     - <<: *if-dev-push
       changes: *patterns-submodule
 
-.rules:build:example_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-label-build
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-example_test_esp32c2
-    - <<: *if-label-example_test_esp32c3
-    - <<: *if-label-example_test_esp32c6
-    - <<: *if-label-example_test_esp32h2
-    - <<: *if-label-example_test_esp32s2
-    - <<: *if-label-example_test_esp32s3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-build-example_test
-    - <<: *if-dev-push
-      changes: *patterns-build_components
-    - <<: *if-dev-push
-      changes: *patterns-build_system
-    - <<: *if-dev-push
-      changes: *patterns-downloadable-tools
-    - <<: *if-dev-push
-      changes: *patterns-example_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-bt
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ethernet
-    - <<: *if-dev-push
-      changes: *patterns-example_test-i154
-    - <<: *if-dev-push
-      changes: *patterns-example_test-nvs_encr_hmac
-    - <<: *if-dev-push
-      changes: *patterns-example_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-example_test-usb
-    - <<: *if-dev-push
-      changes: *patterns-example_test-wifi
-    - <<: *if-dev-push
-      changes: *patterns-target_test-adc
-    - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
-      changes: *patterns-target_test-wifi
-
 .rules:build:example_test-esp32:
   rules:
     - <<: *if-revert-branch
@@ -1209,8 +1151,6 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1253,8 +1193,6 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1299,8 +1237,6 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
-    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1342,8 +1278,6 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1387,8 +1321,6 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
-    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1431,8 +1363,6 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
-    - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
@@ -1474,8 +1404,6 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1599,8 +1527,6 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -2402,19 +2328,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:example_test-esp32-ccs811:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ccs811
 
 .rules:test:example_test-esp32-ethernet:
   rules:

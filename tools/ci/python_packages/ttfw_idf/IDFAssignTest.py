@@ -54,7 +54,7 @@ class IDFAssignTest(CIAssignTest.AssignTest):
         super(IDFAssignTest, self).__init__(test_case_path, ci_config_file, case_group)
 
     def format_build_log_path(self, parallel_num):
-        return 'list_job_{}.json'.format(parallel_num)
+        return 'list_job_{}.txt'.format(parallel_num)
 
     def create_artifact_index_file(self, project_id=None, pipeline_id=None):
         if project_id is None:

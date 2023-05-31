@@ -39,14 +39,6 @@
     - build_system
     - downloadable-tools
 
-"build:windows":
-  labels:
-    - build
-    - windows
-  patterns:
-    - build_system
-    - windows
-
 "build:macos":
   labels:
     - build
@@ -140,7 +132,6 @@ build:integration_test:
       - i154
       - flash_multi
       - ecdsa
-      - ccs811    # pytest*ccs811*
       - nvs_encr_hmac
   patterns:
     - "{0}-{1}-{2}"

@@ -39,6 +39,7 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -100,7 +101,7 @@ pytest_examples_esp32_jtag:
 pytest_examples_esp32_ccs811:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-ccs811
+    - .rules:test:example_test-esp32
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, ccs811 ]
@@ -1132,36 +1133,6 @@ pytest_test_apps_esp32s3_mspi_f4r4:
     - cd tools/ci/python_packages/tiny_test_fw/bin
     - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
 
-.example_test_template:
-  extends: .target_test_job_template
-  needs:
-    - assign_example_test
-  variables:
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
-
-.example_test_esp32_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32
-
-.example_test_esp32c3_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32c3
-
-example_test_001C:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_GENERIC
-
-example_test_C3_GENERIC:
-  extends: .example_test_esp32c3_template
-  tags:
-    - ESP32C3
-    - Example_GENERIC
-
 .unit_test_template:
   extends: .target_test_job_template
   needs: # the assign already needs all the build jobs
@@ -1208,7 +1179,7 @@ example_test_C3_GENERIC:
 
 UT_001:
   extends: .unit_test_esp32_template
-  parallel: 16
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -1217,7 +1188,6 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 7
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -1264,7 +1234,7 @@ UT_028:
 
 UT_035:
   extends: .unit_test_esp32s2_template
-  parallel: 16
+  parallel: 2
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -1279,7 +1249,6 @@ UT_S2_SDSPI:
 
 UT_C2:
   extends: .unit_test_esp32c2_template
-  parallel: 8
   tags:
     - ESP32C2_IDF
     - UT_T1_1
@@ -1287,7 +1256,6 @@ UT_C2:
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 11
   tags:
     - ESP32C3_IDF
     - UT_T1_1
@@ -1302,21 +1270,19 @@ UT_C3_SDSPI:
 
 UT_C6:
   extends: .unit_test_esp32c6_template
-  parallel: 8
   tags:
     - ESP32C6_IDF
     - UT_T1_1
 
 UT_H2:
   extends: .unit_test_esp32h2_template
-  parallel: 5
   tags:
     - ESP32H2_IDF
     - UT_T1_1
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 9
+  parallel: 2
   tags:
     - ESP32S3_IDF
     - UT_T1_1

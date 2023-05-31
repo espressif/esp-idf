@@ -21,11 +21,7 @@
       - [Shell Script Related](#shell-script-related)
   - [Manifest File to Control the Build/Test apps](#manifest-file-to-control-the-buildtest-apps)
     - [Grammar](#grammar)
-      - [Operands](#operands)
-      - [Operators](#operators)
-      - [Limitation:](#limitation)
-    - [How does it work?](#how-does-it-work)
-    - [Example](#example)
+    - [Special Rules](#special-rules)
 
 ## General Workflow
 
@@ -242,3 +238,10 @@ We're using the latest version of [idf-build-apps][idf-build-apps]. Please refer
 
 [idf-build-apps]: https://github.com/espressif/idf-build-apps
 [manifest-doc]: https://docs.espressif.com/projects/idf-build-apps/en/latest/manifest.html
+
+### Special Rules
+
+In ESP-IDF CI, there's a few more special rules are additionally supported to disable the check app dependencies feature:
+
+- Add MR labels `BUILD_AND_TEST_ALL_APPS`
+- Run in protected branches

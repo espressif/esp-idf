@@ -1,5 +1,12 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.i2c_dependencies: &i2c_dependencies
+  depends_filepatterns:
+    # components
+    - examples/system/console/advanced/components/**/*
+    - components/driver/i2c/**/*
+    - components/driver/Kconfig
+
 examples/peripherals/adc/continuous_read:
   disable:
     - if: SOC_ADC_DMA_SUPPORTED != 1
@@ -24,11 +31,13 @@ examples/peripherals/i2c/i2c_self_test:
   disable:
     - if: SOC_I2C_SUPPORT_SLAVE != 1
       reason: the test requires both master and slave
+  <<: *i2c_dependencies
 
 examples/peripherals/i2c/i2c_simple:
   disable:
     - if: SOC_I2C_SUPPORT_SLAVE != 1
       reason: the test requires both master and slave
+  <<: *i2c_dependencies
 
 examples/peripherals/i2c/i2c_tools:
   disable:
@@ -37,6 +46,7 @@ examples/peripherals/i2c/i2c_tools:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *i2c_dependencies
 
 examples/peripherals/i2s/i2s_adc_dac:
   disable:

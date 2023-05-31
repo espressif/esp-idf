@@ -186,3 +186,22 @@ check_configure_ci_environment_parsing:
   script:
     - cd tools/ci
     - python -m unittest ci_build_apps.py
+
+mr_variables:
+  extends:
+    - .pre_check_template
+    - .rules:mr
+    - .before_script_minimal
+  tags:
+    - build
+  script:
+    - echo "MR_MODIFIED_FILES=$(python tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
+    - echo "MR_MODIFIED_COMPONENTS=$(python tools/ci/ci_get_mr_info.py components ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
+    - >
+      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "^([^,\n\r]+,)*BUILD_AND_TEST_ALL_APPS(,[^,\n\r]+)*$"; then
+        echo "BUILD_AND_TEST_ALL_APPS=1" >> mr.env
+      fi
+  artifacts:
+    reports:
+      dotenv: mr.env
+    expire_in: 4 days

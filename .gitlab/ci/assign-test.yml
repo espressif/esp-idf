@@ -14,36 +14,6 @@
   script:
     - run_cmd python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py $TEST_TYPE $TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_DIR/test_configs
 
-assign_example_test:
-  extends:
-    - .assign_test_template
-    - .rules:build:example_test
-  needs:
-    - job: build_examples_cmake_esp32
-      artifacts: false
-      optional: true
-    - job: build_examples_cmake_esp32s2
-      artifacts: false
-      optional: true
-    - job: build_examples_cmake_esp32c2
-      artifacts: false
-      optional: true
-    - job: build_examples_cmake_esp32c3
-      artifacts: false
-      optional: true
-    - job: build_examples_cmake_esp32c6
-      artifacts: false
-      optional: true
-    - job: build_examples_cmake_esp32h2
-      artifacts: false
-      optional: true
-    - job: build_examples_cmake_esp32s3
-      artifacts: false
-      optional: true
-  variables:
-    TEST_TYPE: example_test
-    TEST_DIR: examples
-
 assign_unit_test:
   extends:
     - .assign_test_template
