@@ -13,7 +13,7 @@
 #include "driver/rmt_rx.h"
 #include "soc/soc_caps.h"
 
-TEST_CASE("rmt_channel_install_uninstall", "[rmt]")
+TEST_CASE("rmt channel install & uninstall", "[rmt]")
 {
     rmt_tx_channel_config_t tx_channel_cfg = {
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
