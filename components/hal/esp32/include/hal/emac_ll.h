@@ -417,6 +417,11 @@ static inline void emac_ll_flush_trans_fifo_enable(emac_dma_dev_t *dma_regs, boo
     dma_regs->dmaoperation_mode.flush_tx_fifo = enable;
 }
 
+static inline bool emac_ll_get_flush_trans_fifo(emac_dma_dev_t *dma_regs)
+{
+    return dma_regs->dmaoperation_mode.flush_tx_fifo;
+}
+
 static inline void emac_ll_set_transmit_threshold(emac_dma_dev_t *dma_regs, uint32_t threshold)
 {
     dma_regs->dmaoperation_mode.tx_thresh_ctrl = threshold;
