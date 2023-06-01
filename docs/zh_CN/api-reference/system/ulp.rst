@@ -174,8 +174,8 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 应用示例
 --------------------
 
-* 主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器对 IO 脉冲进行计数：:example:`system/ulp_fsm/ulp`。
-* 主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器轮询 ADC：:example:`system/ulp_fsm/ulp_adc`。
+* 主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器对 IO 脉冲进行计数：:example:`system/ulp/ulp_fsm/ulp`。
+* 主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器轮询 ADC：:example:`system/ulp/ulp_fsm/ulp_adc`。
 
 API 参考
 -------------

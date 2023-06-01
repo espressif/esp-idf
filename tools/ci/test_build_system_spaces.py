@@ -166,11 +166,11 @@ class PathsWithSpaces(unittest.TestCase):
         idf_py('build', env_vars=self.ENV, idf_path=self.IDF_PATH_WITH_SPACES, workdir=build_path)
 
     def test_build_ulp_fsm(self) -> None:
-        build_path = self._copy_app_to(os.path.join('examples', 'system', 'ulp_fsm', 'ulp'), 'test app')
+        build_path = self._copy_app_to(os.path.join('examples', 'system', 'ulp', 'ulp_fsm', 'ulp'), 'test app')
         idf_py('build', env_vars=self.ENV, idf_path=self.IDF_PATH_WITH_SPACES, workdir=build_path)
 
     def test_build_ulp_riscv(self) -> None:
-        build_path = self._copy_app_to(os.path.join('examples', 'system', 'ulp_riscv', 'gpio'), 'test app')
+        build_path = self._copy_app_to(os.path.join('examples', 'system', 'ulp', 'ulp_riscv', 'gpio'), 'test app')
         idf_py('-DIDF_TARGET=esp32s2', 'build', env_vars=self.ENV, idf_path=self.IDF_PATH_WITH_SPACES,
                workdir=build_path)
 

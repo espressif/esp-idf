@@ -131,8 +131,8 @@ examples/system/startup_time/example_test.py
 examples/system/sysview_tracing/example_test.py
 examples/system/sysview_tracing_heap_log/example_test.py
 examples/system/task_watchdog/example_test.py
-examples/system/ulp_fsm/ulp/example_test.py
-examples/system/ulp_fsm/ulp_adc/example_test.py
+examples/system/ulp/ulp_fsm/ulp/example_test.py
+examples/system/ulp/ulp_fsm/ulp_adc/example_test.py
 examples/system/unit_test/example_test.py
 examples/wifi/iperf/iperf_test.py
 tools/ble/lib_ble_client.py
