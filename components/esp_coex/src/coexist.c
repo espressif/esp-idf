@@ -164,7 +164,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
     }
 
 #if SOC_EXTERNAL_COEX_ADVANCE
-    esp_coex_external_params(g_external_coex_params);
+    esp_coex_external_params(g_external_coex_params, 0, 0);
 #endif
 
     if(EXTERNAL_COEX_LEADER_ROLE == g_external_coex_params.work_mode) {
@@ -173,6 +173,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
 #if SOC_EXTERNAL_COEX_LEADER_TX_LINE
             case EXTERN_COEX_WIRE_4:
             {
+                esp_coex_external_set_txline(true);
                 gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.tx_line], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.tx_line, GPIO_MODE_OUTPUT);
                 REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.tx_line));
@@ -254,10 +255,11 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
                 return ESP_FAIL;
             }
         }
-#endif /* SOC_EXTERNAL_COEX_ADVANCE */
+#else
         return ESP_ERR_INVALID_ARG;
+#endif /* SOC_EXTERNAL_COEX_ADVANCE */
     }
-    int ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
+    esp_err_t ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
     if (ESP_OK != ret) {
         return ESP_FAIL;
     }
