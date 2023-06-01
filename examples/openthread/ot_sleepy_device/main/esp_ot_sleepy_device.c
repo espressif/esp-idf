@@ -22,7 +22,7 @@
 #include "esp_log.h"
 #include "esp_openthread.h"
 #include "esp_openthread_netif_glue.h"
-#include "esp_ot_power_save_config.h"
+#include "esp_ot_sleepy_device_config.h"
 #include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
 #include "nvs_flash.h"
@@ -34,7 +34,7 @@
 #endif
 
 #if !SOC_IEEE802154_SUPPORTED
-#error "Power save is only supported for the SoCs which have IEEE 802.15.4 module"
+#error "Openthread sleepy device is only supported for the SoCs which have IEEE 802.15.4 module"
 #endif
 
 #define TAG "ot_esp_power_save"

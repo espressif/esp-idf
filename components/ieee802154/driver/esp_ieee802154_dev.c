@@ -205,6 +205,10 @@ static bool stop_current_operation(void)
         ieee802154_ll_set_cmd(IEEE802154_CMD_STOP);
         break;
 
+    case IEEE802154_STATE_SLEEP:
+        // Do nothing
+        break;
+
     case IEEE802154_STATE_RX:
         stop_rx();
         break;
@@ -744,7 +748,7 @@ static esp_err_t ieee802154_sleep_init(void)
     return err;
 }
 
-IRAM_ATTR void ieee802154_sleep_cb(void)
+IRAM_ATTR void ieee802154_enter_sleep(void)
 {
 #if CONFIG_IEEE802154_SLEEP_ENABLE
     esp_phy_disable();
@@ -755,7 +759,7 @@ IRAM_ATTR void ieee802154_sleep_cb(void)
 #endif // CONFIG_IEEE802154_SLEEP_ENABLE
 }
 
-IRAM_ATTR void ieee802154_wakeup_cb(void)
+IRAM_ATTR void ieee802154_wakeup(void)
 {
 #if CONFIG_IEEE802154_SLEEP_ENABLE
     ieee802154_enable(); // IEEE802154 CLOCK Enable
@@ -771,7 +775,7 @@ esp_err_t ieee802154_sleep(void)
     ieee802154_enter_critical();
 
     stop_current_operation();
-    s_ieee802154_state = IEEE802154_STATE_IDLE;
+    s_ieee802154_state = IEEE802154_STATE_SLEEP;
 
     ieee802154_exit_critical();
     return ESP_OK;

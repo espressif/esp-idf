@@ -11,6 +11,7 @@
 #include "esp_openthread_dns64.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_platform.h"
+#include "esp_openthread_sleep.h"
 #include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
@@ -19,6 +20,7 @@
 #include "openthread/netdata.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
+
 
 static int hex_digit_to_int(char hex)
 {
@@ -58,6 +60,10 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 {
     ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread platform driver");
+#if CONFIG_IEEE802154_SLEEP_ENABLE
+    ESP_RETURN_ON_ERROR(esp_openthread_sleep_init(), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread esp pm_lock");
+#endif
     esp_openthread_lock_acquire(portMAX_DELAY);
     ESP_RETURN_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread instance");
@@ -154,11 +160,17 @@ esp_err_t esp_openthread_launch_mainloop(void)
             mainloop.timeout.tv_sec = 0;
             mainloop.timeout.tv_usec = 0;
         }
+#if CONFIG_IEEE802154_SLEEP_ENABLE
+        esp_openthread_sleep_process();
+#endif
         esp_openthread_lock_release();
 
         if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
                    &mainloop.timeout) >= 0) {
             esp_openthread_lock_acquire(portMAX_DELAY);
+#if CONFIG_IEEE802154_SLEEP_ENABLE
+            esp_openthread_wakeup_process();
+#endif
             error = esp_openthread_platform_process(instance, &mainloop);
             while (otTaskletsArePending(instance)) {
                 otTaskletsProcess(instance);
