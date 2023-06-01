@@ -21,11 +21,11 @@ extern "C" {
  * @note The LP I2C must have been initialized from the HP core using the lp_core_i2c_master_init() API
  * before invoking this API.
  *
- * @param lp_i2c_num    LP I2C port number
- * @param device_addr   I2C device address (7-bit)
- * @param data_rd       Buffer to hold data to be read
- * @param size          Size of data to be read in bytes
- * @param timeout       Operation timeout in CPU cycles. Set to -1 to wait forever.
+ * @param lp_i2c_num        LP I2C port number
+ * @param device_addr       I2C device address (7-bit)
+ * @param data_rd           Buffer to hold data to be read
+ * @param size              Size of data to be read in bytes
+ * @param ticks_to_wait     Operation timeout in CPU cycles. Set to -1 to wait forever.
  *
  * @return esp_err_t    ESP_OK when successful
  *
@@ -33,7 +33,7 @@ extern "C" {
  * @note the LP I2C port number is ignored at the moment.
  */
 esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            uint8_t *data_rs, size_t size,
+                                            uint8_t *data_rd, size_t size,
                                             int32_t ticks_to_wait);
 
 /**
@@ -42,11 +42,11 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
  * @note The LP I2C must have been initialized from the HP core using the lp_core_i2c_master_init() API
  * before invoking this API.
  *
- * @param lp_i2c_num    LP I2C port number
- * @param device_addr   I2C device address (7-bit)
- * @param data_wr       Buffer which holds the data to be written
- * @param size          Size of data to be written in bytes
- * @param timeout       Operation timeout in CPU cycles. Set to -1 to wait forever.
+ * @param lp_i2c_num        LP I2C port number
+ * @param device_addr       I2C device address (7-bit)
+ * @param data_wr           Buffer which holds the data to be written
+ * @param size              Size of data to be written in bytes
+ * @param ticks_to_wait     Operation timeout in CPU cycles. Set to -1 to wait forever.
  *
  * @return esp_err_t    ESP_OK when successful
  *
@@ -63,13 +63,13 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
  * @note The LP I2C must have been initialized from the HP core using the lp_core_i2c_master_init() API
  * before invoking this API.
  *
- * @param lp_i2c_num    LP I2C port number
- * @param device_addr   I2C device address (7-bit)
- * @param data_wr       Buffer which holds the data to be written
- * @param write_size    Size of data to be written in bytes
- * @param data_rd       Buffer to hold data to be read
- * @param read_size     Size of data to be read in bytes
- * @param timeout       Operation timeout in CPU cycles. Set to -1 to wait forever.
+ * @param lp_i2c_num        LP I2C port number
+ * @param device_addr       I2C device address (7-bit)
+ * @param data_wr           Buffer which holds the data to be written
+ * @param write_size        Size of data to be written in bytes
+ * @param data_rd           Buffer to hold data to be read
+ * @param read_size         Size of data to be read in bytes
+ * @param ticks_to_wait     Operation timeout in CPU cycles. Set to -1 to wait forever.
  *
  * @return esp_err_t    ESP_OK when successful
  *

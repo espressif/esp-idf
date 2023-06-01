@@ -271,6 +271,11 @@ INPUT = \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_i2c.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/shared/include/ulp_riscv_lock_shared.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/include/ulp_lp_core.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_gpio.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_i2c.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \

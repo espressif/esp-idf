@@ -111,6 +111,8 @@ ULP_FSM_DOCS = ['api-reference/system/ulp.rst',
 
 RISCV_COPROC_DOCS = ['api-reference/system/ulp-risc-v.rst',]
 
+LP_CORE_DOCS = ['api-reference/system/ulp-lp-core.rst']
+
 XTENSA_DOCS = ['api-guides/hlinterrupts.rst',
                'api-reference/system/perfmon.rst']
 
@@ -188,6 +190,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_FSM_SUPPORTED':ULP_FSM_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
+                            'SOC_LP_CORE_SUPPORTED':LP_CORE_DOCS,
                             'SOC_DIG_SIGN_SUPPORTED':['api-reference/peripherals/ds.rst'],
                             'SOC_HMAC_SUPPORTED':['api-reference/peripherals/hmac.rst'],
                             'SOC_ASYNC_MEMCPY_SUPPORTED':['api-reference/system/async_memcpy.rst'],
