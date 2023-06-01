@@ -22,6 +22,10 @@ if(CONFIG_IEEE802154_ENABLED)
 
 endif()
 
+if(CONFIG_IEEE802154_DEBUG)
+    list(APPEND srcs "driver/esp_ieee802154_debug.c")
+endif()
+
 idf_component_register(
     SRCS "${srcs}"
     INCLUDE_DIRS "${include}"
