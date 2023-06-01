@@ -198,7 +198,7 @@ mr_variables:
     - echo "MR_MODIFIED_FILES=$(python tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
     - echo "MR_MODIFIED_COMPONENTS=$(python tools/ci/ci_get_mr_info.py components ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
     - >
-      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "^([^,\n\r]+,)*BUILD_AND_TEST_ALL_APPS(,[^,\n\r]+)*$"; then
+      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> mr.env
       fi
   artifacts:
