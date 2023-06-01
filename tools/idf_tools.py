@@ -1172,7 +1172,7 @@ class IDFEnv:
                 if global_idf_tools_path:  # mypy fix for Optional[str] in the next call
                     # the directory doesn't exist if this is run on a clean system the first time
                     mkdir_p(global_idf_tools_path)
-                with open(idf_env_file_path, 'w') as w:
+                with open(idf_env_file_path, 'w', encoding='utf-8') as w:
                     info('Updating {}'.format(idf_env_file_path))
                     json.dump(dict(self), w, cls=IDFEnvEncoder, ensure_ascii=False, indent=4)  # type: ignore
             except (IOError, OSError):
@@ -1189,7 +1189,7 @@ class IDFEnv:
         idf_env_obj = cls()
         try:
             idf_env_file_path = os.path.join(global_idf_tools_path or '', IDF_ENV_FILE)
-            with open(idf_env_file_path, 'r') as idf_env_file:
+            with open(idf_env_file_path, 'r', encoding='utf-8') as idf_env_file:
                 idf_env_json = json.load(idf_env_file)
 
                 try:
