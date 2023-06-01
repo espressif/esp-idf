@@ -280,6 +280,9 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
         return ESP_IEEE802154_RADIO_DISABLE;
 
     case IEEE802154_STATE_IDLE:
+        return ESP_IEEE802154_RADIO_IDLE;
+
+    case IEEE802154_STATE_SLEEP:
         return ESP_IEEE802154_RADIO_SLEEP;
 
     case IEEE802154_STATE_RX:
@@ -331,14 +334,14 @@ uint8_t esp_ieee802154_get_recent_lqi(void)
     return ieee802154_get_recent_lqi();
 }
 
-void esp_ieee802154_sleep_cb(void)
+void esp_ieee802154_enter_sleep(void)
 {
-    ieee802154_sleep_cb();
+    ieee802154_enter_sleep();
 }
 
-void esp_ieee802154_wakeup_cb(void)
+void esp_ieee802154_wakeup(void)
 {
-    ieee802154_wakeup_cb();
+    ieee802154_wakeup();
 }
 
 __attribute__((weak)) void esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)

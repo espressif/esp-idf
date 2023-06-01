@@ -1,9 +1,9 @@
 | Supported Targets | ESP32-C6 |
 | ----------------- | -------- |
 
-# OpenThread Power Save Example
+# OpenThread Sleepy Device Example
 
-The example demonstrates the OpenThread Power Save based on light sleep, which reduces power consumption by turning off RF, PHY, BB, and IEEE802154 MAC during the sleep state.  
+The example demonstrates the Thread Sleepy End Device (SED), the device will enter [Light Sleep mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32h2/api-reference/system/sleep_modes.html#sleep-modes) during idle state.  
 ## How to use example
 
 ### Hardware Required

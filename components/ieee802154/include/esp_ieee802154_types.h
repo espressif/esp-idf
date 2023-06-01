@@ -18,6 +18,7 @@ extern "C" {
  */
 typedef enum {
     ESP_IEEE802154_RADIO_DISABLE,   /*!< Radio not up */
+    ESP_IEEE802154_RADIO_IDLE,      /*!< Radio in the idle state */
     ESP_IEEE802154_RADIO_SLEEP,     /*!< Radio in the sleep state */
     ESP_IEEE802154_RADIO_RECEIVE,   /*!< Radio in the receive state */
     ESP_IEEE802154_RADIO_TRANSMIT,  /*!< Radio in the transmit state */
