@@ -46,3 +46,5 @@ entries:
 
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         sar_periph_ctrl (noflash)
+    else:
+        sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
