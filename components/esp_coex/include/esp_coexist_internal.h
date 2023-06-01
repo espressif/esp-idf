@@ -308,10 +308,13 @@ esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
 /**
   * @brief     Set external coexistence advanced informations, like working mode.
   *
+  * @param     out_pti1    This parameter no longer works, will be deprecated and later removed in future releases.
+  * @param     out_pti2    This parameter no longer works, will be deprecated and later removed in future releases.
+  *
   * @return
   *    - ESP_OK: succeed
   */
-esp_err_t esp_coex_external_params(esp_external_coex_advance_t coex_info);
+esp_err_t esp_coex_external_params(esp_external_coex_advance_t coex_info, uint32_t out_pti1, uint32_t out_pti2);
 
 /**
   * @brief     Set external coexistence pti level and enable it.
@@ -333,6 +336,18 @@ esp_err_t esp_coex_external_set(esp_coex_pti_level_t level1,
   *    - ESP_OK: succeed
   */
 void esp_coex_external_stop(void);
+
+#if SOC_EXTERNAL_COEX_LEADER_TX_LINE
+/**
+  * @brief     Enable external coexist tx line
+  *
+  * @param     en    Enable external coex tx line
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+void esp_coex_external_set_txline(bool en);
+#endif    /*SOC_EXTERNAL_COEX_LEADER_TX_LINE*/
 #endif    /*External Coex*/
 
 /**

@@ -167,7 +167,9 @@ esp_err_t esp_disable_extern_coex_gpio_pin();
  * @brief Configure leader work mode, gpio pin correspondly and finally enable external coex,
  *        demand not to call the legacy function of `esp_enable_extern_coex_gpio_pin` any more.
  * @param wire_type : to select the whole external coex gpio number.
- * @param gpio_pin : gpio pin number to select.
+ * @param request : request gpio pin number to select.
+ * @param priority : priority gpio pin number to select.
+ * @param grant : grant gpio pin number to select.
  * @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t request, uint32_t priority,
@@ -177,7 +179,9 @@ esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_t
  * @brief Configure follower work mode, gpio pin correspondly and finally enable external coex,
  *        demand not to call the legacy function of `esp_enable_extern_coex_gpio_pin` any more.
  * @param wire_type : to select the whole external coex gpio number.
- * @param gpio_pin : gpio pin number to select.
+ * @param request : request gpio pin number to select.
+ * @param priority : priority gpio pin number to select.
+ * @param grant : grant gpio pin number to select.
  * @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_external_coex_follower_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t request, uint32_t priority,
