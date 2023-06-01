@@ -37,7 +37,7 @@
     spi_master
     spi_slave
     :esp32: secure_element
-    :esp32s2: spi_slave_hd
+    :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
     :esp32s2: touch_element

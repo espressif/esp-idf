@@ -49,6 +49,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 电源管理锁
 ----------------------
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz"}
 
 应用程序可以通过获取或释放管理锁来控制电源管理算法。应用程序获取电源管理锁后，电源管理算法的操作将受到下面的限制。释放电源管理锁后，限制解除。
 
@@ -63,7 +64,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
   * - 电源管理锁
     - 描述
   * - ``ESP_PM_CPU_FREQ_MAX``
-    - 请求使用 :cpp:func:`esp_pm_configure` 将 CPU 频率设置为最大值。{IDF_TARGET_NAME} 可以将该值设置为 80 MHz、160 MHz 或 240 MHz。
+    - 请求使用 :cpp:func:`esp_pm_configure` 将 CPU 频率设置为最大值。{IDF_TARGET_NAME} 可以将该值设置为 {IDF_TARGET_MAX_CPU_FREQ}。
   * - ``ESP_PM_APB_FREQ_MAX``
     - 请求将 APB 频率设置为最大值，{IDF_TARGET_NAME} 支持的最大频率为 80 MHz。
   * - ``ESP_PM_NO_LIGHT_SLEEP``
@@ -74,14 +75,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 下表列出了启用动态调频时如何切换 CPU 频率和 APB 频率。您可以使用 :cpp:func:`esp_pm_configure` 或者 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` 指定 CPU 最大频率。
 
-.. only:: esp32
-
-   .. include:: inc/power_management_esp32.rst
-
-.. only:: not esp32
-
-   .. include:: inc/power_management_esp32s2_and_later.rst
-
+.. include:: inc/power_management_{IDF_TARGET_PATH_NAME}.rst
 
 如果没有获取任何管理锁，调用 :cpp:func:`esp_pm_configure` 将启动 Light-sleep 模式。 Light-sleep 模式持续时间由以下因素决定：
 
