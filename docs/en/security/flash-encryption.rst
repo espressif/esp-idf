@@ -74,7 +74,12 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - If set, disables flash decryption while running in UART Firmware Download mode.
          - 1
        * - ``{IDF_TARGET_CRYPT_CNT}``
-         - Enables/disables encryption at boot time. If even number of bits set (0, 2, 4, 6) - encrypt flash at boot time. If odd number of bits set (1, 3, 5, 7) - do not encrypt flash at boot time.
+         - A :math:`2^n` number that indicating whether the contents of flash have been encrypted.
+
+           * If an odd number of bits are set (e.g., ``0b0000001`` or ``0b0000111``), this indicates the contents of flash are encrypted. The contents will need to be transparently decrypted when read.
+           * If an even number of bits are set (e.g., ``0b0000000`` or ``0b0000011``), this indicates the contents of flash are unencrypted (i.e., plain text).
+
+           With each successive unencrypted flash update (e.g., flashing a new unencrypted binary) and encryption of the flash (via the :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` option), the next MSB of ``{IDF_TARGET_CRYPT_CNT}`` is set.
          - 7
 
 
