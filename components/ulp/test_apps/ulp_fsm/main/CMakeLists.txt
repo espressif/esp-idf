@@ -1,4 +1,4 @@
-set(app_sources "test_app_main.c" "test_ulp.c")
+set(app_sources "test_app_main.c" "test_ulp.c" "test_ulp_manual.c")
 set(ulp_sources "ulp/test_jumps.S")
 
 idf_component_register(SRCS ${app_sources}
