@@ -72,7 +72,7 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handle);
   * Peripherals (except for Wi-Fi, BT, UART0, SPI1, and legacy timers) are not reset.
   * This function does not return.
   */
-void esp_restart(void) __attribute__ ((noreturn));
+void esp_restart(void) __attribute__ ((__noreturn__));
 
 /**
  * @brief  Get reason of last reset
@@ -112,7 +112,7 @@ uint32_t esp_get_minimum_free_heap_size( void );
  *
  * @param details Details that will be displayed during panic handling.
  */
-void  __attribute__((noreturn)) esp_system_abort(const char* details);
+void  __attribute__((__noreturn__)) esp_system_abort(const char* details);
 
 #ifdef __cplusplus
 }
