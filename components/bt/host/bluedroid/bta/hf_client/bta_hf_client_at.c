@@ -427,7 +427,8 @@ static void bta_hf_client_handle_ciev(UINT32 index, UINT32 value)
 
     APPL_TRACE_DEBUG("%s index: %u value: %u", __FUNCTION__, index, value);
 
-    if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
+    if (index == 0 || index > BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
+        APPL_TRACE_WARNING("%s: Invalid index %d", __FUNCTION__, index);
         return;
     }
 
@@ -435,7 +436,7 @@ static void bta_hf_client_handle_ciev(UINT32 index, UINT32 value)
         service_availability = value == 0 ? FALSE : TRUE;
     }
 
-    realind = bta_hf_client_cb.scb.at_cb.indicator_lookup[index];
+    realind = bta_hf_client_cb.scb.at_cb.indicator_lookup[index - 1];
 
     if (realind >= 0 && realind < BTA_HF_CLIENT_AT_SUPPORTED_INDICATOR_COUNT) {
         /* get the real in-array index from lookup table by index it comes at */
