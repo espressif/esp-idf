@@ -70,7 +70,7 @@ Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list 
 
     The maximum number of paired devices is 20, and the paired encryption devices are no more than 4, the default is 2. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in the Wi-Fi component configuration menu.
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
 
     The maximum number of paired devices is 20, and the paired encryption devices are no more than 17, the default is 7. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in the Wi-Fi component configuration menu.
 
@@ -92,7 +92,17 @@ Instead, post the necessary data to a queue and handle it from a lower priority 
 Config ESP-NOW Rate
 -------------------
 
-Call :cpp:func:`esp_wifi_config_espnow_rate()` to config ESPNOW rate of specified interface. Make sure that the interface is enabled before config rate. This API should be called after :cpp:func:`esp_wifi_start()`.
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
+
+    Call :cpp:func:`esp_wifi_config_espnow_rate()` to config ESPNOW rate of specified interface. Make sure that the interface is enabled before config rate. This API should be called after :cpp:func:`esp_wifi_start()`.
+
+.. only:: esp32c6
+
+    Call :cpp:func:`esp_now_set_peer_rate_config()` to configure ESP-NOW rate of each peer. Make sure that the peer is added before configuring the rate. This API should be called after :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_now_add_peer()`.
+
+    .. note::
+
+        :cpp:func:`esp_wifi_config_espnow_rate()` is deprecated, please use cpp::func:`esp_now_set_peer_rate_config()` instead.
 
 Config ESP-NOW Power-saving Parameter
 --------------------------------------------
