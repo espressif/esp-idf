@@ -13,6 +13,7 @@
 #include "esp_ieee802154_frame.h"
 #include "esp_ieee802154_pib.h"
 #include "esp_ieee802154_types.h"
+#include "esp_ieee802154_util.h"
 
 static ieee802154_pending_table_t ieee802154_pending_table;
 
@@ -153,7 +154,7 @@ bool ieee802154_ack_config_pending_bit(const uint8_t *frame)
         }
         break;
     default:
-        assert(false);
+        IEEE802154_ASSERT(false);
     }
 
     if (set_to_hw) {
