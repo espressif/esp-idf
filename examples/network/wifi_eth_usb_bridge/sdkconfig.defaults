@@ -1,6 +1,0 @@
-
-#
-# USB Network Class (NCM)
-#
-CONFIG_TINYUSB_NCM_ENABLE=y
-# end of USB Network Class (NCM)

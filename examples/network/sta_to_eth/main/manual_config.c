@@ -58,8 +58,15 @@ static esp_err_t http_get_handler(httpd_req_t *req)
 
             if (strlen((char*)wifi_cfg.sta.ssid) > 0 && strlen((char*)wifi_cfg.sta.password)) {
                 const char wifi_configured[] = "<h1>Connecting...</h1>";
-                ESP_LOGI(TAG, "WiFi settings accepted!");
-                esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+                esp_wifi_set_mode(WIFI_MODE_STA);
+                if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) == ESP_OK &&
+                    esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) == ESP_OK) {
+                    ESP_LOGI(TAG, "WiFi settings accepted!");
+                } else {
+                    ESP_LOGE(TAG, "Failed to set WiFi config to flash");
+                }
+//
+//                esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
 
                 httpd_resp_set_type(req, "text/html");
                 httpd_resp_send(req, wifi_configured, strlen(wifi_configured));
@@ -104,7 +111,7 @@ esp_err_t start_provisioning(EventGroupHandle_t *flags, int success_bit, int fai
 {
     start_webserver();
     // Start the DNS server that will reply to "wifi.settings" with "usb" network interface address
-    dns_server_config_t config = DNS_SERVER_CONFIG_SINGLE("wifi.settings" /* name */, "usb" /* USB netif ID */);
+    dns_server_config_t config = DNS_SERVER_CONFIG_SINGLE("wifi.settings" /* name */, "wired" /* USB netif ID */);
     start_dns_server(&config);
 
     s_flags = flags;

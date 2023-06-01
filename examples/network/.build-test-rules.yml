@@ -11,3 +11,6 @@ examples/network/simple_sniffer:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+examples/network/sta_to_eth:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1

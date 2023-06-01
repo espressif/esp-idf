@@ -66,7 +66,7 @@ extern const wifi_prov_scheme_t wifi_prov_scheme_httpd;
 esp_err_t start_provisioning(EventGroupHandle_t *flags, int success_bit, int fail_bit)
 {
     // Start the DNS server that will reply to "wifi.settings" with "usb" network interface address
-    dns_server_config_t dns_config = DNS_SERVER_CONFIG_SINGLE("wifi.settings" /* name */, "usb" /* USB netif ID */);
+    dns_server_config_t dns_config = DNS_SERVER_CONFIG_SINGLE("wifi.settings" /* name */, "wired" /* wired netif ID */);
     start_dns_server(&dns_config);
     struct events *handler_args = malloc(sizeof(struct events));
     handler_args->flags = flags;

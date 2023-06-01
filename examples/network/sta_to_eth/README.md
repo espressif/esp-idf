@@ -1,30 +1,26 @@
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
-# TinyUSB Network Control Model Device Example
+# WiFi station to "Wired" interface L2 forwarder
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-Network Control Model (NCM) is a sub-class of Communication Device Class (CDC) USB Device for Ethernet-over-USB applications.
+This example aims to demonstrate 1-1 bridge using WiFi station and one of these interfaces (so called *wired* in this example)
+- Ethernet (supported for all targets)
+- USB acting as NCM device (supported for ESP32-S2 and ESP32-S3)
 
-In this example, we implemented the ESP development board to transmit WiFi data to the Linux host via USB, so that the Linux host could access the Internet.
-
-As a USB stack, a TinyUSB component is used.
+It also allows for reconfiguring WiFi settings using a virtual network in the Ethernet. The reconfiguration mode is initialized if the WiFi settings are not available, connection fails or manually by long pressing the Boot button (GPIO0).
+It is possible to configure WiFi settings (SSID and password) in a browser on an address `"wifi.settings"` or using unified provisioning.
 
 ## How to use example
 
-This example demonstrate usage of USB NCM device as USB-WiFi bridge. It also allows for reconfiguring WiFi settings using a virtual network in NCM device. The reconfiguration mode is initialized if the WiFi settings are not available, connection fails or manually by long pressing the Boot button (GPIO0).
-It is possible to configure WiFi settings (SSID and password) in a browser on an address `"wifi.settings"` or using unified provisioning.
+This example could be used to *bring* wireless connectivity to devices that support only Ethernet (or USB Ethernet implemented as NCM device).
+This example also supports runtime configuration of WiFi settings by means of a webpage or unified provisioning.
+
 
 ### Hardware Required
 
-Any ESP board that have USB-OTG supported.
-
-#### Pin Assignment
-
-_Note:_ In case your board doesn't have micro-USB connector connected to USB-OTG peripheral, you may have to DIY a cable and connect **D+** and **D-** to the pins listed below.
-
-See common pin assignments for USB Device examples from [upper level](../../README.md#common-pin-assignments).
+Any board with either Ethernet of USB-OTG supported.
 
 ### Configure the project
 
@@ -36,7 +32,7 @@ In the `Example Configuration` menu choose the provisioning method:
 
 To provision the device using IDF provisioning tools (if `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` is selected) you can use idf provisioning utility with transport set to `softap`:
 ```bash
-esp-idf/tools/esp_prov$ python esp_prov.py --transport softap ...
+esp-idf/tools/esp_prov$ python esp_prov.py --transport httpd ...
 ```
 Please refer to the provisioning documentation and `esp_prov` script [documentation](../../../../../tools/esp_prov/README.md) for more details.
 
@@ -58,15 +54,15 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 After the flashing you should see the output at idf monitor:
 
+(note that this is the output of USB configuration)
 ```
-I (725) usb_net: Wi-Fi STA connected
-I (735) usb_net: CONNECTED_BIT
-
-I (735) usb_net: connect success
-
-I (735) wifi:BcnInt:102400, DTIM:1
-I (745) usb_net: USB net initialization
-I (745) tusb_desc: 
+I (1740) example_sta2wired: Wi-Fi STA connected
+I (1740) example_sta2wired: WiFi station connected successfully
+W (1750) TinyUSB: The device's configuration descriptor is not provided by user, using default.
+W (1760) TinyUSB: The device's string descriptor is not provided by user, using default.
+W (1770) TinyUSB: The device's device descriptor is not provided by user, using default.
+I (1770) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (1780) tusb_desc:
 ┌─────────────────────────────────┐
 │  USB Device Descriptor Summary  │
 ├───────────────────┬─────────────┤
@@ -93,5 +89,4 @@ I (745) tusb_desc:
 │bNumConfigurations │ 0x1         │
 └───────────────────┴─────────────┘
 I (915) TinyUSB: TinyUSB Driver installed
-I (925) usb_net: USB NCM initialization DONE
 ```
