@@ -87,6 +87,7 @@ typedef struct {
 typedef struct {
     gdma_event_callback_t on_recv_eof;  /*!< Invoked when RX engine meets EOF descriptor */
     gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
+    gdma_event_callback_t on_recv_done; /*!< Invoked when finished to receive one RX descriptor */
 } gdma_rx_event_callbacks_t;
 
 /**

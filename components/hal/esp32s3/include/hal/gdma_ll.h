@@ -269,10 +269,10 @@ static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint3
 }
 
 /**
- * @brief Get current RX descriptor's address
+ * @brief Get the pre-fetched RX descriptor's address
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_rx_get_prefetched_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.dscr;
 }
@@ -508,10 +508,10 @@ static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t ch
 }
 
 /**
- * @brief Get current TX descriptor's address
+ * @brief Get the pre-fetched TX descriptor's address
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_tx_get_prefetched_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.dscr;
 }
