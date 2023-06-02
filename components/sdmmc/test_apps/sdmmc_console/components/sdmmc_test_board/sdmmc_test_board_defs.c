@@ -237,6 +237,38 @@ static const sdmmc_test_board_info_t s_board_info = {
 
 #elif CONFIG_SDMMC_BOARD_ESP32C3_BREAKOUT
 
+#define SD_BREAKOUT_BOARD_EN_GPIO  10
+#define SD_BREAKOUT_BOARD_EN_LEVEL 0
+#define SD_BREAKOUT_BOARD_PWR_RST_DELAY_MS  100
+#define SD_BREAKOUT_BOARD_PWR_ON_DELAY_MS   100
+
+static void card_power_set_esp32c3_breakout(bool en)
+{
+    if (en) {
+        /* power off to make sure card is reset */
+        gpio_set_direction(SD_BREAKOUT_BOARD_EN_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_BREAKOUT_BOARD_EN_GPIO, !SD_BREAKOUT_BOARD_EN_LEVEL);
+        /* set CMD low to discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(4);
+        gpio_set_direction(4, GPIO_MODE_OUTPUT);
+        gpio_set_level(4, 0);
+        usleep(SD_BREAKOUT_BOARD_PWR_RST_DELAY_MS * 1000);
+        /* power on */
+        gpio_reset_pin(4);
+        gpio_set_level(SD_BREAKOUT_BOARD_EN_GPIO, SD_BREAKOUT_BOARD_EN_LEVEL);
+        usleep(SD_BREAKOUT_BOARD_PWR_ON_DELAY_MS * 1000);
+    } else {
+        gpio_set_level(SD_BREAKOUT_BOARD_EN_GPIO, !SD_BREAKOUT_BOARD_EN_LEVEL);
+        gpio_set_direction(SD_BREAKOUT_BOARD_EN_GPIO, GPIO_MODE_INPUT);
+        /* set CMD low to discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(4);
+        gpio_set_direction(4, GPIO_MODE_OUTPUT);
+        gpio_set_level(4, 0);
+        usleep(SD_BREAKOUT_BOARD_PWR_RST_DELAY_MS * 1000);
+        gpio_reset_pin(4);
+    }
+}
+
 static const sdmmc_test_board_info_t s_board_info = {
     .name = "ESP32-C3 breakout board",
     .slot = {
@@ -261,6 +293,7 @@ static const sdmmc_test_board_info_t s_board_info = {
             .unused_pin = 2,
         }
     },
+    .card_power_set = card_power_set_esp32c3_breakout
 };
 
 #elif CONFIG_SDMMC_BOARD_CUSTOM_SD
