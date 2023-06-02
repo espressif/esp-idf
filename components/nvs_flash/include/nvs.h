@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -175,7 +175,10 @@ esp_err_t nvs_open_from_partition(const char *part_name, const char* namespace_n
  * @brief      set int8_t value for given key
  *
  * Set value for the key, given its name. Note that the actual storage will not be updated
- * until \c nvs_commit is called.
+ * until \c nvs_commit is called. Regardless whether key-value pair is created or updated,
+ * function always requires at least one nvs available entry. See \c nvs_get_stats .
+ * After create type of operation, the number of available entries is decreased by one.
+ * After update type of operation, the number of available entries remains the same.
  *
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
@@ -250,8 +253,15 @@ esp_err_t nvs_set_u64 (nvs_handle_t handle, const char* key, uint64_t value);
 /**
  * @brief      set string for given key
  *
- * Set value for the key, given its name. Note that the actual storage will not be updated
- * until \c nvs_commit is called.
+ * Sets string value for the key. Function requires whole space for new data to be available
+ * as contiguous entries in same nvs page. Operation consumes 1 overhead entry and 1 entry per
+ * each 32 characters of new string including zero character to be set. In case of value update
+ * for existing key, entries occupied by the previous value and overhead entry are returned to
+ * the pool of available entries.
+ * Note that storage of long string values can fail due to fragmentation of nvs pages even if
+ * \c available_entries returned by \c nvs_get_stats suggests enough overall space available.
+ * Note that the underlying storage will not be updated until \c nvs_commit is called.
+ *
  *
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
@@ -280,8 +290,11 @@ esp_err_t nvs_set_str (nvs_handle_t handle, const char* key, const char* value);
 /**
  * @brief       set variable length binary value for given key
  *
- * This family of functions set value for the key, given its name. Note that
- * actual storage will not be updated until nvs_commit function is called.
+ * Sets variable length binary value for the key. Function uses 2 overhead and 1 entry
+ * per each 32 bytes of new data from the pool of available entries. See \c nvs_get_stats .
+ * In case of value update for existing key, space occupied by the existing value and 2 overhead entries
+ * are returned to the pool of available entries.
+ * Note that the underlying storage will not be updated until \c nvs_commit is called.
  *
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
@@ -537,24 +550,25 @@ void nvs_close(nvs_handle_t handle);
  * @note Info about storage space NVS.
  */
 typedef struct {
-    size_t used_entries;      /**< Amount of used entries. */
-    size_t free_entries;      /**< Amount of free entries. */
-    size_t total_entries;     /**< Amount all available entries. */
-    size_t namespace_count;   /**< Amount name space. */
+    size_t used_entries;      /**< Number of used entries. */
+    size_t free_entries;      /**< Number of free entries. It includes also reserved entries. */
+    size_t available_entries; /**< Number of entries available for data storage. */
+    size_t total_entries;     /**< Number of all entries. */
+    size_t namespace_count;   /**< Number of namespaces. */
 } nvs_stats_t;
 
 /**
- * @brief      Fill structure nvs_stats_t. It provides info about used memory the partition.
+ * @brief      Fill structure nvs_stats_t. It provides info about memory used by NVS.
  *
- * This function calculates to runtime the number of used entries, free entries, total entries,
- * and amount namespace in partition.
+ * This function calculates the number of used entries, free entries, available entries, total entries
+ * and number of namespaces in partition.
  *
  * \code{c}
- * // Example of nvs_get_stats() to get the number of used entries and free entries:
+ * // Example of nvs_get_stats() to get overview of actual statistics of data entries :
  * nvs_stats_t nvs_stats;
  * nvs_get_stats(NULL, &nvs_stats);
- * printf("Count: UsedEntries = (%d), FreeEntries = (%d), AllEntries = (%d)\n",
-          nvs_stats.used_entries, nvs_stats.free_entries, nvs_stats.total_entries);
+ * printf("Count: UsedEntries = (%lu), FreeEntries = (%lu), AvailableEntries = (%lu), AllEntries = (%lu)\n",
+          nvs_stats.used_entries, nvs_stats.free_entries, nvs_stats.available_entries, nvs_stats.total_entries);
  * \endcode
  *
  * @param[in]   part_name   Partition name NVS in the partition table.

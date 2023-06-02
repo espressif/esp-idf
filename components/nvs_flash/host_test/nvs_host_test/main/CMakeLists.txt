@@ -12,3 +12,7 @@ idf_component_register(SRCS "main.cpp"
                             "../../../../../tools/catch"
                        WHOLE_ARCHIVE
                        REQUIRES nvs_flash)
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++20)
+endif()

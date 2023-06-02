@@ -314,7 +314,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
     TEST_ASSERT_TRUE(stat1.total_entries == stat2.total_entries);
     TEST_ASSERT_TRUE(stat1.used_entries == 7);
 
-    TEST_ASSERT_TRUE(stat1.total_entries == (stat1.used_entries + stat1.free_entries));
+    TEST_ASSERT_TRUE(stat1.total_entries == (stat1.used_entries + stat1.free_entries + 126)); // one Page::ENTRY_COUNT is reserved
 
     // amount valid pair in namespace 2
     size_t h2_count_entries;

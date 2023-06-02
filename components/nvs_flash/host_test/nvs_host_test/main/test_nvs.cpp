@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1475,6 +1475,8 @@ TEST_CASE("nvs page selection takes into account free entries also not just eras
 
 TEST_CASE("calculate used and free space", "[nvs]")
 {
+    size_t consumed_entries = 0;
+
     PartitionEmulationFixture f(0, 6);
     nvs_flash_deinit();
     TEST_ESP_ERR(nvs_get_stats(NULL, NULL), ESP_ERR_INVALID_ARG);
@@ -1497,113 +1499,154 @@ TEST_CASE("calculate used and free space", "[nvs]")
     TEST_ESP_ERR(nvs_get_used_entry_count(handle, &h_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
     CHECK(h_count_entries == 0);
 
-    nvs::Page p;
     // after erase. empty partition
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
     CHECK(stat1.free_entries != 0);
     CHECK(stat1.namespace_count == 0);
-    CHECK(stat1.total_entries == 6 * p.ENTRY_COUNT);
+    CHECK(stat1.total_entries == 6 * nvs::Page::ENTRY_COUNT);
     CHECK(stat1.used_entries == 0);
 
-    // create namespace test_k1
+    // namespace test_k1
     nvs_handle_t handle_1;
+    size_t ns1_expected_entries = 0;
+
+    // create namepace
+    consumed_entries = 1;   // should consume one entry
     TEST_ESP_OK(nvs_open("test_k1", NVS_READWRITE, &handle_1));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
-    CHECK(stat2.free_entries + 1 == stat1.free_entries);
+    CHECK(stat2.free_entries + consumed_entries == stat1.free_entries);
     CHECK(stat2.namespace_count == 1);
     CHECK(stat2.total_entries == stat1.total_entries);
-    CHECK(stat2.used_entries == 1);
+    CHECK(stat2.used_entries == stat1.used_entries + consumed_entries);
+    CHECK(stat2.available_entries + consumed_entries == stat1.available_entries);
 
     // create pair key-value com
+    consumed_entries = 1;   // should consume one entry
     TEST_ESP_OK(nvs_set_i32(handle_1, "com", 0x12345678));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
-    CHECK(stat1.free_entries + 1 == stat2.free_entries);
+    CHECK(stat1.free_entries + consumed_entries == stat2.free_entries);
     CHECK(stat1.namespace_count == 1);
     CHECK(stat1.total_entries == stat2.total_entries);
-    CHECK(stat1.used_entries == 2);
+    CHECK(stat1.used_entries == stat2.used_entries + consumed_entries);
+    CHECK(stat1.available_entries + consumed_entries == stat2.available_entries);
+    ns1_expected_entries += consumed_entries;
 
     // change value in com
+    consumed_entries = 0;   // should not consume any entry
     TEST_ESP_OK(nvs_set_i32(handle_1, "com", 0x01234567));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
     CHECK(stat2.free_entries == stat1.free_entries);
     CHECK(stat2.namespace_count == 1);
     CHECK(stat2.total_entries != 0);
-    CHECK(stat2.used_entries == 2);
+    CHECK(stat2.used_entries == stat1.used_entries + consumed_entries);
+    CHECK(stat2.available_entries + consumed_entries == stat1.available_entries);
+    ns1_expected_entries += consumed_entries;
 
     // create pair key-value ru
+    consumed_entries = 1;   // should consume one entry
     TEST_ESP_OK(nvs_set_i32(handle_1, "ru", 0x00FF00FF));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
-    CHECK(stat1.free_entries + 1 == stat2.free_entries);
+    CHECK(stat1.free_entries + consumed_entries == stat2.free_entries);
     CHECK(stat1.namespace_count == 1);
     CHECK(stat1.total_entries != 0);
-    CHECK(stat1.used_entries == 3);
+    CHECK(stat1.used_entries == stat2.used_entries + consumed_entries);
+    CHECK(stat1.available_entries + consumed_entries == stat2.available_entries);
+    ns1_expected_entries += consumed_entries;
 
-    // amount valid pair in namespace 1
-    size_t h1_count_entries;
-    TEST_ESP_OK(nvs_get_used_entry_count(handle_1, &h1_count_entries));
-    CHECK(h1_count_entries == 2);
+    // amount of valid pairs in namespace 1
+    size_t ns1_reported_entries;
+    TEST_ESP_OK(nvs_get_used_entry_count(handle_1, &ns1_reported_entries));
+    CHECK(ns1_reported_entries == ns1_expected_entries);
 
+    // namespace test_k2
     nvs_handle_t handle_2;
-    // create namespace test_k2
+    size_t ns2_expected_entries = 0;
+
+    // create namespace
+    consumed_entries = 1;   // should consume one entry
     TEST_ESP_OK(nvs_open("test_k2", NVS_READWRITE, &handle_2));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
-    CHECK(stat2.free_entries + 1 == stat1.free_entries);
+    CHECK(stat2.free_entries + consumed_entries == stat1.free_entries);
     CHECK(stat2.namespace_count == 2);
     CHECK(stat2.total_entries == stat1.total_entries);
-    CHECK(stat2.used_entries == 4);
+    CHECK(stat2.used_entries == stat1.used_entries + consumed_entries);
+    CHECK(stat2.available_entries + consumed_entries == stat1.available_entries);
 
-    // create pair key-value
+    // create 3 pairs key-value
+    consumed_entries = 3;   // should consume three entries
     TEST_ESP_OK(nvs_set_i32(handle_2, "su1", 0x00000001));
     TEST_ESP_OK(nvs_set_i32(handle_2, "su2", 0x00000002));
     TEST_ESP_OK(nvs_set_i32(handle_2, "sus", 0x00000003));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
-    CHECK(stat1.free_entries + 3 == stat2.free_entries);
+    CHECK(stat1.free_entries + consumed_entries == stat2.free_entries);
     CHECK(stat1.namespace_count == 2);
     CHECK(stat1.total_entries == stat2.total_entries);
-    CHECK(stat1.used_entries == 7);
+    CHECK(stat1.used_entries == stat2.used_entries + consumed_entries);
+    CHECK(stat1.available_entries + consumed_entries == stat2.available_entries);
+    ns2_expected_entries += consumed_entries;
 
-    CHECK(stat1.total_entries == (stat1.used_entries + stat1.free_entries));
+    // amount of valid pairs in namespace 2
+    size_t ns2_reported_entries;
+    TEST_ESP_OK(nvs_get_used_entry_count(handle_2, &ns2_reported_entries));
+    CHECK(ns2_reported_entries == ns2_expected_entries);
 
-    // amount valid pair in namespace 2
-    size_t h2_count_entries;
-    TEST_ESP_OK(nvs_get_used_entry_count(handle_2, &h2_count_entries));
-    CHECK(h2_count_entries == 3);
-
-    CHECK(stat1.used_entries == (h1_count_entries + h2_count_entries + stat1.namespace_count));
+    CHECK(stat1.used_entries == (ns1_reported_entries + ns2_reported_entries + stat1.namespace_count));
 
     nvs_close(handle_1);
     nvs_close(handle_2);
 
-    size_t temp = h2_count_entries;
-    TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, &h2_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
-    CHECK(h2_count_entries == 0);
-    h2_count_entries = temp;
+    size_t temp = ns2_reported_entries;
+    TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, &ns2_reported_entries), ESP_ERR_NVS_INVALID_HANDLE);
+    CHECK(ns2_reported_entries == 0);
+    ns2_reported_entries = temp;
     TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, NULL), ESP_ERR_INVALID_ARG);
 
+    // namespace test_k3
     nvs_handle_t handle_3;
-    // create namespace test_k3
+    size_t ns3_expected_entries = 0;
+
+    // create namespace
+    consumed_entries = 1;   // should consume one entry
     TEST_ESP_OK(nvs_open("test_k3", NVS_READWRITE, &handle_3));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
-    CHECK(stat2.free_entries + 1 == stat1.free_entries);
+    CHECK(stat2.free_entries + consumed_entries == stat1.free_entries);
     CHECK(stat2.namespace_count == 3);
     CHECK(stat2.total_entries == stat1.total_entries);
-    CHECK(stat2.used_entries == 8);
+    CHECK(stat2.used_entries == stat1.used_entries + consumed_entries);
+    CHECK(stat2.available_entries + consumed_entries == stat1.available_entries);
 
-    // create pair blobs
+    // create pair key - blob
     uint32_t blob[12];
+    consumed_entries = 2 + (sizeof(blob) + 31) / 32;   // should consume 2 + entry for each started block of 32 bytes
     TEST_ESP_OK(nvs_set_blob(handle_3, "bl1", &blob, sizeof(blob)));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
-    CHECK(stat1.free_entries + 4 == stat2.free_entries);
+    CHECK(stat1.free_entries + consumed_entries == stat2.free_entries);
     CHECK(stat1.namespace_count == 3);
     CHECK(stat1.total_entries == stat2.total_entries);
-    CHECK(stat1.used_entries == 12);
+    CHECK(stat1.used_entries == stat2.used_entries + consumed_entries);
+    CHECK(stat1.available_entries + consumed_entries == stat2.available_entries);
+    CHECK(stat1.total_entries == (stat1.used_entries + stat1.available_entries + nvs::Page::ENTRY_COUNT));
+    ns3_expected_entries += consumed_entries;
 
-    // amount valid pair in namespace 2
-    size_t h3_count_entries;
-    TEST_ESP_OK(nvs_get_used_entry_count(handle_3, &h3_count_entries));
-    CHECK(h3_count_entries == 4);
+    // create pair key - string
+    char input_string[] = "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789";
+    consumed_entries = 1 + (strlen(input_string) + 1 + 31) / 32;   // should consume 1 + entry for each started block of 32 bytes
+    TEST_ESP_OK(nvs_set_str(handle_3, "str1", input_string));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
+    CHECK(stat2.free_entries + consumed_entries == stat1.free_entries);
+    CHECK(stat2.namespace_count == 3);
+    CHECK(stat2.total_entries == stat1.total_entries);
+    CHECK(stat2.used_entries == stat1.used_entries + consumed_entries);
+    CHECK(stat2.available_entries + consumed_entries == stat1.available_entries);
+    ns3_expected_entries += consumed_entries;
 
-    CHECK(stat1.used_entries == (h1_count_entries + h2_count_entries + h3_count_entries + stat1.namespace_count));
+    // amount of valid pairs in namespace 3
+    size_t ns3_reported_entries;
+    TEST_ESP_OK(nvs_get_used_entry_count(handle_3, &ns3_reported_entries));
+    CHECK(ns3_reported_entries == ns3_expected_entries);
+
+    // overall check of used entries across all namespaces
+    CHECK(stat2.used_entries == (ns1_reported_entries + ns2_reported_entries + ns3_reported_entries + stat2.namespace_count));
 
     nvs_close(handle_3);
 
