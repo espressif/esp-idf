@@ -5102,7 +5102,7 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data)
 {
-    L2CA_BleDisconnect(p_data->ble_disconnect.remote_bda);
+    L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_data->ble_disconnect.remote_bda);
 }
 
 /*******************************************************************************
