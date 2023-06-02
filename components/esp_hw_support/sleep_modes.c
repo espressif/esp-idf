@@ -127,6 +127,8 @@
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
 #define SLEEP_TIMER_ALARM_TO_SLEEP_TICKS    (16)
 
+#define SLEEP_UART_FLUSH_DONE_TO_SLEEP_US   (450)
+
 #if SOC_PM_SUPPORT_TOP_PD
 // IDF console uses 8 bits data mode without parity, so each char occupy 8(data)+1(start)+1(stop)=10bits
 #define UART_FLUSH_US_PER_CHAR              (10*1000*1000 / CONFIG_ESP_CONSOLE_UART_BAUDRATE)
@@ -235,7 +237,7 @@ static void ext0_wakeup_prepare(void);
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 static void ext1_wakeup_prepare(void);
 #endif
-static esp_err_t timer_wakeup_prepare(void);
+static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static void touch_wakeup_prepare(void);
 #endif
@@ -395,12 +397,14 @@ static void IRAM_ATTR flush_uarts(void)
     }
 }
 
+static uint32_t s_suspended_uarts_bmap = 0;
+
 /**
  * Suspend enabled uarts and return suspended uarts bit map
  */
-static uint32_t IRAM_ATTR suspend_uarts(void)
+static IRAM_ATTR void suspend_uarts(void)
 {
-    uint32_t suspended_uarts_bmap = 0;
+    s_suspended_uarts_bmap = 0;
     for (int i = 0; i < SOC_UART_NUM; ++i) {
 #ifndef CONFIG_IDF_TARGET_ESP32
         if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
@@ -408,7 +412,7 @@ static uint32_t IRAM_ATTR suspend_uarts(void)
         }
 #endif
         uart_ll_force_xoff(i);
-        suspended_uarts_bmap |= BIT(i);
+        s_suspended_uarts_bmap |= BIT(i);
 #if SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
         uint32_t uart_fsm = 0;
         do {
@@ -418,17 +422,55 @@ static uint32_t IRAM_ATTR suspend_uarts(void)
         while (uart_ll_get_fsm_status(i) != 0) {}
 #endif
     }
-    return suspended_uarts_bmap;
 }
 
-static void IRAM_ATTR resume_uarts(uint32_t uarts_resume_bmap)
+static void IRAM_ATTR resume_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
-        if (uarts_resume_bmap & 0x1) {
+        if (s_suspended_uarts_bmap & 0x1) {
             uart_ll_force_xon(i);
         }
-        uarts_resume_bmap >>= 1;
+        s_suspended_uarts_bmap >>= 1;
     }
+}
+
+/*
+  UART prepare strategy in sleep:
+    Deepsleep : flush the fifo before enter sleep to avoid data loss
+
+    Lightsleep:
+      Chips not support PD_TOP: Suspend uart before cpu freq switch
+
+      Chips support PD_TOP:
+        For sleep which will not power down the TOP domain (uart belongs it), we can just suspend the UART.
+
+        For sleep which will power down the TOP domain, we need to consider whether the uart flushing will
+        block the sleep process and cause the rtos target tick to be missed upon waking up. It's need to
+        estimate the flush time based on the number of bytes in the uart FIFO,  if the predicted flush
+        completion time has exceeded the wakeup time, we should abandon the flush, skip the sleep and
+        return ESP_ERR_SLEEP_REJECT.
+ */
+static bool light_sleep_uart_prepare(uint32_t pd_flags, int64_t sleep_duration)
+{
+    bool should_skip_sleep = false;
+#if !SOC_PM_SUPPORT_TOP_PD
+    suspend_uarts();
+#else
+    if (pd_flags & PMU_SLEEP_PD_TOP) {
+        if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
+            // +1 is for cover the last charactor flush time
+            (sleep_duration < (int64_t)((UART_LL_FIFO_DEF_LEN - uart_ll_get_txfifo_len(CONSOLE_UART_DEV) + 1) * UART_FLUSH_US_PER_CHAR) + SLEEP_UART_FLUSH_DONE_TO_SLEEP_US)) {
+            should_skip_sleep = true;
+        } else {
+            /* Only flush the uart_num configured to console, the transmission integrity of
+               other uarts is guaranteed by the UART driver */
+            esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        }
+    } else {
+        suspend_uarts();
+    }
+#endif
+    return should_skip_sleep;
 }
 
 /**
@@ -492,8 +534,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     // For deep sleep, wait for the contents of UART FIFO to be sent.
     bool deep_sleep = (mode == ESP_SLEEP_MODE_DEEP_SLEEP);
     bool should_skip_sleep = false;
-    uint32_t suspended_uarts_bmap = 0;
 
+    int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
 
 #if SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256
     //Keep the RTC8M_CLK on if RTC clock is rc_fast_d256.
@@ -512,22 +554,17 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     //turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
 
+    // Sleep UART prepare
+    if (deep_sleep) {
+        flush_uarts();
+    } else {
+        should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
+    }
+
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
-
-    // Deep sleep UART prepare
-    /* flush_uart should be as late as possible, because the later the flush,
-    the shorter the time overhead of entering sleep caused by blocking,
-    and blocking after frequency switching can also reduce the power consumption
-    during the active state.*/
-
-    /* ext/gpio deepsleep wakeup prepare will change GPIO configure,
-       we need to flush uart before it */
-    if (deep_sleep) {
-        flush_uarts();
-    }
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     // Configure pins for external wakeup
@@ -620,32 +657,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
 
     // Configure timer wakeup
-    if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
-        if (timer_wakeup_prepare() != ESP_OK) {
-            result = ESP_ERR_SLEEP_REJECT;
+    if (!should_skip_sleep && (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN)) {
+        if (timer_wakeup_prepare(sleep_duration) != ESP_OK) {
             should_skip_sleep = true;
-        }
-    }
-
-    // Light sleep UART prepare
-    if (!deep_sleep) {
-#if SOC_PM_SUPPORT_TOP_PD
-        if (pd_flags & PMU_SLEEP_PD_TOP) {
-            if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
-                // s_config.sleep_duration here has been compensated in timer_wakeup_prepare,
-                // +2 is for cover the last charactor flush time and timer alarm to sleep request time(no more than 80us)
-                (s_config.sleep_duration < (UART_LL_FIFO_DEF_LEN - uart_ll_get_txfifo_len(CONSOLE_UART_DEV) + 2) * UART_FLUSH_US_PER_CHAR)) {
-                result = ESP_ERR_SLEEP_REJECT;
-                should_skip_sleep = true;
-            } else {
-                /* Only flush the uart_num configured to console, the transmission integrity of
-                   other uarts is guaranteed by the UART driver */
-                esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-            }
-        } else
-#endif
-        {
-            suspended_uarts_bmap = suspend_uarts();
         }
     }
 
@@ -655,7 +669,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 #endif
 
-    if (!should_skip_sleep) {
+    if (should_skip_sleep) {
+        result = ESP_ERR_SLEEP_REJECT;
+    } else {
         if (deep_sleep) {
 #if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
             esp_sleep_isolate_digital_gpio();
@@ -736,7 +752,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 
     // re-enable UART output
-    resume_uarts(suspended_uarts_bmap);
+    resume_uarts();
     s_lightsleep_cnt++;
     return result;
 }
@@ -1166,9 +1182,8 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
-static esp_err_t timer_wakeup_prepare(void)
+static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 {
-    int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
     if (sleep_duration < 0) {
         sleep_duration = 0;
     }
@@ -1190,7 +1205,6 @@ static esp_err_t timer_wakeup_prepare(void)
     rtc_hal_set_wakeup_timer(target_wakeup_tick);
 #endif
 
-    s_config.sleep_duration = sleep_duration;
     return ESP_OK;
 }
 
