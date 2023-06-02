@@ -7,6 +7,13 @@
 #include <string.h>
 
 #include "sdkconfig.h"
+
+#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/task_snapshot.h"
+#endif
+
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -101,3 +108,61 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     esp_backtrace_get_start(&(start.pc), &(start.sp), &(start.next_pc));
     return esp_backtrace_print_from_frame(depth, &start, false);
 }
+
+
+#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
+
+esp_backtrace_frame_t esp_task_snapshot_to_backtrace_frame(TaskSnapshot_t snapshot)
+{
+    XtExcFrame* xtf = (XtExcFrame*)snapshot.pxTopOfStack;
+
+    esp_backtrace_frame_t frame = {
+        .pc = xtf->pc,
+        .sp = xtf->a1,
+        .next_pc = xtf->a0,
+        .exc_frame = xtf,
+    };
+
+    return frame;
+}
+
+esp_err_t IRAM_ATTR esp_backtrace_print_all_tasks(int depth, bool panic)
+{
+    // todo: should we disable context switching, and the other core?
+    // It works fine without that, but still seems like a good idea.
+
+    uint32_t task_count = uxTaskGetNumberOfTasks();
+
+    TaskSnapshot_t* snapshots = (TaskSnapshot_t*) calloc(task_count * sizeof(TaskSnapshot_t), 1);
+
+    // get snapshots
+    UBaseType_t tcb_size = 0;
+    uint32_t got = uxTaskGetSnapshotAll(snapshots, task_count, &tcb_size);
+
+    uint32_t len = got < task_count ? got : task_count;
+
+    print_str("printing all tasks:\n\n", panic);
+
+    esp_err_t err = ESP_OK;
+
+    for (uint32_t i = 0; i < len; i++) {
+
+        TaskHandle_t handle = (TaskHandle_t) snapshots[i].pxTCB;
+
+        char* name = pcTaskGetName(handle);
+
+        print_str(name ? name : "No Name" , panic);
+
+        esp_backtrace_frame_t frame = esp_task_snapshot_to_backtrace_frame(snapshots[i]);
+
+        esp_err_t nerr = esp_backtrace_print_from_frame(depth, &frame, panic);
+        if (nerr != ESP_OK) {
+            err = nerr;
+        }
+    }
+
+    free(snapshots);
+    return err;
+}
+
+#endif // CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT

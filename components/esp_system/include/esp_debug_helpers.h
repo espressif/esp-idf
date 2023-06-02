@@ -12,6 +12,11 @@ extern "C" {
 
 #ifndef __ASSEMBLER__
 
+#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
+#include "freertos/FreeRTOS.h"
+#include "freertos/task_snapshot.h"
+#endif
+
 #include <stdbool.h>
 #include "esp_err.h"
 #include "soc/soc.h"  // [refactor-todo] IDF-2297
@@ -108,6 +113,28 @@ esp_err_t esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t*
  *      - ESP_FAIL  Backtrace is corrupted
  */
 esp_err_t esp_backtrace_print(int depth);
+
+#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
+/**
+ * @brief Convert a FreeRTOS TaskSnapshot into a esp_backtrace_frame_t
+ *
+ * @param snapshot The task snapshot, from vTaskGetSnapshot or uxTaskGetSnapshotAll
+ *
+ * @return the backtrace frame
+ */
+esp_backtrace_frame_t esp_task_snapshot_to_backtrace_frame(TaskSnapshot_t snapshot);
+
+/**
+ * @brief Print the backtrace of every task on the system
+ *
+ * @param depth The maximum number of stack frames to print (should be > 0)
+ *
+ * @return
+ *      - ESP_OK    All backtraces successfully printed to completion or to depth limit
+ *      - ESP_FAIL  One or more backtraces is corrupt
+ */
+esp_err_t esp_backtrace_print_all_tasks(int depth, bool panic);
+#endif
 
 /**
  * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
