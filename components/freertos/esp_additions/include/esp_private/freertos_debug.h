@@ -73,7 +73,7 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
  *        does not acquire any locks.
  * @param[out] pxTaskSnapshotArray Array of TaskSnapshot_t structures filled by this function
  * @param[in] uxArrayLength Length of the provided array
- * @param[out] pxTCBSize Size of the a task's TCB structure
+ * @param[out] pxTCBSize Size of the a task's TCB structure (can be set to NULL)
  * @return UBaseType_t
  */
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
