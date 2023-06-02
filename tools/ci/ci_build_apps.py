@@ -204,7 +204,7 @@ def main(args: argparse.Namespace) -> None:
         build_verbose=args.build_verbose,
         keep_going=True,
         collect_size_info='size_info.txt',
-        collect_app_info='list_job_@p.txt',
+        collect_app_info=args.collect_app_info,
         ignore_warning_strs=args.ignore_warning_str,
         ignore_warning_file=args.ignore_warning_file,
         copy_sdkconfig=args.copy_sdkconfig,
@@ -266,11 +266,8 @@ if __name__ == '__main__':
         help='Index (1-based) of the job, out of the number specified by --parallel-count.',
     )
     parser.add_argument(
-        '--collect-size-info',
-        help='If specified, the test case name and size info json will be written to this file',
-    )
-    parser.add_argument(
         '--collect-app-info',
+        default='list_job_@p.txt',
         help='If specified, the test case name and app info json will be written to this file',
     )
     parser.add_argument(
