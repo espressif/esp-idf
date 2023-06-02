@@ -8,6 +8,7 @@
 
 #include "esp_err.h"
 #include "esp_openthread_types.h"
+#include "openthread/dataset.h"
 #include "openthread/error.h"
 #include "openthread/instance.h"
 #include "lwip/ip_addr.h"
@@ -33,9 +34,22 @@ extern "C" {
 esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *init_config);
 
 /**
+ * @brief   Starts the Thread protocol operation and attaches to a Thread network.
+ *
+ * @param[in]  datasetTlvs    The operational dataset (TLV encoded), if it's NULL, the function will generate the dataset
+ *                            based on the configurations from kconfig.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
+ */
+esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs);
+
+/**
  * @brief   Launches the OpenThread main loop.
  *
- * @note Thie function will not return unless error happens when running the OpenThread stack.
+ * @note This function will not return unless error happens when running the OpenThread stack.
  *
  * @return
  *      - ESP_OK on success

@@ -16,7 +16,8 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "private_include")
 
         set(src_dirs
-        "port"
+        "src"
+        "src/port"
         "openthread/examples/platforms/utils"
         "openthread/src/core/api"
         "openthread/src/core/common"
@@ -113,13 +114,13 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_RADIO_NATIVE)
         list(APPEND exclude_srcs
-            "port/esp_openthread_radio_spinel.cpp"
-            "port/esp_spi_spinel_interface.cpp"
-            "port/esp_uart_spinel_interface.cpp"
+            "src/port/esp_openthread_radio_spinel.cpp"
+            "src/port/esp_spi_spinel_interface.cpp"
+            "src/port/esp_uart_spinel_interface.cpp"
             )
     elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
         list(APPEND exclude_srcs
-            "port/esp_openthread_radio.c")
+            "src/port/esp_openthread_radio.c")
     endif()
 
     if(CONFIG_OPENTHREAD_BORDER_ROUTER)
@@ -135,7 +136,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(NOT CONFIG_OPENTHREAD_DNS64_CLIENT)
         list(APPEND exclude_srcs
-            "port/esp_openthread_dns64.c")
+            "src/esp_openthread_dns64.c")
     endif()
 
     if(CONFIG_OPENTHREAD_FTD)
