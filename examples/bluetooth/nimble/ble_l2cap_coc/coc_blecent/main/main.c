@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -23,15 +23,17 @@ void ble_store_config_init(void);
 
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
-#define COC_BUF_COUNT         (3 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
+#define COC_BUF_COUNT          (3 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 #define L2CAP_COC_UUID         0x1812
+#define MTU                    512
 
 static uint16_t conn_handle_coc ;
-static uint16_t mtu = 512;
-static os_membuf_t sdu_coc_mem[OS_MEMPOOL_SIZE(COC_BUF_COUNT, 500)];
+static os_membuf_t sdu_coc_mem[OS_MEMPOOL_SIZE(COC_BUF_COUNT, MTU * 2)];
 static struct os_mempool sdu_coc_mbuf_mempool;
 static struct os_mbuf_pool sdu_os_mbuf_pool;
 static int blecent_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg);
+
+struct ble_l2cap_chan *coc_chan = NULL;
 
 /**
  * This API is used to send data over L2CAP connection oriented channel.
@@ -48,17 +50,30 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
         value[i] = i;
     }
 
-    sdu_rx_data = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
+    do {
+        sdu_rx_data = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
+        if (sdu_rx_data == NULL) {
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            sdu_rx_data = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
+        }
+    } while (sdu_rx_data == NULL);
+
     os_mbuf_append(sdu_rx_data, value, len);
 
     print_mbuf_data(sdu_rx_data);
 
     rc = ble_l2cap_send(chan, sdu_rx_data);
+
+    while (rc == BLE_HS_ESTALLED) {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        rc = ble_l2cap_send(chan, sdu_rx_data);
+    }
     if (rc == 0) {
         MODLOG_DFLT(INFO, "Data sent successfully");
     } else {
         MODLOG_DFLT(INFO, "Data sending failed, rc = %d", rc);
     }
+    os_mbuf_free(sdu_rx_data);
 }
 
 /**
@@ -72,7 +87,7 @@ blecent_l2cap_coc_on_disc_complete(const struct peer *peer, int status, void *ar
     struct os_mbuf *sdu_rx;
 
     sdu_rx = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
-    ble_l2cap_connect(conn_handle_coc, psm, mtu, sdu_rx, blecent_l2cap_coc_event_cb,
+    ble_l2cap_connect(conn_handle_coc, psm, MTU, sdu_rx, blecent_l2cap_coc_event_cb,
                       NULL);
 }
 
@@ -113,7 +128,8 @@ blecent_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
                        chan_info.psm, chan_info.scid, chan_info.dcid,
                        chan_info.our_l2cap_mtu, chan_info.our_coc_mtu,
                        chan_info.peer_l2cap_mtu, chan_info.peer_coc_mtu);
-        blecent_l2cap_coc_send_data(event->connect.chan);
+
+        coc_chan = event->connect.chan;
         return 0;
 
     case BLE_L2CAP_EVENT_COC_DISCONNECTED:
@@ -130,10 +146,10 @@ static void
 blecent_l2cap_coc_mem_init(void)
 {
     int rc;
-    rc = os_mempool_init(&sdu_coc_mbuf_mempool, COC_BUF_COUNT, mtu, sdu_coc_mem,
+    rc = os_mempool_init(&sdu_coc_mbuf_mempool, COC_BUF_COUNT, MTU, sdu_coc_mem,
                          "coc_sdu_pool");
     assert(rc == 0);
-    rc = os_mbuf_pool_init(&sdu_os_mbuf_pool, &sdu_coc_mbuf_mempool, mtu,
+    rc = os_mbuf_pool_init(&sdu_os_mbuf_pool, &sdu_coc_mbuf_mempool, MTU,
                            COC_BUF_COUNT);
     assert(rc == 0);
 }
@@ -466,6 +482,21 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
     }
 }
 
+void
+ble_coc_cent_task(void *pvParameters)
+{
+    while (1) {
+        if (coc_chan) {
+            for (int i = 0; i < 5; i++) {
+                blecent_l2cap_coc_send_data(coc_chan);
+                vTaskDelay(500 / portTICK_PERIOD_MS);
+            }
+            coc_chan = NULL;
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
 static void
 blecent_on_reset(int reason)
 {
@@ -516,6 +547,7 @@ app_main(void)
 
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
     blecent_l2cap_coc_mem_init();
+    xTaskCreate(ble_coc_cent_task, "ble_coc_cent_task", 4096, NULL, 10, NULL);
 #endif
 
     /* Initialize data structures to track connected peers. */
@@ -530,5 +562,4 @@ app_main(void)
     ble_store_config_init();
 
     nimble_port_freertos_init(blecent_host_task);
-
 }
