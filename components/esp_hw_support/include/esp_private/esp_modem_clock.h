@@ -63,6 +63,11 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
  */
 void modem_clock_deselect_lp_clock_source(periph_module_t module);
 
+/**
+ * @brief Reset wifi mac
+ */
+void modem_clock_wifi_mac_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -372,11 +372,11 @@ static esp_err_t iperf_run_tcp_client(void)
     wifi_cmd_clr_tx_statistics(0, NULL);
 #endif
     socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_TCP, s_iperf_ctrl.cfg.bw_lim);
-#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
-    wifi_cmd_get_tx_statistics(0, NULL);
-#endif
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
     wifi_cmd_get_rx_statistics(0, NULL);
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_get_tx_statistics(0, NULL);
 #endif
 
 exit:
