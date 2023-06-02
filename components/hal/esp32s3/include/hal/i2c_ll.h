@@ -300,10 +300,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
 __attribute__((always_inline))
 static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_ll_hw_cmd_t cmd, int cmd_idx)
 {
-    ESP_STATIC_ASSERT(sizeof(i2c_comd0_reg_t) == sizeof(i2c_ll_hw_cmd_t),
-                      "i2c_comdX_reg_t structure size must be equal to i2c_ll_hw_cmd_t structure size");
-    volatile i2c_ll_hw_cmd_t* commands = (volatile i2c_ll_hw_cmd_t*) &hw->comd0;
-    commands[cmd_idx].val = cmd.val;
+    hw->comd[cmd_idx].val = cmd.val;
 }
 
 /**
