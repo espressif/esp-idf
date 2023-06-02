@@ -25,6 +25,10 @@ if(NOT ${target} STREQUAL "esp32" AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     list(APPEND srcs "cache_hal.c")
 endif()
 
+if(CONFIG_SOC_LP_TIMER_SUPPORTED)
+    list(APPEND srcs "lp_timer_hal.c")
+endif()
+
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
         "rtc_io_hal.c"
@@ -127,10 +131,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
         list(APPEND srcs "${target}/modem_clock_hal.c")
-    endif()
-
-    if(CONFIG_SOC_LP_TIMER_SUPPORTED)
-        list(APPEND srcs "lp_timer_hal.c")
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)

@@ -14,7 +14,7 @@
 #include "soc/wdev_reg.h"
 #include "esp_private/esp_clk.h"
 
-#if defined CONFIG_IDF_TARGET_ESP32C6
+#if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_hal.h"
 #endif
 
@@ -32,20 +32,6 @@
                                       * 96MHz instead of 160 MHz */
 #else
 #define APB_CYCLE_WAIT_NUM (16)
-#endif
-
-#if defined CONFIG_IDF_TARGET_ESP32H2
-
-// TODO: temporary definition until IDF-6270 is implemented
-#include "soc/lp_timer_reg.h"
-
-static uint32_t IRAM_ATTR lp_timer_hal_get_cycle_count(void)
-{
-    REG_SET_BIT(LP_TIMER_UPDATE_REG, LP_TIMER_MAIN_TIMER_UPDATE);
-
-    uint32_t lo = REG_GET_FIELD(LP_TIMER_MAIN_BUF0_LOW_REG, LP_TIMER_MAIN_TIMER_BUF0_LOW);
-    return lo;
-}
 #endif
 
 uint32_t IRAM_ATTR esp_random(void)
@@ -73,7 +59,7 @@ uint32_t IRAM_ATTR esp_random(void)
     static uint32_t last_ccount = 0;
     uint32_t ccount;
     uint32_t result = 0;
-#if (defined CONFIG_IDF_TARGET_ESP32C6 || defined CONFIG_IDF_TARGET_ESP32H2)
+#if SOC_LP_TIMER_SUPPORTED
     for (size_t i = 0; i < sizeof(result); i++) {
         do {
             ccount = esp_cpu_get_cycle_count();
