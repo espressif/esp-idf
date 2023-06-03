@@ -68,6 +68,18 @@ menu "Example Configuration"
             default 512
             help
                 TWT Wake Interval Mantissa, in microseconds. The value range is [1, 65535].
+        config EXAMPLE_ITWT_ID
+            int "itwt connection id"
+            range 0 32767
+            default 0
+            help
+                TWT Connection id. The value range is [0, 32767].
+        config EXAMPLE_ITWT_SETUP_TIMEOUT_TIME_MS
+            int "itwt wake interval mantissa"
+            range 100 65535
+            default 5000
+            help
+                TWT setup timeout time, in microseconds. The value range is [100, 65535].
     endmenu
 
     choice EXAMPLE_MAX_CPU_FREQ

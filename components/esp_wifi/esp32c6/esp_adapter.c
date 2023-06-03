@@ -42,6 +42,7 @@
 #include "esp_coexist_internal.h"
 #include "esp32c6/rom/ets_sys.h"
 #include "esp_modem_wrapper.h"
+#include "esp_private/esp_modem_clock.h"
 
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
 #include "esp_private/esp_regdma.h"
@@ -297,6 +298,7 @@ static void IRAM_ATTR timer_arm_wrapper(void *timer, uint32_t tmout, bool repeat
 static void wifi_reset_mac_wrapper(void)
 {
     // TODO: IDF-5713
+    modem_clock_wifi_mac_reset();
     ESP_LOGW(TAG, "wifi_reset_mac_wrapper() has not been implemented yet");
 }
 

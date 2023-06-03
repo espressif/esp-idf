@@ -48,15 +48,15 @@ static const char *TAG = "itwt";
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 
 #if CONFIG_EXAMPLE_ITWT_TRIGGER_ENABLE
-bool trigger_enabled = true;
+uint8_t trigger_enabled = 1;
 #else
-bool trigger_enabled = false;
+uint8_t trigger_enabled = 0;
 #endif
 
 #if CONFIG_EXAMPLE_ITWT_ANNOUNCED
-bool flow_type_announced = true;
+uint8_t flow_type_announced = 1;
 #else
-bool flow_type_announced = false;
+uint8_t flow_type_announced = 0;
 #endif
 
 esp_netif_t *netif_sta = NULL;
@@ -117,10 +117,18 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     esp_wifi_sta_get_negotiated_phymode(&phymode);
     if (phymode == WIFI_PHY_MODE_HE20) {
         esp_err_t err = ESP_OK;
-        int flow_id = 0;
-        err = esp_wifi_sta_itwt_setup(TWT_REQUEST, trigger_enabled, flow_type_announced ? 0 : 1,
-                                      CONFIG_EXAMPLE_ITWT_MIN_WAKE_DURA, CONFIG_EXAMPLE_ITWT_WAKE_INVL_EXPN,
-                                      CONFIG_EXAMPLE_ITWT_WAKE_INVL_MANT, &flow_id);
+        wifi_twt_setup_config_t setup_config = {
+            .setup_cmd = TWT_REQUEST,
+            .flow_id = 0,
+            .twt_id = CONFIG_EXAMPLE_ITWT_ID,
+            .flow_type = flow_type_announced ? 0 : 1,
+            .min_wake_dura = CONFIG_EXAMPLE_ITWT_MIN_WAKE_DURA,
+            .wake_invl_expn = CONFIG_EXAMPLE_ITWT_WAKE_INVL_EXPN,
+            .wake_invl_mant = CONFIG_EXAMPLE_ITWT_WAKE_INVL_MANT,
+            .trigger = trigger_enabled,
+            .timeout_time_ms = CONFIG_EXAMPLE_ITWT_SETUP_TIMEOUT_TIME_MS,
+        };
+        err = esp_wifi_sta_itwt_setup(&setup_config);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "itwt setup failed, err:0x%x", err);
         }
@@ -148,14 +156,14 @@ static void itwt_setup_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
     wifi_event_sta_itwt_setup_t *setup = (wifi_event_sta_itwt_setup_t *) event_data;
-    if (setup->setup_cmd == TWT_ACCEPT) {
+    if (setup->config.setup_cmd == TWT_ACCEPT) {
         /* TWT Wake Interval = TWT Wake Interval Mantissa * (2 ^ TWT Wake Interval Exponent) */
-        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>flow_id:%d, %s, %s, wake_dura:%d, wake_invl_e:%d, wake_invl_m:%d", setup->flow_id,
-                setup->trigger ? "trigger-enabled" : "non-trigger-enabled", setup->flow_type ? "unannounced" : "announced",
-                setup->min_wake_dura, setup->wake_invl_expn, setup->wake_invl_mant);
-        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>wake duration:%d us, service period:%d us", setup->min_wake_dura << 8, setup->wake_invl_mant << setup->wake_invl_expn);
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, flow_id:%d, %s, %s, wake_dura:%d, wake_invl_e:%d, wake_invl_m:%d", setup->config.twt_id,
+                setup->config.flow_id, setup->config.trigger ? "trigger-enabled" : "non-trigger-enabled", setup->config.flow_type ? "unannounced" : "announced",
+                setup->config.min_wake_dura, setup->config.wake_invl_expn, setup->config.wake_invl_mant);
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>wake duration:%d us, service period:%d us", setup->config.min_wake_dura << 8, setup->config.wake_invl_mant << setup->config.wake_invl_expn);
     } else {
-        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>unexpected setup command:%d", setup->setup_cmd);
+        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, unexpected setup command:%d", setup->config.twt_id, setup->config.setup_cmd);
     }
 }
 
