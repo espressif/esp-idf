@@ -699,6 +699,12 @@ def main() -> None:
     # Check the environment only when idf.py is invoked regularly from command line.
     checks_output = None if SHELL_COMPLETE_RUN else check_environment()
 
+    # Check existance of the current working directory to prevent exceptions from click cli.
+    try:
+        os.getcwd()
+    except FileNotFoundError as e:
+        raise FatalError(f'ERROR: {e}. Working directory cannot be established. Check it\'s existence.')
+
     try:
         cli = init_cli(verbose_output=checks_output)
     except ImportError:
