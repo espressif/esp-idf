@@ -17,6 +17,7 @@
 #include "esp_private/crosscore_int.h"
 
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
 #include "hal/cpu_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
@@ -31,6 +32,10 @@
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_private.h"
+
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+#include "esp_private/spi_flash_os.h"
+#endif
 
 #include "esp_sleep.h"
 
@@ -501,7 +506,19 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
-        rtc_clk_cpu_freq_set_config_fast(&new_config);
+
+        if (new_config.source == RTC_CPU_FREQ_SRC_PLL) {
+            rtc_clk_cpu_freq_set_config_fast(&new_config);
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+            spi_timing_change_speed_mode_cache_safe(false);
+#endif
+        } else {
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+            spi_timing_change_speed_mode_cache_safe(true);
+#endif
+            rtc_clk_cpu_freq_set_config_fast(&new_config);
+        }
+
         if (!switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
