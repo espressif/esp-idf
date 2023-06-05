@@ -37,7 +37,7 @@ static esp_err_t http_get_handler(httpd_req_t *req)
                         "Password:  <input type=\"text\" id=\"password\" name=\"password\"><br><br>\n"
                         "  <input type=\"submit\" value=\"Connect\">"
                         "</form>";
-    char*  buf = NULL;
+    char  *buf = NULL;
     size_t buf_len;
     buf_len = httpd_req_get_url_query_len(req) + 1;
     if (buf_len > 1) {
@@ -49,27 +49,27 @@ static esp_err_t http_get_handler(httpd_req_t *req)
 
             if (httpd_query_key_value(buf, "ssid", param, sizeof(param)) == ESP_OK) {
                 ESP_LOGI(TAG, "ssid=%s", param);
-                strncpy((char*)wifi_cfg.sta.ssid, param, sizeof(wifi_cfg.sta.ssid));
+                strncpy((char *)wifi_cfg.sta.ssid, param, sizeof(wifi_cfg.sta.ssid));
             }
             if (httpd_query_key_value(buf, "password", param, sizeof(param)) == ESP_OK) {
                 ESP_LOGI(TAG, "password=%s", param);
-                strncpy((char*)wifi_cfg.sta.password, param, sizeof(wifi_cfg.sta.password));
+                strncpy((char *)wifi_cfg.sta.password, param, sizeof(wifi_cfg.sta.password));
             }
 
-            if (strlen((char*)wifi_cfg.sta.ssid) > 0 && strlen((char*)wifi_cfg.sta.password)) {
-                const char wifi_configured[] = "<h1>Connecting...</h1>";
+            if (strlen((char *)wifi_cfg.sta.ssid) > 0 && strlen((char *)wifi_cfg.sta.password)) {
+                httpd_resp_set_type(req, "text/html");
                 esp_wifi_set_mode(WIFI_MODE_STA);
                 if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) == ESP_OK &&
-                    esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) == ESP_OK) {
+                        esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) == ESP_OK) {
+                    const char wifi_configured[] = "<h1>Connecting...</h1>";
                     ESP_LOGI(TAG, "WiFi settings accepted!");
+                    httpd_resp_send(req, wifi_configured, strlen(wifi_configured));
                 } else {
+                    const char wifi_config_failed[] = "<h1>Failed to configure WiFi settings</h1>";
                     ESP_LOGE(TAG, "Failed to set WiFi config to flash");
+                    httpd_resp_send(req, wifi_config_failed, strlen(wifi_config_failed));
                 }
-//
-//                esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
 
-                httpd_resp_set_type(req, "text/html");
-                httpd_resp_send(req, wifi_configured, strlen(wifi_configured));
                 free(buf);
                 if (s_flags) {
                     xEventGroupSetBits(*s_flags, s_success_bit);
@@ -87,9 +87,9 @@ static esp_err_t http_get_handler(httpd_req_t *req)
 }
 
 static const httpd_uri_t root = {
-        .uri = "/",
-        .method = HTTP_GET,
-        .handler = http_get_handler,
+    .uri = "/",
+    .method = HTTP_GET,
+    .handler = http_get_handler,
 };
 
 static void start_webserver(void)

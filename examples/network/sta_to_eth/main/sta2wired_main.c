@@ -35,7 +35,7 @@ const int PROV_FAIL_BIT = BIT4;
 /**
  * WiFi -- Wired packet path
  */
-static esp_err_t wired_recv_callback(void *buffer, uint16_t len, void* ctx)
+static esp_err_t wired_recv_callback(void *buffer, uint16_t len, void *ctx)
 {
     if (s_wifi_is_connected) {
         mac_spoof(FROM_WIRED, buffer, len, s_sta_mac);
@@ -46,7 +46,7 @@ static esp_err_t wired_recv_callback(void *buffer, uint16_t len, void* ctx)
     return ESP_OK;
 }
 
-static void wifi_buff_free(void* buffer, void* ctx)
+static void wifi_buff_free(void *buffer, void *ctx)
 {
     esp_wifi_internal_free_rx_buffer(buffer);
 }
@@ -62,7 +62,7 @@ static esp_err_t wifi_recv_callback(void *buffer, uint16_t len, void *eb)
 }
 
 static void event_handler(void *arg, esp_event_base_t event_base,
-                               int32_t event_id, void *event_data)
+                          int32_t event_id, void *event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG, "Wi-Fi STA disconnected");
@@ -93,7 +93,7 @@ static esp_err_t connect_wifi(void)
         return ESP_FAIL;
     }
     esp_wifi_connect();
-    EventBits_t status = xEventGroupWaitBits(s_event_flags, CONNECTED_BIT, 0, 1, 10000/portTICK_PERIOD_MS);
+    EventBits_t status = xEventGroupWaitBits(s_event_flags, CONNECTED_BIT, 0, 1, 10000 / portTICK_PERIOD_MS);
     if (status & CONNECTED_BIT) {
         ESP_LOGI(TAG, "WiFi station connected successfully");
         return ESP_OK;
@@ -108,7 +108,7 @@ static esp_err_t connect_wifi(void)
 #define GPIO_INPUT          CONFIG_EXAMPLE_RECONFIGURE_BUTTON
 #define GPIO_LONG_PUSH_US   2000000  /* push for 2 seconds to reconfigure */
 
-static void IRAM_ATTR gpio_isr_handler(void* arg)
+static void IRAM_ATTR gpio_isr_handler(void *arg)
 {
     static int64_t last_pushed = -1;
     if (gpio_get_level(GPIO_INPUT) == 0) {
@@ -129,9 +129,10 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
 static void gpio_init(void)
 {
     gpio_config_t io_conf = { .intr_type = GPIO_INTR_ANYEDGE,
-            .pin_bit_mask = (1ULL<<GPIO_INPUT),
-            .mode = GPIO_MODE_INPUT,
-            .pull_up_en = 1 };
+                              .pin_bit_mask = (1ULL << GPIO_INPUT),
+                              .mode = GPIO_MODE_INPUT,
+                              .pull_up_en = 1
+                            };
     gpio_config(&io_conf);
     gpio_install_isr_service(0);
     //hook isr handler for specific gpio pin
@@ -178,8 +179,7 @@ void app_main(void)
 
     /* Start the application in configuration mode (to perform provisioning)
      * or in a bridge mode (already provisioned) */
-    if (do_provision || !is_provisioned())
-    {
+    if (do_provision || !is_provisioned()) {
         ESP_LOGI(TAG, "Starting provisioning");
         ESP_ERROR_CHECK(esp_netif_init());
         // needed to complete provisioning with getting a valid IP event

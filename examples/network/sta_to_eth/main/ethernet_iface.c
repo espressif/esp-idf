@@ -39,26 +39,26 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
     esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
 
     switch (event_id) {
-        case ETHERNET_EVENT_CONNECTED:
-            esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
-            ESP_LOGI(TAG, "Ethernet Link Up");
-            ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
-                     mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-            s_ethernet_is_connected = true;
-            break;
-        case ETHERNET_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG, "Ethernet Link Down");
-            s_ethernet_is_connected = false;
-            break;
-        case ETHERNET_EVENT_START:
-            ESP_LOGI(TAG, "Ethernet Started");
-            break;
-        case ETHERNET_EVENT_STOP:
-            ESP_LOGI(TAG, "Ethernet Stopped");
-            break;
-        default:
-            ESP_LOGI(TAG, "Default Event");
-            break;
+    case ETHERNET_EVENT_CONNECTED:
+        esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
+        ESP_LOGI(TAG, "Ethernet Link Up");
+        ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
+                 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+        s_ethernet_is_connected = true;
+        break;
+    case ETHERNET_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Down");
+        s_ethernet_is_connected = false;
+        break;
+    case ETHERNET_EVENT_START:
+        ESP_LOGI(TAG, "Ethernet Started");
+        break;
+    case ETHERNET_EVENT_STOP:
+        ESP_LOGI(TAG, "Ethernet Stopped");
+        break;
+    default:
+        ESP_LOGI(TAG, "Default Event");
+        break;
     }
 }
 
@@ -178,7 +178,7 @@ void mac_spoof(mac_spoof_direction_t direction, uint8_t *buffer, uint16_t len, u
 
 static esp_err_t wired_recv(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t len, void *priv)
 {
-    esp_err_t ret = s_rx_cb(buffer,len, buffer);
+    esp_err_t ret = s_rx_cb(buffer, len, buffer);
     free(buffer);
     return ret;
 }
@@ -235,7 +235,7 @@ esp_err_t wired_send(void *buffer, uint16_t len, void *buff_free_arg)
  *  From the PC's NIC perspective the board acts as a separate network with it's own IP and MAC address
  *  (this network's MAC address is the native ESP32's Ethernet interface MAC)
  */
-static void l2_free(void *h, void* buffer)
+static void l2_free(void *h, void *buffer)
 {
     free(buffer);
 }
@@ -281,9 +281,9 @@ esp_err_t wired_netif_init(void)
     base_cfg.if_desc = "ethernet config device";
     // 2) Use static config for driver's config pointing only to static transmit and free functions
     esp_netif_driver_ifconfig_t driver_cfg = {
-            .handle = (void*)1,     // will be replaced by the driver pointer only tinyusb_net supports ti
-            .transmit = netif_transmit,
-            .driver_free_rx_buffer = l2_free
+        .handle = (void *)1,    // will be replaced by the driver pointer only tinyusb_net supports ti
+        .transmit = netif_transmit,
+        .driver_free_rx_buffer = l2_free
     };
 
     // Config the esp-netif with:
@@ -291,10 +291,10 @@ esp_err_t wired_netif_init(void)
     //   2) driver's config (connection to IO functions -- usb)
     //   3) stack config (using lwip IO functions -- derive from eth)
     esp_netif_config_t cfg = {
-            .base = &base_cfg,
-            .driver = &driver_cfg,
-            // 3) use ethernet style of lwip netif settings
-            .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH
+        .base = &base_cfg,
+        .driver = &driver_cfg,
+        // 3) use ethernet style of lwip netif settings
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH
     };
 
     s_netif = esp_netif_new(&cfg);

@@ -15,6 +15,7 @@
 #include "tinyusb_net.h"
 #include "wired_iface.h"
 #include "dhcpserver/dhcpserver_options.h"
+#include "lwip/esp_netif_net_stack.h"
 #include "esp_mac.h"
 
 static const char *TAG = "example_wired_tusb_ncm";
@@ -44,13 +45,13 @@ void mac_spoof(mac_spoof_direction_t direction, uint8_t *buffer, uint16_t len, u
 esp_err_t wired_bridge_init(wired_rx_cb_t rx_cb, wired_free_cb_t free_cb)
 {
     const tinyusb_config_t tusb_cfg = {
-            .external_phy = false,
+        .external_phy = false,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_net_config_t net_config = {
-            .on_recv_callback = rx_cb,
-            .free_tx_buffer = free_cb,
+        .on_recv_callback = rx_cb,
+        .free_tx_buffer = free_cb,
     };
 
     esp_read_mac(net_config.mac_addr, ESP_MAC_WIFI_STA);
@@ -69,7 +70,7 @@ esp_err_t wired_send(void *buffer, uint16_t len, void *buff_free_arg)
     return tinyusb_net_send_sync(buffer, len, buff_free_arg, pdMS_TO_TICKS(100));
 }
 
-static void l2_free(void *h, void* buffer)
+static void l2_free(void *h, void *buffer)
 {
     free(buffer);
 }
@@ -82,7 +83,7 @@ static esp_err_t netif_transmit (void *h, void *buffer, size_t len)
     return ESP_OK;
 }
 
-static esp_err_t netif_recv_callback(void *buffer, uint16_t len, void* ctx)
+static esp_err_t netif_recv_callback(void *buffer, uint16_t len, void *ctx)
 {
     if (s_netif) {
         void *buf_copy = malloc(len);
@@ -113,15 +114,15 @@ static esp_err_t netif_recv_callback(void *buffer, uint16_t len, void* ctx)
 esp_err_t wired_netif_init(void)
 {
     const tinyusb_config_t tusb_cfg = {
-            .external_phy = false,
+        .external_phy = false,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     const tinyusb_net_config_t net_config = {
-            // locally administrated address for the ncm device as it's going to be used internally
-            // for configuration only
-            .mac_addr = {0x02, 0x02, 0x11, 0x22, 0x33, 0x01},
-            .on_recv_callback = netif_recv_callback,
+        // locally administrated address for the ncm device as it's going to be used internally
+        // for configuration only
+        .mac_addr = {0x02, 0x02, 0x11, 0x22, 0x33, 0x01},
+        .on_recv_callback = netif_recv_callback,
     };
 
     esp_err_t ret = tinyusb_net_init(TINYUSB_USBDEV_0, &net_config);
@@ -132,18 +133,30 @@ esp_err_t wired_netif_init(void)
 
     // with OUI range MAC to create a virtual netif running http server
     // this needs to be different to usb_interface_mac (==client)
-    uint8_t lwip_addr[6]=  {0x02, 0x02, 0x11, 0x22, 0x33, 0x02};
+    uint8_t lwip_addr[6] =  {0x02, 0x02, 0x11, 0x22, 0x33, 0x02};
 
-
-    // 1) Derive the base config from the default AP (using DHCP server)
-    esp_netif_inherent_config_t base_cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
-    base_cfg.if_key = "wired";
-    base_cfg.if_desc = "usb ncm config device";
+    // Definition of
+    // 1) Derive the base config (very similar to IDF's default WiFi AP with DHCP server)
+    esp_netif_inherent_config_t base_cfg =  {
+        .flags = ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP, // Run DHCP server; set the netif "ip" immediately
+        .ip_info = &_g_esp_netif_soft_ap_ip,                    // Use the same IP ranges as IDF's soft AP
+        .if_key = "wired",                                      // Set mame, key, priority
+        .if_desc = "usb ncm config device",
+        .route_prio = 10
+    };
     // 2) Use static config for driver's config pointing only to static transmit and free functions
     esp_netif_driver_ifconfig_t driver_cfg = {
-            .handle = (void*)1,     // will be replaced by the driver pointer only tinyusb_net supports ti
-            .transmit = netif_transmit,
-            .driver_free_rx_buffer = l2_free
+        .handle = (void *)1,                // not using an instance, USB-NCM is a static singleton (must be != NULL)
+        .transmit = netif_transmit,         // point to static Tx function
+        .driver_free_rx_buffer = l2_free    // point to Free Rx buffer function
+    };
+
+    // 3) USB-NCM is an Ethernet netif from lwip perspective, we already have IO definitions for that:
+    struct esp_netif_netstack_config lwip_netif_config = {
+        .lwip = {
+            .init_fn = ethernetif_init,
+            .input_fn = ethernetif_input
+        }
     };
 
     // Config the esp-netif with:
@@ -151,10 +164,9 @@ esp_err_t wired_netif_init(void)
     //   2) driver's config (connection to IO functions -- usb)
     //   3) stack config (using lwip IO functions -- derive from eth)
     esp_netif_config_t cfg = {
-            .base = &base_cfg,
-            .driver = &driver_cfg,
-            // 3) use ethernet style of lwip netif settings
-            .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH
+        .base = &base_cfg,
+        .driver = &driver_cfg,
+        .stack = &lwip_netif_config
     };
 
     s_netif = esp_netif_new(&cfg);

@@ -25,9 +25,9 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
         return ESP_ERR_INVALID_ARG;
     }
     protocomm_httpd_config_t default_config = {
-            .data = {
-                    .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
-            }
+        .data = {
+            .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
+        }
     };
 
     /* Start protocomm server on top of HTTP */
@@ -60,7 +60,7 @@ static esp_err_t prov_stop(protocomm_t *pc)
  */
 static void *new_config(void)
 {
-    return (void*)1;
+    return (void *)1;
 }
 
 static void delete_config(void *config)
@@ -81,11 +81,11 @@ static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, ui
  * @brief Creating a generic HTTPD scheme
  */
 const wifi_prov_scheme_t wifi_prov_scheme_httpd = {
-        .prov_start          = prov_start,
-        .prov_stop           = prov_stop,
-        .new_config          = new_config,
-        .delete_config       = delete_config,
-        .set_config_service  = set_config_service,
-        .set_config_endpoint = set_config_endpoint,
-        .wifi_mode           = WIFI_MODE_STA
+    .prov_start          = prov_start,
+    .prov_stop           = prov_stop,
+    .new_config          = new_config,
+    .delete_config       = delete_config,
+    .set_config_service  = set_config_service,
+    .set_config_endpoint = set_config_endpoint,
+    .wifi_mode           = WIFI_MODE_STA
 };
