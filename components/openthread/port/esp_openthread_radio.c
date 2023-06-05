@@ -588,14 +588,16 @@ static void IRAM_ATTR convert_to_ot_frame(uint8_t *data, esp_ieee802154_frame_in
 #endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 }
 
-static void IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
+static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
 {
     struct otMacKeyMaterial *key = NULL;
     uint8_t key_id;
 
     ETS_ASSERT(otMacFrameIsSecurityEnabled(ack_frame));
     key_id = otMacFrameGetKeyId(ack_frame);
-    ETS_ASSERT(otMacFrameIsKeyIdMode1(ack_frame) && key_id != 0);
+    if(!(otMacFrameIsKeyIdMode1(ack_frame) && key_id != 0)) {
+        return ESP_FAIL;
+    }
 
     if (key_id == s_key_id) {
         key = &s_current_key;
@@ -604,7 +606,7 @@ static void IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
     } else if (key_id == s_key_id + 1) {
         key = &s_next_key;
     } else {
-        ETS_ASSERT(false);
+        return ESP_FAIL;
     }
     s_ack_frame_counter = s_mac_frame_counter;
     s_ack_key_id = key_id;
@@ -615,6 +617,7 @@ static void IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
     }
 
     esp_ieee802154_set_transmit_security(&ack_frame->mPsdu[-1], s_security_key, s_security_addr);
+    return ESP_OK;
 }
 
 esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info,
@@ -658,7 +661,9 @@ esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802
 
     if (otMacFrameIsSecurityEnabled(&ack_frame) && !ack_frame.mInfo.mTxInfo.mIsSecurityProcessed) {
         otMacFrameSetFrameCounter(&ack_frame, s_mac_frame_counter++);
-        enh_ack_set_security_addr_and_key(&ack_frame);
+        if (enh_ack_set_security_addr_and_key(&ack_frame) != ESP_OK) {
+            return ESP_FAIL;
+        }
     }
     return ESP_OK;
 }
