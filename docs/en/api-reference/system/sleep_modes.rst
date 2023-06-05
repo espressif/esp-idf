@@ -7,7 +7,18 @@ Sleep Modes
 Overview
 --------
 
-{IDF_TARGET_NAME} contains the following power saving modes: Light-sleep, and Deep-sleep.
+{IDF_TARGET_NAME} supports two major power saving modes: Light-sleep and Deep-sleep. According to the features used by an application, there are some sub sleep modes. See :ref:`sleep_modes` for these sleep modes and sub sleep modes. Additionally, there are some power-down options that can be configured to further reduce the power consumption. See :ref:`power_down_options` for more details.
+
+There are several wakeup sources in the sleep modes. These sources can also be combined so that the chip will wake up when any of the sources are triggered. :ref:`api-reference-wakeup-source` describes these wakeup sources and configuration APIs in detail.
+
+The configuration of power-down options and wakeup sources are optional. They can be configured at any moment before entering the sleep modes.
+
+Then the application can call sleep start APIs to enter one of the sleep modes. See :ref:`enter_sleep` for more details. When the wakeup condition is met, the application is awoken from sleep. See :ref:`wakeup_cause` on how to get the wakeup cause, and :ref:`disable_sleep_wakeup_source` on how to handle the wakeup sources after wakeup.
+
+.. _sleep_modes:
+
+Sleep Modes
+-----------
 
 In Light-sleep mode, the digital peripherals, most of the RAM, and CPUs are clock-gated and their supply voltage is reduced. Upon exit from Light-sleep, the digital peripherals, RAM, and CPUs resume operation and their internal states are preserved.
 
@@ -20,23 +31,17 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
         :SOC_RTC_FAST_MEM_SUPPORTED: - RTC fast memory
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC slow memory
 
-There are several wakeup sources in Deep-sleep and Light-sleep modes. These sources can also be combined so that the chip will wake up when any of the sources are triggered. Wakeup sources can be enabled using ``esp_sleep_enable_X_wakeup`` APIs and can be disabled using :cpp:func:`esp_sleep_disable_wakeup_source` API. Next section describes these APIs in detail. Wakeup sources can be configured at any moment before entering Light-sleep or Deep-sleep mode.
-
-Additionally, the application can force specific powerdown modes for RTC peripherals and RTC memories using :cpp:func:`esp_sleep_pd_config` API.
-
-Once wakeup sources are configured, the application can enter sleep mode using :cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start` APIs. At this point, the hardware will be configured according to the requested wakeup sources, and the RTC controller will either power down or power off the CPUs and digital peripherals.
-
 .. only:: SOC_BT_SUPPORTED
 
     Wi-Fi/Bluetooth and Sleep Modes
-    ---------------------------------
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections will not be maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
 
 .. only:: not SOC_BT_SUPPORTED
 
     Wi-Fi and Sleep Modes
-    -----------------------
+    ^^^^^^^^^^^^^^^^^^^^^^^
 
     In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, applications must disable Wi-Fi using the appropriate calls (:cpp:func:`esp_wifi_stop`). Wi-Fi connections will not be maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
 
@@ -46,6 +51,10 @@ If Wi-Fi connections need to be maintained, enable Wi-Fi Modem-sleep mode and au
 
 Wakeup Sources
 --------------
+
+Wakeup sources can be enabled using ``esp_sleep_enable_X_wakeup`` APIs. Wakeup sources are not disabled after wakeup, you can disable them using :cpp:func:`esp_sleep_disable_wakeup_source` API if you don't need them any more. See :ref:`disable_sleep_wakeup_source`.
+
+Following are the wakeup sources supported on {IDF_TARGET_NAME}.
 
 Timer
 ^^^^^
@@ -162,9 +171,22 @@ When {IDF_TARGET_NAME} receives UART input from external devices, it is often ne
 
 :cpp:func:`esp_sleep_enable_uart_wakeup` function can be used to enable this wakeup source.
 
+.. _disable_sleep_wakeup_source:
+
+Disable Sleep Wakeup Source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Previously configured wakeup sources can be disabled later using :cpp:func:`esp_sleep_disable_wakeup_source` API. This function deactivates trigger for the given wakeup source. Additionally, it can disable all triggers if the argument is ``ESP_SLEEP_WAKEUP_ALL``.
+
+.. _power_down_options:
+
+Power-down Options
+------------------
+
+The application can force specific powerdown modes for RTC peripherals and RTC memories. In Deep-sleep mode, we can also isolate some IOs to further reduce current consumption.
 
 Power-down of RTC Peripherals and Memories
-------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_start` functions will power down all RTC power domains which are not needed by the enabled wakeup sources. To override this behaviour, :cpp:func:`esp_sleep_pd_config` function is provided.
 
@@ -181,7 +203,7 @@ By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_star
     In {IDF_TARGET_NAME}, there is only RTC fast memory, so if some variables in the program are marked by ``RTC_DATA_ATTR``, ``RTC_SLOW_ATTR`` or ``RTC_FAST_ATTR`` attributes, all of them go to RTC fast memory. It will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
 Power-down of Flash
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 By default, to avoid potential issues, :cpp:func:`esp_light_sleep_start` function will **not** power down flash. To be more specific, it takes time to power down the flash and during this period the system may be woken up, which then actually powers up the flash before this flash could be powered down completely. As a result, there is a chance that the flash may not work properly.
 
@@ -210,18 +232,8 @@ However, for those who have fully understood the risk and are still willing to p
         - ESP-IDF does not provide any mechanism that can power down the flash in all conditions when light sleep.
         - :cpp:func:`esp_deep_sleep_start` function will force power down flash regardless of user configuration.
 
-Entering Light-sleep
---------------------
-
-:cpp:func:`esp_light_sleep_start` function can be used to enter Light-sleep once wakeup sources are configured. It is also possible to enter Light-sleep with no wakeup sources configured. In this case, the chip will be in Light-sleep mode indefinitely until external reset is applied.
-
-Entering Deep-sleep
--------------------
-
-:cpp:func:`esp_deep_sleep_start` function can be used to enter Deep-sleep once wakeup sources are configured. It is also possible to enter Deep-sleep with no wakeup sources configured. In this case, the chip will be in Deep-sleep mode indefinitely until external reset is applied.
-
-Configuring IOs
----------------
+Configuring IOs (Deep-sleep only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled by default. If an external circuit drives this pin in Deep-sleep mode, current consumption may increase due to current flowing through these pullups and pulldowns.
 
@@ -243,12 +255,23 @@ Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled
             - if the hold function is not enabled, RTC GPIOs will be in a high impedance state.
             - if the hold function is enabled, RTC GPIOs will retain the pin state latched at that hold moment.
 
+.. _enter_sleep:
+
+Entering Sleep
+--------------
+
+:cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start` functions can be used to enter Light-sleep or Deep-sleep modes correspondingly. After that, the system will configure the parameters of RTC controller according to the requested wakeup sources and power-down options.
+
+It is also possible to enter sleep modes with no wakeup sources configured. In this case, the chip will be in sleep modes indefinitely until external reset is applied.
+
 UART Output Handling
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 Before entering sleep mode, :cpp:func:`esp_deep_sleep_start` will flush the contents of UART FIFOs.
 
 When entering Light-sleep mode using :cpp:func:`esp_light_sleep_start`, UART FIFOs will not be flushed. Instead, UART output will be suspended, and remaining characters in the FIFO will be sent out after wakeup from Light-sleep.
+
+.. _wakeup_cause:
 
 Checking Sleep Wakeup Cause
 ---------------------------
@@ -262,12 +285,6 @@ Checking Sleep Wakeup Cause
 .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
 
     For ext1 wakeup sources, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_ext1_wakeup_status` functions.
-
-
-Disable Sleep Wakeup Source
----------------------------
-
-Previously configured wakeup sources can be disabled later using :cpp:func:`esp_sleep_disable_wakeup_source` API. This function deactivates trigger for the given wakeup source. Additionally, it can disable all triggers if the argument is ``ESP_SLEEP_WAKEUP_ALL``.
 
 Application Example
 -------------------
