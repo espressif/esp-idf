@@ -410,11 +410,11 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
     } else if (consecutive_length <= 4) {
         //consecutive length :  3 or 4
         best_point = end - 1;
-        ESP_EARLY_LOGD(TAG,"tuning success, best point is index %d", best_point);
+        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %d", best_point);
     } else {
         //consecutive point list length equals 5
         best_point = end - 2;
-        ESP_EARLY_LOGD(TAG,"tuning success, best point is index %d", best_point);
+        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %d", best_point);
     }
 
     return best_point;
@@ -474,7 +474,7 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
     } else {
         //consecutive length :  3 or 4
         best_point = end - consecutive_length / 2;
-        ESP_EARLY_LOGD(TAG,"tuning success, best point is index %d", best_point);
+        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %d", best_point);
     }
 
     return best_point;
@@ -499,13 +499,19 @@ static uint32_t s_select_best_tuning_config(const mspi_timing_config_t *configs,
 uint32_t mspi_timing_flash_select_best_tuning_config(const void *configs, uint32_t consecutive_length, uint32_t end, const uint8_t *reference_data, bool is_ddr)
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
-    return s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, true);
+    uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, true);
+    ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %d", best_point);
+
+    return best_point;
 }
 
 uint32_t mspi_timing_psram_select_best_tuning_config(const void *configs, uint32_t consecutive_length, uint32_t end, const uint8_t *reference_data, bool is_ddr)
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
-    return s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, false);
+    uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, false);
+    ESP_EARLY_LOGI(TAG, "PSRAM timing tuning index: %d", best_point);
+
+    return best_point;
 }
 
 static mspi_timing_tuning_param_t s_flash_best_timing_tuning_config;
