@@ -488,6 +488,7 @@ static void wpa_free_sta_sm(struct wpa_state_machine *sm)
     wpa_printf( MSG_DEBUG, "wpa_free_sta_sm: free eapol=%p\n", sm->last_rx_eapol_key);
     os_free(sm->last_rx_eapol_key);
     os_free(sm->wpa_ie);
+    os_free(sm->rsnxe);
     os_free(sm);
 }
 
@@ -2635,7 +2636,7 @@ bool wpa_ap_remove(u8* bssid)
         } else {
             sta->remove_pending = true;
         }
-	return true;
+        return true;
     }
 #endif /* CONFIG_SAE */
 
@@ -2644,10 +2645,10 @@ bool wpa_ap_remove(u8* bssid)
     if (wps_get_status() == WPS_STATUS_PENDING) {
         u8 *addr = os_malloc(ETH_ALEN);
 
-	if (!addr) {
+        if (!addr) {
             return false;
-	}
-	os_memcpy(addr, sta->addr, ETH_ALEN);
+        }
+        os_memcpy(addr, sta->addr, ETH_ALEN);
         eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr);
     } else
 #endif
