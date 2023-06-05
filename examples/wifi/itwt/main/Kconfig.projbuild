@@ -44,11 +44,13 @@ menu "Example Configuration"
             default y
             help
                 0- a non-trigger-enabled TWT, 1-a trigger-enabled TWT
+
         config EXAMPLE_ITWT_ANNOUNCED
             bool "announced"
             default y
             help
                 0- an unannounced TWT, 1-an announced TWT
+
         config EXAMPLE_ITWT_MIN_WAKE_DURA
             int "itwt minimum wake duration"
             range 1 255
@@ -56,30 +58,42 @@ menu "Example Configuration"
             help
                 Nominal Minimum Wake Duration, indicates the minimum amount of time, in unit of 256 us, that the TWT
                 requesting STA expects that it needs to be awake. The value range is [1, 255].
+
+        config EXAMPLE_ITWT_WAKE_DURATION_UNIT
+            int "itwt wake duration unit"
+            range 0 1
+            default 0
+            help
+                TWT wake duration unit, 0: 256us 1: TU (TU = 1024us)
+
         config EXAMPLE_ITWT_WAKE_INVL_EXPN
             int "itwt wake interval exponent"
             range 0 31
             default 10
             help
                 TWT Wake Interval Exponent, in microseconds. The value range is [0, 31].
+
         config EXAMPLE_ITWT_WAKE_INVL_MANT
             int "itwt wake interval mantissa"
             range 1 65535
             default 512
             help
                 TWT Wake Interval Mantissa, in microseconds. The value range is [1, 65535].
+
         config EXAMPLE_ITWT_ID
             int "itwt connection id"
             range 0 32767
             default 0
             help
                 TWT Connection id. The value range is [0, 32767].
+
         config EXAMPLE_ITWT_SETUP_TIMEOUT_TIME_MS
-            int "itwt wake interval mantissa"
+            int "itwt setup timeout times"
             range 100 65535
             default 5000
             help
                 TWT setup timeout time, in microseconds. The value range is [100, 65535].
+
     endmenu
 
     choice EXAMPLE_MAX_CPU_FREQ
