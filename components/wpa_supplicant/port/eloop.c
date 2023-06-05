@@ -6,7 +6,7 @@
  * See README for more details.
  */
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,7 @@ static int eloop_run_wrapper(void *data)
 	return 0;
 }
 
-static void eloop_run_timer(void)
+static void eloop_run_timer(void *args)
 {
 	/* Execute timers in pptask context to make it thread safe */
 	wifi_ipc_config_t cfg;
@@ -141,8 +141,10 @@ run:
 	wpa_printf(MSG_DEBUG, "ELOOP: Added one timer from %s:%d to call %p, current order=%d",
 			timeout->func_name, line, timeout->handler, count);
 #endif
+	ELOOP_LOCK();
 	os_timer_disarm(&eloop.eloop_timer);
 	os_timer_arm(&eloop.eloop_timer, 0, 0);
+	ELOOP_UNLOCK();
 
 	return 0;
 
@@ -336,8 +338,10 @@ void eloop_run(void)
 				uint32_t ms;
 				os_reltime_sub(&timeout->time, &now, &tv);
 				ms = tv.sec * 1000 + tv.usec / 1000;
+				ELOOP_LOCK();
 				os_timer_disarm(&eloop.eloop_timer);
 				os_timer_arm(&eloop.eloop_timer, ms, 0);
+				ELOOP_UNLOCK();
 				goto out;
 			}
 		}
