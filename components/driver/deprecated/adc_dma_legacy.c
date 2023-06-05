@@ -380,7 +380,6 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
         }
 
         ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
-        adc_hal_read_desc_finish (&adc_digi_ctx->hal);
         if (ret == pdFALSE) {
             //ringbuffer overflow
             adc_digi_ctx->ringbuf_overflow_flag = 1;
