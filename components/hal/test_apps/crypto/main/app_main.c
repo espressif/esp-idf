@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "unity.h"
 #include "unity_fixture.h"
 #include "unity_fixture_extras.h"
 
@@ -34,7 +37,14 @@ static void run_all_tests(void)
 #endif /* CONFIG_IDF_ENV_FPGA */
 }
 
+static void test_task(void *pvParameters)
+{
+    vTaskDelay(2); /* Delay a bit to let the main task be deleted */
+    UNITY_MAIN_FUNC(run_all_tests);
+    vTaskDelete(NULL);
+}
+
 void app_main(void)
 {
-    UNITY_MAIN_FUNC(run_all_tests);
+    xTaskCreatePinnedToCore(test_task, "testTask", CONFIG_UNITY_FREERTOS_STACK_SIZE, NULL, CONFIG_UNITY_FREERTOS_PRIORITY, NULL, CONFIG_UNITY_FREERTOS_CPU);
 }

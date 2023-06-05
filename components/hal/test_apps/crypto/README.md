@@ -53,9 +53,9 @@ This contains tests for the following features of the crypto peripherals:
 The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 hmac_key.bin HMAC_DOWN_JTAG
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 hmac_key.bin HMAC_UP
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_UP
 ```
 
 # Burning the HMAC keys for Digital Signature tests
@@ -63,11 +63,11 @@ espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 hmac_key.bin HMAC_UP
 The tests needs some HMAC keys to be burned in the `BLOCK_KEY1`, `BLOCK_KEY2` and `BLOCK_KEY3` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 ds_key1.bin HMAC_DOWN_DIGITAL_SIGNATURE --no-read-protect --no-write-protect --do-not-confirm
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 main/ds/ds_key1.bin HMAC_DOWN_DIGITAL_SIGNATURE --do-not-confirm
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE --no-read-protect --no-write-protect --do-not-confirm
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 main/ds/ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE --do-not-confirm
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE --no-read-protect --no-write-protect --do-not-confirm
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 main/ds/ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE --do-not-confirm
 ```
 
 # Burning the ECDSA keys
@@ -75,9 +75,9 @@ espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 ds_key3.bin HMAC_DOWN_DIGITAL_SIGNAT
 The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY1` and `BLOCK_KEY2` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 ecdsa192_priv_key.pem ECDSA_KEY --no-read-protect --no-write-protect --do-not-confirm
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY --do-not-confirm
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 ecdsa256_priv_key.pem ECDSA_KEY --no-read-protect --no-write-protect --do-not-confirm
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY --do-not-confirm
 ```
 
 # Building
