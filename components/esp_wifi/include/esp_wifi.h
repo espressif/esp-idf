@@ -85,6 +85,8 @@ extern "C" {
 
 #define ESP_ERR_WIFI_TWT_FULL          (ESP_ERR_WIFI_BASE + 23)  /*!< no available flow id */
 #define ESP_ERR_WIFI_TWT_SETUP_TIMEOUT (ESP_ERR_WIFI_BASE + 24)  /*!< Timeout of receiving twt setup response frame, timeout times can be set during twt setup */
+#define ESP_ERR_WIFI_TWT_SETUP_TXFAIL  (ESP_ERR_WIFI_BASE + 25)  /*!< TWT setup frame tx failed */
+#define ESP_ERR_WIFI_TWT_SETUP_REJECT  (ESP_ERR_WIFI_BASE + 26)  /*!< The twt setup request was rejected by the AP */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
