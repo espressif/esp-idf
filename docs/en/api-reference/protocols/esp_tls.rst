@@ -94,13 +94,13 @@ There are two ways to use wolfssl in your project
     (First change directory (cd) to your project directory)
     mkdir components
     cd components
-    git clone https://github.com/espressif/esp-wolfssl.git
+    git clone --recursive https://github.com/espressif/esp-wolfssl.git
 
 2) Add wolfssl as an extra component in your project.
 
 * Download wolfssl with::
 
-    git clone https://github.com/espressif/esp-wolfssl.git
+    git clone --recursive https://github.com/espressif/esp-wolfssl.git
 
 * Include  esp-wolfssl in ESP-IDF with setting EXTRA_COMPONENT_DIRS in CMakeLists.txt of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see Optional Project variables in :doc:`build-system.</api-guides/build-system>`
 
