@@ -163,7 +163,7 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
     assert(chars != NULL);
 
     int32_t error = 0;
-    uint64_t v_cali_1 = adc_reading * chars->coeff_a / coeff_a_scaling;
+    uint64_t v_cali_1 = (uint64_t)adc_reading * chars->coeff_a / coeff_a_scaling;
     esp_adc_error_calc_param_t param = {
         .v_cali_input = v_cali_1,
         .term_num = (chars->atten == 3) ? 5 : 3,
