@@ -35,6 +35,12 @@
 
     {IDF_TARGET_NAME} 是一款支持 2.4 GHz Wi-Fi, 802.15.4 Thread/Zigbee 和低功耗蓝牙的芯片，搭载 RISC-V RV32IMAC 32 位单核处理器。
 
+.. only:: esp32h2
+
+    本指南为 {IDF_TARGET_NAME} 官方应用开发框架 `ESP-IDF <https://github.com/espressif/esp-idf>`_ 的配套文档。
+
+    {IDF_TARGET_NAME} 是一款支持 802.15.4 Thread/Zigbee 和低功耗蓝牙的芯片，搭载 RISC-V RV32IMAC 32 位单核处理器。
+
 .. figure:: ../_static/about-doc.png
     :align: center
     :alt: 乐鑫物联网综合开发框架

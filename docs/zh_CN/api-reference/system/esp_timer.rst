@@ -5,7 +5,7 @@
 
 {IDF_TARGET_HR_TIMER:default = "SYSTIMER", esp32 = "LAC 定时器"}
 
-{IDF_TARGET_HR_TIMER_Resolution:default = "Not updated", esp32 = "64", esp32s2 = "64", esp32c3 = "52", esp32s3 = "52", esp32c2 = "52", esp32c6 = "52"}
+{IDF_TARGET_HR_TIMER_Resolution:default = "Not updated", esp32 = "64", esp32s2 = "64", esp32c3 = "52", esp32s3 = "52", esp32c2 = "52", esp32c6 = "52", esp32h2 = "52"}
 
 
 概述
@@ -18,7 +18,10 @@
 
 硬件定时器虽不受上述限制，但使用不便。例如，应用组件可能需要在特定的未来时间触发计时器事件，但硬件定时器通常只有一个“compare（比较）”值用于中断生成。为提升使用的便利性，应在硬件定时器的基础上构建某种机制来管理待处理事件列表，确保在相应的硬件中断发生时调度回调。
 
-配置 :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` 选项，设置硬件定时器中断的优先级（可设置为 1、2 或 3 级），提高定时器中断的优先级可以减少由中断延迟引起的定时器处理延迟。
+.. only:: esp32
+
+    配置 :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` 选项，设置硬件定时器中断的优先级（可设置为 1、2 或 3 级），提高定时器中断的优先级可以减少由中断延迟引起的定时器处理延迟。
+
 
 ``esp_timer`` API 集支持单次定时器和周期定时器、微秒级的时间分辨率、以及 {IDF_TARGET_HR_TIMER_Resolution} 位范围。
 

@@ -5,7 +5,7 @@ High Resolution Timer (ESP Timer)
 
 {IDF_TARGET_HR_TIMER:default = "SYSTIMER", esp32 = "LAC timer"}
 
-{IDF_TARGET_HR_TIMER_Resolution:default = "Not updated", esp32 = "64", esp32s2 = "64", esp32c3 = "52", esp32s3 = "52", esp32c2 = "52", esp32c6 = "52"}
+{IDF_TARGET_HR_TIMER_Resolution:default = "Not updated", esp32 = "64", esp32s2 = "64", esp32c3 = "52", esp32s3 = "52", esp32c2 = "52", esp32c6 = "52", esp32h2 = "52"}
 
 
 Overview
@@ -18,7 +18,10 @@ Although FreeRTOS provides software timers, FreeRTOS software timers have a few 
 
 Although hardware timers are not subject to the limitations mentioned, they may not be as user-friendly. For instance, application components may require timer events to be triggered at specific future times, but hardware timers typically have only one "compare" value for interrupt generation. This necessitates the creation of an additional system on top of the hardware timer to keep track of pending events and ensure that callbacks are executed when the corresponding hardware interrupts occur.
 
-The hardware timer interrupt's priority is configured via the :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` option (possible priorities being 1, 2, or 3). Raising the timer interrupt's priority can reduce the timer processing delay caused by interrupt latency.
+.. only:: esp32
+
+    The hardware timer interrupt's priority is configured via the :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` option (possible priorities being 1, 2, or 3). Raising the timer interrupt's priority can reduce the timer processing delay caused by interrupt latency.
+
 
 ``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and {IDF_TARGET_HR_TIMER_Resolution}-bit range.
 
