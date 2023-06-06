@@ -164,15 +164,15 @@ Pytest Execution Process
 
       1. ``pexpect_proc``: `pexpect <https://github.com/pexpect/pexpect>`__ instance
 
-      2. ``app``: `IdfApp <https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.app.IdfApp>`__ instance
+      2. ``app``: `IdfApp <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.app.IdfApp>`__ instance
 
          The information of the app, like sdkconfig, flash_files, partition_table, etc., would be parsed at this phase.
 
-      3. ``serial``: `IdfSerial <https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.serial.IdfSerial>`__ instance
+      3. ``serial``: `IdfSerial <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.serial.IdfSerial>`__ instance
 
          The port of the host which connected to the target type parsed from the app would be auto-detected. The flash files would be auto flashed.
 
-      4. ``dut``: `IdfDut <https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.dut.IdfDut>`__ instance
+      4. ``dut``: `IdfDut <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__ instance
 
    2. Run the real test function
 
@@ -269,7 +269,7 @@ Expect From the Serial output
 
 When we're using ``dut.expect(...)``, the string would be compiled into regex at first, and then seeks through the serial output until the compiled regex is matched, or a timeout is exceeded. You may have to pay extra attention when the string contains regex keyword characters, like parentheses, or square brackets.
 
-Actually using ``dut.expect_exact(...)`` here is better, since it would seek until the string is matched. For further reading about the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting>`__.
+Actually using ``dut.expect_exact(...)`` here is better, since it would seek until the string is matched. For further reading about the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting.html>`__.
 
 Advanced Examples
 -----------------
