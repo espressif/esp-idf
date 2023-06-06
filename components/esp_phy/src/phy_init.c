@@ -251,7 +251,7 @@ void esp_phy_enable(void)
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
             extern bool pm_mac_modem_rf_already_enabled(void);
             if (!pm_mac_modem_rf_already_enabled()) {
-                if (sleep_modem_wifi_modem_state_enabled()) {
+                if (sleep_modem_wifi_modem_state_enabled() && sleep_modem_wifi_modem_link_done()) {
                     sleep_modem_wifi_do_phy_retention(true);
                 } else {
                     phy_wakeup_init();
