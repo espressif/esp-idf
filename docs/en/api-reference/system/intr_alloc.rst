@@ -16,9 +16,13 @@ Overview
 
   The {IDF_TARGET_NAME} has two cores, with 32 interrupts. Each interrupt has a certain priority level, most (but not all) interrupts are connected to the interrupt mux.
 
-.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
+.. only:: esp32c2 or esp32c3
 
   The {IDF_TARGET_NAME} has one core, with 31 interrupts. Each interrupt has a programmable priority level.
+
+.. only:: esp32c6 or esp32h2
+
+  The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt has a programmable priority level. In addition, there are also 4 core local interrupt sources (CLINT). See *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
@@ -96,5 +100,3 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_intr_alloc.inc
-
-
