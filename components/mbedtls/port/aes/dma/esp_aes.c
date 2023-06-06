@@ -371,8 +371,8 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
             return esp_aes_process_dma_ext_ram(ctx, input, output, len, stream_out, input_needs_realloc, output_needs_realloc);
         }
 
-        /* Set up dma descriptors for input and output */
-        lldesc_num = lldesc_get_required_num(block_bytes);
+        /* Set up dma descriptors for input and output considering the 16 byte alignment requirement for EDMA */
+        lldesc_num = lldesc_get_required_num_constrained(block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED);
 
         /* Allocate both in and out descriptors to save a malloc/free per function call */
         block_desc = heap_caps_calloc(lldesc_num * 2, sizeof(lldesc_t), MALLOC_CAP_DMA);
