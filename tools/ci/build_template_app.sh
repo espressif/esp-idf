@@ -27,8 +27,8 @@ gen_configs() {
     echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> esp-idf-template/sdkconfig.ci.O2
 
     # This part will be built in earlier stage (pre_build job) with only cmake. Built with make in later stage
-    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
-    echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > esp-idf-template/sdkconfig.ci2.Og
+    # CONFIG_COMPILER_OPTIMIZATION_DEBUG with flag -Og
+    echo "CONFIG_COMPILER_OPTIMIZATION_DEBUG=y" > esp-idf-template/sdkconfig.ci2.Og
     echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG=y" >> esp-idf-template/sdkconfig.ci2.Og
     # -Og makes the bootloader too large to fit in the default space, otherwise(!)
     echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> esp-idf-template/sdkconfig.ci2.Og
