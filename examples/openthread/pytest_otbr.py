@@ -141,7 +141,7 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
 @pytest.mark.esp32h2
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=0, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
     'config, count, app_path, target', [
         ('rcp|cli_h2|br', 3,
