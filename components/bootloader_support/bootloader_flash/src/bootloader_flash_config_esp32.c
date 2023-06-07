@@ -87,7 +87,7 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
     uint32_t pkg_ver = bootloader_common_get_chip_ver_pkg();
 
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
-        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH ||
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 ||
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
@@ -201,7 +201,7 @@ void bootloader_configure_spi_pins(int drv)
     uint32_t pkg_ver = bootloader_common_get_chip_ver_pkg();
 
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
-        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+        pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH ||
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 ||
         pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         // For ESP32D2WD or ESP32-PICO series,the SPI pins are already configured
