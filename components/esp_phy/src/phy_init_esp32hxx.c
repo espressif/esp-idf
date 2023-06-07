@@ -53,6 +53,7 @@ void esp_phy_enable(void)
         } else {
             phy_wakeup_init();
         }
+        phy_track_pll_init();
     }
 
     s_phy_access_ref++;
@@ -69,6 +70,7 @@ void esp_phy_disable(void)
     }
 
     if (s_phy_access_ref == 0) {
+        phy_track_pll_deinit();
         phy_close_rf();
         phy_xpd_tsens();
     }
