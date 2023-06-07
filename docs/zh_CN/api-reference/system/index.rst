@@ -40,6 +40,7 @@ System API
     :esp32: himem
     :SOC_ULP_FSM_SUPPORTED: ulp
     :SOC_RISCV_COPROC_SUPPORTED: ulp-risc-v
+    :SOC_LP_CORE_SUPPORTED: ulp-lp-core
     wdts
 
 

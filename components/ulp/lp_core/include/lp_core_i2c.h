@@ -16,21 +16,32 @@ extern "C" {
 #include "hal/gpio_types.h"
 #include "esp_err.h"
 
+/**
+ * @brief LP Core I2C pin config parameters
+ */
 typedef struct {
-    gpio_num_t sda_io_num;      // GPIO pin for SDA signal. Only GPIO#6 can be used as the SDA pin.
-    gpio_num_t scl_io_num;      // GPIO pin for SCL signal. Only GPIO#7 can be used as the SCL pin.
-    bool sda_pullup_en;         // SDA line enable internal pullup. Can be configured if external pullup is not used.
-    bool scl_pullup_en;         // SCL line enable internal pullup. Can be configured if external pullup is not used.
+    gpio_num_t sda_io_num;      /*!< GPIO pin for SDA signal. Only GPIO#6 can be used as the SDA pin. */
+    gpio_num_t scl_io_num;      /*!< GPIO pin for SCL signal. Only GPIO#7 can be used as the SCL pin. */
+    bool sda_pullup_en;         /*!< SDA line enable internal pullup. Can be configured if external pullup is not used. */
+    bool scl_pullup_en;         /*!< SCL line enable internal pullup. Can be configured if external pullup is not used. */
 } lp_core_i2c_pin_cfg_t;
 
+
+/**
+ * @brief LP Core I2C timing config parameters
+ */
 typedef struct {
-    uint32_t clk_speed_hz;      // LP I2C clock speed for master mode
+    uint32_t clk_speed_hz;      /*!< LP I2C clock speed for master mode */
 } lp_core_i2c_timing_cfg_t;
 
+
+/**
+ * @brief LP Core I2C config parameters
+ */
 typedef struct {
-    lp_core_i2c_pin_cfg_t i2c_pin_cfg;        // LP I2C pin configuration
-    lp_core_i2c_timing_cfg_t i2c_timing_cfg;  // LP I2C timing configuration
-    soc_periph_lp_i2c_clk_src_t i2c_src_clk;  // LP I2C source clock type
+    lp_core_i2c_pin_cfg_t i2c_pin_cfg;        /*!< LP I2C pin configuration */
+    lp_core_i2c_timing_cfg_t i2c_timing_cfg;  /*!< LP I2C timing configuration */
+    soc_periph_lp_i2c_clk_src_t i2c_src_clk;  /*!< LP I2C source clock type */
 } lp_core_i2c_cfg_t;
 
 /* Default LP I2C GPIO settings */
@@ -63,6 +74,7 @@ typedef struct {
  * @brief Initialize and configure the LP I2C for use by the LP core
  * Currently LP I2C can only be used in master mode
  *
+ * @param lp_i2c_num    LP I2C port number
  * @param cfg           Configuration parameters
  * @return esp_err_t    ESP_OK when successful
  *
