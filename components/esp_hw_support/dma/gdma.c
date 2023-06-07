@@ -7,6 +7,7 @@
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include <stdlib.h>
+#include <string.h>
 #include <sys/cdefs.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -382,7 +383,7 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE(dma_chan && dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(dma_chan && cbs && dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
     gdma_tx_channel_t *tx_chan = __containerof(dma_chan, gdma_tx_channel_t, base);
@@ -408,8 +409,7 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     gdma_ll_tx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_TX_DESC_ERROR, cbs->on_descr_err != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
-    tx_chan->on_trans_eof = cbs->on_trans_eof;
-    tx_chan->on_descr_err = cbs->on_descr_err;
+    memcpy(&tx_chan->cbs, cbs, sizeof(gdma_tx_event_callbacks_t));
     tx_chan->user_data = user_data;
 
     ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
@@ -423,7 +423,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE(dma_chan && dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(dma_chan && cbs && dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
     gdma_rx_channel_t *rx_chan = __containerof(dma_chan, gdma_rx_channel_t, base);
@@ -434,6 +434,9 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     }
     if (cbs->on_descr_err) {
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG, err, TAG, "on_descr_err not in IRAM");
+    }
+    if (cbs->on_recv_done) {
+        ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG, err, TAG, "on_recv_done not in IRAM");
     }
     if (user_data) {
         ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
@@ -447,10 +450,10 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     portENTER_CRITICAL(&pair->spinlock);
     gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_SUC_EOF, cbs->on_recv_eof != NULL);
     gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_DESC_ERROR, cbs->on_descr_err != NULL);
+    gdma_ll_rx_enable_interrupt(group->hal.dev, pair->pair_id, GDMA_LL_EVENT_RX_DONE, cbs->on_recv_done != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
 
-    rx_chan->on_recv_eof = cbs->on_recv_eof;
-    rx_chan->on_descr_err = cbs->on_descr_err;
+    memcpy(&rx_chan->cbs, cbs, sizeof(gdma_rx_event_callbacks_t));
     rx_chan->user_data = user_data;
 
     ESP_GOTO_ON_ERROR(esp_intr_enable(dma_chan->intr), err, TAG, "enable interrupt failed");
@@ -725,23 +728,26 @@ static void IRAM_ATTR gdma_default_rx_isr(void *args)
     uint32_t intr_status = gdma_ll_rx_get_interrupt_status(group->hal.dev, pair->pair_id);
     gdma_ll_rx_clear_interrupt_status(group->hal.dev, pair->pair_id, intr_status);
 
-    if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
-        if (rx_chan->on_recv_eof) {
-            uint32_t eof_addr = gdma_ll_rx_get_success_eof_desc_addr(group->hal.dev, pair->pair_id);
-            gdma_event_data_t edata = {
-                .rx_eof_desc_addr = eof_addr
-            };
-            if (rx_chan->on_recv_eof(&rx_chan->base, &edata, rx_chan->user_data)) {
-                need_yield = true;
-            }
-        }
+    if ((intr_status & GDMA_LL_EVENT_RX_SUC_EOF) && rx_chan->cbs.on_recv_eof) {
+        uint32_t eof_addr = gdma_ll_rx_get_success_eof_desc_addr(group->hal.dev, pair->pair_id);
+        gdma_event_data_t edata = {
+            .rx_eof_desc_addr = eof_addr
+        };
+        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &edata, rx_chan->user_data);
     }
-    if (intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) {
-        if (rx_chan->on_descr_err) {
-            if (rx_chan->on_descr_err(&rx_chan->base, NULL, rx_chan->user_data)) {
-                need_yield = true;
-            }
-        }
+    if ((intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) && rx_chan->cbs.on_descr_err) {
+        need_yield |= rx_chan->cbs.on_descr_err(&rx_chan->base, NULL, rx_chan->user_data);
+    }
+    if ((intr_status & GDMA_LL_EVENT_RX_DONE) && rx_chan->cbs.on_recv_done) {
+        /* Here we don't return an event data in this callback.
+         * Because we can't get a determinant descriptor address
+         * that just finished processing by DMA controller.
+         * When the `rx_done` interrupt triggers, the finished descriptor should ideally
+         * stored in `in_desc_bf1` register, however, as it takes a while to
+         * get the `in_desc_bf1` in software, `in_desc_bf1` might have already refreshed,
+         * Therefore, instead of returning an unreliable descriptor, we choose to return nothing.
+         */
+        need_yield |= rx_chan->cbs.on_recv_done(&rx_chan->base, NULL, rx_chan->user_data);
     }
 
     if (need_yield) {
@@ -759,23 +765,15 @@ static void IRAM_ATTR gdma_default_tx_isr(void *args)
     uint32_t intr_status = gdma_ll_tx_get_interrupt_status(group->hal.dev, pair->pair_id);
     gdma_ll_tx_clear_interrupt_status(group->hal.dev, pair->pair_id, intr_status);
 
-    if (intr_status & GDMA_LL_EVENT_TX_EOF) {
-        if (tx_chan && tx_chan->on_trans_eof) {
-            uint32_t eof_addr = gdma_ll_tx_get_eof_desc_addr(group->hal.dev, pair->pair_id);
-            gdma_event_data_t edata = {
-                .tx_eof_desc_addr = eof_addr
-            };
-            if (tx_chan->on_trans_eof(&tx_chan->base, &edata, tx_chan->user_data)) {
-                need_yield = true;
-            }
-        }
+    if ((intr_status & GDMA_LL_EVENT_TX_EOF) && tx_chan->cbs.on_trans_eof) {
+        uint32_t eof_addr = gdma_ll_tx_get_eof_desc_addr(group->hal.dev, pair->pair_id);
+        gdma_event_data_t edata = {
+            .tx_eof_desc_addr = eof_addr
+        };
+        need_yield |= tx_chan->cbs.on_trans_eof(&tx_chan->base, &edata, tx_chan->user_data);
     }
-    if (intr_status & GDMA_LL_EVENT_TX_DESC_ERROR) {
-        if (tx_chan && tx_chan->on_descr_err) {
-            if (tx_chan->on_descr_err(&tx_chan->base, NULL, tx_chan->user_data)) {
-                need_yield = true;
-            }
-        }
+    if ((intr_status & GDMA_LL_EVENT_TX_DESC_ERROR) && tx_chan->cbs.on_descr_err) {
+        need_yield |= tx_chan->cbs.on_descr_err(&tx_chan->base, NULL, tx_chan->user_data);
     }
     if (need_yield) {
         portYIELD_FROM_ISR();
