@@ -106,6 +106,18 @@ void phy_bbpll_en_usb(bool en);
 void phy_eco_version_sel(uint8_t chip_ver);
 #endif
 
+#if CONFIG_ESP_PHY_IMPROVE_RX_11B
+/**
+ * @brief Improve Wi-Fi receive 11b pkts when modules with high interference.
+ *
+ * @attention 1.This is a workaround to improve Wi-Fi receive 11b pkts for some modules using AC-DC power supply with high interference.
+ * @attention 2.Enable this will sacrifice Wi-Fi OFDM receive performance. But to guarantee 11b receive performance serves as a bottom line in this case.
+ *
+ * @param     enable  Enable or disable.
+ */
+void phy_improve_rx_special(bool enable);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
