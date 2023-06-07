@@ -38,15 +38,6 @@ extern "C" {
 #define static_assert _Static_assert
 #endif
 
-#ifndef min
-#define min(a, b) ((a)<(b)?(a):(b))
-#endif
-
-#ifndef max
-#define max(a, b) ((a)>(b)?(a):(b))
-#endif
-
-#include "soc/soc_caps.h"
 #include "nimble/nimble_npl.h"
 
 #define OS_ALIGN(__n, __a) (                             \
