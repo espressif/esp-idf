@@ -12,6 +12,7 @@
 
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "esp_mac.h"
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_private/wifi.h"
@@ -142,8 +143,6 @@ static void gpio_init(void)
 /**
  * Application
  */
-#include "esp_mac.h"
-
 void app_main(void)
 {
     static __NOINIT_ATTR uint32_t s_reconfigure_requested;

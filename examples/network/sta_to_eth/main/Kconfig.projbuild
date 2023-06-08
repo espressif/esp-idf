@@ -1,5 +1,7 @@
 menu "Example Configuration"
 
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
     choice EXAMPLE_WIFI_CONFIGURATION
         prompt "WiFi configuration"
         default EXAMPLE_WIFI_CONFIGURATION_MANUAL
@@ -21,6 +23,8 @@ menu "Example Configuration"
         help
             Wi-Fi provisioning component offers 3 security versions.
             The example offers a choice between security version 1 and 2.
+            You can also choose version 0, which is recommended only
+            for testing (not secure, plain text communication)
 
         config EXAMPLE_PROV_SECURITY_VERSION_1
             bool "Security version 1"
@@ -61,7 +65,7 @@ menu "Example Configuration"
         prompt "Choose the Wired interface"
         default EXAMPLE_WIRED_INTERFACE_IS_ETHERNET
         help
-            Choose how the WiFi settings should be configured.
+            Choose the wired interface: Ethernet or USB
 
         config EXAMPLE_WIRED_INTERFACE_IS_ETHERNET
             bool
@@ -74,7 +78,7 @@ menu "Example Configuration"
 
     config EXAMPLE_RECONFIGURE_BUTTON
         int "Button for switching to reconfigure mode"
-        range 0 46
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
         default 2 if EXAMPLE_WIRED_INTERFACE_IS_ETHERNET
         default 0
         help

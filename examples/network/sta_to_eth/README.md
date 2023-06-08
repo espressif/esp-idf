@@ -34,7 +34,7 @@ To provision the device using IDF provisioning tools (if `EXAMPLE_WIFI_CONFIGURA
 ```bash
 esp-idf/tools/esp_prov$ python esp_prov.py --transport httpd ...
 ```
-Please refer to the provisioning documentation and `esp_prov` script [documentation](../../../../../tools/esp_prov/README.md) for more details.
+Please refer to the provisioning documentation and `esp_prov` script [documentation](../../../tools/esp_prov/README.md) for more details.
 
 ### Build, Flash, and Run
 

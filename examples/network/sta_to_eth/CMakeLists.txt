@@ -7,4 +7,4 @@ set(EXTRA_COMPONENT_DIRS    $ENV{IDF_PATH}/examples/protocols/http_server/captiv
                             $ENV{IDF_PATH}/examples/ethernet/basic/components/ethernet_init)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(wifi_to_wired)
+project(sta_to_eth)
