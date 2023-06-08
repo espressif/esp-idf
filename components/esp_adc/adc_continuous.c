@@ -263,6 +263,7 @@ static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan
     ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
     return s_adc_dma_intr(user_data);
 }
+
 #else
 static IRAM_ATTR void adc_dma_intr_handler(void *arg)
 {
@@ -340,11 +341,6 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
                 }
             }
         }
-    }
-
-    if (status == ADC_HAL_DMA_DESC_NULL) {
-        //start next turns of dma operation
-        adc_hal_digi_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf);
     }
 
     return need_yield;
