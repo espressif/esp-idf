@@ -429,6 +429,9 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
+/*------------------------ Anti DPA (Security) CAPS --------------------------*/
+#define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
+
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-H2 has 2 UARTs
 #define SOC_UART_NUM                (2)
