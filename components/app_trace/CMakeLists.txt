@@ -66,6 +66,12 @@ idf_component_register(SRCS "${srcs}"
 idf_component_get_property(app_trace app_trace COMPONENT_LIB)
 
 if(CONFIG_APPTRACE_GCOV_ENABLE)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        # Coverage info is not supported when clang is used
+        # TODO: LLVM-214
+        message(FATAL_ERROR "Coverage info is not supported when building with Clang!")
+    endif()
+
     # The original Gcov library from toolchain will be objcopy with symbols redefinitions (see file gcov/io_sym.map).
     # This needs because ESP has no file-system onboard, and redefined functions solves this problem and transmits
     # output file to host PC.

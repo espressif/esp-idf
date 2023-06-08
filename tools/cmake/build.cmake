@@ -468,6 +468,8 @@ macro(idf_build_process target)
 
     idf_build_set_property(BOOTLOADER_BUILD "${BOOTLOADER_BUILD}")
 
+    idf_build_set_property(IDF_TOOLCHAIN "${IDF_TOOLCHAIN}")
+
     # Check build target is specified. Since this target corresponds to a component
     # name, the target component is automatically added to the list of common component
     # requirements.

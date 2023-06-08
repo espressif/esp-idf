@@ -19,6 +19,18 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default y if "$(IDF_CI_BUILD)" = "y" || "$(IDF_CI_BUILD)" = 1
 
+    config IDF_TOOLCHAIN
+        # This option records the IDF target when sdkconfig is generated the first time.
+        # It is not updated if environment variable $IDF_TOOLCHAIN changes later, and
+        # the build system is responsible for detecting the mismatch between
+        # CONFIG_IDF_TOOLCHAIN and $IDF_TOOLCHAIN.
+        string
+        default "$IDF_TOOLCHAIN"
+
+    config IDF_TOOLCHAIN_CLANG
+        bool
+        default "y" if IDF_TOOLCHAIN="clang"
+
     config IDF_TARGET_ARCH_RISCV
         bool
         default "n"
@@ -492,6 +504,27 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 If enabled, RTL files will be produced during compilation. These files
                 can be used by other tools, for example to calculate call graphs.
+
+        choice COMPILER_RT_LIB
+            prompt "Compiler runtime library"
+            default COMPILER_RT_LIB_CLANGRT if IDF_TOOLCHAIN_CLANG
+            default COMPILER_RT_LIB_GCCLIB
+            help
+                Select runtime library to be used by compiler.
+                - GCC toolchain supports libgcc only.
+                - Clang allows to choose between libgcc or libclang_rt.
+
+            config COMPILER_RT_LIB_GCCLIB
+                bool "libgcc"
+            config COMPILER_RT_LIB_CLANGRT
+                depends on IDF_TOOLCHAIN_CLANG
+                bool "libclang_rt"
+        endchoice
+
+        config COMPILER_RT_LIB_NAME
+            string
+            default "clang_rt.builtins" if COMPILER_RT_LIB_CLANGRT
+            default "gcc" if COMPILER_RT_LIB_GCCLIB
 
     endmenu # Compiler Options
 

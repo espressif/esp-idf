@@ -115,6 +115,8 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-Wno-c2x-extensions")
     # warning on xMPU_SETTINGS for esp32s2 has size 0 for C and 1 for C++
     list(APPEND compile_options "-Wno-extern-c-compat")
+    # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
+    list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
 endif()
 # More warnings may exist in unit tests and example projects.
 
@@ -222,6 +224,11 @@ endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-fno-use-cxa-atexit")
+    if(CONFIG_COMPILER_RT_LIB_GCCLIB)
+        list(APPEND link_options "-rtlib=libgcc")
+    elseif(CONFIG_COMPILER_RT_LIB_CLANGRT)
+        list(APPEND link_options "-rtlib=compiler-rt")
+    endif()
 endif()
 
 # For the transition period from 32-bit time_t to 64-bit time_t,

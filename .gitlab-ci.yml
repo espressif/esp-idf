@@ -176,6 +176,15 @@ cache:
 
   source ./export.sh
 
+  # Custom clang
+  if [[ ! -z "$CI_CLANG_DISTRO_URL" ]]; then
+    echo "Using custom clang from ${CI_CLANG_DISTRO_URL}"
+    wget $CI_CLANG_DISTRO_URL
+    ARCH_NAME=$(basename $CI_CLANG_DISTRO_URL)
+    tar -x -f $ARCH_NAME
+    export PATH=$PWD/esp-clang/bin:$PATH
+  fi
+
   # Custom OpenOCD
   if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
     echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
