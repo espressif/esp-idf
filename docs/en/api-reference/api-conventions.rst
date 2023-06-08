@@ -55,7 +55,7 @@ Most ESP-IDF examples use C99 `designated initializers`_ for structure initializ
         /* Correct, fields .arg and .name are zero-initialized */
     };
 
-The C++ language supports designated initializers syntax, too, but the initializers must be in the order of declaration. When using ESP-IDF APIs in C++ code, you may consider using the following pattern::
+The C++ language supports designated initializer syntax, too, but the initializers must be in the order of declaration. When using ESP-IDF APIs in C++ code, you may consider using the following pattern::
 
     /* Correct, fields .dispatch_method, .name and .skip_unhandled_events are zero-initialized */
     const esp_timer_create_args_t my_timer_args = {
@@ -69,7 +69,7 @@ The C++ language supports designated initializers syntax, too, but the initializ
     //    .callback = &my_timer_callback,
     //};
 
-For more information on designated initializers, see :ref:`Designated initializers <cplusplus_designated_initializers>`. Note that C++ language versions older than C++20 (not the default in the current version of ESP-IDF) do not support designated initializers. If you have to compile code with an older C++ standard than C++20, you may use GCC extensions to produce the following pattern::
+For more information on designated initializers, see :ref:`cplusplus_designated_initializers`. Note that C++ language versions older than C++20, which are not the default in the current version of ESP-IDF, do not support designated initializers. If you have to compile code with an older C++ standard than C++20, you may use GCC extensions to produce the following pattern::
 
     esp_timer_create_args_t my_timer_args = {};
     /* All the fields are zero-initialized */
