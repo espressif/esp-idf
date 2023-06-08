@@ -1,6 +1,9 @@
 {
+    "version":            "1",
     "project_name":       "${PROJECT_NAME}",
+    "project_version":    "${PROJECT_VER}",
     "project_path":       "${PROJECT_PATH}",
+    "idf_path":           "${IDF_PATH}",
     "build_dir":          "${BUILD_DIR}",
     "config_file":        "${SDKCONFIG}",
     "config_defaults":    "${SDKCONFIG_DEFAULTS}",
@@ -15,11 +18,14 @@
     "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
     "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
     "monitor_toolprefix": "${_CMAKE_TOOLCHAIN_PREFIX}",
+    "c_compiler":         "${CMAKE_C_COMPILER}",
     "config_environment" : {
         "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
         "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
     },
+    "common_component_reqs": ${common_component_reqs_json},
     "build_components" : ${build_components_json},
     "build_component_paths" : ${build_component_paths_json},
+    "build_component_info" : ${build_component_info_json},
     "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}"
 }
