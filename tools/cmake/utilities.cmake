@@ -178,7 +178,12 @@ endfunction()
 
 # Convert a CMake list to a JSON list and store it in a variable
 function(make_json_list list variable)
-    string(REPLACE ";" "\", \"" result "[ \"${list}\" ]")
+    list(LENGTH list length)
+    if(${length})
+        string(REPLACE ";" "\", \"" result "[ \"${list}\" ]")
+    else()
+        set(result "[]")
+    endif()
     set("${variable}" "${result}" PARENT_SCOPE)
 endfunction()
 
