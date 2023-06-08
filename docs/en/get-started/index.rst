@@ -451,7 +451,7 @@ If the previous steps have been done correctly, the following menu appears:
 
     Project configuration - Home window
 
-You are using this menu to set up project specific variables, e.g. Wi-Fi network name and password, the processor speed, etc. Setting up the project with menuconfig may be skipped for "hello_word". This example will run with default configuration.
+You are using this menu to set up project specific variables, e.g. Wi-Fi network name and password, the processor speed, etc. Setting up the project with menuconfig may be skipped for "hello_world". This example will run with default configuration.
 
 .. only:: esp32
 
