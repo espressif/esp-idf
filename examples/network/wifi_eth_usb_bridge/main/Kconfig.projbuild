@@ -1,0 +1,17 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_WIFI_CONFIGURATION
+        prompt "WiFi configuration"
+        default EXAMPLE_WIFI_CONFIGURATION_MANUAL
+        help
+            Choose how the WiFi settings should be configured.
+
+        config EXAMPLE_WIFI_CONFIGURATION_MANUAL
+            bool
+            prompt "Manual configuration via http server"
+        config EXAMPLE_WIFI_CONFIGURATION_PROVISIONING
+            bool
+            prompt "Using unified provisioning"
+    endchoice
+
+endmenu
