@@ -78,7 +78,7 @@ static void read_efuse_fields(device_desc_t *desc)
 }
 
 
-#ifdef CONFIG_EFUSE_VIRTUAL
+#if defined(CONFIG_EFUSE_VIRTUAL) || defined(CONFIG_EXAMPLE_TEST_RUN_USING_QEMU)
 static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t coding_scheme)
 {
 #if CONFIG_IDF_TARGET_ESP32
@@ -104,7 +104,7 @@ static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t co
         ESP_ERROR_CHECK(esp_efuse_batch_write_commit());
     }
 }
-#endif // CONFIG_EFUSE_VIRTUAL
+#endif // defined(CONFIG_EFUSE_VIRTUAL) || defined(CONFIG_EXAMPLE_TEST_RUN_USING_QEMU)
 
 
 static esp_efuse_coding_scheme_t get_coding_scheme(void)
@@ -154,7 +154,10 @@ void app_main(void)
     device_desc_t device_desc = { 0 };
     read_efuse_fields(&device_desc);
 
+#if !CONFIG_EXAMPLE_TEST_RUN_USING_QEMU
     ESP_LOGW(TAG, "This example does not burn any efuse in reality only virtually");
+#endif
+
 
 #if CONFIG_IDF_TARGET_ESP32C2
     if (esp_secure_boot_enabled() || esp_flash_encryption_enabled()) {
@@ -165,8 +168,10 @@ void app_main(void)
     }
 #endif
 
-#ifdef CONFIG_EFUSE_VIRTUAL
+#if defined(CONFIG_EFUSE_VIRTUAL) || defined(CONFIG_EXAMPLE_TEST_RUN_USING_QEMU)
+#if !CONFIG_EXAMPLE_TEST_RUN_USING_QEMU
     ESP_LOGW(TAG, "Write operations in efuse fields are performed virtually");
+#endif
     if (device_desc.device_role == 0) {
         device_desc.module_version = 1;
         device_desc.device_role = 2;

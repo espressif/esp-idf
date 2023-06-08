@@ -7,6 +7,7 @@ import os
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_qemu.dut import QemuDut
 
 
 @pytest.mark.generic
@@ -843,6 +844,89 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('example: Flash Encryption is NOT in RELEASE mode')
     dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
+
+
+@pytest.mark.esp32
+@pytest.mark.host_test
+@pytest.mark.qemu
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32.qemu',], indirect=True)
+@pytest.mark.parametrize(
+    'qemu_extra_args',
+    [
+        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32eco3_efuses.bin")},if=none,format=raw,id=efuse '
+        '-global driver=nvram.esp32.efuse,property=drive,value=efuse '
+        '-global driver=timer.esp32.timg,property=wdt_disable,value=true',
+    ],
+    indirect=True,
+)
+def test_examples_efuse_with_virt_sb_v2_and_fe_qemu(dut: QemuDut) -> None:
+    try:
+        dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
+        dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+        dut.expect('secure_boot_v2: Signature verified successfully!')
+
+        dut.expect('secure_boot_v2: enabling secure boot v2...')
+        dut.expect('Verifying image signature...')
+        dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
+        dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+        dut.expect('secure_boot_v2: Signature verified successfully')
+        dut.expect('secure_boot_v2: Secure boot digests absent, generating..')
+        dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
+        dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
+
+        dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
+        dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
+        dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+        dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+
+        dut.expect('secure_boot_v2: blowing secure boot efuse...')
+        dut.expect('Disable JTAG...')
+        dut.expect('Disable ROM BASIC interpreter fallback...')
+        dut.expect('Disable ROM Download mode...')
+        dut.expect('secure_boot_v2: Secure boot permanently enabled')
+
+        dut.expect('Checking flash encryption...')
+        dut.expect('flash_encrypt: Generating new flash encryption key...')
+        dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
+        dut.expect('flash_encrypt: Setting CRYPT_CONFIG efuse to 0xF')
+        dut.expect('flash_encrypt: Not disabling UART bootloader encryption')
+        dut.expect('flash_encrypt: Disable UART bootloader decryption...')
+        dut.expect('flash_encrypt: Disable UART bootloader MMU cache...')
+        dut.expect('flash_encrypt: Disable JTAG...')
+        dut.expect('flash_encrypt: Disable ROM BASIC interpreter fallback...')
+
+        dut.expect('Verifying image signature...')
+        dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+        dut.expect('secure_boot_v2: Signature verified successfully!')
+        dut.expect('flash_encrypt: bootloader encrypted successfully')
+        dut.expect('flash_encrypt: partition table encrypted and loaded successfully')
+
+        dut.expect('Verifying image signature...')
+        dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+        dut.expect('secure_boot_v2: Signature verified successfully!')
+        dut.expect('flash_encrypt: Flash encryption completed', timeout=120)
+        dut.expect('Resetting with flash encryption enabled...')
+
+        dut.expect('Verifying image signature...', timeout=180)
+        dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+        dut.expect('secure_boot_v2: Signature verified successfully!')
+        dut.expect('secure_boot_v2: enabling secure boot v2...')
+        dut.expect('secure_boot_v2: secure boot v2 is already enabled, continuing..')
+        dut.expect_exact('flash_encrypt: flash encryption is enabled (3 plaintext flashes left)')
+        dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
+        dut.expect('main_task: Calling app_main()')
+        dut.expect('Start eFuse example')
+        dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+        dut.expect('example: Secure Boot is in RELEASE mode')
+        dut.expect('example: Done')
+
+    finally:
+        # the above example test burns the efuses, and hence the efuses file which the
+        # qemu uses to emulate the efuses, "test/esp32eco3_efuses.bin", gets modified.
+        # Thus, restore the efuses file values back to the default ESP32-ECO3 efuses values.
+        with open(os.path.join(os.path.dirname(__file__), 'test', 'esp32eco3_efuses.bin'), 'wb') as efuse_file:
+            esp32eco3_efuses = '0' * 26 + '8' + '0' * 17 + '1' + '0' * 203
+            efuse_file.write(bytearray.fromhex(esp32eco3_efuses))
 
 
 @pytest.mark.esp32c3
