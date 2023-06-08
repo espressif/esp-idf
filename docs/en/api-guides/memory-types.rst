@@ -120,7 +120,7 @@ Jump table optimizations can be re-enabled for individual source files that don'
 
 .. _irom:
 
-IROM (code executed from flash)
+IROM (Code Executed from flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If a function is not explicitly placed into :ref:`iram` or RTC memory, it is placed into flash. As IRAM is limited, most of an application's binary code must be placed into IROM instead.

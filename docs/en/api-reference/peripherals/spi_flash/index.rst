@@ -272,6 +272,7 @@ API Reference - SPI Flash
 .. include-build-file:: inc/spi_flash_mmap.inc
 .. include-build-file:: inc/spi_flash_types.inc
 .. include-build-file:: inc/esp_flash_err.inc
+.. include-build-file:: inc/esp_spi_flash_counters.inc
 
 API Reference - Flash Encrypt
 -----------------------------

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS || defined __DOXYGEN__
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,15 +21,18 @@ extern "C" {
  * Structure holding statistics for one type of operation
  */
 typedef struct {
-    uint32_t count;     // number of times operation was executed
-    uint32_t time;      // total time taken, in microseconds
-    uint32_t bytes;     // total number of bytes
+    uint32_t count;     /*!< number of times operation was executed */
+    uint32_t time;      /*!< total time taken, in microseconds */
+    uint32_t bytes;     /*!< total number of bytes */
 } esp_flash_counter_t;
 
+/**
+ * Structure for counters of flash actions
+*/
 typedef struct {
-    esp_flash_counter_t read;
-    esp_flash_counter_t write;
-    esp_flash_counter_t erase;
+    esp_flash_counter_t read;   /*!< counters for read action, like `esp_flash_read`*/
+    esp_flash_counter_t write;  /*!< counters for write action, like `esp_flash_write`*/
+    esp_flash_counter_t erase;  /*!< counters for erase action, like `esp_flash_erase`*/
 } esp_flash_counters_t;
 
 // for deprecate old api
@@ -61,4 +64,4 @@ const spi_flash_counters_t* spi_flash_get_counters(void) __attribute__((deprecat
 }
 #endif
 
-#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS || defined __DOXYGEN__
