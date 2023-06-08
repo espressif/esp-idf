@@ -1,7 +1,7 @@
 ESP-IDF 前端工具 - idf.py
 **********************************
 
-:link_to_translation:`en:English`
+:link_to_translation:`en:[English]`
 
 ``idf.py`` 命令行工具提供了一个前端界面，管理工程构建、工程部署及工程调试等操作。该前端界面使用多项工具，如：
 
