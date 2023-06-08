@@ -120,22 +120,6 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 
 #if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 
-#define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
-
-_Static_assert(RTC_RETAIN_MEM_ADDR >= SOC_RTC_DRAM_LOW, "rtc_retain_mem_t structure size is bigger than the RTC memory size. Consider reducing RTC reserved memory size.");
-
-rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
-
-#ifndef BOOTLOADER_BUILD
-#include "heap_memory_layout.h"
-/* The app needs to be told this memory is reserved, important if configured to use RTC memory as heap.
-
-   Note that keeping this macro here only works when other symbols in this file are referenced by the app, as
-   this feature is otherwise 100% part of the bootloader. However this seems to happen in all apps.
- */
-SOC_RESERVE_MEMORY_REGION(RTC_RETAIN_MEM_ADDR, RTC_RETAIN_MEM_ADDR + sizeof(rtc_retain_mem_t), rtc_retain_mem);
-#endif
-
 static uint32_t rtc_retain_mem_size(void) {
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
     /* A custom memory has been reserved by the user, do not consider this memory into CRC calculation as it may change without
@@ -143,29 +127,31 @@ static uint32_t rtc_retain_mem_size(void) {
      * minus the size of everything after (including) `custom` */
     return offsetof(rtc_retain_mem_t, custom);
 #else
-    return sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc);
+    return sizeof(rtc_retain_mem_t) - sizeof(bootloader_common_get_rtc_retain_mem()->crc);
 #endif
 }
 
 static bool is_retain_mem_valid(void)
 {
+    rtc_retain_mem_t* rtc_retain_mem = bootloader_common_get_rtc_retain_mem();
     return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size()) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
 }
 
 static void update_rtc_retain_mem_crc(void)
 {
+    rtc_retain_mem_t* rtc_retain_mem = bootloader_common_get_rtc_retain_mem();
     rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size());
 }
 
 NOINLINE_ATTR void bootloader_common_reset_rtc_retain_mem(void)
 {
-    hal_memset(rtc_retain_mem, 0, sizeof(rtc_retain_mem_t));
+    hal_memset(bootloader_common_get_rtc_retain_mem(), 0, sizeof(rtc_retain_mem_t));
 }
 
 uint16_t bootloader_common_get_rtc_retain_mem_reboot_counter(void)
 {
     if (is_retain_mem_valid()) {
-        return rtc_retain_mem->reboot_counter;
+        return bootloader_common_get_rtc_retain_mem()->reboot_counter;
     }
     return 0;
 }
@@ -175,12 +161,13 @@ void bootloader_common_set_rtc_retain_mem_factory_reset_state(void)
     if (!is_retain_mem_valid()) {
         bootloader_common_reset_rtc_retain_mem();
     }
-    rtc_retain_mem->flags.factory_reset_state = true;
+    bootloader_common_get_rtc_retain_mem()->flags.factory_reset_state = true;
     update_rtc_retain_mem_crc();
 }
 
 bool bootloader_common_get_rtc_retain_mem_factory_reset_state(void)
 {
+    rtc_retain_mem_t* rtc_retain_mem = bootloader_common_get_rtc_retain_mem();
     if (is_retain_mem_valid()) {
         bool factory_reset_state = rtc_retain_mem->flags.factory_reset_state;
         if (factory_reset_state == true) {
@@ -195,13 +182,14 @@ bool bootloader_common_get_rtc_retain_mem_factory_reset_state(void)
 esp_partition_pos_t* bootloader_common_get_rtc_retain_mem_partition(void)
 {
     if (is_retain_mem_valid()) {
-        return &rtc_retain_mem->partition;
+        return &bootloader_common_get_rtc_retain_mem()->partition;
     }
     return NULL;
 }
 
 void bootloader_common_update_rtc_retain_mem(esp_partition_pos_t* partition, bool reboot_counter)
 {
+    rtc_retain_mem_t* rtc_retain_mem = bootloader_common_get_rtc_retain_mem();
     if (reboot_counter) {
         if (!is_retain_mem_valid()) {
             bootloader_common_reset_rtc_retain_mem();
@@ -223,7 +211,14 @@ void bootloader_common_update_rtc_retain_mem(esp_partition_pos_t* partition, boo
 
 rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 {
-    return rtc_retain_mem;
+#ifdef BOOTLOADER_BUILD
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
+    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
+    return s_bootloader_retain_mem;
+#else
+    static __attribute__((section(".bootloader_data_rtc_mem"))) rtc_retain_mem_t s_bootloader_retain_mem;
+    return &s_bootloader_retain_mem;
+#endif // !BOOTLOADER_BUILD
 }
 
 #endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM
