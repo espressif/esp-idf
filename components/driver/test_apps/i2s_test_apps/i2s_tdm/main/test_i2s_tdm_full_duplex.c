@@ -160,7 +160,7 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
                     is_start = true;
                 }
             } else if (is_start) {
-                ESP_LOGE(TAG, "Failed at index: %d real: %"PRIu32" expect: %"PRIu32"\n", i, rx_buffer[i], count);
+                ESP_LOGE(TAG, "Failed at index: %d real: %" PRIu32 " expect: %" PRIu32, i, rx_buffer[i], count);
                 is_start = false;
                 count = 1;
                 fail_cnt++;

@@ -38,7 +38,7 @@ int ble_mesh_module_publish_message(int argc, char **argv)
     uint8_t device_role = ROLE_NODE;
     uint16_t length = 0;
 
-    ESP_LOGD(TAG, "enter %s \n", __func__);
+    ESP_LOGD(TAG, "enter %s", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &msg_publish);
     if (nerrors != 0) {
@@ -48,7 +48,7 @@ int ble_mesh_module_publish_message(int argc, char **argv)
 
     data = malloc(strlen(msg_publish.data->sval[0]));
     if (data == NULL) {
-        ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+        ESP_LOGE(TAG, "ble mesh malloc failed, %d", __LINE__);
         return ESP_ERR_NO_MEM;
     } else {
         get_value_string((char *)msg_publish.data->sval[0], (char *) data);
@@ -88,7 +88,7 @@ int ble_mesh_module_publish_message(int argc, char **argv)
         length = strlen(msg_publish.data->sval[0]);
         data = malloc((length + 1) * sizeof(uint8_t));
         if (data == NULL) {
-            ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+            ESP_LOGE(TAG, "ble mesh malloc failed, %d", __LINE__);
             return ESP_ERR_NO_MEM;
         } else {
             get_value_string((char *)msg_publish.data->sval[0], (char *) data);
@@ -97,7 +97,7 @@ int ble_mesh_module_publish_message(int argc, char **argv)
 
     err = esp_ble_mesh_model_publish(model, msg_publish.opcode->ival[0], length, data, device_role);
 
-    ESP_LOGD(TAG, "exit %s \n", __func__);
+    ESP_LOGD(TAG, "exit %s", __func__);
     free(data);
     return err;
 }

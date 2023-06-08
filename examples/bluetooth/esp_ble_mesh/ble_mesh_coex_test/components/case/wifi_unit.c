@@ -1,7 +1,7 @@
 /*
  * ESP BLE Mesh Example
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -108,7 +108,7 @@ esp_err_t wifi_unit_tcp_recv(int socket_id, const char *duration, uint32_t user_
     buffer = malloc(2920);
 
     if (buffer == NULL) {
-        ESP_LOGE(TAG, "%s malloc fail\n", __func__);
+        ESP_LOGE(TAG, "%s malloc fail", __func__);
         return ESP_ERR_NO_MEM;
     }
 
@@ -140,7 +140,7 @@ esp_err_t wifi_util_tcp_send(int socket_id, uint32_t len, uint32_t delay, uint32
     }
     buffer = malloc(len);
     if (buffer == NULL) {
-        ESP_LOGE(TAG, "%s malloc fail\n", __func__);
+        ESP_LOGE(TAG, "%s malloc fail", __func__);
         return ESP_ERR_NO_MEM;
     }
 

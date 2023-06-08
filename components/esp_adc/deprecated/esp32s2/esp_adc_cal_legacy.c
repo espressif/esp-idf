@@ -127,14 +127,14 @@ static bool calculate_characterization_coefficients(const adc_calib_parsed_info 
 {
     switch (parsed_data->version_num) {
     case 1:
-        ESP_LOGD(LOG_TAG, "Calib V1, low%dmV, high%dmV\n", parsed_data->efuse_data.ver1.adc_calib_low, parsed_data->efuse_data.ver1.adc_calib_high);
+        ESP_LOGD(LOG_TAG, "Calib V1, low%dmV, high%dmV", parsed_data->efuse_data.ver1.adc_calib_low, parsed_data->efuse_data.ver1.adc_calib_high);
 
         characterize_using_two_point(parsed_data->adc_num, parsed_data->atten_level,
                                      parsed_data->efuse_data.ver1.adc_calib_high, parsed_data->efuse_data.ver1.adc_calib_low,
                                      &(chars->coeff_a), &(chars->coeff_b));
         break;
     case 2:
-        ESP_LOGD(LOG_TAG, "Calib V2, volt%dmV\n", parsed_data->efuse_data.ver2.adc_calib_high);
+        ESP_LOGD(LOG_TAG, "Calib V2, volt%dmV", parsed_data->efuse_data.ver2.adc_calib_high);
         chars->coeff_a = coeff_a_scaling * parsed_data->efuse_data.ver2.adc_calib_high_voltage /
                          parsed_data->efuse_data.ver2.adc_calib_high;
         chars->coeff_b = 0;
@@ -178,7 +178,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     assert(res);
     res = calculate_characterization_coefficients(&efuse_parsed_data, chars);
     assert(res);
-    ESP_LOGD(LOG_TAG, "adc%d (atten leven %d) calibration done: A:%"PRId32" B:%"PRId32"\n", adc_num, atten, chars->coeff_a, chars->coeff_b);
+    ESP_LOGD(LOG_TAG, "adc%d (atten leven %d) calibration done: A:%" PRId32 " B:%" PRId32, adc_num, atten, chars->coeff_a, chars->coeff_b);
 
     // Initialize remaining fields
     chars->adc_num = adc_num;

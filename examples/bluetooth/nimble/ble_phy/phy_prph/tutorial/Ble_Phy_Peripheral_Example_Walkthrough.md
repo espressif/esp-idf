@@ -143,7 +143,7 @@ esp_err_t esp_nimble_init(void)
     npl_freertos_mempool_init();
 
     if(esp_nimble_hci_init() != ESP_OK) {
-        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "hci inits failed\n");
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "hci inits failed");
         return ESP_FAIL;
     }
 

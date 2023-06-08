@@ -417,7 +417,7 @@ void app_main(void)
     /* A queue for storing received HCI packets. */
     adv_queue = xQueueCreate(15, sizeof(host_rcv_data_t));
     if (adv_queue == NULL) {
-        ESP_LOGE(TAG, "Queue creation failed\n");
+        ESP_LOGE(TAG, "Queue creation failed");
         return;
     }
 

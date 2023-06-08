@@ -87,7 +87,7 @@ int lwip_hook_netconn_external_resolve(const char *name, ip_addr_t *addr, u8_t a
 
     ip6_addr_t nat64_prefix;
     if (esp_openthread_get_nat64_prefix(&nat64_prefix) != ESP_OK) {
-        ESP_LOGE(TAG, "Cannot find NAT64 prefix\n");
+        ESP_LOGE(TAG, "Cannot find NAT64 prefix");
         *err = ERR_ABRT;
         return 1;
     }

@@ -159,7 +159,7 @@ static void wifi_scan(void)
         if (ap_info[i].authmode != WIFI_AUTH_WEP) {
             print_cipher_type(ap_info[i].pairwise_cipher, ap_info[i].group_cipher);
         }
-        ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
+        ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
     }
 
 }

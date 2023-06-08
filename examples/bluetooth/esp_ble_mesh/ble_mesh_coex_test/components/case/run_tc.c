@@ -232,7 +232,7 @@ void ble_scan_start(void *param)
 
 void ble_scan_end(void)
 {
-    ESP_LOGI(TAG, "%s \n", __func__);
+    ESP_LOGI(TAG, "%s", __func__);
 }
 
 tc_t tc_case[] = {
@@ -266,7 +266,7 @@ static void run_task(void *arg)
             if ( msg.case_id < sizeof(tc_case) / sizeof(tc_case[0]) ) {
                 xTaskCreatePinnedToCore(excute_case, tc_case_table->name, 4096, &tc_case_table[msg.case_id], RUN_TASK_PRIORITY, NULL, 0);
             } else {
-                ESP_LOGW(TAG, "msg.case_id  %d\n", msg.case_id);
+                ESP_LOGW(TAG, "msg.case_id  %d", msg.case_id);
             }
 
         }

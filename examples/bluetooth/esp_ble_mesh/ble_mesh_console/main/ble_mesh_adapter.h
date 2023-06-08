@@ -71,7 +71,7 @@ extern ble_mesh_node_status node_status;
 
 #define arg_int_to_value(src_msg, dst_msg, message) do { \
     if (src_msg->count != 0) {\
-        ESP_LOGD(TAG, "\n%s, %s\n", __func__, message);\
+        ESP_LOGD(TAG, "\n%s, %s", __func__, message);\
         dst_msg = src_msg->ival[0];\
     } \
 } while(0) \
@@ -103,9 +103,9 @@ extern ble_mesh_node_status node_status;
 
 #define ble_mesh_callback_check_err_code(err_code, message) do { \
     if (err_code == ESP_OK) { \
-        ESP_LOGI(TAG, "%s,OK\n", message); \
+        ESP_LOGI(TAG, "%s,OK", message); \
     } else { \
-        ESP_LOGE(TAG, "%s,Fail,%d\n", message, err_code); \
+        ESP_LOGE(TAG, "%s,Fail,%d", message, err_code); \
     } \
 }while(0) \
 

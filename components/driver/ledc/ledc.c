@@ -347,7 +347,7 @@ static inline uint32_t ledc_auto_global_clk_divisor(int freq_hz, uint32_t precis
         /* Before calculating the divisor, we need to have the RC_FAST frequency.
          * If it hasn't been measured yet, try calibrating it now. */
         if (s_glb_clks[i] == LEDC_SLOW_CLK_RC_FAST && s_ledc_slow_clk_rc_fast_freq == 0 && !ledc_slow_clk_calibrate()) {
-            ESP_LOGD(LEDC_TAG, "Unable to retrieve RC_FAST clock frequency, skipping it\n");
+            ESP_LOGD(LEDC_TAG, "Unable to retrieve RC_FAST clock frequency, skipping it");
             continue;
         }
 
@@ -1069,7 +1069,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur, dir, step_num, cycle_num, scale);
         portEXIT_CRITICAL(&ledc_spinlock);
-        ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d\n",
+        ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d",
                  duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
         portENTER_CRITICAL(&ledc_spinlock);

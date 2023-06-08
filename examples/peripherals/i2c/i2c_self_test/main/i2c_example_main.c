@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -265,7 +265,7 @@ static void i2c_test_task(void *arg)
             printf("====TASK[%d] Master read ====\n", task_idx);
             disp_buf(data_rd, d_size);
         } else {
-            ESP_LOGW(TAG, "TASK[%d] %s: Master read slave error, IO not connected...\n",
+            ESP_LOGW(TAG, "TASK[%d] %s: Master read slave error, IO not connected...",
                      task_idx, esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
@@ -292,7 +292,7 @@ static void i2c_test_task(void *arg)
             printf("----TASK[%d] Slave read: [%d] bytes ----\n", task_idx, size);
             disp_buf(data, size);
         } else {
-            ESP_LOGW(TAG, "TASK[%d] %s: Master write slave error, IO not connected....\n",
+            ESP_LOGW(TAG, "TASK[%d] %s: Master write slave error, IO not connected....",
                      task_idx, esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);

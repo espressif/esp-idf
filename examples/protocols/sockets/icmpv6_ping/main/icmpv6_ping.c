@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -53,7 +53,7 @@ static socklen_t resolve_v6addr(char *addr_str_i, struct sockaddr_in6 *addr_o)
 
     // Resolve source using getaddrinfo().
     if (0 != getaddrinfo(addr_str_i, NULL, &hints, &res)) {
-        ESP_LOGE(TAG, "getaddrinfo(): Could not resolve address, got error: %d\n", errno);
+        ESP_LOGE(TAG, "getaddrinfo(): Could not resolve address, got error: %d", errno);
         return 0;
     }
 
@@ -94,13 +94,13 @@ static void send_ping(char *src_addr_str, char *dst_addr_str, char *interface)
 
     // Resolve source address.
     if (0 == (srclen = resolve_v6addr(src_addr_str, &src))) {
-        ESP_LOGE(TAG, "resolve_v6addr(): Source address error\n");
+        ESP_LOGE(TAG, "resolve_v6addr(): Source address error");
         return;
     }
 
     // Resolve destination address.
     if (0 == resolve_v6addr(dst_addr_str, &dst)) {
-        ESP_LOGE(TAG, "resolve_v6addr(): Destination address error\n");
+        ESP_LOGE(TAG, "resolve_v6addr(): Destination address error");
         return;
     }
 
@@ -145,34 +145,34 @@ static void send_ping(char *src_addr_str, char *dst_addr_str, char *interface)
 
     // Request a socket descriptor sd.
     if ((sd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6)) < 0) {
-        ESP_LOGE(TAG, "Failed to get socket descriptor.: %d\n", errno);
+        ESP_LOGE(TAG, "Failed to get socket descriptor.: %d", errno);
         return;
     }
 
     // Bind the socket descriptor to the source address.
     if (bind(sd, (struct sockaddr *)&src, srclen) != 0) {
-        ESP_LOGE(TAG, "Failed to bind the socket descriptor to the source address.: %d\n", errno);
+        ESP_LOGE(TAG, "Failed to bind the socket descriptor to the source address.: %d", errno);
         return;
     }
 
     // Bind socket to interface index.
     strcpy(ifr.ifr_name, interface);
     if (setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0) {
-        ESP_LOGE(TAG, "setsockopt() failed to bind to interface: %d\n", errno);
+        ESP_LOGE(TAG, "setsockopt() failed to bind to interface: %d", errno);
         return;
     }
 
     // Send packet.
     int ret = 0;
     if ((ret = sendmsg(sd, &msghdr, 0)) < 0) {
-        ESP_LOGE(TAG, "sendmsg() failed: %d\n", errno);
+        ESP_LOGE(TAG, "sendmsg() failed: %d", errno);
         return;
     }
     free(msghdr.msg_control);
 
     ESP_LOGI(TAG, "ICMPv6 msg payload:");
     ESP_LOG_BUFFER_HEXDUMP(TAG, &(psdhdr[IP6_HLEN]), ICMP6_HLEN + datalen, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "Sent ICMPv6 msg: type: %d, code: %d, id: %d, seqno: %d\n",
+    ESP_LOGI(TAG, "Sent ICMPv6 msg: type: %d, code: %d, id: %d, seqno: %d",
              icmphdr->type,
              icmphdr->code,
              icmphdr->id,
@@ -199,13 +199,13 @@ static void send_ping(char *src_addr_str, char *dst_addr_str, char *interface)
     icmphdr = (struct icmp6_echo_hdr *)(inpack + IP6_HLEN);
     while (ICMP6_TYPE_EREP != icmphdr->type) {
         if ((len = recvmsg(sd, &msghdr, 0)) < 0) {
-            ESP_LOGE(TAG, "recvmsg() failed: %d\n", errno);
+            ESP_LOGE(TAG, "recvmsg() failed: %d", errno);
             return;
         }
 
         ESP_LOGI(TAG, "ICMPv6 msg payload:");
         ESP_LOG_BUFFER_HEXDUMP(TAG, inpack, IP6_HLEN + ICMP6_HLEN + datalen, ESP_LOG_INFO);
-        ESP_LOGI(TAG, "Received ICMPv6 msg: type: %d, code: %d, id: %d, seqno: %d\n",
+        ESP_LOGI(TAG, "Received ICMPv6 msg: type: %d, code: %d, id: %d, seqno: %d",
                  icmphdr->type,
                  icmphdr->code,
                  icmphdr->id,

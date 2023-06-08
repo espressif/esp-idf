@@ -245,7 +245,7 @@ void app_main(void)
     }
 
     if (esp_bt_gap_register_callback(esp_bt_gap_cb) != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s gap register failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(SPP_TAG, "%s gap register failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 

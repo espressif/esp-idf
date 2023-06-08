@@ -64,7 +64,7 @@ static const char* TAG = "sdio_test";
 static esp_err_t slave_slchost_reg_read(sdmmc_card_t* card, uint32_t addr, uint32_t* out_val)
 {
     if ((addr & DR_REG_SLCHOST_MASK) != DR_REG_SLCHOST_BASE) {
-        ESP_LOGW(TAG, "%s: invalid addr 0x%08x\n", __func__, addr);
+        ESP_LOGW(TAG, "%s: invalid addr 0x%08x", __func__, addr);
         return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_read_bytes(card, 1, addr & (~DR_REG_SLCHOST_MASK), out_val, sizeof(*out_val));
@@ -73,7 +73,7 @@ static esp_err_t slave_slchost_reg_read(sdmmc_card_t* card, uint32_t addr, uint3
 static esp_err_t slave_slchost_reg_write(sdmmc_card_t* card, uint32_t addr, uint32_t val)
 {
     if ((addr & DR_REG_SLCHOST_MASK) != DR_REG_SLCHOST_BASE) {
-        ESP_LOGW(TAG, "%s: invalid addr 0x%08x\n", __func__, addr);
+        ESP_LOGW(TAG, "%s: invalid addr 0x%08x", __func__, addr);
         return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_write_bytes(card, 1, addr & (~DR_REG_SLCHOST_MASK), &val, sizeof(val));
@@ -82,7 +82,7 @@ static esp_err_t slave_slchost_reg_write(sdmmc_card_t* card, uint32_t addr, uint
 static esp_err_t slave_slc_reg_read(sdmmc_card_t* card, uint32_t addr, uint32_t* val)
 {
     if ((addr & DR_REG_SLC_MASK) != DR_REG_SLC_BASE) {
-        ESP_LOGW(TAG, "%s: invalid addr 0x%08x\n", __func__, addr);
+        ESP_LOGW(TAG, "%s: invalid addr 0x%08x", __func__, addr);
         return ESP_ERR_INVALID_ARG;
     }
     uint32_t word = (addr - DR_REG_SLC_BASE) / 4;
@@ -102,7 +102,7 @@ static esp_err_t slave_slc_reg_read(sdmmc_card_t* card, uint32_t addr, uint32_t*
 static esp_err_t slave_slc_reg_write(sdmmc_card_t* card, uint32_t addr, uint32_t val)
 {
     if ((addr & DR_REG_SLC_MASK) != DR_REG_SLC_BASE) {
-        ESP_LOGW(TAG, "%s: invalid addr 0x%08x\n", __func__, addr);
+        ESP_LOGW(TAG, "%s: invalid addr 0x%08x", __func__, addr);
         return ESP_ERR_INVALID_ARG;
     }
     uint32_t word = (addr - DR_REG_SLC_BASE) / 4;

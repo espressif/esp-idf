@@ -279,7 +279,7 @@ void app_main(void)
         return;
     }
 
-    ESP_LOGI(tag, "HCI messages can be communicated over UART%d: \n"
+    ESP_LOGI(tag, "HCI messages can be communicated over UART%d:\n"
              "--PINs: TxD %d, RxD %d, RTS %d, CTS %d\n"
              "--Baudrate: %d", UART_HCI_NUM,
              GPIO_UART_TXD_OUT, GPIO_UART_RXD_IN, GPIO_UART_RTS_OUT, GPIO_UART_CTS_IN,

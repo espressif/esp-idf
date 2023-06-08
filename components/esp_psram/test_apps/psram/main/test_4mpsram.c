@@ -33,7 +33,7 @@ static void test_psram_content(void)
         }
     }
     if (errct) {
-        ESP_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %p\n", errct, s/32, initial_err+test_area);
+        ESP_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %p", errct, s/32, initial_err+test_area);
         TEST_FAIL();
     } else {
         ESP_LOGI(TAG, "SPI SRAM memory test OK");

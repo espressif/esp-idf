@@ -90,25 +90,25 @@ void app_main()
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed", __func__);
         return;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed", __func__);
         return;
     }
 
-    ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth\n", __func__);
+    ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth", __func__);
     ret = esp_bluedroid_init();
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed", __func__);
         return;
     }
     ret = esp_bluedroid_enable();
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed", __func__);
         return;
     }
 
@@ -214,14 +214,14 @@ An advertising payload can be up to 31 bytes of data. It is possible that some o
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
 esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
-    ESP_LOGE(GATTS_TABLE_TAG, "event = %x\n",event);
+    ESP_LOGE(GATTS_TABLE_TAG, "event = %x",event);
     switch (event) {
         case ESP_GATTS_REG_EVT:
-            ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
+            ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
             esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-            ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
+            ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
             esp_ble_gap_config_adv_data(&heart_rate_adv_config);
-            ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
+            ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
 …
 ```
 
@@ -232,7 +232,7 @@ Once the advertising data have been set, the ``ESP_GAP_BLE_ADV_DATA_SET_COMPLETE
 ```c
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {   
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
+    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d", event);
     
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
@@ -241,7 +241,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //advertising start complete event to indicate advertising start successfully or failed
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed\n");
+            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed");
         }
         break;
     default:
@@ -300,7 +300,7 @@ If the advertising started successfully, an ``ESP_GAP_BLE_ADV_START_COMPLETE_EVT
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //advertising start complete event to indicate advertising start successfully or failed
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed\n");
+            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed");
         }
         break;
 …
@@ -320,14 +320,14 @@ In addition to the previous parameters, the event also contains the GATT interfa
 ```c
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
-    ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
+    ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d", event, gatts_if);
 
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
         if (param->reg.status == ESP_GATT_OK) {
             heart_rate_profile_tab[HEART_PROFILE_APP_IDX].gatts_if = gatts_if;
         } else {
-            ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d\n",
+            ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d",
                     param->reg.app_id,
                     param->reg.status);
             return;
@@ -453,7 +453,7 @@ This example uses this event to print information and to check that the size of 
 
 ```c
 case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-        ESP_LOGI(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
+        ESP_LOGI(GATTS_TABLE_TAG, "The number handle =%x",param->add_attr_tab.num_handle);
         if (param->add_attr_tab.status != ESP_GATT_OK){
             ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
         }
