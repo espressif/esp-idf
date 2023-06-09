@@ -94,6 +94,8 @@ static intr_handler_t s_alarm_handler = NULL;
 /* Spinlock used to protect access to the hardware registers. */
 portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
 
+/* Alarm values to generate interrupt on match */
+static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
 
 void esp_timer_impl_lock(void)
 {
@@ -145,7 +147,6 @@ int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")
 
 void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
 {
-    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
     timestamp_id[alarm_id] = timestamp;
     timestamp = MIN(timestamp_id[0], timestamp_id[1]);
@@ -173,6 +174,24 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
+static void IRAM_ATTR esp_timer_impl_update_alarm() {
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
+    int this_timestamp = 1;
+    int other_timestamp = 0;
+    if (timestamp_id[0] < timestamp_id[1]) {
+        this_timestamp = 0;
+        other_timestamp = 1;
+    }
+
+    if (timestamp_id[other_timestamp] != UINT64_MAX) {
+        esp_timer_impl_set_alarm_id(UINT64_MAX, this_timestamp);
+    } else {
+        timestamp_id[this_timestamp] = UINT64_MAX;
+    }
+
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+}
+
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
     esp_timer_impl_set_alarm_id(timestamp, 0);
@@ -182,6 +201,9 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
 {
     /* Clear interrupt status */
     REG_WRITE(INT_CLR_REG, TIMG_LACT_INT_CLR);
+
+    esp_timer_impl_update_alarm();
+
     /*  Call the upper layer handler */
     (*s_alarm_handler)(arg);
 }
