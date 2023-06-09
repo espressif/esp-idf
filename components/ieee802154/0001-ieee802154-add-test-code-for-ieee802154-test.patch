@@ -1,0 +1,600 @@
+From 10206409c83397f3a61666dbf84ce7900e8564c6 Mon Sep 17 00:00:00 2001
+From: xiaqilin <xiaqilin@espressif.com>
+Date: Fri, 9 Jun 2023 18:48:43 +0800
+Subject: [PATCH] ieee802154: add test code for ieee802154 test
+
+* The test code only for ieee802154 test and it will be to patch
+---
+ .../ieee802154/driver/esp_ieee802154_ack.c    | 147 +++++++++
+ .../ieee802154/driver/esp_ieee802154_dev.c    | 102 +++++++
+ .../ieee802154/driver/esp_ieee802154_frame.c  | 279 ++++++++++++++++++
+ components/ieee802154/esp_ieee802154.c        |  10 +
+ .../private_include/esp_ieee802154_dev.h      |   3 +
+ 5 files changed, 541 insertions(+)
+
+diff --git a/components/ieee802154/driver/esp_ieee802154_ack.c b/components/ieee802154/driver/esp_ieee802154_ack.c
+index 99bdecff7d..8f633c8e7d 100644
+--- a/components/ieee802154/driver/esp_ieee802154_ack.c
++++ b/components/ieee802154/driver/esp_ieee802154_ack.c
+@@ -162,3 +162,150 @@ bool ieee802154_ack_config_pending_bit(const uint8_t *frame)
+
+     return pending_bit;
+ }
++
++/*
++*******************************
++Add ack_ie_data_table for ieee802154_test
++********************************
++*/
++
++#define CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE 20
++#define CONFIG_IEEE802154_MAX_ACK_IE_SIZE 8
++
++typedef struct {
++    uint8_t short_addr[CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE][IEEE802154_FRAME_SHORT_ADDR_SIZE];
++    uint8_t ext_addr[CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE][IEEE802154_FRAME_EXT_ADDR_SIZE];
++    uint8_t short_ie_data[CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE][CONFIG_IEEE802154_MAX_ACK_IE_SIZE];
++    uint8_t ext_ie_data[CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE][CONFIG_IEEE802154_MAX_ACK_IE_SIZE];
++    uint8_t short_ie_data_len[CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE];
++    uint8_t ext_ie_data_len[CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE];
++    uint32_t short_addr_mask;
++    uint32_t ext_addr_mask;
++} ieee802154_ack_ie_data_table_t;
++
++static ieee802154_pending_table_t ieee802154_pending_table;
++static ieee802154_ack_ie_data_table_t ieee802154_ack_ie_data_table;
++
++#define BIT_SET(mask, pos) ((mask) |= (1UL << (pos)))
++#define BIT_CLR(mask, pos) ((mask) &= ~(1UL << (pos)))
++#define BIT_TST(mask, pos) ((mask) & (1UL << (pos)))
++
++static bool ieee802154_addr_compare(const uint8_t *first, const uint8_t *second, uint8_t addr_size)
++{
++    bool is_same = true;
++
++    for (uint8_t index = 0; index < addr_size; index++) {
++        if (first[index] != second[index]) {
++            is_same = false;
++            break;
++        }
++    }
++    return is_same;
++}
++
++bool IRAM_ATTR ieee802154_addr_in_ack_ie_data_table(const uint8_t *addr, bool is_short, uint8_t *data, uint8_t *data_len)
++{
++    bool ret = false;
++
++    if (is_short) {
++        for (uint8_t index = 0; index < CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE; index++) {
++            if (BIT_TST(ieee802154_ack_ie_data_table.short_addr_mask, index) &&
++                    ieee802154_addr_compare(addr, ieee802154_ack_ie_data_table.short_addr[index], IEEE802154_FRAME_SHORT_ADDR_SIZE)) {
++                ret = true;
++                *data_len = ieee802154_ack_ie_data_table.short_ie_data_len[index];
++                memcpy(data, ieee802154_ack_ie_data_table.short_ie_data, *data_len);
++                break;
++            }
++        }
++    } else {
++        for (uint8_t index = 0; index < CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE; index++) {
++            if (BIT_TST(ieee802154_ack_ie_data_table.ext_addr_mask, index) &&
++                    ieee802154_addr_compare(addr, ieee802154_ack_ie_data_table.ext_addr[index], IEEE802154_FRAME_EXT_ADDR_SIZE)) {
++                ret = true;
++                *data_len = ieee802154_ack_ie_data_table.ext_ie_data_len[index];
++                memcpy(data, ieee802154_ack_ie_data_table.ext_ie_data, *data_len);
++                break;
++            }
++        }
++    }
++    return ret;
++}
++
++esp_err_t ieee802154_clear_ack_ie_data_addr(const uint8_t *addr, const uint8_t *data, bool is_short)
++{
++    esp_err_t ret = ESP_FAIL;
++
++    if (is_short) {
++        for (uint8_t index = 0; index < CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE; index++) {
++            if (BIT_TST(ieee802154_ack_ie_data_table.short_addr_mask, index) &&
++                     ieee802154_addr_compare(addr, ieee802154_ack_ie_data_table.short_addr[index], IEEE802154_FRAME_SHORT_ADDR_SIZE)) {
++                memset(ieee802154_ack_ie_data_table.short_addr[index], 0, IEEE802154_FRAME_SHORT_ADDR_SIZE);
++                memset(ieee802154_ack_ie_data_table.short_ie_data[index], 0, ieee802154_ack_ie_data_table.short_ie_data_len[index]);
++                BIT_CLR(ieee802154_ack_ie_data_table.short_addr_mask, index);
++                ieee802154_ack_ie_data_table.short_ie_data_len[index] = 0;
++                ret = ESP_OK;
++                break;
++            }
++        }
++    } else {
++        for (uint8_t index = 0; index < CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE; index++) {
++            if (BIT_TST(ieee802154_ack_ie_data_table.ext_addr_mask, index) &&
++                    ieee802154_addr_compare(addr, ieee802154_ack_ie_data_table.ext_addr[index], IEEE802154_FRAME_EXT_ADDR_SIZE)) {
++                memset(ieee802154_ack_ie_data_table.ext_addr[index], 0, IEEE802154_FRAME_EXT_ADDR_SIZE);
++                memset(ieee802154_ack_ie_data_table.ext_ie_data[index], 0, ieee802154_ack_ie_data_table.ext_ie_data_len[index]);
++                BIT_CLR(ieee802154_ack_ie_data_table.ext_addr_mask, index);
++                ieee802154_ack_ie_data_table.ext_ie_data_len[index] = 0;
++                ret = ESP_OK;
++                break;
++            }
++        }
++    }
++    return ret;
++}
++
++esp_err_t ieee802154_add_ack_ie_data_addr(const uint8_t *addr, const uint8_t *data, uint8_t data_len, bool is_short)
++{
++    esp_err_t ret = ESP_FAIL;
++
++    if (is_short) {
++        ieee802154_clear_ack_ie_data_addr(addr, data, is_short);
++        for (uint8_t index = 0; index < CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE; index++) {
++            if (!BIT_TST(ieee802154_ack_ie_data_table.short_addr_mask, index)) {
++                memcpy(ieee802154_ack_ie_data_table.short_addr[index], addr, IEEE802154_FRAME_SHORT_ADDR_SIZE);
++                memcpy(ieee802154_ack_ie_data_table.short_ie_data[index], data, data_len);
++                ieee802154_ack_ie_data_table.short_ie_data_len[index] = data_len;
++                BIT_SET(ieee802154_ack_ie_data_table.short_addr_mask, index);
++                ret = ESP_OK;
++                break;
++            }
++        }
++    } else {
++        ieee802154_clear_ack_ie_data_addr(addr, data, is_short);
++        for (uint8_t index = 0; index < CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE; index++) {
++            if (!BIT_TST(ieee802154_ack_ie_data_table.ext_addr_mask, index)) {
++                memcpy(ieee802154_ack_ie_data_table.ext_addr[index], addr, IEEE802154_FRAME_EXT_ADDR_SIZE);
++                memcpy(ieee802154_ack_ie_data_table.ext_ie_data[index], data, data_len);
++                ieee802154_ack_ie_data_table.ext_ie_data_len[index] = data_len;
++                BIT_SET(ieee802154_ack_ie_data_table.ext_addr_mask, index);
++                ret = ESP_OK;
++                break;
++            }
++        }
++    }
++    return ret;
++}
++
++void ieee802154_reset_ack_ie_data_table(bool is_short)
++{
++    if (is_short) {
++        ieee802154_ack_ie_data_table.short_addr_mask = 0;
++        memset(ieee802154_ack_ie_data_table.short_addr, 0, sizeof(ieee802154_ack_ie_data_table.short_addr));
++        memset(ieee802154_ack_ie_data_table.short_ie_data, 0, sizeof(ieee802154_ack_ie_data_table.short_ie_data));
++        memset(ieee802154_ack_ie_data_table.short_ie_data_len, 0, sizeof(ieee802154_ack_ie_data_table.short_ie_data_len));
++    } else {
++        ieee802154_ack_ie_data_table.ext_addr_mask = 0;
++        memset(ieee802154_ack_ie_data_table.ext_addr, 0, sizeof(ieee802154_ack_ie_data_table.ext_addr));
++        memset(ieee802154_ack_ie_data_table.ext_ie_data, 0, sizeof(ieee802154_ack_ie_data_table.ext_ie_data));
++        memset(ieee802154_ack_ie_data_table.ext_ie_data_len, 0, sizeof(ieee802154_ack_ie_data_table.ext_ie_data_len));
++    }
++}
+diff --git a/components/ieee802154/driver/esp_ieee802154_dev.c b/components/ieee802154/driver/esp_ieee802154_dev.c
+index 3076ae674d..b33907b469 100644
+--- a/components/ieee802154/driver/esp_ieee802154_dev.c
++++ b/components/ieee802154/driver/esp_ieee802154_dev.c
+@@ -761,3 +761,105 @@ ieee802154_state_t ieee802154_get_state(void)
+ {
+     return s_ieee802154_state;
+ }
++
++/*
++********************************
++Add API for ieee802154_test
++********************************
++*/
++
++void ieee802154_test_enter_critical(void)
++{
++   ieee802154_enter_critical();
++}
++
++void ieee802154_test_exit_critical(void)
++{
++    ieee802154_exit_critical();
++}
++
++void  ieee802154_set_state(int8_t state)
++{
++    s_ieee802154_state = state;
++}
++
++void ieee802154_stop_current_operation()
++{
++    stop_current_operation();
++}
++
++esp_err_t ieee802154_transmit_test_init(const uint8_t *frame)
++{
++    ieee802154_enter_critical();
++    tx_init(frame);
++    ieee802154_exit_critical();
++
++    return ESP_OK;
++}
++
++void ieee802154_transmit_test_start(bool cca)
++{
++    ieee802154_enter_critical();
++    if (cca) {
++        ieee802154_ll_set_cmd(IEEE802154_CMD_CCA_TX_START);
++        s_ieee802154_state = IEEE802154_STATE_TX_CCA;
++    } else {
++        ieee802154_ll_set_cmd(IEEE802154_CMD_TX_START);
++        s_ieee802154_state = IEEE802154_STATE_TX;
++    }
++    ieee802154_exit_critical();
++}
++
++esp_err_t ieee802154_receive_test_init(void)
++{
++    if (((s_ieee802154_state == IEEE802154_STATE_RX) || (s_ieee802154_state == IEEE802154_STATE_TX_ACK)) && (!ieee802154_pib_is_pending())) {
++        // already in rx state, don't abort current rx operation
++        return ESP_OK;
++    }
++
++    ieee802154_enter_critical();
++
++    rx_init();
++    set_next_rx_buffer();
++
++    ieee802154_exit_critical();
++    return ESP_OK;
++}
++
++void ieee802154_receive_test_start(void)
++{
++    ieee802154_enter_critical();
++
++    ieee802154_ll_set_cmd(IEEE802154_CMD_RX_START);
++    s_ieee802154_state = IEEE802154_STATE_RX;
++
++    ieee802154_exit_critical();
++}
++
++
++esp_err_t ieee802154_test_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
++{
++    tx_init(frame);
++    IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
++    if (cca) {
++        s_ieee802154_state = IEEE802154_STATE_TX_CCA;
++
++    } else {
++
++        if (ieee802154_frame_get_type(frame) == IEEE802154_FRAME_TYPE_ACK && ieee802154_frame_get_version(frame) == IEEE802154_FRAME_VERSION_2) {
++            s_ieee802154_state = IEEE802154_STATE_TX_ENH_ACK;
++        } else {
++            s_ieee802154_state = IEEE802154_STATE_TX;
++        }
++    }
++    return ESP_OK;
++}
++
++esp_err_t ieee802154_test_receive_at(uint32_t time)
++{
++    rx_init();
++    IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX_AT);
++    set_next_rx_buffer();
++    s_ieee802154_state = IEEE802154_STATE_RX;
++    return ESP_OK;
++}
+diff --git a/components/ieee802154/driver/esp_ieee802154_frame.c b/components/ieee802154/driver/esp_ieee802154_frame.c
+index 3935ed642f..b61c0c3fca 100644
+--- a/components/ieee802154/driver/esp_ieee802154_frame.c
++++ b/components/ieee802154/driver/esp_ieee802154_frame.c
+@@ -416,3 +416,282 @@ esp_err_t ieee802154_frame_get_src_panid(const uint8_t *frame, uint8_t *panid)
+     }
+     return ESP_FAIL;
+ }
++
++
++/*
++*******************************
++enhance ack for ieee802154_test
++********************************
++*/
++
++
++#include "esp_ieee802154_ack.h"
++#include "hal/ieee802154_common_ll.h"
++#define CONFIG_IEEE802154_ACK_IE_DATA_TABLE_SIZE 20
++#define CONFIG_IEEE802154_MAX_ACK_IE_SIZE 8
++static uint8_t DRAM_ATTR enh_ack_frame[128];
++
++uint8_t se_security_enc_mic_len;
++
++static uint8_t IRAM_ATTR ieee802154_frame_src_addr(const uint8_t *frame, uint8_t *addr)
++{
++    uint8_t offset = ieee802154_frame_address_offset(frame);
++    uint8_t dst_mode = dst_addr_mode(frame);
++    uint8_t src_mode = src_addr_mode(frame);
++    uint8_t addr_size;
++
++    if (src_mode != IEEE802154_FRAME_SRC_MODE_SHORT && src_mode != IEEE802154_FRAME_SRC_MODE_EXT) {
++        return src_mode;
++    }
++    addr_size = (src_mode == IEEE802154_FRAME_SRC_MODE_SHORT) ? IEEE802154_FRAME_SHORT_ADDR_SIZE : IEEE802154_FRAME_EXT_ADDR_SIZE;
++
++    if (is_dst_panid_present(frame)) {
++        offset += IEEE802154_FRAME_PANID_SIZE;
++    }
++
++    switch (dst_mode) {
++    case IEEE802154_FRAME_DST_MODE_SHORT:
++        offset += IEEE802154_FRAME_SHORT_ADDR_SIZE;
++        break;
++
++    case IEEE802154_FRAME_DST_MODE_EXT:
++        offset += IEEE802154_FRAME_EXT_ADDR_SIZE;
++        break;
++
++    default:
++        break;
++    }
++
++    if (is_src_panid_present(frame)) {
++        offset += IEEE802154_FRAME_PANID_SIZE;
++    }
++
++    memcpy(addr, frame + offset, addr_size);
++
++    return src_mode;
++}
++
++
++static void IRAM_ATTR ieee802154_enh_ack_clear(void)
++{
++    memset(enh_ack_frame, 0, 128);
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_frame_type_set(void)
++{
++    enh_ack_frame[IEEE802154_FRAME_TYPE_OFFSET] |= IEEE802154_FRAME_TYPE_ACK;
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_security_enabled_set(const uint8_t *p_frame)
++{
++    if (p_frame[IEEE802154_FRAME_SECURITY_OFFSET] & IEEE802154_FRAME_SECURITY_BIT) {
++        enh_ack_frame[IEEE802154_FRAME_SECURITY_OFFSET] |= IEEE802154_FRAME_SECURITY_BIT;
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_panid_compression_set(const uint8_t *p_frame)
++{
++    if (p_frame[IEEE802154_FRAME_PANID_COMP_OFFSET] & IEEE802154_FRAME_PANID_COMP_BIT) {
++        enh_ack_frame[IEEE802154_FRAME_PANID_COMP_OFFSET] |= IEEE802154_FRAME_PANID_COMP_BIT;
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_sequence_number_set(const uint8_t *p_frame)
++{
++    if (p_frame[IEEE802154_FRAME_DSN_OFFSET] & IEEE802154_FRAME_DSN_BIT) {
++        enh_ack_frame[IEEE802154_FRAME_DSN_OFFSET] |= IEEE802154_FRAME_DSN_BIT;
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_ie_present_set(bool is_set_ie)
++{
++    if (is_set_ie) {
++        enh_ack_frame[IEEE802154_FRAME_IE_OFFSET] |= IEEE802154_FRAME_IE_BIT;
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_dst_addressing_mode_set(const uint8_t *p_frame, uint8_t p_frame_src_addressing_mode)
++{
++    enh_ack_frame[IEEE802154_FRAME_DST_MODE_OFFSET] |= p_frame_src_addressing_mode >> 4;
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_frame_version_set(void)
++{
++    enh_ack_frame[IEEE802154_FRAME_VERSION_OFFSET] |= IEEE802154_FRAME_VERSION_2;
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_set_sequence_number(const uint8_t *p_frame)
++{
++    if (enh_ack_frame[IEEE802154_FRAME_DSN_OFFSET] & IEEE802154_FRAME_DSN_BIT) {
++        enh_ack_frame[0] = IEEE802154_FRAME_FCF_SIZE;
++    } else {
++        enh_ack_frame[0] = IEEE802154_FRAME_FCF_SIZE + IEEE802154_FRAME_DSN_SIZE;
++        enh_ack_frame[enh_ack_frame[0]] = p_frame[enh_ack_frame[0]];
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_set_dest_panid(const uint8_t *p_frame)
++{
++    uint8_t src_panid[IEEE802154_FRAME_PANID_SIZE];
++    uint8_t dest_panid[IEEE802154_FRAME_PANID_SIZE];
++    uint16_t pib_panid;
++    uint8_t offset = enh_ack_frame[0] + 1;
++
++    if (enh_ack_frame[IEEE802154_FRAME_PANID_COMP_OFFSET] & IEEE802154_FRAME_PANID_COMP_BIT) {
++        return;
++    } else {
++        ieee802154_frame_get_src_panid(p_frame, src_panid);
++        ieee802154_frame_get_dest_panid(p_frame, dest_panid);
++        pib_panid = ieee802154_ll_get_multipan_panid(0);
++
++        if (is_src_panid_present(p_frame)) {
++            memcpy(enh_ack_frame + offset, src_panid, IEEE802154_FRAME_PANID_SIZE);
++            enh_ack_frame[0] += IEEE802154_FRAME_PANID_SIZE;
++        } else if (is_dst_panid_present(p_frame)) {
++            memcpy(enh_ack_frame + offset, dest_panid, IEEE802154_FRAME_PANID_SIZE);
++            enh_ack_frame[0] += IEEE802154_FRAME_PANID_SIZE;
++        } else {
++            memcpy(enh_ack_frame + offset, &pib_panid, IEEE802154_FRAME_PANID_SIZE);
++            enh_ack_frame[0] += IEEE802154_FRAME_PANID_SIZE;
++        }
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_set_dest_addr(const uint8_t *p_frame, const uint8_t *enh_ack_dest_addr)
++{
++    uint8_t offset = enh_ack_frame[0] + 1;
++
++    if ((enh_ack_frame[IEEE802154_FRAME_DST_MODE_OFFSET] & IEEE802154_FRAME_DST_MODE_MASK) == IEEE802154_FRAME_DST_MODE_SHORT) {
++        memcpy(enh_ack_frame + offset, enh_ack_dest_addr, IEEE802154_FRAME_SHORT_ADDR_SIZE);
++        enh_ack_frame[0] += IEEE802154_FRAME_SHORT_ADDR_SIZE;
++    } else if ((enh_ack_frame[IEEE802154_FRAME_DST_MODE_OFFSET] & IEEE802154_FRAME_DST_MODE_MASK) == IEEE802154_FRAME_DST_MODE_EXT) {
++        memcpy(enh_ack_frame + offset, enh_ack_dest_addr, IEEE802154_FRAME_EXT_ADDR_SIZE);
++        enh_ack_frame[0] += IEEE802154_FRAME_EXT_ADDR_SIZE;
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_set_security_field(const uint8_t *p_frame)
++{
++
++    uint8_t offset = 0;
++    uint8_t security_header = 0;
++    uint8_t se_frame_counter_len = 0;
++    uint8_t se_key_id_len = 0;
++
++    if (enh_ack_frame[IEEE802154_FRAME_SECURITY_OFFSET] & IEEE802154_FRAME_SECURITY_BIT) {
++        offset = ieee802154_frame_security_header_offset(p_frame);
++        security_header = p_frame[offset];
++        enh_ack_frame[enh_ack_frame[0] + 1] = security_header;
++        enh_ack_frame[0] += 1;
++        if (security_header & IEEE802154_FRAME_COUNTER_SUPPRESS_BIT) {
++            se_frame_counter_len = 0;
++        } else {
++            se_frame_counter_len = IEEE802154_FRAME_COUNTER_SIZE;
++        }
++        enh_ack_frame[0] += se_frame_counter_len;
++        switch (security_header & IEEE802154_FRAME_KEY_ID_MODE_MASK) {
++        case IEEE802154_FRAME_KEY_ID_MODE_1:
++            se_key_id_len = IEEE802154_FRAME_KEY_ID_MODE_1_SIZE;
++            break;
++
++        case IEEE802154_FRAME_KEY_ID_MODE_2:
++            se_key_id_len = IEEE802154_FRAME_KEY_ID_MODE_2_SIZE;
++            break;
++
++        case IEEE802154_FRAME_KEY_ID_MODE_3:
++            se_key_id_len = IEEE802154_FRAME_KEY_ID_MODE_3_SIZE;
++            break;
++
++        default:
++            se_key_id_len = 0;
++            break;
++        }
++        memcpy(enh_ack_frame + enh_ack_frame[0] + 1, p_frame + offset + 1 + se_frame_counter_len, se_key_id_len);
++        enh_ack_frame[0] += se_key_id_len;
++        switch (security_header & IEEE802154_FRAME_SECURITY_MASK) {
++        case IEEE802154_FRAME_SECURITY_MIC_32:
++        case IEEE802154_FRAME_SECURITY_ENC_MIC_32:
++            se_security_enc_mic_len = IEEE802154_FRAME_SECURITY_MIC_32_SIZE;
++            break;
++
++        case IEEE802154_FRAME_SECURITY_MIC_64:
++        case IEEE802154_FRAME_SECURITY_ENC_MIC_64:
++            se_security_enc_mic_len = IEEE802154_FRAME_SECURITY_MIC_64_SIZE;
++            break;
++
++        case IEEE802154_FRAME_SECURITY_MIC_128:
++        case IEEE802154_FRAME_SECURITY_ENC_MIC_128:
++            se_security_enc_mic_len = IEEE802154_FRAME_SECURITY_MIC_128_SIZE;
++            break;
++
++        default:
++            se_security_enc_mic_len = 0;
++            break;
++        }
++    }
++}
++
++static void IRAM_ATTR ieee802154_enh_ack_set_ie_field(const uint8_t *p_frame, uint8_t *data, uint8_t data_len)
++{
++    if (data == NULL) {
++        return;
++    } else {
++        memcpy(enh_ack_frame + enh_ack_frame[0] + 1, data, data_len);
++        enh_ack_frame[0] += data_len;
++    }
++}
++
++uint8_t IRAM_ATTR *ieee802154_enh_ack_generator_create(const uint8_t *p_frame, uint8_t *offset)
++{
++    uint8_t dst_addr[IEEE802154_FRAME_EXT_ADDR_SIZE] = {0};
++    uint8_t p_frame_src_addressing_mode;
++    uint8_t data[16];
++    uint8_t data_len = 0;
++    bool is_set_ie = false;
++    p_frame_src_addressing_mode = ieee802154_frame_src_addr(p_frame, dst_addr);
++
++    extern bool IRAM_ATTR ieee802154_addr_in_ack_ie_data_table(const uint8_t *addr, bool is_short, uint8_t *data, uint8_t *data_len);
++    is_set_ie = ieee802154_addr_in_ack_ie_data_table(dst_addr, p_frame_src_addressing_mode == IEEE802154_FRAME_SRC_MODE_SHORT, data, &data_len);
++
++    //Clear ack frame buffer
++    ieee802154_enh_ack_clear();
++
++    //Set ack frame control field
++    ieee802154_enh_ack_frame_type_set();
++    ieee802154_enh_ack_frame_version_set();
++
++    ieee802154_enh_ack_sequence_number_set(p_frame);
++    ieee802154_enh_ack_panid_compression_set(p_frame);
++    ieee802154_enh_ack_dst_addressing_mode_set(p_frame, p_frame_src_addressing_mode);
++    ieee802154_enh_ack_security_enabled_set(p_frame);
++    ieee802154_enh_ack_ie_present_set(is_set_ie);
++
++    //Set Sequence
++    ieee802154_enh_ack_set_sequence_number(p_frame);
++
++    //Set dest PANID
++    ieee802154_enh_ack_set_dest_panid(p_frame);
++
++    //Set dest addr
++    ieee802154_enh_ack_set_dest_addr(p_frame, dst_addr);
++
++    // Set auxiliary security field
++    ieee802154_enh_ack_set_security_field(p_frame);
++
++    //Set IE field
++    if (is_set_ie) {
++        ieee802154_enh_ack_set_ie_field(p_frame, data, data_len);
++    }
++
++    *offset = enh_ack_frame[0];
++    enh_ack_frame[0] += se_security_enc_mic_len + IEEE802154_FRAME_FCS_SIZE;
++
++    return enh_ack_frame;
++}
++
++uint8_t ieee802154_frame_get_cmd_id(const uint8_t *frame)
++{
++    uint8_t offset = ieee802154_frame_payload_offset(frame);
++
++    return frame[offset];
++}
+diff --git a/components/ieee802154/esp_ieee802154.c b/components/ieee802154/esp_ieee802154.c
+index 1bcd4a2ebd..0b92146fb0 100644
+--- a/components/ieee802154/esp_ieee802154.c
++++ b/components/ieee802154/esp_ieee802154.c
+@@ -380,3 +380,13 @@ __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame,
+ {
+     return ESP_OK;
+ }
++
++__attribute__((weak)) void esp_ieee802154_timer0_done(void)
++{
++
++}
++
++__attribute__((weak)) void esp_ieee802154_timer1_done(void)
++{
++
++}
+diff --git a/components/ieee802154/private_include/esp_ieee802154_dev.h b/components/ieee802154/private_include/esp_ieee802154_dev.h
+index fbf3d9ca9b..5e01ec505a 100644
+--- a/components/ieee802154/private_include/esp_ieee802154_dev.h
++++ b/components/ieee802154/private_include/esp_ieee802154_dev.h
+@@ -201,6 +201,9 @@ extern void esp_ieee802154_receive_failed(uint16_t error);
+  *
+  */
+ extern void esp_ieee802154_ed_failed(uint16_t error);
++
++extern void esp_ieee802154_timer0_done(void);
++extern void esp_ieee802154_timer1_done(void);
+ #ifdef __cplusplus
+ }
+ #endif
+--
+2.25.1
