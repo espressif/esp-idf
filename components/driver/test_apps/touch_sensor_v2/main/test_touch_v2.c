@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -625,7 +625,7 @@ static esp_err_t test_touch_check_ch_touched_with_proximity(uint32_t test_ch_num
                 continue;
             } else {    // If the interrupt type error, test error.
                 ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
-                continue;;
+                continue;
             }
         } else {
             ESP_LOGI(TAG, "Touch intr exceed time");
@@ -667,7 +667,7 @@ static esp_err_t test_touch_check_ch_released_with_proximity(uint32_t test_ch_nu
                 continue;
             } else {    // If the interrupt type error, test error.
                 ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
-                continue;;
+                continue;
             }
         } else {
             ESP_LOGI(TAG, "Touch intr exceed time");

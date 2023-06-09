@@ -688,7 +688,7 @@ esp_err_t twai_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_ale
     TWAI_ENTER_CRITICAL();
     //Clear any unhandled alerts
     if (current_alerts != NULL) {
-        *current_alerts = p_twai_obj->alerts_triggered;;
+        *current_alerts = p_twai_obj->alerts_triggered;
     }
     p_twai_obj->alerts_triggered = 0;
     p_twai_obj->alerts_enabled = alerts_enabled;         //Update enabled alerts

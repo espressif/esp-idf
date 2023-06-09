@@ -756,7 +756,7 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
 esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
 {
     if (dump_info_string == NULL) {
-        return ESP_ERR_INVALID_ARG;;
+        return ESP_ERR_INVALID_ARG;
     }
 
     *dump_info_string = calloc(1024, 1);

@@ -133,7 +133,6 @@ static esp_err_t rmt_rx_register_to_group(rmt_rx_channel_t *rx_channel, const rm
         if (channel_id < 0) {
             // didn't find a capable channel in the group, don't forget to release the group handle
             rmt_release_group_handle(group);
-            group = NULL;
         } else {
             rx_channel->base.channel_id = channel_id;
             rx_channel->base.channel_mask = channel_mask;

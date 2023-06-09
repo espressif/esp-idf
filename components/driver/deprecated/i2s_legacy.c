@@ -1730,7 +1730,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
 
 esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
 {
-    char *data_ptr;;
+    char *data_ptr;
     char *dest_byte;
     int bytes_can_read;
     *bytes_read = 0;

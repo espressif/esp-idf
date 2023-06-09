@@ -295,6 +295,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
         uint32_t wait_time_ms = 0;
         uint32_t wait_tick = 0;
         uint32_t rtc_clk_freq = rtc_clk_slow_freq_get_hz();
+        assert(rtc_clk_freq != 0);
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
         touch_pad_get_measurement_interval(&sleep_time);
         touch_pad_get_measurement_clock_cycles(&meas_cycle);

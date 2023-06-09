@@ -230,7 +230,7 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal)
     /* Enable Carrier Sense During Transmission */
     emac_ll_carrier_sense_enable(hal->mac_regs, true);
     /* Select speed: port: 10/100 Mbps, here set default 100M, afterwards, will reset by auto-negotiation */
-    emac_ll_set_port_speed(hal->mac_regs, ETH_SPEED_100M);;
+    emac_ll_set_port_speed(hal->mac_regs, ETH_SPEED_100M);
     /* Allow the reception of frames when the TX_EN signal is asserted in Half-Duplex mode */
     emac_ll_recv_own_enable(hal->mac_regs, true);
     /* Disable internal loopback mode */
