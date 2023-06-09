@@ -1,0 +1,127 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_MAX_CPU_FREQ
+        prompt "Maximum CPU frequency"
+        default EXAMPLE_MAX_CPU_FREQ_160
+        depends on PM_ENABLE
+        help
+            Maximum CPU frequency to use for dynamic frequency scaling.
+
+        config EXAMPLE_MAX_CPU_FREQ_80
+            bool "80 MHz"
+        config EXAMPLE_MAX_CPU_FREQ_160
+            bool "160 MHz"
+        config EXAMPLE_MAX_CPU_FREQ_240
+            bool "240 MHz"
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+    endchoice
+
+    config EXAMPLE_MAX_CPU_FREQ_MHZ
+        int
+        default 80 if EXAMPLE_MAX_CPU_FREQ_80
+        default 160 if EXAMPLE_MAX_CPU_FREQ_160
+        default 240 if EXAMPLE_MAX_CPU_FREQ_240
+
+    choice EXAMPLE_MIN_CPU_FREQ
+        prompt "Minimum CPU frequency"
+        default EXAMPLE_MIN_CPU_FREQ_40M
+        depends on PM_ENABLE
+        help
+            Minimum CPU frequency to use for dynamic frequency scaling.
+            Should be set to XTAL frequency or XTAL frequency divided by integer.
+
+        config EXAMPLE_MIN_CPU_FREQ_80M
+            bool "80 MHz"
+            depends on !(IDF_TARGET_ESP32 && EXAMPLE_MAX_CPU_FREQ_240)
+            help
+                ESP32 does not support switching between 240M and 80M.The root cause
+                is that when switching between 240M and 80M, we need to disable
+                BBPLL and then re-enable it with a different frequency.Since the
+                Bluetooth baseband works from PLL frequency, it will temporarily
+                lose its 80 MHz clock, while the BBPLL is disabled.
+        config EXAMPLE_MIN_CPU_FREQ_40M
+            bool "40 MHz (use with 40MHz XTAL)"
+            depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
+        config EXAMPLE_MIN_CPU_FREQ_20M
+            bool "20 MHz (use with 40MHz XTAL)"
+            depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
+        config EXAMPLE_MIN_CPU_FREQ_10M
+            bool "10 MHz (use with 40MHz XTAL)"
+            depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
+    endchoice
+
+    config EXAMPLE_MIN_CPU_FREQ_MHZ
+        int
+        default 80 if EXAMPLE_MIN_CPU_FREQ_80M
+        default 40 if EXAMPLE_MIN_CPU_FREQ_40M
+        default 20 if EXAMPLE_MIN_CPU_FREQ_20M
+        default 10 if EXAMPLE_MIN_CPU_FREQ_10M
+
+    config EXAMPLE_ADVERTISE_INTERVAL
+        int "BLE Advertise interval"
+        range 0 5000
+        default 100
+        help
+            Wake up interval for BLE advertising. Unit: 1 microsecond.
+
+    choice EXAMPLE_USE_IO_TYPE
+        prompt "I/O Capability"
+        default BLE_SM_IO_CAP_NO_IO
+        help
+            I/O capability of device.
+
+        config BLE_SM_IO_CAP_DISP_ONLY
+            bool "DISPLAY ONLY"
+        config BLE_SM_IO_CAP_DISP_YES_NO
+            bool "DISPLAY YESNO"
+        config BLE_SM_IO_CAP_KEYBOARD_ONLY
+            bool "KEYBOARD ONLY"
+        config BLE_SM_IO_CAP_NO_IO
+            bool "Just works"
+        config BLE_SM_IO_CAP_KEYBOARD_DISP
+            bool "Both KEYBOARD & DISPLAY"
+    endchoice
+
+    config EXAMPLE_IO_TYPE
+        int
+        default 0 if BLE_SM_IO_CAP_DISP_ONLY
+        default 1 if BLE_SM_IO_CAP_DISP_YES_NO
+        default 2 if BLE_SM_IO_CAP_KEYBOARD_ONLY
+        default 3 if BLE_SM_IO_CAP_NO_IO
+        default 4 if BLE_SM_IO_CAP_KEYBOARD_DISP
+
+    config EXAMPLE_BONDING
+        bool
+        default n
+        prompt "Use Bonding"
+        help
+            Use this option to enable/disable bonding.
+
+    config EXAMPLE_MITM
+        bool
+        default n
+        prompt "MITM security"
+        help
+            Use this option to enable/disable MITM security.
+
+    config EXAMPLE_USE_SC
+        bool
+        depends on BT_NIMBLE_SM_SC
+        default n
+        prompt "Use Secure Connection feature"
+        help
+            Use this option to enable/disable Security Manager Secure Connection 4.2 feature.
+
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        help
+            This adds Encrypted Read and Write permissions in the custom GATT server.
+
+    config EXAMPLE_RESOLVE_PEER_ADDR
+        bool
+        prompt "Enable resolving peer address"
+        help
+            Use this option to enable resolving peer's address.
+
+endmenu
