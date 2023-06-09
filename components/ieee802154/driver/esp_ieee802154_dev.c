@@ -257,11 +257,17 @@ static void isr_handle_timer0_done(void)
         esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
         next_operation();
     }
+#if CONFIG_IEEE802154_TEST
+    esp_ieee802154_timer0_done();
+#endif
 }
 
 static void isr_handle_timer1_done(void)
 {
     // timer 1 is now unused.
+#if CONFIG_IEEE802154_TEST
+    esp_ieee802154_timer1_done();
+#endif
 }
 
 static IRAM_ATTR void isr_handle_tx_done(void)
@@ -302,12 +308,14 @@ static IRAM_ATTR void isr_handle_rx_done(void)
             s_rx_frame_info[s_rx_index].pending = ieee802154_ack_config_pending_bit(s_rx_frame[s_rx_index]);
             // For 2015 enh-ack, SW should generate an enh-ack then send it manually
             if (esp_ieee802154_enh_ack_generator(s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index], s_enh_ack_frame) == ESP_OK) {
+#if !CONFIG_IEEE802154_TEST
                 // Send the Enh-Ack frame if generator succeeds.
                 ieee802154_ll_set_tx_addr(s_enh_ack_frame);
                 s_tx_frame = s_enh_ack_frame;
                 ieee802154_sec_update();
                 ieee802154_ll_enhack_generate_done_notify();
                 s_ieee802154_state = IEEE802154_STATE_TX_ENH_ACK;
+#endif
             } else {
                 // Stop current process if generator returns errors.
                 ieee802154_ll_set_cmd(IEEE802154_CMD_STOP);
@@ -355,6 +363,10 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
     case IEEE802154_RX_ABORT_BY_UNEXPECTED_ACK:
     case IEEE802154_RX_ABORT_BY_RX_RESTART:
         assert(s_ieee802154_state == IEEE802154_STATE_RX);
+#if CONFIG_IEEE802154_TEST
+        esp_ieee802154_receive_failed(rx_status);
+        next_operation();
+#endif
         break;
     case IEEE802154_RX_ABORT_BY_COEX_BREAK:
         assert(s_ieee802154_state == IEEE802154_STATE_RX);
@@ -369,13 +381,21 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
     case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
         assert(s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
+#if !CONFIG_IEEE802154_TEST
         esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
         next_operation();
+#else
+        esp_ieee802154_receive_failed(rx_status);
+#endif
         break;
     case IEEE802154_RX_ABORT_BY_ENHACK_SECURITY_ERROR:
         assert(s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
+#if !CONFIG_IEEE802154_TEST
         esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
         next_operation();
+#else
+        esp_ieee802154_receive_failed(rx_status);
+#endif
         break;
     default:
         assert(false);
@@ -525,7 +545,9 @@ static void ieee802154_isr(void *arg)
     }
 
     if (events & IEEE802154_EVENT_TIMER0_OVERFLOW) {
+#if !CONFIG_IEEE802154_TEST
         assert(s_ieee802154_state == IEEE802154_STATE_RX_ACK);
+#endif
         isr_handle_timer0_done();
 
         events &= (uint16_t)(~IEEE802154_EVENT_TIMER0_OVERFLOW);
@@ -568,8 +590,9 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_pib_init();
 
     ieee802154_ll_enable_events(IEEE802154_EVENT_MASK);
+#if !CONFIG_IEEE802154_TEST
     ieee802154_ll_disable_events((IEEE802154_EVENT_TIMER0_OVERFLOW) | (IEEE802154_EVENT_TIMER1_OVERFLOW));
-
+#endif
     ieee802154_ll_enable_tx_abort_events(BIT(IEEE802154_TX_ABORT_BY_RX_ACK_TIMEOUT - 1) | BIT(IEEE802154_TX_ABORT_BY_TX_COEX_BREAK - 1) | BIT(IEEE802154_TX_ABORT_BY_TX_SECURITY_ERROR - 1) | BIT(IEEE802154_TX_ABORT_BY_CCA_FAILED - 1) | BIT(IEEE802154_TX_ABORT_BY_CCA_BUSY - 1));
     ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
 
