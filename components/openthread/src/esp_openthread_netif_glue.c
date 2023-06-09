@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue_priv.h"
 #include "esp_openthread_platform.h"
+#include "esp_openthread_state.h"
 #include "esp_openthread_types.h"
 #include "esp_vfs_eventfd.h"
 #include "sdkconfig.h"
@@ -170,30 +171,6 @@ static esp_err_t process_thread_transmit(otInstance *instance)
     return error;
 }
 
-void esp_openthread_netif_glue_state_callback(otChangedFlags changed_flags, void *ctx)
-{
-    otInstance *instance = esp_openthread_get_instance();
-    esp_err_t err = ESP_OK;
-
-    if (s_packet_queue != NULL && (OT_CHANGED_THREAD_NETIF_STATE & changed_flags)) {
-        if (otLinkIsEnabled(instance)) {
-            ESP_LOGI(OT_PLAT_LOG_TAG, "netif up");
-            if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_IF_UP, NULL, 0, 0) != ESP_OK) {
-                ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to post OpenThread if up event");
-            }
-        } else {
-            ESP_LOGI(OT_PLAT_LOG_TAG, "netif down");
-            if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_IF_DOWN, NULL, 0, 0) != ESP_OK) {
-                ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to post OpenThread if down event");
-            }
-        }
-    }
-
-    if (err != ESP_OK) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to configure netif state");
-    }
-}
-
 static esp_err_t openthread_netif_transmit(void *handle, void *buffer, size_t len)
 {
     esp_err_t error = ESP_OK;
@@ -298,9 +275,6 @@ void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *con
     if (instance == NULL || s_packet_queue || s_openthread_netif_glue.event_fd >= 0) {
         return NULL;
     }
-    ESP_RETURN_ON_FALSE(otSetStateChangedCallback(instance, esp_openthread_netif_glue_state_callback, NULL) ==
-                            OT_ERROR_NONE,
-                        NULL, OT_PLAT_LOG_TAG, "Failed to install netif glue state callback");
 
     s_packet_queue = xQueueCreate(config->port_config.netif_queue_size, sizeof(otMessage *));
     if (s_packet_queue == NULL) {

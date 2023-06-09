@@ -14,9 +14,10 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
+#include "driver/uart.h"
 #include "hal/gpio_types.h"
 #include "hal/uart_types.h"
-#include "driver/uart.h"
+#include "openthread/thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,9 @@ extern "C" {
 typedef enum {
     OPENTHREAD_EVENT_START,                     /*!< OpenThread stack start */
     OPENTHREAD_EVENT_STOP,                      /*!< OpenThread stack stop */
+    OPENTHREAD_EVENT_DETACHED,                  /*!< OpenThread detached */
+    OPENTHREAD_EVENT_ATTACHED,                  /*!< OpenThread attached */
+    OPENTHREAD_EVENT_ROLE_CHANGED,              /*!< OpenThread role changed */
     OPENTHREAD_EVENT_IF_UP,                     /*!< OpenThread network interface up */
     OPENTHREAD_EVENT_IF_DOWN,                   /*!< OpenThread network interface down */
     OPENTHREAD_EVENT_GOT_IP6,                   /*!< OpenThread stack added IPv6 address */
@@ -46,6 +50,15 @@ typedef enum {
  *
  */
 ESP_EVENT_DECLARE_BASE(OPENTHREAD_EVENT);
+
+/**
+ * @brief OpenThread role changed event data
+ *
+ */
+typedef struct {
+    otDeviceRole previous_role; /*!< Previous Thread role */
+    otDeviceRole current_role;  /*!< Current Thread role */
+} esp_openthread_role_changed_event_t;
 
 /**
  * This structure represents a context for a select() based mainloop.
