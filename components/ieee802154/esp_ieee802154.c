@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "esp_coex_i154.h"
 #include "hal/ieee802154_ll.h"
+#include "hal/ieee802154_common_ll.h"
 
 esp_err_t esp_ieee802154_enable(void)
 {
@@ -168,13 +169,13 @@ esp_err_t esp_ieee802154_set_multipan_extended_address(esp_ieee802154_multipan_i
 
 uint8_t esp_ieee802154_get_multipan_enable(void)
 {
-    return ieee802154_pib_get_multipan_enable();
+    return ieee802154_ll_get_multipan_enable_mask();
 }
 
 esp_err_t esp_ieee802154_set_multipan_enable(uint8_t mask)
 {
-    assert(mask < ((1 << ESP_IEEE802154_MULTIPAN_MAX) - 1));
-    ieee802154_pib_set_multipan_enable(mask);
+    assert(mask < (1 << ESP_IEEE802154_MULTIPAN_MAX));
+    ieee802154_ll_set_multipan_enable_mask(mask);
     return ESP_OK;
 }
 
