@@ -798,6 +798,7 @@ int wps_finish(void)
             os_memcpy(config->sta.password, sm->key[0], sm->key_len[0]);
             os_memcpy(config->sta.bssid, sm->bssid, ETH_ALEN);
             config->sta.bssid_set = 0;
+            config->sta.sae_pwe_h2e = 0;
             esp_wifi_set_config(WIFI_IF_STA, config);
 
             os_free(config);
