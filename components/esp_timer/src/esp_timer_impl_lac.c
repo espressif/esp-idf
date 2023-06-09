@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,6 +101,8 @@ static intr_handler_t s_alarm_handler = NULL;
 /* Spinlock used to protect access to the hardware registers. */
 portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
 
+/* Alarm values to generate interrupt on match */
+static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
 
 void esp_timer_impl_lock(void)
 {
@@ -152,7 +154,7 @@ int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")
 
 void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
 {
-    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
+    assert(alarm_id < sizeof(timestamp_id) / sizeof(timestamp_id[0]));
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
     timestamp_id[alarm_id] = timestamp;
     timestamp = MIN(timestamp_id[0], timestamp_id[1]);
@@ -185,11 +187,42 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
     esp_timer_impl_set_alarm_id(timestamp, 0);
 }
 
+#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+static void IRAM_ATTR try_to_set_next_alarm(void) {
+    portENTER_CRITICAL_ISR(&s_time_update_lock);
+    unsigned now_alarm_idx;  // ISR is called due to this current alarm
+    unsigned next_alarm_idx; // The following alarm after now_alarm_idx
+    if (timestamp_id[0] < timestamp_id[1]) {
+        now_alarm_idx = 0;
+        next_alarm_idx = 1;
+    } else {
+        now_alarm_idx = 1;
+        next_alarm_idx = 0;
+    }
+
+    if (timestamp_id[next_alarm_idx] != UINT64_MAX) {
+        // The following alarm is valid and can be used.
+        // Remove the current alarm from consideration.
+        esp_timer_impl_set_alarm_id(UINT64_MAX, now_alarm_idx);
+    } else {
+        // There is no the following alarm.
+        // Remove the current alarm from consideration as well.
+        timestamp_id[now_alarm_idx] = UINT64_MAX;
+    }
+    portEXIT_CRITICAL_ISR(&s_time_update_lock);
+}
+#else
+#define try_to_set_next_alarm()
+#endif
+
 static void IRAM_ATTR timer_alarm_isr(void *arg)
 {
 #if ISR_HANDLERS == 1
     /* Clear interrupt status */
     REG_WRITE(INT_CLR_REG, TIMG_LACT_INT_CLR);
+
+    try_to_set_next_alarm();
+
     /* Call the upper layer handler */
     (*s_alarm_handler)(arg);
 #else
@@ -210,6 +243,7 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
                 REG_WRITE(INT_CLR_REG, TIMG_LACT_INT_CLR);
                 portEXIT_CRITICAL_ISR(&s_time_update_lock);
 
+                try_to_set_next_alarm();
                 (*s_alarm_handler)(arg);
 
                 portENTER_CRITICAL_ISR(&s_time_update_lock);
