@@ -41,7 +41,7 @@ The following features are supported:
     - Multiple antennas
     - Channel state information
     - Support TWT
-    - Supoort downlink MU-MIMO
+    - Support downlink MU-MIMO
     - Support OFDMA
     - Support BSS Color
 
