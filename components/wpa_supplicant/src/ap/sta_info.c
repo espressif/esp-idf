@@ -183,15 +183,6 @@ static void ap_sta_delayed_1x_auth_fail_cb(void *eloop_ctx, void *timeout_ctx)
 void ap_sta_delayed_1x_auth_fail_disconnect(struct hostapd_data *hapd,
 					    struct sta_info *sta)
 {
-#ifdef ESP_SUPPLICANT
-	wpa_dbg(hapd->msg_ctx, MSG_DEBUG,
-		"IEEE 802.1X: Scheduled disconnection of " MACSTR
-		" after EAP-Failure", MAC2STR(sta->addr));
-
-	esp_wifi_ap_deauth_internal(sta->addr, WLAN_REASON_IEEE_802_1X_AUTH_FAILED);
-	if (wps_get_status() == WPS_STATUS_PENDING)
-		wps_set_status(WPS_STATUS_DISABLE);
-#else
 	wpa_dbg(hapd->msg_ctx, MSG_DEBUG,
 		"IEEE 802.1X: Force disconnection of " MACSTR
 		" after EAP-Failure in 10 ms", MAC2STR(sta->addr));
@@ -204,7 +195,8 @@ void ap_sta_delayed_1x_auth_fail_disconnect(struct hostapd_data *hapd,
 	eloop_cancel_timeout(ap_sta_delayed_1x_auth_fail_cb, hapd, sta);
 	eloop_register_timeout(0, 10000, ap_sta_delayed_1x_auth_fail_cb,
 			       hapd, sta);
-#endif
+	if (wps_get_status() == WPS_STATUS_PENDING)
+		wps_set_status(WPS_STATUS_SUCCESS);
 }
 
 
