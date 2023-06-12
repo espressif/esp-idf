@@ -661,3 +661,9 @@ config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
     help
         This option is used when data to be sent is more than 512 bytes. For peripheral role,
         BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
+
+config BT_NIMBLE_VS_SUPPORT
+    bool "Enable support for VSC and VSE"
+    help
+        This option is used to enable support for sending Vendor Specific HCI commands and handling
+        Vendor Specific HCI Events.
