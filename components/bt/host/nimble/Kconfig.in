@@ -819,3 +819,9 @@ menu "GAP Service"
             Timeout = Value * 10 ms
 
 endmenu
+
+config BT_NIMBLE_VS_SUPPORT
+    bool "Enable support for VSC and VSE"
+    help
+        This option is used to enable support for sending Vendor Specific HCI commands and handling
+        Vendor Specific HCI Events.
