@@ -203,6 +203,23 @@ Clean the Python Byte Code: ``python-clean``
 
 This command deletes generated python byte code from the ESP-IDF directory. The byte code may cause issues when switching between ESP-IDF and Python versions. It is advised to run this target after switching versions of Python.
 
+Generate a UF2 Binary: ``uf2``
+---------------------------------
+
+.. code-block:: bash
+
+  idf.py uf2
+
+This command generates a UF2 (`USB Flashing Format <https://github.com/microsoft/uf2>`_) binary ``uf2.bin`` in the build directory. This file includes all the necessary binaries (bootloader, app, and partition table) for flashing the target.
+
+This UF2 file can be copied to a USB mass storage device exposed by another ESP running the `ESP USB Bridge <https://github.com/espressif/esp-usb-bridge>`_ project. The bridge MCU will use it to flash the target MCU. This is as simple as copying (or "drag-and-dropping") the file to the exposed disk accessed by a file explorer in your machine.
+
+To generate a UF2 binary for the application only (not including the bootloader and partition table), use the ``uf2-app`` command.
+
+.. code-block:: bash
+
+  idf.py uf2-app
+
 Global Options
 ==============
 
