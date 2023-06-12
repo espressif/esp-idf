@@ -9,4 +9,5 @@ if(CONFIG_RMT_ISR_IRAM_SAFE)
 endif()
 
 idf_component_register(SRCS "${srcs}"
+                       PRIV_REQUIRES unity driver esp_timer
                        WHOLE_ARCHIVE)
