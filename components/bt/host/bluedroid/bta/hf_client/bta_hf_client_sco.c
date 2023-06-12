@@ -47,7 +47,8 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         .tx_bw = BTM_64KBITS_RATE,
         .max_latency = 10,
         .voice_contfmt = BTM_VOICE_SETTING_CVSD,
-        .packet_types = (BTM_SCO_LINK_ONLY_MASK          |
+        .packet_types = (BTM_SCO_PKT_TYPES_MASK_HV1 |
+        BTM_SCO_PKT_TYPES_MASK_HV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
@@ -60,9 +61,9 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         .tx_bw = BTM_64KBITS_RATE,
         .max_latency = 10,
         .voice_contfmt = BTM_VOICE_SETTING_CVSD,
-        /* Allow controller to use all types available except 5-slot EDR */
-        .packet_types = (BTM_SCO_LINK_ALL_PKT_MASK |
-        BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+        /* Packet Types : 2-EV3 */
+        .packet_types = (BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+        BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
         .retrans_effort = BTM_ESCO_RETRANS_POWER,
     },
@@ -72,10 +73,9 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         .tx_bw = BTM_64KBITS_RATE,
         .max_latency = 13,
         .voice_contfmt = BTM_VOICE_SETTING_TRANS,
-        /* Packet Types : EV3 + 2-EV3               */
-        .packet_types = (BTM_SCO_PKT_TYPES_MASK_EV3  |
+        /* Packet Types : 2-EV3 */
+        .packet_types = (BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
-        BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
         .retrans_effort = BTM_ESCO_RETRANS_QUALITY,
     },
@@ -86,9 +86,9 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         .tx_bw = BTM_64KBITS_RATE,
         .max_latency = 12,
         .voice_contfmt = BTM_VOICE_SETTING_CVSD,
-        /* Allow controller to use all types available except 5-slot EDR */
-        .packet_types = (BTM_SCO_LINK_ALL_PKT_MASK |
-        BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+        /* Packet Types : 2-EV3 */
+        .packet_types = (BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+        BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
         .retrans_effort = BTM_ESCO_RETRANS_QUALITY,
     }
