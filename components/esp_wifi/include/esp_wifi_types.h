@@ -165,6 +165,7 @@ typedef struct {
     bool show_hidden;            /**< enable to scan AP whose SSID is hidden */
     wifi_scan_type_t scan_type;  /**< scan type, active or passive */
     wifi_scan_time_t scan_time;  /**< scan time per channel */
+    uint8_t home_chan_dwell_time;/**< time spent at home channel between scanning consecutive channels.*/
 } wifi_scan_config_t;
 
 typedef enum {
