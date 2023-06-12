@@ -11,4 +11,5 @@ set(src_test "test_heap_main.c"
 
 idf_component_register(SRCS ${src_test}
                        INCLUDE_DIRS "."
+                       REQUIRES unity esp_psram spi_flash
                        WHOLE_ARCHIVE)
