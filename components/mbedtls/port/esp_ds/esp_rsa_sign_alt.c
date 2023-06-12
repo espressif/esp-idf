@@ -104,8 +104,10 @@ esp_err_t esp_ds_init_data_ctx(esp_ds_data_ctx_t *ds_data)
 
 void esp_ds_release_ds_lock(void)
 {
-    /* Give back the semaphore (DS lock) */
-    xSemaphoreGive(s_ds_lock);
+    if (xSemaphoreGetMutexHolder(s_ds_lock) == xTaskGetCurrentTaskHandle()) {
+        /* Give back the semaphore (DS lock) */
+        xSemaphoreGive(s_ds_lock);
+    }
 }
 
 size_t esp_ds_get_keylen(void *ctx)
