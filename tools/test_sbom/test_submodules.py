@@ -67,3 +67,7 @@ def test_sha() -> None:
                f'information if necessary. It is important to keep this information '
                f'up-to-date for SBOM generation.')
         assert submodule['hash'] == sbom_hash, msg
+
+
+if __name__ == '__main__':
+    test_sha()
