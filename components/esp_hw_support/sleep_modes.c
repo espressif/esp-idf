@@ -1610,6 +1610,21 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     return ESP_OK;
 }
 
+/**
+ * The modules in the CPU and modem power domains still depend on the top power domain.
+ * To be safe, the CPU and Modem power domains must also be powered off and saved when
+ * the TOP is powered off.
+ */
+#if SOC_PM_SUPPORT_TOP_PD
+static inline bool top_domain_pd_allowed(void) {
+    return (cpu_domain_pd_allowed() && \
+            clock_domain_pd_allowed() && \
+            peripheral_domain_pd_allowed() && \
+            modem_domain_pd_allowed() && \
+            s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON);
+}
+#endif
+
 static uint32_t get_power_down_flags(void)
 {
     // Where needed, convert AUTO options to ON. Later interpret AUTO as OFF.
@@ -1671,11 +1686,6 @@ static uint32_t get_power_down_flags(void)
     }
 #endif // SOC_PM_SUPPORT_RTC_PERIPH_PD
 
-#if SOC_PM_SUPPORT_CPU_PD
-    if (!cpu_domain_pd_allowed()) {
-        s_config.domain[ESP_PD_DOMAIN_CPU].pd_option = ESP_PD_OPTION_ON;
-    }
-#endif
     /**
      * VDD_SDIO power domain shall be kept on during the light sleep
      * when CONFIG_ESP_SLEEP_POWER_DOWN_FLASH is not set and off when it is set.
@@ -1692,23 +1702,7 @@ static uint32_t get_power_down_flags(void)
 #endif
     }
 #endif
-#if SOC_PM_SUPPORT_MODEM_PD
-    if (!modem_domain_pd_allowed()) {
-        s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option = ESP_PD_OPTION_ON;
-    }
-#endif
 
-/**
- * The modules in the CPU and modem power domains still depend on the top power domain.
- * To be safe, the CPU and Modem power domains must also be powered off and saved when
- * the TOP is powered off.
- */
-#if SOC_PM_SUPPORT_TOP_PD
-    if (!cpu_domain_pd_allowed() || !clock_domain_pd_allowed() ||
-        !peripheral_domain_pd_allowed() || !modem_domain_pd_allowed()) {
-        s_config.domain[ESP_PD_DOMAIN_TOP].pd_option = ESP_PD_OPTION_ON;
-    }
-#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option = ESP_PD_OPTION_OFF;
@@ -1745,7 +1739,7 @@ static uint32_t get_power_down_flags(void)
 #endif
 
 #if SOC_PM_SUPPORT_CPU_PD
-    if (s_config.domain[ESP_PD_DOMAIN_CPU].pd_option != ESP_PD_OPTION_ON) {
+    if ((s_config.domain[ESP_PD_DOMAIN_CPU].pd_option != ESP_PD_OPTION_ON) && cpu_domain_pd_allowed()) {
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
 #endif
@@ -1768,13 +1762,13 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_XTAL;
     }
 #if SOC_PM_SUPPORT_TOP_PD
-    if (s_config.domain[ESP_PD_DOMAIN_TOP].pd_option != ESP_PD_OPTION_ON) {
+    if ((s_config.domain[ESP_PD_DOMAIN_TOP].pd_option != ESP_PD_OPTION_ON) && top_domain_pd_allowed()) {
         pd_flags |= PMU_SLEEP_PD_TOP;
     }
 #endif
 
 #if SOC_PM_SUPPORT_MODEM_PD
-    if (s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) {
+    if ((s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) && modem_domain_pd_allowed()) {
         pd_flags |= RTC_SLEEP_PD_MODEM;
     }
 #endif
