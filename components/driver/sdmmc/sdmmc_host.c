@@ -29,10 +29,10 @@
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
 
-static void sdmmc_isr(void* arg);
+static void sdmmc_isr(void *arg);
 static void sdmmc_host_dma_init(void);
 
-static const char* TAG = "sdmmc_periph";
+static const char *TAG = "sdmmc_periph";
 static intr_handle_t s_intr_handle;
 static QueueHandle_t s_event_queue;
 static SemaphoreHandle_t s_io_intr_event;
@@ -56,7 +56,7 @@ static size_t s_slot_width[2] = {1, 1};
  * (for GPIO matrix).
  */
 #ifdef SOC_SDMMC_USE_GPIO_MATRIX
-static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char* name);
+static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char *name);
 #define configure_pin(name, slot, mode) \
     configure_pin_gpio_matrix(s_sdmmc_slot_gpio_num[slot].name, sdmmc_slot_gpio_sig[slot].name, mode, #name)
 static sdmmc_slot_io_info_t s_sdmmc_slot_gpio_num[SOC_SDMMC_NUM_SLOTS];
@@ -197,7 +197,7 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
         .wait_complete = 1
     };
     bool repeat = true;
-    while(repeat) {
+    while (repeat) {
 
         ESP_RETURN_ON_ERROR(sdmmc_host_start_command(slot, cmd_val, 0), TAG, "sdmmc_host_start_command returned 0x%x", err_rc_);
 
@@ -339,7 +339,7 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz)
+esp_err_t sdmmc_host_get_real_freq(int slot, int *real_freq_khz)
 {
     if (real_freq_khz == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -366,7 +366,8 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     ESP_RETURN_ON_FALSE(delay_phase < SOC_SDMMC_DELAY_PHASE_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid delay phase");
 
     uint32_t clk_src_freq_hz = 0;
-    esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz),
+                        TAG, "get source clock frequency failed");
 
     //Now we're in high speed. Note ESP SDMMC Host HW only supports integer divider.
     int delay_phase_num = 0;
@@ -397,7 +398,8 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
+esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
+{
     if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -526,7 +528,7 @@ static void configure_pin_iomux(uint8_t gpio_num)
 
 #elif SOC_SDMMC_USE_GPIO_MATRIX
 
-static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char* name)
+static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char *name)
 {
     assert (gpio_num != (uint8_t) GPIO_NUM_NC);
     ESP_LOGD(TAG, "using GPIO%d as %s pin", gpio_num, name);
@@ -543,7 +545,7 @@ static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig,
 
 #endif // SOC_SDMMC_USE_{IOMUX,GPIO_MATRIX}
 
-esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
+esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 {
     if (!s_intr_handle) {
         return ESP_ERR_INVALID_STATE;
@@ -559,12 +561,11 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     uint8_t slot_width = slot_config->width;
 
     // Configure pins
-    const sdmmc_slot_info_t* slot_info = &sdmmc_slot_info[slot];
+    const sdmmc_slot_info_t *slot_info = &sdmmc_slot_info[slot];
 
     if (slot_width == SDMMC_SLOT_WIDTH_DEFAULT) {
         slot_width = slot_info->width;
-    }
-    else if (slot_width > slot_info->width) {
+    } else if (slot_width > slot_info->width) {
         return ESP_ERR_INVALID_ARG;
     }
     s_slot_width[slot] = slot_width;
@@ -683,7 +684,7 @@ esp_err_t sdmmc_host_deinit(void)
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t* out_event)
+esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t *out_event)
 {
     if (!out_event) {
         return ESP_ERR_INVALID_ARG;
@@ -778,7 +779,6 @@ static void sdmmc_host_dma_init(void)
     SDMMC.idinten.ti = 1;
 }
 
-
 void sdmmc_host_dma_stop(void)
 {
     SDMMC.ctrl.use_internal_dma = 0;
@@ -787,7 +787,7 @@ void sdmmc_host_dma_stop(void)
     SDMMC.bmod.enable = 0;
 }
 
-void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_size)
+void sdmmc_host_dma_prepare(sdmmc_desc_t *desc, size_t block_size, size_t data_size)
 {
     // Set size of data and DMA descriptor pointer
     SDMMC.bytcnt = data_size;
@@ -862,7 +862,8 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
  * may be dropped. We ignore this problem for now, since the there are no other
  * interesting events which can get lost due to this.
  */
-static void sdmmc_isr(void* arg) {
+static void sdmmc_isr(void *arg)
+{
     QueueHandle_t queue = (QueueHandle_t) arg;
     sdmmc_event_t event;
     int higher_priority_task_awoken = pdFALSE;

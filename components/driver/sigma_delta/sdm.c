@@ -156,7 +156,6 @@ static esp_err_t sdm_register_to_group(sdm_channel_t *chan)
         portEXIT_CRITICAL(&group->spinlock);
         if (chan_id < 0) {
             sdm_release_group_handle(group);
-            group = NULL;
         } else {
             chan->group = group;
             chan->chan_id = chan_id;

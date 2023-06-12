@@ -92,7 +92,6 @@ static esp_err_t parlio_tx_register_to_group(parlio_tx_unit_t *unit)
         if (unit_id < 0) {
             // didn't find a free unit slot in the group
             parlio_release_group_handle(group);
-            group = NULL;
         } else {
             unit->unit_id = unit_id;
             unit->group = group;
@@ -477,6 +476,8 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
     if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
         // check if we need to start one transaction
         if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
+            // sanity check
+            assert(t);
             atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_RUN);
             parlio_tx_do_transaction(tx_unit, t);
         } else {
@@ -611,6 +612,8 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
         expected_fsm = PARLIO_TX_FSM_ENABLE;
         if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
             if (xQueueReceiveFromISR(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &trans_desc, &high_task_woken) == pdTRUE) {
+                // sanity check
+                assert(trans_desc);
                 atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_RUN);
                 parlio_tx_do_transaction(tx_unit, trans_desc);
                 if (high_task_woken == pdTRUE) {
