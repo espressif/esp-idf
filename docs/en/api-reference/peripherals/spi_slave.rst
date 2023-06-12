@@ -3,21 +3,9 @@ SPI Slave Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
-SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals while they function as slaves.
+SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s General Purpose SPI (GP-SPI) peripheral(s) when it functions as a slave.
 
-
-Overview of {IDF_TARGET_NAME}'s SPI peripherals
------------------------------------------------
-
-{IDF_TARGET_MAX_SLAVE_PERIPH_NUM:default="2", esp32c3="1", esp32c2="1", esp32c6="1", esp32h2="1"}
-
-On {IDF_TARGET_NAME}, {IDF_TARGET_MAX_SLAVE_PERIPH_NUM} SPI controllers are available for general purpose usage. A certain SPI controller has an independent signal bus with the same name.
-
-.. only:: esp32
-
-    .. note::
-
-        On ESP32, HSPI refers to SPI2, VSPI refers to SPI3.
+For more hardware information about the GP-SPI peripheral(s), see *{IDF_TARGET_NAME} Technical Reference Manual* > *SPI Controller* [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
 
 Terminology
 -----------

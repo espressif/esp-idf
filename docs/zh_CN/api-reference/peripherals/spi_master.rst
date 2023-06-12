@@ -2,38 +2,15 @@ SPI 主机驱动程序
 ===================
 :link_to_translation:`en:[English]`
 
-SPI 主机驱动程序是用于控制 {IDF_TARGET_NAME} 的 SPI 外设作为 SPI 主机的软件程序。
-
-
-{IDF_TARGET_NAME}  的 SPI 外设概述
--------------------------------------------
-
-{IDF_TARGET_SPI2_CS_NUM:default="6", esp32="3"}
-{IDF_TARGET_SPI3_CS_NUM:default="3"}
-
-{IDF_TARGET_NAME} 集成了 {IDF_TARGET_SOC_SPI_PERIPH_NUM} 个 SPI 外设。
-
-- SPI0 与 SPI1 用于内部访问 {IDF_TARGET_NAME} 所连接的 flash。两个控制器共享同一 SPI 总线信号，并由仲裁器裁定控制器访问权。
-
-  .. only:: esp32
-
-      在 SPI1 总线上使用 SPI 主机驱动程序存在诸多限制，请参阅 :ref:`spi_master_on_spi1_bus`。
-
-  .. only:: not esp32
-
-      当前，SPI 主机驱动程序不支持 SPI1 总线。
+SPI 主机驱动程序是用于控制 {IDF_TARGET_NAME} 的通用 SPI (GP-SPI) 外设作为 SPI 主机的软件程序。
 
 .. only:: esp32
 
-    - SPI2 和 SPI3 为通用 SPI 控制器，也被称作 HSPI 和 VSPI，使用权对用户开放。SPI2 和 SPI3 具有独立的总线信号，各自的信号线名称相同。每条总线具有三条 CS 线，可驱动多达相同数量的 SPI 从机设备。
+    .. note::
+    
+        SPI1 不属于 GP-SPI。SPI 主机驱动程序也支持 SPI1。但在 SPI1 总线上使用 SPI 主机驱动程序存在诸多限制，请参阅 :ref:`spi_master_on_spi1_bus`。
 
-.. only:: esp32s2 or esp32s3
-
-    - SPI2 和 SPI3 为通用 SPI 控制器，使用权对用户开放。SPI2 和 SPI3 具有独立的信号总线，名称分别相同。SPI2 具有 {IDF_TARGET_SPI2_CS_NUM} 条 CS 线，SPI3 具有 {IDF_TARGET_SPI3_CS_NUM} 条 CS 线。每条 CS 线可用于驱动一个 SPI 从机设备。
-
-.. only:: esp32c3 or esp32c2 or esp32c6 or esp32h2
-
-    - SPI2 为通用 SPI 控制器，具有独立的信号总线且名称相同。SPI2 具有 {IDF_TARGET_SPI2_CS_NUM} 条 CS 线，可驱动多达 {IDF_TARGET_SPI2_CS_NUM} 个 SPI 从机设备.
+有关 GP-SPI 硬件相关信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *SPI 控制器* [`PDF <{IDF_TARGET_TRM_CN_URL}#spi>`__]。
 
 术语
 --------
