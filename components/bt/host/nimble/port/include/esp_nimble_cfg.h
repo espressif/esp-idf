@@ -1404,4 +1404,11 @@
 #endif
 #endif
 
+#ifndef MYNEWT_VAL_BLE_HCI_VS
+#define MYNEWT_VAL_BLE_HCI_VS    CONFIG_BT_NIMBLE_VS_SUPPORT
+#define MYNEWT_VAL_BLE_HCI_VS_OCF_OFFSET (0)
+#else
+#define MYNEWT_VAL_BLE_HCI_VS    (0)
+#endif
+
 #endif

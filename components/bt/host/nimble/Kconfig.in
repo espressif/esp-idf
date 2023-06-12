@@ -517,4 +517,10 @@ config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
     bool "Enable BLE high duty advertising interval feature"
     depends on BT_NIMBLE_ENABLED
     help
-        This enable BLE high duty advertising interval feature
+        This enables BLE high duty advertising interval feature
+
+config BT_NIMBLE_VS_SUPPORT
+    bool "Enable support for VSC and VSE"
+    help
+        This option is used to enable support for sending Vendor Specific HCI commands and handling
+        Vendor Specific HCI Events.
