@@ -15,10 +15,7 @@ list(APPEND EXTRA_COMPONENT_DIRS
      "$ENV{IDF_PATH}/tools/unit-test-app/components")   # For test_utils component
 
 #"Trim" the build. Include the minimal set of components, main, and anything it depends on.
-# Note: This is commented out for now due to pthread depending on vPortCleanUpTCB provided by "test_freertos_hooks.c".
-# pthread is no used in FreeRTOS unit tests, but is pulled in by esp_system due to another dependency.
-# Todo: Resolve this by either moving the "test_freertos_hooks.c" out, or solving the component dependencies.
-#set(COMPONENTS main)
+set(COMPONENTS main esp_psram ${test_types})
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(freertos_test)
