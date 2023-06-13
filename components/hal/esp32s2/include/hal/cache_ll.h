@@ -22,6 +22,29 @@ extern "C" {
 #define CACHE_LL_DEFAULT_IBUS_MASK    CACHE_BUS_IBUS0
 #define CACHE_LL_DEFAULT_DBUS_MASK    CACHE_BUS_IBUS2
 
+/**
+ * @brief Get the status of cache if it is enabled or not
+ *
+ * @param   cache_id    cache ID (when l1 cache is per core)
+ * @param   type        see `cache_type_t`
+ * @return  enabled or not
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_l1_is_cache_enabled(uint32_t cache_id, cache_type_t type)
+{
+    HAL_ASSERT(cache_id == 0);
+
+    bool enabled;
+    if (type == CACHE_TYPE_INSTRUCTION) {
+        enabled = REG_GET_BIT(EXTMEM_PRO_ICACHE_CTRL_REG, EXTMEM_PRO_ICACHE_ENABLE);
+    } else if (type == CACHE_TYPE_DATA) {
+        enabled = REG_GET_BIT(EXTMEM_PRO_DCACHE_CTRL_REG, EXTMEM_PRO_DCACHE_ENABLE);
+    } else {
+        enabled = REG_GET_BIT(EXTMEM_PRO_ICACHE_CTRL_REG, EXTMEM_PRO_ICACHE_ENABLE);
+        enabled = enabled && REG_GET_BIT(EXTMEM_PRO_DCACHE_CTRL_REG, EXTMEM_PRO_DCACHE_ENABLE);
+    }
+    return enabled;
+}
 
 /**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range

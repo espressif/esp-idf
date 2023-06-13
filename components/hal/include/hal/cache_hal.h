@@ -1,12 +1,13 @@
 
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
 #include "hal/cache_types.h"
 
 #ifdef __cplusplus
@@ -38,6 +39,35 @@ void cache_hal_disable(cache_type_t type);
  * @param type  see `cache_type_t`
  */
 void cache_hal_enable(cache_type_t type);
+
+/**
+ * @brief Suspend cache
+ *
+ * Suspend the ICache or DCache or both，suspends the CPU access to cache for a while, without invalidation.
+ *
+ * @param type  see `cache_type_t`
+ *
+ * @return  Current status of corresponding Cache(s)
+ */
+void cache_hal_suspend(cache_type_t type);
+
+/**
+ * @brief Resume cache
+ *
+ * Resume the ICache or DCache or both.
+ *
+ * @param type  see `cache_type_t`
+ */
+void cache_hal_resume(cache_type_t type);
+
+/**
+ * @brief Check if corresponding cache is enabled or not
+ *
+ * @param type  see `cache_type_t`
+ *
+ * @return true: enabled; false: disabled
+ */
+bool cache_hal_is_cache_enabled(cache_type_t type);
 
 /**
  * @brief Invalidate cache supported addr

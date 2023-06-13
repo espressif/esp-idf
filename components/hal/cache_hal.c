@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,10 @@
 typedef struct {
     uint32_t data_autoload_flag;
     uint32_t inst_autoload_flag;
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    // There's no register indicating if cache is enabled on these chips, use sw flag to save this state.
+    volatile bool cache_enabled;
+#endif
 } cache_hal_context_t;
 
 static cache_hal_context_t ctx;
@@ -66,6 +70,10 @@ void cache_hal_init(void)
     cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_DBUS_MASK);
     cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_IBUS_MASK);
 #endif
+
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    ctx.cache_enabled = 1;
+#endif
 }
 
 void cache_hal_disable(cache_type_t type)
@@ -82,6 +90,10 @@ void cache_hal_disable(cache_type_t type)
         Cache_Disable_DCache();
     }
 #endif
+
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    ctx.cache_enabled = 0;
+#endif
 }
 
 void cache_hal_enable(cache_type_t type)
@@ -97,6 +109,59 @@ void cache_hal_enable(cache_type_t type)
         Cache_Enable_ICache(ctx.inst_autoload_flag);
         Cache_Enable_DCache(ctx.data_autoload_flag);
     }
+#endif
+
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    ctx.cache_enabled = 1;
+#endif
+}
+
+void cache_hal_suspend(cache_type_t type)
+{
+#if SOC_SHARED_IDCACHE_SUPPORTED
+    Cache_Suspend_ICache();
+#else
+    if (type == CACHE_TYPE_DATA) {
+        Cache_Suspend_DCache();
+    } else if (type == CACHE_TYPE_INSTRUCTION) {
+        Cache_Suspend_ICache();
+    } else {
+        Cache_Suspend_ICache();
+        Cache_Suspend_DCache();
+    }
+#endif
+
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    ctx.cache_enabled = 0;
+#endif
+}
+
+void cache_hal_resume(cache_type_t type)
+{
+#if SOC_SHARED_IDCACHE_SUPPORTED
+    Cache_Resume_ICache(ctx.inst_autoload_flag);
+#else
+    if (type == CACHE_TYPE_DATA) {
+        Cache_Resume_DCache(ctx.data_autoload_flag);
+    } else if (type == CACHE_TYPE_INSTRUCTION) {
+        Cache_Resume_ICache(ctx.inst_autoload_flag);
+    } else {
+        Cache_Resume_ICache(ctx.inst_autoload_flag);
+        Cache_Resume_DCache(ctx.data_autoload_flag);
+    }
+#endif
+
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    ctx.cache_enabled = 1;
+#endif
+}
+
+bool cache_hal_is_cache_enabled(cache_type_t type)
+{
+#if CACHE_LL_ENABLE_DISABLE_STATE_SW
+    return ctx.cache_enabled;
+#else
+    return cache_ll_l1_is_cache_enabled(0, type);
 #endif
 }
 
