@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __REGDMA_LINK_H__
-#define __REGDMA_LINK_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
@@ -13,6 +13,10 @@
 
 #if SOC_PAU_SUPPORTED
 #include "esp_regdma.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define FILL_PLINK_HEAD(_pl, _len, _mode, _branch, _sr, _sb, _eof) { \
     _pl->head.length = _len;     \
@@ -194,6 +198,8 @@ static inline void regdma_link_update_stats(regdma_link_stats_t *stats, int entr
     stats->ref |= BIT(entry);
 }
 
-#endif // SOC_PAU_SUPPORTED
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* __REGDMA_LINK_H__ */
+#endif // SOC_PAU_SUPPORTED
