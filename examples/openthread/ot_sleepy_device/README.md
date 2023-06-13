@@ -16,7 +16,7 @@ The example demonstrates the Thread Sleepy End Device (SED), the device will ent
 ## Configure the Openthread Dataset
 
 * Run [ot_cli](../ot_cli/) on another ESP32-C6 device to create openthread dataset configuration and start an openthread network as the leader.  
-* Configure the Openthread dataset (`CONFIG_OPENTHREAD_NETWORK_DATASET`) in [ot_power_save](../ot_power_save/main/esp_ot_power_save_config.h), ensuring that the device's dataset matches the dataset of the leader.  
+* Configure the Openthread dataset using `idf.py menuconfig` in `Component config ---> Openthread ---> Thread Operation Dataset`, ensuring that the openthread sleepy device's dataset matches the dataset of the leader.  
 
 ## Erase the ot_storage
 

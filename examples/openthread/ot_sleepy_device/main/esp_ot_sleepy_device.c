@@ -39,46 +39,9 @@
 
 #define TAG "ot_esp_power_save"
 
-static int hex_digit_to_int(char hex)
-{
-    if ('A' <= hex && hex <= 'F') {
-        return 10 + hex - 'A';
-    }
-    if ('a' <= hex && hex <= 'f') {
-        return 10 + hex - 'a';
-    }
-    if ('0' <= hex && hex <= '9') {
-        return hex - '0';
-    }
-    return -1;
-}
-
-static size_t hex_string_to_binary(const char *hex_string, uint8_t *buf)
-{
-    int num_char = strlen(hex_string);
-
-    if (num_char % 2 == true) {
-        return 0;
-    }
-
-    for (size_t i = 0; i < num_char; i += 2) {
-        int digit0 = hex_digit_to_int(hex_string[i]);
-        int digit1 = hex_digit_to_int(hex_string[i + 1]);
-
-        if (digit0 < 0 || digit1 < 0) {
-            return 0;
-        }
-        buf[i / 2] = (digit0 << 4) + digit1;
-    }
-
-    return num_char/2;
-}
-
 static void create_config_network(otInstance *instance)
 {
     otLinkModeConfig linkMode;
-    uint16_t dataset_str_len = strlen(CONFIG_OPENTHREAD_NETWORK_DATASET);
-    otOperationalDatasetTlvs datasetTlvs;
     memset(&linkMode, 0, sizeof(otLinkModeConfig));
 
     linkMode.mRxOnWhenIdle = false;
@@ -94,33 +57,7 @@ static void create_config_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to set OpenThread linkmode.");
         abort();
     }
-
-    if (dataset_str_len > (OT_OPERATIONAL_DATASET_MAX_LENGTH * 2)) {
-        ESP_LOGE(TAG, "dataset length error.");
-        abort();
-    }
-
-    datasetTlvs.mLength = hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_DATASET, datasetTlvs.mTlvs);
-
-    if (!datasetTlvs.mLength) {
-        ESP_LOGE(TAG, "Failed convert configured dataset");
-        abort();
-    }
-
-    if (otDatasetSetActiveTlvs(instance, &datasetTlvs) != OT_ERROR_NONE) {
-        ESP_LOGE(TAG, "Failed to set OpenThread otDatasetSetActiveTlvs.");
-        abort();
-    }
-
-    if(otIp6SetEnabled(instance, true) != OT_ERROR_NONE) {
-        ESP_LOGE(TAG, "Failed to enable OpenThread IP6 link");
-        abort();
-    }
-
-    if(otThreadSetEnabled(instance, true) != OT_ERROR_NONE) {
-        ESP_LOGE(TAG, "Failed to enable OpenThread");
-        abort();
-    }
+    ESP_ERROR_CHECK(esp_openthread_auto_start(NULL));
 }
 
 static esp_netif_t *init_openthread_netif(const esp_openthread_platform_config_t *config)
