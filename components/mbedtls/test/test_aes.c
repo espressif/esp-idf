@@ -16,6 +16,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_memory_utils.h"
+#include "soc/lldesc.h"
 
 
 static const uint8_t key_256[] = {
@@ -74,6 +75,55 @@ TEST_CASE("mbedtls CBC AES-256 test", "[aes]")
         0x9b, 0xb2, 0xc0, 0xc4, 0x63, 0x63, 0xd9, 0x25,
         0x51, 0xdc, 0xc2, 0x71, 0x96, 0xb3, 0xe5, 0xcd,
         0xbd, 0x0e, 0xf2, 0xef, 0xa9, 0xab, 0xab, 0x2d,
+    };
+
+    memcpy(nonce, iv, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    // Encrypt
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+
+    // Decrypt
+    memcpy(nonce, iv, 16);
+    mbedtls_aes_setkey_dec(&ctx, key_256, 256);
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    mbedtls_aes_free(&ctx);
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
+TEST_CASE("mbedtls CBC AES-256 DMA buffer align test", "[aes]")
+{
+#define ALIGN_DOWN(val, align) ((val) & ~((align) - 1))
+    // Size is taken considering the maximum DMA buffer size
+    const unsigned SZ = ALIGN_DOWN((2*LLDESC_MAX_NUM_PER_DESC), 16);
+    mbedtls_aes_context ctx;
+    uint8_t nonce[16];
+
+    const uint8_t expected_cipher_end[] = {
+        0x9e, 0xcb, 0x1d, 0x24, 0x01, 0xc8, 0x3f, 0xba,
+        0xde, 0x76, 0xea, 0x9c, 0xf3, 0x64, 0x23, 0x19,
+        0x8c, 0x67, 0xd4, 0x1a, 0xd1, 0xe0, 0xbf, 0xc3,
+        0xd2, 0xb8, 0x40, 0x95, 0x89, 0x41, 0x09, 0xdb,
     };
 
     memcpy(nonce, iv, 16);
