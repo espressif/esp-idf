@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "hal/temperature_sensor_ll.h"
 #include "soc/temperature_sensor_periph.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 static const char *TAG = "temperature_sensor";
 
@@ -70,6 +71,7 @@ static esp_err_t temperature_sensor_choose_best_range(temperature_sensor_handle_
             tsens->tsens_attribute = &s_tsens_attribute_copy[i];
             break;
         }
+        temp_sensor_sync_tsens_idx(i);
     }
     ESP_RETURN_ON_FALSE(tsens->tsens_attribute != NULL, ESP_ERR_INVALID_ARG, TAG, "Out of testing range");
     return ESP_OK;
@@ -100,7 +102,6 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
 
     regi2c_saradc_enable();
     temperature_sensor_ll_set_range(tsens->tsens_attribute->reg_val);
-    temperature_sensor_ll_enable(false); // disable the sensor by default
 
     tsens->fsm = TEMP_SENSOR_FSM_INIT;
     *ret_tsens = tsens;
@@ -126,6 +127,20 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
     return ESP_OK;
 }
 
+static esp_err_t s_update_tsens_attribute(temperature_sensor_handle_t tsens)
+{
+    uint32_t dac;
+    ESP_RETURN_ON_FALSE(tsens != NULL, ESP_ERR_INVALID_ARG, TAG, "no tsens specified");
+    dac = temperature_sensor_ll_get_offset();
+    for (int i = 0 ; i < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; i++) {
+        if (dac == s_tsens_attribute_copy[i].reg_val) {
+            tsens->tsens_attribute = &s_tsens_attribute_copy[i];
+            break;
+        }
+    }
+    return ESP_OK;
+}
+
 esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
 {
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -139,7 +154,7 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
 
     temperature_sensor_ll_clk_enable(true);
     temperature_sensor_ll_clk_sel(tsens->clk_src);
-    temperature_sensor_ll_enable(true);
+    temperature_sensor_power_acquire();
     tsens->fsm = TEMP_SENSOR_FSM_ENABLE;
     return ESP_OK;
 }
@@ -149,7 +164,8 @@ esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens)
     ESP_RETURN_ON_FALSE(tsens, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "tsens not enabled yet");
 
-    temperature_sensor_ll_enable(false);
+    temperature_sensor_power_release();
+
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_RC_FAST) {
         periph_rtc_dig_clk8m_disable();
@@ -169,12 +185,12 @@ static esp_err_t read_delta_t_from_efuse(void)
     return ESP_OK;
 }
 
-static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const int dac_offset)
+static float parse_temp_sensor_raw_value(uint32_t tsens_raw)
 {
     if (isnan(s_deltaT)) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
     }
-    float result = (TEMPERATURE_SENSOR_LL_ADC_FACTOR * (float)tsens_raw - TEMPERATURE_SENSOR_LL_DAC_FACTOR * dac_offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR) - s_deltaT / 10.0;
+    float result = tsens_raw - s_deltaT / 10.0;
     return result;
 }
 
@@ -184,13 +200,16 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
     ESP_RETURN_ON_FALSE(out_celsius != NULL, ESP_ERR_INVALID_ARG, TAG, "Celsius points to nothing");
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "tsens not enabled yet");
 
-    uint32_t tsens_out = temperature_sensor_ll_get_raw_value();
-    ESP_LOGV(TAG, "tsens_out %"PRIu32, tsens_out);
+    bool range_changed;
+    uint16_t tsens_out = temp_sensor_get_raw_value(&range_changed);
+    *out_celsius = parse_temp_sensor_raw_value(tsens_out);
 
-    *out_celsius = parse_temp_sensor_raw_value(tsens_out, tsens->tsens_attribute->offset);
-    if (*out_celsius < tsens->tsens_attribute->range_min || *out_celsius > tsens->tsens_attribute->range_max) {
-        ESP_LOGW(TAG, "value out of range, probably invalid");
-        return ESP_FAIL;
+    if (*out_celsius < TEMPERATURE_SENSOR_LL_MEASURE_MIN || *out_celsius > TEMPERATURE_SENSOR_LL_MEASURE_MAX) {
+        ESP_LOGE(TAG, "Exceeding temperature measure range.");
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (range_changed) {
+        s_update_tsens_attribute(tsens);
     }
     return ESP_OK;
 }

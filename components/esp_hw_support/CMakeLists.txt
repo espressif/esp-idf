@@ -16,6 +16,7 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
                      "regi2c_ctrl.c"
+                     "sar_periph_ctrl_common.c"
                      "adc_share_hw_ctrl.c")
 
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)

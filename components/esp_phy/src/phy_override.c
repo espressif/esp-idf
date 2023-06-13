@@ -8,6 +8,9 @@
 #include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
+#include "freertos/FreeRTOS.h"
+
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.
@@ -15,6 +18,8 @@
  */
 
 static bool s_wifi_adc_xpd_flag;
+static bool s_wifi_pwdet_xpd_flag;
+static bool s_wifi_tsens_xpd_flag;
 
 void include_esp_phy_override(void)
 {
@@ -52,9 +57,35 @@ IRAM_ATTR void phy_i2c_exit_critical(void)
 
 void phy_set_pwdet_power(bool en)
 {
+    if (s_wifi_pwdet_xpd_flag == en) {
+        /* ignore repeated calls to phy_set_pwdet_power when the state is already correct */
+        return;
+    }
+
+    s_wifi_pwdet_xpd_flag = en;
     if (en) {
         sar_periph_ctrl_pwdet_power_acquire();
     } else {
         sar_periph_ctrl_pwdet_power_release();
     }
+}
+
+void phy_set_tsens_power(bool en)
+{
+    if (s_wifi_tsens_xpd_flag == en) {
+        /* ignore repeated calls to phy_set_tsens_power when the state is already correct */
+        return;
+    }
+
+    s_wifi_tsens_xpd_flag = en;
+    if (en) {
+        temperature_sensor_power_acquire();
+    } else {
+        temperature_sensor_power_release();
+    }
+}
+
+int16_t phy_get_tsens_value(void)
+{
+    return temp_sensor_get_raw_value(NULL);
 }
