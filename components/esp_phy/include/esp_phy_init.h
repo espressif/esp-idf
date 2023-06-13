@@ -95,7 +95,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void);
 void esp_phy_release_init_data(const esp_phy_init_data_t* data);
 
 /**
- * @brief Function called by esp_phy_init to load PHY calibration data
+ * @brief Function called by esp_phy_load_cal_and_init to load PHY calibration data
  *
  * This is a convenience function which can be used to load PHY calibration
  * data from NVS. Data can be stored to NVS using esp_phy_store_cal_data_to_nvs
@@ -106,13 +106,6 @@ void esp_phy_release_init_data(const esp_phy_init_data_t* data);
  * or obtained for a different version of software), this function will
  * return an error.
  *
- * If "Initialize PHY in startup code" option is set in menuconfig, this
- * function will be used to load calibration data. To provide a different
- * mechanism for loading calibration data, disable
- * "Initialize PHY in startup code" option in menuconfig and call esp_phy_init
- * function from the application. For an example usage of esp_phy_init and
- * this function, see esp_phy_store_cal_data_to_nvs function in cpu_start.c
- *
  * @param out_cal_data pointer to calibration data structure to be filled with
  *                     loaded data.
  * @return ESP_OK on success
@@ -120,18 +113,12 @@ void esp_phy_release_init_data(const esp_phy_init_data_t* data);
 esp_err_t esp_phy_load_cal_data_from_nvs(esp_phy_calibration_data_t* out_cal_data);
 
 /**
- * @brief Function called by esp_phy_init to store PHY calibration data
+ * @brief Function called by esp_phy_load_cal_and_init to store PHY calibration data
  *
  * This is a convenience function which can be used to store PHY calibration
- * data to the NVS. Calibration data is returned by esp_phy_init function.
+ * data to the NVS. Calibration data is returned by esp_phy_load_cal_and_init function.
  * Data saved using this function to the NVS can later be loaded using
  * esp_phy_store_cal_data_to_nvs function.
- *
- * If "Initialize PHY in startup code" option is set in menuconfig, this
- * function will be used to store calibration data. To provide a different
- * mechanism for storing calibration data, disable
- * "Initialize PHY in startup code" option in menuconfig and call esp_phy_init
- * function from the application.
  *
  * @param cal_data pointer to calibration data which has to be saved.
  * @return ESP_OK on success
