@@ -20,6 +20,66 @@ extern "C" {
 #endif
 
 /**
+ * @brief enable a cache unit
+ *
+ * @param cache_id  cache ID (when l1 cache is per core)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_enable_cache(uint32_t cache_id)
+{
+    HAL_ASSERT(cache_id == 0 || cache_id == 1);
+
+    if (cache_id == 0) {
+        DPORT_REG_SET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE);
+    } else {
+        DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE);
+    }
+}
+
+/**
+ * @brief disable a cache unit
+ *
+ * @param cache_id  cache ID (when l1 cache is per core)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_disable_cache(uint32_t cache_id)
+{
+    if (cache_id == 0) {
+        while (DPORT_GET_PERI_REG_BITS2(DPORT_PRO_DCACHE_DBUG0_REG, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1){
+            ;
+        }
+        DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE);
+    } else {
+        while (DPORT_GET_PERI_REG_BITS2(DPORT_APP_DCACHE_DBUG0_REG, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1){
+            ;
+        }
+        DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE);
+    }
+}
+
+/**
+ * @brief Get the status of cache if it is enabled or not
+ *
+ * @param   cache_id    cache ID (when l1 cache is per core)
+ * @param   type        see `cache_type_t`
+ * @return  enabled or not
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_l1_is_cache_enabled(uint32_t cache_id, cache_type_t type)
+{
+    HAL_ASSERT(cache_id == 0 || cache_id == 1);
+    (void) type;    //On 32 it shares between I and D cache
+
+    bool enabled;
+    if (cache_id == 0) {
+        enabled = DPORT_REG_GET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE);
+    } else {
+        enabled = DPORT_REG_GET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE);
+    }
+    return enabled;
+}
+
+/**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range
  *
  * External virtual address can only be accessed when the involved cache buses are enabled.
