@@ -1146,6 +1146,7 @@ esp_err_t esp_wifi_set_inactive_time(wifi_interface_t ifx, uint16_t sec);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_inactive_time(wifi_interface_t ifx, uint16_t *sec);
@@ -1319,6 +1320,29 @@ esp_err_t esp_wifi_config_80211_tx_rate(wifi_interface_t ifx, wifi_phy_rate_t ra
   */
 esp_err_t esp_wifi_disable_pmf_config(wifi_interface_t ifx);
 
+/**
+  * @brief     Get the Association id assigned to STA by AP
+  *
+  * @param[out] aid  store the aid
+  *
+  * @attention aid = 0 if station is not connected to AP.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_sta_get_aid(uint16_t *aid);
+
+/**
+  * @brief     Get the negotiated phymode after connection.
+  *
+  * @param[out] phymode  store the negotiated phymode.
+  *
+  * @attention Operation phy mode, BIT[5]: indicate whether LR enabled, BIT[0-4]: wifi_phy_mode_t
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
 #ifdef __cplusplus
 }
 #endif
