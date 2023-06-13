@@ -524,6 +524,7 @@ if __name__ == '__main__':
                 extra_default_build_targets=extra_default_build_targets_list,
             )
         elif arg.action == 'check-test-scripts':
+            os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
             check_test_scripts(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,

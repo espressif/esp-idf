@@ -4,9 +4,12 @@
 """
 Pytest Related Constants. Don't import third-party packages here.
 """
-
+import os
 import typing as t
 from dataclasses import dataclass
+
+from _pytest.python import Function
+from pytest_embedded.utils import to_list
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2']
 PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
@@ -113,9 +116,56 @@ class PytestApp:
 class PytestCase:
     path: str
     name: str
-    apps: t.Set[PytestApp]
 
-    nightly_run: bool
+    apps: t.Set[PytestApp]
+    target: str
+
+    item: Function
 
     def __hash__(self) -> int:
-        return hash((self.path, self.name, self.apps, self.nightly_run))
+        return hash((self.path, self.name, self.apps, self.all_markers))
+
+    @property
+    def all_markers(self) -> t.Set[str]:
+        return {marker.name for marker in self.item.iter_markers()}
+
+    @property
+    def is_nightly_run(self) -> bool:
+        return 'nightly_run' in self.all_markers
+
+    @property
+    def target_markers(self) -> t.Set[str]:
+        return {marker for marker in self.all_markers if marker in TARGET_MARKERS}
+
+    @property
+    def env_markers(self) -> t.Set[str]:
+        return {marker for marker in self.all_markers if marker in ENV_MARKERS}
+
+    @property
+    def skipped_targets(self) -> t.Set[str]:
+        def _get_temp_markers_disabled_targets(marker_name: str) -> t.Set[str]:
+            temp_marker = self.item.get_closest_marker(marker_name)
+
+            if not temp_marker:
+                return set()
+
+            # temp markers should always use keyword arguments `targets` and `reason`
+            if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
+                raise ValueError(
+                    f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '
+                    f'For example: '
+                    f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
+                )
+
+            return set(to_list(temp_marker.kwargs['targets']))  # type: ignore
+
+        temp_skip_ci_targets = _get_temp_markers_disabled_targets('temp_skip_ci')
+        temp_skip_targets = _get_temp_markers_disabled_targets('temp_skip')
+
+        # in CI we skip the union of `temp_skip` and `temp_skip_ci`
+        if os.getenv('CI_JOB_ID'):
+            skip_targets = temp_skip_ci_targets.union(temp_skip_targets)
+        else:  # we use `temp_skip` locally
+            skip_targets = temp_skip_targets
+
+        return skip_targets

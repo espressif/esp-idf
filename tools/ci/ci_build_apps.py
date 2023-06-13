@@ -48,15 +48,7 @@ def get_pytest_apps(
     for case in pytest_cases:
         for app in case.apps:
             _paths.add(app.path)
-
-            if os.getenv('INCLUDE_NIGHTLY_RUN') == '1':
-                test_related_app_configs[app.path].add(app.config)
-            elif os.getenv('NIGHTLY_RUN') == '1':
-                if case.nightly_run:
-                    test_related_app_configs[app.path].add(app.config)
-            else:
-                if not case.nightly_run:
-                    test_related_app_configs[app.path].add(app.config)
+            test_related_app_configs[app.path].add(app.config)
 
     if not extra_default_build_targets:
         extra_default_build_targets = []

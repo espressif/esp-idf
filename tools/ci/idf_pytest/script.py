@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import io
-import os
 import typing as t
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -14,7 +13,7 @@ from idf_py_actions.constants import SUPPORTED_TARGETS as TOOLS_SUPPORTED_TARGET
 from pytest_embedded.utils import to_list
 
 from .constants import PytestCase
-from .plugin import PytestCollectPlugin
+from .plugin import IdfPytestEmbedded
 
 
 def get_pytest_files(paths: t.List[str]) -> t.List[str]:
@@ -47,19 +46,6 @@ def get_pytest_cases(
 
     paths = to_list(paths)
 
-    origin_include_nightly_run_env = os.getenv('INCLUDE_NIGHTLY_RUN')
-    origin_nightly_run_env = os.getenv('NIGHTLY_RUN')
-
-    # disable the env vars to get all test cases
-    if 'INCLUDE_NIGHTLY_RUN' in os.environ:
-        os.environ.pop('INCLUDE_NIGHTLY_RUN')
-
-    if 'NIGHTLY_RUN' in os.environ:
-        os.environ.pop('NIGHTLY_RUN')
-
-    # collect all cases
-    os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
-
     cases: t.List[PytestCase] = []
     pytest_scripts = get_pytest_files(paths)  # type: ignore
     if not pytest_scripts:
@@ -67,7 +53,7 @@ def get_pytest_cases(
         return cases
 
     for target in targets:
-        collector = PytestCollectPlugin(target)
+        collector = IdfPytestEmbedded(target)
 
         with io.StringIO() as buf:
             with redirect_stdout(buf):
@@ -77,22 +63,14 @@ def get_pytest_cases(
                 if filter_expr:
                     cmd.extend(['-k', filter_expr])
                 res = pytest.main(cmd, plugins=[collector])
-            if res.value != ExitCode.OK:
-                if res.value == ExitCode.NO_TESTS_COLLECTED:
-                    print(f'WARNING: no pytest app found for target {target} under paths {", ".join(paths)}')
-                else:
-                    print(buf.getvalue())
-                    raise RuntimeError(
-                        f'pytest collection failed at {", ".join(paths)} with command \"{" ".join(cmd)}\"'
-                    )
+
+        if res.value != ExitCode.OK:
+            if res.value == ExitCode.NO_TESTS_COLLECTED:
+                print(f'WARNING: no pytest app found for target {target} under paths {", ".join(paths)}')
+            else:
+                print(buf.getvalue())
+                raise RuntimeError(f'pytest collection failed at {", ".join(paths)} with command \"{" ".join(cmd)}\"')
 
         cases.extend(collector.cases)
-
-    # revert back the env vars
-    if origin_include_nightly_run_env is not None:
-        os.environ['INCLUDE_NIGHTLY_RUN'] = origin_include_nightly_run_env
-
-    if origin_nightly_run_env is not None:
-        os.environ['NIGHTLY_RUN'] = origin_nightly_run_env
 
     return cases

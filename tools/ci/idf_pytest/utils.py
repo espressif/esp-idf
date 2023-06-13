@@ -6,10 +6,7 @@ import os
 import typing as t
 from xml.etree import ElementTree as ET
 
-from _pytest.nodes import Item
-from pytest_embedded.utils import to_list
-
-from .constants import ENV_MARKERS, TARGET_MARKERS
+from .constants import TARGET_MARKERS
 
 
 def format_case_id(target: t.Optional[str], config: t.Optional[str], case: str, is_qemu: bool = False) -> str:
@@ -21,57 +18,6 @@ def format_case_id(target: t.Optional[str], config: t.Optional[str], case: str, 
     parts.append(case)
 
     return '.'.join(parts)
-
-
-def item_marker_names(item: Item) -> t.List[str]:
-    return [marker.name for marker in item.iter_markers()]
-
-
-def item_target_marker_names(item: Item) -> t.List[str]:
-    res = set()
-    for marker in item.iter_markers():
-        if marker.name in TARGET_MARKERS:
-            res.add(marker.name)
-
-    return sorted(res)
-
-
-def item_env_marker_names(item: Item) -> t.List[str]:
-    res = set()
-    for marker in item.iter_markers():
-        if marker.name in ENV_MARKERS:
-            res.add(marker.name)
-
-    return sorted(res)
-
-
-def item_skip_targets(item: Item) -> t.List[str]:
-    def _get_temp_markers_disabled_targets(marker_name: str) -> t.List[str]:
-        temp_marker = item.get_closest_marker(marker_name)
-
-        if not temp_marker:
-            return []
-
-        # temp markers should always use keyword arguments `targets` and `reason`
-        if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
-            raise ValueError(
-                f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '
-                f'For example: '
-                f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
-            )
-
-        return to_list(temp_marker.kwargs['targets'])  # type: ignore
-
-    temp_skip_ci_targets = _get_temp_markers_disabled_targets('temp_skip_ci')
-    temp_skip_targets = _get_temp_markers_disabled_targets('temp_skip')
-
-    # in CI we skip the union of `temp_skip` and `temp_skip_ci`
-    if os.getenv('CI_JOB_ID'):
-        skip_targets = list(set(temp_skip_ci_targets).union(set(temp_skip_targets)))
-    else:  # we use `temp_skip` locally
-        skip_targets = temp_skip_targets
-
-    return skip_targets
 
 
 def get_target_marker_from_expr(markexpr: str) -> str:

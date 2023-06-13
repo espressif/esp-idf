@@ -17,7 +17,7 @@ from pytest_embedded.plugin import parse_multi_dut_args
 from pytest_embedded.utils import find_by_suffix, to_list
 
 from .constants import DEFAULT_SDKCONFIG, PREVIEW_TARGETS, SUPPORTED_TARGETS, PytestApp, PytestCase
-from .utils import format_case_id, item_marker_names, item_skip_targets, merge_junit_files
+from .utils import format_case_id, merge_junit_files
 
 IDF_PYTEST_EMBEDDED_KEY = pytest.StashKey['IdfPytestEmbedded']()
 ITEM_FAILED_CASES_KEY = pytest.StashKey[list]()
@@ -37,6 +37,8 @@ class IdfPytestEmbedded:
         self.sdkconfig = sdkconfig
         self.known_failure_patterns = self._parse_known_failure_cases_file(known_failure_cases_file)
         self.apps_list = apps_list
+
+        self.cases: t.List[PytestCase] = []
 
         self._failed_cases: t.List[t.Tuple[str, bool, bool]] = []  # (test_case_name, is_known_failure_cases, is_xfail)
 
@@ -72,6 +74,49 @@ class IdfPytestEmbedded:
 
         return patterns
 
+    @staticmethod
+    def get_param(item: Function, key: str, default: t.Any = None) -> t.Any:
+        # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
+        # https://github.com/pytest-dev/pytest/discussions/9689
+        if not hasattr(item, 'callspec'):
+            raise ValueError(f'Function {item} does not have params')
+
+        return item.callspec.params.get(key, default) or default
+
+    def item_to_pytest_case(self, item: Function) -> PytestCase:
+        count = 1
+        case_path = str(item.path)
+        case_name = item.originalname
+        target = self.target
+
+        # funcargs is not calculated while collection
+        if hasattr(item, 'callspec'):
+            count = item.callspec.params.get('count', 1)
+            app_paths = to_list(
+                parse_multi_dut_args(
+                    count,
+                    self.get_param(item, 'app_path', os.path.dirname(case_path)),
+                )
+            )
+            configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', 'default')))
+            targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target', target)))
+        else:
+            app_paths = [os.path.dirname(case_path)]
+            configs = ['default']
+            targets = [target]
+
+        case_apps = set()
+        for i in range(count):
+            case_apps.add(PytestApp(app_paths[i], targets[i], configs[i]))
+
+        return PytestCase(
+            case_path,
+            case_name,
+            case_apps,
+            self.target,
+            item,
+        )
+
     @pytest.hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
         # same behavior for vanilla pytest-embedded '--target'
@@ -79,24 +124,17 @@ class IdfPytestEmbedded:
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, items: t.List[Function]) -> None:
-        # sort by file path and callspec.config
-        # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
-        # https://github.com/pytest-dev/pytest/discussions/9689
-        # after sort the test apps, the test may use the app cache to reduce the flash times.
-        def _get_param_config(_item: Function) -> str:
-            if hasattr(_item, 'callspec'):
-                return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
-            return DEFAULT_SDKCONFIG  # type: ignore
-
-        items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
-
-        # set default timeout 10 minutes for each case
+        item_to_case: t.Dict[Function, PytestCase] = {}
         for item in items:
+            # generate PytestCase for each item
+            case = self.item_to_pytest_case(item)
+            item_to_case[item] = case
+
+            # set default timeout 10 minutes for each case
             if 'timeout' not in item.keywords:
                 item.add_marker(pytest.mark.timeout(10 * 60))
 
-        # add markers for special markers
-        for item in items:
+            # add markers for special markers
             if 'supported_targets' in item.keywords:
                 for _target in SUPPORTED_TARGETS:
                     item.add_marker(_target)
@@ -109,11 +147,7 @@ class IdfPytestEmbedded:
 
             # add 'xtal_40mhz' tag as a default tag for esp32c2 target
             # only add this marker for esp32c2 cases
-            if (
-                self.target == 'esp32c2'
-                and 'esp32c2' in item_marker_names(item)
-                and 'xtal_26mhz' not in item_marker_names(item)
-            ):
+            if self.target == 'esp32c2' and 'esp32c2' in case.target_markers and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
         # filter all the test cases with "nightly_run" marker
@@ -121,20 +155,25 @@ class IdfPytestEmbedded:
             # Do not filter nightly_run cases
             pass
         elif os.getenv('NIGHTLY_RUN') == '1':
-            items[:] = [item for item in items if 'nightly_run' in item_marker_names(item)]
+            items[:] = [item for item in items if item_to_case[item].is_nightly_run]
         else:
-            items[:] = [item for item in items if 'nightly_run' not in item_marker_names(item)]
+            items[:] = [item for item in items if not item_to_case[item].is_nightly_run]
 
         # filter all the test cases with target and skip_targets
         items[:] = [
             item
             for item in items
-            if self.target in item_marker_names(item) and self.target not in item_skip_targets(item)
+            if self.target in item_to_case[item].target_markers
+            and self.target not in item_to_case[item].skipped_targets
         ]
 
         # filter all the test cases with cli option "config"
         if self.sdkconfig:
-            items[:] = [item for item in items if _get_param_config(item) == self.sdkconfig]
+            items[:] = [item for item in items if self.get_param(item, 'config', DEFAULT_SDKCONFIG) == self.sdkconfig]
+
+    def pytest_report_collectionfinish(self, items: t.List[Function]) -> None:
+        for item in items:
+            self.cases.append(self.item_to_pytest_case(item))
 
     def pytest_runtest_makereport(self, item: Function, call: CallInfo[None]) -> t.Optional[TestReport]:
         report = TestReport.from_item_and_call(item, call)
@@ -236,51 +275,3 @@ class IdfPytestEmbedded:
         if self.failed_cases:
             terminalreporter.section('Failed cases', bold=True, red=True)
             terminalreporter.line('\n'.join(self.failed_cases))
-
-
-class PytestCollectPlugin:
-    def __init__(self, target: str) -> None:
-        self.target = target
-        self.cases: t.List[PytestCase] = []
-
-    @staticmethod
-    def get_param(item: 'Function', key: str, default: t.Any = None) -> t.Any:
-        if not hasattr(item, 'callspec'):
-            raise ValueError(f'Function {item} does not have params')
-
-        return item.callspec.params.get(key, default) or default
-
-    def pytest_report_collectionfinish(self, items: t.List['Function']) -> None:
-        for item in items:
-            count = 1
-            case_path = str(item.path)
-            case_name = item.originalname
-            target = self.target
-            # funcargs is not calculated while collection
-            if hasattr(item, 'callspec'):
-                count = item.callspec.params.get('count', 1)
-                app_paths = to_list(
-                    parse_multi_dut_args(
-                        count,
-                        self.get_param(item, 'app_path', os.path.dirname(case_path)),
-                    )
-                )
-                configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', 'default')))
-                targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target', target)))
-            else:
-                app_paths = [os.path.dirname(case_path)]
-                configs = ['default']
-                targets = [target]
-
-            case_apps = set()
-            for i in range(count):
-                case_apps.add(PytestApp(app_paths[i], targets[i], configs[i]))
-
-            self.cases.append(
-                PytestCase(
-                    case_path,
-                    case_name,
-                    case_apps,
-                    'nightly_run' in [marker.name for marker in item.iter_markers()],
-                )
-            )
