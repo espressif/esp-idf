@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
@@ -37,6 +38,29 @@ extern "C" {
 #define CACHE_LL_L1_ILG_EVENT_ICACHE_PRELOAD_OP_FAULT    (1<<1)
 #define CACHE_LL_L1_ILG_EVENT_ICACHE_SYNC_OP_FAULT       (1<<0)
 
+/**
+ * @brief Get the status of cache if it is enabled or not
+ *
+ * @param   cache_id    cache ID (when l1 cache is per core)
+ * @param   type        see `cache_type_t`
+ * @return  enabled or not
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_l1_is_cache_enabled(uint32_t cache_id, cache_type_t type)
+{
+    HAL_ASSERT(cache_id == 0 || cache_id == 1);
+
+    bool enabled;
+    if (type == CACHE_TYPE_INSTRUCTION) {
+        enabled = REG_GET_BIT(EXTMEM_ICACHE_CTRL_REG, EXTMEM_ICACHE_ENABLE);
+    } else if (type == CACHE_TYPE_DATA) {
+        enabled = REG_GET_BIT(EXTMEM_DCACHE_CTRL_REG, EXTMEM_DCACHE_ENABLE);
+    } else {
+        enabled = REG_GET_BIT(EXTMEM_ICACHE_CTRL_REG, EXTMEM_ICACHE_ENABLE);
+        enabled = enabled && REG_GET_BIT(EXTMEM_DCACHE_CTRL_REG, EXTMEM_DCACHE_ENABLE);
+    }
+    return enabled;
+}
 
 /**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range

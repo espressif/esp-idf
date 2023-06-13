@@ -16,7 +16,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#define CACHE_LL_ENABLE_DISABLE_STATE_SW            1   //There's no register indicating cache enable/disable state, we need to use software way for this state.
 
 #define CACHE_LL_DEFAULT_IBUS_MASK                  CACHE_BUS_IBUS0
 #define CACHE_LL_DEFAULT_DBUS_MASK                  CACHE_BUS_DBUS0

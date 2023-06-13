@@ -5,8 +5,10 @@ entries:
         mmu_hal (noflash)
         spi_flash_hal_iram (noflash)
         spi_flash_encrypt_hal_iram (noflash)
-    if IDF_TARGET_ESP32 = n && APP_BUILD_TYPE_PURE_RAM_APP = n:
-        cache_hal (noflash)
+        if IDF_TARGET_ESP32 = y:
+            cache_hal_esp32 (noflash)
+        else:
+            cache_hal (noflash)
     if SOC_GPSPI_SUPPORTED = y:
         if HAL_SPI_MASTER_FUNC_IN_IRAM = y:
             spi_hal_iram (noflash)
