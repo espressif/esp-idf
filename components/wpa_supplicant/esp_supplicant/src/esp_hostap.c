@@ -17,6 +17,7 @@
 #include "ap/wpa_auth_i.h"
 #include "esp_wifi_driver.h"
 #include "esp_wifi_types.h"
+#include "esp_wps.h"
 
 struct hostapd_data *global_hapd;
 
@@ -146,6 +147,13 @@ bool hostap_deinit(void *data)
     if (hapd == NULL) {
         return true;
     }
+
+#ifdef CONFIG_WPS_REGISTRAR
+    if (esp_wifi_get_wps_type_internal () != WPS_TYPE_DISABLE ||
+        esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
+        esp_wifi_ap_wps_disable();
+    }
+#endif /* CONFIG_WPS_REGISTRAR */
 
     if (hapd->wpa_auth != NULL) {
         if (hapd->wpa_auth->wpa_ie != NULL) {

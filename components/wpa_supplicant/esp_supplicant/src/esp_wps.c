@@ -1793,7 +1793,6 @@ int wps_post_block(uint32_t sig, void *arg)
 
 int wps_check_wifi_mode(void)
 {
-    bool sniffer = false;
     wifi_mode_t mode;
     int ret;
 
@@ -1803,18 +1802,12 @@ int wps_check_wifi_mode(void)
         return ESP_FAIL;
     }
 
-    ret = esp_wifi_get_promiscuous(&sniffer);
-    if (ESP_OK != ret) {
-        wpa_printf(MSG_ERROR, "wps check wifi mode: failed to get sniffer mode ret=%d", ret);
-        return ESP_FAIL;
-    }
-
     if (
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
         mode == WIFI_MODE_AP ||
 #endif
-        mode == WIFI_MODE_NULL || sniffer == true) {
-        wpa_printf(MSG_ERROR, "wps check wifi mode: wrong wifi mode=%d sniffer=%d", mode, sniffer);
+        mode == WIFI_MODE_NULL) {
+        wpa_printf(MSG_ERROR, "wps check wifi mode: wrong wifi mode=%d ", mode);
         return ESP_ERR_WIFI_MODE;
     }
 
@@ -1823,7 +1816,13 @@ int wps_check_wifi_mode(void)
 
 int esp_wifi_wps_enable(const esp_wps_config_t *config)
 {
-    int ret;
+    int ret = ESP_OK;
+    struct wps_sm *sm = gWpsSm;
+
+    if (esp_wifi_get_user_init_flag_internal() == 0) {
+        wpa_printf(MSG_ERROR, "wps enable: wifi not started cannot disable wpsreg");
+        return ESP_ERR_WIFI_STATE;
+    }
 
     if (ESP_OK != wps_check_wifi_mode()) {
         return ESP_ERR_WIFI_MODE;
@@ -1831,9 +1830,14 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
 
     API_MUTEX_TAKE();
     if (s_wps_enabled) {
+        if (sm && os_memcmp(sm->identity, WSC_ID_REGISTRAR, sm->identity_len) == 0) {
+            wpa_printf(MSG_ERROR, "wps enable: wpsreg already enabled cannot enable wps enrollee");
+            ret = ESP_ERR_WIFI_MODE;
+        } else {
+            wpa_printf(MSG_DEBUG, "wps enable: already enabled");
+        }
         API_MUTEX_GIVE();
-        wpa_printf(MSG_DEBUG, "wps enable: already enabled");
-        return ESP_OK;
+        return ret;
     }
 
 #ifdef USE_WPS_TASK
@@ -1864,6 +1868,7 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
 int wifi_wps_enable_internal(const esp_wps_config_t *config)
 {
     int ret = 0;
+    struct wpa_sm *wpa_sm = &gWpaSm;
 
     wpa_printf(MSG_DEBUG, "ESP WPS crypto initialize!");
     if (config->wps_type == WPS_TYPE_DISABLE) {
@@ -1889,7 +1894,7 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
         wps_set_status(WPS_STATUS_DISABLE);
         return ESP_FAIL;
     }
-
+    wpa_sm->wpa_sm_wps_disable = esp_wifi_wps_disable;
     return ESP_OK;
 }
 
@@ -1904,8 +1909,10 @@ int esp_wifi_wps_disable(void)
 {
     int ret = 0;
     int wps_status;
+    struct wps_sm *wps_sm = gWpsSm;
+    struct wpa_sm *wpa_sm = &gWpaSm;
 
-    if (ESP_OK != wps_check_wifi_mode()) {
+    if (wps_sm && os_memcmp(wps_sm->identity, WSC_ID_REGISTRAR, wps_sm->identity_len) == 0) {
         return ESP_ERR_WIFI_MODE;
     }
 
@@ -1944,6 +1951,7 @@ int esp_wifi_wps_disable(void)
     wps_task_deinit();
     s_wps_enabled = false;
     API_MUTEX_GIVE();
+    wpa_sm->wpa_sm_wps_disable = NULL;
     return ESP_OK;
 }
 

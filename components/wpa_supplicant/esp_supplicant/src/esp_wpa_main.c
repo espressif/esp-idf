@@ -182,7 +182,14 @@ void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 
 bool  wpa_deattach(void)
 {
-    esp_wifi_sta_wpa2_ent_disable();
+    struct wpa_sm *sm = &gWpaSm;
+    if (sm->wpa_sm_wpa2_ent_disable) {
+        sm->wpa_sm_wpa2_ent_disable();
+    }
+    if (sm->wpa_sm_wps_disable) {
+        sm->wpa_sm_wps_disable();
+    }
+
     wpa_sm_deinit();
     return true;
 }
