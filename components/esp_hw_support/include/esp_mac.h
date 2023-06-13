@@ -19,14 +19,15 @@ extern "C" {
 #endif
 
 typedef enum {
-    ESP_MAC_WIFI_STA,
-    ESP_MAC_WIFI_SOFTAP,
-    ESP_MAC_BT,
-    ESP_MAC_ETH,
-    ESP_MAC_IEEE802154,
-    ESP_MAC_BASE,
-    ESP_MAC_EFUSE_FACTORY,
-    ESP_MAC_EFUSE_CUSTOM,
+    ESP_MAC_WIFI_STA,      /**< MAC for WiFi Station (6 bytes) */
+    ESP_MAC_WIFI_SOFTAP,   /**< MAC for WiFi Soft-AP (6 bytes) */
+    ESP_MAC_BT,            /**< MAC for Bluetooth (6 bytes) */
+    ESP_MAC_ETH,           /**< MAC for Ethernet (6 bytes) */
+    ESP_MAC_IEEE802154,    /**< if CONFIG_SOC_IEEE802154_SUPPORTED=y, MAC for IEEE802154 (8 bytes) */
+    ESP_MAC_BASE,          /**< Base MAC for that used for other MAC types (6 bytes) */
+    ESP_MAC_EFUSE_FACTORY, /**< MAC_FACTORY eFuse which was burned by Espressif in production (6 bytes) */
+    ESP_MAC_EFUSE_CUSTOM,  /**< MAC_CUSTOM eFuse which was can be burned by customer (6 bytes) */
+    ESP_MAC_EFUSE_EXT,     /**< if CONFIG_SOC_IEEE802154_SUPPORTED=y, MAC_EXT eFuse which is used as an extender for IEEE802154 MAC (2 bytes) */
 } esp_mac_type_t;
 
 /** @cond */
@@ -62,9 +63,8 @@ typedef enum {
   * @note If not using a valid OUI, set the "locally administered" bit
   *       (bit value 0x02 in the first byte) to avoid collisions.
   *
-  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  * @param  mac base MAC address, length: 6 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_ARG If mac is NULL or is not a unicast MAC
@@ -76,9 +76,8 @@ esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
   *
   * @note If no custom Base MAC has been set, this returns the pre-programmed Espressif base MAC address.
   *
-  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  * @param  mac base MAC address, length: 6 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_ARG mac is NULL
@@ -100,7 +99,7 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac);
   *
   * @param  mac base MAC address, length: 6 bytes/8 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4, if CONFIG_SOC_IEEE802154_SUPPORTED=y)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_ARG mac is NULL
@@ -115,7 +114,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
   *
   * @param  mac base MAC address, length: 6 bytes/8 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4, if CONFIG_SOC_IEEE802154_SUPPORTED=y)
   *
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_ARG mac is NULL
@@ -133,7 +132,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
   *
   * @param  mac base MAC address, length: 6 bytes/8 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
+  *                 8 bytes for EUI-64(used for IEEE 802.15.4, if CONFIG_SOC_IEEE802154_SUPPORTED=y)
   * @param  type Type of MAC address to return
   *
   * @return ESP_OK on success
@@ -151,9 +150,8 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type);
   * address, then the first octet is XORed with 0x4 in order to create a different
   * locally administered MAC address.
   *
-  * @param  local_mac base MAC address, length: 6 bytes/8 bytes.
+  * @param  local_mac base MAC address, length: 6 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   * @param  universal_mac  Source universal MAC address, length: 6 bytes.
   *
   * @return ESP_OK on success
@@ -166,7 +164,7 @@ esp_err_t esp_derive_local_mac(uint8_t *local_mac, const uint8_t *universal_mac)
   *
   * @param  mac  MAC address, length: 6 bytes/8 bytes.
   *         length: 6 bytes for MAC-48
-  *                 8 bytes for EUI-64(used for ESP_MAC_IEEE802154 type)
+  *                 8 bytes for EUI-64(used for ESP_MAC_IEEE802154 type, if CONFIG_SOC_IEEE802154_SUPPORTED=y)
   * @param  type  Type of MAC address
   *
   * @return ESP_OK on success
@@ -176,9 +174,11 @@ esp_err_t esp_iface_mac_addr_set(const uint8_t *mac, esp_mac_type_t type);
 /**
   * @brief  Return the size of the MAC type in bytes.
   *
-  * If CONFIG_IEEE802154_ENABLED is set then for these types:
-  * ESP_MAC_IEEE802154, ESP_MAC_BASE, ESP_MAC_EFUSE_FACTORY and ESP_MAC_EFUSE_CUSTOM the MAC size is 8 bytes.
-  * If CONFIG_IEEE802154_ENABLED is not set then for all types it returns 6 bytes.
+  * If CONFIG_SOC_IEEE802154_SUPPORTED is set then for these types:
+  *  - ESP_MAC_IEEE802154 is 8 bytes.
+  *  - ESP_MAC_BASE, ESP_MAC_EFUSE_FACTORY and ESP_MAC_EFUSE_CUSTOM the MAC size is 6 bytes.
+  *  - ESP_MAC_EFUSE_EXT is 2 bytes.
+  * If CONFIG_SOC_IEEE802154_SUPPORTED is not set then for all types it returns 6 bytes.
   *
   * @param  type  Type of MAC address
   *
