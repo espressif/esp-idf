@@ -19,7 +19,7 @@ extern "C" {
 /*
  * @brief set alarm target value
  *
- * @param timer_id timer num of lp_timer, 0 or 1 for esp32h2
+ * @param timer_id timer num of lp_timer, 0 or 1 for esp32c6 and esp32h2
  *
  * @param value when counter reaches alarm value, alarm event will be triggered
  */
