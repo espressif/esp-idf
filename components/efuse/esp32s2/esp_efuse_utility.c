@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include <sys/param.h>
 #include "esp32s2/rom/efuse.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "efuse";
 
@@ -58,7 +59,8 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
 static esp_err_t esp_efuse_set_timing(void)
 {
     uint32_t clock_hz = esp_clk_apb_freq();
-    return ets_efuse_set_timing(clock_hz) ? ESP_FAIL : ESP_OK;
+    efuse_hal_set_timing(clock_hz);
+    return ESP_OK;
 }
 
 static bool efuse_hal_is_coding_error_in_block(unsigned block)

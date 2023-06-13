@@ -12,6 +12,7 @@
 #include "soc/efuse_periph.h"
 #include "esp32c3/clk.h"
 #include "esp32c3/rom/efuse.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "efuse";
 
@@ -57,7 +58,7 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x190);
+    efuse_hal_set_timing(0);
     return ESP_OK;
 }
 
