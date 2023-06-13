@@ -24,14 +24,6 @@ void ble_store_config_init(void);
 static bool is_connect = false;
 uint16_t connection_handle;
 uint16_t attribute_handle;
-/* 16 Bit Alert Notification Service UUID */
-#define GATT_SVR_SVC_ALERT_UUID                            0x1811
-
-/* 16 Bit SPP Service UUID */
-#define GATT_SPP_SVC_UUID                                  0xABF0
-
-/* 16 Bit SPP Service Characteristic UUID */
-#define GATT_SPP_CHR_UUID                                  0xABF1
 
 static void
 ble_spp_client_set_handles(const struct peer *peer){
@@ -138,7 +130,7 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
      * service (0x1811).
      */
     for (i = 0; i < fields.num_uuids16; i++) {
-        if (ble_uuid_u16(&fields.uuids16[i].u) == GATT_SVR_SVC_ALERT_UUID) {
+        if (ble_uuid_u16(&fields.uuids16[i].u) == GATT_SPP_SVC_UUID) {
             return 1;
         }
     }
