@@ -184,7 +184,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if extra_args:
             extra += shlex.split(extra_args)
         env = {'ESPBAUD': str(args.baud), 'ESPPORT': args.port, 'SERIAL_TOOL_EXTRA_ARGS': ';'.join(extra)}
-        run_target(action, args, env)
+        run_target(action, args, env, force_progression=True)
 
     def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)
