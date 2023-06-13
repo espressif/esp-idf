@@ -33,7 +33,7 @@
 static const char *TAG = "esp.emac";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
-#define MAC_STOP_TIMEOUT_US (250)
+#define MAC_STOP_TIMEOUT_US (2500) // this is absolute maximum for 10Mbps, it is 10 times faster for 100Mbps
 #define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
@@ -240,7 +240,6 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     ESP_GOTO_ON_FALSE(buf && length, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf and length to null");
     uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, expected_len, &emac->frames_remain, &emac->free_rx_descriptor);
     /* we need to check the return value in case the buffer size is not enough */
-    ESP_LOGD(TAG, "receive len= %d", receive_len);
     ESP_GOTO_ON_FALSE(expected_len >= receive_len, ESP_ERR_INVALID_SIZE, err, TAG, "received buffer longer than expected");
     *length = receive_len;
     return ESP_OK;
@@ -349,8 +348,6 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     ESP_GOTO_ON_FALSE(to < emac->sw_reset_timeout_ms / 10, ESP_ERR_TIMEOUT, err, TAG, "reset timeout");
     /* set smi clock */
     emac_hal_set_csr_clock_range(&emac->hal, esp_clk_apb_freq());
-    /* reset descriptor chain */
-    emac_hal_reset_desc_chain(&emac->hal);
     /* init mac registers by default */
     emac_hal_init_mac_default(&emac->hal);
     /* init dma registers by default */
@@ -384,6 +381,7 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    /* reset descriptor chain */
     emac_hal_reset_desc_chain(&emac->hal);
     emac_hal_start(&emac->hal);
     return ESP_OK;
