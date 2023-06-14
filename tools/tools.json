@@ -92,7 +92,8 @@
         "esp32c3",
         "esp32c2",
         "esp32c6",
-        "esp32h2"
+        "esp32h2",
+        "esp32p4"
       ],
       "version_cmd": [
         "riscv32-esp-elf-gdb-no-python",
