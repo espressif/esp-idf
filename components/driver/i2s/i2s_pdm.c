@@ -70,7 +70,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 #if SOC_I2S_HW_VERSION_2
     /* Work around for PDM TX clock, overwrite the raw division directly to reduce the noise
      * This set of coefficients is a special division to reduce the background noise in PDM TX mode */
-    i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, 1, 1, 0, 0);
+    i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, clk_info.mclk_div, 1, 1, 0, 0);
 #endif
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
