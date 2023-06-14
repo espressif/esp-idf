@@ -10,7 +10,7 @@ Introduction
 ============
 {IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB"}
 
-{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (Psuedostatic RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
 
 .. only:: esp32s3
 
@@ -19,7 +19,7 @@ Introduction
 Hardware
 ========
 
-{IDF_TARGET_NAME} supports SPI PSRAM (Psuedostatic RAM) connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
+{IDF_TARGET_NAME} supports PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
 
 .. note::
 
@@ -57,11 +57,11 @@ Integrate RAM into the {IDF_TARGET_NAME} Memory Map
 
 Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
 
-This is the most basic option for external SPI RAM integration. Most likely, you will need another, more advanced option.
+This is the most basic option for external RAM integration. Most likely, you will need another, more advanced option.
 
 During the ESP-IDF startup, external RAM is mapped into the data virtual address space. The address space is dynamically allocated. The length will be the mininum length between the PSRAM size and the available data virtual address space size.
 
-Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external SPI RAM: coordinating buffer usage, preventing corruption, etc.
+Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external RAM: coordinating buffer usage, preventing corruption, etc.
 
 It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next chapter).
 
