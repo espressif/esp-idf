@@ -58,6 +58,48 @@ void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal,
     }
 }
 
+uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
+{
+    HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
+    uint32_t bitmap = 0;
+    switch (domain)
+    {
+    case MODEM_CLOCK_DOMAIN_MODEM_APB:
+        bitmap = modem_syscon_ll_get_modem_apb_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_MODEM_PERIPH:
+        bitmap = modem_syscon_ll_get_modem_periph_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_WIFI:
+        bitmap = modem_syscon_ll_get_wifi_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_BT:
+        bitmap = modem_syscon_ll_get_bt_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_FE:
+        bitmap = modem_syscon_ll_get_fe_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_IEEE802154:
+        bitmap = modem_syscon_ll_get_ieee802154_icg_bitmap(hal->syscon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_LP_APB:
+        bitmap = modem_lpcon_ll_get_lp_apb_icg_bitmap(hal->lpcon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_I2C_MASTER:
+        bitmap = modem_lpcon_ll_get_i2c_master_icg_bitmap(hal->lpcon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_COEX:
+        bitmap = modem_lpcon_ll_get_coex_icg_bitmap(hal->lpcon_dev);
+        break;
+    case MODEM_CLOCK_DOMAIN_WIFIPWR:
+        bitmap = modem_lpcon_ll_get_wifipwr_icg_bitmap(hal->lpcon_dev);
+        break;
+    default:
+        break;
+    }
+    return bitmap;
+}
+
 void modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     if (enable) {
