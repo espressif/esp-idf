@@ -24,6 +24,7 @@ typedef struct {
 
 #if MAC_SUPPORT_PMU_MODEM_STATE
 void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap);
+uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain);
 #endif
 
 void modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable);

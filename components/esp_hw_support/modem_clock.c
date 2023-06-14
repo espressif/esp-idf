@@ -180,6 +180,38 @@ void modem_clock_domain_pmu_state_icg_map_init(void)
 {
     modem_clock_domain_power_state_icg_map_init(MODEM_CLOCK_instance());
 }
+
+esp_err_t modem_clock_domain_clk_gate_enable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode)
+{
+    if (domain >= MODEM_CLOCK_DOMAIN_MAX || domain < MODEM_CLOCK_DOMAIN_MODEM_APB) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (mode > PMU_HP_ICG_MODEM_CODE_ACTIVE || mode < PMU_HP_ICG_MODEM_CODE_SLEEP) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
+    modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, (code & ~BIT(mode)));
+    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    return ESP_OK;
+}
+
+esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode)
+{
+    if (domain >= MODEM_CLOCK_DOMAIN_MAX || domain < MODEM_CLOCK_DOMAIN_MODEM_APB) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (mode > PMU_HP_ICG_MODEM_CODE_ACTIVE || mode < PMU_HP_ICG_MODEM_CODE_SLEEP) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
+    modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, (code | BIT(mode)));
+    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    return ESP_OK;
+}
 #endif // #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)

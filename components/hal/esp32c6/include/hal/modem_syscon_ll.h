@@ -105,10 +105,23 @@ static inline void modem_syscon_ll_enable_data_dump_force_clock(modem_syscon_dev
 {
     hw->clk_conf_force_on.clk_data_dump_fo = 1;
 }
+
+__attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_get_ieee802154_icg_bitmap(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_zb_st_map;
+}
+
 __attribute__((always_inline))
 static inline void modem_syscon_ll_set_ieee802154_icg_bitmap(modem_syscon_dev_t *hw, uint32_t bitmap)
 {
     hw->clk_conf_power_st.clk_zb_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_get_fe_icg_bitmap(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_fe_st_map;
 }
 
 __attribute__((always_inline))
@@ -118,9 +131,21 @@ static inline void modem_syscon_ll_set_fe_icg_bitmap(modem_syscon_dev_t *hw, uin
 }
 
 __attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_get_bt_icg_bitmap(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_bt_st_map;
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_set_bt_icg_bitmap(modem_syscon_dev_t *hw, uint32_t bitmap)
 {
     hw->clk_conf_power_st.clk_bt_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_get_wifi_icg_bitmap(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_wifi_st_map;
 }
 
 __attribute__((always_inline))
@@ -130,9 +155,21 @@ static inline void modem_syscon_ll_set_wifi_icg_bitmap(modem_syscon_dev_t *hw, u
 }
 
 __attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_get_modem_periph_icg_bitmap(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_modem_peri_st_map;
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_set_modem_periph_icg_bitmap(modem_syscon_dev_t *hw, uint32_t bitmap)
 {
     hw->clk_conf_power_st.clk_modem_peri_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_get_modem_apb_icg_bitmap(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_modem_apb_st_map;
 }
 
 __attribute__((always_inline))
