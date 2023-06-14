@@ -514,23 +514,30 @@ mainmenu "Espressif IoT Development Framework Configuration"
         choice COMPILER_RT_LIB
             prompt "Compiler runtime library"
             default COMPILER_RT_LIB_CLANGRT if IDF_TOOLCHAIN_CLANG
+            default COMPILER_RT_LIB_HOST if IDF_TARGET_LINUX
             default COMPILER_RT_LIB_GCCLIB
             help
                 Select runtime library to be used by compiler.
                 - GCC toolchain supports libgcc only.
                 - Clang allows to choose between libgcc or libclang_rt.
+                - For host builds ("linux" target), uses the default library.
 
             config COMPILER_RT_LIB_GCCLIB
+                depends on !IDF_TARGET_LINUX
                 bool "libgcc"
             config COMPILER_RT_LIB_CLANGRT
-                depends on IDF_TOOLCHAIN_CLANG
+                depends on IDF_TOOLCHAIN_CLANG && !IDF_TARGET_LINUX
                 bool "libclang_rt"
+            config COMPILER_RT_LIB_HOST
+                depends on IDF_TARGET_LINUX
+                bool "Host"
         endchoice
 
         config COMPILER_RT_LIB_NAME
             string
             default "clang_rt.builtins" if COMPILER_RT_LIB_CLANGRT
             default "gcc" if COMPILER_RT_LIB_GCCLIB
+            default "" if COMPILER_RT_LIB_HOST
 
     endmenu # Compiler Options
 

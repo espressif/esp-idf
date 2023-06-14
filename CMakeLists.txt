@@ -224,11 +224,10 @@ endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-fno-use-cxa-atexit")
-    if(CONFIG_COMPILER_RT_LIB_GCCLIB)
-        list(APPEND link_options "-rtlib=libgcc")
-    elseif(CONFIG_COMPILER_RT_LIB_CLANGRT)
-        list(APPEND link_options "-rtlib=compiler-rt")
-    endif()
+endif()
+
+if(COMPILER_RT_LIB_NAME)
+    list(APPEND link_options "-rtlib=${CONFIG_COMPILER_RT_LIB_NAME}")
 endif()
 
 # For the transition period from 32-bit time_t to 64-bit time_t,
