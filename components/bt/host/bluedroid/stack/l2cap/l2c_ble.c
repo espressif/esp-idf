@@ -35,11 +35,35 @@
 #if (BLE_INCLUDED == TRUE)
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-const tHCI_ExtConnParams ext_conn_params = {
+#define EXT_CONN_INT_DEF_1M MAX(((MAX_ACL_CONNECTIONS + 1) * 4), 12)
+#define EXT_CONN_INT_DEF_2M MAX(((MAX_ACL_CONNECTIONS + 1) * 2), 12)
+#define EXT_CONN_INT_DEF_CODED (320) // 306-> 362Kbps
+
+const static tHCI_ExtConnParams ext_conn_params_1m_phy = {
     .scan_interval = 0x40,
     .scan_window = 0x40,
-    .conn_interval_min = 320, // 306-> 362Kbps
-    .conn_interval_max = 320,
+    .conn_interval_min = EXT_CONN_INT_DEF_1M,
+    .conn_interval_max = EXT_CONN_INT_DEF_1M,
+    .conn_latency = 0,
+    .sup_timeout = 600,
+    .min_ce_len  = 0,
+    .max_ce_len = 0,
+};
+const static tHCI_ExtConnParams ext_conn_params_2m_phy = {
+    .scan_interval = 0x40,
+    .scan_window = 0x40,
+    .conn_interval_min = EXT_CONN_INT_DEF_2M,
+    .conn_interval_max = EXT_CONN_INT_DEF_2M,
+    .conn_latency = 0,
+    .sup_timeout = 600,
+    .min_ce_len  = 0,
+    .max_ce_len = 0,
+};
+const static tHCI_ExtConnParams ext_conn_params_coded_phy = {
+    .scan_interval = 0x40,
+    .scan_window = 0x40,
+    .conn_interval_min = EXT_CONN_INT_DEF_CODED,
+    .conn_interval_max = EXT_CONN_INT_DEF_CODED,
     .conn_latency = 0,
     .sup_timeout = 600,
     .min_ce_len  = 0,
@@ -992,9 +1016,9 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         if (p_dev_rec->ext_conn_params.phy_mask == BLE_PHY_NO_PREF) {
             L2CAP_TRACE_WARNING("No extend connection parameters set, use default parameters");
             aux_conn.init_phy_mask = BLE_PHY_PREF_MASK;
-            memcpy(&aux_conn.params[0], &ext_conn_params, sizeof(tHCI_ExtConnParams));
-            memcpy(&aux_conn.params[1], &ext_conn_params, sizeof(tHCI_ExtConnParams));
-            memcpy(&aux_conn.params[2], &ext_conn_params, sizeof(tHCI_ExtConnParams));
+            memcpy(&aux_conn.params[0], &ext_conn_params_1m_phy, sizeof(tHCI_ExtConnParams));
+            memcpy(&aux_conn.params[1], &ext_conn_params_2m_phy, sizeof(tHCI_ExtConnParams));
+            memcpy(&aux_conn.params[2], &ext_conn_params_coded_phy, sizeof(tHCI_ExtConnParams));
         } else {
             aux_conn.init_phy_mask = p_dev_rec->ext_conn_params.phy_mask;
             memcpy(&aux_conn.params[0], &p_dev_rec->ext_conn_params.phy_1m_conn_params, sizeof(tHCI_ExtConnParams));
