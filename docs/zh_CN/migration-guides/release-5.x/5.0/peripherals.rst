@@ -71,6 +71,9 @@ API 更新
 - ESP32 中的 API ``hall_sensor_read`` 已被删除，因此 ESP32 不再支持霍尔传感器。
 - API ``adc_set_i2s_data_source`` 和 ``adc_i2s_mode_init`` 已被弃用，相关的枚举 ``adc_i2s_source_t`` 也已被弃用，请使用 ``esp_adc/adc_continuous.h`` 进行迁移。
 - API ``adc_digi_filter_reset`` ， ``adc_digi_filter_set_config`` ， ``adc_digi_filter_get_config`` 和 ``adc_digi_filter_enable`` 已被移除. 这些接口的行为不被保证。 枚举 ``adc_digi_filter_idx_t`` ， ``adc_digi_filter_mode_t`` 和结构体 ``adc_digi_iir_filter_t`` 已被移除。
+- API ``esp_adc_cal_characterize`` 已被弃用， 请迁移到 ``adc_cali_create_scheme_curve_fitting`` 或 ``adc_cali_create_scheme_line_fitting``.
+- API ``esp_adc_cal_raw_to_voltage`` 已被弃用， 请迁移到 ``adc_cali_raw_to_voltage``.
+- API ``esp_adc_cal_get_voltage`` 已被弃用， 请迁移到 ``adc_oneshot_get_calibrated_result``.
 
 GPIO
 ----------
