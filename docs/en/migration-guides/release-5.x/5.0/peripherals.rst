@@ -71,6 +71,9 @@ API Changes
 - API ``hall_sensor_read`` on ESP32 has been removed. Hall sensor is no longer supported on ESP32.
 - API ``adc_set_i2s_data_source`` and ``adc_i2s_mode_init`` have been deprecated. Related enum ``adc_i2s_source_t`` has been deprecated. Please migrate to use ``esp_adc/adc_continuous.h``.
 - API ``adc_digi_filter_reset``, ``adc_digi_filter_set_config``, ``adc_digi_filter_get_config`` and ``adc_digi_filter_enable`` have been removed. These APIs behaviours are not guaranteed. Enum ``adc_digi_filter_idx_t``, ``adc_digi_filter_mode_t`` and structure ``adc_digi_iir_filter_t`` have been removed as well.
+- API ``esp_adc_cal_characterize`` has been deprecated, please migrate to ``adc_cali_create_scheme_curve_fitting`` or ``adc_cali_create_scheme_line_fitting`` instead.
+- API ``esp_adc_cal_raw_to_voltage`` has been deprecated, please migrate to ``adc_cali_raw_to_voltage`` instead.
+- API ``esp_adc_cal_get_voltage`` has been deprecated, please migrate to ``adc_oneshot_get_calibrated_result`` instead.
 
 GPIO
 ----
