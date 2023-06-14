@@ -86,7 +86,8 @@ static void btc_gap_ble_get_dev_name_callback(UINT8 status, char *name)
     param.get_dev_name_cmpl.status = btc_btm_status_to_esp_status(status);
     param.get_dev_name_cmpl.name = (char *)osi_malloc(BTC_MAX_LOC_BD_NAME_LEN + 1);
     if (param.get_dev_name_cmpl.name) {
-        BCM_STRNCPY_S(param.get_dev_name_cmpl.name, name, BTC_MAX_LOC_BD_NAME_LEN + 1);
+        BCM_STRNCPY_S(param.get_dev_name_cmpl.name, name, BTC_MAX_LOC_BD_NAME_LEN);
+        param.get_dev_name_cmpl.name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
     } else {
         param.get_dev_name_cmpl.status = ESP_BT_STATUS_NOMEM;
     }
