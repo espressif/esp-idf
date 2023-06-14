@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 //ADC utilises I2S0 DMA on ESP32
-#include "hal/i2s_ll.h"
+#include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "soc/i2s_struct.h"
 #endif
@@ -180,8 +180,9 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuo
     uint32_t bclk_div = 16;
     uint32_t bclk = sample_freq_hz * 2;
     uint32_t mclk = bclk * bclk_div;
-    uint32_t mclk_div = I2S_BASE_CLK / mclk;
-    i2s_ll_rx_set_mclk(hal->dev, I2S_BASE_CLK, mclk, mclk_div);
+    i2s_ll_mclk_div_t mclk_div = {};
+    i2s_hal_calc_mclk_precise_division(I2S_BASE_CLK, mclk, &mclk_div);
+    i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
     i2s_ll_rx_set_bck_div_num(hal->dev, bclk_div);
 #endif
 }
