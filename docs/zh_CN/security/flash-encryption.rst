@@ -17,17 +17,6 @@ flash 加密
 
 flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 中的内容。启用 flash 加密功能后，固件会以明文形式烧录，然后在首次启动时将数据进行加密。因此，物理读取 flash 将无法恢复大部分 flash 内容。
 
-启用 flash 加密后，系统将默认加密下列类型的 flash 数据：
-
-- 固件引导加载程序
-- 分区表
-- 所有 “app” 类型的分区
-
-其他类型的数据将视情况进行加密：
-
-- 任何在分区表中标有“加密”标志的分区。详情请见 :ref:`encrypted-partition-flag`。
-- 如果启用了安全启动，则可以加密安全启动引导程序摘要（见下文）。
-
 .. only:: esp32
 
     :doc:`安全启动<secure-boot-v2>` 是一个独立的功能，可以与 flash 加密一起使用，从而创建更安全的环境。
@@ -39,6 +28,24 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 .. important::
 
     启用 flash 加密将限制后续 {IDF_TARGET_NAME} 更新。在使用 flash 加密功能前，请务必阅读本文档了解其影响。
+
+.. _encrypted-partitions:
+
+Encrypted Partitions
+--------------------
+
+启用 flash 加密后，系统将默认加密下列类型的 flash 数据：
+
+- 固件引导加载程序
+- 分区表
+- :ref:`nvs_key_partition`
+- Otadata
+- 所有 “app” 类型的分区
+
+其他类型的数据将视情况进行加密：
+
+- 任何在分区表中标有“加密”标志的分区。详情请见 :ref:`encrypted-partition-flag`。
+- 如果启用了安全启动，则可以加密安全启动引导程序摘要（见下文）。
 
 .. _flash-encryption-efuse:
 
