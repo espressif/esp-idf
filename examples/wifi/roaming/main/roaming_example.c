@@ -51,7 +51,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 	} else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
 #if EXAMPLE_WIFI_RSSI_THRESHOLD
 		if (EXAMPLE_WIFI_RSSI_THRESHOLD) {
-			ESP_LOGI(TAG, "setting rssi threshold as %d\n", EXAMPLE_WIFI_RSSI_THRESHOLD);
+			ESP_LOGI(TAG, "setting rssi threshold as %d", EXAMPLE_WIFI_RSSI_THRESHOLD);
 			esp_wifi_set_rssi_threshold(EXAMPLE_WIFI_RSSI_THRESHOLD);
 		}
 #endif

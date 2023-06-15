@@ -237,7 +237,7 @@ static void bt_app_send_data_task(void *arg)
             bt_app_hf_create_audio_data(buf, frame_data_num);
             BaseType_t done = xRingbufferSend(s_m_rb, buf, frame_data_num, 0);
             if (!done) {
-                ESP_LOGE(BT_HF_TAG, "rb send fail\n");
+                ESP_LOGE(BT_HF_TAG, "rb send fail");
             }
             osi_free(buf);
             vRingbufferGetInfo(s_m_rb, NULL, NULL, NULL, NULL, &item_size);

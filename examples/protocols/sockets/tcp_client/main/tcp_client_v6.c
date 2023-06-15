@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -192,7 +192,7 @@ void tcp_client(void)
         ESP_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, PORT);
 
         if (0 != get_src_iface(interface)) {
-            ESP_LOGE(TAG, "Interface: Unavailable\n");
+            ESP_LOGE(TAG, "Interface: Unavailable");
             break;
         }
 
@@ -205,7 +205,7 @@ void tcp_client(void)
         }
 #if defined(CONFIG_EXAMPLE_IPV6)
         dest_addr.sin6_scope_id = ifr.ifr_ifindex;
-        ESP_LOGI(TAG, "Interface index: %d\n", dest_addr.sin6_scope_id);
+        ESP_LOGI(TAG, "Interface index: %d", dest_addr.sin6_scope_id);
 #endif
 #else
         if (NULL == (netif = get_esp_netif_from_iface(interface))) {
@@ -214,7 +214,7 @@ void tcp_client(void)
         }
 #if defined(CONFIG_EXAMPLE_IPV6)
         dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(netif);
-        ESP_LOGI(TAG, "Interface index: %d\n", dest_addr.sin6_scope_id);
+        ESP_LOGI(TAG, "Interface index: %d", dest_addr.sin6_scope_id);
 #endif
 #endif
 

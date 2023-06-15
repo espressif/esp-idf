@@ -183,7 +183,7 @@ TEST_CASE("test psram unaligned access", "[psram]")
             ESP_LOGV(TAG, "i is %d, j is %d, expected_val_16bit val  is 0x%"PRIx16, i, j, expected_val_16bit);
             TEST_ASSERT(val_16bit == expected_val_16bit);
             uint32_t expected_val_32bit = (fourth_byte << 24) | (third_byte << 16) | (second_byte << 8) | first_byte;
-            ESP_LOGV(TAG, "i is %d, j is %d, expected_val_32bit val  is 0x%"PRIx32"\n", i, j, expected_val_32bit);
+            ESP_LOGV(TAG, "i is %d, j is %d, expected_val_32bit val  is 0x%" PRIx32, i, j, expected_val_32bit);
             TEST_ASSERT(val_32bit == expected_val_32bit);
         }
     }

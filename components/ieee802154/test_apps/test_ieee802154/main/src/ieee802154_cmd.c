@@ -651,7 +651,7 @@ static int process_free(int argc, char **argv)
     }
 
     esp_get_free_heap_size();
-    ESP_LOGI(TAG, "heap size: %"PRIu32"\n", esp_get_free_heap_size());
+    ESP_LOGI(TAG, "heap size: %" PRIu32, esp_get_free_heap_size());
     return 0;
 }
 

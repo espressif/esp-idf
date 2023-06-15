@@ -23,7 +23,7 @@ The registration takes place in the ``app_main()`` function by using the ``esp_b
 …
 ret = esp_ble_gattc_app_register(PROFILE_A_APP_ID);
 if (ret){
-	ESP_LOGE(GATTC_TAG, "%s gattc app register error, error code = %x\n", __func__, ret);
+	ESP_LOGE(GATTC_TAG, "%s gattc app register error, error code = %x", __func__, ret);
 }
 …
 ```

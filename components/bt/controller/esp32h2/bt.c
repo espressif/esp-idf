@@ -449,7 +449,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
         esp_err_t err = esp_timer_start_once(s_ble_sleep_timer,
                                              us_to_sleep - BTDM_MIN_TIMER_UNCERTAINTY_US);
         if (err != ESP_OK) {
-            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ESP timer start failed\n");
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ESP timer start failed");
             return;
         }
     }
@@ -495,7 +495,7 @@ esp_err_t controller_sleep_init(void)
     esp_err_t rc = 0;
 
 #ifdef CONFIG_BT_LE_SLEEP_ENABLE
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled\n");
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled");
     ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
                                 500 + BLE_RTC_DELAY_US);
 

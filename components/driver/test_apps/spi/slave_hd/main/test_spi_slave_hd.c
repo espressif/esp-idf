@@ -255,7 +255,7 @@ void test_wrdma(testhd_context_t* ctx, const spitest_param_set_t *cfg, spi_devic
     if (pos+len > TEST_DMA_MAX_SIZE) len = TEST_DMA_MAX_SIZE - pos;
 
     int test_seg_size = len;//TEST_SEG_SIZE;
-    ESP_LOGW("test_wrdma", "len: %d, seg_size: %d\n", len, test_seg_size);
+    ESP_LOGW("test_wrdma", "len: %d, seg_size: %d", len, test_seg_size);
     TEST_ESP_OK(essl_spi_wrdma(spi, &ctx->master_wrdma_buf[pos], len, test_seg_size, get_hd_flags()));
 
     spi_slave_hd_data_t* ret_trans;
@@ -284,7 +284,7 @@ void test_rddma(testhd_context_t* ctx, const spitest_param_set_t* cfg, spi_devic
     len = ctx->tx_data.len;
     test_seg_size = TEST_SEG_SIZE;
 
-    ESP_LOGW("test_rddma", "pos: %d, len: %d, slave_tx: %d, seg_size: %d\n", data_expected - ctx->slave_rddma_buf, len, ctx->tx_data.len, test_seg_size);
+    ESP_LOGW("test_rddma", "pos: %d, len: %d, slave_tx: %d, seg_size: %d", data_expected - ctx->slave_rddma_buf, len, ctx->tx_data.len, test_seg_size);
 
     TEST_ESP_OK(essl_spi_rddma(spi, ctx->master_rddma_buf, len, test_seg_size, get_hd_flags()));
 

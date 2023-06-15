@@ -151,7 +151,7 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
         m = ble_transport_alloc_acl_from_ll();
 
         if (!m) {
-            ESP_LOGD(TAG,"Failed to allocate buffer, retrying \n");
+            ESP_LOGD(TAG,"Failed to allocate buffer, retrying ");
 	    /* Give some time to free buffer and try again */
 	    vTaskDelay(1);
 	}

@@ -654,7 +654,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
         return err;
     }
     uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
-    ESP_LOGV(TAG, "phy_get_rf_cal_version: %" PRId32 "\n", cal_format_version);
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %" PRId32, cal_format_version);
     if (cal_data_version != cal_format_version) {
         ESP_LOGD(TAG, "%s: expected calibration data format %" PRId32 ", found %" PRId32 "",
                 __func__, cal_format_version, cal_data_version);
@@ -699,7 +699,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
 
     err = nvs_set_blob(handle, PHY_CAL_DATA_KEY, cal_data, sizeof(*cal_data));
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: store calibration data failed(0x%x)\n", __func__, err);
+        ESP_LOGE(TAG, "%s: store calibration data failed(0x%x)", __func__, err);
         return err;
     }
 
@@ -707,21 +707,21 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
     ESP_ERROR_CHECK(esp_efuse_mac_get_default(sta_mac));
     err = nvs_set_blob(handle, PHY_CAL_MAC_KEY, sta_mac, sizeof(sta_mac));
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: store calibration mac failed(0x%x)\n", __func__, err);
+        ESP_LOGE(TAG, "%s: store calibration mac failed(0x%x)", __func__, err);
         return err;
     }
 
     uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
-    ESP_LOGV(TAG, "phy_get_rf_cal_version: %" PRId32 "\n", cal_format_version);
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %" PRId32 "", cal_format_version);
     err = nvs_set_u32(handle, PHY_CAL_VERSION_KEY, cal_format_version);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: store calibration version failed(0x%x)\n", __func__, err);
+        ESP_LOGE(TAG, "%s: store calibration version failed(0x%x)", __func__, err);
         return err;
     }
 
     err = nvs_commit(handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: store calibration nvs commit failed(0x%x)\n", __func__, err);
+        ESP_LOGE(TAG, "%s: store calibration nvs commit failed(0x%x)", __func__, err);
     }
 
     return err;
@@ -854,7 +854,7 @@ static uint8_t phy_find_bin_type_according_country(const char* country)
     {
         if (!memcmp(country, s_country_code_map_type_table[i].cc, sizeof(s_phy_current_country))) {
             phy_init_data_type = s_country_code_map_type_table[i].type;
-            ESP_LOGD(TAG, "Current country is %c%c, PHY init data type is %s\n", s_country_code_map_type_table[i].cc[0],
+            ESP_LOGD(TAG, "Current country is %c%c, PHY init data type is %s", s_country_code_map_type_table[i].cc[0],
                     s_country_code_map_type_table[i].cc[1], s_phy_type[s_country_code_map_type_table[i].type]);
             break;
         }

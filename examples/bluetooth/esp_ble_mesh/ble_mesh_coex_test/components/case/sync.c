@@ -224,7 +224,7 @@ void excute_case(uint8_t run_case)
     run_task_msg_t msg;
     msg.case_id = run_case;
     if (xQueueSend(xTaskQueue, &msg, portMAX_DELAY) != pdTRUE) {
-        ESP_LOGE(TAG, "xTaskQueue Post failed\n");
+        ESP_LOGE(TAG, "xTaskQueue Post failed");
     }
 }
 
@@ -251,7 +251,7 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
     for (int i = 0 ; i < PARAM_MAX; i++ ) {
         switch (GET_PARAM(param_bit, 0x1000 >> i)) {
         case BLE_CASE_ID:
-            ESP_LOGD(TAG, "BLE_CASE_ID\n");
+            ESP_LOGD(TAG, "BLE_CASE_ID");
 #if defined(CONFIG_EXAMPLE_BT_ROLE)
             sync_obj.own_ble_case = data[data_ptr];
             (*recv_param_bit) |= BLE_CASE_ID;
@@ -259,7 +259,7 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
             data_ptr += 1;
             break;
         case WIFI_CASE_ID:
-            ESP_LOGD(TAG, "WIFI_CASE_ID\n");
+            ESP_LOGD(TAG, "WIFI_CASE_ID");
 #if defined(CONFIG_EXAMPLE_WIFI_ROLE)
             sync_obj.own_wifi_case = data[data_ptr];
             (*recv_param_bit) |= WIFI_CASE_ID;
@@ -267,12 +267,12 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
             data_ptr += 1;
             break;
         case START_TIME:
-            ESP_LOGD(TAG, "START_TIME\n");
+            ESP_LOGD(TAG, "START_TIME");
             sync_obj.start_time   = data[data_ptr];
             data_ptr += 1;
             break;
         case SERVER_IP: {
-            ESP_LOGD(TAG, "SERVER_IP\n");
+            ESP_LOGD(TAG, "SERVER_IP");
             char server_ip[16];
             memset(server_ip, '0', sizeof(server_ip));
             sprintf(server_ip, "%d.%d.%d.%d", data[data_ptr], data[data_ptr + 1], data[data_ptr + 2], data[data_ptr + 3]); // size conversion
@@ -283,7 +283,7 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
             break;
         }
         case WIFI_SSID: {
-            ESP_LOGD(TAG, "WIFI_SSID\n");
+            ESP_LOGD(TAG, "WIFI_SSID");
             uint8_t length = data[data_ptr];
             data_ptr += 1;
             if ( length > 20) {
@@ -292,7 +292,7 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
             }
             char *ssid = malloc(length + 1);
             if (ssid == NULL) {
-                ESP_LOGE(TAG, "%s malloc fail\n", __func__);
+                ESP_LOGE(TAG, "%s malloc fail", __func__);
                 return ;
             }
             memset(ssid, '0', sizeof(length + 1));
@@ -308,7 +308,7 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
             break;
         }
         case WIFI_PASSWIRD: {
-            ESP_LOGD(TAG, "WIFI_PASSWIRD\n");
+            ESP_LOGD(TAG, "WIFI_PASSWIRD");
             uint8_t length = data[data_ptr];
             data_ptr += 1;
             if ( length > 20) {
@@ -317,7 +317,7 @@ void analys_param(uint16_t param_bit, uint8_t data[], uint16_t *recv_param_bit)
             }
             char *password = malloc(length + 1);
             if (password == NULL) {
-                ESP_LOGE(TAG, "%s malloc fail\n", __func__);
+                ESP_LOGE(TAG, "%s malloc fail", __func__);
                 return ;
             }
             memset(password, '0', sizeof(length + 1));
@@ -350,12 +350,12 @@ void sync_cmd_recv(uint8_t *raw_data, uint32_t raw_data_len)
         ESP_LOGD(TAG, "msg is unknown");
         return;
     }
-    ESP_LOGD(TAG, "msg_id: %x\n", msg_head.msg_id);
+    ESP_LOGD(TAG, "msg_id: %x", msg_head.msg_id);
     // ESP_LOG_BUFFER_HEX("sync recv:", raw_data, raw_data_len);
     switch (sync_obj.state) {
 #if defined(CONFIG_EXAMPLE_WIFI_ROLE) || defined(CONFIG_EXAMPLE_BT_ROLE)
     case WAIT_CASE: {
-        ESP_LOGD(TAG, "WAIT_CASE\n");
+        ESP_LOGD(TAG, "WAIT_CASE");
         if (msg_head.msg_id == MSG_ID_ASSIGN_CASE) {
             analys_param(msg_head.param_bit, raw_data + MSG_DATA_BASE, &sync_obj.recv_param_bit );
 #if defined(CONFIG_EXAMPLE_WIFI_ROLE)
@@ -379,8 +379,8 @@ void sync_cmd_recv(uint8_t *raw_data, uint32_t raw_data_len)
         break;
     }
     case WAIT_START:
-        ESP_LOGD(TAG, "WAIT_START\n");
-        ESP_LOGD(TAG, "WAIT_START %x\n", msg_head.msg_id);
+        ESP_LOGD(TAG, "WAIT_START");
+        ESP_LOGD(TAG, "WAIT_START %x", msg_head.msg_id);
         if (msg_head.msg_id == MSG_ID_START_CASE) {
             analys_param(msg_head.param_bit, raw_data + MSG_DATA_BASE, &sync_obj.recv_param_bit );
             sync_obj.state = START_CASE;
@@ -395,7 +395,7 @@ void sync_cmd_recv(uint8_t *raw_data, uint32_t raw_data_len)
 #endif
 #if defined(CONFIG_EXAMPLE_COEX_ROLE)
     case ASSIGN_CASE:
-        ESP_LOGD(TAG, "ASSIGN_CASE\n");
+        ESP_LOGD(TAG, "ASSIGN_CASE");
         switch (msg_head.msg_id) {
         case MSG_ID_WIFI_DEV_INIT_FINISH:
             if (msg_head.param_bit != 0x0) {
@@ -429,7 +429,7 @@ static void handle_sync_timeout(void *arg)
     switch (sync_obj.state) {
 #if defined(CONFIG_EXAMPLE_COEX_ROLE)
     case ASSIGN_CASE:
-        ESP_LOGD(TAG, "ASSIGN_CASE\n");
+        ESP_LOGD(TAG, "ASSIGN_CASE");
         assign_test_case();
         esp_timer_start_periodic(sync_obj.sync_timer, SYNC_TIMEOUT);
         break;
@@ -437,7 +437,7 @@ static void handle_sync_timeout(void *arg)
 
 #if defined(CONFIG_EXAMPLE_WIFI_ROLE) || defined(CONFIG_EXAMPLE_BT_ROLE)
     case WAIT_START: {
-        ESP_LOGD(TAG, "WAIT_START\n");
+        ESP_LOGD(TAG, "WAIT_START");
 #if defined(CONFIG_EXAMPLE_WIFI_ROLE)
         if ( WIFI_TCP_RX_CASE == sync_obj.own_wifi_case ) {
             send_tcp_rx_inited_msg();
@@ -454,12 +454,12 @@ static void handle_sync_timeout(void *arg)
 
 
     case START_CASE: {
-        ESP_LOGD(TAG, "START_CASE\n");
+        ESP_LOGD(TAG, "START_CASE");
 #if defined(CONFIG_EXAMPLE_BT_ROLE)
         excute_case(sync_obj.own_ble_case);
 
 #elif defined(CONFIG_EXAMPLE_WIFI_ROLE)
-        ESP_LOGD(TAG, "START_CASE\n");
+        ESP_LOGD(TAG, "START_CASE");
         if (arg != NULL) {
             xSemaphoreGive((SemaphoreHandle_t)arg);
             run_first = true;
@@ -500,7 +500,7 @@ esp_err_t create_sync_timer(esp_timer_handle_t *timer_hdl)
 
     ret = esp_timer_create(&tca, timer_hdl);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "timer create failed %d %x\n", __LINE__, ret);
+        ESP_LOGE(TAG, "timer create failed %d %x", __LINE__, ret);
         return ret;
     }
     esp_timer_start_once( *timer_hdl, 10);

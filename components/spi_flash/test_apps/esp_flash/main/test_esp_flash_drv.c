@@ -61,12 +61,12 @@ static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int
 static void setup_bus(spi_host_device_t host_id)
 {
     if (host_id == SPI1_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
+        ESP_LOGI(TAG, "setup flash on SPI1 CS1...");
         //no need to initialize the bus, however the CLK may need one more output if it's on the usual place of PSRAM
         esp_rom_gpio_connect_out_signal(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...\n", host_id + 1);
+        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...", host_id + 1);
         spi_bus_config_t hspi_bus_cfg = {
             .mosi_io_num = HSPI_PIN_NUM_MOSI,
             .miso_io_num = HSPI_PIN_NUM_MISO,
@@ -78,7 +78,7 @@ static void setup_bus(spi_host_device_t host_id)
         esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
         TEST_ESP_OK(ret);
     } else if (host_id == SPI3_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (VSPI) CS0...\n", host_id + 1);
+        ESP_LOGI(TAG, "setup flash on SPI%u (VSPI) CS0...", host_id + 1);
         spi_bus_config_t vspi_bus_cfg = {
             .mosi_io_num = VSPI_PIN_NUM_MOSI,
             .miso_io_num = VSPI_PIN_NUM_MISO,
@@ -97,7 +97,7 @@ static void setup_bus(spi_host_device_t host_id)
 static void setup_bus(spi_host_device_t host_id)
 {
     if (host_id == SPI1_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
+        ESP_LOGI(TAG, "setup flash on SPI1 CS1...");
 #if !CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_ESPTOOLPY_FLASHMODE_QOUT
         //Initialize the WP and HD pins, which are not automatically initialized on ESP32-S2.
         int wp_pin = spi_periph_signal[host_id].spiwp_iomux_pin;
@@ -109,7 +109,7 @@ static void setup_bus(spi_host_device_t host_id)
 #endif //CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (FSPI) CS0...\n", host_id + 1);
+        ESP_LOGI(TAG, "setup flash on SPI%u (FSPI) CS0...", host_id + 1);
         spi_bus_config_t fspi_bus_cfg = {
             .mosi_io_num = FSPI_PIN_NUM_MOSI,
             .miso_io_num = FSPI_PIN_NUM_MISO,
@@ -123,7 +123,7 @@ static void setup_bus(spi_host_device_t host_id)
     }
 #if SOC_SPI_PERIPH_NUM > 2
     else if (host_id == SPI3_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...\n", host_id + 1);
+        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...", host_id + 1);
         spi_bus_config_t hspi_bus_cfg = {
             .mosi_io_num = HSPI_PIN_NUM_MOSI,
             .miso_io_num = HSPI_PIN_NUM_MISO,

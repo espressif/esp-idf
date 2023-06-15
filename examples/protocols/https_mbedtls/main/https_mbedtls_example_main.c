@@ -71,7 +71,7 @@ static void https_get_task(void *pvParameters)
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
     psa_status_t status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d\n", (int) status);
+        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d", (int) status);
         return;
     }
 #endif
@@ -97,7 +97,7 @@ static void https_get_task(void *pvParameters)
 
     if(ret < 0)
     {
-        ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x\n\n", -ret);
+        ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x", -ret);
         abort();
     }
 
@@ -134,7 +134,7 @@ static void https_get_task(void *pvParameters)
 #endif
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
     {
-        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
         goto exit;
     }
 

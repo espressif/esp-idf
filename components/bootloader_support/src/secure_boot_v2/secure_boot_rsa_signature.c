@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +41,7 @@ esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_bloc
     mbedtls_ctr_drbg_init(&ctr_drbg);
     ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
     if (ret != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04x\n", ret);
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04x", ret);
         goto exit_outer;
     }
 

@@ -143,7 +143,7 @@ esp_err_t WL_Ext_Perf::erase_range(size_t start_address, size_t size)
         result = this->erase_sector_fit(start_address / this->fat_sector_size, pre_check_count);
         WL_EXT_RESULT_CHECK(result);
     }
-    ESP_LOGV(TAG, "%s rest_check_start = %i, pre_check_count=%i, rest_check_count=%i, post_check_count=%i\n", __func__, rest_check_start, pre_check_count, rest_check_count, post_check_count);
+    ESP_LOGV(TAG, "%s rest_check_start = %i, pre_check_count=%i, rest_check_count=%i, post_check_count=%i", __func__, rest_check_start, pre_check_count, rest_check_count, post_check_count);
     if (rest_check_count > 0) {
         rest_check_count = rest_check_count / this->size_factor;
         size_t start_sector = rest_check_start / this->flash_sector_size;
