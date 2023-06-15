@@ -1,0 +1,11 @@
+# ESP32S3 has USB-OTG, let's prefer virtual Ethernet (USB-NCM device)
+CONFIG_EXAMPLE_WIRED_INTERFACE_IS_USB=y
+CONFIG_EXAMPLE_WIRED_INTERFACE_IS_ETHERNET=n
+
+# TinyUSB needs to be initialized and run from one core
+# that's why we pin the task to CPU0 and init tusb in the task
+# on dual core devices (ESP32S3)
+CONFIG_TINYUSB_TASK_AFFINITY_CPU0=y
+CONFIG_TINYUSB_INIT_IN_DEFAULT_TASK=y
+
+CONFIG_TINYUSB_NET_MODE_NCM=y

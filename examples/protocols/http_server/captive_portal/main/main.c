@@ -159,5 +159,6 @@ void app_main(void)
     start_webserver();
 
     // Start the DNS server that will redirect all queries to the softAP IP
-    start_dns_server();
+    dns_server_config_t config = DNS_SERVER_CONFIG_SINGLE("*" /* all A queries */, "WIFI_AP_DEF" /* softAP netif ID */);
+    start_dns_server(&config);
 }
