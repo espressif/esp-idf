@@ -632,6 +632,7 @@ typedef enum {
 extern void filter_duplicate_mode_enable(disc_duplicate_mode_t mode);
 extern void filter_duplicate_mode_disable(disc_duplicate_mode_t mode);
 extern void filter_duplicate_set_ring_list_max_num(uint32_t max_num);
+extern void scan_duplicate_cache_refresh_set_time(uint32_t period_time);
 
 int
 ble_vhci_disc_duplicate_mode_enable(int mode)
@@ -655,6 +656,12 @@ int ble_vhci_disc_duplicate_set_max_cache_size(int max_cache_size){
     return true;
 }
 
+int ble_vhci_disc_duplicate_set_period_refresh_time(int refresh_period_time){
+    // TODO: use vendor hci to update
+    scan_duplicate_cache_refresh_set_time(refresh_period_time);
+    return true;
+}
+
 /**
  * @brief Config scan duplicate option mode from menuconfig (Adapt to the old configuration method.)
  */
@@ -675,6 +682,7 @@ void ble_controller_scan_duplicate_config()
     ble_vhci_disc_duplicate_mode_disable(0xFF);
     ble_vhci_disc_duplicate_mode_enable(duplicate_mode);
     ble_vhci_disc_duplicate_set_max_cache_size(cache_size);
+    ble_vhci_disc_duplicate_set_period_refresh_time(CONFIG_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD);
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
