@@ -27,6 +27,10 @@ INPUT = \
     $(PROJECT_PATH)/components/bootloader_support/include/bootloader_random.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
+    $(PROJECT_PATH)/components/esp_coex/include/esp_coexist_adapter.h \
+    $(PROJECT_PATH)/components/esp_coex/include/esp_coexist_internal.h \
+    $(PROJECT_PATH)/components/esp_coex/include/esp_coexist.h \
+    $(PROJECT_PATH)/components/esp_coex/include/esp_modem_wrapper.h \
     $(PROJECT_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
@@ -196,10 +200,14 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh_internal.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_now.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_smartconfig.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_ap_get_sta_list.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_crypto_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_default.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_netif.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_mbo.h  \
