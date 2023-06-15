@@ -83,6 +83,7 @@ typedef enum {
     ESP_PHY_INIT_DATA_TYPE_OFCA,
     ESP_PHY_INIT_DATA_TYPE_IFETEL,
     ESP_PHY_INIT_DATA_TYPE_RCM,
+    ESP_PHY_INIT_DATA_TYPE_CS,
     ESP_PHY_INIT_DATA_TYPE_NUMBER,
 } phy_init_data_type_t;
 #endif

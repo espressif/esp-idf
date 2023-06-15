@@ -88,8 +88,8 @@ static char s_phy_current_country[PHY_COUNTRY_CODE_LEN] = {0};
 static bool s_multiple_phy_init_data_bin = false;
 
 /* PHY init data type array */
-static char* s_phy_type[ESP_PHY_INIT_DATA_TYPE_NUMBER] = {"DEFAULT", "SRRC", "FCC", "CE", "NCC", "KCC", "MIC", "IC", 
-    "ACMA", "ANATEL", "ISED", "WPC", "OFCA", "IFETEL", "RCM"};
+static char* s_phy_type[ESP_PHY_INIT_DATA_TYPE_NUMBER] = {"DEFAULT", "SRRC", "FCC", "CE", "NCC", "KCC", "MIC", "IC",
+    "ACMA", "ANATEL", "ISED", "WPC", "OFCA", "IFETEL", "RCM", "CS"};
 
 /* Country and PHY init data type map */
 static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
@@ -137,6 +137,7 @@ static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
     {"SK",  ESP_PHY_INIT_DATA_TYPE_CE},
     {"TW",  ESP_PHY_INIT_DATA_TYPE_NCC},
     {"US",  ESP_PHY_INIT_DATA_TYPE_FCC},
+    {"CS",  ESP_PHY_INIT_DATA_TYPE_CS},
 };
 #endif
 uint32_t IRAM_ATTR phy_enter_critical(void)
