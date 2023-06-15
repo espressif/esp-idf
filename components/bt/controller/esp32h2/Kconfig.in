@@ -402,3 +402,59 @@ config BT_LE_USE_ESP_TIMER
     help
         Set this option to use Esp Timer which has higher priority timer
         instead of FreeRTOS timer
+
+config BT_LE_SCAN_DUPL
+    bool "BLE Scan Duplicate Options"
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+choice BT_LE_SCAN_DUPL_TYPE
+    prompt "Scan Duplicate Type"
+    default BT_LE_SCAN_DUPL_TYPE_DEVICE
+    depends on BT_LE_SCAN_DUPL
+    help
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use
+        advertiser address filtering. The adv packet of the same address is only allowed to be reported once.
+        Another way is "Scan Duplicate By Device Address And Advertising Data". This way is to use advertising
+        data and device address filtering. All different adv packets with the same address are allowed to be
+        reported. The last way is "Scan Duplicate By Advertising Data". This way is to use advertising data
+        filtering. All same advertising data only allow to be reported once even though they are from
+        different devices.
+
+    config BT_LE_SCAN_DUPL_TYPE_DEVICE
+        bool "Scan Duplicate By Device Address"
+        help
+            This way is to use advertiser address filtering. The adv packet of the same address is only
+            allowed to be reported once
+
+    config BT_LE_SCAN_DUPL_TYPE_DATA
+        bool "Scan Duplicate By Advertising Data"
+        help
+            This way is to use advertising data filtering. All same advertising data only allow to be reported
+            once even though they are from different devices.
+
+    config BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
+        bool "Scan Duplicate By Device Address And Advertising Data"
+        help
+            This way is to use advertising data and device address filtering. All different adv packets with
+            the same address are allowed to be reported.
+endchoice
+
+config BT_LE_SCAN_DUPL_TYPE
+    int
+    depends on BT_LE_SCAN_DUPL
+    default 0 if BT_LE_SCAN_DUPL_TYPE_DEVICE
+    default 1 if BT_LE_SCAN_DUPL_TYPE_DATA
+    default 2 if BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
+    default 0
+
+
+config BT_LE_SCAN_DUPL_CACHE_SIZE
+    int "Maximum number of devices in scan duplicate filter"
+    depends on BT_LE_SCAN_DUPL
+    range 10 1000
+    default 100
+    help
+        Maximum number of devices which can be recorded in scan duplicate filter.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
