@@ -558,6 +558,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     }
     int gpio_cd = slot_config->cd;
     int gpio_wp = slot_config->wp;
+    bool gpio_wp_polarity = slot_config->flags & SDMMC_SLOT_FLAG_WP_ACTIVE_HIGH;
     uint8_t slot_width = slot_config->width;
 
     // Configure pins
@@ -649,9 +650,10 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         // if not set, default to WP high (not write protected)
         matrix_in_wp = GPIO_MATRIX_CONST_ONE_INPUT;
     }
-    // WP signal is normally active low, but hardware expects
-    // an active-high signal, so invert it in GPIO matrix
-    esp_rom_gpio_connect_in_signal(matrix_in_wp, slot_info->write_protect, true);
+    // As hardware expects an active-high signal,
+    // if WP signal is active low, then invert it in GPIO matrix,
+    // else keep it in its default state
+    esp_rom_gpio_connect_in_signal(matrix_in_wp, slot_info->write_protect, (gpio_wp_polarity? false : true));
 
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);

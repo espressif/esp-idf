@@ -46,7 +46,11 @@ typedef struct {
     uint8_t gpio_cs;            //!< CS GPIO, or GPIO_UNUSED
     uint8_t gpio_cd;            //!< Card detect GPIO, or GPIO_UNUSED
     uint8_t gpio_wp;            //!< Write protect GPIO, or GPIO_UNUSED
-    uint8_t gpio_int;            //!< Write protect GPIO, or GPIO_UNUSED
+    uint8_t gpio_int;           //!< Write protect GPIO, or GPIO_UNUSED
+    /// GPIO write protect polarity.
+    /// 0 means "active low", i.e. card is protected when the GPIO is low;
+    /// 1 means "active high", i.e. card is protected when GPIO is high.
+    uint8_t gpio_wp_polarity : 1;
     /// Set to 1 if the higher layer has asked the card to enable CRC checks
     uint8_t data_crc_enabled : 1;
     /// Intermediate buffer used when application buffer is not in DMA memory;
@@ -133,13 +137,13 @@ static void cs_low(slot_info_t *slot)
     }
 }
 
-/// Return true if WP pin is configured and is low
+/// Return true if WP pin is configured and is set as per its polarity
 static bool card_write_protected(slot_info_t *slot)
 {
     if (slot->gpio_wp == GPIO_UNUSED) {
         return false;
     }
-    return gpio_get_level(slot->gpio_wp) == 0;
+    return gpio_get_level(slot->gpio_wp) == (slot->gpio_wp_polarity ? 1 : 0);
 }
 
 /// Return true if CD pin is configured and is high
@@ -322,9 +326,9 @@ static void gpio_intr(void* arg)
 
 esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi_dev_handle_t* out_handle)
 {
-    ESP_LOGD(TAG, "%s: SPI%d cs=%d cd=%d wp=%d",
+    ESP_LOGD(TAG, "%s: SPI%d cs=%d cd=%d wp=%d wp_polarity:%d",
              __func__, slot_config->host_id + 1, slot_config->gpio_cs,
-             slot_config->gpio_cd, slot_config->gpio_wp);
+             slot_config->gpio_cd, slot_config->gpio_wp, slot_config->gpio_wp_polarity);
 
     slot_info_t* slot = (slot_info_t*)malloc(sizeof(slot_info_t));
     if (slot == NULL) {
@@ -380,6 +384,11 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
     if (slot_config->gpio_wp != SDSPI_SLOT_NO_WP) {
         io_conf.pin_bit_mask |= (1ULL << slot_config->gpio_wp);
         slot->gpio_wp = slot_config->gpio_wp;
+        slot->gpio_wp_polarity = slot_config->gpio_wp_polarity;
+        if (slot->gpio_wp_polarity) {
+            io_conf.pull_down_en = true;
+            io_conf.pull_up_en = false;
+        }
     } else {
         slot->gpio_wp = GPIO_UNUSED;
     }
