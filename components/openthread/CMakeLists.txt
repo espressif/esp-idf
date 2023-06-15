@@ -174,7 +174,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        REQUIRES esp_netif lwip driver
                        LDFRAGMENTS linker.lf
                        PRIV_REQUIRES console esp_event esp_partition esp_timer
-                                     ieee802154 mbedtls spi_flash)
+                                     ieee802154 mbedtls nvs_flash)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)

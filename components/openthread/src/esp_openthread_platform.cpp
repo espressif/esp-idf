@@ -102,17 +102,11 @@ esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *c
     s_openthread_platform_initialized = true;
     esp_err_t ret = ESP_OK;
 
-/* Avoid to compile flash in RADIO type device */
-#if !CONFIG_OPENTHREAD_RADIO
-    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY,
-                                                                config->port_config.storage_partition_name);
-    ESP_RETURN_ON_FALSE(partition, ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "OpenThread storage partition not found");
-    esp_openthread_flash_set_partition(partition);
-#endif
-
     s_platform_config = *config;
     ESP_GOTO_ON_ERROR(esp_openthread_lock_init(), exit, OT_PLAT_LOG_TAG, "esp_openthread_lock_init failed");
     ESP_GOTO_ON_ERROR(esp_openthread_alarm_init(), exit, OT_PLAT_LOG_TAG, "esp_openthread_alarm_init failed");
+
+    esp_openthread_set_storage_name(config->port_config.storage_partition_name);
 
     if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI) {
         ESP_GOTO_ON_ERROR(esp_openthread_spi_slave_init(config), exit, OT_PLAT_LOG_TAG,
