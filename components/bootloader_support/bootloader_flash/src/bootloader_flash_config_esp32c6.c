@@ -200,6 +200,12 @@ esp_err_t bootloader_init_spi_flash(void)
     bootloader_enable_qio_mode();
 #endif
 
+    // Since the workaround in IDF-6709, the spi_speed value in the bootloader header
+    // is not the real value, overwrite it.
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    bootloader_image_hdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_1;
+#endif
+
     print_flash_info(&bootloader_image_hdr);
     update_flash_config(&bootloader_image_hdr);
     //ensure the flash is write-protected
