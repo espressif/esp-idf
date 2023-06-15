@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,8 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
 #define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str)
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
+#define LEDC_CHECK_ISR(a, str, ret_val) ESP_RETURN_ON_FALSE_ISR(a, ret_val, LEDC_TAG, "%s", str)
+#define LEDC_ARG_CHECK_ISR(a, param) ESP_RETURN_ON_FALSE_ISR(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
 
 #define LEDC_CLK_NOT_FOUND  0
 #define LEDC_SLOW_CLK_UNINIT -1
@@ -705,26 +707,26 @@ static void _ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 
 esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
-    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    portENTER_CRITICAL(&ledc_spinlock);
+    LEDC_ARG_CHECK_ISR(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK_ISR(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK_ISR(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    portENTER_CRITICAL_SAFE(&ledc_spinlock);
     _ledc_update_duty(speed_mode, channel);
-    portEXIT_CRITICAL(&ledc_spinlock);
+    portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idle_level)
 {
-    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
-    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    portENTER_CRITICAL(&ledc_spinlock);
+    LEDC_ARG_CHECK_ISR(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK_ISR(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK_ISR(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    portENTER_CRITICAL_SAFE(&ledc_spinlock);
     ledc_hal_set_idle_level(&(p_ledc_obj[speed_mode]->ledc_hal), channel, idle_level);
     ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
     ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
     ledc_ls_channel_update(speed_mode, channel);
-    portEXIT_CRITICAL(&ledc_spinlock);
+    portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
 }
 

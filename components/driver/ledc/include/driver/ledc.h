@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,6 +141,9 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf);
  * @note  ledc_set_duty, ledc_set_duty_with_hpoint and ledc_update_duty are not thread-safe, do not call these functions to
  *        control one LEDC channel in different tasks at the same time.
  *        A thread-safe version of API is ledc_set_duty_and_update
+ * @note  If `CONFIG_LEDC_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *        makes it possible to execute even when the Cache is disabled.
+ * @note  This function is allowed to run within ISR context.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  *
@@ -171,6 +174,9 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
  * @brief LEDC stop.
  *        Disable LEDC output, and set idle level
  *
+ * @note  If `CONFIG_LEDC_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
+ *        makes it possible to execute even when the Cache is disabled.
+ * @note  This function is allowed to run within ISR context.
  * @param  speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param  channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param  idle_level Set output idle level after LEDC stops.
