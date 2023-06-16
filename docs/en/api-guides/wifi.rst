@@ -1665,7 +1665,11 @@ In maximum power-saving mode, station wakes up in every listen interval to recei
 
 Call ``esp_wifi_set_ps(WIFI_PS_MIN_MODEM)`` to enable Modem-sleep minimum power-saving mode or ``esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`` to enable Modem-sleep maximum power-saving mode after calling :cpp:func:`esp_wifi_init()`. When station connects to AP, Modem-sleep will start. When station disconnects from AP, Modem-sleep will stop.
 
-Call ``esp_wifi_set_ps(WIFI_PS_NONE)`` to disable Modem-sleep entirely. This has much higher power consumption, but provides minimum latency for receiving Wi-Fi data in real time. When Modem-sleep is enabled, received Wi-Fi data can be delayed for as long as the DTIM period (minimum power-saving mode) or the listen interval (maximum power-saving mode). Disabling Modem-sleep entirely is not possible for Wi-Fi and Bluetooth coexist mode.
+Call ``esp_wifi_set_ps(WIFI_PS_NONE)`` to disable Modem-sleep entirely. This has much higher power consumption, but provides minimum latency for receiving Wi-Fi data in real time. When Modem-sleep is enabled, received Wi-Fi data can be delayed for as long as the DTIM period (minimum power-saving mode) or the listen interval (maximum power-saving mode).
+
+.. only:: SOC_SUPPORT_COEXISTENCE
+
+    Notice that at coexist mode, Wi-Fi would still keep active state in Wi-Fi time slice and only keep sleep state in non Wi-Fi time slice even when calling "esp_wifi_set_ps(WIFI_PS_NONE)". Please refer to :ref:`coexist policy <coexist_policy>`.
 
 The default Modem-sleep mode is WIFI_PS_MIN_MODEM.
 

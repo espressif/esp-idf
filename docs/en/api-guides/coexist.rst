@@ -111,6 +111,8 @@ The RF resource allocation mechanism is based on priority. As shown below, both 
     }
 
 
+.. _coexist_policy:
+
 Coexistence Policy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

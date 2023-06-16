@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,12 +82,6 @@ esp_err_t coex_preference_set(coex_prefer_t prefer);
  * @return : software coexist status
  */
 uint32_t coex_status_get(void);
-
-/**
- * @brief Set software coexist condition.
- * @return : software coexist condition
- */
-void coex_condition_set(uint32_t type, bool dissatisfy);
 
 /**
  * @brief WiFi requests coexistence.
