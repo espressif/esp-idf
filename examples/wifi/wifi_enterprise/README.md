@@ -15,7 +15,7 @@ This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption. Th
 *Note:* 
 1. The certificates currently are generated and are present in examples/wifi/wifi_enterprise/main folder.
 2. The expiration date of the certificates is 2027/06/05.
-3. In case using suite-b, please go into `generate_certs` directory, then execute the script as `sh generate_certs.sh <type>` to create appropriate certificates such as RSA-3072 or p384 EC certificates.
+3. In case using suite-b, please go into `generate_certs` directory, then execute the script as `python generate_certs.py <cert_type> sha384` to create appropriate certificates such as RSA-3072 or p384 EC certificates.
 
 The steps to create new certificates are given below.
 
