@@ -256,9 +256,9 @@ class SerialHandlerNoElf(SerialHandler):
             if self._serial_check_exit and line == console_parser.exit_key.encode('latin-1'):
                 raise SerialStopException()
 
-            self.logger.print(line + b'\n')
-            self.compare_elf_sha256(line.decode(errors='ignore'))
-            self._force_line_print = False
+            if self._force_line_print or line_matcher.match(line.decode(errors='ignore')):
+                self.logger.print(line + b'\n')
+                self._force_line_print = False
 
         if self._last_line_part.startswith(CONSOLE_STATUS_QUERY):
             self.logger.print(CONSOLE_STATUS_QUERY)
