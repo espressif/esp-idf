@@ -13,7 +13,11 @@ extern "C" {
 #endif
 
 #define SUPPORT_BTDM            1
+#define SUPPORT_BTBB            1
 #define SUPPORT_WIFI            1
+#define SUPPORT_USB_DWCOTG      0
+#define SUPPORT_COEXIST         1
+#define SUPPORT_MBEDTLS         1
 
 /* Structure and functions for returning ROM global layout
  *
@@ -28,6 +32,7 @@ typedef struct {
     void *stack_app;
 
     /* BTDM data */
+#if SUPPORT_BTDM
     void *data_start_btdm;
     void *data_end_btdm;
     void *bss_start_btdm;
@@ -38,12 +43,19 @@ typedef struct {
     void *data_end_interface_btdm;
     void *bss_start_interface_btdm;
     void *bss_end_interface_btdm;
+#endif
+
+#if SUPPORT_BTBB
+    void *dram_start_btbbrom;
+    void *dram_end_btbbrom;
+#endif
 
     /* Other DRAM ranges */
 #if SUPPORT_BTDM || SUPPORT_WIFI
     void *dram_start_phyrom;
     void *dram_end_phyrom;
 #endif
+
 #if SUPPORT_WIFI
     void *dram_start_coexist;
     void *dram_end_coexist;
@@ -64,11 +76,25 @@ typedef struct {
     void *bss_start_interface_pp;
     void *bss_end_interface_pp;
 #endif
-    void *dram_start_usbdev_rom;
-    void *dram_end_usbdev_rom;
+
+#if SUPPORT_USB_DWCOTG
+    void *dram_start_usb_dwcotg_rom;
+    void *dram_end_usb_dwcotg_rom;
+#else
+    //Two reserved members are defined here, so the structure will not be broken,
+    //please keep in mind that there is no memory can be released between
+    //dram_start_usb_reserved_rom ~ dram_end_usb_reserved_rom.
+    void *dram_start_usb_reserved_rom;
+    void *dram_end_usb_reserved_rom;
+#endif
+
     void *dram_start_uart_rom;
     void *dram_end_uart_rom;
 
+#if SUPPORT_MBEDTLS
+    void *dram_start_mbedtls_rom;
+    void *dram_end_mbedtls_rom;
+#endif
 } ets_rom_layout_t;
 
 extern const ets_rom_layout_t * const ets_rom_layout_p;
