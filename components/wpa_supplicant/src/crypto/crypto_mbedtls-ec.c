@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -376,14 +376,18 @@ struct crypto_bignum *crypto_ec_point_compute_y_sqr(struct crypto_ec *e,
 	mbedtls_mpi_init(&num);
 	mbedtls_mpi_init(y_sqr);
 
-	/* y^2 = x^3 + ax + b  mod  P*/
-	/* mbedtls does not have mod-add or mod-mul apis.
-	 *
-	 */
-
+	/* y^2 = x^3 + ax + b  mod  P */
+	/* X*X*X is faster on esp32 whereas X^3 is faster on other chips */
+#if CONFIG_IDF_TARGET_ESP32
+	/* Calculate x*x*x  mod P*/
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp, (const mbedtls_mpi *) x, (const mbedtls_mpi *) x));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp, &temp, (const mbedtls_mpi *) x));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp, &temp, &e->group.P));
+#else
 	/* Calculate x^3  mod P*/
 	MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&num, 3));
 	MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&temp, (const mbedtls_mpi *) x, &num, &e->group.P, NULL));
+#endif
 
 	/* Calculate ax  mod P*/
 	MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&num, -3));
