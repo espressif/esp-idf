@@ -324,7 +324,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_select_wifi_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_lpcon_ll_set_wifi_lpclk_divisor_value(MODEM_CLOCK_instance()->hal->lpcon_dev, divider);
-        modem_lpcon_ll_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, true);
+        modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, true);
         break;
 #endif // SOC_WIFI_SUPPORTED
 
@@ -377,7 +377,7 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
 #if SOC_WIFI_SUPPORTED
     case PERIPH_WIFI_MODULE:
         modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
-        modem_lpcon_ll_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false);
+        modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, false);
         break;
 #endif // SOC_WIFI_SUPPORTED
 

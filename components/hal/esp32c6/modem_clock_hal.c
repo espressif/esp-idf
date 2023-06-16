@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "hal/modem_clock_hal.h"
 #include "hal/modem_clock_types.h"
+#include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
 typedef enum {
@@ -237,5 +238,24 @@ void modem_clock_hal_select_wifi_lpclk_source(modem_clock_hal_context_t *hal, mo
         break;
     default:
         break;
+    }
+}
+
+void modem_clock_hal_enable_wifipwr_clock(modem_clock_hal_context_t *hal, bool enable)
+{
+    if (efuse_hal_chip_revision() == 0) { /* eco0 */
+        modem_lpcon_ll_enable_wifipwr_clock(hal->lpcon_dev, enable);
+    } else {
+        static int ref = 0;
+        if (enable) {
+            if (ref++ == 0) {
+                modem_lpcon_ll_enable_wifipwr_clock(hal->lpcon_dev, enable);
+            }
+        } else {
+            if (--ref == 0) {
+                modem_lpcon_ll_enable_wifipwr_clock(hal->lpcon_dev, enable);
+            }
+        }
+        HAL_ASSERT(ref > 0);
     }
 }
