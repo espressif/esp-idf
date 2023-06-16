@@ -50,6 +50,24 @@ typedef struct {
     esp_mbedtls_sha1_mode mode;
 } mbedtls_sha1_context;
 
+/**
+ * \brief          Set the SHA-1 mode for a mbedtls_sha1_context.
+ *
+ * \param ctx      The SHA-1 context structure.
+ * \param mode     The SHA-1 mode to be set. It can be one of the following:
+ *                  - ESP_MBEDTLS_SHA1_UNUSED: Indicates that the first block hasn't been processed yet.
+ *                  - ESP_MBEDTLS_SHA1_HARDWARE: Specifies the use of hardware SHA engine for SHA-1 calculations.
+ *                  - ESP_MBEDTLS_SHA1_SOFTWARE: Specifies the use of software-based SHA-1 calculations.
+ *
+ * \return         None.
+ */
+static inline void esp_mbedtls_set_sha1_mode(mbedtls_sha1_context *ctx, esp_mbedtls_sha1_mode mode)
+{
+    if (ctx) {
+        ctx->mode = mode;
+    }
+}
+
 #elif SOC_SHA_SUPPORT_DMA
 
 typedef enum {

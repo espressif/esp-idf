@@ -1,4 +1,10 @@
 /*
+ * SPDX-FileCopyrightText: 2015 Joseph Birr-Pixton <jpixton@gmail.com>
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
+
+/*
  * fast-pbkdf2 - Optimal PBKDF2-HMAC calculation
  * Written in 2015 by Joseph Birr-Pixton <jpixton@gmail.com>
  *
@@ -11,7 +17,7 @@
  * along with this software. If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-
+#include "utils/common.h"
 #include "fastpbkdf2.h"
 
 #include <assert.h>
@@ -20,7 +26,9 @@
 #include <endian.h>
 #endif
 
-#include <openssl/sha.h>
+#include <mbedtls/sha1.h>
+#include "mbedtls/esp_config.h"
+#include "utils/wpa_debug.h"
 
 /* --- MSVC doesn't support C99 --- */
 #ifdef _MSC_VER
@@ -29,7 +37,9 @@
 #endif
 
 /* --- Common useful things --- */
+#ifndef MIN
 #define MIN(a, b) ((a) > (b)) ? (b) : (a)
+#endif
 
 static inline void write32_be(uint32_t n, uint8_t out[4])
 {
@@ -42,23 +52,6 @@ static inline void write32_be(uint32_t n, uint8_t out[4])
   out[3] = n & 0xff;
 #endif
 }
-
-static inline void write64_be(uint64_t n, uint8_t out[8])
-{
-#if defined(__GNUC__) &&  __GNUC__ >= 4 && __BYTE_ORDER == __LITTLE_ENDIAN
-  *(uint64_t *)(out) = __builtin_bswap64(n);
-#else
-  write32_be((n >> 32) & 0xffffffff, out);
-  write32_be(n & 0xffffffff, out + 4);
-#endif
-}
-
-/* --- Optional OpenMP parallelisation of consecutive blocks --- */
-#ifdef WITH_OPENMP
-# define OPENMP_PARALLEL_FOR _Pragma("omp parallel for")
-#else
-# define OPENMP_PARALLEL_FOR
-#endif
 
 /* Prepare block (of blocksz bytes) to contain md padding denoting a msg-size
  * message (in bytes).  block has a prefix of used bytes.
@@ -93,7 +86,7 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
  * _update hash context update function
  *    args: (_ctx *c, const void *data, size_t ndata)
  * _final hash context finish function
- *    args: (void *out, _ctx *c)
+ *    args: (_ctx *c, void *out)
  * _xform hash context raw block update function
  *    args: (_ctx *c, const void *data)
  * _xcpy hash context raw copy function (only need copy hash state)
@@ -123,7 +116,7 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
     {                                                                         \
       _init(&ctx->inner);                                                     \
       _update(&ctx->inner, key, nkey);                                        \
-      _final(k, &ctx->inner);                                                 \
+      _final(&ctx->inner, k);                                                 \
                                                                               \
       key = k;                                                                \
       nkey = _hashsz;                                                         \
@@ -165,9 +158,9 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
   static inline void HMAC_FINAL(_name)(HMAC_CTX(_name) *ctx,                  \
                                        uint8_t out[_hashsz])                  \
   {                                                                           \
-    _final(out, &ctx->inner);                                                 \
+    _final(&ctx->inner, out);                                                 \
     _update(&ctx->outer, out, _hashsz);                                       \
-    _final(out, &ctx->outer);                                                 \
+    _final(&ctx->outer, out);                                                 \
   }                                                                           \
                                                                               \
                                                                               \
@@ -229,7 +222,6 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
     /* How many blocks do we need? */                                         \
     uint32_t blocks_needed = (uint32_t)(nout + _hashsz - 1) / _hashsz;        \
                                                                               \
-    OPENMP_PARALLEL_FOR                                                       \
     for (uint32_t counter = 1; counter <= blocks_needed; counter++)           \
     {                                                                         \
       uint8_t block[_hashsz];                                                 \
@@ -241,140 +233,88 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
     }                                                                         \
   }
 
-static inline void sha1_extract(SHA_CTX *restrict ctx, uint8_t *restrict out)
+static inline void sha1_extract(mbedtls_sha1_context *restrict ctx, uint8_t *restrict out)
 {
-  write32_be(ctx->h0, out);
-  write32_be(ctx->h1, out + 4);
-  write32_be(ctx->h2, out + 8);
-  write32_be(ctx->h3, out + 12);
-  write32_be(ctx->h4, out + 16);
+#if defined(MBEDTLS_SHA1_ALT)
+#if CONFIG_IDF_TARGET_ESP32
+  /* ESP32 stores internal SHA state in BE format similar to software */
+  write32_be(ctx->state[0], out);
+  write32_be(ctx->state[1], out + 4);
+  write32_be(ctx->state[2], out + 8);
+  write32_be(ctx->state[3], out + 12);
+  write32_be(ctx->state[4], out + 16);
+#else
+  *(uint32_t *)(out) = ctx->state[0];
+  *(uint32_t *)(out + 4) = ctx->state[1];
+  *(uint32_t *)(out + 8) = ctx->state[2];
+  *(uint32_t *)(out + 12) = ctx->state[3];
+  *(uint32_t *)(out + 16) = ctx->state[4];
+#endif
+#else
+  write32_be(ctx->MBEDTLS_PRIVATE(state)[0], out);
+  write32_be(ctx->MBEDTLS_PRIVATE(state)[1], out + 4);
+  write32_be(ctx->MBEDTLS_PRIVATE(state)[2], out + 8);
+  write32_be(ctx->MBEDTLS_PRIVATE(state)[3], out + 12);
+  write32_be(ctx->MBEDTLS_PRIVATE(state)[4], out + 16);
+#endif
 }
 
-static inline void sha1_cpy(SHA_CTX *restrict out, const SHA_CTX *restrict in)
+static inline void sha1_cpy(mbedtls_sha1_context *restrict out, const mbedtls_sha1_context *restrict in)
 {
-  out->h0 = in->h0;
-  out->h1 = in->h1;
-  out->h2 = in->h2;
-  out->h3 = in->h3;
-  out->h4 = in->h4;
+#if defined(MBEDTLS_SHA1_ALT)
+  out->state[0] = in->state[0];
+  out->state[1] = in->state[1];
+  out->state[2] = in->state[2];
+  out->state[3] = in->state[3];
+  out->state[4] = in->state[4];
+#else
+  out->MBEDTLS_PRIVATE(state)[0] = in->MBEDTLS_PRIVATE(state)[0];
+  out->MBEDTLS_PRIVATE(state)[1] = in->MBEDTLS_PRIVATE(state)[1];
+  out->MBEDTLS_PRIVATE(state)[2] = in->MBEDTLS_PRIVATE(state)[2];
+  out->MBEDTLS_PRIVATE(state)[3] = in->MBEDTLS_PRIVATE(state)[3];
+  out->MBEDTLS_PRIVATE(state)[4] = in->MBEDTLS_PRIVATE(state)[4];
+#endif
 }
 
-static inline void sha1_xor(SHA_CTX *restrict out, const SHA_CTX *restrict in)
+static inline void sha1_xor(mbedtls_sha1_context *restrict out, const mbedtls_sha1_context *restrict in)
 {
-  out->h0 ^= in->h0;
-  out->h1 ^= in->h1;
-  out->h2 ^= in->h2;
-  out->h3 ^= in->h3;
-  out->h4 ^= in->h4;
+#if defined(MBEDTLS_SHA1_ALT)
+  out->state[0] ^= in->state[0];
+  out->state[1] ^= in->state[1];
+  out->state[2] ^= in->state[2];
+  out->state[3] ^= in->state[3];
+  out->state[4] ^= in->state[4];
+#else
+  out->MBEDTLS_PRIVATE(state)[0] ^= in->MBEDTLS_PRIVATE(state)[0];
+  out->MBEDTLS_PRIVATE(state)[1] ^= in->MBEDTLS_PRIVATE(state)[1];
+  out->MBEDTLS_PRIVATE(state)[2] ^= in->MBEDTLS_PRIVATE(state)[2];
+  out->MBEDTLS_PRIVATE(state)[3] ^= in->MBEDTLS_PRIVATE(state)[3];
+  out->MBEDTLS_PRIVATE(state)[4] ^= in->MBEDTLS_PRIVATE(state)[4];
+#endif
 }
 
-DECL_PBKDF2(sha1,
-            SHA_CBLOCK,
-            SHA_DIGEST_LENGTH,
-            SHA_CTX,
-            SHA1_Init,
-            SHA1_Update,
-            SHA1_Transform,
-            SHA1_Final,
-            sha1_cpy,
-            sha1_extract,
-            sha1_xor)
-
-static inline void sha256_extract(SHA256_CTX *restrict ctx, uint8_t *restrict out)
+static int mbedtls_sha1_init_start(mbedtls_sha1_context *ctx)
 {
-  write32_be(ctx->h[0], out);
-  write32_be(ctx->h[1], out + 4);
-  write32_be(ctx->h[2], out + 8);
-  write32_be(ctx->h[3], out + 12);
-  write32_be(ctx->h[4], out + 16);
-  write32_be(ctx->h[5], out + 20);
-  write32_be(ctx->h[6], out + 24);
-  write32_be(ctx->h[7], out + 28);
+  mbedtls_sha1_init(ctx);
+  mbedtls_sha1_starts(ctx);
+#if defined(CONFIG_IDF_TARGET_ESP32) && defined(MBEDTLS_SHA1_ALT)
+  /* Use software mode for esp32 since hardware can't give output more than 20 */
+  esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
+#endif
+  return 0;
 }
 
-static inline void sha256_cpy(SHA256_CTX *restrict out, const SHA256_CTX *restrict in)
-{
-  out->h[0] = in->h[0];
-  out->h[1] = in->h[1];
-  out->h[2] = in->h[2];
-  out->h[3] = in->h[3];
-  out->h[4] = in->h[4];
-  out->h[5] = in->h[5];
-  out->h[6] = in->h[6];
-  out->h[7] = in->h[7];
-}
-
-static inline void sha256_xor(SHA256_CTX *restrict out, const SHA256_CTX *restrict in)
-{
-  out->h[0] ^= in->h[0];
-  out->h[1] ^= in->h[1];
-  out->h[2] ^= in->h[2];
-  out->h[3] ^= in->h[3];
-  out->h[4] ^= in->h[4];
-  out->h[5] ^= in->h[5];
-  out->h[6] ^= in->h[6];
-  out->h[7] ^= in->h[7];
-}
-
-DECL_PBKDF2(sha256,
-            SHA256_CBLOCK,
-            SHA256_DIGEST_LENGTH,
-            SHA256_CTX,
-            SHA256_Init,
-            SHA256_Update,
-            SHA256_Transform,
-            SHA256_Final,
-            sha256_cpy,
-            sha256_extract,
-            sha256_xor)
-
-static inline void sha512_extract(SHA512_CTX *restrict ctx, uint8_t *restrict out)
-{
-  write64_be(ctx->h[0], out);
-  write64_be(ctx->h[1], out + 8);
-  write64_be(ctx->h[2], out + 16);
-  write64_be(ctx->h[3], out + 24);
-  write64_be(ctx->h[4], out + 32);
-  write64_be(ctx->h[5], out + 40);
-  write64_be(ctx->h[6], out + 48);
-  write64_be(ctx->h[7], out + 56);
-}
-
-static inline void sha512_cpy(SHA512_CTX *restrict out, const SHA512_CTX *restrict in)
-{
-  out->h[0] = in->h[0];
-  out->h[1] = in->h[1];
-  out->h[2] = in->h[2];
-  out->h[3] = in->h[3];
-  out->h[4] = in->h[4];
-  out->h[5] = in->h[5];
-  out->h[6] = in->h[6];
-  out->h[7] = in->h[7];
-}
-
-static inline void sha512_xor(SHA512_CTX *restrict out, const SHA512_CTX *restrict in)
-{
-  out->h[0] ^= in->h[0];
-  out->h[1] ^= in->h[1];
-  out->h[2] ^= in->h[2];
-  out->h[3] ^= in->h[3];
-  out->h[4] ^= in->h[4];
-  out->h[5] ^= in->h[5];
-  out->h[6] ^= in->h[6];
-  out->h[7] ^= in->h[7];
-}
-
-DECL_PBKDF2(sha512,
-            SHA512_CBLOCK,
-            SHA512_DIGEST_LENGTH,
-            SHA512_CTX,
-            SHA512_Init,
-            SHA512_Update,
-            SHA512_Transform,
-            SHA512_Final,
-            sha512_cpy,
-            sha512_extract,
-            sha512_xor)
+DECL_PBKDF2(sha1,                           // _name
+            64,                             // _blocksz
+            20,                             // _hashsz
+            mbedtls_sha1_context,           // _ctx
+            mbedtls_sha1_init_start,        // _init
+            mbedtls_sha1_update,            // _update
+            mbedtls_internal_sha1_process,  // _xform
+            mbedtls_sha1_finish,            // _final
+            sha1_cpy,                       // _xcpy
+            sha1_extract,                   // _xtract
+            sha1_xor)                       // _xxor
 
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
                           const uint8_t *salt, size_t nsalt,
@@ -382,20 +322,4 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
                           uint8_t *out, size_t nout)
 {
   PBKDF2(sha1)(pw, npw, salt, nsalt, iterations, out, nout);
-}
-
-void fastpbkdf2_hmac_sha256(const uint8_t *pw, size_t npw,
-                            const uint8_t *salt, size_t nsalt,
-                            uint32_t iterations,
-                            uint8_t *out, size_t nout)
-{
-  PBKDF2(sha256)(pw, npw, salt, nsalt, iterations, out, nout);
-}
-
-void fastpbkdf2_hmac_sha512(const uint8_t *pw, size_t npw,
-                            const uint8_t *salt, size_t nsalt,
-                            uint32_t iterations,
-                            uint8_t *out, size_t nout)
-{
-  PBKDF2(sha512)(pw, npw, salt, nsalt, iterations, out, nout);
 }
