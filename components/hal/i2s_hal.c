@@ -10,7 +10,7 @@
 #include "soc/soc.h"
 #include "hal/i2s_hal.h"
 
-#if SOC_I2S_HW_VERSION_2 && SOC_I2S_SUPPORTS_PDM_TX
+#if SOC_I2S_HW_VERSION_2 && (SOC_I2S_SUPPORTS_PDM_TX || SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER)
 /* PDM tx high pass filter cut-off frequency and coefficients list
  * [0]: cut-off frequency; [1]: param0; [2]: param5 */
 static const float cut_off_coef[21][3] = {
@@ -22,6 +22,22 @@ static const float cut_off_coef[21][3] = {
     {63,  4, 7}, {58,   5, 6}, {49,   5, 7},
     {46,  6, 6}, {35.5, 6, 7}, {23.3, 7, 7}
 };
+
+static void s_i2s_hal_get_cut_off_coef(float freq, uint32_t *param0, uint32_t *param5)
+{
+    uint8_t cnt = 0;
+    float min = 1000;
+    /* Find the closest cut-off frequency and its coefficients */
+    for (int i = 0; i < 21; i++) {
+        float tmp = cut_off_coef[i][0] < freq ? freq - cut_off_coef[i][0] : cut_off_coef[i][0] - freq;
+        if (tmp < min) {
+            min = tmp;
+            cnt = i;
+        }
+    }
+    *param0 = (uint32_t)cut_off_coef[cnt][1];
+    *param5 = (uint32_t)cut_off_coef[cnt][2];
+}
 #endif
 
 /**
@@ -183,20 +199,12 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_ws_idle_pol(hal->dev, false);
     /* Slot mode seems not take effect according to the test, leave it default here */
     i2s_ll_tx_pdm_slot_mode(hal->dev, is_mono, false, I2S_PDM_SLOT_BOTH);
-    uint8_t cnt = 0;
-    float min = 1000;
-    float expt_cut_off = slot_cfg->pdm_tx.hp_cut_off_freq_hz;
-    /* Find the closest cut-off frequency and its coefficients */
-    for (int i = 0; i < 21; i++) {
-        float tmp = cut_off_coef[i][0] < expt_cut_off ? expt_cut_off - cut_off_coef[i][0] : cut_off_coef[i][0] - expt_cut_off;
-        if (tmp < min) {
-            min = tmp;
-            cnt = i;
-        }
-    }
+    uint32_t param0;
+    uint32_t param5;
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_tx.hp_cut_off_freq_hz, &param0, &param5);
     i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
-    i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, cut_off_coef[cnt][1]);
-    i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, cut_off_coef[cnt][2]);
+    i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, param0);
+    i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, param5);
     i2s_ll_tx_set_pdm_sd_dither(hal->dev, slot_cfg->pdm_tx.sd_dither);
     i2s_ll_tx_set_pdm_sd_dither2(hal->dev, slot_cfg->pdm_tx.sd_dither2);
 #endif
@@ -233,7 +241,18 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     uint32_t slot_mask = slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO ? I2S_PDM_SLOT_BOTH : slot_cfg->pdm_rx.slot_mask;
 #endif  // SOC_I2S_SUPPORTS_PDM_RX > 1
     i2s_ll_rx_set_active_chan_mask(hal->dev, slot_mask);
-#endif  // SOC_I2S_SUPPORTS_PDM_RX
+#endif  // SOC_I2S_HW_VERSION_1
+
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER // TODO: add this macro to soc_caps
+    uint32_t param0;
+    uint32_t param5;
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hz, &param0, &param5);
+    i2s_ll_rx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_rx.hp_en);
+    i2s_ll_rx_set_pdm_hp_filter_param0(hal->dev, param0);
+    i2s_ll_rx_set_pdm_hp_filter_param5(hal->dev, param5);
+    /* Set the amplification number, the default and the minimum value is 1. 0 will mute the channel */
+    i2s_ll_rx_set_pdm_amplify_num(hal->dev, slot_cfg->pdm_rx.amplify_num ? slot_cfg->pdm_rx.amplify_num : 1);
+#endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 }
 
 void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal)

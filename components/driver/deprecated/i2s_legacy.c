@@ -654,12 +654,12 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
         return real_freq;
     }
-    return I2S_LL_DEFAULT_PLL_CLK_FREQ;
+    return I2S_LL_DEFAULT_CLK_FREQ;
 #else
     if (use_apll) {
         ESP_LOGW(TAG, "APLL not supported on current chip, use I2S_CLK_SRC_DEFAULT as default clock source");
     }
-    return I2S_LL_DEFAULT_PLL_CLK_FREQ;
+    return I2S_LL_DEFAULT_CLK_FREQ;
 #endif
 }
 

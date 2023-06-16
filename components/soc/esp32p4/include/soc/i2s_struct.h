@@ -277,6 +277,92 @@ typedef union {
     uint32_t val;
 } i2s_rx_pdm2pcm_conf_reg_t;
 
+/** Type of tx_pcm2pdm_conf register
+ *  I2S TX PCM2PDM configuration register
+ */
+typedef union {
+    struct {
+        /** tx_pdm_hp_bypass : R/W; bitpos: [0]; default: 0;
+         *  I2S TX PDM bypass hp filter or not. The option has been removed.
+         */
+        uint32_t tx_pdm_hp_bypass:1;
+        /** tx_pdm_sinc_osr2 : R/W; bitpos: [4:1]; default: 2;
+         *  I2S TX PDM OSR2 value
+         */
+        uint32_t tx_pdm_sinc_osr2:4;
+        /** tx_pdm_prescale : R/W; bitpos: [12:5]; default: 0;
+         *  I2S TX PDM prescale for sigmadelta
+         */
+        uint32_t tx_pdm_prescale:8;
+        /** tx_pdm_hp_in_shift : R/W; bitpos: [14:13]; default: 1;
+         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
+         */
+        uint32_t tx_pdm_hp_in_shift:2;
+        /** tx_pdm_lp_in_shift : R/W; bitpos: [16:15]; default: 1;
+         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
+         */
+        uint32_t tx_pdm_lp_in_shift:2;
+        /** tx_pdm_sinc_in_shift : R/W; bitpos: [18:17]; default: 1;
+         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
+         */
+        uint32_t tx_pdm_sinc_in_shift:2;
+        /** tx_pdm_sigmadelta_in_shift : R/W; bitpos: [20:19]; default: 1;
+         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
+         */
+        uint32_t tx_pdm_sigmadelta_in_shift:2;
+        /** tx_pdm_sigmadelta_dither2 : R/W; bitpos: [21]; default: 0;
+         *  I2S TX PDM sigmadelta dither2 value
+         */
+        uint32_t tx_pdm_sigmadelta_dither2:1;
+        /** tx_pdm_sigmadelta_dither : R/W; bitpos: [22]; default: 1;
+         *  I2S TX PDM sigmadelta dither value
+         */
+        uint32_t tx_pdm_sigmadelta_dither:1;
+        /** tx_pdm_dac_2out_en : R/W; bitpos: [23]; default: 0;
+         *  I2S TX PDM dac mode enable
+         */
+        uint32_t tx_pdm_dac_2out_en:1;
+        /** tx_pdm_dac_mode_en : R/W; bitpos: [24]; default: 0;
+         *  I2S TX PDM dac 2channel enable
+         */
+        uint32_t tx_pdm_dac_mode_en:1;
+        /** pcm2pdm_conv_en : R/W; bitpos: [25]; default: 0;
+         *  I2S TX PDM Converter enable
+         */
+        uint32_t pcm2pdm_conv_en:1;
+        uint32_t reserved_26:6;
+    };
+    uint32_t val;
+} i2s_tx_pcm2pdm_conf_reg_t;
+
+/** Type of tx_pcm2pdm_conf1 register
+ *  I2S TX PCM2PDM configuration register
+ */
+typedef union {
+    struct {
+        /** tx_pdm_fp : R/W; bitpos: [9:0]; default: 960;
+         *  I2S TX PDM Fp
+         */
+        uint32_t tx_pdm_fp:10;
+        /** tx_pdm_fs : R/W; bitpos: [19:10]; default: 480;
+         *  I2S TX PDM Fs
+         */
+        uint32_t tx_pdm_fs:10;
+        /** tx_iir_hp_mult12_5 : R/W; bitpos: [22:20]; default: 7;
+         *  The fourth parameter of PDM TX IIR_HP filter stage 2 is (504 +
+         *  I2S_TX_IIR_HP_MULT12_5[2:0])
+         */
+        uint32_t tx_iir_hp_mult12_5:3;
+        /** tx_iir_hp_mult12_0 : R/W; bitpos: [25:23]; default: 7;
+         *  The fourth parameter of PDM TX IIR_HP filter stage 1 is (504 +
+         *  I2S_TX_IIR_HP_MULT12_0[2:0])
+         */
+        uint32_t tx_iir_hp_mult12_0:3;
+        uint32_t reserved_26:6;
+    };
+    uint32_t val;
+} i2s_tx_pcm2pdm_conf1_reg_t;
+
 /** Type of rx_tdm_ctrl register
  *  I2S TX TDM mode control register
  */
@@ -371,7 +457,7 @@ typedef union {
     uint32_t val;
 } i2s_rx_tdm_ctrl_reg_t;
 
-/** Type of rxeof_num register
+/** Type of rx_eof_num register
  *  I2S RX data number control register.
  */
 typedef union {
@@ -384,7 +470,7 @@ typedef union {
         uint32_t reserved_12:20;
     };
     uint32_t val;
-} i2s_rxeof_num_reg_t;
+} i2s_rx_eof_num_reg_t;
 
 
 /** Group: TX Control and configuration registers */
@@ -529,89 +615,6 @@ typedef union {
     };
     uint32_t val;
 } i2s_tx_conf1_reg_t;
-
-/** Type of tx_pcm2pdm_conf register
- *  I2S TX PCM2PDM configuration register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:1;
-        /** tx_pdm_sinc_osr2 : R/W; bitpos: [4:1]; default: 2;
-         *  I2S TX PDM OSR2 value
-         */
-        uint32_t tx_pdm_sinc_osr2:4;
-        /** tx_pdm_prescale : R/W; bitpos: [12:5]; default: 0;
-         *  I2S TX PDM prescale for sigmadelta
-         */
-        uint32_t tx_pdm_prescale:8;
-        /** tx_pdm_hp_in_shift : R/W; bitpos: [14:13]; default: 1;
-         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
-         */
-        uint32_t tx_pdm_hp_in_shift:2;
-        /** tx_pdm_lp_in_shift : R/W; bitpos: [16:15]; default: 1;
-         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
-         */
-        uint32_t tx_pdm_lp_in_shift:2;
-        /** tx_pdm_sinc_in_shift : R/W; bitpos: [18:17]; default: 1;
-         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
-         */
-        uint32_t tx_pdm_sinc_in_shift:2;
-        /** tx_pdm_sigmadelta_in_shift : R/W; bitpos: [20:19]; default: 1;
-         *  I2S TX PDM sigmadelta scale shift number: 0:/2 , 1:x1 , 2:x2 , 3: x4
-         */
-        uint32_t tx_pdm_sigmadelta_in_shift:2;
-        /** tx_pdm_sigmadelta_dither2 : R/W; bitpos: [21]; default: 0;
-         *  I2S TX PDM sigmadelta dither2 value
-         */
-        uint32_t tx_pdm_sigmadelta_dither2:1;
-        /** tx_pdm_sigmadelta_dither : R/W; bitpos: [22]; default: 1;
-         *  I2S TX PDM sigmadelta dither value
-         */
-        uint32_t tx_pdm_sigmadelta_dither:1;
-        /** tx_pdm_dac_2out_en : R/W; bitpos: [23]; default: 0;
-         *  I2S TX PDM dac mode enable
-         */
-        uint32_t tx_pdm_dac_2out_en:1;
-        /** tx_pdm_dac_mode_en : R/W; bitpos: [24]; default: 0;
-         *  I2S TX PDM dac 2channel enable
-         */
-        uint32_t tx_pdm_dac_mode_en:1;
-        /** pcm2pdm_conv_en : R/W; bitpos: [25]; default: 0;
-         *  I2S TX PDM Converter enable
-         */
-        uint32_t pcm2pdm_conv_en:1;
-        uint32_t reserved_26:6;
-    };
-    uint32_t val;
-} i2s_tx_pcm2pdm_conf_reg_t;
-
-/** Type of tx_pcm2pdm_conf1 register
- *  I2S TX PCM2PDM configuration register
- */
-typedef union {
-    struct {
-        /** tx_pdm_fp : R/W; bitpos: [9:0]; default: 960;
-         *  I2S TX PDM Fp
-         */
-        uint32_t tx_pdm_fp:10;
-        /** tx_pdm_fs : R/W; bitpos: [19:10]; default: 480;
-         *  I2S TX PDM Fs
-         */
-        uint32_t tx_pdm_fs:10;
-        /** tx_iir_hp_mult12_5 : R/W; bitpos: [22:20]; default: 7;
-         *  The fourth parameter of PDM TX IIR_HP filter stage 2 is (504 +
-         *  I2S_TX_IIR_HP_MULT12_5[2:0])
-         */
-        uint32_t tx_iir_hp_mult12_5:3;
-        /** tx_iir_hp_mult12_0 : R/W; bitpos: [25:23]; default: 7;
-         *  The fourth parameter of PDM TX IIR_HP filter stage 1 is (504 +
-         *  I2S_TX_IIR_HP_MULT12_0[2:0])
-         */
-        uint32_t tx_iir_hp_mult12_0:3;
-        uint32_t reserved_26:6;
-    };
-    uint32_t val;
-} i2s_tx_pcm2pdm_conf1_reg_t;
 
 /** Type of tx_tdm_ctrl register
  *  I2S TX TDM mode control register
@@ -845,7 +848,7 @@ typedef union {
     uint32_t val;
 } i2s_lc_hung_conf_reg_t;
 
-/** Type of conf_sigle_data register
+/** Type of conf_single_data register
  *  I2S signal data register
  */
 typedef union {
@@ -856,7 +859,7 @@ typedef union {
         uint32_t single_data:32;
     };
     uint32_t val;
-} i2s_conf_sigle_data_reg_t;
+} i2s_conf_single_data_reg_t;
 
 
 /** Group: TX status registers */
@@ -986,8 +989,8 @@ typedef struct {
     volatile i2s_rx_timing_reg_t rx_timing;
     volatile i2s_tx_timing_reg_t tx_timing;
     volatile i2s_lc_hung_conf_reg_t lc_hung_conf;
-    volatile i2s_rxeof_num_reg_t rxeof_num;
-    volatile i2s_conf_sigle_data_reg_t conf_sigle_data;
+    volatile i2s_rx_eof_num_reg_t rx_eof_num;
+    volatile i2s_conf_single_data_reg_t conf_single_data;
     volatile i2s_state_reg_t state;
     volatile i2s_etm_conf_reg_t etm_conf;
     volatile i2s_fifo_cnt_reg_t fifo_cnt;
@@ -996,6 +999,9 @@ typedef struct {
     volatile i2s_date_reg_t date;
 } i2s_dev_t;
 
+extern i2s_dev_t I2S0;
+extern i2s_dev_t I2S1;
+extern i2s_dev_t I2S2;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2s_dev_t) == 0x84, "Invalid size of i2s_dev_t structure");

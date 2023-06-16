@@ -368,6 +368,22 @@ uint32_t rtc_clk_apb_freq_get(void)
     return rtc_clk_ahb_freq_get() / clk_ll_apb_get_divider() * MHZ;
 }
 
+void rtc_clk_apll_enable(bool enable)
+{
+    // TODO: IDF-7526
+}
+
+uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2)
+{
+    // TODO: IDF-7526
+    return 0;
+}
+
+void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2)
+{
+    // TODO: IDF-7526
+}
+
 void rtc_dig_clk8m_enable(void)
 {
     clk_ll_rc_fast_digi_enable();

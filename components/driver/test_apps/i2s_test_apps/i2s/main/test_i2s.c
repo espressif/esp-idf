@@ -803,7 +803,9 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
+#if SOC_I2S_SUPPORTS_PLL_F160M || SOC_I2S_SUPPORTS_PLL_F96M
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
+#endif  // SOC_I2S_SUPPORTS_PLL_F160M || SOC_I2S_SUPPORTS_PLL_F96M
 #if SOC_I2S_SUPPORTS_XTAL
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_XTAL;
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);

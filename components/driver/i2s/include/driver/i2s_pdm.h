@@ -48,6 +48,24 @@ extern "C" {
     .bclk_div = 8, \
 }
 
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+/**
+ * @brief PDM format in 2 slots(RX)
+ * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
+                 I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
+    .hp_en = true, \
+    .hp_cut_off_freq_hz = 35.5, \
+    .amplify_num = 1, \  /* TODO: maybe need an enum */
+}
+#endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+
 /**
  * @brief I2S slot configuration for pdm rx mode
  */
@@ -58,6 +76,12 @@ typedef struct {
     i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
     /* Particular fields */
     i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+    bool                    hp_en;              /*!< High pass filter enable */
+    float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
+    uint32_t                amplify_num;        /*!< The amplification number of the final conversion result, range 1~15, default 1 */
+#endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+
 } i2s_pdm_rx_slot_config_t;
 
 /**

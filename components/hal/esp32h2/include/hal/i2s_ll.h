@@ -36,7 +36,7 @@ extern "C" {
 
 #define I2S_LL_PLL_F96M_CLK_FREQ      (96 * 1000000) // PLL_F96M_CLK: 96MHz
 #define I2S_LL_PLL_F64M_CLK_FREQ      (64 * 1000000) // PLL_F64M_CLK: 64MHz
-#define I2S_LL_DEFAULT_PLL_CLK_FREQ   I2S_LL_PLL_F96M_CLK_FREQ  // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_DEFAULT_CLK_FREQ   I2S_LL_PLL_F96M_CLK_FREQ  // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
 /**
  * @brief I2S module general init, enable I2S clock.
