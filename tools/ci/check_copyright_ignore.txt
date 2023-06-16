@@ -850,6 +850,8 @@ components/wifi_provisioning/python/wifi_scan_pb2.py
 components/wifi_provisioning/src/scheme_console.c
 components/wifi_provisioning/src/wifi_config.c
 components/wifi_provisioning/src/wifi_scan.c
+components/wpa_supplicant/esp_supplicant/src/crypto/fastpbkdf2.c
+components/wpa_supplicant/esp_supplicant/src/crypto/fastpbkdf2.h
 components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
 components/wpa_supplicant/include/utils/wpa_debug.h
