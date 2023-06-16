@@ -265,6 +265,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C2 has 2 UARTs
 #define SOC_UART_NUM                (2)
+#define SOC_UART_HP_NUM             (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */

@@ -17,7 +17,6 @@
 #include "soc/pcr_struct.h"
 #include "hal/i2c_types.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/lp_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -675,33 +674,6 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_c
     PCR.i2c_sclk_conf.i2c_sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
 
-#if SOC_LP_I2C_SUPPORTED
-/**
- * @brief Set LP I2C source clock
- *
- * @param  hw Address offset of the LP I2C peripheral registers
- * @param  src_clk Source clock for the LP I2C peripheral
- *
- * @return None
- */
-static inline void lp_i2c_ll_set_source_clk(i2c_dev_t *hw, soc_periph_lp_i2c_clk_src_t src_clk)
-{
-    (void)hw;
-    // src_clk : (0) for LP_FAST_CLK (RTC Fast), (1) for XTAL_D2_CLK
-    switch (src_clk) {
-    case LP_I2C_SCLK_LP_FAST:
-        LP_CLKRST.lpperi.lp_i2c_clk_sel = 0;
-        break;
-    case LP_I2C_SCLK_XTAL_D2:
-        LP_CLKRST.lpperi.lp_i2c_clk_sel = 1;
-        break;
-    default:
-        // Invalid source clock selected
-        abort();
-    }
-}
-#endif /* SOC_LP_I2C_SUPPORTED */
-
 /**
  * @brief Enable I2C peripheral controller clock
  *
@@ -770,6 +742,7 @@ static inline volatile void *i2c_ll_get_interrupt_status_reg(i2c_dev_t *dev)
 {
     return &dev->int_status;
 }
+
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////

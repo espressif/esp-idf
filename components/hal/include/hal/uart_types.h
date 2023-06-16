@@ -18,7 +18,19 @@ extern "C" {
 /**
  * @brief UART port number, can be UART_NUM_0 ~ (UART_NUM_MAX -1).
  */
-typedef int uart_port_t;
+typedef enum {
+    UART_NUM_0,                         /*!< UART port 0 */
+    UART_NUM_1,                         /*!< UART port 1 */
+#if SOC_UART_HP_NUM > 2
+    UART_NUM_2,                         /*!< UART port 2 */
+#endif
+#if (SOC_UART_LP_NUM >= 1)
+    LP_UART_NUM_0,                      /*!< LP UART port 0 */
+#endif
+    UART_NUM_MAX,                       /*!< UART port max */
+} uart_port_t;
+
+_Static_assert(UART_NUM_MAX == SOC_UART_NUM, "UART_NUM_MAX does not match SOC_UART_NUM");
 
 /**
  * @brief UART mode selection
@@ -92,6 +104,13 @@ typedef enum {
  */
 typedef soc_periph_uart_clk_src_legacy_t uart_sclk_t;
 
+#if (SOC_UART_LP_NUM >= 1)
+/**
+ * @brief LP_UART source clock
+ */
+typedef soc_periph_lp_uart_clk_src_t lp_uart_sclk_t;
+#endif
+
 /**
  * @brief UART AT cmd char configuration parameters
  *        Note that this function may different on different chip. Please refer to the TRM at confirguration.
@@ -113,19 +132,6 @@ typedef struct {
     uint8_t xon_thrd;      /*!< If the software flow control is enabled and the data amount in rxfifo is less than xon_thrd, an xon_char will be sent*/
     uint8_t xoff_thrd;       /*!< If the software flow control is enabled and the data amount in rxfifo is more than xoff_thrd, an xoff_char will be sent*/
 } uart_sw_flowctrl_t;
-
-/**
- * @brief UART configuration parameters for uart_param_config function
- */
-typedef struct {
-    int baud_rate;                      /*!< UART baud rate*/
-    uart_word_length_t data_bits;       /*!< UART byte size*/
-    uart_parity_t parity;               /*!< UART parity mode*/
-    uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
-    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
-    uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
-    uart_sclk_t source_clk;             /*!< UART source clock selection */
-} uart_config_t;
 
 #ifdef __cplusplus
 }

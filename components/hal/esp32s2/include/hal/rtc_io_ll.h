@@ -40,6 +40,17 @@ typedef enum {
 } rtcio_ll_out_mode_t;
 
 /**
+ * @brief Select a RTC IOMUX function for the RTC IO
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param func Function to assign to the pin
+ */
+static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
+{
+    SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, 0x3, func, rtc_io_desc[rtcio_num].func);
+}
+
+/**
  * @brief Select the rtcio function.
  *
  * @note The RTC function must be selected before the pad analog function is enabled.
@@ -53,7 +64,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
         //0:RTC FUNCTION 1,2,3:Reserved
-        SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, RTCIO_LL_PIN_FUNC, rtc_io_desc[rtcio_num].func);
+        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
         SENS.sar_io_mux_conf.iomux_clk_gate_en = 0;

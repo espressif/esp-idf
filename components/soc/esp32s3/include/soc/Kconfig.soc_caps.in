@@ -887,6 +887,10 @@ config SOC_UART_NUM
     int
     default 3
 
+config SOC_UART_HP_NUM
+    int
+    default 3
+
 config SOC_UART_FIFO_LEN
     int
     default 128

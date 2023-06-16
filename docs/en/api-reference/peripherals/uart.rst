@@ -8,9 +8,13 @@ Introduction
 
 A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that handles communication (i.e., timing requirements and data framing) using widely-adopted asynchronous serial communication interfaces, such as RS232, RS422, and RS485. A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
-The {IDF_TARGET_NAME} chip has {IDF_TARGET_SOC_UART_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and for more flexibility.
+The {IDF_TARGET_NAME} chip has {IDF_TARGET_SOC_UART_HP_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and for more flexibility.
 
-Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit, etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association (IrDA) protocols.
+Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit, etc. All the regular UART controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association (IrDA) protocols.
+
+.. only:: SOC_UART_LP_NUM
+
+    Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *Features* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
 Functional Overview
 -------------------
@@ -238,7 +242,7 @@ The API provides a convenient way to handle specific interrupts discussed in thi
 Macros
 ^^^^^^
 
-The API also defines several macros. For example, :c:macro:`UART_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
+The API also defines several macros. For example, :c:macro:`UART_HW_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
 
 
 .. _uart-api-deleting-driver:

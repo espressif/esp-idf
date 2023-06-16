@@ -10,9 +10,10 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include "hal/misc.h"
 #include "esp_attr.h"
-#include "soc/uart_periph.h"
+#include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "hal/uart_types.h"
 
@@ -23,7 +24,7 @@ extern "C" {
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
-#define UART_LL_GET_HW(num) (((num) == 0) ? (&UART0) : (((num) == 1) ? (&UART1) : (&UART2)))
+#define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (((num) == UART_NUM_1) ? (&UART1) : (&UART2)))
 
 // The timeout calibration factor when using ref_tick
 #define UART_LL_TOUT_REF_FACTOR_DEFAULT (8)
@@ -63,9 +64,19 @@ typedef enum {
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
+FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_clk)
 {
-    hw->conf0.tick_ref_always_on = (source_clk == UART_SCLK_APB) ? 1 : 0;
+    switch (source_clk) {
+        case UART_SCLK_REF_TICK:
+            hw->conf0.tick_ref_always_on = 0;
+            break;
+        case UART_SCLK_APB:
+            hw->conf0.tick_ref_always_on = 1;
+            break;
+        default:
+            // Invalid UART clock source
+            abort();
+    }
 }
 
 /**
@@ -76,9 +87,17 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t* source_clk)
+FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk)
 {
-    *source_clk = hw->conf0.tick_ref_always_on ? UART_SCLK_APB : UART_SCLK_REF_TICK;
+    switch (hw->conf0.tick_ref_always_on) {
+        default:
+        case 0:
+            *source_clk = UART_SCLK_REF_TICK;
+            break;
+        case 1:
+            *source_clk = UART_SCLK_APB;
+            break;
+    }
 }
 
 /**

@@ -22,8 +22,7 @@
 #include "soc/soc_caps.h"
 #include "hal/uart_ll.h"
 
-// TODO: make the number of UARTs chip dependent
-#define UART_NUM SOC_UART_NUM
+#define UART_NUM SOC_UART_HP_NUM
 
 // Token signifying that no character is available
 #define NONE -1

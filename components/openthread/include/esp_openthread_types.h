@@ -16,6 +16,7 @@
 #include "driver/spi_slave.h"
 #include "hal/gpio_types.h"
 #include "hal/uart_types.h"
+#include "driver/uart.h"
 
 #ifdef __cplusplus
 extern "C" {
