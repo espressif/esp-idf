@@ -27,6 +27,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * `wpa_supplicant`_ Copyright (c) 2003-2022 Jouni Malinen <j@w1.fi> and contributors and licensed under the BSD license.
 
+* :component_file:`Fast PBKDF2 <wpa_supplicant/esp_supplicant/src/crypto/crypto_mbedtls.c>` Copyright (c) 2015 Joseph Birr-Pixton and licensed under CC0 Public Domain Dedication license.
+
 * `FreeBSD net80211`_ Copyright (c) 2004-2008 Sam Leffler, Errno Consulting and licensed under the BSD license.
 
 * `argtable3`_ argument parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license. argtable3 also includes the following software components. For details, please see argtable3 :component_file:`LICENSE file<console/argtable3/LICENSE>`.
