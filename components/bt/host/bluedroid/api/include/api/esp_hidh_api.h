@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+/// maximum size of HID Device report descriptor
 #define BTHH_MAX_DSC_LEN 884
 
 /**
@@ -29,31 +30,30 @@ typedef enum {
     ESP_HIDH_CONN_STATE_UNKNOWN                  /*!< unknown state(initial state) */
 } esp_hidh_connection_state_t;
 
+/**
+ * @brief HID handshake error code and vendor-defined result code
+ */
 typedef enum {
-    ESP_HIDH_OK,
-    ESP_HIDH_HS_HID_NOT_READY,  /*!< handshake error : device not ready */
-    ESP_HIDH_HS_INVALID_RPT_ID, /*!< handshake error : invalid report ID */
-    ESP_HIDH_HS_TRANS_NOT_SPT,  /*!< handshake error : transaction not spt */
-    ESP_HIDH_HS_INVALID_PARAM,  /*!< handshake error : invalid paremeter */
-    ESP_HIDH_HS_ERROR,          /*!< handshake error : unspecified HS error */
-    ESP_HIDH_ERR,               /*!< general ESP HH error */
+    ESP_HIDH_OK,                /*!< successful */
+    ESP_HIDH_HS_HID_NOT_READY,  /*!< handshake error: device not ready */
+    ESP_HIDH_HS_INVALID_RPT_ID, /*!< handshake error: invalid report ID */
+    ESP_HIDH_HS_TRANS_NOT_SPT,  /*!< handshake error: HID device does not support the request */
+    ESP_HIDH_HS_INVALID_PARAM,  /*!< handshake error: parameter value is out of range or inappropriate */
+    ESP_HIDH_HS_ERROR,          /*!< handshake error: HID device could not identify the error condition */
+    ESP_HIDH_ERR,               /*!< general ESP HID Host error */
     ESP_HIDH_ERR_SDP,           /*!< SDP error */
-    ESP_HIDH_ERR_PROTO,         /*!< SET_Protocol error,
-                                  only used in ESP_HIDH_OPEN_EVT callback */
-
-    ESP_HIDH_ERR_DB_FULL,       /*!< device database full error, used in
-                                     ESP_HIDH_OPEN_EVT/ESP_HIDH_ADD_DEV_EVT */
+    ESP_HIDH_ERR_PROTO,         /*!< SET_PROTOCOL error, only used in ESP_HIDH_OPEN_EVT callback */
+    ESP_HIDH_ERR_DB_FULL,       /*!< device database full, used in ESP_HIDH_OPEN_EVT/ESP_HIDH_ADD_DEV_EVT */
     ESP_HIDH_ERR_TOD_UNSPT,     /*!< type of device not supported */
     ESP_HIDH_ERR_NO_RES,        /*!< out of system resources */
     ESP_HIDH_ERR_AUTH_FAILED,   /*!< authentication fail */
     ESP_HIDH_ERR_HDL,           /*!< connection handle error */
     ESP_HIDH_ERR_SEC,           /*!< encryption error */
-    // self_defined
-    ESP_HIDH_BUSY,              /*!< Temporarily can not handle this request. */
-    ESP_HIDH_NO_DATA,           /*!< No data. */
-    ESP_HIDH_NEED_INIT,         /*!< HIDH module shall init first */
-    ESP_HIDH_NEED_DEINIT,       /*!< HIDH module shall deinit first */
-    ESP_HIDH_NO_CONNECTION,     /*!< connection may have been closed */
+    ESP_HIDH_BUSY,              /*!< vendor-defined: temporarily can not handle this request */
+    ESP_HIDH_NO_DATA,           /*!< vendor-defined: no data. */
+    ESP_HIDH_NEED_INIT,         /*!< vendor-defined: HIDH module shall initialize first */
+    ESP_HIDH_NEED_DEINIT,       /*!< vendor-defined: HIDH module shall de-deinitialize first */
+    ESP_HIDH_NO_CONNECTION,     /*!< vendor-defined: connection may have been closed */
 } esp_hidh_status_t;
 
 /**
@@ -98,16 +98,47 @@ typedef enum {
     ESP_HIDH_SET_INFO_EVT   /*!< When set the HID device descriptor, the event comes */
 } esp_hidh_cb_event_t;
 
+/**
+ * @brief HID device information from HID Device Service Record and Device ID Service Record
+ */
+typedef enum {
+    ESP_HIDH_DEV_ATTR_VIRTUAL_CABLE = 0x0001,           /*!< whether Virtual Cables is supported */
+    ESP_HIDH_DEV_ATTR_NORMALLY_CONNECTABLE = 0x0002,    /*!< whether device is in Page Scan mode when there is no active connection */
+    ESP_HIDH_DEV_ATTR_RECONNECT_INITIATE = 0x0004,      /*!< whether the HID device inititates the reconnection process */
+    ESP_HIDH_DEV_ATTR_SDP_DISABLE = 0x0008,             /*!< whether connections to the SDP channel and control or interrupt
+                                                             channel are mutually exclusive */
+    ESP_HIDH_DEV_ATTR_BATTERY_POWER = 0x0010,           /*!< whether HID device is battery-powered */
+    ESP_HIDH_DEV_ATTR_REMOTE_AWAKE = 0x0020,            /*!< whether the HID device is designed to be capable to provide wake-up
+                                                             signal to host */
+    ESP_HIDH_DEV_ATTR_SUPERVISION_TIMEOUT = 0x0040,     /*!< recommended supvervision timeout value in slots */
+    ESP_HIDH_DEV_ATTR_SSR_MAX_LATENCY = 0x0080,         /*!< maximum latency for Sniff Subrate request */
+    ESP_HIDH_DEV_ATTR_SSR_MIN_TIMEOUT = 0x0100,         /*!< minimum timeout for Sniff Subrate request */
+} esp_hidh_dev_attr_t;
+
+/**
+ * @brief application ID(non-zero) for each type of device
+ */
+typedef enum {
+    ESP_HIDH_APP_ID_MOUSE = 1,                /*!< pointing device */
+    ESP_HIDH_APP_ID_KEYBOARD = 2,             /*!< keyboard */
+    ESP_HIDH_APP_ID_REMOTE_CONTROL = 3,       /*!< remote control */
+    ESP_HIDH_APP_ID_JOYSTICK = 5,             /*!< joystick */
+    ESP_HIDH_APP_ID_GAMEPAD = 6,              /*!< gamepad*/
+} esp_hidh_dev_app_id_t;
+
+/**
+ * @brief HID device information from HID Device Service Record and Device ID Service Record
+ */
 typedef struct {
-    int attr_mask;
-    uint8_t sub_class;
-    uint8_t app_id;
-    int vendor_id;
-    int product_id;
-    int version;
-    uint8_t ctry_code;
-    int dl_len;
-    uint8_t dsc_list[BTHH_MAX_DSC_LEN];
+    int attr_mask;                            /*!< device attribute bit mask, refer to esp_hidh_dev_attr_t */
+    uint8_t sub_class;                        /*!< HID device subclass */
+    uint8_t app_id;                           /*!< application ID, refer to esp_hidh_dev_app_id_t */
+    int vendor_id;                            /*!< Device ID information: vendor ID */
+    int product_id;                           /*!< Device ID information: product ID */
+    int version;                              /*!< Device ID information: version */
+    uint8_t ctry_code;                        /*!< SDP attrbutes of HID devices: HID country code */
+    int dl_len;                               /*!< SDP attrbutes of HID devices: size of device report descriptor size */
+    uint8_t dsc_list[BTHH_MAX_DSC_LEN];       /*!< SDP attrbutes of HID devices: device report descriptor */
 } esp_hidh_hid_info_t;
 
 /**
