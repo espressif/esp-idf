@@ -20,9 +20,7 @@ API 指南
    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    :SOC_SPIRAM_SUPPORTED: external-ram
-   ../security/host-based-security-workflows
    fatal-errors
-   ../security/flash-encryption
    :esp32s3: flash_psram_config
    hardware-abstraction
    :CONFIG_IDF_TARGET_ARCH_XTENSA: hlinterrupts
@@ -35,9 +33,6 @@ API 指南
    performance/index
    reproducible-builds
    :not esp32h2: RF_calibration
-   ../security/security
-   :esp32: ../security/secure-boot-v1
-   ../security/secure-boot-v2
    thread-local-storage
    tools/index
    unit-tests

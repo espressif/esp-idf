@@ -43,6 +43,7 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    api-reference/index
    hw-reference/index
    api-guides/index
+   security/index
    migration-guides/index
    libraries-and-frameworks/index
    contribute/index
