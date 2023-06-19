@@ -387,6 +387,10 @@ More LCD panel drivers and touch drivers are available in `IDF Component Registr
 
         It's highly recommended to turn on the "PSRAM XIP (Execute In Place)" feature in this mode by enabling the Kconfig options: :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA`, which allows the CPU to fetch instructions and readonly data from the PSRAM instead of the main flash. What's more, the external memory cache won't be disabled even if you attempt to write to the main flash through SPI1. This makes it possible to display an OTA progress bar for your application.
 
+    .. note::
+
+        This mode still has another problem which is also caused by insufficient PSRAM bandwidth. e.g. when your draw buffers are allocated from PSRAM, and their contents are copied into the internal frame buffer on CPU core 1. On CPU core 0, there's another memory copy happening in the DMA EOF ISR. In this situation, both CPUs are accessing the PSRAM by cache and sharing the bandwidth of the PSRAM. This increases the memory copy time that spent in the DMA EOF ISR significantly. The driver can't switch the bounce buffer in time, thus leading to a shift on the LCD screen. Although the driver can detect such a condition and perform a restart in the LCD's VSYNC interrupt handler, you still can see a flickering on the screen.
+
     .. code:: c
 
         esp_lcd_panel_handle_t panel_handle = NULL;
