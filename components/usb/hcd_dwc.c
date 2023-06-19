@@ -2469,7 +2469,7 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
         usb_dwc_hal_xfer_desc_parse(buffer->xfer_desc_list, desc_idx, &rem_len, &desc_status);
         usb_dwc_hal_xfer_desc_clear(buffer->xfer_desc_list, desc_idx);
         assert(rem_len == 0 || is_in);
-        assert(desc_status == USB_DWC_HAL_XFER_DESC_STS_SUCCESS || USB_DWC_HAL_XFER_DESC_STS_NOT_EXECUTED);
+        assert(desc_status == USB_DWC_HAL_XFER_DESC_STS_SUCCESS || desc_status == USB_DWC_HAL_XFER_DESC_STS_NOT_EXECUTED);
         assert(rem_len <= transfer->isoc_packet_desc[pkt_idx].num_bytes);    // Check for DMA errata
         // Update ISO packet actual length and status
         transfer->isoc_packet_desc[pkt_idx].actual_num_bytes = transfer->isoc_packet_desc[pkt_idx].num_bytes - rem_len;
