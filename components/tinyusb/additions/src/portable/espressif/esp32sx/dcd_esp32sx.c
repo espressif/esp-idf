@@ -193,6 +193,7 @@ void dcd_init(uint8_t rhport)
                  USB_RXFLVIMSK_M   |
                  USB_ERLYSUSPMSK_M |
                  USB_USBSUSPMSK_M  |
+                 USB_WKUPINTMSK_M  |
                  USB_USBRSTMSK_M   |
                  USB_ENUMDONEMSK_M |
                  USB_RESETDETMSK_M |
@@ -829,6 +830,7 @@ static void _dcd_int_handler(void* arg)
                   USB_GOUTNAKEFF    |
                   USB_ERLYSUSP_M    |
                   USB_USBSUSP_M     |
+                  USB_WKUPINT_M     |
                   USB_ISOOUTDROP_M  |
                   USB_EOPF_M        |
                   USB_EPMIS_M       |
