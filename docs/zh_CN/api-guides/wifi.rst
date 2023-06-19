@@ -3,6 +3,10 @@ Wi-Fi 驱动程序
 
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_MAX_CONN_STA_NUM:default="15", esp32c2="4", esp32c3="10", esp32c6="10"}
+
+{IDF_TARGET_SUB_MAX_NUM_FROM_KEYS:default="2", esp32c3="7", esp32c6="7"}
+
 {IDF_TARGET_NAME} Wi-Fi 功能列表
 ------------------------------------
 {IDF_TARGET_NAME} 支持以下 Wi-Fi 功能：
@@ -1282,7 +1286,7 @@ AP 基本配置
 
 API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息会保存到 NVS 中。下表详细介绍了各个字段。
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
 
     .. list-table::
       :header-rows: 1
@@ -1303,33 +1307,7 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息
       * - ssid_hidden
         - 如果 ssid_hidden 为 1，AP 不广播 SSID。若为其他值，则广播。
       * - max_connection
-        - 允许连接 station 的最大数目，默认值是 10。ESP Wi-Fi 支持 15 (ESP_WIFI_MAX_CONN_NUM) 个 Wi-Fi 连接。请注意， ESP AP 和 ESP-NOW 共享同一块加密硬件 keys，因此 max_connection 参数将受到 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 的影响。加密硬件 keys 的总数是 17，如果 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 小于等于 2，那么 max_connection 最大可以设置为 15，否则 max_connection 最大可以设置为 (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`)。
-      * - beacon_interval
-        - beacon 间隔。值为 100 ~ 60000 ms，默认值为 100 ms。如果该值不在上述范围，AP 默认取 100 ms。
-
-
-.. only:: esp32c3 or esp32c6
-
-    .. list-table::
-      :header-rows: 1
-      :widths: 15 55
-
-      * - 字段
-        - 描述
-      * - ssid
-        - 指 AP 的 SSID。如果 ssid[0] 和 ssid[1] 均为 0xFF，AP 默认 SSID 为 ESP_aabbcc，”aabbcc” 是 AP MAC 的最后三个字节。
-      * - password
-        - AP 的密码。如果身份验证模式为 WIFI_AUTH_OPEN，此字段将被忽略。
-      * - ssid_len
-        - SSID 的长度。如果 ssid_len 为 0，则检查 SSID 直至出现终止字符。如果 ssid_len 大于 32，请更改为 32，或者根据 ssid_len 设置 SSID 长度。
-      * - channel
-        - AP 的信道。如果信道超出范围，Wi-Fi 驱动程序将默认为信道 1。所以，请确保信道在要求的范围内。有关详细信息，请参阅 `Wi-Fi 国家/地区代码`_。
-      * - authmode
-        - ESP AP 的身份验证模式。目前，ESP AP 不支持 AUTH_WEP。如果 authmode 是一个无效值，AP 默认该值为 WIFI_AUTH_OPEN。
-      * - ssid_hidden
-        - 如果 ssid_hidden 为 1，AP 不广播 SSID。若为其他值，则广播。
-      * - max_connection
-        - 允许连接 station 的最大数目，默认值是 10。ESP Wi-Fi 支持 10 (ESP_WIFI_MAX_CONN_NUM) 个 Wi-Fi 连接。请注意， ESP AP 和 ESP-NOW 共享同一块加密硬件 keys，因此 max_connection 参数将受到 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 的影响。加密硬件 keys 的总数是 17，如果 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 小于等于 7，那么 max_connection 最大可以设置为 10，否则 max_connection 最大可以设置为 (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`)。
+        - 允许连接 station 的最大数目，默认值是 10。ESP Wi-Fi 支持 {IDF_TARGET_MAX_CONN_STA_NUM} (ESP_WIFI_MAX_CONN_NUM) 个 Wi-Fi 连接。请注意， ESP AP 和 ESP-NOW 共享同一块加密硬件 keys，因此 max_connection 参数将受到 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 的影响。加密硬件 keys 的总数是 17，如果 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 小于等于 {IDF_TARGET_SUB_MAX_NUM_FROM_KEYS}，那么 max_connection 最大可以设置为 {IDF_TARGET_MAX_CONN_STA_NUM}，否则 max_connection 最大可以设置为 (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`)。
       * - beacon_interval
         - beacon 间隔。值为 100 ~ 60000 ms，默认值为 100 ms。如果该值不在上述范围，AP 默认取 100 ms。
 
@@ -1355,7 +1333,7 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息
       * - ssid_hidden
         - 如果 ssid_hidden 为 1，AP 不广播 SSID。若为其他值，则广播。
       * - max_connection
-        - 允许连接 station 的最大数目，默认值是 2。ESP Wi-Fi 支持 4 (ESP_WIFI_MAX_CONN_NUM) 个 Wi-Fi 连接。请注意， ESP AP 和 ESP-NOW 共享同一块加密硬件 keys，因此 max_connection 参数将受到 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 的影响。加密硬件 keys 的总数是 4， max_connection 最大可以设置为 (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`)。
+        - 允许连接 station 的最大数目，默认值是 2。ESP Wi-Fi 支持 {IDF_TARGET_MAX_CONN_STA_NUM} (ESP_WIFI_MAX_CONN_NUM) 个 Wi-Fi 连接。请注意， ESP AP 和 ESP-NOW 共享同一块加密硬件 keys，因此 max_connection 参数将受到 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` 的影响。加密硬件 keys 的总数是 {IDF_TARGET_MAX_CONN_STA_NUM}， max_connection 最大可以设置为 ({IDF_TARGET_MAX_CONN_STA_NUM} - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`)。
       * - beacon_interval
         - beacon 间隔。值为 100 ~ 60000 ms，默认值为 100 ms。如果该值不在上述范围，AP 默认取 100 ms。
 
@@ -1473,7 +1451,7 @@ Wi-Fi 协议模式
         +-------+-----+----+---+-------+------+-----+----+
         | LR    | -   | -  | - | LR    | LR   | LR  | LR |
         +-------+-----+----+---+-------+------+-----+----+
-    
+
     .. only:: esp32c6
 
         +---------+-------+-----+----+---+---------+-------+------+-----+----+
