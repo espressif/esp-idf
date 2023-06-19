@@ -151,30 +151,15 @@ static inline void modem_syscon_ll_reset_zbmac(modem_syscon_dev_t *hw)
 }
 
 __attribute__((always_inline))
-static inline void modem_syscon_ll_reset_modem_ecb(modem_syscon_dev_t *hw)
-{
-    hw->modem_rst_conf.rst_modem_ecb = 1;
-    hw->modem_rst_conf.rst_modem_ecb = 0;
-}
-
-__attribute__((always_inline))
-static inline void modem_syscon_ll_reset_modem_ccm(modem_syscon_dev_t *hw)
-{
-    hw->modem_rst_conf.rst_modem_ccm = 1;
-    hw->modem_rst_conf.rst_modem_ccm = 0;
-}
-
-__attribute__((always_inline))
-static inline void modem_syscon_ll_reset_modem_bah(modem_syscon_dev_t *hw)
-{
-    hw->modem_rst_conf.rst_modem_bah = 1;
-    hw->modem_rst_conf.rst_modem_bah = 0;
-}
-
-__attribute__((always_inline))
 static inline void modem_syscon_ll_reset_modem_sec(modem_syscon_dev_t *hw)
 {
+    hw->modem_rst_conf.rst_modem_ecb = 1;
+    hw->modem_rst_conf.rst_modem_ccm = 1;
+    hw->modem_rst_conf.rst_modem_bah = 1;
     hw->modem_rst_conf.rst_modem_sec = 1;
+    hw->modem_rst_conf.rst_modem_ecb = 0;
+    hw->modem_rst_conf.rst_modem_ccm = 0;
+    hw->modem_rst_conf.rst_modem_bah = 0;
     hw->modem_rst_conf.rst_modem_sec = 0;
 }
 
