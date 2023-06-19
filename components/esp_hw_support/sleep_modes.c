@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -475,7 +475,7 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 
 inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp);
 
-static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mode)
+static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mode)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
@@ -579,13 +579,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 #endif
 
-    uint32_t reject_triggers = 0;
-    if (!deep_sleep) {
-        /* Light sleep, enable sleep reject for faster return from this function,
-         * in case the wakeup is already triggerred.
-         */
-        reject_triggers = (s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK) | sleep_modem_reject_triggers();
-    }
+    /* Enable sleep reject for faster return from this function,
+     * in case the wakeup is already triggerred.
+     */
+    uint32_t reject_triggers = (s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK) | sleep_modem_reject_triggers();
 
     //Append some flags in addition to power domains
     uint32_t sleep_flags = pd_flags;
@@ -720,7 +717,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 
     // re-enable UART output
     resume_uarts(suspended_uarts_bmap);
-    return result;
+    return result ? ESP_ERR_SLEEP_REJECT : ESP_OK;
 }
 
 inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp)
@@ -793,7 +790,9 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 #endif
 
     // Enter sleep
-    esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP);
+    if (esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP) == ESP_ERR_SLEEP_REJECT) {
+        ESP_EARLY_LOGW(TAG, "Deep sleep request is rejected");
+    }
 
     // Because RTC is in a slower clock domain than the CPU, it
     // can take several CPU cycles for the sleep mode to start.
@@ -816,7 +815,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
                                        uint32_t flash_enable_time_us)
 {
     // Enter sleep
-    uint32_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP);
+    esp_err_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP);
 
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
@@ -833,7 +832,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         esp_rom_delay_us(flash_enable_time_us);
     }
 
-    return reject ? ESP_ERR_SLEEP_REJECT : ESP_OK;
+    return reject;
 }
 
 /**
