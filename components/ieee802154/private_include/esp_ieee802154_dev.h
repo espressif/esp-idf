@@ -201,6 +201,16 @@ extern void esp_ieee802154_receive_failed(uint16_t error);
  *
  */
 extern void esp_ieee802154_ed_failed(uint16_t error);
+
+#if !CONFIG_IEEE802154_TEST
+#define IEEE802154_STATIC  static
+#define IEEE802154_INLINE  inline
+#else
+#define IEEE802154_STATIC
+#define IEEE802154_INLINE
+extern void esp_ieee802154_timer0_done(void);
+extern void esp_ieee802154_timer1_done(void);
+#endif
 #ifdef __cplusplus
 }
 #endif
