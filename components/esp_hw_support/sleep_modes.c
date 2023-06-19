@@ -551,15 +551,15 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
-    //turn down MSPI speed
-    mspi_timing_change_speed_mode_cache_safe(true);
-
     // Sleep UART prepare
     if (deep_sleep) {
         flush_uarts();
     } else {
         should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
     }
+
+    // Will switch to XTAL turn down MSPI speed
+    mspi_timing_change_speed_mode_cache_safe(true);
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
@@ -743,8 +743,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
 
-    //restore MSPI speed
-    mspi_timing_change_speed_mode_cache_safe(false);
+    if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
+        // Turn up MSPI speed if switch to PLL
+        mspi_timing_change_speed_mode_cache_safe(false);
+    }
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
