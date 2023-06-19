@@ -102,6 +102,7 @@ tools/test_idf_size/test.sh
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
+tools/test_sbom/test_submodules.py
 tools/unit-test-app/tools/get_available_configs.sh
 tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.sh

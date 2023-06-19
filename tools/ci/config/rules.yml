@@ -1,3 +1,40 @@
+# patterns
+.patterns-submodule: &patterns-submodule
+  - "components/asio/asio"
+  - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
+  - "components/bt/controller/lib_esp32"
+  - "components/bt/controller/lib_esp32c3_family"
+  - "components/bt/host/nimble/nimble"
+  - "components/cbor/tinycbor"
+  - "components/cmock/CMock"
+  - "components/cmock/CMock/vendor/c_exception"
+  - "components/cmock/CMock/vendor/unity"
+  - "components/coap/libcoap"
+  - "components/coap/libcoap/ext/tinydtls"
+  - "components/esp_phy/lib"
+  - "components/esp_wifi/lib"
+  - "components/esptool_py/esptool"
+  - "components/expat/expat"
+  - "components/json/cJSON"
+  - "components/libsodium/libsodium"
+  - "components/lwip/lwip"
+  - "components/mbedtls/mbedtls"
+  - "components/mqtt/esp-mqtt"
+  - "components/nghttp/nghttp2"
+  - "components/nghttp/nghttp2/third-party/mruby"
+  - "components/nghttp/nghttp2/third-party/neverbleed"
+  - "components/openthread/lib"
+  - "components/protobuf-c/protobuf-c"
+  - "components/spiffs/spiffs"
+  - "components/tinyusb/tinyusb"
+  - "components/unity/unity"
+  - "examples/build_system/cmake/import_lib/main/lib/tinyxml2"
+  - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
+  - ".gitmodules"
+
+.patterns-sbom: &patterns-sbom
+  - "tools/test_sbom/*"
+
 # if anchors
 .if-ref-master: &if-ref-master
   if: '$CI_COMMIT_REF_NAME == "master"'
@@ -270,3 +307,13 @@
     - <<: *if-label-custom_test
     - <<: *if-label-unit_test-all_labels
     - <<: *if-label-weekend_test
+
+.rules:patterns:sbom:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-regular_test
+    - <<: *if-label-host_test
+    - <<: *if-dev-push
+      changes: *patterns-sbom
+    - <<: *if-dev-push
+      changes: *patterns-submodule
