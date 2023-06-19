@@ -8,7 +8,7 @@
 #include "esp_check.h"
 #include "esp_ieee802154.h"
 
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_pm.h"
 static esp_pm_lock_handle_t s_pm_lock = NULL;
 static const char* TAG = "esp openthread sleep";
@@ -48,4 +48,4 @@ void esp_openthread_wakeup_process(void)
         s_ot_sleep = false;
     }
 }
-#endif // CONFIG_IEEE802154_SLEEP_ENABLE
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE

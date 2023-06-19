@@ -26,7 +26,7 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
@@ -735,7 +735,7 @@ esp_err_t ieee802154_receive_at(uint32_t time)
 static esp_err_t ieee802154_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     #define N_REGS_IEEE802154() (((IEEE802154_MAC_DATE_REG - IEEE802154_REG_BASE) / 4) + 1)
     const static sleep_retention_entries_config_t ieee802154_mac_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = ENTRY(3) },
@@ -750,24 +750,24 @@ static esp_err_t ieee802154_sleep_init(void)
 
 IRAM_ATTR void ieee802154_enter_sleep(void)
 {
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     esp_phy_disable();
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
     sleep_retention_do_extra_retention(true);// backup
 #endif
     ieee802154_disable(); // IEEE802154 CLOCK Disable
-#endif // CONFIG_IEEE802154_SLEEP_ENABLE
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
 IRAM_ATTR void ieee802154_wakeup(void)
 {
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ieee802154_enable(); // IEEE802154 CLOCK Enable
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
     sleep_retention_do_extra_retention(false);// restore
 #endif
     esp_phy_enable();
-#endif //CONFIG_IEEE802154_SLEEP_ENABLE
+#endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
 esp_err_t ieee802154_sleep(void)
