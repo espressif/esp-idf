@@ -29,7 +29,7 @@
 
 extern void bt_bb_set_zb_tx_on_delay(uint16_t time);
 
-static volatile ieee802154_state_t s_ieee802154_state;
+IEEE802154_STATIC volatile ieee802154_state_t s_ieee802154_state;
 static uint8_t *s_tx_frame = NULL;
 static uint8_t s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE][127 + 1 + 1]; // +1: len, +1: for dma test
 static esp_ieee802154_frame_info_t s_rx_frame_info[CONFIG_IEEE802154_RX_BUFFER_SIZE];
@@ -76,7 +76,7 @@ uint8_t ieee802154_get_recent_lqi(void)
     return s_rx_frame_info[s_recent_rx_frame_info_index].lqi;
 }
 
-static void set_next_rx_buffer(void)
+IEEE802154_STATIC void set_next_rx_buffer(void)
 {
     if (s_rx_frame[s_rx_index][0] != 0) {
         s_rx_index++;
@@ -185,7 +185,7 @@ static bool stop_ed(void)
     return true;
 }
 
-static bool stop_current_operation(void)
+IEEE802154_STATIC bool stop_current_operation(void)
 {
     event_end_process();
     switch (s_ieee802154_state) {
@@ -547,6 +547,9 @@ static void ieee802154_isr(void *arg)
     if (events & IEEE802154_EVENT_TIMER0_OVERFLOW) {
 #if !CONFIG_IEEE802154_TEST
         assert(s_ieee802154_state == IEEE802154_STATE_RX_ACK);
+#else
+        extern bool ieee802154_timer0_test;
+        assert(ieee802154_timer0_test || s_ieee802154_state == IEEE802154_STATE_RX_ACK);
 #endif
         isr_handle_timer0_done();
 
@@ -564,12 +567,12 @@ static void ieee802154_isr(void *arg)
 
 }
 
-static IRAM_ATTR void ieee802154_enter_critical(void)
+IEEE802154_STATIC IRAM_ATTR void ieee802154_enter_critical(void)
 {
     portENTER_CRITICAL(&s_ieee802154_spinlock);
 }
 
-static IRAM_ATTR void ieee802154_exit_critical(void)
+IEEE802154_STATIC IRAM_ATTR void ieee802154_exit_critical(void)
 {
     portEXIT_CRITICAL(&s_ieee802154_spinlock);
 }
@@ -621,14 +624,14 @@ esp_err_t ieee802154_mac_init(void)
     return ret;
 }
 
-static void start_ed(uint32_t duration)
+IEEE802154_STATIC void start_ed(uint32_t duration)
 {
     ieee802154_ll_enable_events(IEEE802154_EVENT_ED_DONE);
     ieee802154_ll_set_ed_duration(duration);
     ieee802154_ll_set_cmd(IEEE802154_CMD_ED_START);
 }
 
-static void tx_init(const uint8_t *frame)
+IEEE802154_STATIC void tx_init(const uint8_t *frame)
 {
     s_tx_frame = (uint8_t *)frame;
     stop_current_operation();
@@ -701,7 +704,7 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
     return ESP_OK;
 }
 
-static void rx_init(void)
+IEEE802154_STATIC void rx_init(void)
 {
     stop_current_operation();
     ieee802154_pib_update();
