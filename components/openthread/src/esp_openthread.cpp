@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@
 #include "openthread/netdata.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
-
 
 static int hex_digit_to_int(char hex)
 {
@@ -61,7 +60,7 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 {
     ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread platform driver");
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ESP_RETURN_ON_ERROR(esp_openthread_sleep_init(), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread esp pm_lock");
 #endif
@@ -165,7 +164,7 @@ esp_err_t esp_openthread_launch_mainloop(void)
             mainloop.timeout.tv_sec = 0;
             mainloop.timeout.tv_usec = 0;
         }
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
         esp_openthread_sleep_process();
 #endif
         esp_openthread_lock_release();
@@ -173,7 +172,7 @@ esp_err_t esp_openthread_launch_mainloop(void)
         if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
                    &mainloop.timeout) >= 0) {
             esp_openthread_lock_acquire(portMAX_DELAY);
-#if CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
             esp_openthread_wakeup_process();
 #endif
             error = esp_openthread_platform_process(instance, &mainloop);

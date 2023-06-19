@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_IEEE802154_SLEEP_ENABLE
+#ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
 /**
  * @brief This function initializes the OpenThread sleep.
  *
