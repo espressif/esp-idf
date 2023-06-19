@@ -279,9 +279,9 @@ bool IRAM_ATTR modem_domain_pd_allowed(void)
     const uint32_t mask_wifi = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC |
                                                  SLEEP_RETENTION_MODULE_WIFI_BB);
     const uint32_t mask_ble = (const uint32_t) (SLEEP_RETENTION_MODULE_BLE_MAC |
-                                                SLEEP_RETENTION_MODULE_BLE_BB);
+                                                SLEEP_RETENTION_MODULE_BT_BB);
     const uint32_t mask_154 = (const uint32_t) (SLEEP_RETENTION_MODULE_802154_MAC |
-                                                SLEEP_RETENTION_MODULE_802154_BB);
+                                                SLEEP_RETENTION_MODULE_BT_BB);
     return (((modules & mask_wifi) == mask_wifi) ||
             ((modules & mask_ble)  == mask_ble) ||
             ((modules & mask_154)  == mask_154));
