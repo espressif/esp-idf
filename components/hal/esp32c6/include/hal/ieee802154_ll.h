@@ -9,5 +9,6 @@
 #include <stdbool.h>
 #include "hal/ieee802154_common_ll.h"
 
-#define IEEE802154_TXPOWER_VALUE_MAX  21
-#define IEEE802154_TXPOWER_VALUE_MIN -24
+#define IEEE802154_TXPOWER_VALUE_MAX  20
+#define IEEE802154_TXPOWER_VALUE_MIN -15
+#define IEEE802154_TXPOWER_INDEX_MIN   3
