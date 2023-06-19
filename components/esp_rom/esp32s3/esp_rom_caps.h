@@ -18,3 +18,5 @@
 #define ESP_ROM_HAS_HAL_WDT                 (1) // ROM has the implementation of Watchdog HAL driver
 #define ESP_ROM_NEEDS_SWSETUP_WORKAROUND    (1) // ROM uses 32-bit time_t. A workaround is required to prevent printf functions from crashing
 #define ESP_ROM_HAS_ETS_PRINTF_BUG          (1) // ROM has ets_printf bug when disable the ROM log either by eFuse or RTC storage register
+#define ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG   (1) // ROM api Cache_Count_Flash_Pages will return unexpected value
+#define ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG (1) // ROM api Cache_Suspend_I/DCache and Cache_Freeze_I/DCache_Enable does not waiti
