@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdlib.h>
 
 
 /**
@@ -52,6 +53,11 @@ void ulp_lp_core_delay_cycles(uint32_t cycles);
  *
  */
 __attribute__((__noreturn__))  void ulp_lp_core_halt(void);
+
+/**
+ * @brief The LP core puts itself to sleep and disables all wakeup sources.
+ */
+__attribute__((__noreturn__))  void ulp_lp_core_stop_lp_core(void);
 
 #ifdef __cplusplus
 }

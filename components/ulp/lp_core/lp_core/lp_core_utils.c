@@ -63,3 +63,18 @@ void ulp_lp_core_halt(void)
 
     while(1);
 }
+
+void ulp_lp_core_stop_lp_core(void)
+{
+    /* Disable wake-up source and put lp core to sleep */
+    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_WAKEUP_EN, 0);
+    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
+}
+
+void __attribute__((noreturn)) abort(void)
+{
+    /* Stop the LP Core */
+    ulp_lp_core_stop_lp_core();
+
+    while (1);
+}
