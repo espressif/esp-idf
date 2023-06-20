@@ -40,7 +40,7 @@ static const char *TAG = "Timer";
 #define BLE_HOST_CO_COUNT    (8)
 #define BLE_HOST_EV_COUNT    (11 + BLE_HOST_CO_COUNT)
 #define BLE_HOST_EVQ_COUNT   (3)
-#define BLE_HOST_SEM_COUNT   (1)
+#define BLE_HOST_SEM_COUNT   (10)
 #define BLE_HOST_MUTEX_COUNT (4)
 
 struct os_mempool ble_freertos_ev_pool;
