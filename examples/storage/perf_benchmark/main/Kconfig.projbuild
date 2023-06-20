@@ -1,0 +1,194 @@
+menu "Performance Benchmark Example Configuration"
+
+    config EXAMPLE_USE_MEGABYTES
+        bool "Use megabytes instead of megabits"
+        default y
+        help
+            If this config item is set, the IO speed will be displayed in megabytes per second
+            instead of megabits per second.
+
+    config EXAMPLE_TEST_SPIFLASH
+        bool "Test internal SPI flash"
+        default y
+        help
+            If this config item is set, the internal SPI flash will be tested.
+
+    menu "Internal flash test config"
+        depends on EXAMPLE_TEST_SPIFLASH
+
+        config EXAMPLE_TEST_SPIFLASH_RAW
+            bool "Test raw access"
+            default y
+            help
+                If this config item is set, raw access will be tested.
+
+        config EXAMPLE_TEST_SPIFLASH_FATFS
+            bool "Test FATFS"
+            default y
+            help
+                If this config item is set, FATFS will be tested.
+
+        config EXAMPLE_TEST_SPIFLASH_SPIFFS
+            bool "Test SPIFFS"
+            default y
+            help
+                If this config item is set, SPIFFS will be tested.
+
+    endmenu  # "Internal flash test config"
+
+    config EXAMPLE_TEST_SD_CARD
+        bool "Test SD card"
+        default y
+        help
+            If this config item is set, the SD card will be tested after it is mounted.
+
+    choice EXAMPLE_SD_CARD_INTERFACE
+        prompt "SD card interface"
+        depends on EXAMPLE_TEST_SD_CARD
+        default EXAMPLE_USE_SDMMC if SOC_SDMMC_HOST_SUPPORTED
+        default EXAMPLE_USE_SDSPI if !SOC_SDMMC_HOST_SUPPORTED
+        help
+            Select the SD card interface.
+
+        if SOC_SDMMC_HOST_SUPPORTED
+            config EXAMPLE_USE_SDMMC
+                bool "SDMMC"
+        endif  # SOC_SDMMC_HOST_SUPPORTED
+
+        config EXAMPLE_USE_SDSPI
+            bool "SDSPI"
+    endchoice  # EXAMPLE_SD_CARD_INTERFACE
+
+    menu "SD card test config"
+        depends on EXAMPLE_TEST_SD_CARD
+
+        config EXAMPLE_TEST_SD_CARD_RAW
+            bool "Test raw access"
+            default y
+            help
+                If this config item is set, raw access will be tested.
+
+        config EXAMPLE_TEST_SD_CARD_FATFS
+            bool "Test FATFS"
+            default y
+            help
+                If this config item is set, FATFS will be tested.
+
+        choice EXAMPLE_SD_CARD_FREQ_PICKER
+            prompt "SD card frequency"
+            default EXAMPLE_SD_FREQ_HIGHSPEED if EXAMPLE_USE_SDMMC
+            default EXAMPLE_SD_FREQ_DEFAULT if EXAMPLE_USE_SDSPI
+            help
+                Select the frequency of SD card interface.
+
+            config EXAMPLE_SD_FREQ_PROBING
+                bool "Probing frequency (400kHz)"
+
+            config EXAMPLE_SD_FREQ_DEFAULT
+                bool "Default frequency (20MHz)"
+
+            config EXAMPLE_SD_FREQ_HIGHSPEED
+                bool "High speed frequency (40MHz)"
+                depends on EXAMPLE_USE_SDMMC
+
+            config EXAMPLE_SD_FREQ_CUSTOM
+                bool "Custom frequency"
+        endchoice  # EXAMPLE_SD_CARD_FREQ_PICKER
+
+        config EXAMPLE_SD_FREQ_CUSTOM_VAL
+            int "Custom frequency (kHz)"
+            default 20000
+            depends on EXAMPLE_SD_FREQ_CUSTOM
+            help
+                Enter the custom frequency of SD card interface.
+
+        if EXAMPLE_USE_SDMMC
+
+            choice EXAMPLE_SDMMC_BUS_WIDTH
+                prompt "SD/MMC bus width"
+                help
+                    Select the bus width of SD or MMC interface.
+                    Note that even if 1 line mode is used,
+                    D3 pin of the SD card must have a pull-up resistor connected.
+                    Otherwise the card may enter SPI mode,
+                    the only way to recover from which is to cycle power to the card.
+
+                config EXAMPLE_SDMMC_BUS_WIDTH_4
+                    bool "4 lines (D0 - D3)"
+
+                config EXAMPLE_SDMMC_BUS_WIDTH_1
+                    bool "1 line (D0)"
+            endchoice  # EXAMPLE_SDMMC_BUS_WIDTH
+
+            if SOC_SDMMC_USE_GPIO_MATRIX
+
+                config EXAMPLE_PIN_CMD
+                    int "CMD GPIO number"
+                    default 35 if IDF_TARGET_ESP32S3
+
+                config EXAMPLE_PIN_CLK
+                    int "CLK GPIO number"
+                    default 36 if IDF_TARGET_ESP32S3
+
+                config EXAMPLE_PIN_D0
+                    int "D0 GPIO number"
+                    default 37 if IDF_TARGET_ESP32S3
+
+                if EXAMPLE_SDMMC_BUS_WIDTH_4
+
+                    config EXAMPLE_PIN_D1
+                        int "D1 GPIO number"
+                        default 38 if IDF_TARGET_ESP32S3
+
+                    config EXAMPLE_PIN_D2
+                        int "D2 GPIO number"
+                        default 33 if IDF_TARGET_ESP32S3
+
+                    config EXAMPLE_PIN_D3
+                        int "D3 GPIO number"
+                        default 34 if IDF_TARGET_ESP32S3
+
+                endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
+
+            endif  # SOC_SDMMC_USE_GPIO_MATRIX
+
+        endif  # EXAMPLE_USE_SDMMC
+
+        if EXAMPLE_USE_SDSPI
+
+            config EXAMPLE_PIN_MOSI
+                int "MOSI GPIO number"
+                default 15 if IDF_TARGET_ESP32
+                default 35 if IDF_TARGET_ESP32S2
+                default 35 if IDF_TARGET_ESP32S3
+                default 5  if IDF_TARGET_ESP32H2
+                default 4  # C3 and others
+
+            config EXAMPLE_PIN_MISO
+                int "MISO GPIO number"
+                default 2 if IDF_TARGET_ESP32
+                default 37 if IDF_TARGET_ESP32S2
+                default 37 if IDF_TARGET_ESP32S3
+                default 0  if IDF_TARGET_ESP32H2
+                default 6  # C3 and others
+
+            config EXAMPLE_PIN_CLK
+                int "CLK GPIO number"
+                default 14 if IDF_TARGET_ESP32
+                default 36 if IDF_TARGET_ESP32S2
+                default 36 if IDF_TARGET_ESP32S3
+                default 4  if IDF_TARGET_ESP32H2
+                default 5  # C3 and others
+
+            config EXAMPLE_PIN_CS
+                int "CS GPIO number"
+                default 13 if IDF_TARGET_ESP32
+                default 34 if IDF_TARGET_ESP32S2
+                default 34 if IDF_TARGET_ESP32S3
+                default 1  # C3 and others
+
+        endif  # EXAMPLE_USE_SDSPI
+
+    endmenu  # "SD card test config"
+
+endmenu  # "Performance Monitor Example Configuration"
