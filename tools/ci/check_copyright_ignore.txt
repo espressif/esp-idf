@@ -438,7 +438,6 @@ components/esp_netif/test_apps/component_ut_test.py
 components/esp_netif/test_apps/main/esp_netif_test.c
 components/esp_phy/test/test_phy_rtc.c
 components/esp_pm/include/esp_private/pm_trace.h
-components/esp_pm/pm_locks.c
 components/esp_pm/test/test_pm.c
 components/esp_rom/esp32/ld/esp32.rom.api.ld
 components/esp_rom/esp32/ld/esp32.rom.eco3.ld
