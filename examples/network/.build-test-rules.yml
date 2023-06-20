@@ -17,6 +17,6 @@ examples/network/simple_sniffer:
       temporary: true
       reason: lack of runners
 
-examples/network/sta_to_eth:
+examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1

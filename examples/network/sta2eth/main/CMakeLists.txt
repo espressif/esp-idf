@@ -10,7 +10,7 @@ else()
     set(wired_iface usb_ncm_iface.c)
 endif()
 
-idf_component_register(SRCS sta_to_eth_main.c
+idf_component_register(SRCS sta2eth_main.c
                             ${wired_iface}
                             ${config_method}
                        INCLUDE_DIRS "")
