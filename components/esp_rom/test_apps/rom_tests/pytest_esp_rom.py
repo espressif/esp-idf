@@ -14,3 +14,10 @@ from pytest_embedded import Dut
 @pytest.mark.nightly_run
 def test_esp_rom(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32c3
+@pytest.mark.host_test
+@pytest.mark.qemu
+def test_esp_rom_qemu(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
