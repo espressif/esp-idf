@@ -18,7 +18,8 @@ if(NOT BOOTLOADER_BUILD)
         "esp_hmac.c"
         "esp_ds.c"
         "esp_crypto_lock.c"
-        "spiram.c")
+        "spiram.c"
+        "sar_periph_ctrl.c")
 
     if(CONFIG_SPIRAM_MODE_QUAD)
         list(APPEND srcs "spiram_psram.c")

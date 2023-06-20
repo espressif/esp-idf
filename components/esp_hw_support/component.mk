@@ -17,7 +17,8 @@ COMPONENT_OBJEXCLUDE += clk_ctrl_os.o \
 						port/$(IDF_TARGET)/cache_sram_mmu.o \
 						port/$(IDF_TARGET)/esp_himem.o \
 						port/$(IDF_TARGET)/spiram.o \
-						port/$(IDF_TARGET)/spiram_psram.o
+						port/$(IDF_TARGET)/spiram_psram.o \
+						port/$(IDF_TARGET)/sar_periph_ctrl.o
 endif
 
 ifdef CONFIG_IDF_TARGET_ESP32

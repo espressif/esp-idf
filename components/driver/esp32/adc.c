@@ -21,6 +21,7 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -47,7 +48,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
 {
     int hall_value;
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     ADC_ENTER_CRITICAL();
     /* disable other peripherals. */
@@ -59,7 +60,7 @@ static int hall_sensor_get_value(void)    //hall sensor without LNA
     adc_ll_hall_disable();
     ADC_EXIT_CRITICAL();
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
     return hall_value;
 }
 

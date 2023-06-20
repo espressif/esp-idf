@@ -852,19 +852,17 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
  *
  * @param manage Set ADC power status.
  */
-static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
+static inline void adc_ll_digi_set_power_manage(adc_ll_power_t manage)
 {
-    /* Bit1  0:Fsm  1: SW mode
-       Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_POWER_SW_ON) {
-        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 1;
-        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+        APB_SARADC.ctrl.sar_clk_gated = 1;
+        APB_SARADC.ctrl.xpd_sar_force = 0x3;
     } else if (manage == ADC_POWER_BY_FSM) {
-        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 1;
-        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
+        APB_SARADC.ctrl.sar_clk_gated = 1;
+        APB_SARADC.ctrl.xpd_sar_force = 0x0;
     } else if (manage == ADC_POWER_SW_OFF) {
-        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
-        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 0;
+        APB_SARADC.ctrl.sar_clk_gated = 0;
+        APB_SARADC.ctrl.xpd_sar_force = 0x2;
     }
 }
 
