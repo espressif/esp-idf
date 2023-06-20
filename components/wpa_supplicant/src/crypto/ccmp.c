@@ -157,8 +157,8 @@ u8 * ccmp_decrypt(const u8 *tk, const u8 *hdr,
 	os_memset(aad, 0, sizeof(aad));
 	ccmp_aad_nonce((const struct ieee80211_hdr *)hdr, data, aad, &aad_len,
                    nonce);
-	wpa_hexdump(MSG_DEBUG, "CCMP AAD", aad, aad_len);
-	wpa_hexdump(MSG_DEBUG, "CCMP nonce", nonce, 13);
+	wpa_hexdump(MSG_MSGDUMP, "CCMP AAD", aad, aad_len);
+	wpa_hexdump(MSG_MSGDUMP, "CCMP nonce", nonce, 13);
 
 #ifdef ESPRESSIF_USE
 	if (espnow_pkt) {
@@ -167,11 +167,11 @@ u8 * ccmp_decrypt(const u8 *tk, const u8 *hdr,
 	}
 #endif
 	if (aes_ccm_ad(tk, 16, nonce, tag_len, data + 8, mlen, aad, aad_len,
-                   data + 8 + mlen, plain) < 0) {
+			data + 8 + mlen, plain) < 0) {
 		os_free(plain);
 		return NULL;
 	}
-	wpa_hexdump(MSG_DEBUG, "CCMP decrypted", plain, mlen);
+	wpa_hexdump(MSG_MSGDUMP, "CCMP decrypted", plain, mlen);
 
 	*decrypted_len = mlen;
 	return plain;
@@ -219,8 +219,8 @@ u8 * ccmp_encrypt(const u8 *tk, u8 *frame, size_t len, size_t hdrlen,
 
 	os_memset(aad, 0, sizeof(aad));
 	ccmp_aad_nonce(hdr, crypt + hdrlen, aad, &aad_len, nonce);
-	wpa_hexdump(MSG_DEBUG, "CCMP AAD", aad, aad_len);
-	wpa_hexdump(MSG_DEBUG, "CCMP nonce", nonce, 13);
+	wpa_hexdump(MSG_MSGDUMP, "CCMP AAD", aad, aad_len);
+	wpa_hexdump(MSG_MSGDUMP, "CCMP nonce", nonce, 13);
 
 	if (aes_ccm_ae(tk, 16, nonce, 8, frame + hdrlen, plen, aad, aad_len,
 		       pos, pos + plen) < 0) {
@@ -229,7 +229,7 @@ u8 * ccmp_encrypt(const u8 *tk, u8 *frame, size_t len, size_t hdrlen,
 		return NULL;
 	}
 
-	wpa_hexdump(MSG_DEBUG, "CCMP encrypted", crypt + hdrlen + 8, plen);
+	wpa_hexdump(MSG_MSGDUMP, "CCMP encrypted", crypt + hdrlen + 8, plen);
 
 	*encrypted_len = hdrlen + 8 + plen + 8;
 
