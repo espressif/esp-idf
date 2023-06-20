@@ -10,7 +10,7 @@ Introduction
 ============
 {IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB"}
 
-{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (Psuedostatic RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (Psuedostatic RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
 
 .. only:: esp32s3
 
@@ -55,7 +55,7 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
 Integrate RAM into the {IDF_TARGET_NAME} Memory Map
 ---------------------------------------------------
 
-Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Integrate RAM into memory map`` from :ref:`CONFIG_SPIRAM_USE`.
 
 This is the most basic option for external RAM integration. Most likely, you will need another, more advanced option.
 
@@ -71,7 +71,7 @@ It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next
 Add External RAM to the Capability Allocator
 --------------------------------------------
 
-Select this option by choosing "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`` from :ref:`CONFIG_SPIRAM_USE`.
 
 When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
 
@@ -83,7 +83,7 @@ To allocate memory from external RAM, a program should call ``heap_caps_malloc(s
 Provide External RAM via malloc()
 ---------------------------------
 
-Select this option by choosing "Make RAM allocatable using malloc() as well" from :ref:`CONFIG_SPIRAM_USE`. This is the default option.
+Select this option by choosing ``Make RAM allocatable using malloc() as well`` from :ref:`CONFIG_SPIRAM_USE`. This is the default option.
 
 In this case, memory is added to the capability allocator as described for the previous option. However, it is also added to the pool of RAM that can be returned by the standard ``malloc()`` function.
 
@@ -105,7 +105,7 @@ Allow .bss Segment to Be Placed in External Memory
 
 Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
-If enabled, a region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
 Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
@@ -122,7 +122,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
     Allow .noinit Segment to Be Placed in External Memory
     --------------------------------------------------------------
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
+    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
 
     By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
 
