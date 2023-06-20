@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 import typing as t
 from fnmatch import fnmatch
@@ -125,6 +126,8 @@ class IdfPytestEmbedded:
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, items: t.List[Function]) -> None:
         item_to_case: t.Dict[Function, PytestCase] = {}
+
+        # Add Markers to the test cases
         for item in items:
             # generate PytestCase for each item
             case = self.item_to_pytest_case(item)
@@ -150,26 +153,62 @@ class IdfPytestEmbedded:
             if self.target == 'esp32c2' and 'esp32c2' in case.target_markers and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
-        # filter all the test cases with "nightly_run" marker
-        if os.getenv('INCLUDE_NIGHTLY_RUN') == '1':
-            # Do not filter nightly_run cases
-            pass
-        elif os.getenv('NIGHTLY_RUN') == '1':
-            items[:] = [item for item in items if item_to_case[item].is_nightly_run]
-        else:
-            items[:] = [item for item in items if not item_to_case[item].is_nightly_run]
+        # Filter the test cases
+        filtered_items = []
+        for item in items:
+            case = item_to_case[item]
+            # filter by "nightly_run" marker
+            if os.getenv('INCLUDE_NIGHTLY_RUN') == '1':
+                # Do not filter nightly_run cases
+                pass
+            elif os.getenv('NIGHTLY_RUN') == '1':
+                if not case.is_nightly_run:
+                    logging.debug(
+                        'Skipping test case %s because of this test case is not a nightly run test case', item.name
+                    )
+                    continue
+            else:
+                if case.is_nightly_run:
+                    logging.debug(
+                        'Skipping test case %s because of this test case is a nightly run test case', item.name
+                    )
+                    continue
 
-        # filter all the test cases with target and skip_targets
-        items[:] = [
-            item
-            for item in items
-            if self.target in item_to_case[item].target_markers
-            and self.target not in item_to_case[item].skipped_targets
-        ]
+            # filter by target
+            if self.target not in case.target_markers:
+                continue
 
-        # filter all the test cases with cli option "config"
-        if self.sdkconfig:
-            items[:] = [item for item in items if self.get_param(item, 'config', DEFAULT_SDKCONFIG) == self.sdkconfig]
+            if self.target in case.skipped_targets:
+                continue
+
+            # filter by sdkconfig
+            if self.sdkconfig:
+                if self.get_param(item, 'config', DEFAULT_SDKCONFIG) != self.sdkconfig:
+                    continue
+
+            # filter by apps_list, skip the test case if not listed
+            # should only be used in CI
+            if self.apps_list is not None:
+                bin_not_found = False
+                for case_app in case.apps:
+                    # in ci, always use build_<target>_<config> as build dir
+                    binary_path = os.path.join(case_app.path, f'build_{case_app.target}_{case_app.config}')
+                    if binary_path not in self.apps_list:
+                        logging.info(
+                            'Skipping test case %s because binary path %s is not listed in app info list files',
+                            item.name,
+                            binary_path,
+                        )
+                        bin_not_found = True
+                        break
+
+                if bin_not_found:
+                    continue
+
+            # finally!
+            filtered_items.append(item)
+
+        items[:] = filtered_items[:]
 
     def pytest_report_collectionfinish(self, items: t.List[Function]) -> None:
         for item in items:

@@ -92,7 +92,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 @pytest.fixture
 @multi_dut_fixture
-def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], config: Optional[str]) -> str:
+def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
     """
     Check local build dir with the following priority:
 
@@ -113,29 +113,10 @@ def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], con
         check_dirs.append(f'build_{config}')
     check_dirs.append('build')
 
-    idf_pytest_embedded = request.config.stash[IDF_PYTEST_EMBEDDED_KEY]
-
-    build_dir = None
-    if idf_pytest_embedded.apps_list is not None:
-        for check_dir in check_dirs:
-            binary_path = os.path.join(app_path, check_dir)
-            if binary_path in idf_pytest_embedded.apps_list:
-                build_dir = check_dir
-                break
-
-        if build_dir is None:
-            pytest.skip(
-                f'app path {app_path} with target {target} and config {config} is not listed in app info list files'
-            )
-            return ''  # not reachable, to fool mypy
-
-    if build_dir:
-        check_dirs = [build_dir]
-
     for check_dir in check_dirs:
         binary_path = os.path.join(app_path, check_dir)
         if os.path.isdir(binary_path):
-            logging.info(f'find valid binary path: {binary_path}')
+            logging.info(f'found valid binary path: {binary_path}')
             return check_dir
 
         logging.warning('checking binary path: %s... missing... try another place', binary_path)
