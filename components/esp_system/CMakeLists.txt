@@ -12,7 +12,7 @@ endif()
 
 set(srcs "esp_err.c")
 
-if(CONFIG_IDF_ENV_FPGA)
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     list(APPEND srcs "fpga_overrides.c")
 endif()
 
@@ -86,7 +86,7 @@ else()
     include(${CMAKE_CURRENT_LIST_DIR}/ld/ld.cmake)
 endif()
 
-if(CONFIG_IDF_ENV_FPGA)
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     # Forces the linker to include fpga stubs from this component
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
 endif()

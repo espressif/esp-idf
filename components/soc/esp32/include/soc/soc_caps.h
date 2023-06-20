@@ -96,6 +96,7 @@
 #define SOC_TOUCH_SENSOR_SUPPORTED  1
 #define SOC_BOD_SUPPORTED           1
 #define SOC_ULP_FSM_SUPPORTED       1
+#define SOC_CLK_TREE_SUPPORTED      1
 
 #if SOC_CAPS_ECO_VER < 200
 #define SOC_DPORT_WORKAROUND                   1
