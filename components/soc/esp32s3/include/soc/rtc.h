@@ -119,19 +119,20 @@ set sleep_init default param
 */
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
-#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  14
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_ULTRA_LOW 15
-#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_ON  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_ON  0
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 0xf
+
+#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
+#define RTC_CNTL_BIASSLP_MONITOR_ON  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
+#define RTC_CNTL_PD_CUR_MONITOR_ON  0
 
 /*
 The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
@@ -679,7 +680,6 @@ typedef struct {
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
     uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
-    uint32_t dbg_atten_monitor : 4;     //!< voltage parameter, in monitor mode
     uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
     uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
     uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
