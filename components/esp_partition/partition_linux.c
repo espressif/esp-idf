@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "esp_flash_partitions.h"
 #include "esp_private/partition_linux.h"
 #include "esp_log.h"
+#include "spi_flash_mmap.h"
 
 static const char *TAG = "linux_spiflash";
 
@@ -390,7 +391,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
     // in case of power - off it decreases new_size to the number of bytes written
     // before power event occured
     if (!ESP_PARTITION_HOOK_WRITE(dst_addr, &new_size)) {
-        ret =  ESP_ERR_FLASH_BASE + 1;
+        ret =  ESP_ERR_FLASH_OP_FAIL;
     }
 
     for (size_t x = 0; x < new_size; x++) {
@@ -398,7 +399,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
         // Check if address to be written was erased first
         if((~((uint8_t *)dst_addr)[x] & ((uint8_t *)src)[x]) != 0) {
             ESP_LOGW(TAG, "invalid flash operation detected");
-            ret = ESP_ERR_FLASH_BASE + 1;
+            ret = ESP_ERR_FLASH_OP_FAIL;
             break;
         }
 
@@ -466,7 +467,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
     esp_err_t ret = ESP_OK;
 
     if(!ESP_PARTITION_HOOK_ERASE(target_addr, &new_size)) {
-        ret =  ESP_ERR_FLASH_BASE + 1;
+        ret =  ESP_ERR_FLASH_OP_FAIL;
     }
 
     //set all bits to 1 (NOR FLASH default)
@@ -654,14 +655,11 @@ static bool esp_partition_hook_erase(const void *dstAddr, size_t *size)
             sector_count = s_esp_partition_emulated_power_off_counter;
             // disable power on cycles for further calls
             s_esp_partition_emulated_power_off_counter = SIZE_MAX;
+            // update number of bytes to be really erased before power-off event
+            *size = sector_count * ESP_PARTITION_EMULATED_SECTOR_SIZE;
             // final result value will be false
             ret_val = false;
         }
-    }
-
-    if(!ret_val) {
-        // update number of bytes to be really erased before power-off event
-        *size = sector_count * ESP_PARTITION_EMULATED_SECTOR_SIZE;
     }
 
     // update statistcs for all sectors until power down cycle

@@ -9,10 +9,11 @@ if(${target} STREQUAL "linux")
     list(APPEND srcs "partition_linux.c")
     set(priv_reqs partition_table)
 
-    # Steal some include directories from bootloader_support and hal components:
+    # Steal some include directories from bootloader_support hal and spi_flash components:
     idf_component_get_property(hal_dir hal COMPONENT_DIR)
     idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
-    list(APPEND include_dirs include ${hal_dir}/include ${bootloader_support_dir}/include)
+    idf_component_get_property(spi_flash_dir spi_flash COMPONENT_DIR)
+    list(APPEND include_dirs include ${hal_dir}/include ${bootloader_support_dir}/include ${spi_flash_dir}/include)
 else()
     list(APPEND srcs "partition_target.c")
 endif()
