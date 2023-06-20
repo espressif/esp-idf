@@ -1861,8 +1861,8 @@ void bta_av_dereg_comp(tBTA_AV_DATA *p_data)
             bta_sys_remove_uuid(UUID_SERVCLASS_VIDEO_SOURCE);
         }
 
-        /* make sure that the timer is not active */
-        bta_sys_stop_timer(&p_scb->timer);
+        /* free the delay timer for AVRC CT */
+        bta_sys_free_timer(&p_scb->timer);
         list_free(p_scb->a2d_list);
         p_scb->a2d_list = NULL;
         utl_freebuf((void **)&p_cb->p_scb[p_scb->hdi]);
