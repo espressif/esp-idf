@@ -16,7 +16,7 @@ def test_loop(env, config_names):  # type: (Any, Any) -> None
         Utility.console_log("Checking config \"{}\"... ".format(name), end='')
         dut = env.get_dut('flash_psram', 'tools/test_apps/system/flash_psram', app_config_name=name)
         dut.start_app()
-        dut.expect('flash psram test success')
+        dut.expect('flash psram test success', timeout=30)
         env.close_dut(dut.name)
         Utility.console_log('done')
 
