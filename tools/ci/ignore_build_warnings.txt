@@ -15,3 +15,4 @@ CryptographyDeprecationWarning
 Warning: \d+/\d+ app partitions are too small for binary
 CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy\)
 The smallest .+ partition is nearly full \(\d+% free space left\)!
+DeprecationWarning: pkg_resources is deprecated as an API
