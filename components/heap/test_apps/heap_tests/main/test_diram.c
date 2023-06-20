@@ -43,7 +43,7 @@ static void *malloc_block_diram(uint32_t caps)
     return result;
 }
 
-TEST_CASE("Allocate D/IRAM as DRAM", "[heap]")
+TEST_CASE("Allocate D/IRAM as DRAM", "[heap][qemu-ignore]")
 {
     uint32_t *dram = malloc_block_diram(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
@@ -61,7 +61,7 @@ TEST_CASE("Allocate D/IRAM as DRAM", "[heap]")
     free(dram);
 }
 
-TEST_CASE("Allocate D/IRAM as IRAM", "[heap]")
+TEST_CASE("Allocate D/IRAM as IRAM", "[heap][qemu-ignore]")
 {
     uint32_t *iram = malloc_block_diram(MALLOC_CAP_EXEC);
 
