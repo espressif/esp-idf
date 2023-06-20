@@ -274,5 +274,6 @@ bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 uint8_t esp_wifi_sta_get_config_sae_pwe_h2e_internal(void);
 uint8_t esp_wifi_sta_get_use_h2e_internal(void);
 void esp_wifi_sta_disable_wpa2_authmode_internal(void);
+bool esp_wifi_eb_tx_status_success_internal(void *eb);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
