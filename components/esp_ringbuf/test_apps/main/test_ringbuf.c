@@ -753,7 +753,8 @@ out:
     return need_yield;
 }
 
-TEST_CASE("Test ring buffer ISR", "[esp_ringbuf]")
+// IDF-6471 - test hangs up on QEMU
+TEST_CASE("Test ring buffer ISR", "[esp_ringbuf][qemu-ignore]")
 {
     gptimer_handle_t gptimer;
     for (int i = 0; i < NO_OF_RB_TYPES; i++) {
