@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#if CONFIG_TEST_ADDR_LOOKUP_IN_APP
 static volatile bool s_initialization_done = false;
 
 static void initialize(void)
@@ -23,9 +24,13 @@ static int get_random_number(void)
     }
     return rand();
 }
+#endif // CONFIG_TEST_ADDR_LOOKUP_IN_APP
 
 void app_main(void)
 {
+    printf("app_main is running from 0x%x\n", (int) app_main);
+
+#if CONFIG_TEST_ADDR_LOOKUP_IN_APP
     volatile int number = get_random_number();
     int *n = malloc(sizeof(int));
 
@@ -33,10 +38,17 @@ void app_main(void)
 
     *n = number;
 
-    printf("app_main is running from 0x%x\n", (int) app_main);
     printf("Initializer function at 0x%x\n", (int) initialize);
     printf("Got %d stored at 0x%x and 0x%x from a function from 0x%x\n", *n, (int) n, (int) (&number), (int) get_random_number);
     printf("This is the end of the report\n");
 
     free(n);
+#endif // CONFIG_TEST_ADDR_LOOKUP_IN_APP
+
+#if CONFIG_TEST_ADDR_LOOKUP_IN_ROM
+    printf("Crashing now!\n");
+
+    esp_rom_install_channel_putc(1, (void (*)(char)) abort);
+    esp_rom_printf("a");
+#endif // CONFIG_TEST_ADDR_LOOKUP_IN_ROM
 }
