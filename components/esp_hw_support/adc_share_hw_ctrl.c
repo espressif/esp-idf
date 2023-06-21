@@ -68,7 +68,8 @@ void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 
     uint32_t init_code = 0;
 
-    if (version == ESP_EFUSE_ADC_CALIB_VER) {
+    if ((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
+        (version <= ESP_EFUSE_ADC_CALIB_VER_MAX)) {
         init_code = esp_efuse_rtc_calib_get_init_code(version, adc_n, atten);
     }
 #if SOC_ADC_SELF_HW_CALI_SUPPORTED
