@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_BT_SUPPORTED                1
 #define SOC_WIFI_SUPPORTED              1
@@ -104,9 +105,9 @@
 #define SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK  1  // C2 ECC peripheral has a bug in ECC point verification, if value of K is zero the verification fails
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
-#define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1)  // TX and RX channel in the same pair will share the same interrupt source number
+#define SOC_AHB_GDMA_VERSION            1U
+#define SOC_GDMA_NUM_GROUPS_MAX         1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX    1U
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C2 has 1 GPIO peripheral
@@ -186,7 +187,6 @@
 
 /* The SHA engine is able to resume hashing from a user */
 #define SOC_SHA_SUPPORT_RESUME          (1)
-
 
 /* Supported HW algorithms */
 #define SOC_SHA_SUPPORT_SHA1            (1)

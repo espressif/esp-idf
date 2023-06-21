@@ -85,7 +85,19 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "gdma_hal.c")
+        list(APPEND srcs "gdma_hal_top.c")
+    endif()
+
+    if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
+        list(APPEND srcs "gdma_hal_ahb_v1.c")
+    endif()
+
+    if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
+        list(APPEND srcs "gdma_hal_ahb_v2.c")
+    endif()
+
+    if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
+        list(APPEND srcs "gdma_hal_axi.c")
     endif()
 
     if(CONFIG_SOC_I2S_SUPPORTED)

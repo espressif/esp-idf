@@ -27,7 +27,7 @@
 /*---------------------------------------------------------------
             Define all ADC DMA required operations here
 ---------------------------------------------------------------*/
-#if SOC_GDMA_SUPPORTED
+#if SOC_AHB_GDMA_VERSION == 1
 #define adc_dma_ll_rx_clear_intr(dev, chan, mask)       gdma_ll_rx_clear_interrupt_status(dev, chan, mask)
 #define adc_dma_ll_rx_enable_intr(dev, chan, mask)      gdma_ll_rx_enable_interrupt(dev, chan, mask, true)
 #define adc_dma_ll_rx_disable_intr(dev, chan, mask)     gdma_ll_rx_enable_interrupt(dev, chan, mask, false)

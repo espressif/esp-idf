@@ -13,7 +13,6 @@ extern "C" {
 /**
  * @brief Enumeration of peripherals which have the DMA capability
  * @note Some peripheral might not be available on certain chip, please refer to `soc_caps.h` for detail.
- *
  */
 typedef enum {
     GDMA_TRIG_PERIPH_M2M,  /*!< GDMA trigger peripheral: M2M */
@@ -32,7 +31,6 @@ typedef enum {
 
 /**
  * @brief Enumeration of GDMA channel direction
- *
  */
 typedef enum {
     GDMA_CHANNEL_DIRECTION_TX, /*!< GDMA channel direction: TX */

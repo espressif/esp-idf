@@ -1,0 +1,69 @@
+[mapping:gdma_driver]
+archive: libesp_hw_support.a
+entries:
+    # performance optimization, always put the DMA default interrupt handler in IRAM
+    if SOC_GDMA_SUPPORTED = y:
+        gdma: gdma_default_tx_isr (noflash)
+        gdma: gdma_default_rx_isr (noflash)
+
+    # put GDMA control functions in IRAM
+    if GDMA_CTRL_FUNC_IN_IRAM = y:
+        gdma: gdma_start (noflash)
+        gdma: gdma_stop (noflash)
+        gdma: gdma_append (noflash)
+        gdma: gdma_reset (noflash)
+
+[mapping:gdma_hal]
+archive: libhal.a
+entries:
+    # performance optimization, always put the DMA default interrupt handler in IRAM
+    if SOC_GDMA_SUPPORTED = y:
+        gdma_hal_top: gdma_hal_clear_intr (noflash)
+        gdma_hal_top: gdma_hal_read_intr_status (noflash)
+        gdma_hal_top: gdma_hal_get_eof_desc_addr (noflash)
+
+    # GDMA implementation layer for AHB-DMA version 1
+    if SOC_AHB_GDMA_VERSION = 1:
+        gdma_hal_ahb_v1: gdma_ahb_hal_clear_intr (noflash)
+        gdma_hal_ahb_v1: gdma_ahb_hal_read_intr_status (noflash)
+        gdma_hal_ahb_v1: gdma_ahb_hal_get_eof_desc_addr (noflash)
+
+    # GDMA implementation layer for AHB-DMA version 2
+    if SOC_AHB_GDMA_VERSION = 2:
+        gdma_hal_ahb_v2: gdma_ahb_hal_clear_intr (noflash)
+        gdma_hal_ahb_v2: gdma_ahb_hal_read_intr_status (noflash)
+        gdma_hal_ahb_v2: gdma_ahb_hal_get_eof_desc_addr (noflash)
+
+    # GDMA implementation layer for AXI-DMA
+    if SOC_AXI_GDMA_SUPPORTED = y:
+        gdma_hal_axi: gdma_axi_hal_clear_intr (noflash)
+        gdma_hal_axi: gdma_axi_hal_read_intr_status (noflash)
+        gdma_hal_axi: gdma_axi_hal_get_eof_desc_addr (noflash)
+
+    # put GDMA control HAL functions in IRAM
+    if GDMA_CTRL_FUNC_IN_IRAM = y:
+        gdma_hal_top: gdma_hal_start_with_desc (noflash)
+        gdma_hal_top: gdma_hal_stop (noflash)
+        gdma_hal_top: gdma_hal_append (noflash)
+        gdma_hal_top: gdma_hal_reset (noflash)
+
+        # GDMA implementation layer for AHB-DMA version 1
+        if SOC_AHB_GDMA_VERSION = 1:
+            gdma_hal_ahb_v1: gdma_ahb_hal_start_with_desc (noflash)
+            gdma_hal_ahb_v1: gdma_ahb_hal_stop (noflash)
+            gdma_hal_ahb_v1: gdma_ahb_hal_append (noflash)
+            gdma_hal_ahb_v1: gdma_ahb_hal_reset (noflash)
+
+        # GDMA implementation layer for AHB-DMA version 2
+        if SOC_AHB_GDMA_VERSION = 2:
+            gdma_hal_ahb_v2: gdma_ahb_hal_start_with_desc (noflash)
+            gdma_hal_ahb_v2: gdma_ahb_hal_stop (noflash)
+            gdma_hal_ahb_v2: gdma_ahb_hal_append (noflash)
+            gdma_hal_ahb_v2: gdma_ahb_hal_reset (noflash)
+
+        # GDMA implementation layer for AXI-DMA
+        if SOC_AXI_GDMA_SUPPORTED = y:
+            gdma_hal_axi: gdma_axi_hal_start_with_desc (noflash)
+            gdma_hal_axi: gdma_axi_hal_stop (noflash)
+            gdma_hal_axi: gdma_axi_hal_append (noflash)
+            gdma_hal_axi: gdma_axi_hal_reset (noflash)

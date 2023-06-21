@@ -18,7 +18,7 @@
 #include "hal/assert.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_GDMA_SUPPORTED
+#if SOC_AHB_GDMA_VERSION == 1
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 #define spi_dma_ll_tx_restart(dev, chan)                           gdma_ll_tx_restart(&GDMA, chan)
