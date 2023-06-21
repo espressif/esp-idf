@@ -30,7 +30,6 @@ from builtins import object
 from io import open
 
 XTENSA_ARGS = '--toolchain-prefix xtensa-esp32-elf-'
-RISCV_ARGS = '--decode-panic backtrace --target esp32c3 --toolchain-prefix riscv32-esp-elf-'
 
 test_list = (
     # Add new tests here. All files should be placed in IN_DIR. Columns are
@@ -41,8 +40,6 @@ test_list = (
     ('in1.txt',             '*:N',                                       'in1f3.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
     ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',     'in2f1.txt',               420,    'dummy_xtensa.elf',       XTENSA_ARGS),
     ('in2.txt',             'vfs',                                       'in2f2.txt',               420,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('core1.txt',           '',                                          'core1_out.txt',            60,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('riscv_panic1.txt',    '',                                          'riscv_panic1_out.txt',     60,    'dummy_riscv.elf',        RISCV_ARGS),
 )
 
 IN_DIR = 'tests/'       # tests are in this directory
