@@ -354,19 +354,31 @@ static void IRAM_ATTR resume_uarts(uint32_t uarts_resume_bmap)
  */
 inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 {
+    if (deep_sleep) {
+        extern bool esp_phy_is_initialized(void);
+        if (esp_phy_is_initialized()) {
+            extern void phy_close_rf(void);
+            phy_close_rf();
+#if !CONFIG_IDF_TARGET_ESP32
+            extern void phy_xpd_tsens(void);
+            phy_xpd_tsens();
+#endif
+        }
+    } else {
 #if CONFIG_MAC_BB_PD
-    mac_bb_power_down_cb_execute();
+        mac_bb_power_down_cb_execute();
 #endif
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_apply();
+        gpio_sleep_mode_config_apply();
 #endif
 #if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
-    sleep_enable_memory_retention();
+        sleep_enable_memory_retention();
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
-    regi2c_analog_cali_reg_read();
+        regi2c_analog_cali_reg_read();
 #endif
-    if (!(deep_sleep && s_adc_tsen_enabled)){
+    }
+    if (!(deep_sleep && s_adc_tsen_enabled)) {
         sar_periph_ctrl_power_disable();
     }
 }
@@ -463,19 +475,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 #endif
 
-    if (deep_sleep) {
-        extern bool esp_phy_is_initialized(void);
-        if (esp_phy_is_initialized()){
-            extern void phy_close_rf(void);
-            phy_close_rf();
-#if !CONFIG_IDF_TARGET_ESP32
-            extern void phy_xpd_tsens(void);
-            phy_xpd_tsens();
-#endif
-        }
-    } else {
-        misc_modules_sleep_prepare(deep_sleep);
-    }
+    misc_modules_sleep_prepare(deep_sleep);
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (deep_sleep) {
