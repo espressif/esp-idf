@@ -461,11 +461,11 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB *p_scb)
 
     APPL_TRACE_DEBUG("bta_ag_scb_dealloc %d", bta_ag_scb_to_idx(p_scb));
     /* stop timers */
-    bta_sys_stop_timer(&p_scb->act_timer);
+    bta_sys_free_timer(&p_scb->act_timer);
 #if (BTM_WBS_INCLUDED == TRUE)
-    bta_sys_stop_timer(&p_scb->cn_timer);
+    bta_sys_free_timer(&p_scb->cn_timer);
 #endif
-    bta_sys_stop_timer(&p_scb->colli_timer);
+    bta_sys_free_timer(&p_scb->colli_timer);
 
     /* initialize control block */
     memset(p_scb, 0, sizeof(tBTA_AG_SCB));
