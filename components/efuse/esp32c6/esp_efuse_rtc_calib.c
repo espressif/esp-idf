@@ -20,8 +20,11 @@
 int esp_efuse_rtc_calib_get_ver(void)
 {
     uint32_t cali_version = 0;
-    if (efuse_hal_blk_version() >= 1) {
-        cali_version = ESP_EFUSE_ADC_CALIB_VER;
+    uint32_t blk_ver = efuse_hal_blk_version();
+    if (blk_ver == 1) {
+        cali_version = ESP_EFUSE_ADC_CALIB_VER1;
+    } else if (blk_ver >= 2) {
+        cali_version = ESP_EFUSE_ADC_CALIB_VER2;
     } else {
         ESP_LOGW("eFuse", "calibration efuse version does not match, set default version to 0");
     }
@@ -31,7 +34,7 @@ int esp_efuse_rtc_calib_get_ver(void)
 
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
-    assert(version == ESP_EFUSE_ADC_CALIB_VER);
+    /* Version validation should be guaranteed in the caller */
     assert(atten >=0 && atten < 4);
     (void) adc_unit;
 
@@ -56,7 +59,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
 
 int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_t adc_channel, int atten)
 {
-    assert(version == ESP_EFUSE_ADC_CALIB_VER);
+    /* Version validation should be guaranteed in the caller */
     assert(atten < 4);
     assert(adc_channel < SOC_ADC_CHANNEL_NUM(adc_unit));
 
@@ -95,34 +98,35 @@ int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t* out_digi, uint32_t* out_vol_mv)
 {
     (void) adc_unit;
-    const esp_efuse_desc_t** cal_vol_efuse;
-    uint32_t calib_vol_expected_mv;
-    if (version != ESP_EFUSE_ADC_CALIB_VER) {
+    const esp_efuse_desc_t** cal_vol_efuse[4] = {
+        ESP_EFUSE_ADC1_CAL_VOL_ATTEN0,
+        ESP_EFUSE_ADC1_CAL_VOL_ATTEN1,
+        ESP_EFUSE_ADC1_CAL_VOL_ATTEN2,
+        ESP_EFUSE_ADC1_CAL_VOL_ATTEN3,
+    };
+    const uint32_t input_vout_mv[2][4] = {
+        {400,  550,  750, 1370}, // Calibration V1 coefficients
+        {750, 1000, 1500, 2800}, // Calibration V2 coefficients
+    };
+
+    if ((version < ESP_EFUSE_ADC_CALIB_VER_MIN) ||
+        (version > ESP_EFUSE_ADC_CALIB_VER_MAX)) {
         return ESP_ERR_INVALID_ARG;
     }
     if (atten >= 4 || atten < 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (atten == 0) {
-        cal_vol_efuse = ESP_EFUSE_ADC1_CAL_VOL_ATTEN0;
-        calib_vol_expected_mv = 400;
-    } else if (atten == 1) {
-        cal_vol_efuse = ESP_EFUSE_ADC1_CAL_VOL_ATTEN1;
-        calib_vol_expected_mv = 550;
-    } else if (atten == 2) {
-        cal_vol_efuse = ESP_EFUSE_ADC1_CAL_VOL_ATTEN2;
-        calib_vol_expected_mv = 750;
-    } else {
-        cal_vol_efuse = ESP_EFUSE_ADC1_CAL_VOL_ATTEN3;
-        calib_vol_expected_mv = 1370;
-    }
-    assert(cal_vol_efuse[0]->bit_count == 10);
+
+    assert(cal_vol_efuse[atten][0]->bit_count == 10);
 
     uint32_t cal_vol = 0;
-    ESP_ERROR_CHECK(esp_efuse_read_field_blob(cal_vol_efuse, &cal_vol, cal_vol_efuse[0]->bit_count));
-
-    *out_digi = 1500 + RTC_CALIB_GET_SIGNED_VAL(cal_vol, 9);
-    *out_vol_mv = calib_vol_expected_mv;
+    esp_err_t ret = esp_efuse_read_field_blob(cal_vol_efuse[atten], &cal_vol, cal_vol_efuse[atten][0]->bit_count);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    uint32_t chk_offset = (version == ESP_EFUSE_ADC_CALIB_VER1) ? 1500 : (atten == 2) ? 2900 : 2850;
+    *out_digi = chk_offset + RTC_CALIB_GET_SIGNED_VAL(cal_vol, 9);
+    *out_vol_mv = input_vout_mv[VER2IDX(version)][atten];
     return ESP_OK;
 }
 

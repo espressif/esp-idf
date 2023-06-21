@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,11 +15,11 @@
 #include "soc/soc_caps.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
-#include "curve_fitting_coefficients.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
 #include "esp_efuse_rtc_calib.h"
+#include "curve_fitting_coefficients.h"
 
 const __attribute__((unused)) static char *TAG = "adc_cali";
 
@@ -49,12 +49,6 @@ typedef struct {
 } cali_chars_first_step_t;
 
 typedef struct {
-    uint8_t  term_num;                                        ///< Term number of the algorithm formula
-    const uint64_t (*coeff)[COEFF_GROUP_NUM][TERM_MAX][2];    ///< Coeff of each term. See `adc_error_coef_atten` for details (and the magic number 2)
-    const int32_t  (*sign)[COEFF_GROUP_NUM][TERM_MAX];        ///< Sign of each term
-} cali_chars_second_step_t;
-
-typedef struct {
     adc_unit_t unit_id;                            ///< ADC unit
     adc_channel_t chan;                            ///< ADC channel
     adc_atten_t atten;                             ///< ADC attenuation
@@ -65,7 +59,6 @@ typedef struct {
 /* ----------------------- Characterization Functions ----------------------- */
 static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, adc_atten_t atten, adc_calib_info_t *calib_info);
 static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, cali_chars_curve_fitting_t *chars);
-static void calc_second_step_coefficients(const adc_cali_curve_fitting_config_t *config, cali_chars_curve_fitting_t *ctx);
 static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param, adc_atten_t atten);
 static esp_err_t check_valid(const adc_cali_curve_fitting_config_t *config);
 
@@ -81,9 +74,10 @@ esp_err_t adc_cali_create_scheme_curve_fitting(const adc_cali_curve_fitting_conf
     if (ret != ESP_OK) {
         return ret;
     }
-    // current version only accepts encoding version: `ESP_EFUSE_ADC_CALIB_VER`.
-    uint8_t adc_encoding_version = esp_efuse_rtc_calib_get_ver();
-    ESP_RETURN_ON_FALSE(adc_encoding_version == ESP_EFUSE_ADC_CALIB_VER, ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
+    // current version only accepts encoding version: ESP_EFUSE_ADC_CALIB_VER_MIN <= adc_encoding_version <= ESP_EFUSE_ADC_CALIB_VER_MAX.
+    uint32_t adc_encoding_version = esp_efuse_rtc_calib_get_ver();
+    ESP_RETURN_ON_FALSE((adc_encoding_version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
+                        (adc_encoding_version <= ESP_EFUSE_ADC_CALIB_VER_MAX), ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
 
     adc_cali_scheme_t *scheme = (adc_cali_scheme_t *)heap_caps_calloc(1, sizeof(adc_cali_scheme_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(scheme, ESP_ERR_NO_MEM, TAG, "no mem for adc calibration scheme");
@@ -100,7 +94,7 @@ esp_err_t adc_cali_create_scheme_curve_fitting(const adc_cali_curve_fitting_conf
     get_first_step_reference_point(adc_encoding_version, config->unit_id, config->atten, &calib_info);
     calc_first_step_coefficients(&calib_info, chars);
     //Set second step calibration context
-    calc_second_step_coefficients(config, chars);
+    curve_fitting_get_second_step_coeff(config, &(chars->chars_second_step));
     chars->unit_id = config->unit_id;
     chars->chan = config->chan;
     chars->atten = config->atten;
@@ -157,7 +151,8 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 //To get the reference point (Dout, Vin)
 static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, adc_atten_t atten, adc_calib_info_t *calib_info)
 {
-    assert(version_num == ESP_EFUSE_ADC_CALIB_VER);
+    assert((version_num >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
+           (version_num <= ESP_EFUSE_ADC_CALIB_VER_MAX));
     esp_err_t ret;
 
     calib_info->version_num = version_num;
@@ -183,19 +178,6 @@ static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, ca
     ESP_LOGV(TAG, "Calib V1, Cal Voltage = %"PRId32", Digi out = %"PRId32", Coef_a = %"PRId32"\n", parsed_data->ref_data.ver1.voltage, parsed_data->ref_data.ver1.digi, ctx->chars_first_step.coeff_a);
 }
 
-static void calc_second_step_coefficients(const adc_cali_curve_fitting_config_t *config, cali_chars_curve_fitting_t *ctx)
-{
-    ctx->chars_second_step.term_num = (config->atten == 3) ? 5 : 3;
-#if CONFIG_IDF_TARGET_ESP32C3 || SOC_ADC_PERIPH_NUM == 1
-    // On esp32c3, ADC1 and ADC2 share the second step coefficients
-    // And if the target only has 1 ADC peripheral, just use the ADC1 directly
-    ctx->chars_second_step.coeff = &adc1_error_coef_atten;
-    ctx->chars_second_step.sign = &adc1_error_sign;
-#else
-    ctx->chars_second_step.coeff = (config->unit_id == ADC_UNIT_1) ? &adc1_error_coef_atten : &adc2_error_coef_atten;
-    ctx->chars_second_step.sign = (config->unit_id == ADC_UNIT_1) ? &adc1_error_sign : &adc2_error_sign;
-#endif
-}
 
 static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param, adc_atten_t atten)
 {
@@ -211,13 +193,6 @@ static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step
     memset(variable, 0, term_num * sizeof(uint64_t));
     memset(term, 0, term_num * sizeof(uint64_t));
 
-    /**
-     * For atten0 ~ 2:
-     * error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2);
-     *
-     * For atten3:
-     * error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
-     */
     variable[0] = 1;
     coeff = (*param->coeff)[atten][0][0];
     term[0] = variable[0] * coeff / (*param->coeff)[atten][0][1];
