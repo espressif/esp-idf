@@ -18,7 +18,7 @@ Goals
 #. Simplify the traditional workflow with stepwise instructions.
 #. Design a more flexible workflow as compared to the traditional firmware based workflow.
 #. Improve reliability by dividing the workflow in small operations.
-#. Eliminate dependency on firmware bootloader.
+#. Eliminate dependency on :ref:`second-stage-bootloader` (firmware bootloader).
 
 Pre-requisite
 -------------

@@ -36,7 +36,7 @@ Encrypted Partitions
 
 With flash encryption enabled, the following types of data are encrypted by default:
 
-- Firmware bootloader
+- :ref:`second-stage-bootloader` (Firmware Bootloader)
 - Partition Table
 - :ref:`nvs_encr_key_partition`
 - Otadata
