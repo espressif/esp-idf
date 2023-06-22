@@ -73,9 +73,7 @@ typedef struct RingbufferDefinition {
     portMUX_TYPE mux;                           //Spinlock required for SMP
 } Ringbuffer_t;
 
-#if __GNUC_PREREQ(4, 6)
 _Static_assert(sizeof(StaticRingbuffer_t) == sizeof(Ringbuffer_t), "StaticRingbuffer_t != Ringbuffer_t");
-#endif
 
 // ------------------------------------------------ Forward Declares ---------------------------------------------------
 
