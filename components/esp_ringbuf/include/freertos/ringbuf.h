@@ -57,18 +57,16 @@ typedef enum {
  * buffer's control data structure.
  *
  */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
 typedef struct xSTATIC_RINGBUFFER {
     /** @cond */    //Doxygen command to hide this structure from API Reference
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
-    BaseType_t xDummy3;
-    void *pvDummy4[11];
+    void *pvDummy3[11];
+    BaseType_t xDummy4;
     StaticSemaphore_t xDummy5[2];
     portMUX_TYPE muxDummy;
     /** @endcond */
 } StaticRingbuffer_t;
-#endif
 
 /**
  * @brief       Create a ring buffer
@@ -111,12 +109,10 @@ RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
  *
  * @return  A handle to the created ring buffer
  */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
 RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
                                         RingbufferType_t xBufferType,
                                         uint8_t *pucRingbufferStorage,
                                         StaticRingbuffer_t *pxStaticRingbuffer);
-#endif
 
 /**
  * @brief       Insert an item into the ring buffer
