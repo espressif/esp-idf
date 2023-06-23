@@ -44,6 +44,7 @@ ESP-IDF 编程指南
    hw-reference/index
    api-guides/index
    migration-guides/index
+   security/index
    libraries-and-frameworks/index
    contribute/index
    versions

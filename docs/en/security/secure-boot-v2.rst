@@ -27,7 +27,7 @@ Secure Boot V2
 
         For ESP32 before ECO3, refer to :doc:`Secure Boot <secure-boot-v1>`. It is recommended that users use Secure Boot V2 if they have a chip version that supports it. Secure Boot V2 is safer and more flexible than Secure Boot V1.
 
-    Secure Boot V2 uses {IDF_TARGET_SBV2_SCHEME} based app and bootloader verification. This document can also be used as a reference for signing apps using the {IDF_TARGET_SBV2_SCHEME} scheme without signing the bootloader.
+    Secure Boot V2 uses {IDF_TARGET_SBV2_SCHEME} based app and bootloader (:ref:`second-stage-bootloader`) verification. This document can also be used as a reference for signing apps using the {IDF_TARGET_SBV2_SCHEME} scheme without signing the bootloader.
 
 .. only:: esp32
 
