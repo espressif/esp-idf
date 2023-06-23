@@ -24,9 +24,8 @@ public :
     virtual esp_err_t config(wl_config_t *cfg, Flash_Access *flash_drv);
     virtual esp_err_t init();
 
-    size_t chip_size() override;
-    size_t sector_size() override;
-
+    size_t get_flash_size() override;
+    size_t get_sector_size() override;
 
     esp_err_t erase_sector(size_t sector) override;
     esp_err_t erase_range(size_t start_address, size_t size) override;

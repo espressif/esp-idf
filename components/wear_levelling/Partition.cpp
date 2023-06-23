@@ -12,7 +12,7 @@ Partition::Partition(const esp_partition_t *partition)
     this->partition = partition;
 }
 
-size_t Partition::chip_size()
+size_t Partition::get_flash_size()
 {
     return this->partition->size;
 }
@@ -49,7 +49,7 @@ esp_err_t Partition::read(size_t src_addr, void *dest, size_t size)
     return result;
 }
 
-size_t Partition::sector_size()
+size_t Partition::get_sector_size()
 {
     return SPI_FLASH_SEC_SIZE;
 }
