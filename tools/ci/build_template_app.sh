@@ -80,7 +80,7 @@ build_stage1() {
         --size-file size.json \
         --collect-size-info size_info.txt \
         --default-build-targets esp32,esp32s2,esp32s3,esp32c2,esp32c3,esp32c6,esp32h2 \
-        --ignore-warning-str "DeprecationWarning: pkg_resources is deprecated as an API"\
+        --ignore-warning-str "DeprecationWarning: pkg_resources is deprecated as an API"
 }
 
 # Default arguments
