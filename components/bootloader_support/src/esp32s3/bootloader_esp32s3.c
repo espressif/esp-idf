@@ -210,7 +210,7 @@ static esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
-#if CONFIG_SPI_FLASH_HPM_ENABLE
+#if CONFIG_BOOTLOADER_FLASH_DC_AWARE
     // Reset flash, clear volatile bits DC[0:1]. Make it work under default mode to boot.
     bootloader_spi_flash_reset();
 #endif

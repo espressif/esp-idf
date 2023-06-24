@@ -79,7 +79,7 @@ menu "SPI RAM config"
 
         config SPIRAM_SPEED_120M
             depends on SPIRAM_MODE_QUAD
-            bool "120MHz clock speed"
+            bool "120MHz clock speed (READ DOCS FIRST)"
         config SPIRAM_SPEED_80M
             bool "80MHz clock speed"
         config SPIRAM_SPEED_40M

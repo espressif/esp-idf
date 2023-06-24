@@ -62,34 +62,67 @@ menu "Bootloader config"
         default 4 if BOOTLOADER_LOG_LEVEL_DEBUG
         default 5 if BOOTLOADER_LOG_LEVEL_VERBOSE
 
-    config BOOTLOADER_SPI_CUSTOM_WP_PIN
-        bool "Use custom SPI Flash WP Pin when flash pins set in eFuse (read help)"
-        depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_QIO || ESPTOOLPY_FLASHMODE_QOUT)
-        default y if BOOTLOADER_SPI_WP_PIN != 7  # backwards compatibility, can remove in IDF 5
-        default n
-        help
-            This setting is only used if the SPI flash pins have been overridden by setting the eFuses
-            SPI_PAD_CONFIG_xxx, and the SPI flash mode is QIO or QOUT.
+    menu "Serial Flash Configurations"
+        config BOOTLOADER_SPI_CUSTOM_WP_PIN
+            bool "Use custom SPI Flash WP Pin when flash pins set in eFuse (read help)"
+            depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_QIO || ESPTOOLPY_FLASHMODE_QOUT)
+            default y if BOOTLOADER_SPI_WP_PIN != 7  # backwards compatibility, can remove in IDF 5
+            default n
+            help
+                This setting is only used if the SPI flash pins have been overridden by setting the eFuses
+                SPI_PAD_CONFIG_xxx, and the SPI flash mode is QIO or QOUT.
 
-            When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
-            ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The same pin is also used
-            for external SPIRAM if it is enabled.
+                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The same pin is also used
+                for external SPIRAM if it is enabled.
 
-            If this config item is set to N (default), the correct WP pin will be automatically used for any
-            Espressif chip or module with integrated flash. If a custom setting is needed, set this config item to
-            Y and specify the GPIO number connected to the WP.
+                If this config item is set to N (default), the correct WP pin will be automatically used for any
+                Espressif chip or module with integrated flash. If a custom setting is needed, set this config item to
+                Y and specify the GPIO number connected to the WP.
 
-    config BOOTLOADER_SPI_WP_PIN
-        int "Custom SPI Flash WP Pin"
-        range 0 33
-        default 7
-        depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_QIO || ESPTOOLPY_FLASHMODE_QOUT)
-        #depends on BOOTLOADER_SPI_CUSTOM_WP_PIN  # backwards compatibility, can uncomment in IDF 5
-        help
-            The option "Use custom SPI Flash WP Pin" must be set or this value is ignored
+        config BOOTLOADER_SPI_WP_PIN
+            int "Custom SPI Flash WP Pin"
+            range 0 33
+            default 7
+            depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_QIO || ESPTOOLPY_FLASHMODE_QOUT)
+            #depends on BOOTLOADER_SPI_CUSTOM_WP_PIN  # backwards compatibility, can uncomment in IDF 5
+            help
+                The option "Use custom SPI Flash WP Pin" must be set or this value is ignored
 
-            If burning a customized set of SPI flash pins in eFuse and using QIO or QOUT mode for flash, set this
-            value to the GPIO number of the SPI flash WP pin.
+                If burning a customized set of SPI flash pins in eFuse and using QIO or QOUT mode for flash, set this
+                value to the GPIO number of the SPI flash WP pin.
+
+        config BOOTLOADER_FLASH_DC_AWARE
+            bool "Allow app adjust Dummy Cycle bits in SPI Flash for higher frequency (READ HELP FIRST)"
+            help
+                This will force 2nd bootloader to be loaded by DOUT mode, and will restore Dummy Cycle setting by
+                resetting the Flash
+
+        config BOOTLOADER_FLASH_XMC_SUPPORT
+            bool "Enable the support for flash chips of XMC (READ DOCS FIRST)"
+            default y
+            depends on !IDF_ENV_BRINGUP
+            help
+                Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
+                XMC chips will be forbidden to be used, when this option is disabled.
+
+                DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+                comment "Features below require specific hardware (READ DOCS FIRST!)"
+
+        config BOOTLOADER_FLASH_32BIT_ADDR
+            bool
+            default y if ESPTOOLPY_FLASHSIZE_32MB || ESPTOOLPY_FLASHSIZE_64MB || ESPTOOLPY_FLASHSIZE_128MB
+            default n
+            help
+                This is a helper config for 32bits address flash. Invisible for users.
+
+        config BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
+            bool
+            default y if ESPTOOLPY_OCT_FLASH && SPI_FLASH_32BIT_ADDRESS
+            default n
+
+    endmenu
 
     choice BOOTLOADER_VDDSDIO_BOOST
         bool "VDDSDIO LDO voltage"
@@ -411,14 +444,6 @@ menu "Bootloader config"
             in this area of memory, you can increase it. It must be a multiple of 4 bytes.
             This area (rtc_retain_mem_t) is reserved and has access from the bootloader and an application.
 
-    config BOOTLOADER_FLASH_XMC_SUPPORT
-        bool "Enable the support for flash chips of XMC (READ HELP FIRST)"
-        default y
-        help
-            Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
-            XMC chips will be forbidden to be used, when this option is disabled.
-
-            DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
 
 endmenu  # Bootloader
 

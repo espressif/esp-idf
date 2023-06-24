@@ -73,9 +73,12 @@ menu "Serial flasher config"
         default ESPTOOLPY_FLASHFREQ_60M if IDF_TARGET_ESP32C2
         default ESPTOOLPY_FLASHFREQ_48M if IDF_TARGET_ESP32H2
         config ESPTOOLPY_FLASHFREQ_120M
-            bool "120 MHz"
-            select SPI_FLASH_HPM_ENABLE
-            depends on SOC_MEMSPI_SRC_FREQ_120M && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+            bool "120 MHz (READ DOCS FIRST)"
+            depends on SOC_MEMSPI_SRC_FREQ_120M && ESPTOOLPY_FLASH_SAMPLE_MODE_STR && \
+                (SPI_FLASH_HPM_ON || ESPTOOLPY_OCT_FLASH)
+            help
+                - Optional feature for QSPI Flash. Read docs and enable `CONFIG_SPI_FLASH_HPM_ENA` first!
+
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
