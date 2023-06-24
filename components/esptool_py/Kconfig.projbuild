@@ -118,6 +118,10 @@ menu "Serial flasher config"
         # information get from efuse, so don't care this dout choice.
         default "dout" if ESPTOOLPY_FLASHMODE_OPI
 
+    config ESPTOOLPY_S3_STR
+        bool
+        default y if IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
         default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32 || IDF_TARGET_ESP32H2
@@ -126,9 +130,11 @@ menu "Serial flasher config"
             The SPI flash frequency to be used.
 
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
-            bool "120 MHz"
-            select SPI_FLASH_HPM_ENABLE
+            bool "120 MHz (READ DOCS FIRST)"
+            depends on ESPTOOLPY_S3_STR && (SPI_FLASH_HPM_ON || ESPTOOLPY_OCT_FLASH)
+            help
+                - Optional feature for QSPI Flash. Read docs and enable `CONFIG_SPI_FLASH_HPM_ENA` first!
+
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
         config ESPTOOLPY_FLASHFREQ_40M

@@ -139,8 +139,13 @@ bool spi_timing_is_tuned(void);
  */
 void spi_flash_set_vendor_required_regs(void);
 
+#if CONFIG_SPI_FLASH_HPM_ON
 /**
  * @brief Enable SPI flash high performance mode.
+ *
+ * @note 1. When `CONFIG_SPI_FLASH_HPM_ON` is True, caller can always call this function without taking whether the used
+ *          frequency falls into the HPM range into consideration.
+ *       2. However, caller shouldn't attempt to call this function on Octal flash.
  *
  * @return ESP_OK if success.
  */
@@ -161,6 +166,7 @@ const spi_flash_hpm_dummy_conf_t *spi_flash_hpm_get_dummy(void);
  * @return true Yes, and work under HPM with adjusting dummy. Otherwise, false.
  */
 bool spi_flash_hpm_dummy_adjust(void);
+#endif //CONFIG_SPI_FLASH_HPM_ON
 
 #ifdef __cplusplus
 }
