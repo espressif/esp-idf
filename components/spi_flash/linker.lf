@@ -15,6 +15,8 @@ entries:
 
         if IDF_TARGET_ESP32S3 = y:
             spi_flash_chip_mxic_opi (noflash)
+
+        if SPI_FLASH_HPM_ON = y:
             spi_flash_hpm_enable (noflash)
 
         if ESPTOOLPY_OCT_FLASH = y || ESPTOOLPY_FLASH_MODE_AUTO_DETECT = y:
