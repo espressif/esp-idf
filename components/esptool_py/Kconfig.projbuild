@@ -27,8 +27,10 @@ menu "Serial flasher config"
                mode to "OPI" and the sample mode will be STR.
             2. If the flash chip is a Quad one, even if "OPI" is selected in `ESPTOOLPY_FLASHMODE`, our code will
                automatically change the mode to "DIO".
-            3. Please do not rely on this option when you are pretty sure that you are using Octal flash,
-               please enable `ESPTOOLPY_OCT_FLASH` option, then you can choose `DTR` sample mode
+            3. This option is mainly to improve the out-of-box experience of developers. It doesn't guarantee
+               the feature-complete. Some code still rely on `ESPTOOLPY_OCT_FLASH`. Please do not rely on this option
+               when you are pretty sure that you are using Octal flash.
+               In this case, please enable `ESPTOOLPY_OCT_FLASH` option, then you can choose `DTR` sample mode
                in `ESPTOOLPY_FLASH_SAMPLE_MODE`. Otherwise, only `STR` mode is available.
             4. Enabling this feature reduces available internal RAM size (around 900 bytes).
                If your IRAM space is insufficient and you're aware of your flash type,
@@ -92,11 +94,12 @@ menu "Serial flasher config"
         default ESPTOOLPY_FLASHFREQ_80M if ESPTOOLPY_FLASHFREQ_80M_DEFAULT
         default ESPTOOLPY_FLASHFREQ_60M if IDF_TARGET_ESP32C2
         config ESPTOOLPY_FLASHFREQ_120M
-            bool "120 MHz"
-            select SPI_FLASH_HPM_ENABLE
+            bool "120 MHz (READ DOCS FIRST)"
             depends on SOC_MEMSPI_SRC_FREQ_120M && \
+                (SPI_FLASH_HPM_ON || ESPTOOLPY_OCT_FLASH) && \
                 (ESPTOOLPY_FLASH_SAMPLE_MODE_STR || IDF_EXPERIMENTAL_FEATURES)
             help
+                - Optional feature for QSPI Flash. Read docs and enable `CONFIG_SPI_FLASH_HPM_ENA` first!
                 - Flash 120 MHz SDR mode is stable.
                 - Flash 120 MHz DDR mode is an experimental feature, it works when
                   the temperature is stable.
