@@ -20,7 +20,6 @@
 
 esp_err_t esp_ieee802154_enable(void)
 {
-
     ieee802154_enable();
     esp_phy_enable();
     esp_btbb_enable();
