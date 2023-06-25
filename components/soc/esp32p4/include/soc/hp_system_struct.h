@@ -22,7 +22,7 @@ typedef union {
         uint32_t reg_ver_date:32;
     };
     uint32_t val;
-} hp_sys_ver_date_reg_t;
+} hp_system_ver_date_reg_t;
 
 
 /** Group: HP CLK EN REG */
@@ -38,7 +38,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_clk_en_reg_t;
+} hp_system_clk_en_reg_t;
 
 
 /** Group: HP CPU INT FROM CPU 0 REG */
@@ -54,7 +54,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_cpu_int_from_cpu_0_reg_t;
+} hp_system_cpu_int_from_cpu_0_reg_t;
 
 
 /** Group: HP CPU INT FROM CPU 1 REG */
@@ -70,7 +70,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_cpu_int_from_cpu_1_reg_t;
+} hp_system_cpu_int_from_cpu_1_reg_t;
 
 
 /** Group: HP CPU INT FROM CPU 2 REG */
@@ -86,7 +86,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_cpu_int_from_cpu_2_reg_t;
+} hp_system_cpu_int_from_cpu_2_reg_t;
 
 
 /** Group: HP CPU INT FROM CPU 3 REG */
@@ -102,7 +102,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_cpu_int_from_cpu_3_reg_t;
+} hp_system_cpu_int_from_cpu_3_reg_t;
 
 
 /** Group: HP CACHE CLK CONFIG REG */
@@ -131,7 +131,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_cache_clk_config_reg_t;
+} hp_system_cache_clk_config_reg_t;
 
 
 /** Group: HP CACHE RESET CONFIG REG */
@@ -157,7 +157,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_cache_reset_config_reg_t;
+} hp_system_cache_reset_config_reg_t;
 
 
 /** Group: HP SYS DMA ADDR CTRL REG */
@@ -173,7 +173,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_sys_dma_addr_ctrl_reg_t;
+} hp_system_dma_addr_ctrl_reg_t;
 
 
 /** Group: HP TCM RAM WRR CONFIG REG */
@@ -225,7 +225,7 @@ typedef union {
         uint32_t reg_tcm_ram_wrr_high:1;
     };
     uint32_t val;
-} hp_tcm_ram_wrr_config_reg_t;
+} hp_system_tcm_ram_wrr_config_reg_t;
 
 
 /** Group: HP TCM SW PARITY BWE MASK REG */
@@ -241,7 +241,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_tcm_sw_parity_bwe_mask_reg_t;
+} hp_system_tcm_sw_parity_bwe_mask_reg_t;
 
 
 /** Group: HP TCM RAM PWR CTRL0 REG */
@@ -250,14 +250,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reg_hp_tcm_clk_force_on : R/W; bitpos: [0]; default: 0;
-         *  hp_tcm clk gatig force on
+        /** reg_hp_system_tcm_clk_force_on : R/W; bitpos: [0]; default: 0;
+         *  hp_system_tcm clk gatig force on
          */
-        uint32_t reg_hp_tcm_clk_force_on:1;
+        uint32_t reg_hp_system_tcm_clk_force_on:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_tcm_ram_pwr_ctrl0_reg_t;
+} hp_system_tcm_ram_pwr_ctrl0_reg_t;
 
 
 /** Group: HP L2 ROM PWR CTRL0 REG */
@@ -273,7 +273,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_l2_rom_pwr_ctrl0_reg_t;
+} hp_system_l2_rom_pwr_ctrl0_reg_t;
 
 
 /** Group: HP PROBEA CTRL REG */
@@ -306,7 +306,7 @@ typedef union {
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} hp_probea_ctrl_reg_t;
+} hp_system_probea_ctrl_reg_t;
 
 
 /** Group: HP PROBEB CTRL REG */
@@ -331,7 +331,7 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} hp_probeb_ctrl_reg_t;
+} hp_system_probeb_ctrl_reg_t;
 
 
 /** Group: HP PROBE OUT REG */
@@ -346,7 +346,7 @@ typedef union {
         uint32_t reg_probe_top_out:32;
     };
     uint32_t val;
-} hp_probe_out_reg_t;
+} hp_system_probe_out_reg_t;
 
 
 /** Group: HP L2 MEM RAM PWR CTRL0 REG */
@@ -362,7 +362,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_l2_mem_ram_pwr_ctrl0_reg_t;
+} hp_system_l2_mem_ram_pwr_ctrl0_reg_t;
 
 
 /** Group: HP CPU CORESTALLED ST REG */
@@ -382,7 +382,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_cpu_corestalled_st_reg_t;
+} hp_system_cpu_corestalled_st_reg_t;
 
 
 /** Group: HP CRYPTO CTRL REG */
@@ -410,7 +410,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} hp_crypto_ctrl_reg_t;
+} hp_system_crypto_ctrl_reg_t;
 
 
 /** Group: HP GPIO O HOLD CTRL0 REG */
@@ -425,7 +425,7 @@ typedef union {
         uint32_t reg_gpio_0_hold_low:32;
     };
     uint32_t val;
-} hp_gpio_o_hold_ctrl0_reg_t;
+} hp_system_gpio_o_hold_ctrl0_reg_t;
 
 
 /** Group: HP GPIO O HOLD CTRL1 REG */
@@ -441,7 +441,7 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} hp_gpio_o_hold_ctrl1_reg_t;
+} hp_system_gpio_o_hold_ctrl1_reg_t;
 
 
 /** Group: HP SYS RDN ECO CS REG */
@@ -450,18 +450,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reg_hp_sys_rdn_eco_en : R/W; bitpos: [0]; default: 0;
+        /** reg_hp_system_rdn_eco_en : R/W; bitpos: [0]; default: 0;
          *  NA
          */
-        uint32_t reg_hp_sys_rdn_eco_en:1;
-        /** reg_hp_sys_rdn_eco_result : RO; bitpos: [1]; default: 0;
+        uint32_t reg_hp_system_rdn_eco_en:1;
+        /** reg_hp_system_rdn_eco_result : RO; bitpos: [1]; default: 0;
          *  NA
          */
-        uint32_t reg_hp_sys_rdn_eco_result:1;
+        uint32_t reg_hp_system_rdn_eco_result:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_sys_rdn_eco_cs_reg_t;
+} hp_system_rdn_eco_cs_reg_t;
 
 
 /** Group: HP CACHE APB POSTW EN REG */
@@ -478,7 +478,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_cache_apb_postw_en_reg_t;
+} hp_system_cache_apb_postw_en_reg_t;
 
 
 /** Group: HP L2 MEM SUBSIZE REG */
@@ -494,7 +494,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_l2_mem_subsize_reg_t;
+} hp_system_l2_mem_subsize_reg_t;
 
 
 /** Group: HP L2 MEM INT RAW REG */
@@ -519,7 +519,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_l2_mem_int_raw_reg_t;
+} hp_system_l2_mem_int_raw_reg_t;
 
 
 /** Group: HP L2 MEM INT ST REG */
@@ -543,7 +543,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_l2_mem_int_st_reg_t;
+} hp_system_l2_mem_int_st_reg_t;
 
 
 /** Group: HP L2 MEM INT ENA REG */
@@ -567,7 +567,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_l2_mem_int_ena_reg_t;
+} hp_system_l2_mem_int_ena_reg_t;
 
 
 /** Group: HP L2 MEM INT CLR REG */
@@ -591,7 +591,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_l2_mem_int_clr_reg_t;
+} hp_system_l2_mem_int_clr_reg_t;
 
 
 /** Group: HP L2 MEM L2 RAM ECC REG */
@@ -627,7 +627,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_l2_mem_l2_ram_ecc_reg_t;
+} hp_system_l2_mem_l2_ram_ecc_reg_t;
 
 
 /** Group: HP L2 MEM INT RECORD0 REG */
@@ -651,7 +651,7 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} hp_l2_mem_int_record0_reg_t;
+} hp_system_l2_mem_int_record0_reg_t;
 
 
 /** Group: HP L2 MEM INT RECORD1 REG */
@@ -683,7 +683,7 @@ typedef union {
         uint32_t reserved_27:5;
     };
     uint32_t val;
-} hp_l2_mem_int_record1_reg_t;
+} hp_system_l2_mem_int_record1_reg_t;
 
 
 /** Group: HP L2 MEM L2 CACHE ECC REG */
@@ -699,7 +699,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_l2_mem_l2_cache_ecc_reg_t;
+} hp_system_l2_mem_l2_cache_ecc_reg_t;
 
 
 /** Group: HP L1CACHE BUS0 ID REG */
@@ -715,7 +715,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} hp_l1cache_bus0_id_reg_t;
+} hp_system_l1cache_bus0_id_reg_t;
 
 
 /** Group: HP L1CACHE BUS1 ID REG */
@@ -731,7 +731,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} hp_l1cache_bus1_id_reg_t;
+} hp_system_l1cache_bus1_id_reg_t;
 
 
 /** Group: HP L2 MEM RDN ECO CS REG */
@@ -751,7 +751,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_l2_mem_rdn_eco_cs_reg_t;
+} hp_system_l2_mem_rdn_eco_cs_reg_t;
 
 
 /** Group: HP L2 MEM RDN ECO LOW REG */
@@ -766,7 +766,7 @@ typedef union {
         uint32_t reg_l2_mem_rdn_eco_low:32;
     };
     uint32_t val;
-} hp_l2_mem_rdn_eco_low_reg_t;
+} hp_system_l2_mem_rdn_eco_low_reg_t;
 
 
 /** Group: HP L2 MEM RDN ECO HIGH REG */
@@ -781,7 +781,7 @@ typedef union {
         uint32_t reg_l2_mem_rdn_eco_high:32;
     };
     uint32_t val;
-} hp_l2_mem_rdn_eco_high_reg_t;
+} hp_system_l2_mem_rdn_eco_high_reg_t;
 
 
 /** Group: HP TCM RDN ECO CS REG */
@@ -790,18 +790,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reg_hp_tcm_rdn_eco_en : R/W; bitpos: [0]; default: 0;
+        /** reg_hp_system_tcm_rdn_eco_en : R/W; bitpos: [0]; default: 0;
          *  NA
          */
-        uint32_t reg_hp_tcm_rdn_eco_en:1;
-        /** reg_hp_tcm_rdn_eco_result : RO; bitpos: [1]; default: 0;
+        uint32_t reg_hp_system_tcm_rdn_eco_en:1;
+        /** reg_hp_system_tcm_rdn_eco_result : RO; bitpos: [1]; default: 0;
          *  NA
          */
-        uint32_t reg_hp_tcm_rdn_eco_result:1;
+        uint32_t reg_hp_system_tcm_rdn_eco_result:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_tcm_rdn_eco_cs_reg_t;
+} hp_system_tcm_rdn_eco_cs_reg_t;
 
 
 /** Group: HP TCM RDN ECO LOW REG */
@@ -810,13 +810,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reg_hp_tcm_rdn_eco_low : R/W; bitpos: [31:0]; default: 0;
+        /** reg_hp_system_tcm_rdn_eco_low : R/W; bitpos: [31:0]; default: 0;
          *  NA
          */
-        uint32_t reg_hp_tcm_rdn_eco_low:32;
+        uint32_t reg_hp_system_tcm_rdn_eco_low:32;
     };
     uint32_t val;
-} hp_tcm_rdn_eco_low_reg_t;
+} hp_system_tcm_rdn_eco_low_reg_t;
 
 
 /** Group: HP TCM RDN ECO HIGH REG */
@@ -825,13 +825,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reg_hp_tcm_rdn_eco_high : R/W; bitpos: [31:0]; default: 4294967295;
+        /** reg_hp_system_tcm_rdn_eco_high : R/W; bitpos: [31:0]; default: 4294967295;
          *  NA
          */
-        uint32_t reg_hp_tcm_rdn_eco_high:32;
+        uint32_t reg_hp_system_tcm_rdn_eco_high:32;
     };
     uint32_t val;
-} hp_tcm_rdn_eco_high_reg_t;
+} hp_system_tcm_rdn_eco_high_reg_t;
 
 
 /** Group: HP GPIO DED HOLD CTRL REG */
@@ -847,7 +847,7 @@ typedef union {
         uint32_t reserved_26:6;
     };
     uint32_t val;
-} hp_gpio_ded_hold_ctrl_reg_t;
+} hp_system_gpio_ded_hold_ctrl_reg_t;
 
 
 /** Group: HP L2 MEM SW ECC BWE MASK REG */
@@ -863,7 +863,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_l2_mem_sw_ecc_bwe_mask_reg_t;
+} hp_system_l2_mem_sw_ecc_bwe_mask_reg_t;
 
 
 /** Group: HP USB20OTG MEM CTRL REG */
@@ -879,7 +879,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_usb20otg_mem_ctrl_reg_t;
+} hp_system_usb20otg_mem_ctrl_reg_t;
 
 
 /** Group: configure_register */
@@ -895,7 +895,7 @@ typedef union {
         uint32_t tcm_parity_err_int_raw:1;
     };
     uint32_t val;
-} hp_tcm_int_raw_reg_t;
+} hp_system_tcm_int_raw_reg_t;
 
 /** Type of tcm_int_st register
  *  need_des
@@ -909,7 +909,7 @@ typedef union {
         uint32_t tcm_parity_err_int_st:1;
     };
     uint32_t val;
-} hp_tcm_int_st_reg_t;
+} hp_system_tcm_int_st_reg_t;
 
 /** Type of tcm_int_ena register
  *  need_des
@@ -923,7 +923,7 @@ typedef union {
         uint32_t tcm_parity_err_int_ena:1;
     };
     uint32_t val;
-} hp_tcm_int_ena_reg_t;
+} hp_system_tcm_int_ena_reg_t;
 
 /** Type of tcm_int_clr register
  *  need_des
@@ -937,7 +937,7 @@ typedef union {
         uint32_t tcm_parity_err_int_clr:1;
     };
     uint32_t val;
-} hp_tcm_int_clr_reg_t;
+} hp_system_tcm_int_clr_reg_t;
 
 /** Type of core_ahb_timeout register
  *  need_des
@@ -955,7 +955,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} hp_core_ahb_timeout_reg_t;
+} hp_system_core_ahb_timeout_reg_t;
 
 /** Type of core_ibus_timeout register
  *  need_des
@@ -973,7 +973,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} hp_core_ibus_timeout_reg_t;
+} hp_system_core_ibus_timeout_reg_t;
 
 /** Type of core_dbus_timeout register
  *  need_des
@@ -991,7 +991,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} hp_core_dbus_timeout_reg_t;
+} hp_system_core_dbus_timeout_reg_t;
 
 /** Type of icm_cpu_h2x_cfg register
  *  need_des
@@ -1013,7 +1013,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_icm_cpu_h2x_cfg_reg_t;
+} hp_system_icm_cpu_h2x_cfg_reg_t;
 
 /** Type of bitscrambler_peri_sel register
  *  Bitscrambler Peri Sel
@@ -1037,10 +1037,10 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} hp_bitscrambler_peri_sel_reg_t;
+} hp_system_bitscrambler_peri_sel_reg_t;
 
 
-/** Group: HP_TCM_PARITY_INT_RECORD_REG */
+/** Group: hp_system_TCM_PARITY_INT_RECORD_REG */
 /** Type of tcm_parity_int_record register
  *  need_des
  */
@@ -1053,7 +1053,7 @@ typedef union {
         uint32_t reserved_13:19;
     };
     uint32_t val;
-} hp_tcm_parity_int_record_reg_t;
+} hp_system_tcm_parity_int_record_reg_t;
 
 
 /** Group: HP L1 CACHE PWR CTRL REG */
@@ -1069,7 +1069,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_l1_cache_pwr_ctrl_reg_t;
+} hp_system_l1_cache_pwr_ctrl_reg_t;
 
 
 /** Group: HP L2 CACHE PWR CTRL REG */
@@ -1085,7 +1085,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_l2_cache_pwr_ctrl_reg_t;
+} hp_system_l2_cache_pwr_ctrl_reg_t;
 
 
 /** Group: Configuration Register */
@@ -1106,7 +1106,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} hp_cpu_waiti_conf_reg_t;
+} hp_system_cpu_waiti_conf_reg_t;
 
 /** Type of sys_core_debug_runstall_conf register
  *  Core Debug runstall configure register
@@ -1120,7 +1120,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_sys_core_debug_runstall_conf_reg_t;
+} hp_system_core_debug_runstall_conf_reg_t;
 
 /** Type of rsa_pd_ctrl register
  *  rsa pd ctrl register
@@ -1142,7 +1142,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_rsa_pd_ctrl_reg_t;
+} hp_system_rsa_pd_ctrl_reg_t;
 
 /** Type of ecc_pd_ctrl register
  *  ecc pd ctrl register
@@ -1164,7 +1164,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_ecc_pd_ctrl_reg_t;
+} hp_system_ecc_pd_ctrl_reg_t;
 
 /** Type of rng_cfg register
  *  rng cfg register
@@ -1186,7 +1186,7 @@ typedef union {
         uint32_t rng_sample_cnt:8;
     };
     uint32_t val;
-} hp_rng_cfg_reg_t;
+} hp_system_rng_cfg_reg_t;
 
 /** Type of uart_pd_ctrl register
  *  ecc pd ctrl register
@@ -1204,7 +1204,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_uart_pd_ctrl_reg_t;
+} hp_system_uart_pd_ctrl_reg_t;
 
 /** Type of peri_mem_clk_force_on register
  *  hp peri mem clk force on regpster
@@ -1230,7 +1230,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} hp_peri_mem_clk_force_on_reg_t;
+} hp_system_peri_mem_clk_force_on_reg_t;
 
 
 /** Group: HP PERI1 APB POSTW EN REG */
@@ -1240,14 +1240,14 @@ typedef union {
 typedef union {
     struct {
         /** peri1_apb_postw_en : R/W; bitpos: [0]; default: 0;
-         *  hp_peri1 apb register interface post write enable, 1 will speed up write, but will
+         *  hp_system_peri1 apb register interface post write enable, 1 will speed up write, but will
          *  take some time to update value to register
          */
         uint32_t peri1_apb_postw_en:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_peri1_apb_postw_en_reg_t;
+} hp_system_peri1_apb_postw_en_reg_t;
 
 
 /** Group: APB Sync Register */
@@ -1275,7 +1275,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} hp_sys_apb_sync_postw_en_reg_t;
+} hp_system_apb_sync_postw_en_reg_t;
 
 
 /** Group: GDMA Ctonrol Register */
@@ -1291,7 +1291,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_sys_gdma_ctrl_reg_t;
+} hp_system_gdma_ctrl_reg_t;
 
 
 /** Group: GMAC Control Register */
@@ -1327,7 +1327,7 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} hp_sys_gmac_ctrl0_reg_t;
+} hp_system_gmac_ctrl0_reg_t;
 
 /** Type of sys_gmac_ctrl1 register
  *  N/A
@@ -1340,7 +1340,7 @@ typedef union {
         uint32_t sys_ptp_timestamp_l:32;
     };
     uint32_t val;
-} hp_sys_gmac_ctrl1_reg_t;
+} hp_system_gmac_ctrl1_reg_t;
 
 /** Type of sys_gmac_ctrl2 register
  *  N/A
@@ -1353,7 +1353,7 @@ typedef union {
         uint32_t sys_ptp_timestamp_h:32;
     };
     uint32_t val;
-} hp_sys_gmac_ctrl2_reg_t;
+} hp_system_gmac_ctrl2_reg_t;
 
 
 /** Group: VPU Control Register */
@@ -1385,7 +1385,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} hp_sys_vpu_ctrl_reg_t;
+} hp_system_vpu_ctrl_reg_t;
 
 
 /** Group: USB OTG20 Control Register */
@@ -1445,10 +1445,10 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} hp_sys_usbotg20_ctrl_reg_t;
+} hp_system_usbotg20_ctrl_reg_t;
 
 
-/** Group: HP_TCM_ERR_RESP_CTRL_REG */
+/** Group: hp_system_TCM_ERR_RESP_CTRL_REG */
 /** Type of tcm_err_resp_ctrl register
  *  need_des
  */
@@ -1461,7 +1461,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_tcm_err_resp_ctrl_reg_t;
+} hp_system_tcm_err_resp_ctrl_reg_t;
 
 
 /** Group: HP L2 MEM REFRESH REG */
@@ -1525,7 +1525,7 @@ typedef union {
         uint32_t reserved_13:19;
     };
     uint32_t val;
-} hp_l2_mem_refresh_reg_t;
+} hp_system_l2_mem_refresh_reg_t;
 
 
 /** Group: HP TCM INIT REG */
@@ -1549,10 +1549,10 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_tcm_init_reg_t;
+} hp_system_tcm_init_reg_t;
 
 
-/** Group: HP_TCM_PARITY_CHECK_CTRL_REG */
+/** Group: hp_system_TCM_PARITY_CHECK_CTRL_REG */
 /** Type of tcm_parity_check_ctrl register
  *  need_des
  */
@@ -1565,10 +1565,10 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_tcm_parity_check_ctrl_reg_t;
+} hp_system_tcm_parity_check_ctrl_reg_t;
 
 
-/** Group: HP_DESIGN_FOR_VERIFICATION0 */
+/** Group: hp_system_DESIGN_FOR_VERIFICATION0 */
 /** Type of design_for_verification0 register
  *  need_des
  */
@@ -1580,10 +1580,10 @@ typedef union {
         uint32_t dfv0:32;
     };
     uint32_t val;
-} hp_design_for_verification0_reg_t;
+} hp_system_design_for_verification0_reg_t;
 
 
-/** Group: HP_DESIGN_FOR_VERIFICATION1 */
+/** Group: hp_system_DESIGN_FOR_VERIFICATION1 */
 /** Type of design_for_verification1 register
  *  need_des
  */
@@ -1595,10 +1595,10 @@ typedef union {
         uint32_t dfv1:32;
     };
     uint32_t val;
-} hp_design_for_verification1_reg_t;
+} hp_system_design_for_verification1_reg_t;
 
 
-/** Group: HP_PSRAM_FLASH_ADDR_INTERCHANGE */
+/** Group: hp_system_PSRAM_FLASH_ADDR_INTERCHANGE */
 /** Type of psram_flash_addr_interchange register
  *  need_des
  */
@@ -1617,7 +1617,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_psram_flash_addr_interchange_reg_t;
+} hp_system_psram_flash_addr_interchange_reg_t;
 
 
 /** Group: Interrupt Registers */
@@ -1634,7 +1634,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_ahb2axi_bresp_err_int_raw_reg_t;
+} hp_system_ahb2axi_bresp_err_int_raw_reg_t;
 
 /** Type of ahb2axi_bresp_err_int_st register
  *  need_des
@@ -1648,7 +1648,7 @@ typedef union {
         uint32_t cpu_icm_h2x_bresp_err_int_st:1;
     };
     uint32_t val;
-} hp_ahb2axi_bresp_err_int_st_reg_t;
+} hp_system_ahb2axi_bresp_err_int_st_reg_t;
 
 /** Type of ahb2axi_bresp_err_int_ena register
  *  need_des
@@ -1662,7 +1662,7 @@ typedef union {
         uint32_t cpu_icm_h2x_bresp_err_int_ena:1;
     };
     uint32_t val;
-} hp_ahb2axi_bresp_err_int_ena_reg_t;
+} hp_system_ahb2axi_bresp_err_int_ena_reg_t;
 
 /** Type of ahb2axi_bresp_err_int_clr register
  *  need_des
@@ -1676,7 +1676,7 @@ typedef union {
         uint32_t cpu_icm_h2x_bresp_err_int_clr:1;
     };
     uint32_t val;
-} hp_ahb2axi_bresp_err_int_clr_reg_t;
+} hp_system_ahb2axi_bresp_err_int_clr_reg_t;
 
 /** Type of core_timeout_int_raw register
  *  Hp core bus timeout interrupt raw register
@@ -1710,7 +1710,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_core_timeout_int_raw_reg_t;
+} hp_system_core_timeout_int_raw_reg_t;
 
 /** Type of core_timeout_int_st register
  *  masked interrupt register
@@ -1744,7 +1744,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_core_timeout_int_st_reg_t;
+} hp_system_core_timeout_int_st_reg_t;
 
 /** Type of core_timeout_int_ena register
  *  masked interrupt register
@@ -1752,33 +1752,33 @@ typedef union {
 typedef union {
     struct {
         /** core0_ahb_timeout_int_ena : R/W; bitpos: [0]; default: 0;
-         *  Write 1 to enable hp_core0_ahb_timeout int
+         *  Write 1 to enable hp_system_core0_ahb_timeout int
          */
         uint32_t core0_ahb_timeout_int_ena:1;
         /** core1_ahb_timeout_int_ena : R/W; bitpos: [1]; default: 0;
-         *  Write 1 to enable hp_core1_ahb_timeout int
+         *  Write 1 to enable hp_system_core1_ahb_timeout int
          */
         uint32_t core1_ahb_timeout_int_ena:1;
         /** core0_ibus_timeout_int_ena : R/W; bitpos: [2]; default: 0;
-         *  Write 1 to enable hp_core0_ibus_timeout int
+         *  Write 1 to enable hp_system_core0_ibus_timeout int
          */
         uint32_t core0_ibus_timeout_int_ena:1;
         /** core1_ibus_timeout_int_ena : R/W; bitpos: [3]; default: 0;
-         *  Write 1 to enable hp_core1_ibus_timeout int
+         *  Write 1 to enable hp_system_core1_ibus_timeout int
          */
         uint32_t core1_ibus_timeout_int_ena:1;
         /** core0_dbus_timeout_int_ena : R/W; bitpos: [4]; default: 0;
-         *  Write 1 to enable hp_core0_dbus_timeout int
+         *  Write 1 to enable hp_system_core0_dbus_timeout int
          */
         uint32_t core0_dbus_timeout_int_ena:1;
         /** core1_dbus_timeout_int_ena : R/W; bitpos: [5]; default: 0;
-         *  Write 1 to enable hp_core1_dbus_timeout int
+         *  Write 1 to enable hp_system_core1_dbus_timeout int
          */
         uint32_t core1_dbus_timeout_int_ena:1;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_core_timeout_int_ena_reg_t;
+} hp_system_core_timeout_int_ena_reg_t;
 
 /** Type of core_timeout_int_clr register
  *  interrupt clear register
@@ -1786,36 +1786,36 @@ typedef union {
 typedef union {
     struct {
         /** core0_ahb_timeout_int_clr : WT; bitpos: [0]; default: 0;
-         *  Write 1 to clear hp_core0_ahb_timeout int
+         *  Write 1 to clear hp_system_core0_ahb_timeout int
          */
         uint32_t core0_ahb_timeout_int_clr:1;
         /** core1_ahb_timeout_int_clr : WT; bitpos: [1]; default: 0;
-         *  Write 1 to clear hp_core1_ahb_timeout int
+         *  Write 1 to clear hp_system_core1_ahb_timeout int
          */
         uint32_t core1_ahb_timeout_int_clr:1;
         /** core0_ibus_timeout_int_clr : WT; bitpos: [2]; default: 0;
-         *  Write 1 to clear hp_core0_ibus_timeout int
+         *  Write 1 to clear hp_system_core0_ibus_timeout int
          */
         uint32_t core0_ibus_timeout_int_clr:1;
         /** core1_ibus_timeout_int_clr : WT; bitpos: [3]; default: 0;
-         *  Write 1 to clear hp_core1_ibus_timeout int
+         *  Write 1 to clear hp_system_core1_ibus_timeout int
          */
         uint32_t core1_ibus_timeout_int_clr:1;
         /** core0_dbus_timeout_int_clr : WT; bitpos: [4]; default: 0;
-         *  Write 1 to clear hp_core0_dbus_timeout int
+         *  Write 1 to clear hp_system_core0_dbus_timeout int
          */
         uint32_t core0_dbus_timeout_int_clr:1;
         /** core1_dbus_timeout_int_clr : WT; bitpos: [5]; default: 0;
-         *  Write 1 to clear hp_core1_dbus_timeout int
+         *  Write 1 to clear hp_system_core1_dbus_timeout int
          */
         uint32_t core1_dbus_timeout_int_clr:1;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} hp_core_timeout_int_clr_reg_t;
+} hp_system_core_timeout_int_clr_reg_t;
 
 
-/** Group: HP_L2_MEM_ERR_RESP_CTRL_REG */
+/** Group: hp_system_L2_MEM_ERR_RESP_CTRL_REG */
 /** Type of l2_mem_err_resp_ctrl register
  *  need_des
  */
@@ -1828,10 +1828,10 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_l2_mem_err_resp_ctrl_reg_t;
+} hp_system_l2_mem_err_resp_ctrl_reg_t;
 
 
-/** Group: HP_L2_MEM_AHB_BUFFER_CTRL_REG */
+/** Group: hp_system_L2_MEM_AHB_BUFFER_CTRL_REG */
 /** Type of l2_mem_ahb_buffer_ctrl register
  *  need_des
  */
@@ -1848,10 +1848,10 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} hp_l2_mem_ahb_buffer_ctrl_reg_t;
+} hp_system_l2_mem_ahb_buffer_ctrl_reg_t;
 
 
-/** Group: HP_CORE_DMACTIVE_LPCORE_REG */
+/** Group: hp_system_CORE_DMACTIVE_LPCORE_REG */
 /** Type of core_dmactive_lpcore register
  *  need_des
  */
@@ -1864,7 +1864,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} hp_core_dmactive_lpcore_reg_t;
+} hp_system_core_dmactive_lpcore_reg_t;
 
 
 /** Group: control registers */
@@ -1881,7 +1881,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} hp_core_err_resp_dis_reg_t;
+} hp_system_core_err_resp_dis_reg_t;
 
 
 /** Group: HP GPIO O HYS CTRL0 REG */
@@ -1896,7 +1896,7 @@ typedef union {
         uint32_t reg_gpio_0_hys_low:32;
     };
     uint32_t val;
-} hp_gpio_o_hys_ctrl0_reg_t;
+} hp_system_gpio_o_hys_ctrl0_reg_t;
 
 
 /** Group: HP GPIO O HYS CTRL1 REG */
@@ -1912,120 +1912,120 @@ typedef union {
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} hp_gpio_o_hys_ctrl1_reg_t;
+} hp_system_gpio_o_hys_ctrl1_reg_t;
 
 
 typedef struct {
-    volatile hp_sys_ver_date_reg_t sys_ver_date;
-    volatile hp_clk_en_reg_t clk_en;
+    volatile hp_system_ver_date_reg_t sys_ver_date;
+    volatile hp_system_clk_en_reg_t clk_en;
     uint32_t reserved_008[2];
-    volatile hp_cpu_int_from_cpu_0_reg_t cpu_int_from_cpu_0;
-    volatile hp_cpu_int_from_cpu_1_reg_t cpu_int_from_cpu_1;
-    volatile hp_cpu_int_from_cpu_2_reg_t cpu_int_from_cpu_2;
-    volatile hp_cpu_int_from_cpu_3_reg_t cpu_int_from_cpu_3;
-    volatile hp_cache_clk_config_reg_t cache_clk_config;
-    volatile hp_cache_reset_config_reg_t cache_reset_config;
+    volatile hp_system_cpu_int_from_cpu_0_reg_t cpu_int_from_cpu_0;
+    volatile hp_system_cpu_int_from_cpu_1_reg_t cpu_int_from_cpu_1;
+    volatile hp_system_cpu_int_from_cpu_2_reg_t cpu_int_from_cpu_2;
+    volatile hp_system_cpu_int_from_cpu_3_reg_t cpu_int_from_cpu_3;
+    volatile hp_system_cache_clk_config_reg_t cache_clk_config;
+    volatile hp_system_cache_reset_config_reg_t cache_reset_config;
     uint32_t reserved_028;
-    volatile hp_sys_dma_addr_ctrl_reg_t sys_dma_addr_ctrl;
+    volatile hp_system_dma_addr_ctrl_reg_t sys_dma_addr_ctrl;
     uint32_t reserved_030;
-    volatile hp_tcm_ram_wrr_config_reg_t tcm_ram_wrr_config;
-    volatile hp_tcm_sw_parity_bwe_mask_reg_t tcm_sw_parity_bwe_mask;
-    volatile hp_tcm_ram_pwr_ctrl0_reg_t tcm_ram_pwr_ctrl0;
-    volatile hp_l2_rom_pwr_ctrl0_reg_t l2_rom_pwr_ctrl0;
+    volatile hp_system_tcm_ram_wrr_config_reg_t tcm_ram_wrr_config;
+    volatile hp_system_tcm_sw_parity_bwe_mask_reg_t tcm_sw_parity_bwe_mask;
+    volatile hp_system_tcm_ram_pwr_ctrl0_reg_t tcm_ram_pwr_ctrl0;
+    volatile hp_system_l2_rom_pwr_ctrl0_reg_t l2_rom_pwr_ctrl0;
     uint32_t reserved_044[3];
-    volatile hp_probea_ctrl_reg_t probea_ctrl;
-    volatile hp_probeb_ctrl_reg_t probeb_ctrl;
+    volatile hp_system_probea_ctrl_reg_t probea_ctrl;
+    volatile hp_system_probeb_ctrl_reg_t probeb_ctrl;
     uint32_t reserved_058;
-    volatile hp_probe_out_reg_t probe_out;
-    volatile hp_l2_mem_ram_pwr_ctrl0_reg_t l2_mem_ram_pwr_ctrl0;
-    volatile hp_cpu_corestalled_st_reg_t cpu_corestalled_st;
+    volatile hp_system_probe_out_reg_t probe_out;
+    volatile hp_system_l2_mem_ram_pwr_ctrl0_reg_t l2_mem_ram_pwr_ctrl0;
+    volatile hp_system_cpu_corestalled_st_reg_t cpu_corestalled_st;
     uint32_t reserved_068[2];
-    volatile hp_crypto_ctrl_reg_t crypto_ctrl;
-    volatile hp_gpio_o_hold_ctrl0_reg_t gpio_o_hold_ctrl0;
-    volatile hp_gpio_o_hold_ctrl1_reg_t gpio_o_hold_ctrl1;
-    volatile hp_sys_rdn_eco_cs_reg_t sys_rdn_eco_cs;
-    volatile hp_cache_apb_postw_en_reg_t cache_apb_postw_en;
-    volatile hp_l2_mem_subsize_reg_t l2_mem_subsize;
+    volatile hp_system_crypto_ctrl_reg_t crypto_ctrl;
+    volatile hp_system_gpio_o_hold_ctrl0_reg_t gpio_o_hold_ctrl0;
+    volatile hp_system_gpio_o_hold_ctrl1_reg_t gpio_o_hold_ctrl1;
+    volatile hp_system_rdn_eco_cs_reg_t sys_rdn_eco_cs;
+    volatile hp_system_cache_apb_postw_en_reg_t cache_apb_postw_en;
+    volatile hp_system_l2_mem_subsize_reg_t l2_mem_subsize;
     uint32_t reserved_088[5];
-    volatile hp_l2_mem_int_raw_reg_t l2_mem_int_raw;
-    volatile hp_l2_mem_int_st_reg_t l2_mem_int_st;
-    volatile hp_l2_mem_int_ena_reg_t l2_mem_int_ena;
-    volatile hp_l2_mem_int_clr_reg_t l2_mem_int_clr;
-    volatile hp_l2_mem_l2_ram_ecc_reg_t l2_mem_l2_ram_ecc;
-    volatile hp_l2_mem_int_record0_reg_t l2_mem_int_record0;
-    volatile hp_l2_mem_int_record1_reg_t l2_mem_int_record1;
+    volatile hp_system_l2_mem_int_raw_reg_t l2_mem_int_raw;
+    volatile hp_system_l2_mem_int_st_reg_t l2_mem_int_st;
+    volatile hp_system_l2_mem_int_ena_reg_t l2_mem_int_ena;
+    volatile hp_system_l2_mem_int_clr_reg_t l2_mem_int_clr;
+    volatile hp_system_l2_mem_l2_ram_ecc_reg_t l2_mem_l2_ram_ecc;
+    volatile hp_system_l2_mem_int_record0_reg_t l2_mem_int_record0;
+    volatile hp_system_l2_mem_int_record1_reg_t l2_mem_int_record1;
     uint32_t reserved_0b8[3];
-    volatile hp_l2_mem_l2_cache_ecc_reg_t l2_mem_l2_cache_ecc;
-    volatile hp_l1cache_bus0_id_reg_t l1cache_bus0_id;
-    volatile hp_l1cache_bus1_id_reg_t l1cache_bus1_id;
+    volatile hp_system_l2_mem_l2_cache_ecc_reg_t l2_mem_l2_cache_ecc;
+    volatile hp_system_l1cache_bus0_id_reg_t l1cache_bus0_id;
+    volatile hp_system_l1cache_bus1_id_reg_t l1cache_bus1_id;
     uint32_t reserved_0d0[2];
-    volatile hp_l2_mem_rdn_eco_cs_reg_t l2_mem_rdn_eco_cs;
-    volatile hp_l2_mem_rdn_eco_low_reg_t l2_mem_rdn_eco_low;
-    volatile hp_l2_mem_rdn_eco_high_reg_t l2_mem_rdn_eco_high;
-    volatile hp_tcm_rdn_eco_cs_reg_t tcm_rdn_eco_cs;
-    volatile hp_tcm_rdn_eco_low_reg_t tcm_rdn_eco_low;
-    volatile hp_tcm_rdn_eco_high_reg_t tcm_rdn_eco_high;
-    volatile hp_gpio_ded_hold_ctrl_reg_t gpio_ded_hold_ctrl;
-    volatile hp_l2_mem_sw_ecc_bwe_mask_reg_t l2_mem_sw_ecc_bwe_mask;
-    volatile hp_usb20otg_mem_ctrl_reg_t usb20otg_mem_ctrl;
-    volatile hp_tcm_int_raw_reg_t tcm_int_raw;
-    volatile hp_tcm_int_st_reg_t tcm_int_st;
-    volatile hp_tcm_int_ena_reg_t tcm_int_ena;
-    volatile hp_tcm_int_clr_reg_t tcm_int_clr;
-    volatile hp_tcm_parity_int_record_reg_t tcm_parity_int_record;
-    volatile hp_l1_cache_pwr_ctrl_reg_t l1_cache_pwr_ctrl;
-    volatile hp_l2_cache_pwr_ctrl_reg_t l2_cache_pwr_ctrl;
-    volatile hp_cpu_waiti_conf_reg_t cpu_waiti_conf;
-    volatile hp_sys_core_debug_runstall_conf_reg_t sys_core_debug_runstall_conf;
-    volatile hp_core_ahb_timeout_reg_t core_ahb_timeout;
-    volatile hp_core_ibus_timeout_reg_t core_ibus_timeout;
-    volatile hp_core_dbus_timeout_reg_t core_dbus_timeout;
+    volatile hp_system_l2_mem_rdn_eco_cs_reg_t l2_mem_rdn_eco_cs;
+    volatile hp_system_l2_mem_rdn_eco_low_reg_t l2_mem_rdn_eco_low;
+    volatile hp_system_l2_mem_rdn_eco_high_reg_t l2_mem_rdn_eco_high;
+    volatile hp_system_tcm_rdn_eco_cs_reg_t tcm_rdn_eco_cs;
+    volatile hp_system_tcm_rdn_eco_low_reg_t tcm_rdn_eco_low;
+    volatile hp_system_tcm_rdn_eco_high_reg_t tcm_rdn_eco_high;
+    volatile hp_system_gpio_ded_hold_ctrl_reg_t gpio_ded_hold_ctrl;
+    volatile hp_system_l2_mem_sw_ecc_bwe_mask_reg_t l2_mem_sw_ecc_bwe_mask;
+    volatile hp_system_usb20otg_mem_ctrl_reg_t usb20otg_mem_ctrl;
+    volatile hp_system_tcm_int_raw_reg_t tcm_int_raw;
+    volatile hp_system_tcm_int_st_reg_t tcm_int_st;
+    volatile hp_system_tcm_int_ena_reg_t tcm_int_ena;
+    volatile hp_system_tcm_int_clr_reg_t tcm_int_clr;
+    volatile hp_system_tcm_parity_int_record_reg_t tcm_parity_int_record;
+    volatile hp_system_l1_cache_pwr_ctrl_reg_t l1_cache_pwr_ctrl;
+    volatile hp_system_l2_cache_pwr_ctrl_reg_t l2_cache_pwr_ctrl;
+    volatile hp_system_cpu_waiti_conf_reg_t cpu_waiti_conf;
+    volatile hp_system_core_debug_runstall_conf_reg_t sys_core_debug_runstall_conf;
+    volatile hp_system_core_ahb_timeout_reg_t core_ahb_timeout;
+    volatile hp_system_core_ibus_timeout_reg_t core_ibus_timeout;
+    volatile hp_system_core_dbus_timeout_reg_t core_dbus_timeout;
     uint32_t reserved_12c[3];
-    volatile hp_icm_cpu_h2x_cfg_reg_t icm_cpu_h2x_cfg;
-    volatile hp_peri1_apb_postw_en_reg_t peri1_apb_postw_en;
-    volatile hp_bitscrambler_peri_sel_reg_t bitscrambler_peri_sel;
-    volatile hp_sys_apb_sync_postw_en_reg_t sys_apb_sync_postw_en;
-    volatile hp_sys_gdma_ctrl_reg_t sys_gdma_ctrl;
-    volatile hp_sys_gmac_ctrl0_reg_t sys_gmac_ctrl0;
-    volatile hp_sys_gmac_ctrl1_reg_t sys_gmac_ctrl1;
-    volatile hp_sys_gmac_ctrl2_reg_t sys_gmac_ctrl2;
-    volatile hp_sys_vpu_ctrl_reg_t sys_vpu_ctrl;
-    volatile hp_sys_usbotg20_ctrl_reg_t sys_usbotg20_ctrl;
-    volatile hp_tcm_err_resp_ctrl_reg_t tcm_err_resp_ctrl;
-    volatile hp_l2_mem_refresh_reg_t l2_mem_refresh;
-    volatile hp_tcm_init_reg_t tcm_init;
-    volatile hp_tcm_parity_check_ctrl_reg_t tcm_parity_check_ctrl;
-    volatile hp_design_for_verification0_reg_t design_for_verification0;
-    volatile hp_design_for_verification1_reg_t design_for_verification1;
+    volatile hp_system_icm_cpu_h2x_cfg_reg_t icm_cpu_h2x_cfg;
+    volatile hp_system_peri1_apb_postw_en_reg_t peri1_apb_postw_en;
+    volatile hp_system_bitscrambler_peri_sel_reg_t bitscrambler_peri_sel;
+    volatile hp_system_apb_sync_postw_en_reg_t sys_apb_sync_postw_en;
+    volatile hp_system_gdma_ctrl_reg_t sys_gdma_ctrl;
+    volatile hp_system_gmac_ctrl0_reg_t sys_gmac_ctrl0;
+    volatile hp_system_gmac_ctrl1_reg_t sys_gmac_ctrl1;
+    volatile hp_system_gmac_ctrl2_reg_t sys_gmac_ctrl2;
+    volatile hp_system_vpu_ctrl_reg_t sys_vpu_ctrl;
+    volatile hp_system_usbotg20_ctrl_reg_t sys_usbotg20_ctrl;
+    volatile hp_system_tcm_err_resp_ctrl_reg_t tcm_err_resp_ctrl;
+    volatile hp_system_l2_mem_refresh_reg_t l2_mem_refresh;
+    volatile hp_system_tcm_init_reg_t tcm_init;
+    volatile hp_system_tcm_parity_check_ctrl_reg_t tcm_parity_check_ctrl;
+    volatile hp_system_design_for_verification0_reg_t design_for_verification0;
+    volatile hp_system_design_for_verification1_reg_t design_for_verification1;
     uint32_t reserved_178[2];
-    volatile hp_psram_flash_addr_interchange_reg_t psram_flash_addr_interchange;
+    volatile hp_system_psram_flash_addr_interchange_reg_t psram_flash_addr_interchange;
     uint32_t reserved_184;
-    volatile hp_ahb2axi_bresp_err_int_raw_reg_t ahb2axi_bresp_err_int_raw;
-    volatile hp_ahb2axi_bresp_err_int_st_reg_t ahb2axi_bresp_err_int_st;
-    volatile hp_ahb2axi_bresp_err_int_ena_reg_t ahb2axi_bresp_err_int_ena;
-    volatile hp_ahb2axi_bresp_err_int_clr_reg_t ahb2axi_bresp_err_int_clr;
-    volatile hp_l2_mem_err_resp_ctrl_reg_t l2_mem_err_resp_ctrl;
-    volatile hp_l2_mem_ahb_buffer_ctrl_reg_t l2_mem_ahb_buffer_ctrl;
-    volatile hp_core_dmactive_lpcore_reg_t core_dmactive_lpcore;
-    volatile hp_core_err_resp_dis_reg_t core_err_resp_dis;
-    volatile hp_core_timeout_int_raw_reg_t core_timeout_int_raw;
-    volatile hp_core_timeout_int_st_reg_t core_timeout_int_st;
-    volatile hp_core_timeout_int_ena_reg_t core_timeout_int_ena;
-    volatile hp_core_timeout_int_clr_reg_t core_timeout_int_clr;
+    volatile hp_system_ahb2axi_bresp_err_int_raw_reg_t ahb2axi_bresp_err_int_raw;
+    volatile hp_system_ahb2axi_bresp_err_int_st_reg_t ahb2axi_bresp_err_int_st;
+    volatile hp_system_ahb2axi_bresp_err_int_ena_reg_t ahb2axi_bresp_err_int_ena;
+    volatile hp_system_ahb2axi_bresp_err_int_clr_reg_t ahb2axi_bresp_err_int_clr;
+    volatile hp_system_l2_mem_err_resp_ctrl_reg_t l2_mem_err_resp_ctrl;
+    volatile hp_system_l2_mem_ahb_buffer_ctrl_reg_t l2_mem_ahb_buffer_ctrl;
+    volatile hp_system_core_dmactive_lpcore_reg_t core_dmactive_lpcore;
+    volatile hp_system_core_err_resp_dis_reg_t core_err_resp_dis;
+    volatile hp_system_core_timeout_int_raw_reg_t core_timeout_int_raw;
+    volatile hp_system_core_timeout_int_st_reg_t core_timeout_int_st;
+    volatile hp_system_core_timeout_int_ena_reg_t core_timeout_int_ena;
+    volatile hp_system_core_timeout_int_clr_reg_t core_timeout_int_clr;
     uint32_t reserved_1b8[2];
-    volatile hp_gpio_o_hys_ctrl0_reg_t gpio_o_hys_ctrl0;
-    volatile hp_gpio_o_hys_ctrl1_reg_t gpio_o_hys_ctrl1;
+    volatile hp_system_gpio_o_hys_ctrl0_reg_t gpio_o_hys_ctrl0;
+    volatile hp_system_gpio_o_hys_ctrl1_reg_t gpio_o_hys_ctrl1;
     uint32_t reserved_1c8[2];
-    volatile hp_rsa_pd_ctrl_reg_t rsa_pd_ctrl;
-    volatile hp_ecc_pd_ctrl_reg_t ecc_pd_ctrl;
-    volatile hp_rng_cfg_reg_t rng_cfg;
-    volatile hp_uart_pd_ctrl_reg_t uart_pd_ctrl;
-    volatile hp_peri_mem_clk_force_on_reg_t peri_mem_clk_force_on;
-} hp_dev_t;
+    volatile hp_system_rsa_pd_ctrl_reg_t rsa_pd_ctrl;
+    volatile hp_system_ecc_pd_ctrl_reg_t ecc_pd_ctrl;
+    volatile hp_system_rng_cfg_reg_t rng_cfg;
+    volatile hp_system_uart_pd_ctrl_reg_t uart_pd_ctrl;
+    volatile hp_system_peri_mem_clk_force_on_reg_t peri_mem_clk_force_on;
+} hp_system_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(hp_dev_t) == 0x1e4, "Invalid size of hp_dev_t structure");
+_Static_assert(sizeof(hp_system_dev_t) == 0x1e4, "Invalid size of hp_system_dev_t structure");
 #endif
 
 #ifdef __cplusplus
