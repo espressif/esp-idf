@@ -401,7 +401,7 @@ static esp_netif_t *eth_start(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 #if CONFIG_EXAMPLE_USE_DM9051
     spi_device_interface_config_t devcfg = {
         .command_bits = 1,
