@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,15 +101,16 @@ static IRAM_ATTR esp_err_t spi23_end(void *arg){
 
 static IRAM_ATTR esp_err_t spi1_start(void *arg)
 {
+    esp_err_t ret = ESP_OK;
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     //use the lock to disable the cache and interrupts before using the SPI bus
-    return spi_start(arg);
+    ret = spi_start(arg);
 #else
     //directly disable the cache and interrupts when lock is not used
     cache_disable(NULL);
+#endif
     on_spi_acquired((app_func_arg_t*)arg);
     return ESP_OK;
-#endif
 }
 
 static IRAM_ATTR esp_err_t spi1_end(void *arg)
