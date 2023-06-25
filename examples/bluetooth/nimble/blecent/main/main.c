@@ -394,7 +394,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
      * list of services, characteristics, and descriptors that the peer
      * supports.
      */
-    MODLOG_DFLT(ERROR, "Service discovery complete; status=%d "
+    MODLOG_DFLT(INFO, "Service discovery complete; status=%d "
                 "conn_handle=%d\n", status, peer->conn_handle);
 
     /* Now perform three GATT procedures against the peer: read,
