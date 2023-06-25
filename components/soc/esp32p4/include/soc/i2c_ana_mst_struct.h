@@ -27,7 +27,7 @@ typedef union {
         uint32_t reserved_26:6;
     };
     uint32_t val;
-} ana_i2c_mst_i2c0_ctrl_reg_t;
+} i2c_ana_mst_i2c0_ctrl_reg_t;
 
 /** Type of i2c1_ctrl register
  *  need des
@@ -45,7 +45,7 @@ typedef union {
         uint32_t reserved_26:6;
     };
     uint32_t val;
-} ana_i2c_mst_i2c1_ctrl_reg_t;
+} i2c_ana_mst_i2c1_ctrl_reg_t;
 
 /** Type of i2c0_conf register
  *  need des
@@ -62,7 +62,7 @@ typedef union {
         uint32_t i2c0_status:8;
     };
     uint32_t val;
-} ana_i2c_mst_i2c0_conf_reg_t;
+} i2c_ana_mst_i2c0_conf_reg_t;
 
 /** Type of i2c1_conf register
  *  need des
@@ -79,7 +79,7 @@ typedef union {
         uint32_t i2c1_status:8;
     };
     uint32_t val;
-} ana_i2c_mst_i2c1_conf_reg_t;
+} i2c_ana_mst_i2c1_conf_reg_t;
 
 /** Type of i2c_burst_conf register
  *  need des
@@ -92,7 +92,7 @@ typedef union {
         uint32_t i2c_mst_burst_ctrl:32;
     };
     uint32_t val;
-} ana_i2c_mst_i2c_burst_conf_reg_t;
+} i2c_ana_mst_i2c_burst_conf_reg_t;
 
 /** Type of i2c_burst_status register
  *  need des
@@ -118,7 +118,7 @@ typedef union {
         uint32_t i2c_mst_burst_timeout_cnt:12;
     };
     uint32_t val;
-} ana_i2c_mst_i2c_burst_status_reg_t;
+} i2c_ana_mst_i2c_burst_status_reg_t;
 
 /** Type of ana_conf0 register
  *  need des
@@ -135,7 +135,7 @@ typedef union {
         uint32_t ana_status0:8;
     };
     uint32_t val;
-} ana_i2c_mst_ana_conf0_reg_t;
+} i2c_ana_mst_ana_conf0_reg_t;
 
 /** Type of ana_conf1 register
  *  need des
@@ -152,7 +152,7 @@ typedef union {
         uint32_t ana_status1:8;
     };
     uint32_t val;
-} ana_i2c_mst_ana_conf1_reg_t;
+} i2c_ana_mst_ana_conf1_reg_t;
 
 /** Type of ana_conf2 register
  *  need des
@@ -169,7 +169,7 @@ typedef union {
         uint32_t ana_status2:8;
     };
     uint32_t val;
-} ana_i2c_mst_ana_conf2_reg_t;
+} i2c_ana_mst_ana_conf2_reg_t;
 
 /** Type of i2c0_ctrl1 register
  *  need des
@@ -187,7 +187,7 @@ typedef union {
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} ana_i2c_mst_i2c0_ctrl1_reg_t;
+} i2c_ana_mst_i2c0_ctrl1_reg_t;
 
 /** Type of i2c1_ctrl1 register
  *  need des
@@ -205,7 +205,7 @@ typedef union {
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} ana_i2c_mst_i2c1_ctrl1_reg_t;
+} i2c_ana_mst_i2c1_ctrl1_reg_t;
 
 /** Type of hw_i2c_ctrl register
  *  need des
@@ -227,7 +227,7 @@ typedef union {
         uint32_t reserved_12:20;
     };
     uint32_t val;
-} ana_i2c_mst_hw_i2c_ctrl_reg_t;
+} i2c_ana_mst_hw_i2c_ctrl_reg_t;
 
 /** Type of nouse register
  *  need des
@@ -240,7 +240,7 @@ typedef union {
         uint32_t i2c_mst_nouse:32;
     };
     uint32_t val;
-} ana_i2c_mst_nouse_reg_t;
+} i2c_ana_mst_nouse_reg_t;
 
 /** Type of clk160m register
  *  need des
@@ -254,7 +254,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} ana_i2c_mst_clk160m_reg_t;
+} i2c_ana_mst_clk160m_reg_t;
 
 /** Type of date register
  *  need des
@@ -272,30 +272,30 @@ typedef union {
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} ana_i2c_mst_date_reg_t;
+} i2c_ana_mst_date_reg_t;
 
 
 typedef struct {
-    volatile ana_i2c_mst_i2c0_ctrl_reg_t i2c0_ctrl;
-    volatile ana_i2c_mst_i2c1_ctrl_reg_t i2c1_ctrl;
-    volatile ana_i2c_mst_i2c0_conf_reg_t i2c0_conf;
-    volatile ana_i2c_mst_i2c1_conf_reg_t i2c1_conf;
-    volatile ana_i2c_mst_i2c_burst_conf_reg_t i2c_burst_conf;
-    volatile ana_i2c_mst_i2c_burst_status_reg_t i2c_burst_status;
-    volatile ana_i2c_mst_ana_conf0_reg_t ana_conf0;
-    volatile ana_i2c_mst_ana_conf1_reg_t ana_conf1;
-    volatile ana_i2c_mst_ana_conf2_reg_t ana_conf2;
-    volatile ana_i2c_mst_i2c0_ctrl1_reg_t i2c0_ctrl1;
-    volatile ana_i2c_mst_i2c1_ctrl1_reg_t i2c1_ctrl1;
-    volatile ana_i2c_mst_hw_i2c_ctrl_reg_t hw_i2c_ctrl;
-    volatile ana_i2c_mst_nouse_reg_t nouse;
-    volatile ana_i2c_mst_clk160m_reg_t clk160m;
-    volatile ana_i2c_mst_date_reg_t date;
-} ana_i2c_mst_dev_t;
+    volatile i2c_ana_mst_i2c0_ctrl_reg_t i2c0_ctrl;
+    volatile i2c_ana_mst_i2c1_ctrl_reg_t i2c1_ctrl;
+    volatile i2c_ana_mst_i2c0_conf_reg_t i2c0_conf;
+    volatile i2c_ana_mst_i2c1_conf_reg_t i2c1_conf;
+    volatile i2c_ana_mst_i2c_burst_conf_reg_t i2c_burst_conf;
+    volatile i2c_ana_mst_i2c_burst_status_reg_t i2c_burst_status;
+    volatile i2c_ana_mst_ana_conf0_reg_t ana_conf0;
+    volatile i2c_ana_mst_ana_conf1_reg_t ana_conf1;
+    volatile i2c_ana_mst_ana_conf2_reg_t ana_conf2;
+    volatile i2c_ana_mst_i2c0_ctrl1_reg_t i2c0_ctrl1;
+    volatile i2c_ana_mst_i2c1_ctrl1_reg_t i2c1_ctrl1;
+    volatile i2c_ana_mst_hw_i2c_ctrl_reg_t hw_i2c_ctrl;
+    volatile i2c_ana_mst_nouse_reg_t nouse;
+    volatile i2c_ana_mst_clk160m_reg_t clk160m;
+    volatile i2c_ana_mst_date_reg_t date;
+} i2c_ana_mst_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(ana_i2c_mst_dev_t) == 0x3c, "Invalid size of ana_i2c_mst_dev_t structure");
+_Static_assert(sizeof(i2c_ana_mst_dev_t) == 0x3c, "Invalid size of i2c_ana_mst_dev_t structure");
 #endif
 
 #ifdef __cplusplus
