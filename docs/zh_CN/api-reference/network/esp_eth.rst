@@ -162,7 +162,7 @@ MAC 的相关配置可以在 :cpp:class:`eth_mac_config_t` 中找到，具体包
 
     :SOC_EMAC_SUPPORTED: * :cpp:member:`eth_esp32_emac_config_t::clock_config`：配置 EMAC 接口时钟（RMII 模式下的 ``REF_CLK`` 模式以及 GPIO 编号）。
 
-MAC 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包括：
+PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包括：
 
 .. list::
 
