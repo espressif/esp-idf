@@ -126,6 +126,8 @@ class ElfFile(object):
         self.load_segments = []  # type: list[ElfSegment]
         self.note_segments = []  # type: list[ElfNoteSegment]
 
+        self.sha256 = b''  # type: bytes
+
         if elf_path and os.path.isfile(elf_path):
             self.read_elf(elf_path)
 
@@ -155,6 +157,12 @@ class ElfFile(object):
                                     sec.sh.sh_addr,
                                     sec.data,
                                     sec.sh.sh_flags) for sec in self._model.sections]
+
+        # calculate sha256 of the input bytes (note: this may not be the same as the sha256 of any generated
+        # output struct, as the ELF parser may change some details.)
+        sha256 = hashlib.sha256()
+        sha256.update(elf_bytes)
+        self.sha256 = sha256.digest()
 
     @staticmethod
     def _parse_string_table(byte_str, offset):  # type: (bytes, int) -> str
@@ -214,15 +222,6 @@ class ElfFile(object):
             args.append('string_table' / Pointer(string_table_sh.sh_offset, Bytes(string_table_sh.sh_size)))
 
         return Struct(*args)
-
-    @property
-    def sha256(self):  # type: () -> bytes
-        """
-        :return: SHA256 hash of the input ELF file
-        """
-        sha256 = hashlib.sha256()
-        sha256.update(self._struct.build(self._model))  # type: ignore
-        return sha256.digest()
 
 
 class ElfSection(object):
@@ -284,6 +283,13 @@ class ElfNoteSegment(ElfSegment):
         super(ElfNoteSegment, self).__init__(addr, data, flags)
         self.type = ElfFile.PT_NOTE
         self.note_secs = NoteSections.parse(self.data)
+        for note in self.note_secs:
+            # note.name should include a terminating NUL byte, plus possible
+            # padding
+            #
+            # (note: construct.PaddingString can't parse this if there
+            # are non-zero padding bytes after the NUL, it also parses those.)
+            note.name = note.name.split(b'\x00')[0]
 
     @staticmethod
     def _type_str():  # type: () -> str
