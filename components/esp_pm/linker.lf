@@ -5,6 +5,9 @@ entries:
         pm_impl:esp_pm_impl_idle_hook (noflash)
         pm_impl:esp_pm_impl_waiti (noflash)
 
+    if PM_SLP_IRAM_OPT = y:
+        pm_impl:esp_pm_impl_get_cpu_freq (noflash)
+
 [mapping:esp_hw_support_pm]
 archive: libesp_hw_support.a
 entries:
@@ -16,12 +19,24 @@ entries:
         esp_clk:esp_clk_slowclk_cal_set (noflash)
         esp_clk:esp_clk_slowclk_cal_get (noflash)
         esp_clk:esp_rtc_get_time_us (noflash)
+        esp_clk:esp_clk_private_lock (noflash)
+        esp_clk:esp_clk_private_unlock (noflash)
+        if SOC_RTC_MEM_SUPPORTED = y:
+            esp_clk:calc_checksum (noflash)
+        if SOC_SYSTIMER_SUPPORTED = y:
+            systimer (noflash)
         if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
             sleep_gpio:gpio_sleep_mode_config_apply (noflash)
         if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (SOC_PM_SUPPORT_CPU_PD = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
             sleep_cpu:sleep_enable_cpu_retention (noflash)
         if SOC_PM_SUPPORT_CPU_PD = y:
             sleep_cpu:cpu_domain_pd_allowed (noflash)
+        if SOC_PM_SUPPORT_TOP_PD = y:
+            sleep_clock:clock_domain_pd_allowed (noflash)
+            sleep_system_peripheral:peripheral_domain_pd_allowed (noflash)
+        sleep_modem:modem_domain_pd_allowed (noflash)
+        sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
+        sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a
@@ -48,10 +63,12 @@ entries:
             esp_timer_impl_lac:esp_timer_impl_lock (noflash)
             esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
             esp_timer_impl_lac:esp_timer_impl_advance (noflash)
+            esp_timer_impl_lac:esp_timer_impl_set (noflash)
         elif ESP_TIMER_IMPL_SYSTIMER = y:
             esp_timer_impl_systimer:esp_timer_impl_lock (noflash)
             esp_timer_impl_systimer:esp_timer_impl_unlock (noflash)
             esp_timer_impl_systimer:esp_timer_impl_advance (noflash)
+            esp_timer_impl_systimer:esp_timer_impl_set (noflash)
 
 [mapping:newlib_pm]
 archive: libnewlib.a

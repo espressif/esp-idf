@@ -19,7 +19,7 @@ typedef enum {
     MODEM_CLOCK_EXT32K_CODE  = 2
 } modem_clock_32k_clk_src_code_t;
 
-void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap)
+void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap)
 {
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
     switch (domain)
@@ -101,7 +101,7 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
     return bitmap;
 }
 
-void modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+void IRAM_ATTR modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     if (enable) {
         modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);

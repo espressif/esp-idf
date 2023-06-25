@@ -51,8 +51,8 @@ menu "Power Management"
         bool "Put lightsleep related codes in internal RAM"
         depends on FREERTOS_USE_TICKLESS_IDLE
         help
-            If enabled, about 1.8KB of lightsleep related source code would be in IRAM and chip would sleep
-            longer for 760us at most each time.
+            If enabled, about 2.1KB of lightsleep related source code would be in IRAM and chip would sleep
+            longer for 310us at 160MHz CPU frequency most each time.
             This feature is intended to be used when lower power consumption is needed
             while there is enough place in IRAM to place source code.
 
@@ -60,8 +60,8 @@ menu "Power Management"
         bool "Put RTOS IDLE related codes in internal RAM"
         depends on FREERTOS_USE_TICKLESS_IDLE
         help
-            If enabled, about 260B of RTOS_IDLE related source code would be in IRAM and chip would sleep
-            longer for 40us at most each time.
+            If enabled, about 180Bytes of RTOS_IDLE related source code would be in IRAM and chip would sleep
+            longer for 20us at 160MHz CPU frequency most each time.
             This feature is intended to be used when lower power consumption is needed
             while there is enough place in IRAM to place source code.
 

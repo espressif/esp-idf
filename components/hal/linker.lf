@@ -50,3 +50,5 @@ entries:
             adc_hal: adc_hal_check_event (noflash)
             adc_hal: adc_hal_digi_clr_intr (noflash)
             adc_hal: adc_hal_get_desc_addr (noflash)
+    if SOC_PMU_SUPPORTED = y:
+        pmu_hal (noflash)

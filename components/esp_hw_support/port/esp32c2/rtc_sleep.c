@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -20,6 +21,8 @@
 #include "regi2c_ctrl.h"
 #include "soc/regi2c_lp_bias.h"
 #include "soc/regi2c_dig_reg.h"
+
+static const DRAM_ATTR rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
 
 /**
  * Configure whether certain peripherals are powered down in deep sleep
@@ -143,7 +146,6 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
     if (cfg.lslp_mem_inf_fpu) {
-        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
         rtc_sleep_pu(pu_cfg);
     }
 
@@ -229,7 +231,6 @@ static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
 
     /* restore config if it is a light sleep */
     if (lslp_mem_inf_fpu) {
-        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
         rtc_sleep_pu(pu_cfg);
     }
     return reject;

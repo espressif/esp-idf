@@ -275,7 +275,7 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
 
-bool IRAM_ATTR modem_domain_pd_allowed(void)
+bool modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     const uint32_t modules = sleep_retention_get_modules();
