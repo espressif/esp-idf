@@ -670,7 +670,7 @@ void ble_controller_scan_duplicate_config()
     uint32_t duplicate_mode = FILTER_DUPLICATE_DEFAULT;
     uint32_t cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
     if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 0) {
-        duplicate_mode = FILTER_DUPLICATE_ADDRESS;
+        duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_PDUTYPE;
     } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 1) {
         duplicate_mode = FILTER_DUPLICATE_ADVDATA;
     } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 2) {
