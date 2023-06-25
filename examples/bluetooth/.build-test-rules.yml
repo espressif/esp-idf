@@ -264,6 +264,6 @@ examples/bluetooth/nimble/hci:
 
 examples/bluetooth/nimble/power_save:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32h2"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet

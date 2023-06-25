@@ -688,7 +688,6 @@ void ble_controller_scan_duplicate_config(void)
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
-    uint32_t chip_version;
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
 
@@ -753,7 +752,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     /* Select slow clock source for BT momdule */
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
-    chip_version = efuse_hal_chip_revision();
+    uint32_t chip_version = efuse_hal_chip_revision();
     if (chip_version == 0) {
         modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, (400 - 1));
     } else{
