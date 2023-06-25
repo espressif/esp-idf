@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+#if SOC_GDMA_SUPPORTED
 typedef struct {
     struct {
         const periph_module_t module;
@@ -24,6 +25,8 @@ typedef struct {
 } gdma_signal_conn_t;
 
 extern const gdma_signal_conn_t gdma_periph_signals;
+
+#endif
 
 #ifdef __cplusplus
 }

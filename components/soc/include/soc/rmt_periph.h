@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#if SOC_RMT_SUPPORTED
+
 typedef struct {
     struct {
         const int irq;
@@ -27,6 +29,8 @@ typedef struct {
 } rmt_signal_conn_t;
 
 extern const rmt_signal_conn_t rmt_periph_signals;
+
+#endif // SOC_RMT_SUPPORTED
 
 #ifdef __cplusplus
 }

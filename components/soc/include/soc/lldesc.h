@@ -6,7 +6,6 @@
 
 #pragma once
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "esp_rom_lldesc.h"
 
 //the size field has 12 bits, but 0 not for 4096.
@@ -17,6 +16,10 @@
 // Some DMA operations might impose certain alignment restrictions on the length
 #define LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED (4096 - 16)
 #define LLDESC_MAX_NUM_PER_DESC_32B_ALIGNED (4096 - 32)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Generate a linked list pointing to a (huge) buffer in an descriptor array.
@@ -75,3 +78,7 @@ static inline int lldesc_get_required_num_constrained(int data_size, int max_des
  * @return Numbers required.
  */
 #define lldesc_get_required_num(data_size) lldesc_get_required_num_constrained(data_size, LLDESC_MAX_NUM_PER_DESC)
+
+#ifdef __cplusplus
+}
+#endif

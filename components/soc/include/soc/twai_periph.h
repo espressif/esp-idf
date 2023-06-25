@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+#if SOC_TWAI_SUPPORTED
+
 typedef struct {
     struct {
         const periph_module_t module;  // peripheral module
@@ -27,6 +29,8 @@ typedef struct {
 } twai_controller_signal_conn_t;
 
 extern const twai_controller_signal_conn_t twai_controller_periph_signals;
+
+#endif // SOC_TWAI_SUPPORTED
 
 #ifdef __cplusplus
 }

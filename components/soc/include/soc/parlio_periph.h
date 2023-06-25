@@ -9,13 +9,16 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
+#if SOC_PARLIO_SUPPORTED
 #include "soc/parl_io_reg.h"
 #include "soc/parl_io_struct.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_PARLIO_SUPPORTED
 typedef struct {
     struct {
         struct {
@@ -35,6 +38,8 @@ typedef struct {
 } parlio_signal_conn_t;
 
 extern const parlio_signal_conn_t parlio_periph_signals;
+
+#endif
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,6 @@
 #include "esp_rom_uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 #include "soc/syscon_reg.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_hw_log.h"
