@@ -219,7 +219,7 @@ To decode each address, IDF Monitor runs the following command in the background
     0x400481b0: ets_rsa_pss_verify in ROM
     .....
 
-The ROM ELF file is automatically loaded from a location based on the ``IDF_PATH`` and ``ESP_ROM_ELF_DIR`` environment variables. This can be overridden by calling esp_idf_monitor and providing a path to a specific ROM ELF file: ``python -m esp_idf_monitor --rom-elf-file [path to ROM ELF file]``.
+The ROM ELF file is automatically loaded from a location based on the ``IDF_PATH`` and ``ESP_ROM_ELF_DIR`` environment variables. This can be overridden by calling ``esp_idf_monitor`` and providing a path to a specific ROM ELF file: ``python -m esp_idf_monitor --rom-elf-file [path to ROM ELF file]``.
 
 .. note::
 
