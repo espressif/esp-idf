@@ -611,7 +611,7 @@ static uint32_t slider_filter_average(te_slider_handle_t slider_handle, uint32_t
     for (int win_idx = 0; win_idx < TE_SLD_DEFAULT_POS_FILTER_SIZE(s_te_sld_obj); win_idx++) { //Moving average filter
         position_average += slider_handle->pos_filter_window[win_idx];
     }
-    position_average = position_average / TE_SLD_DEFAULT_POS_FILTER_SIZE(s_te_sld_obj) + 0.5;
+    position_average = (uint32_t)((float)position_average / TE_SLD_DEFAULT_POS_FILTER_SIZE(s_te_sld_obj) + 0.5F);
     return position_average;
 }
 
