@@ -39,7 +39,7 @@ WL_Flash::~WL_Flash()
 
 esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *flash_drv)
 {
-    ESP_LOGV(TAG, "%s partition_start_addr=0x%08x, wl_partition_size=0x%08x, flash_sector_size=0x%08x, wl_update_rate=0x%08x, wl_pos_update_record_size=0x%08x, version=0x%08x, wl_temp_buff_size=0x%08x", __func__,
+    ESP_LOGV(TAG, "%s partition_start_addr=0x%08x, wl_partition_size=0x%08x, wl_page_size=0x%08x, flash_sector_size=0x%08x, wl_update_rate=0x%08x, wl_pos_update_record_size=0x%08x, version=0x%08x, wl_temp_buff_size=0x%08x", __func__,
              (uint32_t) cfg->wl_partition_start_addr,
              cfg->wl_partition_size,
              cfg->wl_page_size,
