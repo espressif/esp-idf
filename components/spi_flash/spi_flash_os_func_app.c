@@ -71,7 +71,7 @@ IRAM_ATTR static void cache_disable(void* arg)
 }
 #endif  //#if !SPI_FLASH_CACHE_NO_DISABLE
 
-static IRAM_ATTR esp_err_t spi_start(void *arg)
+static IRAM_ATTR esp_err_t acquire_spi_bus_lock(void *arg)
 {
     spi_bus_lock_dev_handle_t dev_lock = ((app_func_arg_t *)arg)->dev_lock;
 
@@ -84,19 +84,19 @@ static IRAM_ATTR esp_err_t spi_start(void *arg)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t spi_end(void *arg)
+static IRAM_ATTR esp_err_t release_spi_bus_lock(void *arg)
 {
     return spi_bus_lock_acquire_end(((app_func_arg_t *)arg)->dev_lock);
 }
 
 static IRAM_ATTR esp_err_t spi23_start(void *arg){
-    esp_err_t ret = spi_start(arg);
+    esp_err_t ret = acquire_spi_bus_lock(arg);
     on_spi_acquired((app_func_arg_t*)arg);
     return ret;
 }
 
 static IRAM_ATTR esp_err_t spi23_end(void *arg){
-    esp_err_t ret = spi_end(arg);
+    esp_err_t ret = release_spi_bus_lock(arg);
     on_spi_released((app_func_arg_t*)arg);
     return ret;
 }
@@ -114,7 +114,7 @@ static IRAM_ATTR esp_err_t spi1_start(void *arg)
      */
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     //use the lock to disable the cache and interrupts before using the SPI bus
-    ret = spi_start(arg);
+    ret = acquire_spi_bus_lock(arg);
 #elif SPI_FLASH_CACHE_NO_DISABLE
     _lock_acquire(&s_spi1_flash_mutex);
 #else
@@ -133,7 +133,7 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
      * There are three ways for ESP Flash API lock, see `spi1_start`
      */
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
-    ret = spi_end(arg);
+    ret = release_spi_bus_lock(arg);
 #elif SPI_FLASH_CACHE_NO_DISABLE
     _lock_release(&s_spi1_flash_mutex);
 #else
