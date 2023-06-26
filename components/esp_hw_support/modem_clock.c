@@ -334,6 +334,9 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_clock_hal_set_ble_rtc_timer_divisor_value(MODEM_CLOCK_instance()->hal, divider);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, true);
+        if (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+            pmu_sleep_enable_hp_sleep_sysclk(true);
+        }
         break;
 #endif // SOC_BT_SUPPORTED
 
@@ -372,6 +375,8 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
+    MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = MODEM_CLOCK_LPCLK_SRC_INVALID;
     switch (module)
     {
 #if SOC_WIFI_SUPPORTED
@@ -385,6 +390,9 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     case PERIPH_BT_MODULE:
         modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, false);
+        if (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+            pmu_sleep_enable_hp_sleep_sysclk(false);
+        }
         break;
 #endif // SOC_BT_SUPPORTED
     case PERIPH_COEX_MODULE:
@@ -394,8 +402,6 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     default:
         break;
     }
-    modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
-    MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = MODEM_CLOCK_LPCLK_SRC_INVALID;
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) ( \

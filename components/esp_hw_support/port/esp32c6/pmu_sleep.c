@@ -294,3 +294,8 @@ bool pmu_sleep_finish(void)
 {
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
+
+void pmu_sleep_enable_hp_sleep_sysclk(bool enable)
+{
+    pmu_ll_hp_set_icg_sysclk_enable(PMU_instance()->hal->dev, HP(SLEEP), enable);
+}
