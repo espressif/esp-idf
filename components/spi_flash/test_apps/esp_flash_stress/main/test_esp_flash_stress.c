@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,9 +15,9 @@
 #include "esp_check.h"
 #include "esp_attr.h"
 #include "esp_flash.h"
-#include "esp_partition.h"
+#include "test_flash_utils.h"
 
-portMUX_TYPE s_test_spinlock = portMUX_INITIALIZER_UNLOCKED;
+portMUX_TYPE static s_test_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 /*---------------------------------------------------------------
             ESP Flash API Concurrency Pressure Test
@@ -32,17 +32,6 @@ typedef struct {
     bool is_pressure_test;
     const esp_partition_t *part;
 } test_concurrency_ctx_t;
-
-
-static const esp_partition_t *get_test_flash_partition(void)
-{
-    /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
-    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
-            ESP_PARTITION_SUBTYPE_ANY, "flash_test");
-    assert(result != NULL); /* means partition table set wrong */
-    return result;
-}
-
 
 static void s_test_flash_ops_task(void *arg)
 {
