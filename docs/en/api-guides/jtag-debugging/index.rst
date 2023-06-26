@@ -78,7 +78,7 @@ Likewise, the "Application Loading and Monitoring" label indicates the key softw
 
     .. note::
 
-        Debugging through the USB interface implemented in {IDF_TARGET_NAME} requires to have a chip with revision 3 or newer. Please use other debugging options (e.g. with ESP-Prog) for chip revision 1 and 2. The easiest way to determine the chip revision is to look for the ``Chip is ESP32-C3 (revision 3)`` message near the end of a successful chip flashing done by ``idf.py flash``.
+        Debugging through the USB interface implemented in {IDF_TARGET_NAME} requires to have a chip with revision 0.3 or newer. Please use other debugging options (e.g. with ESP-Prog) for chip revisions 0.1 and 0.2. The easiest way to determine the chip revision is to look for the ``boot: chip revision: v0.3`` message at the beginning of the boot log. See `SoC errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_ for more details.
 
 .. _jtag-debugging-selecting-jtag-adapter:
 
