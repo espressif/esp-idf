@@ -217,7 +217,10 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                 'blob_index',
                 'blob',
             ]:  # Entry is non-variable length
-                nvs_log.info(entry.data['value'])
+                if entry.data is not None:
+                    nvs_log.info(entry.data['value'])
+                else:
+                    nvs_log.info(entry.data)  # None
             else:
                 if entry.metadata['type'] == 'blob_index':
                     nvs_log.info(
