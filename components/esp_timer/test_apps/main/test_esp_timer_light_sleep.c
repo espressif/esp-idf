@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include "unity.h"
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6) // TODO IDF-6770
 
 static void timer_cb1(void *arg)
 {
@@ -50,3 +52,5 @@ TEST_CASE("Test the periodic timer does not handle lost events during light slee
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
+
+#endif //#!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

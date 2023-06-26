@@ -22,7 +22,7 @@ case $IDF_TARGET in
     esp32s3)
         PREFIX=xtensa-esp32s3-elf-
         ;;
-    esp32c3)
+    esp32c2|esp32c3|esp32c6)
         PREFIX=riscv32-esp-elf-
         ;;
     *)
@@ -36,10 +36,11 @@ ELF_FILE=test.elf
 
 ${PREFIX}ld --unresolved-symbols=ignore-all --entry 0 -o ${ELF_FILE} \
     -u g_esp_wifi_md5 \
+    -u g_esp_wifi_he_md5 \
     -u g_wifi_crypto_funcs_md5 \
     -u g_wifi_type_md5 \
+    -u g_wifi_he_type_md5 \
     -u g_wifi_osi_funcs_md5 \
-    -u g_coex_adapter_funcs_md5 \
     -u g_wifi_supplicant_funcs_md5 \
     ${IDF_PATH}/components/esp_wifi/lib/${LIB_DIR}/*.a
 
@@ -65,10 +66,11 @@ function check_md5()
 
 echo "Checking libraries for target ${IDF_TARGET}..."
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi.h g_esp_wifi_md5
+check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_he.h g_esp_wifi_he_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_private/wifi_os_adapter.h g_wifi_osi_funcs_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_crypto_types.h g_wifi_crypto_funcs_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_types.h g_wifi_type_md5
-check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_coexist_adapter.h g_coex_adapter_funcs_md5
+check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_he_types.h g_wifi_he_type_md5
 check_md5 ${IDF_PATH}/components/wpa_supplicant/esp_supplicant/src/esp_wifi_driver.h g_wifi_supplicant_funcs_md5
 
 if [ $FAILURES -gt 0 ]; then

@@ -246,12 +246,12 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 说明：
 
 * NC/XTAL - :ref:`32.768 kHz 晶振 <get-started-esp-wrover-kit-v4.1-xtal>`
-* JTAG - :ref:`JTAG / JP2 <get-started-esp-wrover-kit-v4.1-jtag-header>`
-* Boot - Boot 按键 / SW2
-* 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
+* JTAG - :ref:`JTAG/JP2 <get-started-esp-wrover-kit-v4.1-jtag-header>`
+* Boot - Boot 按键/SW2
+* 摄像头 - :ref:`摄像头/JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
-* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
-* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
+* microSD - :ref:`microSD Card/J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
+* LCD - :ref:`LCD/U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
 * PSRAM - ESP32-WROVER-E 的 PSRAM
 
 
@@ -274,19 +274,23 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 
 .. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
 
-SPI Flash / JP2
+SPI Flash/JP2
 ^^^^^^^^^^^^^^^
 
 ====  =============
 .     ESP32 管脚
 ====  =============
-1     CLK / GPIO6
-2     SD0 / GPIO7
-3     SD1 / GPIO8
-4     SD2 / GPIO9
-5     SD3 / GPIO10
-6     CMD / GPIO11
+1     CLK/GPIO6
+2     SD0/GPIO7
+3     SD1/GPIO8
+4     SD2/GPIO9
+5     SD3/GPIO10
+6     CMD/GPIO11
 ====  =============
+
+.. note::
+
+    SPI Flash 管脚用于访问内部闪存。因此，这些管脚不支持连接外部 SPI 设备，仅用于监测或高级选项。
 
 .. important::
 
@@ -295,23 +299,23 @@ SPI Flash / JP2
 
 .. _get-started-esp-wrover-kit-v4.1-jtag-header:
 
-JTAG / JP2
+JTAG/JP2
 ^^^^^^^^^^
 
 ====  ==============  =============
 .     ESP32 管脚       JTAG 信号
 ====  ==============  =============
 1     EN              TRST_N
-2     MTMS / GPIO14   TMS
-3     MTDO / GPIO15   TDO
-4     MTDI / GPIO12   TDI
-5     MTCK / GPIO13   TCK
+2     MTMS/GPIO14     TMS
+3     MTDO/GPIO15     TDO
+4     MTDI/GPIO12     TDI
+5     MTCK/GPIO13     TCK
 ====  ==============  =============
 
 
 .. _get-started-esp-wrover-kit-v4.1-camera-header:
 
-摄像头 / JP4
+摄像头/JP4
 ^^^^^^^^^^^^
 
 ====  ==========  =============================
@@ -319,22 +323,22 @@ JTAG / JP2
 ====  ==========  =============================
 1     n/a         3.3V
 2     n/a         地
-3     GPIO27      SIO_C / SCCB 时钟
-4     GPIO26      SIO_D / SCCB 数据
-5     GPIO25      VSYNC / 垂直同步
-6     GPIO23      HREF / 水平参考
-7     GPIO22      PCLK / 像素时钟
-8     GPIO21      XCLK / 系统时钟
-9     GPIO35      D7 / 像素数据 Bit 7
-10    GPIO34      D6 / 像素数据 Bit 6
-11    GPIO39      D5 / 像素数据 Bit 5
-12    GPIO36      D4 / 像素数据 Bit 4
-13    GPIO19      D3 / 像素数据 Bit 3
-14    GPIO18      D2 / 像素数据 Bit 2
-15    GPIO5       D1 / 像素数据 Bit 1
-16    GPIO4       D0 / 像素数据 Bit 0
-17    GPIO0       RESET / 摄像头复位
-18    n/a         PWDN / 摄像头断电
+3     GPIO27      SIO_C/SCCB 时钟
+4     GPIO26      SIO_D/SCCB 数据
+5     GPIO25      VSYNC/垂直同步
+6     GPIO23      HREF/水平参考
+7     GPIO22      PCLK/像素时钟
+8     GPIO21      XCLK/系统时钟
+9     GPIO35      D7/像素数据 Bit 7
+10    GPIO34      D6/像素数据 Bit 6
+11    GPIO39      D5/像素数据 Bit 5
+12    GPIO36      D4/像素数据 Bit 4
+13    GPIO19      D3/像素数据 Bit 3
+14    GPIO18      D2/像素数据 Bit 2
+15    GPIO5       D1/像素数据 Bit 1
+16    GPIO4       D0/像素数据 Bit 0
+17    GPIO0       RESET/摄像头复位
+18    n/a         PWDN/摄像头断电
 ====  ==========  =============================
 
 * D0 到 D7 为摄像头的数据总线
@@ -362,10 +366,10 @@ microSD 卡
 ====  ==============  ===============
 .     ESP32 管脚       microSD 信号
 ====  ==============  ===============
-1.    MTDI / GPIO12   DATA2
-2.    MTCK / GPIO13   CD / DATA3
-3.    MTDO / GPIO15   CMD
-4.    MTMS / GPIO14   CLK
+1.    MTDI/GPIO12     DATA2
+2.    MTCK/GPIO13     CD/DATA3
+3.    MTDO/GPIO15     CMD
+4.    MTMS/GPIO14     CLK
 5.    GPIO2           DATA0
 6.    GPIO4           DATA1
 7.    GPIO21          Card Detect
@@ -374,7 +378,7 @@ microSD 卡
 
 .. _get-started-esp-wrover-kit-v4.1-lcd-connector:
 
-LCD / U5
+LCD/U5
 ^^^^^^^^
 
 ====  ==============  ===============
@@ -436,7 +440,7 @@ USB 供电                   使能 UART 通信
 
 * `ESP-WROVER-KIT V4.1 原理图`_ (PDF)
 * `ESP-WROVER-KIT V4.1 布局 <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF)
-* `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF) 
+* `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `《ESP32-WROVER-E 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`

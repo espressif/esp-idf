@@ -98,7 +98,7 @@ TEST_CASE("Power Test: Lightsleep (8M by digital)", "[pm]")
         .duty_resolution = LEDC_TIMER_12_BIT,
         .timer_num = 0,
         .freq_hz = 2 * 1000,
-        .clk_cfg = LEDC_USE_RTC8M_CLK,
+        .clk_cfg = LEDC_USE_RC_FAST_CLK,
     };
     ledc_timer_config(&config);
     test_lightsleep();

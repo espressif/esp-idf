@@ -39,7 +39,7 @@ The services provided by the SDIO Slave peripheral of the {IDF_TARGET_NAME} chip
 ESP SDIO Slave Initialization
 -----------------------------
 
-The host should initialize the ESP32 SDIO slave according to the standard SDIO initialization process (Section 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification as well as below, the SDIO slave is called an (SD)IO card. Here is a brief example of an ESP SDIO Slave initialization process:
+The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard SDIO initialization process (Section 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification as well as below, the SDIO slave is called an (SD)IO card. Here is a brief example of an ESP SDIO Slave initialization process:
 
 1. SDIO reset
     CMD52 (Write 0x6=0x8)
@@ -171,7 +171,7 @@ Interrupts
 
 SDIO interrupts are "level sensitive". For host interrupts, the slave sends an interrupt by pulling the DAT1 line down at a proper time. The host detects when the interrupt line is pulled down and reads the INT_ST register to determine the source of the interrupt. After that, the host can clear the interrupt bits by writing the INT_CLR register and process the interrupt. The host can also mask unneeded sources by clearing the bits in the INT_ENA register corresponding to the sources. If all the sources are cleared (or masked), the DAT1 line goes inactive.
 
-On ESP32, the corresponding host_int bits are: bit 0 to bit 7.
+On {IDF_TARGET_NAME}, the corresponding host_int bits are: bit 0 to bit 7.
 
 For slave interrupts, the host sends a transfer to write the SLAVE_INT register. Once a bit is set to 1, the slave hardware and the driver will detect it and inform the application.
 
@@ -199,4 +199,3 @@ To read the slave's sending FIFO, the host should complete the following steps:
 3. **If new packets are ready, read the PKT_LEN register**. Before reading the packets, determine the length of data to be read. As the host keeps the length of data already read from the slave, subtract this value from PKT_LEN, the result will be the maximum length of data available for reading. If no data has been added to the sending FIFO yet, wait and poll until the slave is ready and update PKT_LEN.
 4. **Read from the FIFO using CMD53**. Note that the *requested length* should not be greater than calculated at Step 3, and the FIFO address is related to *requested length*.
 5. **Update the read length**.
-

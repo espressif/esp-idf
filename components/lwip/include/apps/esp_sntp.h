@@ -8,7 +8,7 @@
 #define __ESP_SNTP_H__
 
 #include "lwip/err.h"
-#include "lwip/apps/sntp.h"
+#include "lwip/ip.h"
 
 
 #ifdef __cplusplus
@@ -38,6 +38,23 @@ extern "C" {
  *    to wait for the next sync cycle.
  */
 
+/// Aliases for esp_sntp prefixed API (inherently thread safe)
+#define esp_sntp_sync_time sntp_sync_time
+#define esp_sntp_set_sync_mode sntp_set_sync_mode
+#define esp_sntp_get_sync_mode sntp_get_sync_mode
+#define esp_sntp_get_sync_status sntp_get_sync_status
+#define esp_sntp_set_sync_status sntp_set_sync_status
+#define esp_sntp_set_time_sync_notification_cb sntp_set_time_sync_notification_cb
+#define esp_sntp_set_sync_interval sntp_set_sync_interval
+#define esp_sntp_get_sync_interval sntp_get_sync_interval
+#define esp_sntp_restart sntp_restart
+
+#ifndef SNTP_OPMODE_POLL
+#define SNTP_OPMODE_POLL ESP_SNTP_OPMODE_POLL
+#else
+#warning "Defined!"
+#endif /* SNTP_OPMODE_POLL */
+
 /// SNTP time update mode
 typedef enum {
     SNTP_SYNC_MODE_IMMED,   /*!< Update system time immediately when receiving a response from the SNTP server. */
@@ -50,6 +67,12 @@ typedef enum {
     SNTP_SYNC_STATUS_COMPLETED,     // Time is synchronized.
     SNTP_SYNC_STATUS_IN_PROGRESS,   // Smooth time sync in progress.
 } sntp_sync_status_t;
+
+/// SNTP operating modes per lwip SNTP module
+typedef enum {
+    ESP_SNTP_OPMODE_POLL,
+    ESP_SNTP_OPMODE_LISTENONLY,
+} esp_sntp_operatingmode_t;
 
 /**
  * @brief SNTP callback function for notifying about time sync event
@@ -142,6 +165,112 @@ uint32_t sntp_get_sync_interval(void);
  *         False - SNTP was not initialized yet
  */
 bool sntp_restart(void);
+
+/**
+ * @brief Sets SNTP operating mode. The mode has to be set before init.
+ *
+ * @param operating_mode Desired operating mode
+ */
+void esp_sntp_setoperatingmode(esp_sntp_operatingmode_t operating_mode);
+
+/**
+ * @brief Init and start SNTP service
+ */
+void esp_sntp_init(void);
+
+/**
+ * @brief Stops SNTP service
+ */
+void esp_sntp_stop(void);
+
+/**
+ * @brief Sets SNTP server address
+ *
+ * @param idx Index of the server
+ * @param addr IP address of the server
+ */
+void esp_sntp_setserver(u8_t idx, const ip_addr_t *addr);
+
+/**
+ * @brief Sets SNTP hostname
+ * @param idx Index of the server
+ * @param server Name of the server
+ */
+void esp_sntp_setservername(u8_t idx, const char *server);
+
+/**
+ * @brief Gets SNTP server name
+ * @param idx Index of the server
+ * @return Name of the server
+ */
+const char *esp_sntp_getservername(u8_t idx);
+
+/**
+ * @brief Get SNTP server IP
+ * @param idx Index of the server
+ * @return IP address of the server
+ */
+const ip_addr_t* esp_sntp_getserver(u8_t idx);
+
+/**
+ * @brief Checks if sntp is enabled
+ * @return true if sntp module is enabled
+ */
+bool esp_sntp_enabled(void);
+
+#if LWIP_DHCP_GET_NTP_SRV
+/**
+ * @brief Enable acquiring SNTP server from DHCP
+ * @param enable True for enabling SNTP from DHCP
+ */
+void esp_sntp_servermode_dhcp(bool enable);
+#endif /* LWIP_DHCP_GET_NTP_SRV */
+
+#if !defined(ESP_LWIP_COMPONENT_BUILD) && !defined(ESP_NETIF_COMPONENT_BUILD)
+/**
+ * @brief if not build within lwip, provide translating inlines,
+ * that will warn about thread safety
+ */
+static inline __attribute__((deprecated("use esp_sntp_setoperatingmode() instead")))
+void sntp_setoperatingmode(u8_t operating_mode)
+{
+    esp_sntp_setoperatingmode((esp_sntp_operatingmode_t)operating_mode);
+}
+
+static inline __attribute__((deprecated("use esp_sntp_servermode_dhcp() instead")))
+void sntp_servermode_dhcp(int set_servers_from_dhcp)
+{
+#if LWIP_DHCP_GET_NTP_SRV
+    esp_sntp_servermode_dhcp(set_servers_from_dhcp);
+#endif
+}
+
+static inline __attribute__((deprecated("use esp_sntp_setservername() instead")))
+void sntp_setservername(u8_t idx, const char *server)
+{
+    esp_sntp_setservername(idx, server);
+}
+
+static inline __attribute__((deprecated("use esp_sntp_init() instead")))
+void sntp_init(void)
+{
+    esp_sntp_init();
+}
+
+static inline __attribute__((deprecated("use esp_sntp_getservername() instead")))
+const char *sntp_getservername(u8_t idx)
+{
+    return esp_sntp_getservername(idx);
+}
+
+static inline __attribute__((deprecated("use esp_sntp_getserver() instead")))
+const ip_addr_t* sntp_getserver(u8_t idx)
+{
+    return esp_sntp_getserver(idx);
+}
+
+#endif /* ESP_LWIP_COMPONENT_BUILD */
+
 
 #ifdef __cplusplus
 }

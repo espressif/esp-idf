@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +8,11 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
-#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +36,21 @@ extern "C" {
 #define CACHE_LL_L1_ILG_EVENT_SYNC_OP_FAULT         (1<<0)
 
 /**
+ * @brief Get the status of cache if it is enabled or not
+ *
+ * @param   cache_id    cache ID (when l1 cache is per core)
+ * @param   type        see `cache_type_t`
+ * @return  enabled or not
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_l1_is_cache_enabled(uint32_t cache_id, cache_type_t type)
+{
+    HAL_ASSERT(cache_id == 0);
+    (void) type; // On C2 there's only ICache
+    return REG_GET_BIT(EXTMEM_ICACHE_CTRL_REG, EXTMEM_ICACHE_ENABLE);
+}
+
+/**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range
  *
  * External virtual address can only be accessed when the involved cache buses are enabled.
@@ -54,9 +69,9 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
     cache_bus_mask_t mask = 0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
-    if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW && vaddr_end < IRAM0_CACHE_ADDRESS_HIGH(CONFIG_MMU_PAGE_SIZE)) {
+    if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW && vaddr_end < IRAM0_CACHE_ADDRESS_HIGH) {
         mask |= CACHE_BUS_IBUS0;
-    } else if (vaddr_start >= DRAM0_CACHE_ADDRESS_LOW && vaddr_end < DRAM0_CACHE_ADDRESS_HIGH(CONFIG_MMU_PAGE_SIZE)) {
+    } else if (vaddr_start >= DRAM0_CACHE_ADDRESS_LOW && vaddr_end < DRAM0_CACHE_ADDRESS_HIGH) {
         mask |= CACHE_BUS_DBUS0;
     } else {
         HAL_ASSERT(0);      //Out of region

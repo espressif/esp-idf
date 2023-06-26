@@ -109,6 +109,46 @@ SECTIONS
     _rtc_force_slow_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
+  /**
+   * This section holds RTC FAST data that should have fixed addresses.
+   * The data are not initialized at power-up and are retained during deep sleep.
+   */
+  .rtc_fast_reserved (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_fast_reserved_start = ABSOLUTE(.);
+    /* New data can only be added here to ensure existing data are not moved.
+       Because data have adhered to the end of the segment and code is relied on it.
+       >> put new data here << */
+    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+    _rtc_fast_reserved_end = ABSOLUTE(.);
+  } > rtc_fast_reserved_seg
+
+  _rtc_fast_reserved_length = _rtc_fast_reserved_end - _rtc_fast_reserved_start;
+  ASSERT((_rtc_fast_reserved_length <= LENGTH(rtc_fast_reserved_seg)),
+          "RTC FAST reserved segment data does not fit.")
+
+  /**
+   * This section holds RTC SLOW data that should have fixed addresses.
+   * The data are not initialized at power-up and are retained during deep sleep.
+   */
+  .rtc_slow_reserved (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_slow_reserved_start = ABSOLUTE(.);
+    /* New data can only be added here to ensure existing data are not moved.
+       Because data have adhered to the end of the segment and code is relied on it.
+       >> put new data here << */
+
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+    _rtc_slow_reserved_end = ABSOLUTE(.);
+  } > rtc_slow_reserved_seg
+
+  _rtc_slow_reserved_length = _rtc_slow_reserved_end - _rtc_slow_reserved_start;
+  _rtc_reserved_length = _rtc_slow_reserved_length;
+  ASSERT((_rtc_slow_reserved_length <= LENGTH(rtc_slow_reserved_seg)),
+          "RTC SLOW reserved segment data does not fit.")
+
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location))
                         ? (_rtc_force_slow_end - _rtc_data_start)
@@ -319,14 +359,22 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
-    _rodata_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address */
     . = ALIGN(4);
   } >default_rodata_seg
 
   _flash_rodata_align = ALIGNOF(.flash.rodata);
 
+  /*
+    This section is a place where we dump all the rodata which aren't used at runtime,
+    so as to avoid binary size increase
+  */
   .flash.rodata_noload (NOLOAD) :
   {
+    /*
+      This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address
+      We don't need to include the noload rodata in this section
+    */
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN (4);
     mapping[rodata_noload]
   } > default_rodata_seg
@@ -396,7 +444,8 @@ SECTIONS
   .dram0.heap_start (NOLOAD) :
   {
     . = ALIGN (8);
-    _heap_start = ABSOLUTE(.);
+    /* Lowest possible start address for the heap */
+    _heap_low_start = ABSOLUTE(.);
   } > dram0_0_seg
 
   /** This section will be used by the debugger and disassembler to get more information
@@ -422,5 +471,5 @@ SECTIONS
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
 
-ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+ASSERT(((_heap_low_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
           "DRAM segment data does not fit.")

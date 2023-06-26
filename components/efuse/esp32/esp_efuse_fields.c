@@ -15,7 +15,6 @@
 #include "soc/efuse_periph.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
-#include "bootloader_random.h"
 #include "sys/param.h"
 #include "soc/syscon_reg.h"
 

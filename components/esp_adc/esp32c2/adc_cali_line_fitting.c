@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,7 +80,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     assert(ret == ESP_OK);
     chars->coeff_a = coeff_a_scaling * voltage_mv / digi_val;
     chars->coeff_b = 0;
-    ESP_LOGV(TAG, "Calib V1, Cal Voltage = %"PRId32", Digi out = %"PRId32", Coef_a = %"PRId32"\n", voltage_mv, digi_val, chars->coeff_a);
+    ESP_LOGV(TAG, "Calib V1, Cal Voltage = %" PRId32 ", Digi out = %" PRId32 ", Coef_a = %" PRId32, voltage_mv, digi_val, chars->coeff_a);
 
     *ret_handle = scheme;
 

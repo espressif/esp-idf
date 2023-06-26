@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,10 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** rxfifo_rd_byte : RO; bitpos: [7:0]; default: 0;
+        /** rxfifo_rd_byte : RO; bitpos: [31:0]; default: 0;
          *  UART $n accesses FIFO via this register.
          */
-        uint32_t rxfifo_rd_byte:8;
-        uint32_t reserved_8:24;
+        uint32_t rxfifo_rd_byte:32;
     };
     uint32_t val;
 } lp_uart_fifo_reg_t;
@@ -75,92 +74,92 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rxfifo_full_int_raw : R/WTC/SS; bitpos: [0]; default: 0;
+        /** rxfifo_full : R/WTC/SS; bitpos: [0]; default: 0;
          *  This interrupt raw bit turns to high level when receiver receives more data than
          *  what rxfifo_full_thrhd specifies.
          */
-        uint32_t rxfifo_full_int_raw:1;
-        /** txfifo_empty_int_raw : R/WTC/SS; bitpos: [1]; default: 1;
+        uint32_t rxfifo_full:1;
+        /** txfifo_empty : R/WTC/SS; bitpos: [1]; default: 1;
          *  This interrupt raw bit turns to high level when the amount of data in Tx-FIFO is
          *  less than what txfifo_empty_thrhd specifies .
          */
-        uint32_t txfifo_empty_int_raw:1;
-        /** parity_err_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
+        uint32_t txfifo_empty:1;
+        /** parity_err : R/WTC/SS; bitpos: [2]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects a parity error in
          *  the data.
          */
-        uint32_t parity_err_int_raw:1;
-        /** frm_err_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
+        uint32_t parity_err:1;
+        /** frm_err : R/WTC/SS; bitpos: [3]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects a data frame error
          *  .
          */
-        uint32_t frm_err_int_raw:1;
-        /** rxfifo_ovf_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
+        uint32_t frm_err:1;
+        /** rxfifo_ovf : R/WTC/SS; bitpos: [4]; default: 0;
          *  This interrupt raw bit turns to high level when receiver receives more data than
          *  the FIFO can store.
          */
-        uint32_t rxfifo_ovf_int_raw:1;
-        /** dsr_chg_int_raw : R/WTC/SS; bitpos: [5]; default: 0;
+        uint32_t rxfifo_ovf:1;
+        /** dsr_chg : R/WTC/SS; bitpos: [5]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects the edge change of
          *  DSRn signal.
          */
-        uint32_t dsr_chg_int_raw:1;
-        /** cts_chg_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
+        uint32_t dsr_chg:1;
+        /** cts_chg : R/WTC/SS; bitpos: [6]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects the edge change of
          *  CTSn signal.
          */
-        uint32_t cts_chg_int_raw:1;
-        /** brk_det_int_raw : R/WTC/SS; bitpos: [7]; default: 0;
+        uint32_t cts_chg:1;
+        /** brk_det : R/WTC/SS; bitpos: [7]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects a 0 after the stop
          *  bit.
          */
-        uint32_t brk_det_int_raw:1;
-        /** rxfifo_tout_int_raw : R/WTC/SS; bitpos: [8]; default: 0;
+        uint32_t brk_det:1;
+        /** rxfifo_tout : R/WTC/SS; bitpos: [8]; default: 0;
          *  This interrupt raw bit turns to high level when receiver takes more time than
          *  rx_tout_thrhd to receive a byte.
          */
-        uint32_t rxfifo_tout_int_raw:1;
-        /** sw_xon_int_raw : R/WTC/SS; bitpos: [9]; default: 0;
+        uint32_t rxfifo_tout:1;
+        /** sw_xon : R/WTC/SS; bitpos: [9]; default: 0;
          *  This interrupt raw bit turns to high level when receiver recevies Xon char when
          *  uart_sw_flow_con_en is set to 1.
          */
-        uint32_t sw_xon_int_raw:1;
-        /** sw_xoff_int_raw : R/WTC/SS; bitpos: [10]; default: 0;
+        uint32_t sw_xon:1;
+        /** sw_xoff : R/WTC/SS; bitpos: [10]; default: 0;
          *  This interrupt raw bit turns to high level when receiver receives Xoff char when
          *  uart_sw_flow_con_en is set to 1.
          */
-        uint32_t sw_xoff_int_raw:1;
-        /** glitch_det_int_raw : R/WTC/SS; bitpos: [11]; default: 0;
+        uint32_t sw_xoff:1;
+        /** glitch_det : R/WTC/SS; bitpos: [11]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects a glitch in the
          *  middle of a start bit.
          */
-        uint32_t glitch_det_int_raw:1;
-        /** tx_brk_done_int_raw : R/WTC/SS; bitpos: [12]; default: 0;
+        uint32_t glitch_det:1;
+        /** tx_brk_done : R/WTC/SS; bitpos: [12]; default: 0;
          *  This interrupt raw bit turns to high level when transmitter completes  sending
          *  NULL characters after all data in Tx-FIFO are sent.
          */
-        uint32_t tx_brk_done_int_raw:1;
-        /** tx_brk_idle_done_int_raw : R/WTC/SS; bitpos: [13]; default: 0;
+        uint32_t tx_brk_done:1;
+        /** tx_brk_idle_done : R/WTC/SS; bitpos: [13]; default: 0;
          *  This interrupt raw bit turns to high level when transmitter has kept the shortest
          *  duration after sending the  last data.
          */
-        uint32_t tx_brk_idle_done_int_raw:1;
-        /** tx_done_int_raw : R/WTC/SS; bitpos: [14]; default: 0;
+        uint32_t tx_brk_idle_done:1;
+        /** tx_done : R/WTC/SS; bitpos: [14]; default: 0;
          *  This interrupt raw bit turns to high level when transmitter has send out all data
          *  in FIFO.
          */
-        uint32_t tx_done_int_raw:1;
+        uint32_t tx_done:1;
         uint32_t reserved_15:3;
-        /** at_cmd_char_det_int_raw : R/WTC/SS; bitpos: [18]; default: 0;
+        /** at_cmd_char_det : R/WTC/SS; bitpos: [18]; default: 0;
          *  This interrupt raw bit turns to high level when receiver detects the configured
          *  at_cmd char.
          */
-        uint32_t at_cmd_char_det_int_raw:1;
-        /** wakeup_int_raw : R/WTC/SS; bitpos: [19]; default: 0;
+        uint32_t at_cmd_char_det:1;
+        /** wakeup : R/WTC/SS; bitpos: [19]; default: 0;
          *  This interrupt raw bit turns to high level when input rxd edge changes more times
          *  than what reg_active_threshold specifies in light sleeping mode.
          */
-        uint32_t wakeup_int_raw:1;
+        uint32_t wakeup:1;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -171,78 +170,78 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rxfifo_full_int_st : RO; bitpos: [0]; default: 0;
+        /** rxfifo_full : RO; bitpos: [0]; default: 0;
          *  This is the status bit for rxfifo_full_int_raw when rxfifo_full_int_ena is set to 1.
          */
-        uint32_t rxfifo_full_int_st:1;
-        /** txfifo_empty_int_st : RO; bitpos: [1]; default: 0;
+        uint32_t rxfifo_full:1;
+        /** txfifo_empty : RO; bitpos: [1]; default: 0;
          *  This is the status bit for  txfifo_empty_int_raw  when txfifo_empty_int_ena is set
          *  to 1.
          */
-        uint32_t txfifo_empty_int_st:1;
-        /** parity_err_int_st : RO; bitpos: [2]; default: 0;
+        uint32_t txfifo_empty:1;
+        /** parity_err : RO; bitpos: [2]; default: 0;
          *  This is the status bit for parity_err_int_raw when parity_err_int_ena is set to 1.
          */
-        uint32_t parity_err_int_st:1;
-        /** frm_err_int_st : RO; bitpos: [3]; default: 0;
+        uint32_t parity_err:1;
+        /** frm_err : RO; bitpos: [3]; default: 0;
          *  This is the status bit for frm_err_int_raw when frm_err_int_ena is set to 1.
          */
-        uint32_t frm_err_int_st:1;
-        /** rxfifo_ovf_int_st : RO; bitpos: [4]; default: 0;
+        uint32_t frm_err:1;
+        /** rxfifo_ovf : RO; bitpos: [4]; default: 0;
          *  This is the status bit for rxfifo_ovf_int_raw when rxfifo_ovf_int_ena is set to 1.
          */
-        uint32_t rxfifo_ovf_int_st:1;
-        /** dsr_chg_int_st : RO; bitpos: [5]; default: 0;
+        uint32_t rxfifo_ovf:1;
+        /** dsr_chg : RO; bitpos: [5]; default: 0;
          *  This is the status bit for dsr_chg_int_raw when dsr_chg_int_ena is set to 1.
          */
-        uint32_t dsr_chg_int_st:1;
-        /** cts_chg_int_st : RO; bitpos: [6]; default: 0;
+        uint32_t dsr_chg:1;
+        /** cts_chg : RO; bitpos: [6]; default: 0;
          *  This is the status bit for cts_chg_int_raw when cts_chg_int_ena is set to 1.
          */
-        uint32_t cts_chg_int_st:1;
-        /** brk_det_int_st : RO; bitpos: [7]; default: 0;
+        uint32_t cts_chg:1;
+        /** brk_det : RO; bitpos: [7]; default: 0;
          *  This is the status bit for brk_det_int_raw when brk_det_int_ena is set to 1.
          */
-        uint32_t brk_det_int_st:1;
-        /** rxfifo_tout_int_st : RO; bitpos: [8]; default: 0;
+        uint32_t brk_det:1;
+        /** rxfifo_tout : RO; bitpos: [8]; default: 0;
          *  This is the status bit for rxfifo_tout_int_raw when rxfifo_tout_int_ena is set to 1.
          */
-        uint32_t rxfifo_tout_int_st:1;
-        /** sw_xon_int_st : RO; bitpos: [9]; default: 0;
+        uint32_t rxfifo_tout:1;
+        /** sw_xon : RO; bitpos: [9]; default: 0;
          *  This is the status bit for sw_xon_int_raw when sw_xon_int_ena is set to 1.
          */
-        uint32_t sw_xon_int_st:1;
-        /** sw_xoff_int_st : RO; bitpos: [10]; default: 0;
+        uint32_t sw_xon:1;
+        /** sw_xoff : RO; bitpos: [10]; default: 0;
          *  This is the status bit for sw_xoff_int_raw when sw_xoff_int_ena is set to 1.
          */
-        uint32_t sw_xoff_int_st:1;
-        /** glitch_det_int_st : RO; bitpos: [11]; default: 0;
+        uint32_t sw_xoff:1;
+        /** glitch_det : RO; bitpos: [11]; default: 0;
          *  This is the status bit for glitch_det_int_raw when glitch_det_int_ena is set to 1.
          */
-        uint32_t glitch_det_int_st:1;
-        /** tx_brk_done_int_st : RO; bitpos: [12]; default: 0;
+        uint32_t glitch_det:1;
+        /** tx_brk_done : RO; bitpos: [12]; default: 0;
          *  This is the status bit for tx_brk_done_int_raw when tx_brk_done_int_ena is set to 1.
          */
-        uint32_t tx_brk_done_int_st:1;
-        /** tx_brk_idle_done_int_st : RO; bitpos: [13]; default: 0;
+        uint32_t tx_brk_done:1;
+        /** tx_brk_idle_done : RO; bitpos: [13]; default: 0;
          *  This is the stauts bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_ena
          *  is set to 1.
          */
-        uint32_t tx_brk_idle_done_int_st:1;
-        /** tx_done_int_st : RO; bitpos: [14]; default: 0;
+        uint32_t tx_brk_idle_done:1;
+        /** tx_done : RO; bitpos: [14]; default: 0;
          *  This is the status bit for tx_done_int_raw when tx_done_int_ena is set to 1.
          */
-        uint32_t tx_done_int_st:1;
+        uint32_t tx_done:1;
         uint32_t reserved_15:3;
-        /** at_cmd_char_det_int_st : RO; bitpos: [18]; default: 0;
+        /** at_cmd_char_det : RO; bitpos: [18]; default: 0;
          *  This is the status bit for at_cmd_det_int_raw when at_cmd_char_det_int_ena is set
          *  to 1.
          */
-        uint32_t at_cmd_char_det_int_st:1;
-        /** wakeup_int_st : RO; bitpos: [19]; default: 0;
+        uint32_t at_cmd_char_det:1;
+        /** wakeup : RO; bitpos: [19]; default: 0;
          *  This is the status bit for uart_wakeup_int_raw when uart_wakeup_int_ena is set to 1.
          */
-        uint32_t wakeup_int_st:1;
+        uint32_t wakeup:1;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -253,75 +252,75 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rxfifo_full_int_ena : R/W; bitpos: [0]; default: 0;
+        /** rxfifo_full : R/W; bitpos: [0]; default: 0;
          *  This is the enable bit for rxfifo_full_int_st register.
          */
-        uint32_t rxfifo_full_int_ena:1;
-        /** txfifo_empty_int_ena : R/W; bitpos: [1]; default: 0;
+        uint32_t rxfifo_full:1;
+        /** txfifo_empty : R/W; bitpos: [1]; default: 0;
          *  This is the enable bit for txfifo_empty_int_st register.
          */
-        uint32_t txfifo_empty_int_ena:1;
-        /** parity_err_int_ena : R/W; bitpos: [2]; default: 0;
+        uint32_t txfifo_empty:1;
+        /** parity_err : R/W; bitpos: [2]; default: 0;
          *  This is the enable bit for parity_err_int_st register.
          */
-        uint32_t parity_err_int_ena:1;
-        /** frm_err_int_ena : R/W; bitpos: [3]; default: 0;
+        uint32_t parity_err:1;
+        /** frm_err : R/W; bitpos: [3]; default: 0;
          *  This is the enable bit for frm_err_int_st register.
          */
-        uint32_t frm_err_int_ena:1;
-        /** rxfifo_ovf_int_ena : R/W; bitpos: [4]; default: 0;
+        uint32_t frm_err:1;
+        /** rxfifo_ovf : R/W; bitpos: [4]; default: 0;
          *  This is the enable bit for rxfifo_ovf_int_st register.
          */
-        uint32_t rxfifo_ovf_int_ena:1;
-        /** dsr_chg_int_ena : R/W; bitpos: [5]; default: 0;
+        uint32_t rxfifo_ovf:1;
+        /** dsr_chg : R/W; bitpos: [5]; default: 0;
          *  This is the enable bit for dsr_chg_int_st register.
          */
-        uint32_t dsr_chg_int_ena:1;
-        /** cts_chg_int_ena : R/W; bitpos: [6]; default: 0;
+        uint32_t dsr_chg:1;
+        /** cts_chg : R/W; bitpos: [6]; default: 0;
          *  This is the enable bit for cts_chg_int_st register.
          */
-        uint32_t cts_chg_int_ena:1;
-        /** brk_det_int_ena : R/W; bitpos: [7]; default: 0;
+        uint32_t cts_chg:1;
+        /** brk_det : R/W; bitpos: [7]; default: 0;
          *  This is the enable bit for brk_det_int_st register.
          */
-        uint32_t brk_det_int_ena:1;
-        /** rxfifo_tout_int_ena : R/W; bitpos: [8]; default: 0;
+        uint32_t brk_det:1;
+        /** rxfifo_tout : R/W; bitpos: [8]; default: 0;
          *  This is the enable bit for rxfifo_tout_int_st register.
          */
-        uint32_t rxfifo_tout_int_ena:1;
-        /** sw_xon_int_ena : R/W; bitpos: [9]; default: 0;
+        uint32_t rxfifo_tout:1;
+        /** sw_xon : R/W; bitpos: [9]; default: 0;
          *  This is the enable bit for sw_xon_int_st register.
          */
-        uint32_t sw_xon_int_ena:1;
-        /** sw_xoff_int_ena : R/W; bitpos: [10]; default: 0;
+        uint32_t sw_xon:1;
+        /** sw_xoff : R/W; bitpos: [10]; default: 0;
          *  This is the enable bit for sw_xoff_int_st register.
          */
-        uint32_t sw_xoff_int_ena:1;
-        /** glitch_det_int_ena : R/W; bitpos: [11]; default: 0;
+        uint32_t sw_xoff:1;
+        /** glitch_det : R/W; bitpos: [11]; default: 0;
          *  This is the enable bit for glitch_det_int_st register.
          */
-        uint32_t glitch_det_int_ena:1;
-        /** tx_brk_done_int_ena : R/W; bitpos: [12]; default: 0;
+        uint32_t glitch_det:1;
+        /** tx_brk_done : R/W; bitpos: [12]; default: 0;
          *  This is the enable bit for tx_brk_done_int_st register.
          */
-        uint32_t tx_brk_done_int_ena:1;
-        /** tx_brk_idle_done_int_ena : R/W; bitpos: [13]; default: 0;
+        uint32_t tx_brk_done:1;
+        /** tx_brk_idle_done : R/W; bitpos: [13]; default: 0;
          *  This is the enable bit for tx_brk_idle_done_int_st register.
          */
-        uint32_t tx_brk_idle_done_int_ena:1;
-        /** tx_done_int_ena : R/W; bitpos: [14]; default: 0;
+        uint32_t tx_brk_idle_done:1;
+        /** tx_done : R/W; bitpos: [14]; default: 0;
          *  This is the enable bit for tx_done_int_st register.
          */
-        uint32_t tx_done_int_ena:1;
+        uint32_t tx_done:1;
         uint32_t reserved_15:3;
-        /** at_cmd_char_det_int_ena : R/W; bitpos: [18]; default: 0;
+        /** at_cmd_char_det : R/W; bitpos: [18]; default: 0;
          *  This is the enable bit for at_cmd_char_det_int_st register.
          */
-        uint32_t at_cmd_char_det_int_ena:1;
-        /** wakeup_int_ena : R/W; bitpos: [19]; default: 0;
+        uint32_t at_cmd_char_det:1;
+        /** wakeup : R/W; bitpos: [19]; default: 0;
          *  This is the enable bit for uart_wakeup_int_st register.
          */
-        uint32_t wakeup_int_ena:1;
+        uint32_t wakeup:1;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -332,75 +331,75 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rxfifo_full_int_clr : WT; bitpos: [0]; default: 0;
+        /** rxfifo_full : WT; bitpos: [0]; default: 0;
          *  Set this bit to clear the rxfifo_full_int_raw interrupt.
          */
-        uint32_t rxfifo_full_int_clr:1;
-        /** txfifo_empty_int_clr : WT; bitpos: [1]; default: 0;
+        uint32_t rxfifo_full:1;
+        /** txfifo_empty : WT; bitpos: [1]; default: 0;
          *  Set this bit to clear txfifo_empty_int_raw interrupt.
          */
-        uint32_t txfifo_empty_int_clr:1;
-        /** parity_err_int_clr : WT; bitpos: [2]; default: 0;
+        uint32_t txfifo_empty:1;
+        /** parity_err : WT; bitpos: [2]; default: 0;
          *  Set this bit to clear parity_err_int_raw interrupt.
          */
-        uint32_t parity_err_int_clr:1;
-        /** frm_err_int_clr : WT; bitpos: [3]; default: 0;
+        uint32_t parity_err:1;
+        /** frm_err : WT; bitpos: [3]; default: 0;
          *  Set this bit to clear frm_err_int_raw interrupt.
          */
-        uint32_t frm_err_int_clr:1;
-        /** rxfifo_ovf_int_clr : WT; bitpos: [4]; default: 0;
+        uint32_t frm_err:1;
+        /** rxfifo_ovf : WT; bitpos: [4]; default: 0;
          *  Set this bit to clear rxfifo_ovf_int_raw interrupt.
          */
-        uint32_t rxfifo_ovf_int_clr:1;
-        /** dsr_chg_int_clr : WT; bitpos: [5]; default: 0;
+        uint32_t rxfifo_ovf:1;
+        /** dsr_chg : WT; bitpos: [5]; default: 0;
          *  Set this bit to clear the dsr_chg_int_raw interrupt.
          */
-        uint32_t dsr_chg_int_clr:1;
-        /** cts_chg_int_clr : WT; bitpos: [6]; default: 0;
+        uint32_t dsr_chg:1;
+        /** cts_chg : WT; bitpos: [6]; default: 0;
          *  Set this bit to clear the cts_chg_int_raw interrupt.
          */
-        uint32_t cts_chg_int_clr:1;
-        /** brk_det_int_clr : WT; bitpos: [7]; default: 0;
+        uint32_t cts_chg:1;
+        /** brk_det : WT; bitpos: [7]; default: 0;
          *  Set this bit to clear the brk_det_int_raw interrupt.
          */
-        uint32_t brk_det_int_clr:1;
-        /** rxfifo_tout_int_clr : WT; bitpos: [8]; default: 0;
+        uint32_t brk_det:1;
+        /** rxfifo_tout : WT; bitpos: [8]; default: 0;
          *  Set this bit to clear the rxfifo_tout_int_raw interrupt.
          */
-        uint32_t rxfifo_tout_int_clr:1;
-        /** sw_xon_int_clr : WT; bitpos: [9]; default: 0;
+        uint32_t rxfifo_tout:1;
+        /** sw_xon : WT; bitpos: [9]; default: 0;
          *  Set this bit to clear the sw_xon_int_raw interrupt.
          */
-        uint32_t sw_xon_int_clr:1;
-        /** sw_xoff_int_clr : WT; bitpos: [10]; default: 0;
+        uint32_t sw_xon:1;
+        /** sw_xoff : WT; bitpos: [10]; default: 0;
          *  Set this bit to clear the sw_xoff_int_raw interrupt.
          */
-        uint32_t sw_xoff_int_clr:1;
-        /** glitch_det_int_clr : WT; bitpos: [11]; default: 0;
+        uint32_t sw_xoff:1;
+        /** glitch_det : WT; bitpos: [11]; default: 0;
          *  Set this bit to clear the glitch_det_int_raw interrupt.
          */
-        uint32_t glitch_det_int_clr:1;
-        /** tx_brk_done_int_clr : WT; bitpos: [12]; default: 0;
+        uint32_t glitch_det:1;
+        /** tx_brk_done : WT; bitpos: [12]; default: 0;
          *  Set this bit to clear the tx_brk_done_int_raw interrupt..
          */
-        uint32_t tx_brk_done_int_clr:1;
-        /** tx_brk_idle_done_int_clr : WT; bitpos: [13]; default: 0;
+        uint32_t tx_brk_done:1;
+        /** tx_brk_idle_done : WT; bitpos: [13]; default: 0;
          *  Set this bit to clear the tx_brk_idle_done_int_raw interrupt.
          */
-        uint32_t tx_brk_idle_done_int_clr:1;
-        /** tx_done_int_clr : WT; bitpos: [14]; default: 0;
+        uint32_t tx_brk_idle_done:1;
+        /** tx_done : WT; bitpos: [14]; default: 0;
          *  Set this bit to clear the tx_done_int_raw interrupt.
          */
-        uint32_t tx_done_int_clr:1;
+        uint32_t tx_done:1;
         uint32_t reserved_15:3;
-        /** at_cmd_char_det_int_clr : WT; bitpos: [18]; default: 0;
+        /** at_cmd_char_det : WT; bitpos: [18]; default: 0;
          *  Set this bit to clear the at_cmd_char_det_int_raw interrupt.
          */
-        uint32_t at_cmd_char_det_int_clr:1;
-        /** wakeup_int_clr : WT; bitpos: [19]; default: 0;
+        uint32_t at_cmd_char_det:1;
+        /** wakeup : WT; bitpos: [19]; default: 0;
          *  Set this bit to clear the uart_wakeup_int_raw interrupt.
          */
-        uint32_t wakeup_int_clr:1;
+        uint32_t wakeup:1;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -413,10 +412,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** clkdiv : R/W; bitpos: [11:0]; default: 694;
+        /** clkdiv_int : R/W; bitpos: [11:0]; default: 694;
          *  The integral part of the frequency divider factor.
          */
-        uint32_t clkdiv:12;
+        uint32_t clkdiv_int:12;
         uint32_t reserved_12:8;
         /** clkdiv_frag : R/W; bitpos: [23:20]; default: 0;
          *  The decimal part of the frequency divider factor.
@@ -1019,10 +1018,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** at_cmd_char : R/W; bitpos: [7:0]; default: 43;
+        /** data : R/W; bitpos: [7:0]; default: 43;
          *  This register is used to configure the content of at_cmd char.
          */
-        uint32_t at_cmd_char:8;
+        uint32_t data:8;
         /** char_num : R/W; bitpos: [15:8]; default: 3;
          *  This register is used to configure the num of continuous at_cmd chars received by
          *  receiver.
@@ -1116,7 +1115,8 @@ typedef struct lp_uart_dev_t {
     volatile lp_uart_id_reg_t id;
 } lp_uart_dev_t;
 
-extern lp_uart_dev_t LP_UART;
+// We map the LP_UART instance to the uart_dev_t struct for convinience of using the same HAL/LL. See soc/uart_struct.h
+// extern lp_uart_dev_t LP_UART;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_uart_dev_t) == 0xa0, "Invalid size of lp_uart_dev_t structure");

@@ -4,11 +4,12 @@ Logging library
 Overview
 --------
 
-The logging library provides two ways for setting log verbosity:
+The logging library provides three ways for setting log verbosity:
 
 - **At compile time**: in menuconfig, set the verbosity level using the option :ref:`CONFIG_LOG_DEFAULT_LEVEL`.
-- Optionally, also in menuconfig, set the maximum verbosity level using the option :ref:`CONFIG_LOG_MAXIMUM_LEVEL`. By default this is the same as the default level, but it can be set higher in order to compile more optional logs into the firmware.
-- **At runtime**: all logs for verbosity levels lower than :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. The function :cpp:func:`esp_log_level_set` can be used to set a logging level on a per module basis. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
+- Optionally, also in menuconfig, set the maximum verbosity level using the option :ref:`CONFIG_LOG_MAXIMUM_LEVEL`. By default, this is the same as the default level, but it can be set higher in order to compile more optional logs into the firmware.
+- **At runtime**: all logs for verbosity levels lower than :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. The function :cpp:func:`esp_log_level_set` can be used to set a logging level on a per-module basis. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
+- **At runtime**: if :ref:`CONFIG_LOG_MASTER_LEVEL` is enabled then a ``Master logging level`` can be set using :cpp:func:`esp_log_set_level_master`. This option adds an additional logging level check for all compiled logs. Note that this will increase application size. This feature is useful if you want to compile in a lot of logs that are selectable at runtime, but also want to avoid the performance hit from looking up the tags and their log level when you don't want log output.
 
 There are the following verbosity levels:
 
@@ -81,8 +82,39 @@ To configure logging output per module at runtime, add calls to the function :cp
 
    The "DRAM" and "EARLY" log macro variants documented above do not support per module setting of log verbosity. These macros will always log at the "default" verbosity level, which can only be changed at runtime by calling ``esp_log_level("*", level)``.
 
+Even when logs are disabled by using a tag name they will still require a processing time of around 10.9 microseconds per entry.
+
+Master Logging Level
+^^^^^^^^^^^^^^^^^^^^
+
+To enable the Master logging level feature, the :ref:`CONFIG_LOG_MASTER_LEVEL` option must be enabled. It adds an additional level check for ``ESP_LOGx`` macros before calling :cpp:func:`esp_log_write`. This allows to set a higher :ref:`CONFIG_LOG_MAXIMUM_LEVEL`, but not inflict a performance hit during normal operation (only when directed). An application may set the master logging level (:cpp:func:`esp_log_set_level_master`) globally to enforce a maximum log level. ``ESP_LOGx`` macros above this level will be skipped immediately, rather than calling :cpp:func:`esp_log_write` and doing a tag lookup. It is recommended to only use this in an top-level application and not in shared components as this would override the global log level for any user using the component. By default, at startup, the Master logging level is :ref:`CONFIG_LOG_DEFAULT_LEVEL`.
+
+Note that this feature increases application size because the additional check is added into all ``ESP_LOGx`` macros.
+
+The snippet below shows how it works. Setting the Master logging level to ``ESP_LOG_NONE`` disables all logging globally. :cpp:func:`esp_log_level_set` does not currently affect logging. But after the Master logging level is released, the logs will be printed as set by :cpp:func:`esp_log_level_set`.
+
+.. code-block:: c
+
+   // Master logging level is CONFIG_LOG_DEFAULT_LEVEL at start up and = ESP_LOG_INFO
+   ESP_LOGI("lib_name", "Message for print");          // prints a INFO message
+   esp_log_level_set("lib_name", ESP_LOG_WARN);        // enables WARN logs from lib_name
+
+   esp_log_set_level_master(ESP_LOG_NONE);             // disables all logs globally. esp_log_level_set has no effect at the moment.
+
+   ESP_LOGW("lib_name", "Message for print");          // no print, Master logging level blocks it
+   esp_log_level_set("lib_name", ESP_LOG_INFO);        // enable INFO logs from lib_name
+   ESP_LOGI("lib_name", "Message for print");          // no print, Master logging level blocks it
+
+   esp_log_set_level_master(ESP_LOG_INFO);             // enables all INFO logs globally.
+
+   ESP_LOGI("lib_name", "Message for print");          // prints a INFO message
+
 Logging to Host via JTAG
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the logging library uses the vprintf-like function to write formatted output to the dedicated UART. By calling a simple API, all log output may be routed to JTAG instead, making logging several times faster. For details, please refer to Section :ref:`app_trace-logging-to-host`.
 
+Thread Safety
+^^^^^^^^^^^^^
+
+The log string is first written into a memory buffer and then sent to the UART for printing. Log calls are thread-safe, i.e., logs of different threads do not conflict with each other.

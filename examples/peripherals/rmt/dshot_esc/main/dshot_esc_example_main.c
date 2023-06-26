@@ -10,7 +10,11 @@
 #include "driver/rmt_tx.h"
 #include "dshot_esc_encoder.h"
 
+#if CONFIG_IDF_TARGET_ESP32H2
+#define DSHOT_ESC_RESOLUTION_HZ 32000000 // 32MHz resolution, DSHot protocol needs a relative high resolution
+#else
 #define DSHOT_ESC_RESOLUTION_HZ 40000000 // 40MHz resolution, DSHot protocol needs a relative high resolution
+#endif
 #define DSHOT_ESC_GPIO_NUM      0
 
 static const char *TAG = "example";

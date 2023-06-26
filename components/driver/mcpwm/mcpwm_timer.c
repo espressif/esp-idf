@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ static void mcpwm_timer_unregister_from_group(mcpwm_timer_t *timer)
     mcpwm_release_group_handle(group);
 }
 
-static esp_err_t mcpwm_timer_destory(mcpwm_timer_t *timer)
+static esp_err_t mcpwm_timer_destroy(mcpwm_timer_t *timer)
 {
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(timer->intr), TAG, "uninstall interrupt service failed");
@@ -136,7 +136,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
 
 err:
     if (timer) {
-        mcpwm_timer_destory(timer);
+        mcpwm_timer_destroy(timer);
     }
     return ret;
 }
@@ -159,7 +159,7 @@ esp_err_t mcpwm_del_timer(mcpwm_timer_handle_t timer)
 
     ESP_LOGD(TAG, "del timer (%d,%d)", group->group_id, timer_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_timer_destory(timer), TAG, "destory timer failed");
+    ESP_RETURN_ON_ERROR(mcpwm_timer_destroy(timer), TAG, "destroy timer failed");
     return ESP_OK;
 }
 
@@ -171,7 +171,7 @@ esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const
     int timer_id = timer->timer_id;
     mcpwm_hal_context_t *hal = &group->hal;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_empty) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_empty), ESP_ERR_INVALID_ARG, TAG, "on_empty callback not in IRAM");
     }

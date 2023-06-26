@@ -241,7 +241,7 @@ static inline void emac_ll_set_back_off_limit(emac_mac_dev_t *mac_regs, uint32_t
 
 static inline void emac_ll_deferral_check_enable(emac_mac_dev_t *mac_regs, bool enable)
 {
-    mac_regs->gmacconfig.padcrcstrip = enable;
+    mac_regs->gmacconfig.deferralcheck = enable;
 }
 
 static inline void emac_ll_set_preamble_length(emac_mac_dev_t *mac_regs, uint32_t len)
@@ -415,6 +415,11 @@ static inline void emac_ll_trans_store_forward_enable(emac_dma_dev_t *dma_regs, 
 static inline void emac_ll_flush_trans_fifo_enable(emac_dma_dev_t *dma_regs, bool enable)
 {
     dma_regs->dmaoperation_mode.flush_tx_fifo = enable;
+}
+
+static inline bool emac_ll_get_flush_trans_fifo(emac_dma_dev_t *dma_regs)
+{
+    return dma_regs->dmaoperation_mode.flush_tx_fifo;
 }
 
 static inline void emac_ll_set_transmit_threshold(emac_dma_dev_t *dma_regs, uint32_t threshold)

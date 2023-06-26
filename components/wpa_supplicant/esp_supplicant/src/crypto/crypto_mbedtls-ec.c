@@ -601,6 +601,14 @@ struct crypto_ec_group *crypto_ec_get_group_from_key(struct crypto_key *key)
 	return (struct crypto_ec_group *)&(mbedtls_pk_ec(*pkey)->MBEDTLS_PRIVATE(grp));
 }
 
+int crypto_ec_key_group(struct crypto_ec_key *key)
+{
+	mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
+
+	int iana_group = (int)crypto_ec_get_mbedtls_to_nist_group_id(mbedtls_pk_ec(*pkey)->MBEDTLS_PRIVATE(grp).id);
+	return iana_group;
+}
+
 struct crypto_bignum *crypto_ec_get_private_key(struct crypto_key *key)
 {
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
@@ -1213,5 +1221,70 @@ cleanup:
 	mbedtls_entropy_free(&entropy);
 	return sh_secret;
 }
+
+
+struct crypto_ec_key *crypto_ec_key_parse_pub(const u8 *der, size_t der_len)
+{
+	int ret;
+	mbedtls_pk_context *pkey = os_zalloc(sizeof(*pkey));
+
+	if (!pkey) {
+		return NULL;
+	}
+
+	mbedtls_pk_init(pkey);
+	ret = mbedtls_pk_parse_public_key(pkey, der, der_len);
+
+	if (ret < 0) {
+		wpa_printf(MSG_ERROR, "failed to parse ec public key");
+		os_free(pkey);
+		return NULL;
+	}
+	return (struct crypto_ec_key *)pkey;
+}
+
+
+void crypto_ec_key_deinit(struct crypto_ec_key *key)
+{
+	mbedtls_pk_free((mbedtls_pk_context *)key);
+	os_free(key);
+}
+
+int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
+					size_t len, const u8 *sig, size_t sig_len)
+{
+	int ret = 0;
+
+	mbedtls_ecdsa_context *ctx_verify = os_malloc(sizeof(mbedtls_ecdsa_context));
+	if (ctx_verify == NULL) {
+		return -1;
+	}
+
+	mbedtls_ecdsa_init(ctx_verify);
+
+	mbedtls_ecp_keypair *ec_key = mbedtls_pk_ec(*((mbedtls_pk_context *)key));
+	mbedtls_ecp_group *grp = &ec_key->MBEDTLS_PRIVATE(grp);
+
+	if ((ret = mbedtls_ecp_group_copy(&ctx_verify->MBEDTLS_PRIVATE(grp),grp)) != 0) {
+		goto cleanup;
+	}
+
+	if ((ret = mbedtls_ecp_copy(&ctx_verify->MBEDTLS_PRIVATE(Q), &ec_key->MBEDTLS_PRIVATE(Q))) != 0) {
+		goto cleanup;
+	}
+
+	if ((ret = mbedtls_ecdsa_read_signature(ctx_verify,
+					data, len,
+					sig, sig_len)) != 0) {
+		goto cleanup;
+	}
+	ret = 1;
+
+cleanup:
+	mbedtls_ecdsa_free(ctx_verify);
+	os_free(ctx_verify);
+	return ret;
+}
+
 
 #endif /* CONFIG_ECC */

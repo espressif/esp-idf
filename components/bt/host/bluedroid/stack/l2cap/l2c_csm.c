@@ -36,7 +36,7 @@
 #include "stack/hcimsgs.h"
 #include "osi/allocator.h"
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (L2CAP_COC_INCLUDED == TRUE)
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
@@ -1117,7 +1117,7 @@ static void l2c_csm_w4_l2ca_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void 
         break;
     }
 }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif /// (L2CAP_COC_INCLUDED == TRUE)
 
 #if (BT_TRACE_VERBOSE == TRUE)
 /*******************************************************************************

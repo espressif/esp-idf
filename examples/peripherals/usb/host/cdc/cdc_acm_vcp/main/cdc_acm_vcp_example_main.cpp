@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -28,25 +28,36 @@ using namespace esp_usb;
 #define EXAMPLE_DATA_BITS    (8)
 
 namespace {
-const char *TAG = "VCP example";
-SemaphoreHandle_t device_disconnected_sem;
+static const char *TAG = "VCP example";
+static SemaphoreHandle_t device_disconnected_sem;
 
 /**
  * @brief Data received callback
  *
  * Just pass received data to stdout
+ *
+ * @param[in] data     Pointer to received data
+ * @param[in] data_len Length of received data in bytes
+ * @param[in] arg      Argument we passed to the device open function
+ * @return
+ *   true:  We have processed the received data
+ *   false: We expect more data
  */
-void handle_rx(uint8_t *data, size_t data_len, void *arg)
+static bool handle_rx(const uint8_t *data, size_t data_len, void *arg)
 {
     printf("%.*s", data_len, data);
+    return true;
 }
 
 /**
  * @brief Device event callback
  *
  * Apart from handling device disconnection it doesn't do anything useful
+ *
+ * @param[in] event    Device event type and data
+ * @param[in] user_ctx Argument we passed to the device open function
  */
-void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
+static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
 {
     switch (event->type) {
         case CDC_ACM_HOST_ERROR:
@@ -69,7 +80,7 @@ void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
  *
  * @param arg Unused
  */
-void usb_lib_task(void *arg)
+static void usb_lib_task(void *arg)
 {
     while (1) {
         // Start handling system events
@@ -89,14 +100,14 @@ void usb_lib_task(void *arg)
 /**
  * @brief Main application
  *
- * This function shows how you can use VCP drivers
+ * This function shows how you can use Virtual COM Port drivers
  */
 extern "C" void app_main(void)
 {
     device_disconnected_sem = xSemaphoreCreateBinary();
     assert(device_disconnected_sem);
 
-    //Install USB Host driver. Should only be called once in entire application
+    // Install USB Host driver. Should only be called once in entire application
     ESP_LOGI(TAG, "Installing USB Host");
     const usb_host_config_t host_config = {
         .skip_phy_setup = false,
@@ -111,7 +122,7 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Installing CDC-ACM driver");
     ESP_ERROR_CHECK(cdc_acm_host_install(NULL));
 
-    // Register VCP drivers to VCP service.
+    // Register VCP drivers to VCP service
     VCP::register_driver<FT23x>();
     VCP::register_driver<CP210x>();
     VCP::register_driver<CH34x>();
@@ -120,13 +131,14 @@ extern "C" void app_main(void)
     while (true) {
         const cdc_acm_host_device_config_t dev_config = {
             .connection_timeout_ms = 5000, // 5 seconds, enough time to plug the device in or experiment with timeout
-            .out_buffer_size = 64,
+            .out_buffer_size = 512,
+            .in_buffer_size = 512,
             .event_cb = handle_event,
             .data_cb = handle_rx,
             .user_arg = NULL,
         };
 
-        // You don't need to know the device's VID and PID. Just plug in any device and the VCP service will pick correct (already registered) driver for the device
+        // You don't need to know the device's VID and PID. Just plug in any device and the VCP service will load correct (already registered) driver for the device
         ESP_LOGI(TAG, "Opening any VCP device...");
         auto vcp = std::unique_ptr<CdcAcmDevice>(VCP::open(&dev_config));
 

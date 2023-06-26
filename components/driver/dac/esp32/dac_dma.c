@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
 #include "hal/adc_ll.h"
-#include "hal/i2s_ll.h"
+#include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "soc/i2s_periph.h"
 #include "../dac_priv_dma.h"
@@ -97,7 +97,9 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
     ESP_LOGD(TAG, "[sclk] %"PRIu32" [mclk] %"PRIu32" [mclk_div] %"PRIu32" [bclk] %"PRIu32" [bclk_div] %"PRIu32, sclk, mclk, mclk_div, bclk, bclk_div);
 
     i2s_ll_tx_clk_set_src(s_ddp->periph_dev, is_apll ? I2S_CLK_SRC_APLL : I2S_CLK_SRC_DEFAULT);
-    i2s_ll_tx_set_mclk(s_ddp->periph_dev, sclk, mclk, mclk_div);
+    i2s_ll_mclk_div_t mclk_div_coeff = {};
+    i2s_hal_calc_mclk_precise_division(sclk, mclk, &mclk_div_coeff);
+    i2s_ll_tx_set_mclk(s_ddp->periph_dev, &mclk_div_coeff);
     i2s_ll_tx_set_bck_div_num(s_ddp->periph_dev, bclk_div);
 
     return ESP_OK;

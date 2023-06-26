@@ -1,0 +1,45 @@
+menu "SoC Settings"
+    # No visible menu/configs for now
+    visible if 0
+
+    menu "MMU Config"
+        # This Config is used for configure the MMU.
+        # Be configured based on flash size selection.
+        # Invisible to users.
+
+        config MMU_PAGE_SIZE_16KB
+            bool
+            default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_1MB
+            default n
+
+        config MMU_PAGE_SIZE_32KB
+            bool
+            default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_2MB
+            default n
+
+        config MMU_PAGE_SIZE_64KB
+            bool
+            default y if !MMU_PAGE_SIZE_32KB && !MMU_PAGE_SIZE_16KB
+            default n
+
+        config MMU_PAGE_MODE
+            string
+            default "8KB" if MMU_PAGE_SIZE_8KB
+            default "16KB" if MMU_PAGE_SIZE_16KB
+            default "32KB" if MMU_PAGE_SIZE_32KB
+            default "64KB" if MMU_PAGE_SIZE_64KB
+
+        config MMU_PAGE_SIZE
+            # Some chips support different flash MMU page sizes: 64k, 32k, 16k.
+            # Since the number of MMU pages is limited, the maximum flash size supported
+            # for each page size is reduced proportionally: 4 MB, 2MB, 1MB. To make best
+            # use of small flash sizes (reducing the wasted space due to alignment), we
+            # need to use the smallest possible MMU page size for the given flash size.
+            hex
+            default 0x2000 if MMU_PAGE_SIZE_8KB
+            default 0x4000 if MMU_PAGE_SIZE_16KB
+            default 0x8000 if MMU_PAGE_SIZE_32KB
+            default 0x10000 if MMU_PAGE_SIZE_64KB
+    endmenu
+
+endmenu

@@ -20,15 +20,20 @@
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
+
+#if SOC_LP_AON_SUPPORTED
+#include "hal/lp_aon_hal.h"
+#else
 #include "hal/rtc_hal.h"
+#endif
+
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
 
 static const char *TAG = "sleep";
-
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
 
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 void gpio_sleep_mode_config_apply(void)
@@ -104,10 +109,7 @@ void esp_sleep_enable_gpio_switch(bool enable)
     }
 }
 
-#endif // SOC_GPIO_SUPPORT_SLP_SWITCH
-
-// TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
 {
     gpio_hal_context_t gpio_hal = {
@@ -145,11 +147,11 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
         }
     }
 }
-#endif
+#endif // !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 void esp_deep_sleep_wakeup_io_reset(void)
 {
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     uint32_t rtc_io_mask = rtc_hal_ext1_get_wakeup_pins();
     // Disable ext1 wakeup before releasing hold, such that wakeup status can reflect the correct wakeup pin
     rtc_hal_ext1_clear_wakeup_pins();
@@ -180,3 +182,19 @@ void esp_deep_sleep_wakeup_io_reset(void)
     }
 #endif
 }
+
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
+{
+/* If the TOP domain is powered off, the GPIO will also be powered off during sleep,
+   and all configurations in the sleep state of GPIO will not take effect.*/
+#if !CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+#endif
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+    return ESP_OK;
+}
+#endif

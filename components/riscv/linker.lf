@@ -2,4 +2,6 @@
 archive: libriscv.a
 entries:
     interrupt (noflash_text)
+    interrupt:intr_handler_get (default)
+    interrupt:intr_handler_set (default)
     vectors (noflash_text)

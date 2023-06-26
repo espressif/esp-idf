@@ -26,8 +26,6 @@
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/memprot.h"
 #else
 #include "esp_memprot.h"
 #endif
@@ -196,20 +194,22 @@ static void panic_handler(void *frame, bool pseudo_excause)
  * This function must always be in IRAM as it is required to
  * re-enable the flash cache.
  */
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 static void IRAM_ATTR panic_enable_cache(void)
 {
     int core_id = esp_cpu_get_core_id();
-
     if (!spi_flash_cache_enabled()) {
         esp_ipc_isr_stall_abort();
         spi_flash_enable_cache(core_id);
     }
 }
+#endif
 
 void IRAM_ATTR panicHandler(void *frame)
 {
-
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     panic_enable_cache();
+#endif
     // This panic handler gets called for when the double exception vector,
     // kernel exception vector gets used; as well as handling interrupt-based
     // faults cache error, wdt expiry. EXCAUSE register gets written with
@@ -219,7 +219,9 @@ void IRAM_ATTR panicHandler(void *frame)
 
 void IRAM_ATTR xt_unhandled_exception(void *frame)
 {
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     panic_enable_cache();
+#endif
     panic_handler(frame, false);
 }
 

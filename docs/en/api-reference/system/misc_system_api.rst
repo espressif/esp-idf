@@ -3,12 +3,12 @@ Miscellaneous System APIs
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_BASE_MAC_BLOCK: default="BLK1", esp32="BLK0"}
-{IDF_TARGET_CPU_RESET_DES: default="both CPUs are reset", esp32c3="the CPU is reset", esp32c2="the CPU is reset"}
+{IDF_TARGET_CPU_RESET_DES: default="the CPU is reset", esp32="both CPUs are reset", esp32s3="both CPUs are reset"}
 
 Software Reset
 --------------
 
-To perform software reset of the chip, the :cpp:func:`esp_restart` function is provided. When the function is called, execution of the program stops, {IDF_TARGET_CPU_RESET_DES}, and the application is loaded by the bootloader and starts execution again.
+To perform software reset of the chip, the :cpp:func:`esp_restart` function is provided. When the function is called, execution of the program stops, {IDF_TARGET_CPU_RESET_DES}, the application is loaded by the bootloader and starts execution again.
 
 Additionally, the :cpp:func:`esp_register_shutdown_handler` function can register a routine that will be automatically called before a restart (that is triggered by :cpp:func:`esp_restart`) occurs. This is similar to the functionality of ``atexit`` POSIX function.
 
@@ -23,7 +23,7 @@ Heap Memory
 Two heap-memory-related functions are provided:
 
 * :cpp:func:`esp_get_free_heap_size` returns the current size of free heap memory.
-* :cpp:func:`esp_get_minimum_free_heap_size` returns the minimum size of free heap memory that has ever been available (i.e., the smallest size of free heap memory in the applications lifetime).
+* :cpp:func:`esp_get_minimum_free_heap_size` returns the minimum size of free heap memory that has ever been available (i.e., the smallest size of free heap memory in the application's lifetime).
 
 Note that ESP-IDF supports multiple heaps with different capabilities. The functions mentioned in this section return the size of heap memory that can be allocated using the ``malloc`` family of functions. For further information about heap memory, see :doc:`Heap Memory Allocation <mem_alloc>`.
 
@@ -111,7 +111,7 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
 Custom MAC Address in eFuse
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp__mac_get_custom`. Users can also use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp__mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
+When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. Users can also use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp_efuse_mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
 
 .. only:: esp32
 
@@ -169,8 +169,8 @@ Once custom eFuse MAC address has been obtained (using :cpp:func:`esp_efuse_mac_
 
 .. _local-mac-addresses:
 
-Local vs Universal MAC Addresses
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Local Versus Universal MAC Addresses
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 {IDF_TARGET_NAME} comes pre-programmed with enough valid Espressif universally administered MAC addresses for all internal interfaces. The table above shows how to calculate and derive the MAC address for a specific interface according to the base MAC address.
 

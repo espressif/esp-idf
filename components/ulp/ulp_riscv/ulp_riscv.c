@@ -20,8 +20,58 @@
 #include "hal/misc.h"
 #include "ulp_common.h"
 #include "esp_rom_sys.h"
+#include "esp_check.h"
+#include "esp_private/rtc_ctrl.h"
 
 __attribute__((unused)) static const char* TAG = "ulp-riscv";
+
+esp_err_t ulp_riscv_isr_register(intr_handler_t fn, void *arg, uint32_t mask)
+{
+    /* Verify that the ISR callback is valid */
+    ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, "ULP RISC-V ISR is NULL");
+
+    /* Verify that the interrupt bits are valid */
+    if (!(mask & (RTC_CNTL_COCPU_INT_ST_M | RTC_CNTL_COCPU_TRAP_INT_ST_M))) {
+        ESP_LOGE(TAG, "Invalid bitmask for ULP RISC-V interrupts");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Make sure we enable only the  ULP interrupt bits.
+     * We don't want other RTC interrupts triggering this ISR.
+     */
+    mask &= (RTC_CNTL_COCPU_INT_ST_M | RTC_CNTL_COCPU_TRAP_INT_ST_M);
+
+    /* Register the RTC ISR */
+    ESP_RETURN_ON_ERROR(rtc_isr_register(fn, arg, mask, 0), TAG, "rtc_isr_register() failed");
+
+    /* Enable the interrupt bits */
+    SET_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, mask);
+
+    return ESP_OK;
+}
+
+esp_err_t ulp_riscv_isr_deregister(intr_handler_t fn, void *arg, uint32_t mask)
+{
+    /* Verify that the ISR callback is valid */
+    ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, "ULP RISC-V ISR is NULL");
+
+    /* Verify that the interrupt bits are valid */
+    if (!(mask & (RTC_CNTL_COCPU_INT_ST_M | RTC_CNTL_COCPU_TRAP_INT_ST_M))) {
+        ESP_LOGE(TAG, "Invalid bitmask for ULP RISC-V interrupts");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Make sure we disable only the ULP interrupt bits */
+    mask &= (RTC_CNTL_COCPU_INT_ST_M | RTC_CNTL_COCPU_TRAP_INT_ST_M);
+
+    /* Disable the interrupt bits */
+    CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, mask);
+
+    /* Deregister the RTC ISR */
+    ESP_RETURN_ON_ERROR(rtc_isr_deregister(fn, arg), TAG, "rtc_isr_deregister() failed");
+
+    return ESP_OK;
+}
 
 static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup_source)
 {
@@ -139,6 +189,15 @@ void ulp_riscv_halt(void)
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);
 
     /* Resets the processor */
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
+}
+
+void ulp_riscv_reset()
+{
+    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT | RTC_CNTL_COCPU_DONE);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
+    esp_rom_delay_us(20);
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT | RTC_CNTL_COCPU_DONE);
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 }
 

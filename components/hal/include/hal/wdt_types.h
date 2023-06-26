@@ -1,18 +1,12 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
+
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +59,8 @@ typedef enum {
     WDT_RESET_SIG_LENGTH_3_2us = 7     /*!< 3.2 us */
 } wdt_reset_sig_length_t;
 
+
+typedef soc_periph_mwdt_clk_src_t mwdt_clock_source_t;
 
 #ifdef __cplusplus
 }

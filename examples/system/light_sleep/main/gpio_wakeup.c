@@ -12,7 +12,8 @@
 /* Most development boards have "boot" button attached to GPIO0.
  * You can also change this to another pin.
  */
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2 \
+    || CONFIG_IDF_TARGET_ESP32C6
 #define BOOT_BUTTON_NUM         9
 #else
 #define BOOT_BUTTON_NUM         0

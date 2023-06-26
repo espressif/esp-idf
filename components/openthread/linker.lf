@@ -1,0 +1,13 @@
+[mapping:openthread]
+archive: libopenthread.a
+entries:
+  if OPENTHREAD_CSL_ENABLE = y || OPENTHREAD_LINK_METRICS = y:
+    mesh_forwarder (noflash_text)
+    mac_frame (noflash_text)
+    csl_tx_scheduler (noflash_text)
+    link_metrics (noflash_text)
+    mac (noflash_text)
+    sub_mac (noflash_text)
+
+  if OPENTHREAD_RCP_SPI = y:
+    ncp_spi (noflash_text)

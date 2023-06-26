@@ -23,6 +23,9 @@ extern "C" {
 #include "esp_attr.h"
 #include "esp_assert.h"
 
+/* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
+#define MWDT_LL_DEFAULT_CLK_PRESCALER 40000
+
 /* The value that needs to be written to MWDT_LL_WKEY to write-enable the wdt registers */
 #define MWDT_LL_WKEY_VALUE 0x50D83AA1
 
@@ -273,6 +276,35 @@ FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
 FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
 {
     hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
+}
+
+/**
+ * @brief Set the clock source for the MWDT.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_src Clock source
+ */
+FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
+{
+    /* No clk source option on S3, always use APB as clock source */
+    (void)hw;
+    (void)clk_src;
+
+    HAL_ASSERT(clk_src == MWDT_CLK_SRC_APB);
+}
+
+/**
+ * @brief Enable MWDT module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
+{
+    /* No MWDT specific clock bit on ESP32S3 */
+    (void)hw;
+    (void)en;
 }
 
 #ifdef __cplusplus

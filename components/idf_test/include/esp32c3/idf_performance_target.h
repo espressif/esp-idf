@@ -20,6 +20,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              670000
 
+#define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        40*1000*1000
 #if !CONFIG_FREERTOS_SMP // IDF-5223
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               15
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        15
@@ -39,3 +40,11 @@
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_SQRT                                     140
+
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 5
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              5

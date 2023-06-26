@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import pytest
@@ -15,6 +15,5 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_i2s_adc_dac(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    #  ADC_DMA_read test takes more than 30 sec
+    dut.run_all_single_board_cases(timeout=60)

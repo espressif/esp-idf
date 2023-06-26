@@ -7,8 +7,13 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#if __has_include(<bsd/string.h>)
+// for strlcpy
+#include <bsd/string.h>
+#endif
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
@@ -19,21 +24,29 @@
 #include "esp_log.h"
 
 static const char *TAG = "linux_spiflash";
+
 static void *s_spiflash_mem_file_buf = NULL;
+static int s_spiflash_mem_file_fd = -1;
 static const esp_partition_mmap_handle_t s_default_partition_mmap_handle = 0;
 
+// input control structure, always contains what was specified by caller
+static esp_partition_file_mmap_ctrl_t s_esp_partition_file_mmap_ctrl_input = {0};
+// actual control structure, contains what is actually used by the esp_partition
+static esp_partition_file_mmap_ctrl_t s_esp_partition_file_mmap_ctrl_act = {0};
+
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
-// variables holding stats and controlling wear emulation
-size_t s_esp_partition_stat_read_ops = 0;
-size_t s_esp_partition_stat_write_ops = 0;
-size_t s_esp_partition_stat_read_bytes = 0;
-size_t s_esp_partition_stat_write_bytes = 0;
-size_t s_esp_partition_stat_erase_ops = 0;
-size_t s_esp_partition_stat_total_time = 0;
-size_t s_esp_partition_emulated_flash_life = SIZE_MAX;
+// variables holding stats and controlling power-off emulation
+static size_t s_esp_partition_stat_read_ops = 0;
+static size_t s_esp_partition_stat_write_ops = 0;
+static size_t s_esp_partition_stat_read_bytes = 0;
+static size_t s_esp_partition_stat_write_bytes = 0;
+static size_t s_esp_partition_stat_erase_ops = 0;
+static size_t s_esp_partition_stat_total_time = 0;
+static size_t s_esp_partition_emulated_power_off_counter = SIZE_MAX;
+static uint8_t s_esp_partition_emulated_power_off_mode = 0;
 
 // tracking erase count individually for each emulated sector
-size_t s_esp_partition_stat_sector_erase_count[ESP_PARTITION_EMULATED_FLASH_SIZE / ESP_PARTITION_EMULATED_SECTOR_SIZE] = {0};
+static size_t *s_esp_partition_stat_sector_erase_count = NULL;
 
 // forward declaration of hooks
 static void esp_partition_hook_read(const void *srcAddr, const size_t size);
@@ -86,71 +99,191 @@ const char *esp_partition_subtype_to_str(const uint32_t type, const uint32_t sub
 
 esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 {
-    //create temporary file to hold complete SPIFLASH size
-    char temp_spiflash_mem_file_name[PATH_MAX] = {"/tmp/idf-partition-XXXXXX"};
-    int spiflash_mem_file_fd = mkstemp(temp_spiflash_mem_file_name);
+    // temporary file is used only if control structure doesn't specify file name.
+    bool open_existing_file = false;
 
-    if (spiflash_mem_file_fd == -1) {
-        ESP_LOGE(TAG, "Failed to create SPI FLASH emulation file %s: %s", temp_spiflash_mem_file_name, strerror(errno));
-        return ESP_ERR_NOT_FINISHED;
+    if (strlen(s_esp_partition_file_mmap_ctrl_input.flash_file_name) > 0) {
+        // Open existing file. If size or partition table file were specified, raise errors
+        if (s_esp_partition_file_mmap_ctrl_input.flash_file_size > 0) {
+            ESP_LOGE(TAG, "Flash emulation file size: %u was specified while together with the file name: %s (illegal). Use file size = 0",
+                     s_esp_partition_file_mmap_ctrl_input.flash_file_size,
+                     s_esp_partition_file_mmap_ctrl_input.flash_file_name);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if (strlen(s_esp_partition_file_mmap_ctrl_input.partition_file_name) > 0) {
+            ESP_LOGE(TAG, "Partition file name: %s was specified together with the flash emulation file name: %s (illegal). Use empty partition file name",
+                     s_esp_partition_file_mmap_ctrl_input.partition_file_name,
+                     s_esp_partition_file_mmap_ctrl_input.flash_file_name);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        // copy flash file name to actual control struct
+        strlcpy(s_esp_partition_file_mmap_ctrl_act.flash_file_name, s_esp_partition_file_mmap_ctrl_input.flash_file_name, sizeof(s_esp_partition_file_mmap_ctrl_act.flash_file_name));
+
+        open_existing_file = true;
+    } else {
+        // Open temporary file. If size was specified, also partition table has to be specified, otherwise raise error.
+        // If none of size, partition table were specified, defaults are used.
+        // Name of temporary file is available in s_esp_partition_file_mmap_ctrl.flash_file_name
+
+        bool has_partfile = (strlen(s_esp_partition_file_mmap_ctrl_input.partition_file_name) > 0);
+        bool has_len = (s_esp_partition_file_mmap_ctrl_input.flash_file_size > 0);
+
+        // conflicting input
+        if (has_partfile != has_len) {
+            ESP_LOGE(TAG, "Invalid combination of Partition file name: %s flash file size: %u was specified. Use either both parameters or none.",
+                     s_esp_partition_file_mmap_ctrl_input.partition_file_name,
+                     s_esp_partition_file_mmap_ctrl_input.flash_file_size);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        // check if partition file is present, if not, use default
+        if (!has_partfile) {
+            strlcpy(s_esp_partition_file_mmap_ctrl_act.partition_file_name, BUILD_DIR "/partition_table/partition-table.bin", sizeof(s_esp_partition_file_mmap_ctrl_act.partition_file_name));
+        } else {
+            strlcpy(s_esp_partition_file_mmap_ctrl_act.partition_file_name, s_esp_partition_file_mmap_ctrl_input.partition_file_name, sizeof(s_esp_partition_file_mmap_ctrl_act.partition_file_name));
+        }
+
+        // check if flash size is present, if not set to default
+        if (!has_len) {
+            s_esp_partition_file_mmap_ctrl_act.flash_file_size = ESP_PARTITION_DEFAULT_EMULATED_FLASH_SIZE;
+        } else {
+            s_esp_partition_file_mmap_ctrl_act.flash_file_size = s_esp_partition_file_mmap_ctrl_input.flash_file_size;
+        }
+
+        // specify pattern file name for temporary flash file
+        strlcpy(s_esp_partition_file_mmap_ctrl_act.flash_file_name, "/tmp/idf-partition-XXXXXX", sizeof(s_esp_partition_file_mmap_ctrl_act.flash_file_name));
     }
 
-    if (ftruncate(spiflash_mem_file_fd, ESP_PARTITION_EMULATED_FLASH_SIZE) != 0) {
-        ESP_LOGE(TAG, "Failed to set size of SPI FLASH memory emulation file %s: %s", temp_spiflash_mem_file_name, strerror(errno));
-        return ESP_ERR_INVALID_SIZE;
+    esp_err_t ret = ESP_OK;
+
+    if (open_existing_file) {
+
+        s_spiflash_mem_file_fd = open(s_esp_partition_file_mmap_ctrl_act.flash_file_name, O_RDWR);
+
+        if (s_spiflash_mem_file_fd == -1) {
+            ESP_LOGE(TAG, "Failed to open SPI FLASH emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+            return ESP_ERR_NOT_FOUND;
+        }
+
+        do {
+            // seek to the end
+            off_t size = lseek(s_spiflash_mem_file_fd, 0L, SEEK_END);
+            if (size < 0) {
+                ESP_LOGE(TAG, "Failed to seek in SPI FLASH emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+                ret = ESP_ERR_NOT_FINISHED;
+                break;
+            }
+
+            s_esp_partition_file_mmap_ctrl_act.flash_file_size = size;
+
+            // seek to beginning
+            size = lseek(s_spiflash_mem_file_fd, 0L, SEEK_SET);
+            if (size < 0) {
+                ESP_LOGE(TAG, "Failed to seek in SPI FLASH emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+                ret = ESP_ERR_NOT_FINISHED;
+                break;
+            }
+
+            //create memory-mapping for the flash holder file
+            if ((s_spiflash_mem_file_buf = mmap(NULL, s_esp_partition_file_mmap_ctrl_act.flash_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, s_spiflash_mem_file_fd, 0)) == MAP_FAILED) {
+                ESP_LOGE(TAG, "Failed to mmap() SPI FLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+                ret = ESP_ERR_NOT_FINISHED;
+                break;
+            }
+        } while (false);
+    } else {
+        //create temporary file to hold complete SPIFLASH size
+        s_spiflash_mem_file_fd = mkstemp(s_esp_partition_file_mmap_ctrl_act.flash_file_name);
+
+        if (s_spiflash_mem_file_fd == -1) {
+            ESP_LOGE(TAG, "Failed to create SPI FLASH emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+            return ESP_ERR_NOT_FINISHED;
+        }
+
+        do {
+            // resize file
+            if (ftruncate(s_spiflash_mem_file_fd, s_esp_partition_file_mmap_ctrl_act.flash_file_size) != 0) {
+                ESP_LOGE(TAG, "Failed to set size of SPI FLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+                ret = ESP_ERR_INVALID_SIZE;
+                break;
+            }
+
+            ESP_LOGV(TAG, "SPIFLASH memory emulation file created: %s (size: %d B)", s_esp_partition_file_mmap_ctrl_act.flash_file_name, s_esp_partition_file_mmap_ctrl_act.flash_file_size);
+
+            // create memory-mapping for the flash holder file
+            if ((s_spiflash_mem_file_buf = mmap(NULL, s_esp_partition_file_mmap_ctrl_act.flash_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, s_spiflash_mem_file_fd, 0)) == MAP_FAILED) {
+                ESP_LOGE(TAG, "Failed to mmap() SPI FLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+                ret = ESP_ERR_NO_MEM;
+                break;
+            }
+
+            // initialize whole range with bit-1 (NOR FLASH default)
+            memset(s_spiflash_mem_file_buf, 0xFF, s_esp_partition_file_mmap_ctrl_act.flash_file_size);
+
+            // upload partition table to the mmap file at real offset as in SPIFLASH
+            FILE *f_partition_table = fopen(s_esp_partition_file_mmap_ctrl_act.partition_file_name, "r+");
+            if (f_partition_table == NULL) {
+                ESP_LOGE(TAG, "Failed to open partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
+                ret = ESP_ERR_NOT_FOUND;
+                break;
+            }
+
+            if (fseek(f_partition_table, 0L, SEEK_END) != 0) {
+                ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
+                ret =  ESP_ERR_INVALID_SIZE;
+                break;
+            }
+
+            int partition_table_file_size = ftell(f_partition_table);
+            ESP_LOGV(TAG, "Using partition table file %s (size: %d B):", s_esp_partition_file_mmap_ctrl_act.partition_file_name, partition_table_file_size);
+
+            // check whether partition table fits into the memory mapped file
+            if (partition_table_file_size + ESP_PARTITION_TABLE_OFFSET > s_esp_partition_file_mmap_ctrl_act.flash_file_size) {
+                ESP_LOGE(TAG, "Flash file: %s (size: %d B) cannot hold partition table requiring %d B",
+                         s_esp_partition_file_mmap_ctrl_act.flash_file_name,
+                         s_esp_partition_file_mmap_ctrl_act.flash_file_size,
+                         partition_table_file_size + ESP_PARTITION_TABLE_OFFSET);
+                ret =  ESP_ERR_INVALID_SIZE;
+                break;
+            }
+
+            //copy partition table from the file to emulated SPIFLASH memory space
+            if (fseek(f_partition_table, 0L, SEEK_SET) != 0) {
+                ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
+                ret =  ESP_ERR_INVALID_SIZE;
+                break;
+            }
+
+            uint8_t *part_table_in_spiflash = s_spiflash_mem_file_buf + ESP_PARTITION_TABLE_OFFSET;
+
+            size_t res = fread(part_table_in_spiflash, 1, partition_table_file_size, f_partition_table);
+            fclose(f_partition_table);
+            if (res != partition_table_file_size) {
+                ESP_LOGE(TAG, "Failed to read partition table file %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name);
+                ret = ESP_ERR_INVALID_STATE;
+                break;
+            }
+        } while (false);
     }
 
-    ESP_LOGV(TAG, "SPIFLASH memory emulation file created: %s (size: %d B)", temp_spiflash_mem_file_name, ESP_PARTITION_EMULATED_FLASH_SIZE);
+    if (ret != ESP_OK) {
+        if (close(s_spiflash_mem_file_fd)) {
+            ESP_LOGE(TAG, "Failed to close() SPIFLASH memory emulation file: %s", strerror(errno));
+        }
+        s_spiflash_mem_file_fd = -1;
 
-    //create memory-mapping for the partitions holder file
-    if ((s_spiflash_mem_file_buf = mmap(NULL, ESP_PARTITION_EMULATED_FLASH_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, spiflash_mem_file_fd, 0)) == MAP_FAILED) {
-        ESP_LOGE(TAG, "Failed to mmap() SPI FLASH memory emulation file: %s", strerror(errno));
-        return ESP_ERR_NO_MEM;
-    }
-
-    //initialize whole range with bit-1 (NOR FLASH default)
-    memset(s_spiflash_mem_file_buf, 0xFF, ESP_PARTITION_EMULATED_FLASH_SIZE);
-
-    //upload partition table to the mmap file at real offset as in SPIFLASH
-    const char *partition_table_file_name = "build/partition_table/partition-table.bin";
-
-    FILE *f_partition_table = fopen(partition_table_file_name, "r+");
-    if (f_partition_table == NULL) {
-        ESP_LOGE(TAG, "Failed to open partition table file %s: %s", partition_table_file_name, strerror(errno));
-        return ESP_ERR_NOT_FOUND;
-    }
-
-    if (fseek(f_partition_table, 0L, SEEK_END) != 0) {
-        ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", partition_table_file_name, strerror(errno));
-        return ESP_ERR_INVALID_SIZE;
-    }
-
-    int partition_table_file_size = ftell(f_partition_table);
-    ESP_LOGV(TAG, "Using partition table file %s (size: %d B):", partition_table_file_name, partition_table_file_size);
-
-    uint8_t *part_table_in_spiflash = s_spiflash_mem_file_buf + ESP_PARTITION_TABLE_OFFSET;
-
-    //copy partition table from the file to emulated SPIFLASH memory space
-    if (fseek(f_partition_table, 0L, SEEK_SET) != 0) {
-        ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", partition_table_file_name, strerror(errno));
-        return ESP_ERR_INVALID_SIZE;
-    }
-
-    size_t res = fread(part_table_in_spiflash, 1, partition_table_file_size, f_partition_table);
-    fclose(f_partition_table);
-    if (res != partition_table_file_size) {
-        ESP_LOGE(TAG, "Failed to read partition table file %s", partition_table_file_name);
-        return ESP_ERR_INVALID_STATE;
+        return ret;
     }
 
 #ifdef CONFIG_LOG_DEFAULT_LEVEL_VERBOSE
-    uint8_t *part_ptr = part_table_in_spiflash;
-    uint8_t *part_end_ptr = part_table_in_spiflash + partition_table_file_size;
+    uint8_t *part_ptr = s_spiflash_mem_file_buf + ESP_PARTITION_TABLE_OFFSET;
 
     ESP_LOGV(TAG, "");
     ESP_LOGV(TAG, "Partition table sucessfully imported, partitions found:");
 
-    while (part_ptr < part_end_ptr) {
+    while (true) {
         esp_partition_info_t *p_part_item = (esp_partition_info_t *)part_ptr;
         if (p_part_item->magic != ESP_PARTITION_MAGIC ) {
             break;
@@ -170,37 +303,73 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
     ESP_LOGV(TAG, "");
 #endif
 
+#ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
+    free(s_esp_partition_stat_sector_erase_count);
+    s_esp_partition_stat_sector_erase_count = malloc(sizeof(size_t) * s_esp_partition_file_mmap_ctrl_act.flash_file_size / ESP_PARTITION_EMULATED_SECTOR_SIZE);
+#endif
+
     //return mmapped file starting address
     *part_desc_addr_start = s_spiflash_mem_file_buf;
+
+    // clear input control structure
+    memset(&s_esp_partition_file_mmap_ctrl_input, 0, sizeof(s_esp_partition_file_mmap_ctrl_input));
 
     return ESP_OK;
 }
 
-esp_err_t esp_partition_file_munmap()
+esp_err_t esp_partition_file_munmap(void)
 {
     if (s_spiflash_mem_file_buf == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    if (ESP_PARTITION_EMULATED_FLASH_SIZE == 0) {
+    if (s_esp_partition_file_mmap_ctrl_act.flash_file_size == 0) {
         return ESP_ERR_INVALID_SIZE;
     }
+    if (s_spiflash_mem_file_fd == -1) {
+        return ESP_ERR_NOT_FOUND;
+    }
 
-    if (munmap(s_spiflash_mem_file_buf, ESP_PARTITION_EMULATED_FLASH_SIZE) != 0) {
-        ESP_LOGE(TAG, "Failed to munmap() SPI FLASH memory emulation file: %s", strerror(errno));
+    unload_partitions();
+
+#ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
+    free(s_esp_partition_stat_sector_erase_count);
+    s_esp_partition_stat_sector_erase_count = NULL;
+#endif
+
+    // unmap the flash emulation memory file
+    if (munmap(s_spiflash_mem_file_buf, s_esp_partition_file_mmap_ctrl_act.flash_file_size) != 0) {
+        ESP_LOGE(TAG, "Failed to munmap() SPIFLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
         return ESP_ERR_INVALID_RESPONSE;
     }
 
+    // close memory mapped file
+    if (close(s_spiflash_mem_file_fd)) {
+        ESP_LOGE(TAG, "Failed to close() SPIFLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+        return ESP_ERR_INVALID_RESPONSE;
+    }
+
+    if (s_esp_partition_file_mmap_ctrl_input.remove_dump) {
+        // delete spi flash file
+        if (remove(s_esp_partition_file_mmap_ctrl_act.flash_file_name) != 0) {
+            ESP_LOGE(TAG, "Failed to remove() SPI FLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+    }
+
+    // cleanup
+    memset(&s_esp_partition_file_mmap_ctrl_act, 0, sizeof(s_esp_partition_file_mmap_ctrl_act));
     s_spiflash_mem_file_buf = NULL;
+    s_spiflash_mem_file_fd = -1;
 
     return ESP_OK;
 }
 
 esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offset, const void *src, size_t size)
 {
-    assert(partition != NULL);
+    assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
 
     if (partition->encrypted) {
-        return  ESP_ERR_NOT_SUPPORTED;
+        return ESP_ERR_NOT_SUPPORTED;
     }
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
@@ -217,8 +386,9 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
     void *dst_addr = s_spiflash_mem_file_buf + partition->address + dst_offset;
     ESP_LOGV(TAG, "esp_partition_write(): partition=%s dst_offset=%zu src=%p size=%zu (real dst address: %p)", partition->label, dst_offset, src, size, dst_addr);
 
-    // hook gathers statistics and can emulate limited number of write cycles
+    // hook gathers statistics and can emulate power-off
     if (!ESP_PARTITION_HOOK_WRITE(dst_addr, size)) {
+        free(write_buf);
         return ESP_FAIL;
     }
 
@@ -235,7 +405,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 
 esp_err_t esp_partition_read(const esp_partition_t *partition, size_t src_offset, void *dst, size_t size)
 {
-    assert(partition != NULL);
+    assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
 
     if (partition->encrypted) {
         return  ESP_ERR_NOT_SUPPORTED;
@@ -248,7 +418,6 @@ esp_err_t esp_partition_read(const esp_partition_t *partition, size_t src_offset
     }
 
     void *src_addr = s_spiflash_mem_file_buf + partition->address + src_offset;
-
     ESP_LOGV(TAG, "esp_partition_read(): partition=%s src_offset=%zu dst=%p size=%zu (real src address: %p)", partition->label, src_offset, dst, size, src_addr);
 
     memcpy(dst, src_addr, size);
@@ -284,7 +453,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
     void *target_addr = s_spiflash_mem_file_buf + partition->address + offset;
     ESP_LOGV(TAG, "esp_partition_erase_range(): partition=%s offset=%zu size=%zu (real target address: %p)", partition->label, offset, size, target_addr);
 
-    // hook gathers statistics and can emulate limited number of write/erase cycles
+    // hook gathers statistics and can emulate power-off
     if (!ESP_PARTITION_HOOK_ERASE(target_addr, size)) {
         return ESP_FAIL;
     }
@@ -328,7 +497,6 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
 
     // check if memory mapped file is already present, if not, map it now
     if (s_spiflash_mem_file_buf == NULL) {
-        ESP_LOGE(TAG, "esp_partition_mmap(): in esp_partition_file_mmap");
         uint8_t *part_desc_addr_start = NULL;
         rc = esp_partition_file_mmap((const uint8_t **) &part_desc_addr_start);
     }
@@ -338,16 +506,25 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
         *out_ptr = (void *) (s_spiflash_mem_file_buf + req_flash_addr);
         *out_handle = s_default_partition_mmap_handle;
     } else {
-        *out_ptr = (void *) NULL;
+        *out_ptr = NULL;
         *out_handle = 0;
     }
     return rc;
 }
 
 // Intentionally does nothing.
-void esp_partition_munmap(esp_partition_mmap_handle_t handle)
+void esp_partition_munmap(esp_partition_mmap_handle_t handle __attribute__((unused)))
 {
-    ;
+}
+
+esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_input(void)
+{
+    return &s_esp_partition_file_mmap_ctrl_input;
+}
+
+esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_act(void)
+{
+    return &s_esp_partition_file_mmap_ctrl_act;
 }
 
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
@@ -372,7 +549,7 @@ static size_t esp_partition_stat_time_interpolate(uint32_t bytes, size_t *lut)
 }
 
 // Registers read access statistics of emulated SPI FLASH device (Linux host)
-// Ffunction increases nmuber of read operations, accumulates number of read bytes
+// Function increases nmuber of read operations, accumulates number of read bytes
 // and accumulates emulated read operation time (size dependent)
 static void esp_partition_hook_read(const void *srcAddr, const size_t size)
 {
@@ -385,40 +562,63 @@ static void esp_partition_hook_read(const void *srcAddr, const size_t size)
 }
 
 // Registers write access statistics of emulated SPI FLASH device (Linux host)
-// If enabled by the esp_partition_fail_after, function emulates physical limitation of write/erase operations by
-// decrementing the s_esp_partition_emulated_life for each 4 bytes written
+// If enabled by the esp_partition_fail_after, function emulates power-off event during write/erase operations by
+// decrementing the s_esp_partition_emulated_power_off_counter for each 4 bytes written
 // If zero threshold is reached, false is returned.
 // Else the function increases nmuber of write operations, accumulates number
 // of bytes written and accumulates emulated write operation time (size dependent) and returns true.
 static bool esp_partition_hook_write(const void *dstAddr, const size_t size)
 {
-    ESP_LOGV(TAG, "esp_partition_hook_write()");
+    ESP_LOGV(TAG, "%s", __FUNCTION__);
 
-    // wear emulation
+    // power-off emulation
     for (size_t i = 0; i < size / 4; ++i) {
-        if (s_esp_partition_emulated_flash_life != SIZE_MAX && s_esp_partition_emulated_flash_life-- == 0) {
+        if (s_esp_partition_emulated_power_off_counter != SIZE_MAX && s_esp_partition_emulated_power_off_counter-- == 0) {
             return false;
+        }
+    }
+
+    bool ret_val = true;
+
+    // one power down cycle per 4 bytes written
+    size_t write_cycles = size / 4;
+
+    // check whether power off simulation is active for write
+    if (s_esp_partition_emulated_power_off_counter != SIZE_MAX &&
+            s_esp_partition_emulated_power_off_counter & ESP_PARTITION_FAIL_AFTER_MODE_WRITE) {
+
+        // check if power down happens during this call
+        if (s_esp_partition_emulated_power_off_counter >= write_cycles) {
+            // OK
+            s_esp_partition_emulated_power_off_counter -= write_cycles;
+        } else {
+            // failure in this call - reduce cycle count to the number of remainint power on cycles
+            write_cycles = s_esp_partition_emulated_power_off_counter;
+            // clear remaining cycles
+            s_esp_partition_emulated_power_off_counter = 0;
+            // final result value will be false
+            ret_val = false;
         }
     }
 
     // stats
     ++s_esp_partition_stat_write_ops;
-    s_esp_partition_stat_write_bytes += size;
-    s_esp_partition_stat_total_time += esp_partition_stat_time_interpolate((uint32_t) size, s_esp_partition_stat_write_times);
+    s_esp_partition_stat_write_bytes += write_cycles * 4;
+    s_esp_partition_stat_total_time += esp_partition_stat_time_interpolate((uint32_t) (write_cycles * 4), s_esp_partition_stat_write_times);
 
-    return true;
+    return ret_val;
 }
 
 // Registers erase access statistics of emulated SPI FLASH device (Linux host)
-// If enabled by the esp_partition_fail_after, function emulates physical limitation of write/erase operations by
-// decrementing the s_esp_partition_emulated_life for each erased virtual sector.
+// If enabled by 'esp_partition_fail_after' parameter, the function emulates a power-off event during write/erase
+// operations by decrementing the s_esp_partition_emulated_power_off_counterpower for each erased virtual sector.
 // If zero threshold is reached, false is returned.
 // Else, for statistics purpose, the impacted virtual sectors are identified based on
 // ESP_PARTITION_EMULATED_SECTOR_SIZE and their respective counts of erase operations are incremented
 // Total number of erase operations is increased by the number of impacted virtual sectors
 static bool esp_partition_hook_erase(const void *dstAddr, const size_t size)
 {
-    ESP_LOGV(TAG, "esp_partition_hook_erase()");
+    ESP_LOGV(TAG, "%s", __FUNCTION__);
 
     if (size == 0) {
         return true;
@@ -430,22 +630,37 @@ static bool esp_partition_hook_erase(const void *dstAddr, const size_t size)
     size_t last_sector_idx = (offset + size - 1) / ESP_PARTITION_EMULATED_SECTOR_SIZE;
     size_t sector_count = 1 + last_sector_idx - first_sector_idx;
 
-    for (size_t sector_index = first_sector_idx; sector_index < first_sector_idx + sector_count; sector_index++) {
-        // wear emulation
-        if (s_esp_partition_emulated_flash_life != SIZE_MAX && s_esp_partition_emulated_flash_life-- == 0) {
-            return false;
-        }
+    bool ret_val = true;
 
-        // stats
+    // check whether power off simulation is active for erase
+    if (s_esp_partition_emulated_power_off_counter != SIZE_MAX &&
+            s_esp_partition_emulated_power_off_counter & ESP_PARTITION_FAIL_AFTER_MODE_ERASE) {
+
+        // check if power down happens during this call
+        if (s_esp_partition_emulated_power_off_counter >= sector_count) {
+            // OK
+            s_esp_partition_emulated_power_off_counter -= sector_count;
+        } else {
+            // failure in this call - reduce sector_count to the number of remainint power on cycles
+            sector_count = s_esp_partition_emulated_power_off_counter;
+            // clear remaining cycles
+            s_esp_partition_emulated_power_off_counter = 0;
+            // final result value will be false
+            ret_val = false;
+        }
+    }
+
+    // update statistcs for all sectors until power down cycle
+    for (size_t sector_index = first_sector_idx; sector_index < first_sector_idx + sector_count; sector_index++) {
         ++s_esp_partition_stat_erase_ops;
         s_esp_partition_stat_sector_erase_count[sector_index]++;
         s_esp_partition_stat_total_time += s_esp_partition_stat_block_erase_time;
     }
 
-    return true;
+    return ret_val;
 }
 
-void esp_partition_clear_stats()
+void esp_partition_clear_stats(void)
 {
     s_esp_partition_stat_read_bytes = 0;
     s_esp_partition_stat_write_bytes = 0;
@@ -454,42 +669,43 @@ void esp_partition_clear_stats()
     s_esp_partition_stat_write_ops = 0;
     s_esp_partition_stat_total_time = 0;
 
-    memset(s_esp_partition_stat_sector_erase_count, 0, sizeof(s_esp_partition_stat_sector_erase_count));
+    memset(s_esp_partition_stat_sector_erase_count, 0, sizeof(size_t) * s_esp_partition_file_mmap_ctrl_act.flash_file_size / ESP_PARTITION_EMULATED_SECTOR_SIZE);
 }
 
-size_t esp_partition_get_read_ops()
+size_t esp_partition_get_read_ops(void)
 {
     return s_esp_partition_stat_read_ops;
 }
 
-size_t esp_partition_get_write_ops()
+size_t esp_partition_get_write_ops(void)
 {
     return s_esp_partition_stat_write_ops;
 }
 
-size_t esp_partition_get_erase_ops()
+size_t esp_partition_get_erase_ops(void)
 {
     return s_esp_partition_stat_erase_ops;
 }
 
-size_t esp_partition_get_read_bytes()
+size_t esp_partition_get_read_bytes(void)
 {
     return s_esp_partition_stat_read_bytes;
 }
 
-size_t esp_partition_get_write_bytes()
+size_t esp_partition_get_write_bytes(void)
 {
     return s_esp_partition_stat_write_bytes;
 }
 
-size_t esp_partition_get_total_time()
+size_t esp_partition_get_total_time(void)
 {
     return s_esp_partition_stat_total_time;
 }
 
-void esp_partition_fail_after(size_t count)
+void esp_partition_fail_after(size_t count, uint8_t mode)
 {
-    s_esp_partition_emulated_flash_life = count;
+    s_esp_partition_emulated_power_off_counter = count;
+    s_esp_partition_emulated_power_off_mode = mode;
 }
 
 size_t esp_partition_get_sector_erase_count(size_t sector)

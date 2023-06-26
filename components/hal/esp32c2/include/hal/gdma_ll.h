@@ -8,6 +8,7 @@
 #include <stddef.h> /* Required for NULL constant */
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/gdma_types.h"
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
 
@@ -17,8 +18,14 @@ extern "C" {
 
 #define GDMA_LL_GET_HW(id) (((id) == 0) ? (&GDMA) : NULL)
 
+#define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
+
 #define GDMA_LL_RX_EVENT_MASK       (0x06A7)
 #define GDMA_LL_TX_EVENT_MASK       (0x1958)
+
+// any "valid" peripheral ID can be used for M2M mode
+#define GDMA_LL_M2M_FREE_PERIPH_ID_MASK (0x185)
+#define GDMA_LL_INVALID_PERIPH_ID       (0x3F)
 
 #define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<12)
 #define GDMA_LL_EVENT_TX_FIFO_OVF   (1<<11)
@@ -35,19 +42,6 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_DONE       (1<<0)
 
 ///////////////////////////////////// Common /////////////////////////////////////////
-/**
- * @brief Enable DMA channel M2M mode (TX channel n forward data to RX channel n), disabled by default
- */
-static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bool enable)
-{
-    dev->channel[channel].in.in_conf0.mem_trans_en = enable;
-    if (enable) {
-        // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a valid value
-        dev->channel[channel].in.in_peri_sel.sel = 0;
-        dev->channel[channel].out.out_peri_sel.sel = 0;
-    }
-}
-
 /**
  * @brief Enable DMA clock gating
  */
@@ -236,10 +230,10 @@ static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint3
 }
 
 /**
- * @brief Get current RX descriptor's address
+ * @brief Get the pre-fetched RX descriptor's address
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_rx_get_prefetched_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.in_dscr;
 }
@@ -255,9 +249,19 @@ static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 /**
  * @brief Connect DMA RX channel to a given peripheral
  */
-static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
+static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, gdma_trigger_peripheral_t periph, int periph_id)
 {
     dev->channel[channel].in.in_peri_sel.sel = periph_id;
+    dev->channel[channel].in.in_conf0.mem_trans_en = (periph == GDMA_TRIG_PERIPH_M2M);
+}
+
+/**
+ * @brief Disconnect DMA RX channel from peripheral
+ */
+static inline void gdma_ll_rx_disconnect_from_periph(gdma_dev_t *dev, uint32_t channel)
+{
+    dev->channel[channel].in.in_peri_sel.sel = GDMA_LL_INVALID_PERIPH_ID;
+    dev->channel[channel].in.in_conf0.mem_trans_en = false;
 }
 
 ///////////////////////////////////// TX /////////////////////////////////////////
@@ -439,10 +443,10 @@ static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t ch
 }
 
 /**
- * @brief Get current TX descriptor's address
+ * @brief Get the pre-fetched TX descriptor's address
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_tx_get_prefetched_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.out_dscr;
 }
@@ -458,9 +462,18 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 /**
  * @brief Connect DMA TX channel to a given peripheral
  */
-static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
+static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, gdma_trigger_peripheral_t periph, int periph_id)
 {
+    (void)periph;
     dev->channel[channel].out.out_peri_sel.sel = periph_id;
+}
+
+/**
+ * @brief Disconnect DMA TX channel from peripheral
+ */
+static inline void gdma_ll_tx_disconnect_from_periph(gdma_dev_t *dev, uint32_t channel)
+{
+    dev->channel[channel].out.out_peri_sel.sel = GDMA_LL_INVALID_PERIPH_ID;
 }
 
 #ifdef __cplusplus

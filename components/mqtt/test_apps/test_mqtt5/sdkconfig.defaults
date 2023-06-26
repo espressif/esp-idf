@@ -1,0 +1,4 @@
+# General options for additional checks
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_MQTT_PROTOCOL_5=y
+CONFIG_UNITY_ENABLE_FIXTURE=y

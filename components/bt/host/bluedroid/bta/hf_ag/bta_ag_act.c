@@ -94,7 +94,7 @@ static void bta_ag_cback_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data, tBTA_AG_
     /* call app callback with open event */
     open.hdr.handle = bta_ag_scb_to_idx(p_scb);
     open.hdr.app_id = p_scb->app_id;
-    open.status = status;
+    open.hdr.status = status;
     open.service_id = bta_ag_svc_id[p_scb->conn_service];
     if (p_data) {
         /* if p_data is provided then we need to pick the bd address from the open api structure */
@@ -131,7 +131,7 @@ void bta_ag_register(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     /* call app callback with register event */
     reg.hdr.handle = bta_ag_scb_to_idx(p_scb);
     reg.hdr.app_id = p_scb->app_id;
-    reg.status = BTA_AG_SUCCESS;
+    reg.hdr.status = BTA_AG_SUCCESS;
     (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, (tBTA_AG *) &reg);
 }
 

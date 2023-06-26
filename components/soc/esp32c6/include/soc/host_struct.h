@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -2654,7 +2654,7 @@ typedef union {
 } slchost_inf_st_reg_t;
 
 
-typedef struct slchost_dev_t {
+typedef struct host_dev_t {
     uint32_t reserved_000[4];
     volatile slchost_func2_0_reg_t func2_0;
     volatile slchost_func2_1_reg_t func2_1;
@@ -2725,12 +2725,12 @@ typedef struct slchost_dev_t {
     uint32_t reserved_180[28];
     volatile slchost_conf_reg_t conf;
     volatile slchost_inf_st_reg_t inf_st;
-} slchost_dev_t;
+} host_dev_t;
 
-extern slchost_dev_t HOST;
+extern host_dev_t HOST;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(slchost_dev_t) == 0x1f8, "Invalid size of slchost_dev_t structure");
+_Static_assert(sizeof(host_dev_t) == 0x1f8, "Invalid size of host_dev_t structure");
 #endif
 
 #ifdef __cplusplus

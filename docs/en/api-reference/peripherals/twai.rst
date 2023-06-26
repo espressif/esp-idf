@@ -1,19 +1,17 @@
 Two-Wire Automotive Interface (TWAI)
 ====================================
 
-{IDF_TARGET_TWAI_NUM:default="1", esp32c6="2"}
-
 .. -------------------------------- Overview -----------------------------------
 
 .. only:: esp32c6
 
 	.. warning::
-		{IDF_TARGET_NAME} has {IDF_TARGET_TWAI_NUM} TWAI controllers, but at the moment, the driver can only support ``TWAI0`` due to the limitation of the driver structure.
+		{IDF_TARGET_NAME} has {IDF_TARGET_SOC_TWAI_CONTROLLER_NUM} TWAI controllers, but at the moment, the driver can only support ``TWAI0`` due to the limitation of the driver structure.
 
 Overview
 --------
 
-The Two-Wire Automotive Interface (TWAI) is a real-time serial communication protocol suited for automotive and industrial applications. It is compatible with ISO11898-1 Classical frames, thus can support Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID). The {IDF_TARGET_NAME} contains {IDF_TARGET_TWAI_NUM} TWAI controller(s) that can be configured to communicate on a TWAI bus via an external transceiver.
+The Two-Wire Automotive Interface (TWAI) is a real-time serial communication protocol suited for automotive and industrial applications. It is compatible with ISO11898-1 Classical frames, thus can support Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID). The {IDF_TARGET_NAME} contains {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} TWAI controller(s) that can be configured to communicate on a TWAI bus via an external transceiver.
 
 .. warning::
     The TWAI controller is not compatible with ISO11898-1 FD Format frames, and will interpret such frames as errors.
@@ -52,7 +50,7 @@ TWAI Messages are split into Data Frames and Remote Frames. Data Frames are used
 Error States and Counters
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The TWAI protocol implements a feature known as "fault confinement" where a persistently erroneous node will eventually eliminate itself form the bus. This is implemented by requiring every node to maintain two internal error counters known as the **Transmit Error Counter (TEC)** and the **Receive Error Counter (REC)**. The two error counters are incremented and decremented according to a set of rules (where the counters increase on an error, and decrease on a successful message transmission/reception). The values of the counters are used to determine a node's **error state**, namely **Error Active**, **Error Passive**, and **Bus-Off**.
+The TWAI protocol implements a feature known as "fault confinement" where a persistently erroneous node will eventually eliminate itself from the bus. This is implemented by requiring every node to maintain two internal error counters known as the **Transmit Error Counter (TEC)** and the **Receive Error Counter (REC)**. The two error counters are incremented and decremented according to a set of rules (where the counters increase on an error, and decrease on a successful message transmission/reception). The values of the counters are used to determine a node's **error state**, namely **Error Active**, **Error Passive**, and **Bus-Off**.
 
 **Error Active:** A node is Error Active when **both TEC and REC are less than 128** and indicates that the node is operating normally. Error Active nodes are allowed to participate in bus communications, and will actively signal the detection of any errors by automatically transmitting an **Active Error Flag** over the bus.
 
@@ -159,7 +157,7 @@ The operating bit rate of the TWAI driver is configured using the :cpp:type:`twa
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
-{IDF_TARGET_MAX_BRP:default="128", esp32="128", esp32s2="32768", esp32c3="16384", esp32c6="16384"}
+{IDF_TARGET_MAX_BRP:default="128", esp32="128", esp32s2="32768", esp32s3="16384", esp32c3="16384", esp32c6="32768", esp32h2="32768"}
 
 The **Baudrate Prescaler** is used to determine the period of each time quantum by dividing the TWAI controller's source clock. On the {IDF_TARGET_NAME}, the ``brp`` can be **any even number from 2 to {IDF_TARGET_MAX_BRP}**. Alternatively, you can decide the resolution of each quantum, by setting :cpp:member:`twai_timing_config_t::quanta_resolution_hz` to a non-zero value. In this way, the driver can calculate the underlying ``brp`` value for you. It's useful when you set different clock sources but want the bitrate to keep the same.
 

@@ -29,12 +29,11 @@
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
-#include "hal/emac_ll.h"
 
 static const char *TAG = "esp.emac";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
-#define MAC_STOP_TIMEOUT_US (250)
+#define MAC_STOP_TIMEOUT_US (2500) // this is absolute maximum for 10Mbps, it is 10 times faster for 100Mbps
 #define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
@@ -85,15 +84,15 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_GOTO_ON_FALSE(!emac_ll_is_mii_busy(emac->hal.mac_regs), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
-    emac_ll_set_phy_data(emac->hal.mac_regs, reg_value);
+    ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
+    emac_hal_set_phy_data(&emac->hal, reg_value);
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, true);
     /* polling the busy flag */
     uint32_t to = 0;
     bool busy = true;
     do {
         esp_rom_delay_us(100);
-        busy = emac_ll_is_mii_busy(emac->hal.mac_regs);
+        busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
     ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
@@ -107,19 +106,19 @@ static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, 
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, err, TAG, "can't set reg_value to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_GOTO_ON_FALSE(!emac_ll_is_mii_busy(emac->hal.mac_regs), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
+    ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, false);
     /* polling the busy flag */
     uint32_t to = 0;
     bool busy = true;
     do {
         esp_rom_delay_us(100);
-        busy = emac_ll_is_mii_busy(emac->hal.mac_regs);
+        busy = emac_hal_is_mii_busy(&emac->hal);
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
     ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
     /* Store value */
-    *reg_value = emac_ll_get_phy_data(emac->hal.mac_regs);
+    *reg_value = emac_hal_get_phy_data(&emac->hal);
     return ESP_OK;
 err:
     return ret;
@@ -175,7 +174,7 @@ static esp_err_t emac_esp32_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
     esp_err_t ret = ESP_ERR_INVALID_ARG;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     if (speed >= ETH_SPEED_10M && speed < ETH_SPEED_MAX) {
-        emac_ll_set_port_speed(emac->hal.mac_regs, speed);
+        emac_hal_set_speed(&emac->hal, speed);
         ESP_LOGD(TAG, "working in %dMbps", speed == ETH_SPEED_10M ? 10 : 100);
         return ESP_OK;
     }
@@ -187,7 +186,7 @@ static esp_err_t emac_esp32_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
     esp_err_t ret = ESP_ERR_INVALID_ARG;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     if (duplex == ETH_DUPLEX_HALF || duplex == ETH_DUPLEX_FULL) {
-        emac_ll_set_duplex(emac->hal.mac_regs, duplex);
+        emac_hal_set_duplex(&emac->hal, duplex);
         ESP_LOGD(TAG, "working in %s duplex", duplex == ETH_DUPLEX_HALF ? "half" : "full");
         return ESP_OK;
     }
@@ -197,7 +196,7 @@ static esp_err_t emac_esp32_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
 static esp_err_t emac_esp32_set_promiscuous(esp_eth_mac_t *mac, bool enable)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    emac_ll_promiscuous_mode_enable(emac->hal.mac_regs, enable);
+    emac_hal_set_promiscuous(&emac->hal, enable);
     return ESP_OK;
 }
 
@@ -262,7 +261,6 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     ESP_GOTO_ON_FALSE(buf && length, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf and length to null");
     uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, expected_len, &emac->frames_remain, &emac->free_rx_descriptor);
     /* we need to check the return value in case the buffer size is not enough */
-    ESP_LOGD(TAG, "receive len= %d", receive_len);
     ESP_GOTO_ON_FALSE(expected_len >= receive_len, ESP_ERR_INVALID_SIZE, err, TAG, "received buffer longer than expected");
     *length = receive_len;
     return ESP_OK;
@@ -306,9 +304,9 @@ static void emac_esp32_rx_task(void *arg)
 #if CONFIG_ETH_SOFT_FLOW_CONTROL
             // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
             if ((emac->free_rx_descriptor < emac->flow_control_low_water_mark) && emac->do_flow_ctrl && emac->frames_remain) {
-                emac_ll_pause_frame_enable(emac->hal.ext_regs, true);
+                emac_hal_send_pause_frame(&emac->hal, true);
             } else if ((emac->free_rx_descriptor > emac->flow_control_high_water_mark) || !emac->frames_remain) {
-                emac_ll_pause_frame_enable(emac->hal.ext_regs, false);
+                emac_hal_send_pause_frame(&emac->hal, false);
             }
 #endif
         } while (emac->frames_remain);
@@ -359,10 +357,10 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     emac_esp32_init_smi_gpio(emac);
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
     /* software reset */
-    emac_ll_reset(emac->hal.dma_regs);
+    emac_hal_reset(&emac->hal);
     uint32_t to = 0;
     for (to = 0; to < emac->sw_reset_timeout_ms / 10; to++) {
-        if (emac_ll_is_reset_done(emac->hal.dma_regs)) {
+        if (emac_hal_is_reset_done(&emac->hal)) {
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -370,8 +368,6 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     ESP_GOTO_ON_FALSE(to < emac->sw_reset_timeout_ms / 10, ESP_ERR_TIMEOUT, err, TAG, "reset timeout");
     /* set smi clock */
     emac_hal_set_csr_clock_range(&emac->hal, esp_clk_apb_freq());
-    /* reset descriptor chain */
-    emac_hal_reset_desc_chain(&emac->hal);
     /* init mac registers by default */
     emac_hal_init_mac_default(&emac->hal);
     /* init dma registers with selected EMAC-DMA configuration */
@@ -406,6 +402,7 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    /* reset descriptor chain */
     emac_hal_reset_desc_chain(&emac->hal);
     emac_hal_start(&emac->hal);
     return ESP_OK;
@@ -429,7 +426,7 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    esp_emac_free_driver_obj(emac, emac->hal.descriptors);
+    esp_emac_free_driver_obj(emac, emac_hal_get_desc_chain(&emac->hal));
     periph_module_disable(PERIPH_EMAC_MODULE);
     return ESP_OK;
 }
@@ -438,13 +435,13 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 IRAM_ATTR void emac_isr_default_handler(void *args)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
-    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
-    BaseType_t high_task_wakeup = pdFALSE;
-    uint32_t intr_stat = emac_ll_get_intr_status(hal->dma_regs);
-    emac_ll_clear_corresponding_intr(hal->dma_regs, intr_stat);
+    uint32_t intr_stat = emac_hal_get_intr_status(hal);
+    emac_hal_clear_corresponding_intr(hal, intr_stat);
 
 #if EMAC_LL_CONFIG_ENABLE_INTR_MASK & EMAC_LL_INTR_RECEIVE_ENABLE
     if (intr_stat & EMAC_LL_DMA_RECEIVE_FINISH_INTR) {
+        emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
+        BaseType_t high_task_wakeup = pdFALSE;
         /* notify receive task */
         vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
         if (high_task_wakeup == pdTRUE) {
@@ -539,7 +536,7 @@ static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *e
         /* MII interface GPIO initialization */
         emac_hal_iomux_init_mii();
         /* Enable MII clock */
-        emac_ll_clock_enable_mii(emac->hal.ext_regs);
+        emac_hal_clock_enable_mii(&emac->hal);
         break;
     case EMAC_DATA_INTERFACE_RMII:
         // by default, the clock mode is selected at compile time (by Kconfig)
@@ -571,7 +568,7 @@ static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *e
             ESP_GOTO_ON_FALSE(emac->clock_config.rmii.clock_gpio == EMAC_CLK_IN_GPIO,
                               ESP_ERR_INVALID_ARG, err, TAG, "ESP32 EMAC only support input RMII clock to GPIO0");
             emac_hal_iomux_rmii_clk_input();
-            emac_ll_clock_enable_rmii_input(emac->hal.ext_regs);
+            emac_hal_clock_enable_rmii_input(&emac->hal);
         } else if (emac->clock_config.rmii.clock_mode == EMAC_CLK_OUT) {
             ESP_GOTO_ON_FALSE(emac->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO ||
                               emac->clock_config.rmii.clock_gpio == EMAC_CLK_OUT_GPIO ||
@@ -582,7 +579,7 @@ static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *e
                 REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
             }
             /* Enable RMII clock */
-            emac_ll_clock_enable_rmii_output(emac->hal.ext_regs);
+            emac_hal_clock_enable_rmii_output(&emac->hal);
             // Power up APLL clock
             periph_rtc_apll_acquire();
             ESP_GOTO_ON_ERROR(emac_config_apll_clock(), err, TAG, "Configure APLL for RMII failed");

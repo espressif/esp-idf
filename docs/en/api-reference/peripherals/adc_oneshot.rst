@@ -1,7 +1,7 @@
 Analog to Digital Converter (ADC) Oneshot Mode Driver
 =====================================================
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h4="one"}
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one"}
 
 Introduction
 ------------
@@ -42,6 +42,7 @@ The ADC oneshot mode driver is implemented based on {IDF_TARGET_NAME} SAR ADC mo
 To install an ADC instance, set up the required initial configuration structure :cpp:type:`adc_oneshot_unit_init_cfg_t`:
 
 -  :cpp:member:`adc_oneshot_unit_init_cfg_t::unit_id` selects the ADC. Please refer to the `datasheet <{IDF_TARGET_TRM_EN_URL}>`__ to know dedicated analog IOs for this ADC.
+-  :cpp:member:`adc_oneshot_unit_init_cfg_t::clk_src` selects the source clock of the ADC. If it's set to 0, driver will fallback to use a default clock source, see :cpp:type:`adc_oneshot_clk_src_t` to know the details.
 -  :cpp:member:`adc_oneshot_unit_init_cfg_t::ulp_mode` sets if the ADC will be working under ULP mode.
 
 .. todo::
@@ -161,7 +162,7 @@ Hardware Limitations
 
 .. only:: esp32c3
 
-    - ADC2 oneshot mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`. For compatibility, you can enable :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3` to force use ADC2.
+    - ADC2 oneshot mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3` to force use ADC2.
 
 .. only:: esp32
 

@@ -13,28 +13,16 @@
 #include "host/util/util.h"
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
 #include "ble_spp_server.h"
 #include "driver/uart.h"
 
-static const char *tag = "NimBLE_SPP_BLE_PRPH";
 static int ble_spp_server_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
 int gatt_svr_register(void);
 QueueHandle_t spp_common_uart_queue = NULL;
-uint16_t connection_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS];
-static uint16_t ble_svc_gatt_read_val_handle,ble_spp_svc_gatt_read_val_handle;
-
-/* 16 Bit Alert Notification Service UUID */
-#define BLE_SVC_ANS_UUID16                                  0x1811
-
-/* 16 Bit Alert Notification Service Characteristic UUIDs */
-#define BLE_SVC_ANS_CHR_UUID16_SUP_NEW_ALERT_CAT            0x2a47
-
-/* 16 Bit SPP Service UUID */
-#define BLE_SVC_SPP_UUID16				    0xABF0
-
-/* 16 Bit SPP Service Characteristic UUID */
-#define BLE_SVC_SPP_CHR_UUID16                              0xABF1
+static bool conn_handle_subs[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+static uint16_t ble_spp_svc_gatt_read_val_handle;
 
 void ble_store_config_init(void);
 
@@ -108,7 +96,7 @@ ble_spp_server_advertise(void)
     fields.name_is_complete = 1;
 
     fields.uuids16 = (ble_uuid16_t[]) {
-        BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
+        BLE_UUID16_INIT(BLE_SVC_SPP_UUID16)
     };
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
@@ -154,7 +142,7 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
 
     switch (event->type) {
     case BLE_GAP_EVENT_CONNECT:
-	/* A new connection was established or a connection attempt failed. */
+        /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",
                     event->connect.status);
@@ -162,10 +150,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             ble_spp_server_print_conn_desc(&desc);
-	    connection_handle[event->connect.conn_handle - 1] = event->connect.conn_handle;
         }
         MODLOG_DFLT(INFO, "\n");
-	if (event->connect.status != 0 || CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1) {
+        if (event->connect.status != 0 || CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1) {
             /* Connection failed or if multiple connection allowed; resume advertising. */
             ble_spp_server_advertise();
         }
@@ -175,6 +162,8 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "disconnect; reason=%d ", event->disconnect.reason);
         ble_spp_server_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
+
+        conn_handle_subs[event->disconnect.conn.conn_handle] = false;
 
         /* Connection terminated; resume advertising. */
         ble_spp_server_advertise();
@@ -203,8 +192,21 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
                     event->mtu.value);
         return 0;
 
+    case BLE_GAP_EVENT_SUBSCRIBE:
+        MODLOG_DFLT(INFO, "subscribe event; conn_handle=%d attr_handle=%d "
+                    "reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
+                    event->subscribe.conn_handle,
+                    event->subscribe.attr_handle,
+                    event->subscribe.reason,
+                    event->subscribe.prev_notify,
+                    event->subscribe.cur_notify,
+                    event->subscribe.prev_indicate,
+                    event->subscribe.cur_indicate);
+        conn_handle_subs[event->subscribe.conn_handle] = true;
+        return 0;
+
     default:
-    	return 0;
+        return 0;
     }
 }
 
@@ -242,7 +244,7 @@ ble_spp_server_on_sync(void)
 
 void ble_spp_server_host_task(void *param)
 {
-    ESP_LOGI(tag, "BLE Host Task Started");
+    MODLOG_DFLT(INFO, "BLE Host Task Started");
     /* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();
 
@@ -250,137 +252,158 @@ void ble_spp_server_host_task(void *param)
 }
 
 /* Callback function for custom service */
-static int  ble_svc_gatt_handler(uint16_t conn_handle, uint16_t attr_handle,struct ble_gatt_access_ctxt *ctxt, void *arg)
+static int  ble_svc_gatt_handler(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-      switch(ctxt->op){
-      case BLE_GATT_ACCESS_OP_READ_CHR:
-         ESP_LOGI(tag, "Callback for read");
-      break;
+    switch (ctxt->op) {
+    case BLE_GATT_ACCESS_OP_READ_CHR:
+        MODLOG_DFLT(INFO, "Callback for read");
+        break;
 
-      case BLE_GATT_ACCESS_OP_WRITE_CHR:
-	 ESP_LOGI(tag,"Data received in write event,conn_handle = %x,attr_handle = %x",conn_handle,attr_handle);
-      break;
+    case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        MODLOG_DFLT(INFO, "Data received in write event,conn_handle = %x,attr_handle = %x", conn_handle, attr_handle);
+        break;
 
-      default:
-         ESP_LOGI(tag, "\nDefault Callback");
-      break;
-      }
-      return 0;
+    default:
+        MODLOG_DFLT(INFO, "\nDefault Callback");
+        break;
+    }
+    return 0;
 }
 
 /* Define new custom service */
 static const struct ble_gatt_svc_def new_ble_svc_gatt_defs[] = {
-      {
-          /*** Service: GATT */
-          .type = BLE_GATT_SVC_TYPE_PRIMARY,
-          .uuid = BLE_UUID16_DECLARE(BLE_SVC_ANS_UUID16),
-          .characteristics = (struct ble_gatt_chr_def[]) { {
-	  		/* Support new alert category */
-              		.uuid = BLE_UUID16_DECLARE(BLE_SVC_ANS_CHR_UUID16_SUP_NEW_ALERT_CAT),
-              		.access_cb = ble_svc_gatt_handler,
-              		.val_handle = &ble_svc_gatt_read_val_handle,
-              		.flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
-	  	},
-	  	{
-	  		0, /* No more characteristics */
-		}
-	  },
-      },
-      {
-      	/*** Service: SPP */
-          .type = BLE_GATT_SVC_TYPE_PRIMARY,
-          .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_UUID16),
-          .characteristics = (struct ble_gatt_chr_def[]) { {
-                        /* Support SPP service */
-                        .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_CHR_UUID16),
-                        .access_cb = ble_svc_gatt_handler,
-                        .val_handle = &ble_spp_svc_gatt_read_val_handle,
-                        .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
-		},
-                {
-                         0, /* No more characteristics */
-                }
-           },
-      },
-      {
-          0, /* No more services. */
-      },
+    {
+        /*** Service: SPP */
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_UUID16),
+        .characteristics = (struct ble_gatt_chr_def[])
+        { {
+                /* Support SPP service */
+                .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_CHR_UUID16),
+                .access_cb = ble_svc_gatt_handler,
+                .val_handle = &ble_spp_svc_gatt_read_val_handle,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY,
+            }, {
+                0, /* No more characteristics */
+            }
+        },
+    },
+    {
+        0, /* No more services. */
+    },
 };
 
-int gatt_svr_register(void)
+static void
+gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
-     int rc=0;
+    char buf[BLE_UUID_STR_LEN];
 
-     rc = ble_gatts_count_cfg(new_ble_svc_gatt_defs);
+    switch (ctxt->op) {
+    case BLE_GATT_REGISTER_OP_SVC:
+        MODLOG_DFLT(DEBUG, "registered service %s with handle=%d\n",
+                    ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
+                    ctxt->svc.handle);
+        break;
 
-     if (rc != 0) {
-         return rc;
-     }
+    case BLE_GATT_REGISTER_OP_CHR:
+        MODLOG_DFLT(DEBUG, "registering characteristic %s with "
+                    "def_handle=%d val_handle=%d\n",
+                    ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
+                    ctxt->chr.def_handle,
+                    ctxt->chr.val_handle);
+        break;
 
-     rc = ble_gatts_add_svcs(new_ble_svc_gatt_defs);
-     if (rc != 0) {
-         return rc;
-     }
+    case BLE_GATT_REGISTER_OP_DSC:
+        MODLOG_DFLT(DEBUG, "registering descriptor %s with handle=%d\n",
+                    ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
+                    ctxt->dsc.handle);
+        break;
 
-     return 0;
+    default:
+        assert(0);
+        break;
+    }
+}
+
+int gatt_svr_init(void)
+{
+    int rc = 0;
+    ble_svc_gap_init();
+    ble_svc_gatt_init();
+
+    rc = ble_gatts_count_cfg(new_ble_svc_gatt_defs);
+
+    if (rc != 0) {
+        return rc;
+    }
+
+    rc = ble_gatts_add_svcs(new_ble_svc_gatt_defs);
+    if (rc != 0) {
+        return rc;
+    }
+
+    return 0;
 }
 
 
-void ble_server_uart_task(void *pvParameters){
-     ESP_LOGI(tag,"BLE server UART_task started\n");
-     uart_event_t event;
-     int rc=0;
-     for (;;) {
-         //Waiting for UART event.
-         if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY))            {
-	     switch (event.type) {
-             //Event of UART receving data
-             case UART_DATA:
-		if (event.size) {
-			static uint8_t ntf[1];
-                        ntf[0] = 90;
-			for ( int i = 0; i < CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
-			    if (connection_handle[i] != 0) {
-				struct os_mbuf *txom;
-				txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
-				rc = ble_gatts_notify_custom(connection_handle[i],
-							     ble_spp_svc_gatt_read_val_handle,
-							     txom);
-				if ( rc == 0 ) {
-				    ESP_LOGI(tag,"Notification sent successfully");
-				}
-				else {
-				    ESP_LOGI(tag,"Error in sending notification rc = %d", rc);
-				}
-			    }
-			}
-		}
-             	break;
-	     default:
-	     	break;
-	     }
-	  }
-	}
-	  vTaskDelete(NULL);
+void ble_server_uart_task(void *pvParameters)
+{
+    MODLOG_DFLT(INFO, "BLE server UART_task started\n");
+    uart_event_t event;
+    int rc = 0;
+    for (;;) {
+        //Waiting for UART event.
+        if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY))            {
+            switch (event.type) {
+            //Event of UART receving data
+            case UART_DATA:
+                if (event.size) {
+                    uint8_t *ntf;
+                    ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    memset(ntf, 0x00, event.size);
+                    uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
+
+                    for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+                        /* Check if client has subscribed to notifications */
+                        if (conn_handle_subs[i]) {
+                            struct os_mbuf *txom;
+                            txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
+                            rc = ble_gatts_notify_custom(i, ble_spp_svc_gatt_read_val_handle,
+                                                         txom);
+                            if (rc == 0) {
+                                MODLOG_DFLT(INFO, "Notification sent successfully");
+                            } else {
+                                MODLOG_DFLT(INFO, "Error in sending notification rc = %d", rc);
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    vTaskDelete(NULL);
 }
 static void ble_spp_uart_init(void)
 {
-     uart_config_t uart_config = {
-         .baud_rate = 115200,
-         .data_bits = UART_DATA_8_BITS,
-         .parity = UART_PARITY_DISABLE,
-         .stop_bits = UART_STOP_BITS_1,
-         .flow_ctrl = UART_HW_FLOWCTRL_RTS,
-         .rx_flow_ctrl_thresh = 122,
-         .source_clk = UART_SCLK_DEFAULT,
-     };
-     //Install UART driver, and get the queue.
-     uart_driver_install(UART_NUM_0, 4096, 8192, 10,&spp_common_uart_queue,0);
-     //Set UART parameters
-     uart_param_config(UART_NUM_0, &uart_config);
-     //Set UART pins
-     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-     xTaskCreate(ble_server_uart_task, "uTask", 4096, (void*)UART_NUM_0, 8, NULL);
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_RTS,
+        .rx_flow_ctrl_thresh = 122,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+    //Install UART driver, and get the queue.
+    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    //Set UART parameters
+    uart_param_config(UART_NUM_0, &uart_config);
+    //Set UART pins
+    uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    xTaskCreate(ble_server_uart_task, "uTask", 4096, (void *)UART_NUM_0, 8, NULL);
 }
 
 
@@ -397,7 +420,16 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
+
+    /* Initialize connection_handle array */
+    for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+        conn_handle_subs[i] = false;
+    }
 
     /* Initialize uart driver and start uart task */
     ble_spp_uart_init();
@@ -425,12 +457,8 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
-
-    rc = new_gatt_svr_init();
-    assert(rc == 0);
-
     /* Register custom service */
-    rc = gatt_svr_register();
+    rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name. */

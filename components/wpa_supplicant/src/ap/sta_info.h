@@ -50,6 +50,7 @@ struct sta_info {
 
 	char *identity; /* User-Name from RADIUS */
 
+	u16 auth_alg;
 #ifdef CONFIG_INTERWORKING
 #define GAS_DIALOG_MAX 8 /* Max concurrent dialog number */
 	struct gas_dialog_info *gas_dialog;
@@ -57,10 +58,17 @@ struct sta_info {
 #endif /* CONFIG_INTERWORKING */
 	struct wpabuf *wps_ie; /* WPS IE from (Re)Association Request */
 
+#ifdef ESP_SUPPLICANT
 #ifdef CONFIG_SAE
-	enum { SAE_INIT, SAE_COMMIT, SAE_CONFIRM } sae_state;
-	u16 sae_send_confirm;
+	void *lock;
+	struct sae_data *sae;
+	bool sae_commit_processing;	/* halt queuing commit while we are
+				 * processing commit for that station  */
+	bool remove_pending;	/* Flag to indicate to free station when
+				 * whose mutex is taken by task */
 #endif /* CONFIG_SAE */
+#endif /* ESP_SUPPLICANT */
+
 };
 
 

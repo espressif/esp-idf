@@ -29,9 +29,6 @@ def is_test_server_available():  # type: () -> bool
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet
 def test_examples_protocol_http2_request(dut: Dut) -> None:
     """

@@ -25,7 +25,7 @@
     - :ref:`gptimer-register-event-callbacks` - 如何将用户的特定代码挂载到警报事件回调函数。
     - :ref:`enable-and-disable-timer` - 如何使能和禁用定时器。
     - :ref:`start-and-stop-timer` - 通过不同报警行为启动定时器的典型使用场景。
-    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
+    :SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
     - :ref:`gptimer-power-management` - 选择不同的时钟源将会如何影响功耗。
     - :ref:`gptimer-iram-safe` - 在 cache 禁用的情况下，如何更好地让定时器处理中断事务以及实现 IO 控制功能。
     - :ref:`gptimer-thread-safety` - 驱动程序保证哪些 API 线程安全。
@@ -129,6 +129,7 @@
 ^^^^^^^^^^^^^^^^
 
 启动和停止是定时器的基本 IO 操作。调用 :cpp:func:`gptimer_start` 可以使内部计数器开始工作，而 :cpp:func:`gptimer_stop` 可以使计数器停止工作。下文说明了如何在存在或不存在警报事件的情况下启动定时器。
+调用 :cpp:func:`gptimer_start` 将使驱动程序状态从 enable 转换为 run, 反之亦然。您需要确保 start 和 stop 函数成对使用，否则，函数可能返回 :c:macro:`ESP_ERR_INVALID_STATE`。
 
 将定时器作为挂钟启动
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,7 +261,7 @@
     ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
 
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-etm-event-and-task:
 
@@ -273,18 +274,16 @@
 
     .. _gptimer-power-management:
 
-.. only:: not SOC_TIMER_SUPPORT_ETM
+.. only:: not SOC_ETM_SUPPORTED or not SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-power-management:
 
 电源管理
-^^^^^^^^^^^^^^^^^
+^^^^^^^^
 
-当使能电源管理时（即 :ref:`CONFIG_PM_ENABLE` 已打开），系统将在进入 Light-sleep 模式之前调整 APB 频率，从而可能会改变通用定时器的计数步骤周期，导致计时不准确。
+有些电源管理的策略会在某些时刻关闭时钟源，或者改变时钟源的频率，以求降低功耗。比如在启用 DFS 后， APB 时钟源会降低频率。如果浅睡眠（light sleep） 模式也被开启， PLL 和 XTAL 时钟都会被默认关闭，从而导致 GPTimer 的计时不准确。
 
-然而，驱动程序可以通过获取类型为 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 的电源管理锁来阻止系统更改 APB 频率。每当驱动程序创建一个通用定时器实例，且该实例选择 :cpp:enumerator:`GPTIMER_CLK_SRC_APB` 作为其时钟源的时，驱动程序会确保在通过 :cpp:func:`gptimer_enable` 使能定时器时，已经获取了电源管理锁。同样，当为该定时器调用 :cpp:func:`gptimer_disable` 时，驱动程序会释放电源管理锁。
-
-如果选择 :cpp:enumerator:`GPTIMER_CLK_SRC_XTAL` 等其他时钟源，那么驱动程序不会安装电源管理锁。只要时钟源仍可提供足够的分辨率，XTAL 时钟源就更适合低功耗应用。
+驱动程序会根据具体的时钟源选择，通过创建不同的电源锁来避免上述情况的发生。驱动会在 :cpp:func:`gptimer_enable` 函数中增加电源锁的引用计数，并在 :cpp:func:`gptimer_disable` 函数中减少电源锁的引用计数，从而保证了在 :cpp:func:`gptimer_enable` 和 :cpp:func:`gptimer_disable` 之间， GPTimer 的时钟源始处于稳定工作的状态。
 
 .. _gptimer-iram-safe:
 
@@ -312,19 +311,16 @@ IRAM 安全
 .. _gptimer-thread-safety:
 
 线程安全
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^
 
-驱动程序会保证工厂函数 :cpp:func:`gptimer_new_timer` 的线程安全，这意味着您可以从不同的 RTOS 任务中调用这一函数，而无需额外的锁保护。
-
-由于驱动程序通过使用临界区来防止这些函数在任务和 ISR 中同时被调用，所以以下函数能够在 ISR 上下文中运行。
+驱动提供的所有 API 都是线程安全的，这意味着您可以从不同的 RTOS 任务中调用这些函数，而无需额外的互斥锁去保护。以下这些函数还被允许在中断上下文中运行。
 
 - :cpp:func:`gptimer_start`
 - :cpp:func:`gptimer_stop`
 - :cpp:func:`gptimer_get_raw_count`
 - :cpp:func:`gptimer_set_raw_count`
+- :cpp:func:`gptimer_get_captured_count`
 - :cpp:func:`gptimer_set_alarm_action`
-
-将 :cpp:type:`gptimer_handle_t` 作为第一个位置参数的其他函数不被视作线程安全，也就是说应该避免从多个任务中调用这些函数。
 
 .. _gptimer-kconfig-options:
 

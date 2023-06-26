@@ -98,13 +98,14 @@ components/esp_hw_support/include/esp_private/esp_memprot_internal.h
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
 components/esp_wifi/include/esp_private/wifi_os_adapter.h
+components/esp_coex/include/esp_coexist_adapter.h
+components/esp_coex/include/esp_coex_i154.h
 ### To be fixed: headers that rely on implicit inclusion
 #
 components/esp_rom/include/esp32/rom/rtc.h
 components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s3/rom/rtc.h
-components/esp_rom/include/esp32h4/rom/rtc.h
 components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp_rom/include/esp32c6/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
@@ -118,11 +119,9 @@ components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_ringbuf/include/freertos/ringbuf.h
 components/esp_wifi/include/esp_wifi_crypto_types.h
-components/esp_wifi/include/esp_coexist_internal.h
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/include/esp_wifi_default.h
-components/esp_wifi/include/esp_coexist_adapter.h
 components/esp_event/include/esp_event_base.h
 components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
@@ -156,3 +155,4 @@ components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
 components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/interrupt.h
 components/riscv/include/riscv/rvruntime-frames.h
+components/riscv/include/riscv/rvsleep-frames.h

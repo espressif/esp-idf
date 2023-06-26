@@ -2,7 +2,7 @@ Console
 =======
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF provides ``console`` component, which includes building blocks needed to develop an interactive console over serial port. This component includes following facilities:
+ESP-IDF provides ``console`` component, which includes building blocks needed to develop an interactive console over serial port. This component includes the following features:
 
 - Line editing, provided by `linenoise`_ library. This includes handling of backspace and arrow keys, scrolling through command history, command auto-completion, and argument hints.
 - Splitting of command line into arguments.
@@ -12,16 +12,16 @@ ESP-IDF provides ``console`` component, which includes building blocks needed to
 
 .. note::
 
-  These facilities can be used together or independently. For example, it is possible to use line editing and command registration features, but use ``getopt`` or custom code for argument parsing, instead of `argtable3`_. Likewise, it is possible to use simpler means of command input (such as ``fgets``) together with the rest of the means for command splitting and argument parsing.
+  These features can be used together or independently. For example, it is possible to use line editing and command registration features, but use ``getopt`` or custom code for argument parsing, instead of `argtable3`_. Likewise, it is possible to use simpler means of command input (such as ``fgets``) together with the rest of the means for command splitting and argument parsing.
 
 Line editing
 ------------
 
-Line editing feature lets users compose commands by typing them, erasing symbols using 'backspace' key, navigating within the command using left/right keys, navigating to previously typed commands using up/down keys, and performing autocompletion using 'tab' key.
+Line editing feature lets users compose commands by typing them, erasing symbols using the 'backspace' key, navigating within the command using the left/right keys, navigating to previously typed commands using the up/down keys, and performing autocompletion using the 'tab' key.
 
 .. note::
 
-  This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running :example:`system/console` example instead of a command prompt (e.g. ``esp>`` ), it means that the serial monitor does not support escape sequences. Programs which are known to work are  GNU screen, minicom, and idf_monitor.py (which can be invoked using ``idf.py monitor`` from project directory).
+  This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running :example:`system/console` example instead of a command prompt (e.g. ``esp>`` ), it means that the serial monitor does not support escape sequences. Programs which are known to work are GNU screen, minicom, and esp-idf-monitor (which can be invoked using ``idf.py monitor`` from project directory).
 
 Here is an overview of functions provided by `linenoise <https://github.com/antirez/linenoise>`_ library.
 
@@ -36,7 +36,7 @@ Linenoise library does not need explicit initialization. However, some configura
 
 :cpp:func:`linenoiseSetMultiLine`
 
-  Switch between single line and multi line editing modes. In single line mode, if the length of the command exceeds the width of the terminal, the command text is scrolled within the line to show the end of the text. In this case the beginning of the text is hidden. Single line needs less data to be sent to refresh screen on each key press, so exhibits less glitching compared to the multi line mode. On the flip side, editing commands and copying command text from terminal in single line mode is harder. Default is single line mode.
+  Switch between single line and multi line editing modes. In single line mode, if the length of the command exceeds the width of the terminal, the command text is scrolled within the line to show the end of the text. In this case the beginning of the text is hidden. Single line mode needs less data to be sent to refresh screen on each key press, so exhibits less glitching compared to the multi line mode. On the flip side, editing commands and copying command text from terminal in single line mode is harder. Default is single line mode.
 
 :cpp:func:`linenoiseAllowEmpty`
 
@@ -44,7 +44,7 @@ Linenoise library does not need explicit initialization. However, some configura
 
 :cpp:func:`linenoiseSetMaxLineLen`
 
-  Set maximum length of the line for linenoise library. Default length is 4096. If you need optimize RAM memory usage, you can do it by this function by setting a value less than default 4 KB.
+  Set maximum length of the line for linenoise library. Default length is 4096 bytes. The default value can be updated to optimize RAM memory usage.
 
 
 Main loop
@@ -52,7 +52,7 @@ Main loop
 
 :cpp:func:`linenoise`
 
-  In most cases, console applications have some form of read/eval loop. :cpp:func:`linenoise` is the single function which handles user's key presses and returns completed line once 'enter' key is pressed. As such, it handles the 'read' part of the loop.
+  In most cases, console applications have some form of read/eval loop. :cpp:func:`linenoise` is the single function which handles user's key presses and returns the completed line once the 'enter' key is pressed. As such, it handles the 'read' part of the loop.
 
 :cpp:func:`linenoiseFree`
 
@@ -64,7 +64,7 @@ Hints and completions
 
 :cpp:func:`linenoiseSetCompletionCallback`
 
-  When user presses 'tab' key, linenoise library invokes completion callback. The callback should inspect the contents of the command typed so far and provide a list of possible completions using calls to :cpp:func:`linenoiseAddCompletion` function. :cpp:func:`linenoiseSetCompletionCallback` function should be called to register this completion callback, if completion feature is desired.
+  When the user presses the 'tab' key, linenoise library invokes the completion callback. The callback should inspect the contents of the command typed so far and provide a list of possible completions using calls to :cpp:func:`linenoiseAddCompletion` function. :cpp:func:`linenoiseSetCompletionCallback` function should be called to register this completion callback, if completion feature is desired.
 
   ``console`` component provides a ready made function to provide completions for registered commands, :cpp:func:`esp_console_get_completion` (see below).
 
@@ -74,11 +74,11 @@ Hints and completions
 
 :cpp:func:`linenoiseSetHintsCallback`
 
-  Whenever user input changes, linenoise invokes hints callback. This callback can inspect the command line typed so far, and provide a string with hints (which can include list of command arguments, for example). The library then displays the hint text on the same line where editing happens, possibly with a different color.
+  Whenever user input changes, linenoise invokes the hints callback. This callback can inspect the command line typed so far, and provide a string with hints (which can include list of command arguments, for example). The library then displays the hint text on the same line where editing happens, possibly with a different color.
 
 :cpp:func:`linenoiseSetFreeHintsCallback`
 
-  If hint string returned by hints callback is dynamically allocated or needs to be otherwise recycled, the function which performs such cleanup should be registered via :cpp:func:`linenoiseSetFreeHintsCallback`.
+  If the hint string returned by hints callback is dynamically allocated or needs to be otherwise recycled, the function which performs such cleanup should be registered via :cpp:func:`linenoiseSetFreeHintsCallback`.
 
 
 History
@@ -86,7 +86,7 @@ History
 
 :cpp:func:`linenoiseHistorySetMaxLen`
 
-  This function sets the number of most recently typed commands to be kept in memory. Users can navigate the history using up/down arrows.
+  This function sets the number of most recently typed commands to be kept in memory. Users can navigate the history using the up/down arrows keys.
 
 :cpp:func:`linenoiseHistoryAdd`
 
@@ -174,14 +174,14 @@ After that, you can register your own commands with :cpp:func:`esp_console_cmd_r
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
-    Likewise, if your REPL environment is based on USB_SERIAL_JTAG device, you only need to call :cpp:func:`esp_console_new_repl_usb_serial_jtag` at first step. And call other functions as usual.
+    Likewise, if your REPL environment is based on USB_SERIAL_JTAG device, you only need to call :cpp:func:`esp_console_new_repl_usb_serial_jtag` at first step. Then call other functions as usual.
 
 Application Example
 -------------------
 
 Example application illustrating usage of the ``console`` component is available in :example:`system/console` directory. This example shows how to initialize UART and VFS functions, set up linenoise library, read and handle commands from UART, and store command history in Flash. See README.md in the example directory for more details.
 
-Besides that, ESP-IDF contains several useful examples which based on `console` component and can be treated as "tools" when developing applications. For example, :example:`peripherals/i2c/i2c_tools`, :example:`wifi/iperf`.
+Besides that, ESP-IDF contains several useful examples which are based on the `console` component and can be treated as "tools" when developing applications. For example, :example:`peripherals/i2c/i2c_tools`, :example:`wifi/iperf`.
 
 
 API Reference

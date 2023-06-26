@@ -379,6 +379,7 @@ int hwaddr_aton2(const char *txt, u8 *addr);
 int hex2byte(const char *hex);
 int hexstr2bin(const char *hex, u8 *buf, size_t len);
 void inc_byte_array(u8 *counter, size_t len);
+void buf_shift_right(u8 *buf, size_t len, size_t bits);
 void wpa_get_ntp_timestamp(u8 *buf);
 int wpa_scnprintf(char *buf, size_t size, const char *fmt, ...);
 int wpa_snprintf_hex_sep(char *buf, size_t buf_size, const u8 *data, size_t len,
@@ -392,6 +393,7 @@ u8 rssi_to_rcpi(int rssi);
 int os_reltime_expired(struct os_time *now,
 		struct os_time *ts,
 		os_time_t timeout_secs);
+int os_reltime_initialized(struct os_reltime *t);
 
 #ifdef CONFIG_NATIVE_WINDOWS
 void wpa_unicode2ascii_inplace(TCHAR *str);

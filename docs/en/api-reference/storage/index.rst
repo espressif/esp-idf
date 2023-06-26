@@ -3,7 +3,6 @@ Storage API
 
 :link_to_translation:`zh_CN:[中文]`
 
-
 This section contains reference of the high-level storage APIs. They are based on low-level drivers such as SPI Flash, SD/MMC.
 
 - :doc:`Partitions API <partition>` allow block based access to SPI Flash according to the :doc:`Partition Table </api-guides/partition-tables>`.
@@ -24,6 +23,7 @@ This section contains reference of the high-level storage APIs. They are based o
     fatfs
     mass_mfg.rst
     nvs_flash
+    nvs_encryption
     nvs_partition_gen.rst
     nvs_partition_parse.rst
     sdmmc
@@ -33,4 +33,3 @@ This section contains reference of the high-level storage APIs. They are based o
     wear-levelling
 
 Code examples for this API section are provided in the :example:`storage` directory of ESP-IDF examples.
-

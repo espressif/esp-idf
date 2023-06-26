@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,9 +40,6 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rtc.h"
-#include "esp32h4/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
 #include "esp32c2/rom/rtc.h"
@@ -349,8 +346,6 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[test
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(...)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5060
 TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 {
     int64_t t1 = esp_rtc_get_time_us();
@@ -389,11 +384,11 @@ static void trigger_deepsleep(void)
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() / 2);
 
     // Delay for error accumulation.
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(10*1000));
 
     // Save start time. Deep sleep.
     start = esp_rtc_get_time_us();
-    esp_sleep_enable_timer_wakeup(1000);
+    esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
@@ -409,11 +404,11 @@ static void check_time_deepsleep_1(void)
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
 
     // Delay for error accumulation.
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(10*1000));
 
     start = esp_rtc_get_time_us();
 
-    esp_sleep_enable_timer_wakeup(1000);
+    esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
@@ -428,5 +423,3 @@ static void check_time_deepsleep_2(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sleep", "", trigger_deepsleep, check_time_deepsleep_1, check_time_deepsleep_2);
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

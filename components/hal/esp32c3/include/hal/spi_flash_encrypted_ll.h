@@ -1,16 +1,8 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -23,7 +15,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "soc/system_reg.h"
-#include "soc/hwcrypto_reg.h"
+#include "soc/xts_aes_reg.h"
 #include "soc/soc.h"
 #include "hal/assert.h"
 
@@ -68,7 +60,7 @@ static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
 {
     // Our hardware only support flash encryption
     HAL_ASSERT(type == FLASH_ENCRYPTION_MANU);
-    REG_WRITE(AES_XTS_DESTINATION_REG, type);
+    REG_WRITE(XTS_AES_DESTINATION_REG, type);
 }
 
 /**
@@ -79,7 +71,7 @@ static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
 static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
 {
     // Desired block should not be larger than the block size.
-    REG_WRITE(AES_XTS_SIZE_REG, size >> 5);
+    REG_WRITE(XTS_AES_LINESIZE_REG, size >> 5);
 }
 
 /**
@@ -93,7 +85,7 @@ static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
 static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const uint32_t* buffer, uint32_t size)
 {
     uint32_t plaintext_offs = (address % 64);
-    memcpy((void *)(AES_XTS_PLAIN_BASE + plaintext_offs), buffer, size);
+    memcpy((void *)(XTS_AES_PLAIN_MEM + plaintext_offs), buffer, size);
 }
 
 /**
@@ -103,7 +95,7 @@ static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const u
  */
 static inline void spi_flash_encrypt_ll_address_save(uint32_t flash_addr)
 {
-    REG_WRITE(AES_XTS_PHYSICAL_ADDR_REG, flash_addr);
+    REG_WRITE(XTS_AES_PHYSICAL_ADDRESS_REG, flash_addr);
 }
 
 /**
@@ -111,7 +103,7 @@ static inline void spi_flash_encrypt_ll_address_save(uint32_t flash_addr)
  */
 static inline void spi_flash_encrypt_ll_calculate_start(void)
 {
-    REG_WRITE(AES_XTS_TRIGGER_REG, 1);
+    REG_WRITE(XTS_AES_TRIGGER_REG, 1);
 }
 
 /**
@@ -119,7 +111,7 @@ static inline void spi_flash_encrypt_ll_calculate_start(void)
  */
 static inline void spi_flash_encrypt_ll_calculate_wait_idle(void)
 {
-    while(REG_READ(AES_XTS_STATE_REG) == 0x1) {
+    while(REG_READ(XTS_AES_STATE_REG) == 0x1) {
     }
 }
 
@@ -128,8 +120,8 @@ static inline void spi_flash_encrypt_ll_calculate_wait_idle(void)
  */
 static inline void spi_flash_encrypt_ll_done(void)
 {
-    REG_WRITE(AES_XTS_RELEASE_REG, 1);
-    while(REG_READ(AES_XTS_STATE_REG) != 0x3) {
+    REG_WRITE(XTS_AES_RELEASE_REG, 1);
+    while(REG_READ(XTS_AES_STATE_REG) != 0x3) {
     }
 }
 
@@ -138,7 +130,7 @@ static inline void spi_flash_encrypt_ll_done(void)
  */
 static inline void spi_flash_encrypt_ll_destroy(void)
 {
-    REG_WRITE(AES_XTS_DESTROY_REG, 1);
+    REG_WRITE(XTS_AES_DESTROY_REG, 1);
 }
 
 /**

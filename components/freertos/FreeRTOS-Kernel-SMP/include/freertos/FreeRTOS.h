@@ -73,8 +73,10 @@
 #endif
 
 #ifdef configNEWLIB_REENTRANT_IS_DYNAMIC
-    #if ( configUSE_NEWLIB_REENTRANT != 1 )
-        #error configUSE_NEWLIB_REENTRANT must be defined to 1 to enable configNEWLIB_REENTRANT_IS_DYNAMIC
+    #if configNEWLIB_REENTRANT_IS_DYNAMIC == 1
+        #if ( configUSE_NEWLIB_REENTRANT != 1 )
+            #error configUSE_NEWLIB_REENTRANT must be defined to 1 to enable configNEWLIB_REENTRANT_IS_DYNAMIC
+        #endif
     #endif
 #else /* configNEWLIB_REENTRANT_IS_DYNAMIC */
     #define configNEWLIB_REENTRANT_IS_DYNAMIC   0
@@ -1390,5 +1392,12 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
     }
 #endif
 /* *INDENT-ON* */
+
+/* IDF API additions have been moved to idf_additions.h when building for
+ * Amazon SMP FreeRTOS. However, the rest of ESP-IDF has not been updated to
+ * include this header explicitly when calling this additional API. Thus, we
+ * include this here as a workaround until the rest of ESP-IDF can be updated
+ * to include idf_additions.h explicitly. */
+#include "freertos/idf_additions.h"
 
 #endif /* INC_FREERTOS_H */

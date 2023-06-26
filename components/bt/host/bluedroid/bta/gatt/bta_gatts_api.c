@@ -667,4 +667,14 @@ uint8_t BTA_GATTS_SendMultiNotification(uint8_t gatt_if, uint16_t conn_id, void 
 
     return 0;
 }
+
+void BTA_GATTS_ShowLocalDatabase(void)
+{
+    BT_HDR  *p_buf;
+
+    if ((p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
+        p_buf->event = BTA_GATTS_API_SHOW_LOCAL_DATABASE_EVT;
+        bta_sys_sendmsg(p_buf);
+    }
+}
 #endif /* BTA_GATT_INCLUDED */

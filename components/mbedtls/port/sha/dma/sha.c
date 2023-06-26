@@ -54,8 +54,6 @@
 #include "esp32s3/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
 #endif
@@ -139,48 +137,6 @@ void esp_sha_release_hardware()
 
     SHA_RELEASE();
 }
-
-#if SOC_SHA_SUPPORT_SHA512_T
-/* The initial hash value for SHA512/t is generated according to the
-   algorithm described in the TRM, chapter SHA-Accelerator
-*/
-int esp_sha_512_t_init_hash(uint16_t t)
-{
-    uint32_t t_string = 0;
-    uint8_t t0, t1, t2, t_len;
-
-    if (t == 384) {
-        ESP_LOGE(TAG, "Invalid t for SHA512/t, t = %u,cannot be 384", t);
-        return -1;
-    }
-
-    if (t <= 9) {
-        t_string = (uint32_t)((1 << 23) | ((0x30 + t) << 24));
-        t_len = 0x48;
-    } else if (t <= 99) {
-        t0 = t % 10;
-        t1 = (t / 10) % 10;
-        t_string = (uint32_t)((1 << 15) | ((0x30 + t0) << 16) |
-                              (((0x30 + t1) << 24)));
-        t_len = 0x50;
-    } else if (t <= 512) {
-        t0 = t % 10;
-        t1 = (t / 10) % 10;
-        t2 = t / 100;
-        t_string = (uint32_t)((1 << 7) | ((0x30 + t0) << 8) |
-                              (((0x30 + t1) << 16) + ((0x30 + t2) << 24)));
-        t_len = 0x58;
-    } else {
-        ESP_LOGE(TAG, "Invalid t for SHA512/t, t = %u, must equal or less than 512", t);
-        return -1;
-    }
-
-    sha_hal_sha512_init_hash(t_string, t_len);
-
-    return 0;
-}
-
-#endif //SOC_SHA_SUPPORT_SHA512_T
 
 
 /* Hash the input block by block, using non-DMA mode */

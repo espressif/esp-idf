@@ -1,15 +1,19 @@
-| Supported Targets | ESP32-C6 | ESP32-H4 |
+| Supported Targets | ESP32-C6 | ESP32-H2 |
 | ----------------- | -------- | -------- |
 
 # Light Switch Example
 
-This test code shows how to configure Zigbee Coordinator and use it as an HA on/off_switch
+This test code shows how to configure Zigbee Coordinator and use it as an HA on/off_switch.
+
+The ESP Zigbee SDK provides more examples and tools for productization:
+* [ESP Zigbee SDK Docs](https://docs.espressif.com/projects/esp-zigbee-sdk)
+* [ESP Zigbee SDK Repo](https://github.com/espressif/esp-zigbee-sdk)
 
 ## Hardware Required
 
-* One development board with ESP32-H4 SoC acting as Zigbee Coordinator (loaded with HA_on_off_switch)
+* One development board with ESP32-H2 SoC acting as Zigbee Coordinator (loaded with HA_on_off_switch)
 * A USB cable for power supply and programming
-* Choose another ESP32-H4 as Zigbee end-device (see [HA_on_off_light](../HA_on_off_light/))
+* Choose another ESP32-H2 as Zigbee end-device (see [HA_on_off_light](../HA_on_off_light/))
 
 ## Configure the project
 

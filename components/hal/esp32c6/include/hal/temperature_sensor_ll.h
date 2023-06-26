@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,13 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 #include "soc/apb_saradc_struct.h"
+#include "soc/apb_saradc_reg.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "soc/pcr_struct.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +34,15 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_ADC_FACTOR     (0.4386)
 #define TEMPERATURE_SENSOR_LL_DAC_FACTOR     (27.88)
 #define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR  (20.52)
+#define TEMPERATURE_SENSOR_LL_MEASURE_MAX    (125)
+#define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
+
+#define TEMPERATURE_SENSOR_LL_INTR_MASK      APB_SARADC_APB_SARADC_TSENS_INT_ST
+
+typedef enum {
+    TEMPERATURE_SENSOR_LL_WAKE_ABSOLUTE = 0,
+    TEMPERATURE_SENSOR_LL_WAKE_DELTA = 1,
+} temperature_sensor_ll_wakeup_mode_t;
 
 /**
  * @brief Enable the temperature sensor power.
@@ -89,6 +100,7 @@ static inline void temperature_sensor_ll_set_range(uint32_t range)
  *
  * @return uint32_t raw_value
  */
+__attribute__((always_inline))
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
     return APB_SARADC.saradc_apb_tsens_ctrl.saradc_tsens_out;
@@ -186,6 +198,7 @@ static inline void temperature_sensor_ll_enable_intr(bool enable)
 /**
  * @brief Clear temperature sensor interrupt
  */
+__attribute__((always_inline))
 static inline void temperature_sensor_ll_clear_intr(void)
 {
     APB_SARADC.saradc_int_clr.saradc_apb_saradc_tsens_int_clr = 1;
@@ -193,12 +206,10 @@ static inline void temperature_sensor_ll_clear_intr(void)
 
 /**
  * @brief Get temperature sensor interrupt status.
- *
- * @param[out] int_status interrupt status.
  */
-static inline void temperature_sensor_ll_get_intr_status(uint8_t *int_status)
+static inline volatile void *temperature_sensor_ll_get_intr_status(void)
 {
-    *int_status = APB_SARADC.saradc_int_st.saradc_apb_saradc_tsens_int_st;
+    return &APB_SARADC.saradc_int_st;
 }
 
 /**
@@ -216,9 +227,9 @@ static inline void temperature_sensor_ll_sample_enable(bool en)
  *
  * @param rate sampling rate
  */
-static inline void temperature_sensor_ll_sample_rate(uint16_t rate)
+static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
 {
-    APB_SARADC.tsens_sample.saradc_tsens_sample_rate = rate;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_sample, saradc_tsens_sample_rate, rate);
 }
 
 #ifdef __cplusplus

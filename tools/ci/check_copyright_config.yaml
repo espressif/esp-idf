@@ -53,6 +53,7 @@ examples_and_unit_tests:
    - 'components/**/test/**'
    - 'components/**/test_apps/**'
    - 'tools/test_apps/**'
+   - '**/pytest_*.py'
   allowed_licenses:
   - Apache-2.0
   - Unlicense
@@ -63,6 +64,7 @@ lwip_component:
   include:
     - 'components/lwip/**'
     - 'components/esp_netif/lwip/**'
+    - 'examples/common_components/protocol_examples_tapif_io/lwip'
   allowed_licenses:
     - Apache-2.0
     - BSD-3-Clause
@@ -107,7 +109,7 @@ systemview:
     - 'components/app_trace/sys_view'
   allowed_licenses:
     - Apache-2.0
-    - BSD-3-Clause
+    - BSD-1-Clause
   license_for_new_files: Apache-2.0
 
 spiffs:
@@ -119,7 +121,7 @@ spiffs:
 
 sdmmc:
   include:
-    - 'components/driver/include/driver/'
+    - 'components/driver/sdmmc/include/driver/'
     - 'components/sdmmc/'
   allowed_licenses:
     - Apache-2.0
@@ -145,6 +147,7 @@ xtensa:
   allowed_licenses:
     - Apache-2.0    #Files added to the xtensa component by us
     - MIT           #Cadence sources
+
 tinyusb:
   include:
     - 'examples/peripherals/usb/device/tusb_midi/'
@@ -153,6 +156,32 @@ tinyusb:
     - MIT           # Example derived from TinyUSB code by HaThach
     - Unlicense
     - CC0-1.0
+
+# Portions of the USB stack in ROM are derived from Zephyr project,
+# with files licensed under a mix of Apache and BSD-3-Clause licenses.
+esp_rom_usb:
+  include:
+    - 'components/esp_rom/include/*/rom/usb/'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+
+protocol_examples_common_component:
+  include:
+    - 'examples/common_components/protocol_examples_common/'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-2-Clause  # Contains URI encoding/decoding code from nginx
+    - Unlicense
+    - CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
+zigbee:
+  include:
+    - 'examples/zigbee/'
+  allowed_licenses:
+    - Apache-2.0
+    - LicenseRef-Included
 
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
@@ -169,7 +198,6 @@ ignore:
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'
-    - examples/zigbee/
     - components/esp_local_ctrl/proto-c/
     - components/esp_local_ctrl/python/
     - components/protocomm/proto-c/

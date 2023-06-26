@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <sys/random.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include "esp_log.h"
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"
@@ -55,6 +56,8 @@ typedef struct {
     char *sub_protocol;
     char *user_agent;
     char *headers;
+    char *auth;
+    int http_status_code;
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
@@ -121,6 +124,26 @@ static char *trimwhitespace(const char *str)
     *(end + 1) = 0;
 
     return (char *)str;
+}
+
+static int get_http_status_code(const char *buffer)
+{
+    const char http[] = "HTTP/";
+    const char *found = strcasestr(buffer, http);
+    char status_code[4];
+    if (found) {
+        found += sizeof(http)/sizeof(http[0]) - 1;
+        found = strchr(found, ' ');
+        if (found) {
+            found++;
+            strncpy(status_code, found, 4);
+            status_code[3] = '\0';
+            int code = atoi(status_code);
+            ESP_LOGD(TAG, "HTTP status code is %d", code);
+            return code == 0 ? -1 : code;
+        }
+    }
+    return -1;
 }
 
 static char *get_http_header(const char *buffer, const char *key)
@@ -194,6 +217,16 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
             return -1;
         }
     }
+    if (ws->auth) {
+        ESP_LOGD(TAG, "Authorization: %s", ws->auth);
+        int r = snprintf(ws->buffer + len, WS_BUFFER_SIZE - len, "Authorization: %s\r\n", ws->auth);
+        len += r;
+        if (r <= 0 || len >= WS_BUFFER_SIZE) {
+            ESP_LOGE(TAG, "Error in request generation"
+                     "(snprintf of authorization returned %d, desired request len: %d, buffer size: %d", r, len, WS_BUFFER_SIZE);
+            return -1;
+        }
+    }
     if (ws->headers) {
         ESP_LOGD(TAG, "headers: %s", ws->headers);
         int r = snprintf(ws->buffer + len, WS_BUFFER_SIZE - len, "%s", ws->headers);
@@ -226,6 +259,12 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ws->buffer[header_len] = '\0';
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
     } while (NULL == strstr(ws->buffer, "\r\n\r\n") && header_len < WS_BUFFER_SIZE);
+
+    ws->http_status_code = get_http_status_code(ws->buffer);
+    if (ws->http_status_code == -1) {
+        ESP_LOGE(TAG, "HTTP upgrade failed");
+        return -1;
+    }
 
     char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
     if (server_key == NULL) {
@@ -409,7 +448,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     mask = ((*data_ptr >> 7) & 0x01);
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", ws->frame_state.opcode, mask, payload_len);
+    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d", ws->frame_state.opcode, mask, payload_len);
     if (payload_len == 126) {
         // headerLen += 2;
         if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
@@ -567,6 +606,7 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
     free(ws->sub_protocol);
     free(ws->user_agent);
     free(ws->headers);
+    free(ws->auth);
     free(ws);
     return 0;
 }
@@ -711,6 +751,26 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->auth) {
+        free(ws->auth);
+    }
+    if (auth == NULL) {
+        ws->auth = NULL;
+        return ESP_OK;
+    }
+    ws->auth = strdup(auth);
+    if (ws->auth == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transport_ws_config_t *config)
 {
     if (t == NULL) {
@@ -734,6 +794,10 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
         err = esp_transport_ws_set_headers(t, config->headers);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
+    if (config->auth) {
+        err = esp_transport_ws_set_auth(t, config->auth);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
     ws->propagate_control_frames = config->propagate_control_frames;
 
     return err;
@@ -743,6 +807,12 @@ bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t)
 {
   transport_ws_t *ws = esp_transport_get_context_data(t);
   return ws->frame_state.fin;
+}
+
+int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return ws->http_status_code;
 }
 
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)

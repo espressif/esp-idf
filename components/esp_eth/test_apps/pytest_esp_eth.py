@@ -1,11 +1,10 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import contextlib
 import logging
 import os
 import socket
-import time
 from multiprocessing import Pipe, Process, connection
 from typing import Iterator
 
@@ -13,7 +12,7 @@ import pytest
 from pytest_embedded import Dut
 from scapy.all import Ether, raw
 
-ETH_TYPE = 0x2222
+ETH_TYPE = 0x3300
 
 
 class EthTestIntf(object):
@@ -38,12 +37,14 @@ class EthTestIntf(object):
                     self.target_if = my_if
                     break
         if self.target_if == '':
-            raise Exception('network interface not found')
+            raise RuntimeError('network interface not found')
         logging.info('Use %s for testing', self.target_if)
 
     @contextlib.contextmanager
-    def configure_eth_if(self) -> Iterator[socket.socket]:
-        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(self.eth_type))
+    def configure_eth_if(self, eth_type:int=0) -> Iterator[socket.socket]:
+        if eth_type == 0:
+            eth_type = self.eth_type
+        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
         so.bind((self.target_if, 0))
         try:
             yield so
@@ -62,21 +63,30 @@ class EthTestIntf(object):
             except Exception as e:
                 raise e
 
-    def recv_resp_poke(self, i: int) -> None:
-        with self.configure_eth_if() as so:
-            so.settimeout(10)
-            try:
-                eth_frame = Ether(so.recv(60))
-
-                if eth_frame.type == self.eth_type and eth_frame.load[0] == 0xfa:
+    def recv_resp_poke(self, mac:str, i:int=0) -> None:
+        eth_type_ctrl = self.eth_type + 1
+        with self.configure_eth_if(eth_type_ctrl) as so:
+            so.settimeout(30)
+            for _ in range(10):
+                try:
+                    eth_frame = Ether(so.recv(60))
+                except Exception as e:
+                    raise e
+                if mac == eth_frame.src and eth_frame.load[0] == 0xfa:
                     if eth_frame.load[1] != i:
-                        raise Exception('Missed Poke Packet')
+                        raise RuntimeError('Missed Poke Packet')
+                    logging.info('Poke Packet received...')
                     eth_frame.dst = eth_frame.src
                     eth_frame.src = so.getsockname()[4]
                     eth_frame.load = bytes.fromhex('fb')    # POKE_RESP code
                     so.send(raw(eth_frame))
-            except Exception as e:
-                raise e
+                    break
+                else:
+                    logging.warning('Unexpected Control packet')
+                    logging.warning('Expected Ctrl command: 0xfa, actual: 0x%x', eth_frame.load[0])
+                    logging.warning('Source MAC %s', eth_frame.src)
+            else:
+                raise RuntimeError('No Poke Packet!')
 
     def traffic_gen(self, mac: str, pipe_rcv:connection.Connection) -> None:
         with self.configure_eth_if() as so:
@@ -118,46 +128,64 @@ def ethernet_l2_test(dut: Dut) -> None:
     with target_if.configure_eth_if() as so:
         so.settimeout(30)
         dut.write('"ethernet broadcast transmit"')
-        eth_frame = Ether(so.recv(1024))
+        res = dut.expect(
+            r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+        )
+
+        # wait for POKE msg to be sure the switch already started forwarding the port's traffic
+        # (there might be slight delay due to the RSTP execution)
+        dut_mac = res.group(1).decode('utf-8')
+        target_if.recv_resp_poke(mac=dut_mac)
+
+        for _ in range(10):
+            eth_frame = Ether(so.recv(1024))
+            if dut_mac == eth_frame.src:
+                break
+        else:
+            raise RuntimeError('No broadcast received from expected DUT MAC addr')
+
         for i in range(0, 1010):
             if eth_frame.load[i] != i & 0xff:
-                raise Exception('Packet content mismatch')
+                raise RuntimeError('Packet content mismatch')
     dut.expect_unity_test_output()
 
     dut.expect_exact("Enter next test, or 'enter' to see menu")
     dut.write('"ethernet recv_pkt"')
     res = dut.expect(
-        r'([\s\S]*)'
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
-    time.sleep(1)
+    dut_mac = res.group(1).decode('utf-8')
+    # wait for POKE msg to be sure the switch already started forwarding the port's traffic
+    # (there might be slight delay due to the RSTP execution)
+    target_if.recv_resp_poke(mac=dut_mac)
     target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
     target_if.send_eth_packet('01:00:00:00:00:00')  # multicast frame
-    target_if.send_eth_packet(res.group(2))  # unicast frame
+    target_if.send_eth_packet(mac=dut_mac)  # unicast frame
     dut.expect_unity_test_output(extra_before=res.group(1))
 
     dut.expect_exact("Enter next test, or 'enter' to see menu")
     dut.write('"ethernet start/stop stress test under heavy traffic"')
     res = dut.expect(
-        r'([\s\S]*)'
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
+    dut_mac = res.group(1).decode('utf-8')
     # Start/stop under heavy Tx traffic
     for tx_i in range(10):
-        target_if.recv_resp_poke(tx_i)
+        target_if.recv_resp_poke(dut_mac, tx_i)
+        dut.expect_exact('Ethernet stopped')
 
-    # Start/stop under heavy Rx traffic
-    pipe_rcv, pipe_send = Pipe(False)
-    tx_proc = Process(target=target_if.traffic_gen, args=(res.group(2), pipe_rcv, ))
-    tx_proc.start()
-    try:
-        for rx_i in range(10):
-            target_if.recv_resp_poke(rx_i)
-    finally:
+    for rx_i in range(10):
+        target_if.recv_resp_poke(dut_mac, rx_i)
+        # Start/stop under heavy Rx traffic
+        pipe_rcv, pipe_send = Pipe(False)
+        tx_proc = Process(target=target_if.traffic_gen, args=(dut_mac, pipe_rcv, ))
+        tx_proc.start()
+        dut.expect_exact('Ethernet stopped')
         pipe_send.send(0)  # just send some dummy data
         tx_proc.join(5)
         if tx_proc.exitcode is None:
             tx_proc.terminate()
+
     dut.expect_unity_test_output(extra_before=res.group(1))
 
 
@@ -178,7 +206,6 @@ def test_esp_ethernet(dut: Dut) -> None:
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_emac_hal(dut: Dut) -> None:
     ethernet_int_emac_hal_test(dut)
 
@@ -188,7 +215,6 @@ def test_esp_emac_hal(dut: Dut) -> None:
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_eth_ip101(dut: Dut) -> None:
     ethernet_l2_test(dut)
 
@@ -198,6 +224,5 @@ def test_esp_eth_ip101(dut: Dut) -> None:
 @pytest.mark.parametrize('config', [
     'default_lan8720',
 ], indirect=True)
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_eth_lan8720(dut: Dut) -> None:
     ethernet_l2_test(dut)

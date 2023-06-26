@@ -136,14 +136,10 @@
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)           // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
-#if CONFIG_IDF_ENV_FPGA
-#define  APB_CLK_FREQ                                ( 40*1000000 )
-#else
 #define  APB_CLK_FREQ                                ( 80*1000000 )
-#endif
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  RTC_CLK_FREQ                                (20*1000000)
 #define  XTAL_CLK_FREQ                               (40*1000000)
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ

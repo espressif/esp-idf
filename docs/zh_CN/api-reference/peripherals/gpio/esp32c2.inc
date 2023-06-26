@@ -109,8 +109,8 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO8 和 GPIO9 是 Strapping 管脚。更多信息请参考 `ESP8684 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_cn.pdf>`_。
+    - Strapping 管脚：GPIO8 和 GPIO9 是 Strapping 管脚。更多信息请参考 `ESP8684 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1：GPIO12-17 通常用于 SPI flash，不推荐用于其他用途。
-    - RTC：GPIO0-5 可以在 Deep-sleep 模式时使用。
+    - RTC：GPIO0-5 可用于将芯片从 Deep-sleep 模式中唤醒，其他 GPIO 仅能将芯片从 Light-sleep 模式中唤醒。更多信息请参考 :ref:`唤醒源<api-reference-wakeup-source>` 章节。
 
 ---

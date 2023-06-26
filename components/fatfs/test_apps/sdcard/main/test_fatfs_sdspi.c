@@ -40,7 +40,13 @@
 #define SDSPI_CLK_PIN  5
 #define SDSPI_CS_PIN   1
 #define SPI_DMA_CHAN   SPI_DMA_CH_AUTO
-#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define SDSPI_MISO_PIN 0
+#define SDSPI_MOSI_PIN 5
+#define SDSPI_CLK_PIN  4
+#define SDSPI_CS_PIN   1
+#define SPI_DMA_CHAN   SPI_DMA_CH_AUTO
+#endif
 
 #ifndef SPI_DMA_CHAN
 #define SPI_DMA_CHAN   1
@@ -53,6 +59,7 @@ typedef struct sdspi_mem {
     uint32_t* buf;
 } sdspi_mem_t;
 
+static const char* s_test_filename = "/sdcard/hello.txt";
 static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
 
 static void test_setup_sdspi(sdspi_mem_t* mem)
@@ -157,5 +164,36 @@ TEST_CASE("(SDSPI) can get partition info", "[fatfs][sdspi]")
 
     TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
 
+    test_teardown_sdspi(&mem);
+}
+
+TEST_CASE("(SDSPI) can format card", "[fatfs][sdspi][timeout=180]")
+{
+    sdspi_mem_t mem;
+    test_setup_sdspi(&mem);
+
+    const char path[] = "/sdcard";
+    sdmmc_card_t *card;
+    card = NULL;
+    sdspi_device_config_t device_cfg = {
+        .gpio_cs = SDSPI_CS_PIN,
+        .host_id = SDSPI_HOST_ID,
+        .gpio_cd = SDSPI_SLOT_NO_CD,
+        .gpio_wp = SDSPI_SLOT_NO_WP,
+        .gpio_int = SDSPI_SLOT_NO_INT,
+    };
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    host.slot = SDSPI_HOST_ID;
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+        .allocation_unit_size = 64 * 1024
+    };
+    TEST_ESP_OK(esp_vfs_fat_sdspi_mount(path, &host, &device_cfg, &mount_config, &card));
+    TEST_ESP_OK(esp_vfs_fat_sdcard_format("/sdcard", card));
+    test_fatfs_create_file_with_text(s_test_filename, fatfs_test_hello_str);
+    test_fatfs_read_file(s_test_filename);
+    TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
     test_teardown_sdspi(&mem);
 }

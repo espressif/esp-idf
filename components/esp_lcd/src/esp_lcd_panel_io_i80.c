@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,10 +25,11 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
-#include "esp_private/esp_clk.h"
+#include "esp_clk_tree.h"
 #include "esp_memory_utils.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
+#include "hal/cache_hal.h"
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
@@ -36,15 +37,16 @@
 #include "soc/lcd_periph.h"
 #include "hal/lcd_ll.h"
 #include "hal/lcd_hal.h"
+#include "esp_cache.h"
+
+#define ALIGN_UP(size, align)    (((size) + (align) - 1) & ~((align) - 1))
+#define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
 
 static const char *TAG = "lcd_panel.io.i80";
 
 typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
 typedef struct lcd_panel_io_i80_t lcd_panel_io_i80_t;
 typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
-
-// This function is located in ROM (also see esp_rom/${target}/ld/${target}.rom.ld)
-extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
 static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
@@ -339,8 +341,8 @@ static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
 
-    if(i80_device->on_color_trans_done != NULL) {
-        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+    if (i80_device->on_color_trans_done != NULL) {
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was overwritten!");
     }
 
     i80_device->on_color_trans_done = cbs->on_color_trans_done;
@@ -471,8 +473,10 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->user_ctx = i80_device->user_ctx;
 
     if (esp_ptr_external_ram(color)) {
-        // flush framebuffer from cache to the physical PSRAM
-        Cache_WriteBack_Addr((uint32_t)color, color_size);
+        uint32_t dcache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA);
+        // flush frame buffer from cache to the physical PSRAM
+        // note the esp_cache_msync function will check the alignment of the address and size, make sure they're aligned to current cache line size
+        esp_cache_msync((void *)ALIGN_DOWN((intptr_t)color, dcache_line_size), ALIGN_UP(color_size, dcache_line_size), 0);
     }
 
     // send transaction to trans_queue
@@ -486,27 +490,23 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 
 static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src)
 {
-    esp_err_t ret = ESP_OK;
+    // get clock source frequency
+    uint32_t src_clk_hz = 0;
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
+                        TAG, "get clock source frequency failed");
+
     // force to use integer division, as fractional division might lead to clock jitter
     lcd_ll_select_clk_src(bus->hal.dev, clk_src);
     lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
-    switch (clk_src) {
-    case LCD_CLK_SRC_PLL160M:
-        bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+
+    // save the resolution of the i80 bus
+    bus->resolution_hz = src_clk_hz / LCD_PERIPH_CLOCK_PRE_SCALE;
+    // create pm lock based on different clock source
+    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i80_bus_lcd", &bus->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
 #endif
-        break;
-    case LCD_CLK_SRC_XTAL:
-        bus->resolution_hz = esp_clk_xtal_freq() / LCD_PERIPH_CLOCK_PRE_SCALE;
-        break;
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG,  "unsupported clock source: %d", clk_src);
-        break;
-    }
-    return ret;
+    return ESP_OK;
 }
 
 static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
@@ -583,9 +583,16 @@ static void lcd_periph_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t b
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc)
 {
     // by default, the dummy phase is disabled because it's not common for most LCDs
+    uint32_t dummy_cycles = 0;
+    uint32_t cmd_cycles = trans_desc->cmd_value >= 0 ? trans_desc->cmd_cycles : 0;
     // Number of data phase cycles are controlled by DMA buffer length, we only need to enable/disable the phase here
-    lcd_ll_set_phase_cycles(bus->hal.dev, trans_desc->cmd_cycles, 0, trans_desc->data ? 1 : 0);
-    lcd_ll_set_command(bus->hal.dev, bus->bus_width, trans_desc->cmd_value);
+    uint32_t data_cycles = trans_desc->data ? 1 : 0;
+    if (trans_desc->cmd_value >= 0) {
+        lcd_ll_set_command(bus->hal.dev, bus->bus_width, trans_desc->cmd_value);
+    }
+    lcd_ll_set_phase_cycles(bus->hal.dev, cmd_cycles, dummy_cycles, data_cycles);
+    lcd_ll_set_blank_cycles(bus->hal.dev, 1, 1);
+
     if (trans_desc->data) { // some specific LCD commands can have no parameters
         gdma_start(bus->dma_chan, (intptr_t)(bus->dma_nodes));
         // delay 1us is sufficient for DMA to pass data to LCD FIFO

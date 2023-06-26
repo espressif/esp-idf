@@ -21,7 +21,7 @@ CONFIG_CONSOLE_UART_BAUDRATE                            CONFIG_ESP_CONSOLE_UART_
 CONFIG_INT_WDT                                          CONFIG_ESP_INT_WDT
 CONFIG_INT_WDT_TIMEOUT_MS                               CONFIG_ESP_INT_WDT_TIMEOUT_MS
 CONFIG_INT_WDT_CHECK_CPU1                               CONFIG_ESP_INT_WDT_CHECK_CPU1
-CONFIG_TASK_WDT                                         CONFIG_ESP_TASK_WDT
+CONFIG_TASK_WDT                                         CONFIG_ESP_TASK_WDT_INIT
 CONFIG_TASK_WDT_PANIC                                   CONFIG_ESP_TASK_WDT_PANIC
 CONFIG_TASK_WDT_TIMEOUT_S                               CONFIG_ESP_TASK_WDT_TIMEOUT_S
 CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0                    CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0

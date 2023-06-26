@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -8,14 +8,11 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet
 def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     """
     steps: |
-      1. join AP
+      1. join AP/Ethernet
       2. Send HTTP request to httpbin.org
     """
     binary_file = os.path.join(dut.app.binary_path, 'esp_http_client_example.bin')
@@ -57,15 +54,11 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.parametrize(
-    'config',
-    [
-        pytest.param('ssldyn', marks=[pytest.mark.supported_targets,
-                                      pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD'),
-                                      pytest.mark.ethernet]),
-    ],
-    indirect=True
-)
+@pytest.mark.esp32
+@pytest.mark.ethernet
+@pytest.mark.parametrize('config', [
+    'ssldyn',
+], indirect=True)
 def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
     # check and log bin size
@@ -105,3 +98,15 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     dut.expect(r'HTTP Status = 206, content_length = 10')
     dut.expect(r'HTTP Status = 206, content_length = 10')
     dut.expect('Finish http example')
+
+
+@pytest.mark.linux
+@pytest.mark.host_test
+# Currently we are just testing the build for esp_http_client on Linux target. So skipping the test run.
+# Later we will enable the test run for Linux target as well.
+@pytest.mark.skipif('config.getvalue("target") == "linux"', reason='Do not run on Linux')
+@pytest.mark.parametrize('config', [
+    'default', 'ssldyn',
+], indirect=True)
+def test_examples_protocol_esp_http_client_linux(dut: Dut) -> None:
+    dut.expect('Finish http example', timeout=60)

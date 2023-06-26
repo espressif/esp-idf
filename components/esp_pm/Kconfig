@@ -2,10 +2,10 @@ menu "Power Management"
     config PM_ENABLE
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
-        # ESP32C6 currently does not support power management IDF-5347
-        # Note. Disabling this option for C6 will also cause all sdkconfig.release test cases run without pm enabled
-        # ORed with  __DOXYGEN__ to pass C6 docs build, need to remove when pm is supported on C6
-        depends on (!FREERTOS_SMP && !IDF_TARGET_ESP32C6) || __DOXYGEN__
+        # ESP32H2 currently does not support power management IDF-6270
+        # Note. Disabling this option for H2 will also cause all sdkconfig.release test cases run without pm enabled
+        # ORed with  __DOXYGEN__ to pass H2 docs build, need to remove when pm is supported on H2
+        depends on (!FREERTOS_SMP && !IDF_TARGET_ESP32H2) || __DOXYGEN__
         default n
         help
             If enabled, application is compiled with support for power management.
@@ -85,9 +85,31 @@ menu "Power Management"
         bool
         default n
 
+    config PM_CHECK_SLEEP_RETENTION_FRAME
+        bool
+        depends on PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+        default n if !IDF_CI_BUILD
+        help
+            This option is invisible to users, and it is only used for ci testing,
+            enabling it in the application will increase the sleep and wake-up time overhead
+
+    config PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL
+        int "Calibrate the RTC_FAST/SLOW clock every N times of light sleep"
+        default 1
+        depends on PM_ENABLE
+        range 1 128
+        help
+            The value of this option determines the calibration interval of the RTC_FAST/SLOW clock during sleep when
+            power management is enabled. When it is configured as N, the RTC_FAST/SLOW clock will be calibrated
+            every N times of lightsleep.
+            Decreasing this value will increase the time the chip is in the active state, thereby increasing the
+            average power consumption of the chip.
+            Increasing this value can reduce the average power consumption, but when the external environment changes
+            drastically and the chip RTC_FAST/SLOW oscillator frequency drifts, it may cause system instability.
+
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6
         select PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
         default y
         help
@@ -103,6 +125,31 @@ menu "Power Management"
         help
             If enabled, the I/D-cache tag memory will be retained in light sleep. Depending on the the
             cache configuration, if this option is enabled, it will consume up to 9 KB of internal RAM.
+
+    config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        bool "Power down Digital Peripheral in light sleep (EXPERIMENTAL)"
+        depends on SOC_PAU_SUPPORTED
+        default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
+        help
+            If enabled, digital peripherals will be powered down in light sleep, it will reduce sleep
+            current consumption by about 100 uA. Chip will save/restore register context at sleep/wake
+            time to keep the system running. Enabling this option will increase static RAM and heap usage,
+            the actual cost depends on the peripherals you have initialized. In order to save/restore the
+            context of the necessary hardware for FreeRTOS to run, it will need at least 4.55 KB free heap
+            at sleep time. Otherwise sleep will not power down the peripherals.
+
+            Note1: Please use this option with caution, the current IDF does not support the retention of
+            all peripherals. When the digital peripherals are powered off and a sleep and wake-up is completed,
+            the peripherals that have not saved the running context are equivalent to performing a reset.
+            !!! Please confirm the peripherals used in your application and their sleep retention support status
+            before enabling this option, peripherals sleep retention driver support status is tracked in
+            power_management.rst
+
+            Note2: When this option is enabled simultaneously with FREERTOS_USE_TICKLESS_IDLE, since the UART will
+            be powered down, the uart FIFO will be flushed before sleep to avoid data loss, however, this has the
+            potential to block the sleep process and cause the wakeup time to be skipped, which will cause the tick
+            of freertos to not be compensated correctly when returning from sleep and cause the system to crash.
+            To avoid this, you can increase FREERTOS_IDLE_TIME_BEFORE_SLEEP threshold in menuconfig.
 
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool

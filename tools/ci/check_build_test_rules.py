@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -29,7 +29,6 @@ USUAL_TO_FORMAL = {
     'esp32s2': 'ESP32-S2',
     'esp32s3': 'ESP32-S3',
     'esp32c3': 'ESP32-C3',
-    'esp32h4': 'ESP32-H4',
     'esp32c2': 'ESP32-C2',
     'esp32c6': 'ESP32-C6',
     'esp32h2': 'ESP32-H2',
@@ -41,7 +40,6 @@ FORMAL_TO_USUAL = {
     'ESP32-S2': 'esp32s2',
     'ESP32-S3': 'esp32s3',
     'ESP32-C3': 'esp32c3',
-    'ESP32-H4': 'esp32h4',
     'ESP32-C2': 'esp32c2',
     'ESP32-C6': 'esp32c6',
     'ESP32-H2': 'esp32h2',
@@ -105,7 +103,7 @@ def check_readme(
             for part in support_string[0].split('\n', 1)[0].split('|')
             if part.strip()
         ]
-        return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:]]
+        return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:] if part in FORMAL_TO_USUAL]
 
     def check_enable_build(_app: App, _old_supported_targets: List[str]) -> bool:
         if _app.supported_targets == sorted(_old_supported_targets):
@@ -221,7 +219,7 @@ def check_test_scripts(
     # {
     #      app_dir: {
     #          'script_path': 'path/to/script',
-    #          'targets': ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32h4', 'esp32c2', 'linux'],
+    #          'targets': ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'linux'],
     #      }
     # }
     def check_enable_test(
@@ -467,6 +465,9 @@ if __name__ == '__main__':
                 check_dirs.add(os.path.dirname(p))
             else:
                 check_dirs.add(p)
+
+        if 'tools/idf_py_actions/constants.py' in arg.paths or 'tools/ci/check_build_test_rules.py' in arg.paths:
+            check_all = True
 
         if check_all:
             check_dirs = {IDF_PATH}

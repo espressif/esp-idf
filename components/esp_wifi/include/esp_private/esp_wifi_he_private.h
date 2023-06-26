@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,6 +185,18 @@ esp_err_t esp_wifi_softap_set_bss_max_idle(bool bss_max_idle_enable, uint16_t bs
 */
 esp_err_t esp_wifi_sta_reset_muedca_timer(uint8_t aci_bitmap);
 
+/**
+  * @brief     Set bss color collision detection duration and frame threshold.
+  *
+  * @param[in] threshold the number of HE frames with the same BSS color as STA but in different BSSs.
+  * @param[in] duration duration of the detection. If the number of frames that STA detects reaches threshold,
+  *            STA will report BSS Color Collision to the associated AP. Unit seconds.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_sta_set_bss_color_collision_detection(int threshold, int duration);
 
 #ifdef __cplusplus
 }

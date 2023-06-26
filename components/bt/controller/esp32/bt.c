@@ -89,7 +89,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010003
+#define OSI_VERSION              0x00010004
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* Types definition
@@ -111,7 +111,6 @@ typedef struct {
 
 typedef struct {
     void *handle;
-    void *storage;
 } btdm_queue_item_t;
 
 /* OSI function */
@@ -176,6 +175,7 @@ struct osi_funcs_t {
     void (*_interrupt_l3_disable)(void);
     void (*_interrupt_l3_restore)(void);
     void *(* _customer_queue_create)(uint32_t queue_len, uint32_t item_size);
+    int (* _coex_version_get)(unsigned int *major, unsigned int *minor, unsigned int *patch);
     uint32_t _magic;
 };
 
@@ -218,20 +218,6 @@ extern int bredr_txpwr_set(int min_power_level, int max_power_level);
 extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 extern void bredr_sco_datapath_set(uint8_t data_path);
 extern void btdm_controller_scan_duplicate_list_clear(void);
-/* Coexistence */
-extern int coex_bt_request(uint32_t event, uint32_t latency, uint32_t duration);
-extern int coex_bt_release(uint32_t event);
-extern int coex_register_bt_cb(coex_func_cb_t cb);
-extern uint32_t coex_bb_reset_lock(void);
-extern void coex_bb_reset_unlock(uint32_t restore);
-extern int coex_schm_register_btdm_callback(void *callback);
-extern void coex_schm_status_bit_clear(uint32_t type, uint32_t status);
-extern void coex_schm_status_bit_set(uint32_t type, uint32_t status);
-extern uint32_t coex_schm_interval_get(void);
-extern uint8_t coex_schm_curr_period_get(void);
-extern void * coex_schm_curr_phase_get(void);
-extern int coex_wifi_channel_get(uint8_t *primary, uint8_t *secondary);
-extern int coex_register_wifi_channel_change_callback(void *cb);
 /* Shutdown */
 extern void esp_bt_controller_shutdown(void);
 
@@ -320,6 +306,7 @@ static uint8_t coex_schm_curr_period_get_wrapper(void);
 static void * coex_schm_curr_phase_get_wrapper(void);
 static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary);
 static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
+static int coex_version_get_wrapper(unsigned int *major, unsigned int *minor, unsigned int *patch);
 #if CONFIG_BTDM_CTRL_HLI
 static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
 #endif /* CONFIG_BTDM_CTRL_HLI */
@@ -412,6 +399,7 @@ static const struct osi_funcs_t osi_funcs_ro = {
 #else
     ._customer_queue_create = NULL,
 #endif /* CONFIG_BTDM_CTRL_HLI */
+    ._coex_version_get = coex_version_get_wrapper,
     ._magic = OSI_MAGIC_VALUE,
 };
 
@@ -566,17 +554,8 @@ static void *semphr_create_wrapper(uint32_t max, uint32_t init)
 
     void *handle = NULL;
 
-#if !CONFIG_SPIRAM_USE_MALLOC
+    /* IDF FreeRTOS guarantees that all dynamic memory allocation goes to internal RAM. */
     handle = (void *)xSemaphoreCreateCounting(max, init);
-#else
-    StaticQueue_t *queue_buffer = NULL;
-
-    queue_buffer = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    assert(queue_buffer);
-    semphr->storage = queue_buffer;
-
-    handle = (void *)xSemaphoreCreateCountingStatic(max, init, queue_buffer);
-#endif
     assert(handle);
 
 #if CONFIG_BTDM_CTRL_HLI
@@ -612,11 +591,6 @@ static void semphr_delete_wrapper(void *semphr)
     if (handle) {
         vSemaphoreDelete(handle);
     }
-#ifdef CONFIG_SPIRAM_USE_MALLOC
-    if (semphr_item->storage) {
-        free(semphr_item->storage);
-    }
-#endif
 
     free(semphr);
 }
@@ -702,18 +676,9 @@ static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
     queue = (btdm_queue_item_t*)heap_caps_malloc(sizeof(btdm_queue_item_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     assert(queue);
 
-#if CONFIG_SPIRAM_USE_MALLOC
-
-    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    assert(queue->storage);
-
-    queue->handle = xQueueCreateStatic( queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
-    assert(queue->handle);
-
-#else
+    /* IDF FreeRTOS guarantees that all dynamic memory allocation goes to internal RAM. */
     queue->handle = xQueueCreate( queue_len, item_size);
     assert(queue->handle);
-#endif
 
     return queue;
 }
@@ -725,13 +690,6 @@ static void queue_delete_wrapper(void *queue)
         if(queue_item->handle){
             vQueueDelete(queue_item->handle);
         }
-
-#if CONFIG_SPIRAM_USE_MALLOC
-        if (queue_item->storage) {
-            free(queue_item->storage);
-        }
-#endif
-
         free(queue_item);
     }
 }
@@ -1165,7 +1123,7 @@ static void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
 static int coex_schm_register_btdm_callback_wrapper(void *callback)
 {
 #if CONFIG_SW_COEXIST_ENABLE
-    return coex_schm_register_btdm_callback(callback);
+    return coex_schm_register_callback(COEX_SCHM_CALLBACK_TYPE_BT, callback);
 #else
     return 0;
 #endif
@@ -1228,6 +1186,30 @@ static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
 #else
     return -1;
 #endif
+}
+
+static int coex_version_get_wrapper(unsigned int *major, unsigned int *minor, unsigned int *patch)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    const char *ver_str = esp_coex_version_get();
+    if (ver_str != NULL) {
+        unsigned int _major = 0, _minor = 0, _patch = 0;
+        if (sscanf(ver_str, "%u.%u.%u", &_major, &_minor, &_patch) != 3) {
+            return -1;
+        }
+        if (major != NULL) {
+            *major = _major;
+        }
+        if (minor != NULL) {
+            *minor = _minor;
+        }
+        if (patch != NULL) {
+            *patch = _patch;
+        }
+        return 0;
+    }
+#endif
+    return -1;
 }
 
 bool esp_vhci_host_check_send_available(void)

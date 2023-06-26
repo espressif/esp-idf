@@ -40,12 +40,12 @@ typedef UINT8 tBTA_SDP_STATUS;
 
 /* SDP I/F callback events */
 /* events received by tBTA_SDP_DM_CBACK */
-#define BTA_SDP_ENABLE_EVT               0  /* SDP service enabled*/
-#define BTA_SDP_DISENABLE_EVT            1  /* SDP service disenabled*/
+#define BTA_SDP_ENABLE_EVT               0  /* SDP service enabled */
+#define BTA_SDP_DISENABLE_EVT            1  /* SDP service disenabled */
 #define BTA_SDP_SEARCH_EVT               2  /* SDP search started */
 #define BTA_SDP_SEARCH_COMP_EVT          3  /* SDP search complete */
 #define BTA_SDP_CREATE_RECORD_USER_EVT   4  /* SDP create record complete */
-#define BTA_SDP_REMOVE_RECORD_USER_EVT   5  /* SDP remove reocrd complete */
+#define BTA_SDP_REMOVE_RECORD_USER_EVT   5  /* SDP remove record complete */
 #define BTA_SDP_MAX_EVT                  6  /* max number of SDP events */
 
 #define BTA_SDP_MAX_RECORDS 15
@@ -61,10 +61,16 @@ typedef struct {
     bluetooth_sdp_record records[BTA_SDP_MAX_RECORDS];
 } tBTA_SDP_SEARCH_COMP;
 
+/* data associated with BTA_SDP_CREATE_RECORD_USER_EVT */
+typedef struct {
+    tBTA_SDP_STATUS     status;
+    int                 handle;
+} tBTA_SDP_CREATE_RECORD_USER;
+
 typedef union {
     tBTA_SDP_STATUS              status;            /* BTA_SDP_SEARCH_EVT */
     tBTA_SDP_SEARCH_COMP         sdp_search_comp;   /* BTA_SDP_SEARCH_COMP_EVT */
-    int                          handle;
+    tBTA_SDP_CREATE_RECORD_USER  sdp_create_record; /* BTA_SDP_CREATE_RECORD_USER_EVT */
 } tBTA_SDP;
 
 /* SDP DM Interface callback */

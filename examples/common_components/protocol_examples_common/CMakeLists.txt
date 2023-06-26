@@ -1,7 +1,18 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    # Header only library for linux
+
+    idf_component_register(INCLUDE_DIRS include
+                           SRCS protocol_examples_utils.c)
+    return()
+endif()
+
 set(srcs "stdin_out.c"
          "addr_from_stdin.c"
          "connect.c"
-         "wifi_connect.c")
+         "wifi_connect.c"
+         "protocol_examples_utils.c")
 
 if(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
     list(APPEND srcs "console_cmd.c")

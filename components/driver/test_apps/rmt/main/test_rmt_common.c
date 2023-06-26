@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "driver/rmt_rx.h"
 #include "soc/soc_caps.h"
 
-TEST_CASE("rmt_channel_install_uninstall", "[rmt]")
+TEST_CASE("rmt channel install & uninstall", "[rmt]")
 {
     rmt_tx_channel_config_t tx_channel_cfg = {
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
@@ -81,7 +81,7 @@ TEST_CASE("rmt_channel_install_uninstall", "[rmt]")
 
 #if SOC_RMT_SUPPORT_DMA
     printf("install DMA channel + normal channel\r\n");
-    tx_channel_cfg.mem_block_symbols = 4096; // DMA is aimed for transfer large amount of buffers
+    tx_channel_cfg.mem_block_symbols = 1024; // DMA is aimed for transfer large amount of buffers
     tx_channel_cfg.flags.with_dma = true;
     TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channels[0]));
     rx_channel_cfg.flags.with_dma = true;

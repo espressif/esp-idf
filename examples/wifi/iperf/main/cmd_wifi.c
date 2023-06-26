@@ -193,7 +193,7 @@ void initialise_wifi(void)
     esp_wifi_enable_rx_statistics(true, false);
 #endif
 #endif
-#if CONFIG_ENABLE_WIFI_TX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
     esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_BE, true);
 #endif
     initialized = true;

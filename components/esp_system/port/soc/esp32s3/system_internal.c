@@ -14,10 +14,10 @@
 #include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "soc/syscon_reg.h"
 #include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
@@ -30,6 +30,34 @@
 #define ALIGN_DOWN(val, align)  ((val) & ~((align) - 1))
 
 extern int _bss_end;
+
+void IRAM_ATTR esp_system_reset_modules_on_exit(void)
+{
+    // Flush any data left in UART FIFOs before reset the UART peripheral
+    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_uart_tx_wait_idle(1);
+    esp_rom_uart_tx_wait_idle(2);
+
+    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
+    SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
+                      SYSTEM_WIFIBB_RST | SYSTEM_FE_RST | SYSTEM_WIFIMAC_RST | SYSTEM_SDIO_RST |
+                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST | SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
+    REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
+
+    // Reset timer, systimer, spi, uart, mcpwm
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
+                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST |
+                      SYSTEM_PWM0_RST | SYSTEM_PWM1_RST);
+    REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
+
+    // Reset dma
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
+    REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
+
+    SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
+    CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
+}
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -63,10 +91,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
 
-    // Flush any data left in UART FIFOs
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
-
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     if (esp_ptr_external_ram(esp_cpu_get_sp())) {
         // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
@@ -88,7 +112,7 @@ void IRAM_ATTR esp_restart_noos(void)
     const uint32_t core_id = esp_cpu_get_core_id();
 #if !CONFIG_FREERTOS_UNICORE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-    esp_cpu_reset(other_core_id);
+    esp_rom_software_reset_cpu(other_core_id);
     esp_cpu_stall(other_core_id);
 #endif
 
@@ -101,29 +125,12 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-                      SYSTEM_WIFIBB_RST | SYSTEM_FE_RST | SYSTEM_WIFIMAC_RST |
-                      SYSTEM_SDIO_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
-    REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
+    // reset necessary peripheral modules
+    esp_system_reset_modules_on_exit();
 
-    // Reset timer/spi/uart
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
-    REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-
-    // Reset dma
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
-    REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
-
-    SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
-    CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
-
-    // Set CPU back to XTAL source, no PLL, same as hard reset
+    // Set CPU back to XTAL source, same as hard reset, but keep BBPLL on so that USB Serial JTAG can log at 1st stage bootloader.
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_clk_cpu_freq_set_xtal();
+    rtc_clk_cpu_set_to_default_config();
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -135,17 +142,17 @@ void IRAM_ATTR esp_restart_noos(void)
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
 #if !CONFIG_FREERTOS_UNICORE
-        esp_cpu_reset(1);
+        esp_rom_software_reset_cpu(1);
 #endif
-        esp_cpu_reset(0);
+        esp_rom_software_reset_cpu(0);
     }
 #if !CONFIG_FREERTOS_UNICORE
     else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU
-        esp_cpu_reset(0);
+        esp_rom_software_reset_cpu(0);
         esp_cpu_unstall(0);
-        esp_cpu_reset(1);
+        esp_rom_software_reset_cpu(1);
     }
 #endif
     while (true) {

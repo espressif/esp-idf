@@ -4,35 +4,57 @@ SDIO Card Slave Driver
 Overview
 --------
 
+.. only:: esp32
+
     The ESP32 SDIO Card peripherals (Host, Slave) shares two sets of pins as below table.
     The first set is usually occupied by SPI0 bus which is responsible for the SPI flash holding the code to run.
     This means SDIO slave driver can only runs on the second set of pins while SDIO host is not using it.
 
-    The SDIO slave can run under 3 modes: SPI, 1-bit SD and 4-bit SD modes, which
-    is detected automatically by the hardware. According to the SDIO
-    specification, CMD and DAT0-3 lines should be pulled up no matter in 1-bit,
-    4-bit or SPI mode.
+The SDIO slave can run under 3 modes: SPI, 1-bit SD and 4-bit SD modes, which
+is detected automatically by the hardware. According to the SDIO
+specification, CMD and DAT0-3 lines should be pulled up no matter in 1-bit,
+4-bit or SPI mode.
 
 Connections
 ^^^^^^^^^^^
 
-+----------+---------------+-------+-------+
-| Pin Name | Corresponding | Slot1 | Slot2 |
-+          + pins in SPI   +-------+-------+
-|          | mode          | GPIO Number   |
-+==========+===============+=======+=======+
-| CLK      | SCLK          | 6     | 14    |
-+----------+---------------+-------+-------+
-| CMD      | MOSI          | 11    | 15    |
-+----------+---------------+-------+-------+
-| DAT0     | MISO          | 7     | 2     |
-+----------+---------------+-------+-------+
-| DAT1     | Interrupt     | 8     | 4     |
-+----------+---------------+-------+-------+
-| DAT2     | N.C. (pullup) | 9     | 12    |
-+----------+---------------+-------+-------+
-| DAT3     | #CS           | 10    | 13    |
-+----------+---------------+-------+-------+
+.. only:: esp32
+
+    +----------+---------------+-------+-------+
+    | Pin Name | Corresponding | Slot1 | Slot2 |
+    +          + pins in SPI   +-------+-------+
+    |          | mode          | GPIO Number   |
+    +==========+===============+=======+=======+
+    | CLK      | SCLK          | 6     | 14    |
+    +----------+---------------+-------+-------+
+    | CMD      | MOSI          | 11    | 15    |
+    +----------+---------------+-------+-------+
+    | DAT0     | MISO          | 7     | 2     |
+    +----------+---------------+-------+-------+
+    | DAT1     | Interrupt     | 8     | 4     |
+    +----------+---------------+-------+-------+
+    | DAT2     | N.C. (pullup) | 9     | 12    |
+    +----------+---------------+-------+-------+
+    | DAT3     | #CS           | 10    | 13    |
+    +----------+---------------+-------+-------+
+
+.. only:: esp32c6
+
+    +----------+--------------------------------+---------------+
+    | Pin Name | Corresponding pins in SPI mode |  GPIO Number  |
+    +==========+================================+===============+
+    | CLK      | SCLK                           | 19            |
+    +----------+--------------------------------+---------------+
+    | CMD      | MOSI                           | 18            |
+    +----------+--------------------------------+---------------+
+    | DAT0     | MISO                           | 20            |
+    +----------+--------------------------------+---------------+
+    | DAT1     | Interrupt                      | 21            |
+    +----------+--------------------------------+---------------+
+    | DAT2     | N.C. (pullup)                  | 22            |
+    +----------+--------------------------------+---------------+
+    | DAT3     | #CS                            | 23            |
+    +----------+--------------------------------+---------------+
 
 - 1-bit SD mode: Connect CLK, CMD, DAT0, DAT1 pins and the ground.
 - 4-bit SD mode: Connect all pins and the ground.
@@ -45,23 +67,25 @@ Connections
     :ref:`compatibility_overview_espressif_hw_sdio` to see whether your
     development boards have such pullups.
 
-.. note:: Most official modules have conflicts on strapping pins with the
-    SDIO slave function. If you are using a ESP32 module with 3.3 V flash
-    inside, you have to burn the EFUSE when you are developing on the module
-    for the first time. See :ref:`compatibility_overview_espressif_hw_sdio` to
-    see how to make your modules compatible with the SDIO.
+.. only:: esp32
 
-    Here is a list for modules/kits with 3.3 V flash:
+    .. note:: Most official modules have conflicts on strapping pins with the
+        SDIO slave function. If you are using a ESP32 module with 3.3 V flash
+        inside, you have to burn the EFUSE when you are developing on the module
+        for the first time. See :ref:`compatibility_overview_espressif_hw_sdio` to
+        see how to make your modules compatible with the SDIO.
 
-    - Modules: ESP32-PICO-D4, ESP32-WROOM-32 series (including ESP32-SOLO-1),
-      ESP32-WROVER-B and ESP32-WROVER-IB
-    - Kits: ESP32-PICO-KIT, ESP32-DevKitC (till v4), ESP32-WROVER-KIT
-      (v4.1 (also known as ESP32-WROVER-KIT-VB), v2, v1 (also known as DevKitJ
-      v1))
+        Here is a list for modules/kits with 3.3 V flash:
 
-    You can tell the version of your ESP23-WROVER-KIT version from the module
-    on it: v4.1 are with ESP32-WROVER-B modules, v3 are with ESP32-WROVER
-    modules, while v2 and v1 are with ESP32-WROOM-32 modules.
+        - Modules: ESP32-PICO-D4, ESP32-WROOM-32 series (including ESP32-SOLO-1),
+          ESP32-WROVER-B and ESP32-WROVER-IB
+        - Kits: ESP32-PICO-KIT, ESP32-DevKitC (till v4), ESP32-WROVER-KIT
+          (v4.1 (also known as ESP32-WROVER-KIT-VB), v2, v1 (also known as DevKitJ
+          v1))
+
+        You can tell the version of your ESP23-WROVER-KIT version from the module
+        on it: v4.1 are with ESP32-WROVER-B modules, v3 are with ESP32-WROVER
+        modules, while v2 and v1 are with ESP32-WROOM-32 modules.
 
 Refer to :doc:`sd_pullup_requirements` for more technical details of the pullups.
 
@@ -90,7 +114,7 @@ Terminology
 The SDIO slave driver uses the following terms:
 
 - Transfer: a transfer is always started by a command token from the host, and may contain a reply and several data
-  blocks. ESP32 slave software is based on transfers.
+  blocks. {IDF_TARGET_NAME} SDIO slave software is based on transfers.
 - Sending: slave to host transfers.
 - Receiving: host to slave transfers.
 
@@ -109,29 +133,29 @@ The SDIO slave driver uses the following terms:
 - Requested length: The length requested in one transfer determined by the FIFO address.
 - Transfer length: The length requested in one transfer determined by the CMD53 byte/block count field.
 
-.. note:: Requested length is different from the transfer length. ESP32 slave DMA base on the *requested length* rather
+.. note:: Requested length is different from the transfer length. {IDF_TARGET_NAME} SDIO slave DMA base on the *requested length* rather
     than the *transfer length*. The *transfer length* should be no shorter than the *requested length*, and the rest
     part will be filled with 0 (sending) or discard (receiving).
 
 - Receiving buffer size: The buffer size is pre-defined between the host and the slave before communication starts.
   Slave application has to set the buffer size during initialization by the ``recv_buffer_size`` member of
   ``sdio_slave_config_t``.
-- Interrupts: the esp32 slave support interrupts in two directions: from host to slave (called slave interrupts below)
+- Interrupts: the {IDF_TARGET_NAME} SDIO slave support interrupts in two directions: from host to slave (called slave interrupts below)
   and from slave to host (called host interrupts below). See more in :ref:`interrupts`.
 - Registers: specific address in Function 1 access by CMD52 or CMD53.
 
 Communication with ESP SDIO Slave
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The host should initialize the ESP32 SDIO slave according to the standard
+The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard
 SDIO initialization process (Sector 3.1.2 of `SDIO Simplified
 Specification <https://www.sdcard.org/downloads/pls/>`_), which is described
 briefly in :ref:`esp_slave_init`.
 
-Furthermore, there's an ESP32-specific upper-level communication protocol upon the CMD52/CMD53 to
+Furthermore, there's an {IDF_TARGET_NAME}-specific upper-level communication protocol upon the CMD52/CMD53 to
 Func 1. Please refer to :ref:`esp_slave_protocol_layer`. There is also a component
 :doc:`ESP Serial Slave Link </api-reference/protocols/esp_serial_slave_link>`
-for ESP32 master to communicate with ESP32 SDIO slave, see example :example:`peripherals/sdio`
+for {IDF_TARGET_NAME} master to communicate with {IDF_TARGET_NAME} SDIO slave, see example :example:`peripherals/sdio`
 when programming your host.
 
 
@@ -222,7 +246,7 @@ following functions instead:
    If non-blocking call is needed, set ``wait=0``. If the ``wait`` is not ``portMAX_DELAY`` (wait until success),
    application has to check the result to know whether the data is put in to the queue or discard.
 
-2. Call ``sdio_slave_send_get_finished`` to get and deal with a finished transfer. A buffer should be keep unmodified
+2. Call ``sdio_slave_send_get_finished`` to get and deal with a finished transfer. A buffer should be kept unmodified
    until returned from ``sdio_slave_send_get_finished``. This means the buffer is actually sent to the host, rather
    than just staying in the queue.
 
@@ -281,5 +305,3 @@ API Reference
 
 .. include-build-file:: inc/sdio_slave_types.inc
 .. include-build-file:: inc/sdio_slave.inc
-
-

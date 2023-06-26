@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/opt.h"
@@ -91,6 +92,7 @@ static int esp_ping_receive(esp_ping_t *ep)
     uint16_t data_head = 0;
 
     while ((len = recvfrom(ep->sock, buf, sizeof(buf), 0, (struct sockaddr *)&from, (socklen_t *)&fromlen)) > 0) {
+#if CONFIG_LWIP_IPV4
         if (from.ss_family == AF_INET) {
             // IPv4
             struct sockaddr_in *from4 = (struct sockaddr_in *)&from;
@@ -98,8 +100,9 @@ static int esp_ping_receive(esp_ping_t *ep)
             IP_SET_TYPE_VAL(ep->recv_addr, IPADDR_TYPE_V4);
             data_head = (uint16_t)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr));
         }
+#endif
 #if CONFIG_LWIP_IPV6
-        else {
+        if (from.ss_family == AF_INET6) {
             // IPv6
             struct sockaddr_in6 *from6 = (struct sockaddr_in6 *)&from;
             inet6_addr_to_ip6addr(ip_2_ip6(&ep->recv_addr), &from6->sin6_addr);
@@ -108,6 +111,7 @@ static int esp_ping_receive(esp_ping_t *ep)
         }
 #endif
         if (len >= data_head) {
+#if CONFIG_LWIP_IPV4
             if (IP_IS_V4_VAL(ep->recv_addr)) {              // Currently we process IPv4
                 struct ip_hdr *iphdr = (struct ip_hdr *)buf;
                 struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
@@ -119,8 +123,9 @@ static int esp_ping_receive(esp_ping_t *ep)
                     return len;
                 }
             }
+#endif // CONFIG_LWIP_IPV4
 #if CONFIG_LWIP_IPV6
-            else if (IP_IS_V6_VAL(ep->recv_addr)) {      // Currently we process IPv6
+            if (IP_IS_V6_VAL(ep->recv_addr)) {      // Currently we process IPv6
                 struct ip6_hdr *iphdr = (struct ip6_hdr *)buf;
                 struct icmp6_echo_hdr *iecho6 = (struct icmp6_echo_hdr *)(buf + sizeof(struct ip6_hdr)); // IPv6 head length is 40
                 if ((iecho6->id == ep->packet_hdr->id) && (iecho6->seqno == ep->packet_hdr->seqno)) {
@@ -129,7 +134,7 @@ static int esp_ping_receive(esp_ping_t *ep)
                     return len;
                 }
             }
-#endif
+#endif // CONFIG_LWIP_IPV6
         }
         fromlen = sizeof(from);
     }
@@ -231,7 +236,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     /* set ICMP type and code field */
     ep->packet_hdr->code = 0;
     /* ping id should be unique, treat task handle as ping ID */
-    ep->packet_hdr->id = ((uint32_t)ep->ping_task_hdl) & 0xFFFF;
+    ep->packet_hdr->id = ((intptr_t)ep->ping_task_hdl) & 0xFFFF;
     /* fill the additional data buffer with some data */
     char *d = (char *)(ep->packet_hdr) + sizeof(struct icmp_echo_hdr);
     for (uint32_t i = 0; i < config->data_size; i++) {
@@ -277,12 +282,14 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     setsockopt(ep->sock, IPPROTO_IP, IP_TTL, &config->ttl, sizeof(config->ttl));
 
     /* set socket address */
+#if CONFIG_LWIP_IPV4
     if (IP_IS_V4(&config->target_addr)) {
         struct sockaddr_in *to4 = (struct sockaddr_in *)&ep->target_addr;
         to4->sin_family = AF_INET;
         inet_addr_from_ip4addr(&to4->sin_addr, ip_2_ip4(&config->target_addr));
         ep->packet_hdr->type = ICMP_ECHO;
     }
+#endif
 #if CONFIG_LWIP_IPV6
     if (IP_IS_V6(&config->target_addr)) {
         struct sockaddr_in6 *to6 = (struct sockaddr_in6 *)&ep->target_addr;

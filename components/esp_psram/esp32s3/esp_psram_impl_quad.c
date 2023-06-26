@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_types.h"
+#include "esp_bit_defs.h"
 #include "esp_log.h"
 #include "../esp_psram_impl.h"
 #include "esp32s3/rom/spi_flash.h"
@@ -19,6 +20,7 @@
 #include "hal/gpio_hal.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/mspi_timing_tuning.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 static const char* TAG = "quad_psram";
 
@@ -296,6 +298,9 @@ static void psram_gpio_config(void)
     }
     //This ROM function will init both WP and HD pins.
     esp_rom_spiflash_select_qio_pins(wp_io, spiconfig);
+
+    // Reserve psram pins
+    esp_gpio_reserve_pins(BIT64(cs1_io) | BIT64(wp_io));
 }
 
 esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psram init

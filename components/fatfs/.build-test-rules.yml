@@ -2,6 +2,6 @@
 
 components/fatfs/test_apps/sdcard:
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6"]
+    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: No sdspi runners for these targets

@@ -20,7 +20,7 @@ extern "C" {
  */
 typedef struct {
     uint32_t timeout_ms;        /**< TWDT timeout duration in milliseconds */
-    uint32_t idle_core_mask;    /**< Mask of the cores who's idle task should be subscribed on initialization */
+    uint32_t idle_core_mask;    /**< Bitmask of the core whose idle task should be subscribed on initialization where 1 << i means that core i's idle task will be monitored by the TWDT */
     bool trigger_panic;         /**< Trigger panic when timeout occurs */
 } esp_task_wdt_config_t;
 

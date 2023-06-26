@@ -21,7 +21,7 @@ ESP-NOW 使用各个供应商的动作帧传输数据，默认比特率为 1 Mbp
     -----------------------------------------------------------------------------------------
     |   MAC 报头   |  分类代码  |  组织标识符  |  随机值  |  供应商特定内容  |   FCS   |
     -----------------------------------------------------------------------------------------
-       24 字节        1 字节        3 字节      4 字节      7~255 字节       4 字节
+       24 字节        1 字节        3 字节      4 字节      7~257 字节       4 字节
 
 - 分类代码：分类代码字段可用于指示各个供应商的类别（比如 127）。
 - 组织标识符：组织标识符包含一个唯一标识符 (比如 0x18fe34)，为乐鑫指定的 MAC 地址的前三个字节。
@@ -70,7 +70,7 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 
     配对设备的最大数量是 20，其中加密设备的数量不超过 4，默认值是 2。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
 
     配对设备的最大数量是 20，其中加密设备的数量不超过 17，默认值是 7。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
@@ -92,7 +92,17 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 配置 ESP-NOW 速率
 ----------------------
 
-调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESPNOW 速率。确保在配置速率之前使能接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
+
+    调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESPNOW 速率。确保在配置速率之前使能接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
+
+.. only:: esp32c6
+    
+    调用 :cpp:func:`esp_now_set_peer_rate_config()` 配置指定peer的 ESPNOW 速率。确保在配置速率之前添加peer。这个 API 应该在 :cpp:func:`esp_wifi_start()` 和 :cpp:func:`esp_now_add_peer()` 之后调用。
+
+    .. note::
+
+        :cpp:func:`esp_wifi_config_espnow_rate()` 已经被废弃了，请用 :cpp:func:`esp_now_set_peer_rate_config()`
 
 配置 ESP-NOW 功耗参数
 ----------------------

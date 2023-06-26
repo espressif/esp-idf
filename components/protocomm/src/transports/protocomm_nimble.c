@@ -68,6 +68,7 @@ typedef struct _protocomm_ble {
     protocomm_ble_name_uuid_t *g_nu_lookup;
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
+    unsigned ble_link_encryption:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -127,6 +128,8 @@ typedef struct {
     unsigned ble_bonding:1;
     /** BLE Secure Connection flag */
     unsigned ble_sm_sc:1;
+    /** BLE Link Encryption flag */
+    unsigned ble_link_encryption:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -253,7 +256,7 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_MTU:
-        ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
+        ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d",
                  event->mtu.conn_handle,
                  event->mtu.channel_id,
                  event->mtu.value);
@@ -320,8 +323,8 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         rc = simple_ble_gatts_get_attr_value(attr_handle, &temp_outlen,
                                              &temp_outbuf);
         if (rc != 0) {
-            ESP_LOGE(TAG, "Failed to read characteristic with attr_handle = %d", attr_handle);
-            return rc;
+            ESP_LOGE(TAG, "Characteristic with attr_handle = %d is not added to the list", attr_handle);
+            return 0;
         }
 
         rc = os_mbuf_append(ctxt->om, temp_outbuf, temp_outlen);
@@ -450,7 +453,7 @@ gatt_svr_init(const simple_ble_cfg_t *config)
 static void
 simple_ble_on_reset(int reason)
 {
-    ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
+    ESP_LOGE(TAG, "Resetting state; reason=%d", reason);
 }
 
 static void
@@ -467,7 +470,7 @@ simple_ble_on_sync(void)
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
-        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc);
+        ESP_LOGE(TAG, "error determining address type; rc=%d", rc);
         return;
     }
 
@@ -491,7 +494,11 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     int rc;
     ESP_LOGD(TAG, "Free memory at start of simple_ble_init %" PRIu32, esp_get_free_heap_size());
 
-    nimble_port_init();
+    rc = nimble_port_init();
+    if (rc != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to init nimble %d ", rc);
+        return rc;
+    }
 
     /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = simple_ble_on_reset;
@@ -575,6 +582,15 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
 {
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", event->connect.conn_handle);
+
+#ifdef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+    /* Ignore BLE events received after protocomm layer is stopped */
+    if (protoble_internal == NULL) {
+        ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+#endif
+
     if (protoble_internal->pc_ble->sec &&
             protoble_internal->pc_ble->sec->new_transport_session) {
         ret =
@@ -665,10 +681,10 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
     (characteristics + idx)->flags = BLE_GATT_CHR_F_READ |
                                      BLE_GATT_CHR_F_WRITE ;
 
-#if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
-    (characteristics + idx)->flags |= BLE_GATT_CHR_F_READ_ENC |
-                                      BLE_GATT_CHR_F_WRITE_ENC;
-#endif
+    if (protoble_internal->ble_link_encryption) {
+        (characteristics + idx)->flags |= BLE_GATT_CHR_F_READ_ENC |
+                                        BLE_GATT_CHR_F_WRITE_ENC;
+    }
 
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
@@ -837,7 +853,7 @@ static void free_gatt_ble_misc_memory(simple_ble_cfg_t *ble_config)
 
 esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *config)
 {
-    if (!pc || !config || !config->device_name || !config->nu_lookup) {
+    if (!pc || !config || !config->nu_lookup) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -921,6 +937,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     pc->remove_endpoint = protocomm_ble_remove_endpoint;
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
+    protoble_internal->ble_link_encryption = config->ble_link_encryption;
 
     simple_ble_cfg_t *ble_config = (simple_ble_cfg_t *) calloc(1, sizeof(simple_ble_cfg_t));
     if (ble_config == NULL) {
@@ -982,6 +999,7 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
         if (ret == 0) {
             nimble_port_deinit();
         }
+        free_gatt_ble_misc_memory(ble_cfg_p);
 #else
 #ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
 	/* Keep BT stack on, but terminate the connection after provisioning */

@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #ifdef __cplusplus
@@ -20,8 +12,8 @@ extern "C"
 
 #include <stdint.h>
 
-typedef volatile struct emac_dma_dev_s {
-    union {
+typedef struct emac_dma_dev_s {
+    volatile union {
         struct {
             uint32_t sw_rst : 1;         /*When this bit is set  the MAC DMA Controller resets the logic and all internal registers of the MAC. It is cleared automatically after the reset operation is complete in all of the ETH_MAC clock domains. Before reprogramming any register of the ETH_MAC  you should read a zero (0) value in this bit.*/
             uint32_t dma_arb_sch : 1;    /*This bit specifies the arbitration scheme between the transmit and receive paths.1'b0: weighted round-robin with RX:TX or TX:RX  priority specified in PR (bit[15:14]). 1'b1 Fixed priority (Rx priority to Tx).*/
@@ -46,7 +38,7 @@ typedef volatile struct emac_dma_dev_s {
     uint32_t dmarxpolldemand; /*When these bits are written with any value  the DMA reads the current descriptor to which the Current Host Receive Descriptor Register is pointing. If that descriptor is not available (owned by the Host)  the reception returns to the Suspended state and Bit[7] (RU) of Status Register is asserted. If the descriptor is available  the Rx DMA returns to the active state.*/
     uint32_t dmarxbaseaddr;   /*This field contains the base address of the first descriptor in the Receive Descriptor list. The LSB Bits[1:0] are ignored and internally taken as all-zero by the DMA. Therefore these LSB bits are read-only.*/
     uint32_t dmatxbaseaddr;   /*This field contains the base address of the first descriptor in the Transmit Descriptor list. The LSB Bits[1:0] are ignored and are internally taken as all-zero by the DMA.Therefore  these LSB bits are read-only.*/
-    union {
+    volatile union {
         struct {
             uint32_t trans_int : 1;         /*This bit indicates that the frame transmission is complete. When transmission is complete  Bit[31] (OWN) of TDES0 is reset  and the specific frame status information is updated in the Descriptor.*/
             uint32_t trans_proc_stop : 1;   /*This bit is set when the transmission is stopped.*/
@@ -76,7 +68,7 @@ typedef volatile struct emac_dma_dev_s {
         };
         uint32_t val;
     } dmastatus;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0 : 1;
             uint32_t start_stop_rx : 1;    /*When this bit is set  the Receive process is placed in the Running state. The DMA attempts to acquire the descriptor from the Receive list and processes the incoming frames.When this bit is cleared  the Rx DMA operation is stopped after the transfer of the current frame.*/
@@ -102,7 +94,7 @@ typedef volatile struct emac_dma_dev_s {
         };
         uint32_t val;
     } dmaoperation_mode;
-    union {
+    volatile union {
         struct {
             uint32_t dmain_tie : 1;  /*When this bit is set with Normal Interrupt Summary Enable (Bit[16])  the Transmit Interrupt is enabled. When this bit is reset  the Transmit Interrupt is disabled.*/
             uint32_t dmain_tse : 1;  /*When this bit is set with Abnormal Interrupt Summary Enable (Bit[15])  the Transmission Stopped Interrupt is enabled. When this bit is reset  the Transmission Stopped Interrupt is disabled.*/
@@ -124,7 +116,7 @@ typedef volatile struct emac_dma_dev_s {
         };
         uint32_t val;
     } dmain_en;
-    union {
+    volatile union {
         struct {
             uint32_t missed_fc : 16;    /*This field indicates the number of frames missed by the controller because of the Host Receive Buffer being unavailable. This counter is incremented each time the DMA discards an incoming frame. The counter is cleared when this register is read.*/
             uint32_t overflow_bmfc : 1; /*This bit is set every time Missed Frame Counter (Bits[15:0]) overflows that is  the DMA discards an incoming frame because of the Host Receive  Buffer being unavailable with the missed frame counter at maximum value. In such a scenario  the Missed frame counter is reset to all-zeros and this bit indicates that the rollover happened.*/
@@ -134,7 +126,7 @@ typedef volatile struct emac_dma_dev_s {
         };
         uint32_t val;
     } dmamissedfr;
-    union {
+    volatile union {
         struct {
             uint32_t riwtc : 8; /*This bit indicates the number of system clock cycles multiplied by 256 for which the watchdog timer is set. The watchdog timer gets triggered with the programmed value after the Rx DMA completes the transfer of a frame for which the RI(RECV_INT) status bit is not set because of the setting in the corresponding descriptor RDES1[31]. When the watchdog timer runs out  the RI bit is set and the timer is stopped. The watchdog timer is reset when the RI bit is set high because of automatic setting of RI as per RDES1[31] of any received frame.*/
             uint32_t reserved8 : 24;

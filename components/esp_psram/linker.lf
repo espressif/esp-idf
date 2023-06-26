@@ -3,8 +3,6 @@ archive: libesp_psram.a
 entries:
 
     if SPIRAM = y:
-        mmu (noflash)
-
         if SPIRAM_MODE_QUAD = y:
             if IDF_TARGET_ESP32S3 = y:
                 esp_psram_impl_quad (noflash)

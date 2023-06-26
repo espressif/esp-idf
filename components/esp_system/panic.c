@@ -17,6 +17,7 @@
 #include "hal/timer_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/mwdt_ll.h"
 #include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
@@ -25,10 +26,12 @@
 
 #include "sdkconfig.h"
 
+#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 #if __has_include("esp_app_desc.h")
 #define WITH_ELF_SHA256
 #include "esp_app_desc.h"
 #endif
+#endif // CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
@@ -59,14 +62,12 @@
 #include "hal/usb_serial_jtag_ll.h"
 #endif
 
+#define MWDT_DEFAULT_TICKS_PER_US       500
+
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// ESP32C6,ESP32H2-TODO: IDF-5653
-static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
-#else
-static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-#endif
+static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
@@ -183,9 +184,9 @@ void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms)
 
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     //Reconfigure TWDT (Timer Group 0)
-    wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT0_TICK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
+    wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT_LL_DEFAULT_CLK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
     wdt_hal_write_protect_disable(&wdt0_context);
-    wdt_hal_config_stage(&wdt0_context, 0, timeout_ms * 1000 / MWDT0_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
+    wdt_hal_config_stage(&wdt0_context, 0, timeout_ms * 1000 / MWDT_DEFAULT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
     wdt_hal_enable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
@@ -333,11 +334,9 @@ void esp_panic_handler(panic_info_t *info)
 
 #ifdef WITH_ELF_SHA256
     panic_print_str("\r\nELF file SHA256: ");
-    char sha256_buf[65];
-    esp_app_get_elf_sha256(sha256_buf, sizeof(sha256_buf));
-    panic_print_str(sha256_buf);
+    panic_print_str(esp_app_get_elf_sha256_str());
     panic_print_str("\r\n");
-#endif
+#endif // WITH_ELF_SHA256
 
     panic_print_str("\r\n");
 
@@ -352,14 +351,6 @@ void esp_panic_handler(panic_info_t *info)
     esp_panic_handler_reconfigure_wdts(1000); // restore WDT config
 #endif // CONFIG_APPTRACE_ENABLE
 
-#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-    disable_all_wdts();
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_disable(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-    panic_print_str("Entering gdb stub now.\r\n");
-    esp_gdbstub_panic_handler((void *)info->frame);
-#else
 #if CONFIG_ESP_COREDUMP_ENABLE
     static bool s_dumping_core;
     if (s_dumping_core) {
@@ -379,6 +370,14 @@ void esp_panic_handler(panic_info_t *info)
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */
 
+#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
+    disable_all_wdts();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    panic_print_str("Entering gdb stub now.\r\n");
+    esp_gdbstub_panic_handler((void *)info->frame);
+#else
 #if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
     // start RTC WDT if it hasn't been started yet and set the timeout to more than the delay time
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -429,6 +428,7 @@ void esp_panic_handler(panic_info_t *info)
 #else /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
     disable_all_wdts();
     panic_print_str("CPU halted.\r\n");
+    esp_system_reset_modules_on_exit();
     while (1);
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
 #endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */

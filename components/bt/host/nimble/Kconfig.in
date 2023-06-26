@@ -64,13 +64,10 @@ config BT_NIMBLE_LOG_LEVEL
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
-    range 1 8 if (IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32C6)
     range 1 2 if IDF_TARGET_ESP32C2
-    range 1 9 if !SOC_ESP_NIMBLE_CONTROLLER
-    range 1 2
-    default 3 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4)
-    default 2 if (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6)
-    default 1
+    range 1 9
+    default 2 if IDF_TARGET_ESP32C2
+    default 3
     depends on BT_NIMBLE_ENABLED
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
@@ -270,23 +267,23 @@ menu "Memory Settings"
         help
                 Dynamic memory size of block 2
 
-    config BT_NIMBLE_ACL_BUF_COUNT
+    config BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT
         int "ACL Buffer count"
         depends on BT_NIMBLE_ENABLED
         default 24
         help
-            The number of ACL data buffers.
+            The number of ACL data buffers allocated for host.
 
-    config BT_NIMBLE_ACL_BUF_SIZE
-        int "ACL Buffer size"
+    config BT_NIMBLE_TRANSPORT_ACL_SIZE
+        int "Transport ACL Buffer size"
         depends on BT_NIMBLE_ENABLED
         default 255
         help
             This is the maximum size of the data portion of HCI ACL data packets.
             It does not include the HCI data header (of 4 bytes)
 
-    config BT_NIMBLE_HCI_EVT_BUF_SIZE
-        int "HCI Event Buffer size"
+    config BT_NIMBLE_TRANSPORT_EVT_SIZE
+        int "Transport Event Buffer size"
         depends on BT_NIMBLE_ENABLED
         default 257 if BT_NIMBLE_EXT_ADV
         default 70
@@ -295,8 +292,8 @@ menu "Memory Settings"
             extended advertising, packets can be fragmented. 257 bytes is the
             maximum size of a packet.
 
-    config BT_NIMBLE_HCI_EVT_HI_BUF_COUNT
-        int "High Priority HCI Event Buffer count"
+    config BT_NIMBLE_TRANSPORT_EVT_COUNT
+        int "Transport Event Buffer count"
         depends on BT_NIMBLE_ENABLED
         default 30
         help
@@ -305,8 +302,8 @@ menu "Memory Settings"
             are no free high-priority event buffers then host will try to allocate a
             low-priority buffer instead
 
-    config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
-        int "Low Priority HCI Event Buffer count"
+    config BT_NIMBLE_TRANSPORT_EVT_DISCARD_COUNT
+        int "Discardable Transport Event Buffer count"
         depends on BT_NIMBLE_ENABLED
         default 8
         help
@@ -482,7 +479,7 @@ config BT_NIMBLE_HS_STOP_TIMEOUT_MS
 config BT_NIMBLE_HOST_BASED_PRIVACY
     bool "Enable host based privacy for random address."
     default n
-    depends on BT_NIMBLE_ENABLED && !IDF_TARGET_ESP32
+    depends on BT_NIMBLE_ENABLED && IDF_TARGET_ESP32
     help
         Use this option to do host based Random Private Address resolution.
         If this option is disabled then controller based privacy is used.
@@ -505,7 +502,7 @@ config BT_NIMBLE_MAX_CONN_REATTEMPT
 
 menuconfig BT_NIMBLE_50_FEATURE_SUPPORT
     bool "Enable BLE 5 feature"
-    depends on BT_NIMBLE_ENABLED
+    depends on BT_NIMBLE_ENABLED && (SOC_BLE_50_SUPPORTED || !BT_CONTROLLER_ENABLED)
     default y
     help
             Enable BLE 5 feature
@@ -594,7 +591,7 @@ config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
 
 config BT_NIMBLE_BLE_POWER_CONTROL
     bool "Enable support for BLE Power Control"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && IDF_TARGET_ESP32C6
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_POWER_CONTROL_SUPPORTED
     default n
     help
         Set this option to enable the Power Control feature
@@ -602,7 +599,7 @@ config BT_NIMBLE_BLE_POWER_CONTROL
 choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
     default BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on ESP32_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED
+    depends on ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED
     help
             When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
             better avoid dramatic performance deterioration of Wi-Fi.
@@ -620,7 +617,7 @@ endchoice
 
 config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
-    default 0 if !(ESP32_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED)
+    default 0 if !(ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED)
     default 1 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
     default 0 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
@@ -658,3 +655,9 @@ config BT_NIMBLE_LEGACY_VHCI_ENABLE
     default n
     help
         This option is used to distinguish whether a previous version of VHCI is being used
+
+config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
+    bool "Blob transfer"
+    help
+        This option is used when data to be sent is more than 512 bytes. For peripheral role,
+        BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.

@@ -152,10 +152,10 @@
 #define  APB_CLK_FREQ_ROM                            (40*1000000)
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  EFUSE_CLK_FREQ_ROM                          (20*1000000)
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                (80*1000000)
 #define  REF_CLK_FREQ                                (1000000)
-#define  RTC_CLK_FREQ                                (20*1000000)
 #define  XTAL_CLK_FREQ                               (40*1000000)
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
@@ -218,7 +218,7 @@
 //Region of memory that is internal, as in on the same silicon die as the ESP32 CPUs
 //(excluding RTC data region, that's checked separately.) See esp_ptr_internal().
 #define SOC_MEM_INTERNAL_LOW        0x3FC88000
-#define SOC_MEM_INTERNAL_HIGH       0x403E2000
+#define SOC_MEM_INTERNAL_HIGH       0x403E0000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x3fceb710

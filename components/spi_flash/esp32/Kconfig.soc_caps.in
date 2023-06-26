@@ -1,0 +1,24 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config SPI_FLASH_VENDOR_XMC_SUPPORTED
+    bool
+    default y
+
+config SPI_FLASH_VENDOR_GD_SUPPORTED
+    bool
+    default y
+
+config SPI_FLASH_VENDOR_ISSI_SUPPORTED
+    bool
+    default y
+
+config SPI_FLASH_VENDOR_MXIC_SUPPORTED
+    bool
+    default y
+
+config SPI_FLASH_VENDOR_WINBOND_SUPPORTED
+    bool
+    default y

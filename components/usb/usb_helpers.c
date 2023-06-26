@@ -21,12 +21,12 @@ const usb_standard_desc_t *usb_parse_next_descriptor(const usb_standard_desc_t *
 {
     assert(cur_desc != NULL && offset != NULL);
     if (*offset >= wTotalLength) {
-        return NULL;    //We have traversed the entire configuration descriptor
+        return NULL;    // We have traversed the entire configuration descriptor
     }
     if (*offset + cur_desc->bLength >= wTotalLength) {
-        return NULL;    //Next descriptor is out of bounds
+        return NULL;    // Next descriptor is out of bounds
     }
-    //Return the next descriptor, update offset
+    // Return the next descriptor, update offset
     const usb_standard_desc_t *ret_desc = (const usb_standard_desc_t *)(((uint32_t)cur_desc) + cur_desc->bLength);
     *offset += cur_desc->bLength;
     return ret_desc;
@@ -35,8 +35,8 @@ const usb_standard_desc_t *usb_parse_next_descriptor(const usb_standard_desc_t *
 const usb_standard_desc_t *usb_parse_next_descriptor_of_type(const usb_standard_desc_t *cur_desc, uint16_t wTotalLength, uint8_t bDescriptorType, int *offset)
 {
     assert(cur_desc != NULL && offset != NULL);
-    int offset_temp = *offset;      //We only want to update offset if we've actually found a descriptor
-    //Keep stepping over descriptors until we find one of bDescriptorType or until we go out of bounds
+    int offset_temp = *offset;      // We only want to update offset if we've actually found a descriptor
+    // Keep stepping over descriptors until we find one of bDescriptorType or until we go out of bounds
     const usb_standard_desc_t *ret_desc = usb_parse_next_descriptor(cur_desc, wTotalLength, &offset_temp);
     while (ret_desc != NULL) {
         if (ret_desc->bDescriptorType == bDescriptorType) {
@@ -45,7 +45,7 @@ const usb_standard_desc_t *usb_parse_next_descriptor_of_type(const usb_standard_
         ret_desc = usb_parse_next_descriptor(ret_desc, wTotalLength, &offset_temp);
     }
     if (ret_desc != NULL) {
-        //We've found a descriptor. Update the offset
+        // We've found a descriptor. Update the offset
         *offset = offset_temp;
     }
     return ret_desc;
@@ -55,10 +55,10 @@ int usb_parse_interface_number_of_alternate(const usb_config_desc_t *config_desc
 {
     assert(config_desc != NULL);
     int offset = 0;
-    //Find the first interface descriptor of bInterfaceNumber
+    // Find the first interface descriptor of bInterfaceNumber
     const usb_intf_desc_t *first_intf_desc = usb_parse_interface_descriptor(config_desc, bInterfaceNumber, 0, &offset);
     if (first_intf_desc == NULL) {
-        return -1;  //bInterfaceNumber not found
+        return -1;  // bInterfaceNumber not found
     }
 
     int num_alt_setting = 0;
@@ -76,35 +76,32 @@ int usb_parse_interface_number_of_alternate(const usb_config_desc_t *config_desc
 const usb_intf_desc_t *usb_parse_interface_descriptor(const usb_config_desc_t *config_desc, uint8_t bInterfaceNumber, uint8_t bAlternateSetting, int *offset)
 {
     assert(config_desc != NULL);
-    if (bInterfaceNumber >= config_desc->bNumInterfaces) {
-        return NULL;    //bInterfaceNumber is out of range
-    }
 
-    //Walk to first interface descriptor of bInterfaceNumber
+    // Walk to first interface descriptor of bInterfaceNumber
     int offset_temp = 0;
     const usb_intf_desc_t *next_intf_desc = (const usb_intf_desc_t *)usb_parse_next_descriptor_of_type((const usb_standard_desc_t *)config_desc, config_desc->wTotalLength, USB_B_DESCRIPTOR_TYPE_INTERFACE, &offset_temp);
     while (next_intf_desc != NULL) {
         if (next_intf_desc->bInterfaceNumber == bInterfaceNumber) {
-            break;      //We found the first interface descriptor with matching bInterfaceNumber
+            break;      // We found the first interface descriptor with matching bInterfaceNumber
         }
         next_intf_desc = (const usb_intf_desc_t *)usb_parse_next_descriptor_of_type((const usb_standard_desc_t *)next_intf_desc, config_desc->wTotalLength, USB_B_DESCRIPTOR_TYPE_INTERFACE, &offset_temp);
     }
     if (next_intf_desc == NULL) {
-        return NULL;    //Couldn't find a interface with bInterfaceNumber
+        return NULL;    // Couldn't find a interface with bInterfaceNumber
     }
 
-    //Keep walking until an interface descriptor matching bInterfaceNumber and bAlternateSetting is found
+    // Keep walking until an interface descriptor matching bInterfaceNumber and bAlternateSetting is found
     while (next_intf_desc != NULL) {
         if (next_intf_desc->bInterfaceNumber == bInterfaceNumber + 1) {
-            //We've walked past our target bInterfaceNumber
+            // We've walked past our target bInterfaceNumber
             next_intf_desc = NULL;
             break;
         }
         if (next_intf_desc->bAlternateSetting == bAlternateSetting) {
-            //We've found our target interface descriptor
+            // We've found our target interface descriptor
             break;
         }
-        //Get the next interface descriptor
+        // Get the next interface descriptor
         next_intf_desc = (const usb_intf_desc_t *)usb_parse_next_descriptor_of_type((const usb_standard_desc_t *)next_intf_desc, config_desc->wTotalLength, USB_B_DESCRIPTOR_TYPE_INTERFACE, &offset_temp);
     }
     if (next_intf_desc != NULL && offset != NULL) {
@@ -117,9 +114,9 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_index(const usb_intf_desc_
 {
     assert(intf_desc != NULL && offset != NULL);
     if (index >= intf_desc->bNumEndpoints) {
-        return NULL;    //Index is out of range
+        return NULL;    // Index is out of range
     }
-    //Walk to the Nth endpoint descriptor we find
+    // Walk to the Nth endpoint descriptor we find
     int offset_temp = *offset;
     bool ep_found = true;
     const usb_standard_desc_t *next_desc = (const usb_standard_desc_t *)intf_desc;
@@ -141,14 +138,14 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_address(const usb_config_d
 {
     assert(config_desc != NULL);
 
-    //Find the interface descriptor
+    // Find the interface descriptor
     int offset_intf;
     const usb_intf_desc_t *intf_desc = usb_parse_interface_descriptor(config_desc, bInterfaceNumber, bAlternateSetting, &offset_intf);
     if (intf_desc == NULL) {
         return NULL;
     }
 
-    //Walk endpoint descriptors until one matching bEndpointAddress is found
+    // Walk endpoint descriptors until one matching bEndpointAddress is found
     int offset_ep;
     bool ep_found = false;
     const usb_ep_desc_t *ep_desc = NULL;
@@ -177,21 +174,21 @@ static void print_ep_desc(const usb_ep_desc_t *ep_desc)
     int type = ep_desc->bmAttributes & USB_BM_ATTRIBUTES_XFERTYPE_MASK;
 
     switch (type) {
-        case USB_BM_ATTRIBUTES_XFER_CONTROL:
-            ep_type_str = "CTRL";
-            break;
-        case USB_BM_ATTRIBUTES_XFER_ISOC:
-            ep_type_str = "ISOC";
-            break;
-        case USB_BM_ATTRIBUTES_XFER_BULK:
-            ep_type_str = "BULK";
-            break;
-        case USB_BM_ATTRIBUTES_XFER_INT:
-            ep_type_str = "INT";
-            break;
-        default:
-            ep_type_str = NULL;
-            break;
+    case USB_BM_ATTRIBUTES_XFER_CONTROL:
+        ep_type_str = "CTRL";
+        break;
+    case USB_BM_ATTRIBUTES_XFER_ISOC:
+        ep_type_str = "ISOC";
+        break;
+    case USB_BM_ATTRIBUTES_XFER_BULK:
+        ep_type_str = "BULK";
+        break;
+    case USB_BM_ATTRIBUTES_XFER_INT:
+        ep_type_str = "INT";
+        break;
+    default:
+        ep_type_str = NULL;
+        break;
     }
 
     printf("\t\t*** Endpoint descriptor ***\n");
@@ -280,23 +277,23 @@ void usb_print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_
 
     do {
         switch (next_desc->bDescriptorType) {
-            case USB_B_DESCRIPTOR_TYPE_CONFIGURATION:
-                usbh_print_cfg_desc((const usb_config_desc_t *)next_desc);
-                break;
-            case USB_B_DESCRIPTOR_TYPE_INTERFACE:
-                usbh_print_intf_desc((const usb_intf_desc_t *)next_desc);
-                break;
-            case USB_B_DESCRIPTOR_TYPE_ENDPOINT:
-                print_ep_desc((const usb_ep_desc_t *)next_desc);
-                break;
-            case USB_B_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION:
-                print_iad_desc((const usb_iad_desc_t*)next_desc);
-                break;
-            default:
-                if(class_specific_cb) {
-                    class_specific_cb(next_desc);
-                }
-                break;
+        case USB_B_DESCRIPTOR_TYPE_CONFIGURATION:
+            usbh_print_cfg_desc((const usb_config_desc_t *)next_desc);
+            break;
+        case USB_B_DESCRIPTOR_TYPE_INTERFACE:
+            usbh_print_intf_desc((const usb_intf_desc_t *)next_desc);
+            break;
+        case USB_B_DESCRIPTOR_TYPE_ENDPOINT:
+            print_ep_desc((const usb_ep_desc_t *)next_desc);
+            break;
+        case USB_B_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION:
+            print_iad_desc((const usb_iad_desc_t *)next_desc);
+            break;
+        default:
+            if (class_specific_cb) {
+                class_specific_cb(next_desc);
+            }
+            break;
         }
 
         next_desc = usb_parse_next_descriptor(next_desc, wTotalLength, &offset);
@@ -310,7 +307,7 @@ void usb_print_string_descriptor(const usb_str_desc_t *str_desc)
         return;
     }
 
-    for (int i = 0; i < str_desc->bLength/2; i++) {
+    for (int i = 0; i < str_desc->bLength / 2; i++) {
         /*
         USB String descriptors of UTF-16.
         Right now We just skip any character larger than 0xFF to stay in BMP Basic Latin and Latin-1 Supplement range.

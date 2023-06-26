@@ -28,8 +28,7 @@ menu "Cache config"
 
     choice ESP32S2_DATA_CACHE_SIZE
         prompt "Data cache size"
-        default ESP32S2_DATA_CACHE_0KB if !SPIRAM
-        default ESP32S2_DATA_CACHE_8KB if SPIRAM
+        default ESP32S2_DATA_CACHE_8KB
         help
             Data cache size to be set on application startup.
             If you use 0KB data cache, the other 16KB will be added to the heap

@@ -10,11 +10,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
-#include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/uart.h"
 #include "esp32c2/rom/gpio.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/soc.h"
@@ -146,7 +146,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
 
     rtc_clk_apb_freq_update(40 * MHZ);
-    ets_update_cpu_frequency(cpu_freq_mhz);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 }
 
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *out_config)
@@ -270,29 +270,36 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 
 void rtc_clk_cpu_freq_set_xtal(void)
 {
-    int freq_mhz = (int)rtc_clk_xtal_freq_get();
-
-    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+    rtc_clk_cpu_set_to_default_config();
     rtc_clk_bbpll_disable();
 }
 
-/**
- * Switch to XTAL frequency. Does not disable the PLL.
- */
-void rtc_clk_cpu_freq_to_xtal(int freq, int div)
+void rtc_clk_cpu_set_to_default_config(void)
 {
-    ets_update_cpu_frequency(freq);
+    int freq_mhz = (int)rtc_clk_xtal_freq_get();
+
+    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+}
+
+/**
+ * Switch to use XTAL as the CPU clock source.
+ * Must satisfy: cpu_freq = XTAL_FREQ / div.
+ * Does not disable the PLL.
+ */
+void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+{
+    esp_rom_set_cpu_ticks_per_us(cpu_freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_divider(div);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
-    rtc_clk_apb_freq_update(freq * MHZ);
+    rtc_clk_apb_freq_update(cpu_freq * MHZ);
 }
 
 static void rtc_clk_cpu_freq_to_8m(void)
 {
-    ets_update_cpu_frequency(20);
+    esp_rom_set_cpu_ticks_per_us(20);
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);

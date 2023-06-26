@@ -3,6 +3,22 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
+config SOC_ANA_CMPR_SUPPORTED
+    bool
+    default y
+
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
+config SOC_UART_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
     bool
     default y
@@ -11,15 +27,47 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
+config SOC_PCNT_SUPPORTED
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
+config SOC_TWAI_SUPPORTED
+    bool
+    default y
+
+config SOC_BT_SUPPORTED
+    bool
+    default y
+
+config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
 config SOC_IEEE802154_BLE_ONLY
     bool
     default y
 
-config SOC_EFUSE_KEY_PURPOSE_FIELD
+config SOC_USB_SERIAL_JTAG_SUPPORTED
     bool
     default y
 
-config SOC_EFUSE_HAS_EFUSE_RST_BUG
+config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
+config SOC_SUPPORTS_SECURE_DL_MODE
+    bool
+    default y
+
+config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
@@ -31,7 +79,79 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
+config SOC_I2S_SUPPORTED
+    bool
+    default y
+
+config SOC_SDM_SUPPORTED
+    bool
+    default y
+
+config SOC_ETM_SUPPORTED
+    bool
+    default y
+
+config SOC_RMT_SUPPORTED
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORTED
+    bool
+    default y
+
+config SOC_GPSPI_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
+    bool
+    default y
+
+config SOC_HMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
+config SOC_ECC_SUPPORTED
+    bool
+    default y
+
+config SOC_ECC_EXTENDED_MODES_SUPPORTED
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORTED
+    bool
+    default y
+
+config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
@@ -40,6 +160,10 @@ config SOC_BOD_SUPPORTED
     default y
 
 config SOC_APM_SUPPORTED
+    bool
+    default y
+
+config SOC_PMU_SUPPORTED
     bool
     default y
 
@@ -67,15 +191,15 @@ config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
-config SOC_ADC_ARBITER_SUPPORTED
-    bool
-    default y
-
-config SOC_ADC_FILTER_SUPPORTED
+config SOC_ADC_DIG_IIR_FILTER_SUPPORTED
     bool
     default y
 
 config SOC_ADC_MONITOR_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DMA_SUPPORTED
     bool
     default y
 
@@ -103,13 +227,25 @@ config SOC_ADC_DIGI_MAX_BITWIDTH
     int
     default 12
 
-config SOC_ADC_DIGI_FILTER_NUM
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_IIR_FILTER_NUM
     int
     default 2
 
 config SOC_ADC_DIGI_MONITOR_NUM
     int
     default 2
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 4
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 4
 
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
@@ -131,6 +267,10 @@ config SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool
     default n
 
+config SOC_ADC_TEMPERATURE_SHARE_INTR
+    bool
+    default y
+
 config SOC_APB_BACKUP_DMA
     bool
     default n
@@ -140,6 +280,10 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     default y
 
 config SOC_SHARED_IDCACHE_SUPPORTED
+    bool
+    default y
+
+config SOC_CACHE_FREEZE_SUPPORTED
     bool
     default y
 
@@ -171,7 +315,27 @@ config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
 
+config SOC_CPU_HAS_PMA
+    bool
+    default y
+
+config SOC_CPU_IDRAM_SPLIT_USING_PMP
+    bool
+    default y
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
+config SOC_MMU_PERIPH_NUM
+    int
+    default 1
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
+config SOC_MMU_DI_VADDR_SHARED
     bool
     default y
 
@@ -199,17 +363,45 @@ config SOC_GDMA_SUPPORT_ETM
     bool
     default y
 
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
+
 config SOC_GPIO_PORT
     int
     default 1
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 31
+    default 28
 
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
     bool
     default y
+
+config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    bool
+    default y
+
+config SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    int
+    default 8
+
+config SOC_GPIO_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_GPIO_ETM_EVENTS_PER_GROUP
+    int
+    default 8
+
+config SOC_GPIO_ETM_TASKS_PER_GROUP
+    int
+    default 8
 
 config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
@@ -221,9 +413,13 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
-    default 0x000000007FFFFF00
+    default 0x000000000FFF807F
 
-config SOC_GPIO_SUPPORT_SLP_SWITCH
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
     default y
 
@@ -239,13 +435,21 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     bool
     default y
 
-config SOC_I2C_NUM
+config SOC_ANA_CMPR_NUM
     int
     default 1
+
+config SOC_I2C_NUM
+    int
+    default 2
 
 config SOC_I2C_FIFO_LEN
     int
     default 32
+
+config SOC_I2C_CMD_REG_NUM
+    int
+    default 8
 
 config SOC_I2C_SUPPORT_SLAVE
     bool
@@ -264,14 +468,22 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2S_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_I2S_HW_VERSION_2
     bool
     default y
 
 config SOC_I2S_SUPPORTS_XTAL
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PLL_F96M
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PLL_F64M
     bool
     default y
 
@@ -295,6 +507,10 @@ config SOC_I2S_SUPPORTS_TDM
     bool
     default y
 
+config SOC_I2S_TDM_FULL_DATA_WIDTH
+    bool
+    default y
+
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y
@@ -315,9 +531,17 @@ config SOC_LEDC_SUPPORT_FADE_STOP
     bool
     default y
 
-config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+config SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
     int
     default 16
+
+config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
+    int
+    default 10
 
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
@@ -411,7 +635,7 @@ config SOC_RMT_SUPPORT_XTAL
     bool
     default y
 
-config SOC_RMT_SUPPORT_APB
+config SOC_RMT_SUPPORT_RC_FAST
     bool
     default y
 
@@ -467,11 +691,31 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
-config SOC_MCPWM_CLK_SUPPORT_PLL160M
+config SOC_PARLIO_GROUPS
+    int
+    default 1
+
+config SOC_PARLIO_TX_UNITS_PER_GROUP
+    int
+    default 1
+
+config SOC_PARLIO_RX_UNITS_PER_GROUP
+    int
+    default 1
+
+config SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
+    int
+    default 8
+
+config SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
+    int
+    default 8
+
+config SOC_PARLIO_TX_CLK_SUPPORT_GATING
     bool
     default y
 
-config SOC_MCPWM_CLK_SUPPORT_XTAL
+config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 
@@ -486,6 +730,14 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
 config SOC_RTCIO_PIN_COUNT
     int
     default 0
+
+config SOC_MPI_MEM_BLOCKS_NUM
+    int
+    default 4
+
+config SOC_MPI_OPERATIONS_NUM
+    int
+    default 3
 
 config SOC_RSA_MAX_BIT_LEN
     int
@@ -527,7 +779,7 @@ config SOC_SDM_CHANNELS_PER_GROUP
     int
     default 4
 
-config SOC_SDM_CLK_SUPPORT_PLL_F80M
+config SOC_SDM_CLK_SUPPORT_PLL_F48M
     bool
     default y
 
@@ -563,6 +815,22 @@ config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
     bool
     default y
 
+config SOC_SPI_SUPPORT_SLAVE_HD_VER2
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_XTAL
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_PLL_F48M
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_RC_FAST
+    bool
+    default y
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
@@ -595,7 +863,23 @@ config SOC_SPI_MEM_SUPPORT_CHECK_SUS
     bool
     default y
 
-config SOC_MEMSPI_SRC_FREQ_48M_SUPPORTED
+config SOC_SPI_MEM_SUPPORT_WRAP
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
     bool
     default y
 
@@ -651,13 +935,17 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
 
-config SOC_TIMER_GROUP_SUPPORT_APB
+config SOC_TIMER_GROUP_SUPPORT_RC_FAST
     bool
     default y
 
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TWAI_CONTROLLER_NUM
     bool
@@ -676,6 +964,30 @@ config SOC_TWAI_BRP_MAX
     default 32768
 
 config SOC_TWAI_SUPPORTS_RX_STATUS
+    bool
+    default y
+
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_ICACHE
+    bool
+    default y
+
+config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
     bool
     default y
 
@@ -711,15 +1023,15 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
 
-config SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
-    int
-    default 16
-
-config SOC_MEMPROT_MEM_ALIGN_SIZE
-    int
-    default 512
+config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
+    bool
+    default y
 
 config SOC_UART_NUM
+    int
+    default 2
+
+config SOC_UART_HP_NUM
     int
     default 2
 
@@ -733,13 +1045,9 @@ config SOC_UART_BITRATE_MAX
 
 config SOC_UART_SUPPORT_RTC_CLK
     bool
-    default n
-
-config SOC_UART_SUPPORT_XTAL_CLK
-    bool
     default y
 
-config SOC_UART_REQUIRE_CORE_RESET
+config SOC_UART_SUPPORT_XTAL_CLK
     bool
     default y
 
@@ -755,10 +1063,6 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
-config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
-    int
-    default 12
-
 config SOC_PM_SUPPORT_WIFI_WAKEUP
     bool
     default y
@@ -771,11 +1075,15 @@ config SOC_PM_SUPPORT_CPU_PD
     bool
     default y
 
-config SOC_PM_SUPPORT_WIFI_PD
+config SOC_PM_SUPPORT_BT_PD
     bool
     default y
 
-config SOC_PM_SUPPORT_BT_PD
+config SOC_PM_SUPPORT_XTAL32K_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RC32K_PD
     bool
     default y
 
@@ -783,7 +1091,39 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_VDDSDIO_PD
+    bool
+    default y
+
+config SOC_PM_CPU_RETENTION_BY_RTCCNTL
+    bool
+    default y
+
 config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
+    bool
+    default y
+
+config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+    bool
+    default y
+
+config SOC_CLK_XTAL32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_OSC_SLOW_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_RC32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_LP_FAST_SUPPORT_LP_PLL
+    bool
+    default y
+
+config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
 
@@ -795,6 +1135,30 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
     bool
     default y
 
+config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y
+
+config SOC_BLE_50_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_POWER_CONTROL_SUPPORTED
     bool
     default y

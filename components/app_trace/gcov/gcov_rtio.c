@@ -103,7 +103,7 @@ static int esp_dbg_stub_gcov_entry(void)
     return ESP_OK;
 }
 
-int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
+void gcov_rtio_init(void)
 {
     uint32_t capabilities = 0;
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
@@ -112,7 +112,6 @@ int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
         esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_CAPABILITIES, capabilities | ESP_DBG_STUB_CAP_GCOV_TASK);
     }
     esp_register_freertos_tick_hook(gcov_create_task_tick_hook);
-    return ESP_OK;
 }
 
 void esp_gcov_dump(void)
@@ -172,4 +171,19 @@ long gcov_rtio_ftell(void *stream)
     ESP_EARLY_LOGV(TAG, "%s(%p) = %ld", __FUNCTION__, stream, ret);
     return ret;
 }
+
+void gcov_rtio_setbuf(void *arg1 __attribute__ ((unused)), void *arg2 __attribute__ ((unused)))
+{
+    return;
+}
+
+/* Wrappers for Gcov functions */
+
+extern void __real___gcov_init(void *info);
+void __wrap___gcov_init(void *info)
+{
+    __real___gcov_init(info);
+    gcov_rtio_init();
+}
+
 #endif

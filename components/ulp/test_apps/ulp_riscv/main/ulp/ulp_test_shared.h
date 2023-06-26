@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,7 +10,8 @@
 
 typedef enum{
     RISCV_READ_WRITE_TEST = 1,
-    RISCV_DEEP_SLEEP_WAKEUP_TEST,
+    RISCV_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST,
+    RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST,
     RISCV_LIGHT_SLEEP_WAKEUP_TEST,
     RISCV_STOP_TEST,
     RISCV_MUTEX_TEST,

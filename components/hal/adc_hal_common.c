@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
 {
     if (unit == ADC_UNIT_1) {
         switch (work_mode) {
-#if SOC_ULP_SUPPORTED
+#if SOC_ULP_HAS_ADC
             case ADC_HAL_ULP_FSM_MODE:
                 return ADC_LL_CTRL_ULP;
 #endif
@@ -35,7 +35,7 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
         }
     } else {
         switch (work_mode) {
-#if SOC_ULP_SUPPORTED
+#if SOC_ULP_HAS_ADC
             case ADC_HAL_ULP_FSM_MODE:
                 return ADC_LL_CTRL_ULP;
 #endif
@@ -104,6 +104,7 @@ void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param)
     }
 }
 
+#if SOC_ADC_SELF_HW_CALI_SUPPORTED
 static void cal_setup(adc_unit_t adc_n, adc_atten_t atten)
 {
     adc_hal_set_controller(adc_n, ADC_HAL_SINGLE_READ_MODE);
@@ -203,6 +204,6 @@ uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool inte
 
     adc_ll_calibration_finish(adc_n);
     return ret;
-    return 0;
 }
+#endif  //#if SOC_ADC_SELF_HW_CALI_SUPPORTED
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED

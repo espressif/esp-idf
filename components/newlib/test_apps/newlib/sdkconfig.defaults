@@ -1,0 +1,6 @@
+# certain 64-bit related asserts need this option to be enabled in unity in order to work correctly
+CONFIG_UNITY_ENABLE_64BIT=y
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_TASK_WDT_INIT=n
+CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER=y
+CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER=y

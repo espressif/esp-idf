@@ -7,9 +7,11 @@
 #include <string.h>
 #include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
+#include "esp_gdbstub_memory_regions.h"
 #include "sdkconfig.h"
 #include <sys/param.h>
 
+#include "soc/soc_caps.h"
 #include "soc/uart_reg.h"
 #include "soc/periph_defs.h"
 #include "esp_attr.h"
@@ -73,7 +75,6 @@ void esp_gdbstub_panic_handler(void *in_frame)
     }
 #endif /* CONFIG_ESP_GDBSTUB_SUPPORT_TASKS */
 
-    esp_gdbstub_target_init();
     s_scratch.signal = esp_gdbstub_get_signal(frame);
     send_reason();
     while (true) {
@@ -114,11 +115,7 @@ static uint32_t gdbstub_hton(uint32_t i)
     return __builtin_bswap32(i);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5653
-static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-#else
-static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
-#endif
+static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 static bool rtc_wdt_ctx_enabled = false;
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 static bool wdt0_context_enabled = false;
@@ -191,6 +188,25 @@ static inline void enable_all_wdts(void)
     }
 }
 
+int getActiveTaskNum(void);
+int __swrite(struct _reent *, void *, const char *, int);
+int gdbstub__swrite(struct _reent *data1, void *data2, const char *buff, int len);
+
+volatile esp_gdbstub_frame_t *temp_regs_frame;
+
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+static int bp_count = 0;
+static int wp_count = 0;
+static uint32_t bp_list[SOC_CPU_BREAKPOINTS_NUM] = {0};
+static uint32_t wp_list[SOC_CPU_WATCHPOINTS_NUM] = {0};
+static uint32_t wp_size[SOC_CPU_WATCHPOINTS_NUM] = {0};
+static esp_cpu_watchpoint_trigger_t wp_access[SOC_CPU_WATCHPOINTS_NUM] = {0};
+
+static volatile bool step_in_progress = false;
+static bool not_send_reason = false;
+static bool process_gdb_kill = false;
+static bool gdb_debug_int = false;
+
 /**
  * @breef Handle UART interrupt
  *
@@ -200,24 +216,7 @@ static inline void enable_all_wdts(void)
  *
  * @param curr_regs - actual registers frame
  *
-*/
-static int bp_count = 0;
-static int wp_count = 0;
-static uint32_t bp_list[GDB_BP_SIZE] = {0};
-static uint32_t wp_list[GDB_WP_SIZE] = {0};
-static uint32_t wp_size[GDB_WP_SIZE] = {0};
-static esp_cpu_watchpoint_trigger_t wp_access[GDB_WP_SIZE] = {0};
-
-static volatile bool step_in_progress = false;
-static bool not_send_reason = false;
-static bool process_gdb_kill = false;
-static bool gdb_debug_int = false;
-int getActiveTaskNum(void);
-int __swrite(struct _reent *, void *, const char *, int);
-int gdbstub__swrite(struct _reent *data1, void *data2, const char *buff, int len);
-
-volatile esp_gdbstub_frame_t *temp_regs_frame;
-
+ */
 void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame)
 {
     temp_regs_frame = regs_frame;
@@ -268,11 +267,9 @@ void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame)
             if (res == -2) {
                 esp_gdbstub_send_str_packet(NULL);
             }
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
             if (res == GDBSTUB_ST_CONT) {
                 break;
             }
-#endif /* CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME */
         }
         {
             /* Resume other core */
@@ -360,16 +357,12 @@ void gdbstub_handle_debug_int(esp_gdbstub_frame_t *regs_frame)
     gdb_debug_int = false;
 }
 
-intr_handle_t intr_handle_;
-extern void _xt_gdbstub_int(void * );
-
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 /** @brief Init gdbstub
  * Init uart interrupt for gdbstub
  * */
 void esp_gdbstub_init(void)
 {
-    esp_intr_alloc(ETS_UART0_INTR_SOURCE, 0, _xt_gdbstub_int, NULL, &intr_handle_);
+    esp_intr_alloc(ETS_UART0_INTR_SOURCE, 0, esp_gdbstub_int, NULL, NULL);
     esp_gdbstub_init_dports();
 }
 #endif /* CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME */
@@ -405,6 +398,36 @@ static void handle_G_command(const unsigned char *cmd, int len)
         *p++ = gdbstub_hton(esp_gdbstub_gethex(&cmd, 32));
     }
     esp_gdbstub_send_str_packet("OK");
+}
+
+static int esp_gdbstub_readmem(intptr_t addr)
+{
+    if (!is_valid_memory_region(addr)) {
+        /* see esp_cpu_configure_region_protection */
+        return -1;
+    }
+    uint32_t val_aligned = *(uint32_t *)(addr & (~3));
+    uint32_t shift = (addr & 3) * 8;
+    return (val_aligned >> shift) & 0xff;
+}
+
+static int esp_gdbstub_writemem(unsigned int addr, unsigned char data)
+{
+    if (!is_valid_memory_region(addr)) {
+        /* see esp_cpu_configure_region_protection */
+        return -1;
+    }
+
+    unsigned *addr_aligned = (unsigned *)(addr & (~3));
+    const uint32_t bit_offset = (addr & 0x3) * 8;
+    const uint32_t mask = ~(0xff << bit_offset);
+    *addr_aligned = (*addr_aligned & mask) | (data << bit_offset);
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    asm volatile("ISYNC\nISYNC\n");
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    return 0;
 }
 
 /** Read memory to gdb */
@@ -448,45 +471,71 @@ static void handle_M_command(const unsigned char *cmd, int len)
     esp_gdbstub_send_end();
 }
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 void update_breakpoints(void)
 {
-    for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         if (bp_list[i] != 0) {
             esp_cpu_set_breakpoint(i, (const void *)bp_list[i]);
         } else {
             esp_cpu_clear_breakpoint(i);
         }
     }
-    for (size_t i = 0; i < GDB_WP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_WATCHPOINTS_NUM; i++) {
         if (wp_list[i] != 0) {
             esp_cpu_set_watchpoint(i, (void *)wp_list[i], wp_size[i], wp_access[i]);
         } else {
             esp_cpu_clear_watchpoint(i);
         }
     }
+#else  // CONFIG_IDF_TARGET_ARCH_XTENSA
+#if (SOC_CPU_BREAKPOINTS_NUM != SOC_CPU_WATCHPOINTS_NUM)
+#error "riscv have a common number of BP and WP"
+#endif
+    /*
+     * On riscv we have no separated registers for setting BP and WP as we have for xtensa.
+     * Instead we have common registers which could be configured as BP or WP.
+     */
+    size_t i = 0;
+    for (size_t b = 0; b < SOC_CPU_BREAKPOINTS_NUM; b++) {
+        if (bp_list[b] != 0) {
+            esp_cpu_set_breakpoint(i, (const void *)bp_list[b]);
+            i++;
+        }
+    }
+    for (size_t w = 0; w < SOC_CPU_WATCHPOINTS_NUM && i < SOC_CPU_WATCHPOINTS_NUM; w++) {
+        if (wp_list[w] != 0) {
+            esp_cpu_set_watchpoint(i, (void *)wp_list[w], wp_size[w], wp_access[w]);
+            i++;
+        }
+    }
+    for (; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
+        esp_cpu_clear_breakpoint(i);
+    }
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
 }
 
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 /** Write breakpoint */
 static void handle_Z0_command(const unsigned char *cmd, int len)
 {
     cmd++; /* skip 'Z' */
     cmd++; /* skip '0' */
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    if (bp_count >= GDB_BP_SIZE) {
+    if (bp_count >= SOC_CPU_BREAKPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
     bool add_bp = true;
     /* Check if bp already exist */
-    for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         if (bp_list[i] == addr) {
             add_bp = false;
             break;
         }
     }
     if (true == add_bp) {
-        for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+        for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
             if (bp_list[i] == 0) {
                 bp_list[i] = (uint32_t)addr;
                 bp_count++;
@@ -505,7 +554,7 @@ static void handle_z0_command(const unsigned char *cmd, int len)
     cmd++; /* skip 'z' */
     cmd++; /* skip '0' */
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    for (size_t i = 0; i < GDB_BP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
         if (bp_list[i] == addr) {
             bp_list[i] = 0;
             bp_count--;
@@ -524,7 +573,7 @@ static void handle_Z2_command(const unsigned char *cmd, int len)
     cmd++;
     uint32_t size = esp_gdbstub_gethex(&cmd, -1);
 
-    if (wp_count >= GDB_WP_SIZE) {
+    if (wp_count >= SOC_CPU_WATCHPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
@@ -543,7 +592,7 @@ static void handle_Z3_command(const unsigned char *cmd, int len)
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
     cmd++;
     uint32_t size = esp_gdbstub_gethex(&cmd, -1);
-    if (wp_count >= GDB_WP_SIZE) {
+    if (wp_count >= SOC_CPU_WATCHPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
@@ -562,7 +611,7 @@ static void handle_Z4_command(const unsigned char *cmd, int len)
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
     cmd++;
     uint32_t size = esp_gdbstub_gethex(&cmd, -1);
-    if (wp_count >= GDB_WP_SIZE) {
+    if (wp_count >= SOC_CPU_WATCHPOINTS_NUM) {
         esp_gdbstub_send_str_packet("E02");
         return;
     }
@@ -579,7 +628,7 @@ static void handle_zx_command(const unsigned char *cmd, int len)
     cmd++; /* skip 'z' */
     cmd++; /* skip 'x' */
     uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    for (size_t i = 0; i < GDB_WP_SIZE; i++) {
+    for (size_t i = 0; i < SOC_CPU_WATCHPOINTS_NUM; i++) {
         if (wp_list[i] == addr) {
             wp_access[i] = 0;
             wp_list[i] = 0;
@@ -600,7 +649,7 @@ static void handle_S_command(const unsigned char *cmd, int len)
 static void handle_s_command(const unsigned char *cmd, int len)
 {
     step_in_progress = true;
-    esp_gdbstub_do_step();
+    esp_gdbstub_do_step((esp_gdbstub_frame_t *)temp_regs_frame);
 }
 
 /** Step ... */
@@ -862,9 +911,11 @@ static eTaskState get_task_state(size_t index)
     eTaskState result = eReady;
     TaskHandle_t handle = NULL;
     get_task_handle(index, &handle);
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     if (gdb_debug_int == false) {
         result = eTaskGetState(handle);
     }
+#endif
     return result;
 }
 

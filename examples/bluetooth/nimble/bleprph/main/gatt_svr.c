@@ -27,54 +27,62 @@
 #include "bleprph.h"
 #include "services/ans/ble_svc_ans.h"
 
-/**
- * The vendor specific security test service consists of two characteristics:
- *     o random-number-generator: generates a random 32-bit number each time
- *       it is read.  This characteristic can only be read over an encrypted
- *       connection.
- *     o static-value: a single-byte characteristic that can always be read,
- *       but can only be written over an encrypted connection.
- */
+/*** Maximum number of characteristics with the notify flag ***/
+#define MAX_NOTIFY 5
 
-/* 59462f12-9543-9999-12c8-58b459a2712d */
-static const ble_uuid128_t gatt_svr_svc_sec_test_uuid =
+static const ble_uuid128_t gatt_svr_svc_uuid =
     BLE_UUID128_INIT(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
                      0x99, 0x99, 0x43, 0x95, 0x12, 0x2f, 0x46, 0x59);
 
-/* 5c3a659e-897e-45e1-b016-007107c96df6 */
-static const ble_uuid128_t gatt_svr_chr_sec_test_rand_uuid =
-    BLE_UUID128_INIT(0xf6, 0x6d, 0xc9, 0x07, 0x71, 0x00, 0x16, 0xb0,
-                     0xe1, 0x45, 0x7e, 0x89, 0x9e, 0x65, 0x3a, 0x5c);
+/* A characteristic that can be subscribed to */
+static uint8_t gatt_svr_chr_val;
+static uint16_t gatt_svr_chr_val_handle;
+static const ble_uuid128_t gatt_svr_chr_uuid =
+    BLE_UUID128_INIT(0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11,
+                     0x22, 0x22, 0x22, 0x22, 0x33, 0x33, 0x33, 0x33);
 
-/* 5c3a659e-897e-45e1-b016-007107c96df7 */
-static const ble_uuid128_t gatt_svr_chr_sec_test_static_uuid =
-    BLE_UUID128_INIT(0xf7, 0x6d, 0xc9, 0x07, 0x71, 0x00, 0x16, 0xb0,
-                     0xe1, 0x45, 0x7e, 0x89, 0x9e, 0x65, 0x3a, 0x5c);
-
-static uint8_t gatt_svr_sec_test_static_val;
+/* A custom descriptor */
+static uint8_t gatt_svr_dsc_val;
+static const ble_uuid128_t gatt_svr_dsc_uuid =
+    BLE_UUID128_INIT(0x01, 0x01, 0x01, 0x01, 0x12, 0x12, 0x12, 0x12,
+                     0x23, 0x23, 0x23, 0x23, 0x34, 0x34, 0x34, 0x34);
 
 static int
-gatt_svr_chr_access_sec_test(uint16_t conn_handle, uint16_t attr_handle,
-                             struct ble_gatt_access_ctxt *ctxt,
-                             void *arg);
+gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
+                struct ble_gatt_access_ctxt *ctxt,
+                void *arg);
 
 static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     {
-        /*** Service: Security test. */
+        /*** Service ***/
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = &gatt_svr_svc_sec_test_uuid.u,
+        .uuid = &gatt_svr_svc_uuid.u,
         .characteristics = (struct ble_gatt_chr_def[])
         { {
-                /*** Characteristic: Random number generator. */
-                .uuid = &gatt_svr_chr_sec_test_rand_uuid.u,
-                .access_cb = gatt_svr_chr_access_sec_test,
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
-            }, {
-                /*** Characteristic: Static value. */
-                .uuid = &gatt_svr_chr_sec_test_static_uuid.u,
-                .access_cb = gatt_svr_chr_access_sec_test,
-                .flags = BLE_GATT_CHR_F_READ |
-                BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_ENC,
+                /*** This characteristic can be subscribed to by writing 0x00 and 0x01 to the CCCD ***/
+                .uuid = &gatt_svr_chr_uuid.u,
+                .access_cb = gatt_svc_access,
+#if CONFIG_EXAMPLE_ENCRYPTION
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE |
+                BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC |
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
+#else
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
+#endif
+                .val_handle = &gatt_svr_chr_val_handle,
+                .descriptors = (struct ble_gatt_dsc_def[])
+                { {
+                      .uuid = &gatt_svr_dsc_uuid.u,
+#if CONFIG_EXAMPLE_ENCRYPTION
+                      .att_flags = BLE_ATT_F_READ | BLE_ATT_F_READ_ENC,
+#else
+                      .att_flags = BLE_ATT_F_READ,
+#endif
+                      .access_cb = gatt_svc_access,
+                    }, {
+                      0, /* No more descriptors in this characteristic */
+                    }
+                },
             }, {
                 0, /* No more characteristics in this service. */
             }
@@ -87,8 +95,8 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
 };
 
 static int
-gatt_svr_chr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
-                   void *dst, uint16_t *len)
+gatt_svr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
+               void *dst, uint16_t *len)
 {
     uint16_t om_len;
     int rc;
@@ -106,52 +114,90 @@ gatt_svr_chr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
     return 0;
 }
 
+/**
+ * Access callback whenever a characteristic/descriptor is read or written to.
+ * Here reads and writes need to be handled.
+ * ctxt->op tells weather the operation is read or write and
+ * weather it is on a characteristic or descriptor,
+ * ctxt->dsc->uuid tells which characteristic/descriptor is accessed.
+ * attr_handle give the value handle of the attribute being accessed.
+ * Accordingly do:
+ *     Append the value to ctxt->om if the operation is READ
+ *     Write ctxt->om to the value if the operation is WRITE
+ **/
 static int
-gatt_svr_chr_access_sec_test(uint16_t conn_handle, uint16_t attr_handle,
-                             struct ble_gatt_access_ctxt *ctxt,
-                             void *arg)
+gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
+                struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
     const ble_uuid_t *uuid;
-    int rand_num;
     int rc;
 
-    uuid = ctxt->chr->uuid;
-
-    /* Determine which characteristic is being accessed by examining its
-     * 128-bit UUID.
-     */
-
-    if (ble_uuid_cmp(uuid, &gatt_svr_chr_sec_test_rand_uuid.u) == 0) {
-        assert(ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR);
-
-        /* Respond with a 32-bit random number. */
-        rand_num = rand();
-        rc = os_mbuf_append(ctxt->om, &rand_num, sizeof rand_num);
-        return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-    }
-
-    if (ble_uuid_cmp(uuid, &gatt_svr_chr_sec_test_static_uuid.u) == 0) {
-        switch (ctxt->op) {
-        case BLE_GATT_ACCESS_OP_READ_CHR:
-            rc = os_mbuf_append(ctxt->om, &gatt_svr_sec_test_static_val,
-                                sizeof gatt_svr_sec_test_static_val);
-            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-
-        case BLE_GATT_ACCESS_OP_WRITE_CHR:
-            rc = gatt_svr_chr_write(ctxt->om,
-                                    sizeof gatt_svr_sec_test_static_val,
-                                    sizeof gatt_svr_sec_test_static_val,
-                                    &gatt_svr_sec_test_static_val, NULL);
-            return rc;
-
-        default:
-            assert(0);
-            return BLE_ATT_ERR_UNLIKELY;
+    switch (ctxt->op) {
+    case BLE_GATT_ACCESS_OP_READ_CHR:
+        if (conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            MODLOG_DFLT(INFO, "Characteristic read; conn_handle=%d attr_handle=%d\n",
+                        conn_handle, attr_handle);
+        } else {
+            MODLOG_DFLT(INFO, "Characteristic read by NimBLE stack; attr_handle=%d\n",
+                        attr_handle);
         }
+        uuid = ctxt->chr->uuid;
+        if (attr_handle == gatt_svr_chr_val_handle) {
+            rc = os_mbuf_append(ctxt->om,
+                                &gatt_svr_chr_val,
+                                sizeof(gatt_svr_chr_val));
+            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+        goto unknown;
+
+    case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        if (conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            MODLOG_DFLT(INFO, "Characteristic write; conn_handle=%d attr_handle=%d",
+                        conn_handle, attr_handle);
+        } else {
+            MODLOG_DFLT(INFO, "Characteristic write by NimBLE stack; attr_handle=%d",
+                        attr_handle);
+        }
+        uuid = ctxt->chr->uuid;
+        if (attr_handle == gatt_svr_chr_val_handle) {
+            rc = gatt_svr_write(ctxt->om,
+                                sizeof(gatt_svr_chr_val),
+                                sizeof(gatt_svr_chr_val),
+                                &gatt_svr_chr_val, NULL);
+            ble_gatts_chr_updated(attr_handle);
+            MODLOG_DFLT(INFO, "Notification/Indication scheduled for "
+                        "all subscribed peers.\n");
+            return rc;
+        }
+        goto unknown;
+
+    case BLE_GATT_ACCESS_OP_READ_DSC:
+        if (conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            MODLOG_DFLT(INFO, "Descriptor read; conn_handle=%d attr_handle=%d\n",
+                        conn_handle, attr_handle);
+        } else {
+            MODLOG_DFLT(INFO, "Descriptor read by NimBLE stack; attr_handle=%d\n",
+                        attr_handle);
+        }
+        uuid = ctxt->dsc->uuid;
+        if (ble_uuid_cmp(uuid, &gatt_svr_dsc_uuid.u) == 0) {
+            rc = os_mbuf_append(ctxt->om,
+                                &gatt_svr_dsc_val,
+                                sizeof(gatt_svr_chr_val));
+            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+        goto unknown;
+
+    case BLE_GATT_ACCESS_OP_WRITE_DSC:
+        goto unknown;
+
+    default:
+        goto unknown;
     }
 
-    /* Unknown characteristic; the nimble stack should not have called this
-     * function.
+unknown:
+    /* Unknown characteristic/descriptor;
+     * The NimBLE host should not have called this function;
      */
     assert(0);
     return BLE_ATT_ERR_UNLIKELY;
@@ -207,6 +253,9 @@ gatt_svr_init(void)
     if (rc != 0) {
         return rc;
     }
+
+    /* Setting a value for the read-only descriptor */
+    gatt_svr_dsc_val = 0x99;
 
     return 0;
 }

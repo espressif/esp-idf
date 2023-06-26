@@ -40,10 +40,11 @@ python esp_prov.py --transport < mode of provisioning : softap \ ble \ console >
       * `console` - for debugging via console-based provisioning
         * The client->device commands are printed to STDOUT and device->client messages are accepted via STDIN.
         * This is to be used when the device is accepting provisioning commands on UART console.
+      * `httpd` - the script works the same as for `softap`. This could be used on any other network interface than WiFi soft AP, e.g. Ethernet or USB.
 
 * `--service_name <name>` (Optional)
     - When transport mode is `ble`, this specifies the BLE device name to which connection is to be established for provisioned. If not provided, BLE scanning is initiated and a list of nearby devices, as seen by the host, is displayed, of which the target device can be chosen.
-    - When transport mode is `softap`, this specifies the HTTP server hostname / IP which is running the provisioning service, on the SoftAP network of the device which is to be provisioned. This defaults to `192.168.4.1:80` if not specified
+    - When transport mode is `softap` or `httpd`, this specifies the HTTP server hostname / IP which is running the provisioning service, on the SoftAP network (or any other interface for `httpd` mode) of the device which is to be provisioned. This defaults to `192.168.4.1:80` if not specified
 
 * `--ssid <AP SSID>` (Optional)
     - For specifying the SSID of the Wi-Fi AP to which the device is to connect after provisioning.

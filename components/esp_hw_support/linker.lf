@@ -13,16 +13,22 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     rtc_clk (noflash)
-    if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n: # TODO: IDF-5645
+    esp_gpio_reserve: esp_gpio_reserve_pins (noflash)
+    esp_gpio_reserve: esp_gpio_is_pin_reserved (noflash)
+    if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED:
         rtc_init:rtc_vddsdio_set_config (noflash)
-        rtc_pm (noflash_text)
+    if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n: # TODO: IDF-5645
         rtc_sleep (noflash_text)
     rtc_time (noflash_text)
+    if SOC_PMU_SUPPORTED = y:
+        pmu_sleep (noflash)
+    if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = n:
+        sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:
         periph_ctrl: periph_module_reset (noflash)
-    if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP32_WIFI_ENABLED = y:
+    if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
     if GDMA_CTRL_FUNC_IN_IRAM = y:
@@ -32,6 +38,13 @@ entries:
         gdma: gdma_reset (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
-    if SOC_MEMSPI_SRC_FREQ_120M = y:
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
         mspi_timing_tuning (noflash)
         mspi_timing_config (noflash)
+        if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY = y:
+            mspi_timing_by_mspi_delay (noflash)
+
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        sar_periph_ctrl (noflash)
+    else:
+        sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)

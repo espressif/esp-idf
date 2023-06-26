@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -775,194 +775,32 @@ typedef union {
 
 
 /** Group: Command registers */
-/** Type of comd0 register
- *  I2C command register 0
+/** Type of command register
+ *  I2C command register
  */
 typedef union {
     struct {
-        /** command0 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 0. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+        /** command : R/W; bitpos: [13:0]; default: 0;
+         *  This is the content of a command. It consists of three parts:
+         *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
          *  Byte_num represents the number of bytes that need to be sent or received.
          *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
+         *  structure for more information.
          */
-        uint32_t command0:14;
+        uint32_t byte_num:8;
+        uint32_t ack_en:1;
+        uint32_t ack_exp:1;
+        uint32_t ack_val:1;
+        uint32_t op_code:3;
         uint32_t reserved_14:17;
-        /** command0_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 0 is done in I2C Master mode, this bit changes to high
+        /** command_done : R/W/SS; bitpos: [31]; default: 0;
+         *  When command is done in I2C Master mode, this bit changes to high
          *  level.
          */
-        uint32_t command0_done:1;
+        uint32_t command_done:1;
     };
     uint32_t val;
-} lp_i2c_comd0_reg_t;
-
-/** Type of comd1 register
- *  I2C command register 1
- */
-typedef union {
-    struct {
-        /** command1 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 1. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command1:14;
-        uint32_t reserved_14:17;
-        /** command1_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 1 is done in I2C Master mode, this bit changes to high
-         *  level.
-         */
-        uint32_t command1_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd1_reg_t;
-
-/** Type of comd2 register
- *  I2C command register 2
- */
-typedef union {
-    struct {
-        /** command2 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 2. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command2:14;
-        uint32_t reserved_14:17;
-        /** command2_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 2 is done in I2C Master mode, this bit changes to high
-         *  Level.
-         */
-        uint32_t command2_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd2_reg_t;
-
-/** Type of comd3 register
- *  I2C command register 3
- */
-typedef union {
-    struct {
-        /** command3 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 3. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command3:14;
-        uint32_t reserved_14:17;
-        /** command3_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 3 is done in I2C Master mode, this bit changes to high
-         *  level.
-         */
-        uint32_t command3_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd3_reg_t;
-
-/** Type of comd4 register
- *  I2C command register 4
- */
-typedef union {
-    struct {
-        /** command4 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 4. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command4:14;
-        uint32_t reserved_14:17;
-        /** command4_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 4 is done in I2C Master mode, this bit changes to high
-         *  level.
-         */
-        uint32_t command4_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd4_reg_t;
-
-/** Type of comd5 register
- *  I2C command register 5
- */
-typedef union {
-    struct {
-        /** command5 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 5. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command5:14;
-        uint32_t reserved_14:17;
-        /** command5_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 5 is done in I2C Master mode, this bit changes to high level.
-         */
-        uint32_t command5_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd5_reg_t;
-
-/** Type of comd6 register
- *  I2C command register 6
- */
-typedef union {
-    struct {
-        /** command6 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 6. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command6:14;
-        uint32_t reserved_14:17;
-        /** command6_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 6 is done in I2C Master mode, this bit changes to high level.
-         */
-        uint32_t command6_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd6_reg_t;
-
-/** Type of comd7 register
- *  I2C command register 7
- */
-typedef union {
-    struct {
-        /** command7 : R/W; bitpos: [13:0]; default: 0;
-         *  This is the content of command 7. It consists of three parts:
-         *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
-         *  Byte_num represents the number of bytes that need to be sent or received.
-         *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
-         *  structure for more
-         *  Information.
-         */
-        uint32_t command7:14;
-        uint32_t reserved_14:17;
-        /** command7_done : R/W/SS; bitpos: [31]; default: 0;
-         *  When command 7 is done in I2C Master mode, this bit changes to high level.
-         */
-        uint32_t command7_done:1;
-    };
-    uint32_t val;
-} lp_i2c_comd7_reg_t;
+} lp_i2c_command_reg_t;
 
 
 /** Group: Version register */
@@ -1031,14 +869,7 @@ typedef struct lp_i2c_dev_t {
     volatile lp_i2c_scl_stop_setup_reg_t scl_stop_setup;
     volatile lp_i2c_filter_cfg_reg_t filter_cfg;
     volatile lp_i2c_clk_conf_reg_t clk_conf;
-    volatile lp_i2c_comd0_reg_t comd0;
-    volatile lp_i2c_comd1_reg_t comd1;
-    volatile lp_i2c_comd2_reg_t comd2;
-    volatile lp_i2c_comd3_reg_t comd3;
-    volatile lp_i2c_comd4_reg_t comd4;
-    volatile lp_i2c_comd5_reg_t comd5;
-    volatile lp_i2c_comd6_reg_t comd6;
-    volatile lp_i2c_comd7_reg_t comd7;
+    volatile lp_i2c_command_reg_t command[8];
     volatile lp_i2c_scl_st_time_out_reg_t scl_st_time_out;
     volatile lp_i2c_scl_main_st_time_out_reg_t scl_main_st_time_out;
     volatile lp_i2c_scl_sp_conf_reg_t scl_sp_conf;
@@ -1050,7 +881,8 @@ typedef struct lp_i2c_dev_t {
     volatile lp_i2c_rxfifo_start_addr_reg_t rxfifo_start_addr;
 } lp_i2c_dev_t;
 
-extern lp_i2c_dev_t LP_I2C;
+// We map the LP_I2C instance to the i2c_dev_t struct for convinience of using the same HAL/LL. See soc/i2c_struct.h
+//extern lp_i2c_dev_t LP_I2C;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_i2c_dev_t) == 0x184, "Invalid size of lp_i2c_dev_t structure");

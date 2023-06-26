@@ -28,19 +28,6 @@ typedef enum {
     SB_FAILED = 0x7533885E,
 } ets_secure_boot_status_t;
 
-
-/* Verify and stage-load the bootloader image
-   (reconfigures cache to map, loads trusted key digests from efuse,
-   copies the bootloader into the staging buffer.)
-
-   If allow_key_revoke is true and aggressive revoke efuse is set,
-   any failed signature has its associated key revoked in efuse.
-
-   If result is SB_SUCCESS, the "simple hash" of the bootloader
-   is copied into verified_hash.
-*/
-ets_secure_boot_status_t ets_secure_boot_verify_stage_bootloader(uint8_t *verified_hash, bool allow_key_revoke);
-
 /* Verify bootloader image (reconfigures cache to map),
    with key digests provided as parameters.)
 

@@ -2,7 +2,7 @@ ESP-WROVER-KIT V4.1 Getting Started Guide
 =========================================
 :link_to_translation:`zh_CN:[中文]`
 
-This guide shows how to get started with the ESP-WROVER-KIT V4.1 development board and also provides information about its functionality and configuration options. 
+This guide shows how to get started with the ESP-WROVER-KIT V4.1 development board and also provides information about its functionality and configuration options.
 
 
 What You Need
@@ -26,7 +26,7 @@ ESP-WROVER-KIT features the following integrated components:
 - LCD screen
 - microSD card slot
 
-Its another distinguishing feature is the embedded FTDI FT2232HL chip - an advanced multi-interface USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through the USB interface without a separate JTAG debugger. ESP-WROVER-KIT makes development convenient, easy, and cost-effective.
+Another distinguishing feature is the embedded FTDI FT2232HL chip, an advanced multi-interface USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through the USB interface without a separate JTAG debugger. ESP-WROVER-KIT makes development convenient, easy, and cost-effective.
 
 Most of the ESP32 I/O pins are broken out to the board's pin headers for easy access.
 
@@ -125,7 +125,7 @@ The table below provides description in the following manner:
       - All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
     * - microSD Card Slot
       - Useful for developing applications that access microSD card for data storage and retrieval.
-    * - LCD 
+    * - LCD
       - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown in figure :ref:`get-started-esp-wrover-kit-v4.1-board-back`.
 
 
@@ -148,7 +148,7 @@ There are three jumper blocks available to set up the board functionality. The m
       - |jp7-ext_5v|
       - Power ESP-WROVER-KIT via an external power supply
     * - JP7
-      - |jp7-usb_5v|      
+      - |jp7-usb_5v|
       - Power ESP-WROVER-KIT via USB
     * - JP2
       - |jp2-jtag|
@@ -241,17 +241,17 @@ The JP1 connector consists of 14x2 male pins whose functions are shown in the mi
     * - JTAG, microSD
       - IO15
       - 5V
-      - 
+      -
 
 Legend:
 
 * NC/XTAL - :ref:`32.768 kHz Oscillator <get-started-esp-wrover-kit-v4.1-xtal>`
-* JTAG - :ref:`JTAG / JP2 <get-started-esp-wrover-kit-v4.1-jtag-header>`
-* Boot - Boot button / SW2
-* Camera - :ref:`Camera / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
+* JTAG - :ref:`JTAG/JP2 <get-started-esp-wrover-kit-v4.1-jtag-header>`
+* Boot - Boot button/SW2
+* Camera - :ref:`Camera/JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
-* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
-* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
+* microSD - :ref:`microSD Card/J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
+* LCD - :ref:`LCD/U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
 * PSRAM - ESP32-WROVER-E's PSRAM
 
 
@@ -274,23 +274,23 @@ Legend:
 
 .. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
 
-SPI Flash / JP2
+SPI Flash/JP2
 ^^^^^^^^^^^^^^^
 
 ====  =============
 .     ESP32 Pin
 ====  =============
-1     CLK / GPIO6
-2     SD0 / GPIO7
-3     SD1 / GPIO8
-4     SD2 / GPIO9
-5     SD3 / GPIO10
-6     CMD / GPIO11
+1     CLK/GPIO6
+2     SD0/GPIO7
+3     SD1/GPIO8
+4     SD2/GPIO9
+5     SD3/GPIO10
+6     CMD/GPIO11
 ====  =============
 
 .. note::
 
-    SPI Flash pins are used to access the internal flash memory, therefore they are not available to connect external SPI devices. Those pins are exposed for monitoring or for advanced usage only.
+    SPI Flash pins are used to access the internal flash memory. Therefore, they are not available to connect external SPI devices. Those pins are exposed for monitoring or for advanced usage only.
 
 .. important::
 
@@ -299,23 +299,23 @@ SPI Flash / JP2
 
 .. _get-started-esp-wrover-kit-v4.1-jtag-header:
 
-JTAG / JP2
+JTAG/JP2
 ^^^^^^^^^^
 
 ====  ==============  =============
 .     ESP32 Pin       JTAG Signal
 ====  ==============  =============
 1     EN              TRST_N
-2     MTMS / GPIO14   TMS
-3     MTDO / GPIO15   TDO
-4     MTDI / GPIO12   TDI
-5     MTCK / GPIO13   TCK
+2     MTMS/GPIO14     TMS
+3     MTDO/GPIO15     TDO
+4     MTDI/GPIO12     TDI
+5     MTCK/GPIO13     TCK
 ====  ==============  =============
 
 
 .. _get-started-esp-wrover-kit-v4.1-camera-header:
 
-Camera / JP4
+Camera/JP4
 ^^^^^^^^^^^^
 
 ====  ==========  =============================
@@ -323,22 +323,22 @@ Camera / JP4
 ====  ==========  =============================
  1    n/a         3.3V
  2    n/a         Ground
- 3    GPIO27      SIO_C / SCCB Clock
- 4    GPIO26      SIO_D / SCCB Data
- 5    GPIO25      VSYNC / Vertical Sync
- 6    GPIO23      HREF / Horizontal Reference
- 7    GPIO22      PCLK / Pixel Clock
- 8    GPIO21      XCLK / System Clock
- 9    GPIO35      D7 / Pixel Data Bit 7
-10    GPIO34      D6 / Pixel Data Bit 6
-11    GPIO39      D5 / Pixel Data Bit 5
-12    GPIO36      D4 / Pixel Data Bit 4
-13    GPIO19      D3 / Pixel Data Bit 3
-14    GPIO18      D2 / Pixel Data Bit 2
-15    GPIO5       D1 / Pixel Data Bit 1
-16    GPIO4       D0 / Pixel Data Bit 0
-17    GPIO0       RESET / Camera Reset
-18    n/a         PWDN / Camera Power Down
+ 3    GPIO27      SIO_C/SCCB Clock
+ 4    GPIO26      SIO_D/SCCB Data
+ 5    GPIO25      VSYNC/Vertical Sync
+ 6    GPIO23      HREF/Horizontal Reference
+ 7    GPIO22      PCLK/Pixel Clock
+ 8    GPIO21      XCLK/System Clock
+ 9    GPIO35      D7/Pixel Data Bit 7
+10    GPIO34      D6/Pixel Data Bit 6
+11    GPIO39      D5/Pixel Data Bit 5
+12    GPIO36      D4/Pixel Data Bit 4
+13    GPIO19      D3/Pixel Data Bit 3
+14    GPIO18      D2/Pixel Data Bit 2
+15    GPIO5       D1/Pixel Data Bit 1
+16    GPIO4       D0/Pixel Data Bit 0
+17    GPIO0       RESET/Camera Reset
+18    n/a         PWDN/Camera Power Down
 ====  ==========  =============================
 
 * Signals D0 .. D7 denote camera data bus
@@ -366,10 +366,10 @@ microSD Card
 ====  ==============  ===============
 .     ESP32 Pin       microSD Signal
 ====  ==============  ===============
-1     MTDI / GPIO12   DATA2
-2     MTCK / GPIO13   CD / DATA3
-3     MTDO / GPIO15   CMD
-4     MTMS / GPIO14   CLK
+1     MTDI/GPIO12     DATA2
+2     MTCK/GPIO13     CD/DATA3
+3     MTDO/GPIO15     CMD
+4     MTMS/GPIO14     CLK
 5     GPIO2           DATA0
 6     GPIO4           DATA1
 7     GPIO21          Card Detect
@@ -378,7 +378,7 @@ microSD Card
 
 .. _get-started-esp-wrover-kit-v4.1-lcd-connector:
 
-LCD / U5
+LCD/U5
 ^^^^^^^^
 
 ====  ==============  ===============
@@ -419,7 +419,7 @@ Power up from USB port    Enable UART communication
 
 Do not install any other jumpers.
 
-Turn the **Power Switch** to ON, and the **5V Power On LED** should light up.
+Turn the **Power Switch** to ON, and the **5 V Power On LED** should light up.
 
 Now to Development
 ^^^^^^^^^^^^^^^^^^
@@ -440,7 +440,7 @@ Related Documents
 
 * `ESP-WROVER-KIT V4.1 schematic`_ (PDF)
 * `ESP-WROVER-KIT V4.1 layout <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF) may be opened online with `Autodesk Viewer <https://viewer.autodesk.com/>`_
-* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF) 
+* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER-E Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`

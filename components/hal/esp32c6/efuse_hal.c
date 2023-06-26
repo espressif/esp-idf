@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,12 +16,20 @@
 
 uint32_t efuse_hal_get_major_chip_version(void)
 {
+#ifdef CONFIG_ESP_REV_NEW_CHIP_TEST
+    return CONFIG_ESP_REV_MIN_FULL / 100;
+#else
     return efuse_ll_get_chip_wafer_version_major();
+#endif
 }
 
 uint32_t efuse_hal_get_minor_chip_version(void)
 {
+#ifdef CONFIG_ESP_REV_NEW_CHIP_TEST
+    return CONFIG_ESP_REV_MIN_FULL % 100;
+#else
     return efuse_ll_get_chip_wafer_version_minor();
+#endif
 }
 
 /******************* eFuse control functions *************************/
@@ -29,6 +37,9 @@ uint32_t efuse_hal_get_minor_chip_version(void)
 void efuse_hal_set_timing(uint32_t apb_freq_hz)
 {
     (void) apb_freq_hz;
+    efuse_ll_set_dac_num(0xFF);
+    efuse_ll_set_dac_clk_div(0x28);
+    efuse_ll_set_pwr_on_num(0x3000);
     efuse_ll_set_pwr_off_num(0x190);
 }
 

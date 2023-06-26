@@ -1,3 +1,0 @@
-# This config is split between targets since different component needs to be excluded
-CONFIG_IDF_TARGET="esp32c3"
-TEST_EXCLUDE_COMPONENTS=bt esp_system driver soc spi_flash vfs lwip spiffs experimental_cpp_component perfmon test_utils

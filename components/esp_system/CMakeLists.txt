@@ -55,7 +55,7 @@ else()
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include
-                        PRIV_REQUIRES spi_flash esp_timer
+                        PRIV_REQUIRES spi_flash esp_timer esp_mm
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
@@ -110,7 +110,9 @@ endif()
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
 idf_component_optional_requires(PRIVATE esp_gdbstub)
 
-idf_component_optional_requires(PRIVATE esp_app_format)
+if(NOT CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT)
+    idf_component_optional_requires(PRIVATE esp_app_format)
+endif()
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)
@@ -121,7 +123,7 @@ if(CONFIG_VFS_SUPPORT_IO)
 endif()
 
 if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
-    idf_component_optional_requires(PRIVATE esp_wifi)
+    idf_component_optional_requires(PRIVATE esp_coex)
 endif()
 
 if(NOT BOOTLOADER_BUILD)
@@ -129,5 +131,3 @@ if(NOT BOOTLOADER_BUILD)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

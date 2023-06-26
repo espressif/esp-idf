@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 #include "soc/rmt_periph.h"
 #include "hal/rmt_ll.h"
 #include "driver/gpio.h"
-#include "esp_private/esp_clk.h"
+#include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "rmt";
@@ -122,62 +122,58 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_STATE, TAG,
                         "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
 
-    // [clk_tree] TODO: replace the following switch table by clk_tree API
-    switch (clk_src) {
-#if SOC_RMT_SUPPORT_APB
-    case RMT_CLK_SRC_APB:
-        periph_src_clk_hz = esp_clk_apb_freq();
-#if CONFIG_PM_ENABLE
-        sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
-        ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
-        ESP_LOGD(TAG, "install APB_FREQ_MAX lock for RMT channel (%d,%d)", group->group_id, channel_id);
-#endif // CONFIG_PM_ENABLE
-        break;
-#endif // SOC_RMT_SUPPORT_APB
-#if SOC_RMT_SUPPORT_PLL_F80M
-    case RMT_CLK_SRC_PLL_F80M:
-        periph_src_clk_hz = 80000000;
-#if CONFIG_PM_ENABLE
-        sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
-        // ESP32C6 PLL_F80M is available even when SOC_ROOT_CLK switches from PLL to XTAL, so using NO_LIGHT_SLEEP lock here is sufficient
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
-        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for RMT channel (%d,%d)", group->group_id, channel_id);
-#endif // CONFIG_PM_ENABLE
-        break;
-#endif // SOC_RMT_SUPPORT_PLL_F80M
-#if SOC_RMT_SUPPORT_AHB
-    case RMT_CLK_SRC_AHB:
-        // TODO: decide which kind of PM lock we should use for such clock
-        periph_src_clk_hz = 48 * 1000 * 1000;
-        break;
-#endif // SOC_RMT_SUPPORT_AHB
-#if SOC_RMT_SUPPORT_XTAL
-    case RMT_CLK_SRC_XTAL:
-        periph_src_clk_hz = esp_clk_xtal_freq();
-        break;
-#endif // SOC_RMT_SUPPORT_XTAL
-#if SOC_RMT_SUPPORT_REF_TICK
-    case RMT_CLK_SRC_REF_TICK:
-        periph_src_clk_hz = REF_CLK_FREQ;
-        break;
-#endif // SOC_RMT_SUPPORT_REF_TICK
+    // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
 #if SOC_RMT_SUPPORT_RC_FAST
-    case RMT_CLK_SRC_RC_FAST:
+    if (clk_src == RMT_CLK_SRC_RC_FAST) {
+        // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
+        // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
         periph_rtc_dig_clk8m_enable();
-        periph_src_clk_hz = periph_rtc_dig_clk8m_get_freq();
-        break;
-#endif // SOC_RMT_SUPPORT_RC_FAST
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "clock source %d is not supported", clk_src);
-        break;
     }
+#endif // SOC_RMT_SUPPORT_RC_FAST
+
+    // get clock source frequency
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
+                        TAG, "get clock source frequency failed");
+
+#if CONFIG_PM_ENABLE
+    bool need_pm_lock = true;
+    // to make the RMT work reliable, the source clock must stay alive and unchanged
+    // driver will create different pm lock for that purpose, according to different clock source
+    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+
+#if SOC_RMT_SUPPORT_RC_FAST
+    if (clk_src == RMT_CLK_SRC_RC_FAST) {
+        // RC_FAST won't be turn off in sleep and won't change its frequency during DFS
+        need_pm_lock = false;
+    }
+#endif // SOC_RMT_SUPPORT_RC_FAST
+
+#if SOC_RMT_SUPPORT_APB
+    if (clk_src == RMT_CLK_SRC_APB) {
+        // APB clock frequency can be changed during DFS
+        pm_lock_type = ESP_PM_APB_FREQ_MAX;
+    }
+#endif // SOC_RMT_SUPPORT_APB
+
+    if (need_pm_lock) {
+        sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
+        ret  = esp_pm_lock_create(pm_lock_type, 0, chan->pm_lock_name, &chan->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
+
     // no division for group clock source, to achieve highest resolution
     rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);
     group->resolution_hz = periph_src_clk_hz;
     ESP_LOGD(TAG, "group clock resolution:%"PRIu32, group->resolution_hz);
     return ret;
+}
+
+esp_err_t rmt_get_channel_id(rmt_channel_handle_t channel, int *ret_id)
+{
+    ESP_RETURN_ON_FALSE(channel && ret_id, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *ret_id = channel->channel_id;
+    return ESP_OK;
 }
 
 esp_err_t rmt_apply_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config)

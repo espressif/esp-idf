@@ -20,22 +20,11 @@
 
 #include "esp_rom_gpio.h"
 
-#define TEST_DMA_MAX_SIZE    4092
-#define TEST_BUFFER_SIZE 256     ///< buffer size of each wrdma buffer in fifo mode
-#define TEST_SEG_SIZE   25
+#define TEST_BUFFER_SIZE    256     ///< buffer size of each wrdma buffer in fifo mode
+#define TEST_SEG_SIZE       25
 
 //ESP32-S2 cannot do single board test over IOMUX+GPIO matrix
 #define TEST_MASTER_GPIO_MATRIX     1
-
-#define SPI_SLOT_TEST_DEFAULT_CONFIG() {\
-    .spics_io_num = PIN_NUM_CS, \
-    .flags = 0, \
-    .mode = 0, \
-    .command_bits = 8,\
-    .address_bits = 8,\
-    .dummy_bits = 8,\
-    .queue_size = 10,\
-}
 
 //context definition for the tcf framework
 typedef struct {
@@ -266,7 +255,7 @@ void test_wrdma(testhd_context_t* ctx, const spitest_param_set_t *cfg, spi_devic
     if (pos+len > TEST_DMA_MAX_SIZE) len = TEST_DMA_MAX_SIZE - pos;
 
     int test_seg_size = len;//TEST_SEG_SIZE;
-    ESP_LOGW("test_wrdma", "len: %d, seg_size: %d\n", len, test_seg_size);
+    ESP_LOGW("test_wrdma", "len: %d, seg_size: %d", len, test_seg_size);
     TEST_ESP_OK(essl_spi_wrdma(spi, &ctx->master_wrdma_buf[pos], len, test_seg_size, get_hd_flags()));
 
     spi_slave_hd_data_t* ret_trans;
@@ -295,7 +284,7 @@ void test_rddma(testhd_context_t* ctx, const spitest_param_set_t* cfg, spi_devic
     len = ctx->tx_data.len;
     test_seg_size = TEST_SEG_SIZE;
 
-    ESP_LOGW("test_rddma", "pos: %d, len: %d, slave_tx: %d, seg_size: %d\n", data_expected - ctx->slave_rddma_buf, len, ctx->tx_data.len, test_seg_size);
+    ESP_LOGW("test_rddma", "pos: %d, len: %d, slave_tx: %d, seg_size: %d", data_expected - ctx->slave_rddma_buf, len, ctx->tx_data.len, test_seg_size);
 
     TEST_ESP_OK(essl_spi_rddma(spi, ctx->master_rddma_buf, len, test_seg_size, get_hd_flags()));
 
@@ -444,9 +433,9 @@ static const ptest_func_t hd_test_func = {
 
 static int test_freq_hd[] = {
     // 100*1000,
-    // SPI_MASTER_FREQ_10M, //maximum freq MISO stable before next latch edge
-    // SPI_MASTER_FREQ_20M, //maximum freq MISO stable before next latch edge
-    SPI_MASTER_FREQ_40M, //maximum freq MISO stable before next latch edge
+    // 10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    // 20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
     0,
 };
 
@@ -594,7 +583,7 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
  *
- * Master (C3, C2, H4) && Slave (C3, C2, H4):
+ * Master (C3, C2, H2) && Slave (C3, C2, H2):
  *      PIN | Master     | Slave      |
  *      ----| ---------  | ---------  |
  *      CS  | 10         | 10         |
@@ -882,4 +871,166 @@ TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=generic_multi
 
 #endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
+
+
+//***************************************TEST FOR APPEND MODE******************************************//
+#define TEST_APPEND_CACHE_SIZE      4
+#define TEST_TRANS_LEN              TEST_DMA_MAX_SIZE
+
+void prepare_data(uint8_t *buff, uint32_t len, int8_t diff){
+    buff[0] = random();
+    for (int line_index=1; line_index<len; line_index ++) {
+        buff[line_index] = buff[0] + line_index * diff;
+    }
+}
+
+void slave_run_append(void)
+{
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.max_transfer_sz = 40000;    //will prepare 40000/DMA_MAX_BUFF_SIZE +1 dma desciptor for use
+
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+    slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
+    slave_hd_cfg.dma_chan = SPI_DMA_CH_AUTO;
+    TEST_ESP_OK(spi_slave_hd_init(TEST_SPI_HOST, &bus_cfg, &slave_hd_cfg));
+
+    unity_wait_for_signal("Master ready");
+    spi_slave_hd_data_t *ret_trans, slave_rx_trans[TEST_APPEND_CACHE_SIZE] = {};
+    uint8_t *slave_exp = heap_caps_malloc(TEST_TRANS_LEN, MALLOC_CAP_DEFAULT);
+
+    // append some data first
+    for (uint32_t cache_instans = 0; cache_instans < TEST_APPEND_CACHE_SIZE; cache_instans++) {
+        int trans_len = 16 << (cache_instans+1);
+        if (trans_len > TEST_TRANS_LEN) {
+            trans_len = TEST_TRANS_LEN;
+        }
+
+        slave_rx_trans[cache_instans].data = heap_caps_calloc(1, TEST_TRANS_LEN, MALLOC_CAP_DMA);
+        TEST_ASSERT_NOT_NULL(slave_rx_trans[cache_instans].data);
+        slave_rx_trans[cache_instans].len = trans_len;
+        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_rx_trans[cache_instans], portMAX_DELAY));
+    }
+
+    for (int trans_num = 1; trans_num <= 8; trans_num ++) {
+        int trans_len = 16 << trans_num;
+        if (trans_len > TEST_TRANS_LEN) {
+            trans_len = TEST_TRANS_LEN;
+        }
+        unity_send_signal("Slave ready");
+        prepare_data(slave_exp, trans_len, 2);
+        spi_slave_hd_get_append_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY);
+
+        ESP_LOGI("slave", "actually received len: %d", ret_trans->trans_len);
+        ESP_LOG_BUFFER_HEX_LEVEL("slave rx", ret_trans->data, ret_trans->trans_len, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_exp, trans_len, ESP_LOG_DEBUG);
+        spitest_cmp_or_dump(slave_exp, ret_trans->data, trans_len);
+
+        // append one more transaction
+        int new_append_len = trans_len << 4;
+        if (new_append_len > TEST_TRANS_LEN) {
+            new_append_len = TEST_TRANS_LEN;
+        }
+        memset(ret_trans->data, 0, ret_trans->trans_len);
+        ret_trans->len = new_append_len;
+        ret_trans->trans_len = 0;
+        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, ret_trans, portMAX_DELAY));
+    }
+    printf("================Master Tx Done==================\n\n");
+    free(slave_exp);
+
+    //------------------------------------tx direction------------------------------
+    spi_slave_hd_data_t slave_tx_trans[TEST_APPEND_CACHE_SIZE] = {};
+    for (uint32_t cache_instans = 0; cache_instans < TEST_APPEND_CACHE_SIZE; cache_instans ++) {
+        int trans_len = 16 << (cache_instans+1);
+        if (trans_len >= TEST_TRANS_LEN) {
+            trans_len = TEST_TRANS_LEN;
+        }
+        slave_tx_trans[cache_instans].data = slave_rx_trans[cache_instans].data;
+        slave_tx_trans[cache_instans].len = trans_len;
+        prepare_data(slave_tx_trans[cache_instans].data, trans_len, -3);
+        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_tx_trans[cache_instans], portMAX_DELAY));
+    }
+
+    //Get one result and load a new transaction
+    for (int trans_num = 1; trans_num <= 8; trans_num ++) {
+        unity_send_signal("Slave ready");
+        TEST_ESP_OK(spi_slave_hd_get_append_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+        ESP_LOGI("slave", "trasacted len: %d", ret_trans->len);
+        ESP_LOG_BUFFER_HEX_LEVEL("slave tx", ret_trans->data, ret_trans->len, ESP_LOG_DEBUG);
+
+        // append one more transaction
+        int new_append_len = 16 << (trans_num + 4);
+        if (new_append_len > TEST_TRANS_LEN) {
+            new_append_len = TEST_TRANS_LEN;
+        }
+        ret_trans->len = new_append_len;
+        ret_trans->trans_len = 0;
+        prepare_data(ret_trans->data, ret_trans->len, -3);
+        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, ret_trans, portMAX_DELAY));
+    }
+    printf("================Master Rx Done==================\n");
+    for (int i = 0; i < TEST_APPEND_CACHE_SIZE; i++) free(slave_tx_trans[i].data);
+
+    spi_slave_hd_deinit(TEST_SPI_HOST);
+}
+
+void master_run_essl(void)
+{
+    spi_device_handle_t devhd;
+
+    uint8_t *master_send_buf = heap_caps_calloc(1, TEST_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_recv_buf = heap_caps_calloc(1, TEST_TRANS_LEN, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(master_send_buf);
+    TEST_ASSERT_NOT_NULL(master_recv_buf);
+
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.max_transfer_sz = 50000;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
+
+    spi_device_interface_config_t dev_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+    dev_cfg.clock_speed_hz = 1 * 1000 * 1000;
+    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devhd));
+
+    printf("\n================Master Tx==================\n");
+    unity_send_signal("Master ready");
+    for (int trans_num = 1; trans_num <= 8; trans_num ++) {
+        int trans_len = 16 << trans_num;
+        if (trans_len >= TEST_TRANS_LEN) {
+            trans_len = TEST_TRANS_LEN;
+        }
+        prepare_data(master_send_buf, trans_len, 2);
+
+        unity_wait_for_signal("Slave ready");
+        essl_spi_wrdma(devhd, master_send_buf, trans_len, -1, 0);
+        ESP_LOGI("master", "transacted len: %d", trans_len);
+        ESP_LOG_BUFFER_HEX_LEVEL("master tx", master_send_buf, trans_len, ESP_LOG_DEBUG);
+    }
+
+    printf("\n================Master Rx==================\n");
+    for (int trans_num = 1; trans_num <= 8; trans_num ++) {
+        int trans_len = 16 << trans_num;
+        if (trans_len >= TEST_TRANS_LEN) {
+            trans_len = TEST_TRANS_LEN;
+        }
+        prepare_data(master_send_buf, trans_len, -3);
+        unity_wait_for_signal("Slave ready");
+
+        essl_spi_rddma(devhd, master_recv_buf, trans_len, -1, 0);
+        ESP_LOGI("master", "actually received len: %d", trans_len);
+        ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_recv_buf, trans_len, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_send_buf, trans_len, ESP_LOG_DEBUG);
+        spitest_cmp_or_dump(master_send_buf, master_recv_buf, trans_len);
+
+        memset(master_recv_buf, 0, trans_len);
+    }
+
+    free(master_send_buf);
+    free(master_recv_buf);
+
+    TEST_ESP_OK(spi_bus_remove_device(devhd));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: Append mode", "[spi_ms]", master_run_essl, slave_run_append);
 #endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Command line tool to assign tests to CI test jobs.
@@ -54,7 +54,7 @@ class IDFAssignTest(CIAssignTest.AssignTest):
         super(IDFAssignTest, self).__init__(test_case_path, ci_config_file, case_group)
 
     def format_build_log_path(self, parallel_num):
-        return 'list_job_{}.json'.format(parallel_num)
+        return 'list_job_{}.txt'.format(parallel_num)
 
     def create_artifact_index_file(self, project_id=None, pipeline_id=None):
         if project_id is None:
@@ -120,6 +120,7 @@ class UnitTestGroup(IDFCaseGroup):
         'esp32c2': 'ESP32C2DUT',
         'esp32c3': 'ESP32C3DUT',
         'esp32c6': 'ESP32C6DUT',
+        'esp32h2': 'ESP32H2DUT',
         'esp8266': 'ESP8266DUT',
     }
 

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # I2C Self-Test Example
 
@@ -44,15 +44,15 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 
 **Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
 
-#### Pin Assignment(esp32s3):
+#### Pin Assignment(esp32s3, esp32h2):
 
 **Note:** The following pin assignments are used by default, you can change these  in the `menuconfig` .
 
-|                           | SDA    | SCL    |
-| ------------------------- | ------ | ------ |
-| ESP32-S3 I2C Master       | GPIO1  | GPIO2  |
-| ESP32-S3 I2C Slave        | GPIO4  | GPIO5  |
-| BH1750 Sensor             | SDA    | SCL    |
+|                                    | SDA    | SCL    |
+| ---------------------------------- | ------ | ------ |
+| ESP32-S3/ESP32-H2 I2C Master       | GPIO1  | GPIO2  |
+| ESP32-S3/ESP32-H2 I2C Slave        | GPIO4  | GPIO5  |
+| BH1750 Sensor                      | SDA    | SCL    |
 
 - slave:
   - GPIO4 is assigned as the data signal of I2C slave port
@@ -68,13 +68,13 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 
 **Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
 
-#### Pin Assignment(esp32c3, esp32c2, esp32h4):
+#### Pin Assignment(esp32c3, esp32c2):
 
 **Note:** The following pin assignments are used by default, you can change these in the `menuconfig` .
 
 |                                             | SDA    | SCL    |
 | ------------------------------------------- | ------ | ------ |
-| ESP32-C3/ESP32-C2/ESP32-H4 I2C Master(Slave)| GPIO5  | GPIO6  |
+| ESP32-C3/ESP32-C2 I2C Master(Slave)         | GPIO5  | GPIO6  |
 | BH1750 Sensor                               | SDA    | SCL    |
 
 - master:
@@ -84,7 +84,7 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 - Connection:
   - connect SDA/SCL of BH1750 sensor to GPIO5/GPIO6
 
-**Note:** There is only one i2c device on ESP32-C3/ESP32-C2/ESP32-H4, so it is not possible to perform any ESP32/ESP32-S2 self-test example from this repo. However it is possible to test I2C with external devices. If you find anything wrong with your device, please try connecting external pull-up resistors.
+**Note:** There is only one i2c device on ESP32-C3/ESP32-C2, so it is not possible to perform any ESP32/ESP32-S2 self-test example from this repo. However it is possible to test I2C with external devices. If you find anything wrong with your device, please try connecting external pull-up resistors.
 
 ### Configure the project
 

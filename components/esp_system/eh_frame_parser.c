@@ -15,14 +15,18 @@
  * found in the official documentation:
  * http://dwarfstd.org/Download.php
  */
-
-#include "esp_private/eh_frame_parser.h"
-#include "esp_private/panic_internal.h"
+#include "sdkconfig.h"
 #include <string.h>
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
-#include "eh_frame_parser_impl.h"
+#include "libunwind.h"
+#include "esp_private/panic_internal.h"
+#include "esp_private/eh_frame_parser.h"
+
+#if UNW_UNKNOWN_TARGET
+    #error "Unsupported architecture for unwinding"
+#endif
 
 /**
  * @brief Dimension of an array (number of elements)
@@ -928,4 +932,124 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
 
     panic_print_str("\r\n");
 }
+
+/**
+ * The following functions are the implementation of libunwind API
+ * Check the header libunwind.h for more information
+ */
+
+int unw_init_local(unw_cursor_t* c, unw_context_t* ctxt) {
+    /* In our implementation, a context and a cursor is the same, so we simply need
+     * to copy a structure inside another one */
+    _Static_assert(sizeof(unw_cursor_t) >= sizeof(unw_context_t), "unw_cursor_t size must be greater or equal to unw_context_t's");
+    int ret = -UNW_EUNSPEC;
+    if (c != NULL && ctxt != NULL) {
+        memcpy(c, ctxt, sizeof(unw_context_t));
+        ret = UNW_ESUCCESS;
+    }
+    return ret;
+}
+
+int unw_step(unw_cursor_t* cp) {
+    static dwarf_regs state = { 0 };
+    ExecutionFrame* frame = (ExecutionFrame*) cp;
+    uint32_t size = 0;
+    uint8_t* enc_values = NULL;
+
+    /* Start parsing the .eh_frame_hdr section. */
+    fde_header* header = (fde_header*) EH_FRAME_HDR_ADDR;
+    if (header->version != 1) {
+        goto badversion;
+    }
+
+    /* Make enc_values point to the end of the structure, where the encoded
+     * values start. */
+    enc_values = (uint8_t*) (header + 1);
+
+    /* Retrieve the encoded value eh_frame_ptr. Get the size of the data also. */
+    const uint32_t eh_frame_ptr = esp_eh_frame_get_encoded(enc_values, header->eh_frame_ptr_enc, &size);
+    assert(eh_frame_ptr == (uint32_t) EH_FRAME_ADDR);
+    enc_values += size;
+
+    /* Same for the number of entries in the sorted table. */
+    const uint32_t fde_count = esp_eh_frame_get_encoded(enc_values, header->fde_count_enc, &size);
+    enc_values += size;
+
+    /* enc_values points now at the beginning of the sorted table. */
+    /* Only support 4-byte entries. */
+    const uint32_t table_enc = header->table_enc;
+    if ( ((table_enc >> 4) != 0x3) && ((table_enc >> 4) != 0xB) ) {
+        goto badversion;
+    }
+
+    const table_entry* sorted_table = (const table_entry*) enc_values;
+
+    const table_entry* from_fun = esp_eh_frame_find_entry(sorted_table, fde_count,
+                                                          table_enc, EXECUTION_FRAME_PC(*frame));
+
+    /* Get absolute address of FDE entry describing the function where PC left of. */
+    uint32_t* fde = NULL;
+    if (from_fun != NULL) {
+        fde = esp_eh_frame_decode_address(&from_fun->fde_addr, table_enc);
+    }
+
+    if (esp_eh_frame_missing_info(fde, EXECUTION_FRAME_PC(*frame))) {
+        goto missinginfo;
+    }
+
+    const uint32_t prev_sp = EXECUTION_FRAME_SP(*frame);
+
+    /* Retrieve the return address of the frame. The frame's registers will be modified.
+     * The frame we get then is the caller's one. */
+    uint32_t ra = esp_eh_frame_restore_caller_state(fde, frame, &state);
+
+    /* End of backtrace is reached if the stack and the PC don't change anymore. */
+    if ((EXECUTION_FRAME_SP(*frame) == prev_sp) && (EXECUTION_FRAME_PC(*frame) == ra)) {
+        goto stopunwind;
+    }
+
+    /* Go back to the caller: update stack pointer and program counter. */
+    EXECUTION_FRAME_PC(*frame) = ra;
+
+    return 1;
+badversion:
+    return -UNW_EBADVERSION;
+missinginfo:
+    return -UNW_ENOINFO;
+stopunwind:
+    return 0;
+}
+
+int unw_get_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t* valp) {
+    if (cp == NULL || valp == NULL) {
+        goto invalid;
+    }
+    if (reg >= EXECUTION_FRAME_MAX_REGS) {
+        goto badreg;
+    }
+
+    *valp = EXECUTION_FRAME_REG(cp, reg);
+    return UNW_ESUCCESS;
+invalid:
+    return -UNW_EUNSPEC;
+badreg:
+    return -UNW_EBADREG;
+}
+
+int unw_set_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t val) {
+    if (cp == NULL) {
+        goto invalid;
+    }
+    if (reg >= EXECUTION_FRAME_MAX_REGS) {
+        goto badreg;
+    }
+
+    EXECUTION_FRAME_REG(cp, reg) = val;
+    return UNW_ESUCCESS;
+invalid:
+    return -UNW_EUNSPEC;
+badreg:
+    return -UNW_EBADREG;
+}
+
 #endif //ESP_SYSTEM_USE_EH_FRAME

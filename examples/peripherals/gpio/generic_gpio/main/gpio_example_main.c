@@ -20,8 +20,8 @@
  * This test code shows how to configure gpio and how to use gpio interrupt.
  *
  * GPIO status:
- * GPIO18: output (ESP32C2/ESP32H4 uses GPIO8 as the second output pin)
- * GPIO19: output (ESP32C2/ESP32H4 uses GPIO9 as the second output pin)
+ * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
+ * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
  * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
  * GPIO5:  input, pulled up, interrupt from rising edge.
  *
@@ -38,9 +38,23 @@
 #define GPIO_OUTPUT_IO_0    CONFIG_GPIO_OUTPUT_0
 #define GPIO_OUTPUT_IO_1    CONFIG_GPIO_OUTPUT_1
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
+/*
+ * Let's say, GPIO_OUTPUT_IO_0=18, GPIO_OUTPUT_IO_1=19
+ * In binary representation,
+ * 1ULL<<GPIO_OUTPUT_IO_0 is equal to 0000000000000000000001000000000000000000 and
+ * 1ULL<<GPIO_OUTPUT_IO_1 is equal to 0000000000000000000010000000000000000000
+ * GPIO_OUTPUT_PIN_SEL                0000000000000000000011000000000000000000
+ * */
 #define GPIO_INPUT_IO_0     CONFIG_GPIO_INPUT_0
 #define GPIO_INPUT_IO_1     CONFIG_GPIO_INPUT_1
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
+/*
+ * Let's say, GPIO_INPUT_IO_0=4, GPIO_INPUT_IO_1=5
+ * In binary representation,
+ * 1ULL<<GPIO_INPUT_IO_0 is equal to 0000000000000000000000000000000000010000 and
+ * 1ULL<<GPIO_INPUT_IO_1 is equal to 0000000000000000000000000000000000100000
+ * GPIO_INPUT_PIN_SEL                0000000000000000000000000000000000110000
+ * */
 #define ESP_INTR_FLAG_DEFAULT 0
 
 static QueueHandle_t gpio_evt_queue = NULL;

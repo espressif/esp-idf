@@ -53,6 +53,7 @@ typedef struct {
     BOOLEAN         opened;             /* opened */
     UINT16          mtu;                /* maximum transmit unit size */
     UINT16          uuid_to_connect;    /* uuid of peer device */
+    BOOLEAN         got_disc_res;       /* got the results of initiating discovery */
 } tBTA_AV_CO_PEER;
 
 typedef struct {

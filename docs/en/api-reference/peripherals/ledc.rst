@@ -1,6 +1,7 @@
 LED Control (LEDC)
 ==================
-{IDF_TARGET_LEDC_CHAN_NUM:default="6", esp32="16", esp32s2="8", esp32s3="8"}
+
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -8,7 +9,7 @@ Introduction
 ------------
 
 The LED control (LEDC) peripheral is primarily designed to control the intensity of LEDs, although it can also be used to generate PWM signals for other purposes.
-It has {IDF_TARGET_LEDC_CHAN_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
+It has {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
 
 .. only:: esp32
 
@@ -59,7 +60,7 @@ Setting the timer is done by calling the function :cpp:func:`ledc_timer_config` 
     :esp32:     - Speed mode :cpp:type:`ledc_mode_t`
     :not esp32: - Speed mode (value must be ``LEDC_LOW_SPEED_MODE``)
     - Timer number :cpp:type:`ledc_timer_t`
-    - PWM signal frequency
+    - PWM signal frequency in Hz
     - Resolution of PWM duty
     - Source clock :cpp:type:`ledc_clk_cfg_t`
 
@@ -85,7 +86,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 1 MHz
          - High / Low
          - Dynamic Frequency Scaling compatible
-       * - RTC8M_CLK
+       * - RC_FAST_CLK
          - ~8 MHz
          - Low
          - Dynamic Frequency Scaling compatible, Light sleep compatible
@@ -105,7 +106,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
        * - REF_TICK
          - 1 MHz
          - Dynamic Frequency Scaling compatible
-       * - RTC8M_CLK
+       * - RC_FAST_CLK
          - ~8 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
@@ -124,7 +125,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
        * - APB_CLK
          - 80 MHz
          - /
-       * - RTC20M_CLK
+       * - RC_FAST_CLK
          - ~20 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
@@ -143,7 +144,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
        * - PLL_60M_CLK
          - 60 MHz
          - /
-       * - RTC20M_CLK
+       * - RC_FAST_CLK
          - ~20 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
@@ -162,14 +163,14 @@ The source clock can also limit the PWM frequency. The higher the source clock f
        * - PLL_80M_CLK
          - 80 MHz
          - /
-       * - RTC20M_CLK
+       * - RC_FAST_CLK
          - ~20 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
          - 40 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32h4
+.. only:: esp32h2
 
     .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
        :widths: 15 15 30
@@ -178,10 +179,10 @@ The source clock can also limit the PWM frequency. The higher the source clock f
        * - Clock name
          - Clock freq
          - Clock capabilities
-       * - APB_CLK
+       * - PLL_96M_CLK
          - 96 MHz
          - /
-       * - RTC8M_CLK
+       * - RC_FAST_CLK
          - ~8 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
@@ -190,17 +191,25 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
 .. note::
 
-    .. only:: not esp32h4
+    .. only:: SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-        1. On {IDF_TARGET_NAME}, if RTCxM_CLK is chosen as the LEDC clock source, an internal calibration will be performed to get the exact frequency of the clock. This ensures the accuracy of output PWM signal frequency.
+        1. On {IDF_TARGET_NAME}, if RC_FAST_CLK is chosen as the LEDC clock source, an internal calibration will be performed to get the exact frequency of the clock. This ensures the accuracy of output PWM signal frequency.
 
-    .. only:: esp32h4
+    .. only:: not SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-        1. On {IDF_TARGET_NAME}, if RTC8M_CLK is chosen as the LEDC clock source, you may see the frequency of output PWM signal is not very accurate. This is because no internal calibration is performed to get the exact frequency of the clock due to hardware limitation, a theoretic frequency value is used.
+        1. On {IDF_TARGET_NAME}, if RC_FAST_CLK is chosen as the LEDC clock source, you may see the frequency of output PWM signal is not very accurate. This is because no internal calibration is performed to get the exact frequency of the clock due to hardware limitation, a theoretic frequency value is used.
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
         2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
+
+When a timer is no longer needed by any channel, it can be deconfigured by calling the same function :cpp:func:`ledc_timer_config`. The configuration structure :cpp:type:`ledc_timer_config_t` passes in should be:
+
+-  :cpp:member:`ledc_timer_config_t::speed_mode` The speed mode of the timer which wants to be deconfigured belongs to (:cpp:type:`ledc_mode_t`)
+
+-  :cpp:member:`ledc_timer_config_t::timer_num` The ID of the timers which wants to be deconfigured (:cpp:type:`ledc_timer_t`)
+
+-  :cpp:member:`ledc_timer_config_t::deconfigure` Set this to true so that the timer specified can be deconfigured
 
 
 .. _ledc-api-configure-channel:
@@ -249,6 +258,12 @@ The LEDC hardware provides the means to gradually transition from one duty cycle
 * :cpp:func:`ledc_set_fade_with_time`
 * :cpp:func:`ledc_set_fade_with_step`
 * :cpp:func:`ledc_set_fade`
+
+.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+
+    On {IDF_TARGET_NAME}, the hardware additionally allows to perform up to {IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM} consecutive linear fades without CPU intervention. This feature can be useful if you want to do a fade with gamma correction.
+
+    The luminance perceived by human eyes does not have a linear relationship with the PWM duty cycle. In order to make human feel the LED is dimming or lightening linearly, the change in duty cycle should be non-linear, which is the so-called gamma correction. The LED controller can simulate a gamma curve fading by piecewise linear approximation. :cpp:func:`ledc_fill_multi_fade_param_list` is a function that can help to construct the parameters for the piecewise linear fades. First, you need to allocate a memory block for saving the fade parameters, then by providing start/end PWM duty cycle values, gamma correction function, and the total number of desired linear segments to the helper function, it will fill the calculation results into the allocated space. You can also construct the array of :cpp:type:`ledc_fade_param_config_t` manually. Once the fade parameter structs are prepared, a consecutive fading can be configured by passing the pointer to the prepared :cpp:type:`ledc_fade_param_config_t` list and the total number of fade ranges to :cpp:func:`ledc_set_multi_fade`.
 
 .. only:: esp32
 
@@ -342,9 +357,13 @@ The duty resolution is normally set using :cpp:type:`ledc_timer_bit_t`. This enu
 Application Example
 -------------------
 
+The LEDC basic example: :example:`peripherals/ledc/ledc_basic`.
+
 The LEDC change duty cycle and fading control example: :example:`peripherals/ledc/ledc_fade`.
 
-The LEDC basic example: :example:`peripherals/ledc/ledc_basic`.
+.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+
+    The LEDC color control with Gamma correction on RGB LED example: :example:`peripherals/ledc/ledc_gamma_curve_fade`.
 
 API Reference
 -------------

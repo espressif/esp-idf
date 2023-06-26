@@ -10,6 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.generic
 def test_sdm_dac_example(dut: Dut) -> None:
     dut.expect(r'sdm_dac: Sigma-delta output is attached to GPIO \w+')

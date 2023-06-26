@@ -45,6 +45,16 @@ uint32_t g_rtc_dbias_pvt_non_240m = 27;
 
 void rtc_init(rtc_config_t cfg)
 {
+    /**
+     * When run rtc_init, it maybe deep sleep reset. Since we power down modem in deep sleep, after wakeup
+     * from deep sleep, these fields are changed and not reset. We will access two BB regs(BBPD_CTRL and
+     * NRXPD_CTRL) in rtc_sleep_pu. If PD modem and no iso, CPU will stuck when access these two BB regs
+     * and finally triggle RTC WDT. So need to clear modem Force PD.
+     *
+     * No worry about the power consumption, Because modem Force PD will be set at the end of this function.
+     */
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PVTMON_PU);
@@ -187,7 +197,7 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO);
     }
-    /* force power down wifi and bt power domain */
+    /* force power down modem(wifi and ble) power domain */
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
 
@@ -252,7 +262,7 @@ static void set_ocode_by_efuse(int calib_version)
  */
 static void calibrate_ocode(void)
 {
-#ifndef BOOTLOADER_BUILD
+#if !defined(BOOTLOADER_BUILD) && !defined(CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     /**
      * Background:
      * 1. Following code will switch the system clock to XTAL first, to self-calibrate the OCode.
@@ -262,7 +272,7 @@ static void calibrate_ocode(void)
      * When CPU clock switches down, the delay should be cleared. Therefore here we call this function to remove the delays.
      */
     mspi_timing_change_speed_mode_cache_safe(true);
-#endif
+#endif // #if !defined(BOOTLOADER_BUILD) && !defined(CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     /*
     Bandgap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration (must turn off PLL).
     Method:
@@ -308,10 +318,10 @@ static void calibrate_ocode(void)
         }
     }
     rtc_clk_cpu_freq_set_config(&old_config);
-#ifndef BOOTLOADER_BUILD
+#if !defined(BOOTLOADER_BUILD) && !defined(CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     //System clock is switched back to PLL. Here we switch to the MSPI high speed mode, add the delays back
     mspi_timing_change_speed_mode_cache_safe(false);
-#endif
+#endif // #if !defined(BOOTLOADER_BUILD) && !defined(CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
 }
 
 static uint32_t get_dig_dbias_by_efuse(uint8_t pvt_scheme_ver)

@@ -15,9 +15,6 @@
  *  buffers area (0x4087c610).
  */
 
-/* The offset between Dbus and Ibus. Used to convert between 0x403xxxxx and 0x3fcxxxxx addresses. */
-iram_dram_offset = 0x0;
-
 /* We consider 0x4087c610 to be the last usable address for 2nd stage bootloader stack overhead, dram_seg,
  * and work out iram_seg and iram_loader_seg addresses from there, backwards.
  */
@@ -27,12 +24,12 @@ bootloader_usable_dram_end = 0x4087c610;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
 bootloader_dram_seg_len = 0x5000;
 bootloader_iram_loader_seg_len = 0x7000;
-bootloader_iram_seg_len = 0x2000;
+bootloader_iram_seg_len = 0x2200;
 
 /* Start of the lower region is determined by region size and the end of the higher region */
 bootloader_dram_seg_end = bootloader_usable_dram_end - bootloader_stack_overhead;
 bootloader_dram_seg_start = bootloader_dram_seg_end - bootloader_dram_seg_len;
-bootloader_iram_loader_seg_start = bootloader_dram_seg_start - bootloader_iram_loader_seg_len + iram_dram_offset;
+bootloader_iram_loader_seg_start = bootloader_dram_seg_start - bootloader_iram_loader_seg_len;
 bootloader_iram_seg_start = bootloader_iram_loader_seg_start - bootloader_iram_seg_len;
 
 MEMORY
@@ -41,6 +38,14 @@ MEMORY
   iram_loader_seg (RWX) :           org = bootloader_iram_loader_seg_start, len = bootloader_iram_loader_seg_len
   dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
 }
+
+/* The app may use RAM for static allocations up to the start of iram_loader_seg.
+ * If you have changed something above and this assert fails:
+ * 1. Check what the new value of bootloader_iram_loader_seg start is.
+ * 2. Update the value in this assert.
+ * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32c6/memory.ld.in to the same value.
+ */
+ASSERT(bootloader_iram_loader_seg_start == 0x4086E610, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
@@ -55,7 +60,9 @@ SECTIONS
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
+    /* we use either libgcc or compiler-rt, so put similar entries for them here */
     *libgcc.a:(.literal .text .literal.* .text.*)
+    *libclang_rt.builtins.a:(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_common_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
@@ -123,9 +130,14 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } > dram_seg
 
-  .dram0.data :
+  .dram0.bootdesc : ALIGN(0x10)
   {
     _data_start = ABSOLUTE(.);
+    *(.data_bootloader_desc .data_bootloader_desc.*)               /* Should be the first.  Bootloader version info.        DO NOT PUT ANYTHING BEFORE IT! */
+  } > dram_seg
+
+  .dram0.data :
+  {
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)

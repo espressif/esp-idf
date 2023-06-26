@@ -94,13 +94,13 @@ There are two ways to use wolfssl in your project
     (First change directory (cd) to your project directory)
     mkdir components
     cd components
-    git clone https://github.com/espressif/esp-wolfssl.git
+    git clone --recursive https://github.com/espressif/esp-wolfssl.git
 
 2) Add wolfssl as an extra component in your project.
 
 * Download wolfssl with::
 
-    git clone https://github.com/espressif/esp-wolfssl.git
+    git clone --recursive https://github.com/espressif/esp-wolfssl.git
 
 * Include  esp-wolfssl in ESP-IDF with setting EXTRA_COMPONENT_DIRS in CMakeLists.txt of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see Optional Project variables in :doc:`build-system.</api-guides/build-system>`
 
@@ -191,6 +191,25 @@ SSL/TLS libraries and with all respective configurations set to default.
     .. note:: When using Digital Signature for the TLS connection, along with the other required params, only the client cert (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
 
     * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
+
+TLS Ciphersuites
+------------------------------------
+ESP-TLS provides an ability to set a ciphersuites list in the client mode. TLS ciphersuites list helps to inform the server about the supported ciphersuites for the specific TLS connection (irrespective of the TLS stack configuration). If the server supports any ciphersuite from this list then the TLS connection shall succeed, otherwise it would fail.
+
+You can set ``ciphersuites_list`` in the :cpp:type:`esp_tls_cfg_t` structure during client connection as follows:
+
+.. code-block:: c
+
+    /* ciphersuites_list must end with 0 and must be available in the memory scope active during the entire TLS connection */
+    static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0};
+    esp_tls_cfg_t cfg = {
+        .ciphersuites_list = ciphersuites_list,
+    };
+
+ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you should call :cpp:func:`esp_tls_get_ciphersuites_list` to get ciphersuites list supported in the TLS stack and cross-check it against the supplied list.
+
+.. note::
+   This feature is supported only in the mbedTLS stack.
 
 API Reference
 -------------

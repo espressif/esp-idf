@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,8 @@
 #define DR_REG_LP_APM0_BASE                     0x60099800
 #define DR_REG_MISC_BASE                        0x6009F000
 
+#define DR_REG_I2C_ANA_MST_BASE                 0x600AF800
+
 #define DR_REG_PMU_BASE                         0x600B0000
 #define DR_REG_LP_CLKRST_BASE                   0x600B0400
 #define DR_REG_EFUSE_BASE                       0x600B0800
@@ -76,3 +78,5 @@
 #define DR_REG_CPU_BUS_MONITOR_BASE             0x600C2000
 #define DR_REG_INTPRI_BASE                      0x600C5000
 #define DR_REG_EXTMEM_BASE                      0x600C8000
+
+#define PWDET_CONF_REG                          0x600A8010

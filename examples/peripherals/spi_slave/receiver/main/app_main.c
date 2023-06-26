@@ -41,7 +41,7 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_SCLK 15
 #define GPIO_CS 14
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
 #define GPIO_HANDSHAKE 3
 #define GPIO_MOSI 7
 #define GPIO_MISO 2
@@ -54,6 +54,13 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_MISO 20
 #define GPIO_SCLK 18
 #define GPIO_CS 9
+
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define GPIO_HANDSHAKE 2
+#define GPIO_MOSI 5
+#define GPIO_MISO 0
+#define GPIO_SCLK 4
+#define GPIO_CS 1
 
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define GPIO_HANDSHAKE 2

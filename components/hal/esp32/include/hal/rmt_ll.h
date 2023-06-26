@@ -32,6 +32,9 @@ extern "C" {
 #define RMT_LL_EVENT_TX_MASK(channel)     (RMT_LL_EVENT_TX_DONE(channel) | RMT_LL_EVENT_TX_THRES(channel) | RMT_LL_EVENT_TX_LOOP_END(channel))
 #define RMT_LL_EVENT_RX_MASK(channel)     (RMT_LL_EVENT_RX_DONE(channel) | RMT_LL_EVENT_RX_THRES(channel))
 
+#define RMT_LL_MAX_FILTER_VALUE           255
+#define RMT_LL_MAX_IDLE_VALUE             65535
+
 typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,
     RMT_LL_MEM_OWNER_HW = 1,

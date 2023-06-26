@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
-#include "bootloader_random.h"
 #include "sys/param.h"
 
 static __attribute__((unused)) const char *TAG = "efuse";

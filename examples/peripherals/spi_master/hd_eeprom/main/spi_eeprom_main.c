@@ -60,6 +60,14 @@
 #  define PIN_NUM_MOSI 11
 #  define PIN_NUM_CLK  12
 #  define PIN_NUM_CS   10
+
+#elif CONFIG_IDF_TARGET_ESP32H2
+#  define EEPROM_HOST    SPI2_HOST
+
+#  define PIN_NUM_MISO 0
+#  define PIN_NUM_MOSI 5
+#  define PIN_NUM_CLK  4
+#  define PIN_NUM_CS   1
 #endif
 
 

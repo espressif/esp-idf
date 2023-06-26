@@ -387,6 +387,10 @@ More LCD panel drivers and touch drivers are available in `IDF Component Registr
 
         It's highly recommended to turn on the "PSRAM XIP (Execute In Place)" feature in this mode by enabling the Kconfig options: :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA`, which allows the CPU to fetch instructions and readonly data from the PSRAM instead of the main flash. What's more, the external memory cache won't be disabled even if you attempt to write to the main flash through SPI1. This makes it possible to display an OTA progress bar for your application.
 
+    .. note::
+
+        This mode still has another problem which is also caused by insufficient PSRAM bandwidth. e.g. when your draw buffers are allocated from PSRAM, and their contents are copied into the internal frame buffer on CPU core 1. On CPU core 0, there's another memory copy happening in the DMA EOF ISR. In this situation, both CPUs are accessing the PSRAM by cache and sharing the bandwidth of the PSRAM. This increases the memory copy time that spent in the DMA EOF ISR significantly. The driver can't switch the bounce buffer in time, thus leading to a shift on the LCD screen. Although the driver can detect such a condition and perform a restart in the LCD's VSYNC interrupt handler, you still can see a flickering on the screen.
+
     .. code:: c
 
         esp_lcd_panel_handle_t panel_handle = NULL;
@@ -447,9 +451,30 @@ LCD Panel IO Operations
 -----------------------
 
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD panel.
-* Use :cpp:func:`esp_lcd_panel_swap_xy` and :cpp:func:`esp_lcd_panel_mirror`, you can rotate the LCD screen.
+* :cpp:func:`esp_lcd_panel_init` will perform a basic initialization of the panel. To perform more manufacture specific initialization, please go to :ref:`steps_add_manufacture_init`.
+* Through combined use of :cpp:func:`esp_lcd_panel_swap_xy` and :cpp:func:`esp_lcd_panel_mirror`, you can rotate the LCD screen.
 * :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen (different from LCD backlight).
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the most significant function, that will do the magic to draw the user provided color buffer to the LCD screen, where the draw window is also configurable.
+
+.. _steps_add_manufacture_init:
+
+Steps to Add Manufacture Specific Initialization
+-------------------------------------------------
+
+The LCD controller drivers (e.g. st7789) in esp-idf only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
+
+.. code:: c
+
+    esp_lcd_panel_reset(panel_handle);
+    esp_lcd_panel_init(panel_handle);
+    // set extra configurations e.g. gamma control
+    // with the underlying IO handle
+    // please consult your manufacture for special commands and corresponding values
+    esp_lcd_panel_io_tx_param(io_handle, GAMMA_CMD, (uint8_t[]) {
+           GAMMA_ARRAY
+        }, N);
+    // turn on the display
+    esp_lcd_panel_disp_on_off(panel_handle, true);
 
 Application Example
 -------------------

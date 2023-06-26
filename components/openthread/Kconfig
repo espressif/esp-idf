@@ -34,6 +34,40 @@ menu "OpenThread"
             bool "Debug logs"
     endchoice #OPENTHREAD_LOG_LEVEL
 
+    menu "Thread Operational Dataset"
+        config OPENTHREAD_NETWORK_NAME
+            string "OpenThread network name"
+            default "OpenThread-ESP"
+
+        config OPENTHREAD_NETWORK_CHANNEL
+            int "OpenThread network channel"
+            range 11 26
+            default 15
+
+        config OPENTHREAD_NETWORK_PANID
+            hex "OpenThread network pan id"
+            range 0 0xFFFE
+            default 0x1234
+
+        config OPENTHREAD_NETWORK_EXTPANID
+            string "OpenThread extended pan id"
+            default "dead00beef00cafe"
+            help
+                The OpenThread network extended pan id in hex string format
+
+        config OPENTHREAD_NETWORK_MASTERKEY
+            string "OpenThread network key"
+            default "00112233445566778899aabbccddeeff"
+            help
+                The OpenThread network network key in hex string format
+
+        config OPENTHREAD_NETWORK_PSKC
+            string "OpenThread pre-shared commissioner key"
+            default "104810e2315100afd6bc9215a6bfac53"
+            help
+                The OpenThread pre-shared commissioner key in hex string format
+    endmenu
+
     config OPENTHREAD_LOG_LEVEL
         int
         depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
@@ -61,6 +95,12 @@ menu "OpenThread"
             bool "Connect via UART"
             help
                 Select this to connect to a Radio Co-Processor via UART.
+
+        config OPENTHREAD_RADIO_SPINEL_SPI
+            bool "Connect via SPI"
+            help
+                Select this to connect to a Radio Co-Processor via SPI.
+
     endchoice
 
     choice OPENTHREAD_DEVICE_TYPE
@@ -87,6 +127,22 @@ menu "OpenThread"
                 Select this to enable Radio Only Device which can only forward 15.4 packets to the host.
                 The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
                 radio only device.
+    endchoice
+
+    choice OPENTHREAD_RCP_TRANSPORT
+        prompt "The RCP transport type"
+        depends on OPENTHREAD_RADIO
+        default OPENTHREAD_RCP_UART
+
+        config OPENTHREAD_RCP_UART
+            bool "UART RCP"
+            help
+                Select this to enable UART connection to host.
+
+        config OPENTHREAD_RCP_SPI
+            bool "SPI RCP"
+            help
+                Select this to enable SPI connection to host.
     endchoice
 
     config OPENTHREAD_CLI
@@ -130,6 +186,13 @@ menu "OpenThread"
             Select this option to enable SRP Client in OpenThread. This allows a device to register SRP services to SRP
             Server.
 
+    config OPENTHREAD_DNS_CLIENT
+        bool "Enable DNS Client"
+        depends on OPENTHREAD_ENABLED
+        default y
+        help
+            Select this option to enable DNS Client in OpenThread.
+
     config OPENTHREAD_BORDER_ROUTER
         bool "Enable Border Router"
         depends on OPENTHREAD_ENABLED
@@ -145,9 +208,58 @@ menu "OpenThread"
 
     config OPENTHREAD_DNS64_CLIENT
         bool "Use dns64 client"
-        depends on OPENTHREAD_ENABLED
+        depends on OPENTHREAD_ENABLED && LWIP_IPV4
         default n
         help
             Select this option to acquire NAT64 address from dns servers.
 
+    config OPENTHREAD_DNS_SERVER_ADDR
+        string "DNS server address (IPv4)"
+        depends on OPENTHREAD_DNS64_CLIENT
+        default "8.8.8.8"
+        help
+            Set the DNS server IPv4 address.
+
+    config OPENTHREAD_UART_BUFFER_SIZE
+        int "The uart received buffer size of openthread"
+        depends on OPENTHREAD_ENABLED
+        default 256
+        range 128 1024
+        help
+            Set the OpenThread UART buffer size.
+
+    config OPENTHREAD_LINK_METRICS
+        bool "Enable link metrics feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable link metrics feature
+
+    config OPENTHREAD_MACFILTER_ENABLE
+        bool "Enable mac filter feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable mac filter feature
+
+    config OPENTHREAD_CSL_ENABLE
+        bool "Enable CSL feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable CSL feature
+
+    config OPENTHREAD_CSL_DEBUG_ENABLE
+        bool "Enable CSL debug"
+        depends on OPENTHREAD_CSL_ENABLE
+        default n
+        help
+            Select this option to set rx on when sleep in CSL feature, only for debug
+
+    config OPENTHREAD_DUA_ENABLE
+        bool "Enable Domain Unicast Address feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Only used for Thread1.2 certification
 endmenu

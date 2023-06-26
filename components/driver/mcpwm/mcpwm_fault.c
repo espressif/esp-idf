@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,7 +71,7 @@ static void mcpwm_gpio_fault_unregister_from_group(mcpwm_gpio_fault_t *fault)
     mcpwm_release_group_handle(group);
 }
 
-static esp_err_t mcpwm_gpio_fault_destory(mcpwm_gpio_fault_t *fault)
+static esp_err_t mcpwm_gpio_fault_destroy(mcpwm_gpio_fault_t *fault)
 {
     if (fault->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(fault->intr), TAG, "uninstall interrupt service failed");
@@ -133,7 +133,7 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
 
 err:
     if (fault) {
-        mcpwm_gpio_fault_destory(fault);
+        mcpwm_gpio_fault_destroy(fault);
     }
     return ret;
 }
@@ -157,7 +157,7 @@ static esp_err_t mcpwm_del_gpio_fault(mcpwm_fault_handle_t fault)
     mcpwm_ll_fault_enable_detection(hal->dev, fault_id, false);
 
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_gpio_fault_destory(gpio_fault), TAG, "destory GPIO fault failed");
+    ESP_RETURN_ON_ERROR(mcpwm_gpio_fault_destroy(gpio_fault), TAG, "destroy GPIO fault failed");
     return ESP_OK;
 }
 
@@ -229,7 +229,7 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     mcpwm_hal_context_t *hal = &group->hal;
     int fault_id = gpio_fault->fault_id;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_fault_enter) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_fault_enter), ESP_ERR_INVALID_ARG, TAG, "on_fault_enter callback not in IRAM");
     }

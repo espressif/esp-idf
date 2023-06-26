@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,22 +45,16 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
     return EFUSE.rd_repeat_data2.secure_boot_en;
 }
 
-// TODO: IDF-5341
-// __attribute__((always_inline)) static inline bool efuse_ll_get_err_rst_enable(void)
-// {
-//     return EFUSE.rd_repeat_data3.err_rst_enable;
-// }
-
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return EFUSE.rd_mac_spi_sys_5.wafer_version_major;
+    return EFUSE.rd_mac_spi_sys_3.wafer_version_major;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return (EFUSE.rd_mac_spi_sys_5.wafer_version_minor_high << 3) + EFUSE.rd_mac_spi_sys_3.wafer_version_minor_low;
+    return EFUSE.rd_mac_spi_sys_3.wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
@@ -70,7 +64,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_ver
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return EFUSE.rd_sys_part1_data4.blk_version_major;
+    return EFUSE.rd_mac_spi_sys_3.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
@@ -86,6 +80,11 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_versi
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
     return EFUSE.rd_mac_spi_sys_3.pkg_version;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
+{
+    return EFUSE.rd_sys_part1_data4.ocode;
 }
 
 /******************* eFuse control functions *************************/
@@ -119,6 +118,21 @@ __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
     EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_dac_num(uint8_t val)
+{
+    EFUSE.dac_conf.dac_num = val;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint8_t val)
+{
+    EFUSE.dac_conf.dac_clk_div = val;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16_t val)
+{
+    EFUSE.wr_tim_conf1.pwr_on_num = val;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)

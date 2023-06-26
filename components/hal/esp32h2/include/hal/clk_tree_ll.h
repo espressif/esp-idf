@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,16 @@
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
-#include "soc/pcr_reg.h"
+#include "soc/pcr_struct.h"
+#include "soc/lp_clkrst_struct.h"
+#include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "soc/regi2c_pmu.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32h2/rom/rtc.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,11 +27,10 @@ extern "C" {
 
 #define MHZ                 (1000000)
 
-#define CLK_LL_PLL_80M_FREQ_MHZ    (80)
-#define CLK_LL_PLL_160M_FREQ_MHZ   (160)
-
-#define CLK_LL_PLL_320M_FREQ_MHZ   (320)
-#define CLK_LL_PLL_480M_FREQ_MHZ   (480)
+#define CLK_LL_PLL_8M_FREQ_MHZ    (8)
+#define CLK_LL_PLL_48M_FREQ_MHZ   (48)
+#define CLK_LL_PLL_64M_FREQ_MHZ   (64)
+#define CLK_LL_PLL_96M_FREQ_MHZ   (96)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \
@@ -35,6 +38,13 @@ extern "C" {
     .dgm = 3, \
     .dbuf = 1, \
 }
+
+/*
+Set the frequency division factor of ref_tick
+The FOSC of rtc calibration uses the 32 frequency division clock for ECO2,
+So the frequency division factor of ref_tick must be greater than or equal to 32
+*/
+#define REG_FOSC_TICK_NUM  255
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -60,7 +70,9 @@ typedef struct {
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C |
+                      PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
 }
 
 /**
@@ -68,7 +80,26 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_BBPLL_ICG) ;
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_BBPLL | PMU_TIE_LOW_XPD_BBPLL_I2C);
+}
+
+/**
+ * @brief Enable the internal oscillator output for LP_PLL_CLK
+ */
+static inline __attribute__((always_inline)) void clk_ll_lp_pll_enable(void)
+{
+    // Enable lp_pll xpd status
+    SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_LPPLL);
+}
+
+/**
+ * @brief Disable the internal oscillator output for LP_PLL_CLK
+ */
+static inline __attribute__((always_inline)) void clk_ll_lp_pll_disable(void)
+{
+    // Disable lp_pll xpd status
+    CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_LPPLL);
 }
 
 /**
@@ -76,17 +107,29 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
  *
  * @param mode Used to determine the xtal32k configuration parameters
  */
-static inline void clk_ll_xtal32k_enable(clk_ll_xtal32k_enable_mode_t mode)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_enable(clk_ll_xtal32k_enable_mode_t mode)
 {
-    // ESP32H2-TODO: IDF-6401
+    if (mode == CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL) {
+        // No need to configure anything for OSC_SLOW_CLK
+        return;
+    }
+    // Configure xtal32k
+    clk_ll_xtal32k_config_t cfg = CLK_LL_XTAL32K_CONFIG_DEFAULT();
+    LP_CLKRST.xtal32k.dac_xtal32k = cfg.dac;
+    LP_CLKRST.xtal32k.dres_xtal32k = cfg.dres;
+    LP_CLKRST.xtal32k.dgm_xtal32k = cfg.dgm;
+    LP_CLKRST.xtal32k.dbuf_xtal32k = cfg.dbuf;
+    // Enable xtal32k xpd
+    SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K);
 }
 
 /**
  * @brief Disable the 32kHz crystal oscillator
  */
-static inline void clk_ll_xtal32k_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_disable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    // Disable xtal32k xpd
+    CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K);
 }
 
 /**
@@ -94,10 +137,37 @@ static inline void clk_ll_xtal32k_disable(void)
  *
  * @return True if the 32kHz XTAL is enabled
  */
-static inline bool clk_ll_xtal32k_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K) == 1;
+}
+
+/**
+ * @brief Enable the internal oscillator output for RC32K_CLK
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc32k_enable(void)
+{
+    // Enable rc32k xpd status
+    SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
+}
+
+/**
+ * @brief Disable the internal oscillator output for RC32K_CLK
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc32k_disable(void)
+{
+    // Disable rc32k xpd status
+    CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
+}
+
+/**
+ * @brief Get the state of the internal oscillator for RC32K_CLK
+ *
+ * @return True if the oscillator is enabled
+ */
+static inline __attribute__((always_inline)) bool clk_ll_rc32k_is_enabled(void)
+{
+    return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K) == 1;
 }
 
 /**
@@ -105,7 +175,7 @@ static inline bool clk_ll_xtal32k_is_enabled(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_FOSC_CLK);
 }
 
 /**
@@ -113,7 +183,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_disable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_FOSC_CLK);
 }
 
 /**
@@ -121,61 +191,25 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_disable(void)
  *
  * @return True if the oscillator is enabled
  */
-static inline bool clk_ll_rc_fast_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_rc_fast_is_enabled(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 1;
-}
-
-/**
- * @brief Enable the output from the internal oscillator to be passed into a configurable divider,
- * which by default divides the input clock frequency by 256. i.e. RC_FAST_D256_CLK = RC_FAST_CLK / 256
- *
- * Divider values other than 256 may be configured, but this facility is not currently needed,
- * so is not exposed in the code.
- * The output of the divider, RC_FAST_D256_CLK, is referred as 8md256 or simply d256 in reg. descriptions.
- */
-static inline void clk_ll_rc_fast_d256_enable(void)
-{
-    // ESP32H2-TODO: IDF-6401
-}
-
-/**
- * @brief Disable the output from the internal oscillator to be passed into a configurable divider.
- * i.e. RC_FAST_D256_CLK = RC_FAST_CLK / 256
- *
- * Disabling this divider could reduce power consumption.
- */
-static inline void clk_ll_rc_fast_d256_disable(void)
-{
-    // ESP32H2-TODO: IDF-6401
-}
-
-/**
- * @brief Get the state of the divider which is applied to the output from the internal oscillator (RC_FAST_CLK)
- *
- * @return True if the divided output is enabled
- */
-static inline bool clk_ll_rc_fast_d256_is_enabled(void)
-{
-    // ESP32H2-TODO: IDF-6401
-    return 1;
+    return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_FOSC_CLK) == 1;
 }
 
 /**
  * @brief Enable the digital RC_FAST_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_rc_fast_digi_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_digi_enable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    LP_CLKRST.clk_to_hp.icg_hp_fosc = 1;
 }
 
 /**
  * @brief Disable the digital RC_FAST_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_rc_fast_digi_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_digi_disable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    LP_CLKRST.clk_to_hp.icg_hp_fosc = 0;
 }
 
 /**
@@ -183,42 +217,25 @@ static inline void clk_ll_rc_fast_digi_disable(void)
  *
  * @return True if the digital RC_FAST_CLK is enabled
  */
-static inline bool clk_ll_rc_fast_digi_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_rc_fast_digi_is_enabled(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
-}
-
-/**
- * @brief Enable the digital RC_FAST_D256_CLK, which is used to support peripherals.
- */
-static inline void clk_ll_rc_fast_d256_digi_enable(void)
-{
-    // ESP32H2-TODO: IDF-6401
-}
-
-/**
- * @brief Disable the digital RC_FAST_D256_CLK, which is used to support peripherals.
- */
-static inline void clk_ll_rc_fast_d256_digi_disable(void)
-{
-    // ESP32H2-TODO: IDF-6401
+    return LP_CLKRST.clk_to_hp.icg_hp_fosc;
 }
 
 /**
  * @brief Enable the digital XTAL32K_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_xtal32k_digi_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_digi_enable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    LP_CLKRST.clk_to_hp.icg_hp_xtal32k = 1;
 }
 
 /**
  * @brief Disable the digital XTAL32K_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_xtal32k_digi_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_digi_disable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    LP_CLKRST.clk_to_hp.icg_hp_xtal32k = 0;
 }
 
 /**
@@ -226,10 +243,35 @@ static inline void clk_ll_xtal32k_digi_disable(void)
  *
  * @return True if the digital XTAL32K_CLK is enabled
  */
-static inline bool clk_ll_xtal32k_digi_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_xtal32k_digi_is_enabled(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    return LP_CLKRST.clk_to_hp.icg_hp_xtal32k;
+}
+
+/**
+ * @brief Enable the digital RC32K_CLK, which is used to support peripherals.
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_enable(void)
+{
+    LP_CLKRST.clk_to_hp.icg_hp_osc32k = 1;
+}
+
+/**
+ * @brief Disable the digital RC32K_CLK, which is used to support peripherals.
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_disable(void)
+{
+    LP_CLKRST.clk_to_hp.icg_hp_osc32k = 0;
+}
+
+/**
+ * @brief Get the state of the digital RC32K_CLK
+ *
+ * @return True if the digital RC32K_CLK is enabled
+ */
+static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(void)
+{
+    return LP_CLKRST.clk_to_hp.icg_hp_osc32k;
 }
 
 /**
@@ -239,8 +281,8 @@ static inline bool clk_ll_xtal32k_digi_is_enabled(void)
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_bbpll_get_freq_mhz(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    // The target has a fixed 96MHz SPLL
+    return CLK_LL_PLL_96M_FREQ_MHZ;
 }
 
 /**
@@ -250,7 +292,9 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_bbpll_get_freq_mhz(
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint32_t pll_freq_mhz)
 {
-    // ESP32H2-TODO: IDF-6401
+    // The target SPLL is fixed to 96MHz
+    // Do nothing
+    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
 }
 
 /**
@@ -261,26 +305,63 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    // ESP32H2-TODO: IDF-6401
+    HAL_ASSERT(xtal_freq_mhz == RTC_XTAL_FREQ_32M);
+    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
+    uint8_t oc_ref_div;
+    uint8_t oc_div;
+    uint8_t oc_dhref_sel;
+    uint8_t oc_dlref_sel;
+
+    oc_ref_div = 0;
+    oc_div = 1;
+    oc_dhref_sel = 3;
+    oc_dlref_sel = 1;
+
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, oc_ref_div);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DIV, oc_div);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DHREF_SEL, oc_dhref_sel);
+    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, oc_dlref_sel);
 }
 
 /**
- * @brief Select the clock source for CPU_CLK
+ * @brief Get FLASH_PLL_CLK frequency
+ *
+ * @return FLASH_PLL clock frequency, in MHz
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_flash_pll_get_freq_mhz(void)
+{
+    // The target has a fixed 64MHz flash PLL, which is directly derived from BBPLL
+    return CLK_LL_PLL_64M_FREQ_MHZ;
+}
+
+/**
+ * @brief To enable the change of soc_clk_sel, cpu_div_num, and ahb_div_num
+ */
+static inline __attribute__((always_inline)) void clk_ll_bus_update(void)
+{
+    PCR.bus_clk_update.bus_clock_update = 1;
+    while (PCR.bus_clk_update.bus_clock_update);
+}
+
+/**
+ * @brief Select the clock source for CPU_CLK (SOC Clock Root)
  *
  * @param in_sel One of the clock sources in soc_cpu_clk_src_t
  */
 static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk_src_t in_sel)
 {
-    // ESP32H2-TODO: IDF-6401
     switch (in_sel) {
     case SOC_CPU_CLK_SRC_XTAL:
-        REG_SET_FIELD(PCR_SYSCLK_CONF_REG, PCR_SOC_CLK_SEL, 0);
+        PCR.sysclk_conf.soc_clk_sel = 0;
         break;
     case SOC_CPU_CLK_SRC_PLL:
-        REG_SET_FIELD(PCR_SYSCLK_CONF_REG, PCR_SOC_CLK_SEL, 1);
+        PCR.sysclk_conf.soc_clk_sel = 1;
         break;
-    case SOC_CPU_CLK_SRC_RC_FAST://FOSC
-        REG_SET_FIELD(PCR_SYSCLK_CONF_REG, PCR_SOC_CLK_SEL, 2);
+    case SOC_CPU_CLK_SRC_RC_FAST:
+        PCR.sysclk_conf.soc_clk_sel = 2;
+        break;
+    case SOC_CPU_CLK_SRC_FLASH_PLL:
+        PCR.sysclk_conf.soc_clk_sel = 3;
         break;
     default:
         // Unsupported CPU_CLK mux input sel
@@ -289,124 +370,134 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
 }
 
 /**
- * @brief Get the clock source for CPU_CLK
+ * @brief Get the clock source for CPU_CLK (SOC Clock Root)
  *
  * @return Currently selected clock source (one of soc_cpu_clk_src_t values)
  */
 static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_src(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    uint32_t clk_sel = REG_GET_FIELD(PCR_SYSCLK_CONF_REG, PCR_SOC_CLK_SEL);
+    uint32_t clk_sel = PCR.sysclk_conf.soc_clk_sel;
     switch (clk_sel) {
     case 0:
         return SOC_CPU_CLK_SRC_XTAL;
     case 1:
         return SOC_CPU_CLK_SRC_PLL;
-    case 2://FOSC
+    case 2:
         return SOC_CPU_CLK_SRC_RC_FAST;
+    case 3:
+        return SOC_CPU_CLK_SRC_FLASH_PLL;
     default:
         // Invalid SOC_CLK_SEL value
         return SOC_CPU_CLK_SRC_INVALID;
     }
 }
 
-#include "hal/uart_types.h"
-static inline __attribute__((always_inline)) void clk_ll_uart_set_sclk(uint32_t uart_num, uart_sclk_t source_clk)
-{
-    // switch (source_clk) {
-    //     default:
-    //     case UART_SCLK_APB:
-    //         REG_SET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_SEL, 1);
-    //         break;
-    //     case UART_SCLK_RTC:
-    //         REG_SET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_SEL, 2);
-    //         break;
-    //     case UART_SCLK_XTAL:
-    //         REG_SET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_SEL, 3);
-    //         break;
-    // }
-}
-
-static inline __attribute__((always_inline)) void clk_ll_uart_get_sclk(uint32_t uart_num, uart_sclk_t *source_clk)
-{
-    // switch (REG_GET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_SEL)) {
-    //     default:
-    //     case 1:
-    //         *source_clk = UART_SCLK_APB;
-    //         break;
-    //     case 2:
-    //         *source_clk = UART_SCLK_RTC;
-    //         break;
-    //     case 3:
-    //         *source_clk = UART_SCLK_XTAL;
-    //         break;
-    // }
-}
-
-static inline uint32_t clk_ll_get_uart_sclk_freq(uint32_t uart_num)
-{
-    // switch (REG_GET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_SEL)) {
-    //     default:
-    //     case 1:
-    //         return APB_CLK_FREQ;
-    //     case 2:
-    //         return RTC_CLK_FREQ;
-    //     case 3:
-    //         return XTAL_CLK_FREQ;
-    // }
-    return 0;
-}
-
-static inline __attribute__((always_inline)) void clk_ll_uart_set_sclk_div_num(uint8_t uart_num, uint32_t val)
-{
-    // REG_SET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_DIV_NUM, val);
-}
-
-static inline __attribute__((always_inline)) uint32_t clk_ll_uart_get_sclk_div_num(uint8_t uart_num)
-{
-    return 0;//REG_GET_FIELD(PCR_UART_SCLK_CONF_REG(uart_num), PCR_UART0_SCLK_DIV_NUM);
-}
-
 /**
- * @brief Set CPU frequency from PLL clock
+ * @brief Set CPU_CLK divider
  *
- * @param cpu_mhz CPU frequency value, in MHz
- */
-static inline __attribute__((always_inline)) void clk_ll_cpu_set_freq_mhz_from_pll(uint32_t cpu_mhz)
-{
-    // ESP32H2-TODO: IDF-6401
-}
-
-/**
- * @brief Get CPU_CLK frequency from PLL_CLK source
- *
- * @return CPU clock frequency, in MHz. Returns 0 if register field value is invalid.
- */
-static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_freq_mhz_from_pll(void)
-{
-    // ESP32H2-TODO: IDF-6401
-    return 0;
-}
-
-/**
- * @brief Set CPU_CLK's XTAL/FAST_RC clock source path divider
- *
- * @param divider Divider. Usually this divider is set to 1 in bootloader stage. PRE_DIV_CNT = divider - 1.
+ * @param divider Divider. PRE_DIV_CNT = divider - 1.
  */
 static inline __attribute__((always_inline)) void clk_ll_cpu_set_divider(uint32_t divider)
 {
-    // ESP32H2-TODO: IDF-6401: not configurable for 761, fixed at 3 for HS, 1 for LS
+    HAL_ASSERT(divider >= 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_div_num, divider - 1);
 }
 
 /**
- * @brief Get CPU_CLK's XTAL/FAST_RC clock source path divider
+ * @brief Get CPU_CLK divider
  *
  * @return Divider. Divider = (PRE_DIV_CNT + 1).
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    return HAL_FORCE_READ_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_div_num) + 1;
+}
+
+/**
+ * @brief Set AHB_CLK divider
+ *
+ * @param divider Divider. PRE_DIV_CNT = divider - 1.
+ */
+static inline __attribute__((always_inline)) void clk_ll_ahb_set_divider(uint32_t divider)
+{
+    HAL_ASSERT(divider >= 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num, divider - 1);
+}
+
+/**
+ * @brief Get AHB_CLK divider
+ *
+ * @return Divider. Divider = (PRE_DIV_CNT + 1).
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_divider(void)
+{
+    return HAL_FORCE_READ_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num) + 1;
+}
+
+/**
+ * @brief Set APB_CLK divider. freq of APB_CLK = freq of AHB_CLK / divider
+ *
+ * @param divider Divider. PCR_APB_DIV_NUM = divider - 1.
+ */
+static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_t divider)
+{
+    // AHB ------> APB
+    // Divider option: 1, 2, 4 (PCR_APB_DIV_NUM=0, 1, 3)
+    HAL_ASSERT(divider == 1 || divider == 2 || divider == 4);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num, divider - 1);
+}
+
+/**
+ * @brief Get APB_CLK divider
+ *
+ * @return Divider. Divider = (PCR_APB_DIV_NUM + 1).
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(void)
+{
+    return HAL_FORCE_READ_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num) + 1;
+}
+
+/**
+ * @brief Select the calibration 32kHz clock source for timergroup0
+ *
+ * @param in_sel One of the 32kHz clock sources (RC32K_CLK, XTAL32K_CLK, OSC_SLOW_CLK)
+ */
+static inline __attribute__((always_inline)) void clk_ll_32k_calibration_set_target(soc_rtc_slow_clk_src_t in_sel)
+{
+    switch (in_sel) {
+    case SOC_RTC_SLOW_CLK_SRC_RC32K:
+        PCR.ctrl_32k_conf.clk_32k_sel = 0;
+        break;
+    case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
+        PCR.ctrl_32k_conf.clk_32k_sel = 1;
+        break;
+    case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
+        PCR.ctrl_32k_conf.clk_32k_sel = 2;
+        break;
+    default:
+        // Unsupported 32K_SEL mux input
+        abort();
+    }
+}
+
+/**
+ * @brief Get the calibration 32kHz clock source for timergroup0
+ *
+ * @return soc_rtc_slow_clk_src_t Currently selected calibration 32kHz clock (one of the 32kHz clocks)
+ */
+static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
+{
+    uint32_t clk_sel = PCR.ctrl_32k_conf.clk_32k_sel;
+    switch (clk_sel) {
+    case 0:
+        return SOC_RTC_SLOW_CLK_SRC_RC32K;
+    case 1:
+        return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
+    case 2:
+        return SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
+    default:
+        return SOC_RTC_SLOW_CLK_SRC_INVALID;
+    }
 }
 
 /**
@@ -414,9 +505,25 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(voi
  *
  * @param in_sel One of the clock sources in soc_rtc_slow_clk_src_t
  */
-static inline void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
 {
-    // ESP32H2-TODO: IDF-6401
+    switch (in_sel) {
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
+        LP_CLKRST.lp_clk_conf.slow_clk_sel = 0;
+        break;
+    case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
+        LP_CLKRST.lp_clk_conf.slow_clk_sel = 1;
+        break;
+    case SOC_RTC_SLOW_CLK_SRC_RC32K:
+        LP_CLKRST.lp_clk_conf.slow_clk_sel = 2;
+        break;
+    case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
+        LP_CLKRST.lp_clk_conf.slow_clk_sel = 3;
+        break;
+    default:
+        // Unsupported RTC_SLOW_CLK mux input sel
+        abort();
+    }
 }
 
 /**
@@ -424,10 +531,72 @@ static inline void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
  *
  * @return Currently selected clock source (one of soc_rtc_slow_clk_src_t values)
  */
-static inline soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
+static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    uint32_t clk_sel = LP_CLKRST.lp_clk_conf.slow_clk_sel;
+    switch (clk_sel) {
+    case 0:
+        return SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+    case 1:
+        return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
+    case 2:
+        return SOC_RTC_SLOW_CLK_SRC_RC32K;
+    case 3:
+        return SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
+    default:
+        return SOC_RTC_SLOW_CLK_SRC_INVALID;
+    }
+}
+
+/**
+ * @brief Select the clock source for LP_PLL_CLK
+ *
+ * @param in_sel One of the clock sources in soc_lp_pll_clk_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_lp_pll_set_src(soc_lp_pll_clk_src_t in_sel)
+{
+    uint32_t field_value;
+    switch (in_sel) {
+    case SOC_LP_PLL_CLK_SRC_RC32K:
+        field_value = 0;
+        break;
+    case SOC_LP_PLL_CLK_SRC_XTAL32K:
+        field_value = 1;
+        break;
+    default:
+        // Unsupported LP_PLL_CLK mux input sel
+        abort();
+    }
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_SEL_PLL8M_REF, field_value);
+}
+
+/**
+ * @brief Get the clock source for LP_PLL_CLK
+ *
+ * @return Currently selected clock source (one of soc_lp_pll_clk_src_t values)
+ */
+static inline __attribute__((always_inline)) soc_lp_pll_clk_src_t clk_ll_lp_pll_get_src(void)
+{
+    uint32_t clk_sel = REGI2C_READ_MASK(I2C_PMU, I2C_PMU_SEL_PLL8M_REF);
+    switch (clk_sel) {
+    case 0:
+        return SOC_LP_PLL_CLK_SRC_RC32K;
+    case 1:
+        return SOC_LP_PLL_CLK_SRC_XTAL32K;
+    default:
+        return SOC_LP_PLL_CLK_SRC_INVALID;
+    }
+}
+
+/**
+ * @brief Get LP_PLL_CLK frequency
+ *
+ * @return LP_PLL clock frequency, in MHz
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_lp_pll_get_freq_mhz(void)
+{
+    // The target has a fixed 8MHz LP_PLL
+    return CLK_LL_PLL_8M_FREQ_MHZ;
 }
 
 /**
@@ -435,9 +604,22 @@ static inline soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
  *
  * @param in_sel One of the clock sources in soc_rtc_fast_clk_src_t
  */
-static inline void clk_ll_rtc_fast_set_src(soc_rtc_fast_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_rtc_fast_set_src(soc_rtc_fast_clk_src_t in_sel)
 {
-    // ESP32H2-TODO: IDF-6401
+    switch (in_sel) {
+    case SOC_RTC_FAST_CLK_SRC_RC_FAST:
+        LP_CLKRST.lp_clk_conf.fast_clk_sel = 0;
+        break;
+    case SOC_RTC_FAST_CLK_SRC_XTAL_D2:
+        LP_CLKRST.lp_clk_conf.fast_clk_sel = 1;
+        break;
+    case SOC_RTC_FAST_CLK_SRC_LP_PLL:
+        LP_CLKRST.lp_clk_conf.fast_clk_sel = 2;
+        break;
+    default:
+        // Unsupported RTC_FAST_CLK mux input sel
+        abort();
+    }
 }
 
 /**
@@ -445,10 +627,19 @@ static inline void clk_ll_rtc_fast_set_src(soc_rtc_fast_clk_src_t in_sel)
  *
  * @return Currently selected clock source (one of soc_rtc_fast_clk_src_t values)
  */
-static inline soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
+static inline __attribute__((always_inline)) soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    uint32_t clk_sel = LP_CLKRST.lp_clk_conf.fast_clk_sel;
+    switch (clk_sel) {
+    case 0:
+        return SOC_RTC_FAST_CLK_SRC_RC_FAST;
+    case 1:
+        return SOC_RTC_FAST_CLK_SRC_XTAL_D2;
+    case 2:
+        return SOC_RTC_FAST_CLK_SRC_LP_PLL;
+    default:
+        return SOC_RTC_FAST_CLK_SRC_INVALID;
+    }
 }
 
 /**
@@ -456,9 +647,10 @@ static inline soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
  *
  * @param divider Divider of RC_FAST_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
  */
-static inline void clk_ll_rc_fast_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uint32_t divider)
 {
-    // ESP32H2-TODO: IDF-6401
+    // No divider on the target
+    HAL_ASSERT(divider == 1);
 }
 
 /**
@@ -466,10 +658,10 @@ static inline void clk_ll_rc_fast_set_divider(uint32_t divider)
  *
  * @return Divider. Divider = (CK8M_DIV_SEL + 1).
  */
-static inline uint32_t clk_ll_rc_fast_get_divider(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    // No divider on the target, always return divider = 1
+    return 1;
 }
 
 /**
@@ -477,23 +669,32 @@ static inline uint32_t clk_ll_rc_fast_get_divider(void)
  *
  * @param divider Divider of RC_SLOW_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
  */
-static inline void clk_ll_rc_slow_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_rc_slow_set_divider(uint32_t divider)
 {
-    // ESP32H2-TODO: IDF-6401
+    // No divider on the target
+    HAL_ASSERT(divider == 1);
 }
 
-/************************* RTC STORAGE REGISTER STORE/LOAD **************************/
+/************************** LP STORAGE REGISTER STORE/LOAD **************************/
 /**
  * @brief Store XTAL_CLK frequency in RTC storage register
  *
  * Value of RTC_XTAL_FREQ_REG is stored as two copies in lower and upper 16-bit
  * halves. These are the routines to work with that representation.
  *
- * @param xtal_freq_mhz XTAL frequency, in MHz
+ * @param xtal_freq_mhz XTAL frequency, in MHz. The frequency must necessarily be even,
+ * otherwise there will be a conflict with the low bit, which is used to disable logs
+ * in the ROM code.
  */
-static inline void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
+static inline __attribute__((always_inline)) void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
 {
-    // ESP32H2-TODO: IDF-6401
+    // Read the status of whether disabling logging from ROM code
+    uint32_t reg = READ_PERI_REG(RTC_XTAL_FREQ_REG) & RTC_DISABLE_ROM_LOG;
+    // If so, need to write back this setting
+    if (reg == RTC_DISABLE_ROM_LOG) {
+        xtal_freq_mhz |= 1;
+    }
+    WRITE_PERI_REG(RTC_XTAL_FREQ_REG, (xtal_freq_mhz & UINT16_MAX) | ((xtal_freq_mhz & UINT16_MAX) << 16));
 }
 
 /**
@@ -506,34 +707,13 @@ static inline void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_load_freq_mhz(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
-}
-
-/**
- * @brief Store APB_CLK frequency in RTC storage register
- *
- * Value of RTC_APB_FREQ_REG is stored as two copies in lower and upper 16-bit
- * halves. These are the routines to work with that representation.
- *
- * @param apb_freq_hz APB frequency, in Hz
- */
-static inline __attribute__((always_inline)) void clk_ll_apb_store_freq_hz(uint32_t apb_freq_hz)
-{
-    // ESP32H2-TODO: IDF-6401
-}
-
-/**
- * @brief Load APB_CLK frequency from RTC storage register
- *
- * Value of RTC_APB_FREQ_REG is stored as two copies in lower and upper 16-bit
- * halves. These are the routines to work with that representation.
- *
- * @return The stored APB frequency, in Hz
- */
-static inline uint32_t clk_ll_apb_load_freq_hz(void)
-{
-    // ESP32H2-TODO: IDF-6401
+    // Read from RTC storage register
+    uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
+    if ((xtal_freq_reg & 0xFFFF) == ((xtal_freq_reg >> 16) & 0xFFFF) &&
+        xtal_freq_reg != 0 && xtal_freq_reg != UINT32_MAX) {
+        return xtal_freq_reg & ~RTC_DISABLE_ROM_LOG & UINT16_MAX;
+    }
+    // If the format in reg is invalid
     return 0;
 }
 
@@ -545,9 +725,9 @@ static inline uint32_t clk_ll_apb_load_freq_hz(void)
  *
  * @param cal_value The calibration value of slow clock period in microseconds, in Q13.19 fixed point format
  */
-static inline void clk_ll_rtc_slow_store_cal(uint32_t cal_value)
+static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint32_t cal_value)
 {
-    // ESP32H2-TODO: IDF-6401
+    REG_WRITE(RTC_SLOW_CLK_CAL_REG, cal_value);
 }
 
 /**
@@ -557,10 +737,17 @@ static inline void clk_ll_rtc_slow_store_cal(uint32_t cal_value)
  *
  * @return The calibration value of slow clock period in microseconds, in Q13.19 fixed point format
  */
-static inline uint32_t clk_ll_rtc_slow_load_cal(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
-    // ESP32H2-TODO: IDF-6401
-    return 0;
+    return REG_READ(RTC_SLOW_CLK_CAL_REG);
+}
+
+/*
+Set the frequency division factor of ref_tick
+*/
+static inline void clk_ll_rc_fast_tick_conf(void)
+{
+    PCR.ctrl_tick_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
 }
 
 #ifdef __cplusplus

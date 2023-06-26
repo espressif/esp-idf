@@ -61,8 +61,8 @@ BluFi 流程图
 
         Phone <- {IDF_TARGET_NAME} [label="广播"];
         Phone -> {IDF_TARGET_NAME} [label="建立 GATT 链接"];
-        Phone <- {IDF_TARGET_NAME} [label="协商密钥"];
         Phone -> {IDF_TARGET_NAME} [label="协商密钥"];
+        Phone <- {IDF_TARGET_NAME} [label="协商密钥"];
         Phone -> {IDF_TARGET_NAME} [label="CTRL: 设置 {IDF_TARGET_NAME} 为手机安全模式"];
         Phone -> {IDF_TARGET_NAME} [label="DATA: SSID"];
         Phone -> {IDF_TARGET_NAME} [label="DATA: Password"];

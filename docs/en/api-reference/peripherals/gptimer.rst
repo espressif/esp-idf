@@ -25,7 +25,7 @@ The following sections of this document cover the typical steps to install and o
     - :ref:`gptimer-register-event-callbacks` - covers how to hook user specific code to the alarm event callback function.
     - :ref:`enable-and-disable-timer` - covers how to enable and disable the timer.
     - :ref:`start-and-stop-timer` - shows some typical use cases that start the timer with different alarm behavior.
-    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - describes what the events and tasks can be connected to the ETM channel.
+    :SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - describes what the events and tasks can be connected to the ETM channel.
     - :ref:`gptimer-power-management` - describes how different source clock selections can affect power consumption.
     - :ref:`gptimer-iram-safe` - describes tips on how to make the timer interrupt and IO control functions work better along with a disabled cache.
     - :ref:`gptimer-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
@@ -129,6 +129,7 @@ Start and Stop Timer
 ^^^^^^^^^^^^^^^^^^^^
 
 The basic IO operation of a timer is to start and stop. Calling :cpp:func:`gptimer_start` can make the internal counter work, while calling :cpp:func:`gptimer_stop` can make the counter stop working. The following illustrates how to start a timer with or without an alarm event.
+Calling :cpp:func:`gptimer_start` will transit the driver state from **enable** to **run**, and vice versa. You need to make sure the start and stop functions are used in pairs, otherwise, the functions may return :c:macro:`ESP_ERR_INVALID_STATE`. Most of the time, this error means that the timer is already stopped or in the "start protection" state (i.e. :cpp:func:`gptimer_start` is called but not finished).
 
 Start Timer as a Wall Clock
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,7 +261,7 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
     ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
 
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-etm-event-and-task:
 
@@ -273,18 +274,16 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
 
     .. _gptimer-power-management:
 
-.. only:: not SOC_TIMER_SUPPORT_ETM
+.. only:: not SOC_ETM_SUPPORTED or not SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-power-management:
 
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into Light-sleep mode, thus potentially changing the period of a GPTimer's counting step and leading to inaccurate time keeping.
+There're some power management strategies, which might turn off or change the frequency of GPTimer's source clock to save power consumption. For example, during DFS, APB clock will be scaled down. If light-sleep is also enabled, PLL and XTAL clocks will be powered off. Both of them can result in an inaccurate time keeping.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates a GPTimer instance that has selected :cpp:enumerator:`GPTIMER_CLK_SRC_APB` as its clock source, the driver will guarantee that the power management lock is acquired when enabling the timer by :cpp:func:`gptimer_enable`. Likewise, the driver releases the lock when :cpp:func:`gptimer_disable` is called for that timer.
-
-If other gptimer clock sources are selected such as :cpp:enumerator:`GPTIMER_CLK_SRC_XTAL`, then the driver will not install power management lock. The XTAL clock source is more suitable for a low power application as long as the source clock can still provide sufficient resolution.
+The driver can prevent the above situation from happening by creating different power management lock according to different clock source. The driver will increase the reference count of that power management lock in the :cpp:func:`gptimer_enable` and decrease it in the :cpp:func:`gptimer_disable`. So we can ensure the clock source is stable between :cpp:func:`gptimer_enable` and :cpp:func:`gptimer_disable`.
 
 .. _gptimer-iram-safe:
 
@@ -314,17 +313,14 @@ There is another Kconfig option :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` that can
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`gptimer_new_timer` is guaranteed to be thread safe by the driver, which means, you can call it from different RTOS tasks without protection by extra locks.
-
-The following functions are allowed to run under ISR context, as the driver uses a critical section to prevent them being called concurrently in the task and ISR.
+All the APIs provided by the driver are guaranteed to be thread safe, which means you can call them from different RTOS tasks without protection by extra locks. The following functions are allowed to run under ISR context.
 
 - :cpp:func:`gptimer_start`
 - :cpp:func:`gptimer_stop`
 - :cpp:func:`gptimer_get_raw_count`
 - :cpp:func:`gptimer_set_raw_count`
+- :cpp:func:`gptimer_get_captured_count`
 - :cpp:func:`gptimer_set_alarm_action`
-
-Other functions that take :cpp:type:`gptimer_handle_t` as the first positional parameter, are not treated as thread safe, which means you should avoid calling them from multiple tasks.
 
 .. _gptimer-kconfig-options:
 

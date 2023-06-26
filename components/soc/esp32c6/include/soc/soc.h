@@ -139,10 +139,11 @@
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
-#define  APB_CLK_FREQ                                ( 80*1000000 ) // TODO: IDF-6343 APB clock freq is 40MHz indeed
+#define  APB_CLK_FREQ                                ( 40*1000000 )
+#define  MODEM_APB_CLK_FREQ                          ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  RTC_CLK_FREQ                                (20*1000000)
 #define  XTAL_CLK_FREQ                               (40*1000000)
 #define  GPIO_MATRIX_DELAY_NS                        0
 //}}
@@ -154,7 +155,7 @@
  */
 
 #define SOC_IROM_LOW    0x42000000
-#define SOC_IROM_HIGH   (SOC_IROM_LOW + (CONFIG_MMU_PAGE_SIZE<<8))
+#define SOC_IROM_HIGH   (SOC_IROM_LOW + (SOC_MMU_PAGE_SIZE<<8))
 #define SOC_DROM_LOW    SOC_IROM_LOW
 #define SOC_DROM_HIGH   SOC_IROM_HIGH
 #define SOC_IROM_MASK_LOW  0x40000000
@@ -177,6 +178,9 @@
 #define SOC_DIRAM_IRAM_HIGH   0x40880000
 #define SOC_DIRAM_DRAM_LOW    0x40800000
 #define SOC_DIRAM_DRAM_HIGH   0x40880000
+
+#define MAP_DRAM_TO_IRAM(addr) (addr)
+#define MAP_IRAM_TO_DRAM(addr) (addr)
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x40800000

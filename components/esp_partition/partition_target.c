@@ -45,7 +45,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition,
 
     /* Encrypted partitions need to be read via a cache mapping */
     const void *buf;
-    spi_flash_mmap_handle_t handle;
+    esp_partition_mmap_handle_t handle;
 
     esp_err_t err = esp_partition_mmap(partition, src_offset, size,
                                        SPI_FLASH_MMAP_DATA, &buf, &handle);

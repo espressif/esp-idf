@@ -10,6 +10,12 @@
 extern "C" {
 #endif
 
+#include <sdkconfig.h>
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+#include <esp_https_server.h>
+#else
+#include <esp_http_server.h>
+#endif
 #include <protocomm.h>
 
 /**

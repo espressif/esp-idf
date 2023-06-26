@@ -29,8 +29,6 @@
 #include "esp32s3/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/libc_stubs.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
@@ -113,7 +111,7 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 \
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 \
     || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
@@ -137,7 +135,7 @@ void esp_newlib_init(void)
     syscall_table_ptr_pro = syscall_table_ptr_app = &s_stub_table;
 #elif CONFIG_IDF_TARGET_ESP32S2
     syscall_table_ptr_pro = &s_stub_table;
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 \
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 \
     || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     syscall_table_ptr = &s_stub_table;
 #endif

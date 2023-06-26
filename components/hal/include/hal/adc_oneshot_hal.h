@@ -20,6 +20,8 @@ typedef struct sens_dev_t *adc_oneshot_soc_handle_t;
 typedef struct adc_oneshot_hal_cfg_t {
     adc_unit_t unit;                 ///< ADC unit
     adc_hal_work_mode_t work_mode;   ///< ADC work mode
+    adc_oneshot_clk_src_t clk_src;   ///< Clock source
+    uint32_t clk_src_freq_hz;        ///< Clock source frequency in hz
 } adc_oneshot_hal_cfg_t;
 
 /**
@@ -27,20 +29,20 @@ typedef struct adc_oneshot_hal_cfg_t {
  */
 typedef struct adc_oneshot_hal_chan_cfg_t {
     adc_atten_t atten;               ///< ADC attenuation
-    adc_bitwidth_t bitwidth;        ///< ADC conversion result bits
+    adc_bitwidth_t bitwidth;         ///< ADC conversion result bits
 } adc_oneshot_hal_chan_cfg_t;
 
 /**
  * Context of the ADC unit, should be maintained by both the driver and the HAL.
  */
 typedef struct adc_oneshot_hal_ctx_t {
-    /* This should be configured by driver in initialisation, dou't touch again */
+    /* These should be configured by driver, dou't modify these directly in hal*/
     adc_oneshot_soc_handle_t dev;    ///< ADC SoC layer handle
-
-    /* These should be malloced by the driver first */
     adc_unit_t unit;                 ///< ADC unit
     adc_hal_work_mode_t work_mode;   ///< ADC work mode
     adc_oneshot_hal_chan_cfg_t chan_configs[SOC_ADC_MAX_CHANNEL_NUM];    ///< ADC configurations per channel
+    adc_oneshot_clk_src_t clk_src;   ///< Clock source
+    uint32_t clk_src_freq_hz;        ///< Clock source frequency in hz
 } adc_oneshot_hal_ctx_t;
 
 /**

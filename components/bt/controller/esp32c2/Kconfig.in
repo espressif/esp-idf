@@ -207,13 +207,13 @@ menu "Memory Settings"
 
     config BT_LE_ACL_BUF_COUNT
         int "ACL Buffer count"
-        default 24
+        default 10
         help
             The number of ACL data buffers.
 
     config BT_LE_ACL_BUF_SIZE
         int "ACL Buffer size"
-        default 255
+        default 517
         help
             This is the maximum size of the data portion of HCI ACL data packets.
             It does not include the HCI data header (of 4 bytes)
@@ -387,3 +387,10 @@ choice BT_LE_WAKEUP_SOURCE
         help
             Use BLE rtc timer to wakeup CPU
 endchoice
+
+config BT_LE_USE_ESP_TIMER
+    bool "Use Esp Timer for callout"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer

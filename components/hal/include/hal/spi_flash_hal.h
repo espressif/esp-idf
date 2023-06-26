@@ -47,8 +47,9 @@ typedef struct {
     spi_flash_sus_cmd_conf sus_cfg;        ///< To store suspend command/mask information.
     uint32_t slicer_flags;      /// Slicer flags for configuring how to slice data correctly while reading or writing.
 #define SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR           BIT(0)  ///< Slice data according to DTR mode, the address and length must be even (A0=0).
+    int freq_mhz;               /// Flash clock frequency.
 } spi_flash_hal_context_t;
-ESP_STATIC_ASSERT(sizeof(spi_flash_hal_context_t) == 40, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
+ESP_STATIC_ASSERT(sizeof(spi_flash_hal_context_t) == 44, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
 
 /// This struct provide MSPI Flash necessary timing related config, should be consistent with that in union in `spi_flash_hal_config_t`.
 typedef struct {

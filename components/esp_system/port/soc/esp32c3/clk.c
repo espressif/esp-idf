@@ -23,7 +23,6 @@
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
-#include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -295,4 +294,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
+
+    /* Enable TimerGroup 0 clock to ensure its reference counter will never
+     * be decremented to 0 during normal operation and preventing it from
+     * being disabled.
+     * If the TimerGroup 0 clock is disabled and then reenabled, the watchdog
+     * registers (Flashboot protection included) will be reenabled, and some
+     * seconds later, will trigger an unintended reset.
+     */
+    periph_module_enable(PERIPH_TIMG0_MODULE);
 }

@@ -13,6 +13,10 @@
 #include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 #include "esp_pm.h"
+#if SOC_GDMA_SUPPORTED
+#include "esp_private/gdma.h"
+#endif
+
 
 #ifdef __cplusplus
 extern "C"
@@ -129,6 +133,22 @@ esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma
  *        - ESP_OK: On success
  */
 esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id);
+
+#if SOC_GDMA_SUPPORTED
+/**
+ * @brief Get SPI GDMA Handle for GMDA Supported Chip
+ *
+ * @param host_id           SPI host ID
+ * @param gdma_handle       GDMA Handle to Return
+ * @param gdma_direction    GDMA Channel Direction in Enum
+ *                          - GDMA_CHANNEL_DIRECTION_TX
+ *                          - GDMA_CHANNEL_DIRECTION_RX
+ *
+ * @return
+ *        - ESP_OK: On success
+ */
+esp_err_t spicommon_gdma_get_handle(spi_host_device_t host_id, gdma_channel_handle_t *gdma_handle, gdma_channel_direction_t gdma_direction);
+#endif
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins

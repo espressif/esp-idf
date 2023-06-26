@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
@@ -8,51 +8,123 @@ import socket
 import struct
 import subprocess
 import time
-from typing import Tuple, Union
+from typing import Tuple
 
 import netifaces
 import pexpect
 from pytest_embedded_idf.dut import IdfDut
 
 
-def reset_thread(dut:IdfDut) -> None:
-    dut.write(' ')
-    dut.write('state')
+class thread_parameter:
+
+    def __init__(self, deviceRole:str='', dataset:str='', channel:str='', exaddr:str='', bbr:bool=False):
+        self.deviceRole = deviceRole
+        self.dataset = dataset
+        self.channel = channel
+        self.exaddr = exaddr
+        self.bbr = bbr
+
+
+class wifi_parameter:
+
+    def __init__(self, ssid:str='', psk:str='', retry_times:int=10):
+        self.ssid = ssid
+        self.psk = psk
+        self.retry_times = retry_times
+
+
+def joinThreadNetwork(dut:IdfDut, thread:thread_parameter) -> None:
+    if thread.dataset != '':
+        command = 'dataset set active ' + thread.dataset
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    else:
+        execute_command(dut, 'dataset init new')
+        dut.expect('Done', timeout=5)
+        execute_command(dut, 'dataset commit active')
+        dut.expect('Done', timeout=5)
+    if thread.channel != '':
+        command = 'channel ' + thread.channel
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    if thread.exaddr != '':
+        command = 'extaddr ' + thread.exaddr
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    if thread.bbr:
+        execute_command(dut, 'bbr enable')
+        dut.expect('Done', timeout=5)
+    if thread.deviceRole == 'router':
+        execute_command(dut, 'routerselectionjitter 1')
+        dut.expect('Done', timeout=5)
+    execute_command(dut, 'ifconfig up')
+    dut.expect('Done', timeout=5)
+    execute_command(dut, 'thread start')
+    assert wait_for_join(dut, thread.deviceRole)
+
+
+def wait_for_join(dut:IdfDut, role:str) -> bool:
+    for _ in range(1, 30):
+        if getDeviceRole(dut) == role:
+            wait(dut, 5)
+            return True
+        wait(dut, 1)
+    return False
+
+
+def joinWiFiNetwork(dut:IdfDut, wifi:wifi_parameter) -> Tuple[str, int]:
     clean_buffer(dut)
-    wait(dut, 1)
-    dut.write('factoryreset')
+    ip_address = ''
+    information = ''
+    for order in range(1, wifi.retry_times):
+        command = 'wifi connect -s ' + str(wifi.ssid) + ' -p ' + str(wifi.psk)
+        tmp = get_ouput_string(dut, command, 10)
+        if 'sta ip' in str(tmp):
+            ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
+        if 'wifi sta' in str(tmp):
+            information = re.findall(r'wifi sta (\w+ \w+ \w+)\W', str(tmp))[0]
+        if information == 'is connected successfully':
+            break
+    assert information == 'is connected successfully'
+    return ip_address, order
+
+
+def getDeviceRole(dut:IdfDut) -> str:
+    clean_buffer(dut)
+    execute_command(dut, 'state')
+    role = dut.expect(r'\W+(\w+)\W+Done', timeout=5)[1].decode()
+    print(role)
+    return str(role)
+
+
+def changeDeviceRole(dut:IdfDut, role:str) -> None:
+    command = 'state ' + role
+    execute_command(dut, command)
+
+
+def getDataset(dut:IdfDut) -> str:
+    clean_buffer(dut)
+    execute_command(dut, 'dataset active -x')
+    dut_data = dut.expect(r'\n(\w{212})\r', timeout=5)[1].decode()
+    return str(dut_data)
+
+
+def reset_thread(dut:IdfDut) -> None:
+    dut.expect('>', timeout=10)
+    wait(dut, 3)
+    clean_buffer(dut)
+    execute_command(dut, 'factoryreset')
     dut.expect('OpenThread attached to netif', timeout=20)
-    dut.write(' ')
-    dut.write('state')
-
-
-# config thread
-def config_thread(dut:IdfDut, model:str, dataset:str='0') -> Union[str, None]:
-    if model == 'random':
-        dut.write('dataset init new')
-        dut.expect('Done', timeout=5)
-        dut.write('dataset commit active')
-        dut.expect('Done', timeout=5)
-        dut.write('ifconfig up')
-        dut.expect('Done', timeout=5)
-        dut.write('dataset active -x')          # get dataset
-        dut_data = dut.expect(r'\n(\w{212})\r', timeout=5)[1].decode()
-        return str(dut_data)
-    if model == 'appointed':
-        tmp = 'dataset set active ' + str(dataset)
-        dut.write(tmp)
-        dut.expect('Done', timeout=5)
-        dut.write('ifconfig up')
-        dut.expect('Done', timeout=5)
-        return None
-    return None
+    dut.expect('>', timeout=10)
+    wait(dut, 3)
+    clean_buffer(dut)
 
 
 # get the mleid address of the thread
 def get_mleid_addr(dut:IdfDut) -> str:
     dut_adress = ''
     clean_buffer(dut)
-    dut.write('ipaddr mleid')
+    execute_command(dut, 'ipaddr mleid')
     dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
     return dut_adress
 
@@ -61,7 +133,7 @@ def get_mleid_addr(dut:IdfDut) -> str:
 def get_rloc_addr(dut:IdfDut) -> str:
     dut_adress = ''
     clean_buffer(dut)
-    dut.write('ipaddr rloc')
+    execute_command(dut, 'ipaddr rloc')
     dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
     return dut_adress
 
@@ -70,7 +142,7 @@ def get_rloc_addr(dut:IdfDut) -> str:
 def get_linklocal_addr(dut:IdfDut) -> str:
     dut_adress = ''
     clean_buffer(dut)
-    dut.write('ipaddr linklocal')
+    execute_command(dut, 'ipaddr linklocal')
     dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
     return dut_adress
 
@@ -79,103 +151,22 @@ def get_linklocal_addr(dut:IdfDut) -> str:
 def get_global_unicast_addr(dut:IdfDut, br:IdfDut) -> str:
     dut_adress = ''
     clean_buffer(br)
-    br.write('br omrprefix')
-    omrprefix = br.expect(r'\n((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    omrprefix = get_omrprefix(br)
     clean_buffer(dut)
-    dut.write('ipaddr')
+    execute_command(dut, 'ipaddr')
     dut_adress = dut.expect(r'(%s(?:\w+:){3}\w+)\r' % str(omrprefix), timeout=5)[1].decode()
     return dut_adress
-
-
-# start thread
-def start_thread(dut:IdfDut) -> str:
-    role = ''
-    dut.write('thread start')
-    tmp = dut.expect(r'Role detached -> (\w+)\W', timeout=20)[0]
-    role = re.findall(r'Role detached -> (\w+)\W', str(tmp))[0]
-    return role
-
-
-def wait_key_str(leader:IdfDut, child:IdfDut) -> None:
-    wait(leader, 1)
-    leader.expect('OpenThread attached to netif', timeout=20)
-    leader.write(' ')
-    leader.write('state')
-    child.expect('OpenThread attached to netif', timeout=20)
-    child.write(' ')
-    child.write('state')
-
-
-def config_network(leader:IdfDut, child:IdfDut, leader_name:str, thread_dataset_model:str,
-                   thread_dataset:str, wifi:IdfDut, wifi_ssid:str, wifi_psk:str) -> str:
-    wait_key_str(leader, child)
-    return form_network_using_manual_configuration(leader, child, leader_name, thread_dataset_model,
-                                                   thread_dataset, wifi, wifi_ssid, wifi_psk)
-
-
-# config br and cli manually
-def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_name:str, thread_dataset_model:str,
-                                            thread_dataset:str, wifi:IdfDut, wifi_ssid:str, wifi_psk:str) -> str:
-    reset_thread(leader)
-    clean_buffer(leader)
-    reset_thread(child)
-    clean_buffer(child)
-    leader.write('channel 12')
-    leader.expect('Done', timeout=5)
-    child.write('channel 12')
-    child.expect('Done', timeout=5)
-    res = '0000'
-    if wifi_psk != '0000':
-        res = connect_wifi(wifi, wifi_ssid, wifi_psk, 10)[0]
-    leader_data = ''
-    if thread_dataset_model == 'random':
-        leader_data = str(config_thread(leader, 'random'))
-    else:
-        config_thread(leader, 'appointed', thread_dataset)
-    if leader_name == 'br':
-        leader.write('bbr enable')
-        leader.expect('Done', timeout=5)
-    role = start_thread(leader)
-    assert role == 'leader'
-    if thread_dataset_model == 'random':
-        config_thread(child, 'appointed', leader_data)
-    else:
-        config_thread(child, 'appointed', thread_dataset)
-    if leader_name != 'br':
-        child.write('bbr enable')
-        child.expect('Done', timeout=5)
-    role = start_thread(child)
-    assert role == 'child'
-    wait(leader, 10)
-    return res
 
 
 # ping of thread
 def ot_ping(dut:IdfDut, target:str, times:int) -> Tuple[int, int]:
     command = 'ping ' + str(target) + ' 0 ' + str(times)
-    dut.write(command)
+    execute_command(dut, command)
     transmitted = dut.expect(r'(\d+) packets transmitted', timeout=30)[1].decode()
     tx_count = int(transmitted)
     received = dut.expect(r'(\d+) packets received', timeout=30)[1].decode()
     rx_count = int(received)
     return tx_count, rx_count
-
-
-# connect Wi-Fi
-def connect_wifi(dut:IdfDut, ssid:str, psk:str, nums:int) -> Tuple[str, int]:
-    clean_buffer(dut)
-    ip_address = ''
-    information = ''
-    for order in range(1, nums):
-        dut.write('wifi connect -s ' + str(ssid) + ' -p ' + str(psk))
-        tmp = dut.expect(pexpect.TIMEOUT, timeout=10)
-        if 'sta ip' in str(tmp):
-            ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
-        information = dut.expect(r'wifi sta (\w+ \w+ \w+)\W', timeout=20)[1].decode()
-        if information == 'is connected successfully':
-            break
-    assert information == 'is connected successfully'
-    return ip_address, order
 
 
 def reset_host_interface() -> None:
@@ -243,8 +234,7 @@ def clean_buffer(dut:IdfDut) -> None:
 def check_if_host_receive_ra(br:IdfDut) -> bool:
     interface_name = get_host_interface_name()
     clean_buffer(br)
-    br.write('br omrprefix')
-    omrprefix = br.expect(r'\n((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    omrprefix = get_omrprefix(br)
     command = 'ip -6 route | grep ' + str(interface_name)
     out_str = subprocess.getoutput(command)
     print('br omrprefix: ', str(omrprefix))
@@ -266,9 +256,7 @@ thread_ipv6_group = 'ff04:0:0:0:0:0:0:125'
 
 
 def check_ipmaddr(dut:IdfDut) -> bool:
-    clean_buffer(dut)
-    dut.write('ipmaddr')
-    info = dut.expect(pexpect.TIMEOUT, timeout=2)
+    info = get_ouput_string(dut, 'ipmaddr', 2)
     if thread_ipv6_group in str(info):
         return True
     return False
@@ -276,24 +264,16 @@ def check_ipmaddr(dut:IdfDut) -> bool:
 
 def thread_is_joined_group(dut:IdfDut) -> bool:
     command = 'mcast join ' + thread_ipv6_group
-    dut.write(command)
+    execute_command(dut, command)
     dut.expect('Done', timeout=5)
     order = 0
     while order < 3:
         if check_ipmaddr(dut):
             return True
-        dut.write(command)
+        execute_command(dut, command)
         wait(dut, 2)
         order = order + 1
     return False
-
-
-def host_joined_group(group:str='') -> bool:
-    interface_name = get_host_interface_name()
-    command = 'netstat -g | grep ' + str(interface_name)
-    out_str = subprocess.getoutput(command)
-    print('groups:\n', str(out_str))
-    return group in str(out_str)
 
 
 class udp_parameter:
@@ -460,12 +440,11 @@ def create_host_tcp_server(mytcp:tcp_parameter) -> None:
 
 def get_ipv6_from_ipv4(ipv4_address:str, br:IdfDut) -> str:
     clean_buffer(br)
-    br.write('br nat64prefix')
-    omrprefix = br.expect(r'\n((?:\w+:){6}):/\d+', timeout=5)[1].decode()
+    nat64prefix = get_nat64prefix(br)
     ipv4_find = re.findall(r'\d+', ipv4_address)
     ipv6_16_1 = decimal_to_hex(ipv4_find[0]) + decimal_to_hex(ipv4_find[1])
     ipv6_16_2 = decimal_to_hex(ipv4_find[2]) + decimal_to_hex(ipv4_find[3])
-    ipv6_get_from_ipv4 = omrprefix + ':' + ipv6_16_1 + ':' + ipv6_16_2
+    ipv6_get_from_ipv4 = nat64prefix + ':' + ipv6_16_1 + ':' + ipv6_16_2
     return str(ipv6_get_from_ipv4)
 
 
@@ -473,3 +452,37 @@ def decimal_to_hex(decimal_str:str) -> str:
     decimal_int = int(decimal_str)
     hex_str = hex(decimal_int)[2:]
     return hex_str
+
+
+def get_omrprefix(br:IdfDut) -> str:
+    clean_buffer(br)
+    execute_command(br, 'br omrprefix')
+    omrprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    return str(omrprefix)
+
+
+def get_onlinkprefix(br:IdfDut) -> str:
+    clean_buffer(br)
+    execute_command(br, 'br onlinkprefix')
+    onlinkprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    return str(onlinkprefix)
+
+
+def get_nat64prefix(br:IdfDut) -> str:
+    clean_buffer(br)
+    execute_command(br, 'br nat64prefix')
+    nat64prefix = br.expect(r'Local: ((?:\w+:){6}):/\d+', timeout=5)[1].decode()
+    return str(nat64prefix)
+
+
+def execute_command(dut:IdfDut, command:str) -> None:
+    dut.write(command)
+    dut.expect(command, timeout=3)
+
+
+def get_ouput_string(dut:IdfDut, command:str, wait_time:int) -> str:
+    clean_buffer(dut)
+    execute_command(dut, command)
+    tmp = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
+    clean_buffer(dut)
+    return str(tmp)

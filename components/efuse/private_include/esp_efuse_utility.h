@@ -147,6 +147,15 @@ void esp_efuse_utility_update_virt_blocks(void);
 void esp_efuse_utility_debug_dump_blocks(void);
 
 /**
+ * @brief   Prints efuse values for a single block.
+ * @param[in] num_block Index of efuse block.
+ * @param[in] from_read Take data from:
+ *                      true - read area (already burned efuses),
+ *                      false - write area (not yet burned efuses, prepared for burn).
+ */
+void esp_efuse_utility_debug_dump_single_block(int num_block, bool from_read);
+
+/**
  * @brief   Erase the virt_blocks array.
  */
 void esp_efuse_utility_erase_virt_blocks(void);

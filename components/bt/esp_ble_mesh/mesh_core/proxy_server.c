@@ -22,9 +22,11 @@
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_SERVER
 
+#if !CONFIG_BLE_MESH_BQB_TEST
 /* Not support enabling Proxy Client and Proxy Server simultaneously */
 _Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)),
                "Not support Proxy Server and Proxy Client simultaneously");
+#endif
 
 #define PDU_TYPE(data)     (data[0] & BIT_MASK(6))
 #define PDU_SAR(data)      (data[0] >> 6)

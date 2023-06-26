@@ -1,4 +1,0 @@
-# This config is split between targets since different component needs to be included (esp32, esp32s2)
-# IRAM is full... split some component to default_32_2
-CONFIG_IDF_TARGET="esp32"
-TEST_COMPONENTS=esp_system driver

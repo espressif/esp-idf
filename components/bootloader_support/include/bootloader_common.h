@@ -173,7 +173,7 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
  */
 void bootloader_common_vddsdio_configure(void);
 
-#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+#if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 /**
  * @brief Returns partition from rtc_retain_mem
  *
@@ -224,6 +224,21 @@ void bootloader_common_reset_rtc_retain_mem(void);
 uint16_t bootloader_common_get_rtc_retain_mem_reboot_counter(void);
 
 /**
+ * @brief Returns True if Factory reset has happened
+ *
+ * Reset the status after reading it.
+ *
+ * @return True: Factory reset has happened
+ *         False: No Factory reset
+ */
+bool bootloader_common_get_rtc_retain_mem_factory_reset_state(void);
+
+/**
+ * @brief Sets Factory reset status
+ */
+void bootloader_common_set_rtc_retain_mem_factory_reset_state(void);
+
+/**
  * @brief Returns rtc_retain_mem
  *
  * Note: This function operates the RTC FAST memory which available only for PRO_CPU.
@@ -233,7 +248,7 @@ uint16_t bootloader_common_get_rtc_retain_mem_reboot_counter(void);
  */
 rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void);
 
-#endif
+#endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 
 #ifdef __cplusplus
 }

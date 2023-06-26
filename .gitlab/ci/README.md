@@ -21,11 +21,7 @@
       - [Shell Script Related](#shell-script-related)
   - [Manifest File to Control the Build/Test apps](#manifest-file-to-control-the-buildtest-apps)
     - [Grammar](#grammar)
-      - [Operands](#operands)
-      - [Operators](#operators)
-      - [Limitation:](#limitation)
-    - [How does it work?](#how-does-it-work)
-    - [Example](#example)
+    - [Special Rules](#special-rules)
 
 ## General Workflow
 
@@ -52,7 +48,7 @@
 - `custom_test[_esp32/esp32s2/...]`
 - `docker`
 - `docs`
-- `docs_fast`, triggers a fast docs build, not a full build which is the CI default. This skips PDF build as well as doxygen APIs, reducing the build time by 90+%.
+- `docs_full`, triggers a full docs build, regardless of files changed
 - `example_test[_esp32/esp32s2/...]`
 - `fuzzer_test`
 - `host_test`
@@ -238,86 +234,14 @@ To run these commands in shell script locally, place `source tools/ci/utils.sh` 
 
 ### Grammar
 
-#### Operands
+We're using the latest version of [idf-build-apps][idf-build-apps]. Please refer to their [documentation][manifest-doc]
 
-- Variables start with `SOC_`. The value would be parsed from components/soc/[TARGET]/include/soc/*_caps.h
-- `IDF_TARGET`
-- `INCLUDE_DEFAULT` (The default value of officially supported targets is 1, otherwise is 0)
-- String, must be double-quoted. e.g. `"esp32"`, `"12345"`
-- Integer, support decimal and hex. e.g. `1`, `0xAB`
-- List with String and Integer inside, the type could be mixed. e.g. `["esp32", 1]`
+[idf-build-apps]: https://github.com/espressif/idf-build-apps
+[manifest-doc]: https://docs.espressif.com/projects/idf-build-apps/en/latest/manifest.html
 
-#### Operators
+### Special Rules
 
-- `==`, `!=`, `>`, `>=`, `<`, `<=`
-- `and`, `or`
-- `in`, `not in` with list
-- parentheses
+In ESP-IDF CI, there's a few more special rules are additionally supported to disable the check app dependencies feature:
 
-#### Limitation:
-
-- all operators are binary operator. For more than two operands, you may use nested parentheses trick. For example,
-  - `A == 1 or (B == 2 and C in [1,2,3])`
-  - `(A == 1 and B == 2) or (C not in ["3", "4", 5])`
-
-### How does it work?
-
-By default, we enable build and test jobs for supported targets. In other words, if an app supports all supported targets, it does not need to be added in a manifest file. The manifest files are files that set the violation rules for apps.
-
-three rules (disable rules are calculated after the `enable` rule):
-- enable: run CI build/test jobs for targets that match any of the specified conditions only
-- disable: will not run CI build/test jobs for targets that match any of the specified conditions
-- disable_test: will not run CI test jobs for targets that match any of the specified conditions
-
-Each key is a test folder. Will apply to all folders inside.
-
-If one sub folder is in a special case, you can overwrite the rules for this folder by adding another entry for this folder itself. Each folder's rules are standalone, and will not inherit its parent's rules. (YAML inheritance is too complicated for reading)
-
-For example in the following codeblock, only `disable` rule exists in `examples/foo/bar`. It's unaware of its parent's `enable` rule. 
-
-```yaml
-examples/foo:
-  enable:
-    - if: IDF_TARGET == "esp32"
-
-examples/foo/bar:
-  disable:
-    - if: IDF_TARGET == "esp32s2"
-```
-
-### Example
-
-```yaml
-examples/foo:
-  enable:
-    - if IDF_TARGET in ["esp32", 1, 2, 3]
-    - if IDF_TARGET not in ["4", "5", 6]
-  # should be run under all targets!
-
-examples/bluetooth:
-  disable:  # disable both build and tests jobs
-    - if: SOC_BT_SUPPORTED != 1
-    # reason is optional if there's no `temporary: true`
-  disable_test:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: lack of ci runners  # required when `temporary: true`
-
-examples/bluetooth/test_foo:
-  # each folder's settings are standalone
-  disable:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: no idea
-  # unlike examples/bluetooth, the apps under this folder would not be build nor test for "no idea" under target esp32s2
-
-examples/get-started/hello_world:
-  enable:
-    - if: IDF_TARGET == "linux"
-      reason: this one only supports linux!
-
-examples/get-started/blink:
-  enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
-      reason: This one supports all supported targets and linux
-```
+- Add MR labels `BUILD_AND_TEST_ALL_APPS`
+- Run in protected branches

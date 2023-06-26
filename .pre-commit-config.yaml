@@ -11,14 +11,12 @@ repos:
         # 1 - some file extensions
         # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
         # 3 - any directory named 'testdata'
-        # 4 - IDF monitor test data
-        # 5 - protobuf auto-generated files
+        # 4 - protobuf auto-generated files
         exclude: &whitespace_excludes |
           (?x)^(
             .+\.(md|rst|map|bin)|
             .+test.*\/.*expected.*|
             .+\/testdata\/.+|
-            .+test_idf_monitor\/tests\/.+|
             .*_pb2.py|
             .*.pb-c.h|
             .*.pb-c.c|
@@ -36,7 +34,7 @@ repos:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
   - repo: https://github.com/pycqa/isort
-    rev: 5.9.3
+    rev: 5.11.5  # python 3.7 compatible
     hooks:
       - id: isort
         name: isort (python)
@@ -131,9 +129,9 @@ repos:
         pass_filenames: false
       - id: check-generated-soc-caps-kconfig
         name: Check soc caps kconfig files are generated (based on components/soc/IDF_TARGET/include/soc/soc_caps.h)
-        entry: tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/' 'components/esp_rom/*/'
+        entry: tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/' 'components/esp_rom/*/' 'components/spi_flash/*/'
         language: python
-        files: 'components/soc/.+/include/soc/.+_caps\.h|components/esp_rom/.+/.+_caps\.h|kconfig\.soc_caps.in'
+        files: 'components/soc/.+/include/soc/.+_caps\.h|components/esp_rom/.+/.+_caps\.h|kconfig\.soc_caps.in|components/spi_flash/.+/.+_caps\.h'
         pass_filenames: false
         additional_dependencies:
           - pyparsing
@@ -141,10 +139,11 @@ repos:
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
         language: python
-        files: 'tools/test_apps/.+|examples/.+|components/.+'
+        files: 'tools/test_apps/.+|examples/.+|components/.+|tools/idf_py_actions/constants.py|tools/ci/check_build_test_rules.py'
+        require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf_build_apps
+          - idf_build_apps~=1.0
       - id: sort-build-test-rules-ymls
         name: sort .build-test-rules.yml files
         entry: tools/ci/check_build_test_rules.py sort-yaml
@@ -153,13 +152,19 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
           - ruamel.yaml
+      - id: submodule-sbom-hash-check
+        name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
+        entry: python tools/test_sbom/test_submodules.py
+        language: python
+        always_run: true
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
         files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
   - repo: https://github.com/espressif/check-copyright/
-    rev: v1.0.1
+    rev: v1.0.2
     hooks:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']

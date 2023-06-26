@@ -7,9 +7,11 @@
  */
 
 #include <string.h>
+#include <errno.h>
 
 #include "mesh_types.h"
 #include "mesh_util.h"
+#include "mesh_trace.h"
 
 const char *bt_hex(const void *buf, size_t len)
 {
@@ -42,3 +44,55 @@ void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len)
         *dst++ = *--src;
     }
 }
+
+#ifdef CONFIG_BLE_MESH_BQB_TEST_LOG
+
+enum BLE_MESH_BQB_TEST_FLAG_OP {
+    BLE_MESH_BQB_TEST_FLAG_OP_GET = 0,
+    BLE_MESH_BQB_TEST_FLAG_OP_SET,
+};
+
+static uint32_t bt_mesh_bqb_test_flag(uint8_t op, uint32_t value)
+{
+    static uint32_t bqb_log_flag = 0;
+
+    switch (op) {
+    case BLE_MESH_BQB_TEST_FLAG_OP_GET:
+        break;
+    case BLE_MESH_BQB_TEST_FLAG_OP_SET:
+        bqb_log_flag = value;
+        break;
+    default:
+        BT_ERR("Unknown BQB test flag opcode 0x%02x", op);
+        break;
+    }
+
+    return bqb_log_flag;
+}
+
+uint32_t bt_mesh_bqb_test_flag_get(void)
+{
+    return bt_mesh_bqb_test_flag(BLE_MESH_BQB_TEST_FLAG_OP_GET, 0);
+}
+
+int bt_mesh_bqb_test_flag_set(uint32_t flag_mask)
+{
+    if (flag_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
+        BT_ERR("Invalid BQB test flag mask 0x%08x", flag_mask);
+        return -EINVAL;
+    }
+
+    return (bt_mesh_bqb_test_flag(BLE_MESH_BQB_TEST_FLAG_OP_SET, flag_mask) == flag_mask) ? 0 : -EINVAL;
+}
+
+bool bt_mesh_bqb_test_flag_check(uint32_t flag_mask)
+{
+    if (flag_mask > BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE) {
+        BT_ERR("Invalid BQB test flag mask 0x%08x", flag_mask);
+        return false;
+    }
+
+    return ((bt_mesh_bqb_test_flag_get() & flag_mask) == flag_mask);
+}
+
+#endif /* CONFIG_BLE_MESH_BQB_TEST_LOG */

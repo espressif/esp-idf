@@ -2,9 +2,7 @@
 
 examples/wifi:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
+    - if: SOC_WIFI_SUPPORTED != 1
 
 examples/wifi/ftm:
   enable:
@@ -14,9 +12,7 @@ examples/wifi/ftm:
 
 examples/wifi/getting_started:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_WIFI_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in  ["esp32", "esp32c3", "esp32c2", "esp32s3"]
       temporary: true
@@ -24,16 +20,17 @@ examples/wifi/getting_started:
 
 examples/wifi/iperf:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_WIFI_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/wifi/itwt:
-  enable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: the other targets are not supported yet
+  disable:
+    - if: SOC_WIFI_HE_SUPPORT != 1
+
+examples/wifi/wifi_aware:
+  disable:
+    - if: SOC_WIFI_NAN_SUPPORT != 1
+      reason: targets esp32c3, esp32s3, esp32c2 and esp32c6 are not supported

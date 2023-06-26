@@ -34,7 +34,6 @@ void esp_netif_action_stop(void *esp_netif, esp_event_base_t base, int32_t event
 
 void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
-    esp_netif_dhcp_status_t status;
 
     ESP_LOGD(TAG, "esp_netif action connected with netif%p from event_id=%d", esp_netif, event_id);
     esp_netif_up(esp_netif);
@@ -43,7 +42,8 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
         // No more actions for interfaces without DHCP client flag
         return;
     }
-
+#if CONFIG_LWIP_IPV4
+    esp_netif_dhcp_status_t status;
     ESP_NETIF_CALL_CHECK("connected action: dhcpc failed", esp_netif_dhcpc_get_status(esp_netif, &status), ESP_OK);
     if (status == ESP_NETIF_DHCP_INIT) {
         esp_netif_dhcpc_start(esp_netif);
@@ -76,6 +76,7 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
             ESP_LOGE(TAG, "invalid static ip");
         }
     }
+#endif
 }
 
 void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)

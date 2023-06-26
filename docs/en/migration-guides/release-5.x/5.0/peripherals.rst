@@ -70,6 +70,10 @@ API Changes
 
 - API ``hall_sensor_read`` on ESP32 has been removed. Hall sensor is no longer supported on ESP32.
 - API ``adc_set_i2s_data_source`` and ``adc_i2s_mode_init`` have been deprecated. Related enum ``adc_i2s_source_t`` has been deprecated. Please migrate to use ``esp_adc/adc_continuous.h``.
+- API ``adc_digi_filter_reset``, ``adc_digi_filter_set_config``, ``adc_digi_filter_get_config`` and ``adc_digi_filter_enable`` have been removed. These APIs behaviours are not guaranteed. Enum ``adc_digi_filter_idx_t``, ``adc_digi_filter_mode_t`` and structure ``adc_digi_iir_filter_t`` have been removed as well.
+- API ``esp_adc_cal_characterize`` has been deprecated, please migrate to ``adc_cali_create_scheme_curve_fitting`` or ``adc_cali_create_scheme_line_fitting`` instead.
+- API ``esp_adc_cal_raw_to_voltage`` has been deprecated, please migrate to ``adc_cali_raw_to_voltage`` instead.
+- API ``esp_adc_cal_get_voltage`` has been deprecated, please migrate to ``adc_oneshot_get_calibrated_result`` instead.
 
 GPIO
 ----
@@ -455,7 +459,7 @@ LCD
     I2S driver
     ----------
 
-    The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h`, or :component_file:`driver/include/driver/i2s_tdm.h`.
+    The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/i2s/include/driver/i2s_std.h`, :component_file:`driver/i2s/include/driver/i2s_pdm.h`, or :component_file:`driver/i2s/include/driver/i2s_tdm.h`.
 
     Meanwhile, the old driver's APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`.
 
@@ -485,9 +489,9 @@ LCD
 
     I2S communication modes are categorized into the following three modes. Note that:
 
-    - **Standard mode**: Standard mode always has two slots, it can support Philips, MSB, and PCM (short frame sync) formats. Please refer to :component_file:`driver/include/driver/i2s_std.h` for more details.
-    - **PDM mode**: PDM mode only supports two slots with 16-bit data width, but the configurations of PDM TX and PDM RX are slightly different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency depends on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency depends on the down-sampling configuration. Please refer to :component_file:`driver/include/driver/i2s_pdm.h` for details.
-    - **TDM mode**: TDM mode can support up to 16 slots. It can work in Philips, MSB, PCM (short frame sync), and PCM (long frame sync) formats. Please refer to :component_file:`driver/include/driver/i2s_tdm.h` for details.
+    - **Standard mode**: Standard mode always has two slots, it can support Philips, MSB, and PCM (short frame sync) formats. Please refer to :component_file:`driver/i2s/include/driver/i2s_std.h` for more details.
+    - **PDM mode**: PDM mode only supports two slots with 16-bit data width, but the configurations of PDM TX and PDM RX are slightly different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency depends on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency depends on the down-sampling configuration. Please refer to :component_file:`driver/i2s/include/driver/i2s_pdm.h` for details.
+    - **TDM mode**: TDM mode can support up to 16 slots. It can work in Philips, MSB, PCM (short frame sync), and PCM (long frame sync) formats. Please refer to :component_file:`driver/i2s/include/driver/i2s_tdm.h` for details.
 
     When allocating a new channel in a specific mode, users should initialize that channel by its corresponding function. It is strongly recommended to use the helper macros to generate the default configurations in case the default values are changed in the future.
 

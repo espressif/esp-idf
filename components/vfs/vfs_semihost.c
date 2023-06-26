@@ -326,7 +326,7 @@ static DIR* vfs_semihost_opendir(void* ctx, const char *restrict path)
         return NULL;
     }
 
-    strncpy(semihost_dirp->path, path, MIN(strlen(path), sizeof(semihost_dirp->path) - 1));
+    strncpy(semihost_dirp->path, path, sizeof(semihost_dirp->path) - 1);
     ESP_LOGV(TAG, "%s: '%s'", __func__, path);
     int ret_fd = semihosting_opendir(path, (int)&semihost_dirp->id);
     if (ret_fd < 0) {

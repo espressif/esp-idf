@@ -25,7 +25,7 @@ Power management can be enabled at compile time, using the option :ref:`CONFIG_P
 
 Enabling power management features comes at the cost of increased interrupt latency. Extra latency depends on a number of factors, such as the CPU frequency, single/dual core mode, whether or not frequency switch needs to be done. Minimum extra latency is 0.2 us (when the CPU frequency is 240 MHz and frequency scaling is not enabled). Maximum extra latency is 40 us (when frequency scaling is enabled, and a switch from 40 MHz to 80 MHz is performed on interrupt entry).
 
-Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an application by calling the function :cpp:func:`esp_pm_configure`. Its argument is a structure defining the frequency scaling settings, :cpp:class:`esp_pm_config_{IDF_TARGET_PATH_NAME}_t`. In this structure, three fields need to be initialized:
+Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an application by calling the function :cpp:func:`esp_pm_configure`. Its argument is a structure defining the frequency scaling settings, :cpp:class:`esp_pm_config_t`. In this structure, three fields need to be initialized:
 
 - ``max_freq_mhz``: Maximum CPU frequency in MHz, i.e., the frequency used when the ``ESP_PM_CPU_FREQ_MAX`` lock is acquired. This field will usually be set to the default CPU frequency.
 - ``min_freq_mhz``: Minimum CPU frequency in MHz, i.e., the frequency used when only the ``ESP_PM_APB_FREQ_MAX`` lock is acquired. This field can be set to the XTAL frequency value, or the XTAL frequency divided by an integer. Note that 10 MHz is the lowest frequency at which the default REF_TICK clock of 1 MHz can be generated.
@@ -42,13 +42,14 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 
   In light sleep, peripherals are clock gated, and interrupts (from GPIOs and internal peripherals) will not be generated. A wakeup source described in the :doc:`sleep_modes` documentation can be used to trigger wakeup from the light sleep state.
 
-.. only:: SOC_PM_SUPPORT_EXT_WAKEUP
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
 
   For example, the EXT0 and EXT1 wakeup sources can be used to wake up the chip via a GPIO.
 
 
 Power Management Locks
 ----------------------
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, or 240 MHz", esp32s3="80 MHz, 160 MHz, or 240 MHz", esp32c2="80 MHz or 120 MHz", esp32c3="80 MHz or 160 MHz", esp32c6="80 MHz or 160 MHz"}
 
 Applications have the ability to acquire/release locks in order to control the power management algorithm. When an application acquires a lock, the power management algorithm operation is restricted in a way described below. When the lock is released, such restrictions are removed.
 
@@ -63,7 +64,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
   * - Lock
     - Description
   * - ``ESP_PM_CPU_FREQ_MAX``
-    - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+    - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to {IDF_TARGET_MAX_CPU_FREQ}.
   * - ``ESP_PM_APB_FREQ_MAX``
     - Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
   * - ``ESP_PM_NO_LIGHT_SLEEP``
@@ -74,14 +75,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
 
 The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`.
 
-.. only:: esp32
-
-   .. include:: inc/power_management_esp32.rst
-
-.. only:: not esp32
-
-   .. include:: inc/power_management_esp32s2_and_later.rst
-
+.. include:: inc/power_management_{IDF_TARGET_PATH_NAME}.rst
 
 If none of the locks are acquired, and light sleep is enabled in a call to :cpp:func:`esp_pm_configure`, the system will go into light sleep mode. The duration of light sleep will be determined by:
 
@@ -133,9 +127,51 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
     - The legacy timer group driver
     :SOC_MCPWM_SUPPORTED: - MCPWM
 
+
+Light-sleep Peripheral Power Down
+---------------------------------
+
+.. only:: esp32c6 or esp32h2
+
+    {IDF_TARGET_NAME} supports power-down peripherals during Light-sleep.
+
+    If :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, when the driver initializes the peripheral, the driver will register the working register context of the peripheral to the sleep retention link. Before entering sleep, the REG_DMA peripheral will read the configuration in the sleep retention link, and back up the register context to memory according to the configuration. REG_DMA will also restore context from memory to peripheral registers on wakeup.
+
+    Currently IDF supports Light-sleep context retention for the following peripherals:
+    - INT_MTX
+    - TEE/APM
+    - IO_MUX / GPIO
+    - UART0
+    - TIMG0
+    - SPI0/1
+    - SYSTIMER
+
+    The following peripherals are not yet supported:
+    - GDMA
+    - ETM
+    - TIMG1
+    - ASSIST_DEBUG
+    - Trace
+    - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
+    - SPI2
+    - I2C
+    - I2S
+    - PCNT
+    - USB-Serial-JTAG
+    - TWAI
+    - LEDC
+    - MCPWM
+    - RMT
+    - SARADC
+    - SDIO
+    - PARL_IO
+    - UART1
+
+    For peripherals that do not support Light-sleep context retention, if the Power management is enabled, the `ESP_PM_NO_LIGHT_SLEEP` lock should be held when the peripheral is working to avoid losing the working context of the peripheral when entering sleep.
+
+
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_pm.inc
-.. include-build-file:: inc/pm.inc
 

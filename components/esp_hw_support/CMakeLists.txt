@@ -12,7 +12,11 @@ set(requires soc)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support)
 
-set(srcs "cpu.c" "esp_memory_utils.c")
+if(${target} STREQUAL "esp32c6")
+    list(APPEND priv_requires hal)
+endif()
+
+set(srcs "cpu.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"
@@ -23,13 +27,28 @@ if(NOT BOOTLOADER_BUILD)
                      "rtc_module.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
-                     "sleep_mac_bb.c"
+                     "sleep_modem.c"
                      "regi2c_ctrl.c"
-                     "adc_share_hw_ctrl.c"
-                     "port/${target}/io_mux.c")
+                     "esp_gpio_reserve.c"
+                     "sar_periph_ctrl_common.c"
+                     "port/${target}/io_mux.c"
+                     "port/${target}/esp_clk_tree.c"
+                     "port/esp_clk_tree_common.c")
 
-    if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
-        list(APPEND srcs "sleep_retention.c")
+    if(CONFIG_SOC_LP_PERIPHERALS_SUPPORTED)
+        list(APPEND srcs "lp_periph_ctrl.c")
+    endif()
+
+    if(CONFIG_SOC_ADC_SUPPORTED)
+        list(APPEND srcs "adc_share_hw_ctrl.c")
+    endif()
+
+    if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
+        list(APPEND srcs "sleep_cpu.c")
+    endif()
+
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "sleep_retention.c"  "sleep_system_peripheral.c" "sleep_clock.c")
     endif()
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
@@ -67,16 +86,36 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_etm.c")
     endif()
 
+    if(CONFIG_SOC_CRYPTO_DPA_PROTECTION_SUPPORTED)
+        list(APPEND srcs "esp_dpa_protection.c")
+    endif()
+
     if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
         list(APPEND srcs "esp_ds.c")
+    endif()
+
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "port/pau_regdma.c"
+                         "port/regdma_link.c")
+    endif()
+
+    if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
+        list(APPEND srcs "sleep_cpu_asm.S")
+        set_property(TARGET ${COMPONENT_LIB}
+                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_save")
+        set_property(TARGET ${COMPONENT_LIB}
+                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_restore")
     endif()
 
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
         list(APPEND srcs "modem_clock.c")
     endif()
 
-    if(CONFIG_SOC_MEMSPI_SRC_FREQ_120M)
-        list(APPEND srcs "mspi_timing_tuning.c" "port/${target}/mspi_timing_config.c")
+    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+        list(APPEND srcs "mspi_timing_tuning.c" "mspi_timing_config.c")
+        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
+            list(APPEND srcs "mspi_timing_by_mspi_delay.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
@@ -85,7 +124,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_IDF_TARGET_ESP32H2)
         list(REMOVE_ITEM srcs
-                "adc_share_hw_ctrl.c" # TODO: IDF-6215
+                "sleep_cpu.c"         # TODO: IDF-6267
+                "sleep_modes.c"       # TODO: IDF-6267
+                "sleep_wake_stub.c"   # TODO: IDF-6267
+                "sleep_gpio.c"        # TODO: IDF-6267
             )
     endif()
 else()
@@ -106,6 +148,9 @@ add_subdirectory(port/${target})
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+    if(CONFIG_SOC_CRYPTO_DPA_PROTECTION_SUPPORTED)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_crypto_dpa_prot_include_impl")
     endif()
 endif()
 

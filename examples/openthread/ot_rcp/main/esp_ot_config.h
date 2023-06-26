@@ -20,6 +20,7 @@
         .radio_mode = RADIO_MODE_NATIVE,                        \
     }
 
+#if CONFIG_OPENTHREAD_RCP_UART
 #if CONFIG_OPENTHREAD_UART_PIN_MANUAL
 #define OPENTHREAD_RCP_UART_RX_PIN CONFIG_OPENTHREAD_UART_RX_PIN
 #define OPENTHREAD_RCP_UART_TX_PIN CONFIG_OPENTHREAD_UART_TX_PIN
@@ -35,7 +36,7 @@
             .port = 0,                                          \
             .uart_config =                                      \
                 {                                               \
-                    .baud_rate =  115200,                       \
+                    .baud_rate =  460800,                       \
                     .data_bits = UART_DATA_8_BITS,              \
                     .parity = UART_PARITY_DISABLE,              \
                     .stop_bits = UART_STOP_BITS_1,              \
@@ -47,10 +48,34 @@
             .tx_pin = OPENTHREAD_RCP_UART_TX_PIN,               \
         },                                                      \
     }
+#else // CONFIG_OPENTHREAD_RCP_SPI
+#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
+    {                                                           \
+        .host_connection_mode = HOST_CONNECTION_MODE_RCP_SPI,   \
+        .spi_slave_config = {                                   \
+            .host_device = SPI2_HOST,                           \
+            .bus_config = {                                     \
+                .mosi_io_num = 3,                               \
+                .miso_io_num = 1,                               \
+                .sclk_io_num = 0,                               \
+                .quadhd_io_num = -1,                            \
+                .quadwp_io_num = -1,                            \
+                .isr_cpu_id = INTR_CPU_ID_0,                    \
+            },                                                  \
+            .slave_config = {                                   \
+                .mode = 0,                                      \
+                .spics_io_num = 2,                              \
+                .queue_size = 3,                                \
+                .flags = 0,                                     \
+            },                                                  \
+            .intr_pin = 9,                                      \
+        },                                                      \
+    }
+#endif
 
 #define ESP_OPENTHREAD_DEFAULT_PORT_CONFIG()    \
     {                                           \
-        .storage_partition_name = "ot_storage", \
+        .storage_partition_name = "nvs",        \
         .netif_queue_size = 10,                 \
         .task_queue_size = 10,                  \
     }

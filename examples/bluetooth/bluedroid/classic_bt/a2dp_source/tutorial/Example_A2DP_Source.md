@@ -50,12 +50,12 @@ The main function also initializes the Bluetooth Controller with default setting
 /* initialize Bluetooth Controller with default configuration */
 esp_bt_controller_config_t bt_cfg = ONTROLLER_INIT_CONFIG_DEFAULT();
 if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
-    ESP_LOGE(BT_AV_TAG, "%s initialize controller ed\n", __func__);
+    ESP_LOGE(BT_AV_TAG, "%s initialize controller ed", __func__);
     return;
 }
 /* Enable Bluetooth Controller in Classical Bluetooth mode */
 if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) != OK) {
-    ESP_LOGE(BT_AV_TAG, "%s enable controller failed\n", __func__);
+    ESP_LOGE(BT_AV_TAG, "%s enable controller failed", __func__);
     return;
 }
 ```
@@ -65,12 +65,12 @@ After the initialization of the Bluetooth Controller, the Bluedroid stack, which
 ```c
 /* initialize Bluedroid Host */
 if (esp_bluedroid_init() != ESP_OK) {
-    ESP_LOGE(BT_AV_TAG, "%s initialize bluedroid failed\n", __func__);
+    ESP_LOGE(BT_AV_TAG, "%s initialize bluedroid failed", __func__);
     return;
 }
 /* Enable Bluedroid Host */
 if (esp_bluedroid_enable() != ESP_OK) {
-    ESP_LOGE(BT_AV_TAG, "%s enable bluedroid failed\n", __func__);
+    ESP_LOGE(BT_AV_TAG, "%s enable bluedroid failed", __func__);
     return;
 }
 ```

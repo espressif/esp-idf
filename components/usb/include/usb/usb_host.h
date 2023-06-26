@@ -14,7 +14,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-//Include the other USB Host Library headers as well
+// Include the other USB Host Library headers as well
 #include "usb/usb_helpers.h"
 #include "usb/usb_types_ch9.h"
 #include "usb/usb_types_stack.h"
@@ -34,7 +34,7 @@ extern "C" {
  *
  * @note Asynchronous API
  */
-typedef struct usb_host_client_handle_s * usb_host_client_handle_t;
+typedef struct usb_host_client_handle_s *usb_host_client_handle_t;
 
 // ----------------------- Events --------------------------
 
@@ -116,7 +116,7 @@ typedef struct {
 typedef struct {
     bool is_synchronous;        /**< Whether the client is asynchronous or synchronous or not. Set to false for now. */
     int max_num_event_msg;      /**< Maximum number of event messages that can be stored (e.g., 3) */
-    union {     //Note: Made into union or future expansion
+    union {     // Note: Made into union or future expansion
         struct {
             usb_host_client_event_cb_t client_event_callback;   /**< Client's event callback function */
             void *callback_arg;                                 /**< Event callback function argument */

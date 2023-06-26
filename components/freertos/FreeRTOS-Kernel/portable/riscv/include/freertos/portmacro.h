@@ -303,20 +303,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
  * - Maps to forward declared functions
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ----------------------- Memory --------------------------
-
-/**
- * @brief Task memory allocation macros
- *
- * @note Because the ROM routines don't necessarily handle a stack in external RAM correctly, we force the stack
- * memory to always be internal.
- * @note [refactor-todo] Update portable.h to match v10.4.3 to use new malloc prototypes
- */
-#define portTcbMemoryCaps               (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-#define portStackMemoryCaps             (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-#define pvPortMallocTcbMem(size)        pvPortMalloc(size)
-#define pvPortMallocStackMem(size)      pvPortMalloc(size)
-
 // --------------------- Interrupts ------------------------
 
 #define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK_FROM_ISR()
@@ -399,6 +385,14 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 #define portALT_GET_RUN_TIME_COUNTER_VALUE(x)    do {x = (uint32_t)esp_timer_get_time();} while(0)
 #endif
 
+// --------------------- TCB Cleanup -----------------------
+
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+/* If enabled, users must provide an implementation of vPortCleanUpTCB() */
+extern void vPortCleanUpTCB ( void *pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
+#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+
 // -------------- Optimized Task Selection -----------------
 
 #if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
@@ -438,7 +432,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  * - Miscellaneous porting macros
- * - These are not port of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
+ * - These are not part of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
  * ------------------------------------------------------------------------------------------------------------------ */
 
 // -------------------- Heap Related -----------------------
@@ -446,7 +440,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 /**
  * @brief Checks if a given piece of memory can be used to store a task's TCB
  *
- * - Defined in port_common.c
+ * - Defined in heap_idf.c
  *
  * @param ptr Pointer to memory
  * @return true Memory can be used to store a TCB
@@ -457,7 +451,7 @@ bool xPortCheckValidTCBMem(const void *ptr);
 /**
  * @brief Checks if a given piece of memory can be used to store a task's stack
  *
- * - Defined in port_common.c
+ * - Defined in heap_idf.c
  *
  * @param ptr Pointer to memory
  * @return true Memory can be used to store a task stack
@@ -465,8 +459,8 @@ bool xPortCheckValidTCBMem(const void *ptr);
  */
 bool xPortcheckValidStackMem(const void *ptr);
 
-#define portVALID_TCB_MEM(ptr) xPortCheckValidTCBMem(ptr)
-#define portVALID_STACK_MEM(ptr) xPortcheckValidStackMem(ptr)
+#define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
+#define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 
 // --------------------- App-Trace -------------------------
 

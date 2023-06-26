@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) CO LTD
- * All rights reserved.
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -38,6 +38,12 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_netif.h"
+#include "esp_vfs_eventfd.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
+#include "protocol_examples_common.h"
+#include "esp_coexist_internal.h"
 #include "esp_zigbee_gateway.h"
 
 #if (!defined ZB_MACSPLIT_HOST && defined ZB_MACSPLIT_DEVICE)
@@ -83,10 +89,10 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         if (err_status == ESP_OK) {
             esp_zb_ieee_addr_t ieee_address;
             esp_zb_get_long_address(ieee_address);
-            ESP_LOGI(TAG, "Formed network successfully (ieee extended address: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx)",
+            ESP_LOGI(TAG, "Formed network successfully (ieee_address: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx, Channel:%d)",
                      ieee_address[7], ieee_address[6], ieee_address[5], ieee_address[4],
                      ieee_address[3], ieee_address[2], ieee_address[1], ieee_address[0],
-                     esp_zb_get_pan_id());
+                     esp_zb_get_pan_id(), esp_zb_get_current_channel());
             esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
         } else {
             ESP_LOGI(TAG, "Restart network formation (status: %d)", err_status);
@@ -114,6 +120,7 @@ static void esp_zb_task(void *pvParameters)
     esp_zb_cfg_t zb_nwk_cfg = ESP_ZB_ZC_CONFIG();
     esp_zb_init(&zb_nwk_cfg);
     /* initiate Zigbee Stack start without zb_send_no_autostart_signal auto-start */
+    esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
     ESP_ERROR_CHECK(esp_zb_start(false));
     esp_zb_main_loop_iteration();
 }
@@ -126,5 +133,18 @@ void app_main(void)
     };
     /* load Zigbee gateway platform config to initialization */
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+    ESP_ERROR_CHECK(example_connect());
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
+    coex_enable();
+    coex_schm_status_bit_set(1, 1);
+#else
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+#endif
+#endif
     xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
 }

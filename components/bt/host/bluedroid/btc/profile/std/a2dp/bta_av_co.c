@@ -312,6 +312,58 @@ void bta_av_co_audio_disc_res(tBTA_AV_HNDL hndl, UINT8 num_seps, UINT8 num_snk,
     } else if (uuid_local == UUID_SERVCLASS_AUDIO_SOURCE) {
         p_peer->uuid_to_connect = UUID_SERVCLASS_AUDIO_SINK;
     }
+    p_peer->got_disc_res = TRUE;
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_cfg_res
+ **
+ ** Description      This callout function is executed by AV to report the
+ **                  number of stream end points (SEP) were found during the
+ **                  incoming AVDT stream config request process.
+ **
+ **
+ ** Returns          void.
+ **
+ *******************************************************************************/
+void bta_av_co_audio_cfg_res(tBTA_AV_HNDL hndl, UINT8 num_seps, UINT8 num_snk,
+                              UINT8 num_src, BD_ADDR addr, UINT16 uuid_local)
+{
+    tBTA_AV_CO_PEER *p_peer;
+
+    FUNC_TRACE();
+
+    APPL_TRACE_DEBUG("bta_av_co_audio_cfg_res h:x%x num_seps:%d num_snk:%d num_src:%d",
+                     hndl, num_seps, num_snk, num_src);
+
+    /* Find the peer info */
+    p_peer = bta_av_co_get_peer(hndl);
+    if (p_peer == NULL) {
+        APPL_TRACE_ERROR("bta_av_co_audio_cfg_res could not find peer entry");
+        return;
+    }
+
+    /* Sanity check : this should never happen */
+    if (p_peer->opened) {
+        APPL_TRACE_ERROR("bta_av_co_audio_cfg_res peer already opened");
+    }
+
+    /* Copy the discovery results */
+    bdcpy(p_peer->addr, addr);
+    if (!p_peer->got_disc_res) {
+        p_peer->num_snks = num_snk;
+        p_peer->num_srcs = num_src;
+        p_peer->num_seps = num_seps;
+        p_peer->num_rx_snks = 0;
+        p_peer->num_rx_srcs = 0;
+        p_peer->num_sup_snks = 0;
+    }
+    if (uuid_local == UUID_SERVCLASS_AUDIO_SINK) {
+        p_peer->uuid_to_connect = UUID_SERVCLASS_AUDIO_SOURCE;
+    } else if (uuid_local == UUID_SERVCLASS_AUDIO_SOURCE) {
+        p_peer->uuid_to_connect = UUID_SERVCLASS_AUDIO_SINK;
+    }
 }
 
 /*******************************************************************************
@@ -1698,6 +1750,7 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
 const tBTA_AV_CO_FUNCTS bta_av_a2d_cos = {
     bta_av_co_audio_init,
     bta_av_co_audio_disc_res,
+    bta_av_co_audio_cfg_res,
     bta_av_co_audio_getconfig,
     bta_av_co_audio_setconfig,
     bta_av_co_audio_open,

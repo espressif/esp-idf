@@ -329,6 +329,17 @@ esp_err_t esp_wifi_internal_crypto_funcs_md5_check(const char *md5);
 esp_err_t esp_wifi_internal_wifi_type_md5_check(const char *md5);
 
 /**
+  * @brief     Check the MD5 values of the esp_wifi_he_types.h in IDF and WiFi library
+  *
+  * @attention 1. It is used for internal CI version check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
+  */
+esp_err_t esp_wifi_internal_wifi_he_type_md5_check(const char *md5);
+
+/**
   * @brief     Check the MD5 values of the esp_wifi.h in IDF and WiFi library
   *
   * @attention 1. It is used for internal CI version check
@@ -338,6 +349,17 @@ esp_err_t esp_wifi_internal_wifi_type_md5_check(const char *md5);
   *     - ESP_WIFI_INVALID_ARG : MD5 check fail
   */
 esp_err_t esp_wifi_internal_esp_wifi_md5_check(const char *md5);
+
+/**
+  * @brief     Check the MD5 values of the esp_wifi_he.h in IDF and WiFi library
+  *
+  * @attention 1. It is used for internal CI version check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
+  */
+esp_err_t esp_wifi_internal_esp_wifi_he_md5_check(const char *md5);
 
 /**
   * @brief     Allocate a chunk of memory for WiFi driver
@@ -463,7 +485,7 @@ esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *pr
   * @param     aid : the connection number when a STA connects to the softAP
   * @param     primary : store the negotiated primary channel
   * @param     second : store the negotiated second channel
-  * @attention the aid param is only works when the ESP32 in softAP/softAP+STA mode
+  * @attention the aid param is only works when the device in softAP/softAP+STA mode
   *
   * @return
   *    - ESP_OK: succeed
@@ -602,11 +624,104 @@ void esp_wifi_set_keep_alive_time(uint32_t keep_alive_time);
 /**
  * @brief   Configure wifi beacon montior default parameters
  *
- * @param   enable: enable or disable beacon monitor
- * @param   timeout: timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond
- * @param   threshold: maximum number of consecutive lost beacons allowed
+ * @param   config: the configuration parameters for wifi beacon monitor
  */
-void esp_wifi_beacon_monitor_configure(bool enable, int timeout, int threshold, int delta_intr_early, int delta_timeout);
+void esp_wifi_beacon_monitor_configure(wifi_beacon_monitor_config_t *config);
+
+/**
+ * @brief   Require WiFi to enable or disable Advanced DTIM sleep function
+ *
+ * @param   light_sleep_enable: true for light sleep mode is enabled, false for light sleep mode is disabled.
+ * @param   modem_state_enable: true for require WiFi to enable Advanced DTIM sleep function,
+ *                              false for require WiFi to disable Advanced DTIM sleep function.
+ * @return
+ *    - ESP_OK: succeed
+ */
+void esp_wifi_internal_mac_sleep_configure(bool light_sleep_enable, bool modem_state_enable);
+
+/**
+  * @brief      Start Publishing a service in the NAN cluster
+  *
+  * @attention  This API should be called after esp_wifi_start() in NAN Mode.
+  *
+  * @param      publish_cfg  Configuration parameters for publishing a service.
+  * @param      id  Identifier for the Publish service.
+  * @param      cancel  Cancel the service identified by the id.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_publish_service(const wifi_nan_publish_cfg_t *publish_cfg,
+                                           uint8_t *id, bool cancel);
+
+/**
+  * @brief      Subscribe for a service within the NAN cluster
+  *
+  * @attention  This API should be called after esp_wifi_start() in NAN Mode.
+  *
+  * @param      subscribe_cfg  Configuration parameters for subscribing for a service.
+  * @param      id  Identifier for the Subscribe service.
+  * @param      cancel  Cancel the service identified by the id.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg,
+                                             uint8_t *id, bool cancel);
+
+/**
+  * @brief      Send Follow-up to the Publisher with matching service
+  *
+  * @attention  This API should be called after WIFI_EVENT_NAN_SVC_MATCH event is received.
+  *
+  * @param      fup_params  Configuration parameters for sending a Follow-up to the Peer.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_send_followup(const wifi_nan_followup_params_t *fup_params);
+
+/**
+  * @brief      Send Datapath Request to the Publisher with matching service
+  *
+  * @attention  This API should be called after WIFI_EVENT_NAN_SVC_MATCH event is received.
+  *
+  * @param      req  NAN Datapath Request parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *ndp_id);
+
+/**
+  * @brief      Send Datapath Response to accept or reject the received request
+  *
+  * @attention  This API should be called on the Publisher after receiving WIFI_EVENT_NDP_INDICATION event.
+  *
+  * @param      resp  NAN Datapath Response parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp);
+
+/**
+  * @brief      End NAN Datapath that is active
+  *
+  * @attention  This API should be called after receiving WIFI_EVENT_NDP_CONFIRM event.
+  *
+  * @param      req  NAN Datapath end request parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_datapath_end(wifi_nan_datapath_end_req_t *req);
 
 #ifdef __cplusplus
 }

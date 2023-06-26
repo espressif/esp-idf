@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -234,7 +234,7 @@ extern "C" {
 #define LP_ANALOG_PERI_LP_ANA_ANA_FIB_ENA_S  0
 
 #define LP_ANALOG_PERI_LP_ANA_FIB_GLITCH_RST BIT(0)
-#define LP_ANALOG_PERI_LP_ANA_FIB_BOR_RST BIT(1)
+#define LP_ANALOG_PERI_LP_ANA_FIB_BOD_RST BIT(1)
 #define LP_ANALOG_PERI_LP_ANA_FIB_SUPER_WDT_RST BIT(2)
 
 /** LP_ANALOG_PERI_LP_ANA_INT_RAW_REG register

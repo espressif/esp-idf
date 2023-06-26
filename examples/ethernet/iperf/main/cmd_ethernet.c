@@ -8,6 +8,7 @@
 */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "sys/socket.h" // for INADDR_ANY
@@ -175,11 +176,14 @@ static int eth_cmd_iperf(int argc, char **argv)
         }
     }
 
-    printf("mode=%s-%s sip=%d.%d.%d.%d:%d, dip=%d.%d.%d.%d:%d, interval=%d, time=%d\r\n",
+    printf("mode=%s-%s sip=" IPSTR ":%" PRIu16 ", dip=%" PRIu32 ".%" PRIu32 ".%" PRIu32 ".%" PRIu32 ":%" PRIu16 ", interval=%" PRIu32 ", time=%" PRIu32 "\r\n",
            cfg.flag & IPERF_FLAG_TCP ? "tcp" : "udp",
            cfg.flag & IPERF_FLAG_SERVER ? "server" : "client",
-           cfg.source_ip4 & 0xFF, (cfg.source_ip4 >> 8) & 0xFF, (cfg.source_ip4 >> 16) & 0xFF,
-           (cfg.source_ip4 >> 24) & 0xFF, cfg.sport,
+           (uint16_t) cfg.source_ip4 & 0xFF,
+           (uint16_t) (cfg.source_ip4 >> 8) & 0xFF,
+           (uint16_t) (cfg.source_ip4 >> 16) & 0xFF,
+           (uint16_t) (cfg.source_ip4 >> 24) & 0xFF,
+           cfg.sport,
            cfg.destination_ip4 & 0xFF, (cfg.destination_ip4 >> 8) & 0xFF,
            (cfg.destination_ip4 >> 16) & 0xFF, (cfg.destination_ip4 >> 24) & 0xFF, cfg.dport,
            cfg.interval, cfg.time);

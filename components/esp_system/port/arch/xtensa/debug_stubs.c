@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,5 +19,5 @@ const static char *TAG = "esp_dbg_stubs";
 void esp_dbg_stubs_ll_init(void *stub_table)
 {
     eri_write(ESP_DBG_STUBS_TRAX_REG, (uint32_t)stub_table);
-    ESP_LOGV(TAG, "%s stubs %x", __func__, eri_read(ESP_DBG_STUBS_TRAX_REG));
+    ESP_LOGV(TAG, "%s stubs %"PRIx32, __func__, eri_read(ESP_DBG_STUBS_TRAX_REG));
 }

@@ -27,7 +27,7 @@
 
 portMUX_TYPE ble_port_mutex = portMUX_INITIALIZER_UNLOCKED;
 
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
 static const char *TAG = "Timer";
 #endif
 
@@ -547,7 +547,7 @@ IRAM_ATTR npl_freertos_sem_release(struct ble_npl_sem *sem)
     return BLE_NPL_OK;
 }
 
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
 static void
 IRAM_ATTR ble_npl_event_fn_wrapper(void *arg)
 {
@@ -613,7 +613,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
         memset(callout, 0, sizeof(*callout));
         ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
 
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
         callout->evq = evq;
 
         esp_timer_create_args_t create_args = {
@@ -637,7 +637,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
             co->co = NULL;
             return -1;
         }
-#endif // CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#endif // BLE_NPL_USE_ESP_TIMER
     } else {
         callout = (struct ble_npl_callout_freertos *)co->co;
         BLE_LL_ASSERT(callout);
@@ -656,7 +656,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
         memset(callout, 0, sizeof(*callout));
         ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
 
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
         callout->evq = evq;
 
         esp_timer_create_args_t create_args = {
@@ -680,7 +680,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
             co->co = NULL;
             return -1;
         }
-#endif // CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#endif // BLE_NPL_USE_ESP_TIMER
     }
     else {
         callout = (struct ble_npl_callout_freertos *)co->co;
@@ -707,7 +707,7 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
     }
 
     ble_npl_event_deinit(&callout->ev);
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     esp_err_t err = esp_timer_stop(callout->handle);
     if(err != ESP_OK) {
         if (err != ESP_ERR_INVALID_STATE) { // ESP_ERR_INVALID_STATE is expected when timer is already stopped
@@ -725,7 +725,7 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 #else
     free((void *)callout);
 #endif // OS_MEM_ALLOC
-#endif // CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#endif // BLE_NPL_USE_ESP_TIMER
     co->co = NULL;
     memset(co, 0, sizeof(struct ble_npl_callout));
 }
@@ -742,7 +742,7 @@ ble_npl_error_t
 IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t ticks)
 {
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     esp_timer_stop(callout->handle);
 
     return esp_err_to_npl_error(esp_timer_start_once(callout->handle, ticks*1000));
@@ -780,7 +780,7 @@ IRAM_ATTR npl_freertos_callout_stop(struct ble_npl_callout *co)
 	return;
     }
 
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     esp_timer_stop(callout->handle);
 #else
     xTimerStop(callout->handle, portMAX_DELAY);
@@ -791,7 +791,7 @@ bool
 IRAM_ATTR npl_freertos_callout_is_active(struct ble_npl_callout *co)
 {
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     return esp_timer_is_active(callout->handle);
 #else
     return xTimerIsTimerActive(callout->handle) == pdTRUE;
@@ -801,7 +801,7 @@ IRAM_ATTR npl_freertos_callout_is_active(struct ble_npl_callout *co)
 ble_npl_time_t
 IRAM_ATTR npl_freertos_callout_get_ticks(struct ble_npl_callout *co)
 {
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
    /* Currently, esp_timer does not support an API which gets the expiry time for
     * current timer.
     * Returning 0 from here should not cause any effect.
@@ -826,7 +826,7 @@ IRAM_ATTR npl_freertos_callout_remaining_ticks(struct ble_npl_callout *co,
 
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
 
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     uint64_t expiry = 0;
     esp_err_t err;
@@ -869,7 +869,7 @@ IRAM_ATTR npl_freertos_callout_set_arg(struct ble_npl_callout *co, void *arg)
 uint32_t
 IRAM_ATTR npl_freertos_time_get(void)
 {
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     return esp_timer_get_time() / 1000;
 #else
     return xTaskGetTickCountFromISR();
@@ -880,7 +880,7 @@ ble_npl_error_t
 IRAM_ATTR npl_freertos_time_ms_to_ticks(uint32_t ms, ble_npl_time_t *out_ticks)
 {
     uint64_t ticks;
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     ticks = (uint64_t)ms;
 #else
     ticks = ((uint64_t)ms * configTICK_RATE_HZ) / 1000;
@@ -898,7 +898,7 @@ ble_npl_error_t
 IRAM_ATTR npl_freertos_time_ticks_to_ms(ble_npl_time_t ticks, uint32_t *out_ms)
 {
     uint64_t ms;
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     ms = ((uint64_t)ticks);
 #else
     ms = ((uint64_t)ticks * 1000) / configTICK_RATE_HZ;
@@ -915,7 +915,7 @@ IRAM_ATTR npl_freertos_time_ticks_to_ms(ble_npl_time_t ticks, uint32_t *out_ms)
 ble_npl_time_t
 IRAM_ATTR npl_freertos_time_ms_to_ticks32(uint32_t ms)
 {
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     return ms;
 #else
     return ms * configTICK_RATE_HZ / 1000;
@@ -925,7 +925,7 @@ IRAM_ATTR npl_freertos_time_ms_to_ticks32(uint32_t ms)
 uint32_t
 IRAM_ATTR npl_freertos_time_ticks_to_ms32(ble_npl_time_t ticks)
 {
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     return ticks;
 #else
     return ticks * 1000 / configTICK_RATE_HZ;
@@ -935,7 +935,7 @@ IRAM_ATTR npl_freertos_time_ticks_to_ms32(ble_npl_time_t ticks)
 void
 IRAM_ATTR npl_freertos_time_delay(ble_npl_time_t ticks)
 {
-#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if BLE_NPL_USE_ESP_TIMER
     vTaskDelay(ticks / portTICK_PERIOD_MS);
 #else
     vTaskDelay(ticks);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,19 +89,26 @@ static void test_gpio_intr_callback(void *args)
 // put the simulation code in the IRAM to avoid cache miss
 NOINLINE_ATTR IRAM_ATTR static void test_gpio_simulate_glitch_pulse(void)
 {
+    static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
     // the following code is used to generate a short glitch pulse
-    // around 10ns @CPU160MHz
+    // around 20ns @CPU160MHz, 40ns @CPU96MHz
+    // pull high for 4 CPU cycles, to ensure the short pulse can be sampled by GPIO
+    // we don't want any preemption to happen during the glitch signal generation
+    portENTER_CRITICAL(&s_lock);
     asm volatile(
+        "csrrsi zero, %0, 0x1\n"
+        "csrrsi zero, %0, 0x1\n"
         "csrrsi zero, %0, 0x1\n"
         "csrrsi zero, %0, 0x1\n"
         "csrrci zero, %0, 0x1"
         :: "i"(CSR_GPIO_OUT_USER)
     );
+    portEXIT_CRITICAL(&s_lock);
 }
 
 TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
 {
-    const gpio_num_t test_gpio = 0;
+    const gpio_num_t test_gpio = 2;
 
     printf("initialize GPIO for input and out\r\n");
     gpio_config_t gpio_cfg = {
@@ -132,15 +139,19 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
         .window_width_ns = 500,
     };
     TEST_ESP_OK((gpio_new_flex_glitch_filter(&filter_cfg, &filter)));
-    TEST_ESP_OK(gpio_glitch_filter_enable(filter));
 
     printf("install gpio interrupt\r\n");
     gpio_install_isr_service(0);
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     TEST_ESP_OK(gpio_isr_handler_add(test_gpio, test_gpio_intr_callback, sem));
 
+    printf("enable the glitch filter\r\n");
+    TEST_ESP_OK(gpio_glitch_filter_enable(filter));
+
     printf("generate rising edge glitch signal\r\n");
-    test_gpio_simulate_glitch_pulse();
+    for (int i = 0; i < 10; i++) {
+        test_gpio_simulate_glitch_pulse();
+    }
 
     // should timeout, because the glitch is filtered out
     TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));

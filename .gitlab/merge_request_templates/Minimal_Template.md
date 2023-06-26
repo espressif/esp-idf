@@ -7,7 +7,7 @@
 <!-- Add description of the change here --><!-- Mandatory -->
 
 ## Related <!-- Optional -->
-<!-- Related Jira issues and Github issues -->
+<!-- Related Jira issues and Github issues or write "No related issues"-->
 
 ## Release notes <!-- Mandatory -->
 <!-- Either state release notes or write "No release notes" -->

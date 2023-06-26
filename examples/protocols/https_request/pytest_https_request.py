@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import logging
@@ -56,9 +56,6 @@ def start_https_server(server_file: str, key_file: str, server_ip: str, server_p
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet
 @pytest.mark.parametrize('config', ['cli_ses_tkt',], indirect=True)
 @pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
@@ -119,9 +116,6 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet
 @pytest.mark.parametrize('config', ['ssldyn',], indirect=True)
 @pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
@@ -153,8 +147,7 @@ def test_examples_protocol_https_request_dynamic_buffers(dut: Dut) -> None:
     logging.info("Passed the test for \"https_request using crt bundle\" when mbedtls dynamic resource was enabled")
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.esp32
 @pytest.mark.ethernet
 @pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
 def test_examples_protocol_https_request(dut: Dut) -> None:
@@ -218,3 +211,26 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
         logging.info("Failed the test for \"https_request using global ca_store\"")
         raise
     logging.info("Passed the test for \"https_request using global ca_store\"")
+
+    # Check for connection using specified server supported ciphersuites
+    logging.info("Testing for \"https_request using server supported ciphersuites\"")
+    try:
+        dut.expect('https_request using server supported ciphersuites', timeout=20)
+        dut.expect(['Connection established...',
+                    'Reading HTTP response...',
+                    'HTTP/1.1 200 OK',
+                    'connection closed'], expect_all=True)
+    except Exception:
+        logging.info("Failed the test for \"https_request using server supported ciphersuites\"")
+        raise
+    logging.info("Passed the test for \"https_request using server supported ciphersuites\"")
+
+    # Check for connection using specified server unsupported ciphersuites
+    logging.info("Testing for \"https_request using server unsupported ciphersuites\"")
+    try:
+        dut.expect('https_request using server unsupported ciphersuites', timeout=20)
+        dut.expect('Connection failed...', timeout=30)
+    except Exception:
+        logging.info("Failed the test for \"https_request using server unsupported ciphersuites\"")
+        raise
+    logging.info("Passed the test for \"https_request using server unsupported ciphersuites\"")

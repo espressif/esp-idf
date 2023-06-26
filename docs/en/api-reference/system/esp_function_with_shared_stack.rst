@@ -12,7 +12,7 @@ Usage
 :cpp:func:`esp_execute_shared_stack_function` takes four arguments:
 
 - a mutex object allocated by the caller, which is used to protect if the same function shares its allocated stack
-- a pointer to the top of stack used for that fuction
+- a pointer to the top of stack used for that function
 - the size of stack in bytes
 - a pointer to the shared stack function
 

@@ -858,12 +858,8 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
                 av.remote_cmd.label = p_data->rc_msg.label;
             }
         }
-        /* else if this is a pass thru respone that TG doesn't implement thie command */
-        else if (p_data->rc_msg.msg.hdr.ctype == AVRC_RSP_NOT_IMPL) {
-            /* do nothing, no need to setup for callback */
-        }
         /* else if this is a pass thru response */
-        else if (p_data->rc_msg.msg.hdr.ctype >= AVRC_RSP_ACCEPT) {
+        else if (p_data->rc_msg.msg.hdr.ctype >= AVRC_RSP_NOT_IMPL) {
             /* set up for callback */
             evt = BTA_AV_REMOTE_RSP_EVT;
             av.remote_rsp.rc_id = p_data->rc_msg.msg.pass.op_id;
@@ -1865,8 +1861,8 @@ void bta_av_dereg_comp(tBTA_AV_DATA *p_data)
             bta_sys_remove_uuid(UUID_SERVCLASS_VIDEO_SOURCE);
         }
 
-        /* make sure that the timer is not active */
-        bta_sys_stop_timer(&p_scb->timer);
+        /* free the delay timer for AVRC CT */
+        bta_sys_free_timer(&p_scb->timer);
         list_free(p_scb->a2d_list);
         p_scb->a2d_list = NULL;
         utl_freebuf((void **)&p_cb->p_scb[p_scb->hdi]);

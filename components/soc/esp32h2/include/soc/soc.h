@@ -137,20 +137,11 @@
 #define  APB_CLK_FREQ_ROM                            ( 32*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (96)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
-#if CONFIG_IDF_ENV_FPGA
 #define  APB_CLK_FREQ                                ( 32*1000000 )
-#else
-#define  APB_CLK_FREQ                                ( 80*1000000 )
-#endif
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  RTC_CLK_FREQ                                (20*1000000)
 #define  XTAL_CLK_FREQ                               (32*1000000)
-#define  UART_CLK_FREQ                               APB_CLK_FREQ
-#define  WDT_CLK_FREQ                                APB_CLK_FREQ
-#define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
-#define  SPI_CLK_DIV                                 4
-#define  TICKS_PER_US_ROM                            32
 #define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
@@ -161,9 +152,9 @@
  */
 
 #define SOC_IROM_LOW    0x42000000
-#define SOC_IROM_HIGH   (SOC_IROM_LOW + (CONFIG_MMU_PAGE_SIZE<<7))
-#define SOC_DROM_LOW    SOC_IROM_HIGH
-#define SOC_DROM_HIGH   (SOC_IROM_LOW + (CONFIG_MMU_PAGE_SIZE<<8)) // ESP32H2 MMU-TODO: IDF-6251
+#define SOC_IROM_HIGH   (SOC_IROM_LOW + (SOC_MMU_PAGE_SIZE<<8))
+#define SOC_DROM_LOW    SOC_IROM_LOW
+#define SOC_DROM_HIGH   SOC_IROM_HIGH
 #define SOC_IROM_MASK_LOW  0x40000000
 #define SOC_IROM_MASK_HIGH 0x4001C400
 #define SOC_DROM_MASK_LOW  0x4001C400
@@ -184,6 +175,9 @@
 #define SOC_DIRAM_IRAM_HIGH   0x40850000
 #define SOC_DIRAM_DRAM_LOW    0x40800000
 #define SOC_DIRAM_DRAM_HIGH   0x40850000
+
+#define MAP_DRAM_TO_IRAM(addr) (addr)
+#define MAP_IRAM_TO_DRAM(addr) (addr)
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x40800000

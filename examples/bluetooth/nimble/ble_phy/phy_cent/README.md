@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Central PHY Example
 
@@ -10,6 +10,10 @@ This example performs below functionalities:
 * Establishes a connection on LE 1M PHY and switch to LE 2M PHY once connection is established. Then perform GATT read operation against the specified peer. Disconnect the link once this is completed.
 
 * Change the default LE PHY to 2M/Coded and establish a connection on that PHY. Then perform GATT read operation against the specified peer. Disconnect the link once this is completed.
+
+* GATT operations performed:
+  1. Read on LE PHY characteristic.
+  2. Write blob on LE PHY characteristic.
 
 This example aims at understanding how to establish connections on preferred PHY and changing LE PHY once the connection is established.
 

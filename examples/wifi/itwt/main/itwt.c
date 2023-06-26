@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,6 +17,7 @@
    set a router or a AP using the same SSID&PASSWORD as configuration of this example.
    start esp32c6 and when it connected to AP it will setup itwt.
 */
+#include <netdb.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
@@ -27,6 +28,8 @@
 #include "cmd_system.h"
 #include "wifi_cmd.h"
 #include "esp_wifi_he.h"
+#include "esp_pm.h"
+#include "esp_timer.h"
 
 /*******************************************************
  *                Constants
@@ -45,15 +48,15 @@ static const char *TAG = "itwt";
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 
 #if CONFIG_EXAMPLE_ITWT_TRIGGER_ENABLE
-bool trigger_enabled = true;
+uint8_t trigger_enabled = 1;
 #else
-bool trigger_enabled = false;
+uint8_t trigger_enabled = 0;
 #endif
 
 #if CONFIG_EXAMPLE_ITWT_ANNOUNCED
-bool flow_type_announced = true;
+uint8_t flow_type_announced = 1;
 #else
-bool flow_type_announced = false;
+uint8_t flow_type_announced = 0;
 #endif
 
 esp_netif_t *netif_sta = NULL;
@@ -68,6 +71,28 @@ EventGroupHandle_t wifi_event_group;
 /*******************************************************
  *                Function Definitions
  *******************************************************/
+
+static void example_set_static_ip(esp_netif_t *netif)
+{
+#if CONFIG_EXAMPLE_ENABLE_STATIC_IP
+    if (esp_netif_dhcpc_stop(netif) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to stop dhcp client");
+        return;
+    }
+    esp_netif_ip_info_t ip;
+    memset(&ip, 0 , sizeof(esp_netif_ip_info_t));
+    ip.ip.addr = ipaddr_addr(CONFIG_EXAMPLE_STATIC_IP_ADDR);
+    ip.netmask.addr = ipaddr_addr(CONFIG_EXAMPLE_STATIC_NETMASK_ADDR);
+    ip.gw.addr = ipaddr_addr(CONFIG_EXAMPLE_STATIC_GW_ADDR);
+    if (esp_netif_set_ip_info(netif, &ip) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set ip info");
+        return;
+    }
+    ESP_LOGI(TAG, "Success to set static ip: %s, netmask: %s, gw: %s",
+             CONFIG_EXAMPLE_STATIC_IP_ADDR, CONFIG_EXAMPLE_STATIC_NETMASK_ADDR, CONFIG_EXAMPLE_STATIC_GW_ADDR);
+#endif
+}
+
 static const char *itwt_probe_status_to_str(wifi_itwt_probe_status_t status)
 {
     switch (status) {
@@ -86,18 +111,27 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 
     /* setup a trigger-based announce individual TWT agreement. */
-    esp_err_t err = ESP_OK;
-    int flow_id = 0;
+    wifi_phy_mode_t phymode;
     wifi_config_t sta_cfg = { 0, };
     esp_wifi_get_config(WIFI_IF_STA, &sta_cfg);
-    if (sta_cfg.sta.phymode == WIFI_PHY_MODE_HE20) {
-        err = esp_wifi_sta_itwt_setup(TWT_REQUEST, trigger_enabled, flow_type_announced ? 0 : 1,
-                                      CONFIG_EXAMPLE_ITWT_MIN_WAKE_DURA, CONFIG_EXAMPLE_ITWT_WAKE_INVL_EXPN,
-                                      CONFIG_EXAMPLE_ITWT_WAKE_INVL_MANT, &flow_id);
+    esp_wifi_sta_get_negotiated_phymode(&phymode);
+    if (phymode == WIFI_PHY_MODE_HE20) {
+        esp_err_t err = ESP_OK;
+        wifi_twt_setup_config_t setup_config = {
+            .setup_cmd = TWT_REQUEST,
+            .flow_id = 0,
+            .twt_id = CONFIG_EXAMPLE_ITWT_ID,
+            .flow_type = flow_type_announced ? 0 : 1,
+            .min_wake_dura = CONFIG_EXAMPLE_ITWT_MIN_WAKE_DURA,
+            .wake_invl_expn = CONFIG_EXAMPLE_ITWT_WAKE_INVL_EXPN,
+            .wake_invl_mant = CONFIG_EXAMPLE_ITWT_WAKE_INVL_MANT,
+            .trigger = trigger_enabled,
+            .timeout_time_ms = CONFIG_EXAMPLE_ITWT_SETUP_TIMEOUT_TIME_MS,
+        };
+        err = esp_wifi_sta_itwt_setup(&setup_config);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "itwt setup failed, err:0x%x", err);
         }
-
     } else {
         ESP_LOGE(TAG, "Must be in 11ax mode to support itwt");
     }
@@ -122,14 +156,14 @@ static void itwt_setup_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
     wifi_event_sta_itwt_setup_t *setup = (wifi_event_sta_itwt_setup_t *) event_data;
-    if (setup->setup_cmd == TWT_ACCEPT) {
+    if (setup->config.setup_cmd == TWT_ACCEPT) {
         /* TWT Wake Interval = TWT Wake Interval Mantissa * (2 ^ TWT Wake Interval Exponent) */
-        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>flow_id:%d, %s, %s, wake_dura:%d, wake_invl_e:%d, wake_invl_m:%d", setup->flow_id,
-                setup->trigger ? "trigger-enabled" : "non-trigger-enabled", setup->flow_type ? "unannounced" : "announced",
-                setup->min_wake_dura, setup->wake_invl_expn, setup->wake_invl_mant);
-        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>wake duration:%d us, service period:%d ms", setup->min_wake_dura << 8, setup->wake_invl_mant << setup->wake_invl_expn);
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, flow_id:%d, %s, %s, wake_dura:%d, wake_invl_e:%d, wake_invl_m:%d", setup->config.twt_id,
+                setup->config.flow_id, setup->config.trigger ? "trigger-enabled" : "non-trigger-enabled", setup->config.flow_type ? "unannounced" : "announced",
+                setup->config.min_wake_dura, setup->config.wake_invl_expn, setup->config.wake_invl_mant);
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>wake duration:%d us, service period:%d us", setup->config.min_wake_dura << 8, setup->config.wake_invl_mant << setup->config.wake_invl_expn);
     } else {
-        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>unexpected setup command:%d", setup->setup_cmd);
+        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, unexpected setup command:%d", setup->config.twt_id, setup->config.setup_cmd);
     }
 }
 
@@ -218,6 +252,10 @@ static void wifi_itwt(void)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX);
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
+#if CONFIG_EXAMPLE_ENABLE_STATIC_IP
+    example_set_static_ip(netif_sta);
+#endif
+
     ESP_ERROR_CHECK(esp_wifi_start());
 
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
@@ -243,20 +281,11 @@ void app_main(void)
         ret = nvs_flash_init();
     }
 
-    // TODO: WIFI-5150
 #if CONFIG_PM_ENABLE
-    io_toggle_pmu_internal_signal_map_to_io_init();
-    io_toggle_gpio_init();
-
-    sleep_clock_system_retention_init();
-    sleep_clock_modem_retention_init();
-    sleep_peripheral_retention_init();
-    sleep_modem_wifi_modem_state_init();
-
     // Configure dynamic frequency scaling:
     // maximum and minimum frequencies are set in sdkconfig,
     // automatic light sleep is enabled if tickless idle support is enabled.
-    esp_pm_config_esp32c6_t pm_config = {
+    esp_pm_config_t pm_config = {
         .max_freq_mhz = CONFIG_EXAMPLE_MAX_CPU_FREQ_MHZ,
         .min_freq_mhz = CONFIG_EXAMPLE_MIN_CPU_FREQ_MHZ,
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE

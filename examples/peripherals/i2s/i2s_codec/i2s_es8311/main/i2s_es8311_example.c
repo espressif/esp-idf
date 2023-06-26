@@ -115,9 +115,19 @@ static void i2s_music(void *args)
 {
     esp_err_t ret = ESP_OK;
     size_t bytes_write = 0;
+    uint8_t *data_ptr = (uint8_t *)music_pcm_start;
+
+    /* (Optional) Disable TX channel and preload the data before enabling the TX channel,
+     * so that the valid data can be transmitted immediately */
+    ESP_ERROR_CHECK(i2s_channel_disable(tx_handle));
+    ESP_ERROR_CHECK(i2s_channel_preload_data(tx_handle, data_ptr, music_pcm_end - data_ptr, &bytes_write));
+    data_ptr += bytes_write;  // Move forward the data pointer
+
+    /* Enable the TX channel */
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
     while (1) {
         /* Write music to earphone */
-        ret = i2s_channel_write(tx_handle, music_pcm_start, music_pcm_end - music_pcm_start, &bytes_write, portMAX_DELAY);
+        ret = i2s_channel_write(tx_handle, data_ptr, music_pcm_end - data_ptr, &bytes_write, portMAX_DELAY);
         if (ret != ESP_OK) {
             /* Since we set timeout to 'portMAX_DELAY' in 'i2s_channel_write'
                so you won't reach here unless you set other timeout value,
@@ -131,6 +141,7 @@ static void i2s_music(void *args)
             ESP_LOGE(TAG, "[music] i2s music play failed.");
             abort();
         }
+        data_ptr = (uint8_t *)music_pcm_start;
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);

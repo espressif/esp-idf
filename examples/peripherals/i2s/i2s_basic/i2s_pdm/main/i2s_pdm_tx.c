@@ -54,9 +54,15 @@ static i2s_chan_handle_t i2s_example_init_pdm_tx(void)
      * These two helper macros is defined in 'i2s_pdm.h' which can only be used in PDM TX mode.
      * They can help to specify the slot and clock configurations for initialization or re-configuring */
     i2s_pdm_tx_config_t pdm_tx_cfg = {
+#if CONFIG_EXAMPLE_PDM_TX_DAC
+        .clk_cfg = I2S_PDM_TX_CLK_DAC_DEFAULT_CONFIG(EXAMPLE_PDM_TX_FREQ_HZ),
+        /* The data bit-width of PDM mode is fixed to 16 */
+        .slot_cfg = I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+#else
         .clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(EXAMPLE_PDM_TX_FREQ_HZ),
         /* The data bit-width of PDM mode is fixed to 16 */
         .slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+#endif
         .gpio_cfg = {
             .clk = EXAMPLE_PDM_TX_CLK_IO,
             .dout = EXAMPLE_PDM_TX_DOUT_IO,

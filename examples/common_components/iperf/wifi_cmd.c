@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,11 @@
  * (1) esp_wifi_enable_rx_statistics(true, true);
  * (2) esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_BE, true);
  */
+#define VAR2IPSTR(var)  (uint16_t) var & 0xFF, \
+                        (uint16_t) (var >> 8) & 0xFF, \
+                        (uint16_t) (var >> 16) & 0xFF, \
+                        (uint16_t) (var >> 24) & 0xFF
+
 
 /*******************************************************
  *                Constants
@@ -258,12 +263,12 @@ static int wifi_cmd_reg_rw(int argc, char **argv)
     }
     if (reg_rw_args.read->count) {
         addr = (uint32_t) reg_rw_args.read->dval[0];
-        ESP_LOGW(TAG, "reg read 0x%08x : 0x%08x\n", addr, REG_READ(addr));
+        ESP_LOGW(TAG, "reg read 0x%08lx : 0x%08lx", addr, REG_READ(addr));
     } else if (reg_rw_args.write->count && (uint32_t) reg_rw_args.value->count) {
         addr = (uint32_t) reg_rw_args.write->dval[0];
-        ESP_LOGW(TAG, "reg write 0x%8x : 0x%8x\n", addr, (uint32_t) reg_rw_args.value->dval[0]);
+        ESP_LOGW(TAG, "reg write 0x%8lx : 0x%8lx", addr, (uint32_t) reg_rw_args.value->dval[0]);
         REG_WRITE(addr, (uint32_t ) reg_rw_args.value->dval[0]);
-        ESP_LOGW(TAG, "reg read 0x%08x : 0x%08x\n", addr, REG_READ(addr));
+        ESP_LOGW(TAG, "reg read 0x%08lx : 0x%08lx", addr, REG_READ(addr));
     } else {
         printf("Input Error\n");
     }
@@ -360,8 +365,15 @@ static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
-    printf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",
+
+#ifdef CONFIG_LWIP_IPV6
+    printf("%" PRIu32 " bytes from %s icmp_seq=%d ttl=%d time=%" PRIu32 " ms\n",
            recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
+#else
+    printf("%" PRIu32 " bytes from %s icmp_seq=%d ttl=%d time=%" PRIu32 " ms\n",
+           recv_len, inet_ntoa(target_addr.addr), seqno, ttl, elapsed_time);
+#endif
+
 }
 
 static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
@@ -370,7 +382,11 @@ static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
     ip_addr_t target_addr;
     esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+#ifdef CONFIG_LWIP_IPV6
     printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+#else
+    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.addr), seqno);
+#endif
 }
 
 static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
@@ -386,10 +402,13 @@ static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
     uint32_t loss = (uint32_t)((1 - ((float)received) / transmitted) * 100);
     if (IP_IS_V4(&target_addr)) {
         printf("\n--- %s ping statistics ---\n", inet_ntoa(*ip_2_ip4(&target_addr)));
-    } else {
+    }
+#ifdef CONFIG_LWIP_IPV6
+    else {
         printf("\n--- %s ping statistics ---\n", inet6_ntoa(*ip_2_ip6(&target_addr)));
     }
-    printf("%d packets transmitted, %d received, %d%% packet loss, time %dms\n",
+#endif
+    printf("%" PRIu32 " packets transmitted, %" PRIu32 " received, %" PRIu32 "%% packet loss, time %" PRIu32 "ms\n",
            transmitted, received, loss, total_time_ms);
     // delete the ping sessions, so that we clean up all resources and can create a new ping session
     // we don't have to call delete function in the callback, instead we can call delete function from other tasks
@@ -445,10 +464,13 @@ static int do_ping_cmd(int argc, char **argv)
     if (res->ai_family == AF_INET) {
         struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
         inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
-    } else {
+    }
+#ifdef CONFIG_LWIP_IPV6
+    else {
         struct in6_addr addr6 = ((struct sockaddr_in6 *) (res->ai_addr))->sin6_addr;
         inet6_addr_to_ip6addr(ip_2_ip6(&target_addr), &addr6);
     }
+#endif
     freeaddrinfo(res);
     config.target_addr = target_addr;
 
@@ -512,10 +534,8 @@ static int wifi_cmd_set_ip(int argc, char **argv)
     /* set static IP settings */
     esp_netif_set_static_ip(netif_sta, ip, gw, netmask);
 
-    ESP_LOGD(TAG, "ip:%d.%d.%d.%d, gateway:%d.%d.%d.%d, netmask:%d.%d.%d.%d,", ip & 0xFF,
-             (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF, gw & 0xFF, (gw >> 8) & 0xFF,
-             (gw >> 16) & 0xFF, (gw >> 24) & 0xFF, netmask & 0xFF, (netmask >> 8) & 0xFF,
-             (netmask >> 16) & 0xFF, (netmask >> 24) & 0xFF);
+    ESP_LOGD(TAG, "ip:%d.%d.%d.%d, gateway:%d.%d.%d.%d, netmask:%d.%d.%d.%d,",
+             VAR2IPSTR(ip), VAR2IPSTR(gw), VAR2IPSTR(netmask));
     return 0;
 }
 
@@ -570,13 +590,9 @@ static int wifi_cmd_query(int argc, char **argv)
             printf("\tap mac: "MACSTR, MAC2STR(mac));
             printf("\n");
         }
-        printf("\tip: %d.%d.%d.%d\n", ip_info.ip.addr & 0xFF, (ip_info.ip.addr >> 8) & 0xFF,
-               (ip_info.ip.addr >> 16) & 0xFF, (ip_info.ip.addr >> 24) & 0xFF);
-        printf("\tnetmask: %d.%d.%d.%d\n", ip_info.netmask.addr & 0xFF,
-               (ip_info.netmask.addr >> 8) & 0xFF, (ip_info.netmask.addr >> 16) & 0xFF,
-               (ip_info.netmask.addr >> 24) & 0xFF);
-        printf("\tgateway: %d.%d.%d.%d\n", ip_info.gw.addr & 0xFF, (ip_info.gw.addr >> 8) & 0xFF,
-               (ip_info.gw.addr >> 16) & 0xFF, (ip_info.gw.addr >> 24) & 0xFF);
+        printf("\tip: %d.%d.%d.%d\n", VAR2IPSTR(ip_info.ip.addr));
+        printf("\tnetmask: %d.%d.%d.%d\n", VAR2IPSTR(ip_info.netmask.addr));
+        printf("\tgateway: %d.%d.%d.%d\n", VAR2IPSTR(ip_info.gw.addr));
         printf("\n");
     } else if (WIFI_MODE_STA == mode) {
         int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
@@ -592,7 +608,9 @@ static int wifi_cmd_query(int argc, char **argv)
             printf("\tbssid: "MACSTR, MAC2STR(cfg.sta.bssid));
             printf("\n");
             printf("\tchannel: %d\n", cfg.sta.channel);
-            printf("\taid: %d\n", cfg.sta.aid);
+            uint16_t aid;
+            esp_wifi_sta_get_aid(&aid);
+            printf("\taid: %d\n", aid);
             if (cfg.sta.pmf_cfg.capable) {
                 if (cfg.sta.pmf_cfg.required) {
                     printf("\tpmf: required\n");
@@ -612,14 +630,9 @@ static int wifi_cmd_query(int argc, char **argv)
                 printf("\tsta mac: "MACSTR, MAC2STR(mac));
                 printf("\n");
             }
-            printf("\tip: %d.%d.%d.%d\n", ip_info.ip.addr & 0xFF, (ip_info.ip.addr >> 8) & 0xFF,
-                   (ip_info.ip.addr >> 16) & 0xFF, (ip_info.ip.addr >> 24) & 0xFF);
-            printf("\tnetmask: %d.%d.%d.%d\n", ip_info.netmask.addr & 0xFF,
-                   (ip_info.netmask.addr >> 8) & 0xFF, (ip_info.netmask.addr >> 16) & 0xFF,
-                   (ip_info.netmask.addr >> 24) & 0xFF);
-            printf("\tgateway: %d.%d.%d.%d\n", ip_info.gw.addr & 0xFF,
-                   (ip_info.gw.addr >> 8) & 0xFF, (ip_info.gw.addr >> 16) & 0xFF,
-                   (ip_info.gw.addr >> 24) & 0xFF);
+            printf("\tip: %d.%d.%d.%d\n", VAR2IPSTR(ip_info.ip.addr));
+            printf("\tnetmask: %d.%d.%d.%d\n", VAR2IPSTR(ip_info.netmask.addr));
+            printf("\tgateway: %d.%d.%d.%d\n", VAR2IPSTR(ip_info.gw.addr));
             printf("\n");
 
         } else {
@@ -717,18 +730,18 @@ static int wifi_cmd_inactive_time(int argc, char **argv)
     if ((mode & WIFI_MODE_AP) && inactive_time_args.val->count) {
         err = esp_wifi_set_inactive_time(ESP_IF_WIFI_AP, inactive_time_args.val->ival[0]);
         if (err != ESP_OK) {
-            ESP_LOGW(TAG, "set softAP inactive time to %d seconds, err:0x%x\n", inactive_time_args.val->ival[0], err);
+            ESP_LOGW(TAG, "set softAP inactive time to %d seconds, err:0x%x", inactive_time_args.val->ival[0], err);
         } else {
-            ESP_LOGI(TAG, "set softAP inactive time to %d seconds, err:0x%x\n", inactive_time_args.val->ival[0]);
+            ESP_LOGI(TAG, "set softAP inactive time to %d seconds", inactive_time_args.val->ival[0]);
         }
     }
     //WIFI_MODE_STA or WIFI_MODE_APSTA
     if ((mode & WIFI_MODE_STA) && inactive_time_args.val->count) {
         err = esp_wifi_set_inactive_time(ESP_IF_WIFI_STA, inactive_time_args.val->ival[0]);
         if (err != ESP_OK) {
-            ESP_LOGW(TAG, "set STA inactive time to %d seconds, err:0x%x\n", inactive_time_args.val->ival[0], err);
+            ESP_LOGW(TAG, "set STA inactive time to %d seconds, err:0x%x", inactive_time_args.val->ival[0], err);
         } else {
-            ESP_LOGI(TAG, "set STA inactive time to %d seconds, err:0x%x\n", inactive_time_args.val->ival[0]);
+            ESP_LOGI(TAG, "set STA inactive time to %d seconds", inactive_time_args.val->ival[0]);
         }
     }
     uint16_t secs = 0;
@@ -814,7 +827,7 @@ static int wifi_cmd_set_tx_pwr(int argc, char **argv)
                 ESP_LOGW(TAG, "set MCS%d TX PWR to %d", tx_pwr_args.mcs->ival[0], tx_pwr_args.power->ival[0]);
             } else if (tx_pwr_args.power->ival[0] == 0xff) {
                 esp_test_set_tx_mcs_pwr(tx_pwr_args.mcs->ival[0] + WIFI_PHY_RATE_MCS0_LGI, tx_pwr_args.power->ival[0]);
-                ESP_LOGW(TAG, "set MCS%d TX PWR to default value", tx_pwr_args.mcs->ival[0], tx_pwr_args.power->ival[0]);
+                ESP_LOGW(TAG, "set MCS%d TX PWR to default value", tx_pwr_args.mcs->ival[0]);
             }
         } else {
             ESP_LOGW(TAG, "Set TX power fail, MCS should in range [0,9], power should in range [-13, 30] or set 0xFF for default");

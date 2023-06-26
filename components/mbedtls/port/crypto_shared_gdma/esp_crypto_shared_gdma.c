@@ -60,7 +60,6 @@ static esp_err_t crypto_shared_gdma_init(void)
 
     gdma_transfer_ability_t transfer_ability = {
         .sram_trans_align = 1,
-        .psram_trans_align = 16,
     };
 
 

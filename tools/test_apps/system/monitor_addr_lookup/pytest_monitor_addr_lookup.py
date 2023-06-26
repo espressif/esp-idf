@@ -12,11 +12,10 @@ from pytest_embedded import Dut
 @pytest.mark.generic
 @pytest.mark.supported_targets
 def test_monitor_addr_lookup(config: str, dut: Dut) -> None:
-    # The port needs to be closed because idf_monitor.py will connect to it
+    # The port needs to be closed because esp_idf_monitor will connect to it
     dut.serial.stop_redirect_thread()
 
-    monitor_py = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_monitor.py')
-    monitor_cmd = ' '.join([sys.executable, monitor_py, os.path.join(dut.app.binary_path, 'monitor_addr_lookup.elf'),
+    monitor_cmd = ' '.join([sys.executable, '-m', 'esp_idf_monitor', os.path.join(dut.app.binary_path, 'monitor_addr_lookup.elf'),
                             '--port', str(dut.serial.port)])
     monitor_log_path = os.path.join(dut.logdir, 'monitor.txt')
 

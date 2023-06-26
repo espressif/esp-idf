@@ -259,12 +259,8 @@ static esp_err_t w5500_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     esp_eth_mediator_t *eth = w5500->eth;
 
-    if (w5500->link_status == ETH_LINK_UP) {
-        /* Since the link is going to be reconfigured, consider it down for a while */
-        w5500->link_status = ETH_LINK_DOWN;
-        /* Indicate to upper stream apps the link is cosidered down */
-        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)w5500->link_status), err, TAG, "change link failed");
-    }
+    /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
+    w5500->link_status = ETH_LINK_DOWN;
 
     phycfg_reg_t phycfg;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)), err, TAG, "read PHYCFG failed");
@@ -298,12 +294,8 @@ static esp_err_t w5500_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     esp_eth_mediator_t *eth = w5500->eth;
 
-    if (w5500->link_status == ETH_LINK_UP) {
-        /* Since the link is going to be reconfigured, consider it down for a while */
-        w5500->link_status = ETH_LINK_DOWN;
-        /* Indicate to upper stream apps the link is cosidered down */
-        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)w5500->link_status), err, TAG, "change link failed");
-    }
+    /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
+    w5500->link_status = ETH_LINK_DOWN;
 
     phycfg_reg_t phycfg;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)), err, TAG, "read PHYCFG failed");

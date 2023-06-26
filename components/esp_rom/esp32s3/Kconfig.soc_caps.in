@@ -27,6 +27,10 @@ config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool
     default y
 
+config ESP_ROM_USB_OTG_NUM
+    int
+    default 3
+
 config ESP_ROM_USB_SERIAL_DEVICE_NUM
     int
     default 4
@@ -56,5 +60,25 @@ config ESP_ROM_HAS_SPI_FLASH
     default y
 
 config ESP_ROM_HAS_ETS_PRINTF_BUG
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+    bool
+    default y
+
+config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+    bool
+    default y
+
+config ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG
+    bool
+    default y
+
+config ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
     bool
     default y

@@ -1,11 +1,12 @@
 分区 API
 ========
 
+:link_to_translation:`en:[English]`
+
 概述
 --------
+
 ``esp_partition`` 组件提供了高层次的 API 函数，用于访问定义在 :doc:`分区表 </api-guides/partition-tables>` 中的分区。这些 API 基于 :doc:`SPI Flash 驱动 </api-reference/peripherals/spi_flash/index>` 提供的低层次 API。
-
-
 
 .. _flash-partition-apis:
 
@@ -23,12 +24,16 @@ ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序�
 - :cpp:func:`esp_partition_find_first`：返回描述 :cpp:func:`esp_partition_find` 中找到的第一个分区的结构；
 - :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 等同于 :cpp:func:`esp_flash_read`、:cpp:func:`esp_flash_write` 和 :cpp:func:`esp_flash_erase_region`，但在分区边界内执行。
 
+
 另请参考
 ------------
 
 - :doc:`分区表 <../../api-guides/partition-tables>`
 - :doc:`OTA API <../system/ota>` 提供了高层 API 用于更新存储在 flash 中的 app 固件。
 - :doc:`NVS API <nvs_flash>` 提供了结构化 API 用于存储 SPI flash 中的碎片数据。
+
+
+.. _api-reference-partition-table:
 
 分区表 API 参考
 -------------------------------

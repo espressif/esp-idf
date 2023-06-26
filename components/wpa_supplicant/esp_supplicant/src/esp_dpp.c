@@ -586,6 +586,7 @@ esp_err_t esp_supp_dpp_start_listen(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+    s_dpp_stop_listening = false;
     return esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
 }
 

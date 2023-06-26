@@ -1,16 +1,16 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_system/host_test/esp_system:
+components/esp_system/test_apps/esp_system_unity_tests:
+  disable:
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+
+components/esp_system/test_apps/linux_apis:
   enable:
     - if: IDF_TARGET == "linux"
 
 components/esp_system/test_apps/rtc_8md256:
   disable:
     - if: SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet IDF-5131
 
 components/esp_system/test_apps/rtc_power_modes:
   enable:

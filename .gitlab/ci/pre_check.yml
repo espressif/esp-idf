@@ -25,6 +25,33 @@ check_pre_commit_MR:
   script:
     - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs pre-commit run --files
 
+check_MR_style_dangerjs:
+  extends:
+    - .pre_check_template
+  image: node:18.15.0-alpine3.16
+  variables:
+    DANGER_GITLAB_API_TOKEN: ${ESPCI_TOKEN}
+    DANGER_GITLAB_HOST: ${GITLAB_HTTP_SERVER}
+    DANGER_GITLAB_API_BASE_URL: ${GITLAB_HTTP_SERVER}/api/v4
+    DANGER_JIRA_USER: ${DANGER_JIRA_USER}
+    DANGER_JIRA_PASSWORD: ${DANGER_JIRA_PASSWORD}
+  cache:
+    # pull only for most of the use cases since it's cache dir.
+    # Only set "push" policy for "upload_cache" stage jobs
+    key:
+      files:
+        - .gitlab/dangerjs/package-lock.json
+    paths:
+      - .gitlab/dangerjs/node_modules/
+    policy: pull
+  before_script:
+    - cd .gitlab/dangerjs
+    - npm install --no-progress --no-update-notifier  # Install danger dependencies
+  script:
+    - npx danger ci --failOnErrors -v
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
   # esp_idf_version.h in a branch before tagging the next version.
@@ -58,34 +85,31 @@ test_check_kconfigs:
 
 check_blobs:
   extends: .pre_check_template
-  tags:
-    - build
   variables:
-    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib"
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib;components/esp_coex/lib"
   script:
     # Check if Wi-Fi library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    # Check if Coexistence library header files match between IDF and the version used when compiling the libraries
+    - IDF_TARGET=esp32 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32h2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
     - bash $IDF_PATH/tools/ci/check_blobs.sh
-
-check_fuzzer_compilation:
-   extends: .pre_check_template
-   image: $AFL_FUZZER_TEST_IMAGE
-   script:
-     - cd ${IDF_PATH}/components/lwip/test_afl_host
-     - make MODE=dhcp_server
-     - make MODE=dhcp_client
-     - make MODE=dns
 
 check_public_headers:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   script:
     - IDF_TARGET=esp32 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
     - IDF_TARGET=esp32s2 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s2-elf-
@@ -99,8 +123,6 @@ check_chip_support_components:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   artifacts:
     when: on_failure
     paths:
@@ -116,8 +138,6 @@ check_esp_err_to_name:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   artifacts:
     when: on_failure
     paths:
@@ -132,8 +152,6 @@ check_esp_system:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   script:
     - python components/esp_system/check_system_init_priorities.py
 
@@ -152,14 +170,6 @@ check_artifacts_expire_time:
     # check if we have set expire time for all artifacts
     - python tools/ci/check_artifacts_expire_time.py
 
-check_commit_msg:
-  extends: .pre_check_template
-  script:
-    - git status
-    - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
-    # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'
-
 check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
@@ -176,3 +186,22 @@ check_configure_ci_environment_parsing:
   script:
     - cd tools/ci
     - python -m unittest ci_build_apps.py
+
+mr_variables:
+  extends:
+    - .pre_check_template
+    - .rules:mr
+    - .before_script_minimal
+  tags:
+    - build
+  script:
+    - echo "MR_MODIFIED_FILES=$(python tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
+    - echo "MR_MODIFIED_COMPONENTS=$(python tools/ci/ci_get_mr_info.py components ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
+    - >
+      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
+        echo "BUILD_AND_TEST_ALL_APPS=1" >> mr.env
+      fi
+  artifacts:
+    reports:
+      dotenv: mr.env
+    expire_in: 4 days

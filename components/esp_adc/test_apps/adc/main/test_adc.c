@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "soc/adc_periph.h"
 #include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_monitor.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "test_common_adc.h"
@@ -149,7 +152,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
     bool do_calibration = false;
     adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
     for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
     if (!do_calibration) {
         ESP_LOGW(TAG, "No efuse bits burnt, only test the regi2c analog register values");
@@ -229,7 +232,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
         for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
             TEST_ASSERT_EQUAL(regi2c_cali_val_before[i], regi2c_cali_val_after[i]);
         }
-        ESP_LOGI(TAG, "Cali register settings unchanged\n");
+        ESP_LOGI(TAG, "Cali register settings unchanged");
 
     }
     TEST_ESP_OK(adc_oneshot_del_unit(adc_handle));
@@ -263,3 +266,215 @@ TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc][manul][ignore]")
 #endif  //#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+
+
+#if SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32S2
+#define TEST_ADC_FORMATE_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE1
+#else
+#define TEST_ADC_FORMATE_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#endif
+bool IRAM_ATTR test_high_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data){
+    return false;
+}
+TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
+{
+    adc_continuous_handle_t handle = NULL;
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = 1024,
+        .conv_frame_size = SOC_ADC_DIGI_DATA_BYTES_PER_CONV * 2,
+    };
+    TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
+
+    adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
+    for (int i = 0; i < 1; i++) {
+        adc_pattern[i].atten = ADC_ATTEN_DB_11;
+        adc_pattern[i].channel = i;
+        adc_pattern[i].unit = ADC_UNIT_1;
+        adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
+    }
+    adc_continuous_config_t dig_cfg = {
+        .pattern_num = 1,
+        .adc_pattern = adc_pattern,
+        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = TEST_ADC_FORMATE_TYPE,
+    };
+    TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
+
+    //try to enable without installed
+    adc_monitor_handle_t monitor_handle = NULL;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, adc_continuous_monitor_enable(monitor_handle));
+
+    //try to install with invalid argument
+    adc_monitor_config_t adc_monitor_cfg = {
+        .adc_unit = 2,
+        .channel = 2,
+        .h_threshold = 3000,
+        .l_threshold = -1,
+    };
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle));
+
+    //try to install when adc is running
+    adc_monitor_cfg.adc_unit = ADC_UNIT_1;
+    TEST_ESP_OK(adc_continuous_start(handle));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle));
+    TEST_ESP_OK(adc_continuous_stop(handle));
+
+    //normal install
+    TEST_ESP_OK(adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle));
+
+    //try register callback funcs when monitor is running
+    adc_monitor_evt_cbs_t monitor_cb = {
+        .on_over_high_thresh = test_high_cb,
+        .on_below_low_thresh = NULL,
+    };
+    TEST_ESP_OK(adc_continuous_monitor_enable(monitor_handle));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, adc_continuous_monitor_register_event_callbacks(monitor_handle, &monitor_cb, NULL));
+    TEST_ESP_OK(adc_continuous_monitor_disable(monitor_handle));
+
+    //normal register cbs
+    TEST_ESP_OK(adc_continuous_monitor_register_event_callbacks(monitor_handle, &monitor_cb, NULL));
+
+    //try init so many monitor, we totally have 2 monitors actually
+    adc_monitor_handle_t monitor_handle_2 = NULL, monitor_handle_3 = NULL;
+#if CONFIG_IDF_TARGET_ESP32S2
+    adc_monitor_cfg.adc_unit = ADC_UNIT_2;  //s2 can't use two monitor on same ADC unit
+#endif
+    TEST_ESP_OK(adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle_2));
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle_3));
+
+    //try delete them, as monitor_handle_3 should be NULL because it should init failed
+    TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle_2));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, adc_del_continuous_monitor(monitor_handle_3));
+
+    //try register cbs again
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, adc_continuous_monitor_register_event_callbacks(monitor_handle, &monitor_cb, &monitor_cb));
+
+    //try delete it when adc is running but monitor not running
+    TEST_ESP_OK(adc_continuous_start(handle));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, adc_del_continuous_monitor(monitor_handle));
+    TEST_ESP_OK(adc_continuous_stop(handle));
+
+    //normal option
+    TEST_ESP_OK(adc_continuous_monitor_enable(monitor_handle));
+    TEST_ESP_OK(adc_continuous_monitor_disable(monitor_handle));
+
+    //normal uninstall
+    TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle));
+
+    TEST_ESP_OK(adc_continuous_deinit(handle));
+}
+
+
+/**
+ * NOTE: To run this special feature test case, you need wire ADC channel pin you want to monit
+ *       to a wave output pin defined below.
+ *
+ *       +---------+
+ *       |         |
+ *       |    (adc)|------------+
+ *       |         |            |
+ *       |   (wave)|------------+
+ *       |         |
+ *       |  ESP32  |
+ *       +---------+
+ *
+ *       or you can connect your signals from signal generator to ESP32 pin which you monitoring
+ **/
+#define TEST_ADC_CHANNEL    ADC_CHANNEL_0   //GPIO_1
+#define TEST_WAVE_OUT_PIN   GPIO_NUM_2      //GPIO_2
+static uint32_t m1h_cnt, m1l_cnt;
+
+bool IRAM_ATTR m1h_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data){
+    m1h_cnt ++;
+    return false;
+}
+bool IRAM_ATTR m1l_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data){
+    m1l_cnt ++;
+    return false;
+}
+TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
+{
+    adc_continuous_handle_t handle = NULL;
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = 1024,
+        .conv_frame_size = SOC_ADC_DIGI_DATA_BYTES_PER_CONV * 2,
+    };
+    TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
+
+    adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
+    for (int i = 0; i < 2; i++) {
+        adc_pattern[i].atten = ADC_ATTEN_DB_11;
+        adc_pattern[i].channel = TEST_ADC_CHANNEL;
+        adc_pattern[i].unit = ADC_UNIT_1;
+        adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
+    }
+    adc_continuous_config_t dig_cfg = {
+        .pattern_num = 2,
+        .adc_pattern = adc_pattern,
+        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = TEST_ADC_FORMATE_TYPE,
+    };
+    TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
+
+    //config monitor
+    adc_monitor_handle_t monitor_handle;
+    adc_monitor_config_t adc_monitor_cfg = {
+        .adc_unit = ADC_UNIT_1,
+        .channel = TEST_ADC_CHANNEL,
+#if CONFIG_IDF_TARGET_ESP32S2
+        .h_threshold = -1,      //S2 support only one threshold for one monitor
+#else
+        .h_threshold = 3000,
+#endif
+        .l_threshold = 1000,
+    };
+    adc_monitor_evt_cbs_t monitor_cb = {
+#if !CONFIG_IDF_TARGET_ESP32S2
+        .on_over_high_thresh = m1h_cb,
+#endif
+        .on_below_low_thresh = m1l_cb,
+    };
+    TEST_ESP_OK(adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle));
+    TEST_ESP_OK(adc_continuous_monitor_register_event_callbacks(monitor_handle, &monitor_cb, NULL));
+
+    //config a pin to generate wave
+    gpio_config_t gpio_cfg = {
+        .pin_bit_mask = (1ULL << TEST_WAVE_OUT_PIN),
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .pull_up_en = GPIO_PULLDOWN_ENABLE,
+    };
+    TEST_ESP_OK(gpio_config(&gpio_cfg));
+
+    TEST_ESP_OK(adc_continuous_monitor_enable(monitor_handle));
+    TEST_ESP_OK(adc_continuous_start(handle));
+
+    for (uint8_t i=0; i<8; i++)
+    {
+        vTaskDelay(1000);
+
+        // check monitor cb
+        printf("%d\t high_cnt %4ld\tlow_cnt %4ld\n", i, m1h_cnt, m1l_cnt);
+        if (gpio_get_level(TEST_WAVE_OUT_PIN)) {
+#if !CONFIG_IDF_TARGET_ESP32S2
+            // TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW*0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1h_cnt);
+            // TEST_ASSERT_LESS_THAN_UINT32(5, m1l_cnt);   //Actually, it will still encountered 1~2 times because hardware run very quickly
+#endif
+            m1h_cnt = 0;
+            gpio_set_level(TEST_WAVE_OUT_PIN, 0);
+        } else {
+            TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW*0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
+            TEST_ASSERT_LESS_THAN_UINT32(5, m1h_cnt);   //Actually, it will still encountered 1~2 times because hardware run very quickly
+            m1l_cnt = 0;
+            gpio_set_level(TEST_WAVE_OUT_PIN, 1);
+        }
+    }
+    TEST_ESP_OK(adc_continuous_stop(handle));
+    TEST_ESP_OK(adc_continuous_monitor_disable(monitor_handle));
+    TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle));
+    TEST_ESP_OK(adc_continuous_deinit(handle));
+}
+
+#endif  //SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED

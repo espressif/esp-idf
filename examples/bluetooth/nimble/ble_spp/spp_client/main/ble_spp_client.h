@@ -19,12 +19,11 @@ struct ble_hs_cfg;
 union ble_store_value;
 union ble_store_key;
 
-#define GATT_SVR_SVC_ALERT_UUID              0x1811
-#define GATT_SVR_CHR_SUP_NEW_ALERT_CAT_UUID  0x2A47
-#define GATT_SVR_CHR_NEW_ALERT               0x2A46
-#define GATT_SVR_CHR_SUP_UNR_ALERT_CAT_UUID  0x2A48
-#define GATT_SVR_CHR_UNR_ALERT_STAT_UUID     0x2A45
-#define GATT_SVR_CHR_ALERT_NOT_CTRL_PT       0x2A44
+/* 16 Bit SPP Service UUID */
+#define GATT_SPP_SVC_UUID                                  0xABF0
+
+/* 16 Bit SPP Service Characteristic UUID */
+#define GATT_SPP_CHR_UUID                                  0xABF1
 
 #ifdef __cplusplus
 }

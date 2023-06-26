@@ -10,7 +10,7 @@ It may include but it is not limited to the following:
 
 ## How to use
 
-- Update the **Environmental Capabilities ``Kcofig``** with capabilities you consider could be shared among other example projects.
+- Update the **Environmental Capabilities ``Kconfig``** with capabilities you consider could be shared among other example projects.
 
 - Use ``orsource`` statement in **your example project ``Kconfig``** to include the Environmental Capabilities as shown below.
 

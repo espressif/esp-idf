@@ -1,3 +1,0 @@
-# continue from default
-CONFIG_IDF_TARGET="esp32"
-TEST_COMPONENTS=soc spi_flash vfs

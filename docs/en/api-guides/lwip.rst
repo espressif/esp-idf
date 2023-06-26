@@ -14,10 +14,15 @@ ESP-IDF supports the following lwIP TCP/IP stack functions:
 Adapted APIs
 ^^^^^^^^^^^^
 
+    .. warning::
+
+        When using any lwIP API (other than `BSD Sockets API`_), please make sure that it is thread safe. To check if a given API call is safe, enable :ref:`CONFIG_LWIP_CHECK_THREAD_SAFETY` and run the application. This way lwIP asserts the TCP/IP core functionality to be correctly accessed; the execution aborts if it is not locked properly or accessed from the correct task (`lwIP FreeRTOS Task`_).
+        The general recommendation is to use :doc:`/api-reference/network/esp_netif` component to interact with lwIP.
+
 Some common lwIP "app" APIs are supported indirectly by ESP-IDF:
 
 - DHCP Server & Client are supported indirectly via the :doc:`/api-reference/network/esp_netif` functionality
-- Simple Network Time Protocol (SNTP) is supported via the :component_file:`lwip/include/apps/sntp/sntp.h` :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` functions (see also :ref:`system-time-sntp-sync`)
+- Simple Network Time Protocol (SNTP) is also supported via the :doc:`/api-reference/network/esp_netif`, or directly via the :component_file:`lwip/include/apps/esp_sntp.h` functions that provide thread-safe API to :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` functions (see also :ref:`system-time-sntp-sync`)
 - ICMP Ping is supported using a variation on the lwIP ping API. See :doc:`/api-reference/protocols/icmp_echo`.
 - NetBIOS lookup is available using the standard lwIP API. :example:`protocols/http_server/restful_server` has an option to demonstrate using NetBIOS to look up a host on the LAN.
 - mDNS uses a different implementation to the lwIP default mDNS (see :doc:`/api-reference/protocols/mdns`), but lwIP can look up mDNS hosts using standard APIs such as ``gethostbyname()`` and the convention ``hostname.local``, provided the :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` setting is enabled.
@@ -139,7 +144,7 @@ Example::
 Socket Error Reason Code
 ++++++++++++++++++++++++
 
-Below is a list of common error codes. For more detailed list of standard POSIX/C error codes, please see `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>` and the platform-specific extensions :component_file:`newlib/platform_include/errno.h`
+Below is a list of common error codes. For more detailed list of standard POSIX/C error codes, please see `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ and the platform-specific extensions :component_file:`newlib/platform_include/errno.h`
 
 +-----------------+-------------------------------------+
 | Error code      | Description                         |
@@ -285,7 +290,7 @@ A number of configuration items are available to modify the task and the queues 
 IPv6 Support
 ------------
 
-Both IPv4 and IPv6 are supported as dual stack and enabled by default (IPv6 may be disabled if it's not needed, see :ref:`lwip-ram-usage`).
+Both IPv4 and IPv6 are supported as a dual stack and are enabled by default. Both IPv6 and IPv4 may be disabled separately if they are not needed (see :ref:`lwip-ram-usage`).
 IPv6 support is limited to *Stateless Autoconfiguration* only, *Stateful configuration* is not supported in ESP-IDF (not in upstream lwip).
 IPv6 Address configuration is defined by means of these protocols or services:
 
@@ -401,11 +406,11 @@ Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fai
 
 .. only:: esp32
 
-    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
+    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
 
 .. only:: not esp32 and SOC_WIFI_SUPPORTED
 
-    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` project configuration may also help.
+    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` project configuration may also help.
 
 .. _lwip-performance:
 
@@ -450,7 +455,8 @@ Most lwIP RAM usage is on-demand, as RAM is allocated from the heap as needed. T
 - Reducing :ref:`CONFIG_LWIP_MAX_SOCKETS` reduces the maximum number of sockets in the system. This will also cause TCP sockets in the ``WAIT_CLOSE`` state to be closed and recycled more rapidly (if needed to open a new socket), further reducing peak RAM usage.
 - Reducing :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`, :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` and :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` reduce memory usage at the expense of throughput, depending on usage.
 - Reducing :ref:`CONFIG_LWIP_TCP_MSL`, :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` reduces the maximum segment lifetime in the system. This will also cause TCP sockets in the ``TIME_WAIT``, ``FIN_WAIT_2`` state to be closed and recycled more rapidly 
-- Disable  :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2KB RAM when system power up and 7KB RAM when TCPIP stack running. If there is no requirement for supporting IPV6 then it can be disabled to save flash and RAM footprint.
+- Disabling :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2KB RAM when the system is powered up and 7KB RAM when the TCPIP stack is running. If there is no requirement for supporting IPV6 then it can be disabled to save flash and RAM footprint.
+- Disabling :ref:`CONFIG_LWIP_IPV4` can save about 26 KB of firmware size and 600B RAM on power up and 6 KB RAM when the TCP/IP stack is running. If the local network supports IPv6-only configuration then IPv4 can be disabled to save flash and RAM footprint.
 
 .. only:: SOC_WIFI_SUPPORTED
 

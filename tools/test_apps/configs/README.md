@@ -7,8 +7,7 @@ To facilitiate re-use, this folder contains some of the most common ones.
 These can then be added to the list of default configs in test apps:
 
 ```
-set(SDKCONFIG_DEFAULTS "$ENV{IDF_PATH}/tools/test_apps/configs/sdkconfig.debug_helpers")
-list(APPEND SDKCONFIG_DEFAULTS "sdkconfig.defaults")
+list(PREPEND SDKCONFIG_DEFAULTS "$ENV{IDF_PATH}/tools/test_apps/configs/sdkconfig.debug_helpers" "sdkconfig.defaults")
 ```
 
 Note that this must be set in the top-level project `CMakelist.txt`.

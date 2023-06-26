@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,7 @@ static void mcpwm_operator_unregister_from_group(mcpwm_oper_t *oper)
     mcpwm_release_group_handle(group);
 }
 
-static esp_err_t mcpwm_operator_destory(mcpwm_oper_t *oper)
+static esp_err_t mcpwm_operator_destroy(mcpwm_oper_t *oper)
 {
     if (oper->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(oper->intr), TAG, "uninstall interrupt service failed");
@@ -123,7 +123,7 @@ esp_err_t mcpwm_new_operator(const mcpwm_operator_config_t *config, mcpwm_oper_h
 
 err:
     if (oper) {
-        mcpwm_operator_destory(oper);
+        mcpwm_operator_destroy(oper);
     }
     return ret;
 }
@@ -149,7 +149,7 @@ esp_err_t mcpwm_del_operator(mcpwm_oper_handle_t oper)
 
     ESP_LOGD(TAG, "del operator (%d,%d)", group->group_id, oper_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_operator_destory(oper), TAG, "destory operator failed");
+    ESP_RETURN_ON_ERROR(mcpwm_operator_destroy(oper), TAG, "destroy operator failed");
     return ESP_OK;
 }
 
@@ -219,7 +219,7 @@ esp_err_t mcpwm_operator_register_event_callbacks(mcpwm_oper_handle_t oper, cons
     int group_id = group->group_id;
     int oper_id = oper->oper_id;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_brake_cbc) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_brake_cbc), ESP_ERR_INVALID_ARG, TAG, "on_brake_cbc callback not in IRAM");
     }

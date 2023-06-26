@@ -27,14 +27,6 @@
 #define CONFIG_BTDM_RESERVE_DRAM 0
 #endif
 
-#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
-#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
-#else
-#define ESP_BOOTLOADER_RESERVE_RTC 0
-#endif
-
 #if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
 
 ASSERT((CONFIG_ESP32_FIXED_STATIC_RAM_SIZE <= 0x2c200),
@@ -46,6 +38,13 @@ ASSERT((CONFIG_ESP32_FIXED_STATIC_RAM_SIZE <= 0x2c200),
 #define DRAM0_0_SEG_LEN 0x2c200
 #endif
 
+#if CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM
+#define SRAM1_IRAM_LEN 0xA000
+#else
+#define SRAM1_IRAM_LEN 0x0
+#endif
+
+
 MEMORY
 {
   /* All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
@@ -53,7 +52,7 @@ MEMORY
   are connected to the data port of the CPU and eg allow bytewise access. */
 
   /* IRAM for PRO cpu. Not sure if happy with this, this is MMU area... */
-  iram0_0_seg (RX) :                 org = 0x40080000, len = 0x20000
+  iram0_0_seg (RX) :                 org = 0x40080000, len = 0x20000 + SRAM1_IRAM_LEN
 
 #ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Even though the segment name is iram, it is actually mapped to flash
@@ -89,12 +88,19 @@ MEMORY
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
-  /* RTC fast memory (executable). Persists over deep sleep.
-   */
+  /* RTC fast memory (executable). Persists over deep sleep. */
   rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 
-  /* RTC fast memory (same block as above), viewed from data bus */
+  /* RTC fast memory (same block as above, rtc_iram_seg), viewed from data bus */
   rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+
+  /* We reduced the size of rtc_iram_seg and rtc_data_seg by ESP_BOOTLOADER_RESERVE_RTC value.
+     It reserves the amount of RTC fast memory that we use for this memory segment.
+     This segment is intended for keeping bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+     org = 0x3ff80000 + 0x2000 - ESP_BOOTLOADER_RESERVE_RTC == SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t)
+  */
+  rtc_fast_reserved_seg(RW) :        org = 0x3ff80000 + 0x2000 - ESP_BOOTLOADER_RESERVE_RTC, len = ESP_BOOTLOADER_RESERVE_RTC
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
 
@@ -102,10 +108,18 @@ MEMORY
   */
 #if CONFIG_ULP_COPROC_ENABLED
   rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                     len = 0x2000 - CONFIG_ULP_COPROC_RESERVE_MEM
+                                     len = 0x2000 - CONFIG_ULP_COPROC_RESERVE_MEM - RESERVE_RTC_MEM
 #else
-  rtc_slow_seg(RW)  :                org = 0x50000000, len = 0x2000
+  rtc_slow_seg(RW)  :                org = 0x50000000, len = 0x2000 - RESERVE_RTC_MEM
 #endif // CONFIG_ULP_COPROC_ENABLED
+
+  /* We reduced the size of rtc_slow_seg by RESERVE_RTC_MEM value.
+     It reserves the amount of RTC slow memory that we use for this memory segment.
+     This segment is intended for keeping rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+     org = 0x50000000 + 0x2000 - RESERVE_RTC_MEM
+  */
+  rtc_slow_reserved_seg(RW) :        org = 0x50000000 + 0x2000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 
   /* external memory */
   extern_ram_seg(RWX)  :             org = 0x3F800000,
@@ -114,13 +128,19 @@ MEMORY
 
 #if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
 /* static data ends at defined address */
-_static_data_end = 0x3FFB0000 + DRAM0_0_SEG_LEN;
+_heap_start = 0x3FFB0000 + DRAM0_0_SEG_LEN;
 #else
-_static_data_end = _bss_end;
+_heap_start = _heap_low_start;
 #endif
 
-/* Heap ends at top of dram0_0_seg */
+_sram1_iram_start = 0x400A0000;
+_sram1_iram_len = ( _iram_end > _sram1_iram_start) ? (_iram_end - _sram1_iram_start) : 0;
+_heap_end = ALIGN(0x40000000 - _sram1_iram_len - 3, 4);
+
+#if CONFIG_ESP32_TRACEMEM_RESERVE_DRAM != 0
 _heap_end = 0x40000000 - CONFIG_ESP32_TRACEMEM_RESERVE_DRAM;
+#endif
+
 
 _data_seg_org = ORIGIN(rtc_data_seg);
 

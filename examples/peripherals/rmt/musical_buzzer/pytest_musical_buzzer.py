@@ -9,7 +9,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
-# @pytest.mark.esp32h4 TODO: uncomment this when remove --preview for h4
+@pytest.mark.esp32h2
 @pytest.mark.generic
 def test_musical_buzzer_example(dut: Dut) -> None:
     dut.expect_exact('example: Create RMT TX channel')

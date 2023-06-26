@@ -1,0 +1,2 @@
+# Test with misc newlib config options turned on
+CONFIG_NEWLIB_NANO_FORMAT=y

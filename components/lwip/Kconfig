@@ -19,12 +19,21 @@ menu "LWIP"
         bool "Enable tcpip core locking"
         default n
         help
-            If Enable tcpip　core locking,Creates a global mutex that is held
+            If Enable tcpip core locking,Creates a global mutex that is held
             during TCPIP thread operations.Can be locked by client code to perform
             lwIP operations without changing into TCPIP thread using callbacks.
             See LOCK_TCPIP_CORE() and UNLOCK_TCPIP_CORE().
 
-            If disable tcpip　core locking,TCP IP will perform tasks through context switching．
+            If disable tcpip core locking,TCP IP will perform tasks through context switching
+
+    config LWIP_CHECK_THREAD_SAFETY
+        bool "Checks that lwip API runs in expected context"
+        default n
+        help
+            Enable to check that the project does not violate lwip thread safety.
+            If enabled, all lwip functions that require thread awareness run an assertion
+            to verify that the TCP/IP core functionality is either locked or accessed
+            from the correct thread.
 
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"
@@ -138,6 +147,7 @@ menu "LWIP"
     config LWIP_IP4_FRAG
         bool "Enable fragment outgoing IP4 packets"
         default y
+        depends on LWIP_IPV4
         help
             Enabling this option allows fragmenting outgoing IP4 packets if their size
             exceeds MTU.
@@ -153,6 +163,7 @@ menu "LWIP"
     config LWIP_IP4_REASSEMBLY
         bool "Enable reassembly incoming fragmented IP4 packets"
         default n
+        depends on LWIP_IPV4
         help
             Enabling this option allows reassemblying incoming fragmented IP4 packets.
 
@@ -192,6 +203,7 @@ menu "LWIP"
     config LWIP_ESP_GRATUITOUS_ARP
         bool "Send gratuitous ARP periodically"
         default y
+        depends on LWIP_IPV4
         help
             Enable this option allows to send gratuitous ARP periodically.
 
@@ -206,6 +218,24 @@ menu "LWIP"
         help
             Set the timer interval for gratuitous ARP. The default value is 60s
 
+    config LWIP_ESP_MLDV6_REPORT
+        bool "Send mldv6 report periodically"
+        depends on LWIP_IPV6
+        default y
+        help
+            Enable this option allows to send mldv6 report periodically.
+
+            This option solve the issue that failed to receive multicast data.
+            Some routers fail to forward multicast packets.
+            To solve this problem, send multicast mdlv6 report to routers regularly.
+
+    config LWIP_MLDV6_TMR_INTERVAL
+        int "mldv6 report timer interval(seconds)"
+        default 40
+        depends on LWIP_ESP_MLDV6_REPORT
+        help
+            Set the timer interval for mldv6 report. The default value is 30s
+
     config LWIP_TCPIP_RECVMBOX_SIZE
         int "TCPIP task receive mail box size"
         default 32
@@ -218,6 +248,7 @@ menu "LWIP"
     config LWIP_DHCP_DOES_ARP_CHECK
         bool "DHCP: Perform ARP check on any offered address"
         default y
+        depends on LWIP_IPV4
         help
             Enabling this option performs a check (via ARP request) if the offered IP address
             is not already in use by another host on the network.
@@ -225,6 +256,7 @@ menu "LWIP"
     config LWIP_DHCP_DISABLE_CLIENT_ID
         bool "DHCP: Disable Use of HW address as client identification"
         default n
+        depends on LWIP_IPV4
         help
             This option could be used to disable DHCP client identification with its MAC address.
             (Client id is used by DHCP servers to uniquely identify clients and are included
@@ -234,6 +266,7 @@ menu "LWIP"
     config LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
         bool "DHCP: Disable Use of vendor class identification"
         default y
+        depends on LWIP_IPV4
         help
             This option could be used to disable DHCP client vendor class identification.
             Set this option to "y" in order to exclude option 60 from DHCP packets.
@@ -241,6 +274,7 @@ menu "LWIP"
     config LWIP_DHCP_RESTORE_LAST_IP
         bool "DHCP: Restore last IP obtained from DHCP server"
         default n
+        depends on LWIP_IPV4
         help
             When this option is enabled, DHCP client tries to re-obtain last valid IP address obtained from DHCP
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
@@ -251,6 +285,7 @@ menu "LWIP"
         default 68 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
         default 108 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
         range 68 255
+        depends on LWIP_IPV4
         help
             Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
             options and values. If your code meets LWIP_ASSERT due to option value is too long.
@@ -263,11 +298,20 @@ menu "LWIP"
         help
             Number of clients that may store data in client_data member array of struct netif.
 
+    config LWIP_DHCP_COARSE_TIMER_SECS
+        int "DHCP coarse timer interval(s)"
+        default 1
+        range 1 10
+        help
+            Set DHCP coarse interval in seconds.
+            A higher value will be less precise but cost less power consumption.
+
     menu "DHCP server"
 
         config LWIP_DHCPS
             bool "DHCPS: Enable IPv4 Dynamic Host Configuration Protocol Server (DHCPS)"
             default y
+            depends on LWIP_IPV4
             help
                 Enabling this option allows the device to run the DHCP server
                 (to dynamically assign IPv4 addresses to clients).
@@ -297,6 +341,7 @@ menu "LWIP"
     menuconfig LWIP_AUTOIP
         bool "Enable IPV4 Link-Local Addressing (AUTOIP)"
         default n
+        depends on LWIP_IPV4
         help
             Enabling this option allows the device to self-assign an address
             in the 169.256/16 range if none is assigned statically or via DHCP.
@@ -334,6 +379,12 @@ menu "LWIP"
         help
             If rate limiting self-assignment requests, wait this long between
             each request.
+
+    config LWIP_IPV4
+        bool "Enable IPv4"
+        default y
+        help
+            Enable IPv4 stack. If you want to use IPv6 only TCP/IP stack, disable this.
 
     config LWIP_IPV6
         bool "Enable IPv6"
@@ -969,6 +1020,26 @@ menu "LWIP"
             config LWIP_HOOK_ND6_GET_GW_DEFAULT
                 bool "Default (weak) implementation"
             config LWIP_HOOK_ND6_GET_GW_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
+        choice LWIP_HOOK_IP6_SELECT_SRC_ADDR
+            prompt "IPv6 source address selection Hook"
+            depends on LWIP_IPV6
+            default LWIP_HOOK_IP6_SELECT_SRC_ADDR_NONE
+            help
+                Enables custom IPv6 source address selection.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_IP6_SELECT_SRC_ADDR_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_IP6_SELECT_SRC_ADDR_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_IP6_SELECT_SRC_ADDR_CUSTOM
                 bool "Custom implementation"
 
         endchoice

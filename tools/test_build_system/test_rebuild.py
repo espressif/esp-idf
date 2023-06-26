@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # These tests check whether the build system rebuilds some files or not
 # depending on the changes to the project.
@@ -8,18 +8,8 @@ from pathlib import Path
 from typing import List, Union
 
 import pytest
-from test_build_system_helpers import IdfPyFunc, get_snapshot, replace_in_file
-
-BOOTLOADER_BINS = ['build/bootloader/bootloader.elf', 'build/bootloader/bootloader.bin']
-APP_BINS = ['build/build_test_app.elf', 'build/build_test_app.bin']
-PARTITION_BIN = ['build/partition_table/partition-table.bin']
-JSON_METADATA = ['build/project_description.json', 'build/flasher_args.json', 'build/config/kconfig_menus.json', 'build/config/sdkconfig.json']
-ALL_ARTIFACTS = [
-    *BOOTLOADER_BINS,
-    *APP_BINS,
-    *PARTITION_BIN,
-    *JSON_METADATA
-]
+from test_build_system_helpers import (ALL_ARTIFACTS, APP_BINS, BOOTLOADER_BINS, PARTITION_BIN, IdfPyFunc,
+                                       get_snapshot, replace_in_file)
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -137,3 +127,26 @@ def test_rebuild_linker(idf_py: IdfPyFunc) -> None:
     (idf_path / 'components/esp_common/common.lf').touch()
     rebuild_and_check(idf_py,
                       APP_BINS, BOOTLOADER_BINS + PARTITION_BIN)
+
+
+@pytest.mark.usefixtures('idf_copy')
+def test_rebuild_version_change(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    idf_path = Path(os.environ['IDF_PATH'])
+
+    logging.info('Creating version files')
+    version_idf_file = idf_path / 'version.txt'
+    version_idf_file.write_text('IDF_VER_0123456789_0123456789_0123456789')
+
+    version_tmp_file = test_app_copy / 'version.txt'
+    version_tmp_file.write_text('project-version-1.0')
+
+    logging.info('Build first version')
+    idf_py('build')
+
+    logging.info('Changing app version')
+    version_tmp_file.write_text('project-version-2.0(012345678901234567890123456789)')
+
+    logging.info('rebuild should update only app files, not bootloader')
+    rebuild_and_check(idf_py, APP_BINS, BOOTLOADER_BINS)
+    logging.info('new rebuild should not change anything')
+    rebuild_and_check(idf_py, [], APP_BINS + BOOTLOADER_BINS)

@@ -18,8 +18,9 @@ GPIO 汇总
     .. list::
 
         - 处于 Deep-sleep 模式时
-        :SOC_ULP_SUPPORTED: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
+        :SOC_ULP_SUPPORTED and not esp32c6: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
         - 使用 ADC/DAC 等模拟功能时
+
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
@@ -48,6 +49,20 @@ GPIO 汇总
 		请注意，``管脚毛刺过滤器`` 和 ``灵活毛刺过滤器`` 是各自独立的，支持为同一 GPIO 同时启用这两种过滤器。
 
 	毛刺过滤器默认关闭，可调用 :cpp:func:`gpio_glitch_filter_enable` 使能过滤器。如需回收这个过滤器，可以调用 :cpp:func:`gpio_del_glitch_filter` 函数。在回收句柄前，请确保过滤器处于关闭状态，否则需调用 :cpp:func:`gpio_glitch_filter_disable`。
+
+
+.. only:: SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+
+    GPIO 迟滞过滤器
+    ---------------
+
+    {IDF_TARGET_NAME} 支持输入引脚的硬件迟滞，这可以减少由于输入电压在逻辑 0、1 临界值附近时采样不稳定造成的 GPIO 中断误触，尤其是当输入逻辑电平转换较慢，电平建立时间较长时。
+
+    每个引脚可以独立启用迟滞功能。默认情况下，它由 eFuse 控制，且处于关闭状态，但也可以由软件控制启用或禁用。您可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择迟滞控制模式。
+
+    .. note::
+
+        当迟滞功能由 eFuse 控制时，仍然可以独立的控制每个引脚的该功能，您需要 `烧断 eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ ，以在特定 GPIO上 启用迟滞功能。
 
 
 应用示例

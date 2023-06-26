@@ -361,7 +361,7 @@ static void te_intr_cb(void *arg)
     static int scan_done_cnt = 0;
     static uint32_t touch_pre_trig_status = 0;
     int task_awoken = pdFALSE;
-    te_intr_msg_t te_intr_msg;
+    te_intr_msg_t te_intr_msg = {};
     /*< Figure out which touch sensor channel is triggered and the trigger type */
     uint32_t intr_mask = touch_pad_read_intr_status_mask();
     if (intr_mask == 0x0) {  //For dummy interrupt

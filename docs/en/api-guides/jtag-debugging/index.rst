@@ -171,13 +171,15 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
    :start-after: run-openocd
    :end-before: ---
 
+{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg"}
+
 .. note::
 
     The files provided after ``-f`` above are specific for |run-openocd-device-name|. You may need to provide different files depending on the hardware that is used. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
-    .. only:: esp32c3
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
-    For example, ``board/esp32c3-ftdi.cfg`` can be used for a custom board with an FT2232H or FT232H chip used for JTAG connection, or with ESP-Prog.
+        For example, ``{IDF_TARGET_FTDI_CONFIG}`` can be used for a custom board with an FT2232H or FT232H chip used for JTAG connection, or with ESP-Prog.
 
 .. highlight:: none
 
@@ -206,13 +208,15 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
  - ``verify`` - Optional. Verify flash contents after writing.
  - ``reset`` - Optional. Reset target after programing.
  - ``exit`` - Optional. Finally exit OpenOCD.
+ - ``compress`` - Optional. Compress image file before programming.
+ - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
 
 You are now ready to start application debugging. Follow the steps described in the section below.
 
@@ -224,10 +228,11 @@ Launching Debugger
 
 The toolchain for {IDF_TARGET_NAME} features GNU Debugger, in short GDB. It is available with other toolchain programs under filename: {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb. GDB can be called and operated directly from command line in a terminal. Another option is to call it from within IDE (like Eclipse, Visual Studio Code, etc.) and operate indirectly with help of GUI instead of typing commands in a terminal.
 
-Both options of using debugger are discussed under links below.
+The options of using debugger are discussed under links below.
 
 * :ref:`jtag-debugging-using-debugger-eclipse`
 * :ref:`jtag-debugging-using-debugger-command-line`
+* `Configuration for Visual Studio Code Debug <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__
 
 It is recommended to first check if debugger works from :ref:`jtag-debugging-using-debugger-command-line` and then move to using :ref:`jtag-debugging-using-debugger-eclipse`.
 

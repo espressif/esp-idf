@@ -93,7 +93,9 @@ function(__build_set_default_build_specifications)
     unset(c_compile_options)
     unset(cxx_compile_options)
 
-    list(APPEND compile_definitions "_GNU_SOURCE")
+    list(APPEND compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"  # These two lines enable libstd++ to use
+                                    "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
+                                    "_GNU_SOURCE")
 
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"
@@ -127,9 +129,10 @@ function(__build_set_lang_version)
     if(NOT IDF_TARGET STREQUAL "linux")
         # Building for chip targets: we use a known version of the toolchain.
         # Use latest supported versions.
-        # Please update docs/en/api-guides/cplusplus.rst when changing this.
+        # Please update docs/en/api-guides/cplusplus.rst and
+        # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
         set(c_std gnu17)
-        set(cxx_std gnu++20)
+        set(cxx_std gnu++2b)
     else()
         enable_language(C CXX)
         # Building for Linux target, fall back to an older version of the standard
@@ -149,7 +152,7 @@ function(__build_set_lang_version)
                                 "${preferred_c_versions}. Please upgrade the host compiler.")
         endif()
 
-        set(preferred_cxx_versions gnu++20 gnu++2a gnu++17 gnu++14)
+        set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
         set(ver_found FALSE)
         foreach(cxx_version ${preferred_cxx_versions})
             check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
@@ -383,9 +386,6 @@ macro(__build_process_project_includes)
         set(${build_property} "${val}")
     endforeach()
 
-    # Check that the CMake target value matches the Kconfig target value.
-    __target_check()
-
     idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
 
     # Include each component's project_include.cmake
@@ -467,6 +467,8 @@ macro(idf_build_process target)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
     idf_build_set_property(BOOTLOADER_BUILD "${BOOTLOADER_BUILD}")
+
+    idf_build_set_property(IDF_TOOLCHAIN "${IDF_TOOLCHAIN}")
 
     # Check build target is specified. Since this target corresponds to a component
     # name, the target component is automatically added to the list of common component

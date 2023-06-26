@@ -6,4 +6,4 @@ Please refer to https://docs.espressif.com/projects/esp-idf/en/latest/esp32/vers
 
 ## Reporting a Vulnerability
 
-If you think you have found a security vulnerability in Espressif solutions (including ESP-IDF), then please send an email to our Bug Bounty team at bugbounty@espressif.com. Please do **NOT** create a public GitHub issue.
+Please refer to [Espressif Security Incident Response Process](https://www.espressif.com/sites/default/files/Espressif%20Security%20Incident%20Response%20Process%20v1.0_EN.pdf) on the guidelines to report a security vulnerability. Please do **NOT** create a public GitHub issue.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +14,8 @@
 #endif
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_clk.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
 #include "mcpwm_private.h"
@@ -115,29 +115,14 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
                         "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
 
     if (do_clock_init) {
-        // [clk_tree] ToDo: replace the following switch-case table by clock_tree APIs
-        switch (clk_src) {
-#if SOC_MCPWM_CLK_SUPPORT_PLL160M
-        case SOC_MOD_CLK_PLL_F160M:
-            periph_src_clk_hz = 160000000;
-#if CONFIG_PM_ENABLE
-            sprintf(group->pm_lock_name, "mcpwm_%d", group->group_id); // e.g. mcpwm_0
-            ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, group->pm_lock_name, &group->pm_lock);
-            ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-            ESP_LOGD(TAG, "install ESP_PM_APB_FREQ_MAX lock for MCPWM group(%d)", group->group_id);
-#endif // CONFIG_PM_ENABLE
-            break;
-#endif // SOC_MCPWM_CLK_SUPPORT_PLL160M
+        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
 
-#if SOC_MCPWM_CLK_SUPPORT_XTAL
-        case SOC_MOD_CLK_XTAL:
-            periph_src_clk_hz = esp_clk_xtal_freq();
-            break;
-#endif // SOC_MCPWM_CLK_SUPPORT_XTAL
-        default:
-            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "clock source %d is not supported", clk_src);
-            break;
-        }
+#if CONFIG_PM_ENABLE
+        sprintf(group->pm_lock_name, "mcpwm_%d", group->group_id); // e.g. mcpwm_0
+        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, group->pm_lock_name, &group->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for MCPWM group(%d)", group->group_id);
+#endif // CONFIG_PM_ENABLE
 
         mcpwm_ll_group_set_clock_source(group->hal.dev, clk_src);
         mcpwm_ll_group_set_clock_prescale(group->hal.dev, MCPWM_PERIPH_CLOCK_PRE_SCALE);

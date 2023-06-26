@@ -7,7 +7,8 @@
 #ifndef _WIFI_PROV_CONFIG_H_
 #define _WIFI_PROV_CONFIG_H_
 
-#include <lwip/ip4_addr.h>
+#include "esp_netif_ip_addr.h"
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {

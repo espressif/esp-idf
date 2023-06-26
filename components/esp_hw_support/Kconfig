@@ -3,6 +3,15 @@ menu "Hardware Settings"
     menu "Chip revision"
         # Insert chip-specific HW config
         orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+
+        config ESP_REV_NEW_CHIP_TEST
+            bool "Internal test mode"
+            depends on IDF_CI_BUILD
+            default n
+            help
+                For internal chip testing, a small number of new versions chips didn't
+                update the version field in eFuse, you can enable this option to force the
+                software recognize the chip version based on the rev selected in menuconfig.
     endmenu
 
     orsource "./port/$IDF_TARGET/Kconfig.spiram"
@@ -67,7 +76,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 # TODO: IDF-5641 (esp32c6)
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
                 esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
@@ -96,6 +105,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             bool "Flash leakage current workaround in light sleep"
+            depends on !APP_BUILD_TYPE_PURE_RAM_APP
             default y
             help
                 When the CS pin of Flash is not pulled up, the sleep current will
@@ -132,33 +142,20 @@ menu "Hardware Settings"
                 console after deep sleep reset, try increasing this value.
     endmenu
 
+    menu "ESP_SLEEP_WORKAROUND"
+        # No visible menu/configs for workaround
+        visible if 0
+        config ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+            bool "ESP32C3 SYSTIMER Stall Issue Workaround"
+            depends on IDF_TARGET_ESP32C3
+            help
+                Its not able to stall ESP32C3 systimer in sleep.
+                To fix related RTOS TICK issue, select it to disable related systimer during sleep.
+                TODO: IDF-7036
+    endmenu
+
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
-
-        config RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
-            # This is used for configure the RTC clock.
-            bool "Keep BBPLL clock always work"
-            depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-            default y
-            help
-                When software switches the CPU clock source from BBPLL clock to XTAL, usually the BBPLL will be
-                switched off. This helps to save some power consumption in sleep modes. However this may also happen
-                during the software reset, resulting in the inactive (disconnected from host) of the USB_SERIAL_JTAG
-                device during software reset.
-
-                When USB_SERIAL_JTAG is being used, whether to turn off the clock source during software reset and in
-                sleep modes is determined by RTC_CLOCK_BBPLL_POWER_ON_WITH_USB.
-
-                  - When RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is enabled, the clock will be kept, so that the
-                    USB_SERIAL_JTAG will keep alive during software reset. The side-effect is the increasing of power
-                    consumption during sleep modes, even though USB_SERIAL_JTAG will not work in sleep modes.
-
-                  - When RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is disabled, the clock will be turned off. USB_SERIAL_JTAG
-                    will be inactive during software reset and in sleep modes. This saves some power consumption in
-                    sleep modes.
-
-                When USB_SERIAL_JTAG is not being used, software will always turn off BBPLL regardless of
-                RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is set or not.
     endmenu
 
     menu "Peripheral Control"
@@ -179,46 +176,6 @@ menu "Hardware Settings"
                 Wether to enable the debug log message for ETM core driver.
                 Note that, this option only controls the ETM related driver log, won't affect other drivers.
     endmenu # ETM Configuration
-
-    menu "MMU Config"
-        # This Config is used for configure the MMU.
-        # Be configured based on flash size selection.
-        # Invisible to users.
-
-        config MMU_PAGE_SIZE_16KB
-            bool
-            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_1MB
-            default n
-
-        config MMU_PAGE_SIZE_32KB
-            bool
-            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_2MB
-            default n
-
-        config MMU_PAGE_SIZE_64KB
-            bool
-            default y if !MMU_PAGE_SIZE_32KB && !MMU_PAGE_SIZE_16KB
-            default n
-
-        config MMU_PAGE_MODE
-            string
-            default "8KB" if MMU_PAGE_SIZE_8KB
-            default "16KB" if MMU_PAGE_SIZE_16KB
-            default "32KB" if MMU_PAGE_SIZE_32KB
-            default "64KB" if MMU_PAGE_SIZE_64KB
-
-        config MMU_PAGE_SIZE
-            # Some chips support different flash MMU page sizes: 64k, 32k, 16k.
-            # Since the number of MMU pages is limited, the maximum flash size supported
-            # for each page size is reduced proportionally: 4 MB, 2MB, 1MB. To make best
-            # use of small flash sizes (reducing the wasted space due to alignment), we
-            # need to use the smallest possible MMU page size for the given flash size.
-            hex
-            default 0x2000 if MMU_PAGE_SIZE_8KB
-            default 0x4000 if MMU_PAGE_SIZE_16KB
-            default 0x8000 if MMU_PAGE_SIZE_32KB
-            default 0x10000 if MMU_PAGE_SIZE_64KB
-    endmenu
 
     menu "GDMA Configuration"
         depends on SOC_GDMA_SUPPORTED
@@ -279,5 +236,43 @@ menu "Hardware Settings"
             default 32 if XTAL_FREQ_32
             default 40 if XTAL_FREQ_40
             default 0  if XTAL_FREQ_AUTO
+    endmenu
+
+    menu "Crypto DPA Protection"
+        depends on SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
+        config ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
+            bool "Enable crypto DPA protection at startup"
+            default y
+            help
+                This config controls the DPA (Differential Power Analysis) protection
+                knob for the crypto peripherals. DPA protection dynamically adjusts the
+                clock frequency of the crypto peripheral. DPA protection helps to make it
+                difficult to perform SCA attacks on the crypto peripherals. However,
+                there is also associated performance impact based on the security level
+                set. Please refer to the TRM for more details.
+
+        choice ESP_CRYPTO_DPA_PROTECTION_LEVEL
+            prompt "DPA protection level"
+            depends on ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
+            default ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
+            help
+                Configure the DPA protection security level
+
+            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
+                bool "Security level low"
+
+            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
+                bool "Security level medium"
+
+            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
+                bool "Security level high"
+        endchoice
+
+        config ESP_CRYPTO_DPA_PROTECTION_LEVEL
+            int
+            default 1 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
+            default 2 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
+            default 3 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
+
     endmenu
 endmenu

@@ -8,5 +8,3 @@ set(COMPONENTS main)
 list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/mocks/freertos/")
 
 project(nvs_host_test)
-
-add_dependencies(nvs_host_test.elf partition-table)

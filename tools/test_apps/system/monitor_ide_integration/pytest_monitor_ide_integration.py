@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import json
 import logging
@@ -70,11 +70,10 @@ class WebSocketServer(object):
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['gdb_stub', 'coredump'], indirect=True)
 def test_monitor_ide_integration(config: str, dut: Dut) -> None:
-    # The port needs to be closed because idf_monitor.py will connect to it
+    # The port needs to be closed because esp_idf_monitor will connect to it
     dut.serial.stop_redirect_thread()
 
-    monitor_py = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_monitor.py')
-    monitor_cmd = ' '.join([sys.executable, monitor_py, os.path.join(dut.app.binary_path, 'panic.elf'),
+    monitor_cmd = ' '.join([sys.executable, '-m', 'esp_idf_monitor', os.path.join(dut.app.binary_path, 'panic.elf'),
                             '--port', str(dut.serial.port),
                             '--ws', f'ws://{WebSocketServer.HOST}:{WebSocketServer.PORT}'])
     monitor_log_path = os.path.join(dut.logdir, 'monitor.txt')

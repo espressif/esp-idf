@@ -176,6 +176,8 @@ typedef struct {
 
 typedef UINT16 tBTA_SEC;
 
+typedef tBTM_GET_DEV_NAME_CBACK tBTA_GET_DEV_NAME_CBACK;
+
 /* Ignore for Discoverable, Connectable, Pairable and Connectable Paired only device modes */
 #define BTA_DM_IGNORE           0x00FF
 
@@ -418,7 +420,7 @@ typedef tBTM_START_ADV_CMPL_CBACK tBTA_START_ADV_CMPL_CBACK;
 
 typedef tBTM_START_STOP_ADV_CMPL_CBACK tBTA_START_STOP_ADV_CMPL_CBACK;
 
-typedef tBTM_ADD_WHITELIST_CBACK tBTA_ADD_WHITELIST_CBACK;
+typedef tBTM_UPDATE_WHITELIST_CBACK tBTA_UPDATE_WHITELIST_CBACK;
 
 typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
 
@@ -1594,7 +1596,14 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT                   BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT                BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT               BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT
-#define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                              BTM_BLE_5_GAP_UNKNOWN_EVT
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define BTA_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT          BTM_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT           BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SET_INFO_TRANS_COMPLETE_EVT       BTM_BLE_GAP_PERIODIC_ADV_SET_INFO_TRANS_COMPLETE_EVT
+#define BTA_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT                   BTM_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT               BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
 
 typedef tBTM_BLE_5_GAP_CB_PARAMS tBTA_DM_BLE_5_GAP_CB_PARAMS;
@@ -1603,6 +1612,15 @@ typedef tBTM_BLE_5_HCI_CBACK tBTA_DM_BLE_5_HCI_CBCAK;
 extern tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+typedef struct {
+    UINT8 mode;
+    UINT16 skip;
+    UINT16 sync_timeout;
+    UINT8 cte_type;
+} tBTA_DM_BLE_PAST_PARAMS;
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 /*****************************************************************************
 **  External Function Declarations
@@ -1681,6 +1699,18 @@ extern void BTA_DmSetDeviceName(const char *p_name);
 
 /*******************************************************************************
 **
+** Function         BTA_DmGetDeviceName
+**
+** Description      This function gets the Bluetooth name of the local device.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmGetRemoteName
 **
 ** Description      This function gets the peer device's Bluetooth name.
@@ -1742,9 +1772,9 @@ void BTA_DmSetQos(BD_ADDR bd_addr, UINT32 t_poll, tBTM_CMPL_CB *p_cb);
 *******************************************************************************/
 void BTA_DmBleSetChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_channels_cb);
 
-extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
+extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb);
 
-extern void BTA_DmClearWhiteList(void);
+extern void BTA_DmClearWhiteList(tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 #endif  ///BLE_INCLUDED == TRUE
@@ -2999,6 +3029,16 @@ extern void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
 
 extern void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_addr);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+extern void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable);
+
+extern void BTA_DmBleGapPeriodicAdvSyncTrans(BD_ADDR peer_addr, UINT16 service_data, UINT16 sync_handle);
+
+extern void BTA_DmBleGapPeriodicAdvSetInfoTrans(BD_ADDR peer_addr, UINT16 service_data, UINT8 adv_handle);
+
+extern void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PAST_PARAMS *params);
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #endif
 

@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -105,13 +97,13 @@ extern "C" {
 
 #define TCR_TXREQ (1 << 0) // TX Request. Auto-Clear after Sending Completely
 
-#define RCR_WTDIS (1 << 6)    // Watchdog Timer Disable
-#define RCR_DIS_LONG (1 << 5) // Discard Long Packet
-#define RCR_DIS_CRC (1 << 4)  // Discard CRC Error Packet
-#define RCR_ALL (1 << 3)      // Receive All Multicast
-#define RCR_RUNT (1 << 2)     // Receive Runt Packet
-#define RCR_PRMSC (1 << 1)    // Promiscuous Mode
-#define RCR_RXEN (1 << 0)     // RX Enable
+#define RCR_WTDIS (1 << 6)     // Watchdog Timer Disable
+#define RCR_DIS_LONG (1 << 5)  // Discard Long Packet
+#define RCR_DIS_CRC (1 << 4)   // Discard CRC Error Packet
+#define RCR_ALL_MCAST (1 << 3) // Receive All Multicast
+#define RCR_RUNT (1 << 2)      // Receive Runt Packet
+#define RCR_PRMSC (1 << 1)     // Promiscuous Mode
+#define RCR_RXEN (1 << 0)      // RX Enable
 
 #define RSR_RF (1 << 7)   // Runt Frame
 #define RSR_MF (1 << 6)   // Multicast Frame

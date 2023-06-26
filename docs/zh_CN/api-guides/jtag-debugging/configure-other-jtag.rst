@@ -2,32 +2,26 @@
 ==================
 :link_to_translation:`en:[English]`
 
-关于适配 OpenOCD 和 {IDF_TARGET_NAME} 的 JTAG 接口选择问题，请参考 :ref:`jtag-debugging-selecting-jtag-adapter` 章节，确保 JTAG 适配器能够与 OpenOCD 和 {IDF_TARGET_NAME} 一同工作。然后按照以下三个步骤进行设置，使其正常工作。
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE"}
 
+关于适配 OpenOCD 和 {IDF_TARGET_NAME} 的 JTAG 接口选择问题，请参考 :ref:`jtag-debugging-selecting-jtag-adapter` 章节。然后按照以下步骤进行设置，使其正常工作。
 
-.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32c3
-
-    配置 eFuse
-    ^^^^^^^^^^^^^^^^
-
-    {IDF_TARGET_NAME} JTAG 接口默认连接至 :doc:`内置 USB_SERIAL_JTAG 外设 <configure-builtin-jtag>`。要使用外部 JTAG 适配器，需将 JTAG 接口切换至 GPIO 管脚。您可以使用 ``espefuse.py`` 工具来烧录 eFuse，以完成接口转换。
-
-    - 烧录 ``DIS_USB_JTAG`` eFuse 后，USB_SERIAL_JTAG 和 CPU 的 JTAG 接口之间的连接将被永久禁用，此后您可以将 JTAG 接口连接到 |jtag-gpio-list|。注意，烧录后，USB_SERIAL_JTAG 的 USB CDC 功能仍然可用，即仍然可以通过 USB CDC 进行烧录和查看日志。
-    - 烧录 ``STRAP_JTAG_SEL`` eFuse 后，JTAG 接口的选择将由 strapping 管脚 |jtag-sel-gpio| 来决定。{IDF_TARGET_NAME} 复位时，如果该 strapping 管脚为低电平，JTAG 接口将使用 |jtag-gpio-list|，如果为高电平，USB_SERIAL_JTAG 将被用作 JTAG 接口。
-
-    .. warning::
-        请注意，烧录 eFuse 是一项不可逆的操作，请在开始前谨慎考虑以上选项。
-
-
-.. only:: esp32c3
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
     配置 eFuse
     ^^^^^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} JTAG 接口默认连接至 :doc:`内置 USB_SERIAL_JTAG 外设 <configure-builtin-jtag>`。要使用外部 JTAG 适配器，需将 JTAG 接口切换至 GPIO 管脚。您可以使用 ``espefuse.py`` 工具来烧录 eFuse，以完成接口转换。
 
-    烧录 ``DIS_USB_JTAG`` eFuse 后，USB_SERIAL_JTAG 和 CPU 的 JTAG 接口之间的连接将被永久禁用，此后您可以将 JTAG 接口连接到 |jtag-gpio-list|。注意，烧录后，USB_SERIAL_JTAG 的 USB CDC 功能仍然可用，即仍然可以通过 USB CDC 进行烧录和查看日志。
-    
+    .. only:: esp32c3
+
+        烧录 ``DIS_USB_JTAG`` eFuse 后，USB_SERIAL_JTAG 和 {IDF_TARGET_NAME} 的 JTAG 接口之间的连接将被永久禁用，此后您可以将 JTAG 接口连接到 |jtag-gpio-list|。注意，烧录后，USB_SERIAL_JTAG 的 USB CDC 功能仍然可用，即仍然可以通过 USB CDC 进行烧录和查看日志。
+
+    .. only:: not esp32c3
+
+        - 烧录 ``DIS_USB_JTAG`` eFuse 后，USB_SERIAL_JTAG 和 {IDF_TARGET_NAME} 的 JTAG 接口之间的连接将被永久禁用，此后您可以将 JTAG 接口连接到 |jtag-gpio-list|。注意，烧录后，USB_SERIAL_JTAG 的 USB CDC 功能仍然可用，即仍然可以通过 USB CDC 进行烧录和查看日志。
+        - 烧录 ``{IDF_TARGET_JTAG_SEL_EFUSE}`` eFuse 后，JTAG 接口的选择将由 strapping 管脚 |jtag-sel-gpio| 来决定。{IDF_TARGET_NAME} 复位时，如果该 strapping 管脚为低电平，JTAG 接口将使用 |jtag-gpio-list|；如果为高电平，USB_SERIAL_JTAG 将被用作 JTAG 接口。
+
     .. warning::
         请注意，烧录 eFuse 是一项不可逆的操作，请在开始前谨慎考虑以上选项。
 
@@ -50,6 +44,7 @@
 
 您可能还需要安装软件驱动，才能使 JTAG 在计算机上正常工作，请参阅您所使用的 JTAG 适配器的有关文档，获取相关详细信息。
 
+在 Linux 中，请务必将 `udev 规则文件 <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ 复制到 ``/etc/udev/rules.d`` 目录中，以添加 OpenOCD udev 规则。
 
 连接
 ^^^^

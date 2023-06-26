@@ -114,7 +114,7 @@ The types ``int32_t`` and ``uint32_t`` have been changed from the previous ``int
      - (unsigned) long
 
 
-The change mostly affects code that formats strings using types provided by ``<inttypes.h>``. Users will need to replace placeholders such as ``%i`` and ``%x`` with ``PRIi32`` and ``PRIxx`` respectively.
+The change mostly affects code that formats strings using types provided by ``<inttypes.h>``. When using these fixed-width types (e.g., ``uint32_t``), users will need to replace placeholders such as ``%i`` and ``%x`` with ``PRIi32`` and ``PRIx32`` respectively. Types *not* defined in ``<inttypes.h>`` (e.g., ``int``) do *not* need this special formatting.
 
 In other cases, it should be noted that enums have the ``int`` type.
 

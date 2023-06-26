@@ -93,6 +93,9 @@ esp_err_t sdmmc_init_io(sdmmc_card_t* card)
         card->is_sdio = 1;
 
         if (card->ocr & SD_IO_OCR_MEM_PRESENT) {
+            ESP_LOGD(TAG, "%s: Combination card", __func__);
+            card->is_mem = 1;
+        } else {
             ESP_LOGD(TAG, "%s: IO-only card", __func__);
             card->is_mem = 0;
         }
@@ -321,6 +324,8 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
         size_t size_aligned = size & (~3);
         size_t will_transfer = size_aligned > 0 ? size_aligned : size;
 
+        // Note: sdmmc_io_rw_extended has an internal timeout,
+        //  typically SDMMC_DEFAULT_CMD_TIMEOUT_MS
         esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
                 SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT,
                 pc_dst, will_transfer);
@@ -344,6 +349,8 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
         size_t size_aligned = size & (~3);
         size_t will_transfer = size_aligned > 0 ? size_aligned : size;
 
+        // Note: sdmmc_io_rw_extended has an internal timeout,
+        //  typically SDMMC_DEFAULT_CMD_TIMEOUT_MS
         esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
                 SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT,
                 (void*) pc_src, will_transfer);

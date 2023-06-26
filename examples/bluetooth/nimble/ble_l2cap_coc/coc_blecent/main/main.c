@@ -21,10 +21,10 @@ static uint8_t peer_addr[6];
 
 void ble_store_config_init(void);
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM > 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
 #define COC_BUF_COUNT         (3 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
-#define L2CAP_COC_UUID	       0x1812
+#define L2CAP_COC_UUID         0x1812
 
 static uint16_t conn_handle_coc ;
 static uint16_t mtu = 512;
@@ -55,9 +55,9 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
 
     rc = ble_l2cap_send(chan, sdu_rx_data);
     if (rc == 0) {
-        MODLOG_DFLT(INFO,"Data sent successfully");
+        MODLOG_DFLT(INFO, "Data sent successfully");
     } else {
-        MODLOG_DFLT(INFO,"Data sending failed, rc = %d",rc);
+        MODLOG_DFLT(INFO, "Data sending failed, rc = %d", rc);
     }
 }
 
@@ -73,9 +73,7 @@ blecent_l2cap_coc_on_disc_complete(const struct peer *peer, int status, void *ar
 
     sdu_rx = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
     ble_l2cap_connect(conn_handle_coc, psm, mtu, sdu_rx, blecent_l2cap_coc_event_cb,
-		      NULL);
-
-    os_mbuf_free(sdu_rx);
+                      NULL);
 }
 
 /**
@@ -97,35 +95,35 @@ blecent_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
 {
     struct ble_l2cap_chan_info chan_info;
 
-    switch(event->type) {
-        case BLE_L2CAP_EVENT_COC_CONNECTED:
-            if (event->connect.status) {
-                console_printf("LE COC error: %d\n", event->connect.status);
-                return 0;
-            }
-
-            if (ble_l2cap_get_chan_info(event->connect.chan, &chan_info)) {
-                assert(0);
-            }
-
-            console_printf("LE COC connected, conn: %d, chan: %p, psm: 0x%02x,"
-                           " scid: 0x%04x, ""dcid: 0x%04x, our_mps: %d, our_mtu: %d,"
-                           " peer_mps: %d, peer_mtu: %d\n",
-                           event->connect.conn_handle, event->connect.chan,
-                           chan_info.psm, chan_info.scid, chan_info.dcid,
-                           chan_info.our_l2cap_mtu, chan_info.our_coc_mtu,
-                           chan_info.peer_l2cap_mtu, chan_info.peer_coc_mtu);
-            blecent_l2cap_coc_send_data(event->connect.chan);
+    switch (event->type) {
+    case BLE_L2CAP_EVENT_COC_CONNECTED:
+        if (event->connect.status) {
+            console_printf("LE COC error: %d\n", event->connect.status);
             return 0;
+        }
 
-        case BLE_L2CAP_EVENT_COC_DISCONNECTED:
-            console_printf("LE CoC disconnected, chan: %p\n",
-                           event->disconnect.chan);
-            return 0;
+        if (ble_l2cap_get_chan_info(event->connect.chan, &chan_info)) {
+            assert(0);
+        }
 
-        default:
-            return 0;
-       }
+        console_printf("LE COC connected, conn: %d, chan: %p, psm: 0x%02x,"
+                       " scid: 0x%04x, ""dcid: 0x%04x, our_mps: %d, our_mtu: %d,"
+                       " peer_mps: %d, peer_mtu: %d\n",
+                       event->connect.conn_handle, event->connect.chan,
+                       chan_info.psm, chan_info.scid, chan_info.dcid,
+                       chan_info.our_l2cap_mtu, chan_info.our_coc_mtu,
+                       chan_info.peer_l2cap_mtu, chan_info.peer_coc_mtu);
+        blecent_l2cap_coc_send_data(event->connect.chan);
+        return 0;
+
+    case BLE_L2CAP_EVENT_COC_DISCONNECTED:
+        console_printf("LE CoC disconnected, chan: %p\n",
+                       event->disconnect.chan);
+        return 0;
+
+    default:
+        return 0;
+    }
 }
 
 static void
@@ -133,17 +131,18 @@ blecent_l2cap_coc_mem_init(void)
 {
     int rc;
     rc = os_mempool_init(&sdu_coc_mbuf_mempool, COC_BUF_COUNT, mtu, sdu_coc_mem,
-			             "coc_sdu_pool");
+                         "coc_sdu_pool");
     assert(rc == 0);
     rc = os_mbuf_pool_init(&sdu_os_mbuf_pool, &sdu_coc_mbuf_mempool, mtu,
-			               COC_BUF_COUNT);
+                           COC_BUF_COUNT);
     assert(rc == 0);
 }
-#endif // #if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM > 1
+#endif // #if  MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
 /**
  * Called when service discovery of the specified peer has completed.
  */
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) < 1
 static void
 blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
 {
@@ -167,6 +166,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
      * write, and subscribe to notifications.
      */
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -227,7 +227,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
-       (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+            (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
@@ -246,7 +246,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             break;
         }
 
-	/* Search if ANS UUID is advertised */
+        /* Search if ANS UUID is advertised */
         if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
             if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x12 ) {
                 return 1;
@@ -255,7 +255,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 
         offset += ad_struct_len + 1;
 
-     } while ( offset < disc->length_data );
+    } while ( offset < disc->length_data );
     return 0;
 }
 #else
@@ -279,7 +279,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     }
 
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
-       (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+            (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         MODLOG_DFLT(INFO, "Peer address from menuconfig:%s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
@@ -405,9 +405,9 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM > 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
             conn_handle_coc = event->connect.conn_handle;
-	        disc_cb = blecent_l2cap_coc_on_disc_complete;
+            disc_cb = blecent_l2cap_coc_on_disc_complete;
 #else
             disc_cb = blecent_on_disc_complete;
 #endif
@@ -506,13 +506,15 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    assert(ret == 0);
+
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;
     ble_hs_cfg.sync_cb = blecent_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-#if CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM > 1
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
     blecent_l2cap_coc_mem_init();
 #endif
 

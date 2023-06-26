@@ -19,6 +19,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_heap_caps.h"
+#include "esp_clk_tree.h"
 #include "esp_log.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
@@ -29,7 +30,7 @@ const static char TAG[] = "test_spi";
 // There is no input-only pin except on esp32 and esp32s2
 #define TEST_SOC_HAS_INPUT_ONLY_PINS  (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
 
-static void check_spi_pre_n_for(int clk, int pre, int n)
+static void check_spi_pre_n_for(spi_clock_source_t clock_source, int clk, int pre, int n)
 {
     spi_device_handle_t handle;
 
@@ -37,6 +38,7 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
         .command_bits = 0,
         .address_bits = 0,
         .dummy_bits = 0,
+        .clock_source = clock_source,
         .clock_speed_hz = clk,
         .duty_cycle_pos = 128,
         .mode = 0,
@@ -55,7 +57,9 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
 
     spi_dev_t *hw = spi_periph_signal[TEST_SPI_HOST].hw;
 
-    printf("Checking clk rate %dHz. expect pre %d n %d, got pre %d n %d\n", clk, pre, n, hw->clock.clkdiv_pre + 1, hw->clock.clkcnt_n + 1);
+    int real_freq_khz;
+    spi_device_get_actual_freq(handle, &real_freq_khz);
+    printf("Checking clk rate %dHz. expect pre %d n %d, got pre %d n %d, real_freq %d kHZ\n", clk, pre, n, hw->clock.clkdiv_pre + 1, hw->clock.clkcnt_n + 1, real_freq_khz);
 
     TEST_ASSERT(hw->clock.clkcnt_n + 1 == n);
     TEST_ASSERT(hw->clock.clkdiv_pre + 1 == pre);
@@ -63,7 +67,6 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
     TEST_ESP_OK(spi_bus_remove_device(handle));
 }
 
-#define TEST_CLK_TIMES              8
 /**
  * In this test, SPI Clock Calculation:
  *   Fspi = Fclk_spi_mst / (pre + n)
@@ -71,33 +74,108 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
  * For each item:
  * {freq, pre, n}
  */
-#define TEST_CLK_PARAM_APB_80       {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} }
-#define TEST_CLK_PARAM_APB_40       {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 8, 50}, {333333, 2, 60}, {800000, 1, 50}, {900000, 1, 44}, {8000000, 1, 5}, {10000000, 1, 4}, {20000000, 1, 2} }
+#define TEST_CLK_TIMES     8
+struct test_clk_param_group_t
+{
+    uint32_t clk_param_80m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_48m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_40m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_32m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_17m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_7m[TEST_CLK_TIMES][3];
+} test_clk_param = {
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 8, 60}, {333333, 3, 48}, {800000, 1, 60}, {5000000, 1, 10}, {12000000, 1, 4}, {18000000, 1, 3}, {26000000, 1, 2} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 8, 50}, {333333, 2, 60}, {800000, 1, 50}, {900000,  1, 44}, {8000000, 1,  5}, {10000000, 1, 4}, {20000000, 1, 2} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 5, 64}, {333333, 2, 48}, {800000, 1, 40}, {2000000, 1, 16}, {8000000, 1,  4}, {15000000, 1, 2}, {20000000, 1, 2} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 5, 35}, {333333, 1, 53}, {800000, 1, 22}, {900000,  1, 19}, {8000000, 1,  2}, {10000000, 1, 2}, {15000000, 1, 1} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 2, 35}, {333333, 1, 21}, {800000, 1,  9}, {900000,  1,  8}, {1100000, 1,  6}, {4000000, 1, 2,}, {7000000, 1,  1} },
+};
+
 
 TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 {
-    spi_bus_config_t buscfg = {
-        .mosi_io_num = PIN_NUM_MOSI,
-        .miso_io_num = PIN_NUM_MISO,
-        .sclk_io_num = PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1
-    };
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    uint32_t clock_source_hz;
+// Test main clock source
+#if SOC_SPI_SUPPORT_CLK_PLL_F80M
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F80M, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source PLL_80M = %ld\n", clock_source_hz);
+    TEST_ASSERT((80 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_PLL_F80M, test_clk_param.clk_param_80m[i][0], test_clk_param.clk_param_80m[i][1], test_clk_param.clk_param_80m[i][2]);
+    }
+#endif
 
-    uint32_t apb_freq_hz = esp_clk_apb_freq();
-    if (apb_freq_hz == (80 * 1000 * 1000)) {
-        uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_80;
+#if SOC_SPI_SUPPORT_CLK_PLL_F48M
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F48M, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source PLL_48M = %ld\n", clock_source_hz);
+    TEST_ASSERT((48 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_PLL_F48M, test_clk_param.clk_param_48m[i][0], test_clk_param.clk_param_48m[i][1], test_clk_param.clk_param_48m[i][2]);
+    }
+#endif
+
+#if SOC_SPI_SUPPORT_CLK_AHB
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_AHB, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source AHB = %ld\n", clock_source_hz);
+    TEST_ASSERT((48 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_AHB, test_clk_param.clk_param_48m[i][0], test_clk_param.clk_param_48m[i][1], test_clk_param.clk_param_48m[i][2]);
+    }
+#endif
+
+#if SOC_SPI_SUPPORT_CLK_PLL_F40M
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F40M, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source PLL_40M = %ld\n", clock_source_hz);
+    TEST_ASSERT((40 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_PLL_F40M, test_clk_param.clk_param_40m[i][0], test_clk_param.clk_param_40m[i][1], test_clk_param.clk_param_40m[i][2]);
+    }
+#endif
+
+#if SOC_SPI_SUPPORT_CLK_APB
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_APB, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source APB = %ld\n", clock_source_hz);
+    TEST_ASSERT((80 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_APB, test_clk_param.clk_param_80m[i][0], test_clk_param.clk_param_80m[i][1], test_clk_param.clk_param_80m[i][2]);
+    }
+#endif
+
+// Test XTAL clock source
+#if SOC_SPI_SUPPORT_CLK_XTAL
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source XTAL = %ld\n", clock_source_hz);
+    if((40 * 1000 * 1000) == clock_source_hz){
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
-        }
-    } else {
-        TEST_ASSERT(apb_freq_hz == (40 * 1000 * 1000));
-        uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_40;
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
+            check_spi_pre_n_for(SPI_CLK_SRC_XTAL, test_clk_param.clk_param_40m[i][0], test_clk_param.clk_param_40m[i][1], test_clk_param.clk_param_40m[i][2]);
         }
     }
+    if((32 * 1000 * 1000) == clock_source_hz){
+        for (int i = 0; i < TEST_CLK_TIMES; i++) {
+            check_spi_pre_n_for(SPI_CLK_SRC_XTAL, test_clk_param.clk_param_32m[i][0], test_clk_param.clk_param_32m[i][1], test_clk_param.clk_param_32m[i][2]);
+        }
+    }
+#endif
+
+// Test RC fast osc clock source
+#if SOC_SPI_SUPPORT_CLK_RC_FAST
+    esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_RC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source RC_FAST = %ld\n", clock_source_hz);
+    if((17500000) == clock_source_hz){
+        for (int i = 0; i < TEST_CLK_TIMES; i++) {
+            check_spi_pre_n_for(SPI_CLK_SRC_RC_FAST, test_clk_param.clk_param_17m[i][0], test_clk_param.clk_param_17m[i][1], test_clk_param.clk_param_17m[i][2]);
+        }
+    }
+    if((7000000) == clock_source_hz){
+        for (int i = 0; i < TEST_CLK_TIMES; i++) {
+            check_spi_pre_n_for(SPI_CLK_SRC_RC_FAST, test_clk_param.clk_param_7m[i][0], test_clk_param.clk_param_7m[i][1], test_clk_param.clk_param_7m[i][2]);
+        }
+    }
+
+#endif
 
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
@@ -1417,6 +1495,8 @@ TEST_CASE("spi_speed", "[spi]")
 //add dummy devices first
 #if CONFIG_IDF_TARGET_ESP32
 #define DUMMY_CS_PINS() {25, 26, 27}
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define DUMMY_CS_PINS() {9, 10, 11, 12, 22, 25}
 #else
 #define DUMMY_CS_PINS() {0, 1, 4, 5, 8, 9}
 #endif //CONFIG_IDF_TARGET_ESP32
@@ -1520,4 +1600,170 @@ void test_add_device_slave(void)
     spi_bus_free(TEST_SPI_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=generic_multi_device]", test_add_device_master, test_add_device_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms]", test_add_device_master, test_add_device_slave);
+
+
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+
+#define TEST_ISR_CNT    100
+static void test_master_isr_core_post_trans_cbk(spi_transaction_t *curr_trans){
+    *((int *)curr_trans->user) += esp_cpu_get_core_id();
+}
+
+TEST_CASE("test_master_isr_pin_to_core","[spi]")
+{
+    spi_device_handle_t dev0;
+    uint32_t master_send;
+    uint32_t master_recive;
+    uint32_t master_expect;
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.post_cb = test_master_isr_core_post_trans_cbk;
+
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = &master_send,
+        .rx_buffer = &master_recive,
+        .user = & master_expect,
+        .length = sizeof(uint32_t) * 8,
+    };
+
+    master_expect = 0;
+    for (int i = 0; i < TEST_ISR_CNT; i++) {
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+
+        TEST_ESP_OK(spi_bus_remove_device(dev0));
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
+    printf("Test Master ISR Not Assign: %d : %ld\n", TEST_ISR_CNT, master_expect);
+    // by default the esp_intr_alloc is called on ESP_MAIN_TASK_AFFINITY_CPU0 now
+    TEST_ASSERT_EQUAL_UINT32(0, master_expect);
+
+
+    //-------------------------------------CPU1---------------------------------------
+    buscfg.isr_cpu_id = INTR_CPU_ID_1;
+
+    master_expect = 0;
+    for (int i = 0; i < TEST_ISR_CNT; i++) {
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+
+        TEST_ESP_OK(spi_bus_remove_device(dev0));
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
+    printf("Test Master ISR Assign CPU1: %d : %ld\n", TEST_ISR_CNT, master_expect);
+    TEST_ASSERT_EQUAL_UINT32(TEST_ISR_CNT, master_expect);
+}
+#endif
+
+#if CONFIG_SPI_MASTER_IN_IRAM
+
+#define TEST_MASTER_IRAM_TRANS_LEN  120
+static IRAM_ATTR void test_master_iram_post_trans_cbk(spi_transaction_t *trans)
+{
+    *((bool *)trans->user) = true;
+}
+
+static IRAM_ATTR void test_master_iram(void)
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.intr_flags = ESP_INTR_FLAG_IRAM;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t dev_handle = {0};
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.post_cb = test_master_iram_post_trans_cbk;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
+
+    bool flag_trans_done;
+    uint8_t *master_send = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_recv = heap_caps_calloc(1, TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_exp  = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
+    get_tx_buffer(211, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = master_send,
+        .rx_buffer = master_recv,
+        .user = &flag_trans_done,
+        .length = TEST_MASTER_IRAM_TRANS_LEN * 8,
+    }, *ret_trans;
+
+    // Test intrrupt trans api once -----------------------------
+    unity_send_signal("Master ready");
+    unity_wait_for_signal("Slave ready");
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    flag_trans_done = false;
+    spi_device_queue_trans(dev_handle, &trans_cfg, portMAX_DELAY);
+    while(!flag_trans_done) {
+        // waitting for transaction done and return from ISR
+    }
+    spi_device_get_trans_result(dev_handle, &ret_trans, portMAX_DELAY);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    ESP_LOG_BUFFER_HEX("master tx", ret_trans->tx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("master rx", ret_trans->rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(master_exp, trans_cfg.rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+
+    // Test polling trans api once -------------------------------
+    unity_wait_for_signal("Slave ready");
+    get_tx_buffer(119, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    spi_device_polling_transmit(dev_handle, &trans_cfg);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    ESP_LOG_BUFFER_HEX("master tx", ret_trans->tx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("master rx", ret_trans->rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(master_exp, trans_cfg.rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+
+    free(master_send);
+    free(master_recv);
+    free(master_exp);
+    spi_bus_remove_device(dev_handle);
+    spi_bus_free(TEST_SPI_HOST);
+}
+
+static void test_iram_slave_normal(void)
+{
+    uint8_t *slave_sendbuf = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_recvbuf = heap_caps_calloc(1, TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_expect = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
+
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+    spi_slave_transaction_t slave_trans = {};
+    slave_trans.length = TEST_MASTER_IRAM_TRANS_LEN * 8;
+    slave_trans.tx_buffer = slave_sendbuf;
+    slave_trans.rx_buffer = slave_recvbuf;
+    get_tx_buffer(211, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+
+    unity_wait_for_signal("Master ready");
+    unity_send_signal("Slave ready");
+    spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+    ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+
+    unity_send_signal("Slave ready");
+    get_tx_buffer(119, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+    ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+
+    free(slave_sendbuf);
+    free(slave_recvbuf);
+    free(slave_expect);
+    spi_slave_free(TEST_SPI_HOST);
+    spi_bus_free(TEST_SPI_HOST);
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:IRAM_safe", "[spi_ms]", test_master_iram, test_iram_slave_normal);
+#endif

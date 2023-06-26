@@ -6,16 +6,32 @@ components/esp_hw_support/test_apps/dma:
       temporary: false
       reason: Neither GDMA nor CPDMA is supported on ESP32
 
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
 components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
 
+components/esp_hw_support/test_apps/host_test_linux:
+  enable:
+    - if: IDF_TARGET == "linux"
+components/esp_hw_support/test_apps/mspi:
+  disable:
+    - if: IDF_TARGET != "esp32s3"
+components/esp_hw_support/test_apps/mspi_psram_with_dfs:
+  disable:
+    - if: IDF_TARGET != "esp32s3"
+
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
-    - if: IDF_TARGET in ["esp32c6"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
       temporary: true
       reason: Unsupported on C6 for now. TODO IDF-5645
 
-components/heap/host_test/host_test_linux:
-  enable:
-    - if: IDF_TARGET == "linux"
+components/esp_hw_support/test_apps/security_support/esp_hw_support_unity_tests:
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: H2 fails IDF-6898

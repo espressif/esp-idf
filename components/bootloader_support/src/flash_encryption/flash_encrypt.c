@@ -313,7 +313,7 @@ esp_err_t esp_flash_encrypt_enable(void)
 
     ESP_LOGI(TAG, "Flash encryption completed");
 
-#if CONFIG_EFUSE_VIRTUAL
+#ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Flash encryption not really completed. Must disable virtual efuses");
 #endif
 
@@ -433,11 +433,8 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
         return ESP_FAIL;
     }
 
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
-    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
-#else
-    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-#endif
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_feed(&rtc_wdt_ctx);

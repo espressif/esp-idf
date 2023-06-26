@@ -3,22 +3,24 @@
     {
       "name": "origin",
       "wave": "0...1.....0...",
-      "node": "....a.....b..."
+      "node": "....a..ef.b..."
     },
     {
       "name": "pwm_A",
       "wave": "1....0....1...",
-      "node": ".....c....."
+      "node": ".....c.g..."
     },
     {
       "name": "pwm_B",
       "wave": "1...0......1..",
-      "node": "...........d.."
+      "node": "........h..d.."
     }
   ],
   "edge": [
     "a|->c RED",
-    "b|->d FED"
+    "b|->d FED",
+    "e<->g Invert",
+    "f<->h Invert"
   ],
   "head": {
     "text": "Active Low"

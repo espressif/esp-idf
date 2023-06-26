@@ -112,20 +112,20 @@ set sleep_init default param
 */
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
-#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  14
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_ULTRA_LOW 15
-#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_ON  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_ON  0
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 0xf
 
+#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
+#define RTC_CNTL_BIASSLP_MONITOR_ON  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
+#define RTC_CNTL_PD_CUR_MONITOR_ON  0
 
 /*
 The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
@@ -424,6 +424,10 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
  * Short form for filling in rtc_cpu_freq_config_t structure and calling
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
+ *
+ * @note This function always disables BBPLL after switching the CPU clock source to XTAL for power saving purpose.
+ * If this is unwanted, please use rtc_clk_cpu_freq_set_config. It helps to check whether USB Serial JTAG is in use,
+ * if so, then BBPLL will not be turned off.
  */
 void rtc_clk_cpu_freq_set_xtal(void);
 
@@ -508,10 +512,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
  */
 uint64_t rtc_time_get(void);
 
-uint64_t rtc_light_slp_time_get(void);
-
-uint64_t rtc_deep_slp_time_get(void);
-
 /**
  * @brief Busy loop until next RTC_SLOW_CLK cycle
  *
@@ -590,8 +590,7 @@ typedef struct {
     uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
-    uint32_t wifi_pd_en : 1;            //!< power down WiFi
-    uint32_t bt_pd_en : 1;              //!< power down BT
+    uint32_t modem_pd_en : 1;           //!< power down Modem(wifi and ble)
     uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
@@ -599,7 +598,6 @@ typedef struct {
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
     uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
-    uint32_t dbg_atten_monitor : 4;     //!< voltage parameter, in monitor mode
     uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
     uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
     uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
@@ -618,8 +616,7 @@ typedef struct {
 #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
-#define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
+#define RTC_SLEEP_PD_MODEM              BIT(6)  //!< Power down Modem(wifi and ble)
 #define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
 #define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
 #define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
@@ -666,14 +663,6 @@ void rtc_sleep_init(rtc_sleep_config_t cfg);
  * @param slowclk_period re-calibrated slow clock period
  */
 void rtc_sleep_low_init(uint32_t slowclk_period);
-
-/**
- * @brief Set target value of RTC counter for RTC_TIMER_TRIG_EN wakeup source
- * @param t value of RTC counter at which wakeup from sleep will happen;
- *          only the lower 48 bits are used
- */
-void rtc_sleep_set_wakeup_time(uint64_t t);
-
 
 #define RTC_EXT0_TRIG_EN    BIT(0)  //!< EXT0 GPIO wakeup
 #define RTC_EXT1_TRIG_EN    BIT(1)  //!< EXT1 GPIO wakeup

@@ -10,5 +10,68 @@ menu "IEEE 802.15.4"
         depends on IEEE802154_ENABLED
         default 20
         range 2 100
+        help
+            The number of 802.15.4 receive buffers
+
+    choice IEEE802154_CCA_MODE
+        prompt "Clear Channel Assessment (CCA) mode"
+        default IEEE802154_CCA_ED
+        help
+            configure the CCA mode
+
+        config IEEE802154_CCA_CARRIER
+            bool "Carrier sense only"
+            help
+                configure the CCA mode to Energy above threshold
+
+        config IEEE802154_CCA_ED
+            bool "Energy above threshold"
+            help
+                configure the CCA mode to Energy above threshold
+
+        config IEEE802154_CCA_CARRIER_OR_ED
+            bool "Carrier sense OR energy above threshold"
+            help
+                configure the CCA mode to Carrier sense OR energy above threshold
+
+        config IEEE802154_CCA_CARRIER_AND_ED
+            bool "Carrier sense AND energy above threshold"
+            help
+                configure the CCA mode to Carrier sense AND energy above threshold
+    endchoice
+
+    config IEEE802154_CCA_MODE
+        int
+        default 0 if IEEE802154_CCA_CARRIER
+        default 1 if IEEE802154_CCA_ED
+        default 2 if IEEE802154_CCA_CARRIER_OR_ED
+        default 3 if IEEE802154_CCA_CARRIER_AND_ED
+
+    config IEEE802154_CCA_THRESHOLD
+        int "CCA detection threshold"
+        range -120 0
+        default -60
+        help
+            set the CCA threshold, in dB
+
+    config IEEE802154_PENDING_TABLE_SIZE
+        int "Pending table size"
+        range 1 100
+        default 20
+        help
+            set the pending table size
+
+    config IEEE802154_MULTI_PAN_ENABLE
+        bool "Enable multi-pan feature for frame filter"
+        default n
+        help
+            Enable IEEE802154 multi-pan
+
+    config IEEE802154_TIMING_OPTIMIZATION
+        bool "Enable throughput optimization"
+        default n
+        help
+            Enabling this option increases throughput by ~5% at the expense of ~2.1k
+            IRAM code size increase.
 
 endmenu  # IEEE 802.15.4

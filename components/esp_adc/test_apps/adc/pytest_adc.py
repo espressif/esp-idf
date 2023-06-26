@@ -10,17 +10,18 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.adc
 @pytest.mark.parametrize('config', [
     'iram_safe',
     'release',
+    'pm_enable'
 ], indirect=True)
 def test_adc(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(timeout=120)
 
 
+# No PM test, as C2 doesn't support ADC continuous mode
 @pytest.mark.esp32c2
 @pytest.mark.adc
 @pytest.mark.xtal_26mhz
@@ -33,6 +34,4 @@ def test_adc(dut: Dut) -> None:
     indirect=True,
 )
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(timeout=120)

@@ -3,8 +3,16 @@ menu "FreeRTOS"
     menu "Kernel"
         # Upstream FreeRTOS configurations go here
 
+        config FREERTOS_USE_KERNEL_10_5_1
+            bool "Use v10.5.1 Kernel (EXPERIMENTAL)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            default n
+            help
+                Hidden option for development/testing purposes to enable building with the v10.5.1 kernel
+
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
+            depends on !FREERTOS_USE_KERNEL_10_5_1
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
@@ -40,7 +48,7 @@ menu "FreeRTOS"
         config FREERTOS_OPTIMIZED_SCHEDULER
             # Todo: Not available in SMP FREERTOS (IDF-3733)
             bool "configUSE_PORT_OPTIMISED_TASK_SELECTION"
-            depends on FREERTOS_UNICORE
+            depends on FREERTOS_UNICORE && !FREERTOS_SMP
             default y
             help
                 Enables port specific task selection method. This option can speed up the search of ready tasks
@@ -154,6 +162,7 @@ menu "FreeRTOS"
         config FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
             bool "configENABLE_BACKWARD_COMPATIBILITY"
             default n
+            depends on !IDF_TARGET_LINUX
             help
                 Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
                 configENABLE_BACKWARD_COMPATIBILITY documentation for more details).
@@ -262,6 +271,9 @@ menu "FreeRTOS"
             # Minimal value is 2 because of a check in FreeRTOS.h (search configEXPECTED_IDLE_TIME_BEFORE_SLEEP)
             help
                 FreeRTOS will enter light sleep mode if no tasks need to run for this number of ticks.
+                You can enable PM_PROFILING feature in esp_pm components and dump the sleep status with
+                esp_pm_dump_locks, if the proportion of rejected sleeps is too high, please increase
+                this value to improve scheduling efficiency
 
     endmenu # Kernel
 
@@ -270,7 +282,7 @@ menu "FreeRTOS"
 
         config FREERTOS_TASK_FUNCTION_WRAPPER
             bool "Wrap task functions"
-            depends on COMPILER_OPTIMIZATION_DEFAULT || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
+            depends on COMPILER_OPTIMIZATION_DEBUG || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
             default y
             help
                 If enabled, all FreeRTOS task functions will be enclosed in a wrapper function. If a task function
@@ -366,7 +378,7 @@ menu "FreeRTOS"
         config FREERTOS_TICK_SUPPORT_SYSTIMER
             bool
             default y if !FREERTOS_TICK_SUPPORT_CORETIMER
-            # ESP32-S3, ESP32-C3 and ESP32-H4 can use Systimer for FreeRTOS SysTick
+            # All targets except ESP32 and ESP32S2 can use Systimer for FreeRTOS SysTick
             # ESP32S2 also has SYSTIMER but it can not be used for the FreeRTOS SysTick because:
             # - It has only one counter, which already in use esp_timer.
             #   A counter for SysTick should be stall in debug mode but work esp_timer.
@@ -410,6 +422,7 @@ menu "FreeRTOS"
         config FREERTOS_SYSTICK_USES_SYSTIMER
             bool
             default y if FREERTOS_CORETIMER_SYSTIMER_LVL1 || FREERTOS_CORETIMER_SYSTIMER_LVL3
+            select ESP_SLEEP_SYSTIMER_STALL_WORKAROUND if IDF_TARGET_ESP32C3
 
         config FREERTOS_SYSTICK_USES_CCOUNT
             bool
@@ -478,6 +491,11 @@ menu "FreeRTOS"
     endmenu # Port
 
     # Hidden or compatibility options
+
+    config FREERTOS_PORT
+        # This invisible config value indicates the FreeRTOS is selected as the current RTOS used by ESP-IDF
+        bool
+        default y
 
     config FREERTOS_NO_AFFINITY
         # This invisible config value sets the value of tskNO_AFFINITY in task.h.

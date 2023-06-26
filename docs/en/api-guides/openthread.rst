@@ -11,12 +11,12 @@ OpenThread can run under the following modes on Espressif chips:
 Standalone node
 +++++++++++++++
 
-The full OpenThread stack and the application layer runs on the same chip. This mode is available on chips with 15.4 radio such as ESP32-H4.
+The full OpenThread stack and the application layer runs on the same chip. This mode is available on chips with 15.4 radio such as {IDF_TARGET}.
 
 Radio Co-Processor (RCP)
 ++++++++++++++++++++++++
 
-The chip will be connected to another host running the OpenThread IP stack. It will send and received 15.4 packets on behalf of the host. This mode is available on chips with 15.4 radio such as ESP32-H4. The underlying transport between the chip and the host can be SPI or UART. For sake of latency, we recommend to use SPI as the underlying transport.
+The chip will be connected to another host running the OpenThread IP stack. It will send and received 15.4 packets on behalf of the host. This mode is available on chips with 15.4 radio such as {IDF_TARGET}. The underlying transport between the chip and the host can be SPI or UART. For sake of latency, we recommend to use SPI as the underlying transport.
 
 OpenThread host
 +++++++++++++++
@@ -38,8 +38,8 @@ For chips without 15.4 radio, it can be connected to an RCP and run OpenThread u
 
         # node labels
         HOST_NODE [label="OpenThread \nhost\n(ESP32)", fontsize=14];
-        RCP [label="Radio \nCo-Processor\n(ESP32-H4)", fontsize=14];
-        STANDALONE [label="Standalone \nnode\n (ESP32-H4)", fontsize=14];
+        RCP [label="Radio \nCo-Processor\n(ESP32-H2)", fontsize=14];
+        STANDALONE [label="Standalone \nnode\n (ESP32-H2)", fontsize=14];
 
         # node connections + labels
         RCP -> STANDALONE [label="15.4 radio", dir=both, style=dashed];

@@ -517,8 +517,8 @@ void bta_gattc_co_get_addr_list(BD_ADDR *addr_list)
 void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
 {
     esp_err_t err_code;
-    UINT8 num = ++cache_env->num_addr;
     UINT8 index = 0;
+    UINT8 new_index = cache_env->num_addr;
     UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
     // check the address list has the same hash key or not
     if (bta_gattc_co_find_hash_in_cache(hash_key) != INVALID_ADDR_NUM) {
@@ -530,20 +530,22 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
             memcpy(cache_env->cache_addr[index].hash_key, hash_key, sizeof(hash_key_t));
         } else {
             //if the bd_addr didn't in the address list, added the bd_addr to the last of the address list.
-            memcpy(cache_env->cache_addr[num - 1].hash_key, hash_key, sizeof(hash_key_t));
-            memcpy(cache_env->cache_addr[num - 1].addr, bd_addr, sizeof(BD_ADDR));
+            memcpy(cache_env->cache_addr[new_index].hash_key, hash_key, sizeof(hash_key_t));
+            memcpy(cache_env->cache_addr[new_index].addr, bd_addr, sizeof(BD_ADDR));
+            cache_env->num_addr++;
         }
 
     } else {
-        APPL_TRACE_DEBUG("%s(), num = %d", __func__, num);
-        memcpy(cache_env->cache_addr[num - 1].addr, bd_addr, sizeof(BD_ADDR));
-        memcpy(cache_env->cache_addr[num - 1].hash_key, hash_key, sizeof(hash_key_t));
+        APPL_TRACE_DEBUG("%s(), num = %d", __func__, new_index + 1);
+        memcpy(cache_env->cache_addr[new_index].addr, bd_addr, sizeof(BD_ADDR));
+        memcpy(cache_env->cache_addr[new_index].hash_key, hash_key, sizeof(hash_key_t));
+        cache_env->num_addr++;
     }
 
     nvs_handle_t *fp = &cache_env->addr_fp;
-    UINT16 length = num*(sizeof(BD_ADDR) + sizeof(hash_key_t));
+    UINT16 length = cache_env->num_addr * (sizeof(BD_ADDR) + sizeof(hash_key_t));
 
-    for (UINT8 i = 0; i < num; i++) {
+    for (UINT8 i = 0; i < cache_env->num_addr; i++) {
         //copy the address to the buffer.
         memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)), cache_env->cache_addr[i].addr, sizeof(BD_ADDR));
         //copy the hash key to the buffer.

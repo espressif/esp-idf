@@ -1,8 +1,6 @@
 通用异步接收器/发送器 (UART)
 ==================================================
 
-{IDF_TARGET_UART_NUM:default="两", esp32="三", esp32s3="三"}
-
 {IDF_TARGET_UART_EXAMPLE_PORT:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 简介
@@ -10,9 +8,13 @@
 
 通用异步接收器/发送器 (UART) 属于一种硬件功能，通过使用 RS232、RS422、RS485 等常见异步串行通信接口来处理通信时序要求和数据帧。UART 是实现不同设备之间全双工或半双工数据交换的一种常用且经济的方式。
 
-{IDF_TARGET_NAME} 芯片有{IDF_TARGET_UART_NUM}个 UART 控制器（也称为端口），每个控制器都有一组相同的寄存器以简化编程并提高灵活性。
+{IDF_TARGET_NAME} 芯片有{IDF_TARGET_SOC_UART_HP_NUM}个 UART 控制器（也称为端口），每个控制器都有一组相同的寄存器以简化编程并提高灵活性。
 
-每个 UART 控制器可以独立配置波特率、数据位长度、位顺序、停止位位数、奇偶校验位等参数。所有控制器都与不同制造商的 UART 设备兼容，并且支持红外数据协会 (IrDA) 定义的标准协议。
+每个 UART 控制器可以独立配置波特率、数据位长度、位顺序、停止位位数、奇偶校验位等参数。所有具备完整功能的 UART 控制器都能与不同制造商的 UART 设备兼容，并且支持红外数据协会 (IrDA) 定义的标准协议。
+
+.. only:: SOC_UART_LP_NUM
+
+    此外，{IDF_TARGET_NAME} 芯片还有一个满足低功耗需求的 LP UART 控制器。LP UART 是原 UART 的功能剪裁版本。它只支持基础 UART 功能，不支持 IrDA 或 RS485 协议，并且只有一块较小的 RAM 存储空间。想要全面了解的 UART 及 LP UART 功能区别，请参考 *{IDF_TARGET_NAME} 技术参考手册* > UART 控制器 (UART) > 主要特性 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]。
 
 功能概述
 -------------------
@@ -233,14 +235,14 @@ API 提供了一种便利的方法来处理本文所讨论的特定中断，即�
 
 - **模式检测**：在检测到重复接收/发送同一字符的“模式”时触发中断，请参考示例 :example:`peripherals/uart/uart_events`。例如，模式检测可用于检测命令字符串末尾是否存在特定数量的相同字符（“模式”）。可以调用以下函数：
 
-    - 配置并启用此中断：调用 :cpp:func:`uart_enable_pattern_det_intr`
+    - 配置并启用此中断：调用 :cpp:func:`uart_enable_pattern_det_baud_intr`
     - 禁用中断：调用 :cpp:func:`uart_disable_pattern_det_intr`
 
 
 宏指令
 ^^^^^^^^^^^^
 
-API 还定义了一些宏指令。例如，:c:macro:`UART_FIFO_LEN` 定义了硬件 FIFO 缓冲区的长度，:c:macro:`UART_BITRATE_MAX` 定义了 UART 控制器支持的最大波特率。
+API 还定义了一些宏指令。例如，:c:macro:`UART_HW_FIFO_LEN` 定义了硬件 FIFO 缓冲区的长度，:c:macro:`UART_BITRATE_MAX` 定义了 UART 控制器支持的最大波特率。
 
 
 .. _uart-api-deleting-driver:

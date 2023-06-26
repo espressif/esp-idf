@@ -26,34 +26,6 @@ extern "C" {
 typedef struct gdma_channel_t *gdma_channel_handle_t;
 
 /**
- * @brief Enumeration of peripherals which have the DMA capability
- * @note Some peripheral might not be available on certain chip, please refer to `soc_caps.h` for detail.
- *
- */
-typedef enum {
-    GDMA_TRIG_PERIPH_M2M,  /*!< GDMA trigger peripheral: M2M */
-    GDMA_TRIG_PERIPH_UHCI, /*!< GDMA trigger peripheral: UHCI */
-    GDMA_TRIG_PERIPH_SPI,  /*!< GDMA trigger peripheral: SPI */
-    GDMA_TRIG_PERIPH_I2S,  /*!< GDMA trigger peripheral: I2S */
-    GDMA_TRIG_PERIPH_AES,  /*!< GDMA trigger peripheral: AES */
-    GDMA_TRIG_PERIPH_SHA,  /*!< GDMA trigger peripheral: SHA */
-    GDMA_TRIG_PERIPH_ADC,  /*!< GDMA trigger peripheral: ADC */
-    GDMA_TRIG_PERIPH_DAC,  /*!< GDMA trigger peripheral: DAC */
-    GDMA_TRIG_PERIPH_LCD,  /*!< GDMA trigger peripheral: LCD */
-    GDMA_TRIG_PERIPH_CAM,  /*!< GDMA trigger peripheral: CAM */
-    GDMA_TRIG_PERIPH_RMT,  /*!< GDMA trigger peripheral: RMT */
-} gdma_trigger_peripheral_t;
-
-/**
- * @brief Enumeration of GDMA channel direction
- *
- */
-typedef enum {
-    GDMA_CHANNEL_DIRECTION_TX, /*!< GDMA channel direction: TX */
-    GDMA_CHANNEL_DIRECTION_RX, /*!< GDMA channel direction: RX */
-} gdma_channel_direction_t;
-
-/**
  * @brief Collection of configuration items that used for allocating GDMA channel
  *
  */
@@ -80,7 +52,6 @@ typedef struct {
 
 /**
  * @brief Type of GDMA event data
- *
  */
 typedef struct {
     union {
@@ -92,31 +63,31 @@ typedef struct {
 /**
  * @brief Type of GDMA event callback
  * @param dma_chan GDMA channel handle, created from `gdma_new_channel`
- * @param event_data GDMA event data
+ * @param event_data GDMA event data. Different event share the same data structure, but the caller may only use a few or none of the data members.
  * @param user_data User registered data from `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`
  *
  * @return Whether a task switch is needed after the callback function returns,
  *         this is usually due to the callback wakes up some high priority task.
- *
  */
 typedef bool (*gdma_event_callback_t)(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
 /**
  * @brief Group of supported GDMA TX callbacks
  * @note The callbacks are all running under ISR environment
- *
  */
 typedef struct {
     gdma_event_callback_t on_trans_eof; /*!< Invoked when TX engine meets EOF descriptor */
+    gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
 } gdma_tx_event_callbacks_t;
 
 /**
  * @brief Group of supported GDMA RX callbacks
  * @note The callbacks are all running under ISR environment
- *
  */
 typedef struct {
-    gdma_event_callback_t on_recv_eof; /*!< Invoked when RX engine meets EOF descriptor */
+    gdma_event_callback_t on_recv_eof;  /*!< Invoked when RX engine meets EOF descriptor */
+    gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
+    gdma_event_callback_t on_recv_done; /*!< Invoked when finished to receive one RX descriptor */
 } gdma_rx_event_callbacks_t;
 
 /**
@@ -205,13 +176,27 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
 /**
  * @brief Apply channel strategy for GDMA channel
  *
- * @param dma_chan GDMA channel handle, allocated by `gdma_new_channel`
- * @param config Configuration of GDMA channel strategy
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] config Configuration of GDMA channel strategy
  *      - ESP_OK: Apply channel strategy successfully
  *      - ESP_ERR_INVALID_ARG: Apply channel strategy failed because of invalid argument
  *      - ESP_FAIL: Apply channel strategy failed because of other error
  */
 esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strategy_config_t *config);
+
+/**
+ * @brief Set GDMA channel priority
+ *
+ * @note By default, all GDMA channels are with the same priority: 0. Channels with the same priority are served in round-robin manner.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] priority Priority of GDMA channel, higher value means higher priority
+ * @return
+ *      - ESP_OK: Set GDMA channel priority successfully
+ *      - ESP_ERR_INVALID_ARG: Set GDMA channel priority failed because of invalid argument, e.g. priority out of range [0,GDMA_LL_CHANNEL_MAX_PRIORITY]
+ *      - ESP_FAIL: Set GDMA channel priority failed because of other error
+ */
+esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority);
 
 /**
  * @brief Delete GDMA channel
@@ -279,6 +264,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
  * @return
  *      - ESP_OK: Start DMA engine successfully
  *      - ESP_ERR_INVALID_ARG: Start DMA engine failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Start DMA engine failed because of invalid state, e.g. the channel is controlled by ETM, so can't start it manually
  *      - ESP_FAIL: Start DMA engine failed because of other error
  */
 esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr);
@@ -293,6 +279,7 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr);
  * @return
  *      - ESP_OK: Stop DMA engine successfully
  *      - ESP_ERR_INVALID_ARG: Stop DMA engine failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Stop DMA engine failed because of invalid state, e.g. the channel is controlled by ETM, so can't stop it manually
  *      - ESP_FAIL: Stop DMA engine failed because of other error
  */
 esp_err_t gdma_stop(gdma_channel_handle_t dma_chan);
@@ -361,6 +348,7 @@ typedef struct {
  * @brief Get the ETM task for GDMA channel
  *
  * @note The created ETM task object can be deleted later by calling `esp_etm_del_task`
+ * @note If the GDMA task (e.g. start/stop) is controlled by ETM, then you can't use `gdma_start`/`gdma_stop` to control it.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
  * @param[in] config GDMA ETM task configuration
@@ -372,6 +360,22 @@ typedef struct {
  *      - ESP_FAIL: Get ETM task failed because of other error
  */
 esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_config_t *config, esp_etm_task_handle_t *out_task);
+
+/**
+ * @brief Get the mask of free M2M trigger IDs
+ *
+ * @note On some ESP targets (e.g. ESP32C3/S3), DMA trigger used for memory copy can be any of valid peripheral's trigger ID,
+ *       which can bring conflict if the peripheral is also using the same trigger ID. This function can return the free IDs
+ *       for memory copy, at the runtime.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[out] mask Returned mask of free M2M trigger IDs
+ * @return
+ *      - ESP_OK: Get free M2M trigger IDs successfully
+ *      - ESP_ERR_INVALID_ARG: Get free M2M trigger IDs failed because of invalid argument
+ *      - ESP_FAIL: Get free M2M trigger IDs failed because of other error
+ */
+esp_err_t gdma_get_free_m2m_trig_id_mask(gdma_channel_handle_t dma_chan, uint32_t *mask);
 
 #ifdef __cplusplus
 }

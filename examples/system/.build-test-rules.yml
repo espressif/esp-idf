@@ -1,67 +1,46 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/system/app_trace_to_host:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2"]
+examples/system/app_trace_basic:
+  disable:
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: lack of runners
+      reason: target esp32c6, esp32h2 is not supported yet
 
 examples/system/console/advanced:
-  disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run this app on one chip with each architecture
 
 examples/system/console/advanced_usb_cdc:
-  enable:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: the other targets are not tested yet
+  disable:
+    - if: SOC_USB_PERIPH_NUM == 0
 
 examples/system/console/basic:
-  disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run this app on one chip with each architecture
 
 examples/system/deep_sleep:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32h2"]
       temporary: true
-      reason: target(s) not supported yet
+      reason: target(s) not supported yet # IDF-6268
 
 examples/system/deep_sleep_wake_stub:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32h2"]
       temporary: true
       reason: target(s) is not supported yet
 
-examples/system/efuse:
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: lack of runners
-    - if: IDF_TARGET == "esp32c6"
+examples/system/esp_timer:
+  disable:
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
-examples/system/esp_timer:
+examples/system/eventfd:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_GPTIMER_SUPPORTED != 1
 
 examples/system/flash_suspend:
   enable:
@@ -75,17 +54,11 @@ examples/system/gcov:
       temporary: true
       reason: lack of runners
 
-examples/system/gdbstub:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-
 examples/system/heap_task_tracking:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target esp32c2, esp32h2 is not supported yet
 
 examples/system/himem:
   enable:
@@ -101,49 +74,53 @@ examples/system/ipc/ipc_isr:
 
 examples/system/light_sleep:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: target(s) not supported yet
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
 
 examples/system/ota/native_ota_example:
   disable:
+    - if: IDF_TARGET == "esp32h2"
+      temporary: true
+      reason: target esp32h2 is not supported yet
+  disable_test:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: lack of runners
 
 examples/system/ota/otatool:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target esp32c2, esp32h2 is not supported yet
 
 examples/system/ota/pre_encrypted_ota:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32h2 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
 
@@ -162,17 +139,21 @@ examples/system/select:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
 examples/system/sysview_tracing:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/system/sysview_tracing_heap_log:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -184,45 +165,57 @@ examples/system/task_watchdog:
       temporary: true
       reason: target esp32c2 is not supported yet
 
-examples/system/ulp_fsm/ulp:
-  disable:
-    - if: SOC_ULP_SUPPORTED != 1
+examples/system/ulp/lp_core/gpio:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
 
-examples/system/ulp_fsm/ulp_adc:
+examples/system/ulp/lp_core/lp_i2c:
+  enable:
+    - if: SOC_LP_I2C_SUPPORTED == 1
+
+examples/system/ulp/ulp_fsm/ulp:
+  disable:
+    - if: SOC_ULP_FSM_SUPPORTED != 1
+
+examples/system/ulp/ulp_fsm/ulp_adc:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/ulp_riscv/adc:
+examples/system/ulp/ulp_riscv/adc:
   enable:
-    - if: IDF_TARGET in ["esp32s3"]
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/ulp_riscv/ds18b20_onewire:
+examples/system/ulp/ulp_riscv/ds18b20_onewire:
   enable:
     - if: IDF_TARGET == "esp32s2"
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/ulp_riscv/gpio:
+examples/system/ulp/ulp_riscv/gpio:
   enable:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/ulp_riscv/gpio_interrupt:
+examples/system/ulp/ulp_riscv/gpio_interrupt:
   enable:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/ulp_riscv/i2c:
+examples/system/ulp/ulp_riscv/i2c:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
 
-examples/system/ulp_riscv/uart_print:
+examples/system/ulp/ulp_riscv/touch:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+
+examples/system/ulp/ulp_riscv/uart_print:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
 

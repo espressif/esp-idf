@@ -191,6 +191,69 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 	return nei_pos - nei_rep;
 }
 
+#ifdef CONFIG_SAE_PK
+static int ieee802_11_parse_vendor_specific(struct wpa_supplicant *wpa_s, const struct element *elem, const u8* pos)
+{
+	u32 oui;
+	oui = WPA_GET_BE24(pos);
+	switch (oui) {
+	case OUI_WFA:
+		switch (pos[3]) {
+		case SAE_PK_OUI_TYPE:
+			wpa_s->sae_pk_elems.sae_pk_len = elem->datalen - 4;
+			wpa_s->sae_pk_elems.sae_pk = (u8*)os_zalloc(sizeof(u8)*(elem->datalen-4));
+			os_memcpy(wpa_s->sae_pk_elems.sae_pk, pos+4, elem->datalen-4);
+			break;
+		default:
+			wpa_printf(MSG_EXCESSIVE, "Unknown WFA "
+				"information element ignored "
+				"(type=%d len=%lu)",
+				pos[3], (unsigned long) elem->datalen);
+			return -1;
+		}
+		break;
+	default:
+		 wpa_printf(MSG_EXCESSIVE, "unknown vendor specific "
+			"information element ignored (vendor OUI "
+			"%02x:%02x:%02x len=%lu)",
+			pos[0], pos[1], pos[2], (unsigned long) elem->datalen);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int ieee802_11_parse_extension(struct wpa_supplicant *wpa_s, const struct element *elem, const u8* pos){
+	// do not consider extension_id element len in datalen
+	if (elem->datalen < 1) {
+		wpa_printf(MSG_DEBUG,
+			"short information element (Ext)");
+		return -1;
+	}
+	u8 ext_id;
+	ext_id = *pos++;
+	switch (ext_id) {
+	case WLAN_EID_EXT_FILS_KEY_CONFIRM:
+		wpa_s->sae_pk_elems.fils_key_confirm_len = elem->datalen - 1;
+		wpa_s->sae_pk_elems.fils_key_confirm = (u8*)os_zalloc(sizeof(u8)*(elem->datalen - 1));
+		os_memcpy(wpa_s->sae_pk_elems.fils_key_confirm, pos, elem->datalen - 1);
+		break;
+	case WLAN_EID_EXT_FILS_PUBLIC_KEY:
+		wpa_s->sae_pk_elems.fils_pk_len = elem->datalen - 1;
+		wpa_s->sae_pk_elems.fils_pk = (u8*)os_zalloc(sizeof(u8)*(elem->datalen - 1));
+		os_memcpy(wpa_s->sae_pk_elems.fils_pk, pos, elem->datalen - 1);
+		break;
+	default:
+		wpa_printf(MSG_EXCESSIVE,
+			"IEEE 802.11 element parsing ignored unknown element extension (ext_id=%u elen=%u)",
+		   ext_id, (unsigned int) elem->datalen-1);
+		return -1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SAE_PK */
+
 /**
  * ieee802_11_parse_elems - Parse information elements in management frames
  * @start: Pointer to the start of IEs
@@ -201,8 +264,9 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
  */
 int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t len)
 {
-#ifdef CONFIG_RRM
+#if defined(CONFIG_RRM) ||  defined(CONFIG_SAE_PK)
 	const struct element *elem;
+	u8 unknown = 0;
 
 	if (!start)
 		return 0;
@@ -211,20 +275,39 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 		u8 id = elem->id;
 		const u8 *pos = elem->data;
 		switch (id) {
+#ifdef CONFIG_RRM
 		case WLAN_EID_RRM_ENABLED_CAPABILITIES:
 			os_memcpy(wpa_s->rrm_ie, pos, 5);
 			wpa_s->rrm.rrm_used = true;
 			break;
+#endif
+#ifdef CONFIG_SAE_PK
+		case WLAN_EID_EXTENSION:
+			if(ieee802_11_parse_extension(wpa_s, elem, pos) != 0){
+				unknown++;
+			}
+			break;
+		case WLAN_EID_VENDOR_SPECIFIC:
+			if(ieee802_11_parse_vendor_specific(wpa_s, elem, pos) != 0){
+				unknown++;
+			}
+			break;
+#endif /*CONFIG_SAE_PK*/
+#ifdef CONFIG_RRM
 		case WLAN_EID_EXT_CAPAB:
 			/* extended caps can go beyond 8 octacts but we aren't using them now */
 			os_memcpy(wpa_s->extend_caps, pos, 5);
 			break;
+#endif
 		default:
 			break;
 
 		}
 	}
-#endif
+	if (unknown)
+		return -1;
+
+#endif /* defined(CONFIG_RRM) ||  defined(CONFIG_SAE_PK) */
 	return 0;
 }
 

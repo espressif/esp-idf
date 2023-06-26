@@ -21,6 +21,16 @@ extern "C" {
 /** Common functions, to be kept in sync with bootloader_memory_utils.h **/
 
 /**
+ * @brief Check if the IRAM and DRAM are separate or using the same memory space
+ *
+ * @return true if the DRAM and IRAM are sharing the same memory space, false otherwise
+ */
+__attribute__((always_inline))
+inline static bool esp_dram_match_iram(void) {
+    return (SOC_DRAM_LOW == SOC_IRAM_LOW && SOC_DRAM_HIGH == SOC_IRAM_HIGH);
+}
+
+/**
  * @brief Check if the pointer is in iram
  *
  * @param p pointer
@@ -246,6 +256,17 @@ inline static bool esp_ptr_internal(const void *p) {
      * additional check is required */
     r |= ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
 #endif
+
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
+     * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
+     * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
+     * Though this memory lies in the external memory vaddr, it is no different
+     * from the internal RAM in terms of hardware attributes and it is a part of
+     * the internal RAM when added to the heap.*/
+    r |= ((intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < (SOC_DROM_LOW + 0x4000));
+#endif
+
     return r;
 }
 
@@ -267,7 +288,17 @@ bool esp_ptr_external_ram(const void *p);
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_drom(const void *p) {
-    return ((intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < SOC_DROM_HIGH);
+    uint32_t drom_start_addr = SOC_DROM_LOW;
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
+     * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
+     * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
+     * The drom_start_addr has to be moved by 0x4000 (16kB) to accomodate
+     * this addition. */
+    drom_start_addr += 0x4000;
+#endif
+
+    return ((intptr_t)p >= drom_start_addr && (intptr_t)p < SOC_DROM_HIGH);
 }
 
 /**

@@ -25,8 +25,6 @@ PROVIDE ( esp_rom_uart_tx_one_char    = uart_tx_one_char );
 PROVIDE ( esp_rom_uart_tx_wait_idle   = uart_tx_wait_idle );
 PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
 PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
-PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
-
 
 PROVIDE ( esp_rom_md5_init   = MD5Init );
 PROVIDE ( esp_rom_md5_update = MD5Update );
@@ -40,6 +38,7 @@ PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
 PROVIDE ( esp_rom_route_intr_matrix = intr_matrix_set );
 PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
+PROVIDE ( esp_rom_set_cpu_ticks_per_us = ets_update_cpu_frequency );
 
 PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
 PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable );

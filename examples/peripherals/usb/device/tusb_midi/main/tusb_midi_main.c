@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2022-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <stdlib.h>
@@ -137,6 +137,7 @@ void app_main(void)
     tinyusb_config_t const tusb_cfg = {
         .device_descriptor = NULL, // If device_descriptor is NULL, tinyusb_driver_install() will use Kconfig
         .string_descriptor = s_str_desc,
+        .string_descriptor_count = sizeof(s_str_desc) / sizeof(s_str_desc[0]),
         .external_phy = false,
         .configuration_descriptor = s_midi_cfg_desc,
     };

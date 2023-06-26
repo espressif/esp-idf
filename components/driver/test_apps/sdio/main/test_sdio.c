@@ -126,6 +126,8 @@ static void deinit_essl(essl_handle_t handle, const sdio_test_config_t *conf);
 
 static void test_framework_master(test_func_t test_func, const sdio_test_config_t* config)
 {
+    unity_send_signal("Master ready");
+    unity_wait_for_signal("Slave ready");
     ESP_LOGI(MASTER_TAG, "### Testing %s... ####", config->test_name);
     essl_handle_t handle;
     esp_err_t err;
@@ -159,14 +161,14 @@ static void init_essl(essl_handle_t *out_handle, const sdio_test_config_t *conf)
 
     switch (conf->sdio_mode) {
     case SDIO_4BIT:
-        ESP_LOGI(MASTER_TAG, "Probe using SD 4-bit...\n");
+        ESP_LOGI(MASTER_TAG, "Probe using SD 4-bit...");
         config = (sdmmc_host_t)SDMMC_HOST_DEFAULT();
         config.flags = SDMMC_HOST_FLAG_4BIT;
         config.max_freq_khz = conf->freq;
         init_sdmmc_host();
         break;
     case SDIO_1BIT:
-        ESP_LOGI(MASTER_TAG, "Probe using SD 1-bit...\n");
+        ESP_LOGI(MASTER_TAG, "Probe using SD 1-bit...");
         config = (sdmmc_host_t)SDMMC_HOST_DEFAULT();
         config.flags = SDMMC_HOST_FLAG_1BIT;
         config.max_freq_khz = conf->freq;
@@ -197,7 +199,7 @@ static void init_essl(essl_handle_t *out_handle, const sdio_test_config_t *conf)
         err = sdspi_host_init_device(&device_config, &sdspi_handle);
         TEST_ESP_OK(err);
 
-        ESP_LOGI(MASTER_TAG, "Probe using SPI...\n");
+        ESP_LOGI(MASTER_TAG, "Probe using SPI...");
 
         config = (sdmmc_host_t)SDSPI_HOST_DEFAULT();
         config.slot = sdspi_handle;
@@ -552,6 +554,7 @@ static void wait_for_finish(slave_context_t *ctx)
 
 static void test_framework_slave(test_func_slave_t test_func, const sdio_test_config_t* config)
 {
+    unity_wait_for_signal("Master ready");
     slave_context.s_finished = false;
     esp_err_t err;
     sdio_slave_config_t slave_config = {
@@ -566,7 +569,7 @@ static void test_framework_slave(test_func_slave_t test_func, const sdio_test_co
     err = sdio_slave_start();
     TEST_ESP_OK(err);
 
-    ESP_LOGI(SLAVE_TAG, "slave ready");
+    unity_send_signal("Slave ready");
 
     test_func(&slave_context, config);
 

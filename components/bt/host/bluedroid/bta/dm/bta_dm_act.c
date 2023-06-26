@@ -675,6 +675,27 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_get_dev_name
+**
+** Description      Gets local device name
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_get_dev_name (tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS status;
+    char *name = NULL;
+
+    status = BTM_ReadLocalDeviceName(&name);
+    if (p_data->get_name.p_cback) {
+        (*p_data->get_name.p_cback)(status, name);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_set_afh_channels
 **
 ** Description      Sets AFH channels
@@ -824,14 +845,14 @@ void bta_dm_ble_set_channels (tBTA_DM_MSG *p_data)
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.add_wl_cb);
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.update_wl_cb);
 #endif  ///BLE_INCLUDED == TRUE
 }
 
 void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleClearWhitelist();
+    BTM_BleClearWhitelist(p_data->white_list.update_wl_cb);
 #endif
 }
 
@@ -5802,6 +5823,37 @@ void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data)
 }
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+void bta_dm_ble_gap_periodic_adv_recv_enable(tBTA_DM_MSG *p_data)
+{
+    BTM_BlePeriodicAdvRecvEnable(p_data->ble_periodic_adv_recv_enable.sync_handle,
+                                 p_data->ble_periodic_adv_recv_enable.enable);
+}
+
+void bta_dm_ble_gap_periodic_adv_sync_trans(tBTA_DM_MSG *p_data)
+{
+    BTM_BlePeriodicAdvSyncTrans(p_data->ble_periodic_adv_sync_trans.addr,
+                                p_data->ble_periodic_adv_sync_trans.service_data,
+                                p_data->ble_periodic_adv_sync_trans.sync_handle);
+}
+
+void bta_dm_ble_gap_periodic_adv_set_info_trans(tBTA_DM_MSG *p_data)
+{
+    BTM_BlePeriodicAdvSetInfoTrans(p_data->ble_periodic_adv_set_info_trans.addr,
+                                   p_data->ble_periodic_adv_set_info_trans.service_data,
+                                   p_data->ble_periodic_adv_set_info_trans.adv_hanlde);
+}
+
+void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPeriodicAdvSyncTransParams(p_data->ble_set_past_params.addr,
+                                         p_data->ble_set_past_params.params.mode,
+                                         p_data->ble_set_past_params.params.skip,
+                                         p_data->ble_set_past_params.params.sync_timeout,
+                                         p_data->ble_set_past_params.params.cte_type);
+}
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_setup_storage

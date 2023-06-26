@@ -159,7 +159,7 @@ config BT_LE_MAX_PERIODIC_SYNCS
     int "Maximum number of periodic advertising syncs"
     depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
 
-    range 0 3
+    range 0 8
     default 1 if BT_LE_ENABLE_PERIODIC_ADV
     default 0
     help
@@ -174,6 +174,13 @@ config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
     default 5
     help
         Set this option to set the upper limit for number of periodic advertiser list.
+
+config BT_LE_POWER_CONTROL_ENABLED
+    bool "Enable controller support for BLE Power Control"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && IDF_TARGET_ESP32C6
+    default n
+    help
+        Set this option to enable the Power Control feature on controller
 
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
@@ -207,13 +214,13 @@ menu "Memory Settings"
 
     config BT_LE_ACL_BUF_COUNT
         int "ACL Buffer count"
-        default 24
+        default 10
         help
             The number of ACL data buffers.
 
     config BT_LE_ACL_BUF_SIZE
         int "ACL Buffer size"
-        default 255
+        default 517
         help
             This is the maximum size of the data portion of HCI ACL data packets.
             It does not include the HCI data header (of 4 bytes)
@@ -333,8 +340,8 @@ config BT_LE_LL_SCA
 config BT_LE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     depends on !BT_NIMBLE_ENABLED
-    range 1 2
-    default 2
+    range 1 9
+    default 3
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
         is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
@@ -387,3 +394,31 @@ choice BT_LE_WAKEUP_SOURCE
         help
             Use BLE rtc timer to wakeup CPU
 endchoice
+
+choice BT_LE_LP_CLK_SRC
+    prompt "BLE low power clock source"
+    default BT_LE_LP_CLK_SRC_MAIN_XTAL
+    config BT_LE_LP_CLK_SRC_MAIN_XTAL
+        bool "Use main XTAL as RTC clock source"
+        help
+            User main XTAL as RTC clock source.
+            This option is recommended if external 32.768k XTAL is not available.
+            Using the external 32.768 kHz XTAL will have lower current consumption
+            in light sleep compared to using the main XTAL.
+
+    config BT_LE_LP_CLK_SRC_DEFAULT
+        bool "Use system RTC slow clock source"
+        help
+            Use the same slow clock source as system RTC
+            Using any clock source other than external 32.768 kHz XTAL supports only
+            legacy ADV and SCAN due to low clock accuracy.
+
+endchoice
+
+config BT_LE_USE_ESP_TIMER
+    bool "Enable Esp Timer for Callout"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer
+        instead of FreeRTOS timer

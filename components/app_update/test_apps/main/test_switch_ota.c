@@ -10,6 +10,7 @@
 #include <esp_types.h>
 #include <stdio.h>
 #include "string.h"
+#include <inttypes.h>
 #include "sdkconfig.h"
 
 #include "esp_rom_spiflash.h"
@@ -126,7 +127,7 @@ static const esp_partition_t * get_next_update_partition(void)
 {
     const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
     TEST_ASSERT_NOT_EQUAL(NULL, update_partition);
-    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x", update_partition->subtype, update_partition->address);
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%"PRIx32, update_partition->subtype, update_partition->address);
     return update_partition;
 }
 
@@ -139,7 +140,7 @@ static void copy_current_app_to_next_part(const esp_partition_t *cur_app_partiti
 {
     esp_ota_get_next_update_partition(NULL);
     TEST_ASSERT_NOT_EQUAL(NULL, next_app_partition);
-    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x", next_app_partition->subtype, next_app_partition->address);
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%"PRIx32, next_app_partition->subtype, next_app_partition->address);
 
     esp_ota_handle_t update_handle = 0;
     TEST_ESP_OK(esp_ota_begin(next_app_partition, OTA_SIZE_UNKNOWN, &update_handle));
@@ -159,7 +160,7 @@ static void copy_current_app_to_next_part_with_offset(const esp_partition_t *cur
 {
     esp_ota_get_next_update_partition(NULL);
     TEST_ASSERT_NOT_EQUAL(NULL, next_app_partition);
-    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x", next_app_partition->subtype, next_app_partition->address);
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%"PRIx32, next_app_partition->subtype, next_app_partition->address);
 
     esp_ota_handle_t update_handle = 0;
     TEST_ESP_OK(esp_ota_begin(next_app_partition, OTA_SIZE_UNKNOWN, &update_handle));
@@ -216,9 +217,9 @@ static const esp_partition_t* get_running_firmware(void)
 {
     const esp_partition_t *configured = esp_ota_get_boot_partition();
     const esp_partition_t *running = esp_ota_get_running_partition();
-    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
+    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08"PRIx32")",
             running->type, running->subtype, running->address);
-    ESP_LOGI(TAG, "Configured partition type %d subtype %d (offset 0x%08x)",
+    ESP_LOGI(TAG, "Configured partition type %d subtype %d (offset 0x%08"PRIx32")",
             configured->type, configured->subtype, configured->address);
     TEST_ASSERT_NOT_EQUAL(NULL, configured);
     TEST_ASSERT_NOT_EQUAL(NULL, running);
@@ -485,6 +486,9 @@ static void test_flow4(void)
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");
+#ifdef BOOTLOADER_RESERVE_RTC_MEM
+            TEST_ASSERT_FALSE(bootloader_common_get_rtc_retain_mem_factory_reset_state());
+#endif
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             mark_app_valid();
             set_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
@@ -493,6 +497,10 @@ static void test_flow4(void)
         case 4:
             reset_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
             ESP_LOGI(TAG, "Factory");
+#ifdef BOOTLOADER_RESERVE_RTC_MEM
+            TEST_ASSERT_TRUE(bootloader_common_get_rtc_retain_mem_factory_reset_state());
+            TEST_ASSERT_FALSE(bootloader_common_get_rtc_retain_mem_factory_reset_state());
+#endif
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
             erase_ota_data();
             break;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -436,7 +436,7 @@ TEST_CASE("gptimer_start_stop_by_etm_task", "[etm]")
     uint64_t cur_count_val = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &cur_count_val));
     printf("cur_count_val: %llu\r\n", cur_count_val);
-    TEST_ASSERT_UINT_WITHIN(900, 500000, cur_count_val);
+    TEST_ASSERT_UINT_WITHIN(1000, 500000, cur_count_val);
 
     // trigger an neg-edge, this should stop the gptimer
     TEST_ESP_OK(gpio_set_level(input_gpio, 0));

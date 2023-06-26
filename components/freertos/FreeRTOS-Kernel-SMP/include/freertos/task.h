@@ -1705,6 +1705,36 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) PRIVILEGED_FUNCTION;     /*lin
 TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION;     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /**
+ * task. h
+ * @code{c}
+ * BaseType_t xTaskGetStaticBuffers( TaskHandle_t xTask,
+ *                                   StackType_t ** ppuxStackBuffer,
+ *                                   StaticTask_t ** ppxTaskBuffer );
+ * @endcode
+ *
+ * Retrieve pointers to a statically created task's data structure
+ * buffer and stack buffer. These are the same buffers that are supplied
+ * at the time of creation.
+ *
+ * @param xTask The task for which to retrieve the buffers.
+ *
+ * @param ppuxStackBuffer Used to return a pointer to the task's stack buffer.
+ *
+ * @param ppxTaskBuffer Used to return a pointer to the task's data structure
+ * buffer.
+ *
+ * @return pdTRUE if buffers were retrieved, pdFALSE otherwise.
+ *
+ * \defgroup xTaskGetStaticBuffers xTaskGetStaticBuffers
+ * \ingroup TaskUtils
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    BaseType_t xTaskGetStaticBuffers( TaskHandle_t xTask,
+                                      StackType_t ** ppuxStackBuffer,
+                                      StaticTask_t ** ppxTaskBuffer ) PRIVILEGED_FUNCTION;
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+/**
  * task.h
  * <PRE>UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask );</PRE>
  *
@@ -3291,7 +3321,7 @@ core 0 during startup.
 void vTaskStartSchedulerOtherCores( void );
 #endif // configNUM_CORES > 1
 
-#include "idf_additions.h"
+#include "freertos/idf_additions.h"
 
 #endif //ESP_PLATFORM
 

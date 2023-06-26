@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef nvs_flash_h
 #define nvs_flash_h
 
@@ -31,6 +23,27 @@ typedef struct {
     uint8_t eky[NVS_KEY_SIZE]; /*!<  XTS encryption and decryption key*/
     uint8_t tky[NVS_KEY_SIZE]; /*!<  XTS tweak key */
 } nvs_sec_cfg_t;
+
+/**
+ * @brief Callback function prototype for generating the NVS encryption keys
+ */
+typedef esp_err_t (*nvs_flash_generate_keys_t) (const void *scheme_data, nvs_sec_cfg_t* cfg);
+
+/**
+ * @brief Callback function prototype for reading the NVS encryption keys
+ */
+typedef esp_err_t (*nvs_flash_read_cfg_t) (const void *scheme_data, nvs_sec_cfg_t* cfg);
+
+/**
+ * @brief NVS encryption: Security scheme configuration structure
+ */
+typedef struct
+{
+    int scheme_id;                                /*!<  Security Scheme ID (E.g. HMAC) */
+    void *scheme_data;                            /*!<  Scheme-specific data (E.g. eFuse block for HMAC-based key generation) */
+    nvs_flash_generate_keys_t nvs_flash_key_gen;  /*!<  Callback for the nvs_flash_key_gen implementation */
+    nvs_flash_read_cfg_t nvs_flash_read_cfg;      /*!<  Callback for the nvs_flash_read_keys implementation */
+} nvs_sec_scheme_t;
 
 /**
  * @brief Initialize the default NVS partition.
@@ -220,9 +233,9 @@ esp_err_t nvs_flash_secure_init_partition(const char *partition_label, nvs_sec_c
  *
  *
  * @return
- *      -ESP_OK, if cfg was read successfully;
- *      -ESP_INVALID_ARG, if partition or cfg;
- *      -or error codes from esp_partition_write/erase APIs.
+ *      - ESP_OK, if cfg was read successfully;
+ *      - ESP_ERR_INVALID_ARG, if partition or cfg is NULL;
+ *      - or error codes from esp_partition_write/erase APIs.
  */
 
 esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_t* cfg);
@@ -240,14 +253,67 @@ esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_
  * @note  Provided partition is assumed to be marked 'encrypted'.
  *
  * @return
- *      -ESP_OK, if cfg was read successfully;
- *      -ESP_INVALID_ARG, if partition or cfg;
- *      -ESP_ERR_NVS_KEYS_NOT_INITIALIZED, if the partition is not yet written with keys.
- *      -ESP_ERR_NVS_CORRUPT_KEY_PART, if the partition containing keys is found to be corrupt
- *      -or error codes from esp_partition_read API.
+ *      - ESP_OK, if cfg was read successfully;
+ *      - ESP_ERR_INVALID_ARG, if partition or cfg is NULL
+ *      - ESP_ERR_NVS_KEYS_NOT_INITIALIZED, if the partition is not yet written with keys.
+ *      - ESP_ERR_NVS_CORRUPT_KEY_PART, if the partition containing keys is found to be corrupt
+ *      - or error codes from esp_partition_read API.
  */
 
 esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_cfg_t* cfg);
+
+/**
+ * @brief Registers the given security scheme for NVS encryption
+ *        The scheme registered with sec_scheme_id by this API be used as
+ *        the default security scheme for the "nvs" partition.
+ *        Users will have to call this API explicitly in their application.
+ *
+ * @param[in] scheme_cfg  Pointer to the security scheme configuration structure
+ *                        that the user (or the nvs_key_provider) wants to register.
+ *
+ * @return
+ *      - ESP_OK, if security scheme registration succeeds;
+ *      - ESP_ERR_INVALID_ARG, if scheme_cfg is NULL;
+ *      - ESP_FAIL, if security scheme registration fails
+ */
+esp_err_t nvs_flash_register_security_scheme(nvs_sec_scheme_t *scheme_cfg);
+
+/**
+ * @brief   Fetch the configuration structure for the default active
+ *          security scheme for NVS encryption
+ *
+ * @return  Pointer to the default active security scheme configuration
+ *          (NULL if no scheme is registered yet i.e. active)
+ */
+nvs_sec_scheme_t *nvs_flash_get_default_security_scheme(void);
+
+/**
+ * @brief Generate (and store) the NVS keys using the specified key-protection scheme
+ *
+ * @param[in] scheme_cfg   Security scheme specific configuration
+ *
+ * @param[out] cfg         Security configuration (encryption keys)
+ *
+ * @return
+ *      - ESP_OK, if cfg was populated successfully with generated encryption keys;
+ *      - ESP_ERR_INVALID_ARG, if scheme_cfg or cfg is NULL;
+ *      - ESP_FAIL, if the key generation process fails
+ */
+esp_err_t nvs_flash_generate_keys_v2(nvs_sec_scheme_t *scheme_cfg, nvs_sec_cfg_t* cfg);
+
+/**
+ * @brief Read NVS security configuration set by the specified security scheme
+ *
+ * @param[in] scheme_cfg   Security scheme specific configuration
+ *
+ * @param[out] cfg         Security configuration (encryption keys)
+ *
+ * @return
+ *      - ESP_OK, if cfg was read successfully;
+ *      - ESP_ERR_INVALID_ARG, if scheme_cfg or cfg is NULL;
+ *      - ESP_FAIL, if the key reading process fails
+ */
+esp_err_t nvs_flash_read_security_cfg_v2(nvs_sec_scheme_t *scheme_cfg, nvs_sec_cfg_t* cfg);
 
 #ifdef __cplusplus
 }

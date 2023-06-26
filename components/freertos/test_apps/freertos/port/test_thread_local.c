@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <esp_types.h>
+#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -51,7 +52,7 @@ static void task_test_tls(void *arg)
 
     GET_THREADPTR(tp);
     for (int i = 0; i < 5; i++) {
-        printf("Task[%x]: var = 0x%x 0x%x step=%d\n", tp, tl_test_var1, tl_test_var2, step);
+        printf("Task[%"PRIx32"]: var1 = %d var2 = 0x%"PRIx8" step=%d\n", tp, tl_test_var1, tl_test_var2, step);
         if (i == 0) {
             TEST_ASSERT_EQUAL(0, tl_test_var1);
             TEST_ASSERT_EQUAL(55, tl_test_var2);

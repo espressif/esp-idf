@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # Deep Sleep Wake Stub Example
 
@@ -13,7 +13,7 @@ In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig opt
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP32/ESP32-S2/ESP32-S3/ESP32-C3 development board without any extra hardware if only **Timer** wake up sources are used.
+This example runs on any commonly available development board with a chip listed under "Supported Targets" without requiring any extra hardware if only **Timer** wake up sources are used.
 
 ### Configure the project
 
@@ -57,19 +57,28 @@ The ESP chips will then enter deep sleep. When a timer wake up occurs, if deep s
 
 ```
 ...
-ESP-ROM:esp32s3-20210327
-Build:Mar 27 2021
-rst:0x5 (DSLEEP),boot:0x8 (SPI_FAST_FLASH_BOOT)
-wake stub: wakeup count is 1, wakeup cause is 8
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x5 (SLEEP_WAKEUP),boot:0x2c (SPI_FAST_FLASH_BOOT)
+wake stub: wakeup count is 1, wakeup cause is 16, wakeup cost 6505 us
 wake stub: going to deep sleep
-ESP-ROM:esp32s3-20210327
-Build:Mar 27 2021
-rst:0x5 (DSLEEP),boot:0x8 (SPI_FAST_FLASH_BOOT)
-wake stub: wakeup count is 2, wakeup cause is 8
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x5 (SLEEP_WAKEUP),boot:0x2c (SPI_FAST_FLASH_BOOT)
+wake stub: wakeup count is 2, wakeup cause is 16, wakeup cost 6506 us
 wake stub: going to deep sleep
-ESP-ROM:esp32s3-20210327
-Build:Mar 27 2021
-rst:0x5 (DSLEEP),boot:0x8 (SPI_FAST_FLASH_BOOT)
-wake stub: wakeup count is 3, wakeup cause is 8
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x5 (SLEEP_WAKEUP),boot:0x2c (SPI_FAST_FLASH_BOOT)
+wake stub: wakeup count is 3, wakeup cause is 16, wakeup cost 6505 us
 wake stub: going to deep sleep
+
 ```
+
+> Note:
+
+> 1. The wakeup time cost printed in this example is not entirely accurate. This is because it does not take into account the hardware initialization time before the CPU starts. For most ESP chips, the initialization time is about 280 us.
+
+> 2. The wake-up time shown in this example may be reduced by disabling the logs printed by ROM code. For most ESP chips, this ROM printing takes about 6100 us. In the product firmware, users can temporarily or permanently turn off ROM printing by calling ``esp_deep_sleep_disable_rom_logging`` or by setting ``menuconfig`` > ``Boot ROM Behavior`` > ``Permanently disable logging`` to speed up the wake-up.(ESP32 does not support suppressing ROM logging through menuconfig, but it can be suppressed by grounding GPIO15)
+
+> 3. Here is a method for roughly estimating optimal wake-up time: Taking ESP32-C6 as an example, the wake-up time from stub printing is about 6500 us. However, by substracting the ROM printing overhead of 6100 us and adding the system initialization overhead of 280 us, the wake-up overhead is estimated to be around 680 us. Users also can modify the example to configure GPIO wake-up and obtain a more realistic and accurate wake-up time by grabbing GPIO signals with a logic analyzer.

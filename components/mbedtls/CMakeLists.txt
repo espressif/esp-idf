@@ -69,7 +69,7 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
 
     target_add_binary_data(${COMPONENT_LIB} ${crt_bundle} BINARY)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${crt_bundle}")
 endif()
 
@@ -124,6 +124,12 @@ endif()
 
 if(${IDF_TARGET} STREQUAL "linux")
 set(mbedtls_target_sources ${mbedtls_target_sources} "${COMPONENT_DIR}/port/net_sockets.c")
+endif()
+
+# While updating to MbedTLS release/v3.4.0, building mbedtls/library/psa_crypto.c
+# clang produces an unreachable-code warning.
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(mbedcrypto PRIVATE "-Wno-unreachable-code")
 endif()
 
 # net_sockets.c should only be compiled if BSD socket functions are available.
@@ -214,9 +220,8 @@ endif()
 # The other port-specific files don't override internal mbedTLS functions, they just add new functions.
 
 if(CONFIG_MBEDTLS_HARDWARE_MPI)
-    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/esp_bignum.c"
-                                       "${COMPONENT_DIR}/port/${idf_target}/bignum.c"
-    )
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/bignum/esp_bignum.c"
+                                       "${COMPONENT_DIR}/port/bignum/bignum_alt.c")
 endif()
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA)
@@ -233,6 +238,18 @@ endif()
 if(CONFIG_MBEDTLS_HARDWARE_ECC)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
                                        "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
+endif()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
+
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign")
+    endif()
+
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify")
+    endif()
 endif()
 
 if(CONFIG_MBEDTLS_ROM_MD5)
@@ -265,6 +282,10 @@ set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 
 if(CONFIG_PM_ENABLE)
     target_link_libraries(mbedcrypto PRIVATE idf::esp_pm)
+endif()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+    target_link_libraries(mbedcrypto PRIVATE idf::efuse)
 endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})

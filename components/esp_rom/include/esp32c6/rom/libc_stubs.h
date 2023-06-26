@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,7 @@ struct syscall_stub_table {
     void (*_retarget_lock_release_recursive)(_LOCK_T lock);
     int (*_printf_float)(struct _reent *data, void *pdata, FILE *fp, int (*pfunc) (struct _reent *, FILE *, const char *, size_t len), va_list *ap);
     int (*_scanf_float) (struct _reent *rptr, void *pdata, FILE *fp, va_list *ap);
-    void (*__assert_func) (const char *file, int line, const char *func, const char *failedexpr) __attribute__((noreturn));
+    void (*__assert_func) (const char *file, int line, const char *func, const char *failedexpr) __attribute__((__noreturn__));
     void (*__sinit) (struct _reent *r);
     void (*_cleanup_r) (struct _reent *r);
 };

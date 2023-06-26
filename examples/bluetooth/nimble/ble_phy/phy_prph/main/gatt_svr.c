@@ -13,6 +13,8 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "phy_prph.h"
 
+static uint8_t *le_phy_val;
+static uint16_t gatt_svr_chr_val_handle;
 static int
 gatt_svr_chr_access_le_phy(uint16_t conn_handle, uint16_t attr_handle,
                            struct ble_gatt_access_ctxt *ctxt,
@@ -28,7 +30,9 @@ static const struct ble_gatt_svc_def gatt_svr_svcs_le_phy[] = {
                 /*** Characteristic */
                 .uuid = BLE_UUID16_DECLARE(LE_PHY_CHR_UUID16),
                 .access_cb = gatt_svr_chr_access_le_phy,
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
+                .val_handle = &gatt_svr_chr_val_handle,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE
+                | BLE_GATT_CHR_F_WRITE_ENC,
             }, {
                 0, /* No more characteristics in this service. */
             }
@@ -48,7 +52,8 @@ gatt_svr_chr_access_le_phy(uint16_t conn_handle, uint16_t attr_handle,
     const ble_uuid_t *uuid;
     int rand_num;
     int rc;
-
+    int len;
+    uint16_t copied_len;
     uuid = ctxt->chr->uuid;
 
     /* Determine which characteristic is being accessed by examining its
@@ -56,12 +61,31 @@ gatt_svr_chr_access_le_phy(uint16_t conn_handle, uint16_t attr_handle,
      */
 
     if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(LE_PHY_CHR_UUID16)) == 0) {
-        assert(ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR);
+        switch (ctxt->op) {
+        case BLE_GATT_ACCESS_OP_READ_CHR:
+            rand_num = rand();
+            rc = os_mbuf_append(ctxt->om, &rand_num, sizeof rand_num);
+            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
-        /* Respond with a 32-bit random number. */
-        rand_num = rand();
-        rc = os_mbuf_append(ctxt->om, &rand_num, sizeof rand_num);
-        return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        case BLE_GATT_ACCESS_OP_WRITE_CHR:
+            len = OS_MBUF_PKTLEN(ctxt->om);
+            if (len > 0) {
+                le_phy_val = (uint8_t *)malloc(len * sizeof(uint8_t));
+                if (le_phy_val) {
+                    rc = ble_hs_mbuf_to_flat(ctxt->om, le_phy_val, len, &copied_len);
+                    if (rc == 0) {
+                        MODLOG_DFLT(INFO, "Write received of len = %d", copied_len);
+                        return 0;
+                    } else {
+                        MODLOG_DFLT(ERROR, "Failed to receive write characteristic");
+                    }
+                }
+            }
+            break;
+
+        default:
+            break;
+        }
     }
 
     /* Unknown characteristic; the nimble stack should not have called this

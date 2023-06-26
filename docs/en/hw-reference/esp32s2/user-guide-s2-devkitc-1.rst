@@ -88,12 +88,12 @@ Required Hardware
 Hardware Setup
 ^^^^^^^^^^^^^^
 
-Connect the board with the computer using **USB-to-UART Port**. Connection using **ESP32-S2 USB Port** is not fully documented. In subsequent steps, **USB-to-UART Port** will be used by default.
+Connect the board with the computer using **USB-to-UART Port** or **ESP32-S2 USB Port**. In subsequent steps, **USB-to-UART Port** will be used by default.
 
 Software Setup
 ^^^^^^^^^^^^^^
 
-Please proceed to `ESP-IDF Get Started <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html>`_, where Section `Installation Step by Step <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/get-started/index.html#get-started-step-by-step>`_ will quickly help you set up the development environment and then flash an application example into your ESP32-S2-DevKitC-1.
+Please proceed to `ESP-IDF Get Started <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html>`_, where Section `Installation Step by Step <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html#get-started-step-by-step>`_ will quickly help you set up the development environment and then flash an application example into your ESP32-S2-DevKitC-1.
 
 Contents and Packaging
 ----------------------
@@ -142,7 +142,7 @@ The development board has a variety of variants to choose from, as shown in the 
      - ESP32-S2-SOLO
      - 4 MB
      - 2 MB
-     - PCB on-board antenna     
+     - PCB on-board antenna
    * - ESP32-S2-DevKitC-1RU
      - ESP32-S2-SOLO-U
      - 4 MB

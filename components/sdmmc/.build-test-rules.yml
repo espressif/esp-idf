@@ -1,0 +1,11 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/sdmmc/test_apps:
+  disable:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: Console component not supported on H2 yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3"]
+      temporary: true
+      reason: No runners for other targets yet

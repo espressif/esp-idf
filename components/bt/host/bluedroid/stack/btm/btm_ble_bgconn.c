@@ -276,12 +276,12 @@ void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE ad
 **                  the white list.
 **
 *******************************************************************************/
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_ADD_WHITELIST_CBACK *add_wl_cb)
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
     if(addr_type > BLE_ADDR_RANDOM) {
         BTM_TRACE_ERROR("%s address type is error, unable to add device", __func__);
-        if (add_wl_cb){
-            add_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
+        if (update_wl_cb){
+            update_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
         }
         return FALSE;
     }
@@ -313,8 +313,8 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
             // do nothing
         } else {
             BTC_TRACE_ERROR(" controller not support resolvable address");
-            if (add_wl_cb){
-                add_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
+            if (update_wl_cb){
+                update_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
             }
             return FALSE;
         }
@@ -325,8 +325,8 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
 
     if (to_add && p_cb->white_list_avail_size == 0) {
         BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
-        if (add_wl_cb){
-            add_wl_cb(HCI_ERR_MEMORY_FULL,to_add);
+        if (update_wl_cb){
+            update_wl_cb(HCI_ERR_MEMORY_FULL,to_add);
         }
         return FALSE;
     }
@@ -335,8 +335,8 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         /* added the bd_addr to the connection hash map queue */
         if(!background_connection_add((bt_bdaddr_t *)bd_addr)) {
             /* if the bd_addr already exist in whitelist, just callback return TRUE */
-            if (add_wl_cb){
-                add_wl_cb(HCI_SUCCESS,to_add);
+            if (update_wl_cb){
+                update_wl_cb(HCI_SUCCESS,to_add);
             }
             return TRUE;
         }
@@ -344,16 +344,16 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         /* remove the bd_addr to the connection hash map queue */
         if(!background_connection_remove((bt_bdaddr_t *)bd_addr)){
             /* if the bd_addr don't exist in whitelist, just callback return TRUE */
-            if (add_wl_cb){
-                add_wl_cb(HCI_SUCCESS,to_add);
+            if (update_wl_cb){
+                update_wl_cb(HCI_SUCCESS,to_add);
             }
             return TRUE;
         }
     }
 
-    if (add_wl_cb){
+    if (update_wl_cb){
         //save add whitelist complete callback
-        p_cb->add_wl_cb = add_wl_cb;
+        p_cb->update_wl_cb = update_wl_cb;
     }
     /* stop the auto connect */
     btm_suspend_wl_activity(p_cb->wl_state);
@@ -371,11 +371,17 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
 ** Description      This function clears the white list.
 **
 *******************************************************************************/
-void btm_ble_clear_white_list (void)
+void btm_ble_clear_white_list (tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+
     BTM_TRACE_EVENT ("btm_ble_clear_white_list");
     btsnd_hcic_ble_clear_white_list();
     background_connections_clear();
+
+    if (update_wl_cb) {
+        p_cb->update_wl_cb = update_wl_cb;
+    }
 }
 
 /*******************************************************************************
@@ -398,6 +404,10 @@ void btm_ble_clear_white_list_complete(UINT8 *p_data, UINT16 evt_len)
         p_cb->white_list_avail_size = controller_get_interface()->get_ble_white_list_size();
     } else {
         BTM_TRACE_ERROR ("%s failed, status 0x%x\n", __func__, status);
+    }
+
+    if (p_cb->update_wl_cb) {
+        (*p_cb->update_wl_cb)(status, BTM_WHITELIST_CLEAR);
     }
 }
 
@@ -429,9 +439,9 @@ void btm_ble_add_2_white_list_complete(UINT8 status)
         --btm_cb.ble_ctr_cb.white_list_avail_size;
     }
     // add whitelist complete callback
-    if (p_cb->add_wl_cb)
+    if (p_cb->update_wl_cb)
     {
-        (*p_cb->add_wl_cb)(status, BTM_WHITELIST_ADD);
+        (*p_cb->update_wl_cb)(status, BTM_WHITELIST_ADD);
     }
 
 }
@@ -451,9 +461,9 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len)
     if (*p == HCI_SUCCESS) {
         ++btm_cb.ble_ctr_cb.white_list_avail_size;
     }
-    if (p_cb->add_wl_cb)
+    if (p_cb->update_wl_cb)
     {
-        (*p_cb->add_wl_cb)(*p, BTM_WHITELIST_REMOVE);
+        (*p_cb->update_wl_cb)(*p, BTM_WHITELIST_REMOVE);
     }
 }
 

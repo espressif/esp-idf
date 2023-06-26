@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-#if SOC_ADC_DMA_SUPPORTED
 
 /**
  * @brief Driver Backgrounds
@@ -55,6 +54,9 @@ typedef struct adc_continuous_ctx_t *adc_continuous_handle_t;
 typedef struct {
     uint32_t max_store_buf_size;    ///< Max length of the conversion Results that driver can store, in bytes.
     uint32_t conv_frame_size;       ///< Conversion frame size, in bytes. This should be in multiples of `SOC_ADC_DIGI_DATA_BYTES_PER_CONV`.
+    struct {
+        uint32_t flush_pool: 1;     ///< Flush the internal pool when the pool is full.
+    } flags;                        ///< Driver flags
 } adc_continuous_handle_cfg_t;
 
 /**
@@ -130,7 +132,7 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
 /**
  * @brief Register callbacks
  *
- * @note User can deregister a previously registered callback by calling this function and setting the to-be-deregistered callback member int
+ * @note User can deregister a previously registered callback by calling this function and setting the to-be-deregistered callback member in
  *       the `cbs` structure to NULL.
  * @note When CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       Involved variables (including `user_data`) should be in internal RAM as well.
@@ -223,8 +225,6 @@ esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t *unit_id, adc_chan
  *       - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *io_num);
-
-#endif  //  #if SOC_ADC_DMA_SUPPORTED
 
 
 #ifdef __cplusplus

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) CO LTD
- * All rights reserved.
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -59,7 +59,7 @@ static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
 void attr_cb(uint8_t status, uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id, void *new_value)
 {
     if (cluster_id == ESP_ZB_ZCL_CLUSTER_ID_ON_OFF) {
-        uint8_t value = *(uint8_t*)new_value;
+        uint8_t value = *(uint8_t *)new_value;
         if (attr_id == ESP_ZB_ZCL_ATTR_ON_OFF_ON_OFF_ID) {
             /* implemented light on/off control */
             ESP_LOGI(TAG, "on/off light set to %hd", value);
@@ -87,17 +87,18 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
             ESP_LOGI(TAG, "Start network steering");
             esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
         } else {
-            ESP_LOGE(TAG, "Failed to initialize Zigbee stack (status: %d)", err_status);
+            /* commissioning failed */
+            ESP_LOGW(TAG, "Failed to initialize Zigbee stack (status: %d)", err_status);
         }
         break;
     case ESP_ZB_BDB_SIGNAL_STEERING:
         if (err_status == ESP_OK) {
             esp_zb_ieee_addr_t extended_pan_id;
             esp_zb_get_extended_pan_id(extended_pan_id);
-            ESP_LOGI(TAG, "Joined network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx)",
+            ESP_LOGI(TAG, "Joined network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx, Channel:%d)",
                      extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                      extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
-                     esp_zb_get_pan_id());
+                     esp_zb_get_pan_id(), esp_zb_get_current_channel());
         } else {
             ESP_LOGI(TAG, "Network steering was not successful (status: %d)", err_status);
             esp_zb_scheduler_alarm((esp_zb_callback_t)bdb_start_top_level_commissioning_cb, ESP_ZB_BDB_MODE_NETWORK_STEERING, 1000);
@@ -119,6 +120,7 @@ static void esp_zb_task(void *pvParameters)
     esp_zb_ep_list_t *esp_zb_on_off_light_ep = esp_zb_on_off_light_ep_create(HA_ESP_LIGHT_ENDPOINT, &light_cfg);
     esp_zb_device_register(esp_zb_on_off_light_ep);
     esp_zb_device_add_set_attr_value_cb(attr_cb);
+    esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
     ESP_ERROR_CHECK(esp_zb_start(false));
     esp_zb_main_loop_iteration();
 }

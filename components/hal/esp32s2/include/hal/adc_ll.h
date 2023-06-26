@@ -27,27 +27,51 @@
 extern "C" {
 #endif
 
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
+
+#define ADC_LL_THRES_ALL_INTR_ST_M  (APB_SARADC_ADC1_THRES_INT_ST_M | APB_SARADC_ADC2_THRES_INT_ST_M)
+#define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? APB_SARADC_ADC1_THRES_INT_ST_M : APB_SARADC_ADC2_THRES_INT_ST_M)
+#define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_ADC1_THRES_INT_ST_M : APB_SARADC_ADC2_THRES_INT_ST_M)
+
+/*---------------------------------------------------------------
+                    Oneshot
+---------------------------------------------------------------*/
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
+#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         ((PERIPH_NUM==0)? 2 : 1)
+
+/*---------------------------------------------------------------
+                    DMA
+---------------------------------------------------------------*/
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM)    (0)
+#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                   (8)
+#define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
+#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
+#define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (3)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (2)
+
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
-#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
-#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
+/*---------------------------------------------------------------
+                    PWDET (Power Detect)
+---------------------------------------------------------------*/
+#define ADC_LL_PWDET_CCT_DEFAULT                       (4)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
-    ADC_POWER_MAX,      /*!< For parameter check. */
+    ADC_LL_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_LL_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_LL_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
 } adc_ll_power_t;
 
 typedef enum {
-    ADC_RTC_DATA_OK = 0,
-    ADC_RTC_CTRL_UNSELECTED = 1,
-    ADC_RTC_CTRL_BREAK = 2,
-    ADC_RTC_DATA_FAIL = -1,
+    ADC_LL_RTC_DATA_OK = 0,
+    ADC_LL_RTC_CTRL_UNSELECTED = 1,
+    ADC_LL_RTC_CTRL_BREAK = 2,
+    ADC_LL_RTC_DATA_FAIL = -1,
 } adc_ll_rtc_raw_data_t;
 
 typedef enum {
@@ -357,10 +381,12 @@ static inline void adc_ll_digi_controller_clk_disable(void)
 /**
  * Reset adc digital controller filter.
  *
+ * @param idx   Filter index
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
+static inline void adc_ll_digi_filter_reset(adc_digi_iir_filter_t idx, adc_unit_t adc_n)
 {
+    (void)idx;
     if (adc_n == ADC_UNIT_1) {
         APB_SARADC.filter_ctrl.adc1_filter_reset = 1;
         APB_SARADC.filter_ctrl.adc1_filter_reset = 0;
@@ -371,20 +397,24 @@ static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
 }
 
 /**
- * Set adc digital controller filter factor.
+ * Set adc digital controller filter coeff.
  *
- * @param adc_n ADC unit.
- * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ * @param idx      filter index
+ * @param adc_n    adc unit
+ * @param channel  adc channel
+ * @param coeff    filter coeff
  */
-static inline void adc_ll_digi_filter_set_factor(adc_unit_t adc_n, adc_digi_filter_mode_t factor)
+static inline void adc_ll_digi_filter_set_factor(adc_digi_iir_filter_t idx, adc_unit_t adc_n, adc_channel_t channel, adc_digi_iir_filter_coeff_t coeff)
 {
+    (void)idx;
+    (void)channel;
     int mode = 0;
-    switch (factor) {
-    case ADC_DIGI_FILTER_IIR_2:  mode = 2;  break;
-    case ADC_DIGI_FILTER_IIR_4:  mode = 4;  break;
-    case ADC_DIGI_FILTER_IIR_8:  mode = 8;  break;
-    case ADC_DIGI_FILTER_IIR_16: mode = 16; break;
-    case ADC_DIGI_FILTER_IIR_64: mode = 64; break;
+    switch (coeff) {
+    case ADC_DIGI_IIR_FILTER_COEFF_2:  mode = 2;  break;
+    case ADC_DIGI_IIR_FILTER_COEFF_4:  mode = 4;  break;
+    case ADC_DIGI_IIR_FILTER_COEFF_8:  mode = 8;  break;
+    case ADC_DIGI_IIR_FILTER_COEFF_16: mode = 16; break;
+    case ADC_DIGI_IIR_FILTER_COEFF_64: mode = 64; break;
     default: mode = 8; break;
     }
     if (adc_n == ADC_UNIT_1) {
@@ -395,38 +425,17 @@ static inline void adc_ll_digi_filter_set_factor(adc_unit_t adc_n, adc_digi_filt
 }
 
 /**
- * Get adc digital controller filter factor.
- *
- * @param adc_n ADC unit.
- * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
- */
-static inline void adc_ll_digi_filter_get_factor(adc_unit_t adc_n, adc_digi_filter_mode_t *factor)
-{
-    int mode = 0;
-    if (adc_n == ADC_UNIT_1) {
-        mode = APB_SARADC.filter_ctrl.adc1_filter_factor;
-    } else { // adc_n == ADC_UNIT_2
-        mode = APB_SARADC.filter_ctrl.adc2_filter_factor;
-    }
-    switch (mode) {
-    case 2:  *factor = ADC_DIGI_FILTER_IIR_2;  break;
-    case 4:  *factor = ADC_DIGI_FILTER_IIR_4;  break;
-    case 8:  *factor = ADC_DIGI_FILTER_IIR_8;  break;
-    case 16: *factor = ADC_DIGI_FILTER_IIR_16; break;
-    case 64: *factor = ADC_DIGI_FILTER_IIR_64; break;
-    default: *factor = ADC_DIGI_FILTER_IIR_MAX;    break;
-    }
-}
-
-/**
  * Enable/disable adc digital controller filter.
  * Filtering the ADC data to obtain smooth data at higher sampling rates.
  *
  * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param idx    Filter index
+ * @param adc_n  ADC unit
+ * @param enable Enable / Disable
  */
-static inline void adc_ll_digi_filter_enable(adc_unit_t adc_n, bool enable)
+static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit_t adc_n, bool enable)
 {
+    (void)idx;
     if (adc_n == ADC_UNIT_1) {
         APB_SARADC.filter_ctrl.adc1_filter_en = enable;
     } else { // adc_n == ADC_UNIT_2
@@ -455,48 +464,88 @@ static inline uint32_t adc_ll_digi_filter_read_data(adc_unit_t adc_n)
  * Set monitor mode of adc digital controller.
  *
  * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param monitor_id ADC digi monitor unit index.
  * @param is_larger true:  If ADC_OUT >  threshold, Generates monitor interrupt.
  *                  false: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
-static inline void adc_ll_digi_monitor_set_mode(adc_unit_t adc_n, bool is_larger)
+static inline void adc_ll_digi_monitor_set_mode(adc_monitor_id_t monitor_id, bool is_larger)
 {
-    if (adc_n == ADC_UNIT_1) {
+    if (monitor_id == ADC_MONITOR_0) {
         APB_SARADC.thres_ctrl.adc1_thres_mode = is_larger;
-    } else { // adc_n == ADC_UNIT_2
+    } else { // monitor_id == ADC_MONITOR_1
         APB_SARADC.thres_ctrl.adc2_thres_mode = is_larger;
     }
 }
 
 /**
- * Set monitor threshold of adc digital controller.
+ * Set monitor threshold of adc digital controller on specific channel.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
- * @param threshold Monitor threshold.
+ * @param monitor_id ADC digi monitor unit index.
+ * @param adc_n      Which adc unit the channel belong to.
+ * @param channel    Which channel of adc want to be monitored.
+ * @param h_thresh   High threshold of this monitor.
+ * @param l_thresh   Low threshold of this monitor.
  */
-static inline void adc_ll_digi_monitor_set_thres(adc_unit_t adc_n, uint32_t threshold)
+static inline void adc_ll_digi_monitor_set_thres(adc_monitor_id_t monitor_id, adc_unit_t adc_n, uint8_t channel, int32_t h_thresh, int32_t l_thresh)
 {
-    if (adc_n == ADC_UNIT_1) {
-        APB_SARADC.thres_ctrl.adc1_thres = threshold;
-    } else { // adc_n == ADC_UNIT_2
-        APB_SARADC.thres_ctrl.adc2_thres = threshold;
+    if (monitor_id == ADC_MONITOR_0) {
+        APB_SARADC.thres_ctrl.adc1_thres = (h_thresh == -1)? l_thresh : h_thresh;
+    } else { // monitor_id == ADC_MONITOR_1
+        APB_SARADC.thres_ctrl.adc2_thres = (h_thresh == -1)? l_thresh : h_thresh;
+    }
+    adc_ll_digi_monitor_set_mode(monitor_id, l_thresh == -1);
+}
+
+/**
+ * Start/Stop monitor of adc digital controller.
+ *
+ * @param monitor_id ADC digi monitor unit index.
+ * @param start 1 for start, 0 for stop
+ */
+static inline void adc_ll_digi_monitor_user_start(adc_monitor_id_t monitor_id, bool start)
+{
+    if (monitor_id == ADC_MONITOR_0) {
+        APB_SARADC.thres_ctrl.adc1_thres_en = start;
+    } else {
+        APB_SARADC.thres_ctrl.adc2_thres_en = start;
     }
 }
 
 /**
- * Enable/disable monitor of adc digital controller.
+ * Enable/disable a intr of adc digital monitor.
  *
- * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param monitor_id ADC digi monitor unit index.
+ * @param mode monit mode to enable/disable intr.
+ * @param enable enable or disable.
  */
-static inline void adc_ll_digi_monitor_enable(adc_unit_t adc_n, bool enable)
+static inline void adc_ll_digi_monitor_enable_intr(adc_monitor_id_t monitor_id, adc_monitor_mode_t mode, bool enable)
 {
-    if (adc_n == ADC_UNIT_1) {
-        APB_SARADC.thres_ctrl.adc1_thres_en = enable;
-    } else { // adc_n == ADC_UNIT_2
-        APB_SARADC.thres_ctrl.adc2_thres_en = enable;
+    if (monitor_id == ADC_MONITOR_0) {
+        APB_SARADC.int_ena.adc1_thres = enable;
     }
+    if (monitor_id == ADC_MONITOR_1) {
+        APB_SARADC.int_ena.adc2_thres = enable;
+    }
+}
+
+/**
+ * Clear intr raw for adc digi monitors.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_digi_monitor_clear_intr(void)
+{
+    APB_SARADC.int_clr.val |= ADC_LL_THRES_ALL_INTR_ST_M;
+}
+
+/**
+ * Get the address of digi monitor intr statue register.
+ *
+ * @return address of register.
+ */
+__attribute__((always_inline))
+static inline volatile const void *adc_ll_digi_monitor_get_intr_status_addr(void)
+{
+    return &APB_SARADC.int_st.val;
 }
 
 /**
@@ -872,15 +921,16 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
  *
  * @param manage Set ADC power status.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_power_manage(adc_ll_power_t manage)
 {
-    if (manage == ADC_POWER_SW_ON) {
+    if (manage == ADC_LL_POWER_SW_ON) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
         APB_SARADC.ctrl.xpd_sar_force = 0x3;
-    } else if (manage == ADC_POWER_BY_FSM) {
+    } else if (manage == ADC_LL_POWER_BY_FSM) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
         APB_SARADC.ctrl.xpd_sar_force = 0x0;
-    } else if (manage == ADC_POWER_SW_OFF) {
+    } else if (manage == ADC_LL_POWER_SW_OFF) {
         APB_SARADC.ctrl.sar_clk_gated = 0;
         APB_SARADC.ctrl.xpd_sar_force = 0x2;
     }

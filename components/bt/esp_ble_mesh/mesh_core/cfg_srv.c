@@ -1464,6 +1464,9 @@ static void mod_sub_add(struct bt_mesh_model *model,
         goto send_status;
     }
 
+    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
+           "SubGroupAddr: 0x%x", sub_addr);
+
     for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
         if (mod->groups[i] == BLE_MESH_ADDR_UNASSIGNED) {
             mod->groups[i] = sub_addr;
@@ -1864,6 +1867,9 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
         status = STATUS_SUCCESS;
         goto send_status;
     }
+
+    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
+           "SubVirtualAddr: 0x%x", sub_addr);
 
     for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
         if (mod->groups[i] == BLE_MESH_ADDR_UNASSIGNED) {

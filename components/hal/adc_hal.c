@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,14 +7,13 @@
 #include <sys/param.h>
 #include "sdkconfig.h"
 #include "hal/adc_hal.h"
-#include "hal/adc_hal_conf.h"
 #include "hal/assert.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 //ADC utilises I2S0 DMA on ESP32
-#include "hal/i2s_ll.h"
+#include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "soc/i2s_struct.h"
 #endif
@@ -83,7 +82,7 @@
 #define adc_ll_digi_dma_disable()                       adc_ll_digi_set_data_source(0)
 
 //ESP32 ADC uses the DMA through I2S. The I2S needs to be configured.
-#define I2S_BASE_CLK                                    (2*APB_CLK_FREQ)
+#define I2S_BASE_CLK                                    (160 * 1000 * 1000)
 #define SAMPLE_BITS                                     16
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT                     2
 #define ADC_LL_CLKM_DIV_B_DEFAULT                       0
@@ -97,7 +96,8 @@ void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *
 {
     hal->desc_dummy_head.next = hal->rx_desc;
     hal->dev = config->dev;
-    hal->desc_max_num = config->desc_max_num;
+    hal->eof_desc_num = config->eof_desc_num;
+    hal->eof_step = config->eof_step;
     hal->dma_chan = config->dma_chan;
     hal->eof_num = config->eof_num;
 }
@@ -105,13 +105,13 @@ void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *
 void adc_hal_digi_init(adc_hal_dma_ctx_t *hal)
 {
     // Set internal FSM wait time, fixed value.
-    adc_ll_digi_set_fsm_time(ADC_HAL_FSM_RSTB_WAIT_DEFAULT, ADC_HAL_FSM_START_WAIT_DEFAULT,
-                             ADC_HAL_FSM_STANDBY_WAIT_DEFAULT);
-    adc_ll_set_sample_cycle(ADC_HAL_SAMPLE_CYCLE_DEFAULT);
-    adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
-    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
-    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
-    adc_ll_digi_set_clk_div(ADC_HAL_DIGI_SAR_CLK_DIV_DEFAULT);
+    adc_ll_digi_set_fsm_time(ADC_LL_FSM_RSTB_WAIT_DEFAULT, ADC_LL_FSM_START_WAIT_DEFAULT,
+                             ADC_LL_FSM_STANDBY_WAIT_DEFAULT);
+    adc_ll_set_sample_cycle(ADC_LL_SAMPLE_CYCLE_DEFAULT);
+    adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+    adc_ll_digi_set_clk_div(ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT);
 
     adc_dma_ll_rx_clear_intr(hal->dev, hal->dma_chan, ADC_HAL_DMA_INTR_MASK);
     adc_dma_ll_rx_enable_intr(hal->dev, hal->dma_chan, ADC_HAL_DMA_INTR_MASK);
@@ -166,22 +166,23 @@ static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t conve
  * - Enable clock and select clock source for ADC digital controller.
  * For esp32, use I2S clock
  */
-static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, uint32_t freq)
+static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuous_clk_src_t clk_src, uint32_t clk_src_freq_hz, uint32_t sample_freq_hz)
 {
 #if !CONFIG_IDF_TARGET_ESP32
-    uint32_t interval = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / freq;
+    uint32_t interval = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / sample_freq_hz;
     //set sample interval
     adc_ll_digi_set_trigger_interval(interval);
     //Here we set the clock divider factor to make the digital clock to 5M Hz
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
-    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);   // use default clock source for ADC digital controller
+    adc_ll_digi_clk_sel(clk_src);
 #else
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_SRC_DEFAULT);    /*!< Clock from PLL_D2_CLK(160M)*/
     uint32_t bclk_div = 16;
-    uint32_t bclk = freq * 2;
+    uint32_t bclk = sample_freq_hz * 2;
     uint32_t mclk = bclk * bclk_div;
-    uint32_t mclk_div = I2S_BASE_CLK / mclk;
-    i2s_ll_rx_set_mclk(hal->dev, I2S_BASE_CLK, mclk, mclk_div);
+    i2s_ll_mclk_div_t mclk_div = {};
+    i2s_hal_calc_mclk_precise_division(I2S_BASE_CLK, mclk, &mclk_div);
+    i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
     i2s_ll_rx_set_bck_div_num(hal->dev, bclk_div);
 #endif
 }
@@ -226,28 +227,39 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
     adc_ll_digi_set_convert_mode(get_convert_mode(cfg->conv_mode));
 
     //clock and sample frequency
-    adc_hal_digi_sample_freq_config(hal, cfg->sample_freq_hz);
+    adc_hal_digi_sample_freq_config(hal, cfg->clk_src, cfg->clk_src_freq_hz, cfg->sample_freq_hz);
 }
 
-static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
+static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t per_eof_size, uint32_t eof_step, uint32_t eof_num)
 {
     HAL_ASSERT(((uint32_t)data_buf % 4) == 0);
-    HAL_ASSERT((size % 4) == 0);
+    HAL_ASSERT((per_eof_size % 4) == 0);
     uint32_t n = 0;
+    dma_descriptor_t *desc_head = desc;
 
-    while (num--) {
-        desc[n] = (dma_descriptor_t) {
-            .dw0.size = size,
-            .dw0.length = 0,
-            .dw0.suc_eof = 0,
-            .dw0.owner = 1,
-            .buffer = data_buf,
-            .next = &desc[n+1]
-        };
-        data_buf += size;
-        n++;
+    while (eof_num--) {
+        uint32_t eof_size = per_eof_size;
+
+        for (int i = 0; i < eof_step; i++) {
+            uint32_t this_len = eof_size;
+            if (this_len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+                this_len = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+            }
+
+            desc[n] = (dma_descriptor_t) {
+                .dw0.size = this_len,
+                .dw0.length = 0,
+                .dw0.suc_eof = 0,
+                .dw0.owner = 1,
+                .buffer = data_buf,
+                .next = &desc[n+1]
+            };
+            eof_size -= this_len;
+            data_buf += this_len;
+            n++;
+        }
     }
-    desc[n-1].next = NULL;
+    desc[n-1].next = desc_head;
 }
 
 void adc_hal_digi_start(adc_hal_dma_ctx_t *hal, uint8_t *data_buf)
@@ -262,7 +274,7 @@ void adc_hal_digi_start(adc_hal_dma_ctx_t *hal, uint8_t *data_buf)
 
     //reset the current descriptor address
     hal->cur_desc_ptr = &hal->desc_dummy_head;
-    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * SOC_ADC_DIGI_DATA_BYTES_PER_CONV, hal->desc_max_num);
+    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * SOC_ADC_DIGI_DATA_BYTES_PER_CONV, hal->eof_step, hal->eof_desc_num);
 
     //start DMA
     adc_dma_ll_rx_start(hal->dev, hal->dma_chan, (lldesc_t *)hal->rx_desc);
@@ -284,18 +296,45 @@ bool adc_hal_check_event(adc_hal_dma_ctx_t *hal, uint32_t mask)
 }
 #endif  //#if !SOC_GDMA_SUPPORTED
 
-adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, const intptr_t eof_desc_addr, uint8_t **buffer, uint32_t *len)
 {
     HAL_ASSERT(hal->cur_desc_ptr);
+
     if (!hal->cur_desc_ptr->next) {
         return ADC_HAL_DMA_DESC_NULL;
     }
+
     if ((intptr_t)hal->cur_desc_ptr == eof_desc_addr) {
         return ADC_HAL_DMA_DESC_WAITING;
     }
 
-    hal->cur_desc_ptr = hal->cur_desc_ptr->next;
-    *cur_desc = hal->cur_desc_ptr;
+    uint8_t *buffer_start = NULL;
+    uint32_t eof_len = 0;
+    dma_descriptor_t *eof_desc = hal->cur_desc_ptr;
+
+    //Find the eof list start
+    eof_desc = eof_desc->next;
+    eof_desc->dw0.owner = 1;
+    buffer_start = eof_desc->buffer;
+    eof_len += eof_desc->dw0.length;
+    if ((intptr_t)eof_desc == eof_desc_addr) {
+        goto valid;
+    }
+
+    //Find the eof list end
+    for (int i = 1; i < hal->eof_step; i++) {
+        eof_desc = eof_desc->next;
+        eof_desc->dw0.owner = 1;
+        eof_len += eof_desc->dw0.length;
+        if ((intptr_t)eof_desc == eof_desc_addr) {
+            goto valid;
+        }
+    }
+
+valid:
+    hal->cur_desc_ptr = eof_desc;
+    *buffer = buffer_start;
+    *len = eof_len;
 
     return ADC_HAL_DMA_DESC_VALID;
 }

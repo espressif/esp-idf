@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_LINUX
+#if CONFIG_IDF_TARGET_LINUX && !defined(__containerof)
 #define __containerof(ptr, type, member) ({         \
     const typeof( ((type *)0)->member ) *__mptr = (ptr); \
     (type *)( (char *)__mptr - offsetof(type,member) );})

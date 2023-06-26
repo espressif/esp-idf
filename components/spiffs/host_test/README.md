@@ -13,5 +13,5 @@ idf.py build
 
 # Run
 ```bash
-build/host_test_spiffs.elf
+idf.py monitor
 ```

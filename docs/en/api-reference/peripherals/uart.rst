@@ -1,8 +1,6 @@
 Universal Asynchronous Receiver/Transmitter (UART)
 ==================================================
 
-{IDF_TARGET_UART_NUM:default="two", esp32="three", esp32s3="three"}
-
 {IDF_TARGET_UART_EXAMPLE_PORT:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 Introduction
@@ -10,9 +8,13 @@ Introduction
 
 A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that handles communication (i.e., timing requirements and data framing) using widely-adopted asynchronous serial communication interfaces, such as RS232, RS422, and RS485. A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
-The {IDF_TARGET_NAME} chip has {IDF_TARGET_UART_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and add flexibility.
+The {IDF_TARGET_NAME} chip has {IDF_TARGET_SOC_UART_HP_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and for more flexibility.
 
-Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit, etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association (IrDA) protocols.
+Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit, etc. All the regular UART controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association (IrDA) protocols.
+
+.. only:: SOC_UART_LP_NUM
+
+    Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *Features* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
 Functional Overview
 -------------------
@@ -233,14 +235,14 @@ The API provides a convenient way to handle specific interrupts discussed in thi
 
 - **Pattern detection**: An interrupt triggered on detecting a 'pattern' of the same character being received/sent repeatedly. This functionality is demonstrated in the example :example:`peripherals/uart/uart_events`. It can be used, e.g., to detect a command string with a specific number of identical characters (the 'pattern') at the end. The following functions are available:
 
-    - Configure and enable this interrupt using :cpp:func:`uart_enable_pattern_det_intr`
+    - Configure and enable this interrupt using :cpp:func:`uart_enable_pattern_det_baud_intr`
     - Disable the interrupt using :cpp:func:`uart_disable_pattern_det_intr`
 
 
 Macros
 ^^^^^^
 
-The API also defines several macros. For example, :c:macro:`UART_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
+The API also defines several macros. For example, :c:macro:`UART_HW_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
 
 
 .. _uart-api-deleting-driver:

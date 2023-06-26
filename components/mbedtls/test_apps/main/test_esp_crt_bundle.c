@@ -252,7 +252,7 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
     mbedtls_ssl_conf_rng(&client->conf, mbedtls_ctr_drbg_random, &client->ctr_drbg);
 
     if ((ret = mbedtls_ssl_setup(&client->ssl, &client->conf)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
         return ESP_FAIL;
     }
 

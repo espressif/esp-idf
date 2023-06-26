@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "string.h"
+#include <inttypes.h>
 #include "esp_system.h"
 #include "unity.h"
 #include "esp_system.h"
@@ -18,6 +19,7 @@
 #include "memory_checks.h"
 #include <time.h>
 
+#if SOC_WIFI_SUPPORTED
 uint32_t timeouts_usec[6] = { 10000, 1000, 10000, 5000, 15000, 1000 };
 uint32_t timeouts_sec[6] = { 10, 1, 10, 5, 15, 1 };
 int executed_order[6];
@@ -45,7 +47,7 @@ void callback(void *a, void *b)
 	}
 	t++;
 
-	ESP_LOGI("Eloop Test", "timer[%d] ran after %d msec of scheduled time",
+	ESP_LOGI("Eloop Test", "timer[%d] ran after %" PRId32 " msec of scheduled time",
 				*i, ms_diff);
 
 }
@@ -82,3 +84,4 @@ TEST_CASE("Test eloop timers run", "[eloop]")
 	TEST_ESP_OK(esp_wifi_deinit());
 	os_sleep(3, 0);
 }
+#endif //SOC_WIFI_SUPPORTED

@@ -8,6 +8,8 @@
 * :ref:`jtag-debugging-using-debugger-command-line`
 * :ref:`jtag-debugging-with-idf-py`
 
+关于如何使用 VS Code 进行调试，请参阅文档 `使用 VS Code 调试 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__。
+
 
 .. _jtag-debugging-using-debugger-eclipse:
 
@@ -16,23 +18,37 @@
 
 .. note::
 
-    建议您首先通过 :ref:`idf.py <jtag-debugging-with-idf-py>` 或 :ref:`命令行 <jtag-debugging-using-debugger-command-line>` 检查调试器是否正常工作，然后再转到使用 :ref:`Eclipse <jtag-debugging-using-debugger-eclipse>` 平台。
+    建议首先通过 :ref:`idf.py <jtag-debugging-with-idf-py>` 或 :ref:`命令行 <jtag-debugging-using-debugger-command-line>` 检查调试器是否正常工作，然后再转到使用 :ref:`Eclipse <jtag-debugging-using-debugger-eclipse>` 平台。
 
-标准的 Eclipse 安装流程默认安装调试功能，另外您还可以使用插件来调试，比如 “GDB Hardware Debugging”。这个插件用起来非常方便，本指南会详细介绍该插件的使用方法。
+作为一款集成开发环境 (IDE)，Eclipse 提供了一套强大的工具，用于开发和调试软件应用程序。对于 ESP-IDF 应用程序，`IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 提供了两种调试方式:
 
-首先，打开 Eclipse 并转到 “Help” > “Install New Software” 来安装 “GDB Hardware Debugging” 插件。
+1. `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
+2. GDB 硬件调试
+
+默认情况下，Eclipse 通过 GDB 硬件调试插件支持 OpenOCD 调试。该调试方式需要从命令行启动 OpenOCD 服务器，并在 Eclipse 中配置 GDB 客户端，整个过程耗时且容易出错。
+
+为了使调试过程更加容易，`IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 提供了定制的 ESP-IDF GDB OpenOCD 调试功能，支持在 Eclipse 内部配置好 OpenOCD 服务器和 GDB 客户端。该插件已经设置好所有必需的配置参数，点击一个按钮即可开始调试。
+
+因此，建议通过 `IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 进行 `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`__。
+
+**GDB 硬件调试**
+
+.. note::
+    只有在无法使用 `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ 的情况下，才建议使用 GDB 硬件调试。
+
+首先，打开 Eclipse，选择 ``Help`` > ``Install New Software`` 来安装 ``GDB Hardware Debugging`` 插件。
 
 安装完成后，按照以下步骤配置调试会话。请注意，一些配置参数是通用的，有些则针对特定项目。我们会通过配置 "blink" 示例项目的调试环境来进行展示，请先按照 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_ 介绍的方法将该示例项目添加到 Eclipse 的工作空间。示例项目 :example:`get-started/blink` 的源代码可以在 ESP-IDF 仓库的 :idf:`examples` 目录下找到。
 
-1. 在 Eclipse 中，进入 `Run` > `Debug Configuration`，会出现一个新的窗口。在窗口的左侧窗格中，双击 “GDB Hardware Debugging”(或者选择 “GDB Hardware Debugging” 然后按下 “New” 按钮）来新建一个配置。
+1. 在 Eclipse 中，进入 ``Run`` > ``Debug Configuration``，会出现一个新的窗口。在窗口的左侧窗格中，双击 ``GDB Hardware Debugging``(或者选择 ``GDB Hardware Debugging`` 然后按下 ``New`` 按钮）来新建一个配置。
 
-2. 在右边显示的表单中，“Name:” 一栏中输入配置的名称，例如： “Blink checking”。
+2. 在右边显示的表单中，``Name:`` 一栏中输入配置的名称，例如： “Blink checking”。
 
-3. 在下面的 “Main” 选项卡中， 点击 “Project:” 边上的 “Browse” 按钮，然后选择当前的 “blink” 项目。
+3. 在下面的 ``Main`` 选项卡中， 点击 ``Project:`` 边上的 ``Browse`` 按钮，然后选择当前的 ``blink`` 项目。
 
-4. 在下一行的 “C/C++ Application:” 中，点击 “Browse” 按钮，选择 “blink.elf” 文件。如果 “blink.elf” 文件不存在，那么很有可能该项目还没有编译，请参考 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_ 指南中的介绍。
+4. 在下一行的 ``C/C++ Application:`` 中，点击 ``Browse`` 按钮，选择 ``blink.elf`` 文件。如果 ``blink.elf`` 文件不存在，那么很有可能该项目还没有编译，请参考 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_ 指南中的介绍。
 
-5. 最后，在 “Build (if required) before launching” 下面点击 “Disable auto build”。
+5. 最后，在 ``Build (if required) before launching`` 下面点击 ``Disable auto build``。
 
     上述步骤 1 - 5 的示例输入如下图所示。
 
@@ -43,9 +59,9 @@
 
         GDB 硬件调试的配置 - Main 选项卡
 
-6. 点击 “Debugger” 选项卡，在 “GDB Command” 栏中输入 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-gdb`` 来调用调试器。
+6. 点击 ``Debugger`` 选项卡，在 ``GDB Command`` 栏中输入 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-gdb`` 来调用调试器。
 
-7. 更改 “Remote host” 的默认配置，在 “Port number” 下面输入 ``3333``。
+7. 更改 ``Remote host`` 的默认配置，在 ``Port number`` 下面输入 ``3333``。
 
     上述步骤 6 - 7 的示例输入如下图所示。
 
@@ -56,7 +72,7 @@
 
         GDB 硬件调试的配置 - Debugger 选项卡
 
-8. 最后一个需要更改默认配置的选项卡是 “Startup” 选项卡。在 “Initialization Commands” 下，取消选中 “Reset and Delay (seconds)” 和 “Halt”，然后在下面一栏中输入以下命令：
+8. 最后一个需要更改默认配置的选项卡是 ``Startup`` 选项卡。在 ``Initialization Commands`` 下，取消选中 ``Reset and Delay (seconds)`` 和 ``Halt``，然后在下面一栏中输入以下命令：
 
     ::
 
@@ -65,18 +81,18 @@
         set remote hardware-watchpoint-limit 2
 
     .. note::
-        如果您想在启动新的调试会话之前自动更新闪存中的镜像，请在 “Initialization Commands” 文本框的开头添加以下命令行::
+        如果想在启动新的调试会话之前自动更新闪存中的镜像，请在 ``Initialization Commands`` 文本框的开头添加以下命令行::
 
             mon reset halt
             mon program_esp ${workspace_loc:blink/build/blink.bin} 0x10000 verify
 
     有关 ``program_esp`` 命令的说明请参考 :ref:`jtag-upload-app-debug` 章节。
 
-9. 在 “Load Image and Symbols” 下，取消选中 “Load image” 选项。
+9. 在 ``Load Image and Symbols`` 下，取消选中 ``Load image`` 选项。
 
-10. 在同一个选项卡中继续往下浏览，建立一个初始断点用来在调试器复位后暂停 CPU。插件会根据 “Set break point at:” 一栏中输入的函数名，在该函数的开头设置断点。选中这一选项，并在相应的字段中输入 ``app_main``。
+10. 在同一个选项卡中继续往下浏览，建立一个初始断点用来在调试器复位后暂停 CPU。插件会根据 ``Set break point at:`` 一栏中输入的函数名，在该函数的开头设置断点。选中这一选项，并在相应的字段中输入 ``app_main``。
 
-11. 选中 “Resume” 选项，这会使得程序在每次调用步骤 8 中的 ``mon reset halt`` 后恢复，然后在 ``app_main`` 的断点处停止。
+11. 选中 ``Resume`` 选项，这会使得程序在每次调用步骤 8 中的 ``mon reset halt`` 后恢复，然后在 ``app_main`` 的断点处停止。
 
     上述步骤 8 - 11 的示例输入如下图所示。
 
@@ -87,11 +103,11 @@
 
         GDB 硬件调试的配置 - Startup 选项卡
 
-    上面的启动序列看起来有些复杂，如果您对其中的初始化命令不太熟悉，请查阅 :ref:`jtag-debugging-tip-debugger-startup-commands` 章节获取更多说明。
+    上面的启动序列看起来有些复杂，如果你对其中的初始化命令不太熟悉，请查阅 :ref:`jtag-debugging-tip-debugger-startup-commands` 章节获取更多说明。
 
-12. 如果您前面已经完成 :ref:`jtag-debugging-configuring-target` 中介绍的步骤，那么目标正在运行并准备与调试器进行对话。按下 “Debug” 按钮就可以直接调试。否则请按下 “Apply” 按钮保存配置，返回 :ref:`jtag-debugging-configuring-target` 章节进行配置，最后再回到这里开始调试。
+12. 如果前面已经完成 :ref:`jtag-debugging-configuring-target` 中介绍的步骤，目标正在运行并准备好与调试器进行对话，那么点击 ``Debug`` 按钮直接进行调试。如果尚未完成前面步骤，请点击 ``Apply`` 按钮保存配置，返回 :ref:`jtag-debugging-configuring-target` 章节进行配置，最后再回到这里开始调试。
 
-一旦所有 1 - 12 的配置步骤都已经完成，Eclipse 就会打开 “Debug” 视图，如下图所示。
+一旦所有 1-12 的配置步骤都已经完成，Eclipse 就会打开 ``Debug`` 视图，如下图所示。
 
 .. figure:: ../../../_static/debug-perspective.jpg
     :align: center
@@ -100,7 +116,7 @@
 
     Eclipse 中的调试视图
 
-如果您不太了解 GDB 的常用方法，请查阅 :ref:`jtag-debugging-examples-eclipse` 文章中的调试示例章节 :ref:`jtag-debugging-examples`。
+如果不太了解 GDB 的常用方法，请查阅 :ref:`jtag-debugging-examples-eclipse` 文章中的调试示例章节 :ref:`jtag-debugging-examples`。
 
 
 .. _jtag-debugging-using-debugger-command-line:
@@ -120,7 +136,7 @@
 
 .. highlight:: none
 
-3. 当启动调试器时，通常需要提供几个配置参数和命令，为了避免每次都在命令行中逐行输入这些命令，您可以新建一个配置文件，并将其命名为 ``gdbinit``:
+3. 当启动调试器时，通常需要提供几个配置参数和命令，为了避免每次都在命令行中逐行输入这些命令，你可以新建一个配置文件，并将其命名为 ``gdbinit``:
 
     ::
 
@@ -145,7 +161,7 @@
 
 .. highlight:: none
 
-5.  如果前面的步骤已经正确完成，您会看到如下所示的输出日志，在日志的最后会出现 ``(gdb)`` 提示符：
+5.  如果前面的步骤已经正确完成，你会看到如下所示的输出日志，在日志的最后会出现 ``(gdb)`` 提示符：
 
     ::
 
@@ -192,9 +208,10 @@
         43      xTaskCreate(&blink_task, "blink_task", 512, NULL, 5, NULL);
         (gdb)
 
-注意上面日志的倒数第三行显示了调试器已经在 ``app_main()`` 函数的断点处停止，该断点在 ``gdbinit`` 文件中设定。由于处理器已经暂停运行，LED 也不会闪烁。如果这也是您看到的现象，您可以开始调试了。
 
-如果您不太了解 GDB 的常用方法，请查阅 :ref:`jtag-debugging-examples-command-line` 文章中的调试示例章节 :ref:`jtag-debugging-examples`。
+注意上面日志的倒数第三行显示了调试器已经在 ``app_main()`` 函数的断点处停止，该断点在 ``gdbinit`` 文件中设定。由于处理器已经暂停运行，LED 不会再闪烁。如果你的 LED 也停止了闪烁，则可以开始调试。
+
+如果不太了解 GDB 的常用方法，请查阅 :ref:`jtag-debugging-examples-command-line` 文章中的调试示例章节 :ref:`jtag-debugging-examples`。
 
 
 .. _jtag-debugging-with-idf-py:
@@ -202,12 +219,12 @@
 使用 idf.py 进行调试
 ^^^^^^^^^^^^^^^^^^^^
 
-您还可以使用 ``idf.py`` 更方便地执行上述提到的调试命令，可以使用以下命令：
+你还可以使用 ``idf.py`` 更方便地执行上述提到的调试命令，可以使用以下命令：
 
 1.  ``idf.py openocd``
 
     在终端中运行 OpenOCD，其配置信息来源于环境变量或者命令行。默认会使用 ``OPENOCD_SCRIPTS`` 环境变量中指定的脚本路径，它是由 ESP-IDF 项目仓库中的导出脚本（``export.sh`` or ``export.bat``）添加到系统环境变量中的。
-    当然，您可以在命令行中通过  ``--openocd-scripts`` 参数来覆盖这个变量的值。
+    当然，你可以在命令行中通过  ``--openocd-scripts`` 参数来覆盖这个变量的值。
 
     .. include:: {IDF_TARGET_PATH_NAME}.inc
         :start-after: idf-py-openocd-default-cfg
@@ -228,7 +245,7 @@
 
 4.  ``idf.py gdbgui``
 
-    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。请在运行安装脚本时添加 "--enable-gdbgui" 参数，即运行 ``install.sh --enable-gdbgui``，从而确保支持 “gdbgui” 选项。
+    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。请在运行安装脚本时添加 "--enable-gdbgui" 参数，即运行 ``install.sh --enable-gdbgui``，从而确保支持 ``gdbgui`` 选项。
 
 
     上述这些命令也可以合并到一起使用，``idf.py`` 会自动将后台进程（比如 openocd）最先运行，交互式进程（比如 GDB，monitor）最后运行。

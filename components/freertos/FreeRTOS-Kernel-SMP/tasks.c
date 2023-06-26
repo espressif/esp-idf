@@ -40,9 +40,11 @@
 #include "stack_macros.h"
 
 #ifdef ESP_PLATFORM
+#if ( configUSE_NEWLIB_REENTRANT == 1 )
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
 #undef _REENT_INIT_PTR
 #define _REENT_INIT_PTR                 esp_reent_init
+#endif
 #endif
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
@@ -3357,6 +3359,53 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
     }
 
 #endif /* INCLUDE_xTaskGetHandle */
+/*-----------------------------------------------------------*/
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+
+    BaseType_t xTaskGetStaticBuffers( TaskHandle_t xTask,
+                                      StackType_t ** ppuxStackBuffer,
+                                      StaticTask_t ** ppxTaskBuffer )
+    {
+        BaseType_t xReturn;
+        TCB_t * pxTCB;
+
+        configASSERT( ppuxStackBuffer != NULL );
+        configASSERT( ppxTaskBuffer != NULL );
+
+        pxTCB = prvGetTCBFromHandle( xTask );
+
+        #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE == 1 )
+        {
+            if( pxTCB->ucStaticallyAllocated == tskSTATICALLY_ALLOCATED_STACK_AND_TCB )
+            {
+                *ppuxStackBuffer = pxTCB->pxStack;
+                *ppxTaskBuffer = ( StaticTask_t * ) pxTCB;
+                xReturn = pdTRUE;
+            }
+            else if( pxTCB->ucStaticallyAllocated == tskSTATICALLY_ALLOCATED_STACK_ONLY )
+            {
+                *ppuxStackBuffer = pxTCB->pxStack;
+                *ppxTaskBuffer = NULL;
+                xReturn = pdTRUE;
+            }
+            else
+            {
+                xReturn = pdFALSE;
+            }
+        }
+        #else /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE == 1 */
+        {
+            *ppuxStackBuffer = pxTCB->pxStack;
+            *ppxTaskBuffer = ( StaticTask_t * ) pxTCB;
+            xReturn = pdTRUE;
+        }
+        #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE == 1 */
+
+        return xReturn;
+    }
+
+#endif /* configSUPPORT_STATIC_ALLOCATION */
 /*-----------------------------------------------------------*/
 
 #if ( configUSE_TRACE_FACILITY == 1 )

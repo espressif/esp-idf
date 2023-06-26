@@ -78,7 +78,7 @@ To install an RMT TX channel, there's a configuration structure that needs to be
 -  :cpp:member:`rmt_tx_channel_config_t::gpio_num` sets the GPIO number used by the transmitter.
 -  :cpp:member:`rmt_tx_channel_config_t::clk_src` selects the source clock for the RMT channel. The available clocks are listed in :cpp:type:`rmt_clock_source_t`. Note that, the selected clock will also be used by other channels, which means user should ensure this configuration is same when allocating other channels, regardless of TX or RX. For the effect on power consumption of different clock source, please refer to `Power Management <#power-management>`__  section.
 -  :cpp:member:`rmt_tx_channel_config_t::resolution_hz` sets the resolution of the internal tick counter. The timing parameter of RMT signal is calculated based on this **tick**.
--  :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` sets the size of the dedicated memory block or DMA buffer that is used to store RMT encoding artifacts.
+-  :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` this field have a slightly different meaning based on if the DMA backend is enabled or not. If the DMA is enabled via :cpp:member:`rmt_tx_channel_config_t::with_dma`, then this field controls the size of the internal DMA buffer. To achieve a better throughput and smaller CPU overhead, we recommend you to set a large value, e.g. ``1024``. If DMA is not used, this field controls the size of the dedicated memory block that owned by the channel, which should be at least {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
 -  :cpp:member:`rmt_tx_channel_config_t::trans_queue_depth` sets the depth of internal transaction queue, the deeper the queue, the more transactions can be prepared in the backlog.
 -  :cpp:member:`rmt_tx_channel_config_t::invert_out` is used to decide whether to invert the RMT signal before sending it to the GPIO pad.
 -  :cpp:member:`rmt_tx_channel_config_t::with_dma` is used to indicate if the channel needs a DMA backend. A channel with DMA attached can offload the CPU by a lot. However, DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
@@ -91,7 +91,7 @@ Once the :cpp:type:`rmt_tx_channel_config_t` structure is populated with mandato
 
     rmt_channel_handle_t tx_chan = NULL;
     rmt_tx_channel_config_t tx_chan_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,       // select source clock
+        .clk_src = RMT_CLK_SRC_DEFAULT,   // select source clock
         .gpio_num = 0,                    // GPIO number
         .mem_block_symbols = 64,          // memory block size, 64 * 4 = 256Bytes
         .resolution_hz = 1 * 1000 * 1000, // 1MHz tick resolution, i.e. 1 tick = 1us
@@ -109,7 +109,7 @@ To install an RMT RX channel, there's a configuration structure that needs to be
 -  :cpp:member:`rmt_rx_channel_config_t::gpio_num` sets the GPIO number used by the receiver.
 -  :cpp:member:`rmt_rx_channel_config_t::clk_src` selects the source clock for the RMT channel. The available clocks are listed in :cpp:type:`rmt_clock_source_t`. Note that, the selected clock will also be used by other channels, which means user should ensure this configuration is same when allocating other channels, regardless of TX or RX. For the effect on power consumption of different clock source, please refer to `Power Management <#power-management>`__  section.
 -  :cpp:member:`rmt_rx_channel_config_t::resolution_hz` sets the resolution of the internal tick counter. The timing parameter of RMT signal is calculated based on this **tick**.
--  :cpp:member:`rmt_rx_channel_config_t::mem_block_symbols` sets the size of the dedicated memory block or DMA buffer that used to store RMT encoding artifacts.
+-  :cpp:member:`rmt_rx_channel_config_t::mem_block_symbols` this field have a slightly different meaning based on if the DMA backend is enabled or not. If the DMA is enabled via :cpp:member:`rmt_rx_channel_config_t::with_dma`, then this field controls the maximum size of the DMA buffer. If DMA is not used, this field controls the size of the dedicated memory block that owned by the channel, which should be at least {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
 -  :cpp:member:`rmt_rx_channel_config_t::invert_in` is used to decide whether to invert the input signals before they going into RMT receiver. The inversion is done by GPIO matrix instead of by the RMT peripheral.
 -  :cpp:member:`rmt_rx_channel_config_t::with_dma` is used to indicate if the channel needs a DMA backend. A channel with DMA attached can offload the CPU by a lot. However, DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 -  :cpp:member:`rmt_rx_channel_config_t::io_loop_back` is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral. Meanwhile, if both TX and RX channels are bound to the same GPIO, then monitoring of the data transmission line can be realized.
@@ -120,7 +120,7 @@ Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandato
 
     rmt_channel_handle_t rx_chan = NULL;
     rmt_rx_channel_config_t rx_chan_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,       // select source clock
+        .clk_src = RMT_CLK_SRC_DEFAULT,   // select source clock
         .resolution_hz = 1 * 1000 * 1000, // 1MHz tick resolution, i.e. 1 tick = 1us
         .mem_block_symbols = 64,          // memory block size, 64 * 4 = 256Bytes
         .gpio_num = 2,                    // GPIO number
@@ -419,8 +419,8 @@ Then we can construct the NEC :cpp:member:`rmt_encoder_t::encode` function in th
     static size_t rmt_encode_ir_nec(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
     {
         rmt_ir_nec_encoder_t *nec_encoder = __containerof(encoder, rmt_ir_nec_encoder_t, base);
-        rmt_encode_state_t session_state = 0;
-        rmt_encode_state_t state = 0;
+        rmt_encode_state_t session_state = RMT_ENCODING_RESET;
+        rmt_encode_state_t state = RMT_ENCODING_RESET;
         size_t encoded_symbols = 0;
         ir_nec_scan_code_t *scan_code = (ir_nec_scan_code_t *)primary_data;
         rmt_encoder_handle_t copy_encoder = nec_encoder->copy_encoder;
@@ -461,7 +461,7 @@ Then we can construct the NEC :cpp:member:`rmt_encoder_t::encode` function in th
             encoded_symbols += copy_encoder->encode(copy_encoder, channel, &nec_encoder->nec_ending_symbol,
                                                     sizeof(rmt_symbol_word_t), &session_state);
             if (session_state & RMT_ENCODING_COMPLETE) {
-                nec_encoder->state = 0; // back to the initial encoding session
+                nec_encoder->state = RMT_ENCODING_RESET; // back to the initial encoding session
                 state |= RMT_ENCODING_COMPLETE; // telling the caller the NEC encoding has finished
             }
             if (session_state & RMT_ENCODING_MEM_FULL) {
@@ -518,7 +518,18 @@ Application Examples
 * RMT transactions in queue: :example:`peripherals/rmt/musical_buzzer`
 * RMT based stepper motor with S-curve algorithm: : :example:`peripherals/rmt/stepper_motor`
 * RMT infinite loop for driving DShot ESC: :example:`peripherals/rmt/dshot_esc`
-* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire_ds18b20`
+* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire`
+
+FAQ
+---
+
+* Why the RMT encoder results in more data than expected?
+
+The RMT encoding takes place in the ISR context. If your RMT encoding session takes a long time (e.g. by logging debug information) or the encoding session is deferred somehow because of interrupt latency, then it's possible the transmitting becomes **faster** than the encoding. Which in result, the encoder can't prepare the next data in time, leading to the transmitter sending the previous data again. There's no way to ask the transmitter to stop and wait. You can mitigate the issue by combining the following ways:
+
+    - increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`, in steps of {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}
+    - place the encoding function in the IRAM
+    - Enables the :cpp:member:`rmt_tx_channel_config_t::with_dma` if it's available for your chip
 
 API Reference
 -------------
@@ -527,7 +538,7 @@ API Reference
 .. include-build-file:: inc/rmt_rx.inc
 .. include-build-file:: inc/rmt_common.inc
 .. include-build-file:: inc/rmt_encoder.inc
-.. include-build-file:: inc/components/driver/include/driver/rmt_types.inc
+.. include-build-file:: inc/components/driver/rmt/include/driver/rmt_types.inc
 .. include-build-file:: inc/components/hal/include/hal/rmt_types.inc
 
 

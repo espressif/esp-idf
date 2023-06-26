@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_assert.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -56,6 +57,21 @@ const esp_app_desc_t *esp_app_get_description(void);
  * @return      Number of bytes written to dst (including null terminator)
  */
 int esp_app_get_elf_sha256(char* dst, size_t size);
+
+/** @cond */
+extern char app_elf_sha256_str[];
+/** @endcond */
+
+/**
+ * @brief   Return SHA256 of the ELF file which is already formatted as hexadecimal, null-terminated included.
+ * Can be used in panic handler or core dump during when cache is disabled.
+ * The length is defined by CONFIG_APP_RETRIEVE_LEN_ELF_SHA option.
+ * @return  Hexadecimal SHA256 string
+ */
+FORCE_INLINE_ATTR char *esp_app_get_elf_sha256_str(void)
+{
+    return app_elf_sha256_str;
+}
 
 #ifdef __cplusplus
 }

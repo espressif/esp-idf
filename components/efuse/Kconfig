@@ -41,6 +41,12 @@ menu "eFuse Bit Manager"
             This mode is useful when need to keep changes after reboot
             (testing secure_boot and flash_encryption).
 
+    config EFUSE_VIRTUAL_LOG_ALL_WRITES
+        bool "Log all virtual writes"
+        depends on EFUSE_VIRTUAL
+        help
+            If enabled, log efuse burns. This shows changes that would be made.
+
     choice EFUSE_CODE_SCHEME_SELECTOR
         prompt "Coding Scheme Compatibility"
         default EFUSE_CODE_SCHEME_COMPAT_3_4

@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_bootloader_format/test_apps:
+  disable:
+    - if: IDF_TARGET != "esp32"
+      reason: It is enough to test it only for one target

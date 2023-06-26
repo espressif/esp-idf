@@ -103,7 +103,7 @@ function(target_add_binary_data target embed_file embed_type)
         WORKING_DIRECTORY "${build_dir}"
         VERBATIM)
 
-    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${embed_srcfile}")
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${embed_srcfile}")
 
     target_sources("${target}" PRIVATE "${embed_srcfile}")
 endfunction()
@@ -172,7 +172,12 @@ endfunction()
 
 # Convert a CMake list to a JSON list and store it in a variable
 function(make_json_list list variable)
-    string(REPLACE ";" "\", \"" result "[ \"${list}\" ]")
+    list(LENGTH list length)
+    if(${length})
+        string(REPLACE ";" "\", \"" result "[ \"${list}\" ]")
+    else()
+        set(result "[]")
+    endif()
     set("${variable}" "${result}" PARENT_SCOPE)
 endfunction()
 
@@ -330,7 +335,7 @@ function(file_generate output)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${output}")
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${output}")
 endfunction()
 
 # add_subdirectory_if_exists

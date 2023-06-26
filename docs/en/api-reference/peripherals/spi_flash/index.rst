@@ -5,6 +5,7 @@ SPI Flash API
 
 Overview
 --------
+
 The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash.
 
 For higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`, see :doc:`/api-reference/storage/partition`
@@ -12,7 +13,7 @@ For higher-level API functions which work with partitions defined in the :doc:`p
 .. note::
     ``esp_partition_*`` APIs are recommended to be used instead of the lower level ``esp_flash_*`` API functions when accessing the main SPI Flash chip, since they do bounds checking and are guaranteed to calculate correct offsets in flash based on the information in the partition table. ``esp_flash_*`` functions can still be used directly when accessing an external (secondary) SPI flash chip.
 
-Different from the API before IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
+Different from the API before ESP-IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
 
 .. note::
 
@@ -34,7 +35,7 @@ Support for Features of Flash Chips
 Quad/Dual Mode Chips
 ^^^^^^^^^^^^^^^^^^^^
 
-Features of different flashes are implemented in different ways and thus need speical support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
+Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all flashes with 24-bit address are supported, because they don't need any vendor-specific commands.
 
 Quad mode (QIO/QOUT) is supported on following chip types:
 
@@ -45,6 +46,10 @@ Quad mode (QIO/QOUT) is supported on following chip types:
 5. Winbond
 6. XMC
 7. BOYA
+
+.. note::
+
+    Only when one flash series listed above is supported by {IDF_TARGET_NAME}, this flash series is supported by the chip driver by default. You can use ``Component config`` > ``SPI Flash driver`` > ``Auto-detect flash chips`` in menuconfig to enable/disable a flash series.
 
 Optional Features
 ^^^^^^^^^^^^^^^^^
@@ -66,7 +71,7 @@ There are some features that are not supported by all flash chips, or not suppor
 
     -  High performance mode (HPM) - means that flash works under high frequency which is higher than 80MHz.
 
--  Flash unique ID - means that flash supports its unique 64-bits ID.
+-  Flash unique ID - means that flash supports its unique 64-bit ID.
 
 .. only:: esp32c3
 
@@ -129,7 +134,6 @@ Concurrency Constraints for Flash on SPI1
    The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) will cause significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
 
 
-
 SPI Flash Encryption
 --------------------
 
@@ -175,7 +179,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 2. The chip driver, which provides compatibility service to different chips;
 3. The OS functions, provide support of some OS functions (e.g. lock, delay) in different stages (1st/2nd boot, or the app).
 
-Host driver
+Host Driver
 ^^^^^^^^^^^
 
 The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``hal/include/hal`` folder). This interface provides some common functions to communicate with the chip.
@@ -245,6 +249,20 @@ Once the flash operation is complete, the function on CPU A sets another flag, `
 Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``).
 
 In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
+
+
+.. toctree::
+    :hidden:
+
+    spi_flash_idf_vs_rom
+
+.. only:: CONFIG_ESP_ROM_HAS_SPI_FLASH
+
+    ESP-IDF vs Chip-ROM SPI Flash Driver
+    ------------------------------------
+
+    Refer to :doc:`spi_flash_idf_vs_rom`.
+
 
 API Reference - SPI Flash
 -------------------------

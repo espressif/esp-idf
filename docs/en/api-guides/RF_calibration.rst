@@ -63,3 +63,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_phy_init.inc
+.. include-build-file:: inc/esp_phy_cert_test.inc

@@ -1,17 +1,20 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "unity.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_commands.h"
 #include "esp_random.h"
 #include "soc/soc_caps.h"
 #include "test_spi_board.h"
@@ -35,8 +38,9 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         .miso_io_num = -1,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = TEST_LCD_H_RES * TEST_LCD_V_RES * sizeof(uint16_t)
+        .max_transfer_sz = 100 * 100 * sizeof(uint16_t),
     };
+#if SOC_SPI_SUPPORT_OCT
     if (oct_mode) {
         buscfg.data1_io_num = TEST_LCD_DATA1_GPIO;
         buscfg.data2_io_num = TEST_LCD_DATA2_GPIO;
@@ -47,6 +51,7 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         buscfg.data7_io_num = TEST_LCD_DATA7_GPIO;
         buscfg.flags = SPICOMMON_BUSFLAG_OCTAL;
     }
+#endif
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO));
 
     esp_lcd_panel_io_spi_config_t io_config = {
@@ -60,10 +65,12 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         .on_color_trans_done = on_color_trans_done,
         .user_ctx = user_data,
     };
+#if SOC_SPI_SUPPORT_OCT
     if (oct_mode) {
         io_config.flags.octal_mode = 1;
         io_config.spi_mode = 3;
     }
+#endif
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, io_handle));
 }
 
@@ -184,4 +191,72 @@ TEST_CASE("lcd_panel_with_1-line_spi_interface_(st7789)", "[lcd]")
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
     lcd_panel_test(io_handle, panel_handle);
+}
+
+TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
+{
+    int x_start = 100;
+    int y_start = 100;
+    int x_end = 200;
+    int y_end = 200;
+    size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
+    void *color_data = malloc(color_size);
+    TEST_ASSERT_NOT_NULL(color_data);
+    uint8_t color_byte = esp_random() & 0xFF;
+    memset(color_data, color_byte, color_size);
+
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 8, 8, false);
+
+    // we don't use the panel handle in this test, creating the panel just for a quick initialization
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = TEST_LCD_RST_GPIO,
+        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .bits_per_pixel = 16,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+    esp_lcd_panel_reset(panel_handle);
+    esp_lcd_panel_init(panel_handle);
+    esp_lcd_panel_invert_color(panel_handle, true);
+    // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
+    esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    // turn on display
+    esp_lcd_panel_disp_on_off(panel_handle, true);
+    // turn on backlight
+    gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
+
+    printf("set the flush window for only once\r\n");
+    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_CASET, (uint8_t[]) {
+        (x_start >> 8) & 0xFF,
+        x_start & 0xFF,
+        ((x_end - 1) >> 8) & 0xFF,
+        (x_end - 1) & 0xFF,
+    }, 4);
+    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RASET, (uint8_t[]) {
+        (y_start >> 8) & 0xFF,
+        y_start & 0xFF,
+        ((y_end - 1) >> 8) & 0xFF,
+        (y_end - 1) & 0xFF,
+    }, 4);
+    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RAMWR, NULL, 0);
+
+    printf("send colors to the fixed region in multiple steps\r\n");
+    const int steps = 10;
+    int color_size_per_step = color_size / steps;
+    for (int i = 0; i < steps; i++) {
+        TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));
+    }
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    // change to another color
+    color_byte = esp_random() & 0xFF;
+    memset(color_data, color_byte, color_size);
+    for (int i = 0; i < steps; i++) {
+        TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));
+    }
+
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    free(color_data);
 }

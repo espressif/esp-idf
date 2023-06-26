@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1699,8 +1699,8 @@ typedef union {
 typedef union {
     struct {
         /** clk_32k_sel : R/W; bitpos: [1:0]; default: 0;
-         *  This field indicates which one 32KHz clock will be used by MODEM_SYSTEM and
-         *  timergroup. 0: OSC32K(default), 1: XTAL32K, 2/3: 32KHz from pad GPIO0.
+         *  This field indicates which one 32KHz clock will be used by timergroup.
+         *  0: OSC32K(default), 1: XTAL32K, 2/3: 32KHz from pad GPIO0.
          */
         uint32_t clk_32k_sel:2;
         uint32_t reserved_2:30;

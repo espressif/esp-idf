@@ -24,7 +24,11 @@ __attribute__((unused)) static const char* TAG = "efuse_key_test";
 TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial state", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
 
     for (esp_efuse_block_t num_key = EFUSE_BLK_KEY0; num_key < EFUSE_BLK_KEY_MAX; ++num_key) {
@@ -46,6 +50,26 @@ TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial st
         printf("EFUSE_BLK_KEY%d, RD, WR, PURPOSE_USER, PURPOSE_USER WR ... OK\n", num_key - EFUSE_BLK_KEY0);
     }
 }
+
+#if SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+TEST_CASE("Test efuse API blocks burning XTS and ECDSA keys into BLOCK9", "[efuse]")
+{
+    uint8_t key[32] = {0};
+    esp_efuse_purpose_t purpose = ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
+#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+    purpose = ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
+    purpose = ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
+#endif
+#if SOC_ECDSA_SUPPORTED
+    purpose = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
+#endif
+}
+#endif // SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+
 #endif // CONFIG_EFUSE_VIRTUAL
 
 // If using efuse is real, then turn off writing tests.
@@ -65,6 +89,9 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
 #ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
+#endif
+#if SOC_ECDSA_SUPPORTED
+            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
@@ -117,14 +144,36 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK_KEY0, tmp_purpose, &rd_key, 33));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK10, tmp_purpose, &rd_key, sizeof(rd_key)));
 
-    for (esp_efuse_purpose_t purpose = ESP_EFUSE_KEY_PURPOSE_RESERVED; purpose < ESP_EFUSE_KEY_PURPOSE_MAX; ++purpose) {
+    for (esp_efuse_purpose_t g_purpose = ESP_EFUSE_KEY_PURPOSE_USER; g_purpose < ESP_EFUSE_KEY_PURPOSE_MAX; ++g_purpose) {
+        if (g_purpose == ESP_EFUSE_KEY_PURPOSE_USER) {
+            continue;
+        }
         esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
         esp_efuse_utility_update_virt_blocks();
+#else
+        esp_efuse_utility_erase_virt_blocks();
+#endif
         esp_efuse_utility_debug_dump_blocks();
 
-        TEST_ASSERT_FALSE(esp_efuse_find_purpose(purpose, NULL));
+        TEST_ASSERT_FALSE(esp_efuse_find_purpose(g_purpose, NULL));
 
         for (esp_efuse_block_t num_key = (EFUSE_BLK_KEY_MAX - 1); num_key >= EFUSE_BLK_KEY0; --num_key) {
+            esp_efuse_purpose_t purpose = g_purpose;
+#if SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+            if (num_key == EFUSE_BLK9 && (
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
+                purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
+                purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
+#endif //#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
+#if SOC_ECDSA_SUPPORTED
+                purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
+#endif
+                purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY)) {
+                printf("BLOCK9 can not have the %d purpose, use RESERVED instead\n", purpose);
+                purpose = ESP_EFUSE_KEY_PURPOSE_RESERVED;
+            }
+#endif // SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
             int id = num_key - EFUSE_BLK_KEY0;
             TEST_ASSERT_EQUAL(id + 1, esp_efuse_count_unused_key_blocks());
             test_write_key(num_key, purpose);
@@ -142,13 +191,21 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
 TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 
     esp_efuse_purpose_t purpose [] = {
         ESP_EFUSE_KEY_PURPOSE_USER,
+#if SOC_ECDSA_SUPPORTED
+        ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY,
+#else
         ESP_EFUSE_KEY_PURPOSE_RESERVED,
+#endif
 #ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
@@ -176,7 +233,11 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 TEST_CASE("Test 2 esp_efuse_write_key for FPGA", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 
@@ -211,7 +272,11 @@ TEST_CASE("Test 2 esp_efuse_write_key for FPGA", "[efuse]")
 TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
     esp_efuse_block_t key_block = EFUSE_BLK_MAX;
@@ -285,7 +350,11 @@ TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
 TEST_CASE("Test esp_efuse_write_keys for returned errors", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 

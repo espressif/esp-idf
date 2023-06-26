@@ -32,6 +32,30 @@ void test_fatfs_create_file_with_text(const char* name, const char* text)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
+void test_fatfs_create_file_with_o_creat_flag(const char* filename)
+{
+    const int fd = open(filename, O_CREAT|O_WRONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    const int r = pwrite(fd, fatfs_test_hello_str, strlen(fatfs_test_hello_str), 0); //offset=0
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str), r);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+}
+
+void test_fatfs_open_file_with_o_creat_flag(const char* filename)
+{
+    char buf[32] = { 0 };
+    const int fd = open(filename, O_CREAT|O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    int r = pread(fd, buf, sizeof(buf), 0); // it is a regular read() with offset==0
+    TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str, buf));
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str), r);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+}
+
 void test_fatfs_overwrite_append(const char* filename)
 {
     /* Create new file with 'aaaa' */

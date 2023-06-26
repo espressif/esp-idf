@@ -8,15 +8,18 @@ Support for External RAM
 
 Introduction
 ============
-{IDF_TARGET_PSRAM_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="16 MB"}
+{IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB"}
 
-{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to also use up to {IDF_TARGET_PSRAM_SIZE} of external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (Psuedostatic RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
 
+.. only:: esp32s3
+
+    The {IDF_TARGET_PSRAM_VADDR_SIZE} virtual addresses are shared with flash instructions and rodata.
 
 Hardware
 ========
 
-{IDF_TARGET_NAME} supports SPI PSRAM (Psuedostatic RAM) connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
+{IDF_TARGET_NAME} supports PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
 
 .. note::
 
@@ -24,7 +27,7 @@ Hardware
 
 .. note::
 
-    Espressif produces both modules and system-in-package chips that integrate compatible PSRAM and flash and are ready to mount on a product PCB. Consult the Espressif website for more information.
+    Espressif produces both modules and system-in-package chips that integrate compatible PSRAM and flash and are ready to mount on a product PCB. Consult the Espressif website for more information. If you're using a custom PSRAM chip, ESP-IDF SDK might not be compatible with it.
 
 For specific details about connecting the SoC or module pins to an external PSRAM chip, consult the SoC or module datasheet.
 
@@ -43,8 +46,8 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
     :esp32: * :ref:`external_ram_config_noinit`
-    :esp32s2 or esp32s3: * :ref:`external_ram_config_instructions`
-    :esp32s2 or esp32s3: * :ref:`external_ram_config_rodata`
+    :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_instructions`
+    :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_rodata`
 
 .. _external_ram_config_memory_map:
 
@@ -52,15 +55,15 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
 Integrate RAM into the {IDF_TARGET_NAME} Memory Map
 ---------------------------------------------------
 
-{IDF_TARGET_PSRAM_ADDR_START:default="Value not updated", esp32="0x3F800000", esp32s2="0x3F500000", esp32s3="0x3D000000"}
+Select this option by choosing ``Integrate RAM into memory map`` from :ref:`CONFIG_SPIRAM_USE`.
 
-Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
+This is the most basic option for external RAM integration. Most likely, you will need another, more advanced option.
 
-This is the most basic option for external SPI RAM integration. Most likely, you will need another, more advanced option.
+During the ESP-IDF startup, external RAM is mapped into the data virtual address space. The address space is dynamically allocated. The length will be the mininum length between the PSRAM size and the available data virtual address space size.
 
-During the ESP-IDF startup, external RAM is mapped into the data address space, starting at address {IDF_TARGET_PSRAM_ADDR_START} (byte-accessible). The length of this region is the same as the SPI RAM size (up to the limit of {IDF_TARGET_PSRAM_SIZE}).
+Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external RAM: coordinating buffer usage, preventing corruption, etc.
 
-Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external SPI RAM: coordinating buffer usage, preventing corruption, etc.
+It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next chapter).
 
 .. _external_ram_config_capability_allocator:
 
@@ -68,9 +71,9 @@ Applications can manually place data in external memory by creating pointers to 
 Add External RAM to the Capability Allocator
 --------------------------------------------
 
-Select this option by choosing "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`` from :ref:`CONFIG_SPIRAM_USE`.
 
-When enabled, memory is mapped to address {IDF_TARGET_PSRAM_ADDR_START} and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
 
 To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
 
@@ -80,7 +83,7 @@ To allocate memory from external RAM, a program should call ``heap_caps_malloc(s
 Provide External RAM via malloc()
 ---------------------------------
 
-Select this option by choosing "Make RAM allocatable using malloc() as well" from :ref:`CONFIG_SPIRAM_USE`. This is the default option.
+Select this option by choosing ``Make RAM allocatable using malloc() as well`` from :ref:`CONFIG_SPIRAM_USE`. This is the default option.
 
 In this case, memory is added to the capability allocator as described for the previous option. However, it is also added to the pool of RAM that can be returned by the standard ``malloc()`` function.
 
@@ -97,12 +100,12 @@ Because some buffers can only be allocated in internal memory, a second configur
 
 .. _external_ram_config_bss:
 
-Allow .bss Segment to be Placed in External Memory
+Allow .bss Segment to Be Placed in External Memory
 --------------------------------------------------
 
 Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
-If enabled, a region of the address space starting from {IDF_TARGET_PSRAM_ADDR_START} will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
 Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
@@ -116,10 +119,10 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
     .. _external_ram_config_noinit:
 
-    Allow .noinit Segment to be Placed in External Memory
+    Allow .noinit Segment to Be Placed in External Memory
     --------------------------------------------------------------
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the address space provided in external RAM will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
+    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
 
     By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
 
@@ -160,22 +163,27 @@ Restrictions
 
 External RAM use has the following restrictions:
 
- * When flash cache is disabled (for example, if the flash is being written to), the external RAM also becomes inaccessible; any reads from or writes to it will lead to an illegal cache access exception. This is also the reason why ESP-IDF does not by default allocate any task stacks in external RAM (see below).
+* When flash cache is disabled (for example, if the flash is being written to), the external RAM also becomes inaccessible. Any read operations from or write operations to it will lead to an illegal cache access exception. This is also the reason why ESP-IDF does not by default allocate any task stacks in external RAM (see below).
 
-  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call.
+.. only:: SOC_PSRAM_DMA_CAPABLE and not esp32s3
 
-  .. only:: SOC_PSRAM_DMA_CAPABLE
+    * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call. Note, although {IDF_TARGET_NAME} has hardware support for DMA to or from external RAM, this is not yet supported in ESP-IDF.
 
-    Note, although {IDF_TARGET_NAME} has hardware support for DMA to/from external RAM, this is not yet supported in ESP-IDF.
+.. only:: esp32s3
 
- * External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
+    * Although {IDF_TARGET_NAME} has hardware support for DMA to or from external RAM, there are still limitations:
 
- * In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
+      - The bandwidth that DMA accesses external RAM is very limited, especially when CPU is trying to access the external RAM at the same time.
+      - You can configure :ref:`CONFIG_SPIRAM_SPEED` as 120 MHz for an octal PSRAM. The bandwidth will be improved. However there are still restrictions for this option. See :ref:`All Supported PSRAM Modes and Speeds <flash-psram-combination>` for more details.
+
+* External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
+
+* In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
 
 The option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` can be used to allow placing task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
 
 
-Failure to initialize
+Failure to Initialize
 =====================
 
  By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`.
@@ -190,7 +198,7 @@ Failure to initialize
     Encryption
     ==========
 
-    It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted/decrypted by the external memory encryption hardware.
+    It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted or decrypted by the external memory encryption hardware.
 
     This feature is enabled whenever flash encryption is enabled. For more information on how to enable and how it works see :doc:`Flash Encryption </security/flash-encryption>`.
 

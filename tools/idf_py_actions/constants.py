@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import collections
 import multiprocessing
@@ -32,8 +32,8 @@ if os.name != 'nt':
 
 URL_TO_DOC = 'https://docs.espressif.com/projects/esp-idf'
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
-PREVIEW_TARGETS = ['linux', 'esp32h4', 'esp32c6', 'esp32h2']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2']
+PREVIEW_TARGETS = ['linux', 'esp32p4']
 
 OPENOCD_TAGET_CONFIG_DEFAULT = '-f interface/ftdi/esp32_devkitj_v1.cfg -f target/{target}.cfg'
 OPENOCD_TAGET_CONFIG: Dict[str, str] = {
@@ -41,4 +41,6 @@ OPENOCD_TAGET_CONFIG: Dict[str, str] = {
     'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
     'esp32c3': '-f board/esp32c3-builtin.cfg',
     'esp32s3': '-f board/esp32s3-builtin.cfg',
+    'esp32c6': '-f board/esp32c6-builtin.cfg',
+    'esp32h2': '-f board/esp32h2-builtin.cfg',
 }

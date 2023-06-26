@@ -3,7 +3,7 @@ ESP Local Control
 
 Overview
 --------
-ESP Local Control (**esp_local_ctrl**) component in  ESP-IDF provides capability to control an ESP device over Wi-Fi + HTTPS or BLE. It provides access to application defined **properties** that are available for reading / writing via a set of configurable handlers.
+ESP Local Control (**esp_local_ctrl**) component in  ESP-IDF provides capability to control an ESP device over HTTPS or BLE. It provides access to application defined **properties** that are available for reading / writing via a set of configurable handlers.
 
 Initialization of the **esp_local_ctrl** service over BLE transport is performed as follows:
 

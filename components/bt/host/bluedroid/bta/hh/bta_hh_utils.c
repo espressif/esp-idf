@@ -88,6 +88,7 @@ UINT8  bta_hh_find_cb(BD_ADDR bda)
     for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++) {
         if (!bta_hh_cb.kdev[xx].in_use) {
             bdcpy(bta_hh_cb.kdev[xx].addr, bda);
+            bta_hh_cb.kdev[xx].in_use = TRUE;
             break;
         }
     }

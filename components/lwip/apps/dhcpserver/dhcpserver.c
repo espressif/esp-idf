@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-//#include "esp_common.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "lwip/dhcp.h"
 #include "lwip/err.h"
 #include "lwip/pbuf.h"
@@ -65,37 +65,14 @@
 
 #define IS_INVALID_SUBNET_MASK(x)  (((x-1) | x) != 0xFFFFFFFF)
 /* Notes:
-*  1. Class a address range 0.0.0.0~127.255.255.255.
- * 2. Class b address range 128.0.0.0~191.255.255.255.
- * 3. Class c address range 192.0.0.0~223.255.255.255.
+*  CIDR eliminates the traditional Class A, Class B and Class C addresses.
  */
-#define IS_VALID_CLASSA_SUBNET_MASK(mask)  (mask >= 0xFF000000 && mask <= 0xFFFE0000)
-#define IS_VALID_CLASSB_SUBNET_MASK(mask)  (mask >= 0xFFFF0000 && mask <= 0xFFFFFE00)
-#define IS_VALID_CLASSC_SUBNET_MASK(mask)  (mask >= 0xFFFFFF00 && mask <= 0xFFFFFFFC)
 #define IP_CLASS_HOST_NUM(mask)            (0xffffffff & ~mask)
-
-#define DHCP_CHECK_SUBNET_MASK_IP(mask, ip)                                                               \
+#define DHCP_CHECK_SUBNET_MASK_IP(mask)                                                               \
     do {                                                                                                  \
         if (IS_INVALID_SUBNET_MASK(mask)) {                                                               \
             DHCPS_LOG("dhcps: Illegal subnet mask.\n");                                                   \
             return ERR_ARG;                                                                               \
-        } else {                                                                                          \
-            if (IP_CLASSA(ip)) {                                                                          \
-                if(!IS_VALID_CLASSA_SUBNET_MASK(mask)) {                                                  \
-                    DHCPS_LOG("dhcps: The subnet mask does not match the A address.\n");                  \
-                    return ERR_ARG;                                                                       \
-                }                                                                                         \
-            } else if (IP_CLASSB(ip)) {                                                                   \
-                if(!IS_VALID_CLASSB_SUBNET_MASK(mask)) {                                                  \
-                    DHCPS_LOG("dhcps: The subnet mask does not match the B address.\n");                  \
-                    return ERR_ARG;                                                                       \
-                }                                                                                         \
-            } else if (IP_CLASSC(ip)) {                                                                   \
-                if(!IS_VALID_CLASSC_SUBNET_MASK(mask)) {                                                  \
-                    DHCPS_LOG("dhcps: The subnet mask does not match the C address.\n");                  \
-                    return ERR_ARG;                                                                       \
-                }                                                                                         \
-            }                                                                                             \
         }                                                                                                 \
     } while (0)
 
@@ -582,7 +559,7 @@ static void send_offer(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 
     end = add_msg_type(&m->options[4], DHCPOFFER);
     end = add_offer_options(dhcps, end);
-    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPOFFER, &end)
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPOFFER, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -660,7 +637,7 @@ static void send_nak(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     create_msg(dhcps, m);
 
     end = add_msg_type(&m->options[4], DHCPNAK);
-    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPNAK, &end)
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPNAK, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -737,7 +714,7 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 
     end = add_msg_type(&m->options[4], DHCPACK);
     end = add_offer_options(dhcps, end);
-    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPACK, &end)
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPACK, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -1272,7 +1249,7 @@ err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
     IP4_ADDR(&dhcps->broadcast_dhcps, 255, 255, 255, 255);
 
     dhcps->server_address.addr = ip.addr;
-    DHCP_CHECK_SUBNET_MASK_IP(htonl(dhcps->dhcps_mask.addr), htonl(dhcps->server_address.addr));
+    DHCP_CHECK_SUBNET_MASK_IP(htonl(dhcps->dhcps_mask.addr));
     dhcps_poll_set(dhcps, dhcps->server_address.addr);
 
     dhcps->client_address_plus.addr = dhcps->dhcps_poll.start_ip.addr;

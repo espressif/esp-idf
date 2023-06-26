@@ -11,27 +11,6 @@ extern "C" {
 #endif
 
 #include "esp_system.h"
-#include "soc/soc_caps.h"
-
-#if SOC_TIMER_GROUPS >= 2
-
-/* All the targets that have more than one timer group are using
- * APB clock by default, which frequency is 80MHz.
- * Thus, we can determine the default parameter for the prescaler here */
-#define MWDT0_TICK_PRESCALER    40000
-#define MWDT0_TICKS_PER_US      500
-#define MWDT1_TICK_PRESCALER    40000
-#define MWDT1_TICKS_PER_US      500
-
-#else
-
-/* The targets that have a single timer group use a 40MHz clock for the
- * Timer Group 0. Let's adapt the prescaler value accordingly.
- */
-#define MWDT0_TICK_PRESCALER    20000
-#define MWDT0_TICKS_PER_US      500
-
-#endif
 
 /**
  * @brief  Internal function to restart PRO and APP CPUs.
@@ -83,6 +62,11 @@ int64_t esp_system_get_time(void);
  * @returns the resolution in nanoseconds
  */
 uint32_t esp_system_get_time_resolution(void);
+
+/**
+ * @brief Before the system exit (e.g. panic, brownout, restart, etc.), this function is to be called to reset all necessary peripherals.
+ */
+void esp_system_reset_modules_on_exit(void);
 
 #ifdef __cplusplus
 }

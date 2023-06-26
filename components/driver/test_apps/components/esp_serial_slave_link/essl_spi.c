@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,9 +267,8 @@ static esp_err_t essl_spi_update_tx_buffer_num(void *arg, uint32_t wait_ms);
 esp_err_t essl_spi_init_dev(essl_handle_t *out_handle, const essl_spi_config_t *init_config)
 {
     ESP_RETURN_ON_FALSE(init_config->spi, ESP_ERR_INVALID_STATE, TAG, "Check SPI initialization first");
-    // for esp32-s2 SOC_SPI_MAXIMUM_BUFFER_SIZE is 72, so compiler warns that comparisons of 'tx/rx_sync_reg' are always true
-    ESP_RETURN_ON_FALSE((uint32_t)init_config->tx_sync_reg <= (SOC_SPI_MAXIMUM_BUFFER_SIZE - 1) * 4, ESP_ERR_INVALID_ARG, TAG, "GPSPI supports %d-byte-width internal registers", SOC_SPI_MAXIMUM_BUFFER_SIZE);
-    ESP_RETURN_ON_FALSE((uint32_t)init_config->rx_sync_reg <= (SOC_SPI_MAXIMUM_BUFFER_SIZE - 1) * 4, ESP_ERR_INVALID_ARG, TAG, "GPSPI supports %d-byte-width internal registers", SOC_SPI_MAXIMUM_BUFFER_SIZE);
+    ESP_RETURN_ON_FALSE(init_config->tx_sync_reg <= (SOC_SPI_MAXIMUM_BUFFER_SIZE - 1) * 4, ESP_ERR_INVALID_ARG, TAG, "GPSPI supports %d-byte-width internal registers", SOC_SPI_MAXIMUM_BUFFER_SIZE);
+    ESP_RETURN_ON_FALSE(init_config->rx_sync_reg <= (SOC_SPI_MAXIMUM_BUFFER_SIZE - 1) * 4, ESP_ERR_INVALID_ARG, TAG, "GPSPI supports %d-byte-width internal registers", SOC_SPI_MAXIMUM_BUFFER_SIZE);
     ESP_RETURN_ON_FALSE(init_config->tx_sync_reg != init_config->rx_sync_reg, ESP_ERR_INVALID_ARG, TAG, "Should use different word of registers for synchronization");
 
     essl_spi_context_t *context = calloc(1, sizeof(essl_spi_context_t));

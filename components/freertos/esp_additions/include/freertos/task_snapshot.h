@@ -38,7 +38,7 @@ typedef struct xTASK_SNAPSHOT
  * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
- * 		 does not acquire any locks.
+ *       does not acquire any locks.
  * @param pxTask Handle of the previous task (or NULL on the first call of this function)
  * @return TaskHandle_t Handle of the next task (or NULL when all tasks have been iterated over)
  */
@@ -51,7 +51,7 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
  * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
- * 		 does not acquire any locks.
+ *       does not acquire any locks.
  * @param[in] pxTask Task's handle
  * @param[out] pxTaskSnapshot Snapshot of the task
  * @return pdTRUE if operation was successful else pdFALSE
@@ -65,7 +65,7 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot
  * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
- * 		 does not acquire any locks.
+ *        does not acquire any locks.
  * @param[out] pxTaskSnapshotArray Array of TaskSnapshot_t structures filled by this function
  * @param[in] uxArrayLength Length of the provided array
  * @param[out] pxTCBSize Size of the a task's TCB structure

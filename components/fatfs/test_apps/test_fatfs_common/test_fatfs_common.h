@@ -27,6 +27,10 @@ extern const char* fatfs_test_hello_str_utf;
 
 void test_fatfs_create_file_with_text(const char* name, const char* text);
 
+void test_fatfs_create_file_with_o_creat_flag(const char* filename);
+
+void test_fatfs_open_file_with_o_creat_flag(const char* filename);
+
 void test_fatfs_overwrite_append(const char* filename);
 
 void test_fatfs_read_file(const char* filename);

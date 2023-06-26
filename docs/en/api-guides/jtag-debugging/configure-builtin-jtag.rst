@@ -6,8 +6,8 @@
 Configure {IDF_TARGET_NAME} built-in JTAG Interface
 ===================================================
 
-{IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19"} 
-{IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20"} 
+{IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26"}
+{IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27"}
 
 {IDF_TARGET_NAME} has a built-in JTAG circuitry and can be debugged without any additional chip. Only an USB cable connected to the D+/D- pins is necessary. The necessary connections are shown in the following section.
 
@@ -37,3 +37,5 @@ Configure USB Drivers
 JTAG communication should work on all supported platforms. Windows users might get `LIBUSB_ERROR_NOT_FOUND` errors. Please use version 2.8 (or newer) of the :ref:`get-started-windows-tools-installer` and select the driver "Espressif - WinUSB support for JTAG (ESP32-C3/S3)" in order to resolve this issue. If you don't want to re-run the installer then the same can be achieved with `idf-env <https://github.com/espressif/idf-env>`_ by running the following command from PowerShell::
 
     Invoke-WebRequest 'https://dl.espressif.com/dl/idf-env/idf-env.exe' -OutFile .\idf-env.exe; .\idf-env.exe driver install --espressif
+
+On Linux adding OpenOCD udev rules is required and is done by placing the following `udev rules file <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ in the ``/etc/udev/rules.d`` folder.

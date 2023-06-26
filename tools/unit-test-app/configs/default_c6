@@ -1,3 +1,4 @@
 # This config is split between targets since different component needs to be included
 CONFIG_IDF_TARGET="esp32c6"
-TEST_COMPONENTS=esp_system driver soc spi_flash vfs
+# spi_flash is tested in other configs
+TEST_EXCLUDE_COMPONENTS=spi_flash

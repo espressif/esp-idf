@@ -75,7 +75,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 
 .. note::
 
-  板载 ESP32-S3-WROOM-2 模组系列的开发板中，管脚 GPIO35、GPIO36 和 GPIO37 已用于内部 ESP32-S3 芯片与 SPI flash/PSRAM 之间的通信，外部不可使用。
+  在板载 ESP32-S3-WROOM-1/1U 模组系列（使用 8 线 SPI flash/PSRAM）的开发板和板载 ESP32-S3-WROOM-2 模组系列的开发板中，管脚 GPIO35、GPIO36 和 GPIO37 已用于内部 ESP32-S3 芯片与 SPI flash/PSRAM 之间的通信，外部不可使用。
 
 
 开始开发应用

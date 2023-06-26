@@ -1,0 +1,29 @@
+
+menu "Wireless Coexistence"
+    config ESP_COEX_SW_COEXIST_ENABLE
+        bool "Software controls WiFi/Bluetooth coexistence"
+        depends on (ESP_WIFI_ENABLED && BT_ENABLED) || \
+            (ESP_WIFI_ENABLED && IEEE802154_ENABLED)   || \
+            (IEEE802154_ENABLED && BT_ENABLED)
+        default y
+        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE if (ESP_WIFI_ENABLED)
+        help
+            If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
+            Recommended for heavy traffic scenarios. Both coexistence configuration options are
+            automatically managed, no user intervention is required.
+            If only Bluetooth is used, it is recommended to disable this option to reduce binary file
+            size.
+
+    config ESP_COEX_EXTERNAL_COEXIST_ENABLE
+        bool "External Coexistence"
+        default n
+        depends on (!(BT_ENABLED||NIMBLE_ENABLED)&&(!IDF_TARGET_ESP32))
+        help
+            If enabled, HW External coexistence arbitration is managed by GPIO pins.
+            It can support three types of wired combinations so far which are 1-wired/2-wired/3-wired.
+            User can select GPIO pins in application code with configure interfaces.
+
+            This function depends on BT-off
+            because currently we do not support external coex and internal coex simultaneously.
+
+endmenu  # Wi-Fi

@@ -84,7 +84,8 @@ extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_
 
 extern const uint8_t local_server_cert_pem_start[] asm("_binary_local_server_cert_pem_start");
 extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cert_pem_end");
-
+static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, 0};
+static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
 static esp_tls_client_session_t *tls_client_session = NULL;
 static bool save_client_session = false;
@@ -185,6 +186,24 @@ static void https_get_request_using_cacert_buf(void)
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
 }
 
+static void https_get_request_using_specified_ciphersuites(void)
+{
+    ESP_LOGI(TAG, "https_request using server supported ciphersuites");
+    esp_tls_cfg_t cfg = {
+        .cacert_buf = (const unsigned char *) server_root_cert_pem_start,
+        .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
+        .ciphersuites_list = server_supported_ciphersuites,
+    };
+
+    https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
+
+    ESP_LOGI(TAG, "https_request using server unsupported ciphersuites");
+
+    cfg.ciphersuites_list = server_unsupported_ciphersuites;
+
+    https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
+}
+
 static void https_get_request_using_global_ca_store(void)
 {
     esp_err_t esp_ret = ESP_FAIL;
@@ -259,6 +278,7 @@ static void https_request_task(void *pvparameters)
     ESP_LOGI(TAG, "Minimum free heap size: %" PRIu32 " bytes", esp_get_minimum_free_heap_size());
     https_get_request_using_cacert_buf();
     https_get_request_using_global_ca_store();
+    https_get_request_using_specified_ciphersuites();
     ESP_LOGI(TAG, "Finish https_request example");
     vTaskDelete(NULL);
 }

@@ -66,7 +66,7 @@ static struct os_mempool os_msys_init_2_mempool;
 
 #define OS_MSYS_SANITY_ENABLED                  \
     (OS_MSYS_1_SANITY_MIN_COUNT > 0 || \
-     OS_MSYS_1_SANITY_MIN_COUNT > 0)
+     OS_MSYS_2_SANITY_MIN_COUNT > 0)
 
 #if OS_MSYS_SANITY_ENABLED
 static struct os_sanity_check os_msys_sc;
@@ -91,7 +91,7 @@ IRAM_ATTR os_msys_sanity_min_count(int idx)
         return OS_MSYS_1_SANITY_MIN_COUNT;
 
     case 1:
-        return OS_MSYS_1_SANITY_MIN_COUNT;
+        return OS_MSYS_2_SANITY_MIN_COUNT;
 
     default:
         BLE_LL_ASSERT(0);

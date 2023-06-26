@@ -13,6 +13,7 @@ menu "Example Configuration"
             depends on !IDF_TARGET_ESP32S2
         config EXAMPLE_PROV_TRANSPORT_SOFTAP
             bool "Soft AP"
+            select LWIP_IPV4
     endchoice
 
     choice EXAMPLE_PROV_SECURITY_VERSION

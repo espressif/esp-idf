@@ -48,17 +48,16 @@ void esp_phy_enable(void)
     _lock_acquire(&s_phy_access_lock);
     if (s_phy_access_ref == 0) {
         register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
-        bt_bb_v2_init_cmplx(PHY_ENABLE_VERSION_PRINT);
         phy_version_print();
     }
 
     s_phy_access_ref++;
 
     _lock_release(&s_phy_access_lock);
-    // ESP32H4-TODO: enable common clk.
+    // ESP32H2-TODO: enable common clk.
 }
 
 void esp_phy_disable(void)
 {
-    // ESP32H4-TODO: close rf and disable clk for modem sleep and light sleep
+    // ESP32H2-TODO: close rf and disable clk for modem sleep and light sleep
 }

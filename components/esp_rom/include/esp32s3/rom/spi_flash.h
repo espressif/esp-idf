@@ -365,20 +365,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t src_addr, uint32_t *des
 void esp_rom_spiflash_write_encrypted_enable(void);
 
 /**
-  * @brief Prepare 32 Bytes data to encrpto writing, you should Erase it yourself if need.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
-  *
-  * @param  uint32_t *data : The pointer to data which is to write.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Prepare OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Prepare error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Prepare timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_prepare_encrypted_data(uint32_t flash_addr, uint32_t *data);
-
-/**
   * @brief SPI1 go out of encrypto mode.
   *        Please do not call this function in SDK.
   *

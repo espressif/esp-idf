@@ -269,6 +269,19 @@ esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_publi
  */
 esp_err_t esp_secure_boot_enable_secure_features(void);
 
+/** @brief Returns the verification status for all physical security features of secure boot in release mode
+ *
+ * If the device has secure boot feature configured in the release mode,
+ * then it is highly recommended to call this API in the application startup code.
+ * This API verifies the sanity of the eFuse configuration against
+ * the release (production) mode of the secure boot feature.
+ *
+ * @return
+ *  - True - all eFuses are configured correctly
+ *  - False - not all eFuses are configured correctly.
+ */
+bool esp_secure_boot_cfg_verify_release_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

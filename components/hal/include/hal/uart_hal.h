@@ -60,6 +60,15 @@ typedef struct {
 #define uart_hal_ena_intr_mask(hal, mask)  uart_ll_ena_intr_mask((hal)->dev, mask)
 
 /**
+ * @brief Get the UART raw interrupt status
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return UART raw interrupt status
+ */
+#define uart_hal_get_intraw_mask(hal) uart_ll_get_intraw_mask((hal)->dev)
+
+/**
  * @brief Get the UART interrupt status
  *
  * @param  hal Context of the HAL layer
@@ -186,7 +195,7 @@ void uart_hal_init(uart_hal_context_t *hal, uart_port_t uart_num);
  *
  * @return None
  */
-void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk);
+void uart_hal_set_sclk(uart_hal_context_t *hal, soc_module_clk_t sclk);
 
 /**
  * @brief Get the UART source clock type
@@ -196,7 +205,7 @@ void uart_hal_set_sclk(uart_hal_context_t *hal, uart_sclk_t sclk);
  *
  * @return None
  */
-void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
+void uart_hal_get_sclk(uart_hal_context_t *hal, soc_module_clk_t *sclk);
 
 /**
  * @brief  Configure the UART baud-rate and select the source clock

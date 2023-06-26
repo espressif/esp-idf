@@ -1,7 +1,7 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-if(IDF_TARGET STREQUAL "esp32h2")
-    # TODO : IDF-6337
+if(IDF_TARGET STREQUAL "esp32p4")
+    # TODO: IDF-7460
     return()
 endif()
 
@@ -21,12 +21,17 @@ else()
     list(APPEND srcs "src/phy_init.c")
 endif()
 
-if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED)
+if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED OR CONFIG_SOC_IEEE802154_BLE_ONLY)
     list(APPEND srcs "src/btbb_init.c")
+endif()
+
+if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
+    list(APPEND srcs "src/phy_callback.c")
 endif()
 
 idf_build_get_property(build_dir BUILD_DIR)
 
+if(CONFIG_SOC_WIFI_SUPPORTED)
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN)
     if(NOT EXISTS "${build_dir}/phy_multiple_init_data.bin")
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin DESTINATION "${build_dir}")
@@ -35,6 +40,7 @@ endif()
 
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
     set(embed_files "${build_dir}/phy_multiple_init_data.bin")
+endif()
 endif()
 
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
@@ -46,18 +52,7 @@ idf_component_register(SRCS "${srcs}"
                     )
 
 set(target_name "${idf_target}")
-if(IDF_TARGET STREQUAL "esp32h4")
-    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-        # TODO: rename esp32h2 to esp32h4 [WIFI-4956]
-        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev2")
-    endif()
-    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-        # TODO: rename esp32h2 to esp32h4 [WIFI-4956]
-        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev1")
-    endif()
-else()
-    target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
-endif()
+target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
 # Override functions in PHY lib with the functions in 'phy_override.c'
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u include_esp_phy_override")
@@ -78,6 +73,11 @@ if(link_binary_libs)
         target_link_libraries(${COMPONENT_LIB} PUBLIC btbb)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
         $<TARGET_FILE:${esp_phy_lib}>)
+    endif()
+
+    if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
+        librfate.a librftest.a $<TARGET_FILE:${esp_phy_lib}>)
     endif()
 endif()
 
@@ -118,5 +118,3 @@ if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
     esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
     esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

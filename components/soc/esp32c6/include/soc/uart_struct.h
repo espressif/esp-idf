@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1268,12 +1268,12 @@ typedef struct uart_dev_s {
     volatile uart_mem_tx_status_reg_t mem_tx_status;
     volatile uart_mem_rx_status_reg_t mem_rx_status;
     volatile uart_fsm_status_reg_t fsm_status;
-    volatile uart_pospulse_reg_t pospulse;
-    volatile uart_negpulse_reg_t negpulse;
-    volatile uart_lowpulse_reg_t lowpulse;
-    volatile uart_highpulse_reg_t highpulse;
-    volatile uart_rxd_cnt_reg_t rxd_cnt;
-    volatile uart_clk_conf_reg_t clk_conf;
+    volatile uart_pospulse_reg_t pospulse;      /* LP_UART instance has this register reserved */
+    volatile uart_negpulse_reg_t negpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
+    volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
+    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1 instance have this register reserved, configure in corresponding PCR registers */
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;
@@ -1283,6 +1283,7 @@ typedef struct uart_dev_s {
 
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
+extern uart_dev_t LP_UART;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(uart_dev_t) == 0xa0, "Invalid size of uart_dev_t structure");

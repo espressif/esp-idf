@@ -37,11 +37,10 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_DUAL | SPI_FWRITE_QUAD | SPI_FWRITE_DIO | SPI_FWRITE_QIO)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-/// This is the expected clock frequency
-#define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? &SPI1:((ID)==1? &SPI2 : &SPI3))
 
-#define SPI_LL_DATA_MAX_BIT_LEN (1 << 24)
+#define SPI_LL_DMA_MAX_BIT_LEN    (1 << 24)    //reg len: 24 bits
+#define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -56,6 +55,18 @@ typedef spi_dev_t spi_dma_dev_t;
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+
+/**
+ * Select SPI peripheral clock source (master).
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_source clock source to select, see valid sources in type `spi_clock_source_t`
+ */
+static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
+{
+    //empty, keep this for compatibility
+}
+
 /**
  * Initialize SPI peripheral (master).
  *

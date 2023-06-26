@@ -6,4 +6,8 @@
 .. toctree::
     :maxdepth: 1
 
+    gcc
     peripherals
+    storage
+    networking
+    system

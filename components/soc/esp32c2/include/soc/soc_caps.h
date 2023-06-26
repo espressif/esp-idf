@@ -27,7 +27,9 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
+#define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_GPTIMER_SUPPORTED           1
 #define SOC_BT_SUPPORTED                1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
@@ -52,7 +54,7 @@
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
-#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
 #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
 #define SOC_ADC_PERIPH_NUM                      (1U)
@@ -65,7 +67,7 @@
 #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-#define SOC_ADC_DIGI_FILTER_NUM                 (2)
+#define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval<= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
@@ -77,6 +79,7 @@
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+#define SOC_ADC_SELF_HW_CALI_SUPPORTED          (1) /*!< support HW offset self calibration */
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
@@ -95,8 +98,8 @@
 
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
-/*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
+/*-------------------------- ECC CAPS --------------------------*/
+#define SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK  1  // C2 ECC peripheral has a bug in ECC point verification, if value of K is zero the verification fails
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
@@ -110,9 +113,8 @@
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
 #define SOC_GPIO_FILTER_CLK_SUPPORT_APB    1
 
-// Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
-// On ESP32-C2, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT   (1)
+// Target has no full RTC IO subsystem, GPIO0~5 remain RTC function (powered by VDD3V3_RTC, and can be used as deep-sleep wakeup pins)
+
 // Force hold is a new function of ESP32-C2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
 // GPIO0~5 on ESP32-C2 can support chip deep sleep wakeup
@@ -125,9 +127,6 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_6~GPIO_NUM_20)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000001FFFC0ULL
 
-// Support to configure sleep status
-#define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
-
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
@@ -138,6 +137,7 @@
 #define SOC_I2C_NUM                 (1U)
 
 #define SOC_I2C_FIFO_LEN            (16) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
@@ -151,7 +151,11 @@
 #define SOC_LEDC_CHANNEL_NUM            (6)
 #define SOC_LEDC_TIMER_BIT_WIDTH        (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP      (1)
-#define SOC_LEDC_GAMMA_FADE_RANGE_MAX   (1U) // The target does not support gamma curve fading
+
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE          (1)
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       (1U)
+#define SOC_MMU_PERIPH_NUM                      (1U)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
@@ -199,6 +203,8 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_XTAL            1
+#define SOC_SPI_SUPPORT_CLK_PLL_F40M        1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
@@ -217,6 +223,7 @@
 #define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
+#define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 
 #define SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED         1
@@ -237,8 +244,12 @@
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_SUPPORT_PLL_F40M  (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
+
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
+#define SOC_EFUSE_DIS_PAD_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
@@ -254,6 +265,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C2 has 2 UARTs
 #define SOC_UART_NUM                (2)
+#define SOC_UART_HP_NUM             (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
@@ -279,25 +291,27 @@
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-#define SOC_PM_SUPPORT_CPU_PD           (0)
-#define SOC_PM_SUPPORT_WIFI_PD          (0)
-#define SOC_PM_SUPPORT_BT_PD            (0)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
+#define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 
 /*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
+#define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< ESP32C2 only supports to connect an external oscillator, not a crystal */
+
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
-#define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
-#define SOC_WIFI_WAPI_SUPPORT           (0)    /*!< WAPI is not supported */
-#define SOC_WIFI_CSI_SUPPORT            (0)    /*!< CSI is not supported */
-#define SOC_WIFI_MESH_SUPPORT           (0)    /*!< WIFI MESH is not supported */
+#define SOC_WIFI_HW_TSF                           (1)    /*!< Support hardware TSF */
+#define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
 #define SOC_BLE_MESH_SUPPORTED          (0)    /*!< Support BLE MESH */
 #define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */
+#define SOC_BLE_50_SUPPORTED            (1)    /*!< Support Bluetooth 5.0 */
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (1)   /*!< Support BLE device privacy mode */
+#define SOC_BLUFI_SUPPORTED             (1)    /*!< Support BLUFI */
+
+/*------------------------------------- PHY CAPS -------------------------------------*/
+#define SOC_PHY_IMPROVE_RX_11B              (1)

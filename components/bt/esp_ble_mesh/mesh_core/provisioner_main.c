@@ -1547,13 +1547,8 @@ int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
 #define HEARTBEAT_FILTER_ADD            0x00
 #define HEARTBEAT_FILTER_REMOVE         0x01
 
-#define HEARTBEAT_FILTER_WITH_SRC       BIT(0)
-#define HEARTBEAT_FILTER_WITH_DST       BIT(1)
-#define HEARTBEAT_FILTER_WITH_BOTH      (BIT(1) | BIT(0))
-
 static struct heartbeat_recv {
     struct heartbeat_filter {
-        uint8_t  type; /* Indicate if using src or dst or both to filter heartbeat messages */
         uint16_t src;  /* Heartbeat source address (unicast address) */
         uint16_t dst;  /* Heartbeat destination address (unicast address or group address) */
     } filter[CONFIG_BLE_MESH_PROVISIONER_RECV_HB_FILTER_SIZE];
@@ -1590,19 +1585,6 @@ int bt_mesh_provisioner_set_heartbeat_filter_type(uint8_t type)
     return 0;
 }
 
-static inline uint8_t get_filter_addr_type(uint16_t src, uint16_t dst)
-{
-    if (BLE_MESH_ADDR_IS_UNICAST(src)) {
-        if (BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)) {
-            return HEARTBEAT_FILTER_WITH_BOTH;
-        } else {
-            return HEARTBEAT_FILTER_WITH_SRC;
-        }
-    } else {
-        return HEARTBEAT_FILTER_WITH_DST;
-    }
-}
-
 static int hb_filter_alloc(uint16_t src, uint16_t dst)
 {
     int i;
@@ -1612,7 +1594,6 @@ static int hb_filter_alloc(uint16_t src, uint16_t dst)
 
         if (filter->src == BLE_MESH_ADDR_UNASSIGNED &&
             filter->dst == BLE_MESH_ADDR_UNASSIGNED) {
-            filter->type = get_filter_addr_type(src, dst);
             filter->src = src;
             filter->dst = dst;
             return 0;
@@ -1627,8 +1608,8 @@ static int hb_filter_add(uint16_t src, uint16_t dst)
 {
     int i;
 
-    if (!BLE_MESH_ADDR_IS_UNICAST(src) &&
-        !BLE_MESH_ADDR_IS_UNICAST(dst) && !BLE_MESH_ADDR_IS_GROUP(dst)) {
+    if (!(BLE_MESH_ADDR_IS_UNICAST(src) &&
+        (BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)))) {
         BT_ERR("Invalid filter address, src 0x%04x, dst 0x%04x", src, dst);
         return -EINVAL;
     }
@@ -1637,10 +1618,9 @@ static int hb_filter_add(uint16_t src, uint16_t dst)
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
 
-        if ((BLE_MESH_ADDR_IS_UNICAST(src) && filter->src == src) ||
-            ((BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)) &&
-            filter->dst == dst)) {
-            memset(filter, 0, sizeof(struct heartbeat_filter));
+        if (filter->src == src && filter->dst == dst) {
+            BT_WARN("Filter already exists, src 0x%04x dst 0x%04x", filter->src, filter->dst);
+            return 0;
         }
     }
 
@@ -1651,8 +1631,8 @@ static int hb_filter_remove(uint16_t src, uint16_t dst)
 {
     int i;
 
-    if (!BLE_MESH_ADDR_IS_UNICAST(src) &&
-        !BLE_MESH_ADDR_IS_UNICAST(dst) && !BLE_MESH_ADDR_IS_GROUP(dst)) {
+    if (!(BLE_MESH_ADDR_IS_UNICAST(src) &&
+        (BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)))) {
         BT_ERR("Invalid filter address, src 0x%04x, dst 0x%04x", src, dst);
         return -EINVAL;
     }
@@ -1660,9 +1640,7 @@ static int hb_filter_remove(uint16_t src, uint16_t dst)
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
 
-        if ((BLE_MESH_ADDR_IS_UNICAST(src) && filter->src == src) ||
-            ((BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)) &&
-            filter->dst == dst)) {
+        if (filter->src == src && filter->dst == dst) {
             memset(filter, 0, sizeof(struct heartbeat_filter));
         }
     }
@@ -1689,26 +1667,8 @@ static bool filter_with_rejectlist(uint16_t hb_src, uint16_t hb_dst)
 
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
-
-        switch (filter->type) {
-        case HEARTBEAT_FILTER_WITH_SRC:
-            if (hb_src == filter->src) {
-                return true;
-            }
-            break;
-        case HEARTBEAT_FILTER_WITH_DST:
-            if (hb_dst == filter->dst) {
-                return true;
-            }
-            break;
-        case HEARTBEAT_FILTER_WITH_BOTH:
-            if (hb_src == filter->src && hb_dst == filter->dst) {
-                return true;
-            }
-            break;
-        default:
-            BT_DBG("Unknown filter addr type 0x%02x", filter->type);
-            break;
+        if (hb_src == filter->src && hb_dst == filter->dst) {
+            return true;
         }
     }
 
@@ -1721,26 +1681,8 @@ static bool filter_with_acceptlist(uint16_t hb_src, uint16_t hb_dst)
 
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
-
-        switch (filter->type) {
-        case HEARTBEAT_FILTER_WITH_SRC:
-            if (hb_src == filter->src) {
-                return false;
-            }
-            break;
-        case HEARTBEAT_FILTER_WITH_DST:
-            if (hb_dst == filter->dst) {
-                return false;
-            }
-            break;
-        case HEARTBEAT_FILTER_WITH_BOTH:
-            if (hb_src == filter->src && hb_dst == filter->dst) {
-                return false;
-            }
-            break;
-        default:
-            BT_DBG("Unknown filter addr type 0x%02x", filter->type);
-            break;
+        if (hb_src == filter->src && hb_dst == filter->dst) {
+            return false;
         }
     }
 

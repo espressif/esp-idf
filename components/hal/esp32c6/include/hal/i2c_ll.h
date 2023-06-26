@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "soc/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
@@ -61,7 +62,7 @@ typedef enum {
 } i2c_ll_slave_intr_t;
 
 // Get the I2C hardware instance
-#define I2C_LL_GET_HW(i2c_num)        (&I2C0)
+#define I2C_LL_GET_HW(i2c_num)      (((i2c_num) == I2C_NUM_0) ? (&I2C0) : (&LP_I2C))
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 #define I2C_LL_SLAVE_EVENT_INTR     (I2C_RXFIFO_WM_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_WM_INT_ENA_M)
 
@@ -91,12 +92,16 @@ static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2
     clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
     clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
     clk_cal->sda_hold = half_cycle / 4;
-    clk_cal->sda_sample = half_cycle / 2 + clk_cal->scl_wait_high;
+    clk_cal->sda_sample = half_cycle / 2;
     clk_cal->setup = half_cycle;
     clk_cal->hold = half_cycle;
     //default we set the timeout value to about 10 bus cycles
     // log(20*half_cycle)/log(2) = log(half_cycle)/log(2) +  log(20)/log(2)
     clk_cal->tout = (int)(sizeof(half_cycle) * 8 - __builtin_clz(5 * half_cycle)) + 2;
+
+    /* Verify the assumptions made by the hardware */
+    HAL_ASSERT(clk_cal->scl_wait_high < clk_cal->sda_sample &&
+               clk_cal->sda_sample < clk_cal->scl_high);
 }
 
 /**
@@ -294,6 +299,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_ll_hw_cmd_t cmd, int cmd_idx)
 {
     hw->command[cmd_idx].val = cmd.val;
@@ -496,6 +502,7 @@ static inline void i2c_ll_get_tout(i2c_dev_t *hw, int *timeout)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_trans_start(i2c_dev_t *hw)
 {
     hw->ctr.trans_start = 1;
@@ -658,7 +665,11 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
-    (void)hw;
+    if (hw == &LP_I2C) {
+        // Do nothing
+        return;
+    }
+
     // src_clk : (1) for RTC_CLK, (0) for XTAL
     PCR.i2c_sclk_conf.i2c_sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
@@ -671,7 +682,11 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_c
  */
 static inline void i2c_ll_enable_controller_clock(i2c_dev_t *hw, bool en)
 {
-    (void)hw;
+    if (hw == &LP_I2C) {
+        // Do nothing
+        return;
+    }
+
     PCR.i2c_sclk_conf.i2c_sclk_en = en;
 }
 
@@ -727,6 +742,7 @@ static inline volatile void *i2c_ll_get_interrupt_status_reg(i2c_dev_t *dev)
 {
     return &dev->int_status;
 }
+
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
@@ -850,6 +866,7 @@ static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = UINT32_MAX;
@@ -863,6 +880,7 @@ static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_enable_rx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = UINT32_MAX;

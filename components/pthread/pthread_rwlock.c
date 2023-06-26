@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,6 +191,34 @@ int	pthread_rwlock_rdlock (pthread_rwlock_t *rwlock)
     return 0;
 }
 
+int	pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
+{
+    esp_pthread_rwlock_t *esp_rwlock;
+    int res;
+
+    res = checkrw_lock(rwlock);
+    if (res != 0) {
+        return res;
+    }
+
+    esp_rwlock = (esp_pthread_rwlock_t *)*rwlock;
+    res = pthread_mutex_trylock(&esp_rwlock->resource_mutex);
+    if (res != 0) {
+        return res;
+    }
+
+    if (esp_rwlock->active_writers == 0) {
+        esp_rwlock->active_readers++;
+        res = 0;
+    } else {
+        res = EBUSY;
+    }
+
+    pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+
+    return res;
+}
+
 int	pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 {
     esp_pthread_rwlock_t *esp_rwlock;
@@ -217,6 +245,35 @@ int	pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
     pthread_mutex_unlock(&esp_rwlock->resource_mutex);
 
     return 0;
+}
+
+int	pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock) {
+    esp_pthread_rwlock_t *esp_rwlock;
+    int res;
+
+    res = checkrw_lock(rwlock);
+    if (res != 0) {
+        return res;
+    }
+
+    esp_rwlock = (esp_pthread_rwlock_t *)*rwlock;
+    res = pthread_mutex_trylock(&esp_rwlock->resource_mutex);
+    if (res != 0) {
+        return res;
+    }
+
+    if (esp_rwlock->active_readers > 0 ||
+            esp_rwlock->active_writers > 0 ||
+            esp_rwlock->waiting_writers > 0) { // the last check for waiting_writers is to avoid skipping the queue
+        res = EBUSY;
+    } else {
+        esp_rwlock->active_writers++;
+        res = 0;
+    }
+
+    pthread_mutex_unlock(&esp_rwlock->resource_mutex);
+
+    return res;
 }
 
 int	pthread_rwlock_unlock (pthread_rwlock_t *rwlock)

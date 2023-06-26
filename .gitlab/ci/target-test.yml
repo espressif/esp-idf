@@ -39,13 +39,14 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
 
 .pytest_examples_dir_template:
   extends: .pytest_template
   variables:
     TEST_DIR: examples
 
-example_test_pytest_esp32_generic:
+pytest_examples_esp32_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -54,7 +55,15 @@ example_test_pytest_esp32_generic:
   tags: [ esp32, generic ]
   parallel: 3
 
-example_test_pytest_esp32_ir_transceiver:
+pytest_examples_esp32_esp32eco3:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, esp32eco3 ]
+
+pytest_examples_esp32_ir_transceiver:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -62,7 +71,7 @@ example_test_pytest_esp32_ir_transceiver:
     - build_pytest_examples_esp32
   tags: [ esp32, ir_transceiver ]
 
-example_test_pytest_esp32_twai_transceiver:
+pytest_examples_esp32_twai_transceiver:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -70,7 +79,7 @@ example_test_pytest_esp32_twai_transceiver:
     - build_pytest_examples_esp32
   tags: [ esp32, twai_transceiver ]
 
-example_test_pytest_esp32_twai_network:
+pytest_examples_esp32_twai_network:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -78,7 +87,7 @@ example_test_pytest_esp32_twai_network:
     - build_pytest_examples_esp32
   tags: [ esp32, twai_network ]
 
-example_test_pytest_esp32_jtag:
+pytest_examples_esp32_jtag:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -89,7 +98,23 @@ example_test_pytest_esp32_jtag:
     SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
-example_test_pytest_esp32s2_generic:
+pytest_examples_esp32_ccs811:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ccs811 ]
+
+pytest_examples_esp32_sdio:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-sdio
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, sdio_master_slave ]
+
+pytest_examples_esp32s2_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2
@@ -98,7 +123,18 @@ example_test_pytest_esp32s2_generic:
   tags: [ esp32s2, generic ]
   parallel: 3
 
-example_test_pytest_esp32s3_generic:
+pytest_examples_esp32s2_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32s2, jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
+pytest_examples_esp32s3_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3
@@ -107,7 +143,18 @@ example_test_pytest_esp32s3_generic:
   tags: [ esp32s3, generic ]
   parallel: 3
 
-example_test_pytest_esp32s3_f4r8:
+pytest_examples_esp32s3_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32s3, usb_serial_jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
+pytest_examples_esp32s3_f4r8:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3
@@ -115,7 +162,7 @@ example_test_pytest_esp32s3_f4r8:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, MSPI_F4R8 ]
 
-example_test_pytest_esp32c2_generic:
+pytest_examples_esp32c2_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2
@@ -124,7 +171,18 @@ example_test_pytest_esp32c2_generic:
   tags: [ esp32c2, generic, xtal_40mhz ]
   parallel: 3
 
-example_test_pytest_esp32c3_generic:
+pytest_examples_esp32c2_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32c2, jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
+pytest_examples_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
@@ -133,7 +191,18 @@ example_test_pytest_esp32c3_generic:
   tags: [ esp32c3, generic ]
   parallel: 3
 
-example_test_pytest_esp32c3_flash_suspend:
+pytest_examples_esp32c3_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32c3, usb_serial_jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
+pytest_examples_esp32c3_flash_suspend:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
@@ -141,7 +210,7 @@ example_test_pytest_esp32c3_flash_suspend:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_suspend ]
 
-example_test_pytest_esp32c6_generic:
+pytest_examples_esp32c6_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c6
@@ -149,7 +218,15 @@ example_test_pytest_esp32c6_generic:
     - build_pytest_examples_esp32c6
   tags: [ esp32c6, generic ]
 
-example_test_pytest_esp32_ethernet_ota:
+pytest_examples_esp32h2_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32h2
+  needs:
+    - build_pytest_examples_esp32h2
+  tags: [ esp32h2, generic ]
+
+pytest_examples_esp32_ethernet_ota:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
@@ -157,7 +234,7 @@ example_test_pytest_esp32_ethernet_ota:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet_ota ]
 
-example_test_pytest_esp32_wifi_high_traffic:
+pytest_examples_esp32_wifi_high_traffic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
@@ -165,7 +242,7 @@ example_test_pytest_esp32_wifi_high_traffic:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_high_traffic ]
 
-example_test_pytest_esp32_flash_encryption_wifi_high_traffic:
+pytest_examples_esp32_flash_encryption_wifi_high_traffic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-include_nightly_run-rule
@@ -173,7 +250,7 @@ example_test_pytest_esp32_flash_encryption_wifi_high_traffic:
     - build_pytest_examples_esp32
   tags: [ esp32, flash_encryption_wifi_high_traffic ]
 
-example_test_pytest_esp32c3_flash_encryption_wifi_high_traffic:
+pytest_examples_esp32c3_flash_encryption_wifi_high_traffic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-include_nightly_run-rule
@@ -181,7 +258,7 @@ example_test_pytest_esp32c3_flash_encryption_wifi_high_traffic:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption_wifi_high_traffic ]
 
-example_test_pytest_esp32_ethernet:
+pytest_examples_esp32_ethernet:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
@@ -189,7 +266,7 @@ example_test_pytest_esp32_ethernet:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet]
 
-example_test_pytest_esp32_8mb_flash:
+pytest_examples_esp32_8mb_flash:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -197,7 +274,7 @@ example_test_pytest_esp32_8mb_flash:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet_flash_8m ]
 
-example_test_pytest_esp32_wifi_ap:
+pytest_examples_esp32_wifi_ap:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
@@ -205,7 +282,7 @@ example_test_pytest_esp32_wifi_ap:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_ap ]
 
-example_test_pytest_esp32c3_wifi_ap:
+pytest_examples_esp32c3_wifi_ap:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
@@ -213,7 +290,7 @@ example_test_pytest_esp32c3_wifi_ap:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, wifi_ap ]
 
-example_test_pytest_esp32s3_wifi_ap:
+pytest_examples_esp32s3_wifi_ap:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
@@ -221,7 +298,7 @@ example_test_pytest_esp32s3_wifi_ap:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_ap ]
 
-example_test_pytest_esp32_wifi_router:
+pytest_examples_esp32_wifi_router:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
@@ -229,7 +306,7 @@ example_test_pytest_esp32_wifi_router:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_router ]
 
-example_test_pytest_esp32c3_wifi_router:
+pytest_examples_esp32c3_wifi_router:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
@@ -237,15 +314,22 @@ example_test_pytest_esp32c3_wifi_router:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, wifi_router ]
 
-example_test_pytest_esp32s3_wifi_router:
+pytest_examples_esp32s3_wifi_router:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
   needs:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_router ]
+pytest_examples_esp32_wifi_iperf:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-wifi
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, Example_ShieldBox_Basic ]
 
-example_test_pytest_esp32_wifi_wlan:
+pytest_examples_esp32_wifi_wlan:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
@@ -253,7 +337,15 @@ example_test_pytest_esp32_wifi_wlan:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_wlan ]
 
-example_test_pytest_esp32_ethernet_ip101:
+pytest_examples_esp32_ethernet_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-ethernet
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ethernet_router ]
+
+pytest_examples_esp32_ethernet_ip101:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -261,7 +353,17 @@ example_test_pytest_esp32_ethernet_ip101:
     - build_pytest_examples_esp32
   tags: [ esp32, ip101 ]
 
-example_test_pytest_esp32_flash_encryption:
+example_test_pytest_esp32_ethernet_bridge:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ethernet_w5500 ]
+  variables:
+    PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER}"
+
+pytest_examples_esp32_flash_encryption:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -269,7 +371,7 @@ example_test_pytest_esp32_flash_encryption:
     - build_pytest_examples_esp32
   tags: [ esp32, flash_encryption ]
 
-example_test_pytest_esp32_wifi_two_dut:
+pytest_examples_esp32_wifi_two_dut:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
@@ -277,7 +379,7 @@ example_test_pytest_esp32_wifi_two_dut:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_two_dut ]
 
-example_test_pytest_esp32c3_wifi_two_dut:
+pytest_examples_esp32c3_wifi_two_dut:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
@@ -285,7 +387,7 @@ example_test_pytest_esp32c3_wifi_two_dut:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, wifi_two_dut ]
 
-example_test_pytest_esp32s3_wifi_two_dut:
+pytest_examples_esp32s3_wifi_two_dut:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
@@ -293,7 +395,7 @@ example_test_pytest_esp32s3_wifi_two_dut:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_two_dut ]
 
-example_test_pytest_esp32c2_wifi_two_dut:
+pytest_examples_esp32c2_wifi_two_dut:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
@@ -301,7 +403,7 @@ example_test_pytest_esp32c2_wifi_two_dut:
     - build_pytest_examples_esp32c2
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
-example_test_pytest_esp32c3_flash_encryption:
+pytest_examples_esp32c3_flash_encryption:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
@@ -309,7 +411,15 @@ example_test_pytest_esp32c3_flash_encryption:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
-example_test_pytest_esp32s2_usb_device:
+pytest_examples_esp32c3_nvs_encr_hmac:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-nvs_encr_hmac
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, nvs_encr_hmac ]
+
+pytest_examples_esp32s2_usb_device:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-usb
@@ -317,7 +427,7 @@ example_test_pytest_esp32s2_usb_device:
     - build_pytest_examples_esp32s2
   tags: [ esp32s2, usb_device ]
 
-example_test_pytest_esp32_sdmmc:
+pytest_examples_esp32_sdmmc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -325,31 +435,31 @@ example_test_pytest_esp32_sdmmc:
     - build_pytest_examples_esp32
   tags: [ esp32, sdcard_sdmode ]
 
-example_test_pytest_esp32_sdspi:
+pytest_examples_esp32_sdspi:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-sdio
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, sdcard_spimode ]
 
-example_test_pytest_esp32s2_sdspi:
+pytest_examples_esp32s2_sdspi:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32s2
+    - .rules:test:example_test-esp32s2-sdio
   needs:
     - build_pytest_examples_esp32s2
   tags: [ esp32s2, sdcard_spimode ]
 
-example_test_pytest_esp32c3_sdspi:
+pytest_examples_esp32c3_sdspi:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c3
+    - .rules:test:example_test-esp32c3-sdio
   needs:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, sdcard_spimode ]
 
-example_test_pytest_esp32_extflash:
+pytest_examples_esp32_extflash:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
@@ -357,7 +467,7 @@ example_test_pytest_esp32_extflash:
     - build_pytest_examples_esp32
   tags: [ esp32, external_flash ]
 
-example_test_pytest_esp32_adc:
+pytest_examples_esp32_adc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-adc
@@ -365,7 +475,7 @@ example_test_pytest_esp32_adc:
     - build_pytest_examples_esp32
   tags: [ esp32, adc ]
 
-example_test_pytest_esp32s2_adc:
+pytest_examples_esp32s2_adc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-adc
@@ -373,7 +483,7 @@ example_test_pytest_esp32s2_adc:
     - build_pytest_examples_esp32s2
   tags: [ esp32s2, adc ]
 
-example_test_pytest_esp32s3_adc:
+pytest_examples_esp32s3_adc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-adc
@@ -381,7 +491,7 @@ example_test_pytest_esp32s3_adc:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, adc ]
 
-example_test_pytest_esp32c3_adc:
+pytest_examples_esp32c3_adc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-adc
@@ -389,7 +499,7 @@ example_test_pytest_esp32c3_adc:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, adc ]
 
-example_test_pytest_esp32c2_adc:
+pytest_examples_esp32c2_adc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-adc
@@ -397,7 +507,7 @@ example_test_pytest_esp32c2_adc:
     - build_pytest_examples_esp32c2
   tags: [ esp32c2, adc, xtal_26mhz]
 
-example_test_pytest_esp32c6_adc:
+pytest_examples_esp32c6_adc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c6-adc
@@ -405,12 +515,28 @@ example_test_pytest_esp32c6_adc:
     - build_pytest_examples_esp32c6
   tags: [ esp32c6, adc ]
 
+pytest_examples_esp32h2_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32h2-adc
+  needs:
+    - build_pytest_examples_esp32h2
+  tags: [ esp32h2, adc ]
+
+example_test_pytest_esp32s3_emmc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, emmc ]
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
     TEST_DIR: components
 
-component_ut_pytest_esp32_generic:
+pytest_components_esp32_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -419,7 +545,7 @@ component_ut_pytest_esp32_generic:
   tags: [ esp32, generic ]
   parallel: 7
 
-component_ut_pytest_esp32_generic_multi_device:
+pytest_components_esp32_generic_multi_device:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -427,7 +553,7 @@ component_ut_pytest_esp32_generic_multi_device:
     - build_pytest_components_esp32
   tags: [ esp32, generic_multi_device ]
 
-component_ut_pytest_esp32_wifi_two_dut:
+pytest_components_esp32_wifi_two_dut:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-wifi
@@ -435,7 +561,7 @@ component_ut_pytest_esp32_wifi_two_dut:
     - build_pytest_components_esp32
   tags: [ esp32, wifi_two_dut ]
 
-component_ut_pytest_esp32_adc:
+pytest_components_esp32_adc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-adc
@@ -443,15 +569,15 @@ component_ut_pytest_esp32_adc:
     - build_pytest_components_esp32
   tags: [ esp32, adc ]
 
-component_ut_pytest_esp32_sdio:
+pytest_components_esp32_sdio:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:unit_test-esp32-sdio
+    - .rules:test:component_ut-esp32-sdio
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, sdio_master_slave ]
 
-component_ut_pytest_esp32_ip101:
+pytest_components_esp32_ip101:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -459,7 +585,7 @@ component_ut_pytest_esp32_ip101:
     - build_pytest_components_esp32
   tags: [ esp32, ip101 ]
 
-component_ut_pytest_esp32_lan8720:
+pytest_components_esp32_lan8720:
   extends:
     - .pytest_components_dir_template
     - .rules:labels-protected:lan8720  # FIXME: IDFCI-1176
@@ -467,7 +593,7 @@ component_ut_pytest_esp32_lan8720:
     - build_pytest_components_esp32
   tags: [ esp32, lan8720 ]
 
-component_ut_pytest_esp32_ethernet:
+pytest_components_esp32_ethernet:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -475,7 +601,7 @@ component_ut_pytest_esp32_ethernet:
     - build_pytest_components_esp32
   tags: [ esp32, ethernet ]
 
-component_ut_pytest_esp32_flash_encryption:
+pytest_components_esp32_flash_encryption:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -483,15 +609,15 @@ component_ut_pytest_esp32_flash_encryption:
     - build_pytest_components_esp32
   tags: [ esp32, flash_encryption ]
 
-component_ut_pytest_esp32_flash_multi:
+pytest_components_esp32_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:test:component_ut-esp32-flash_multi
   needs:
     - build_pytest_components_esp32
-  tags: [ esp32, flash_mutli ]
+  tags: [ esp32, flash_multi ]
 
-component_ut_pytest_esp32_xtal32k:
+pytest_components_esp32_xtal32k:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -499,7 +625,7 @@ component_ut_pytest_esp32_xtal32k:
     - build_pytest_components_esp32
   tags: [ esp32, xtal32k ]
 
-component_ut_pytest_esp32_no32kXtal:
+pytest_components_esp32_no32kXtal:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -507,7 +633,7 @@ component_ut_pytest_esp32_no32kXtal:
     - build_pytest_components_esp32
   tags: [ esp32, no32kXtal ]
 
-component_ut_pytest_esp32_rs485_multi:
+pytest_components_esp32_rs485_multi:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -515,7 +641,7 @@ component_ut_pytest_esp32_rs485_multi:
     - build_pytest_components_esp32
   tags: [ esp32, multi_dut_modbus_rs485 ]
 
-component_ut_pytest_esp32_psramv0:
+pytest_components_esp32_psramv0:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -523,7 +649,7 @@ component_ut_pytest_esp32_psramv0:
     - build_pytest_components_esp32
   tags: [ esp32, psramv0 ]
 
-component_ut_pytest_esp32s2_generic:
+pytest_components_esp32s2_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2
@@ -532,7 +658,7 @@ component_ut_pytest_esp32s2_generic:
   tags: [ esp32s2, generic ]
   parallel: 5
 
-component_ut_pytest_esp32s2_generic_multi_device:
+pytest_components_esp32s2_generic_multi_device:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2
@@ -540,7 +666,7 @@ component_ut_pytest_esp32s2_generic_multi_device:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, generic_multi_device ]
 
-component_ut_pytest_esp32s2_adc:
+pytest_components_esp32s2_adc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2-adc
@@ -548,15 +674,15 @@ component_ut_pytest_esp32s2_adc:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, adc ]
 
-component_ut_pytest_esp32s2_flash_multi:
+pytest_components_esp32s2_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2
+    - .rules:test:component_ut-esp32s2-flash_multi
   needs:
     - build_pytest_components_esp32s2
-  tags: [ esp32s2, flash_mutli ]
+  tags: [ esp32s2, flash_multi ]
 
-component_ut_pytest_esp32s3_generic:
+pytest_components_esp32s3_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
@@ -565,7 +691,7 @@ component_ut_pytest_esp32s3_generic:
   tags: [ esp32s3, generic ]
   parallel: 5
 
-component_ut_pytest_esp32s3_generic_multi_device:
+pytest_components_esp32s3_generic_multi_device:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
@@ -573,7 +699,7 @@ component_ut_pytest_esp32s3_generic_multi_device:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, generic_multi_device ]
 
-component_ut_pytest_esp32s3_adc:
+pytest_components_esp32s3_adc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-adc
@@ -581,7 +707,7 @@ component_ut_pytest_esp32s3_adc:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, adc ]
 
-component_ut_pytest_esp32s3_octal_psram:
+pytest_components_esp32s3_octal_psram:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
@@ -589,7 +715,15 @@ component_ut_pytest_esp32s3_octal_psram:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, octal_psram ]
 
-component_ut_pytest_esp32s3_flash_encryption_f4r8:
+pytest_components_esp32s3_quad_psram:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, quad_psram ]
+
+pytest_components_esp32s3_flash_encryption_f4r8:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
@@ -597,7 +731,7 @@ component_ut_pytest_esp32s3_flash_encryption_f4r8:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_encryption_f4r8 ]
 
-component_ut_pytest_esp32s3_flash_encryption_f8r8:
+pytest_components_esp32s3_flash_encryption_f8r8:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
@@ -605,15 +739,39 @@ component_ut_pytest_esp32s3_flash_encryption_f8r8:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_encryption_f8r8 ]
 
-component_ut_pytest_esp32s3_flash_multi:
+pytest_components_esp32s3_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3-flash_multi
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, flash_multi ]
+
+pytest_components_esp32s3_mspi_f4r4:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
     - build_pytest_components_esp32s3
-  tags: [ esp32s3, flash_mutli ]
+  tags: [ esp32s3, MSPI_F4R4 ]
 
-component_ut_pytest_esp32c2_generic:
+pytest_components_esp32s3_mspi_f4r8:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, MSPI_F4R8 ]
+
+pytest_components_esp32s3_mspi_f8r8:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, MSPI_F8R8 ]
+
+pytest_components_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2
@@ -622,7 +780,7 @@ component_ut_pytest_esp32c2_generic:
   tags: [ esp32c2, generic, xtal_40mhz ]
   parallel: 3
 
-component_ut_pytest_esp32c2_adc:
+pytest_components_esp32c2_adc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2-adc
@@ -630,7 +788,7 @@ component_ut_pytest_esp32c2_adc:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, adc, xtal_26mhz ]
 
-component_ut_pytest_esp32c2_generic_multi_device:
+pytest_components_esp32c2_generic_multi_device:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2
@@ -638,7 +796,7 @@ component_ut_pytest_esp32c2_generic_multi_device:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, generic_multi_device, xtal_40mhz ]
 
-component_ut_pytest_esp32c2_xtal_26mhz:
+pytest_components_esp32c2_xtal_26mhz:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2
@@ -646,7 +804,7 @@ component_ut_pytest_esp32c2_xtal_26mhz:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, generic, xtal_26mhz ]
 
-component_ut_pytest_esp32c3_generic:
+pytest_components_esp32c3_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
@@ -655,7 +813,7 @@ component_ut_pytest_esp32c3_generic:
   tags: [ esp32c3, generic ]
   parallel: 3
 
-component_ut_pytest_esp32c3_generic_multi_device:
+pytest_components_esp32c3_generic_multi_device:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
@@ -663,7 +821,7 @@ component_ut_pytest_esp32c3_generic_multi_device:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic_multi_device ]
 
-component_ut_pytest_esp32c3_wifi_two_dut:
+pytest_components_esp32c3_wifi_two_dut:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-wifi
@@ -671,7 +829,7 @@ component_ut_pytest_esp32c3_wifi_two_dut:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, wifi_two_dut ]
 
-component_ut_pytest_esp32s3_wifi_two_dut:
+pytest_components_esp32s3_wifi_two_dut:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-wifi
@@ -679,7 +837,7 @@ component_ut_pytest_esp32s3_wifi_two_dut:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, wifi_two_dut ]
 
-component_ut_pytest_esp32c2_wifi_two_dut:
+pytest_components_esp32c2_wifi_two_dut:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2-wifi
@@ -687,7 +845,7 @@ component_ut_pytest_esp32c2_wifi_two_dut:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
-component_ut_pytest_esp32c3_adc:
+pytest_components_esp32c3_adc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-adc
@@ -695,7 +853,7 @@ component_ut_pytest_esp32c3_adc:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, adc ]
 
-component_ut_pytest_esp32c3_flash_encryption:
+pytest_components_esp32c3_flash_encryption:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
@@ -703,15 +861,23 @@ component_ut_pytest_esp32c3_flash_encryption:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
-component_ut_pytest_esp32c3_flash_multi:
+pytest_components_esp32c3_nvs_encr_hmac:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3
+    - .rules:test:component_ut-esp32c3-nvs_encr_hmac
   needs:
     - build_pytest_components_esp32c3
-  tags: [ esp32c3, flash_mutli ]
+  tags: [ esp32c3, nvs_encr_hmac ]
 
-component_ut_pytest_esp32_sdmmc:
+pytest_components_esp32c3_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-flash_multi
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, flash_multi ]
+
+pytest_components_esp32_sdmmc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
@@ -719,31 +885,31 @@ component_ut_pytest_esp32_sdmmc:
     - build_pytest_components_esp32
   tags: [ esp32, sdcard_sdmode ]
 
-component_ut_pytest_esp32_sdspi:
+pytest_components_esp32_sdspi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:test:component_ut-esp32-sdio
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, sdcard_spimode ]
 
-component_ut_pytest_esp32s2_sdspi:
+pytest_components_esp32s2_sdspi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2
+    - .rules:test:component_ut-esp32s2-sdio
   needs:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, sdcard_spimode ]
 
-component_ut_pytest_esp32c3_sdspi:
+pytest_components_esp32c3_sdspi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3
+    - .rules:test:component_ut-esp32c3-sdio
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, sdcard_spimode ]
 
-component_ut_pytest_esp32c6_generic:
+pytest_components_esp32c6_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6
@@ -752,7 +918,40 @@ component_ut_pytest_esp32c6_generic:
   tags: [ esp32c6, generic ]
   parallel: 2
 
-component_ut_pytest_esp32c6_generic_multi_device:
+pytest_components_esp32h2_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, generic ]
+  parallel: 2
+
+pytest_components_esp32h2_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, generic_multi_device ]
+
+pytest_components_esp32h2_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2-adc
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, adc ]
+
+component_ut_pytest_esp32h2_ecdsa:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2-ecdsa
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, ecdsa_efuse ]
+
+pytest_components_esp32c6_generic_multi_device:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6
@@ -760,7 +959,7 @@ component_ut_pytest_esp32c6_generic_multi_device:
     - build_pytest_components_esp32c6
   tags: [ esp32c6, generic_multi_device ]
 
-component_ut_pytest_esp32c6_adc:
+pytest_components_esp32c6_adc:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6-adc
@@ -768,26 +967,27 @@ component_ut_pytest_esp32c6_adc:
     - build_pytest_components_esp32c6
   tags: [ esp32c6, adc ]
 
-component_ut_pytest_esp32h4_i154:
+pytest_components_esp32c6_i154:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32h4-i154
+    - .rules:test:component_ut-esp32c6-i154
   needs:
-    - build_pytest_components_esp32h4
-  tags: [ esp32h4, ieee802154 ]
+    - build_pytest_components_esp32c6
+  tags: [ esp32c6, ieee802154 ]
 
-example_test_pytest_openthread_br:
+pytest_examples_openthread_br:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-i154
   needs:
     - build_pytest_examples_esp32s3
-    - build_pytest_examples_esp32h4
+    - build_pytest_examples_esp32c6
+    - build_pytest_examples_esp32h2
   tags:
-    - esp32h4
-    - i154_multi_dut
+    - esp32c6
+    - openthread_br
 
-component_ut_pytest_esp32s3_usb_host:
+pytest_components_esp32s3_usb_host:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-usb
@@ -800,7 +1000,7 @@ component_ut_pytest_esp32s3_usb_host:
   variables:
     TEST_DIR: tools/test_apps
 
-test_app_test_pytest_esp32_generic:
+pytest_test_apps_esp32_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32
@@ -810,7 +1010,7 @@ test_app_test_pytest_esp32_generic:
   variables:
     SETUP_TOOLS: "1"  # need gdb
 
-test_app_test_pytest_esp32_jtag:
+pytest_test_apps_esp32_jtag:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32
@@ -821,7 +1021,7 @@ test_app_test_pytest_esp32_jtag:
     SETUP_TOOLS: "1"  # need gdb
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
-test_app_test_pytest_esp32s2_generic:
+pytest_test_apps_esp32s2_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s2
@@ -831,7 +1031,7 @@ test_app_test_pytest_esp32s2_generic:
   variables:
     SETUP_TOOLS: "1"  # need gdb
 
-test_app_test_pytest_esp32s3_generic:
+pytest_test_apps_esp32s3_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
@@ -839,7 +1039,7 @@ test_app_test_pytest_esp32s3_generic:
     - build_pytest_test_apps_esp32s3
   tags: [ esp32s3, generic ]
 
-test_app_test_pytest_esp32c2_generic:
+pytest_test_apps_esp32c2_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c2
@@ -847,7 +1047,7 @@ test_app_test_pytest_esp32c2_generic:
     - build_pytest_test_apps_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
 
-test_app_test_pytest_esp32c3_generic:
+pytest_test_apps_esp32c3_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c3
@@ -855,7 +1055,7 @@ test_app_test_pytest_esp32c3_generic:
     - build_pytest_test_apps_esp32c3
   tags: [ esp32c3, generic ]
 
-test_app_test_pytest_esp32c6_generic:
+pytest_test_apps_esp32c6_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c6
@@ -863,7 +1063,15 @@ test_app_test_pytest_esp32c6_generic:
     - build_pytest_test_apps_esp32c6
   tags: [ esp32c6, generic ]
 
-test_app_test_pytest_esp32s3_mspi_f8r8:
+pytest_test_apps_esp32h2_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32h2
+  needs:
+    - build_pytest_test_apps_esp32h2
+  tags: [ esp32h2, generic ]
+
+pytest_test_apps_esp32s3_mspi_f8r8:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
@@ -871,7 +1079,7 @@ test_app_test_pytest_esp32s3_mspi_f8r8:
     - build_pytest_test_apps_esp32s3
   tags: [ esp32s3, MSPI_F8R8 ]
 
-test_app_test_pytest_esp32s3_mspi_f4r8:
+pytest_test_apps_esp32s3_mspi_f4r8:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
@@ -879,7 +1087,7 @@ test_app_test_pytest_esp32s3_mspi_f4r8:
     - build_pytest_test_apps_esp32s3
   tags: [ esp32s3, MSPI_F4R8 ]
 
-test_app_test_pytest_esp32s3_mspi_f4r4:
+pytest_test_apps_esp32s3_mspi_f4r4:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
@@ -925,194 +1133,6 @@ test_app_test_pytest_esp32s3_mspi_f4r4:
     - cd tools/ci/python_packages/tiny_test_fw/bin
     - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
 
-.example_test_template:
-  extends: .target_test_job_template
-  needs:
-    - assign_example_test
-  variables:
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
-
-test_weekend_mqtt:
-  extends:
-    - .test_app_esp32_template
-    - .rules:labels:weekend_test
-  tags:
-    - ESP32
-    - ethernet_router
-  script:
-    - export MQTT_PUBLISH_TEST=1
-    - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
-    - cd $IDF_PATH/tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $TEST_PATH -c $TEST_PATH/publish_connect_mqtt_.yml
-
-.example_test_esp32_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32
-
-.example_test_esp32s2_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32s2
-
-.example_test_esp32c2_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32c2
-
-.example_test_esp32c3_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32c3
-
-.example_test_esp32c6_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32c6
-
-.example_test_esp32s3_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32s3
-
-example_test_001B_V3:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_EthKitV12
-
-example_test_001C:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_GENERIC
-
-example_test_002:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-wifi
-  tags:
-    - ESP32
-    - Example_ShieldBox_Basic
-
-example_test_ethernet_router:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-ethernet
-  tags:
-    - ESP32
-    - ethernet_router
-
-.example_test_003:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_SDIO
-
-example_test_005:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-bt
-  tags:
-    - ESP32
-    - Example_WIFI_BT
-
-example_test_006:
-  extends:
-    - .example_test_esp32_template
-    - .rules:labels:iperf_stress_test
-  tags:
-    - ESP32
-    - Example_ShieldBox
-
-example_test_007:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_I2C_CCS811_SENSOR
-
-example_test_011:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_T2_RS485
-
-example_test_016:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_Modbus_TCP
-
-example_test_017:
-  extends: .example_test_esp32s2_template
-  tags:
-    - ESP32S2
-    - Example_GENERIC
-
-example_test_C3_GENERIC:
-  extends: .example_test_esp32c3_template
-  tags:
-    - ESP32C3
-    - Example_GENERIC
-
-example_test_C2_GENERIC:
-  extends: .example_test_esp32c2_template
-  tags:
-    - ESP32C2
-    - Example_GENERIC
-
-example_test_C6_GENERIC:
-  extends: .example_test_esp32c6_template
-  tags:
-    - ESP32C6
-    - Example_GENERIC
-
-.test_app_template:
-  extends: .target_test_job_template
-  needs:
-    - assign_custom_test
-  variables:
-    GIT_DEPTH: 1
-    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
-
-.test_app_esp32_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32
-
-.test_app_esp32s2_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32s2
-
-.test_app_esp32c2_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32c2
-
-.test_app_esp32c3_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32c3
-
-.test_app_esp32c6_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32c6
-
-.test_app_esp32s3_template:
-  extends:
-    - .test_app_template
-    - .rules:test:custom_test-esp32s3
-
-test_app_test_eth:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - ethernet_router
-
 .unit_test_template:
   extends: .target_test_job_template
   needs: # the assign already needs all the build jobs
@@ -1152,9 +1172,14 @@ test_app_test_eth:
     - .unit_test_template
     - .rules:test:unit_test-esp32c6
 
+.unit_test_esp32h2_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32h2
+
 UT_001:
   extends: .unit_test_esp32_template
-  parallel: 16
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -1163,7 +1188,6 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 7
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -1195,18 +1219,11 @@ UT_006:
     - UT_T1_SPIMODE
     - psram
 
-UT_017:
+.UT_017:
   extends: .unit_test_esp32_template
   tags:
     - ESP32_IDF
     - EMMC
-
-UT_022:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T2_I2C
-    - psram
 
 UT_028:
   extends: .unit_test_esp32_template
@@ -1215,107 +1232,60 @@ UT_028:
     - UT_T2_1
     - psram
 
-UT_033:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T2_Ethernet
-    - psram
-
-UT_034:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_ESP_FLASH
-
 UT_035:
   extends: .unit_test_esp32s2_template
-  parallel: 16
+  parallel: 2
   tags:
     - ESP32S2_IDF
     - UT_T1_1
 
-UT_038:
-  extends: .unit_test_esp32s2_template
-  tags:
-    - ESP32S2_IDF
-    - UT_T1_ESP_FLASH
-
 UT_S2_SDSPI:
-  extends: .unit_test_esp32s2_template
+  extends:
+    - .unit_test_esp32s2_template
+    - .rules:test:unit_test-esp32s2-sdio
   tags:
     - ESP32S2_IDF
     - UT_T1_SPIMODE
 
 UT_C2:
   extends: .unit_test_esp32c2_template
-  parallel: 8
   tags:
     - ESP32C2_IDF
     - UT_T1_1
-    - xtal_40mhz
-
-UT_C2_FLASH:
-  extends:
-    - .unit_test_esp32c2_template
-  tags:
-    - ESP32C2_IDF
-    - UT_T1_ESP_FLASH
     - xtal_40mhz
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 11
   tags:
     - ESP32C3_IDF
     - UT_T1_1
 
-UT_C3_FLASH:
-  extends: .unit_test_esp32c3_template
-  tags:
-    - ESP32C3_IDF
-    - UT_T1_ESP_FLASH
-
-UT_C3_I2C:
-  extends: .unit_test_esp32c3_template
-  tags:
-    - ESP32C3_IDF
-    - UT_T2_I2C
-
 UT_C3_SDSPI:
-  extends: .unit_test_esp32c3_template
+  extends:
+    - .unit_test_esp32c3_template
+    - .rules:test:unit_test-esp32c3-sdio
   tags:
     - ESP32C3_IDF
     - UT_T1_SPIMODE
 
 UT_C6:
   extends: .unit_test_esp32c6_template
-  parallel: 8
   tags:
     - ESP32C6_IDF
     - UT_T1_1
 
-UT_S3:
-  extends: .unit_test_esp32s3_template
-  parallel: 9
+UT_H2:
+  extends: .unit_test_esp32h2_template
   tags:
-    - ESP32S3_IDF
+    - ESP32H2_IDF
     - UT_T1_1
 
-UT_S3_FLASH:
-  extends: .unit_test_esp32s3_template
-  tags:
-    - ESP32S3_IDF
-    - UT_T1_ESP_FLASH
-
-
-UT_S3_QUAD_PSRAM:
+UT_S3:
   extends: .unit_test_esp32s3_template
   parallel: 2
   tags:
     - ESP32S3_IDF
     - UT_T1_1
-    - quad_psram
 
 .integration_test_template:
   extends:

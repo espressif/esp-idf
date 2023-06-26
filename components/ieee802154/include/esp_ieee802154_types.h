@@ -33,8 +33,6 @@ typedef enum {
     ESP_IEEE802154_TX_ERR_NO_ACK,       /*!< No Ack frame received until timeout */
     ESP_IEEE802154_TX_ERR_INVALID_ACK,  /*!< Invalid Ack frame */
     ESP_IEEE802154_TX_ERR_COEXIST,      /*!< Rejected by coexist system */
-    ESP_IEEE802154_TX_ERR_COEXIST_REJ,  /*!< Rejected by coexist system before transmitting frame */
-    ESP_IEEE802154_TX_ERR_COEXIST_ACK,  /*!< Rejected by coexist system when receiving ack */
     ESP_IEEE802154_TX_ERR_SECURITY,     /*!< Invalid security configuration */
 } esp_ieee802154_tx_error_t;
 
@@ -66,6 +64,7 @@ typedef enum {
     ESP_IEEE802154_MULTIPAN_1 = 1,
     ESP_IEEE802154_MULTIPAN_2 = 2,
     ESP_IEEE802154_MULTIPAN_3 = 3,
+    ESP_IEEE802154_MULTIPAN_MAX
 } esp_ieee802154_multipan_index_t;
 
 /**

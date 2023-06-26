@@ -9,16 +9,25 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
+
+/* interim to enable test_wl_host and test_fatfs_on_host compilation (both use IDF_TARGET_ESP32)
+ * should go back to #include "sys/queue.h" once the tests are switched to CMake
+ * see IDF-7000
+ */
+#if __has_include(<bsd/string.h>)
+#include <bsd/sys/queue.h>
+#else
+#include "sys/queue.h"
+#endif
+
 #include "sdkconfig.h"
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_partition.h"
-
 #if !CONFIG_IDF_TARGET_LINUX
 #include "esp_flash.h"
 #include "esp_flash_encrypt.h"
 #endif
-
 #include "esp_log.h"
 #include "esp_rom_md5.h"
 #include "bootloader_util.h"
@@ -41,7 +50,6 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-#include "sys/queue.h"
 
 typedef struct partition_list_item_ {
     esp_partition_t info;
@@ -223,6 +231,20 @@ static esp_err_t load_partitions(void)
 #endif
 
     return err;
+}
+
+void unload_partitions(void)
+{
+    _lock_acquire(&s_partition_list_lock);
+    partition_list_item_t *it;
+    partition_list_item_t *tmp;
+    SLIST_FOREACH_SAFE(it, &s_partition_list, next, tmp) {
+        SLIST_REMOVE(&s_partition_list, it, partition_list_item_, next);
+        free(it);
+    }
+    _lock_release(&s_partition_list_lock);
+
+    assert(SLIST_EMPTY(&s_partition_list));
 }
 
 static esp_err_t ensure_partitions_loaded(void)
@@ -428,7 +450,8 @@ esp_err_t esp_partition_deregister_external(const esp_partition_t *partition)
     esp_err_t result = ESP_ERR_NOT_FOUND;
     _lock_acquire(&s_partition_list_lock);
     partition_list_item_t *it;
-    SLIST_FOREACH(it, &s_partition_list, next) {
+    partition_list_item_t *tmp;
+    SLIST_FOREACH_SAFE(it, &s_partition_list, next, tmp) {
         if (&it->info == partition) {
             if (!it->user_registered) {
                 result = ESP_ERR_INVALID_ARG;

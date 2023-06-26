@@ -264,7 +264,7 @@ static int fat_mode_conv(int m)
         res |= FA_CREATE_NEW;
     } else if ((m & O_CREAT) && (m & O_TRUNC)) {
         res |= FA_CREATE_ALWAYS;
-    } else if (m & O_APPEND) {
+    } else if ((m & O_APPEND) || (m & O_CREAT)) {
         res |= FA_OPEN_ALWAYS;
     } else {
         res |= FA_OPEN_EXISTING;
@@ -600,6 +600,7 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     st->st_mtime = 0;
     st->st_atime = 0;
     st->st_ctime = 0;
+    st->st_blksize = CONFIG_FATFS_VFS_FSTAT_BLKSIZE;
     return 0;
 }
 

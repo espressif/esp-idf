@@ -186,10 +186,10 @@ esp_err_t slave_init(essl_handle_t* handle)
 #ifndef CONFIG_EXAMPLE_SDIO_OVER_SPI
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
 #ifdef CONFIG_EXAMPLE_SDIO_4BIT
-    ESP_LOGI(TAG, "Probe using SD 4-bit...\n");
+    ESP_LOGI(TAG, "Probe using SD 4-bit...");
     config.flags = SDMMC_HOST_FLAG_4BIT;
 #else
-    ESP_LOGI(TAG, "Probe using SD 1-bit...\n");
+    ESP_LOGI(TAG, "Probe using SD 1-bit...");
     config.flags = SDMMC_HOST_FLAG_1BIT;
 #endif
 
@@ -249,7 +249,7 @@ esp_err_t slave_init(essl_handle_t* handle)
     ESP_ERROR_CHECK(err);
     err = sdspi_host_init_device(&dev_config, &sdspi_handle);
     ESP_ERROR_CHECK(err);
-    ESP_LOGI(TAG, "Probe using SPI...\n");
+    ESP_LOGI(TAG, "Probe using SPI...");
 
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = sdspi_handle;
@@ -416,7 +416,7 @@ void job_write_reg(essl_handle_t handle, int value)
     }
 
     ESP_LOGI(TAG, "read registers:");
-    ESP_LOG_BUFFER_HEXDUMP(TAG, reg_read, 64, ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, reg_read, 60, ESP_LOG_INFO);
 }
 
 //the slave only load 16 buffers a time

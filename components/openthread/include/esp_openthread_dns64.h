@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,28 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief This function initiizes the dns64 client.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL if OpenThread state changed callback fails to be registered
+ *
+ */
+esp_err_t esp_openthread_dns64_client_init(void);
+
+/**
+ * @brief This function acquires the DNS server address.
+ *
+ * @param[out] dnsserver_addr      The dns server address.
+ *
+ * @return
+ *      - ESP_OK on sussess
+ *      - ESP_ERR_INVALID_ARG if dnsserver_addr is NULL
+ *      - ESP_ERR_INVALID_STATE if dns sever address not available
+ */
+esp_err_t esp_openthread_get_dnsserver_addr(ip6_addr_t *dnsserver_addr);
 
 /**
  * @brief This function acquires the NAT64 prefix in the Thread network.

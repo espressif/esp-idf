@@ -42,12 +42,27 @@ void handle_commands(riscv_test_commands_t cmd)
             ulp_riscv_wakeup_main_processor();
             break;
 
-        case RISCV_DEEP_SLEEP_WAKEUP_TEST:
+        case RISCV_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST:
             /* Echo the command ID back to the main CPU */
-            command_resp = RISCV_DEEP_SLEEP_WAKEUP_TEST;
+            command_resp = RISCV_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST;
 
             /* Set the command reply status */
             main_cpu_reply = RISCV_COMMAND_OK;
+
+            ulp_riscv_delay_cycles(1000 * ULP_RISCV_CYCLES_PER_MS);
+
+            /* Wakeup the main CPU */
+            ulp_riscv_wakeup_main_processor();
+            break;
+
+        case RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST:
+            /* Echo the command ID back to the main CPU */
+            command_resp = RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST;
+
+            /* Set the command reply status */
+            main_cpu_reply = RISCV_COMMAND_OK;
+
+            ulp_riscv_delay_cycles(10000 * ULP_RISCV_CYCLES_PER_MS);
 
             /* Wakeup the main CPU */
             ulp_riscv_wakeup_main_processor();

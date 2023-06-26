@@ -41,4 +41,7 @@
 #define DR_REG_COEX_BIT_BASE                    0x6004C400
 #define DR_REG_MODEM_CLKRST_BASE                0x6004d800
 #define DR_REG_I2C_MST_BASE                     0x6004E800
-#define DR_REG_AES_XTS_BASE                     0x600CC000
+#define DR_REG_XTS_AES_BASE                     0x600CC000
+
+/* For backward compatability with the older register name */
+#define DR_REG_AES_XTS_BASE                     DR_REG_XTS_AES_BASE

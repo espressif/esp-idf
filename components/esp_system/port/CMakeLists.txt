@@ -12,6 +12,10 @@ if(CONFIG_SOC_BOD_SUPPORTED)
     list(APPEND srcs "brownout.c")
 endif()
 
+if(CONFIG_ESP_CONSOLE_USB_CDC)
+    list(APPEND srcs "usb_console.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})

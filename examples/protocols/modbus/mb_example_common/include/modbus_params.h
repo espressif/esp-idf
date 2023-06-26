@@ -13,6 +13,8 @@
 #ifndef _DEVICE_PARAMS
 #define _DEVICE_PARAMS
 
+#include <stdint.h>
+
 // This file defines structure of modbus parameters which reflect correspond modbus address space
 // for each modbus register type (coils, discreet inputs, holding registers, input registers)
 #pragma pack(push, 1)

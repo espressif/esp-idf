@@ -31,7 +31,11 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE)
 endif()
 
 if(CONFIG_SECURE_BOOT AND NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION)
-    set(partition_secure_opt --secure)
+    if(CONFIG_SECURE_BOOT_V2_ENABLED)
+        set(partition_secure_opt --secure v2)
+    else()
+        set(partition_secure_opt --secure v1)
+    endif()
 else()
     set(partition_secure_opt "")
 endif()
@@ -96,6 +100,24 @@ else()
         "Either change partition table in menuconfig or create this input file.")
 endif()
 
+if(${target} STREQUAL "linux" AND EXISTS ${partition_csv})
+    # partition-table target is normally invoked as a dependency of 'flash' target.
+    # However, when building for "linux" target, 'flash' target doesn't exist,
+    # so we need to attach the partition table build to the executable target.
+    #
+    # The problem is that the executable target is not yet defined
+    # when the component CMakeLists.txt file is evaluated, so we
+    # can only get it as a generator expression. But generator expressions
+    # can't be used in 'add_dependencies':
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/19467
+    #
+    # Therefore attach partition-table to the internal __idf_build_target
+    # target. This is a hack, since that target name is an implementation detail
+    # of the build system.
+
+    add_dependencies(__idf_build_target partition-table)
+endif()
+
 # Add signing steps
 if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
@@ -126,7 +148,7 @@ endif()
 idf_component_get_property(main_args esptool_py FLASH_ARGS)
 idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
 
-if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+if(CONFIG_APP_BUILD_GENERATE_BINARIES AND CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
     esptool_py_flash_target(partition-table-flash "${main_args}" "${sub_args}")
     esptool_py_flash_target_image(partition-table-flash partition-table "${PARTITION_TABLE_OFFSET}"
                                         "${build_dir}/partition_table/${final_partition_bin}")

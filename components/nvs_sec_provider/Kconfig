@@ -1,0 +1,46 @@
+menu "NVS Security Provider"
+    visible if NVS_ENCRYPTION
+
+    choice NVS_SEC_KEY_PROTECTION_SCHEME
+        prompt "NVS Encryption: Key Protection Scheme"
+        depends on NVS_ENCRYPTION
+        default NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+        help
+            This choice defines the default NVS encryption keys protection scheme;
+            which will be used for the default NVS partition.
+            Users can use the corresponding scheme registration APIs to register other
+            schemes for the default as well as other NVS partitions.
+
+        config NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+            bool "Using Flash Encryption"
+            depends on SECURE_FLASH_ENC_ENABLED
+            help
+                Protect the NVS Encryption Keys using Flash Encryption
+                Requires a separate 'nvs_keys' partition (which will be encrypted by flash encryption)
+                for storing the NVS encryption keys
+
+        config NVS_SEC_KEY_PROTECT_USING_HMAC
+            bool "Using HMAC peripheral"
+            depends on SOC_HMAC_SUPPORTED
+            help
+                Derive and protect the NVS Encryption Keys using the HMAC peripheral
+                Requires the specified eFuse block (NVS_SEC_HMAC_EFUSE_KEY_ID or the v2 API argument)
+                to be empty or pre-written with a key with the purpose ESP_EFUSE_KEY_PURPOSE_HMAC_UP
+
+    endchoice
+
+    config NVS_SEC_HMAC_EFUSE_KEY_ID
+        int "eFuse key ID storing the HMAC key"
+        depends on NVS_SEC_KEY_PROTECT_USING_HMAC
+        range 0 6
+        default 6
+        help
+            eFuse block key ID storing the HMAC key for deriving the NVS encryption keys
+
+            Note: The eFuse block key ID required by the HMAC scheme
+            (CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC) is set using this config when the default
+            NVS partition is initialized with nvs_flash_init(). The eFuse block key ID can
+            also be set at runtime by passing the appropriate value to the NVS security scheme
+            registration APIs.
+
+endmenu

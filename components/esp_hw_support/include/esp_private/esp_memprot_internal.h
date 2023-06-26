@@ -11,8 +11,11 @@
 #include "esp_err.h"
 #include "esp_memprot_err.h"
 #include "hal/memprot_types.h"
-#include "soc_memprot_types.h"
 #include "esp_memprot_types.h"
+#include "sdkconfig.h"
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#include "soc_memprot_types.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

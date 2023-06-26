@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,9 +13,7 @@
 #include "unity_test_utils.h"
 #include "esp_system.h"
 #include "esp_event.h"
-#include "esp_wifi.h"
 #include "esp_log.h"
-#include "nvs_flash.h"
 #include "soc/soc_caps.h"
 #define CONFIG_ADC_SUPPRESS_DEPRECATE_WARN 1
 #include "driver/adc.h"

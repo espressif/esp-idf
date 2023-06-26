@@ -461,11 +461,11 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB *p_scb)
 
     APPL_TRACE_DEBUG("bta_ag_scb_dealloc %d", bta_ag_scb_to_idx(p_scb));
     /* stop timers */
-    bta_sys_stop_timer(&p_scb->act_timer);
+    bta_sys_free_timer(&p_scb->act_timer);
 #if (BTM_WBS_INCLUDED == TRUE)
-    bta_sys_stop_timer(&p_scb->cn_timer);
+    bta_sys_free_timer(&p_scb->cn_timer);
 #endif
-    bta_sys_stop_timer(&p_scb->colli_timer);
+    bta_sys_free_timer(&p_scb->colli_timer);
 
     /* initialize control block */
     memset(p_scb, 0, sizeof(tBTA_AG_SCB));
@@ -831,7 +831,7 @@ static void bta_ag_api_register(tBTA_AG_DATA *p_data)
         APPL_TRACE_DEBUG("bta_ag_api_register: p_scb 0x%08x ", (unsigned int)p_scb);
         bta_ag_sm_execute(p_scb, p_data->hdr.event, p_data);
     } else {
-        reg.status = BTA_AG_FAIL_RESOURCES;
+        reg.hdr.status = BTA_AG_FAIL_RESOURCES;
         (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, (tBTA_AG *) &reg);
     }
 }

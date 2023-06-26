@@ -1,12 +1,29 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
 cmake_minimum_required(VERSION 3.16)
 
+# Get the currently selected sdkconfig file early, so this doesn't
+# have to be done multiple times on different places.
+if(SDKCONFIG)
+    get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
+else()
+    set(sdkconfig "${CMAKE_SOURCE_DIR}/sdkconfig")
+endif()
+
+# Check if the cmake was started as part of the set-target action.
+# If so, check for existing sdkconfig file and rename it.
+# This is done before __target_init, so the existing IDF_TARGET from sdkconfig
+# is not considered for consistence checking.
+if("$ENV{_IDF_PY_SET_TARGET_ACTION}" EQUAL "1" AND EXISTS "${sdkconfig}")
+    file(RENAME "${sdkconfig}" "${sdkconfig}.old")
+    message(STATUS "Existing sdkconfig '${sdkconfig}' renamed to '${sdkconfig}.old'.")
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/targets.cmake)
 # Initialize build target for this build using the environment variable or
 # value passed externally.
-__target_init()
+__target_init("${sdkconfig}")
 
-# The mere inclusion of this CMake file sets up some interal build properties.
+# The mere inclusion of this CMake file sets up some internal build properties.
 # These properties can be modified in between this inclusion the the idf_build_process
 # call.
 include(${CMAKE_CURRENT_LIST_DIR}/idf.cmake)
@@ -62,8 +79,7 @@ function(__project_get_revision var)
             if(PROJECT_VER_GIT)
                 set(PROJECT_VER ${PROJECT_VER_GIT})
             else()
-                message(STATUS "Project is not inside a git repository, or git repository has no commits;"
-                        " will not use 'git describe' to determine PROJECT_VER.")
+                message(STATUS "Could not use 'git describe' to determine PROJECT_VER.")
                 set(PROJECT_VER 1)
             endif()
         endif()
@@ -103,8 +119,76 @@ function(paths_with_spaces_to_list variable_name)
     endif()
 endfunction()
 
+function(__component_info components output)
+    set(components_json "")
+    foreach(name ${components})
+        __component_get_target(target ${name})
+        __component_get_property(alias ${target} COMPONENT_ALIAS)
+        __component_get_property(prefix ${target} __PREFIX)
+        __component_get_property(dir ${target} COMPONENT_DIR)
+        __component_get_property(type ${target} COMPONENT_TYPE)
+        __component_get_property(lib ${target} COMPONENT_LIB)
+        __component_get_property(reqs ${target} REQUIRES)
+        __component_get_property(include_dirs ${target} INCLUDE_DIRS)
+        __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
+        __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
+        __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+        if("${type}" STREQUAL "LIBRARY")
+            set(file "$<TARGET_LINKER_FILE:${lib}>")
+
+            # The idf_component_register function is converting each source file path defined
+            # in SRCS into absolute one. But source files can be also added with cmake's
+            # target_sources and have relative paths. This is used for example in log
+            # component. Let's make sure all source files have absolute path.
+            set(sources "")
+            get_target_property(srcs ${lib} SOURCES)
+            foreach(src ${srcs})
+                get_filename_component(src "${src}" ABSOLUTE BASE_DIR "${dir}")
+                list(APPEND sources "${src}")
+            endforeach()
+
+        else()
+            set(file "")
+            set(sources "")
+        endif()
+
+        make_json_list("${reqs}" reqs)
+        make_json_list("${priv_reqs}" priv_reqs)
+        make_json_list("${managed_reqs}" managed_reqs)
+        make_json_list("${managed_priv_reqs}" managed_priv_reqs)
+        make_json_list("${include_dirs}" include_dirs)
+        make_json_list("${sources}" sources)
+
+        string(JOIN "\n" component_json
+            "        \"${name}\": {"
+            "            \"alias\": \"${alias}\","
+            "            \"target\": \"${target}\","
+            "            \"prefix\": \"${prefix}\","
+            "            \"dir\": \"${dir}\","
+            "            \"type\": \"${type}\","
+            "            \"lib\": \"${lib}\","
+            "            \"reqs\": ${reqs},"
+            "            \"priv_reqs\": ${priv_reqs},"
+            "            \"managed_reqs\": ${managed_reqs},"
+            "            \"managed_priv_reqs\": ${managed_priv_reqs},"
+            "            \"file\": \"${file}\","
+            "            \"sources\": ${sources},"
+            "            \"include_dirs\": ${include_dirs}"
+            "        }"
+        )
+        string(CONFIGURE "${component_json}" component_json)
+        if(NOT "${components_json}" STREQUAL "")
+            string(APPEND components_json ",\n")
+        endif()
+        string(APPEND components_json "${component_json}")
+    endforeach()
+    string(PREPEND components_json "{\n")
+    string(APPEND components_json "\n    }")
+    set(${output} "${components_json}" PARENT_SCOPE)
+endfunction()
+
 #
-# Output the built components to the user. Generates files for invoking idf_monitor.py
+# Output the built components to the user. Generates files for invoking esp_idf_monitor
 # that doubles as an overview of some of the more important build properties.
 #
 function(__project_info test_components)
@@ -139,6 +223,7 @@ function(__project_info test_components)
     endforeach()
 
     set(PROJECT_NAME ${CMAKE_PROJECT_NAME})
+    idf_build_get_property(PROJECT_VER PROJECT_VER)
     idf_build_get_property(PROJECT_PATH PROJECT_DIR)
     idf_build_get_property(BUILD_DIR BUILD_DIR)
     idf_build_get_property(SDKCONFIG SDKCONFIG)
@@ -146,6 +231,7 @@ function(__project_info test_components)
     idf_build_get_property(PROJECT_EXECUTABLE EXECUTABLE)
     set(PROJECT_BIN ${CMAKE_PROJECT_NAME}.bin)
     idf_build_get_property(IDF_VER IDF_VER)
+    idf_build_get_property(common_component_reqs __COMPONENT_REQUIRES_COMMON)
 
     idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
     include(${sdkconfig_cmake})
@@ -153,12 +239,32 @@ function(__project_info test_components)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
     idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
+    if(CONFIG_APP_BUILD_TYPE_RAM)
+        set(PROJECT_BUILD_TYPE ram_app)
+    else()
+        set(PROJECT_BUILD_TYPE flash_app)
+    endif()
+
     # Write project description JSON file
     idf_build_get_property(build_dir BUILD_DIR)
     make_json_list("${build_components};${test_components}" build_components_json)
     make_json_list("${build_component_paths};${test_component_paths}" build_component_paths_json)
+    make_json_list("${common_component_reqs}" common_component_reqs_json)
+
+    __component_info("${build_components};${test_components}" build_component_info_json)
+
+    # The configure_file function doesn't process generator expressions, which are needed
+    # e.g. to get component target library(TARGET_LINKER_FILE), so the project_description
+    # file is created in two steps. The first step, with configure_file, creates a temporary
+    # file with cmake's variables substituted and unprocessed generator expressions. The second
+    # step, with file(GENERATE), processes the temporary file and substitute generator expression
+    # into the final project_description.json file.
     configure_file("${idf_path}/tools/cmake/project_description.json.in"
-        "${build_dir}/project_description.json")
+        "${build_dir}/project_description.json.templ")
+    file(READ "${build_dir}/project_description.json.templ" project_description_json_templ)
+    file(REMOVE "${build_dir}/project_description.json.templ")
+    file(GENERATE OUTPUT "${build_dir}/project_description.json"
+         CONTENT "${project_description_json_templ}")
 
     # Generate component dependency graph
     depgraph_generate("${build_dir}/component_deps.dot")
@@ -310,7 +416,7 @@ function(__project_init components_var test_components_var)
     set(${test_components_var} "${test_components}" PARENT_SCOPE)
 endfunction()
 
-# Trick to temporarily redefine project(). When functions are overriden in CMake, the originals can still be accessed
+# Trick to temporarily redefine project(). When functions are overridden in CMake, the originals can still be accessed
 # using an underscore prefixed function of the same name. The following lines make sure that __project  calls
 # the original project(). See https://cmake.org/pipermail/cmake/2015-October/061751.html.
 function(project)
@@ -425,12 +531,6 @@ macro(project project_name)
         list(APPEND sdkconfig_defaults ${sdkconfig_default})
     endforeach()
 
-    if(SDKCONFIG)
-        get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
-    else()
-        set(sdkconfig "${CMAKE_CURRENT_LIST_DIR}/sdkconfig")
-    endif()
-
     if(BUILD_DIR)
         get_filename_component(build_dir "${BUILD_DIR}" ABSOLUTE)
         if(NOT EXISTS "${build_dir}")
@@ -484,7 +584,7 @@ macro(project project_name)
     set(project_elf ${CMAKE_PROJECT_NAME}.elf)
 
     # Create a dummy file to work around CMake requirement of having a source file while adding an
-    # executable. This is also used by idf_size.py to detect the target
+    # executable. This is also used by esp_idf_size to detect the target
     set(project_elf_src ${CMAKE_BINARY_DIR}/project_elf_src_${IDF_TARGET}.c)
     add_custom_command(OUTPUT ${project_elf_src}
         COMMAND ${CMAKE_COMMAND} -E touch ${project_elf_src}
@@ -549,23 +649,32 @@ macro(project project_name)
         string(TOUPPER ${idf_target} idf_target)
         # Add cross-reference table to the map file
         target_link_options(${project_elf} PRIVATE "-Wl,--cref")
-        # Add this symbol as a hint for idf_size.py to guess the target name
+        # Add this symbol as a hint for esp_idf_size to guess the target name
         target_link_options(${project_elf} PRIVATE "-Wl,--defsym=IDF_TARGET_${idf_target}=0")
         # Enable map file output
         target_link_options(${project_elf} PRIVATE "-Wl,--Map=${mapfile}")
+        # Check if linker supports --no-warn-rwx-segments
+        execute_process(COMMAND ${CMAKE_LINKER} "--no-warn-rwx-segments" "--version"
+            RESULT_VARIABLE result
+            OUTPUT_QUIET
+            ERROR_QUIET)
+        if(${result} EQUAL 0)
+            # Do not print RWX segment warnings
+            target_link_options(${project_elf} PRIVATE "-Wl,--no-warn-rwx-segments")
+        endif()
         unset(idf_target)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
-        ADDITIONAL_MAKE_CLEAN_FILES
+        ADDITIONAL_CLEAN_FILES
         "${mapfile}" "${project_elf_src}")
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
-    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
+    set(idf_size ${python} -m esp_idf_size)
 
-    # Add size targets, depend on map file, run idf_size.py
+    # Add size targets, depend on map file, run esp_idf_size
     # OUTPUT_JSON is passed for compatibility reasons, SIZE_OUTPUT_FORMAT
     # environment variable is recommended and has higher priority
     add_custom_target(size

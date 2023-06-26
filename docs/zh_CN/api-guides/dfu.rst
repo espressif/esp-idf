@@ -128,3 +128,10 @@ USB 驱动（仅限 Windows）
 - 出现 ``No DFU capable USB device available`` 错误的原因可能是在 Windows 上没有正确安装 USB 驱动程序（请参考 :ref:`api_guide_dfu_flash_win`），或是未在 Linux 上设置 Udev 规则（请参考 :ref:`api_guide_dfu_flash_udev`)，或是设备未处于引导加载程序模式。
 
 - 在 Windows 上使用 ``dfu-util`` 第一次烧录失败，并出现 ``Lost device after RESET?`` 错误信息。出现此问题时，请重新烧录一次，再次烧录应该会成功。
+
+.. only:: SOC_SUPPORTS_SECURE_DL_MODE
+
+    安全下载模式
+    --------------------
+
+    启用安全下载模式后，DFU 不再可用。请参见 :doc:`Flash 加密 <../security/flash-encryption>`，了解详细信息。

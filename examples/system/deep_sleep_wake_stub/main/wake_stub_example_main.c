@@ -43,7 +43,6 @@ void app_main(void)
     rtc_gpio_isolate(GPIO_NUM_12);
 #endif
 
-    // Set the wake stub function
     esp_set_deep_sleep_wake_stub(&wake_stub_example);
 
     printf("Entering deep sleep\n");

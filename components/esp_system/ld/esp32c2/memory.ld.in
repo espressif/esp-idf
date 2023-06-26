@@ -13,19 +13,15 @@
 #define SRAM_DRAM_START     0x3FCA0000
 #define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C2 */
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START + ICACHE_SIZE)
-#define SRAM_DRAM_END       0x403B0000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x403AEB70 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + ICACHE_SIZE)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START)
 
 #define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
 
-#if CONFIG_ESP32C2_USE_FIXED_STATIC_RAM_SIZE
-ASSERT((CONFIG_ESP32C2_FIXED_STATIC_RAM_SIZE <= I_D_SRAM_SIZE), "Fixed static ram data does not fit.")
-#define DRAM0_0_SEG_LEN CONFIG_ESP32C2_FIXED_STATIC_RAM_SIZE
-#else
 #define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
-#endif // CONFIG_ESP32C2_USE_FIXED_STATIC_RAM_SIZE
+
 MEMORY
 {
   /**
@@ -64,13 +60,6 @@ MEMORY
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 }
-
-#if CONFIG_ESP32C2_USE_FIXED_STATIC_RAM_SIZE
-/* static data ends at defined address */
-_static_data_end = 0x3FCA0000 + DRAM0_0_SEG_LEN;
-#else
-_static_data_end = _bss_end;
-#endif // CONFIG_ESP32C2_USE_FIXED_STATIC_RAM_SIZE
 
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000;

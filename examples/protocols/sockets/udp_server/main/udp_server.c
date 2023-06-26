@@ -125,7 +125,7 @@ static void udp_server_task(void *pvParameters)
                         if ( cmsgtmp->cmsg_level == IPPROTO_IP && cmsgtmp->cmsg_type == IP_PKTINFO ) {
                             struct in_pktinfo *pktinfo;
                             pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsgtmp);
-                            ESP_LOGI(TAG, "dest ip: %s\n", inet_ntoa(pktinfo->ipi_addr));
+                            ESP_LOGI(TAG, "dest ip: %s", inet_ntoa(pktinfo->ipi_addr));
                         }
                     }
 #endif

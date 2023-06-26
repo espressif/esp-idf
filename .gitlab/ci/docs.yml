@@ -1,14 +1,20 @@
-.patterns-docs: &patterns-docs
+.patterns-docs-full: &patterns-docs-full
   - ".gitlab/ci/docs.yml"
   - "docs/**/*"
+  - "**/*.rst"
+  - "CONTRIBUTING.rst"
+  - "**/soc_caps.h"
+
+.patterns-docs-partial: &patterns-docs-partial
   - "components/**/*.h"
   - "components/**/Kconfig*"
   - "components/**/CMakeList.txt"
   - "components/**/sdkconfig*"
-  - "**/*.rst"
   - "tools/tools.json"
   - "tools/idf_tools.py"
-  - "CONTRIBUTING.rst"
+
+.patterns-example-readme: &patterns-example-readme
+  - "examples/**/*.md"
 
 .patterns-docs-preview: &patterns-docs-preview
   - "docs/**/*"
@@ -22,23 +28,27 @@
 .if-label-build_docs: &if-label-build_docs
   if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
 
-.if-label-docs: &if-label-docs
-  if: '$BOT_LABEL_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i'
-
-.if-label-docs_fast: &if-label-docs_fast
-  if: '$BOT_LABEL_DOCS_FAST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs_fast(?:,[^,\n\r]+)*$/i'
+.if-label-docs_full: &if-label-docs_full
+  if: '$BOT_LABEL_DOCS_FULL || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs_full(?:,[^,\n\r]+)*$/i'
 
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
 
-.doc-rules:build:docs:
+.doc-rules:build:docs-full:
   rules:
     - <<: *if-protected
     - <<: *if-label-build_docs
-    - <<: *if-label-docs
-    - <<: *if-label-docs_fast
+    - <<: *if-label-docs_full
     - <<: *if-dev-push
-      changes: *patterns-docs
+      changes: *patterns-docs-full
+
+.doc-rules:build:docs-partial:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-docs-full
+      when: never
+    - <<: *if-dev-push
+      changes: *patterns-docs-partial
 
 # stage: pre_check
 check_readme_links:
@@ -46,19 +56,24 @@ check_readme_links:
     - .pre_check_template
   tags: ["build", "amd64", "internet"]
   allow_failure: true
+  rules:
+    - <<: *if-protected
+    - <<: *if-dev-push
+      changes: *patterns-example-readme
   script:
     - python ${IDF_PATH}/tools/ci/check_readme_links.py
 
 check_docs_lang_sync:
   extends:
     - .pre_check_template
-    - .doc-rules:build:docs
+    - .doc-rules:build:docs-full
   script:
     - cd docs
     - ./check_lang_folder_sync.sh
 
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
+  stage: build_doc
   tags:
     - build_docs
   dependencies: []
@@ -68,42 +83,23 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32h2"]
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
   extends:
     - .pre_check_template
-    - .doc-rules:build:docs
+    - .doc-rules:build:docs-full
   script:
     - cd docs
     - build-docs gh-linkcheck
-
-# stage: build_doc
-# Add this stage to let the build_docs job run in parallel with build
-.build_docs_build_stage_template:
-  extends:
-    - .build_docs_template
-  stage: build_doc
-  needs:
-    - job: check_docs_lang_sync
-      artifacts: false
-    - job: check_docs_gh_links
-      artifacts: false
 
 # Doc jobs have a lot of special cases, we specify rules here directly instead
 # in dependencies.yml to simplify things
 build_docs_html_full:
   extends:
-    - .build_docs_build_stage_template
-  rules:
-    - <<: *if-label-docs_fast
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-    - <<: *if-dev-push
-      changes: *patterns-docs
+    - .build_docs_template
+    - .doc-rules:build:docs-full
   artifacts:
     when: always
     paths:
@@ -113,11 +109,10 @@ build_docs_html_full:
   variables:
     DOC_BUILDERS: "html"
 
-build_docs_html_fast:
+build_docs_html_partial:
   extends:
-    - .build_docs_build_stage_template
-  rules:
-    - <<: *if-label-docs_fast
+    - .build_docs_template
+    - .doc-rules:build:docs-partial
   artifacts:
     when: always
     paths:
@@ -126,19 +121,17 @@ build_docs_html_fast:
     expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
-    DOCS_FAST_BUILD: "yes"
+  parallel:
+    matrix:
+      - DOCLANG: "en"
+        DOCTGT: "esp32"
+      - DOCLANG: "zh_CN"
+        DOCTGT: "esp32c6"
 
 build_docs_pdf:
   extends:
-    - .build_docs_build_stage_template
-  rules:
-    - <<: *if-label-docs_fast
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-    - <<: *if-dev-push
-      changes: *patterns-docs
+    - .build_docs_template
+    - .doc-rules:build:docs-full
   artifacts:
     when: always
     paths:
@@ -167,11 +160,11 @@ deploy_docs_preview:
     - .deploy_docs_template
   rules:
     - <<: *if-label-build_docs
-    - <<: *if-label-docs
+    - <<: *if-label-docs_full
     - <<: *if-dev-push
       changes: *patterns-docs-preview
   needs:
-    - job: build_docs_html_fast
+    - job: build_docs_html_partial
       optional: true
     - job: build_docs_html_full
       optional: true
@@ -212,8 +205,12 @@ deploy_docs_production:
 check_doc_links:
   extends:
     - .build_docs_template
-    - .rules:protected
+  rules:
+    - <<: *if-protected-no_label
   stage: post_deploy
+  needs:
+    - job: deploy_docs_production
+      artifacts: false
   tags: ["build", "amd64", "internet"]
   artifacts:
     when: always

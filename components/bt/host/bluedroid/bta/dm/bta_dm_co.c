@@ -389,7 +389,7 @@ void bta_dm_co_ble_set_init_key_req(UINT8 init_key)
 {
 #if (SMP_INCLUDED == TRUE)
    init_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
-   bte_appl_cfg.ble_init_key &= init_key;
+   bte_appl_cfg.ble_init_key = init_key;
 #endif  ///SMP_INCLUDED == TRUE
 }
 
@@ -397,7 +397,7 @@ void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 {
 #if (SMP_INCLUDED == TRUE)
    rsp_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
-   bte_appl_cfg.ble_resp_key &= rsp_key;
+   bte_appl_cfg.ble_resp_key = rsp_key;
 #endif  ///SMP_INCLUDED == TRUE
 }
 

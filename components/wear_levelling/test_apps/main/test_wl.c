@@ -13,6 +13,7 @@
 #include "esp_private/esp_clk.h"
 #include "sdkconfig.h"
 #include "esp_cpu.h"
+#include "esp_system.h"
 #include "spi_flash_mmap.h"
 
 
@@ -43,10 +44,10 @@ TEST(wear_levelling, wl_unmount_doesnt_leak_memory)
     wl_unmount(handle);
 
     // test that we didn't leak any memory on the next init/deinit
-    size_t size_before = xPortGetFreeHeapSize();
+    size_t size_before = esp_get_free_heap_size();
     TEST_ESP_OK(wl_mount(partition, &handle));
     wl_unmount(handle);
-    size_t size_after = xPortGetFreeHeapSize();
+    size_t size_after = esp_get_free_heap_size();
 
     TEST_ASSERT_EQUAL(size_before, size_after);
 }
@@ -64,21 +65,21 @@ TEST(wear_levelling, wl_mount_checks_partition_params)
     // test small partition: result should be error
     for (int i = 0; i < 5; i++) {
         fake_partition.size = SPI_FLASH_SEC_SIZE * (i);
-        size_before = xPortGetFreeHeapSize();
+        size_before = esp_get_free_heap_size();
         TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_mount(&fake_partition, &handle));
         // test that we didn't leak any memory
-        size_after = xPortGetFreeHeapSize();
+        size_after = esp_get_free_heap_size();
         TEST_ASSERT_EQUAL_HEX32(size_before, size_after);
     }
 
     // test minimum size partition: result should be OK
     fake_partition.size = SPI_FLASH_SEC_SIZE * 5;
-    size_before = xPortGetFreeHeapSize();
+    size_before = esp_get_free_heap_size();
     TEST_ESP_OK(wl_mount(&fake_partition, &handle));
     wl_unmount(handle);
 
     // test that we didn't leak any memory
-    size_after = xPortGetFreeHeapSize();
+    size_after = esp_get_free_heap_size();
     TEST_ASSERT_EQUAL_HEX32(size_before, size_after);
 }
 

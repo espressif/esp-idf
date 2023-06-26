@@ -47,7 +47,6 @@ menu "SPI RAM config"
 
             This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
             This should only be used for tasks where the stack is never accessed while the cache is disabled.
-            Cannot be used together with ESP_COREDUMP_ENABLE_TO_FLASH.
 
     config SPIRAM_CLK_IO
         int
@@ -83,8 +82,20 @@ menu "SPI RAM config"
             Select the speed for the SPI RAM chip.
 
         config SPIRAM_SPEED_120M
-            depends on SPIRAM_MODE_QUAD
+            depends on SPIRAM_MODE_QUAD || IDF_EXPERIMENTAL_FEATURES
             bool "120MHz clock speed"
+
+            help
+                - Quad PSRAM 120 MHz is stable.
+
+                - Octal PSRAM 120 MHz is an experimental feature, it works when
+                  the temperature is stable.
+
+                    Risks:
+                        If your chip powers on at a certain temperature, then after the temperature
+                        increases or decreases by approximately 20 Celsius degrees (depending on the
+                        chip), the accesses to / from PSRAM will crash randomly.
+
         config SPIRAM_SPEED_80M
             bool "80MHz clock speed"
         config SPIRAM_SPEED_40M
@@ -98,5 +109,4 @@ menu "SPI RAM config"
         default 40 if SPIRAM_SPEED_40M
 
     source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
-
 endmenu

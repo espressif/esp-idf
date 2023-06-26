@@ -13,6 +13,14 @@ echo "Detecting the Python interpreter"
 echo "Checking Python compatibility"
 "${ESP_PYTHON}" "${IDF_PATH}/tools/python_version_checker.py"
 
+while getopts ":h" option; do
+    case $option in
+        h)
+            "${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" print_help sh
+            exit;;
+    esac
+done
+
 TARGETS=`"${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" extract targets "$@"`
 
 echo "Installing ESP-IDF tools"

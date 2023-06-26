@@ -5,7 +5,7 @@ Overview
 --------
 
 IDF provides a useful feature for program behavior analysis called **Application Level Tracing**. The feature can be enabled in menuconfig and allows transfer of arbitrary data between the host and {IDF_TARGET_NAME} via JTAG interface with minimal overhead on program execution.
-Developers can use this library to send application specific state of execution to the host and receive commands or other type of info in the opposite direction at runtime. The main use cases of this library are:
+Developers can use this library to send application specific state of execution to the host and receive commands or other type of information in the opposite direction at runtime. The main use cases of this library are:
 
 1. Collecting application specific data, see :ref:`app_trace-application-specific-tracing`
 2. Lightweight logging to the host, see :ref:`app_trace-logging-to-host`

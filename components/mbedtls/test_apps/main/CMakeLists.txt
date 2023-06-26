@@ -7,10 +7,9 @@ set(TEST_CRTS "crts/server_cert_chain.pem"
 
 idf_component_register(SRC_DIRS "."
                     PRIV_INCLUDE_DIRS "."
-                    PRIV_REQUIRES cmock test_utils mbedtls esp_timer unity spi_flash
+                    PRIV_REQUIRES cmock test_utils mbedtls esp_timer unity spi_flash esp_psram
                     EMBED_TXTFILES ${TEST_CRTS}
                     WHOLE_ARCHIVE)
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 idf_component_get_property(mbedtls mbedtls COMPONENT_LIB)
 target_compile_definitions(${mbedtls} INTERFACE "-DMBEDTLS_DEPRECATED_WARNING")

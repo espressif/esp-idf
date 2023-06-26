@@ -1,4 +1,7 @@
 CONFIG_SPIRAM=y
 CONFIG_SPIRAM_SPEED_80M=y
-# Can't set the FPS too high due to the limitation of PSRAM bandwidth
-CONFIG_LV_DISP_DEF_REFR_PERIOD=100
+
+# Enabling the following configurations can help increase the PCLK frequency in the case when
+# the Frame Buffer is allocated from the PSRAM and fetched by EDMA
+CONFIG_SPIRAM_FETCH_INSTRUCTIONS=y
+CONFIG_SPIRAM_RODATA=y

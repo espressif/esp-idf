@@ -102,7 +102,7 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
 }
 
-FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(int intr_num)
+FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
 {
     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
 }
@@ -132,49 +132,66 @@ FORCE_INLINE_ATTR void rv_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
     /* The code bellow sets breakpoint which will trigger `Breakpoint` exception
      * instead transfering control to debugger. */
     RV_WRITE_CSR(tselect, bp_num);
-    RV_SET_CSR(CSR_TCONTROL, TCONTROL_MTE);
-    RV_SET_CSR(CSR_TDATA1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
+    RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
+    RV_WRITE_CSR(tdata1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
     RV_WRITE_CSR(tdata2, bp_addr);
+}
+
+FORCE_INLINE_ATTR void rv_utils_set_watchpoint(int wp_num,
+                                               uint32_t wp_addr,
+                                               size_t size,
+                                               bool on_read,
+                                               bool on_write)
+{
+    RV_WRITE_CSR(tselect, wp_num);
+    RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
+    RV_WRITE_CSR(tdata1, TDATA1_USER                   |
+                         TDATA1_MACHINE                |
+                         TDATA1_MATCH                  |
+                         (on_read  ? TDATA1_LOAD  : 0) |
+                         (on_write ? TDATA1_STORE : 0));
+    /* From RISC-V Debug Specification:
+     * NAPOT (Naturally Aligned Power-Of-Two):
+     * Matches when the top M bits of any compare value match the top M bits of tdata2.
+     * M is XLEN − 1 minus the index of the least-significant bit containing 0 in tdata2.
+     *
+     * Note: Expectng that size is number power of 2
+     *
+     * Examples for understanding how to calculate NAPOT:
+     *
+     * nnnn...nnnn0 2-byte  NAPOT range
+     * nnnn...nnn01 4-byte  NAPOT range
+     * nnnn...nn011 8-byte  NAPOT range
+     * nnnn...n0111 16-byte NAPOT range
+     * nnnn...01111 32-byte NAPOT range
+     *  * where n are bits from original address
+     */
+    const uint32_t half_size = size >> 1;
+    uint32_t napot = wp_addr;
+    napot &= ~half_size;      /* set the least-significant bit with zero */
+    napot |= half_size - 1;   /* fill all bits with ones after least-significant bit */
+    RV_WRITE_CSR(tdata2, napot);
 }
 
 FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
 {
     RV_WRITE_CSR(tselect, bp_num);
-    RV_CLEAR_CSR(CSR_TCONTROL, TCONTROL_MTE);
-    RV_CLEAR_CSR(CSR_TDATA1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
-}
-
-FORCE_INLINE_ATTR void rv_utils_set_watchpoint(int wp_num,
-                                           uint32_t wp_addr,
-                                           size_t size,
-                                           bool on_read,
-                                           bool on_write)
-{
-    RV_WRITE_CSR(tselect, wp_num);
-    RV_SET_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
-    RV_SET_CSR(CSR_TDATA1, TDATA1_USER | TDATA1_MACHINE);
-    RV_SET_CSR_FIELD(CSR_TDATA1, (long unsigned int) TDATA1_MATCH, 1);
-
-    // add 0 in napot encoding
-    uint32_t addr_napot;
-    addr_napot = ((uint32_t) wp_addr) | ((size >> 1) - 1);
-    if (on_read) {
-        RV_SET_CSR(CSR_TDATA1, TDATA1_LOAD);
-    }
-    if (on_write) {
-        RV_SET_CSR(CSR_TDATA1, TDATA1_STORE);
-    }
-    RV_WRITE_CSR(tdata2, addr_napot);
+    /* tdata1 is a WARL(write any read legal) register
+     * We can just write 0 to it
+     */
+    RV_WRITE_CSR(tdata1, 0);
 }
 
 FORCE_INLINE_ATTR void rv_utils_clear_watchpoint(int wp_num)
 {
-    RV_WRITE_CSR(tselect, wp_num);
-    RV_CLEAR_CSR(CSR_TCONTROL, TCONTROL_MTE);
-    RV_CLEAR_CSR(CSR_TDATA1, TDATA1_USER | TDATA1_MACHINE);
-    RV_CLEAR_CSR_FIELD(CSR_TDATA1, (long unsigned int) TDATA1_MATCH);
-    RV_CLEAR_CSR(CSR_TDATA1, TDATA1_MACHINE);
-    RV_CLEAR_CSR(CSR_TDATA1, TDATA1_LOAD | TDATA1_STORE | TDATA1_EXECUTE);
+    /* riscv have the same registers for breakpoints and watchpoints */
+    rv_utils_clear_breakpoint(wp_num);
+}
+
+FORCE_INLINE_ATTR bool rv_utils_is_trigger_fired(int id)
+{
+    RV_WRITE_CSR(tselect, id);
+    return (RV_READ_CSR(tdata1) >> TDATA1_HIT_S) & 1;
 }
 
 // ---------------------- Debugger -------------------------

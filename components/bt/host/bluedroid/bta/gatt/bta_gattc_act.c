@@ -745,7 +745,8 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
     if (p_rcb) {
         bta_gattc_send_connect_cback(p_rcb,
                                      p_data->int_conn.remote_bda,
-                                     p_data->int_conn.hdr.layer_specific, p_data->int_conn.conn_params, p_data->int_conn.role);
+                                     p_data->int_conn.hdr.layer_specific, p_data->int_conn.conn_params, p_data->int_conn.role,
+                                     p_data->int_conn.ble_addr_type, p_data->int_conn.conn_handle);
 
     }
 }
@@ -1175,6 +1176,37 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 }
 /*******************************************************************************
 **
+** Function         bta_gattc_read_multi_var
+**
+** Description      read multiple variable
+**
+** Returns          None.
+*********************************************************************************/
+void bta_gattc_read_multi_var(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
+{
+    tBTA_GATT_STATUS    status = BTA_GATT_OK;
+    tGATT_READ_PARAM    read_param;
+
+    if (bta_gattc_enqueue(p_clcb, p_data)) {
+        memset(&read_param, 0, sizeof(tGATT_READ_PARAM));
+
+        if (status == BTA_GATT_OK) {
+            read_param.read_multiple.num_handles = p_data->api_read_multi.num_attr;
+            read_param.read_multiple.auth_req = p_data->api_read_multi.auth_req;
+            memcpy(&read_param.read_multiple.handles, p_data->api_read_multi.handles,
+                    sizeof(UINT16) * p_data->api_read_multi.num_attr);
+
+            status = GATTC_Read(p_clcb->bta_conn_id, GATT_READ_MULTIPLE_VAR, &read_param);
+        }
+
+        /* read fail */
+        if (status != BTA_GATT_OK) {
+            bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
+        }
+    }
+}
+/*******************************************************************************
+**
 ** Function         bta_gattc_write
 **
 ** Description      Write an attribute
@@ -1290,7 +1322,8 @@ void bta_gattc_read_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
         cb_data.read.handle = p_clcb->p_q_cmd->api_read.handle;
     }
 
-    if (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) {
+    if (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT &&
+        p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_VAR_EVT) {
         event = p_clcb->p_q_cmd->api_read.cmpl_evt;
     } else {
         event = p_clcb->p_q_cmd->api_read_multi.cmpl_evt;
@@ -1427,7 +1460,9 @@ void  bta_gattc_op_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             return;
         }
         if (p_clcb->p_q_cmd->hdr.event != bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
-            if ((p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT)&&(p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_BY_TYPE_EVT)) {
+            if ((p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) &&
+                (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_BY_TYPE_EVT) &&
+                (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_VAR_EVT)) {
                 mapped_op = p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
                 if ( mapped_op > GATTC_OPTYPE_INDICATION) {
                     mapped_op = 0;
@@ -1691,6 +1726,11 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
                 p_buf->int_conn.conn_params.interval = p_lcb->current_used_conn_interval;
                 p_buf->int_conn.conn_params.latency = p_lcb->current_used_conn_latency;
                 p_buf->int_conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
+                #if (BLE_INCLUDED == TRUE)
+                p_buf->int_conn.ble_addr_type = p_lcb->ble_addr_type;
+                #endif
+                p_buf->int_conn.conn_handle = p_lcb->handle;
+
             } else {
                 APPL_TRACE_WARNING("gattc_conn_cb: conn params not found");
             }

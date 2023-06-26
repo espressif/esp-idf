@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) CO LTD
- * All rights reserved.
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:

@@ -15,7 +15,7 @@ SPI_Flash::SPI_Flash()
 {
 }
 
-size_t SPI_Flash::chip_size()
+size_t SPI_Flash::get_flash_size()
 {
     uint32_t chip_size;
     esp_flash_get_size(NULL, &chip_size);
@@ -67,7 +67,7 @@ esp_err_t SPI_Flash::read(size_t src_addr, void *dest, size_t size)
     return result;
 }
 
-size_t SPI_Flash::sector_size()
+size_t SPI_Flash::get_sector_size()
 {
     return SPI_FLASH_SEC_SIZE;
 }

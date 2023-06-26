@@ -1,8 +1,3 @@
-if(IDF_TARGET STREQUAL "esp32h2")
-    # TODO : IDF-6214
-    return()
-endif()
-
 idf_build_get_property(target IDF_TARGET)
 
 set(includes "include" "interface" "${target}/include" "deprecated/include")
@@ -15,6 +10,13 @@ set(srcs "adc_cali.c"
 
 if(CONFIG_SOC_ADC_DMA_SUPPORTED)
     list(APPEND srcs "adc_continuous.c")
+    if(CONFIG_SOC_ADC_MONITOR_SUPPORTED)
+        list(APPEND srcs "adc_monitor.c")
+    endif()
+endif()
+
+if(CONFIG_SOC_ADC_DIG_IIR_FILTER_SUPPORTED)
+    list(APPEND srcs "adc_filter.c")
 endif()
 
 # line fitting scheme
@@ -30,16 +32,6 @@ endif()
 # legacy calibration driver
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deprecated/${target}/esp_adc_cal_legacy.c")
     list(APPEND srcs "deprecated/${target}/esp_adc_cal_legacy.c")
-endif()
-
-# ESP32H2-TODO
-if(CONFIG_IDF_TARGET_ESP32H2)
-    # TODO: IDF-6214
-    list(REMOVE_ITEM srcs
-            "adc_cali_curve_fitting.c"
-            "adc_oneshot.c"
-            "adc_common.c"
-        )
 endif()
 
 idf_component_register(SRCS ${srcs}

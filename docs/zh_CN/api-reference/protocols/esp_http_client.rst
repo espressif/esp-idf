@@ -110,6 +110,30 @@ ESP HTTP 客户端同时支持 **基本** 和 **摘要** 认证。
                 .auth_type = HTTP_AUTH_TYPE_BASIC,
             };
 
+事件处理
+---------
+
+ESP HTTP 客户端支持事件处理，发生相关事件时会触发相应的事件处理程序。:cpp:enum:`esp_http_client_event_id_t` 中包含了所有使用 ESP HTTP 客户端执行 HTTP 请求时可能发生的事件。
+
+通过 :cpp:member:`esp_http_client_config_t::event_handler` 设置回调函数即可启用事件处理功能。
+
+ESP HTTP 客户端诊断信息
+--------------------------
+
+诊断信息可以帮助用户深入了解出现的问题。在 ESP HTTP 客户端中，可以通过在 :doc:`事件循环库 <../system/esp_event>` 中注册事件处理程序来获取诊断信息。此功能的增加基于 `ESP Insights <https://github.com/espressif/esp-insights>`_ 框架，该框架可帮助收集诊断信息。然而，即使不依赖 ESP Insights 框架，也可以获取诊断信息。事件处理程序可通过 :cpp:func:`esp_event_handler_register` 函数注册到事件循环中。
+
+事件循环中不同 HTTP 客户端事件的预期数据类型如下所示：
+
+    - HTTP_EVENT_ERROR            :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_CONNECTED     :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_HEADERS_SENT     :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADER        :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_DATA          :   ``esp_http_client_on_data_t``
+    - HTTP_EVENT_ON_FINISH        :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_DISCONNECTED     :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
+
+在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
 
 API 参考
 ---------

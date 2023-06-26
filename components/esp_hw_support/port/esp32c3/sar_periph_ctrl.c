@@ -34,6 +34,13 @@ void sar_periph_ctrl_init(void)
     //Add other periph power control initialisation here
 }
 
+void sar_periph_ctrl_power_enable(void)
+{
+    portENTER_CRITICAL_SAFE(&rtc_spinlock);
+    sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_FSM);
+    portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+}
+
 void sar_periph_ctrl_power_disable(void)
 {
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
@@ -83,7 +90,7 @@ static void s_sar_adc_power_acquire(void)
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
     s_saradc_power_on_cnt++;
     if (s_saradc_power_on_cnt == 1) {
-        adc_ll_digi_set_power_manage(ADC_POWER_SW_ON);
+        adc_ll_digi_set_power_manage(ADC_LL_POWER_SW_ON);
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 }
@@ -97,7 +104,7 @@ static void s_sar_adc_power_release(void)
         ESP_LOGE(TAG, "%s called, but s_saradc_power_on_cnt == 0", __func__);
         abort();
     } else if (s_saradc_power_on_cnt == 0) {
-        adc_ll_digi_set_power_manage(ADC_POWER_BY_FSM);
+        adc_ll_digi_set_power_manage(ADC_LL_POWER_BY_FSM);
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 }

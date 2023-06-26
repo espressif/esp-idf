@@ -41,6 +41,32 @@ typedef int (*vprintf_like_t)(const char *, va_list);
  */
 extern esp_log_level_t esp_log_default_level;
 
+#if defined(CONFIG_LOG_MASTER_LEVEL) || __DOXYGEN__
+
+/**
+ * @brief Master log level.
+ *
+ * Optional master log level to check against for ESP_LOGx macros before calling
+ * esp_log_write. Allows one to set a higher CONFIG_LOG_MAXIMUM_LEVEL but not
+ * impose a performance hit during normal operation (only when instructed). An
+ * application may set esp_log_set_level_master(level) to globally enforce a
+ * maximum log level. ESP_LOGx macros above this level will be skipped immediately,
+ * rather than calling esp_log_write and doing a cache hit.
+ *
+ * The tradeoff is increased application size.
+ *
+ * @param level  Master log level
+ */
+void esp_log_set_level_master(esp_log_level_t level);
+
+/**
+ * @brief Returns master log level.
+ * @return Master log level
+ */
+esp_log_level_t esp_log_get_level_master(void);
+
+#endif //CONFIG_LOG_MASTER_LEVEL
+
 /**
  * @brief Set log level for given tag
  *
@@ -288,7 +314,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /// Log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
 
 /**
- * In the future, we want to switch to C++20. We also want to become compatible with clang.
+ * In the future, we want to become compatible with clang.
  * Hence, we provide two versions of the following macros which are using variadic arguments.
  * The first one is using the GNU extension \#\#__VA_ARGS__. The second one is using the C++20 feature __VA_OPT__(,).
  * This allows users to compile their code with standard C++20 enabled instead of the GNU extension.
@@ -425,13 +451,19 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
 /** runtime macro to output logs at a specified level. Also check the level with ``LOG_LOCAL_LEVEL``.
+ * If ``CONFIG_LOG_MASTER_LEVEL`` set, also check first against ``esp_log_get_level_master()``.
  *
  * @see ``printf``, ``ESP_LOG_LEVEL``
  */
+#ifdef CONFIG_LOG_MASTER_LEVEL
+#define ESP_LOG_LEVEL_LOCAL(level, tag, format, ...) do {               \
+        if ( (esp_log_get_level_master() >= level) && (LOG_LOCAL_LEVEL >= level) ) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
+    } while(0)
+#else
 #define ESP_LOG_LEVEL_LOCAL(level, tag, format, ...) do {               \
         if ( LOG_LOCAL_LEVEL >= level ) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
     } while(0)
-
+#endif //CONFIG_LOG_MASTER_LEVEL
 
 /**
  * @brief Macro to output logs when the cache is disabled. Log at ``ESP_LOG_ERROR`` level.

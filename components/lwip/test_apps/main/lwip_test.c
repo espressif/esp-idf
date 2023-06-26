@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
+#include "lwip/tcpip.h"
+#include "lwip/prot/iana.h"
 #include "ping/ping_sock.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -142,12 +144,18 @@ TEST(lwip, dhcp_server_init_deinit)
     dhcps_delete(dhcps);
 }
 
-TEST(lwip, dhcp_server_start_stop_localhost)
-{
-    test_case_uses_tcpip();
-    struct netif *netif;
-    dhcps_t *dhcps;
+struct dhcps_api {
+    EventGroupHandle_t event;
     ip4_addr_t netmask;
+    ip4_addr_t ip;
+    err_t ret_start;
+    err_t ret_stop;
+};
+
+static void dhcps_test_net_classes_api(void* ctx)
+{
+    struct netif *netif;
+    struct dhcps_api *api = ctx;
 
     NETIF_FOREACH(netif) {
         if (netif->name[0] == 'l' && netif->name[1] == 'o') {
@@ -156,41 +164,52 @@ TEST(lwip, dhcp_server_start_stop_localhost)
     }
     TEST_ASSERT_NOT_NULL(netif);
 
-     //Class A
-    dhcps = dhcps_new();
-    IP4_ADDR(&netmask, 255,0,0,0);
-    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
-    ip4_addr_t a_ip = { .addr = 0x7f0001 };
-    IP4_ADDR(&netmask, 255,0,0,0);
-    TEST_ASSERT(dhcps_start(dhcps, netif, a_ip) == ERR_OK);
-    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
+    dhcps_t *dhcps = dhcps_new();
+    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&api->netmask, sizeof(api->netmask));
+    api->ret_start = dhcps_start(dhcps, netif, api->ip);
+    api->ret_stop = dhcps_stop(dhcps, netif);
     dhcps_delete(dhcps);
+    xEventGroupSetBits(api->event, 1);
+}
 
-     //Class B
-    dhcps = dhcps_new();
-    IP4_ADDR(&netmask, 255,255,0,0);
-    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
-    ip4_addr_t b_ip = { .addr = 0x1000080 };
-    TEST_ASSERT(dhcps_start(dhcps, netif, b_ip) == ERR_OK);
-    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
-    dhcps_delete(dhcps);
+static void dhcps_test_net_classes(uint32_t ip, uint32_t mask, bool pass)
+{
 
-     //Class C
-    dhcps = dhcps_new();
-    IP4_ADDR(&netmask, 255,255,255,0);
-    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
-    ip4_addr_t c_ip = { .addr = 0x101A8C0 };
-    TEST_ASSERT(dhcps_start(dhcps, netif, c_ip) == ERR_OK);
-    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
-    dhcps_delete(dhcps);
+    struct dhcps_api api = {
+            .ret_start = ERR_IF,
+            .ret_stop = ERR_IF,
+            .ip = {.addr = PP_HTONL(ip)},
+            .netmask = {.addr = PP_HTONL(mask)},
+            .event = xEventGroupCreate()
+    };
 
-     //Class A Subnet C
-    dhcps = dhcps_new();
-    IP4_ADDR(&netmask, 255,255,255,0);
-    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
-    TEST_ASSERT(dhcps_start(dhcps, netif, a_ip) == ERR_ARG);
-    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
-    dhcps_delete(dhcps);
+    tcpip_callback(dhcps_test_net_classes_api, &api);
+    xEventGroupWaitBits(api.event, 1, true, true, pdMS_TO_TICKS(5000));
+    vEventGroupDelete(api.event);
+    err_t ret_start_expected = pass ? ERR_OK : ERR_ARG;
+    TEST_ASSERT(api.ret_start == ret_start_expected);
+    TEST_ASSERT(api.ret_stop == ERR_OK);
+
+}
+
+TEST(lwip, dhcp_server_start_stop_localhost)
+{
+    test_case_uses_tcpip();
+
+    // Class A: IP: 127.0.0.1, Mask: 255.0.0.0
+    dhcps_test_net_classes(0x7f000001, 0xFF000000, true);
+
+    // Class B: IP: 128.1.1.1, Mask: 255.255.0.0
+    dhcps_test_net_classes(0x80010101, 0xFFFF0000, true);
+
+    // Class C: IP: 192.168.1.1, Mask: 255.255.255.0
+    dhcps_test_net_classes(0xC0A80101, 0xFFFFFF00, true);
+
+
+    // Class A: IP: 127.0.0.1, with inaccurate Mask: 255.248.255.0
+    // expect dhcps_start() to fail
+    dhcps_test_net_classes(0x7f000001, 0xFFF8FF00, false);
+
 }
 
 
@@ -248,11 +267,10 @@ void test_sntp_timestamps(int year, bool msb_flag)
 {
     int sock = test_sntp_server_create();
 
-    // setup lwip's SNTP in polling mode
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "127.0.0.1");
-    sntp_init();
-
+    // init and start the SNTP
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "127.0.0.1");
+    esp_sntp_init();
     // wait until time sync
     int retry = 0;
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) {
@@ -269,7 +287,7 @@ void test_sntp_timestamps(int year, bool msb_flag)
     TEST_ASSERT_EQUAL(year, 1900 + timeinfo.tm_year);
 
     // close the SNTP and the fake server
-    sntp_stop();
+    esp_sntp_stop();
     close(sock);
 }
 

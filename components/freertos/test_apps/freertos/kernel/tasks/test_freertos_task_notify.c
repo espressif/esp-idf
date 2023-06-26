@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,18 +191,23 @@ TEST_CASE("Test Task_Notify", "[freertos]")
     vSemaphoreDelete(trigger_send_semphr);
     vSemaphoreDelete(task_delete_semphr);
     for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        TEST_ESP_OK(gptimer_stop(gptimers[i]));
         TEST_ESP_OK(gptimer_disable(gptimers[i]));
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
     }
 }
 
+/* Test causes asserts, so it cannot be run as a normal unity test case.
+   Test case is ran as a seperate test case in test_task_notify_too_high_index_fails
+ */
 TEST_CASE("Notify too high index fails", "[ignore]")
 {
     uint32_t notification_value = 47;
     xTaskNotifyIndexed(xTaskGetCurrentTaskHandle(), 2, notification_value, eNoAction);
 }
 
+/* Test causes asserts, so it cannot be run as a normal unity test case.
+   Test case is ran as a seperate test case in test_task_notify_wait_too_high_index_fails
+ */
 TEST_CASE("Notify Wait too high index fails", "[ignore]")
 {
     uint32_t notification_value;

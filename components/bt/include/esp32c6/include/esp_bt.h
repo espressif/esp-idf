@@ -15,6 +15,7 @@
 
 #include "nimble/nimble_npl.h"
 #include "esp_bt_cfg.h"
+#include "hal/efuse_hal.h"
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
@@ -23,7 +24,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 /**
  * @brief Bluetooth mode for controller enable/disable
  */
@@ -145,7 +145,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20221220
+#define CONFIG_VERSION  0x20230113
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -206,6 +206,7 @@ typedef struct {
     uint8_t version_num;
     uint8_t cpu_freq_mhz;
     uint8_t ignore_wl_for_direct_adv;
+    uint8_t enable_pcl;
     uint32_t config_magic;
 } esp_bt_controller_config_t;
 
@@ -257,9 +258,10 @@ typedef struct {
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
     .ble_scan_classify_filter_enable         = 0,                                       \
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
-    .version_num                = 0,                                                    \
+    .version_num                = efuse_hal_chip_revision(),                            \
     .cpu_freq_mhz               = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,                      \
     .ignore_wl_for_direct_adv   = 0,                                                    \
+    .enable_pcl                 = DEFAULT_BT_LE_POWER_CONTROL_ENABLED,                  \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 

@@ -21,7 +21,7 @@ ESP-IDF 提供了 ``console`` 组件，它包含了开发基于串口的交互�
 
 .. note::
 
-  此功能依赖于终端应用程序对 ANSI 转义符的支持。因此，显示原始 UART 数据的串口监视器不能与行编辑库一同使用。如果运行 :example:`system/console` 示例程序的时候看到的输出结果是 ``[6n`` 或者类似的转义字符而不是命令行提示符 ``esp> `` 时，就表明当前的串口监视器不支持 ANSI 转义字符。已知可用的串口监视程序有 GNU screen、minicom 和 idf_monitor.py（可以通过在项目目录下执行 ``idf.py monitor`` 来调用）。
+  此功能依赖于终端应用程序对 ANSI 转义符的支持。因此，显示原始 UART 数据的串口监视器不能与行编辑库一同使用。如果运行 :example:`system/console` 示例程序的时候看到的输出结果是 ``[6n`` 或者类似的转义字符而不是命令行提示符 ``esp> `` 时，就表明当前的串口监视器不支持 ANSI 转义字符。已知可用的串口监视程序有 GNU screen、minicom 和 esp-idf-monitor（可以通过在项目目录下执行 ``idf.py monitor`` 来调用）。
 
 前往这里可以查看 `linenoise <https://github.com/antirez/linenoise>`_ 库提供的所有函数的描述。
 
@@ -44,7 +44,7 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 :cpp:func:`linenoiseSetMaxLineLen`
 
-    设置 linenoise 库中每行的最大长度。默认长度为 4096。如果需要优化 RAM 内存的使用，则可以通过这个函数设置一个小于默认 4 KB 的值来实现。
+    设置 linenoise 库中每行的最大长度，默认长度为 4096 字节，可以通过更新该默认值来优化 RAM 内存的使用。
 
 
 主循环

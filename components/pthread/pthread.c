@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -307,7 +307,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 
     *thread = (pthread_t)pthread; // pointer value fit into pthread_t (uint32_t)
 
-    ESP_LOGV(TAG, "Created task %x", (uint32_t)xHandle);
+    ESP_LOGV(TAG, "Created task %"PRIx32, (uint32_t)xHandle);
 
     return 0;
 }
@@ -595,7 +595,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
     return 0;
 }
 
-static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
+static int pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
 {
     if (!mux) {
         return EINVAL;
@@ -632,7 +632,7 @@ static int pthread_mutex_init_if_static(pthread_mutex_t *mutex)
     return res;
 }
 
-int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
+int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return EINVAL;
@@ -644,7 +644,7 @@ int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
     return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, portMAX_DELAY);
 }
 
-int IRAM_ATTR pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout)
+int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout)
 {
     if (!mutex) {
         return EINVAL;
@@ -666,7 +666,7 @@ int IRAM_ATTR pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct times
     return res;
 }
 
-int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
+int pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return EINVAL;
@@ -678,7 +678,7 @@ int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
     return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, 0);
 }
 
-int IRAM_ATTR pthread_mutex_unlock(pthread_mutex_t *mutex)
+int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
     esp_pthread_mutex_t *mux;
 

@@ -11,7 +11,15 @@ config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
 
+config SOC_UART_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
@@ -91,7 +99,7 @@ config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
-config SOC_ADC_FILTER_SUPPORTED
+config SOC_ADC_DIG_IIR_FILTER_SUPPORTED
     bool
     default y
 
@@ -127,7 +135,7 @@ config SOC_ADC_DIGI_MAX_BITWIDTH
     int
     default 12
 
-config SOC_ADC_DIGI_FILTER_NUM
+config SOC_ADC_DIGI_IIR_FILTER_NUM
     int
     default 2
 
@@ -152,6 +160,10 @@ config SOC_ADC_RTC_MAX_BITWIDTH
     default 12
 
 config SOC_ADC_CALIBRATION_V1_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_SELF_HW_CALI_SUPPORTED
     bool
     default y
 
@@ -191,7 +203,7 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+config SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK
     bool
     default y
 
@@ -223,10 +235,6 @@ config SOC_GPIO_FILTER_CLK_SUPPORT_APB
     bool
     default y
 
-config SOC_GPIO_SUPPORTS_RTC_INDEPENDENT
-    bool
-    default y
-
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
@@ -242,10 +250,6 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x00000000001FFFC0
-
-config SOC_GPIO_SUPPORT_SLP_SWITCH
-    bool
-    default y
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -266,6 +270,10 @@ config SOC_I2C_NUM
 config SOC_I2C_FIFO_LEN
     int
     default 16
+
+config SOC_I2C_CMD_REG_NUM
+    int
+    default 8
 
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
@@ -299,7 +307,15 @@ config SOC_LEDC_SUPPORT_FADE_STOP
     bool
     default y
 
-config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
+config SOC_MMU_PERIPH_NUM
     int
     default 1
 
@@ -387,6 +403,14 @@ config SOC_SPI_SUPPORT_SLAVE_HD_VER2
     bool
     default y
 
+config SOC_SPI_SUPPORT_CLK_XTAL
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_PLL_F40M
+    bool
+    default y
+
 config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
@@ -420,6 +444,10 @@ config SOC_SPI_MEM_SUPPORT_SW_SUSPEND
     default y
 
 config SOC_SPI_MEM_SUPPORT_CHECK_SUS
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_WRAP
     bool
     default y
 
@@ -483,13 +511,21 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
 
-config SOC_TIMER_GROUP_SUPPORT_PLL_F40M
-    bool
-    default y
-
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 1
+
+config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
+    bool
+    default y
+
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
 
 config SOC_SECURE_BOOT_V2_ECC
     bool
@@ -520,6 +556,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
     default y
 
 config SOC_UART_NUM
+    int
+    default 2
+
+config SOC_UART_HP_NUM
     int
     default 2
 
@@ -575,19 +615,11 @@ config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y
 
-config SOC_PM_SUPPORT_CPU_PD
-    bool
-    default n
-
-config SOC_PM_SUPPORT_WIFI_PD
-    bool
-    default n
-
-config SOC_PM_SUPPORT_BT_PD
-    bool
-    default n
-
 config SOC_PM_SUPPORT_RC_FAST_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_VDDSDIO_PD
     bool
     default y
 
@@ -603,29 +635,17 @@ config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 
+config SOC_CLK_OSC_SLOW_SUPPORTED
+    bool
+    default y
+
 config SOC_WIFI_HW_TSF
     bool
     default y
 
-config SOC_WIFI_FTM_SUPPORT
+config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
     bool
-    default n
-
-config SOC_WIFI_GCMP_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_WAPI_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_CSI_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_MESH_SUPPORT
-    bool
-    default n
+    default y
 
 config SOC_BLE_SUPPORTED
     bool
@@ -636,5 +656,21 @@ config SOC_BLE_MESH_SUPPORTED
     default n
 
 config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y
+
+config SOC_BLE_50_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y
+
+config SOC_BLUFI_SUPPORTED
+    bool
+    default y
+
+config SOC_PHY_IMPROVE_RX_11B
     bool
     default y

@@ -19,6 +19,7 @@
 #include "esp_vfs_fat.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "soc/soc_caps.h"
 #include "cmd_system.h"
 #include "cmd_wifi.h"
 #include "cmd_nvs.h"
@@ -26,6 +27,10 @@
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
 #error This example is incompatible with USB CDC console. Please try "console_usb" example instead.
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
+
+#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#error This example is incompatible with USB serial JTAG console.
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 static const char* TAG = "example";
 #define PROMPT_STR CONFIG_IDF_TARGET
@@ -150,8 +155,13 @@ void app_main(void)
 
     /* Register commands */
     esp_console_register_help_command();
-    register_system();
+    register_system_common();
+#ifndef CONFIG_IDF_TARGET_ESP32H2  // needs deep sleep support, IDF-6268
+    register_system_sleep();
+#endif
+#if SOC_WIFI_SUPPORTED
     register_wifi();
+#endif
     register_nvs();
 
     /* Prompt to be printed before each line.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +112,7 @@ typedef enum {
     SOC_MOD_CLK_RC_FAST_D256,                  /*!< RC_FAST_D256_CLK comes from the internal 20MHz rc oscillator, divided by 256, and passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
     SOC_MOD_CLK_TEMP_SENSOR,                   /*!< TEMP_SENSOR_CLK comes directly from the internal 20MHz rc oscillator */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////
@@ -288,7 +289,23 @@ typedef enum {
     I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
 } soc_periph_i2c_clk_src_t;
 
-//////////////////////////////////////////////////SDM///////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SPI
+ */
+#define SOC_SPI_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of SPI clock source.
+ */
+typedef enum {
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,      /*!< Select APB as SPI source clock */
+    SPI_CLK_SRC_APB = SOC_MOD_CLK_APB,          /*!< Select APB as SPI source clock */
+    SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as SPI source clock */
+} soc_periph_spi_clk_src_t;
+
+//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
 
 /**
  * @brief Array initializer for all supported clock sources of SDM
@@ -362,6 +379,57 @@ typedef enum {
     ADC_RTC_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the source clock */
     ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the default clock choice */
 } soc_periph_adc_rtc_clk_src_t;
+
+//////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MWDT
+ */
+#define SOC_MWDT_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief MWDT clock source
+ */
+typedef enum {
+    MWDT_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
+} soc_periph_mwdt_clk_src_t;
+
+//////////////////////////////////////////////////LEDC/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of LEDC
+ */
+#define SOC_LEDC_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_APB, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief Type of LEDC clock source, reserved for the legacy LEDC driver
+ */
+typedef enum {
+    LEDC_AUTO_CLK = 0,                              /*!< LEDC source clock will be automatically selected based on the giving resolution and duty parameter when init the timer*/
+    LEDC_USE_APB_CLK = SOC_MOD_CLK_APB,             /*!< Select APB as the source clock */
+    LEDC_USE_RC_FAST_CLK = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    LEDC_USE_XTAL_CLK = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+
+    LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
+} soc_periph_ledc_clk_src_legacy_t;
+
+//////////////////////////////////////////////////SDMMC///////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SDMMC
+ */
+#define SOC_SDMMC_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of SDMMC clock source
+ */
+typedef enum {
+    SDMMC_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_160M as the default choice */
+    SDMMC_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_160M as the source clock */
+    SDMMC_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the source clock */
+} soc_periph_sdmmc_clk_src_t;
+
 
 #ifdef __cplusplus
 }

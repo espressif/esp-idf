@@ -1,0 +1,4 @@
+CONFIG_IDF_TARGET="esp32"
+CONFIG_FREERTOS_UNICORE=y
+# IDF-6964 test nano format in this configuration (current tests are not passing, so keep disabled for now)
+CONFIG_NEWLIB_NANO_FORMAT=n

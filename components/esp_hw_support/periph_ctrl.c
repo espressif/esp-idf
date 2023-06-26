@@ -7,6 +7,7 @@
 #include "hal/clk_gate_ll.h"
 #include "esp_attr.h"
 #include "esp_private/periph_ctrl.h"
+#include "soc/soc_caps.h"
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
 #include "esp_private/esp_modem_clock.h"
@@ -76,7 +77,7 @@ IRAM_ATTR void wifi_bt_common_module_disable(void)
 }
 #endif
 
-#if CONFIG_ESP32_WIFI_ENABLED
+#if CONFIG_ESP_WIFI_ENABLED
 void wifi_module_enable(void)
 {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
@@ -98,4 +99,4 @@ void wifi_module_disable(void)
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 #endif
 }
-#endif // CONFIG_ESP32_WIFI_ENABLED
+#endif // CONFIG_ESP_WIFI_ENABLED

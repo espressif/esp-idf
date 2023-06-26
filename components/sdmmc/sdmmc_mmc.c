@@ -191,7 +191,7 @@ esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd)
         out_csd->capacity = MMC_CSD_CAPACITY(response);
         out_csd->read_block_len = MMC_CSD_READ_BL_LEN(response);
     } else {
-        ESP_LOGE(TAG, "unknown MMC CSD structure version 0x%x\n", out_csd->csd_ver);
+        ESP_LOGE(TAG, "unknown MMC CSD structure version 0x%x", out_csd->csd_ver);
         return 1;
     }
     int read_bl_size = 1 << out_csd->read_block_len;

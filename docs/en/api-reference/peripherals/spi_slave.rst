@@ -1,19 +1,11 @@
 SPI Slave Driver
 ================
 
-SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals while they function as slaves.
+:link_to_translation:`zh_CN:[中文]`
 
+SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s General Purpose SPI (GP-SPI) peripheral(s) when it functions as a slave.
 
-Overview of {IDF_TARGET_NAME}'s SPI peripherals
------------------------------------------------
-
-On {IDF_TARGET_NAME}, {SOC_SPI_PERIPH_NUM} SPI controllers are available for general purpose usage. A certain SPI controller has an independent signal bus with the same name.
-
-.. only:: esp32
-
-    .. note::
-
-        On ESP32, HSPI refers to SPI2, VSPI refers to SPI3.
+For more hardware information about the GP-SPI peripheral(s), see *{IDF_TARGET_NAME} Technical Reference Manual* > *SPI Controller* [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
 
 Terminology
 -----------
@@ -61,6 +53,7 @@ Driver Features
 
 The SPI slave driver allows using the SPI peripherals as full-duplex Devices. The driver can send/receive transactions up to {IDF_TARGET_MAX_DATA_BUF} bytes in length, or utilize DMA to send/receive longer transactions. However, there are some :ref:`known issues <spi_dma_known_issues>` related to DMA.
 
+The SPI slave driver supports registering the SPI ISR to a certain CPU core. If multiple tasks try to access the same SPI Device simultaneously, it is recommended that your application be refactored so that each SPI peripheral is only accessed by a single task at a time. Please also use :cpp:member:`spi_bus_config_t::isr_cpu_id` to register the SPI ISR to the same core as SPI peripheral related tasks to ensure thread safety.
 
 SPI Transactions
 ----------------
@@ -69,7 +62,7 @@ A full-duplex SPI transaction begins when the Host asserts the CS line and start
 
 The attributes of a transaction are determined by the configuration structure for an SPI peripheral acting as a slave device :cpp:type:`spi_slave_interface_config_t`, and transaction configuration structure :cpp:type:`spi_slave_transaction_t`.
 
-As not every transaction requires both writing and reading data, you have a choice to configure the :cpp:type:`spi_transaction_t` structure for TX only, RX only, or TX and RX transactions. If :cpp:member:`spi_slave_transaction_t::rx_buffer` is set to NULL, the read phase will be skipped. If :cpp:member:`spi_slave_transaction_t::tx_buffer` is set to NULL, the write phase will be skipped.
+As not every transaction requires both writing and reading data, you can choose to configure the :cpp:type:`spi_transaction_t` structure for TX only, RX only, or TX and RX transactions. If :cpp:member:`spi_slave_transaction_t::rx_buffer` is set to NULL, the read phase will be skipped. Similarly, if :cpp:member:`spi_slave_transaction_t::tx_buffer` is set to NULL, the write phase will be skipped.
 
 .. note::
 
@@ -79,11 +72,11 @@ As not every transaction requires both writing and reading data, you have a choi
 Driver Usage
 ------------
 
-- Initialize an SPI peripheral as a Device by calling the function cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct `bus_config`. Set the unused signals to ``-1``.
+- Initialize an SPI peripheral as a Device by calling the function :cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct `bus_config`. Set the unused signals to ``-1``.
 
 .. only:: esp32
 
-    If transactions will be longer than 32 bytes, allow a DMA channel 1 or 2 by setting the parameter ``dma_chan`` to ``1`` or ``2`` respectively. Otherwise, set ``dma_chan`` to ``0``.
+    If transactions are expected to be longer than 32 bytes, set the parameter ``dma_chan`` to ``1`` or ``2`` to allow a DMA channel 1 or 2 respectively. Otherwise, set ``dma_chan`` to ``0``.
 
 .. only:: esp32s2
 
@@ -127,7 +120,7 @@ GPIO Matrix and IO_MUX
        * - Pin Name
          - GPIO Number (SPI2)
          - GPIO Number (SPI3)
-       * - CS0*
+       * - CS0
          - 15
          - 5
        * - SCLK
@@ -148,76 +141,37 @@ GPIO Matrix and IO_MUX
 
 .. only:: not esp32
 
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2"}
+
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
     When an SPI Host is set to 80 MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same compared to routing them via IO_MUX.
 
     The IO_MUX pins for SPI buses are given below.
 
-.. only:: esp32s2 or esp32s3
-
     .. list-table::
        :widths: 40 30
        :header-rows: 1
 
        * - Pin Name
          - GPIO Number (SPI2)
-       * - CS0*
-         - 10
+       * - CS0
+         - {IDF_TARGET_SPI2_IOMUX_PIN_CS}
        * - SCLK
-         - 12
+         - {IDF_TARGET_SPI2_IOMUX_PIN_CLK}
        * - MISO
-         - 13
+         - {IDF_TARGET_SPI2_IOMUX_PIN_MISO}
        * - MOSI
-         - 11
+         - {IDF_TARGET_SPI2_IOMUX_PIN_MOSI}
        * - QUADWP
-         - 14
+         - {IDF_TARGET_SPI2_IOMUX_PIN_WP}
        * - QUADHD
-         - 9
-
-.. only:: esp32c2 or esp32c3
-
-    .. list-table::
-       :widths: 40 30
-       :header-rows: 1
-
-       * - Pin Name
-         - GPIO Number (SPI2)
-       * - CS0*
-         - 10
-       * - SCLK
-         - 6
-       * - MISO
-         - 2
-       * - MOSI
-         - 7
-       * - QUADWP
-         - 5
-       * - QUADHD
-         - 4
-
-.. only:: esp32c6
-
-    .. list-table::
-       :widths: 40 30
-       :header-rows: 1
-
-       * - Pin Name
-         - GPIO Number (SPI2)
-       * - CS0*
-         - 16
-       * - SCLK
-         - 6
-       * - MISO
-         - 2
-       * - MOSI
-         - 7
-       * - QUADWP
-         - 5
-       * - QUADHD
-         - 4
-
-* Only the first Device attached to the bus can use the CS0 pin.
+         - {IDF_TARGET_SPI2_IOMUX_PIN_HD}
 
 
 Speed and Timing Considerations
@@ -238,7 +192,7 @@ You can also configure a GPIO pin through which the Device will signal to the Ho
 SCLK Frequency Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40"}
+{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40", esp32c6="40", esp32h2="32"}
 
 The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
 

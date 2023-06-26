@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,12 +33,16 @@ typedef enum {
     PERIPH_ECC_MODULE,
     PERIPH_HMAC_MODULE,
     PERIPH_DS_MODULE,
+    PERIPH_SDIO_SLAVE_MODULE,
     PERIPH_GDMA_MODULE,
     PERIPH_MCPWM0_MODULE,
     PERIPH_ETM_MODULE,
+    PERIPH_PARLIO_MODULE,
     PERIPH_SYSTIMER_MODULE,
     PERIPH_SARADC_MODULE,
     PERIPH_TEMPSENSOR_MODULE,
+    PERIPH_REGDMA_MODULE,
+/* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
     PERIPH_WIFI_MODULE,
     PERIPH_BT_MODULE,
     PERIPH_IEEE802154_MODULE,
@@ -46,6 +50,12 @@ typedef enum {
     PERIPH_PHY_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
+
+typedef enum {
+    LP_PERIPH_I2C0_MODULE = 0,
+    LP_PERIPH_UART0_MODULE,
+    LP_PERIPH_MODULE_MAX,
+} lp_periph_module_t;
 
 #define PERIPH_MODEM_MODULE_MIN PERIPH_WIFI_MODULE
 #define PERIPH_MODEM_MODULE_MAX PERIPH_PHY_MODULE

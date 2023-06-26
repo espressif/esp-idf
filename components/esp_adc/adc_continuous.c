@@ -22,12 +22,14 @@
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_clk_tree.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_continuous.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
 #include "esp_memory_utils.h"
+#include "adc_continuous_internal.h"
 //For DMA
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
@@ -50,45 +52,6 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define ADC_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
 #define INTERNAL_BUF_NUM      5
-
-typedef enum {
-    ADC_FSM_INIT,
-    ADC_FSM_STARTED,
-} adc_fsm_t;
-
-/*---------------------------------------------------------------
-            Continuous Mode Driverr Context
----------------------------------------------------------------*/
-typedef struct adc_continuous_ctx_t {
-    uint8_t                         *rx_dma_buf;                //dma buffer
-    adc_hal_dma_ctx_t               hal;                        //hal context
-#if SOC_GDMA_SUPPORTED
-    gdma_channel_handle_t           rx_dma_channel;             //dma rx channel handle
-#elif CONFIG_IDF_TARGET_ESP32S2
-    spi_host_device_t               spi_host;                   //ADC uses this SPI DMA
-#elif CONFIG_IDF_TARGET_ESP32
-    i2s_port_t                      i2s_host;                   //ADC uses this I2S DMA
-#endif
-    intr_handle_t                   dma_intr_hdl;               //DMA Interrupt handler
-    RingbufHandle_t                 ringbuf_hdl;                //RX ringbuffer handler
-    void*                           ringbuf_storage;            //Ringbuffer storage buffer
-    void*                           ringbuf_struct;             //Ringbuffer structure buffer
-    intptr_t                        rx_eof_desc_addr;           //eof descriptor address of RX channel
-    adc_fsm_t                       fsm;                        //ADC continuous mode driver internal states
-    bool                            use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
-    bool                            use_adc2;                   //1: ADC unit2 will be used; 0: ADC unit2 won't be used. This determines whether to acquire sar_adc2_mutex lock or not.
-    adc_atten_t                     adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
-    adc_atten_t                     adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
-    adc_hal_digi_ctrlr_cfg_t        hal_digi_ctrlr_cfg;         //Hal digital controller configuration
-    adc_continuous_evt_cbs_t    cbs;                        //Callbacks
-    void                            *user_data;                 //User context
-    esp_pm_lock_handle_t            pm_lock;                    //For power management
-} adc_continuous_ctx_t;
-
-#ifdef CONFIG_PM_ENABLE
-//Only for deprecated API
-extern esp_pm_lock_handle_t adc_digi_arbiter_lock;
-#endif  //CONFIG_PM_ENABLE
 
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
@@ -149,6 +112,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     }
 
     //ringbuffer storage/struct buffer
+    adc_ctx->ringbuf_size = hdl_config->max_store_buf_size;
     adc_ctx->ringbuf_storage = heap_caps_calloc(1, hdl_config->max_store_buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     adc_ctx->ringbuf_struct = heap_caps_calloc(1, sizeof(StaticRingbuffer_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!adc_ctx->ringbuf_storage || !adc_ctx->ringbuf_struct) {
@@ -171,7 +135,9 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     }
 
     //malloc dma descriptor
-    adc_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * INTERNAL_BUF_NUM, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint32_t dma_desc_num_per_frame = (hdl_config->conv_frame_size + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    uint32_t dma_desc_max_num = dma_desc_num_per_frame * INTERNAL_BUF_NUM;
+    adc_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * dma_desc_max_num, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     if (!adc_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -261,12 +227,14 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
 #elif CONFIG_IDF_TARGET_ESP32
         .dev = (void *)I2S_LL_GET_HW(adc_ctx->i2s_host),
 #endif
-        .desc_max_num = INTERNAL_BUF_NUM,
+        .eof_desc_num = INTERNAL_BUF_NUM,
+        .eof_step = dma_desc_num_per_frame,
         .dma_chan = dma_chan,
         .eof_num = hdl_config->conv_frame_size / SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     };
     adc_hal_dma_ctx_config(&adc_ctx->hal, &config);
 
+    adc_ctx->flags.flush_pool = hdl_config->flags.flush_pool;
     adc_ctx->fsm = ADC_FSM_INIT;
     *ret_handle = adc_ctx;
 
@@ -295,6 +263,7 @@ static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan
     ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
     return s_adc_dma_intr(user_data);
 }
+
 #else
 static IRAM_ATTR void adc_dma_intr_handler(void *arg)
 {
@@ -323,21 +292,22 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
     bool need_yield = false;
     BaseType_t ret;
     adc_hal_dma_desc_status_t status = false;
-    dma_descriptor_t *current_desc = NULL;
+    uint8_t *finished_buffer = NULL;
+    uint32_t finished_size = 0;
 
     while (1) {
-        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &current_desc);
+        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &finished_buffer, &finished_size);
         if (status != ADC_HAL_DMA_DESC_VALID) {
             break;
         }
 
-        ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, current_desc->buffer, current_desc->dw0.length, &taskAwoken);
+        ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
         need_yield |= (taskAwoken == pdTRUE);
 
         if (adc_digi_ctx->cbs.on_conv_done) {
             adc_continuous_evt_data_t edata = {
-                .conv_frame_buffer = current_desc->buffer,
-                .size = current_desc->dw0.length,
+                .conv_frame_buffer = finished_buffer,
+                .size = finished_size,
             };
             if (adc_digi_ctx->cbs.on_conv_done(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
                 need_yield |= true;
@@ -345,7 +315,25 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
         }
 
         if (ret == pdFALSE) {
-            //ringbuffer overflow
+            if (adc_digi_ctx->flags.flush_pool) {
+                size_t actual_size = 0;
+                uint8_t *old_data = xRingbufferReceiveUpToFromISR(adc_digi_ctx->ringbuf_hdl, &actual_size, adc_digi_ctx->ringbuf_size);
+                /**
+                 * Replace by ringbuffer reset API when this API is ready.
+                 * Now we do mannual reset.
+                 * For old_data == NULL condition (equals to the future ringbuffer reset fail condition), we don't care this time data,
+                 * as this only happens when the ringbuffer size is small, new data will be filled in soon.
+                 */
+                if (old_data) {
+                    vRingbufferReturnItemFromISR(adc_digi_ctx->ringbuf_hdl, old_data, &taskAwoken);
+                    xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
+                    if (taskAwoken == pdTRUE) {
+                        need_yield |= true;
+                    }
+                }
+            }
+
+            //ringbuffer overflow happens before
             if (adc_digi_ctx->cbs.on_pool_ovf) {
                 adc_continuous_evt_data_t edata = {};
                 if (adc_digi_ctx->cbs.on_pool_ovf(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
@@ -353,11 +341,6 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
                 }
             }
         }
-    }
-
-    if (status == ADC_HAL_DMA_DESC_NULL) {
-        //start next turns of dma operation
-        adc_hal_digi_start(&adc_digi_ctx->hal, adc_digi_ctx->rx_dma_buf);
     }
 
     return need_yield;
@@ -428,11 +411,6 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     adc_hal_digi_stop(&handle->hal);
 
     adc_hal_digi_deinit(&handle->hal);
-#if CONFIG_PM_ENABLE
-    if (handle->pm_lock) {
-        esp_pm_lock_release(handle->pm_lock);
-    }
-#endif  //CONFIG_PM_ENABLE
 
     if (handle->use_adc2) {
         adc_lock_release(ADC_UNIT_2);
@@ -493,11 +471,9 @@ esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle)
         free(handle->ringbuf_struct);
     }
 
-#if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
         esp_pm_lock_delete(handle->pm_lock);
     }
-#endif  //CONFIG_PM_ENABLE
 
     free(handle->rx_dma_buf);
     free(handle->hal.rx_desc);
@@ -566,10 +542,15 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
     ESP_RETURN_ON_FALSE(config->format == ADC_DIGI_OUTPUT_FORMAT_TYPE2, ESP_ERR_INVALID_ARG, ADC_TAG, "Please use type2");
 #endif
 
+    uint32_t clk_src_freq_hz = 0;
+    esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+
     handle->hal_digi_ctrlr_cfg.adc_pattern_len = config->pattern_num;
     handle->hal_digi_ctrlr_cfg.sample_freq_hz = config->sample_freq_hz;
     handle->hal_digi_ctrlr_cfg.conv_mode = config->conv_mode;
     memcpy(handle->hal_digi_ctrlr_cfg.adc_pattern, config->adc_pattern, config->pattern_num * sizeof(adc_digi_pattern_config_t));
+    handle->hal_digi_ctrlr_cfg.clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
+    handle->hal_digi_ctrlr_cfg.clk_src_freq_hz = clk_src_freq_hz;
 
     const int atten_uninitialized = 999;
     handle->adc1_atten = atten_uninitialized;

@@ -10,9 +10,10 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include "hal/misc.h"
 #include "hal/uart_types.h"
-#include "soc/uart_periph.h"
+#include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "esp_attr.h"
 
@@ -23,7 +24,7 @@ extern "C" {
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
-#define UART_LL_GET_HW(num) (((num) == 0) ? (&UART0) : (&UART1))
+#define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
 
 #define UART_LL_MIN_WAKEUP_THRESH (2)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
@@ -61,9 +62,19 @@ typedef enum {
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
+FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_clk)
 {
-    hw->conf0.tick_ref_always_on = (source_clk == UART_SCLK_APB) ? 1 : 0;
+    switch (source_clk) {
+        case UART_SCLK_REF_TICK:
+            hw->conf0.tick_ref_always_on = 0;
+            break;
+        case UART_SCLK_APB:
+            hw->conf0.tick_ref_always_on = 1;
+            break;
+        default:
+            // Invalid UART clock source
+            abort();
+    }
 }
 
 /**
@@ -74,9 +85,17 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t* source_clk)
+FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk)
 {
-    *source_clk = hw->conf0.tick_ref_always_on ? UART_SCLK_APB : UART_SCLK_REF_TICK;
+    switch (hw->conf0.tick_ref_always_on) {
+        default:
+        case 0:
+            *source_clk = UART_SCLK_REF_TICK;
+            break;
+        case 1:
+            *source_clk = UART_SCLK_APB;
+            break;
+    }
 }
 
 /**
@@ -138,6 +157,18 @@ FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
 FORCE_INLINE_ATTR void uart_ll_disable_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
     hw->int_ena.val &= (~mask);
+}
+
+/**
+ * @brief  Get the UART raw interrupt status.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return The UART interrupt status.
+ */
+static inline uint32_t uart_ll_get_intraw_mask(uart_dev_t *hw)
+{
+    return hw->int_raw.val;
 }
 
 /**
@@ -911,6 +942,18 @@ FORCE_INLINE_ATTR void uart_ll_force_xon(uart_port_t uart_num)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_fsm_status(uart_port_t uart_num)
 {
     return REG_GET_FIELD(UART_FSM_STATUS_REG(uart_num), UART_ST_UTX_OUT);
+}
+
+/**
+ * @brief  Configure UART whether to discard when receiving wrong data
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  discard true: Receiver stops storing data into FIFO when data is wrong
+ *                false: Receiver continue storing data into FIFO when data is wrong
+ */
+FORCE_INLINE_ATTR void uart_ll_discard_error_data(uart_dev_t *hw, bool discard)
+{
+    hw->conf0.err_wr_mask = discard ? 1 : 0;
 }
 
 #ifdef __cplusplus

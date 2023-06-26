@@ -152,7 +152,7 @@ FORCE_INLINE_ATTR void xt_utils_set_watchpoint(int wp_num,
 {
     // Initialize DBREAKC bits (see Table 4–143 or isa_rm.pdf)
     uint32_t dbreakc_reg = 0x3F;
-    dbreakc_reg = dbreakc_reg << (__builtin_ffs(size) - 1);
+    dbreakc_reg = dbreakc_reg << (__builtin_ffsll(size) - 1);
     dbreakc_reg = dbreakc_reg & 0x3F;
     if (on_read) {
         dbreakc_reg |= BIT(30);

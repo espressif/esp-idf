@@ -13,6 +13,19 @@ extern "C" {
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
 
+typedef enum {
+    PHY_I2C_MST_CMD_TYPE_OFF = 0,
+    PHY_I2C_MST_CMD_TYPE_ON,
+    PHY_I2C_MST_CMD_TYPE_MAX
+} phy_i2c_master_command_type_t;
+
+typedef struct {
+    struct {
+        uint8_t start, end; /* the start and end index of phy i2c master command memory */
+        uint8_t host_id;    /* phy i2c master host id */
+    } config[PHY_I2C_MST_CMD_TYPE_MAX];
+} phy_i2c_master_command_attribute_t;
+
 /**
  * @file phy.h
  * @brief Declarations for functions provided by libphy.a
@@ -75,6 +88,15 @@ void phy_xpd_tsens(void);
 void phy_init_flag(void);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C6
+/**
+ * @brief Get the configuration info of PHY i2c master command memory.
+ *
+ * @param   attr the configuration info of PHY i2c master command memory
+ */
+void phy_i2c_master_mem_cfg(phy_i2c_master_command_attribute_t *attr);
+#endif
+
 /**
  * @brief Store and load PHY digital registers.
  *
@@ -104,6 +126,18 @@ void phy_bbpll_en_usb(bool en);
  * @brief Phy version select for ESP32S2
  */
 void phy_eco_version_sel(uint8_t chip_ver);
+#endif
+
+#if CONFIG_ESP_PHY_IMPROVE_RX_11B
+/**
+ * @brief Improve Wi-Fi receive 11b pkts when modules with high interference.
+ *
+ * @attention 1.This is a workaround to improve Wi-Fi receive 11b pkts for some modules using AC-DC power supply with high interference.
+ * @attention 2.Enable this will sacrifice Wi-Fi OFDM receive performance.But to guarantee 11b receive performance serves as a bottom line in this case.
+ *
+ * @param     enable  Enable or disable.
+ */
+void phy_improve_rx_special(bool enable);
 #endif
 
 #ifdef __cplusplus

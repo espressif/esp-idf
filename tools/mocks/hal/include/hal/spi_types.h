@@ -20,3 +20,15 @@ typedef enum {
     SPI3_HOST=2,    ///< SPI3
     SPI_HOST_MAX=3,   ///< invalid host value
 } spi_host_device_t;
+
+/**
+ * @brief Type of SPI clock source.
+ */
+typedef enum {
+    SPI_CLK_SRC_DEFAULT,     /*!< Select PLL as SPI source clock */
+    SPI_CLK_SRC_PLL_F40M,     /*!< Select PLL as SPI source clock */
+    SPI_CLK_SRC_PLL_F80M,     /*!< Select PLL as SPI source clock */
+    SPI_CLK_SRC_APB,         /*!< Select APB as SPI source clock */
+    SPI_CLK_SRC_XTAL,        /*!< Select XTAL as SPI source clock */
+    SPI_CLK_SRC_RC_FAST,     /*!< Select RC_FAST as SPI source clock */
+} spi_clock_source_t;

@@ -26,12 +26,86 @@ void ble_store_config_init(void);
 /**
  * Performs GATT operation against the specified peer:
  * 1. Reads the Supported LE PHY characteristic.
+ * 2. After read is completed, performs write blob
  *
  * If the peer does not support a required service, characteristic, or
- * descriptor, then the peer lied when it claimed support for the alert
- * notification service!  When this happens, or if a GATT procedure fails,
+ * descriptor, then the peer lied when it claimed support for the LE
+ * PHY service!  When this happens, or if a GATT procedure fails,
  * this function immediately terminates the connection.
  */
+static int
+blecent_on_write(uint16_t conn_handle,
+                 const struct ble_gatt_error *error,
+                 struct ble_gatt_attr *attr,
+                 void *arg)
+{
+    MODLOG_DFLT(INFO, "Write complete; status=%d conn_handle=%d", error->status,
+                conn_handle);
+    if (error->status == 0) {
+        MODLOG_DFLT(INFO, " attr_handle=%d", attr->handle);
+    }
+
+    MODLOG_DFLT(INFO, "\n");
+    return 0;
+}
+
+static int
+blecent_on_read(uint16_t conn_handle,
+                const struct ble_gatt_error *error,
+                struct ble_gatt_attr *attr,
+                void *arg)
+{
+    MODLOG_DFLT(INFO, "Read complete; status=%d conn_handle=%d", error->status,
+                conn_handle);
+    if (error->status == 0) {
+        MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
+        print_mbuf(attr->om);
+    }
+
+    MODLOG_DFLT(INFO, "\n");
+
+    /* Write 1000 bytes to the LE PHY characteristic.*/
+    const struct peer_chr *chr;
+    int len = 1000;
+    uint8_t value[len];
+    int rc;
+    struct os_mbuf *txom;
+
+    const struct peer *peer = peer_find(conn_handle);
+    chr = peer_chr_find_uuid(peer,
+                             BLE_UUID16_DECLARE(LE_PHY_UUID16),
+                             BLE_UUID16_DECLARE(LE_PHY_CHR_UUID16));
+    if (chr == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the Alert "
+                    "Notification Control Point characteristic\n");
+        goto err;
+    }
+
+    /* Fill the value array with data */
+    for (int i = 0; i < len; i++) {
+        value[i] = i;
+    }
+
+    txom = ble_hs_mbuf_from_flat(&value, len);
+    if (!txom) {
+        MODLOG_DFLT(ERROR, "Insufficient memory");
+        goto err;
+    }
+
+    rc = ble_gattc_write_long(conn_handle, chr->chr.val_handle, 0,
+                              txom, blecent_on_write, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Error: Failed to write characteristic; rc=%d\n",
+                    rc);
+        goto err;
+    }
+    return 0;
+
+err:
+    /* Terminate the connection. */
+    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+}
+
 static void
 blecent_read(const struct peer *peer)
 {
@@ -49,7 +123,7 @@ blecent_read(const struct peer *peer)
     }
 
     rc = ble_gattc_read(peer->conn_handle, chr->chr.val_handle,
-                        NULL, NULL);
+                        blecent_on_read, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to read characteristic; rc=%d\n",
                     rc);
@@ -477,7 +551,12 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
+
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;
     ble_hs_cfg.sync_cb = blecent_on_sync;

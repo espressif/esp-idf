@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,7 +133,6 @@ static esp_err_t rmt_rx_register_to_group(rmt_rx_channel_t *rx_channel, const rm
         if (channel_id < 0) {
             // didn't find a capable channel in the group, don't forget to release the group handle
             rmt_release_group_handle(group);
-            group = NULL;
         } else {
             rx_channel->base.channel_id = channel_id;
             rx_channel->base.channel_mask = channel_mask;
@@ -155,7 +154,7 @@ static void rmt_rx_unregister_from_group(rmt_channel_t *channel, rmt_group_t *gr
     rmt_release_group_handle(group);
 }
 
-static esp_err_t rmt_rx_destory(rmt_rx_channel_t *rx_channel)
+static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
 {
     if (rx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(rx_channel->base.intr), TAG, "delete interrupt service failed");
@@ -289,7 +288,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 
 err:
     if (rx_channel) {
-        rmt_rx_destory(rx_channel);
+        rmt_rx_destroy(rx_channel);
     }
     return ret;
 }
@@ -302,7 +301,7 @@ static esp_err_t rmt_del_rx_channel(rmt_channel_handle_t channel)
     int channel_id = channel->channel_id;
     ESP_LOGD(TAG, "del rx channel(%d,%d)", group_id, channel_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(rmt_rx_destory(rx_chan), TAG, "destory rx channel failed");
+    ESP_RETURN_ON_ERROR(rmt_rx_destroy(rx_chan), TAG, "destroy rx channel failed");
     return ESP_OK;
 }
 
@@ -344,6 +343,11 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
 
+    uint32_t filter_reg_value = ((uint64_t)group->resolution_hz * config->signal_range_min_ns) / 1000000000UL;
+    uint32_t idle_reg_value = ((uint64_t)channel->resolution_hz * config->signal_range_max_ns) / 1000000000UL;
+    ESP_RETURN_ON_FALSE(filter_reg_value <= RMT_LL_MAX_FILTER_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_min_ns too big");
+    ESP_RETURN_ON_FALSE(idle_reg_value <= RMT_LL_MAX_IDLE_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_max_ns too big");
+
     // fill in the transaction descriptor
     rmt_rx_trans_desc_t *t = &rx_chan->trans_desc;
     t->buffer = buffer;
@@ -365,9 +369,9 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     rmt_ll_rx_reset_pointer(hal->regs, channel_id);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_HW);
     // set sampling parameters of incoming signals
-    rmt_ll_rx_set_filter_thres(hal->regs, channel_id, ((uint64_t)group->resolution_hz * config->signal_range_min_ns) / 1000000000UL);
+    rmt_ll_rx_set_filter_thres(hal->regs, channel_id, filter_reg_value);
     rmt_ll_rx_enable_filter(hal->regs, channel_id, config->signal_range_min_ns != 0);
-    rmt_ll_rx_set_idle_thres(hal->regs, channel_id, ((uint64_t)channel->resolution_hz * config->signal_range_max_ns) / 1000000000UL);
+    rmt_ll_rx_set_idle_thres(hal->regs, channel_id, idle_reg_value);
     // turn on RMT RX machine
     rmt_ll_rx_enable(hal->regs, channel_id, true);
     portEXIT_CRITICAL(&channel->spinlock);
@@ -500,7 +504,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
     // sanity check
-    assert(offset > rx_chan->mem_off);
+    assert(offset >= rx_chan->mem_off);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
     // copy the symbols to user space
     size_t stream_symbols = offset - rx_chan->mem_off;

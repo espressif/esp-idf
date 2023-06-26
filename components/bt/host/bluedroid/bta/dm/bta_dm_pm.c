@@ -54,7 +54,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER *p_timer,
 
 #if (BTM_SSR_INCLUDED == TRUE)
 #if (defined BTA_HH_INCLUDED && BTA_HH_INCLUDED == TRUE)
-#include "../hh/bta_hh_int.h"
+#include "bta_hh_int.h"
 /* BTA_DM_PM_SSR1 will be dedicated for HH SSR setting entry, no other profile can use it */
 #define BTA_DM_PM_SSR_HH      BTA_DM_PM_SSR1
 #endif /* (defined BTA_HH_INCLUDED && BTA_HH_INCLUDED == TRUE) */

@@ -1,0 +1,7 @@
+# This example uses an extra partition to demonstrate encrypted/non-encrypted reads/writes.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
+
+CONFIG_NVS_ENCRYPTION=y
+CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC=y

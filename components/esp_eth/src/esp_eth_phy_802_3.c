@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -230,12 +230,9 @@ static esp_err_t eth_phy_802_3_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
     phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
 
-    if (phy_802_3->link_status == ETH_LINK_UP) {
-        /* Since the link is going to be reconfigured, consider it down for a while */
-        phy_802_3->link_status = ETH_LINK_DOWN;
-        /* Indicate to upper stream apps the link is cosidered down */
-        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)phy_802_3->link_status), err, TAG, "change link failed");
-    }
+    /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
+    phy_802_3->link_status = ETH_LINK_DOWN;
+
     /* Set speed */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
@@ -253,12 +250,9 @@ static esp_err_t eth_phy_802_3_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duple
     phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
 
-    if (phy_802_3->link_status == ETH_LINK_UP) {
-        /* Since the link is going to be reconfigured, consider it down for a while */
-        phy_802_3->link_status = ETH_LINK_DOWN;
-        /* Indicate to upper stream apps the link is cosidered down */
-        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)phy_802_3->link_status), err, TAG, "change link failed");
-    }
+    /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
+    phy_802_3->link_status = ETH_LINK_DOWN;
+
     /* Set duplex mode */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");

@@ -1,0 +1,7 @@
+menu "Example Configuration"
+
+    config EXAMPLE_TEST_RUN_USING_QEMU
+        bool "Run example test using Qemu"
+        help
+            Enabling this option emulates the example test under the QEMU environment.
+endmenu

@@ -18,7 +18,7 @@ For a full description of the startup process including the ESP-IDF bootloader, 
 
 .. _bootloader-compatibility:
 
-Bootloader compatibility
+Bootloader Compatibility
 ------------------------
 
 It is recommended to update to newer :doc:`versions of ESP-IDF </versions>`: when they are released. The OTA (over the air) update process can flash new apps in the field but cannot flash a new bootloader. For this reason, the bootloader supports booting apps built from newer versions of ESP-IDF.
@@ -41,6 +41,12 @@ The bootloader does not support booting apps from older versions of ESP-IDF. Whe
 
     Bootloaders built from versions of ESP-IDF before V3.1 do not support MD5 checksums in the partition table binary. When using a bootloader from these ESP-IDF versions and building a new app, enable the config option :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`.
 
+    Before ESP-IDF V5.1
+    ^^^^^^^^^^^^^^^^^^^
+
+    Bootloaders built from versions of ESP-IDF prior to V5.1 do not support :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`. When using a bootloader from these ESP-IDF versions and building a new app, you should not use this option.
+
+
 SPI Flash Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -59,7 +65,7 @@ The default bootloader log level is "Info". By setting the :ref:`CONFIG_BOOTLOAD
 
 Reducing bootloader log verbosity can improve the overall project boot time by a small amount.
 
-Factory reset
+Factory Reset
 -------------
 
 Sometimes it is desirable to have a way for the device to fall back to a known-good state, in case of some problem with an update.
@@ -86,6 +92,19 @@ In addition, the following configuration options control the reset condition:
 
 - :ref:`CONFIG_BOOTLOADER_FACTORY_RESET_PIN_LEVEL` - configure whether a factory reset should trigger on a high or low level of the GPIO. If the GPIO has an internal pullup then this is enabled before the pin is sampled, consult the {IDF_TARGET_NAME} datasheet for details on pin internal pullups.
 
+.. only:: SOC_RTC_FAST_MEM_SUPPORTED
+
+    If an application needs to know if the factory reset has occurred, users can call the function :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state`.
+    
+    - If the status is read as true, the function will return the status, indicating that the factory reset has occurred. The function then resets the status to false for subsequent factory reset judgement.
+    - If the status is read as false, the function will return the status, indicating that the factory reset has not occurred, or the memory where this status is stored is invalid.
+    
+    Note that this feature reserves some RTC FAST memory (the same size as the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` feature).
+
+.. only:: not SOC_RTC_FAST_MEM_SUPPORTED
+
+    Sometimes an application needs to know if the factory reset has occurred. The {IDF_TARGET_NAME} chip does not have RTC FAST memory, so there is no API to detect it. Instead, there is a workaround: you need an NVS partition that will be erased by the bootloader if factory reset occurs (add this partition to :ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET`). In this NVS partition, create a "factory_reset_state" token that will be increased in the application. If the "factory_reset_state" is 0 then the factory reset has occurred.
+
 .. _bootloader_boot_from_test_firmware:
 
 Boot from Test Firmware
@@ -95,13 +114,15 @@ It's possible to write a special firmware app for testing in production, and boo
 
 Implementing a dedicated test app firmware requires creating a totally separate ESP-IDF project for the test app (each project in ESP-IDF only builds one app). The test app can be developed and tested independently of the main project, and then integrated at production testing time as a pre-compiled .bin file which is flashed to the address of the main project's test app partition.
 
-To support this functionality in the main project's bootloader, set the configuration item :ref:`CONFIG_BOOTLOADER_APP_TEST` and configure the following two items:
+To support this functionality in the main project's bootloader, set the configuration item :ref:`CONFIG_BOOTLOADER_APP_TEST` and configure the following three items:
 
-- :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - GPIO number to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset.
+- :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - GPIO number to boot test partition. The selected GPIO will be configured as an input with internal pull-up enabled. This GPIO must be pulled low or high (configurable) on reset to trigger this.
 
-  Once the GPIO input is released (allowing it to be pulled up) and the device has been reboot, the normally configured application will boot (factory or any OTA app partition slot).
+  Once the GPIO input is released and the device has been rebooted, the default boot sequence will be enabled again to boot the factory partition or any OTA app partition slot.
 
-- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is the hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+
+- :ref:`CONFIG_BOOTLOADER_APP_TEST_PIN_LEVEL` - configure whether a test partition boot should trigger on a high or low level of the GPIO. If the GPIO has an internal pull-up, then this is enabled before the pin is sampled. Consult the {IDF_TARGET_NAME} datasheet for details on pin internal pull-ups.
 
 Rollback
 --------
@@ -124,14 +145,13 @@ By default, the hardware RTC Watchdog timer remains running while the bootloader
 Bootloader Size
 ---------------
 
-{IDF_TARGET_DEFAULT_MAX_BOOTLOADER_SIZE:default = "0x8000 (32768)", esp32 = "0x7000 (28672)", esp32s2 = "0x7000 (28672)"}
-{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64KB (0x10000 bytes)", esp32 = "48KB (0xC000 bytes)"}
+{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64 KB (0x10000 bytes)", esp32 = "48 KB (0xC000 bytes)"}
 {IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x12000", esp32 = "0xE000"}
 .. Above is calculated as 0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector
 
 When enabling additional bootloader functions, including :doc:`/security/flash-encryption` or Secure Boot, and especially if setting a high :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` level, then it is important to monitor the bootloader .bin file's size.
 
-When using the default :ref:`CONFIG_PARTITION_TABLE_OFFSET` value 0x8000, the size limit is {IDF_TARGET_DEFAULT_MAX_BOOTLOADER_SIZE} bytes.
+When using the default :ref:`CONFIG_PARTITION_TABLE_OFFSET` value 0x8000, the size limit is {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} bytes.
 
 If the bootloader binary is too large, then the bootloader build will fail with an error "Bootloader binary size [..] is too large for partition table offset". If the bootloader binary is flashed anyhow then the {IDF_TARGET_NAME} will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
 
@@ -145,12 +165,12 @@ When Secure Boot V2 is enabled, there is also an absolute binary size limit of {
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    Fast boot from Deep Sleep
+    Fast Boot from Deep-Sleep
     -------------------------
 
-    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from deep sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
+    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from Deep-sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
 
-Custom bootloader
+Custom Bootloader
 -----------------
 
 The current bootloader implementation allows a project to extend it or modify it. There are two ways of doing it: by implementing hooks or by overriding it. Both ways are presented in :example:`custom_bootloader` folder in ESP-IDF examples:

@@ -20,11 +20,7 @@
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <esp_local_ctrl.h>
-#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
-#include <esp_https_server.h>
-#else
-#include <esp_http_server.h>
-#endif
+
 static const char *TAG = "control";
 
 #define SERVICE_NAME "my_esp_ctrl_device"

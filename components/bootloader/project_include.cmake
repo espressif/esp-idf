@@ -148,5 +148,5 @@ endif()
 #
 # So for now we just have the top-level build remove the final build products...
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
-    ADDITIONAL_MAKE_CLEAN_FILES
+    ADDITIONAL_CLEAN_FILES
     ${bootloader_binary_files})

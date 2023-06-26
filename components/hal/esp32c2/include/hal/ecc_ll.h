@@ -41,9 +41,6 @@ static inline void ecc_ll_set_mode(ecc_mode_t mode)
         case ECC_MODE_POINT_MUL:
             REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 0);
             break;
-        case ECC_MODE_INVERSE_MUL:
-            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 1);
-            break;
         case ECC_MODE_VERIFY:
             REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 2);
             break;

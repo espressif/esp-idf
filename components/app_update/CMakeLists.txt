@@ -1,6 +1,6 @@
 idf_component_register(SRCS "esp_ota_ops.c" "esp_ota_app_desc.c"
                     INCLUDE_DIRS "include"
-                    REQUIRES partition_table bootloader_support esp_app_format esp_partition
+                    REQUIRES partition_table bootloader_support esp_app_format esp_bootloader_format esp_partition
                     PRIV_REQUIRES esptool_py efuse spi_flash)
 
 if(NOT BOOTLOADER_BUILD)

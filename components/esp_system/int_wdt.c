@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
+#include "hal/mwdt_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
 #include "esp_err.h"
@@ -20,6 +21,25 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_int_wdt.h"
+
+#if SOC_TIMER_GROUPS > 1
+
+/* If we have two hardware timer groups, use the second one for interrupt watchdog. */
+#define WDT_LEVEL_INTR_SOURCE   ETS_TG1_WDT_LEVEL_INTR_SOURCE
+#define IWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
+#define IWDT_TICKS_PER_US       500
+#define IWDT_INSTANCE           WDT_MWDT1
+#define IWDT_INITIAL_TIMEOUT_S  5
+
+#else
+
+#define WDT_LEVEL_INTR_SOURCE   ETS_TG0_WDT_LEVEL_INTR_SOURCE
+#define IWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
+#define IWDT_TICKS_PER_US       500
+#define IWDT_INSTANCE           WDT_MWDT0
+#define IWDT_INITIAL_TIMEOUT_S  5
+
+#endif // SOC_TIMER_GROUPS > 1
 
 #if CONFIG_ESP_INT_WDT
 

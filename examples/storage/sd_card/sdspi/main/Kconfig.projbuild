@@ -12,6 +12,7 @@ menu "SD SPI Example Configuration"
         default 15 if IDF_TARGET_ESP32
         default 35 if IDF_TARGET_ESP32S2
         default 35 if IDF_TARGET_ESP32S3
+        default 5  if IDF_TARGET_ESP32H2
         default 4  # C3 and others
 
     config EXAMPLE_PIN_MISO
@@ -19,6 +20,7 @@ menu "SD SPI Example Configuration"
         default 2 if IDF_TARGET_ESP32
         default 37 if IDF_TARGET_ESP32S2
         default 37 if IDF_TARGET_ESP32S3
+        default 0  if IDF_TARGET_ESP32H2
         default 6  # C3 and others
 
     config EXAMPLE_PIN_CLK
@@ -26,6 +28,7 @@ menu "SD SPI Example Configuration"
         default 14 if IDF_TARGET_ESP32
         default 36 if IDF_TARGET_ESP32S2
         default 36 if IDF_TARGET_ESP32S3
+        default 4  if IDF_TARGET_ESP32H2
         default 5  # C3 and others
 
     config EXAMPLE_PIN_CS

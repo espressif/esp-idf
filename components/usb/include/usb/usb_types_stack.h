@@ -43,7 +43,7 @@ typedef enum {
 /**
  * @brief Handle of a USB Device connected to a USB Host
  */
-typedef struct usb_device_handle_s * usb_device_handle_t;
+typedef struct usb_device_handle_s *usb_device_handle_t;
 
 /**
  * @brief Basic information of an enumerated device
@@ -126,7 +126,7 @@ typedef void (*usb_transfer_cb_t)(usb_transfer_t *transfer);
  * @brief USB transfer structure
  *
  */
-struct usb_transfer_s{
+struct usb_transfer_s {
     uint8_t *const data_buffer;                     /**< Pointer to data buffer */
     const size_t data_buffer_size;                  /**< Size of the data buffer in bytes */
     int num_bytes;                                  /**< Number of bytes to transfer.

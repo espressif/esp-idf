@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Periodic Sync Example
 
@@ -37,7 +37,7 @@ See [Development Boards](https://www.espressif.com/en/products/devkits) for more
 
 ### Configure the Project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig
@@ -67,15 +67,15 @@ I (351) system_api: read default base MAC address from EFUSE
 I (351) BTDM_INIT: Bluetooth MAC: 84:f7:03:08:14:8e
 
 I (361) NimBLE_BLE_PERIODIC_SYNC: BLE Host Task Started
-I (941) NimBLE: Periodic sync event : 
+I (941) NimBLE: Periodic sync event :
 
-I (941) NimBLE: Periodic adv report event: 
+I (941) NimBLE: Periodic adv report event:
 
-I (4241) NimBLE: Periodic adv report event: 
+I (4241) NimBLE: Periodic adv report event:
 
-I (7541) NimBLE: Periodic adv report event: 
+I (7541) NimBLE: Periodic adv report event:
 
-I (10841) NimBLE: Periodic adv report event: 
+I (10841) NimBLE: Periodic adv report event:
 ```
 
 

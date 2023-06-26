@@ -63,6 +63,15 @@ struct hostapd_frame_info {
 	int ssi_signal; /* dBm */
 };
 
+struct hostapd_sae_commit_queue {
+	struct dl_list list;
+	size_t len;
+	u8 bssid[ETH_ALEN];
+	u32 auth_transaction;
+	u16 status;
+	u8 msg[];
+};
+
 #ifdef CONFIG_WPS
 enum hapd_wps_status {
 	WPS_SUCCESS_STATUS = 1,
@@ -131,6 +140,20 @@ struct hostapd_data {
 	int noa_start;
 	int noa_duration;
 #endif /* CONFIG_P2P */
+#ifdef CONFIG_SAE
+
+#define COMEBACK_KEY_SIZE 8
+#define COMEBACK_PENDING_IDX_SIZE 256
+
+	/** Key used for generating SAE anti-clogging tokens */
+	u8 comeback_key[COMEBACK_KEY_SIZE];
+	struct os_reltime last_comeback_key_update;
+	u16 comeback_idx;
+	u16 comeback_pending_idx[COMEBACK_PENDING_IDX_SIZE];
+	int dot11RSNASAERetransPeriod;
+	struct dl_list sae_commit_queue; /* struct hostapd_sae_commit_queue */
+#endif /* CONFIG_SAE */
+
 #ifdef CONFIG_INTERWORKING
 	size_t gas_frag_limit;
 #endif /* CONFIG_INTERWORKING */

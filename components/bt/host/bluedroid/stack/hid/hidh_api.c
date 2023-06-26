@@ -378,6 +378,7 @@ tHID_STATUS HID_HostAddDev ( BD_ADDR addr, UINT16 attr_mask, UINT8 *handle )
 
     if (!hh_cb.devices[i].in_use) {
         hh_cb.devices[i].in_use = TRUE;
+        hh_cb.devices[i].delay_remove = FALSE;
         memcpy( hh_cb.devices[i].addr, addr, sizeof( BD_ADDR ) ) ;
         hh_cb.devices[i].state = HID_DEV_NO_CONN;
         hh_cb.devices[i].conn_tries = 0 ;
@@ -443,10 +444,20 @@ tHID_STATUS HID_HostRemoveDev ( UINT8 dev_handle )
     }
 
     HID_HostCloseDev( dev_handle ) ;
-    hh_cb.devices[dev_handle].in_use = FALSE;
-    hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
-    hh_cb.devices[dev_handle].conn.ctrl_cid = hh_cb.devices[dev_handle].conn.intr_cid = 0;
-    hh_cb.devices[dev_handle].attr_mask = 0;
+
+    if (hh_cb.devices[dev_handle].conn.conn_state == HID_CONN_STATE_DISCONNECTING_INTR ||
+        hh_cb.devices[dev_handle].conn.conn_state == HID_CONN_STATE_DISCONNECTING_CTRL) {
+        // delay the remove action, to close the control and the interrupt channel
+        hh_cb.devices[dev_handle].delay_remove = TRUE;
+    } else {
+        HIDH_TRACE_WARNING("%s dev_handle:%d conn_state:%d", __func__, dev_handle,
+                           hh_cb.devices[dev_handle].conn.conn_state);
+        hh_cb.devices[dev_handle].in_use = FALSE;
+        hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
+        hh_cb.devices[dev_handle].conn.ctrl_cid = hh_cb.devices[dev_handle].conn.intr_cid = 0;
+        hh_cb.devices[dev_handle].attr_mask = 0;
+    }
+
     return HID_SUCCESS;
 }
 

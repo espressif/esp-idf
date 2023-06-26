@@ -1,7 +1,7 @@
 Analog to Digital Converter (ADC) Continuous Mode Driver
 ========================================================
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h4="one"}
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one"}
 
 Introduction
 ------------
@@ -52,6 +52,7 @@ To create an ADC continuous mode driver handle, set up the required configuratio
 
 -  :cpp:member:`adc_continuous_handle_cfg_t::max_store_buf_size` set the maximum size (in bytes) of the pool that the driver saves ADC conversion result into. If this pool is full, new conversion results will be lost.
 -  :cpp:member:`adc_continuous_handle_cfg_t::conv_frame_size` set the size of the ADC conversion frame, in bytes.
+-  :cpp:member:`adc_continuous_handle_cfg_t::flags` set the flags that can change the driver behaviour.
 
 
 After setting up above configurations for the ADC, call :cpp:func:`adc_continuous_new_handle` with the prepared :cpp:type:`adc_continuous_handle_cfg_t`. This function may fail due to various errors such as invalid argumemts, insufficient memory, etc.
@@ -70,6 +71,56 @@ After setting up above configurations for the ADC, call :cpp:func:`adc_continuou
 
 If the ADC continuous mode driver is no longer used, you should deinitialize the driver by calling :cpp:func:`adc_continuous_deinit`.
 
+
+.. only:: SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+
+    IIR filter
+    ~~~~~~~~~~
+
+    Two IIR filters are available when ADC is working under continuous mode. To create an ADC IIR filter, you should set up the :cpp:type:`adc_continuous_iir_filter_config_t`, and call :cpp:func:`adc_new_continuous_iir_filter`.
+
+    - :cpp:member:`adc_digi_filter_config_t::unit`, ADC  unit.
+    - :cpp:member:`adc_digi_filter_config_t::channel`, ADC channel to be filtered.
+    - :cpp:member:`adc_digi_filter_config_t::coeff`, filter coefficient.
+
+    .. only:: SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
+
+            On ESP32S2, the filter is per ADC unit. Once a filter is enabled, all the enabled ADC channels in this ADC unit will be filtered. However, we suggest only enabling one ADC channel per unit, when using the filter feature. Because the filtered results depend on the previous filtered result. So you should not enable multiple ADC channels, to avoid mixing the filtered results.
+
+    To recycle a filter, you should call :cpp:func:`adc_del_continuous_iir_filter`.
+
+    .. only:: not SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
+
+        .. note::
+
+            If you use both the filters on a same ADC channel, then only the first one will take effect.
+
+.. only:: SOC_ADC_MONITOR_SUPPORTED
+
+    Monitor
+    ~~~~~~~
+
+    {IDF_TARGET_SOC_ADC_DIGI_MONITOR_NUM} monitors are available when ADC is working under continuous mode, you can set one or two threshold(s) of a monitor on a working ADC channel, then monitor will invoke interrupts every sample loop if converted value outranges of the threshold. To create an ADC monitor, you need setup the :cpp:type:`adc_monitor_config_t` and call :cpp:func:`adc_new_continuous_monitor`.
+    - :cpp:member:`adc_monitor_config_t::adc_unit`, What ADC unit the channel you want to monit belongs to.
+    - :cpp:member:`adc_monitor_config_t::channel`, The channel you want to monit.
+    - :cpp:member:`adc_monitor_config_t::h_threshold`, The high threshold, convert value lager than this value will invoke interrupt, set to -1 if don't use.
+    - :cpp:member:`adc_monitor_config_t::l_threshold`, The low threshold, convert value less than this value will invoke interrupt, set to -1 if don't use.
+
+    Once a monitor is created, you can operate it by following APIs to construct your apps.
+
+    - :cpp:func:`adc_continuous_monitor_enable`, Enable a monitor.
+    - :cpp:func:`adc_continuous_monitor_disable`, Disable a monitor.
+    - :cpp:func:`adc_monitor_register_callbacks`, Register user callbacks to do something when ADC value outrange of the threshold.
+    - :cpp:func:`adc_del_continuous_monitor`, Delete a created monitor, free resources.
+
+    .. only:: esp32s2
+
+        .. NOTE::
+
+            There are some hardware limitations on ESP32S2:
+            1. Only one threshold supported for one monitor.
+            2. Only one monitor supported for one adc unit.
+            3. All enabled channel(s) of a certain adc unit in adc continuous mode driver will be monitored, param :cpp:member:`adc_monitor_config_t::channel` will not used.
 
 Initialize the ADC Continuous Mode Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,6 +170,10 @@ This API may fail due to reasons like :c:macro:`ESP_ERR_INVALID_ARG`. When it re
 
 See ADC continuous mode example :example:`peripherals/adc/continuous_read` to see configuration codes.
 
+
+.. only:: SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+
+    To enable / disable the ADC IIR filter, you should call :cpp:func:`adc_continuous_iir_filter_enable` / :cpp:func:`adc_continuous_iir_filter_disable`.
 
 ADC Control
 ^^^^^^^^^^^
@@ -228,11 +283,11 @@ Hardware Limitations
 
 .. only:: esp32c3
 
-    - ADC2 continuous mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
+    - ADC2 continuous mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
 
 .. only:: esp32s3
 
-    - ADC2 continuous mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32S3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_en.pdf>`. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
+    - ADC2 continuous mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32S3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
 
 
 Power Management

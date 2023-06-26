@@ -145,6 +145,16 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
+esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
+    RTCIO_ENTER_CRITICAL();
+    rtcio_hal_iomux_func_sel(rtc_io_number_get(gpio_num), func);
+    RTCIO_EXIT_CRITICAL();
+
+    return ESP_OK;
+}
+
 #endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_RTCIO_HOLD_SUPPORTED

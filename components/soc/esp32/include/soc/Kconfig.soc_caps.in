@@ -27,7 +27,15 @@ config SOC_DAC_SUPPORTED
     bool
     default y
 
+config SOC_UART_SUPPORTED
+    bool
+    default y
+
 config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
+config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
@@ -135,6 +143,10 @@ config SOC_BOD_SUPPORTED
     bool
     default y
 
+config SOC_ULP_FSM_SUPPORTED
+    bool
+    default y
+
 config SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL
     int
     default 5
@@ -199,6 +211,10 @@ config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     int
     default 4
 
+config SOC_ADC_DIGI_MONITOR_NUM
+    int
+    default 0
+
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
     default 2
@@ -219,9 +235,9 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
-config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
-    int
-    default 5
+config SOC_IDCACHE_PER_CORE
+    bool
+    default y
 
 config SOC_CPU_CORES_NUM
     int
@@ -275,10 +291,6 @@ config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0xEF0FEA
 
-config SOC_GPIO_SUPPORT_SLP_SWITCH
-    bool
-    default y
-
 config SOC_I2C_NUM
     int
     default 2
@@ -286,6 +298,10 @@ config SOC_I2C_NUM
 config SOC_I2C_FIFO_LEN
     int
     default 32
+
+config SOC_I2C_CMD_REG_NUM
+    int
+    default 16
 
 config SOC_I2C_SUPPORT_SLAVE
     bool
@@ -391,10 +407,6 @@ config SOC_LEDC_TIMER_BIT_WIDTH
     int
     default 20
 
-config SOC_LEDC_GAMMA_FADE_RANGE_MAX
-    int
-    default 1
-
 config SOC_MCPWM_GROUPS
     int
     default 2
@@ -435,9 +447,13 @@ config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
     int
     default 3
 
-config SOC_MCPWM_CLK_SUPPORT_PLL160M
-    bool
-    default y
+config SOC_MMU_PERIPH_NUM
+    int
+    default 2
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 3
 
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
@@ -555,6 +571,10 @@ config SOC_SPI_MAX_CS_NUM
     int
     default 3
 
+config SOC_SPI_SUPPORT_CLK_APB
+    bool
+    default y
+
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
@@ -635,6 +655,10 @@ config SOC_UART_NUM
     int
     default 3
 
+config SOC_UART_HP_NUM
+    int
+    default 3
+
 config SOC_UART_SUPPORT_APB_CLK
     bool
     default y
@@ -679,6 +703,14 @@ config SOC_SHA_SUPPORT_SHA512
     bool
     default y
 
+config SOC_MPI_MEM_BLOCKS_NUM
+    int
+    default 4
+
+config SOC_MPI_OPERATIONS_NUM
+    bool
+    default y
+
 config SOC_RSA_MAX_BIT_LEN
     int
     default 4096
@@ -711,6 +743,14 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
+config SOC_PM_SUPPORT_EXT0_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_EXT1_WAKEUP
+    bool
+    default y
+
 config SOC_PM_SUPPORT_EXT_WAKEUP
     bool
     default y
@@ -732,6 +772,18 @@ config SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
     default y
 
 config SOC_PM_SUPPORT_RC_FAST_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_VDDSDIO_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_MODEM_PD
+    bool
+    default y
+
+config SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     bool
     default y
 
@@ -767,6 +819,10 @@ config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 
+config SOC_CLK_XTAL32K_SUPPORTED
+    bool
+    default y
+
 config SOC_SDMMC_USE_IOMUX
     bool
     default y
@@ -774,14 +830,6 @@ config SOC_SDMMC_USE_IOMUX
 config SOC_SDMMC_NUM_SLOTS
     int
     default 2
-
-config SOC_WIFI_FTM_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_GCMP_SUPPORT
-    bool
-    default n
 
 config SOC_WIFI_WAPI_SUPPORT
     bool
@@ -795,6 +843,14 @@ config SOC_WIFI_MESH_SUPPORT
     bool
     default y
 
+config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+    bool
+    default y
+
+config SOC_WIFI_NAN_SUPPORT
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
@@ -804,5 +860,17 @@ config SOC_BLE_MESH_SUPPORTED
     default y
 
 config SOC_BT_CLASSIC_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default n
+
+config SOC_BLUFI_SUPPORTED
+    bool
+    default y
+
+config SOC_ULP_HAS_ADC
     bool
     default y

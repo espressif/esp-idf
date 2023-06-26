@@ -65,13 +65,13 @@ static void ble_gap_event_default_handler(esp_gap_ble_cb_event_t event, esp_ble_
     }
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT: {
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(TAG, "Advertising start failed\n");
+            ESP_LOGE(TAG, "Advertising start failed");
         }
         break;
     }
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(TAG, "Advertising stop failed\n");
+            ESP_LOGE(TAG, "Advertising stop failed");
         }
         break;
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT: {

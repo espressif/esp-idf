@@ -75,3 +75,8 @@ esp_err_t spi_slave_queue_reset_isr(spi_host_device_t host);
  *         - ESP_OK                on success
  */
 esp_err_t spi_slave_queue_trans_isr(spi_host_device_t host, const spi_slave_transaction_t *trans_desc);
+
+
+#ifdef __cplusplus
+}
+#endif

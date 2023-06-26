@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,20 +13,16 @@
 # check_environment() function below. If possible, avoid importing
 # any external libraries here - put in external script, or import in
 # their specific function instead.
-from __future__ import annotations
-
 import codecs
 import json
 import locale
 import os
 import os.path
-import signal
 import subprocess
 import sys
 from collections import Counter, OrderedDict, _OrderedDictKeysView
 from importlib import import_module
 from pkgutil import iter_modules
-from types import FrameType
 from typing import Any, Callable, Dict, List, Optional, Union
 
 # pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
@@ -38,7 +34,7 @@ import python_version_checker  # noqa: E402
 try:
     from idf_py_actions.errors import FatalError  # noqa: E402
     from idf_py_actions.tools import (PROG, SHELL_COMPLETE_RUN, SHELL_COMPLETE_VAR, PropertyDict,  # noqa: E402
-                                      debug_print_idf_version, get_target, merge_action_lists, print_warning, realpath)
+                                      debug_print_idf_version, get_target, merge_action_lists, print_warning)
     if os.getenv('IDF_COMPONENT_MANAGER') != '0':
         from idf_component_manager import idf_extensions
 except ImportError:
@@ -64,9 +60,9 @@ def check_environment() -> List:
 
     # verify that IDF_PATH env variable is set
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
-    detected_idf_path = realpath(os.path.join(os.path.dirname(__file__), '..'))
+    detected_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     if 'IDF_PATH' in os.environ:
-        set_idf_path = realpath(os.environ['IDF_PATH'])
+        set_idf_path = os.path.realpath(os.environ['IDF_PATH'])
         if set_idf_path != detected_idf_path:
             print_warning(
                 'WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. '
@@ -283,7 +279,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
         SCOPES = ('default', 'global', 'shared')
 
-        def __init__(self, scope: Union['Scope', str]=None) -> None:
+        def __init__(self, scope: Union['Scope', str]=None) -> None:  # noqa: F821
             if scope is None:
                 self._scope = 'default'
             elif isinstance(scope, str) and scope in self.SCOPES:
@@ -470,25 +466,35 @@ def init_cli(verbose_output: List=None) -> Any:
                     for o, f in flash_items:
                         cmd += o + ' ' + flasher_path(f) + ' '
 
-                print('\n%s build complete. To flash, run this command:' % title)
+                flash_target = 'flash' if key == 'project' else f'{key}-flash'
+                print(f'{os.linesep}{title} build complete. To flash, run:')
+                print(f' idf.py {flash_target}')
+                if args.port:
+                    print('or')
+                    print(f' idf.py -p {args.port} {flash_target}')
+                print('or')
+                print(f' idf.py -p PORT {flash_target}')
 
-                print(
-                    '%s %s -p %s -b %s --before %s --after %s --chip %s %s write_flash %s' % (
-                        PYTHON,
-                        _safe_relpath('%s/components/esptool_py/esptool/esptool.py' % os.environ['IDF_PATH']),
-                        args.port or '(PORT)',
-                        args.baud,
-                        flasher_args['extra_esptool_args']['before'],
-                        flasher_args['extra_esptool_args']['after'],
-                        flasher_args['extra_esptool_args']['chip'],
-                        '--no-stub' if not flasher_args['extra_esptool_args']['stub'] else '',
-                        cmd.strip(),
-                    ))
-                print(
-                    "or run 'idf.py -p %s %s'" % (
-                        args.port or '(PORT)',
-                        key + '-flash' if key != 'project' else 'flash',
-                    ))
+                esptool_cmd = ['python -m esptool',
+                               '--chip {}'.format(flasher_args['extra_esptool_args']['chip']),
+                               f'-b {args.baud}',
+                               '--before {}'.format(flasher_args['extra_esptool_args']['before']),
+                               '--after {}'.format(flasher_args['extra_esptool_args']['after'])]
+
+                if not flasher_args['extra_esptool_args']['stub']:
+                    esptool_cmd += ['--no-stub']
+
+                if args.port:
+                    esptool_cmd += [f'-p {args.port}']
+
+                esptool_cmd += ['write_flash']
+
+                print('or')
+                print(' {}'.format(' '.join(esptool_cmd + [cmd.strip()])))
+
+                if os.path.exists(os.path.join(args.build_dir, 'flash_args')):
+                    print(f'or from the "{args.build_dir}" directory')
+                    print(' {}'.format(' '.join(esptool_cmd + ['@flash_args'])))
 
             if 'all' in actions or 'build' in actions:
                 print_flashing_message('Project', 'project')
@@ -621,7 +627,7 @@ def init_cli(verbose_output: List=None) -> Any:
     )
     @click.option('-C', '--project-dir', default=os.getcwd(), type=click.Path())
     def parse_project_dir(project_dir: str) -> Any:
-        return realpath(project_dir)
+        return os.path.realpath(project_dir)
 
     # Set `complete_var` to not existing environment variable name to prevent early cmd completion
     project_dir = parse_project_dir(standalone_mode=False, complete_var='_IDF.PY_COMPLETE_NOT_EXISTING')
@@ -629,11 +635,11 @@ def init_cli(verbose_output: List=None) -> Any:
     all_actions: Dict = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_py_actions')
-    extension_dirs = [realpath(idf_py_extensions_path)]
+    extension_dirs = [os.path.realpath(idf_py_extensions_path)]
     extra_paths = os.environ.get('IDF_EXTRA_ACTIONS_PATH')
     if extra_paths is not None:
         for path in extra_paths.split(';'):
-            path = realpath(path)
+            path = os.path.realpath(path)
             if path not in extension_dirs:
                 extension_dirs.append(path)
 
@@ -689,17 +695,15 @@ def init_cli(verbose_output: List=None) -> Any:
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
-def signal_handler(_signal: int, _frame: Optional[FrameType]) -> None:
-    # The Ctrl+C processed by other threads inside
-    pass
-
-
 def main() -> None:
-    # Processing of Ctrl+C event for all threads made by main()
-    signal.signal(signal.SIGINT, signal_handler)
-
     # Check the environment only when idf.py is invoked regularly from command line.
     checks_output = None if SHELL_COMPLETE_RUN else check_environment()
+
+    # Check existance of the current working directory to prevent exceptions from click cli.
+    try:
+        os.getcwd()
+    except FileNotFoundError as e:
+        raise FatalError(f'ERROR: {e}. Working directory cannot be established. Check it\'s existence.')
 
     try:
         cli = init_cli(verbose_output=checks_output)

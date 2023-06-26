@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "soc/periph_defs.h"
 #include "soc/pcr_reg.h"
-#include "soc/dport_access.h"
+#include "soc/soc.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
-{ // TODO: IDF-5713
+{
     switch (periph) {
         case PERIPH_SARADC_MODULE:
             return PCR_SARADC_CLK_EN;
@@ -58,6 +58,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_PWM_CLK_EN;
         case PERIPH_ETM_MODULE:
             return PCR_ETM_CLK_EN;
+        case PERIPH_PARLIO_MODULE:
+            return PCR_PARL_CLK_EN;
         case PERIPH_AES_MODULE:
             return PCR_AES_CLK_EN;
         case PERIPH_SHA_MODULE:
@@ -72,25 +74,17 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_DS_CLK_EN;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_EN;
-        // case PERIPH_RNG_MODULE:
-        //     return PCR_WIFI_CLK_RNG_EN;
-        // case PERIPH_WIFI_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_EN_M;
-        // case PERIPH_BT_MODULE:
-        //     return PCR_WIFI_CLK_BT_EN_M;
-        // case PERIPH_WIFI_BT_COMMON_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_BT_COMMON_M;
-        // case PERIPH_BT_BASEBAND_MODULE:
-        //     return PCR_BT_BASEBAND_EN;
-        // case PERIPH_BT_LC_MODULE:
-        //     return PCR_BT_LC_EN;
+        case PERIPH_SDIO_SLAVE_MODULE:
+            return PCR_SDIO_SLAVE_CLK_EN;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_CLK_EN;
         default:
             return 0;
     }
 }
 
 static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool enable)
-{ // TODO: IDF-5713
+{
     (void)enable; // unused
 
     switch (periph) {
@@ -132,66 +126,47 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_PWM_RST_EN;
         case PERIPH_ETM_MODULE:
             return PCR_ETM_RST_EN;
+        case PERIPH_PARLIO_MODULE:
+            return PCR_PARL_RST_EN;
         case PERIPH_ECC_MODULE:
             return PCR_ECC_RST_EN;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_RST_EN;
         case PERIPH_AES_MODULE:
-        if (enable == true) {
-            // Clear reset on digital signature, otherwise AES unit is held in reset also.
-                return (PCR_AES_RST_EN | PCR_DS_RST_EN);
-        } else {
-                //Don't return other units to reset, as this pulls reset on RSA & SHA units, respectively.
-                return PCR_AES_RST_EN;
-        }
+            if (enable == true) {
+                // Clear reset on digital signature, otherwise AES unit is held in reset
+                CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+            }
+            return PCR_AES_RST_EN;
         case PERIPH_SHA_MODULE:
-        if (enable == true) {
-            // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
-                return (PCR_SHA_RST_EN | PCR_DS_RST_EN | PCR_HMAC_RST_EN);
-        } else {
-            // Don't assert reset on secure boot, otherwise AES is held in reset
-                return PCR_SHA_RST_EN;
-        }
+            if (enable == true) {
+                // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
+                CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+                CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
+            }
+            return PCR_SHA_RST_EN;
         case PERIPH_RSA_MODULE:
-        if (enable == true) {
-            /* also clear reset on digital signature, otherwise RSA is held in reset */
-                return (PCR_RSA_RST_EN | PCR_DS_RST_EN);
-        } else {
-            /* don't reset digital signature unit, as this resets AES also */
-                return PCR_RSA_RST_EN;
-        }
+            if (enable == true) {
+                // Clear reset on digital signature, otherwise RSA is held in reset
+                CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+            }
+            return PCR_RSA_RST_EN;
         case PERIPH_HMAC_MODULE:
             return PCR_HMAC_RST_EN;
         case PERIPH_DS_MODULE:
             return PCR_DS_RST_EN;
-        // case PERIPH_RNG_MODULE:
-        //     return PCR_WIFI_CLK_RNG_EN;
-        // case PERIPH_WIFI_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_EN_M;
-        // case PERIPH_BT_MODULE:
-        //     return PCR_WIFI_CLK_BT_EN_M;
-        // case PERIPH_WIFI_BT_COMMON_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_BT_COMMON_M;
-        // case PERIPH_BT_BASEBAND_MODULE:
-        //     return PCR_BT_BASEBAND_EN;
-        // case PERIPH_BT_LC_MODULE:
-        //     return PCR_BT_LC_EN;
+        case PERIPH_SDIO_SLAVE_MODULE:
+            return PCR_SDIO_SLAVE_RST_EN;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_RST_EN;
         default:
             return 0;
     }
 }
 
 static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
-{ // TODO: IDF-5713
+{
     switch (periph) {
-    // case PERIPH_RNG_MODULE:
-    // case PERIPH_WIFI_MODULE:
-    // case PERIPH_BT_MODULE:
-    // case PERIPH_WIFI_BT_COMMON_MODULE:
-    // case PERIPH_BT_BASEBAND_MODULE:
-    // case PERIPH_BT_LC_MODULE:
-    //      return SYSTEM_WIFI_CLK_EN_REG;
-
         case PERIPH_SARADC_MODULE:
             return PCR_SARADC_CONF_REG;
         case PERIPH_RMT_MODULE:
@@ -230,6 +205,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_PWM_CONF_REG;
         case PERIPH_ETM_MODULE:
             return PCR_ETM_CONF_REG;
+        case PERIPH_PARLIO_MODULE:
+            return PCR_PARL_IO_CONF_REG;
         case PERIPH_AES_MODULE:
             return PCR_AES_CONF_REG;
         case PERIPH_SHA_MODULE:
@@ -244,13 +221,17 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_DS_CONF_REG;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_CONF_REG;
+        case PERIPH_SDIO_SLAVE_MODULE:
+            return PCR_SDIO_SLAVE_CONF_REG;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_CONF_REG;
     default:
         return 0;
     }
 }
 
 static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
-{ // TODO: IDF-5713
+{
     switch (periph) {
         case PERIPH_SARADC_MODULE:
             return PCR_SARADC_CONF_REG;
@@ -290,6 +271,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_PWM_CONF_REG;
         case PERIPH_ETM_MODULE:
             return PCR_ETM_CONF_REG;
+        case PERIPH_PARLIO_MODULE:
+            return PCR_PARL_IO_CONF_REG;
         case PERIPH_AES_MODULE:
             return PCR_AES_CONF_REG;
         case PERIPH_SHA_MODULE:
@@ -304,6 +287,10 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_DS_CONF_REG;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_CONF_REG;
+        case PERIPH_SDIO_SLAVE_MODULE:
+            return PCR_SDIO_SLAVE_CONF_REG;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_CONF_REG;
     default:
         return 0;
     }
@@ -311,26 +298,26 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 
 static inline void periph_ll_enable_clk_clear_rst(periph_module_t periph)
 {
-    DPORT_SET_PERI_REG_MASK(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph));
-    DPORT_CLEAR_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, true));
+    SET_PERI_REG_MASK(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph));
+    CLEAR_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, true));
 }
 
 static inline void periph_ll_disable_clk_set_rst(periph_module_t periph)
 {
-    DPORT_CLEAR_PERI_REG_MASK(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph));
-    DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
+    CLEAR_PERI_REG_MASK(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph));
+    SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
 
 static inline void periph_ll_reset(periph_module_t periph)
 {
-    DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
-    DPORT_CLEAR_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
+    SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
+    CLEAR_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
 
 static inline bool IRAM_ATTR periph_ll_periph_enabled(periph_module_t periph)
 {
-    return DPORT_REG_GET_BIT(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false)) == 0 &&
-           DPORT_REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
+    return REG_GET_BIT(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false)) == 0 &&
+           REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
 }
 
 #ifdef __cplusplus

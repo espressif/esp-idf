@@ -24,9 +24,21 @@ extern "C" {
 #define ESP_NETIF_DEFAULT_ARP_FLAGS (0)
 #endif
 
+#ifdef CONFIG_LWIP_IPV4
+#define ESP_NETIF_IPV4_ONLY_FLAGS(flags) (flags)
+#else
+#define ESP_NETIF_IPV4_ONLY_FLAGS(flags) (0)
+#endif
+
+#ifdef CONFIG_LWIP_ESP_MLDV6_REPORT
+#define ESP_NETIF_DEFAULT_MLDV6_REPORT_FLAGS (ESP_NETIF_FLAG_MLDV6_REPORT)
+#else
+#define ESP_NETIF_DEFAULT_MLDV6_REPORT_FLAGS (0)
+#endif
+
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_STA() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_IPV4_ONLY_FLAGS(ESP_NETIF_DHCP_CLIENT) | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_DEFAULT_MLDV6_REPORT_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_STA_GOT_IP, \
@@ -40,7 +52,7 @@ extern "C" {
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_AP() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_IPV4_ONLY_FLAGS(ESP_NETIF_DHCP_SERVER) | ESP_NETIF_FLAG_AUTOUP), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         .ip_info = &_g_esp_netif_soft_ap_ip, \
         .get_ip_event = 0, \
@@ -52,9 +64,21 @@ extern "C" {
     }
 #endif
 
+#define ESP_NETIF_INHERENT_DEFAULT_WIFI_NAN() \
+    {   \
+        .flags = 0, \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = 0, \
+        .lost_ip_event = 0, \
+        .if_key = "WIFI_NAN_DEF", \
+        .if_desc = "nan", \
+        .route_prio = 10 \
+    };
+
 #define ESP_NETIF_INHERENT_DEFAULT_ETH() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_IPV4_ONLY_FLAGS(ESP_NETIF_DHCP_CLIENT) | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_ETH_GOT_IP, \
@@ -118,6 +142,18 @@ extern "C" {
     }
 #endif
 
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+/**
+* @brief  Default configuration reference of WIFI NAN
+*/
+#define ESP_NETIF_DEFAULT_WIFI_NAN()                  \
+    {                                                 \
+        .base = ESP_NETIF_BASE_DEFAULT_WIFI_NAN,      \
+        .driver = NULL,                               \
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_NAN, \
+    }
+#endif
+
 /**
 * @brief  Default configuration reference of WIFI STA
 */
@@ -152,6 +188,13 @@ extern "C" {
 #define ESP_NETIF_BASE_DEFAULT_WIFI_AP         &_g_esp_netif_inherent_ap_config
 #endif
 
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+/**
+ * @brief  Default base config (esp-netif inherent) of WIFI NAN
+ */
+#define ESP_NETIF_BASE_DEFAULT_WIFI_NAN        &_g_esp_netif_inherent_nan_config
+#endif
+
 /**
  * @brief  Default base config (esp-netif inherent) of ethernet interface
  */
@@ -171,6 +214,9 @@ extern "C" {
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
 #endif
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#define ESP_NETIF_NETSTACK_DEFAULT_WIFI_NAN     _g_esp_netif_netstack_default_wifi_nan
+#endif
 #ifdef CONFIG_PPP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
 #endif
@@ -187,6 +233,9 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
 #endif
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_nan;
+#endif
 #ifdef CONFIG_PPP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
 #endif
@@ -198,6 +247,9 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
+#endif
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+extern const esp_netif_inherent_config_t _g_esp_netif_inherent_nan_config;
 #endif
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
 #ifdef CONFIG_PPP_SUPPORT

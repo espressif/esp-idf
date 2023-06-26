@@ -16,12 +16,8 @@
 #include "soc/timer_periph.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#if CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/memprot.h"
-#else
 #include "esp_private/esp_memprot_internal.h"
 #include "esp_memprot.h"
-#endif
 #endif
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
@@ -348,7 +344,6 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
     info->description = "Exception was unhandled.";
 
     info->addr = (void *) regs->mepc;
-    info->frame = &regs;
 }
 
 static void panic_print_basic_backtrace(const void *frame, int core)

@@ -148,7 +148,6 @@ struct os_mempool_info {
 struct os_mempool *os_mempool_info_get_next(struct os_mempool *,
                                             struct os_mempool_info *);
 
-
 #if (OS_ALIGNMENT == 4)
 typedef uint32_t os_membuf_t;
 #elif (OS_ALIGNMENT == 8)

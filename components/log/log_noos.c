@@ -17,7 +17,7 @@ void esp_log_impl_lock(void)
     s_lock = 1;
 }
 
-bool esp_log_lock_impl_timeout(void)
+bool esp_log_impl_lock_timeout(void)
 {
     esp_log_impl_lock();
     return true;

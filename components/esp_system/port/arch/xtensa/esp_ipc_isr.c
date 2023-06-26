@@ -142,6 +142,8 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
         const uint32_t cpu_id = xPortGetCoreID();
         if (--s_count_of_nested_calls[cpu_id] == 0) {
             esp_ipc_isr_finish_cmd = 1;
+            // Make sure end flag is cleared and esp_ipc_isr_waiting_for_finish_cmd is done.
+            while (!esp_ipc_isr_end_fl) {};
             IPC_ISR_EXIT_CRITICAL();
 #if CONFIG_FREERTOS_SMP
             portRESTORE_INTERRUPTS(s_stored_interrupt_level);

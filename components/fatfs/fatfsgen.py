@@ -85,8 +85,8 @@ class FATFS:
                     object_timestamp_: datetime = FATFS_INCEPTION,
                     is_empty: bool = False) -> None:
         """
-        Root directory recursively finds the parent directory of the new file, allocates cluster,
-        entry and appends a new file into the parent directory.
+        This method allocates necessary clusters and creates a new file record in the directory required.
+        The directory must exists.
 
         When path_from_root is None the dir is root.
 

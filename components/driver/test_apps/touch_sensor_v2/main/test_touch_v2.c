@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -210,7 +210,7 @@ esp_err_t test_touch_sw_read(void)
     uint32_t touch_push[TEST_TOUCH_CHANNEL] = {0};
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     TEST_ESP_OK( touch_pad_init() );
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_config(touch_list[i]) );
@@ -273,7 +273,7 @@ esp_err_t test_touch_timer_read(void)
     uint32_t touch_push[TEST_TOUCH_CHANNEL] = {0};
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     TEST_ESP_OK( touch_pad_init() );
     /* Set different slope for channels to test slope function. */
     printf("Set slope for channel: ");
@@ -340,7 +340,7 @@ esp_err_t test_touch_filtered_read(void)
     uint32_t touch_value[TEST_TOUCH_CHANNEL] = {0};
     uint32_t touch_temp[TEST_TOUCH_CHANNEL] = {0};
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     TEST_ESP_OK( touch_pad_init() );
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         TEST_ESP_OK( touch_pad_config(touch_list[i]) );
@@ -425,7 +425,7 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
     uint64_t val_sum = 0;
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     TEST_ESP_OK( touch_pad_init() );
     /* Note: init all channel, but test one channel. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
@@ -625,7 +625,7 @@ static esp_err_t test_touch_check_ch_touched_with_proximity(uint32_t test_ch_num
                 continue;
             } else {    // If the interrupt type error, test error.
                 ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
-                continue;;
+                continue;
             }
         } else {
             ESP_LOGI(TAG, "Touch intr exceed time");
@@ -667,7 +667,7 @@ static esp_err_t test_touch_check_ch_released_with_proximity(uint32_t test_ch_nu
                 continue;
             } else {    // If the interrupt type error, test error.
                 ESP_LOGI(TAG, "Touch[%"PRIu32"] intr error, status %"PRIx32", evt_msk0x%x", evt.pad_num, evt.pad_status, evt.intr_mask);
-                continue;;
+                continue;
             }
         } else {
             ESP_LOGI(TAG, "Touch intr exceed time");
@@ -795,7 +795,7 @@ esp_err_t test_touch_interrupt(void)
     uint32_t touch_value, smooth;
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -859,7 +859,7 @@ esp_err_t test_touch_interrupt(void)
  */
 esp_err_t test_touch_scan_done_interrupt(void)
 {
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     uint32_t touch_value, smooth;
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
@@ -927,7 +927,7 @@ esp_err_t test_touch_scan_done_interrupt(void)
  */
 esp_err_t test_touch_timeout_interrupt(void)
 {
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     uint32_t touch_value, smooth;
 
     if (que_touch == NULL) {
@@ -1031,7 +1031,7 @@ esp_err_t test_touch_filter_parameter_debounce(int deb_cnt)
     uint32_t touch_value;
     int test_cnt = 2;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1095,7 +1095,7 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
 {
     uint32_t touch_value, base_value;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1209,7 +1209,7 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
 {
     uint32_t touch_value, base_value = 0;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1308,8 +1308,8 @@ esp_err_t test_touch_denoise(uint32_t out_val[], uint32_t *denoise_val, touch_pa
 {
     uint32_t touch_value;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
-    ESP_LOGI(TAG, "Denoise level (%d), cap level (%d) \n", grade, cap);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
+    ESP_LOGI(TAG, "Denoise level (%d), cap level (%d) ", grade, cap);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1423,7 +1423,7 @@ esp_err_t test_touch_waterproof(void)
     uint32_t touch_value;
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1498,7 +1498,7 @@ TEST_CASE("Touch Sensor waterproof guard test", "[touch]")
 
 esp_err_t test_touch_proximity(int meas_num)
 {
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
 
     uint32_t touch_value;
     if (que_touch == NULL) {
@@ -1606,7 +1606,7 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
     uint32_t touch_value, smooth, ret_val;
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1705,7 +1705,7 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
     uint32_t touch_thres;
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -1851,7 +1851,7 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
 {
     uint32_t touch_value, smooth, raw;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
@@ -2012,7 +2012,7 @@ void test_touch_slope_debug(int pad_num)
     touch_event_t evt;
     uint32_t touch_value, smooth;
 
-    ESP_LOGI(TAG, "  >> %s <<  \n", __func__);
+    ESP_LOGI(TAG, "  >> %s <<", __func__);
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */

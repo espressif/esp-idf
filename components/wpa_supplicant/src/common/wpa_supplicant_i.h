@@ -67,6 +67,17 @@ enum scan_trigger_reason {
 	REASON_WNM_BSS_TRANS_REQ,
 };
 
+#ifdef CONFIG_SAE_PK
+struct sae_pk_elems {
+	u8 *fils_pk;
+	u8 fils_pk_len;
+	u8 *fils_key_confirm;
+	u8 fils_key_confirm_len;
+	u8 *sae_pk;
+	u8 sae_pk_len;
+};
+#endif
+
 struct wpa_supplicant {
 
 	int scanning;
@@ -138,6 +149,10 @@ struct wpa_supplicant {
 	struct beacon_rep_data beacon_rep_data;
 	struct os_reltime beacon_rep_scan;
 #endif
+#ifdef CONFIG_SAE_PK
+	struct sae_pk_elems sae_pk_elems;
+#endif
+
 };
 
 struct non_pref_chan_s;

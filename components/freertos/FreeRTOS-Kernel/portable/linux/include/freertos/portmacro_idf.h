@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,17 +16,12 @@
 #include <stdlib.h> // This is for malloc(), used by portmacro.h
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_task.h"
 #include "spinlock.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
-#define ESP_TASK_PRIO_MIN (0)
-#define ESP_TASK_MAIN_PRIO            (ESP_TASK_PRIO_MIN + 1)
-#define ESP_TASK_MAIN_STACK           (CONFIG_ESP_MAIN_TASK_STACK_SIZE)
-#define ESP_TASK_MAIN_CORE            CONFIG_ESP_MAIN_TASK_AFFINITY
 
 // interrupt module will mask interrupt with priority less than threshold
 #define RVHAL_EXCM_LEVEL    4
@@ -56,18 +51,30 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
     return (BaseType_t) 0;
 }
 
-static inline bool portVALID_TCB_MEM(const void *ptr)
-{
-    return true;
-}
+/**
+ * @brief Checks if a given piece of memory can be used to store a task's TCB
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a TCB
+ * @return false Otherwise
+ */
+bool xPortCheckValidTCBMem(const void *ptr);
 
-static inline bool portVALID_STACK_MEM(const void *ptr)
-{
-    return true;
-}
+/**
+ * @brief Checks if a given piece of memory can be used to store a task's stack
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a task stack
+ * @return false Otherwise
+ */
+bool xPortcheckValidStackMem(const void *ptr);
 
-#define pvPortMallocTcbMem(size)        pvPortMalloc(size)
-#define pvPortMallocStackMem(size)      pvPortMalloc(size)
+#define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
+#define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 
 BaseType_t xPortCheckIfInISR(void);
 
@@ -87,6 +94,12 @@ static inline BaseType_t xPortInIsrContext(void)
     //Just call the FreeRTOS port interface version
     return xPortCheckIfInISR();
 }
+
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+/* If enabled, users must provide an implementation of vPortCleanUpTCB() */
+extern void vPortCleanUpTCB ( void *pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
+#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 
 #ifdef __cplusplus
 }

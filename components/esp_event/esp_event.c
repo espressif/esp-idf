@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,9 +23,9 @@
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 // LOOP @<address, name> rx:<recieved events no.> dr:<dropped events no.>
-#define LOOP_DUMP_FORMAT              "LOOP @%p,%s rx:%u dr:%u\n"
+#define LOOP_DUMP_FORMAT              "LOOP @%p,%s rx:%" PRIu32 " dr:%" PRIu32 "\n"
  // handler @<address> ev:<base, id> inv:<times invoked> time:<runtime>
-#define HANDLER_DUMP_FORMAT           "  HANDLER @%p ev:%s,%s inv:%u time:%lld us\n"
+#define HANDLER_DUMP_FORMAT           "  HANDLER @%p ev:%s,%s inv:%" PRIu32 " time:%lld us\n"
 
 #define PRINT_DUMP_INFO(dst, sz, ...)  do { \
                                             int cb = snprintf(dst, sz, __VA_ARGS__); \
@@ -116,7 +116,7 @@ static void esp_event_loop_run_task(void* args)
 
 static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_node_t *handler, esp_event_post_instance_t post)
 {
-    ESP_LOGD(TAG, "running post %s:%d with handler %p and context %p on loop %p", post.base, post.id, handler->handler_ctx->handler, &handler->handler_ctx, loop);
+    ESP_LOGD(TAG, "running post %s:%"PRIu32" with handler %p and context %p on loop %p", post.base, post.id, handler->handler_ctx->handler, &handler->handler_ctx, loop);
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     int64_t start, diff;
@@ -144,8 +144,19 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_n
 
     xSemaphoreTake(loop->profiling_mutex, portMAX_DELAY);
 
-    handler->invoked++;
-    handler->time += diff;
+    // At this point handler may be already unregistered.
+    // This happens in "handler instance can unregister itself" test case.
+    // To prevent memory corruption error it's necessary to check if pointer is still valid.
+    esp_event_loop_node_t* loop_node;
+    esp_event_handler_node_t* handler_node;
+    SLIST_FOREACH(loop_node, &(loop->loop_nodes), next) {
+        SLIST_FOREACH(handler_node, &(loop_node->handlers), next) {
+            if(handler_node == handler) {
+                handler->invoked++;
+                handler->time += diff;
+            }
+        }
+    }
 
     xSemaphoreGive(loop->profiling_mutex);
 #endif
@@ -621,7 +632,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 
         if (!exec) {
             // No handlers were registered, not even loop/base level handlers
-            ESP_LOGD(TAG, "no handlers have been registered for event %s:%d posted to loop %p", base, id, event_loop);
+            ESP_LOGD(TAG, "no handlers have been registered for event %s:%"PRIu32" posted to loop %p", base, id, event_loop);
         }
     }
 
@@ -631,6 +642,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
 {
     assert(event_loop);
+    ESP_LOGD(TAG, "deleting loop %p", (void*) event_loop);
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
     SemaphoreHandle_t loop_mutex = loop->mutex;
@@ -676,8 +688,6 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     vSemaphoreDelete(loop_profiling_mutex);
 #endif
     vSemaphoreDelete(loop_mutex);
-
-    ESP_LOGD(TAG, "deleted loop %p", (void*) event_loop);
 
     return ESP_OK;
 }
@@ -986,7 +996,7 @@ esp_err_t esp_event_dump(FILE* file)
                 SLIST_FOREACH(id_node_it, &(base_node_it->id_nodes), next) {
                     SLIST_FOREACH(handler_it, &(id_node_it->handlers), next) {
                         memset(id_str_buf, 0, sizeof(id_str_buf));
-                        snprintf(id_str_buf, sizeof(id_str_buf), "%d", id_node_it->id);
+                        snprintf(id_str_buf, sizeof(id_str_buf), "%" PRIi32, id_node_it->id);
 
                         PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler_ctx->handler, base_node_it->base ,
                                         id_str_buf, handler_it->invoked, handler_it->time);

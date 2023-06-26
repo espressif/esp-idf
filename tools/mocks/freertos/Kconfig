@@ -29,4 +29,12 @@ menu "FreeRTOS"
                 However, task notifications in general are more light weight compared to alternatives
                 such as semaphores.
     endmenu
+
+    config FREERTOS_NO_AFFINITY
+        # This invisible config value sets the value of tskNO_AFFINITY in task.h.
+        # Intended to be used as a constant from other Kconfig files.
+        # Value is (32-bit) INT_MAX.
+        hex
+        default 0x7FFFFFFF if !FREERTOS_SMP
+        default 0xFFFFFFFF if FREERTOS_SMP
 endmenu

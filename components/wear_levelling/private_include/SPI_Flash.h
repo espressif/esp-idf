@@ -20,12 +20,12 @@ class SPI_Flash : public Flash_Access
 public:
     SPI_Flash();
 
-    size_t chip_size() override;
+    size_t get_flash_size() override;
     esp_err_t erase_sector(size_t sector) override;
     esp_err_t erase_range(size_t start_address, size_t size) override;
     esp_err_t write(size_t dest_addr, const void *src, size_t size) override;
     esp_err_t read(size_t src_addr, void *dest, size_t size) override;
-    size_t sector_size() override;
+    size_t get_sector_size() override;
     ~SPI_Flash() override;
 };
 

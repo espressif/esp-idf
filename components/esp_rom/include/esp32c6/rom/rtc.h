@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ extern "C" {
   *          Please do not use reserved or used rtc memory or registers.              *
   *                                                                                   *
   *************************************************************************************
-  *                          RTC  Memory & Store Register usage
+  *                          LP  Memory & Store Register usage
   *************************************************************************************
   *     rtc memory addr         type    size            usage
   *     0x3f421000(0x50000000)  Slow    SIZE_CP         Co-Processor code/Reset Entry
@@ -42,25 +42,29 @@ extern "C" {
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     RTC_CNTL_STORE0_REG     Reserved
-  *     RTC_CNTL_STORE1_REG     RTC_SLOW_CLK calibration value
-  *     RTC_CNTL_STORE2_REG     Boot time, low word
-  *     RTC_CNTL_STORE3_REG     Boot time, high word
-  *     RTC_CNTL_STORE4_REG     External XTAL frequency
-  *     RTC_CNTL_STORE5_REG     APB bus frequency
-  *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
-  *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE0_REG       Reserved
+  *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
+  *     LP_AON_STORE2_REG       Boot time, low word
+  *     LP_AON_STORE3_REG       Boot time, high word
+  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
+  *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
+  *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE8_REG       Store light sleep wake stub addr
+  *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
   */
 
-#define RTC_SLOW_CLK_CAL_REG    LP_AON_STORE1_REG
-#define RTC_BOOT_TIME_LOW_REG   LP_AON_STORE2_REG
-#define RTC_BOOT_TIME_HIGH_REG  LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG       LP_AON_STORE4_REG
-#define RTC_APB_FREQ_REG        LP_AON_STORE5_REG
-#define RTC_ENTRY_ADDR_REG      LP_AON_STORE6_REG
-#define RTC_RESET_CAUSE_REG     LP_AON_STORE6_REG
-#define RTC_MEMORY_CRC_REG      LP_AON_STORE7_REG
+#define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
+#define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
+#define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
+#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
+#define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
+#define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
+#define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
+#define RTC_MEMORY_CRC_REG                  LP_AON_STORE7_REG
+#define LIGHT_SLEEP_WAKE_STUB_ADDR_REG      LP_AON_STORE8_REG
+#define SLEEP_MODE_REG                      LP_AON_STORE9_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 
@@ -174,6 +178,8 @@ typedef void (* esp_rom_wake_func_t)(void);
   * @brief Read stored RTC wake function address
   *
   * Returns pointer to wake address if a value is set in RTC registers, and stored length & CRC all valid.
+  * valid means that both stored stub length and stored wake function address are four-byte aligned non-zero values
+  * and the crc check passes
   *
   * @param  None
   *
@@ -187,8 +193,11 @@ esp_rom_wake_func_t esp_rom_get_rtc_wake_addr(void);
   * Set a new RTC wake address function. If a non-NULL function pointer is set then the function
   * memory is calculated and stored also.
   *
-  * @param entry_addr Address of function. If NULL, length is ignored and all registers are cleared to 0.
-  * @param length of function in RTC fast memory. cannot be larger than RTC Fast memory size.
+  * @param entry_addr Address of function. should be 4-bytes aligned otherwise it will not start from the stub after wake from deepsleep，
+  *                   if NULL length will be ignored and all registers are cleared to 0.
+  *
+  * @param length length of function in RTC fast memory. should be less than RTC Fast memory size and aligned to 4-bytes.
+  *               otherwise all registers are cleared to 0.
   *
   * @return None
   */

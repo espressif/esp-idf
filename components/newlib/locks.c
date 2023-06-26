@@ -375,9 +375,9 @@ void esp_newlib_locks_init(void)
     extern _lock_t __sinit_lock;
     __sinit_lock = (_lock_t) &s_common_recursive_mutex;
     extern _lock_t __env_lock_object;
-    __env_lock_object = (_lock_t) &s_common_mutex;
+    __env_lock_object = (_lock_t) &s_common_recursive_mutex;
     extern _lock_t __tz_lock_object;
-    __tz_lock_object = (_lock_t) &s_common_recursive_mutex;
+    __tz_lock_object = (_lock_t) &s_common_mutex;
 #elif defined(CONFIG_IDF_TARGET_ESP32S2)
     /* Newlib 3.0.0 is used in ROM, the following lock symbols are defined: */
     extern _lock_t __sinit_recursive_mutex;

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Bootloader override
 
@@ -23,7 +23,7 @@ idf.py flash
 
 This custom bootloader does not do more than the older bootloader, it only prints an extra message on start up:
 ```
-[boot] Custom bootloader has been initialized correctly.
+[boot] Custom bootloader message defined in the KConfig file.
 ```
 
 ## Organisation of this example

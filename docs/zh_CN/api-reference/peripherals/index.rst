@@ -9,6 +9,7 @@
     :SOC_ADC_SUPPORTED: adc_oneshot
     :SOC_ADC_DMA_SUPPORTED: adc_continuous
     :SOC_ADC_SUPPORTED: adc_calibration
+    :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
     clk_tree
     :SOC_DAC_SUPPORTED: dac
     :SOC_ETM_SUPPORTED: etm
@@ -22,9 +23,12 @@
     lcd
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
+    :SOC_PARLIO_SUPPORTED: parlio
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_RMT_SUPPORTED: rmt
-    :SOC_SDMMC_HOST_SUPPORTED: sd_pullup_requirements
+    :esp32: sd_pullup_requirements
+    :esp32s3: sd_pullup_requirements
+    :esp32c6: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
     sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
@@ -33,7 +37,7 @@
     spi_master
     spi_slave
     :esp32: secure_element
-    :esp32s2: spi_slave_hd
+    :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
     :esp32s2: touch_element

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,10 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
-
+#include <sys/time.h>
 
 // Some resources are lazy allocated (newlib locks) in the console code, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-100)
+#define TEST_MEMORY_LEAK_THRESHOLD (-150)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
@@ -40,6 +40,12 @@ void tearDown(void)
 
 void app_main(void)
 {
+    /* Preallocate some newlib locks to avoid it from
+       registering as memory leaks */
+
+    struct timeval tv = { 0 };
+    gettimeofday(&tv, NULL);
+
     printf("Running console component tests\n");
     unity_run_menu();
 }

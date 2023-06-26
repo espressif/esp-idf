@@ -1,18 +1,23 @@
 [mapping:hal]
 archive: libhal.a
 entries:
-    mmu_hal (noflash)
-    if IDF_TARGET_ESP32 = n:
-        cache_hal (noflash)
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
+        mmu_hal (noflash)
+        spi_flash_hal_iram (noflash)
+        spi_flash_encrypt_hal_iram (noflash)
+        if IDF_TARGET_ESP32 = y:
+            cache_hal_esp32 (noflash)
+        else:
+            cache_hal (noflash)
     if SOC_GPSPI_SUPPORTED = y:
-        spi_hal_iram (noflash)
-        spi_slave_hal_iram (noflash)
+        if HAL_SPI_MASTER_FUNC_IN_IRAM = y:
+            spi_hal_iram (noflash)
+        if HAL_SPI_SLAVE_FUNC_IN_IRAM = y:
+            spi_slave_hal_iram (noflash)
     if UART_ISR_IN_IRAM = y || ESP_PANIC_HANDLER_IRAM = y:
         uart_hal_iram (noflash)
     else:
         uart_hal_iram (default)
-    spi_flash_hal_iram (noflash)
-    spi_flash_encrypt_hal_iram (noflash)
     if SOC_LEDC_SUPPORTED = y:
         ledc_hal_iram (noflash)
     if SOC_I2C_SUPPORTED = y:
@@ -33,7 +38,7 @@ entries:
         lcd_hal: lcd_hal_cal_pclk_freq (noflash)
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         adc_oneshot_hal (noflash)
-        if COMPILER_OPTIMIZATION_DEFAULT = y:
+        if COMPILER_OPTIMIZATION_DEBUG = y:
             adc_hal_common: get_controller (noflash)
         adc_hal_common: adc_hal_set_controller (noflash)
         if SOC_ADC_ARBITER_SUPPORTED = y:
@@ -44,7 +49,7 @@ entries:
     if ADC_CONTINUOUS_ISR_IRAM_SAFE = y:
         adc_hal: adc_hal_get_reading_result (noflash)
         adc_hal: adc_hal_digi_start (noflash)
-        if COMPILER_OPTIMIZATION_DEFAULT = y:
+        if COMPILER_OPTIMIZATION_DEBUG = y:
             adc_hal: adc_hal_digi_dma_link_descriptors (noflash)
         adc_hal: adc_hal_digi_stop (noflash)
         if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:

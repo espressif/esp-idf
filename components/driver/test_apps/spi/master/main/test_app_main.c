@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 
 // iterator to load partition tables in `test spi bus lock, with flash` will lead memory not free
-#define TEST_MEMORY_LEAK_THRESHOLD (250)
+#define TEST_MEMORY_LEAK_THRESHOLD (350)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

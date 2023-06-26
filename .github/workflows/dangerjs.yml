@@ -1,0 +1,41 @@
+name: DangerJS Pull Request review
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+  issues: write
+  pull-requests: write
+  security-events: read
+  statuses: write
+
+jobs:
+  danger-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .github/dangerjs
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup NodeJS environment
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: npm
+        cache-dependency-path: .github/dangerjs/package-lock.json
+
+    - name: Install DangerJS dependencies
+      run: npm install
+
+    - name: Run DangerJS
+      run: npx danger ci --failOnErrors -v
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

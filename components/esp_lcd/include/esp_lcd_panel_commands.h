@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@
 #define LCD_CMD_RAMRD        0x2E // Read frame memory
 #define LCD_CMD_PTLAR        0x30 // Define the partial area
 #define LCD_CMD_VSCRDEF      0x33 // Vertical scrolling definition
-#define LCD_CMD_TEOFF        0x34 // Turns of tearing effect
+#define LCD_CMD_TEOFF        0x34 // Turns off tearing effect
 #define LCD_CMD_TEON         0x35 // Turns on tearing effect
 
 #define LCD_CMD_MADCTL       0x36     // Memory data access control
@@ -48,7 +48,7 @@
 #define LCD_CMD_COLMOD       0x3A // Defines the format of RGB picture data
 #define LCD_CMD_RAMWRC       0x3C // Memory write continue
 #define LCD_CMD_RAMRDC       0x3E // Memory read continue
-#define LCD_CMD_STE          0x44 // Set tear scanline, tearing effect output signal when display module reaches line N
-#define LCD_CMD_GDCAN        0x45 // Get scanline
+#define LCD_CMD_STE          0x44 // Set tear scan line, tearing effect output signal when display module reaches line N
+#define LCD_CMD_GDCAN        0x45 // Get scan line
 #define LCD_CMD_WRDISBV      0x51 // Write display brightness
 #define LCD_CMD_RDDISBV      0x52 // Read display brightness value

@@ -49,10 +49,13 @@ extern "C" {
 #define CMD_RDSR3      0x15 /* Not all SPI flash uses this command */
 #define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
 #define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
-#define CMD_WRAP       0x77 /* Set burst with wrap command */
 #define CMD_RESUME     0x7A /* Resume command to clear flash suspend bit */
 #define CMD_RESETEN    0x66
 #define CMD_RESET      0x99
+#define CMD_FASTRD_QIO_4B   0xEC
+#define CMD_FASTRD_QUAD_4B  0x6C
+#define CMD_FASTRD_DIO_4B   0xBC
+#define CMD_FASTRD_DUAL_4B  0x3C
 
 
 /* Provide a Flash API for bootloader_support code,

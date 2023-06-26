@@ -146,6 +146,7 @@ class Platforms:
         'Linux-i686': PLATFORM_LINUX32,
         'FreeBSD-i386': PLATFORM_LINUX32,
         'i586-linux-gnu': PLATFORM_LINUX32,
+        'i686-linux-gnu': PLATFORM_LINUX32,
         PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
         'Linux-arm64': PLATFORM_LINUX_ARM64,
         'Linux-aarch64': PLATFORM_LINUX_ARM64,
@@ -198,8 +199,8 @@ CURRENT_PLATFORM = Platforms.get(PYTHON_PLATFORM)
 EXPORT_SHELL = 'shell'
 EXPORT_KEY_VALUE = 'key-value'
 
-# "DigiCert Global Root CA"
-DIGICERT_ROOT_CERT = u"""
+# the older "DigiCert Global Root CA" certificate used with github.com
+DIGICERT_ROOT_CA_CERT = """
 -----BEGIN CERTIFICATE-----
 MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
@@ -223,6 +224,35 @@ YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
 CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
 -----END CERTIFICATE-----
 """
+
+# the newer "DigiCert Global Root G2" certificate used with dl.espressif.com
+DIGICERT_ROOT_G2_CERT = """
+-----BEGIN CERTIFICATE-----
+MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH
+MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI
+2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx
+1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ
+q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz
+tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ
+vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP
+BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV
+5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY
+1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4
+NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG
+Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91
+8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe
+pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl
+MrY=
+-----END CERTIFICATE-----
+"""
+
+DL_CERT_DICT = {'dl.espressif.com': DIGICERT_ROOT_G2_CERT,
+                'github.com': DIGICERT_ROOT_CA_CERT}
 
 
 global_quiet = False
@@ -428,17 +458,15 @@ def download(url, destination):  # type: (str, str) -> Optional[Exception]
     info(f'Downloading {url}')
     info(f'Destination: {destination}')
     try:
-        ctx = None
-        # For dl.espressif.com and github.com, add the DigiCert root certificate.
-        # This works around the issue with outdated certificate stores in some installations.
-        if 'dl.espressif.com' in url or 'github.com' in url:
-            try:
+        for site, cert in DL_CERT_DICT.items():
+            # For dl.espressif.com and github.com, add the DigiCert root certificate.
+            # This works around the issue with outdated certificate stores in some installations.
+            if site in url:
                 ctx = ssl.create_default_context()
-                ctx.load_verify_locations(cadata=DIGICERT_ROOT_CERT)
-            except AttributeError:
-                # no ssl.create_default_context or load_verify_locations cadata argument
-                # in Python <=2.7.8
-                pass
+                ctx.load_verify_locations(cadata=cert)
+                break
+        else:
+            ctx = None
 
         urlretrieve_ctx(url, destination, report_progress if not global_non_interactive else None, context=ctx)
         sys.stdout.write('\rDone\n')
@@ -758,6 +786,31 @@ class IDFTool(object):
                         self.name, version, ver_str))
                 else:
                     self.versions_installed.append(version)
+
+    def latest_installed_version(self):  # type: () -> Optional[str]
+        """
+        Get the latest installed tool version by directly checking the
+        tool's version directories.
+        """
+        tool_path = self.get_path()
+        if not os.path.exists(tool_path):
+            return None
+        dentries = os.listdir(tool_path)
+        dirs = [d for d in dentries if os.path.isdir(os.path.join(tool_path, d))]
+        for version in sorted(dirs, reverse=True):
+            # get_path_for_version() has assert to check if version is in versions
+            # dict, so get_export_paths() cannot be used. Let's just create the
+            # export paths list directly here.
+            paths = [os.path.join(tool_path, version, *p) for p in self._current_options.export_paths]
+            try:
+                ver_str = self.get_version(paths)
+            except (ToolNotFound, ToolExecError):
+                continue
+            if ver_str != version:
+                continue
+            return version
+
+        return None
 
     def download(self, version):  # type: (str) -> None
         assert version in self.versions
@@ -1145,7 +1198,7 @@ class IDFEnv:
                 if global_idf_tools_path:  # mypy fix for Optional[str] in the next call
                     # the directory doesn't exist if this is run on a clean system the first time
                     mkdir_p(global_idf_tools_path)
-                with open(idf_env_file_path, 'w') as w:
+                with open(idf_env_file_path, 'w', encoding='utf-8') as w:
                     info('Updating {}'.format(idf_env_file_path))
                     json.dump(dict(self), w, cls=IDFEnvEncoder, ensure_ascii=False, indent=4)  # type: ignore
             except (IOError, OSError):
@@ -1162,7 +1215,7 @@ class IDFEnv:
         idf_env_obj = cls()
         try:
             idf_env_file_path = os.path.join(global_idf_tools_path or '', IDF_ENV_FILE)
-            with open(idf_env_file_path, 'r') as idf_env_file:
+            with open(idf_env_file_path, 'r', encoding='utf-8') as idf_env_file:
                 idf_env_json = json.load(idf_env_file)
 
                 try:
@@ -1332,8 +1385,8 @@ def get_python_env_path() -> Tuple[str, str, str, str]:
     python_ver_major_minor = '{}.{}'.format(sys.version_info.major, sys.version_info.minor)
 
     idf_version = get_idf_version()
-    idf_python_env_path = os.path.join(global_idf_tools_path or '', 'python_env',
-                                       'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
+    idf_python_env_path = os.getenv('IDF_PYTHON_ENV_PATH') or os.path.join(global_idf_tools_path or '', 'python_env',
+                                                                           'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
 
     python_exe, subdir = get_python_exe_and_subdir()
     idf_python_export_path = os.path.join(idf_python_env_path, subdir)
@@ -1495,7 +1548,7 @@ def active_repo_id() -> str:
     return global_idf_path + '-v' + get_idf_version()
 
 
-def action_list(args):  # type: ignore
+def list_default(args):  # type: ignore
     tools_info = load_tools_info()
     for name, tool in tools_info.items():
         if tool.get_install_type() == IDFTool.INSTALL_NEVER:
@@ -1512,6 +1565,29 @@ def action_list(args):  # type: ignore
             version_obj = tool.versions[version]
             info('  - {} ({}{})'.format(version, version_obj.status,
                                         ', installed' if version in tool.versions_installed else ''))
+
+
+def list_outdated(args):  # type: ignore
+    tools_info = load_tools_info()
+    for name, tool in tools_info.items():
+        if tool.get_install_type() == IDFTool.INSTALL_NEVER:
+            continue
+        versions_for_platform = {k: v for k, v in tool.versions.items() if v.compatible_with_platform()}
+        if not versions_for_platform:
+            continue
+        version_installed = tool.latest_installed_version()
+        if not version_installed:
+            continue
+        version_available = sorted(versions_for_platform.keys(), key=tool.versions.get, reverse=True)[0]
+        if version_installed < version_available:
+            info(f'{name}: version {version_installed} is outdated by {version_available}')
+
+
+def action_list(args):  # type: ignore
+    if args.outdated:
+        list_outdated(args)
+    else:
+        list_default(args)
 
 
 def action_check(args):  # type: ignore
@@ -2447,7 +2523,8 @@ def main(argv):  # type: (list[str]) -> None
     parser.add_argument('--idf-path', help='ESP-IDF path to use')
 
     subparsers = parser.add_subparsers(dest='action')
-    subparsers.add_parser('list', help='List tools and versions available')
+    list_parser = subparsers.add_parser('list', help='List tools and versions available')
+    list_parser.add_argument('--outdated', help='Print only outdated installed tools', action='store_true')
     subparsers.add_parser('check', help='Print summary of tools installed or found in PATH')
     export = subparsers.add_parser('export', help='Output command for setting tool paths, suitable for shell')
     export.add_argument('--format', choices=[EXPORT_SHELL, EXPORT_KEY_VALUE], default=EXPORT_SHELL,

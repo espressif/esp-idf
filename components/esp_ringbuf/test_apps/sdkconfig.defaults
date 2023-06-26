@@ -1,0 +1,3 @@
+# This "default" configuration is appended to all other configurations
+# The contents of "sdkconfig.debug_helpers" is also appended to all other configurations (see CMakeLists.txt)
+CONFIG_ESP_TASK_WDT_INIT=n

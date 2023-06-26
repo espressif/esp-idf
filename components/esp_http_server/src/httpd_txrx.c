@@ -11,6 +11,7 @@
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
+#include <netinet/tcp.h>
 
 static const char *TAG = "httpd_txrx";
 
@@ -96,14 +97,14 @@ static size_t httpd_recv_pending(httpd_req_t *r, char *buf, size_t buf_len)
 
 int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_after_pending)
 {
-    ESP_LOGD(TAG, LOG_FMT("requested length = %d"), buf_len);
+    ESP_LOGD(TAG, LOG_FMT("requested length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(buf_len));
 
     size_t pending_len = 0;
     struct httpd_req_aux *ra = r->aux;
 
     /* First fetch pending data from local buffer */
     if (ra->sd->pending_len > 0) {
-        ESP_LOGD(TAG, LOG_FMT("pending length = %d"), ra->sd->pending_len);
+        ESP_LOGD(TAG, LOG_FMT("pending length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(ra->sd->pending_len));
         pending_len = httpd_recv_pending(r, buf, buf_len);
         buf     += pending_len;
         buf_len -= pending_len;
@@ -132,7 +133,7 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
         return ret;
     }
 
-    ESP_LOGD(TAG, LOG_FMT("received length = %d"), ret + pending_len);
+    ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST((ret + pending_len)));
     return ret + pending_len;
 }
 
@@ -151,7 +152,7 @@ size_t httpd_unrecv(struct httpd_req *r, const char *buf, size_t buf_len)
      * such that it is right aligned inside the buffer */
     size_t offset = sizeof(ra->sd->pending_data) - ra->sd->pending_len;
     memcpy(ra->sd->pending_data + offset, buf, ra->sd->pending_len);
-    ESP_LOGD(TAG, LOG_FMT("length = %d"), ra->sd->pending_len);
+    ESP_LOGD(TAG, LOG_FMT("length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(ra->sd->pending_len));
     return ra->sd->pending_len;
 }
 
@@ -360,7 +361,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
 
     /* Sending chunked content */
     char len_str[10];
-    snprintf(len_str, sizeof(len_str), "%x\r\n", buf_len);
+    snprintf(len_str, sizeof(len_str), "%lx\r\n", (long)buf_len);
     if (httpd_send_all(r, len_str, strlen(len_str)) != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
     }
@@ -529,7 +530,7 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     }
 
     struct httpd_req_aux *ra = r->aux;
-    ESP_LOGD(TAG, LOG_FMT("remaining length = %d"), ra->remaining_len);
+    ESP_LOGD(TAG, LOG_FMT("remaining length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(ra->remaining_len));
 
     if (buf_len > ra->remaining_len) {
         buf_len = ra->remaining_len;
@@ -551,6 +552,51 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     };
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_DATA, &evt_data, sizeof(esp_http_server_event_data));
     return ret;
+}
+
+esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
+{
+    if (r == NULL || out == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // alloc async req
+    httpd_req_t *async = malloc(sizeof(httpd_req_t));
+    if (async == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(async, r, sizeof(httpd_req_t));
+
+    // alloc async aux
+    async->aux = malloc(sizeof(struct httpd_req_aux));
+    if (async->aux == NULL) {
+        free(async);
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(async->aux, r->aux, sizeof(struct httpd_req_aux));
+
+    // mark socket as "in use"
+    struct httpd_req_aux *ra = r->aux;
+    ra->sd->for_async_req = true;
+
+    *out = async;
+
+    return ESP_OK;
+}
+
+esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
+{
+    if (r == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    struct httpd_req_aux *ra = r->aux;
+    ra->sd->for_async_req = false;
+
+    free(r->aux);
+    free(r);
+
+    return ESP_OK;
 }
 
 int httpd_req_to_sockfd(httpd_req_t *r)
@@ -622,10 +668,10 @@ int httpd_socket_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf
 {
     struct sock_db *sess = httpd_sess_get(hd, sockfd);
     if (!sess) {
-        return ESP_ERR_INVALID_ARG;
+        return HTTPD_SOCK_ERR_INVALID;
     }
     if (!sess->send_fn) {
-        return ESP_ERR_INVALID_STATE;
+        return HTTPD_SOCK_ERR_INVALID;
     }
     return sess->send_fn(hd, sockfd, buf, buf_len, flags);
 }
@@ -634,10 +680,10 @@ int httpd_socket_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, 
 {
     struct sock_db *sess = httpd_sess_get(hd, sockfd);
     if (!sess) {
-        return ESP_ERR_INVALID_ARG;
+        return HTTPD_SOCK_ERR_INVALID;
     }
     if (!sess->recv_fn) {
-        return ESP_ERR_INVALID_STATE;
+        return HTTPD_SOCK_ERR_INVALID;
     }
     return sess->recv_fn(hd, sockfd, buf, buf_len, flags);
 }

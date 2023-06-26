@@ -25,6 +25,9 @@ ESP_EVENT_DEFINE_BASE(ESP_HTTPS_OTA_EVENT);
 _Static_assert(DEFAULT_OTA_BUF_SIZE > (sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t) + 1), "OTA data buffer too small");
 
 #define DEFAULT_REQUEST_SIZE (64 * 1024)
+
+static const int DEFAULT_MAX_AUTH_RETRIES = 10;
+
 static const char *TAG = "esp_https_ota";
 
 typedef enum {
@@ -46,6 +49,7 @@ struct esp_https_ota_handle {
     esp_https_ota_state state;
     bool bulk_flash_erase;
     bool partial_http_download;
+    int max_authorization_retries;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
     void *decrypt_user_ctx;
@@ -85,17 +89,22 @@ static bool process_again(int status_code)
     return false;
 }
 
-static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client, int status_code)
+static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, int status_code)
 {
     esp_err_t err;
     if (redirection_required(status_code)) {
-        err = esp_http_client_set_redirection(http_client);
+        err = esp_http_client_set_redirection(https_ota_handle->http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "URL redirection Failed");
             return err;
         }
     } else if (status_code == HttpStatus_Unauthorized) {
-        esp_http_client_add_auth(http_client);
+        if (https_ota_handle->max_authorization_retries == 0) {
+            ESP_LOGE(TAG, "Reached max_authorization_retries (%d)", status_code);
+            return ESP_FAIL;
+        }
+        https_ota_handle->max_authorization_retries--;
+        esp_http_client_add_auth(https_ota_handle->http_client);
     } else if(status_code == HttpStatus_NotFound || status_code == HttpStatus_Forbidden) {
         ESP_LOGE(TAG, "File not found(%d)", status_code);
         return ESP_FAIL;
@@ -115,7 +124,7 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
              *  In case of redirection, esp_http_client_read() is called
              *  to clear the response buffer of http_client.
              */
-            int data_read = esp_http_client_read(http_client, upgrade_data_buf, sizeof(upgrade_data_buf));
+            int data_read = esp_http_client_read(https_ota_handle->http_client, upgrade_data_buf, sizeof(upgrade_data_buf));
             if (data_read <= 0) {
                 return ESP_OK;
             }
@@ -124,7 +133,7 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
     return ESP_OK;
 }
 
-static esp_err_t _http_connect(esp_http_client_handle_t http_client)
+static esp_err_t _http_connect(esp_https_ota_t *https_ota_handle)
 {
     esp_err_t err = ESP_FAIL;
     int status_code, header_ret;
@@ -134,8 +143,8 @@ static esp_err_t _http_connect(esp_http_client_handle_t http_client)
          * Note: Sending POST request is not supported if partial_http_download
          * is enabled
          */
-        int post_len = esp_http_client_get_post_field(http_client, &post_data);
-        err = esp_http_client_open(http_client, post_len);
+        int post_len = esp_http_client_get_post_field(https_ota_handle->http_client, &post_data);
+        err = esp_http_client_open(https_ota_handle->http_client, post_len);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
             return err;
@@ -143,7 +152,7 @@ static esp_err_t _http_connect(esp_http_client_handle_t http_client)
         if (post_len) {
             int write_len = 0;
             while (post_len > 0) {
-                write_len = esp_http_client_write(http_client, post_data, post_len);
+                write_len = esp_http_client_write(https_ota_handle->http_client, post_data, post_len);
                 if (write_len < 0) {
                     ESP_LOGE(TAG, "Write failed");
                     return ESP_FAIL;
@@ -152,12 +161,12 @@ static esp_err_t _http_connect(esp_http_client_handle_t http_client)
                 post_data += write_len;
             }
         }
-        header_ret = esp_http_client_fetch_headers(http_client);
+        header_ret = esp_http_client_fetch_headers(https_ota_handle->http_client);
         if (header_ret < 0) {
             return header_ret;
         }
-        status_code = esp_http_client_get_status_code(http_client);
-        err = _http_handle_response_code(http_client, status_code);
+        status_code = esp_http_client_get_status_code(https_ota_handle->http_client);
+        err = _http_handle_response_code(https_ota_handle, status_code);
         if (err != ESP_OK) {
             return err;
         }
@@ -274,6 +283,13 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     https_ota_handle->partial_http_download = ota_config->partial_http_download;
     https_ota_handle->max_http_request_size = (ota_config->max_http_request_size == 0) ? DEFAULT_REQUEST_SIZE : ota_config->max_http_request_size;
+    https_ota_handle->max_authorization_retries = ota_config->http_config->max_authorization_retries;
+
+    if (https_ota_handle->max_authorization_retries == 0) {
+        https_ota_handle->max_authorization_retries = DEFAULT_MAX_AUTH_RETRIES;
+    } else if (https_ota_handle->max_authorization_retries == -1) {
+        https_ota_handle->max_authorization_retries = 0;
+    }
 
     /* Initiate HTTP Connection */
     https_ota_handle->http_client = esp_http_client_init(ota_config->http_config);
@@ -323,7 +339,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
     }
 
-    err = _http_connect(https_ota_handle->http_client);
+    err = _http_connect(https_ota_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to establish HTTP connection");
         goto http_cleanup;
@@ -579,7 +595,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             }
             esp_http_client_set_header(handle->http_client, "Range", header_val);
             free(header_val);
-            err = _http_connect(handle->http_client);
+            err = _http_connect(handle);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to establish HTTP connection");
                 return ESP_FAIL;

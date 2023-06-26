@@ -1147,4 +1147,42 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh,int y);
 struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
                                         const u8 *key, size_t len);
 
+
+struct crypto_ec_key;
+
+
+/**
+ * crypto_ec_key_parse_pub - Initialize EC key pair from SubjectPublicKeyInfo ASN.1
+ * @der: DER encoding of ASN.1 SubjectPublicKeyInfo
+ * @der_len: Length of @der buffer
+ * Returns: EC key or %NULL on failure
+ */
+struct crypto_ec_key * crypto_ec_key_parse_pub(const u8 *der, size_t der_len);
+
+
+/**
+ * crypto_ec_key_group - Get IANA group identifier for an EC key
+ * @key: EC key from crypto_ec_key_parse/set_pub/priv() or crypto_ec_key_gen()
+ * Returns: IANA group identifier and -1 on failure
+ */
+int crypto_ec_key_group(struct crypto_ec_key *key);
+
+/**
+ * crypto_ec_key_deinit - Free EC key
+ * @key: EC key from crypto_ec_key_parse_pub/priv() or crypto_ec_key_gen()
+ */
+void crypto_ec_key_deinit(struct crypto_ec_key *key);
+
+/**
+ * crypto_ec_key_verify_signature - Verify ECDSA signature
+ * @key: EC key from crypto_ec_key_parse/set_pub() or crypto_ec_key_gen()
+ * @data: Data to be signed
+ * @len: Length of @data buffer
+ * @sig: DER encoding of ASN.1 Ecdsa-Sig-Value
+ * @sig_len: Length of @sig buffer
+ * Returns: 1 if signature is valid, 0 if signature is invalid and -1 on failure
+ */
+int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
+                                   size_t len, const u8 *sig, size_t sig_len);
+
 #endif /* CRYPTO_H */

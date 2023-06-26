@@ -111,9 +111,9 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO2、GPIO8、和 GPIO9 是 Strapping 管脚。更多信息请参考 `ESP32-C3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf>`_。
+    - Strapping 管脚：GPIO2、GPIO8、和 GPIO9 是 Strapping 管脚。更多信息请参考 `ESP32-C3 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1：GPIO12-17 通常用于 SPI flash 和 PSRAM，不推荐用于其他用途。
     - USB-JTAG：GPIO18 和 GPIO19 默认用于 USB-JTAG。用做 GPIO 时驱动程序将禁用 USB-JTAG。
-    - RTC：GPIO0-5 可以在 Deep-sleep 模式时使用。
+    - RTC：GPIO0-5 可用于将芯片从 Deep-sleep 模式中唤醒，其他 GPIO 仅能将芯片从 Light-sleep 模式中唤醒。更多信息请参考 :ref:`唤醒源<api-reference-wakeup-source>` 章节。
 
 ---

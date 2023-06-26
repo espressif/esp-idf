@@ -22,8 +22,7 @@ def test_get_time_from_sntp_server(dut: Dut) -> None:
         dut.write(f'{ap_ssid} {ap_password}')
     dut.expect('IPv4 address:')
 
-    dut.expect('Initializing SNTP')
-    dut.expect(r'Waiting for system time to be set... \(\d+/\d+\)')
+    dut.expect('Initializing and starting SNTP')
     dut.expect('Notification of a time synchronization event')
 
     TIME_FORMAT = '%a %b %d %H:%M:%S %Y'

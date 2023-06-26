@@ -18,8 +18,9 @@ GPIO Summary
     .. list::
 
         - In Deep-sleep mode
-        :SOC_ULP_SUPPORTED: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
+        :SOC_ULP_SUPPORTED and not esp32c6: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
         - Analog functions such as ADC/DAC/etc are in use.
+
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
@@ -48,6 +49,20 @@ GPIO Summary
 		Please note, the ``pin glitch filter`` and ``flex glitch filter`` are independent. You can enable both of them for the same GPIO.
 
 	The glitch filter is disabled by default, and can be enabled by calling :cpp:func:`gpio_glitch_filter_enable`. To recycle the filter, you can call :cpp:func:`gpio_del_glitch_filter`. Please note, before deleting the filter, you should disable it first by calling :cpp:func:`gpio_glitch_filter_disable`.
+
+
+.. only:: SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+
+    GPIO Hysteresis Filter
+    ----------------------
+
+    {IDF_TARGET_NAME} support the hardware hysteresis of the input pin, which can reduce the GPIO interrupt shoot by accident due to unstable sampling when the input voltage is near the critical of logic 0 and 1, especially when the input logic level conversion is slow or the voltage setup time is too long.
+
+    Each pin can enable hysteresis function independently. By default, it controlled by eFuse and been closed, but it can also be enabled or disabled by software manually. You can select the hysteresis control mode by configuring :cpp:member:`gpio_config_t::hys_ctrl_mode`.
+
+    .. note::
+
+        When the hysteresis function is controlled by eFuse, this feature can still be controlled independently for each pin, you need to `burn the eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ to enable the hysteresis function on specific GPIO additionally.
 
 
 Application Example

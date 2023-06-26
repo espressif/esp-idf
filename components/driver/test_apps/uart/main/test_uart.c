@@ -120,7 +120,7 @@ TEST_CASE("test uart get baud-rate", "[uart]")
     TEST_ASSERT_UINT32_WITHIN(UART_BAUD_115200 * TOLERANCE, UART_BAUD_115200, baud_rate2);
 
     uart_driver_delete(UART_NUM1);
-    ESP_LOGI(UART_TAG, "get baud-rate test passed  ....\n");
+    ESP_LOGI(UART_TAG, "get baud-rate test passed  ....");
 }
 
 TEST_CASE("test uart tx data with break", "[uart]")

@@ -26,7 +26,7 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 2. Call :cpp:func:`ff_diskio_register` to register the disk I/O driver for the drive number used in Step 1.
 
-3. Call the FatFs function ``f_mount``, and optionally ``f_fdisk``, ``f_mkfs``, to mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`. For more information, see `FatFs documentation <http://www.elm-chan.org/fsw/ff/doc/mount.html>`_.
+3. Call the FatFs function ``f_mount``, and optionally ``f_fdisk``, ``f_mkfs``, to mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
 
 4. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. More details on the FatFs filenames are available `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
 
@@ -87,6 +87,8 @@ These APIs provide implementation of disk I/O functions for SD/MMC cards and can
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
 
+.. _fatfs-partition-generator:
+
 FatFs Partition Generator
 -------------------------
 
@@ -98,6 +100,7 @@ The script is based on the partition generator (:component_file:`fatfsgen.py<fat
 
 The latest version supports both short and long file names, FAT12 and FAT16. The long file names are limited to 255 characters and can contain multiple periods (``.``) characters within the filename and additional characters ``+``, ``,``, ``;``, ``=``, ``[`` and ``]``.
 
+An in-depth description of the FatFs partition generator and analyzer can be found at :doc:`Generating and parsing FAT partition on host <fatfsgen>`.
 
 Build System Integration with FatFs Partition Generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

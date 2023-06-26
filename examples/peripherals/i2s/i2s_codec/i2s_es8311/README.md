@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # I2S ES8311 Example
 
@@ -55,7 +55,7 @@ For more details, see [ES8311 datasheet](http://www.everest-semi.com/pdf/ES8311%
 │              GND├───────────┤GND                       │
 └─────────────────┘           └──────────────────────────┘
 ```
-Note: Since ESP32-C3 & ESP32-H4 board does not have GPIO 16/17, you can use other available GPIOs instead. In this example, we set GPIO 6/7 as I2C pins for ESP32-C3 & ESP32-H4 and GPIO 16/17 for other chips, same as GPIO 18/19, we use GPIO 2/3 instead.
+Note: Since ESP32-C3 & ESP32-H2 board does not have GPIO 16/17, you can use other available GPIOs instead. In this example, we set GPIO 6/7 as I2C pins for ESP32-C3 and GPIO 8/9 ESP32-H2 and GPIO 16/17 for other chips, same as GPIO 18/19, we use GPIO 2/3 instead.
 
 ### Dependency
 
@@ -73,13 +73,13 @@ If the dependency is added, you can check `idf_component.yml` for more detail. W
 ```
 idf.py menuconfig
 ```
-You can find configurations for this example in 'Example Configutation' tag.
+You can find configurations for this example in 'Example Configuration' tag.
 
 * In 'Example mode' subtag, you can set the example mode to 'music' or 'echo'. You can hear a piece of music in 'music' mode and echo the sound sampled by mic in 'echo' mode. You can also customize you own music to play as shown below.
 
 * In 'Set MIC gain' subtag, you can set the mic gain for echo mode.
 
-* In 'Voice volume', you can set the volum between 0 to 100.
+* In 'Voice volume', you can set the volume between 0 to 100.
 
 * In 'Enable Board Support Package (BSP) support' you can enable support for BSP. You can pick specific BSP in [idf_component.yml](main/idf_component.yml).
 

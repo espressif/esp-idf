@@ -64,7 +64,9 @@ SECTIONS
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
+    /* we use either libgcc or compiler-rt, so put similar entries for them here */
     *libgcc.a:(.literal .text .literal.* .text.*)
+    *libclang_rt.builtins.a:(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_common_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
@@ -132,9 +134,14 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } > dram_seg
 
-  .dram0.data :
+  .dram0.bootdesc : ALIGN(0x10)
   {
     _data_start = ABSOLUTE(.);
+    *(.data_bootloader_desc .data_bootloader_desc.*)               /* Should be the first.  Bootloader version info.        DO NOT PUT ANYTHING BEFORE IT! */
+  } > dram_seg
+
+  .dram0.data :
+  {
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)

@@ -6,71 +6,80 @@ idf_build_get_property(python PYTHON)
 idf_build_get_property(idf_path IDF_PATH)
 
 set(chip_model ${target})
-# TODO: remove this if block when esp32h4 beta1 is no longer supported and we have h4 target in esptool
-if(target STREQUAL "esp32h4")
-    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-        set(chip_model esp32h2beta1)
-    elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-        set(chip_model esp32h2beta2)
-    endif()
-endif()
 
 set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
-set(ESPMONITOR ${python} "${idf_path}/tools/idf_monitor.py")
-
-if(CONFIG_SPI_FLASH_HPM_ENABLE)
-# When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
-# because on some flash chips, 120M will modify the status register,
-# which will make ROM won't work.
-# This change intends to be for esptool only and the bootloader should keep use
-# ``DOUT`` mode.
-    set(ESPFLASHMODE "dout")
-    message("Note: HPM is enabled for the flash, force the ROM bootloader into DOUT mode for stable boot on")
-else()
-    set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
-endif()
-set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
-set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
-
+set(ESPMONITOR ${python} -m esp_idf_monitor)
 set(ESPTOOLPY_CHIP "${chip_model}")
 
-set(esptool_elf2image_args
-    --flash_mode ${ESPFLASHMODE}
-    --flash_freq ${ESPFLASHFREQ}
-    --flash_size ${ESPFLASHSIZE}
-    )
-
-if(BOOTLOADER_BUILD AND CONFIG_SECURE_BOOT_V2_ENABLED)
-    # The bootloader binary needs to be 4KB aligned in order to append a secure boot V2 signature block.
-    # If CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is NOT set, the bootloader
-    # image generated is not 4KB aligned for external HSM to sign it readily.
-    # Following esptool option --pad-to-size 4KB generates a 4K aligned bootloader image.
-    # In case of signing during build, espsecure.py "sign_data" operation handles the 4K alignment of the image.
-    if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-        list(APPEND esptool_elf2image_args --pad-to-size 4KB)
+if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+    if(CONFIG_SPI_FLASH_HPM_ENABLE)
+    # When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
+    # because on some flash chips, 120M will modify the status register,
+    # which will make ROM won't work.
+    # This change intends to be for esptool only and the bootloader should keep use
+    # ``DOUT`` mode.
+        set(ESPFLASHMODE "dout")
+        message("Note: HPM is enabled for the flash, force the ROM bootloader into DOUT mode for stable boot on")
+    else()
+        set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
     endif()
-endif()
+    set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
+    set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
 
-set(MMU_PAGE_SIZE ${CONFIG_MMU_PAGE_MODE})
 
-if(NOT BOOTLOADER_BUILD)
-    list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
-    # For chips that support configurable MMU page size feature
-    # If page size is configured to values other than the default "64KB" in menuconfig,
-    # then we need to pass the actual size to flash-mmu-page-size arg
-    if(NOT MMU_PAGE_SIZE STREQUAL "64KB")
-        list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
+    set(esptool_elf2image_args
+        --flash_mode ${ESPFLASHMODE}
+        --flash_freq ${ESPFLASHFREQ}
+        --flash_size ${ESPFLASHSIZE}
+        )
+
+    if(BOOTLOADER_BUILD AND CONFIG_SECURE_BOOT_V2_ENABLED)
+        # The bootloader binary needs to be 4KB aligned in order to append a secure boot V2 signature block.
+        # If CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is NOT set, the bootloader
+        # image generated is not 4KB aligned for external HSM to sign it readily.
+        # Following esptool option --pad-to-size 4KB generates a 4K aligned bootloader image.
+        # In case of signing during build, espsecure.py "sign_data" operation handles the 4K alignment of the image.
+        if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+            list(APPEND esptool_elf2image_args --pad-to-size 4KB)
+        endif()
     endif()
-endif()
 
-if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
-    NOT BOOTLOADER_BUILD)
-    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
-        list(APPEND esptool_elf2image_args --secure-pad)
-    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
-        list(APPEND esptool_elf2image_args --secure-pad-v2)
+    set(MMU_PAGE_SIZE ${CONFIG_MMU_PAGE_MODE})
+
+    if(NOT BOOTLOADER_BUILD)
+        list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
+        # For chips that support configurable MMU page size feature
+        # If page size is configured to values other than the default "64KB" in menuconfig,
+        # then we need to pass the actual size to flash-mmu-page-size arg
+        if(NOT MMU_PAGE_SIZE STREQUAL "64KB")
+            list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
+        endif()
+    endif()
+
+    if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
+        NOT BOOTLOADER_BUILD)
+        if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+            list(APPEND esptool_elf2image_args --secure-pad)
+        elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+            list(APPEND esptool_elf2image_args --secure-pad-v2)
+        endif()
+    endif()
+
+    if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
+        # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
+        # as elf2image can't have 'detect' as an option...
+        set(ESPFLASHSIZE detect)
+
+        # Flash size detection updates the image header which would invalidate the appended
+        # SHA256 digest. Therefore, a digest is not appended in that case.
+        # This argument requires esptool>=4.1.
+        list(APPEND esptool_elf2image_args --dont-append-digest)
+    endif()
+
+    if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+        set(ESPFLASHSIZE keep)
     endif()
 endif()
 
@@ -140,7 +149,7 @@ if(CONFIG_APP_BUILD_GENERATE_BINARIES)
 endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    APPEND PROPERTY ADDITIONAL_CLEAN_FILES
     "${build_dir}/${unsigned_project_binary}"
     )
 
@@ -173,7 +182,7 @@ if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
         add_dependencies(gen_project_binary gen_signed_project_binary)
 
         set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+            APPEND PROPERTY ADDITIONAL_CLEAN_FILES
             "${build_dir}/${PROJECT_BIN}"
             )
     else()
@@ -482,7 +491,11 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
 endfunction()
 
 if(NOT BOOTLOADER_BUILD)
-    set(flash_deps "partition_table_bin")
+    set(flash_deps "")
+
+    if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+        list(APPEND flash_deps "partition_table_bin")
+    endif()
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES)
         list(APPEND flash_deps "app")

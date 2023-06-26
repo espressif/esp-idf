@@ -112,7 +112,7 @@ Breaking Changes (Summary)
 ``esp_tls_t`` Structure is Now Private
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the ESP-TLS handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function, please raise an `issue <https://github.com/espressif/esp-adf/issues>`__ on ESP-IDF.
+The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the ESP-TLS handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function, please raise an `issue <https://github.com/espressif/esp-idf/issues>`__ on ESP-IDF.
 
 
 The list of newly added getter/setter function is as as follows:
@@ -169,7 +169,7 @@ MQTT Client
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :cpp:type:`esp_mqtt_client_config_t` have all fields grouped in sub structs. 
+- :cpp:type:`esp_mqtt_client_config_t` have all fields grouped in sub structs.
 
 Most common configurations are listed below:
 
@@ -177,9 +177,11 @@ Most common configurations are listed below:
 - Security related to broker verification in :cpp:member:`esp_mqtt_client_config_t::broker::verification`
 - Client username is set in :cpp:member:`esp_mqtt_client_config_t::credentials::username`
 
+- :cpp:type:`esp_mqtt_client_config_t` no longer supports the ``user_context`` field. Please use :cpp:func:`esp_mqtt_client_register_event` instead for registering an event handler; the last argument ``event_handler_arg`` can be used to pass user context to the handler.
+
 
 ESP-Modbus
-----------
+-----------
 
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

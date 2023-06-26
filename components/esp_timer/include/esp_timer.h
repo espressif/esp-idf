@@ -98,6 +98,11 @@ esp_err_t esp_timer_early_init(void);
  * Before calling this function, esp_timer_early_init must be called by the
  * startup code.
  *
+ * This function will be called from startup code on every core
+ * if CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY is enabled,
+ * It allocates the timer ISR on MULTIPLE cores and
+ * creates the timer task which can be run on any core.
+ *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM if allocation has failed

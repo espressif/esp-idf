@@ -1,41 +1,41 @@
 Heap Memory Allocation
 ======================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Stack and Heap
 --------------
 
-ESP-IDF applications use the common computer architecture patterns of *stack* (dynamic memory allocated by program control flow) and *heap* (dynamic memory allocated by function calls), as well as statically allocated memory (allocated at compile time).
+ESP-IDF applications use the common computer architecture patterns of **stack** (dynamic memory allocated by program control flow), **heap** (dynamic memory allocated by function calls), and **static memory** (memory allocated at compile time).
 
-Because ESP-IDF is a multi-threaded RTOS environment, each RTOS task has its own stack. By default, each of these stacks is allocated from the heap when the task is created. (See :cpp:func:`xTaskCreateStatic` for the alternative where stacks are statically allocated.)
+Because ESP-IDF is a multi-threaded RTOS environment, each RTOS task has its own stack. By default, each of these stacks is allocated from the heap when the task is created. See :cpp:func:`xTaskCreateStatic` for the alternative where stacks are statically allocated.
 
 Because {IDF_TARGET_NAME} uses multiple types of RAM, it also contains multiple heaps with different capabilities. A capabilities-based memory allocator allows apps to make heap allocations for different purposes.
 
-For most purposes, the standard libc ``malloc()`` and ``free()`` functions can be used for heap allocation without any special consideration.
-
-However, in order to fully make use of all of the memory types and their characteristics, ESP-IDF also has a
-capabilities-based heap memory allocator. If you want to have memory with certain properties (for example, :ref:`dma-capable-memory` or executable-memory), you can create an OR-mask of the required capabilities and pass that to :cpp:func:`heap_caps_malloc`.
+For most purposes, the C Standard Library's ``malloc()`` and ``free()`` functions can be used for heap allocation without any special consideration. However, in order to fully make use of all of the memory types and their characteristics, ESP-IDF also has a capabilities-based heap memory allocator. If you want to have a memory with certain properties (e.g., :ref:`dma-capable-memory` or executable-memory), you can create an OR-mask of the required capabilities and pass that to :cpp:func:`heap_caps_malloc`.
 
 Memory Capabilities
 -------------------
 
 The {IDF_TARGET_NAME} contains multiple types of RAM:
 
-- DRAM (Data RAM) is memory used to hold data. This is the most common kind of memory accessed as heap.
-- IRAM (Instruction RAM) usually holds executable data only. If accessed as generic memory, all accesses must be :ref:`32-bit aligned<32-Bit Accessible Memory>`.
-- D/IRAM is RAM which can be used as either Instruction or Data RAM.
+- DRAM (Data RAM) is memory that is connected to CPU's data bus and is used to hold data. This is the most common kind of memory accessed as a heap.
+- IRAM (Instruction RAM) is memory that is connected to the CPU's instruction bus and usually holds executable data only (i.e., instructions). If accessed as generic memory, all accesses must be aligned to :ref:`32-Bit Accessible Memory <32-Bit Accessible Memory>`.
+- D/IRAM is RAM that is connected to CPU's data bus and instruction bus, thus can be used either Instruction or Data RAM.
 
 For more details on these internal memory types, see :ref:`memory-layout`.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME} - :doc:`external RAM </api-guides/external-ram>` can be integrated into the {IDF_TARGET_NAME}'s memory map using the flash cache, and accessed similarly to DRAM.
+    It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME}. The :doc:`external RAM </api-guides/external-ram>` is integrated into the {IDF_TARGET_NAME}'s memory map via the cache, and accessed similarly to DRAM.
 
-DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and writes). To test the free DRAM heap size at runtime, call cpp:func:`heap_caps_get_free_size(MALLOC_CAP_8BIT)`.
+All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MALLOC_CAP_8BIT`` capability. Users can call ``heap_caps_get_free_size(MALLOC_CAP_8BIT)`` to get the free size of all DRAM heaps.
 
-When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls cpp:func:`heap_caps_malloc_default(size)`. This will allocate memory with capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
+If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
 
-Because malloc uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling
-the standard ``free()`` function.
+When calling ``malloc()``, the ESP-IDF ``malloc()`` internally calls ``heap_caps_malloc_default(size)``. This will allocate memory with the capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
+
+Because ``malloc()`` uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling the standard ``free()`` function.
 
 Available Heap
 --------------
@@ -45,7 +45,7 @@ Available Heap
 DRAM
 ^^^^
 
-At startup, the DRAM heap contains all data memory which is not statically allocated by the app. Reducing statically allocated buffers will increase the amount of available free heap.
+At startup, the DRAM heap contains all data memory that is not statically allocated by the app. Reducing statically allocated buffers will increase the amount of available free heap.
 
 To find the amount of statically allocated memory, use the :ref:`idf.py size <idf.py-size>` command.
 
@@ -53,12 +53,12 @@ To find the amount of statically allocated memory, use the :ref:`idf.py size <id
 
     .. note:: See the :ref:`dram` section for more details about the DRAM usage limitations.
 
-.. note:: At runtime, the available heap DRAM may be less than calculated at compile time, because at startup some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
+.. note:: At runtime, the available heap DRAM may be less than calculated at compile time, because, at startup, some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
 
 IRAM
 ^^^^
 
-At startup, the IRAM heap contains all instruction memory which is not used by the app executable code.
+At startup, the IRAM heap contains all instruction memory that is not used by the app executable code.
 
 The :ref:`idf.py size <idf.py-size>` command can be used to find the amount of IRAM used by the app.
 
@@ -81,7 +81,7 @@ At startup, all ESP-IDF apps log a summary of all heap addresses (and sizes) at 
     I (278) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
     I (284) heap_init: At 4008944C len 00016BB4 (90 KiB): IRAM
 
-Finding available heap
+Finding Available Heap
 ^^^^^^^^^^^^^^^^^^^^^^
 
 See :ref:`heap-information`.
@@ -105,11 +105,11 @@ Use the ``MALLOC_CAP_DMA`` flag to allocate memory which is suitable for use wit
 32-Bit Accessible Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If a certain memory structure is only addressed in 32-bit units, for example an array of ints or pointers, it can be useful to allocate it with the ``MALLOC_CAP_32BIT`` flag. This also allows the allocator to give out IRAM memory; something which it can't do for a normal malloc() call. This can help to use all the available memory in the {IDF_TARGET_NAME}.
+If a certain memory structure is only addressed in 32-bit units, for example, an array of ints or pointers, it can be useful to allocate it with the ``MALLOC_CAP_32BIT`` flag. This also allows the allocator to give out IRAM memory, which is sometimes unavailable for a normal malloc() call. This can help to use all the available memory in the {IDF_TARGET_NAME}.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA and SOC_CPU_HAS_FPU
 
-    Please note that on {IDF_TARGET_NAME} series chips, ``MALLOC_CAP_32BIT`` cannot be used for storing floating-point variables. This is because ``MALLOC_CAP_32BIT`` may return instruction RAM, and the floating-point assembly instructions on {IDF_TARGET_NAME} cannot access instruction RAM.
+    Please note that on {IDF_TARGET_NAME} series chips, ``MALLOC_CAP_32BIT`` cannot be used for storing floating-point variables. This is because ``MALLOC_CAP_32BIT`` may return instruction RAM and the floating-point assembly instructions on {IDF_TARGET_NAME} cannot access instruction RAM.
 
 Memory allocated with ``MALLOC_CAP_32BIT`` can *only* be accessed via 32-bit reads and writes, any other type of access will generate a fatal LoadStoreError exception.
 
@@ -118,25 +118,25 @@ Memory allocated with ``MALLOC_CAP_32BIT`` can *only* be accessed via 32-bit rea
     External SPI Memory
     ^^^^^^^^^^^^^^^^^^^
 
-    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on configuration. See :ref:`external_ram_config` for more details.
+    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4 MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on the configuration. See :ref:`external_ram_config` for more details.
 
     .. only:: esp32
 
-        To use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
+        To use the region above the 4 MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
 
 Thread Safety
 -------------
 
-Heap functions are thread safe, meaning they can be called from different tasks simultaneously without any limitations.
+Heap functions are thread-safe, meaning they can be called from different tasks simultaneously without any limitations.
 
-It is technically possible to call ``malloc``, ``free``, and related functions from interrupt handler (ISR) context (see :ref:`calling-heap-related-functions-from-isr`). However this is not recommended, as heap function calls may delay other interrupts. It is strongly recommended to refactor applications so that any buffers used by an ISR are pre-allocated outside of the ISR. Support for calling heap functions from ISRs may be removed in a future update.
+It is technically possible to call ``malloc``, ``free``, and related functions from interrupt handler (ISR) context (see :ref:`calling-heap-related-functions-from-isr`). However, this is not recommended, as heap function calls may delay other interrupts. It is strongly recommended to refactor applications so that any buffers used by an ISR are pre-allocated outside of the ISR. Support for calling heap functions from ISRs may be removed in a future update.
 
 .. _calling-heap-related-functions-from-isr:
 
-Calling heap related functions from ISR
+Calling Heap-Related Functions from ISR
 ---------------------------------------
 
-The following functions from the heap component can be called form interrupt handler (ISR):
+The following functions from the heap component can be called from the interrupt handler (ISR):
 
 * :cpp:func:`heap_caps_malloc`
 * :cpp:func:`heap_caps_malloc_default`
@@ -150,7 +150,7 @@ The following functions from the heap component can be called form interrupt han
 * :cpp:func:`heap_caps_aligned_alloc`
 * :cpp:func:`heap_caps_aligned_free`
 
-Note however this practice is strongly discouraged.
+Note: however, this practice is strongly discouraged.
 
 Heap Tracing & Debugging
 ------------------------
@@ -158,19 +158,20 @@ Heap Tracing & Debugging
 The following features are documented on the :doc:`Heap Memory Debugging </api-reference/system/heap_debug>` page:
 
 - :ref:`Heap Information <heap-information>` (free space, etc.)
+- :ref:`Heap Allocation and Free Function Hooks <heap-allocation-free>`
 - :ref:`Heap Corruption Detection <heap-corruption>`
 - :ref:`Heap Tracing <heap-tracing>` (memory leak detection, monitoring, etc.)
 
 Implementation Notes
 --------------------
 
-Knowledge about the regions of memory in the chip comes from the "soc" component, which contains memory layout information for the chip, and the different capabilities of each region. Each region's capabilities are prioritised, so that (for example) dedicated DRAM and IRAM regions will be used for allocations ahead of the more versatile D/IRAM regions.
+Knowledge about the regions of memory in the chip comes from the "SoC" component, which contains memory layout information for the chip, and the different capabilities of each region. Each region's capabilities are prioritized, so that (for example) dedicated DRAM and IRAM regions will be used for allocations ahead of the more versatile D/IRAM regions.
 
-Each contiguous region of memory contains its own memory heap. The heaps are created using the :ref:`multi_heap <multi-heap>` functionality. multi_heap allows any contiguous region of memory to be used as a heap.
+Each contiguous region of memory contains its own memory heap. The heaps are created using the :ref:`multi_heap <multi-heap>` functionality. ``multi_heap`` allows any contiguous region of memory to be used as a heap.
 
-The heap capabilities allocator uses knowledge of the memory regions to initialize each individual heap. Allocation functions in the heap capabilities API will find the most appropriate heap for the allocation (based on desired capabilities, available space, and preferences for each region's use) and then calling :cpp:func:`multi_heap_malloc` for the heap situated in that particular region.
+The heap capabilities allocator uses knowledge of the memory regions to initialize each individual heap. Allocation functions in the heap capabilities API will find the most appropriate heap for the allocation based on desired capabilities, available space, and preferences for each region's use, and then calling :cpp:func:`multi_heap_malloc` for the heap situated in that particular region.
 
-Calling ``free()`` involves finding the particular heap corresponding to the freed address, and then calling :cpp:func:`multi_heap_free` on that particular multi_heap instance.
+Calling ``free()`` involves finding the particular heap corresponding to the freed address, and then call :cpp:func:`multi_heap_free` on that particular ``multi_heap`` instance.
 
 
 API Reference - Heap Allocation
@@ -186,9 +187,9 @@ API Reference - Initialisation
 
 .. _multi-heap:
 
-API Reference - Multi Heap API
+API Reference - Multi-Heap API
 ------------------------------
 
-(Note: The multi heap API is used internally by the heap capabilities allocator. Most IDF programs will never need to call this API directly.)
+(Note: The multi-heap API is used internally by the heap capabilities allocator. Most IDF programs will never need to call this API directly.)
 
 .. include-build-file:: inc/multi_heap.inc

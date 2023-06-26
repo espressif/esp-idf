@@ -111,7 +111,7 @@ static void smp_connect_callback (UINT16 channel, BD_ADDR bd_addr, BOOLEAN conne
     if (transport == BT_TRANSPORT_BR_EDR || memcmp(bd_addr, dummy_bda, BD_ADDR_LEN) == 0) {
         return;
     }
-    if(!connected && &p_cb->rsp_timer_ent) {
+    if(!connected) {
         //free timer
         btu_free_timer(&p_cb->rsp_timer_ent);
     }

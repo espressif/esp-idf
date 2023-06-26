@@ -22,7 +22,7 @@
 #include "esp_system.h"
 #include "soc/spi_pins.h"
 
-// h4 and c2 will not support external flash
+// h2 and c2 will not support external flash
 #define EXAMPLE_FLASH_FREQ_MHZ      40
 
 static const char *TAG = "example";

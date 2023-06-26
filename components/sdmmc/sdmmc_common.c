@@ -195,20 +195,34 @@ esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card)
 
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
 {
+    esp_err_t err;
     assert(card->max_freq_khz <= card->host.max_freq_khz);
 
     if (card->max_freq_khz > SDMMC_FREQ_PROBING) {
-        esp_err_t err = (*card->host.set_card_clk)(card->host.slot, card->max_freq_khz);
+        err = (*card->host.set_card_clk)(card->host.slot, card->max_freq_khz);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to switch bus frequency (0x%x)", err);
             return err;
         }
+    }
 
-        err = (*card->host.get_real_freq)(card->host.slot, &(card->real_freq_khz));
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "failed to get real working frequency (0x%x)", err);
-            return err;
+    if (card->host.input_delay_phase != SDMMC_DELAY_PHASE_0) {
+        if (card->host.set_input_delay) {
+            err = (*card->host.set_input_delay)(card->host.slot, card->host.input_delay_phase);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "host.set_input_delay failed (0x%x)", err);
+                return err;
+            }
+        } else {
+            ESP_LOGE(TAG, "input phase delay feature isn't supported");
+            return ESP_ERR_NOT_SUPPORTED;
         }
+    }
+
+    err = (*card->host.get_real_freq)(card->host.slot, &(card->real_freq_khz));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failed to get real working frequency (0x%x)", err);
+        return err;
     }
 
     if (card->is_ddr) {
@@ -216,7 +230,7 @@ esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
             ESP_LOGE(TAG, "host doesn't support DDR mode or voltage switching");
             return ESP_ERR_NOT_SUPPORTED;
         }
-        esp_err_t err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
+        err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to switch bus to DDR mode (0x%x)", err);
             return err;

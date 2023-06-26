@@ -74,6 +74,10 @@
    busy-waiting, 30000 bytes is approx 0.5 ms */
 #define AES_DMA_INTR_TRIG_LEN 2000
 
+/* With buffers in PSRAM (worst condition) we still achieve a speed of 4 MB/s
+   thus a 2 second timeout value should be suffient for even very large buffers.
+ */
+#define AES_WAIT_INTR_TIMEOUT_MS 2000
 
 #if defined(CONFIG_MBEDTLS_AES_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
@@ -209,14 +213,14 @@ static esp_err_t esp_aes_isr_initialise( void )
 #endif // CONFIG_MBEDTLS_AES_USE_INTERRUPT
 
 /* Wait for AES hardware block operation to complete */
-static void esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
+static int esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
 {
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     if (use_intr) {
-        if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
+        if (!xSemaphoreTake(op_complete_sem, AES_WAIT_INTR_TIMEOUT_MS / portTICK_PERIOD_MS)) {
             /* indicates a fundamental problem with driver */
-            ESP_LOGE("AES", "Timed out waiting for completion of AES Interrupt");
-            abort();
+            ESP_LOGE(TAG, "Timed out waiting for completion of AES Interrupt");
+            return -1;
         }
 #ifdef CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_cpu_lock);
@@ -230,6 +234,7 @@ static void esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
     aes_hal_wait_done();
 
     esp_aes_wait_dma_done(output_desc);
+    return 0;
 }
 
 
@@ -366,8 +371,8 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
             return esp_aes_process_dma_ext_ram(ctx, input, output, len, stream_out, input_needs_realloc, output_needs_realloc);
         }
 
-        /* Set up dma descriptors for input and output */
-        lldesc_num = lldesc_get_required_num(block_bytes);
+        /* Set up dma descriptors for input and output considering the 16 byte alignment requirement for EDMA */
+        lldesc_num = lldesc_get_required_num_constrained(block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED);
 
         /* Allocate both in and out descriptors to save a malloc/free per function call */
         block_desc = heap_caps_calloc(lldesc_num * 2, sizeof(lldesc_t), MALLOC_CAP_DMA);
@@ -436,7 +441,12 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
     }
 
     aes_hal_transform_dma_start(blocks);
-    esp_aes_dma_wait_complete(use_intr, out_desc_tail);
+
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_tail) < 0) {
+        ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
+        ret = -1;
+        goto cleanup;
+    }
 
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (block_bytes > 0) {
@@ -561,7 +571,11 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     aes_hal_transform_dma_gcm_start(blocks);
 
-    esp_aes_dma_wait_complete(use_intr, out_desc_head);
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_head) < 0) {
+        ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
+        ret = -1;
+        goto cleanup;
+    }
 
     aes_hal_transform_dma_finish();
 
@@ -606,7 +620,7 @@ int esp_internal_aes_encrypt(esp_aes_context *ctx,
     int r;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -640,7 +654,7 @@ int esp_internal_aes_decrypt(esp_aes_context *ctx,
     int r;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -676,7 +690,7 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
     int r;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -705,12 +719,12 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
 {
     int r = 0;
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     /* For CBC input length should be multiple of
@@ -758,12 +772,12 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
     size_t block_bytes = length - (length % AES_BLOCK_BYTES);
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
 
@@ -846,17 +860,17 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     size_t n;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv_off) {
         ESP_LOGE(TAG, "No IV offset supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -931,17 +945,17 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
     size_t stream_bytes = 0;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv_off) {
         ESP_LOGE(TAG, "No IV offset supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     n = *iv_off;
@@ -992,17 +1006,22 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
     size_t n;
 
     if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!stream_block) {
+        ESP_LOGE(TAG, "No stream supplied");
         return -1;
     }
 
     if (!nonce_counter) {
         ESP_LOGE(TAG, "No nonce supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!nc_off) {
         ESP_LOGE(TAG, "No nonce offset supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     n = *nc_off;

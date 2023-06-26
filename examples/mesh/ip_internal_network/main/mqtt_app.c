@@ -56,7 +56,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 }
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
-    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRId32 "", base, event_id);
     mqtt_event_handler_cb(event_data);
 }
 

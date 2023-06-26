@@ -37,8 +37,7 @@ function __main
     set -gx IDF_TOOLS_INSTALL_CMD "$IDF_PATH"/install.fish
     # Allow calling some IDF python tools without specifying the full path
     # "$IDF_PATH"/tools is already added by 'idf_tools.py export'
-    set IDF_ADD_PATHS_EXTRAS "$IDF_PATH"/components/esptool_py/esptool
-    set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/espcoredump
+    set IDF_ADD_PATHS_EXTRAS "$IDF_PATH"/components/espcoredump
     set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/partition_table
     set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/app_update
 
@@ -107,5 +106,4 @@ else
     eval (env _IDF.PY_COMPLETE=fish_source idf.py)
 end
 
-
-set -e __main
+functions -e __main

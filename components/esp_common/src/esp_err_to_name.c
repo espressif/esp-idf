@@ -72,6 +72,9 @@
 #if __has_include("nvs.h")
 #include "nvs.h"
 #endif
+#if __has_include("nvs_sec_provider.h")
+#include "nvs_sec_provider.h"
+#endif
 #if __has_include("spi_flash_mmap.h")
 #include "spi_flash_mmap.h"
 #endif
@@ -129,7 +132,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_INVALID_MAC),                            /*   267 0x10b MAC address was invalid */
 #   endif
 #   ifdef      ESP_ERR_NOT_FINISHED
-    ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c There are items remained to retrieve */
+    ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c Operation has not fully completed */
 #   endif
     // components/nvs_flash/include/nvs.h
 #   ifdef      ESP_ERR_NVS_BASE
@@ -396,6 +399,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_WIFI_TWT_FULL
     ERR_TBL_IT(ESP_ERR_WIFI_TWT_FULL),                          /* 12311 0x3017 no available flow id */
+#   endif
+#   ifdef      ESP_ERR_WIFI_TWT_SETUP_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_WIFI_TWT_SETUP_TIMEOUT),                 /* 12312 0x3018 Timeout of receiving twt setup response
+                                                                                frame, timeout times can be set during
+                                                                                twt setup */
 #   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
@@ -829,6 +837,25 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_TCP_TRANSPORT_NO_MEM
     ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_NO_MEM),                   /* 57348 0xe004 Memory allocation failed */
+#   endif
+    // components/nvs_sec_provider/include/nvs_sec_provider.h
+#   ifdef      ESP_ERR_NVS_SEC_BASE
+    ERR_TBL_IT(ESP_ERR_NVS_SEC_BASE),                           /* 61440 0xf000 Starting number of error codes */
+#   endif
+#   ifdef      ESP_ERR_NVS_SEC_HMAC_KEY_NOT_FOUND
+    ERR_TBL_IT(ESP_ERR_NVS_SEC_HMAC_KEY_NOT_FOUND),             /* 61441 0xf001 HMAC Key required to generate the NVS
+                                                                                encryption keys not found */
+#   endif
+#   ifdef      ESP_ERR_NVS_SEC_HMAC_KEY_BLK_ALREADY_USED
+    ERR_TBL_IT(ESP_ERR_NVS_SEC_HMAC_KEY_BLK_ALREADY_USED),      /* 61442 0xf002 Provided eFuse block for HMAC key
+                                                                                generation is already in use */
+#   endif
+#   ifdef      ESP_ERR_NVS_SEC_HMAC_KEY_GENERATION_FAILED
+    ERR_TBL_IT(ESP_ERR_NVS_SEC_HMAC_KEY_GENERATION_FAILED),     /* 61443 0xf003 Failed to generate/write the HMAC key to eFuse */
+#   endif
+#   ifdef      ESP_ERR_NVS_SEC_HMAC_XTS_KEYS_DERIV_FAILED
+    ERR_TBL_IT(ESP_ERR_NVS_SEC_HMAC_XTS_KEYS_DERIV_FAILED),     /* 61444 0xf004 Failed to derive the NVS encryption keys
+                                                                                based on the HMAC-based scheme */
 #   endif
 };
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP

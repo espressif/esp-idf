@@ -78,7 +78,7 @@ NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。但如果 NVS 加�
 NVS 加密
 --------------
 
-NVS 分区内存储的数据可使用 AES-XTS 进行加密，类似于 IEEE P1619 磁盘加密标准中提到的加密方式。为了实现加密，每个条目被均视为一个扇区，并将条目相对地址（相对于分区开头）传递给加密算法，用作扇区号。可通过 :ref:`CONFIG_NVS_ENCRYPTION` 启用 NVS 加密。NVS 加密所需的密钥存储于其他分区，并且被 :doc:`Flash 加密 <../../security/flash-encryption>` 保护。因此，在使用 NVS 加密前应先启用 :doc:`Flash 加密 <../../security/flash-encryption>`。
+NVS 分区内存储的数据可使用 XTS-AES 进行加密，类似于 IEEE P1619 磁盘加密标准中提到的加密方式。为了实现加密，每个条目被均视为一个扇区，并将条目相对地址（相对于分区开头）传递给加密算法，用作扇区号。可通过 :ref:`CONFIG_NVS_ENCRYPTION` 启用 NVS 加密。NVS 加密所需的密钥存储于其他分区，并且被 :doc:`Flash 加密 <../../security/flash-encryption>` 保护。因此，在使用 NVS 加密前应先启用 :doc:`Flash 加密 <../../security/flash-encryption>`。
 
 启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和密码）。如已启用平台级加密，那么同时默认启用 NVS 加密有其必要性。
 
@@ -129,7 +129,7 @@ NVS 密钥分区
     ::
 
         parttool.py --port PORT --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
-    
+
     .. note:: 如需在设备处于 flash 加密开发模式时更新 NVS 密钥分区，请调用 :component_file:`parttool.py <partition_table/parttool.py>` 对 NVS 密钥分区进行加密。同时，由于设备上的分区表也已加密，您还需要在构建目录（build/partition_table）中提供一个指向未加密分区表的指针。您可以使用如下命令：
         ::
 

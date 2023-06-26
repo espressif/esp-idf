@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,6 +170,15 @@ extern const cache_op_cb_t* rom_cache_op_cb;
 void Cache_MMU_Init(void);
 
 /**
+  * @brief Init Cache for ROM boot, including resetting the Icache, initializing MMU, Enabling ICache, unmasking bus.
+  *
+  * @param None
+  *
+  * @return None
+  */
+void ROM_Boot_Cache_Init(void);
+
+/**
   * @brief Set ICache mmu mapping.
   *        Please do not call this function in your SDK application.
   *
@@ -228,18 +237,6 @@ int Cache_MSPI_MMU_Set(uint32_t sensitive, uint32_t ext_ram, uint32_t vaddr, uin
 int Cache_Dbus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr, uint32_t psize, uint32_t num, uint32_t fixed);
 
 /**
-  * @brief Count the pages in the bus room address which map to Flash.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param uint32_t bus : the bus to count with.
-  *
-  * @param uint32_t * page0_mapped : value should be initial by user, 0 for not mapped, other for mapped count.
-  *
-  * return uint32_t : the number of pages which map to Flash.
-  */
-uint32_t Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped);
-
-/**
   * @brief Get cache mode of ICache or DCache.
   *        Please do not call this function in your SDK application.
   *
@@ -248,26 +245,6 @@ uint32_t Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped);
   * return none
   */
 void Cache_Get_Mode(struct cache_mode * mode);
-
-/**
-  * @brief check if the address is accessed through ICache.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param  uint32_t addr : the address to check.
-  *
-  * @return 1 if the address is accessed through ICache, 0 if not.
-  */
-uint32_t Cache_Address_Through_ICache(uint32_t addr);
-
-/**
-  * @brief check if the address is accessed through DCache.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param  uint32_t addr : the address to check.
-  *
-  * @return 1 if the address is accessed through DCache, 0 if not.
-  */
-uint32_t Cache_Address_Through_DCache(uint32_t addr);
 
 /**
   * @brief Set cache page mode.
@@ -620,11 +597,13 @@ uint32_t Cache_Get_IROM_MMU_End(void);
 uint32_t Cache_Get_DROM_MMU_End(void);
 
 /**
-  * @brief Used by SPI flash mmap
-  *
-  */
-uint32_t flash_instr_rodata_start_page(uint32_t bus);
-uint32_t flash_instr_rodata_end_page(uint32_t bus);
+ * @brief Configure cache MMU page size according to instruction and rodata size
+ *
+ * @param irom_size The instruction cache MMU page size
+ * @param drom_size The rodata data cache MMU page size
+ */
+void Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
+
 #define Cache_Dbus_MMU_Set(ext_ram, vaddr, paddr, psize, num, fixed) \
     Cache_MSPI_MMU_Set(ets_efuse_cache_encryption_enabled() ? MMU_SENSITIVE : 0, ext_ram, vaddr, paddr, psize, num, fixed)
 

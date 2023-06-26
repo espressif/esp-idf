@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,11 @@
 #pragma once
 
 #include "esp_err.h"
+#include "driver/sdmmc_types.h"
 #include "driver/sdmmc_host.h"
 
 #include "esp_serial_slave_link/essl.h"
+#include "essl_sdio_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

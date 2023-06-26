@@ -12,3 +12,5 @@ CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL=y
 CONFIG_PM_SLP_DISABLE_GPIO=y
 # Enable wifi sleep iram optimization
 CONFIG_ESP_WIFI_SLP_IRAM_OPT=y
+# Use 1000Hz freertos tick to lower sleep time threshold
+CONFIG_FREERTOS_HZ=1000

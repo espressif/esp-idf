@@ -56,7 +56,6 @@ extern "C" {
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
  */
-#define RTC_CNTL_DBIAS_SLP  5 //sleep dig_dbias & rtc_dbias
 #define RTC_CNTL_DBIAS_0V90 13 //digital voltage
 #define RTC_CNTL_DBIAS_0V95 16
 #define RTC_CNTL_DBIAS_1V00 18
@@ -107,14 +106,27 @@ set sleep_init default param
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP  0
+#define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
+#define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
+
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
-#define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
-#define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
-#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_DEEPSLEEP_0V7 25
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V6   5
+#define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V6   5
 
 /*
 The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
@@ -398,6 +410,10 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
  * Short form for filling in rtc_cpu_freq_config_t structure and calling
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
+ *
+ * @note This function always disables BBPLL after switching the CPU clock source to XTAL for power saving purpose.
+ * If this is unwanted, please use rtc_clk_cpu_freq_set_config. It helps to check whether USB Serial JTAG is in use,
+ * if so, then BBPLL will not be turned off.
  */
 void rtc_clk_cpu_freq_set_xtal(void);
 
@@ -482,10 +498,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
  * @return current value of RTC counter
  */
 uint64_t rtc_time_get(void);
-
-uint64_t rtc_light_slp_time_get(void);
-
-uint64_t rtc_deep_slp_time_get(void);
 
 /**
  * @brief Busy loop until next RTC_SLOW_CLK cycle
@@ -572,18 +584,14 @@ typedef struct {
     uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
-    uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode
     uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
-    uint32_t rtc_dbias_wak : 5;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
-    uint32_t dbg_atten_monitor : 4;     //!< voltage parameter, in monitor mode
-    uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
     uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
     uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
-    uint32_t pd_cur_monitor : 1;        //!< circuit control parameter, in monitor mode
     uint32_t pd_cur_slp : 1;            //!< circuit control parameter, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
+    uint32_t rtc_regulator_fpu  : 1;    //!< keep rtc regulator powered up in sleep
     uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
     uint32_t light_slp_reject : 1;      //!< enable light sleep reject
 } rtc_sleep_config_t;
@@ -643,12 +651,17 @@ void rtc_sleep_init(rtc_sleep_config_t cfg);
  */
 void rtc_sleep_low_init(uint32_t slowclk_period);
 
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
 /**
- * @brief Set target value of RTC counter for RTC_TIMER_TRIG_EN wakeup source
- * @param t value of RTC counter at which wakeup from sleep will happen;
- *          only the lower 48 bits are used
+ * @brief Configure systimer for esp32c3 systimer stall issue workaround
+ *
+ * This function configures related systimer for esp32c3 systimer stall issue.
+ * Only apply workaround when xtal powered up.
+ *
+ * @param en enable systimer or not
  */
-void rtc_sleep_set_wakeup_time(uint64_t t);
+void rtc_sleep_systimer_enable(bool en);
+#endif
 
 #define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
 #define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
@@ -763,37 +776,6 @@ typedef struct {
  * @param cfg configuration options as rtc_config_t
  */
 void rtc_init(rtc_config_t cfg);
-
-/**
- * Structure describing vddsdio configuration
- */
-typedef struct {
-    uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
-    uint32_t enable : 1;    //!< Enable VDDSDIO regulator
-    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage. One of RTC_VDDSDIO_TIEH_1_8V, RTC_VDDSDIO_TIEH_3_3V
-    uint32_t drefh : 2;     //!< Tuning parameter for VDDSDIO regulator
-    uint32_t drefm : 2;     //!< Tuning parameter for VDDSDIO regulator
-    uint32_t drefl : 2;     //!< Tuning parameter for VDDSDIO regulator
-} rtc_vddsdio_config_t;
-
-/**
- * Get current VDDSDIO configuration
- * If VDDSDIO configuration is overridden by RTC, get values from RTC
- * Otherwise, if VDDSDIO is configured by EFUSE, get values from EFUSE
- * Otherwise, use default values and the level of MTDI bootstrapping pin.
- * @return currently used VDDSDIO configuration
- */
-rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
-
-/**
- * Set new VDDSDIO configuration using RTC registers.
- * If config.force == 1, this overrides configuration done using bootstrapping
- * pins and EFUSE.
- *
- * @param config new VDDSDIO configuration
- */
-void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
-
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.

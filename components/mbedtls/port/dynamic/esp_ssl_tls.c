@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/param.h>
+#include "mbedtls/error.h"
 #include "esp_mbedtls_dynamic_impl.h"
 
 int __real_mbedtls_ssl_write(mbedtls_ssl_context *ssl, unsigned char *buf, size_t len);
@@ -42,15 +43,17 @@ static int rx_done(mbedtls_ssl_context *ssl)
     return 0;
 }
 
-static void ssl_update_checksum_start( mbedtls_ssl_context *ssl,
+static int ssl_update_checksum_start( mbedtls_ssl_context *ssl,
                                        const unsigned char *buf, size_t len )
 {
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 #if defined(MBEDTLS_SHA256_C)
-    mbedtls_sha256_update( &ssl->handshake->fin_sha256, buf, len );
+    ret = mbedtls_md_update( &ssl->handshake->fin_sha256, buf, len );
 #endif
 #if defined(MBEDTLS_SHA512_C)
-    mbedtls_sha512_update( &ssl->handshake->fin_sha384, buf, len );
+    ret = mbedtls_md_update( &ssl->handshake->fin_sha384, buf, len );
 #endif
+    return ret;
 }
 
 static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
@@ -58,12 +61,18 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     memset( handshake, 0, sizeof( mbedtls_ssl_handshake_params ) );
 
 #if defined(MBEDTLS_SHA256_C)
-    mbedtls_sha256_init(   &handshake->fin_sha256    );
-    mbedtls_sha256_starts( &handshake->fin_sha256, 0 );
+    mbedtls_md_init( &handshake->fin_sha256 );
+    mbedtls_md_setup( &handshake->fin_sha256,
+                    mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
+                    0 );
+    mbedtls_md_starts( &handshake->fin_sha256 );
 #endif
 #if defined(MBEDTLS_SHA512_C)
-    mbedtls_sha512_init(   &handshake->fin_sha384    );
-    mbedtls_sha512_starts( &handshake->fin_sha384, 1 );
+    mbedtls_md_init( &handshake->fin_sha384 );
+    mbedtls_md_setup( &handshake->fin_sha384,
+                    mbedtls_md_info_from_type(MBEDTLS_MD_SHA384),
+                    0 );
+    mbedtls_md_starts( &handshake->fin_sha384 );
 #endif
 
     handshake->update_checksum = ssl_update_checksum_start;

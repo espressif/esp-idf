@@ -222,6 +222,38 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
 /**
  * stream_buffer.h
  *
+ * @code{c}
+ * BaseType_t xStreamBufferGetStaticBuffers( StreamBufferHandle_t xStreamBuffer,
+ *                                           uint8_t ** ppucStreamBufferStorageArea,
+ *                                           StaticStreamBuffer_t ** ppxStaticStreamBuffer );
+ * @endcode
+ *
+ * Retrieve pointers to a statically created stream buffer's data structure
+ * buffer and storage area buffer. These are the same buffers that are supplied
+ * at the time of creation.
+ *
+ * @param xStreamBuffer The stream buffer for which to retrieve the buffers.
+ *
+ * @param ppucStreamBufferStorageArea Used to return a pointer to the stream
+ * buffer's storage area buffer.
+ *
+ * @param ppxStaticStreamBuffer Used to return a pointer to the stream
+ * buffer's data structure buffer.
+ *
+ * @return pdTRUE if buffers were retrieved, pdFALSE otherwise.
+ *
+ * \defgroup xStreamBufferGetStaticBuffers xStreamBufferGetStaticBuffers
+ * \ingroup StreamBufferManagement
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    BaseType_t xStreamBufferGetStaticBuffers( StreamBufferHandle_t xStreamBuffer,
+                                              uint8_t ** ppucStreamBufferStorageArea,
+                                              StaticStreamBuffer_t ** ppxStaticStreamBuffer ) PRIVILEGED_FUNCTION;
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+/**
+ * stream_buffer.h
+ *
  * <pre>
  * size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
  *                        const void *pvTxData,

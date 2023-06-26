@@ -76,7 +76,7 @@ IRAM 安全中断处理程序
 如果在注册时没有设置 `ESP_INTR_FLAG_IRAM` 标志，当 cache 被禁用时，将不会执行中断处理程序。一旦 cache 恢复，非 IRAM 安全的中断将重新启用，中断处理程序随即再次正常运行。这意味着，只要 cache 被禁用，将不会发生相应的硬件事件。
 
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2 or esp32s3
 
    .. include:: auto_suspend.inc
 

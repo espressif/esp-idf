@@ -77,6 +77,8 @@ typedef struct {
     // When the driver is used (via esp_vfs_usb_serial_jtag_use_driver),
     // reads are either blocking or non-blocking depending on this flag.
     bool non_blocking;
+    // TX has already tried a blocking send.
+    bool tx_tried_blocking;
     // Newline conversion mode when transmitting
     esp_line_endings_t tx_mode;
     // Newline conversion mode when receiving
@@ -404,7 +406,19 @@ static int usbjtag_rx_char_via_driver(int fd)
 static void usbjtag_tx_char_via_driver(int fd, int c)
 {
     char ch = (char) c;
-    usb_serial_jtag_write_bytes(&ch, 1, portMAX_DELAY);
+    TickType_t ticks = (TX_FLUSH_TIMEOUT_US / 1000) / portTICK_PERIOD_MS;
+    if (usb_serial_jtag_write_bytes(&ch, 1, 0) != 0) {
+        s_ctx.tx_tried_blocking = false;
+        return;
+    }
+
+    if (s_ctx.tx_tried_blocking == false) {
+        if (usb_serial_jtag_write_bytes(&ch, 1, ticks) != 0) {
+            return;
+        } else {
+            s_ctx.tx_tried_blocking = true;
+        }
+    }
 }
 
 void esp_vfs_usb_serial_jtag_use_nonblocking(void)

@@ -265,7 +265,7 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
     } else if (cfg->clientcert_buf != NULL || cfg->clientkey_buf != NULL) {
-        ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication\n\n");
+        ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication");
         return ESP_FAIL;
     }
 

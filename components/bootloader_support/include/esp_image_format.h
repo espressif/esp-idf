@@ -47,7 +47,14 @@ typedef enum {
 typedef struct {
     esp_partition_pos_t partition;  /*!< Partition of application which worked before goes to the deep sleep. */
     uint16_t reboot_counter;        /*!< Reboot counter. Reset only when power is off. */
-    uint16_t reserve;               /*!< Reserve */
+    union {
+        struct {
+            uint8_t factory_reset_state         : 1;  /* True when Factory reset has occurred */
+            uint8_t reserve                     : 7;  /* Reserve */
+        };
+        uint8_t val;
+    } flags;
+    uint8_t reserve;                /*!< Reserve */
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
     uint8_t custom[CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE]; /*!< Reserve for custom propose */
 #endif
@@ -57,6 +64,8 @@ typedef struct {
 
 ESP_STATIC_ASSERT(offsetof(rtc_retain_mem_t, crc) == sizeof(rtc_retain_mem_t) - sizeof(uint32_t), "CRC field must be the last field of rtc_retain_mem_t structure");
 
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC_MEM
+
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
 ESP_STATIC_ASSERT(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE % 4 == 0, "CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE must be a multiple of 4 bytes");
 /* The custom field must be the penultimate field */
@@ -64,19 +73,16 @@ ESP_STATIC_ASSERT(offsetof(rtc_retain_mem_t, custom) == sizeof(rtc_retain_mem_t)
                "custom field in rtc_retain_mem_t structure must be the field before the CRC one");
 #endif
 
-#if defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP) || defined(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC)
 ESP_STATIC_ASSERT(CONFIG_BOOTLOADER_RESERVE_RTC_SIZE % 4 == 0, "CONFIG_BOOTLOADER_RESERVE_RTC_SIZE must be a multiple of 4 bytes");
-#endif
 
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
 #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
-#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#else
 #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
 #endif
 
-#if defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP) || defined(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC)
 ESP_STATIC_ASSERT(sizeof(rtc_retain_mem_t) <= ESP_BOOTLOADER_RESERVE_RTC, "Reserved RTC area must exceed size of rtc_retain_mem_t");
-#endif
+#endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 
 /**
  * @brief Verify an app image.

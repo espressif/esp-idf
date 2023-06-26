@@ -112,7 +112,7 @@ ESP-TLS
 私有化 ``esp_tls_t`` 结构体
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-更新后，:cpp:type:`esp_tls_t` 已完全私有化，用户无法直接访问其内部结构。之前需要通过 ESP-TLS 句柄获得的必要数据，现在可由对应的 getter/setter 函数获取。如需特定功能的 getter/setter 函数，请在 ESP-IDF 的 `Issue 板块 <https://github.com/espressif/esp-adf/issues>`__ 提出。
+更新后，:cpp:type:`esp_tls_t` 已完全私有化，用户无法直接访问其内部结构。之前需要通过 ESP-TLS 句柄获得的必要数据，现在可由对应的 getter/setter 函数获取。如需特定功能的 getter/setter 函数，请在 ESP-IDF 的 `Issue 板块 <https://github.com/espressif/esp-idf/issues>`__ 提出。
 
 
 下列为新增的 getter/setter 函数：
@@ -176,6 +176,8 @@ MQTT 客户端
 - 通过 :cpp:member:`esp_mqtt_client_config_t::broker::address::uri` 配置 MQTT Broker
 - 通过 :cpp:member:`esp_mqtt_client_config_t::broker::verification` 配置 MQTT Broker 身份验证的相关安全问题
 - 通过 :cpp:member:`esp_mqtt_client_config_t::credentials::username` 配置客户端用户名
+
+- :cpp:type:`esp_mqtt_client_config_t` 不再支持 ``user_context`` 字段。之后注册事件处理程序，请使用 :cpp:func:`esp_mqtt_client_register_event`；最后一个参数 ``event_handler_arg`` 可用于将用户上下文传递给处理程序。
 
 
 ESP-Modbus

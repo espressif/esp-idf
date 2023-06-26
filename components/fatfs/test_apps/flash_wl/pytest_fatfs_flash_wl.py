@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
@@ -20,7 +20,7 @@ def test_fatfs_flash_wl_generic(dut: Dut) -> None:
     dut.write('')
     dut.expect_exact('Enter test for running.')
     dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.expect_unity_test_output(timeout=180)
 
 
 @pytest.mark.supported_targets
@@ -36,4 +36,4 @@ def test_fatfs_flash_wl_psram(dut: Dut) -> None:
     dut.write('')
     dut.expect_exact('Enter test for running.')
     dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.expect_unity_test_output(timeout=180)

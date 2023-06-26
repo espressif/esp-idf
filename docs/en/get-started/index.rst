@@ -68,6 +68,14 @@ Introduction
     * Multiple peripherals
     * Built-in security hardware
 
+.. only:: esp32h2
+
+    * Bluetooth Low Energy
+    * 802.15.4 Thread/Zigbee
+    * High performance 32-bit RISC-V single-core processor
+    * Multiple peripherals
+    * Built-in security hardware
+
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
@@ -133,6 +141,14 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
         :maxdepth: 1
 
         ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp8684/esp8684-devkitm-1/index.html>
+
+.. only:: esp32c6
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C6-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/index.html>
+        ESP32-C6-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitm-1/index.html>
 
 .. _get-started-get-prerequisites:
 

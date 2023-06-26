@@ -513,7 +513,7 @@ function run_tests()
     print_status "Test build ESP-IDF as a library to a custom CMake projects for all targets"
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
     # note: we just need to run cmake
-    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h4" "esp32c2" "esp32c6" "esp32h2"
+    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32c2" "esp32c6" "esp32h2"
     do
       echo "Build idf_as_lib for $TARGET target"
       rm -rf build
@@ -885,7 +885,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     rm -rf build sdkconfig
 
     print_status "Loadable ELF build works"
-    echo "CONFIG_APP_BUILD_TYPE_ELF_RAM=y" > sdkconfig
+    echo "CONFIG_APP_BUILD_TYPE_RAM=y" > sdkconfig
 
     # Set recommend configs to reduce memory footprint
     echo "CONFIG_VFS_SUPPORT_TERMIOS=n" >> sdkconfig
@@ -894,7 +894,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     echo "CONFIG_ESP_ERR_TO_NAME_LOOKUP=n" >> sdkconfig
 
     idf.py reconfigure || failure "Couldn't configure for loadable ELF file"
-    test -f build/flasher_args.json && failure "flasher_args.json should not be generated in a loadable ELF build"
+    test ! -f build/flasher_args.json && failure "flasher_args.json should be generated in a loadable ELF build"
     idf.py build || failure "Couldn't build a loadable ELF file"
 
     print_status "Defaults set properly for unspecified idf_build_process args"

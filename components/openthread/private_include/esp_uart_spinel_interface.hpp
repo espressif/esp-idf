@@ -108,12 +108,7 @@ public:
      */
     void RegisterRcpFailureHandler(esp_openthread_rcp_failure_handler handler) { mRcpFailureHandler = handler; }
 
-    void OnRcpReset(void)
-    {
-        if (mRcpFailureHandler) {
-            mRcpFailureHandler();
-        }
-    }
+    void OnRcpReset(void);
 
     otError ResetConnection(void) { return OT_ERROR_NONE; }
 

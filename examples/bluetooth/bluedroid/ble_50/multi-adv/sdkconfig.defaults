@@ -2,3 +2,4 @@
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
 CONFIG_BT_ENABLED=y
+CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES=4

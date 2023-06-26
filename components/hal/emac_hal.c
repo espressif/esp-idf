@@ -23,6 +23,18 @@ typedef struct {
     uint32_t copy_len;
 }__attribute__((packed)) emac_hal_auto_buf_info_t;
 
+static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
+{
+    emac_ll_flush_trans_fifo_enable(hal->dma_regs, true);
+    /* no other writes to the Operation Mode register until the flush tx fifo bit is cleared */
+    for (uint32_t i = 0; i < 1000; i++) {
+        if (emac_ll_get_flush_trans_fifo(hal->dma_regs) == 0) {
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_TIMEOUT;
+}
+
 void emac_hal_iomux_init_mii(void)
 {
     /* TX_CLK to GPIO0 */
@@ -218,7 +230,7 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal)
     /* Enable Carrier Sense During Transmission */
     emac_ll_carrier_sense_enable(hal->mac_regs, true);
     /* Select speed: port: 10/100 Mbps, here set default 100M, afterwards, will reset by auto-negotiation */
-    emac_ll_set_port_speed(hal->mac_regs, ETH_SPEED_100M);;
+    emac_ll_set_port_speed(hal->mac_regs, ETH_SPEED_100M);
     /* Allow the reception of frames when the TX_EN signal is asserted in Half-Duplex mode */
     emac_ll_recv_own_enable(hal->mac_regs, true);
     /* Disable internal loopback mode */
@@ -288,7 +300,7 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *h
     /* Disable Transmit Store Forward */
     emac_ll_trans_store_forward_enable(hal->dma_regs, false);
     /* Flush Transmit FIFO */
-    emac_ll_flush_trans_fifo_enable(hal->dma_regs, true);
+    emac_hal_flush_trans_fifo(hal);
     /* Transmit Threshold Control */
     emac_ll_set_transmit_threshold(hal->dma_regs, EMAC_LL_TRANSMIT_THRESHOLD_CONTROL_64);
     /* Disable Forward Error Frame */
@@ -344,22 +356,21 @@ void emac_hal_start(emac_hal_context_t *hal)
 {
     /* Enable Ethernet MAC and DMA Interrupt */
     emac_ll_enable_corresponding_intr(hal->dma_regs, EMAC_LL_CONFIG_ENABLE_INTR_MASK);
-
-    /* Flush Transmit FIFO */
-    emac_ll_flush_trans_fifo_enable(hal->dma_regs, true);
-
-    /* Start DMA transmission */
-    emac_ll_start_stop_dma_transmit(hal->dma_regs, true);
-    /* Start DMA reception */
-    emac_ll_start_stop_dma_receive(hal->dma_regs, true);
+    /* Clear all pending interrupts */
+    emac_ll_clear_all_pending_intr(hal->dma_regs);
 
     /* Enable transmit state machine of the MAC for transmission on the MII */
     emac_ll_transmit_enable(hal->mac_regs, true);
+    /* Start DMA transmission */
+    /* Note that the EMAC Databook states the DMA could be started prior enabling
+       the MAC transmitter. However, it turned out that such order may cause the MAC
+       transmitter hangs */
+    emac_ll_start_stop_dma_transmit(hal->dma_regs, true);
+
+    /* Start DMA reception */
+    emac_ll_start_stop_dma_receive(hal->dma_regs, true);
     /* Enable receive state machine of the MAC for reception from the MII */
     emac_ll_receive_enable(hal->mac_regs, true);
-
-    /* Clear all pending interrupts */
-    emac_ll_clear_all_pending_intr(hal->dma_regs);
 }
 
 esp_err_t emac_hal_stop(emac_hal_context_t *hal)
@@ -384,6 +395,9 @@ esp_err_t emac_hal_stop(emac_hal_context_t *hal)
 
     /* Stop DMA reception */
     emac_ll_start_stop_dma_receive(hal->dma_regs, false);
+
+    /* Flush Transmit FIFO */
+    emac_hal_flush_trans_fifo(hal);
 
     /* Disable Ethernet MAC and DMA Interrupt */
     emac_ll_disable_all_intr(hal->dma_regs);

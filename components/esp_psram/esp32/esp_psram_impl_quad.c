@@ -14,11 +14,13 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_types.h"
+#include "esp_bit_defs.h"
 #include "esp_log.h"
 #include "../esp_psram_impl.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/efuse.h"
+#include "esp32/rom/gpio.h"
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
@@ -33,6 +35,7 @@
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
 #include "bootloader_flash_config.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"
@@ -359,9 +362,7 @@ static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
         // Load send buffer
         int len = (pInData->txDataBitLen + 31) / 32;
         if (p_tx_val != NULL) {
-            for (int i = 0; i < len; i++) {
-                WRITE_PERI_REG(SPI_W0_REG(spi_num), p_tx_val[i]);
-            }
+            memcpy((void*)SPI_W0_REG(spi_num), p_tx_val, len * 4);
         }
         // Set data send buffer length.Max data length 64 bytes.
         SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(spi_num), SPI_USR_MOSI_DBITLEN, (pInData->txDataBitLen - 1),
@@ -806,6 +807,16 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_spihd_sd2_io], FUN_DRV_V, 3, FUN_DRV_S);
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_spiwp_sd3_io], FUN_DRV_V, 3, FUN_DRV_S);
     }
+
+    // Reserve psram pins
+    esp_gpio_reserve_pins(BIT64(psram_io->flash_clk_io)        |
+                          BIT64(psram_io->flash_cs_io)         |
+                          BIT64(psram_io->psram_clk_io)        |
+                          BIT64(psram_io->psram_cs_io)         |
+                          BIT64(psram_io->psram_spiq_sd0_io)   |
+                          BIT64(psram_io->psram_spid_sd1_io)   |
+                          BIT64(psram_io->psram_spihd_sd2_io)  |
+                          BIT64(psram_io->psram_spiwp_sd3_io)  );
 }
 
 //used in UT only
@@ -835,7 +846,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
         abort();
-    } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
+    } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-PICO");
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
         if (cfg.tieh != RTC_VDDSDIO_TIEH_3_3V) {

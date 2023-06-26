@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,7 +120,6 @@ static esp_err_t rmt_tx_register_to_group(rmt_tx_channel_t *tx_channel, const rm
         if (channel_id < 0) {
             // didn't find a capable channel in the group, don't forget to release the group handle
             rmt_release_group_handle(group);
-            group = NULL;
         } else {
             tx_channel->base.channel_id = channel_id;
             tx_channel->base.channel_mask = channel_mask;
@@ -166,7 +165,7 @@ static esp_err_t rmt_tx_create_trans_queue(rmt_tx_channel_t *tx_channel, const r
     return ESP_OK;
 }
 
-static esp_err_t rmt_tx_destory(rmt_tx_channel_t *tx_channel)
+static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
 {
     if (tx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(tx_channel->base.intr), TAG, "delete interrupt service failed");
@@ -211,8 +210,9 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
                       ESP_ERR_INVALID_ARG, err, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
 #if SOC_RMT_SUPPORT_DMA
     // we only support 2 nodes ping-pong, if the configured memory block size needs more than two DMA descriptors, should treat it as invalid
-    ESP_GOTO_ON_FALSE(config->mem_block_symbols <= RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG, ESP_ERR_INVALID_ARG, err, TAG,
-                      "mem_block_symbols can't exceed %d", RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG);
+    ESP_GOTO_ON_FALSE(config->mem_block_symbols <= RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t),
+                      ESP_ERR_INVALID_ARG, err, TAG, "mem_block_symbols can't exceed %d",
+                      RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t));
 #else
     ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
 #endif
@@ -307,7 +307,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 
 err:
     if (tx_channel) {
-        rmt_tx_destory(tx_channel);
+        rmt_tx_destroy(tx_channel);
     }
     return ret;
 }
@@ -320,7 +320,7 @@ static esp_err_t rmt_del_tx_channel(rmt_channel_handle_t channel)
     int channel_id = channel->channel_id;
     ESP_LOGD(TAG, "del tx channel(%d,%d)", group_id, channel_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(rmt_tx_destory(tx_chan), TAG, "destory tx channel failed");
+    ESP_RETURN_ON_ERROR(rmt_tx_destroy(tx_chan), TAG, "destroy tx channel failed");
     return ESP_OK;
 }
 
@@ -566,7 +566,7 @@ static void IRAM_ATTR rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
 
 static size_t IRAM_ATTR rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
 {
-    rmt_encode_state_t encode_state = 0;
+    rmt_encode_state_t encode_state = RMT_ENCODING_RESET;
     rmt_encoder_handle_t encoder = t->encoder;
     size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_bytes, &encode_state);
     if (encode_state & RMT_ENCODING_COMPLETE) {

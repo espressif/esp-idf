@@ -20,13 +20,6 @@ test_nvs_on_host:
     - cd components/nvs_flash/test_nvs_host
     - make test
 
-test_nvs_on_host_cmake:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_host_test
-    - idf.py build
-    - build/nvs_host_test.elf
-
 test_nvs_coverage:
   extends:
     - .host_test_template
@@ -43,27 +36,9 @@ test_nvs_coverage:
 
 test_partition_table_on_host:
   extends: .host_test_template
-  tags:
-    - build
   script:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
-
-test_wl_on_host:
-  extends: .host_test_template
-  artifacts:
-    paths:
-      - components/wear_levelling/test_wl_host/coverage_report.zip
-    expire_in: 1 week
-  script:
-    - cd components/wear_levelling/test_wl_host
-    - make test
-
-test_fatfs_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/fatfs/test_fatfs_host/
-    - make test
 
 test_ldgen_on_host:
   extends: .host_test_template
@@ -91,44 +66,6 @@ test_reproducible_build:
       - "**/build*/partition_table/*.bin"
     expire_in: 1 week
 
-.host_fuzzer_test_template:
-  extends:
-    - .host_test_template
-    - .rules:labels:fuzzer_test-weekend_test
-  image: $AFL_FUZZER_TEST_IMAGE
-  artifacts:
-    when: always
-    paths:
-      - ${FUZZER_TEST_DIR}/out/crashes
-      - ${FUZZER_TEST_DIR}/fuzz_output.txt
-    expire_in: 1 week
-  script:
-    - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
-    - cd ${FUZZER_TEST_DIR}
-    # run AFL fuzzer for one hour
-    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.txt | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
-    - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
-    # check no crashes found
-    - test -z "$(ls out/crashes/)" || exit 1
-
-test_lwip_dns_fuzzer_on_host:
-  extends: .host_fuzzer_test_template
-  variables:
-    FUZZER_TEST_DIR: components/lwip/test_afl_host
-    FUZZER_PARAMS: MODE=dns
-
-test_lwip_dhcp_fuzzer_on_host:
-  extends: .host_fuzzer_test_template
-  variables:
-    FUZZER_TEST_DIR: components/lwip/test_afl_host
-    FUZZER_PARAMS: MODE=dhcp_client
-
-test_lwip_dhcps_fuzzer_on_host:
-  extends: .host_fuzzer_test_template
-  variables:
-    FUZZER_TEST_DIR: components/lwip/test_afl_host
-    FUZZER_PARAMS: MODE=dhcp_server
-
 test_spiffs_on_host:
   extends: .host_test_template
   script:
@@ -151,36 +88,16 @@ test_multi_heap_on_host:
 
 test_certificate_bundle_on_host:
   extends: .host_test_template
-  tags:
-    - build
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
 
-test_idf_monitor:
+test_gdbstub_on_host:
   extends: .host_test_template
-  artifacts:
-    # save artifacts always in order to access results which were retried without consequent failure
-    when: always
-    paths:
-      - tools/test_idf_monitor/outputs/*
-    expire_in: 1 week
   script:
-    - eval $($IDF_PATH/tools/idf_tools.py export)
-    - cd ${IDF_PATH}/tools/test_idf_monitor
-    - ./run_test_idf_monitor.py
+    - cd components/esp_gdbstub/test_gdbstub_host
+    - make test
 
-test_idf_size:
-  extends: .host_test_template
-  artifacts:
-    when: on_failure
-    paths:
-      - tools/test_idf_size/output
-      - tools/test_idf_size/.coverage
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/tools/test_idf_size
-    - ./test.sh
 
 test_idf_py:
   extends: .host_test_template
@@ -226,7 +143,7 @@ test_idf_tools:
   script:
     - cd ${IDF_PATH}/components/efuse/
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
-    - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run make efuse_common_table or idf.py efuse-common-table and commit the changes.'; exit 1; }
+    - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run idf.py efuse-common-table and commit the changes.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
     - ./efuse_tests.py
 
@@ -248,29 +165,15 @@ test_efuse_table_on_host_esp32c3:
   variables:
     IDF_TARGET: esp32c3
 
-test_efuse_table_on_host_esp32h4:
+test_efuse_table_on_host_esp32h2:
   extends: .test_efuse_table_on_host_template
   variables:
-    IDF_TARGET: esp32h4
+    IDF_TARGET: esp32h2
 
-test_espcoredump:
-  extends: .host_test_template
-  artifacts:
-    when: always
-    paths:
-      - components/espcoredump/test/**/.coverage
-      - components/espcoredump/test/**/output
-    expire_in: 1 week
+test_efuse_table_on_host_esp32c6:
+  extends: .test_efuse_table_on_host_template
   variables:
-    IDF_COREDUMP_ELF_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/idf-coredump-elf.git"
-    IDF_COREDUMP_ELF_TAG: idf-20220928
-    # install CMake version specified in tools.json
-    SETUP_TOOLS_LIST: "all"
-  script:
-    - eval $($IDF_PATH/tools/idf_tools.py export)
-    - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b $IDF_COREDUMP_ELF_TAG
-    - cd ${IDF_PATH}/components/espcoredump/test/
-    - ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf
+    IDF_TARGET: esp32c6
 
 test_logtrace_proc:
   extends: .host_test_template
@@ -310,6 +213,14 @@ test_mkuf2:
     - cd ${IDF_PATH}/tools/test_mkuf2
     - ./test_mkuf2.py
 
+test_sbom:
+  extends:
+    - .host_test_template
+    - .rules:patterns:sbom
+  script:
+    - cd ${IDF_PATH}/tools/test_sbom
+    - pytest
+
 test_autocomplete:
   extends:
     - .host_test_template
@@ -340,13 +251,6 @@ test_split_path_by_spaces:
     - cd ${IDF_PATH}/tools
     - python -m unittest split_paths_by_spaces.py
 
-test_nvs_page:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
-    - idf.py build
-    - build/test_nvs_page_host.elf
-
 test_mqtt_on_host:
   extends: .host_test_template
   script:
@@ -354,59 +258,30 @@ test_mqtt_on_host:
     - idf.py build
     - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
 
-test_log:
+test_transport_on_host:
   extends: .host_test_template
   script:
-    - cd ${IDF_PATH}/components/log/host_test/log_test
+    - cd ${IDF_PATH}/components/tcp_transport/host_test
     - idf.py build
-    - build/test_log_host.elf
+    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_tcp_transport_test.elf
 
-test_esp_event:
+test_sockets_on_host:
   extends: .host_test_template
   script:
-    - cd ${IDF_PATH}/components/esp_event/host_test/esp_event_unit_test
-    - idf.py build
-    - build/test_esp_event_host.elf
-
-test_hello_world_linux_compatible_example:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/tools/test_apps/linux_compatible/hello_world_linux_compatible
+    # test the tcp-client example with system sockets
+    - cd ${IDF_PATH}/examples/protocols/sockets/tcp_client
+    - echo 'CONFIG_EXAMPLE_IPV4_ADDR="127.0.0.1"' >> sdkconfig.defaults
     - idf.py --preview set-target linux
     - idf.py build
-    - timeout 15 build/hello_world.elf | tee test.txt
-    - grep "Hello world!" test.txt
-
-test_esp_system:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_system/host_test/test_esp_system/
+    - timeout 5 ./build/tcp_client.elf >test.log || true
+    - grep "Socket unable to connect" test.log
+    # test the udp-client example with lwip sockets
+    - cd ${IDF_PATH}/examples/protocols/sockets/udp_client
+    - idf.py --preview set-target linux
+    - cat sdkconfig.ci.linux > sdkconfig
     - idf.py build
-    - echo "*" | timeout 5 build/test_esp_system.elf | tee log.txt || true
-    - grep "6 Tests 0 Failures 0 Ignored" log.txt
-
-test_heap_linux:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/heap/host_test/host_test_linux/
-    - idf.py build
-    - echo "*" | timeout 5 build/test_heap.elf | tee log.txt || true
-    - grep "4 Tests 0 Failures 0 Ignored" log.txt
-
-test_esp_hw_support_linux:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_hw_support/host_test/host_test_linux/
-    - idf.py build
-    - echo "*" | timeout 5 build/test_hw_support_linux.elf | tee log.txt || true
-    - grep "2 Tests 0 Failures 0 Ignored" log.txt
-
-test_esp_timer_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer
-    - idf.py build
-    - build/test_esp_timer_cxx_host.elf
+    - timeout 5 ./build/udp_client.elf >test.log || true
+    - grep "Message sent" test.log
 
 test_eh_frame_parser:
   extends: .host_test_template
@@ -414,57 +289,6 @@ test_eh_frame_parser:
     - cd ${IDF_PATH}/components/esp_system/test_eh_frame_parser
     - make
     - ./eh_frame_test
-
-test_rom_on_linux_works:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_rom/host_test/rom_test
-    - idf.py build
-    - build/test_rom_host.elf
-
-test_cxx_gpio:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/gpio
-    - idf.py build
-    - build/test_gpio_cxx_host.elf
-
-test_i2c_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/i2c
-    - idf.py build
-    - build/test_i2c_cxx_host.elf
-
-test_spi_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/spi
-    - idf.py build
-    - build/test_spi_cxx_host.elf
-
-test_system_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/system
-    - idf.py build
-    - build/test_system_cxx_host.elf
-
-test_partition_api_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_partition/host_test/partition_api_test
-    - idf.py build
-    - timeout 5 ./build/partition_api_test.elf | tee test.txt
-    - grep " 0 Failures" test.txt
-
-test_spiffs_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/spiffs/host_test
-    - idf.py build
-    - timeout 5 ./build/host_test_spiffs.elf | tee test.txt
-    - grep " 0 Failures" test.txt
 
 test_gen_soc_caps_kconfig:
   extends: .host_test_template
@@ -485,15 +309,39 @@ test_pytest_qemu:
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32c3]
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
-      --target esp32
+      --target $IDF_TARGET
       --pytest-apps
       -m qemu
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - pytest
-      --target esp32
+      --target $IDF_TARGET
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
+      --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+
+test_pytest_linux:
+  extends:
+    - .host_test_template
+    - .before_script_build_jobs
+  artifacts:
+    when: always
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest_embedded_log/
+    reports:
+      junit: XUNIT_RESULT.xml
+    expire_in: 1 week
+  script:
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+      --target linux
+      --pytest-apps
+      -m host_test
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - run_cmd pytest --target linux -m host_test --junitxml=XUNIT_RESULT.xml
       --known-failure-cases-file known_failure_cases/known_failure_cases.txt

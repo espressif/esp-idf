@@ -6,6 +6,11 @@
 
 
 #include <stdlib.h>
+#include <string.h>
+#if __has_include(<bsd/string.h>)
+// for strlcpy
+#include <bsd/string.h>
+#endif
 #include <sys/param.h>
 #include <esp_log.h>
 #include <esp_err.h>
@@ -72,8 +77,8 @@ static esp_err_t verify_url (http_parser *parser)
     }
 
     if (sizeof(r->uri) < (length + 1)) {
-        ESP_LOGW(TAG, LOG_FMT("URI length (%d) greater than supported (%d)"),
-                 length, sizeof(r->uri));
+        ESP_LOGW(TAG, LOG_FMT("URI length (%"NEWLIB_NANO_COMPAT_FORMAT") greater than supported (%"NEWLIB_NANO_COMPAT_FORMAT")"),
+                 NEWLIB_NANO_COMPAT_CAST(length), NEWLIB_NANO_COMPAT_CAST(sizeof(r->uri)));
         parser_data->error = HTTPD_414_URI_TOO_LONG;
         return ESP_FAIL;
     }
@@ -126,12 +131,12 @@ static esp_err_t cb_url(http_parser *parser,
         return ESP_FAIL;
     }
 
-    ESP_LOGD(TAG, LOG_FMT("processing url = %.*s"), length, at);
+    ESP_LOGD(TAG, LOG_FMT("processing url = %.*s"), (int)length, at);
 
     /* Update length of URL string */
     if ((parser_data->last.length += length) > HTTPD_MAX_URI_LEN) {
-        ESP_LOGW(TAG, LOG_FMT("URI length (%d) greater than supported (%d)"),
-                 parser_data->last.length, HTTPD_MAX_URI_LEN);
+        ESP_LOGW(TAG, LOG_FMT("URI length (%"NEWLIB_NANO_COMPAT_FORMAT") greater than supported (%d)"),
+                 NEWLIB_NANO_COMPAT_CAST(parser_data->last.length), HTTPD_MAX_URI_LEN);
         parser_data->error = HTTPD_414_URI_TOO_LONG;
         parser_data->status = PARSING_FAILED;
         return ESP_FAIL;
@@ -149,7 +154,7 @@ static esp_err_t pause_parsing(http_parser *parser, const char* at)
      * and hence needs to be read again later for parsing */
     ssize_t unparsed = parser_data->raw_datalen - (at - ra->scratch);
     if (unparsed < 0) {
-        ESP_LOGE(TAG, LOG_FMT("parsing beyond valid data = %d"), -unparsed);
+        ESP_LOGE(TAG, LOG_FMT("parsing beyond valid data = %d"), (int)(-unparsed));
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -157,7 +162,7 @@ static esp_err_t pause_parsing(http_parser *parser, const char* at)
      * receiving again with httpd_recv_with_opt() later when
      * read_block() executes */
     if (unparsed && (unparsed != httpd_unrecv(r, at, unparsed))) {
-        ESP_LOGE(TAG, LOG_FMT("data too large for un-recv = %d"), unparsed);
+        ESP_LOGE(TAG, LOG_FMT("data too large for un-recv = %d"), (int)unparsed);
         return ESP_FAIL;
     }
 
@@ -181,7 +186,7 @@ static size_t continue_parsing(http_parser *parser, size_t length)
      * so we must skip that before parsing resumes */
     length = MIN(length, data->pre_parsed);
     data->pre_parsed -= length;
-    ESP_LOGD(TAG, LOG_FMT("skip pre-parsed data of size = %d"), length);
+    ESP_LOGD(TAG, LOG_FMT("skip pre-parsed data of size = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(length));
 
     http_parser_pause(parser, 0);
     data->paused = false;
@@ -241,7 +246,7 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
         return ESP_FAIL;
     }
 
-    ESP_LOGD(TAG, LOG_FMT("processing field = %.*s"), length, at);
+    ESP_LOGD(TAG, LOG_FMT("processing field = %.*s"), (int)length, at);
 
     /* Update length of header string */
     parser_data->last.length += length;
@@ -285,7 +290,7 @@ static esp_err_t cb_header_value(http_parser *parser, const char *at, size_t len
         return ESP_FAIL;
     }
 
-    ESP_LOGD(TAG, LOG_FMT("processing value = %.*s"), length, at);
+    ESP_LOGD(TAG, LOG_FMT("processing value = %.*s"), (int)length, at);
 
     /* Update length of header string */
     parser_data->last.length += length;
@@ -366,7 +371,7 @@ static esp_err_t cb_headers_complete(http_parser *parser)
                       parser->content_length : 0);
 
     ESP_LOGD(TAG, LOG_FMT("bytes read     = %" PRId32 ""),  parser->nread);
-    ESP_LOGD(TAG, LOG_FMT("content length = %zu"), r->content_len);
+    ESP_LOGD(TAG, LOG_FMT("content length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(r->content_len));
 
     /* Handle upgrade requests - only WebSocket is supported for now */
     if (parser->upgrade) {
@@ -582,14 +587,14 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
         /* http_parser error */
         data->error  = HTTPD_400_BAD_REQUEST;
         data->status = PARSING_FAILED;
-        ESP_LOGW(TAG, LOG_FMT("incomplete (%d/%d) with parser error = %d"),
-                 nparsed, length, parser->http_errno);
+        ESP_LOGW(TAG, LOG_FMT("incomplete (%"NEWLIB_NANO_COMPAT_FORMAT"/%"NEWLIB_NANO_COMPAT_FORMAT") with parser error = %d"),
+                 NEWLIB_NANO_COMPAT_CAST(nparsed), NEWLIB_NANO_COMPAT_CAST(length), parser->http_errno);
         return -1;
     }
 
     /* Return with the total length of the request packet
      * that has been parsed till now */
-    ESP_LOGD(TAG, LOG_FMT("parsed block size = %d"), offset + nparsed);
+    ESP_LOGD(TAG, LOG_FMT("parsed block size = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST((offset + nparsed)));
     return offset + nparsed;
 }
 

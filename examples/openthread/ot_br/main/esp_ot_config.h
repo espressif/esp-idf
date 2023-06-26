@@ -16,25 +16,63 @@
 
 #include "esp_openthread_types.h"
 
-#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()                        \
-    {                                                                \
-        .radio_mode = RADIO_MODE_UART_RCP,                           \
-        .radio_uart_config = {                                       \
-            .port = 1,                                               \
-            .uart_config =                                           \
-                {                                                    \
-                    .baud_rate = 115200,                             \
-                    .data_bits = UART_DATA_8_BITS,                   \
-                    .parity = UART_PARITY_DISABLE,                   \
-                    .stop_bits = UART_STOP_BITS_1,                   \
-                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,           \
-                    .rx_flow_ctrl_thresh = 0,                        \
-                    .source_clk = UART_SCLK_DEFAULT,                 \
-                },                                                   \
-            .rx_pin = 4,                                             \
-            .tx_pin = 5,                                             \
-        },                                                           \
+#if CONFIG_OPENTHREAD_RADIO_NATIVE
+#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()              \
+    {                                                      \
+        .radio_mode = RADIO_MODE_NATIVE,                   \
     }
+#elif CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()              \
+    {                                                      \
+        .radio_mode = RADIO_MODE_UART_RCP,                 \
+        .radio_uart_config = {                             \
+            .port = 1,                                     \
+            .uart_config =                                 \
+                {                                          \
+                    .baud_rate = 460800,                   \
+                    .data_bits = UART_DATA_8_BITS,         \
+                    .parity = UART_PARITY_DISABLE,         \
+                    .stop_bits = UART_STOP_BITS_1,         \
+                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE, \
+                    .rx_flow_ctrl_thresh = 0,              \
+                    .source_clk = UART_SCLK_DEFAULT,       \
+                },                                         \
+            .rx_pin = 4,                                   \
+            .tx_pin = 5,                                   \
+        },                                                 \
+    }
+#else
+#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()      \
+    {                                              \
+        .radio_mode = RADIO_MODE_SPI_RCP,          \
+        .radio_spi_config = {                      \
+            .host_device = SPI2_HOST,              \
+            .dma_channel = 2,                      \
+            .spi_interface =                       \
+                {                                  \
+                    .mosi_io_num = 11,             \
+                    .sclk_io_num = 12,             \
+                    .miso_io_num = 13,             \
+                },                                 \
+            .spi_device =                          \
+                {                                  \
+                    .cs_ena_pretrans = 2,          \
+                    .input_delay_ns = 100,         \
+                    .mode = 0,                     \
+                    .clock_speed_hz = 2500 * 1000, \
+                    .spics_io_num = 10,            \
+                    .queue_size = 5,               \
+                },                                 \
+            .intr_pin = 8,                         \
+        },                                         \
+    }
+#endif // CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR  CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
+
+#if CONFIG_IDF_TARGET_ESP32C2 && CONFIG_XTAL_FREQ_26
+#define HOST_BAUD_RATE 74880
+#else
+#define HOST_BAUD_RATE 115200
+#endif
 
 #define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
     {                                                           \
@@ -43,7 +81,7 @@
             .port = 0,                                          \
             .uart_config =                                      \
                 {                                               \
-                    .baud_rate = 115200,                        \
+                    .baud_rate = HOST_BAUD_RATE,                \
                     .data_bits = UART_DATA_8_BITS,              \
                     .parity = UART_PARITY_DISABLE,              \
                     .stop_bits = UART_STOP_BITS_1,              \
@@ -58,7 +96,7 @@
 
 #define ESP_OPENTHREAD_DEFAULT_PORT_CONFIG()    \
     {                                           \
-        .storage_partition_name = "ot_storage", \
+        .storage_partition_name = "nvs",        \
         .netif_queue_size = 10,                 \
         .task_queue_size = 10,                  \
     }

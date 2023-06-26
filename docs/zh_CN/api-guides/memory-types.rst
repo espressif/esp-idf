@@ -164,6 +164,13 @@ DROM（数据存储在 flash 中）
     RTC FAST memory（RTC 快速存储器）
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    .. only:: esp32c6 or esp32h2
+
+        .. note::
+
+            对于 {IDF_TARGET_NAME}， RTC 存储器已被重新重命名为 LP（低功耗）存储器。在与 {IDF_TARGET_NAME} 相关的 IDF 代码、文档以及技术参考手册中，可能会出现这两个术语混用的情况。
+
+
     RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
 
     .. only:: esp32

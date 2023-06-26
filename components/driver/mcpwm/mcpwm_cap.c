@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,7 @@ static void mcpwm_cap_timer_unregister_from_group(mcpwm_cap_timer_t *cap_timer)
     mcpwm_release_group_handle(group);
 }
 
-static esp_err_t mcpwm_cap_timer_destory(mcpwm_cap_timer_t *cap_timer)
+static esp_err_t mcpwm_cap_timer_destroy(mcpwm_cap_timer_t *cap_timer)
 {
     if (cap_timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(cap_timer->pm_lock), TAG, "delete pm_lock failed");
@@ -124,7 +124,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
 
 err:
     if (cap_timer) {
-        mcpwm_cap_timer_destory(cap_timer);
+        mcpwm_cap_timer_destroy(cap_timer);
     }
     return ret;
 }
@@ -140,7 +140,7 @@ esp_err_t mcpwm_del_capture_timer(mcpwm_cap_timer_handle_t cap_timer)
 
     ESP_LOGD(TAG, "del capture timer in group %d", group->group_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_cap_timer_destory(cap_timer), TAG, "destory capture timer failed");
+    ESP_RETURN_ON_ERROR(mcpwm_cap_timer_destroy(cap_timer), TAG, "destroy capture timer failed");
     return ESP_OK;
 }
 
@@ -228,7 +228,7 @@ static void mcpwm_capture_channel_unregister_from_timer(mcpwm_cap_channel_t *cap
     portEXIT_CRITICAL(&cap_timer->spinlock);
 }
 
-static esp_err_t mcpwm_capture_channel_destory(mcpwm_cap_channel_t *cap_chan)
+static esp_err_t mcpwm_capture_channel_destroy(mcpwm_cap_channel_t *cap_chan)
 {
     if (cap_chan->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(cap_chan->intr), TAG, "delete interrupt service failed");
@@ -282,7 +282,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     return ESP_OK;
 err:
     if (cap_chan) {
-        mcpwm_capture_channel_destory(cap_chan);
+        mcpwm_capture_channel_destroy(cap_chan);
     }
     return ret;
 }
@@ -307,7 +307,7 @@ esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel)
     portEXIT_CRITICAL(&group->spinlock);
 
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_capture_channel_destory(cap_channel), TAG, "destory capture channel failed");
+    ESP_RETURN_ON_ERROR(mcpwm_capture_channel_destroy(cap_channel), TAG, "destroy capture channel failed");
     return ESP_OK;
 }
 
@@ -354,7 +354,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
     int group_id = group->group_id;
     int cap_chan_id = cap_channel->cap_chan_id;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_cap) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_cap), ESP_ERR_INVALID_ARG, TAG, "on_cap callback not in IRAM");
     }

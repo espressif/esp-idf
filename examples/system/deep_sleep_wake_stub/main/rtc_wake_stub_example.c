@@ -6,6 +6,8 @@
 
 #include <inttypes.h>
 #include "esp_sleep.h"
+#include "esp_cpu.h"
+#include "esp_rom_sys.h"
 #include "esp_wake_stub.h"
 #include "sdkconfig.h"
 
@@ -33,15 +35,20 @@ static const uint32_t s_max_count = 20;
 // wakeup_cause stored in RTC memory
 static uint32_t wakeup_cause;
 
+// wakeup_time from CPU start to wake stub
+static uint32_t wakeup_time;
+
 // wake up stub function stored in RTC memory
 void wake_stub_example(void)
 {
+    // Get wakeup time.
+    wakeup_time = esp_cpu_get_cycle_count() / esp_rom_get_cpu_ticks_per_us();
     // Get wakeup cause.
     wakeup_cause = esp_wake_stub_get_wakeup_cause();
     // Increment the counter.
     s_count++;
     // Print the counter value and wakeup cause.
-    ESP_RTC_LOGI("wake stub: wakeup count is %d, wakeup cause is %d", s_count, wakeup_cause);
+    ESP_RTC_LOGI("wake stub: wakeup count is %d, wakeup cause is %d, wakeup cost %ld us", s_count, wakeup_cause, wakeup_time);
 
     if (s_count >= s_max_count) {
         // Reset s_count

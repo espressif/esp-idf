@@ -50,7 +50,7 @@ class Entry:
         'DIR_Name' / PaddedString(MAX_NAME_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Name_ext' / PaddedString(MAX_EXT_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Attr' / Int8ul,
-        'DIR_NTRes' / Int8ul,  # this tagged for lfn (0x00 for lfn prefix, 0x18 for short name in lfn)
+        'DIR_NTRes' / Int8ul,  # this tagged for lfn (0x00 for short entry in lfn, 0x18 for short name)
         'DIR_CrtTimeTenth' / Const(EMPTY_BYTE),  # ignored by esp-idf fatfs library
         'DIR_CrtTime' / Int16ul,  # ignored by esp-idf fatfs library
         'DIR_CrtDate' / Int16ul,  # ignored by esp-idf fatfs library

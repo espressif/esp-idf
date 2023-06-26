@@ -11,15 +11,16 @@
 #include "driver/sdm.h"
 #include "driver/gptimer.h"
 
-#define EXAMPLE_SIGMA_DELTA_GPIO_NUM    (0)                 // Select GPIO_NUM_0 as the sigma-delta output pin
-#define EXAMPLE_OVER_SAMPLE_RATE        (20 * 1000 * 1000)  // 20 MHz over sample rate
-#define EXAMPLE_TIMER_RESOLUTION        (10 * 1000 * 1000)  // 10 MHz timer counting resolution
-#define EXAMPLE_CALLBACK_INTERVAL_US    (10)                // 10 us interval of each timer callback
-#define EXAMPLE_ALARM_COUNT             (EXAMPLE_CALLBACK_INTERVAL_US * (EXAMPLE_TIMER_RESOLUTION / 1000000))
-#define EXAMPLE_SINE_WAVE_FREQ_HZ       (1000)              // 1 KHz wave, adjust this value to decide the sine wave frequency
-#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0f)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
-#define EXAMPLE_SINE_WAVE_POINT_NUM     (1000000 / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ))
+#define MHZ                             (1000000)
 #define CONST_PI                        (3.1416f)           // Constant of PI, used for calculating the sine wave
+#define EXAMPLE_SIGMA_DELTA_GPIO_NUM    (0)                 // Select GPIO_NUM_0 as the sigma-delta output pin
+#define EXAMPLE_OVER_SAMPLE_RATE        (10 * MHZ)          // 10 MHz over sample rate
+#define EXAMPLE_TIMER_RESOLUTION        (1  * MHZ)          // 1 MHz timer counting resolution
+#define EXAMPLE_CALLBACK_INTERVAL_US    (100)               // 100 us interval of each timer callback
+#define EXAMPLE_ALARM_COUNT             (EXAMPLE_CALLBACK_INTERVAL_US * (EXAMPLE_TIMER_RESOLUTION / MHZ))
+#define EXAMPLE_SINE_WAVE_FREQ_HZ       (100)               // 100 Hz sine wave, adjust this value to decide the sine wave frequency
+#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0f)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
+#define EXAMPLE_SINE_WAVE_POINT_NUM     (MHZ / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ))
 
 ESP_STATIC_ASSERT(EXAMPLE_SINE_WAVE_POINT_NUM > 1, "Sine wave frequency is too high");
 ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");

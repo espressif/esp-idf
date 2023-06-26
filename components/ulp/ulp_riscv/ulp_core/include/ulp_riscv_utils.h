@@ -10,6 +10,7 @@
 extern "C" {
 #endif
 
+#include "sdkconfig.h"
 #include <stdint.h>
 #include "ulp_riscv_register_ops.h"
 
@@ -17,7 +18,7 @@ extern "C" {
  * @brief Wakeup main CPU from sleep or deep sleep.
  *
  * This raises a software interrupt signal, if the
- * main CPU is configured the ULP as a wakeup source
+ * main CPU has configured the ULP as a wakeup source
  * calling this function will make the main CPU to
  * exit from sleep or deep sleep.
  */
@@ -53,7 +54,7 @@ void ulp_riscv_rescue_from_monitor(void);
  * put the ULP in monitor mode and triggers a reset.
  *
  */
-void __attribute__((noreturn)) ulp_riscv_halt(void);
+void __attribute__((__noreturn__)) ulp_riscv_halt(void);
 
 #define ulp_riscv_shutdown ulp_riscv_halt
 

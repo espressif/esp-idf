@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) CO LTD
- * All rights reserved.
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -91,9 +91,9 @@ static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
     ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(mode_mask));
 }
 
-void user_find_cb(uint8_t zdo_status, uint16_t addr, uint8_t endpoint)
+void user_find_cb(esp_zb_zdp_status_t zdo_status, uint16_t addr, uint8_t endpoint, void *user_ctx)
 {
-    ESP_LOGI(TAG, "User find cb: address:0x%x, endpoint:%d, response_status:%d", addr, endpoint, zdo_status);
+    ESP_LOGI(TAG, "User find cb: response_status:%d, address:0x%x, endpoint:%d", zdo_status, addr, endpoint);
     if (zdo_status == ESP_ZB_ZDP_STATUS_SUCCESS) {
         on_off_light.endpoint = endpoint;
         on_off_light.short_addr = addr;
@@ -124,10 +124,10 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         if (err_status == ESP_OK) {
             esp_zb_ieee_addr_t extended_pan_id;
             esp_zb_get_extended_pan_id(extended_pan_id);
-            ESP_LOGI(TAG, "Formed network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx)",
+            ESP_LOGI(TAG, "Formed network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx, Channel:%d)",
                      extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                      extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
-                     esp_zb_get_pan_id());
+                     esp_zb_get_pan_id(), esp_zb_get_current_channel());
             esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
         } else {
             ESP_LOGI(TAG, "Restart network formation (status: %d)", err_status);
@@ -145,7 +145,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         esp_zb_zdo_match_desc_req_param_t  cmd_req;
         cmd_req.dst_nwk_addr = dev_annce_params->device_short_addr;
         cmd_req.addr_of_interest = dev_annce_params->device_short_addr;
-        esp_zb_zdo_find_on_off_light(&cmd_req, user_find_cb);
+        esp_zb_zdo_find_on_off_light(&cmd_req, user_find_cb, NULL);
         break;
     default:
         ESP_LOGI(TAG, "ZDO signal: %d, status: %d", sig_type, err_status);
@@ -162,6 +162,7 @@ static void esp_zb_task(void *pvParameters)
     esp_zb_on_off_switch_cfg_t switch_cfg = ESP_ZB_DEFAULT_ON_OFF_SWITCH_CONFIG();
     esp_zb_ep_list_t *esp_zb_on_off_switch_ep = esp_zb_on_off_switch_ep_create(HA_ONOFF_SWITCH_ENDPOINT, &switch_cfg);
     esp_zb_device_register(esp_zb_on_off_switch_ep);
+    esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
     ESP_ERROR_CHECK(esp_zb_start(false));
     esp_zb_main_loop_iteration();
 }

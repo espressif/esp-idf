@@ -278,3 +278,109 @@
     re: "fatal error: esp_partition.h: No such file or directory"
     hint: "All the Partition APIs have been moved to the new component 'esp_partition' - please, update your project dependencies. See Storage migration guide 5.x for more details."
     match_to_output: True
+
+-
+    re: "warning: 'esp_vfs_fat_sdmmc_unmount' is deprecated: Please use esp_vfs_fat_sdcard_unmount instead [-Wdeprecated-declarations]"
+    hint: "``esp_vfs_fat_sdmmc_unmount()`` is now deprecated, you can use :cpp:func:`esp_vfs_fat_sdcard_unmount()` instead. See Storage migration guide 5.1 for more details"
+
+-
+    re: "esp_usb_jtag: could not find or open device!"
+    hint: "Please check the wire connection to debugging device or access rights to a serial port."
+
+-
+    re: "Error: couldn't bind [^:]+: Address already in use"
+    hint: "Please check if another process uses the mentioned ports. OpenOCD already running, perhaps in the background?\nPlease list all processes to check if OpenOCD is already running; if so, terminate it before starting OpenOCD from idf.py"
+
+-
+    re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_ACCESS"
+    hint: "OpenOCD process does not have permissions to access the USB JTAG/serial device. Please use 'LIBUSB_DEBUG=1 idf.py openocd' to find out the device name and check its access rights."
+
+-
+    re: "(-Werror=address|-Werror=use-after-free)"
+    hint: "The warning(s) '{}' may appear after compiler update above GCC-12\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable new warnings introduced in GCC 12'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "The HFP AG API function '{}' has been renamed to '{}'."
+    variables:
+        -
+            re_variables: ['esp_bt_hf_init']
+            hint_variables: ['esp_bt_hf_init', 'esp_hf_ag_init']
+        -
+            re_variables: ['esp_bt_hf_deinit']
+            hint_variables: ['esp_bt_hf_deinit', 'esp_hf_ag_deinit']
+        -
+            re_variables: ['esp_bt_hf_register_callback']
+            hint_variables: ['esp_bt_hf_register_callback', 'esp_hf_ag_register_callback']
+        -
+            re_variables: ['esp_bt_hf_connect']
+            hint_variables: ['esp_bt_hf_connect', 'esp_hf_ag_slc_connect']
+        -
+            re_variables: ['esp_bt_hf_disconnect']
+            hint_variables: ['esp_bt_hf_disconnect', 'esp_hf_ag_slc_disconnect']
+        -
+            re_variables: ['esp_bt_hf_connect_audio']
+            hint_variables: ['esp_bt_hf_connect_audio', 'esp_hf_ag_audio_connect']
+        -
+            re_variables: ['esp_bt_hf_disconnect_audio']
+            hint_variables: ['esp_bt_hf_disconnect_audio', 'esp_hf_ag_audio_disconnect']
+        -
+            re_variables: ['esp_bt_hf_vra']
+            hint_variables: ['esp_bt_hf_vra', 'esp_hf_ag_vra_control']
+        -
+            re_variables: ['esp_bt_hf_volume_control']
+            hint_variables: ['esp_bt_hf_volume_control', 'esp_hf_ag_volume_control']
+        -
+            re_variables: ['esp_hf_unat_response']
+            hint_variables: ['esp_hf_unat_response', 'esp_hf_ag_unknown_at_send']
+        -
+            re_variables: ['esp_bt_hf_cmee_response']
+            hint_variables: ['esp_bt_hf_cmee_response', 'esp_hf_ag_cmee_send']
+        -
+            re_variables: ['esp_bt_hf_indchange_notification']
+            hint_variables: ['esp_bt_hf_indchange_notification', 'esp_hf_ag_devices_status_indchange']
+        -
+            re_variables: ['esp_bt_hf_cind_response']
+            hint_variables: ['esp_bt_hf_cind_response', 'esp_hf_ag_cind_response']
+        -
+            re_variables: ['esp_bt_hf_cops_response']
+            hint_variables: ['esp_bt_hf_cops_response', 'esp_hf_ag_cops_response']
+        -
+            re_variables: ['esp_bt_hf_clcc_response']
+            hint_variables: ['esp_bt_hf_clcc_response', 'esp_hf_ag_clcc_response']
+        -
+            re_variables: ['esp_bt_hf_cnum_response']
+            hint_variables: ['esp_bt_hf_cnum_response', 'esp_hf_ag_cnum_response']
+        -
+            re_variables: ['esp_bt_hf_bsir']
+            hint_variables: ['esp_bt_hf_bsir', 'esp_hf_ag_bsir']
+        -
+            re_variables: ['esp_bt_hf_answer_call']
+            hint_variables: ['esp_bt_hf_answer_call', 'esp_hf_ag_answer_call']
+        -
+            re_variables: ['esp_bt_hf_reject_call']
+            hint_variables: ['esp_bt_hf_reject_call', 'esp_hf_ag_reject_call']
+        -
+            re_variables: ['esp_bt_hf_out_call']
+            hint_variables: ['esp_bt_hf_out_call', 'esp_hf_ag_out_call']
+        -
+            re_variables: ['esp_bt_hf_end_call']
+            hint_variables: ['esp_bt_hf_end_call', 'esp_hf_ag_end_call']
+        -
+            re_variables: ['esp_bt_hf_register_data_callback']
+            hint_variables: ['esp_bt_hf_register_data_callback', 'esp_hf_ag_register_data_callback']
+        -
+            re_variables: ['esp_hf_outgoing_data_ready']
+            hint_variables: ['esp_hf_outgoing_data_ready', 'esp_hf_ag_outgoing_data_ready']
+
+-
+    re: "error: '{}' undeclared"
+    hint: "The union element '{}' in 'esp_hf_cme_err_t' has been renamed to '{}'"
+    variables:
+        -
+            re_variables: ['ESP_HF_CME_MEMEORY_FULL']
+            hint_variables: ['ESP_HF_CME_MEMEORY_FULL', 'ESP_HF_CME_MEMORY_FULL']
+        -
+            re_variables: ['ESP_HF_CME_MEMEORY_FAILURE']
+            hint_variables: ['ESP_HF_CME_MEMEORY_FAILURE', 'ESP_HF_CME_MEMORY_FAILURE ']

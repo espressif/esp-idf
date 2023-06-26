@@ -55,7 +55,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
 
-* `TLSF allocator <https://github.com/espressif/tlsf>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD 3-clause license.
+* `TLSF allocator <https://github.com/espressif/tlsf>`_ Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD 3-clause license.
 
 * :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under BSD License as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
 
@@ -63,7 +63,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`HTTP Parser <http_parser>` Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file<http_parser/LICENSE.txt>`.
 
-* `SEGGER SystemView`_ target-side library, Copyright (c) 2015-2017  SEGGER Microcontroller GmbH & Co. KG, is licensed under BSD 3-clause license.
+* `SEGGER SystemView`_ target-side library, Copyright (c) 1995-2021 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
 
 Documentation
 -------------
@@ -86,6 +86,13 @@ ESP32, ESP32-S and ESP32-C Series SoCs mask ROM hardware includes binaries compi
 * `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
 
 * TJpgDec_ Copyright (C) 2011, ChaN, all right reserved. See below for license.
+
+* Parts of Zephyr RTOS USB stack:
+    * `DesignWare USB device driver`_ Copyright (c) 2016 Intel Corporation and licensed under Apache 2.0 license.
+    * `Generic USB device driver`_ Copyright (c) 2006 Bertrik Sikken (bertrik@sikken.nl), 2016 Intel Corporation and licensed under BSD 3-clause license.
+    * `USB descriptors functionality`_ Copyright (c) 2017 PHYTEC Messtechnik GmbH, 2017-2018 Intel Corporation and licensed under Apache 2.0 license.
+    * `USB DFU class driver`_ Copyright(c) 2015-2016 Intel Corporation, 2017 PHYTEC Messtechnik GmbH and licensed under BSD 3-clause license.
+    * `USB CDC ACM class driver`_ Copyright(c) 2015-2016 Intel Corporation and licensed under Apache 2.0 license
 
 Xtensa libhal MIT License
 =========================
@@ -162,3 +169,8 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _SEGGER SystemView: https://www.segger.com/downloads/systemview/
+.. _DesignWare USB device driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/drivers/usb/device/usb_dc_dw.c
+.. _Generic USB device driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/usb_device.c
+.. _USB descriptors functionality: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/usb_descriptor.c
+.. _USB DFU class driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/class/usb_dfu.c
+.. _USB CDC ACM class driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/class/cdc_acm.c

@@ -30,7 +30,7 @@ menu "High resolution timer (esp_timer)"
 
             Note that this is not the same as FreeRTOS timer task. To configure
             FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
-            in "FreeRTOS" menu.
+            in "FreeRTOS".
 
     config ESP_TIMER_INTERRUPT_LEVEL
         int "Interrupt level"
@@ -40,6 +40,69 @@ menu "High resolution timer (esp_timer)"
         help
             It sets the interrupt level for esp_timer ISR in range 1..3.
             A higher level (3) helps to decrease the ISR esp_timer latency.
+
+    config ESP_TIMER_SHOW_EXPERIMENTAL
+        bool "show esp_timer's experimental features"
+        help
+            This shows some hidden features of esp_timer.
+            Note that they may break other features, use them with care.
+
+    config ESP_TIMER_TASK_AFFINITY
+        hex
+        default 0x0 if ESP_TIMER_TASK_AFFINITY_CPU0
+        default 0x1 if ESP_TIMER_TASK_AFFINITY_CPU1
+        default FREERTOS_NO_AFFINITY if ESP_TIMER_TASK_AFFINITY_NO_AFFINITY
+
+    choice ESP_TIMER_TASK_AFFINITY
+        prompt "esp_timer task core affinity"
+        default ESP_TIMER_TASK_AFFINITY_CPU0
+        help
+            The default settings: timer TASK on CPU0 and timer ISR on CPU0.
+            Other settings may help in certain cases, but note that they may break
+            other features, use them with care.
+            - "CPU0": (default) esp_timer task is processed by CPU0.
+            - "CPU1": esp_timer task is processed by CPU1.
+            - "No affinity": esp_timer task can be processed by any CPU.
+
+        config ESP_TIMER_TASK_AFFINITY_CPU0
+            bool "CPU0"
+        config ESP_TIMER_TASK_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+        config ESP_TIMER_TASK_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+    endchoice
+
+    config ESP_TIMER_ISR_AFFINITY
+        hex
+        default 0x1 if ESP_TIMER_ISR_AFFINITY_CPU0
+        default 0x2 if ESP_TIMER_ISR_AFFINITY_CPU1
+        default FREERTOS_NO_AFFINITY if ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+
+    choice ESP_TIMER_ISR_AFFINITY
+        prompt "timer interrupt core affinity"
+        default ESP_TIMER_ISR_AFFINITY_CPU0
+        help
+            The default settings: timer TASK on CPU0 and timer ISR on CPU0.
+            Other settings may help in certain cases, but note that they may break
+            other features, use them with care.
+            - "CPU0": (default) timer interrupt is processed by CPU0.
+            - "CPU1": timer interrupt is processed by CPU1.
+            - "No affinity": timer interrupt can be processed by any CPU. It helps
+            to reduce latency but there is a disadvantage it leads to the timer ISR
+            running on every core. It increases the CPU time usage for timer ISRs
+            by N on an N-core system.
+
+        config ESP_TIMER_ISR_AFFINITY_CPU0
+            bool "CPU0"
+        config ESP_TIMER_ISR_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+        config ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+    endchoice
 
     config ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
         bool "Support ISR dispatch method"

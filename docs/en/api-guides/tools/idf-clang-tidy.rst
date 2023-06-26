@@ -8,7 +8,7 @@ The IDF Clang Tidy is a tool that uses `clang-tidy <https://clang.llvm.org/extra
 
    This functionality and the toolchain it relies on are still under development. There may be breaking changes before a final release.
 
-.. only:: esp32c3 or esp32h4
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
    .. warning::
 

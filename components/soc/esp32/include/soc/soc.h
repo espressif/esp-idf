@@ -156,6 +156,7 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 26*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ       //this may be incorrect, please refer to ESP_DEFAULT_CPU_FREQ_MHZ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
 #define  REF_CLK_FREQ                                ( 1000000 )
@@ -181,7 +182,7 @@
 #define SOC_CACHE_APP_LOW       0x40078000
 #define SOC_CACHE_APP_HIGH      0x40080000
 #define SOC_IRAM_LOW            0x40080000
-#define SOC_IRAM_HIGH           0x400A0000
+#define SOC_IRAM_HIGH           0x400AA000
 #define SOC_RTC_IRAM_LOW        0x400C0000
 #define SOC_RTC_IRAM_HIGH       0x400C2000
 #define SOC_RTC_DRAM_LOW        0x3FF80000

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # ESP Local Control using HTTPS server
 
@@ -8,6 +8,8 @@ This example creates a `esp_local_ctrl` service over HTTPS transport, for secure
 See the `esp_local_ctrl` component documentation for details.
 
 Before using the example, run `idf.py menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+
+Note, that this example in not supported for IPv6-only configuration.
 
 ## Client Side Implementation
 

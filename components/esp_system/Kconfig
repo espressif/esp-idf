@@ -99,10 +99,9 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
-        default y if IDF_TARGET_ESP32H4
         default y if IDF_TARGET_ESP32C6
-        default y if IDF_TARGET_ESP32H2
-        depends on !IDF_TARGET_ESP32C2
+        default n if IDF_TARGET_ESP32H2 # IDF-5667
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
@@ -268,6 +267,10 @@ menu "ESP System Settings"
                 please change the primary config to ESP_CONSOLE_USB_SERIAL_JTAG above.
     endchoice
 
+    config ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        # Internal option, indicates that console USB SERIAL JTAG is used
+        bool
+        default y if ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 
     config ESP_CONSOLE_UART
         # Internal option, indicates that console UART is used (and not USB, for example)
@@ -276,7 +279,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_MULTIPLE_UART
         bool
-        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H4 && !IDF_TARGET_ESP32C2
+        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"

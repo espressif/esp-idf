@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,211 +9,524 @@
 #include <sys/lock.h>
 #include <sys/param.h>
 
+#include "esp_err.h"
 #include "esp_attr.h"
-#include "esp_sleep.h"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "esp_heap_caps.h"
+#include "esp_sleep.h"
 #include "soc/soc_caps.h"
-#include "hal/rtc_hal.h"
+#include "esp_private/esp_regdma.h"
+#include "esp_private/esp_pau.h"
 #include "esp_private/sleep_retention.h"
 #include "sdkconfig.h"
+#include "esp_pmu.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#endif
 
 static __attribute__((unused)) const char *TAG = "sleep";
 
 /**
- * Internal structure which holds all requested light sleep memory retention parameters
+ * Internal structure which holds all requested sleep retention parameters
  */
 typedef struct {
-    rtc_cntl_sleep_retent_t retent;
+    /* The hardware retention module (REGDMA and PMU) uses 4 linked lists to
+     * record the hardware context information that needs to be backed up and
+     * restored when switching between different power states. The 4 linked
+     * lists are linked by 8 types of nodes. The 4 linked lists can reuse some
+     * nodes with each other, or separate their own unique nodes after branch
+     * type nodes.
+     * The REGDMA module iterates the entire linked list from the head of a
+     * linked list and backs up and restores the corresponding register context
+     * information according to the configuration information of the linked list
+     * nodes.
+     * The PMU module triggers REGDMA to use the corresponding linked list when
+     * swtiching between different power states. For example:
+     *
+     * +---------------+---------------+-------------------+-----------+
+     * |    Current    |   The next    | The entry will be | Retention |
+     * |   PMU state   |   PMU state   |  used by REGDMA   |   clock   |
+     * +---------------+---------------+-------------------+-----------+
+     * | PMU_HP_ACTIVE | PMU_HP_SLEEP  |     entry0        |    XTAL   |
+     * | PMU_HP_SLEEP  | PMU_HP_ACTIVE |     entry0        |    XTAL   |
+     * | PMU_HP_MODEM  | PMU_HP_SLEEP  |     ------        |    XTAL   |
+     * | PMU_HP_SLEEP  | PMU_HP_MODEM  |     entry1        |    XTAL   |
+     * | PMU_HP_MODEM  | PMU_HP_ACTIVE |     entry2        |    PLL    |
+     * |---------------------------------------------------------------|
+     * | PMU_HP_ACTIVE | PMU_HP_ACTIVE |     entry3        |    PLL    | (Clock BUG)
+     * +---------------+---------------+-------------------+-----------+
+     *
+     *           +--------+    +-------------------------+    +-------------+                            +-----------+    +--------+    +-----+
+     * entry2 -> |        | -> | WiFi MAC Minimum System | -> |             | -------------------------> | ######### | -> | ###### | -> | End |
+     *           |  SOC   |    +-------------------------+    |   Digital   |                            | Bluetooth |    | Zigbee |    +-----+
+     *           | System |             +--------+            | Peripherals |    +------+    +------+    |   / BLE   |    |        |    +-----+
+     * entry0 -> |        | ----------> |        | ---------> |             | -> |      | -> |      | -> |           | -> |        | -> | End |
+     *           +--------+             | Modem  |            +-------------+    | WiFi |    | WiFi |    +-----------+    +--------+    +-----+
+     *                                  | System |                               | MAC  |    |  BB  |    +-----+
+     * entry1 ------------------------> |        |-----------------------------> |      | -> |      | -> | End |
+     *                                  +--------+                               +------+    +------+    +-----+
+     *
+     * The entry3 (alias: extra linked list) is used for backup and restore of
+     * modules (such as BLE or 15.4 modules) with retention clock bugs.
+     *
+     *           +---------+    +----------+    +-------------+    +-----+
+     * entry3 -> | BLE MAC | -> | 15.4 MAC | -> | BLE/15.4 BB | -> | End |
+     *           +---------+    +----------+    +-------------+    +-----+
+     *
+     * Using it (extra linked list) for retention has the following constraints:
+     * 1. The PLL clock must be enabled (can be done with esp_pm_lock_acquire()
+     *    interface to acquire a pm lock of type ESP_PM_APB_FREQ_MAX.
+     * 2. When using the sleep_retention_entries_create() interface to create an
+     *    extra linked list, the node owner must be equal to BIT(3).
+     * 3. Use the sleep_retention_do_extra_retention() interface to backup or
+     *    restore the register context, which ensures only one backup or restore
+     *    when multiple modules (BLE and 15.4) exists.
+     */
+#define SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES       (8u)
+#define SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY    (0)
+#define SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY     (SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES - 1)
+    struct {
+        sleep_retention_entries_t entries;
+        uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM,
+                 runtime_bitmap: REGDMA_LINK_ENTRY_NUM,
+                 reserved: 32-(2*REGDMA_LINK_ENTRY_NUM);
+        void *entries_tail;
+    } lists[SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES];
+    _lock_t lock;
+    regdma_link_priority_t highpri;
+    uint32_t modules;
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+#define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
+    int extra_refs;
+#endif
 } sleep_retention_t;
 
-static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention;
-
-#if SOC_PM_SUPPORT_TAGMEM_PD
-
-#if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
-static int cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t code_seg_size, uint32_t data_seg_vaddr, uint32_t data_seg_size)
-{
-    int sets;   /* i/d-cache total set counts */
-    int index;  /* virtual address mapping i/d-cache row offset */
-    int waysgrp;
-    int icache_tagmem_blk_gs, dcache_tagmem_blk_gs;
-    struct cache_mode imode = { .icache = 1 };
-    struct cache_mode dmode = { .icache = 0 };
-
-    /* calculate/prepare i-cache tag memory retention parameters */
-    Cache_Get_Mode(&imode);
-    sets = imode.cache_size / imode.cache_ways / imode.cache_line_size;
-    index = (code_seg_vaddr / imode.cache_line_size) % sets;
-    waysgrp = imode.cache_ways >> 2;
-
-    code_seg_size = ALIGNUP(imode.cache_line_size, code_seg_size);
-
-    s_retention.retent.tagmem.icache.start_point = index;
-    s_retention.retent.tagmem.icache.size = (sets * waysgrp) & 0xff;
-    s_retention.retent.tagmem.icache.vld_size = s_retention.retent.tagmem.icache.size;
-    if (code_seg_size < imode.cache_size / imode.cache_ways) {
-        s_retention.retent.tagmem.icache.vld_size = (code_seg_size / imode.cache_line_size) * waysgrp;
-    }
-    s_retention.retent.tagmem.icache.enable = (code_seg_size != 0) ? 1 : 0;
-    icache_tagmem_blk_gs = s_retention.retent.tagmem.icache.vld_size ? s_retention.retent.tagmem.icache.vld_size : sets * waysgrp;
-    icache_tagmem_blk_gs = ALIGNUP(4, icache_tagmem_blk_gs);
-    ESP_LOGD(TAG, "I-cache size:%d KiB, line size:%d B, ways:%d, sets:%d, index:%d, tag block groups:%d", (imode.cache_size>>10),
-            imode.cache_line_size, imode.cache_ways, sets, index, icache_tagmem_blk_gs);
-
-    /* calculate/prepare d-cache tag memory retention parameters */
-    Cache_Get_Mode(&dmode);
-    sets = dmode.cache_size / dmode.cache_ways / dmode.cache_line_size;
-    index = (data_seg_vaddr / dmode.cache_line_size) % sets;
-    waysgrp = dmode.cache_ways >> 2;
-
-    data_seg_size = ALIGNUP(dmode.cache_line_size, data_seg_size);
-
-    s_retention.retent.tagmem.dcache.start_point = index;
-    s_retention.retent.tagmem.dcache.size = (sets * waysgrp) & 0x1ff;
-    s_retention.retent.tagmem.dcache.vld_size = s_retention.retent.tagmem.dcache.size;
-#ifndef CONFIG_ESP32S3_DATA_CACHE_16KB
-    if (data_seg_size < dmode.cache_size / dmode.cache_ways) {
-        s_retention.retent.tagmem.dcache.vld_size = (data_seg_size / dmode.cache_line_size) * waysgrp;
-    }
-    s_retention.retent.tagmem.dcache.enable = (data_seg_size != 0) ? 1 : 0;
-#else
-    s_retention.retent.tagmem.dcache.enable = 1;
+static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
+    .highpri = (uint8_t)-1, .modules = 0
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    , .extra_refs = 0
 #endif
-    dcache_tagmem_blk_gs = s_retention.retent.tagmem.dcache.vld_size ? s_retention.retent.tagmem.dcache.vld_size : sets * waysgrp;
-    dcache_tagmem_blk_gs = ALIGNUP(4, dcache_tagmem_blk_gs);
-    ESP_LOGD(TAG, "D-cache size:%d KiB, line size:%d B, ways:%d, sets:%d, index:%d, tag block groups:%d", (dmode.cache_size>>10),
-            dmode.cache_line_size, dmode.cache_ways, sets, index, dcache_tagmem_blk_gs);
+};
 
-    /* For I or D cache tagmem retention, backup and restore are performed through
-     * RTC DMA (its bus width is 128 bits), For I/D Cache tagmem blocks (i-cache
-     * tagmem blocks = 92 bits, d-cache tagmem blocks = 88 bits), RTC DMA automatically
-     * aligns its bit width to 96 bits, therefore, 3 times RTC DMA can transfer 4
-     * i/d-cache tagmem blocks (128 bits * 3 = 96 bits * 4) */
-    return (((icache_tagmem_blk_gs + dcache_tagmem_blk_gs) << 2) * 3);
+#define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
+#define SLEEP_RETENTION_ENTRY_BITMAP(bitmap)    ((bitmap) & SLEEP_RETENTION_ENTRY_BITMAP_MASK)
+
+static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module);
+static void sleep_retention_entries_join(void);
+
+static inline bool sleep_retention_entries_require_branch(uint32_t owner, uint32_t runtime_bitmap)
+{
+    bool use_new_entry      = SLEEP_RETENTION_ENTRY_BITMAP(owner & ~runtime_bitmap) ? true : false;
+    bool intersection_exist = SLEEP_RETENTION_ENTRY_BITMAP(owner &  runtime_bitmap) ? true : false;
+    return use_new_entry && intersection_exist;
 }
-#endif // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
 
-static esp_err_t esp_sleep_tagmem_pd_low_init(bool enable)
+static esp_err_t sleep_retention_entries_check_and_create_default(uint32_t owner, uint32_t runtime_bitmap, uint32_t entries_bitmap, regdma_link_priority_t priority, uint32_t module)
 {
-    if (enable) {
-#if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
-        if (s_retention.retent.tagmem.link_addr == NULL) {
-            extern char _stext[], _etext[];
-            uint32_t code_start = (uint32_t)_stext;
-            uint32_t code_size = (uint32_t)(_etext - _stext);
-#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32S3)
-            extern char _rodata_start[], _rodata_reserved_end[];
-            uint32_t data_start = (uint32_t)_rodata_start;
-            uint32_t data_size = (uint32_t)(_rodata_reserved_end - _rodata_start);
-#else
-            uint32_t data_start = SOC_DROM_LOW;
-            uint32_t data_size = SOC_EXTRAM_DATA_SIZE;
-#endif
-            ESP_LOGI(TAG, "Code start at %08x, total %.2f KiB, data start at %08x, total %.2f KiB",
-                    code_start, (float)code_size/1024, data_start, (float)data_size/1024);
-            int tagmem_sz = cache_tagmem_retention_setup(code_start, code_size, data_start, data_size);
-            void *buf = heap_caps_aligned_alloc(SOC_RTC_CNTL_TAGMEM_PD_DMA_ADDR_ALIGN,
-                                                tagmem_sz + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                                MALLOC_CAP_RETENTION);
-            if (buf) {
-                memset(buf, 0, tagmem_sz + RTC_HAL_DMA_LINK_NODE_SIZE);
-                s_retention.retent.tagmem.link_addr = rtc_cntl_hal_dma_link_init(buf,
-                                      buf + RTC_HAL_DMA_LINK_NODE_SIZE, tagmem_sz, NULL);
-            } else {
-                s_retention.retent.tagmem.icache.enable = 0;
-                s_retention.retent.tagmem.dcache.enable = 0;
-                s_retention.retent.tagmem.link_addr = NULL;
-                return ESP_ERR_NO_MEM;
-            }
-        }
-#else // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
-        s_retention.retent.tagmem.icache.enable = 0;
-        s_retention.retent.tagmem.dcache.enable = 0;
-        s_retention.retent.tagmem.link_addr = NULL;
-#endif // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
-    } else {
-#if SOC_PM_SUPPORT_TAGMEM_PD
-        if (s_retention.retent.tagmem.link_addr) {
-            heap_caps_free(s_retention.retent.tagmem.link_addr);
-            s_retention.retent.tagmem.icache.enable = 0;
-            s_retention.retent.tagmem.dcache.enable = 0;
-            s_retention.retent.tagmem.link_addr = NULL;
-        }
-#endif
+    assert(sleep_retention_entries_require_branch(owner, runtime_bitmap));
+
+    static sleep_retention_entries_config_t dummy = { REGDMA_LINK_WAIT_INIT(0xffff, 0, 0, 0, 1, 1), 0 };
+    dummy.owner = SLEEP_RETENTION_ENTRY_BITMAP(owner & ~entries_bitmap);
+    if (dummy.owner) {
+        return sleep_retention_entries_create_impl(&dummy, 1, priority, module);
     }
     return ESP_OK;
 }
 
-#endif // SOC_PM_SUPPORT_TAGMEM_PD
-
-#if SOC_PM_SUPPORT_CPU_PD
-
-esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
+static esp_err_t sleep_retention_entries_check_and_create_final_default(void)
 {
-    if (enable) {
-        if (s_retention.retent.cpu_pd_mem == NULL) {
-            void *buf = heap_caps_aligned_alloc(SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN,
-                                                SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                                MALLOC_CAP_RETENTION);
-            if (buf) {
-                memset(buf, 0, SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE);
-                s_retention.retent.cpu_pd_mem = rtc_cntl_hal_dma_link_init(buf,
-                                      buf + RTC_HAL_DMA_LINK_NODE_SIZE, SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE, NULL);
-            } else {
-                return ESP_ERR_NO_MEM;
-            }
+    static const sleep_retention_entries_config_t final_dummy = { REGDMA_LINK_WAIT_INIT(0xffff, 0, 0, 0, 1, 1), SLEEP_RETENTION_ENTRY_BITMAP_MASK };
+
+    esp_err_t err = ESP_OK;
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries_bitmap == 0) {
+        err = sleep_retention_entries_create_impl(&final_dummy, 1, SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY, 0);
+    }
+    _lock_release_recursive(&s_retention.lock);
+    return err;
+}
+
+static void sleep_retention_entries_update(uint32_t owner, void *new_link, regdma_link_priority_t priority)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    sleep_retention_entries_t retention_entries = {
+        (owner & BIT(0)) ? new_link : s_retention.lists[priority].entries[0],
+        (owner & BIT(1)) ? new_link : s_retention.lists[priority].entries[1],
+        (owner & BIT(2)) ? new_link : s_retention.lists[priority].entries[2],
+        (owner & BIT(3)) ? new_link : s_retention.lists[priority].entries[3]
+    };
+    if (s_retention.lists[priority].entries_bitmap == 0) {
+        s_retention.lists[priority].entries_tail = new_link;
+    }
+    memcpy(s_retention.lists[priority].entries, retention_entries, sizeof(sleep_retention_entries_t));
+    s_retention.lists[priority].runtime_bitmap  = owner;
+    s_retention.lists[priority].entries_bitmap |= owner;
+    _lock_release_recursive(&s_retention.lock);
+}
+
+static void * sleep_retention_entries_try_create(const regdma_link_config_t *config, uint32_t owner, regdma_link_priority_t priority, uint32_t module)
+{
+    void *link = NULL;
+    assert(owner > 0 && owner < BIT(REGDMA_LINK_ENTRY_NUM));
+
+    _lock_acquire_recursive(&s_retention.lock);
+    if (sleep_retention_entries_require_branch(owner, s_retention.lists[priority].runtime_bitmap)) {
+        if (sleep_retention_entries_check_and_create_default(owner, s_retention.lists[priority].runtime_bitmap,
+            s_retention.lists[priority].entries_bitmap, priority, module) == ESP_OK) { /* branch node can't as tail node */
+            link = regdma_link_init_safe(
+                        config, true, module,
+                        (owner & BIT(0)) ? s_retention.lists[priority].entries[0] : NULL,
+                        (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
+                        (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
+                        (owner & BIT(3)) ? s_retention.lists[priority].entries[3] : NULL
+                    );
         }
     } else {
-        if (s_retention.retent.cpu_pd_mem) {
-            heap_caps_free(s_retention.retent.cpu_pd_mem);
-            s_retention.retent.cpu_pd_mem = NULL;
+        link = regdma_link_init_safe(config, false, module, s_retention.lists[priority].entries[__builtin_ffs(owner) - 1]);
+    }
+    _lock_release_recursive(&s_retention.lock);
+    return link;
+}
+
+static void * sleep_retention_entries_try_create_bonding(const regdma_link_config_t *config, uint32_t owner, regdma_link_priority_t priority, uint32_t module)
+{
+    assert(owner > 0 && owner < BIT(REGDMA_LINK_ENTRY_NUM));
+    _lock_acquire_recursive(&s_retention.lock);
+    void *link = regdma_link_init_safe(
+                config, true, module,
+                (owner & BIT(0)) ? s_retention.lists[priority].entries[0] : NULL,
+                (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
+                (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
+                (owner & BIT(3)) ? s_retention.lists[priority].entries[3] : NULL
+            );
+    _lock_release_recursive(&s_retention.lock);
+    return link;
+}
+
+static void sleep_retention_entries_stats(void)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY && s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        for (int entry = 0; entry < ARRAY_SIZE(s_retention.lists[s_retention.highpri].entries); entry++) {
+            regdma_link_stats(s_retention.lists[s_retention.highpri].entries[entry], entry);
         }
     }
-#if SOC_PM_SUPPORT_TAGMEM_PD
-    if (esp_sleep_tagmem_pd_low_init(enable) != ESP_OK) {
-#ifdef CONFIG_ESP32S3_DATA_CACHE_16KB
-        esp_sleep_cpu_pd_low_init(false);
+    _lock_release_recursive(&s_retention.lock);
+}
+
+#if REGDMA_LINK_DBG
+void sleep_retention_entries_show_memories(void)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY && s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        for (int entry = 0; entry < ARRAY_SIZE(s_retention.lists[s_retention.highpri].entries); entry++) {
+            ESP_LOGW(TAG, "Print sleep retention entries[%d] memories:", entry);
+            regdma_link_show_memories(s_retention.lists[s_retention.highpri].entries[entry], entry);
+        }
+    }
+    _lock_release_recursive(&s_retention.lock);
+}
+#endif
+
+void * sleep_retention_find_link_by_id(int id)
+{
+    void *link = NULL;
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY &&
+        s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        for (int entry = 0; (link == NULL && entry < ARRAY_SIZE(s_retention.lists[s_retention.highpri].entries)); entry++) {
+            link = regdma_find_link_by_id(s_retention.lists[s_retention.highpri].entries[entry], entry, id);
+        }
+    }
+    _lock_release_recursive(&s_retention.lock);
+    return link;
+}
+
+static uint32_t sleep_retention_entries_owner_bitmap(sleep_retention_entries_t *entries, sleep_retention_entries_t *tails)
+{
+    uint32_t owner = 0;
+    _lock_acquire_recursive(&s_retention.lock);
+    for (int entry = 0; entry < ARRAY_SIZE(*entries); entry++) {
+        owner |= regdma_link_get_owner_bitmap((*entries)[entry], (*tails)[entry], entry);
+    }
+    _lock_release_recursive(&s_retention.lock);
+    return owner;
+}
+
+static bool sleep_retention_entries_get_destroy_context(regdma_link_priority_t priority, uint32_t module, sleep_retention_entries_t *destroy_entries, void **destroy_tail, sleep_retention_entries_t *next_entries, void **prev_tail)
+{
+    bool exist = false;
+    sleep_retention_entries_t destroy_tails, prev_tails;
+
+    memset(&destroy_tails, 0, sizeof(sleep_retention_entries_t));
+    memset(&prev_tails, 0, sizeof(sleep_retention_entries_t));
+
+    _lock_acquire_recursive(&s_retention.lock);
+    for (int entry = 0; entry < ARRAY_SIZE(s_retention.lists[priority].entries); entry++) {
+        (*destroy_entries)[entry] = regdma_find_module_link_head(
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+        destroy_tails     [entry] = regdma_find_module_link_tail(
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+        (*next_entries)   [entry] = regdma_find_next_module_link_head(
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+        prev_tails        [entry] = regdma_find_prev_module_link_tail(
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+        if ((*destroy_entries)[entry] && destroy_tails[entry]) {
+            exist = true;
+        }
+        assert(destroy_tails[entry] == destroy_tails[0]);
+        assert(prev_tails[entry] == prev_tails[0]);
+    }
+    *destroy_tail = destroy_tails[0];
+    *prev_tail = prev_tails[0];
+    _lock_release_recursive(&s_retention.lock);
+    return exist;
+}
+
+static void sleep_retention_entries_context_update(regdma_link_priority_t priority)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    sleep_retention_entries_t tails = {
+        s_retention.lists[priority].entries_tail, s_retention.lists[priority].entries_tail,
+        s_retention.lists[priority].entries_tail, s_retention.lists[priority].entries_tail
+    };
+    s_retention.lists[priority].entries_bitmap = sleep_retention_entries_owner_bitmap(&s_retention.lists[priority].entries, &tails);
+    s_retention.lists[priority].runtime_bitmap = sleep_retention_entries_owner_bitmap(&s_retention.lists[priority].entries, &s_retention.lists[priority].entries);
+    _lock_release_recursive(&s_retention.lock);
+}
+
+static bool sleep_retention_entries_dettach(regdma_link_priority_t priority, sleep_retention_entries_t *destroy_entries, void *destroy_tail, sleep_retention_entries_t *next_entries, void *prev_tail)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    bool is_head = (memcmp(destroy_entries, &s_retention.lists[priority].entries, sizeof(sleep_retention_entries_t)) == 0);
+    bool is_tail = (destroy_tail == s_retention.lists[priority].entries_tail);
+
+    if (is_head && is_tail) {
+        memset(s_retention.lists[priority].entries, 0, sizeof(sleep_retention_entries_t));
+        s_retention.lists[priority].entries_tail = NULL;
+    } else if (is_head) {
+        memcpy(&s_retention.lists[priority].entries, next_entries, sizeof(sleep_retention_entries_t));
+    } else if (is_tail) {
+        s_retention.lists[priority].entries_tail = prev_tail;
+    } else {
+        regdma_link_update_next_safe(prev_tail, (*next_entries)[0], (*next_entries)[1], (*next_entries)[2], (*next_entries)[3]);
+    }
+    sleep_retention_entries_context_update(priority);
+
+    regdma_link_update_next_safe(destroy_tail, NULL, NULL, NULL, NULL);
+    _lock_release_recursive(&s_retention.lock);
+    return (is_head || is_tail);
+}
+
+static void sleep_retention_entries_destroy_wrapper(sleep_retention_entries_t *destroy_entries)
+{
+    for (int entry = 0; entry < ARRAY_SIZE(*destroy_entries); entry++) {
+        regdma_link_destroy((*destroy_entries)[entry], entry);
+    }
+}
+
+static void sleep_retention_entries_check_and_distroy_final_default(void)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    assert(s_retention.highpri == SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY);
+    assert(s_retention.modules == 0);
+    sleep_retention_entries_destroy_wrapper(&s_retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries);
+    _lock_release_recursive(&s_retention.lock);
+}
+
+static void sleep_retention_entries_all_destroy_wrapper(uint32_t module)
+{
+    void *destroy_tail = NULL, *prev_tail = NULL;
+    sleep_retention_entries_t destroy_entries, next_entries;
+
+    memset(&destroy_entries, 0, sizeof(sleep_retention_entries_t));
+    memset(&next_entries, 0, sizeof(sleep_retention_entries_t));
+
+    _lock_acquire_recursive(&s_retention.lock);
+    regdma_link_priority_t priority = 0;
+    do {
+        bool exist = sleep_retention_entries_get_destroy_context(priority, module, &destroy_entries, &destroy_tail, &next_entries, &prev_tail);
+        if (s_retention.lists[priority].entries_bitmap && exist) {
+            if (sleep_retention_entries_dettach(priority, &destroy_entries, destroy_tail, &next_entries, prev_tail)) {
+                sleep_retention_entries_join();
+            }
+            sleep_retention_entries_destroy_wrapper(&destroy_entries);
+        } else {
+            priority++;
+        }
+    } while (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES);
+    s_retention.modules &= ~module;
+    _lock_release_recursive(&s_retention.lock);
+}
+
+static void sleep_retention_entries_do_destroy(int module)
+{
+    assert(module != 0);
+    _lock_acquire_recursive(&s_retention.lock);
+    sleep_retention_entries_join();
+    sleep_retention_entries_stats();
+    sleep_retention_entries_all_destroy_wrapper(module);
+    _lock_release_recursive(&s_retention.lock);
+}
+
+void sleep_retention_entries_destroy(int module)
+{
+    assert(module != 0);
+    _lock_acquire_recursive(&s_retention.lock);
+    sleep_retention_entries_do_destroy(module);
+    if (s_retention.modules == 0) {
+        sleep_retention_entries_check_and_distroy_final_default();
+        pmu_sleep_disable_regdma_backup();
+        memset((void *)s_retention.lists, 0, sizeof(s_retention.lists));
+        s_retention.highpri = (uint8_t)-1;
+        _lock_release_recursive(&s_retention.lock);
+        _lock_close_recursive(&s_retention.lock);
+        s_retention.lock = NULL;
+        return;
+    }
+    _lock_release_recursive(&s_retention.lock);
+}
+
+static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    for (int i = num - 1; i >= 0; i--) {
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+        if ((retent[i].owner > BIT(EXTRA_LINK_NUM)) && (retent[i].config.id != 0xffff)) {
+            _lock_release_recursive(&s_retention.lock);
+            sleep_retention_entries_do_destroy(module);
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+#endif
+        void *link = sleep_retention_entries_try_create(&retent[i].config, retent[i].owner, priority, module);
+        if (link == NULL) {
+            _lock_release_recursive(&s_retention.lock);
+            sleep_retention_entries_do_destroy(module);
+            return ESP_ERR_NO_MEM;
+        }
+        sleep_retention_entries_update(retent[i].owner, link, priority);
+    }
+    _lock_release_recursive(&s_retention.lock);
+    return ESP_OK;
+}
+
+static esp_err_t sleep_retention_entries_create_bonding(regdma_link_priority_t priority, uint32_t module)
+{
+    static const sleep_retention_entries_config_t bonding_dummy = { REGDMA_LINK_WAIT_INIT(0xffff, 0, 0, 0, 1, 1), SLEEP_RETENTION_ENTRY_BITMAP_MASK };
+
+    _lock_acquire_recursive(&s_retention.lock);
+    void *link = sleep_retention_entries_try_create_bonding(&bonding_dummy.config, bonding_dummy.owner, priority, module);
+    if (link == NULL) {
+        _lock_release_recursive(&s_retention.lock);
+        sleep_retention_entries_do_destroy(module);
         return ESP_ERR_NO_MEM;
-#endif
     }
-#endif
+    sleep_retention_entries_update(bonding_dummy.owner, link, priority);
+    _lock_release_recursive(&s_retention.lock);
     return ESP_OK;
 }
 
-bool cpu_domain_pd_allowed(void)
+static void sleep_retention_entries_join(void)
 {
-    return (s_retention.retent.cpu_pd_mem != NULL);
+    void *entries_tail = NULL;
+    _lock_acquire_recursive(&s_retention.lock);
+    s_retention.highpri = SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY;
+    for (regdma_link_priority_t priority = 0; priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES; priority++) {
+        if (s_retention.lists[priority].entries_bitmap == 0) continue;
+        if (priority < s_retention.highpri) { s_retention.highpri = priority; }
+        if (entries_tail) {
+            regdma_link_update_next_safe(
+                    entries_tail,
+                    s_retention.lists[priority].entries[0],
+                    s_retention.lists[priority].entries[1],
+                    s_retention.lists[priority].entries[2],
+                    s_retention.lists[priority].entries[3]
+                );
+        }
+        entries_tail = s_retention.lists[priority].entries_tail;
+    }
+    pau_regdma_set_entry_link_addr(&(s_retention.lists[s_retention.highpri].entries));
+    _lock_release_recursive(&s_retention.lock);
 }
 
-#endif // SOC_PM_SUPPORT_CPU_PD
-
-#if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
-
-void sleep_enable_memory_retention(void)
+static esp_err_t sleep_retention_entries_create_wrapper(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, uint32_t module)
 {
-#if SOC_PM_SUPPORT_CPU_PD
-    rtc_cntl_hal_enable_cpu_retention(&s_retention.retent);
-#endif
-#if SOC_PM_SUPPORT_TAGMEM_PD
-    rtc_cntl_hal_enable_tagmem_retention(&s_retention.retent);
-#endif
+    _lock_acquire_recursive(&s_retention.lock);
+    esp_err_t err = sleep_retention_entries_create_bonding(priority, module);
+    if(err) goto error;
+    err = sleep_retention_entries_create_impl(retent, num, priority, module);
+    if(err) goto error;
+    err = sleep_retention_entries_create_bonding(priority, module);
+    if(err) goto error;
+    s_retention.modules |= module;
+    sleep_retention_entries_join();
+
+error:
+    _lock_release_recursive(&s_retention.lock);
+    return err;
 }
 
-void IRAM_ATTR sleep_disable_memory_retention(void)
+esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module)
 {
-#if SOC_PM_SUPPORT_CPU_PD
-    rtc_cntl_hal_disable_cpu_retention(&s_retention.retent);
-#endif
-#if SOC_PM_SUPPORT_TAGMEM_PD
-    rtc_cntl_hal_disable_tagmem_retention(&s_retention.retent);
-#endif
+    if (!(retent && num > 0 && (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES) && (module != 0))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_retention.lock == NULL) {
+        _lock_init_recursive(&s_retention.lock);
+        if (s_retention.lock == NULL) {
+            ESP_LOGE(TAG, "Create sleep retention lock failed");
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    esp_err_t err = sleep_retention_entries_check_and_create_final_default();
+    if (err)  goto error;
+    err = sleep_retention_entries_create_wrapper(retent, num, priority, module);
+    if (err)  goto error;
+    pmu_sleep_enable_regdma_backup();
+    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&pmu_sleep_disable_regdma_backup));
+
+error:
+    return err;
 }
 
-#endif // SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
+void sleep_retention_entries_get(sleep_retention_entries_t *entries)
+{
+    memset(entries, 0, sizeof(sleep_retention_entries_t));
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY &&
+        s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        memcpy(entries, &s_retention.lists[s_retention.highpri].entries, sizeof(sleep_retention_entries_t));
+    }
+    _lock_release_recursive(&s_retention.lock);
+}
+
+uint32_t IRAM_ATTR sleep_retention_get_modules(void)
+{
+    return s_retention.modules;
+}
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+void sleep_retention_do_extra_retention(bool backup_or_restore)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri < SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY ||
+        s_retention.highpri > SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        _lock_release_recursive(&s_retention.lock);
+        return;
+    }
+    const uint32_t clk_bug_modules = SLEEP_RETENTION_MODULE_BLE_MAC | SLEEP_RETENTION_MODULE_802154_MAC;
+    const int cnt_modules = __builtin_popcount(clk_bug_modules & s_retention.modules);
+    // Set extra linked list head pointer to hardware
+    pau_regdma_set_extra_link_addr(s_retention.lists[s_retention.highpri].entries[EXTRA_LINK_NUM]);
+    if (backup_or_restore) {
+        if (s_retention.extra_refs++ == (cnt_modules - 1)) {
+            pau_regdma_trigger_extra_link_backup();
+        }
+    } else {
+        if (--s_retention.extra_refs == (cnt_modules - 1)) {
+            pau_regdma_trigger_extra_link_restore();
+        }
+    }
+    int refs = s_retention.extra_refs;
+    _lock_release_recursive(&s_retention.lock);
+    assert(refs >= 0 && refs <= cnt_modules);
+}
+#endif

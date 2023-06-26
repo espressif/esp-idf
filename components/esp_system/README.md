@@ -27,3 +27,9 @@ If persistence is enabled, RTC time is also used in conjuction with system time.
 4. RTC time (`esp_rtc_get_time_us`)
 
 Time read from RTC timer.
+
+### Brownout
+
+on some boards, we name BOD1 as ana_bod, to unify the usage, using BOD1 in following passage.
+
+BOD1 will be a little faster then BOD0, but BOD0 can be widely used(can reset rf, flash, or using interrupt, etc.) So, in IDF code, we use BOD1 in bootloader and BOD0 in the app.

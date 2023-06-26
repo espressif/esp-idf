@@ -1,0 +1,4 @@
+dependencies:
+  espressif/fmt: "^9.1.0"
+  idf:
+    version: ">=4.1.0"

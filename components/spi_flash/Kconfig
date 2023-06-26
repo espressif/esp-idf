@@ -1,7 +1,9 @@
 menu "SPI Flash driver"
+    depends on !APP_BUILD_TYPE_PURE_RAM_APP
 
     config SPI_FLASH_VERIFY_WRITE
         bool "Verify SPI flash writes"
+        depends on !SPI_FLASH_ROM_IMPL
         default n
         help
             If this option is enabled, any time SPI flash is written then the data will be read
@@ -33,13 +35,13 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_ENABLE_COUNTERS
         bool "Enable operation counters"
-        default 0
+        default n
         help
             This option enables the following APIs:
 
-            - spi_flash_reset_counters
-            - spi_flash_dump_counters
-            - spi_flash_get_counters
+            - esp_flash_reset_counters
+            - esp_flash_dump_counters
+            - esp_flash_get_counters
 
             These APIs may be used to collect performance data for spi_flash APIs
             and to help understand behaviour of libraries which use SPI flash.
@@ -72,6 +74,7 @@ menu "SPI Flash driver"
 
     choice SPI_FLASH_DANGEROUS_WRITE
         bool  "Writing to dangerous flash regions"
+        default SPI_FLASH_DANGEROUS_WRITE_ALLOWED if APP_BUILD_TYPE_RAM
         default SPI_FLASH_DANGEROUS_WRITE_ABORTS
         help
             SPI flash APIs can optionally abort or return a failure code
@@ -98,7 +101,8 @@ menu "SPI Flash driver"
     config SPI_FLASH_SHARE_SPI1_BUS
         bool  "Support other devices attached to SPI1 bus"
         default n
-        depends on !IDF_TARGET_ESP32S2
+        depends on IDF_TARGET_ESP32
+        select SPI_MASTER_ISR_IN_IRAM
         help
             Each SPI bus needs a lock for arbitration among devices. This allows multiple
             devices on a same bus, but may reduce the speed of esp_flash driver access to the
@@ -143,17 +147,24 @@ menu "SPI Flash driver"
         help
             Defines how many ticks will be before returning to continue a erasing.
 
+    config SPI_FLASH_SUSPEND_QVL_SUPPORTED
+        # Internally usage
+        bool
+        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
+        default n
+
     config SPI_FLASH_AUTO_SUSPEND
         bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_ROM_IMPL
+        depends on SPI_FLASH_SUSPEND_QVL_SUPPORTED && !SPI_FLASH_ROM_IMPL
         help
-            This option is default n before ESP32-C3, because it needs bootloader support.
+            This option is default n because it can't be used in every situation. You need to
+            evaluate this feature through suspend part in `SPI Flash API` document.
 
             CAUTION: If you want to OTA to an app with this feature turned on, please make
             sure the bootloader has the support for it. (later than IDF v4.3)
 
-            Auto-suspend feature only supported by XMC chip.
+            Auto-suspend feature only supported by specific flash chips.
             If you are using an official module, please contact Espressif Business support.
             Also reading auto suspend part in `SPI Flash API` document before you enable this function.
 
@@ -218,9 +229,12 @@ menu "SPI Flash driver"
     menu "Auto-detect flash chips"
         visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
 
+        orsource "./$IDF_TARGET/Kconfig.soc_caps.in"
+
         config SPI_FLASH_SUPPORT_ISSI_CHIP
             bool "ISSI"
-            default y
+            default y if SPI_FLASH_VENDOR_ISSI_SUPPORTED
+            default n
             help
                 Enable this to support auto detection of ISSI chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
@@ -228,7 +242,8 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_MXIC_CHIP
             bool "MXIC"
-            default y
+            default y if SPI_FLASH_VENDOR_MXIC_SUPPORTED
+            default n
             help
                 Enable this to support auto detection of MXIC chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
@@ -236,7 +251,8 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_GD_CHIP
             bool "GigaDevice"
-            default y
+            default y if SPI_FLASH_VENDOR_GD_SUPPORTED
+            default n
             help
                 Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
                 directly given by ``chip_drv`` member of the chip struct. If you are using Wrover
@@ -249,7 +265,8 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_WINBOND_CHIP
             bool "Winbond"
-            default y
+            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORTED
+            default n
             help
                 Enable this to support auto detection of Winbond chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
@@ -258,8 +275,8 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_BOYA_CHIP
             bool "BOYA"
             # ESP32 doens't usually use this chip, default n to save iram.
-            default n if IDF_TARGET_ESP32
-            default y
+            default y if SPI_FLASH_VENDOR_BOYA_SUPPORTED
+            default n
             help
                 Enable this to support auto detection of BOYA chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
@@ -268,8 +285,8 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_TH_CHIP
             bool "TH"
             # ESP32 doens't usually use this chip, default n to save iram.
-            default n if IDF_TARGET_ESP32
-            default y
+            default y if SPI_FLASH_VENDOR_TH_SUPPORTED
+            default n
             help
                 Enable this to support auto detection of TH chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
@@ -301,5 +318,22 @@ menu "SPI Flash driver"
         help
             This option is invisible, and will be selected automatically
             when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+
+    config SPI_FLASH_32BIT_ADDRESS
+        bool
+        default y if ESPTOOLPY_FLASHSIZE_32MB || ESPTOOLPY_FLASHSIZE_64MB || ESPTOOLPY_FLASHSIZE_128MB
+        default n
+        help
+            This is a helper config for 32bits address flash. Invisible for users.
+
+    config SPI_FLASH_32BIT_ADDR_ENABLE
+        bool "Enable 32-bit-address (over 16MB) SPI Flash access"
+        depends on SPI_FLASH_32BIT_ADDRESS && !ESPTOOLPY_OCT_FLASH && IDF_TARGET_ESP32S3 && IDF_EXPERIMENTAL_FEATURES
+        default n
+        help
+            Enabling this option allows the CPU to access 32-bit-address flash beyond 16M range.
+            1. This option only valid for 4-line flash. Octal flash doesn't need this.
+            2. This option is experimental, which means it can't use on all flash chips stable, for more
+            information, please contact Espressif Business support.
 
 endmenu

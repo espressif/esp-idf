@@ -19,6 +19,11 @@ rangehttpserver
 dbus-python; sys_platform == 'linux'
 protobuf
 paho-mqtt
+paramiko
+netmiko
+
+# iperf_test_util
+pyecharts
 
 # for twai tests, communicate with socket can device (e.g. Canable)
 python-can

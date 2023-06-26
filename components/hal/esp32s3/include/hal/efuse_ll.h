@@ -22,32 +22,32 @@ extern "C" {
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_cnt(void)
 {
-    return EFUSE.rd_repeat_data1.reg_spi_boot_crypt_cnt;
+    return EFUSE.rd_repeat_data1.spi_boot_crypt_cnt;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel(void)
 {
-    return EFUSE.rd_repeat_data1.reg_wdt_delay_sel;
+    return EFUSE.rd_repeat_data1.wdt_delay_sel;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_type(void)
 {
-    return EFUSE.rd_repeat_data3.reg_flash_type;
+    return EFUSE.rd_repeat_data3.flash_type;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    return EFUSE.rd_mac_spi_sys_0;
+    return EFUSE.rd_mac_spi_sys_0.mac_0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)
 {
-    return EFUSE.rd_mac_spi_sys_1.reg_mac_1;
+    return EFUSE.rd_mac_spi_sys_1.mac_1;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en(void)
 {
-    return EFUSE.rd_repeat_data2.reg_secure_boot_en;
+    return EFUSE.rd_repeat_data2.secure_boot_en;
 }
 
 // use efuse_hal_get_major_chip_version() to get major chip version
@@ -59,7 +59,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_ve
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return (EFUSE.rd_mac_spi_sys_5.wafer_version_minor_high << 3) + EFUSE.rd_mac_spi_sys_3.wafer_version_minor_low;
+    return (EFUSE.rd_mac_spi_sys_5.wafer_version_minor_hi << 3) + EFUSE.rd_mac_spi_sys_3.wafer_version_minor_lo;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
@@ -108,7 +108,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_k_dig_ldo(voi
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_v_rtc_dbias20(void)
 {
     // EFUSE_BLK1,  155,    8,     BLOCK1 voltage of rtc dbias20
-    return (EFUSE.rd_mac_spi_sys_5.v_rtc_dbias20_hi << 5) + EFUSE.rd_mac_spi_sys_4.v_rtc_dbias20_low;
+    return (EFUSE.rd_mac_spi_sys_5.v_rtc_dbias20_1 << 5) + EFUSE.rd_mac_spi_sys_4.v_rtc_dbias20;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_v_dig_dbias20(void)
@@ -154,6 +154,21 @@ __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
     EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_dac_num(uint8_t val)
+{
+    EFUSE.dac_conf.dac_num = val;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint8_t val)
+{
+    EFUSE.dac_conf.dac_clk_div = val;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16_t val)
+{
+    EFUSE.wr_tim_conf1.pwr_on_num = val;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)

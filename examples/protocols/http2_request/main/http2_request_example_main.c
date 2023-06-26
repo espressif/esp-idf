@@ -17,11 +17,11 @@
 #include "freertos/task.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "lwip/apps/sntp.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "esp_netif.h"
+#include "esp_netif_sntp.h"
 #include "sdkconfig.h"
 
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
@@ -90,8 +90,12 @@ static void set_time(void)
     settimeofday(&tv, &tz);
 
     /* Start SNTP service */
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_init();
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("time.windows.com");
+    esp_netif_sntp_init(&config);
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
+        printf("Failed to update system time, continuing");
+    }
+    esp_netif_deinit();
 }
 
 static void http2_task(void *args)

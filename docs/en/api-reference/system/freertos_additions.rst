@@ -1,9 +1,7 @@
-FreeRTOS Supplemental Features
-==============================
+FreeRTOS (Supplemental Features)
+================================
 
-ESP-IDF uses a modified version of FreeRTOS v10.4.3 that contains significant changes for SMP compatibility (see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`). However, in addition to ESP-IDF FreeRTOS, various features are also provided by ESP-IDF to supplement the features offered by FreeRTOS.
-
-This document describes these supplemental features added to ESP-IDF. This document is split into the following sections:
+ESP-IDF provides multiple features to supplement the features offered by FreeRTOS. These supplemental features are available on all FreeRTOS implementations supported by ESP-IDF (i.e., ESP-IDF FreeRTOS and Amazon SMP FreeRTOS). This document describes these supplemental features and is split into the following sections:
 
 .. contents:: Contents
     :depth: 2
@@ -13,7 +11,7 @@ This document describes these supplemental features added to ESP-IDF. This docum
 Overview
 --------
 
-ESP-IDF FreeRTOS is modified version of based on the Xtensa port of FreeRTOS v10.4.3 with significant modifications for SMP compatibility (see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`). However, various new features specific to ESP-IDF FreeRTOS have been added. The features are as follows:
+ESP-IDF adds various new features to supplement the capabilities of FreeRTOS as follows:
 
 - **Ring buffers**: Ring buffers provide a FIFO buffer that can accept entries of arbitrary lengths.
 - **ESP-IDF Tick and Idle Hooks**: ESP-IDF provides multiple custom tick interrupt hooks and idle task hooks that are more numerous and more flexible when compared to FreeRTOS tick and idle hooks.
@@ -26,7 +24,13 @@ ESP-IDF FreeRTOS is modified version of based on the Xtensa port of FreeRTOS v10
 Ring Buffers
 ------------
 
-The ESP-IDF FreeRTOS ring buffer is a strictly FIFO buffer that supports arbitrarily sized items. Ring buffers are a more memory efficient alternative to FreeRTOS queues in situations where the size of items is variable. The capacity of a ring buffer is not measured by the number of items it can store, but rather by the amount of memory used for storing items. The ring buffer provides API to send an item, or to allocate space for an item in the ring buffer to be filled manually by the user. For efficiency reasons, **items are always retrieved from the ring buffer by reference**. As a result, all retrieved items *must also be returned* to the ring buffer by using :cpp:func:`vRingbufferReturnItem` or :cpp:func:`vRingbufferReturnItemFromISR`, in order for them to be removed from the ring buffer completely. The ring buffers are split into the three following types:
+FreeRTOS provides stream buffers and message buffers as the primary mechanisms to send arbitrarily sized data between tasks and ISRs. However, FreeRTOS stream buffers and message buffers have the following limitations:
+
+- Strictly single sender and single receiver
+- Data is passed by copy
+- Unable to reserve buffer space for a deferred send (i.e., send acquire)
+
+Therefore, ESP-IDF provides a separate ring buffer implementation to address the issues above. ESP-IDF ring buffers are strictly FIFO buffers that supports arbitrarily sized items. Ring buffers are a more memory efficient alternative to FreeRTOS queues in situations where the size of items is variable. The capacity of a ring buffer is not measured by the number of items it can store, but rather by the amount of memory used for storing items. The ring buffer provides APIs to send an item, or to allocate space for an item in the ring buffer to be filled manually by the user. For efficiency reasons, **items are always retrieved from the ring buffer by reference**. As a result, all retrieved items *must also be returned* to the ring buffer by using :cpp:func:`vRingbufferReturnItem` or :cpp:func:`vRingbufferReturnItemFromISR`, in order for them to be removed from the ring buffer completely. The ring buffers are split into the three following types:
 
 **No-Split buffers** will guarantee that an item is stored in contiguous memory and will not attempt to split an item under any circumstances. Use No-Split buffers when items must occupy contiguous memory. *Only this buffer type allows you to get the data item address and write to the item by yourself.* Refer the documentation of the functions :cpp:func:`xRingbufferSendAcquire` and :cpp:func:`xRingbufferSendComplete` for more details.
 
@@ -364,17 +368,6 @@ The code snippet below demonstrates a ring buffer being allocated entirely in ex
     free(buffer_struct);
     free(buffer_storage);
 
-Priority Inversion
-^^^^^^^^^^^^^^^^^^
-
-Ideally, ring buffers can be used with multiple tasks in an SMP fashion where the **highest priority task will always be serviced first.** However due to the usage of binary semaphores in the ring buffer's underlying implementation, priority inversion may occur under very specific circumstances.
-
-The ring buffer governs sending by a binary semaphore which is given whenever space is freed on the ring buffer. The highest priority task waiting to send will repeatedly take the semaphore until sufficient free space becomes available or until it times out. Ideally this should prevent any lower priority tasks from being serviced as the semaphore should always be given to the highest priority task.
-
-However, in between iterations of acquiring the semaphore, there is a **gap in the critical section** which may permit another task (on the other core or with an even higher priority) to free some space on the ring buffer and as a result give the semaphore. Therefore, the semaphore will be given before the highest priority task can re-acquire the semaphore. This will result in the **semaphore being acquired by the second-highest priority task** waiting to send, hence causing priority inversion.
-
-This side effect will not affect ring buffer performance drastically given if the number of tasks using the ring buffer simultaneously is low, and the ring buffer is not operating near maximum capacity.
-
 
 .. ------------------------------------------- ESP-IDF Tick and Idle Hooks ---------------------------------------------
 
@@ -398,7 +391,7 @@ Therefore, ESP-IDF tick and idle hooks are provided to supplement the features o
 - Multiple hooks can be registered (with a maximum of 8 hooks of each type per CPU)
 - On multi-core targets, the hooks can be asymmetric, meaning different hooks can be registered to each CPU
 
-ESP-IDF hooks can be registered and deregistered using the following API:
+ESP-IDF hooks can be registered and deregistered using the following APIs:
 
 - For tick hooks:
 
@@ -425,7 +418,7 @@ Vanilla FreeRTOS provides a Thread Local Storage Pointers (TLSP) feature. These 
 - get a task's TLSPs by calling :cpp:func:`pvTaskGetThreadLocalStoragePointer` during the task's lifetime.
 - free the memory pointed to by the TLSPs before the task is deleted.
 
-However, there can be instances where users may want the freeing of TLSP memory to be automatic. Therefore, ESP-IDF FreeRTOS provides the additional feature of TLSP deletion callbacks. These user provided deletion callbacks are called automatically when a task is deleted, thus allows the TLSP memory to be cleaned up without needing to add the cleanup logic explicitly to the code of every task.
+However, there can be instances where users may want the freeing of TLSP memory to be automatic. Therefore, ESP-IDF provides the additional feature of TLSP deletion callbacks. These user provided deletion callbacks are called automatically when a task is deleted, thus allowing the TLSP memory to be cleaned up without needing to add the cleanup logic explicitly to the code of every task.
 
 The TLSP deletion callbacks are set in a similar fashion to the TLSPs themselves.
 
@@ -437,6 +430,14 @@ When implementing TLSP callbacks, users should note the following:
 - The callback **must never attempt to block or yield** and critical sections should be kept as short as possible
 - The callback is called shortly before a deleted task's memory is freed. Thus, the callback can either be called from :cpp:func:`vTaskDelete` itself, or from the idle task.
 
+.. ----------------------------------------------- IDF Additional API --------------------------------------------------
+
+.. _freertos-idf-additional-api:
+
+IDF Additional API
+------------------
+
+The :component_file:`freertos/esp_additions/include/freertos/idf_additions.h` header contains FreeRTOS related helper functions added by ESP-IDF. Users can include this header via ``#include "freertos/idf_additions.h"``.
 
 .. ------------------------------------------ Component Specific Properties --------------------------------------------
 
@@ -462,3 +463,8 @@ Hooks API
 ^^^^^^^^^
 
 .. include-build-file:: inc/esp_freertos_hooks.inc
+
+Additional API
+^^^^^^^^^^^^^^
+
+.. include-build-file:: inc/idf_additions.inc

@@ -28,6 +28,16 @@
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
+#if CONFIG_ESP_WPA3_SAE_PWE_HUNT_AND_PECK
+#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HUNT_AND_PECK
+#define EXAMPLE_H2E_IDENTIFIER ""
+#elif CONFIG_ESP_WPA3_SAE_PWE_HASH_TO_ELEMENT
+#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HASH_TO_ELEMENT
+#define EXAMPLE_H2E_IDENTIFIER CONFIG_ESP_WIFI_PW_ID
+#elif CONFIG_ESP_WPA3_SAE_PWE_BOTH
+#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_BOTH
+#define EXAMPLE_H2E_IDENTIFIER CONFIG_ESP_WIFI_PW_ID
+#endif
 #if CONFIG_ESP_WIFI_AUTH_OPEN
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
 #elif CONFIG_ESP_WIFI_AUTH_WEP
@@ -114,10 +124,11 @@ void wifi_init_sta(void)
             /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
-	     * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
+             * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
              */
             .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
-            .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+            .sae_pwe_h2e = ESP_WIFI_SAE_MODE,
+            .sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER,
         },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );

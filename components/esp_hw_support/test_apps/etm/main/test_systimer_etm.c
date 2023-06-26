@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,7 +105,7 @@ TEST_CASE("esp_timer_etm_event", "[etm]")
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel_a, esp_timer_event, gpio_task));
     TEST_ESP_OK(esp_etm_channel_enable(etm_channel_a));
 
-    printf("create a periodic esp_timer\r\b");
+    printf("create a periodic esp_timer\r\n");
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = periodic_timer_callback,
         .name = "periodic"

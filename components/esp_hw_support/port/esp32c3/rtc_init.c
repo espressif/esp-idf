@@ -31,6 +31,16 @@ static void set_rtc_dig_dbias(void);
 
 void rtc_init(rtc_config_t cfg)
 {
+    /**
+     * When run rtc_init, it maybe deep sleep reset. Since we power down modem in deep sleep, after wakeup
+     * from deep sleep, these fields are changed and not reset. We will access two BB regs(BBPD_CTRL and
+     * NRXPD_CTRL) in rtc_sleep_pu. If PD modem and no iso, CPU will stuck when access these two BB regs
+     * and finally triggle RTC WDT. So need to clear modem Force PD.
+     *
+     * No worry about the power consumption, Because modem Force PD will be set at the end of this function.
+     */
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
 
@@ -159,43 +169,6 @@ void rtc_init(rtc_config_t cfg)
 #endif
 }
 
-rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
-{
-    rtc_vddsdio_config_t result;
-    uint32_t sdio_conf_reg = REG_READ(RTC_CNTL_SDIO_CONF_REG);
-    result.drefh = (sdio_conf_reg & RTC_CNTL_DREFH_SDIO_M) >> RTC_CNTL_DREFH_SDIO_S;
-    result.drefm = (sdio_conf_reg & RTC_CNTL_DREFM_SDIO_M) >> RTC_CNTL_DREFM_SDIO_S;
-    result.drefl = (sdio_conf_reg & RTC_CNTL_DREFL_SDIO_M) >> RTC_CNTL_DREFL_SDIO_S;
-    if (sdio_conf_reg & RTC_CNTL_SDIO_FORCE) {
-        // Get configuration from RTC
-        result.force = 1;
-        result.enable = (sdio_conf_reg & RTC_CNTL_XPD_SDIO_REG_M) >> RTC_CNTL_XPD_SDIO_REG_S;
-        result.tieh = (sdio_conf_reg & RTC_CNTL_SDIO_TIEH_M) >> RTC_CNTL_SDIO_TIEH_S;
-        return result;
-    } else {
-        result.force = 0;
-    }
-
-    // Otherwise, VDD_SDIO is controlled by bootstrapping pin
-    uint32_t strap_reg = REG_READ(GPIO_STRAP_REG);
-    result.force = 0;
-    result.tieh = (strap_reg & BIT(5)) ? RTC_VDDSDIO_TIEH_1_8V : RTC_VDDSDIO_TIEH_3_3V;
-    result.enable = 1;
-    return result;
-}
-
-void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
-{
-    uint32_t val = 0;
-    val |= (config.force << RTC_CNTL_SDIO_FORCE_S);
-    val |= (config.enable << RTC_CNTL_XPD_SDIO_REG_S);
-    val |= (config.drefh << RTC_CNTL_DREFH_SDIO_S);
-    val |= (config.drefm << RTC_CNTL_DREFM_SDIO_S);
-    val |= (config.drefl << RTC_CNTL_DREFL_SDIO_S);
-    val |= (config.tieh << RTC_CNTL_SDIO_TIEH_S);
-    val |= RTC_CNTL_SDIO_PD_EN;
-    REG_WRITE(RTC_CNTL_SDIO_CONF_REG, val);
-}
 
 static void set_ocode_by_efuse(int calib_version)
 {

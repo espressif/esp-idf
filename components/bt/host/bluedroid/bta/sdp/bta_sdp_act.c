@@ -546,9 +546,9 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
 
 /*******************************************************************************
 **
-** Function     bta_sdp_record
+** Function     bta_sdp_create_record
 **
-** Description  Discovers all sdp records for an uuid on remote device
+** Description  Creates an SDP record for a handle
 **
 ** Returns      void
 **
@@ -556,19 +556,19 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
 void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
-    tBTA_SDP bta_sdp;
+    tBTA_SDP_CREATE_RECORD_USER bta_sdp = {0};
     bta_sdp.status = BTA_SDP_SUCCESS;
     bta_sdp.handle = (int)p_data->record.user_data;
     if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, &bta_sdp, p_data->record.user_data);
+        bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, (tBTA_SDP *)&bta_sdp, p_data->record.user_data);
     }
 }
 
 /*******************************************************************************
 **
-** Function     bta_sdp_create_record
+** Function     bta_sdp_remove_record
 **
-** Description  Discovers all sdp records for an uuid on remote device
+** Description  Removes an SDP record
 **
 ** Returns      void
 **

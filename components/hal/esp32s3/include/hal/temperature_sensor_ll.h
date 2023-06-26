@@ -29,6 +29,8 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_ADC_FACTOR     (0.4386)
 #define TEMPERATURE_SENSOR_LL_DAC_FACTOR     (27.88)
 #define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR  (20.52)
+#define TEMPERATURE_SENSOR_LL_MEASURE_MAX    (125)
+#define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
 
 /**
  * @brief Enable the temperature sensor power.

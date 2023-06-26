@@ -164,15 +164,15 @@ Pytest Execution Process
 
       1. ``pexpect_proc``: `pexpect <https://github.com/pexpect/pexpect>`__ instance
 
-      2. ``app``: `IdfApp <https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.app.IdfApp>`__ instance
+      2. ``app``: `IdfApp <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.app.IdfApp>`__ instance
 
          The information of the app, like sdkconfig, flash_files, partition_table, etc., would be parsed at this phase.
 
-      3. ``serial``: `IdfSerial <https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.serial.IdfSerial>`__ instance
+      3. ``serial``: `IdfSerial <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.serial.IdfSerial>`__ instance
 
          The port of the host which connected to the target type parsed from the app would be auto-detected. The flash files would be auto flashed.
 
-      4. ``dut``: `IdfDut <https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.dut.IdfDut>`__ instance
+      4. ``dut``: `IdfDut <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__ instance
 
    2. Run the real test function
 
@@ -269,7 +269,7 @@ Expect From the Serial output
 
 When we're using ``dut.expect(...)``, the string would be compiled into regex at first, and then seeks through the serial output until the compiled regex is matched, or a timeout is exceeded. You may have to pay extra attention when the string contains regex keyword characters, like parentheses, or square brackets.
 
-Actually using ``dut.expect_exact(...)`` here is better, since it would seek until the string is matched. For further reading about the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting>`__.
+Actually using ``dut.expect_exact(...)`` here is better, since it would seek until the string is matched. For further reading about the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting.html>`__.
 
 Advanced Examples
 -----------------
@@ -543,18 +543,50 @@ The binaries in the target test jobs are downloaded from build jobs, the artifac
 Run the Tests Locally
 =====================
 
-The local executing process is the same as the CI process.
+First you need to install ESP-IDF with additional python requirements:
 
-For example, if you want to run all the esp32 tests under the ``$IDF_PATH/examples/system/console/basic`` folder, you may:
-
-.. code:: shell
+.. code-block:: shell
 
    $ cd $IDF_PATH
    $ bash install.sh --enable-pytest
    $ . ./export.sh
+
+By default, the pytest script will look for the build directory in this order:
+
+- ``build_<target>_<sdkconfig>``
+- ``build_<target>``
+- ``build_<sdkconfig>``
+- ``build``
+
+Which means, the simplest way to run pytest is calling ``idf.py build``.
+
+For example, if you want to run all the esp32 tests under the ``$IDF_PATH/examples/get-started/hello_world`` folder, you should run:
+
+.. code-block:: shell
+
+   $ cd examples/get-started/hello_world
+   $ idf.py build
+   $ pytest --target esp32
+
+If you have multiple sdkconfig files in your test app, like those ``sdkconfig.ci.*`` files, the simple ``idf.py build`` won't apply the extra sdkconfig files. Let's take ``$IDF_PATH/examples/system/console/basic`` as an example.
+
+If you want to test this app with config ``history``, and build with ``idf.py build``, you should run
+
+.. code-block:: shell
+
+   $ cd examples/system/console/basic
+   $ idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.history" build
+   $ pytest --target esp32 --sdkconfig history
+
+If you want to build and test with all sdkconfig files at the same time, you should use our CI script as an helper script:
+
+.. code-block:: shell
+
    $ cd examples/system/console/basic
    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
    $ pytest --target esp32
+
+The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
 
 Tips and Tricks
 ===============

@@ -26,7 +26,7 @@ FatFs 与 VFS 配合使用
 
 2. 调用 :cpp:func:`ff_diskio_register`，为步骤 1 中的驱动编号注册磁盘 I/O 驱动；
 
-3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://www.elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
+3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
 
 4. 调用 C 标准库和 POSIX API 对路径中带有步骤 1 中所述前缀的文件（例如，``"/sdcard/hello.txt"``）执行打开、读取、写入、擦除、复制等操作。文件系统默认使用 `8.3 文件名 <https://en.wikipedia.org/wiki/8.3_filename>`_ 格式 (SFN)。若您需要使用长文件名 (LFN)，启用 :ref:`CONFIG_FATFS_LONG_FILENAMES` 选项。请参考 `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_，查看更多信息；
 
@@ -87,6 +87,8 @@ FatFs 磁盘 I/O 层
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
 
+.. _fatfs-partition-generator:
+
 FatFs 分区生成器
 -------------------------
 
@@ -98,6 +100,7 @@ FatFs 分区生成器
 
 目前的最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 ``.`` 字符以及其他字符，如 ``+``、``,``、``;``、``=``、``[`` and ``]`` 等。
 
+如您想进一步了解 FatFs 分区生成器或分区分析器，请查看 :doc:`Generating and parsing FAT partition on host <./fatfsgen>`。
 
 构建系统中使用 FatFs 分区生成器
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

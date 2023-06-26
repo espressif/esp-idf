@@ -20,6 +20,3 @@ examples/peripherals/dedicated_gpio/soft_uart:
     - if: SOC_DEDICATED_GPIO_SUPPORTED != 1
       temporary: false
       reason: Target doesn't support dedicated GPIO
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: Xtensa targets not supported yet

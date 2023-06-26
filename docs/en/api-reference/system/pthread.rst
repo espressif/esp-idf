@@ -30,6 +30,8 @@ The following standard APIs are implemented in ESP-IDF.
 
 Refer to standard POSIX Threads documentation, or pthread.h, for details about the standard arguments and behaviour of each function. Differences or limitations compared to the standard APIs are noted below.
 
+.. _posix_thread_api:
+
 Thread APIs
 ^^^^^^^^^^^
 
@@ -98,19 +100,48 @@ Static initializer constant ``PTHREAD_COND_INITIALIZER`` is supported.
 
 .. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
 
+Semaphores
+^^^^^^^^^^
+
+In IDF, POSIX *unnamed* semaphores are implemented. The accessible API is described below. It implements `semaphores as specified in the POSIX standard <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/semaphore.h.html>`_, unless specified otherwise.
+
+* `sem_init() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_init.html>`_
+* `sem_destroy() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_destroy.html>`_
+
+  - ``pshared`` is ignored. Semaphores can always be shared between FreeRTOS tasks.
+
+* `sem_post() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_post.html>`_
+
+  - If the semaphore has a value of ``SEM_VALUE_MAX`` already, -1 is returned and ``errno`` is set to ``EAGAIN``.
+
+* `sem_wait() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_wait.html>`_
+* `sem_trywait() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_trywait.html>`_
+* `sem_timedwait() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_timedwait.html>`_
+
+  - The time value passed by abstime will be rounded up to the next FreeRTOS tick. 
+  - The actual timeout will happen after the tick the time was rounded to and before the following tick.
+  - It is possible, though unlikely, that the task is preempted directly after the timeout calculation, delaying the timeout of the following blocking operating system call by the duration of the preemption.
+
+* `sem_getvalue() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_getvalue.html>`_
+
 Read/Write Locks
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
+The following API functions of the POSIX reader-writer locks specification are implemented:
 
-* ``pthread_rwlock_init()``
+* `pthread_rwlock_init() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_init.html>`_
+
   - The ``attr`` argument is not implemented and is ignored.
-* ``pthread_rwlock_destroy()``
-* ``pthread_rwlock_rdlock()``
-* ``pthread_rwlock_wrlock()``
-* ``pthread_rwlock_unlock()``
 
-Static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
+* `pthread_rwlock_destroy() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_destroy.html>`_
+* `pthread_rwlock_rdlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_rdlock.html>`_
+* `pthread_rwlock_tryrdlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_tryrdlock.html>`_
+* `pthread_rwlock_wrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_wrlock.html>`_
+* `pthread_rwlock_trywrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_trywrlock.html>`_
+* `pthread_rwlock_unlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_unlock.html>`_
 
-.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
+The static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
+
+.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs.
 
 Thread-Specific Data
 ^^^^^^^^^^^^^^^^^^^^
@@ -160,4 +191,3 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_pthread.inc
-

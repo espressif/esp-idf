@@ -20,8 +20,9 @@
 #include "esp_timer.h"
 #include "driver/ledc.h"
 #include "soc/ledc_struct.h"
+#include "esp_clk_tree.h"
 
-#define PULSE_IO      18
+#define PULSE_IO      5
 
 #define TEST_PWM_FREQ 2000
 
@@ -83,7 +84,7 @@ static void timer_duty_set_get(ledc_mode_t speed_mode, ledc_channel_t channel, u
 {
     TEST_ESP_OK(ledc_set_duty(speed_mode, channel, duty));
     TEST_ESP_OK(ledc_update_duty(speed_mode, channel));
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(duty, ledc_get_duty(speed_mode, channel));
 }
 
@@ -102,6 +103,7 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
 
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    vTaskDelay(5 / portTICK_PERIOD_MS);
 
     // duty ratio: (2^duty)/(2^timer_bit)
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 0);
@@ -373,11 +375,13 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     // Get duty value right before stopping the fade
     uint32_t duty_before_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
+    // PWM signal is 2000 Hz. It may take one cycle (500 us) at maximum to stablize the duty.
+    esp_rom_delay_us(500);
+    // Get duty value now, which is at least one cycle after the ledc_fade_stop function returns
+    uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     fade_stop = esp_timer_get_time();
     time_ms = (fade_stop - fade_start) / 1000;
     TEST_ASSERT_TRUE(llabs(time_ms - 127) < 20);
-    // Get duty value after fade_stop returns (give at least one cycle for the duty set in fade_stop to take effective)
-    uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ASSERT_INT32_WITHIN(4, duty_before_stop, duty_after_stop); // 4 is the scale for one step in the last fade
     vTaskDelay(300 / portTICK_PERIOD_MS);
     // Duty should not change any more after ledc_fade_stop returns
@@ -389,7 +393,81 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
 }
 #endif // SOC_LEDC_SUPPORT_FADE_STOP
 
-#if SOC_PCNT_SUPPORTED // Note. C3, C2, H4 do not have PCNT peripheral, the following test cases cannot be tested
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+TEST_CASE("LEDC gamma ram write and read test", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // Construct fade parameters
+    ledc_fade_param_config_t *fade_params = (ledc_fade_param_config_t *) heap_caps_calloc(SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, sizeof(ledc_fade_param_config_t), MALLOC_CAP_DEFAULT);
+    for (int i = 0; i < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX; i++) {
+        fade_params[i].dir = (i + 1) % 2;
+        fade_params[i].step_num = i + 1;
+        fade_params[i].cycle_num = i + 2;
+        fade_params[i].scale = i + 3;
+    }
+
+    // Write into gamma ram
+    TEST_ESP_OK(ledc_set_multi_fade(test_speed_mode, LEDC_CHANNEL_0, 0, fade_params, SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX));
+
+    // Read out from gamma ram and check correctness
+    for (int i = 0; i < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX; i++) {
+        uint32_t dir, step, cycle, scale;
+        ledc_read_fade_param(test_speed_mode, LEDC_CHANNEL_0, i, &dir, &cycle, &scale, &step);
+        TEST_ASSERT_EQUAL_INT32((i + 1) % 2, dir);
+        TEST_ASSERT_EQUAL_INT32(i + 1, step);
+        TEST_ASSERT_EQUAL_INT32(i + 2, cycle);
+        TEST_ASSERT_EQUAL_INT32(i + 3, scale);
+    }
+
+    // Deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+
+TEST_CASE("LEDC multi fade test", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // Construct fade parameters
+    const ledc_fade_param_config_t fade_params[] = {
+        {.dir = 1, .step_num = 100, .cycle_num = 1, .scale = 1},
+        {.dir = 1, .step_num = 50, .cycle_num = 2, .scale = 2},
+        {.dir = 1, .step_num = 200, .cycle_num = 10, .scale = 5},
+        {.dir = 0, .step_num = 100, .cycle_num = 5, .scale = 5},
+        {.dir = 1, .step_num = 1000, .cycle_num = 1, .scale = 1},
+        {.dir = 0, .step_num = 200, .cycle_num = 1, .scale = 1},
+        {.dir = 1, .step_num = 1, .cycle_num = 1000, .scale = 1000},
+    };
+    uint32_t fade_range = 7;
+    int32_t start_duty = 2000;
+    int32_t end_duty = start_duty;
+    uint32_t total_cycles = 0;
+    for (int i = 0; i < fade_range; i++) {
+        end_duty += ((fade_params[i].dir == 1) ? (1) : (-1)) * fade_params[i].step_num * fade_params[i].scale;
+        total_cycles += fade_params[i].step_num * fade_params[i].cycle_num;
+    }
+
+    TEST_ESP_OK(ledc_set_multi_fade(test_speed_mode, LEDC_CHANNEL_0, start_duty, fade_params, fade_range));
+
+    int64_t fade_start, fade_end;
+    fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    fade_end = esp_timer_get_time();
+    int64_t time_ms = (fade_end - fade_start) / 1000;
+    // Check time escaped is expected
+    // The time it takes to fade should exactly match with the given parameters, therefore, acceptable error range is small
+    TEST_ASSERT_TRUE(llabs(time_ms - total_cycles * 1000 / TEST_PWM_FREQ) < 2);
+    // Check the duty at the end of the fade
+    TEST_ASSERT_EQUAL_INT32((uint32_t)end_duty, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+
+    // Deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+#endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+
+#if SOC_PCNT_SUPPORTED // Note. C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
 
 #include "driver/pulse_cnt.h"
 
@@ -438,13 +516,14 @@ static int wave_count(int last_time)
 }
 
 // the PCNT will count the frequency of it
-static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t freq_hz, int16_t real_freq, int16_t error)
+static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t desired_freq, int16_t theoretical_freq, int16_t error)
 {
-    int count;
-    TEST_ESP_OK(ledc_set_freq(speed_mode, timer, freq_hz));
-    count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(error, real_freq, count);
-    TEST_ASSERT_EQUAL_INT32(real_freq, ledc_get_freq(speed_mode, timer));
+    int real_freq;
+    TEST_ESP_OK(ledc_set_freq(speed_mode, timer, desired_freq));
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    real_freq = wave_count(1000);
+    TEST_ASSERT_INT16_WITHIN(error, theoretical_freq, real_freq);
+    TEST_ASSERT_EQUAL_INT32(theoretical_freq, ledc_get_freq(speed_mode, timer));
 }
 
 static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, ledc_timer_t timer, ledc_mode_t speed_mode)
@@ -467,9 +546,23 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 20);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 50);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8992, 50);
+    frequency_set_get(speed_mode, timer, 100, 100, 20);
+    frequency_set_get(speed_mode, timer, 5000, 5000, 50);
+    // Try a frequency that couldn't be exactly achieved, requires rounding
+    uint32_t theoretical_freq = 9000;
+    uint32_t clk_src_freq = 0;
+    esp_clk_tree_src_get_freq_hz((soc_module_clk_t)TEST_DEFAULT_CLK_CFG, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &clk_src_freq);
+    if (clk_src_freq == 80 * 1000 * 1000) {
+        theoretical_freq = 8992;
+    } else if (clk_src_freq == 96 * 1000 * 1000) {
+        theoretical_freq = 9009;
+    }
+    frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 50);
+
+    // Pause and de-configure the timer so that it won't affect the following test cases
+    TEST_ESP_OK(ledc_timer_pause(speed_mode, timer));
+    ledc_time_config.deconfigure = 1;
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 }
 
 TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
@@ -500,8 +593,8 @@ static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    if (clk_src == LEDC_USE_RTC8M_CLK) {
-        // RTC8M_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
+    if (clk_src == LEDC_USE_RC_FAST_CLK) {
+        // RC_FAST_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
         TEST_ASSERT_UINT32_WITHIN(5, freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
     } else {
         TEST_ASSERT_EQUAL_INT32(freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
@@ -526,8 +619,10 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     if (test_speed_mode == LEDC_LOW_SPEED_MODE) {
-        printf("Check LEDC_USE_RTC8M_CLK for a 100Hz signal\n");
-        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RTC8M_CLK, 10, 100);
+#if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION // Otherwise, the frequency of output PWM signal may not be very accurate
+        printf("Check LEDC_USE_RC_FAST_CLK for a 100Hz signal\n");
+        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RC_FAST_CLK, 10, 100);
+#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
         printf("Check LEDC_USE_XTAL_CLK for a 400Hz signal\n");
         timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, 13, 400);

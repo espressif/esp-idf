@@ -74,7 +74,7 @@ Linux
         crw-rw---- 1 root dialout 188, 1 Jul 10 19:04 /dev/ttyUSB1
 
 
-3.  根据 `OpenOCD README 文档 <https://sourceforge.net/p/openocd/code/ci/master/tree/README>`_ 中 “Permissions delegation” 小节的介绍，设置这两个 USB 端口的访问权限。
+3.  设置 OpenOCD 所支持 USB 设备的访问权限，请将 `udev 规则文件 <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ 复制到 ``/etc/udev/rules.d`` 目录中。
 
 4.  注销并重新登录 Linux 系统，然后重新插拔板子的电源使之前的改动生效。在终端再次输入 ``ls -l /dev/ttyUSB*`` 命令进行验证，查看这两个设备的组所有者是否已经从 ``dialout`` 更改为 ``plugdev``:
 

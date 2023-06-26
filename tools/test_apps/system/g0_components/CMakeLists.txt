@@ -26,10 +26,9 @@ idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 project(g0_components)
 
-# As a workaround for ESP32-C2, we need to define the MMU page size here, until MMU hal-driver
-# is refactored
-if(CONFIG_IDF_TARGET_ESP32C2 OR CONFIG_IDF_TARGET_ESP32C6 OR CONFIG_IDF_TARGET_ESP32H2)
-    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_MMU_PAGE_SIZE=64" APPEND)
+if(CONFIG_IDF_TARGET_ESP32C2)
+    # clk_tree hal-driver needs CONFIG_XTAL_FREQ
+    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_XTAL_FREQ=26" APPEND)
 endif()
 
 # Currently, only support a single core on Xtensa targets.

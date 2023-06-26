@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # Light Sleep Example
 
@@ -14,6 +14,11 @@ The example enables the following wakeup sources:
 - UART0: wake up the chip when the uart rx pin (default GPIO6) receive more than 3 edges.
 
 The example also prints time spent in light sleep mode to illustrate that timekeeping continues while the chip is in light sleep.
+
+Note: If you find that the bottom current measured by running this example is larger than what is declared on the datasheet, you can try the following methods:
+
+- configure the CPU to be powered down via menuconfig(not all esp series support this feature)
+- configure the SPI Flash to be powered down via menuconfig
 
 ## How to Use Example
 

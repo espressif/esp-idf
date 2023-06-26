@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1470,81 +1470,6 @@ extern "C" {
 #define UART_RXD_EDGE_CNT_M  (UART_RXD_EDGE_CNT_V << UART_RXD_EDGE_CNT_S)
 #define UART_RXD_EDGE_CNT_V  0x000003FFU
 #define UART_RXD_EDGE_CNT_S  0
-
-/** UART_CLK_CONF_REG register
- *  UART core clock configuration
- */
-#define UART_CLK_CONF_REG(i) (REG_UART_BASE(i) + 0x88)
-/** UART_SCLK_DIV_B : R/W; bitpos: [5:0]; default: 0;
- *  The  denominator of the frequency divider factor.
- */
-#define UART_SCLK_DIV_B    0x0000003FU
-#define UART_SCLK_DIV_B_M  (UART_SCLK_DIV_B_V << UART_SCLK_DIV_B_S)
-#define UART_SCLK_DIV_B_V  0x0000003FU
-#define UART_SCLK_DIV_B_S  0
-/** UART_SCLK_DIV_A : R/W; bitpos: [11:6]; default: 0;
- *  The numerator of the frequency divider factor.
- */
-#define UART_SCLK_DIV_A    0x0000003FU
-#define UART_SCLK_DIV_A_M  (UART_SCLK_DIV_A_V << UART_SCLK_DIV_A_S)
-#define UART_SCLK_DIV_A_V  0x0000003FU
-#define UART_SCLK_DIV_A_S  6
-/** UART_SCLK_DIV_NUM : R/W; bitpos: [19:12]; default: 1;
- *  The integral part of the frequency divider factor.
- */
-#define UART_SCLK_DIV_NUM    0x000000FFU
-#define UART_SCLK_DIV_NUM_M  (UART_SCLK_DIV_NUM_V << UART_SCLK_DIV_NUM_S)
-#define UART_SCLK_DIV_NUM_V  0x000000FFU
-#define UART_SCLK_DIV_NUM_S  12
-/** UART_SCLK_SEL : R/W; bitpos: [21:20]; default: 3;
- *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
- */
-#define UART_SCLK_SEL    0x00000003U
-#define UART_SCLK_SEL_M  (UART_SCLK_SEL_V << UART_SCLK_SEL_S)
-#define UART_SCLK_SEL_V  0x00000003U
-#define UART_SCLK_SEL_S  20
-/** UART_SCLK_EN : R/W; bitpos: [22]; default: 1;
- *  Set this bit to enable UART Tx/Rx clock.
- */
-#define UART_SCLK_EN    (BIT(22))
-#define UART_SCLK_EN_M  (UART_SCLK_EN_V << UART_SCLK_EN_S)
-#define UART_SCLK_EN_V  0x00000001U
-#define UART_SCLK_EN_S  22
-/** UART_RST_CORE : R/W; bitpos: [23]; default: 0;
- *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
- */
-#define UART_RST_CORE    (BIT(23))
-#define UART_RST_CORE_M  (UART_RST_CORE_V << UART_RST_CORE_S)
-#define UART_RST_CORE_V  0x00000001U
-#define UART_RST_CORE_S  23
-/** UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
- *  Set this bit to enable UART Tx clock.
- */
-#define UART_TX_SCLK_EN    (BIT(24))
-#define UART_TX_SCLK_EN_M  (UART_TX_SCLK_EN_V << UART_TX_SCLK_EN_S)
-#define UART_TX_SCLK_EN_V  0x00000001U
-#define UART_TX_SCLK_EN_S  24
-/** UART_RX_SCLK_EN : R/W; bitpos: [25]; default: 1;
- *  Set this bit to enable UART Rx clock.
- */
-#define UART_RX_SCLK_EN    (BIT(25))
-#define UART_RX_SCLK_EN_M  (UART_RX_SCLK_EN_V << UART_RX_SCLK_EN_S)
-#define UART_RX_SCLK_EN_V  0x00000001U
-#define UART_RX_SCLK_EN_S  25
-/** UART_TX_RST_CORE : R/W; bitpos: [26]; default: 0;
- *  Write 1 then write 0 to this bit to reset UART Tx.
- */
-#define UART_TX_RST_CORE    (BIT(26))
-#define UART_TX_RST_CORE_M  (UART_TX_RST_CORE_V << UART_TX_RST_CORE_S)
-#define UART_TX_RST_CORE_V  0x00000001U
-#define UART_TX_RST_CORE_S  26
-/** UART_RX_RST_CORE : R/W; bitpos: [27]; default: 0;
- *  Write 1 then write 0 to this bit to reset UART Rx.
- */
-#define UART_RX_RST_CORE    (BIT(27))
-#define UART_RX_RST_CORE_M  (UART_RX_RST_CORE_V << UART_RX_RST_CORE_S)
-#define UART_RX_RST_CORE_V  0x00000001U
-#define UART_RX_RST_CORE_S  27
 
 /** UART_DATE_REG register
  *  UART Version register

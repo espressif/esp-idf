@@ -44,7 +44,7 @@ void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data,
         copy_words = MIN(word_len, copy_words);
 
         // Wait for SHA engine idle
-        while (REG_READ(SHA_256_BUSY_REG) != 0) { }
+        while (_DPORT_REG_READ(SHA_256_BUSY_REG) != 0) { }
 
         // Copy to memory block
         for (size_t i = 0; i < copy_words; i++) {
@@ -61,9 +61,9 @@ void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data,
         // If we loaded a full block, run the SHA engine
         if (block_count == BLOCK_WORDS) {
             if (words_hashed == BLOCK_WORDS) {
-                REG_WRITE(SHA_256_START_REG, 1);
+                _DPORT_REG_WRITE(SHA_256_START_REG, 1);
             } else {
-                REG_WRITE(SHA_256_CONTINUE_REG, 1);
+                _DPORT_REG_WRITE(SHA_256_CONTINUE_REG, 1);
             }
             block_count = 0;
         }
@@ -103,9 +103,9 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
     assert(words_hashed % BLOCK_WORDS == 0);
 
-    while (REG_READ(SHA_256_BUSY_REG) == 1) { }
-    REG_WRITE(SHA_256_LOAD_REG, 1);
-    while (REG_READ(SHA_256_BUSY_REG) == 1) { }
+    while (_DPORT_REG_READ(SHA_256_BUSY_REG) == 1) { }
+    _DPORT_REG_WRITE(SHA_256_LOAD_REG, 1);
+    while (_DPORT_REG_READ(SHA_256_BUSY_REG) == 1) { }
 
     uint32_t *digest_words = (uint32_t *)digest;
     uint32_t *sha_text_reg = (uint32_t *)(SHA_TEXT_BASE);

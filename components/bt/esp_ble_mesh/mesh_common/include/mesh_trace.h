@@ -120,6 +120,52 @@ extern "C" {
 #define NET_BUF_SIMPLE_ASSERT(cond)
 #endif
 
+#if CONFIG_BLE_MESH_BQB_TEST_LOG
+/**
+ * For example, the test case "MESH/NODE/TNPT/BV-01-C"
+ * could use BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT, "msg %s", msg)
+ * to print some message.
+ */
+enum BLE_MESH_BQB_TEST_LOG_LEVEL {
+    BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_ALL           = 0,        /* Output all BQB related test log */
+    BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE      = BIT(0),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_PVNR      = BIT(1),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_CFGCL     = BIT(2),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_SR        = BIT(3),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_CL        = BIT(4),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_PBADV         = BIT(5),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_MPS           = BIT(6),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_PROV          = BIT(7),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_BCN           = BIT(8),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET           = BIT(9),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_RLY           = BIT(10),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT          = BIT(11),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_IVU           = BIT(12),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_KR            = BIT(13),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_FRND_FN       = BIT(14),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_FRND_LPN      = BIT(15),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_PROX          = BIT(16),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_MPXS          = BIT(17),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_CFG           = BIT(18),
+    BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_HM            = BIT(19),
+};
+
+#define BLE_MESH_BQB_TEST_LOG_LEVEL_OUTPUT_NONE      0x000FFFFF
+
+#endif /* CONFIG_BLE_MESH_BQB_TEST_LOG */
+
+#if (CONFIG_BLE_MESH_BQB_TEST_LOG && !CONFIG_BLE_MESH_NO_LOG)
+extern bool bt_mesh_bqb_test_flag_check(uint32_t flag_mask);
+extern int bt_mesh_bqb_test_flag_set(uint32_t value);
+#define BT_BQB(flag_mask, fmt, args...)                             \
+            do {                                                    \
+                if (bt_mesh_bqb_test_flag_check(flag_mask))         \
+                    BLE_MESH_PRINT_I("BLE_MESH_BQB", fmt, ## args); \
+            } while (0)
+#else
+#define BT_BQB(flag_mask, fmt, args...)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -982,16 +982,20 @@ esp_err_t hid_host_claim_interface(const hid_host_interface_config_t *iface_conf
 
     HID_RETURN_ON_ERROR( hid_host_interface_prepare_transfer(iface) );
 
+    /* Set infinity duration for output report = 0. Only reporting when a
+     * change is detected in the report data.
+     */
     HID_RETURN_ON_ERROR( hid_class_request_set_idle(iface, 0, 0) );
 
-    if (iface->proto == HID_PROTOCOL_MOUSE) {
-        HID_RETURN_ON_ERROR (hid_class_request_get_protocol(iface, &report_protocol) );
-        if (report_protocol != HID_REPORT_PROTOCOL_BOOT) {
-            HID_RETURN_ON_ERROR( hid_class_request_set_protocol(iface, HID_REPORT_PROTOCOL_BOOT) );
-        }
+    // Set BOOT protocol for interface
+    HID_RETURN_ON_ERROR (hid_class_request_get_protocol(iface, &report_protocol) );
+
+    if (report_protocol != HID_REPORT_PROTOCOL_BOOT) {
+        HID_RETURN_ON_ERROR( hid_class_request_set_protocol(iface, HID_REPORT_PROTOCOL_BOOT) );
         // verify that protocol has been successfully changed
         report_protocol = HID_REPORT_PROTOCOL_MAX;
         HID_RETURN_ON_ERROR (hid_class_request_get_protocol(iface, &report_protocol) );
+
         if (report_protocol != HID_REPORT_PROTOCOL_BOOT) {
             ESP_LOGE(TAG, "Interface %d Set BOOT Protocol Failure, protocol=%d",
                      iface->num,

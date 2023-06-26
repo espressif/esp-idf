@@ -27,12 +27,14 @@ extern "C" {
 #define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_CH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+
 #define LEDC_LL_GLOBAL_CLOCKS { \
                                 LEDC_SLOW_CLK_PLL_DIV, \
                                 LEDC_SLOW_CLK_XTAL, \
-                                LEDC_SLOW_CLK_RTC8M, \
+                                LEDC_SLOW_CLK_RC_FAST, \
                               }
-#define LEDC_LL_PLL_DIV_CLK_FREQ   (80 * 1000000) // PLL_80M_CLK: 80MHz
+
+#define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
 
 
 /**
@@ -63,7 +65,7 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
     uint32_t clk_sel_val = 0;
     if (slow_clk_sel == LEDC_SLOW_CLK_PLL_DIV) {
         clk_sel_val = 1;
-    } else if (slow_clk_sel == LEDC_SLOW_CLK_RTC8M) {
+    } else if (slow_clk_sel == LEDC_SLOW_CLK_RC_FAST) {
         clk_sel_val = 2;
     } else if (slow_clk_sel == LEDC_SLOW_CLK_XTAL) {
         clk_sel_val = 3;
@@ -86,7 +88,7 @@ static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
     if (clk_sel_val == 1) {
         *slow_clk_sel = LEDC_SLOW_CLK_PLL_DIV;
     } else if (clk_sel_val == 2) {
-        *slow_clk_sel = LEDC_SLOW_CLK_RTC8M;
+        *slow_clk_sel = LEDC_SLOW_CLK_RC_FAST;
     } else if (clk_sel_val == 3) {
         *slow_clk_sel = LEDC_SLOW_CLK_XTAL;
     } else {
@@ -230,6 +232,21 @@ static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
 }
 
 /**
+ * @brief Get LEDC max duty
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
+ * @param max_duty Pointer to accept the max duty
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t *max_duty)
+{
+    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_res));
+}
+
+/**
  * @brief Update channel configure when select low speed mode
  *
  * @param hw Beginning address of the peripheral registers
@@ -241,22 +258,6 @@ static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
 static inline void ledc_ll_ls_channel_update(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
     hw->channel_group[speed_mode].channel[channel_num].conf0.para_up = 1;
-}
-
-/**
- * @brief Get LEDC max duty
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param max_duty Pointer to accept the max duty
- *
- * @return None
- */
-static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *max_duty)
-{
-    uint32_t timer_sel = hw->channel_group[speed_mode].channel[channel_num].conf0.timer_sel;
-    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_res));
 }
 
 /**
@@ -335,21 +336,6 @@ static inline void ledc_ll_set_duty_direction(ledc_dev_t *hw, ledc_mode_t speed_
 }
 
 /**
- * @brief Get LEDC duty change direction
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param duty_direction Pointer to accept the LEDC duty change direction, increase or decrease
- *
- * @return None
- */
-static inline void ledc_ll_get_duty_direction(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, ledc_duty_direction_t *duty_direction)
-{
-    *duty_direction = (ledc_duty_direction_t)(hw->channel_gamma_group[speed_mode].channel[channel_num].wr.gamma_duty_inc);
-}
-
-/**
  * @brief Set the number of increased or decreased times
  *
  * @param hw Beginning address of the peripheral registers
@@ -395,16 +381,35 @@ static inline void ledc_ll_set_duty_scale(ledc_dev_t *hw, ledc_mode_t speed_mode
 }
 
 /**
- * @brief Set the range number of the specified duty configurations written to gamma_wr register
+ * @brief Function to set fade parameters all-in-one
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
  * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_FADE_RANGE_MAX-1)), it specifies to which range the configurations in gamma_wr register apply
+ * @param dir LEDC duty change direction, increase or decrease
+ * @param cycle The duty cycles
+ * @param scale The step scale
+ * @param step The number of increased or decreased times
  *
  * @return None
  */
-static inline void ledc_ll_set_duty_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
+static inline void ledc_ll_set_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
+{
+    uint32_t val = (dir << LEDC_CH0_GAMMA_DUTY_INC_S) | (cycle << LEDC_CH0_GAMMA_DUTY_CYCLE_S) | (scale << LEDC_CH0_GAMMA_SCALE_S) | (step << LEDC_CH0_GAMMA_DUTY_NUM_S);
+    hw->channel_gamma_group[speed_mode].channel[channel_num].wr.val = val;
+}
+
+/**
+ * @brief Set the range number of the specified duty configurations to be written from gamma_wr register to gamma ram
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to write
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_range_wr_addr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
 {
     hw->channel_gamma_group[speed_mode].channel[channel_num].wr_addr.gamma_wr_addr = duty_range;
 }
@@ -415,13 +420,65 @@ static inline void ledc_ll_set_duty_range(ledc_dev_t *hw, ledc_mode_t speed_mode
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
  * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param range_num Total number of ranges (1 - SOC_LEDC_GAMMA_FADE_RANGE_MAX) of the fading configured
+ * @param range_num Total number of ranges (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX) of the fading configured
  *
  * @return None
  */
 static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t range_num)
 {
     hw->channel_gamma_conf_group[speed_mode].gamma_conf[channel_num].gamma_entry_num = range_num;
+}
+
+/**
+ * @brief Get the total number of ranges in one fading
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param range_num Pointer to accept fade range number
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *range_num)
+{
+    *range_num = hw->channel_gamma_conf_group[speed_mode].gamma_conf[channel_num].gamma_entry_num;
+}
+
+/**
+ * @brief Set the range number of the specified duty configurations to be read from gamma ram to gamma_rd register
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to read
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_duty_range_rd_addr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t duty_range)
+{
+    hw->channel_gamma_group[speed_mode].channel[channel_num].rd_addr.gamma_rd_addr = duty_range;
+}
+
+/**
+ * @brief Get fade configurations in gamma_rd register
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param dir Pointer to accept fade direction value
+ * @param cycle Pointer to accept fade cycle value
+ * @param scale Pointer to accept fade scale value
+ * @param step Pointer to accept fade step value
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+{
+    uint32_t val = hw->channel_gamma_group[speed_mode].channel[channel_num].rd_data.gamma_rd_data;
+    *dir = (val & LEDC_CH0_GAMMA_DUTY_INC_M) >> LEDC_CH0_GAMMA_DUTY_INC_S;
+    *cycle = (val & LEDC_CH0_GAMMA_DUTY_CYCLE_M) >> LEDC_CH0_GAMMA_DUTY_CYCLE_S;
+    *scale = (val & LEDC_CH0_GAMMA_SCALE_M) >> LEDC_CH0_GAMMA_SCALE_S;
+    *step = (val & LEDC_CH0_GAMMA_DUTY_NUM_M) >> LEDC_CH0_GAMMA_DUTY_NUM_S;
 }
 
 /**
@@ -434,6 +491,7 @@ static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mo
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool sig_out_en)
 {
     hw->channel_group[speed_mode].channel[channel_num].conf0.sig_out_en = sig_out_en;
@@ -464,6 +522,7 @@ static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void ledc_ll_set_idle_level(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t idle_level)
 {
     hw->channel_group[speed_mode].channel[channel_num].conf0.idle_lv = idle_level & 0x1;

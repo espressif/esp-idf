@@ -8,7 +8,9 @@ menu "Example Configuration"
 
     config EXAMPLE_EXTENDED_ADV
         bool
+        depends on SOC_BLE_50_SUPPORTED
         default y if SOC_ESP_NIMBLE_CONTROLLER
+        select BT_NIMBLE_EXT_ADV
         prompt "Enable Extended Adv"
         help
             Use this option to enable extended advertising in the example
@@ -18,4 +20,10 @@ menu "Example Configuration"
         prompt "Perform init deinit of nimble stack in a loop"
         help
             Enable this flag, to perform only stack Init and Deinit in a loop.
+
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        help
+            This enables bonding and encryption after connection has been established.
 endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,11 +37,10 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-/// This is the expected clock frequency
-#define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):&GPSPI2)
 
-#define SPI_LL_DATA_MAX_BIT_LEN (1 << 18)
+#define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
+#define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -93,6 +92,29 @@ typedef enum {
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+
+/**
+ * Select SPI peripheral clock source (master).
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_source clock source to select, see valid sources in type `spi_clock_source_t`
+ */
+static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
+{
+    switch (clk_source)
+    {
+        case SPI_CLK_SRC_RC_FAST:
+            PCR.spi2_clkm_conf.spi2_clkm_sel = 2;
+            break;
+        case SPI_CLK_SRC_XTAL:
+            PCR.spi2_clkm_conf.spi2_clkm_sel = 0;
+            break;
+        default:
+            PCR.spi2_clkm_conf.spi2_clkm_sel = 1;
+            break;
+    }
+}
+
 /**
  * Initialize SPI peripheral (master).
  *

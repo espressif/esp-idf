@@ -17,6 +17,7 @@
 #include "driver/mcpwm.h"
 #include "driver/gpio.h"
 
+#if CONFIG_IDF_TARGET_ESP32
 #define TEST_PWMA_GPIO (2)
 #define TEST_PWMB_GPIO (4)
 #define TEST_FAULT_GPIO (21)
@@ -24,10 +25,24 @@
 #define TEST_SYNC_GPIO_1 (18)
 #define TEST_SYNC_GPIO_2 (19)
 #define TEST_CAP_GPIO (21)
+#else
+#define TEST_PWMA_GPIO (1)
+#define TEST_PWMB_GPIO (2)
+#define TEST_CAP_GPIO  (3)
+#define TEST_FAULT_GPIO  (3)
+#define TEST_SYNC_GPIO_0 (3)
+#define TEST_SYNC_GPIO_1 (4)
+#define TEST_SYNC_GPIO_2 (5)
+#endif  //CONFIG_IDF_TARGET_ESP32
 
-#define MCPWM_GROUP_CLK_SRC_HZ  160000000
-#define MCPWM_TEST_GROUP_CLK_HZ (MCPWM_GROUP_CLK_SRC_HZ / 16)
-#define MCPWM_TEST_TIMER_CLK_HZ (MCPWM_TEST_GROUP_CLK_HZ / 10)
+// MCPWM default resolution
+#if CONFIG_IDF_TARGET_ESP32H2
+#define MCPWM_TEST_GROUP_CLK_HZ (12 * 1000 * 1000)
+#else
+#define MCPWM_TEST_GROUP_CLK_HZ (10 * 1000 * 1000)
+#endif
+
+#define MCPWM_TEST_TIMER_CLK_HZ (1 * 1000 * 1000)
 
 const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};
 const static mcpwm_io_signals_t pwmb[] = {MCPWM0B, MCPWM1B, MCPWM2B};
@@ -253,7 +268,7 @@ TEST_CASE("MCPWM deadtime test", "[mcpwm]")
 }
 
 // -------------------------------------------------------------------------------------
-
+#define TEST_CARRIER_FREQ    250000
 static void mcpwm_carrier_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_carrier_out_ivt_t invert_or_not,
                                uint8_t period, uint8_t duty, uint8_t os_width)
 {
@@ -271,10 +286,10 @@ static void mcpwm_carrier_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_car
     vTaskDelay(pdMS_TO_TICKS(100));
 
     pulse_number = pcnt_get_pulse_number(pcnt_unit_a, 10);
-    TEST_ASSERT_INT_WITHIN(50, 2500, pulse_number);
+    TEST_ASSERT_INT_WITHIN(50, (TEST_CARRIER_FREQ / 100), pulse_number);
     usleep(10000);
     pulse_number = pcnt_get_pulse_number(pcnt_unit_b, 10);
-    TEST_ASSERT_INT_WITHIN(50, 2500, pulse_number);
+    TEST_ASSERT_INT_WITHIN(50, (TEST_CARRIER_FREQ / 100), pulse_number);
 
     TEST_ESP_OK(mcpwm_carrier_disable(unit, timer));
     TEST_ESP_OK(mcpwm_stop(unit, timer));
@@ -286,8 +301,9 @@ TEST_CASE("MCPWM carrier test", "[mcpwm]")
     for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
         for (int j = 0; j < SOC_MCPWM_TIMERS_PER_GROUP; j++) {
             // carrier should be 10MHz/8/(4+1) = 250KHz, (10MHz is the group resolution, it's fixed in the driver), carrier duty cycle is 4/8 = 50%
-            mcpwm_carrier_test(i, j, MCPWM_CARRIER_OUT_IVT_DIS, 4, 4, 3);
-            mcpwm_carrier_test(i, j, MCPWM_CARRIER_OUT_IVT_EN, 4, 4, 3);
+            // (MCPWM_TEST_GROUP_CLK_HZ/8/TEST_CARRIER_FREQ - 1) should be a integer
+            mcpwm_carrier_test(i, j, MCPWM_CARRIER_OUT_IVT_DIS, (MCPWM_TEST_GROUP_CLK_HZ / 8 / TEST_CARRIER_FREQ - 1), 4, 3);
+            mcpwm_carrier_test(i, j, MCPWM_CARRIER_OUT_IVT_EN, (MCPWM_TEST_GROUP_CLK_HZ / 8 / TEST_CARRIER_FREQ - 1), 4, 3);
         }
     }
 }

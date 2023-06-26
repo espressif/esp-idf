@@ -807,6 +807,30 @@ EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEG
  */
 void vEventGroupDelete( EventGroupHandle_t xEventGroup ) PRIVILEGED_FUNCTION;
 
+/**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * event_groups.h
+ * @code{c}
+ *  BaseType_t xEventGroupGetStaticBuffer( EventGroupHandle_t xEventGroup,
+ *                                         StaticEventGroup_t ** ppxEventGroupBuffer );
+ * @endcode
+ * @endcond
+ *
+ * Retrieve a pointer to a statically created event groups's data structure
+ * buffer. It is the same buffer that is supplied at the time of creation.
+ *
+ * @param xEventGroup The event group for which to retrieve the buffer.
+ *
+ * @param ppxEventGroupBuffer Used to return a pointer to the event groups's
+ * data structure buffer.
+ *
+ * @return pdTRUE if the buffer was retrieved, pdFALSE otherwise.
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    BaseType_t xEventGroupGetStaticBuffer( EventGroupHandle_t xEventGroup,
+                                           StaticEventGroup_t ** ppxEventGroupBuffer ) PRIVILEGED_FUNCTION;
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /* For internal use only. */

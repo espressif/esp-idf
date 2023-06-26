@@ -11,7 +11,9 @@
 #include "soc/soc_caps.h"
 #include "driver/gpio.h"
 #include "driver/pcnt.h"
+#if SOC_LEDC_SUPPORTED
 #include "driver/ledc.h"
+#endif
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
@@ -19,7 +21,7 @@
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
-#define PULSE_IO 21
+#define PULSE_IO 12
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_VCC_IO 5
 #define PCNT_CTRL_GND_IO 2
@@ -29,6 +31,9 @@
 #define MIN_THRESHOLD 0
 #define PCNT_CTRL_HIGH_LEVEL 1
 #define PCNT_CTRL_LOW_LEVEL 0
+
+// The following items only used in the cases that involve LEDC
+#if SOC_LEDC_SUPPORTED
 
 static QueueHandle_t pcnt_evt_queue = NULL;
 
@@ -40,6 +45,69 @@ typedef struct {
     int l_threshold;
     int filter_time;
 } event_times;
+#endif // SOC_LEDC_SUPPORTED
+
+// test PCNT basic configuration
+TEST_CASE("PCNT_test_config", "[pcnt]")
+{
+    pcnt_config_t pcnt_config = {
+        .pulse_gpio_num = PCNT_INPUT_IO,
+        .ctrl_gpio_num = PCNT_CTRL_VCC_IO,
+        .channel = PCNT_CHANNEL_0,
+        .unit = PCNT_UNIT_0,
+        .pos_mode = PCNT_COUNT_INC,
+        .neg_mode = PCNT_COUNT_DIS,
+        .lctrl_mode = PCNT_MODE_REVERSE,
+        .hctrl_mode = PCNT_MODE_KEEP,
+        .counter_h_lim = 100,
+        .counter_l_lim = 0,
+    };
+    // basic configuration
+    pcnt_config_t temp_pcnt_config = pcnt_config;
+    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
+
+    // test SOC_PCNT_UNITS_PER_GROUP units, from 0-(SOC_PCNT_UNITS_PER_GROUP-1)
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.unit = SOC_PCNT_UNITS_PER_GROUP;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+    for (int i = 0; i < SOC_PCNT_UNITS_PER_GROUP; i++) {
+        pcnt_config.unit = i;
+        TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
+    }
+
+    // test channels
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.channel = PCNT_CHANNEL_MAX;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.pulse_gpio_num = -1;
+    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
+
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.pulse_gpio_num = GPIO_NUM_MAX + 1;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+
+    // test pulse_gpio_num and ctrl_gpio_num is the same
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.pulse_gpio_num = PCNT_INPUT_IO;
+    pcnt_config.ctrl_gpio_num = PCNT_INPUT_IO;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.pos_mode = PCNT_COUNT_MAX;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.hctrl_mode = PCNT_MODE_MAX;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+
+    pcnt_config = temp_pcnt_config;
+    pcnt_config.lctrl_mode = PCNT_MODE_MAX;
+    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
+}
+
+// The following test cases rely on the support of LEDC
+#if SOC_LEDC_SUPPORTED
 
 static void pcnt_test_io_config(int ctrl_level)
 {
@@ -302,65 +370,6 @@ static void count_mode_test(gpio_num_t ctl_io)
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[7]);
-}
-
-// test PCNT basic configuration
-TEST_CASE("PCNT_test_config", "[pcnt]")
-{
-    pcnt_config_t pcnt_config = {
-        .pulse_gpio_num = PCNT_INPUT_IO,
-        .ctrl_gpio_num = PCNT_CTRL_VCC_IO,
-        .channel = PCNT_CHANNEL_0,
-        .unit = PCNT_UNIT_0,
-        .pos_mode = PCNT_COUNT_INC,
-        .neg_mode = PCNT_COUNT_DIS,
-        .lctrl_mode = PCNT_MODE_REVERSE,
-        .hctrl_mode = PCNT_MODE_KEEP,
-        .counter_h_lim = 100,
-        .counter_l_lim = 0,
-    };
-    // basic configuration
-    pcnt_config_t temp_pcnt_config = pcnt_config;
-    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
-
-    // test SOC_PCNT_UNITS_PER_GROUP units, from 0-(SOC_PCNT_UNITS_PER_GROUP-1)
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.unit = SOC_PCNT_UNITS_PER_GROUP;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-    for (int i = 0; i < SOC_PCNT_UNITS_PER_GROUP; i++) {
-        pcnt_config.unit = i;
-        TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
-    }
-
-    // test channels
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.channel = PCNT_CHANNEL_MAX;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.pulse_gpio_num = -1;
-    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
-
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.pulse_gpio_num = GPIO_NUM_MAX + 1;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-
-    // test pulse_gpio_num and ctrl_gpio_num is the same
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.pulse_gpio_num = PCNT_INPUT_IO;
-    pcnt_config.ctrl_gpio_num = PCNT_INPUT_IO;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.pos_mode = PCNT_COUNT_MAX;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.hctrl_mode = PCNT_MODE_MAX;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-
-    pcnt_config = temp_pcnt_config;
-    pcnt_config.lctrl_mode = PCNT_MODE_MAX;
-    TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
 }
 
 /* PCNT basic property:
@@ -666,3 +675,4 @@ TEST_CASE("PCNT_counting_mode_test", "[pcnt]")
     printf("PCNT mode test for negative count\n");
     count_mode_test(PCNT_CTRL_GND_IO);
 }
+#endif // SOC_LEDC_SUPPORTED

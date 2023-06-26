@@ -1,0 +1,5 @@
+menu "ESP-TLS"
+    config ESP_TLS_USING_MBEDTLS
+        bool "mbedTLS"
+        default y
+endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,8 +54,11 @@ int phy_printf(const char* format, ...)
 
 int rtc_printf(const char* format, ...)
 {
-    // librtc.a printf temporary disabled due to UART baud rate switching bug.
-    return 0;
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("rtc", format, arg);
+    va_end(arg);
+    return res;
 }
 
 int wpa_printf(const char* format, ...)

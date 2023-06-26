@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -32,7 +33,7 @@ static uint32_t start, end;
 
 #define BENCHMARK_END(OPERATION) do {                       \
         end = esp_cpu_get_cycle_count();                                          \
-        printf("%s took %d cycles/op (%d cycles for %d ops)\n",     \
+        printf("%s took %"PRIu32" cycles/op (%"PRIu32" cycles for %d ops)\n",     \
                OPERATION, (end - start)/REPEAT_OPS,                 \
                (end - start), REPEAT_OPS);                          \
     } while(0)
@@ -49,12 +50,12 @@ TEST_CASE("portMUX spinlocks (no contention)", "[freertos]")
     BENCHMARK_END("no contention lock");
 
 #ifdef CONFIG_FREERTOS_UNICORE
-    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%d cycles/op", ((end - start)/REPEAT_OPS));
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%"PRIu32" cycles/op", ((end - start)/REPEAT_OPS));
 #else
 #if CONFIG_SPIRAM
-    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM, "%d cycles/op", ((end - start)/REPEAT_OPS));
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM, "%"PRIu32" cycles/op", ((end - start)/REPEAT_OPS));
 #else
-    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%d cycles/op", ((end - start)/REPEAT_OPS));
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%"PRIu32" cycles/op", ((end - start)/REPEAT_OPS));
 #endif
 #endif
 }

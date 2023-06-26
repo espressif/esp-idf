@@ -12,25 +12,18 @@
 #include "hal/assert.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/cache.h"
-#include "soc/dport_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/cache.h"
-#endif
+#include "rom/cache.h"
 
 void mmu_hal_init(void)
+{
+#if CONFIG_ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+    ROM_Boot_Cache_Init();
+#endif
+    mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
+    mmu_hal_unmap_all();
+}
+
+void mmu_hal_unmap_all(void)
 {
     mmu_ll_unmap_all(0);
 #if !CONFIG_FREERTOS_UNICORE
@@ -38,8 +31,6 @@ void mmu_hal_init(void)
 #endif
 }
 
-#if !CONFIG_IDF_TARGET_ESP32
-//If decided, add a jira ticket for implementing these APIs on ESP32
 uint32_t mmu_hal_pages_to_bytes(uint32_t mmu_id, uint32_t page_num)
 {
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
@@ -85,15 +76,15 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
     HAL_ASSERT(paddr % page_size_in_bytes == 0);
-    HAL_ASSERT((paddr + len - 1) < mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_PADDR_PAGE_NUM));
-    HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, len));
+    HAL_ASSERT(mmu_ll_check_valid_paddr_region(mmu_id, paddr, len));
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, len, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
 
     uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
     uint32_t entry_id = 0;
     uint32_t mmu_val;     //This is the physical address in the format that MMU supported
 
     *out_len = mmu_hal_pages_to_bytes(mmu_id, page_num);
-    mmu_val = mmu_ll_format_paddr(mmu_id, paddr);
+    mmu_val = mmu_ll_format_paddr(mmu_id, paddr, mem_type);
 
     while (page_num) {
         entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
@@ -103,4 +94,63 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
         page_num--;
     }
 }
-#endif //#if !CONFIG_IDF_TARGET_ESP32
+
+void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
+{
+    uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
+    HAL_ASSERT(vaddr % page_size_in_bytes == 0);
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, len, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
+
+    uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
+    uint32_t entry_id = 0;
+    while (page_num) {
+        entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
+        mmu_ll_set_entry_invalid(mmu_id, entry_id);
+        vaddr += page_size_in_bytes;
+        page_num--;
+    }
+}
+
+bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target)
+{
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, 1, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
+    uint32_t entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
+    if (!mmu_ll_check_entry_valid(mmu_id, entry_id)) {
+        return false;
+    }
+
+    uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
+    uint32_t offset = (uint32_t)vaddr % page_size_in_bytes;
+
+    *out_target = mmu_ll_get_entry_target(mmu_id, entry_id);
+    uint32_t paddr_base = mmu_ll_entry_id_to_paddr_base(mmu_id, entry_id);
+    *out_paddr = paddr_base | offset;
+
+    return true;
+}
+
+bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
+{
+    HAL_ASSERT(mmu_ll_check_valid_paddr_region(mmu_id, paddr, 1));
+
+    uint32_t mmu_val = mmu_ll_format_paddr(mmu_id, paddr, target);
+    int entry_id = mmu_ll_find_entry_id_based_on_map_value(mmu_id, mmu_val, target);
+    if (entry_id == -1) {
+        return false;
+    }
+
+    uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
+    uint32_t offset = paddr % page_size_in_bytes;
+    uint32_t vaddr_base = mmu_ll_entry_id_to_vaddr_base(mmu_id, entry_id, type);
+    if (vaddr_base == 0) {
+        return false;
+    }
+    *out_vaddr = vaddr_base | offset;
+
+    return true;
+}
+
+bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type)
+{
+    return mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr_start, len, type);
+}

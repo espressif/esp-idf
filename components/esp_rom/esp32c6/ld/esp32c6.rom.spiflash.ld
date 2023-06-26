@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@
 spi_flash_disable_cache = 0x400001f0;
 spi_flash_restore_cache = 0x400001f4;
 spi_flash_cache_enabled = 0x400001f8;
-spi_flash_enable_cache = 0x400001fc;
 esp_enable_cache_flash_wrap = 0x40000200;
 
 

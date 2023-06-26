@@ -1,12 +1,14 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import logging
 import os
 import re
 import subprocess
 import time
 
+import pexpect
 from idf_iperf_test_util import LineChart
-from tiny_test_fw import DUT, Utility
+from pytest_embedded import Dut
 
 try:
     from typing import Any, Tuple
@@ -45,7 +47,7 @@ class TestResult(object):
     RSSI_RANGE = [-x for x in range(10, 100)]
     ATT_RANGE = [x for x in range(0, 64)]
 
-    def __init__(self, proto, direction, config_name):  # type: (str, str, str) -> None
+    def __init__(self, proto:str, direction:str, config_name:str) -> None:
         self.proto = proto
         self.direction = direction
         self.config_name = config_name
@@ -55,7 +57,7 @@ class TestResult(object):
         self.heap_size = INVALID_HEAP_SIZE
         self.error_list = []  # type: list[str]
 
-    def _save_result(self, throughput, ap_ssid, att, rssi, heap_size):  # type: (float, str, int, int, str) -> None
+    def _save_result(self, throughput:float, ap_ssid:str, att:int, rssi:int, heap_size:str) -> None:
         """
         save the test results:
 
@@ -70,7 +72,7 @@ class TestResult(object):
 
         self.att_rssi_map[ap_ssid][att] = rssi
 
-        def record_throughput(database, key_value):  # type: (dict, int) -> None
+        def record_throughput(database:dict, key_value:int) -> None:
             try:
                 # we save the larger value for same att
                 if throughput > database[ap_ssid][key_value]:
@@ -84,7 +86,7 @@ class TestResult(object):
         if int(heap_size) < self.heap_size:
             self.heap_size = int(heap_size)
 
-    def add_result(self, raw_data, ap_ssid, att, rssi, heap_size):  # type: (str, str, int, int, str) -> float
+    def add_result(self, raw_data:str, ap_ssid:str, att:int, rssi:int, heap_size:str) -> float:
         """
         add result for one test
 
@@ -132,14 +134,14 @@ class TestResult(object):
 
         return max_throughput
 
-    def post_analysis(self):  # type: () -> None
+    def post_analysis(self) -> None:
         """
         some rules need to be checked after we collected all test raw data:
 
         1. throughput value 30% worse than the next point with lower RSSI
         2. throughput value 30% worse than the next point with larger attenuate
         """
-        def analysis_bad_point(data, index_type):  # type: (dict, str) -> None
+        def analysis_bad_point(data:dict, index_type:str) -> None:
             for ap_ssid in data:
                 result_dict = data[ap_ssid]
                 index_list = list(result_dict.keys())
@@ -160,7 +162,7 @@ class TestResult(object):
         analysis_bad_point(self.throughput_by_rssi, 'rssi')
         analysis_bad_point(self.throughput_by_att, 'att')
 
-    def draw_throughput_figure(self, path, ap_ssid, draw_type):  # type: (str, str, str) -> str
+    def draw_throughput_figure(self, path:str, ap_ssid:str, draw_type:str) -> str:
         """
         :param path: folder to save figure. make sure the folder is already created.
         :param ap_ssid: ap ssid string or a list of ap ssid string
@@ -189,7 +191,7 @@ class TestResult(object):
                                   data, range_list)
         return file_name
 
-    def draw_rssi_vs_att_figure(self, path, ap_ssid):  # type: (str, str) -> str
+    def draw_rssi_vs_att_figure(self, path:str, ap_ssid:str) -> str:
         """
         :param path: folder to save figure. make sure the folder is already created.
         :param ap_ssid: ap to use
@@ -207,13 +209,13 @@ class TestResult(object):
                                   self.ATT_RANGE)
         return file_name
 
-    def get_best_throughput(self):  # type: () -> Any
+    def get_best_throughput(self) -> Any:
         """  get the best throughput during test """
         best_for_aps = [max(self.throughput_by_att[ap_ssid].values())
                         for ap_ssid in self.throughput_by_att]
         return max(best_for_aps)
 
-    def __str__(self):  # type: () -> str
+    def __str__(self) -> str:
         """
         returns summary for this test:
 
@@ -237,8 +239,8 @@ class TestResult(object):
 class IperfTestUtility(object):
     """ iperf test implementation """
 
-    def __init__(self, dut, config_name, ap_ssid, ap_password,
-                 pc_nic_ip, pc_iperf_log_file, test_result=None):   # type: (str, str, str, str, str, str, Any) -> None
+    def __init__(self, dut:Dut, config_name:str, ap_ssid:str, ap_password:str,
+                 pc_nic_ip:str, pc_iperf_log_file:str, test_result:Any=None) -> None:
         self.config_name = config_name
         self.dut = dut
 
@@ -259,7 +261,7 @@ class IperfTestUtility(object):
                 'udp_rx': TestResult('udp', 'rx', config_name),
             }
 
-    def setup(self):  # type: (Any) -> Tuple[str,int]
+    def setup(self) -> Tuple[str,int]:
         """
         setup iperf test:
 
@@ -274,25 +276,26 @@ class IperfTestUtility(object):
             pass
         time.sleep(5)
         self.dut.write('restart')
-        self.dut.expect_any('iperf>', 'esp32>')
+        self.dut.expect_exact("Type 'help' to get the list of commands.")
+        self.dut.expect('iperf>')
         self.dut.write('scan {}'.format(self.ap_ssid))
         for _ in range(SCAN_RETRY_COUNT):
             try:
-                rssi = int(self.dut.expect(re.compile(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid)),
-                                           timeout=SCAN_TIMEOUT)[0])
+                rssi = int(self.dut.expect(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid),
+                                           timeout=SCAN_TIMEOUT).group(1))
                 break
-            except DUT.ExpectTimeout:
+            except pexpect.TIMEOUT:
                 continue
         else:
             raise AssertionError('Failed to scan AP')
         self.dut.write('sta {} {}'.format(self.ap_ssid, self.ap_password))
-        dut_ip = self.dut.expect(re.compile(r'sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)'))[0]
+        dut_ip = self.dut.expect(r'sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)').group(1)
         return dut_ip, rssi
 
-    def _save_test_result(self, test_case, raw_data, att, rssi, heap_size):  # type: (str, str, int, int, int) -> Any
+    def _save_test_result(self, test_case:str, raw_data:str, att:int, rssi:int, heap_size:int) -> Any:
         return self.test_result[test_case].add_result(raw_data, self.ap_ssid, att, rssi, heap_size)
 
-    def _test_once(self, proto, direction, bw_limit):   # type: (Any, str, str, int) -> Tuple[str, int, int]
+    def _test_once(self, proto:str, direction:str, bw_limit:int) -> Tuple[str, int, int]:
         """ do measure once for one type """
         # connect and scan to get RSSI
         dut_ip, rssi = self.setup()
@@ -336,9 +339,9 @@ class IperfTestUtility(object):
                     # wait until DUT TCP server created
                     try:
                         self.dut.expect('iperf: Socket created', timeout=5)
-                    except DUT.ExpectTimeout:
+                    except pexpect.TIMEOUT:
                         # compatible with old iperf example binary
-                        Utility.console_log('create iperf tcp server fail')
+                        logging.info('create iperf tcp server fail')
                     if bw_limit > 0:
                         process = subprocess.Popen(['iperf', '-c', dut_ip, '-b', str(bw_limit) + 'm',
                                                     '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f)
@@ -356,9 +359,9 @@ class IperfTestUtility(object):
                     # wait until DUT TCP server created
                     try:
                         self.dut.expect('iperf: Socket bound', timeout=5)
-                    except DUT.ExpectTimeout:
+                    except pexpect.TIMEOUT:
                         # compatible with old iperf example binary
-                        Utility.console_log('create iperf udp server fail')
+                        logging.info('create iperf udp server fail')
                     if bw_limit > 0:
                         process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', str(bw_limit) + 'm',
                                                     '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f)
@@ -379,9 +382,12 @@ class IperfTestUtility(object):
                             else:
                                 process.terminate()
 
-            server_raw_data = self.dut.read()
+            server_raw_data = self.dut.expect(pexpect.TIMEOUT, timeout=0).decode('utf-8')
             with open(PC_IPERF_TEMP_LOG_FILE, 'r') as f:
                 pc_raw_data = f.read()
+
+        if os.path.exists(PC_IPERF_TEMP_LOG_FILE):
+            os.remove(PC_IPERF_TEMP_LOG_FILE)
 
         # save PC iperf logs to console
         with open(self.pc_iperf_log_file, 'a+') as f:
@@ -391,18 +397,19 @@ class IperfTestUtility(object):
                             time.strftime('%m-%d %H:%M:%S', time.localtime(time.time()))))
             f.write('\r\n```\r\n\r\n' + pc_raw_data + '\r\n```\r\n')
         self.dut.write('heap')
-        heap_size = self.dut.expect(re.compile(r'min heap size: (\d+)\D'))[0]
+        heap_size = self.dut.expect(r'min heap size: (\d+)\D').group(1)
 
         # return server raw data (for parsing test results) and RSSI
         return server_raw_data, rssi, heap_size
 
-    def run_test(self, proto, direction, atten_val, bw_limit):   # type: (str, str, int, int) -> None
+    def run_test(self, proto:str, direction:str, atten_val:int, bw_limit:int) -> None:
         """
         run test for one type, with specified atten_value and save the test result
 
         :param proto: tcp or udp
         :param direction: tx or rx
         :param atten_val: attenuate value
+        :param bw_limit: bandwidth limit
         """
         rssi = FAILED_TO_SCAN_RSSI
         heap_size = INVALID_HEAP_SIZE
@@ -411,32 +418,33 @@ class IperfTestUtility(object):
             throughput = self._save_test_result('{}_{}'.format(proto, direction),
                                                 server_raw_data, atten_val,
                                                 rssi, heap_size)
-            Utility.console_log('[{}][{}_{}][{}][{}]: {:.02f}'
-                                .format(self.config_name, proto, direction, rssi, self.ap_ssid, throughput))
+            logging.info('[{}][{}_{}][{}][{}]: {:.02f}'
+                         .format(self.config_name, proto, direction, rssi, self.ap_ssid, throughput))
             self.lowest_rssi_scanned = min(self.lowest_rssi_scanned, rssi)
         except (ValueError, IndexError):
             self._save_test_result('{}_{}'.format(proto, direction), '', atten_val, rssi, heap_size)
-            Utility.console_log('Fail to get throughput results.')
+            logging.info('Fail to get throughput results.')
         except AssertionError:
             self.fail_to_scan += 1
-            Utility.console_log('Fail to scan AP.')
+            logging.info('Fail to scan AP.')
 
-    def run_all_cases(self, atten_val, bw_limit):   # type: (int, int) -> None
+    def run_all_cases(self, atten_val:int, bw_limit:int) -> None:
         """
         run test for all types (udp_tx, udp_rx, tcp_tx, tcp_rx).
 
         :param atten_val: attenuate value
+        :param bw_limit: bandwidth limit
         """
         self.run_test('tcp', 'tx', atten_val, bw_limit)
         self.run_test('tcp', 'rx', atten_val, bw_limit)
         self.run_test('udp', 'tx', atten_val, bw_limit)
         self.run_test('udp', 'rx', atten_val, bw_limit)
         if self.fail_to_scan > 10:
-            Utility.console_log(
+            logging.info(
                 'Fail to scan AP for more than 10 times. Lowest RSSI scanned is {}'.format(self.lowest_rssi_scanned))
             raise AssertionError
 
-    def wait_ap_power_on(self):    # type: (Any) -> bool
+    def wait_ap_power_on(self) -> bool:
         """
         AP need to take sometime to power on. It changes for different APs.
         This method will scan to check if the AP powers on.
@@ -444,15 +452,15 @@ class IperfTestUtility(object):
         :return: True or False
         """
         self.dut.write('restart')
-        self.dut.expect_any('iperf>', 'esp32>')
+        self.dut.expect('iperf>')
         for _ in range(WAIT_AP_POWER_ON_TIMEOUT // SCAN_TIMEOUT):
             try:
                 self.dut.write('scan {}'.format(self.ap_ssid))
-                self.dut.expect(re.compile(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid)),
+                self.dut.expect(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid),
                                 timeout=SCAN_TIMEOUT)
                 ret = True
                 break
-            except DUT.ExpectTimeout:
+            except pexpect.TIMEOUT:
                 pass
         else:
             ret = False

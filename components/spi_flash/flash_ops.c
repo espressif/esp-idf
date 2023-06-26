@@ -24,6 +24,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_gpio_reserve.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
@@ -36,8 +37,6 @@
 #include "esp32s3/opi_flash_private.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
@@ -56,6 +55,9 @@
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_io.h"
 #endif
+#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
+#include "hal/cache_hal.h"
+#endif
 
 /* bytes erased by SPIEraseBlock() ROM function */
 #define BLOCK_ERASE_SIZE 65536
@@ -72,28 +74,6 @@
 #define MAX_READ_CHUNK 16384
 
 static const char *TAG __attribute__((unused)) = "spi_flash";
-
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-static spi_flash_counters_t s_flash_stats;
-
-#define COUNTER_START()     uint32_t ts_begin = esp_cpu_get_cycle_count()
-#define COUNTER_STOP(counter)  \
-    do{ \
-        s_flash_stats.counter.count++; \
-        s_flash_stats.counter.time += (esp_cpu_get_cycle_count() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
-    } while(0)
-
-#define COUNTER_ADD_BYTES(counter, size) \
-    do { \
-        s_flash_stats.counter.bytes += size; \
-    } while (0)
-
-#else
-#define COUNTER_START()
-#define COUNTER_STOP(counter)
-#define COUNTER_ADD_BYTES(counter, size)
-
-#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
     .start                  = spi_flash_disable_interrupts_caches_and_other_cpu,
@@ -168,6 +148,12 @@ void IRAM_ATTR esp_mspi_pin_init(void)
     }
     //Set F4R4 board pin drive strength. TODO: IDF-3663
 #endif
+    /* Reserve the GPIO pins */
+    uint64_t reserve_pin_mask = 0;
+    for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
+        reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
+    }
+    esp_gpio_reserve_pins(reserve_pin_mask);
 }
 
 esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
@@ -186,33 +172,6 @@ esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
     #endif // CONFIG_IDF_TARGET_ESP32S3
     }
 }
-
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-
-static inline void dump_counter(spi_flash_counter_t *counter, const char *name)
-{
-    ESP_LOGI(TAG, "%s  count=%8d  time=%8dus  bytes=%8d\n", name,
-             counter->count, counter->time, counter->bytes);
-}
-
-const spi_flash_counters_t *spi_flash_get_counters(void)
-{
-    return &s_flash_stats;
-}
-
-void spi_flash_reset_counters(void)
-{
-    memset(&s_flash_stats, 0, sizeof(s_flash_stats));
-}
-
-void spi_flash_dump_counters(void)
-{
-    dump_counter(&s_flash_stats.read,  "read ");
-    dump_counter(&s_flash_stats.write, "write");
-    dump_counter(&s_flash_stats.erase, "erase");
-}
-
-#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 void IRAM_ATTR spi_flash_set_rom_required_regs(void)
 {

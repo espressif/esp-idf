@@ -121,7 +121,7 @@ static void calculate_characterization_coefficients(const adc_calib_info_t *pars
 {
     chars->coeff_a = coeff_a_scaling * parsed_data->ref_data.ver1.voltage / parsed_data->ref_data.ver1.digi;
     chars->coeff_b = 0;
-    ESP_LOGV(LOG_TAG, "Calib V1, Cal Voltage = %"PRId32", Digi out = %"PRId32", Coef_a = %"PRId32"\n", parsed_data->ref_data.ver1.voltage, parsed_data->ref_data.ver1.digi, chars->coeff_a);
+    ESP_LOGV(LOG_TAG, "Calib V1, Cal Voltage = %" PRId32 ", Digi out = %" PRId32 ", Coef_a = %" PRId32, parsed_data->ref_data.ver1.voltage, parsed_data->ref_data.ver1.digi, chars->coeff_a);
 }
 
 esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
@@ -167,7 +167,7 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
     uint64_t v_cali_1 = 0;
 
     //raw * gradient * 1000000
-    v_cali_1 = adc_reading * chars->coeff_a;
+    v_cali_1 = (uint64_t)adc_reading * chars->coeff_a;
     //convert to real number
     v_cali_1 = v_cali_1 / coeff_a_scaling;
     ESP_LOGV(LOG_TAG, "v_cali_1 is %llu", v_cali_1);

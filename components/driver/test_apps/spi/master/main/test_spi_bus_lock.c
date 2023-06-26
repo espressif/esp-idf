@@ -33,7 +33,6 @@
 
 #endif
 
-// H4 and C2 will not support external flash.
 #define TEST_FLASH_FREQ_MHZ      5
 
 typedef struct {
@@ -296,7 +295,7 @@ TEST_CASE("spi bus lock","[spi]")
     test_bus_lock(false);
 }
 
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2, ESP32H4, ESP32C6)
+#if !SOC_MEMSPI_IS_INDEPENDENT
 //disable, SPI1 is not available for GPSPI usage on chips later than ESP32
 static IRAM_ATTR esp_err_t test_polling_send(spi_device_handle_t handle)
 {

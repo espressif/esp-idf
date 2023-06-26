@@ -1,18 +1,18 @@
 | Supported Targets | ESP32-S2 | ESP32-S3 |
 | ----------------- | -------- | -------- |
 
-# USB CDC-ACM Virtual Com Port example
+# USB CDC-ACM Virtual COM Port example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example shows how to extend CDC-ACM driver for Virtual Communication Port (VCP) devices,
-such as CP210x, FTDI FT23x or CP34x devices.
+such as CP210x, FTDI FT23x or CH34x devices.
 
 The drivers are fetched from [IDF Component Registry](https://components.espressif.com/) together with VCP service that automatically loads correct driver for plugged-in device.
 
 ## How to use example
 
-1. Connect your USB<->UART converter to ESP32-S2/S3, the device will be automatically enumerated and correct driver will be picked
+1. Connect your USB<->UART converter to ESP32-S2/S3, the device will be automatically enumerated and correct driver will be loaded
 2. Change baudrate and other line coding parameters in [cdc_acm_vcp_example_main.cpp](main/cdc_acm_vcp_example_main.cpp) to match your needs
 3. Now you can use the usual CDC-ACM API to control the device and send data. Data are received in `handle_rx` callback
 4. Try disconnecting and then reconnecting of the USB device to experiment with USB hotplugging

@@ -11,8 +11,6 @@
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/memprot.h"
 #else
 #include "esp_memprot.h"
 #endif
@@ -47,7 +45,7 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
 }
 
 
-void IRAM_ATTR esp_restart(void)
+void esp_restart(void)
 {
     for (int i = SHUTDOWN_HANDLERS_NO - 1; i >= 0; i--) {
         if (shutdown_handlers[i]) {

@@ -331,6 +331,7 @@ static void do_core_init(void)
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #if CONFIG_SPI_FLASH_ROM_IMPL
     spi_flash_rom_impl_init();
 #endif
@@ -342,6 +343,7 @@ static void do_core_init(void)
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET
     spi_flash_needs_reset_check();
 #endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
@@ -448,7 +450,7 @@ static void start_cpu0_default(void)
 
         ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
         ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s",CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
-                       efuse_ll_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
+                       efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
         unsigned revision = efuse_hal_chip_revision();
         ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
     }
@@ -466,11 +468,7 @@ static void start_cpu0_default(void)
 
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// ESP32H2, ESP32C6-TODO: IDF-5653
-    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
-#else
-    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-#endif
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);

@@ -99,7 +99,7 @@ static esp_ble_adv_params_t adv_params = {
     .adv_int_min        = 0x100,
     .adv_int_max        = 0x100,
     .adv_type           = ADV_TYPE_IND,
-    .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
+    .own_addr_type      = BLE_ADDR_TYPE_RPA_PUBLIC,
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
@@ -243,7 +243,7 @@ static void periodic_timer_callback(void* arg)
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    ESP_LOGV(BLE_ANCS_TAG, "GAP_EVT, event %d\n", event);
+    ESP_LOGV(BLE_ANCS_TAG, "GAP_EVT, event %d", event);
 
     switch (event) {
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
@@ -640,7 +640,7 @@ void app_main(void)
     //register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if (ret) {
-        ESP_LOGE(BLE_ANCS_TAG, "%s gattc register error, error code = %x\n", __func__, ret);
+        ESP_LOGE(BLE_ANCS_TAG, "%s gattc register error, error code = %x", __func__, ret);
         return;
     }
 
@@ -652,7 +652,7 @@ void app_main(void)
 
     ret = esp_ble_gattc_app_register(PROFILE_A_APP_ID);
     if (ret) {
-        ESP_LOGE(BLE_ANCS_TAG, "%s gattc app register error, error code = %x\n", __func__, ret);
+        ESP_LOGE(BLE_ANCS_TAG, "%s gattc app register error, error code = %x", __func__, ret);
     }
 
     ret = esp_ble_gatt_set_local_mtu(500);

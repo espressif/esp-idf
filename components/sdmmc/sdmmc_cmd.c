@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_timer.h"
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_cmd";
@@ -107,6 +108,19 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
 {
     esp_err_t err;
 
+    /* If the host supports this, keep card clock enabled
+     * from the start of ACMD41 until the card is idle.
+     * (Ref. SD spec, section 4.4 "Clock control".)
+     */
+    if (card->host.set_cclk_always_on != NULL) {
+        err = card->host.set_cclk_always_on(card->host.slot, true);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: set_cclk_always_on (1) err=0x%x", __func__, err);
+            return err;
+        }
+        ESP_LOGV(TAG, "%s: keeping clock on during ACMD41", __func__);
+    }
+
     sdmmc_command_t cmd = {
             .arg = ocr,
             .flags = SCF_CMD_BCR | SCF_RSP_R3,
@@ -131,7 +145,7 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
         if (err != ESP_OK) {
             if (--err_cnt == 0) {
                 ESP_LOGD(TAG, "%s: sdmmc_send_app_cmd err=0x%x", __func__, err);
-                return err;
+                goto done;
             } else {
                 ESP_LOGV(TAG, "%s: ignoring err=0x%x", __func__, err);
                 continue;
@@ -151,13 +165,29 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+
     if (nretries == 0) {
-        return ESP_ERR_TIMEOUT;
+        err = ESP_ERR_TIMEOUT;
+        goto done;
     }
+
     if (ocrp) {
         *ocrp = MMC_R3(cmd.response);
     }
-    return ESP_OK;
+
+    err = ESP_OK;
+done:
+
+    if (card->host.set_cclk_always_on != NULL) {
+        esp_err_t err_cclk_dis = card->host.set_cclk_always_on(card->host.slot, false);
+        if (err_cclk_dis != ESP_OK) {
+            ESP_LOGE(TAG, "%s: set_cclk_always_on (2) err=0x%x", __func__, err);
+            /* If we failed to disable clock, don't overwrite 'err' to return the original error */
+        }
+        ESP_LOGV(TAG, "%s: clock always-on mode disabled", __func__);
+    }
+
+    return err;
 }
 
 esp_err_t sdmmc_send_cmd_read_ocr(sdmmc_card_t *card, uint32_t *ocrp)
@@ -359,6 +389,10 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
+    if (block_count == 0) {
+        return ESP_OK;
+    }
+
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
     if (esp_ptr_dma_capable(src) && (intptr_t)src % 4 == 0) {
@@ -418,14 +452,26 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     }
     uint32_t status = 0;
     size_t count = 0;
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
     /* SD mode: wait for the card to become idle based on R1 status */
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
-        // TODO: add some timeout here
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
+            ESP_LOGE(TAG, "write sectors dma - timeout");
+            return ESP_ERR_TIMEOUT;
+        }
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
             return err;
         }
-        if (++count % 10 == 0) {
+        if (++count % 16 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
         }
     }
@@ -437,6 +483,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     if (host_is_spi(card)) {
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
             return err;
         }
         if (status & SD_SPI_R2_CARD_LOCKED) {
@@ -456,6 +503,10 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
 esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         size_t start_block, size_t block_count)
 {
+    if (block_count == 0) {
+        return ESP_OK;
+    }
+
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
     if (esp_ptr_dma_capable(dst) && (intptr_t)dst % 4 == 0) {
@@ -514,13 +565,26 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
     }
     uint32_t status = 0;
     size_t count = 0;
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
+    /* SD mode: wait for the card to become idle based on R1 status */
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
-        // TODO: add some timeout here
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
+            ESP_LOGE(TAG, "read sectors dma - timeout");
+            return ESP_ERR_TIMEOUT;
+        }
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
             return err;
         }
-        if (++count % 10 == 0) {
+        if (++count % 16 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
         }
     }
@@ -530,6 +594,10 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
 esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
         size_t sector_count, sdmmc_erase_arg_t arg)
 {
+    if (sector_count == 0) {
+        return ESP_OK;
+    }
+
     if (start_sector + sector_count > card->csd.capacity) {
         return ESP_ERR_INVALID_SIZE;
     }
@@ -603,6 +671,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
         uint32_t status;
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
             return err;
         }
         if (status != 0) {

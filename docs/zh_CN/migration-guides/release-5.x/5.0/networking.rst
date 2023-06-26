@@ -6,19 +6,18 @@
 Wi-Fi
 *****
 
-
 回调函数类型 esp_now_recv_cb_t
 ------------------------------
 
-先前， ``esp_now_recv_cb_t`` 的第一个参数的类型是 ``const uint8_t *mac_addr``， 它只包含对端 ESP-NOW 设备的地址。
+此前 ``esp_now_recv_cb_t`` 的第一个参数的类型是 ``const uint8_t *mac_addr``，该参数只包含对端 ESP-NOW 设备的地址。
 
-类型定义已更新。 第一个参数的类型是 ``esp_now_recv_info_t``， 它包含三个成员变量 ``src_addr``，``des_addr`` 和 ``rx_ctrl``。 因此，以下更新是需要的:
+现在该函数有所更新。第一个参数的类型变更为 ``esp_now_recv_info_t``， 它包含三个成员变量 ``src_addr``，``des_addr`` 和 ``rx_ctrl``。因此，需要进行如下更新:
 
     - 重新定义的 ESP-NOW 收包回调函数。
 
-    - ``src_addr`` 可以等价替换原来的 ``mac_addr`` 。
+    - ``src_addr`` 可以等价替换原来的 ``mac_addr``。
 
-    - ``des_addr`` 是 ESP-NOW 包的目的 MAC 地址，它可以是单播地址或广播地址。有了 ``des_addr``，可以区分单播和广播的 ESP-NOW ，其中广播的 ESP-NOW 包在加密的 ESP-NOW 配置中也可以是非加密的。
+    - ``des_addr`` 是 ESP-NOW 包的目的 MAC 地址，可以是单播或广播地址。使用 ``des_addr`` 可以区分单播或广播的 ESP-NOW 包，其中，即使是在加密的 ESP-NOW 配置中，广播的 ESP-NOW 包也可以是非加密的。
 
     - ``rx_ctrl`` 是 ESP-NOW 包的 Rx control info，它包含此包的更多有用信息。
 
@@ -51,7 +50,7 @@ esp_eth_ioctl() API
 获取以太网配置的用例如下：
 
 .. code-block:: c
-    
+
     eth_duplex_t duplex_mode;
     esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &duplex_mode);
 
@@ -142,13 +141,13 @@ TCP/IP 适配器是在 ESP-IDF v4.1 之前使用的网络接口抽象组件。�
 
 .. code-block:: c
 
-    ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
+    ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
 
 不建议使用下述方式：
 
 .. code-block:: c
 
-    ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
+    ESP_LOGI(TAG, "got ip:%s", ip4addr_ntoa(&event->ip_info.ip));
 
 ``ip4addr_ntoa()`` 为 LwIP API，因此 esp-netif 还提供了替代函数 ``esp_ip4addr_ntoa()``，然而总得来说仍推荐使用 ``IP2STR()`` 这一方法。
 

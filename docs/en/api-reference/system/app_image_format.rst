@@ -1,6 +1,11 @@
 App Image Format
 ================
 
+.. _app-image-structures:
+
+Application Image Structures
+----------------------------
+
 An application image consists of the following structures:
 
 1. The :cpp:type:`esp_image_header_t` structure describes the mode of SPI flash and the count of memory segments.
@@ -25,6 +30,7 @@ To get the list of your image segments, please run the following command:
 	Image version: 1
 	Entry point: 40080ea4
 	13 segments
+
 	Segment 1: len 0x13ce0 load 0x3f400020 file_offs 0x00000018 SOC_DROM
 	Segment 2: len 0x00000 load 0x3ff80000 file_offs 0x00013d00 SOC_RTC_DRAM
 	Segment 3: len 0x00000 load 0x3ff80000 file_offs 0x00013d08 SOC_RTC_DRAM
@@ -38,7 +44,8 @@ To get the list of your image segments, please run the following command:
 	Segment 11: len 0x00004 load 0x50000000 file_offs 0x00089b60 SOC_RTC_DATA
 	Segment 12: len 0x00000 load 0x50000004 file_offs 0x00089b6c SOC_RTC_DATA
 	Segment 13: len 0x00000 load 0x50000004 file_offs 0x00089b74 SOC_RTC_DATA
-	Checksum: e8 (valid)Validation Hash: 407089ca0eae2bbf83b4120979d3354b1c938a49cb7a0c997f240474ef2ec76b (valid)
+	Checksum: e8 (valid)
+	Validation Hash: 407089ca0eae2bbf83b4120979d3354b1c938a49cb7a0c997f240474ef2ec76b (valid)
 
 You can also see the information on segments in the ESP-IDF logs while your application is booting:
 
@@ -67,7 +74,7 @@ You can also see the information on segments in the ESP-IDF logs while your appl
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
-4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from the first byte and up to this field. The length of this field is 32 bytes.
+4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of the SHA256 hash is calculated on the range from the first byte and up to this field. The length of this field is 32 bytes.
 5. If the option :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to ECDSA then the application image will have an additional 68 bytes for an ECDSA signature, which includes:
 
  * version word (4 bytes),
@@ -75,7 +82,7 @@ You can also see the information on segments in the ESP-IDF logs while your appl
 
 6. If the option :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to RSA or ECDSA (V2) then the application image will have an additional signature sector of 4K size. For more details on the format of this signature sector, please refer to :ref:`signature-block-format`.
 
-.. _app_image_format_application_description:
+.. _app-image-format-application-description:
 
 Application Description
 -----------------------
@@ -88,11 +95,11 @@ The ``DROM`` segment of the application binary starts with the :cpp:type:`esp_ap
  * ``project_name`` is filled from ``PROJECT_NAME``. ``*``
  * ``time`` and ``date`` - compile time and date.
  * ``idf_ver`` - version of ESP-IDF. ``*``
- * ``app_elf_sha256`` - contains sha256 for the application ELF file.
+ * ``app_elf_sha256`` - contains sha256 hash for the application ELF file.
 
 ``*`` - The maximum length is 32 characters, including null-termination character. For example, if the length of ``PROJECT_NAME`` exceeds 31 characters, the excess characters will be disregarded.
 
-This structure is useful for identification of images uploaded OTA because it has a fixed offset = sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`). As soon as a device receives the first fragment containing this structure, it has all the information to determine whether the update should be continued or not.
+This structure is useful for identification of images uploaded via Over-the-Air (OTA) updates because it has a fixed offset = sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`). As soon as a device receives the first fragment containing this structure, it has all the information to determine whether the update should be continued with or not.
 
 To obtain the :cpp:type:`esp_app_desc_t` structure for the currently running application, use :cpp:func:`esp_app_get_description`.
 

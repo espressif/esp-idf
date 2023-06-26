@@ -33,7 +33,16 @@
 
 static const char *TAG = "vfs";
 
-#define VFS_MAX_COUNT   8   /* max number of VFS entries (registered filesystems) */
+/* Max number of VFS entries (registered filesystems) */
+#ifdef CONFIG_VFS_MAX_COUNT
+#define VFS_MAX_COUNT  CONFIG_VFS_MAX_COUNT
+#else
+/* If IO support is disabled, keep this defined to 1 to avoid compiler warnings in this file.
+ * The s_vfs array and the functions defined here will be removed by the linker, anyway.
+ */
+#define VFS_MAX_COUNT 1
+#endif
+
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
 #define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .has_pending_close = false, .has_pending_select = false, .vfs_index = -1, .local_fd = -1 }
 
@@ -990,7 +999,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         const vfs_entry_t *vfs = get_vfs_for_index(i);
         fds_triple_t *item = &vfs_fds_triple[i];
 
-        if (vfs && vfs->vfs.start_select && item->isset) {
+        if (vfs && !vfs->vfs.start_select) {
+            ESP_LOGD(TAG, "start_select function callback for this vfs (s_vfs[%d]) is not defined", vfs->offset);
+        } else if (vfs && vfs->vfs.start_select && item->isset) {
             // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
             // note: it can point to socket VFS but item->isset will be false for that
             ESP_LOGD(TAG, "calling start_select for VFS ID %d with the following local FDs", i);
@@ -1001,7 +1012,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
                     driver_args + i);
 
             if (err != ESP_OK) {
-                call_end_selects(i, vfs_fds_triple, driver_args);
+                if (err != ESP_ERR_NOT_SUPPORTED) {
+                    call_end_selects(i, vfs_fds_triple, driver_args);
+                }
                 (void) set_global_fd_sets(vfs_fds_triple, vfs_count, readfds, writefds, errorfds);
                 if (sel_sem.is_sem_local && sel_sem.sem) {
                     vSemaphoreDelete(sel_sem.sem);

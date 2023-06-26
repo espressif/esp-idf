@@ -152,11 +152,13 @@ typedef struct {
 typedef enum{
     BTM_WHITELIST_REMOVE     = 0X00,
     BTM_WHITELIST_ADD        = 0X01,
+    BTM_WHITELIST_CLEAR      = 0x02,
 }tBTM_WL_OPERATION;
 
 
 typedef void (tBTM_DEV_STATUS_CB) (tBTM_DEV_STATUS status);
 
+typedef void (tBTM_GET_DEV_NAME_CBACK) (UINT8 status, char *name);
 
 /* Callback function for when a vendor specific event occurs. The length and
 ** array of returned parameter bytes are included. This asynchronous event
@@ -189,7 +191,7 @@ typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DAT
 
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
-typedef void (tBTM_ADD_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
+typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
 
 typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 

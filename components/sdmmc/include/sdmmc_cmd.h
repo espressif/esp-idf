@@ -58,7 +58,7 @@ esp_err_t sdmmc_get_status(sdmmc_card_t* card);
  * @param start_sector  sector where to start writing
  * @param sector_count  number of sectors to write
  * @return
- *      - ESP_OK on success
+ *      - ESP_OK on success or sector_count equal to 0
  *      - One of the error codes from SDMMC host controller
  */
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
@@ -74,7 +74,7 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
  * @param start_sector  sector where to start reading
  * @param sector_count  number of sectors to read
  * @return
- *      - ESP_OK on success
+ *      - ESP_OK on success or sector_count equal to 0
  *      - One of the error codes from SDMMC host controller
  */
 esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
@@ -92,7 +92,7 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
  * @param sector_count  number of sectors to erase
  * @param arg  erase command (CMD38) argument
  * @return
- *      - ESP_OK on success
+ *      - ESP_OK on success or sector_count equal to 0
  *      - One of the error codes from SDMMC host controller
  */
 esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,

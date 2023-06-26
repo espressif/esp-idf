@@ -229,7 +229,7 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
         return 0;
     }
 
-    return resp;
+    return resp/size; // return the number of items written
 }
 
 static void esp_apptrace_fread_args_prepare(uint8_t *buf, void *priv)
@@ -266,14 +266,16 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
     }
-    if (resp > 0) {
-        ret = esp_apptrace_file_rsp_recv(dest, ptr, resp);
-        if (ret != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "Failed to read file data (%d)!", ret);
-            return 0;
-        }
+    if (resp == 0) {
+        return 0;
     }
-    return resp;
+
+    ret = esp_apptrace_file_rsp_recv(dest, ptr, resp);
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to read file data (%d)!", ret);
+        return 0;
+    }
+    return resp/size; // return the number of items read
 }
 
 static void esp_apptrace_fseek_args_prepare(uint8_t *buf, void *priv)

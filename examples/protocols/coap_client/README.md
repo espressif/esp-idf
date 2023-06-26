@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 
 # CoAP client example
@@ -107,3 +107,5 @@ optional `path`, and begins with `coap://`, `coaps://`, `coap+tcp://` or `coaps+
 * CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration -> Enable CoAP debugging'
 and setting appropriate log level.  If Mbed TLS logging is required, this needs to be configured separately under mbedTLS
 Component Configuration and the CoAP logging level set to mbedTLS.
+
+* CoAP library does not support IPv6 only configuration, so it is necessary to enable `LWIP_IPv4`

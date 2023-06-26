@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Example: UART software emulation using dedicated/fast GPIOs
 
@@ -22,7 +22,7 @@ Due to the tight timing requirements of SW bit banging, the `asm_emulate_uart` f
 
 ### Hardware Required
 
-* A development board with a RISC-V Espressif SoC (e.g., ESP32-C3 or ESP32-C2)
+* A development board with one of the supported chips (see the list above.)
 * A USB cable for Power supply and programming
 * Some jumper wires to connect the UART to an external UART-to-USB adapter.
 
@@ -34,7 +34,7 @@ Due to the strict timing requirements of the UART emulation, the UART emulation 
 
 ### Build and flash the project
 
-* Set the target of the project to a RISC-V-based one. For example:
+* Set the target of the project to a compatible one. For example:
 ```
 idf.py set-target esp32c3
 ```

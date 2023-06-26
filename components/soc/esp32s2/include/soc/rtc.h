@@ -111,13 +111,31 @@ set sleep_init default param
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  6
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
-#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP 0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+
+#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
+#define RTC_CNTL_BIASSLP_MONITOR_ON  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
+#define RTC_CNTL_PD_CUR_MONITOR_ON  0
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_DEEPSLEEP_0V7 RTC_CNTL_DBIAS_1V25
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V9   5
+#define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V9   4
+#define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V75   0
+#define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V75   1
+
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -423,6 +441,9 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config);
  * Short form for filling in rtc_cpu_freq_config_t structure and calling
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
+ *
+ * @note Unlike on other chips, on ESP32S2, this function does not disable BBPLL after switching the CPU clock source
+ * to XTAL. If BBPLL wants to be turned off for power saving purpose, please use rtc_clk_cpu_freq_set_config.
  */
 void rtc_clk_cpu_freq_set_xtal(void);
 
@@ -508,10 +529,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
  */
 uint64_t rtc_time_get(void);
 
-uint64_t rtc_light_slp_time_get(void);
-
-uint64_t rtc_deep_slp_time_get(void);
-
 /**
  * @brief Busy loop until next RTC_SLOW_CLK cycle
  *
@@ -590,11 +607,8 @@ typedef struct {
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
-    uint32_t dig_dbias_wak : 3;         //!< set bias for digital domain, in active mode
     uint32_t dig_dbias_slp : 3;         //!< set bias for digital domain, in sleep mode
-    uint32_t rtc_dbias_wak : 3;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
-    uint32_t dbg_atten_monitor : 4;     //!< voltage parameter, in monitor mode
     uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
     uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
     uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
@@ -602,6 +616,7 @@ typedef struct {
     uint32_t pd_cur_slp : 1;            //!< circuit control parameter, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
+    uint32_t rtc_regulator_fpu  : 1;    //!< keep rtc regulator powered up in sleep
     uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
     uint32_t light_slp_reject : 1;      //!< enable light sleep reject
 } rtc_sleep_config_t;

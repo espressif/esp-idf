@@ -15,9 +15,7 @@ extern "C" {
 #include "esp_assert.h"
 #include "esp_err.h"
 #include "hal/eth_types.h"
-#include "soc/emac_dma_struct.h"
-#include "soc/emac_mac_struct.h"
-#include "soc/emac_ext_struct.h"
+#include "hal/emac_ll.h"
 
 /**
  * @brief Indicate to ::emac_hal_receive_frame that receive frame buffer was allocated by ::emac_hal_alloc_recv_buf
@@ -159,10 +157,14 @@ typedef struct {
 
 ESP_STATIC_ASSERT(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
 
+typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
+typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;
+typedef struct emac_ext_dev_s *emac_ext_soc_regs_t;
+
 typedef struct {
-    emac_mac_dev_t *mac_regs;
-    emac_dma_dev_t *dma_regs;
-    emac_ext_dev_t *ext_regs;
+    emac_mac_soc_regs_t mac_regs;
+    emac_dma_soc_regs_t dma_regs;
+    emac_ext_soc_regs_t ext_regs;
     uint8_t **rx_buf;
     uint8_t **tx_buf;
     void *descriptors;
@@ -193,11 +195,37 @@ void emac_hal_iomux_init_tx_er(void);
 
 void emac_hal_iomux_init_rx_er(void);
 
+static inline void emac_hal_clock_enable_mii(emac_hal_context_t *hal)
+{
+    emac_ll_clock_enable_mii(hal->ext_regs);
+}
+
+static inline void emac_hal_clock_enable_rmii_input(emac_hal_context_t *hal)
+{
+    emac_ll_clock_enable_rmii_input(hal->ext_regs);
+}
+
+static inline void emac_hal_clock_enable_rmii_output(emac_hal_context_t *hal)
+{
+    emac_ll_clock_enable_rmii_output(hal->ext_regs);
+}
+
 void emac_hal_reset_desc_chain(emac_hal_context_t *hal);
 
-void emac_hal_reset(emac_hal_context_t *hal);
+static inline void *emac_hal_get_desc_chain(emac_hal_context_t *hal)
+{
+    return hal->descriptors;
+}
 
-bool emac_hal_is_reset_done(emac_hal_context_t *hal);
+static inline void emac_hal_reset(emac_hal_context_t *hal)
+{
+    emac_ll_reset(hal->dma_regs);
+}
+
+static inline bool emac_hal_is_reset_done(emac_hal_context_t *hal)
+{
+    return emac_ll_is_reset_done(hal->dma_regs);
+}
 
 void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
@@ -205,24 +233,45 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal);
 
 void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *hal_config);
 
-void emac_hal_set_speed(emac_hal_context_t *hal, uint32_t speed);
+static inline void emac_hal_set_speed(emac_hal_context_t *hal, eth_speed_t speed)
+{
+    emac_ll_set_port_speed(hal->mac_regs, speed);
+}
 
-void emac_hal_set_duplex(emac_hal_context_t *hal, eth_duplex_t duplex);
+static inline void emac_hal_set_duplex(emac_hal_context_t *hal, eth_duplex_t duplex)
+{
+    emac_ll_set_duplex(hal->mac_regs, duplex);
+}
 
-void emac_hal_set_promiscuous(emac_hal_context_t *hal, bool enable);
+static inline void emac_hal_set_promiscuous(emac_hal_context_t *hal, bool enable)
+{
+    emac_ll_promiscuous_mode_enable(hal->mac_regs, enable);
+}
 
 /**
  * @brief Send MAC-CTRL frames to peer (EtherType=0x8808, opcode=0x0001, dest_addr=MAC-specific-ctrl-proto-01 (01:80:c2:00:00:01))
  */
-void emac_hal_send_pause_frame(emac_hal_context_t *hal, bool enable);
+static inline void emac_hal_send_pause_frame(emac_hal_context_t *hal, bool enable)
+{
+    emac_ll_pause_frame_enable(hal->ext_regs, enable);
+}
 
-bool emac_hal_is_mii_busy(emac_hal_context_t *hal);
+static inline bool emac_hal_is_mii_busy(emac_hal_context_t *hal)
+{
+    return emac_ll_is_mii_busy(hal->mac_regs);
+}
 
 void emac_hal_set_phy_cmd(emac_hal_context_t *hal, uint32_t phy_addr, uint32_t phy_reg, bool write);
 
-void emac_hal_set_phy_data(emac_hal_context_t *hal, uint32_t reg_value);
+static inline void emac_hal_set_phy_data(emac_hal_context_t *hal, uint32_t reg_value)
+{
+    emac_ll_set_phy_data(hal->mac_regs, reg_value);
+}
 
-uint32_t emac_hal_get_phy_data(emac_hal_context_t *hal);
+static inline uint32_t emac_hal_get_phy_data(emac_hal_context_t *hal)
+{
+    return emac_ll_get_phy_data(hal->mac_regs);
+}
 
 void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr);
 
@@ -308,13 +357,25 @@ uint32_t emac_hal_flush_recv_frame(emac_hal_context_t *hal, uint32_t *frames_rem
 
 void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 
-uint32_t emac_hal_get_intr_enable_status(emac_hal_context_t *hal);
+static inline uint32_t emac_hal_get_intr_enable_status(emac_hal_context_t *hal)
+{
+    return emac_ll_get_intr_enable_status(hal->dma_regs);
+}
 
-uint32_t emac_hal_get_intr_status(emac_hal_context_t *hal);
+static inline uint32_t emac_hal_get_intr_status(emac_hal_context_t *hal)
+{
+    return emac_ll_get_intr_status(hal->dma_regs);
+}
 
-void emac_hal_clear_corresponding_intr(emac_hal_context_t *hal, uint32_t bits);
+static inline void emac_hal_clear_corresponding_intr(emac_hal_context_t *hal, uint32_t bits)
+{
+    emac_ll_clear_corresponding_intr(hal->dma_regs, bits);
+}
 
-void emac_hal_clear_all_intr(emac_hal_context_t *hal);
+static inline void emac_hal_clear_all_intr(emac_hal_context_t *hal)
+{
+    emac_ll_clear_all_pending_intr(hal->dma_regs);
+}
 
 #ifdef __cplusplus
 }

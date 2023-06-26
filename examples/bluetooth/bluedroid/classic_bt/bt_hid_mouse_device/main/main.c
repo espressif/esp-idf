@@ -262,7 +262,7 @@ void esp_bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
             ESP_LOGI(TAG, "setting hid parameters success!");
             ESP_LOGI(TAG, "setting to connectable, discoverable");
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-            if (param->register_app.in_use && param->register_app.bd_addr != NULL) {
+            if (param->register_app.in_use) {
                 ESP_LOGI(TAG, "start virtual cable plug!");
                 esp_bt_hid_device_connect(param->register_app.bd_addr);
             }
@@ -402,27 +402,27 @@ void app_main(void)
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-        ESP_LOGE(TAG, "initialize controller failed: %s\n", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "initialize controller failed: %s", esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
-        ESP_LOGE(TAG, "enable controller failed: %s\n", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "enable controller failed: %s", esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bluedroid_init()) != ESP_OK) {
-        ESP_LOGE(TAG, "initialize bluedroid failed: %s\n", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "initialize bluedroid failed: %s", esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bluedroid_enable()) != ESP_OK) {
-        ESP_LOGE(TAG, "enable bluedroid failed: %s\n", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "enable bluedroid failed: %s", esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bt_gap_register_callback(esp_bt_gap_cb)) != ESP_OK) {
-        ESP_LOGE(TAG, "gap register failed: %s\n", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "gap register failed: %s", esp_err_to_name(ret));
         return;
     }
 

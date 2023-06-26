@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -155,7 +155,7 @@ typedef union {
 } efuse_pgm_check_value2_reg_t;
 
 
-/** Group: ******** Registers */
+/** Group: Read Data Register */
 /** Type of rd_wr_dis register
  *  BLOCK0 data register 0.
  */
@@ -213,10 +213,10 @@ typedef union {
          *  enabled. 1: disabled. 0: enabled.
          */
         uint32_t spi_download_mspi_dis:1;
-        /** dis_can : RO; bitpos: [14]; default: 0;
+        /** dis_twai : RO; bitpos: [14]; default: 0;
          *  Represents whether TWAI function is disabled or enabled. 1: disabled. 0: enabled.
          */
-        uint32_t dis_can:1;
+        uint32_t dis_twai:1;
         /** jtag_sel_enable : RO; bitpos: [15]; default: 0;
          *  Represents whether the selection between usb_to_jtag and pad_to_jtag through
          *  strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0
@@ -338,18 +338,18 @@ typedef union {
          *  Represents the purpose of Key5.
          */
         uint32_t key_purpose_5:4;
-        /** dpa_sec_level : RO; bitpos: [17:16]; default: 0;
+        /** sec_dpa_level : RO; bitpos: [17:16]; default: 0;
          *  Represents the spa secure level by configuring the clock random divide mode.
          */
-        uint32_t dpa_sec_level:2;
-        /** rpt4_reserved2_1 : RO; bitpos: [18]; default: 0;
-         *  Reserved.
-         */
-        uint32_t rpt4_reserved2_1:1;
-        /** crypt_dpa_enable : RO; bitpos: [19]; default: 1;
+        uint32_t sec_dpa_level:2;
+        /** crypt_dpa_enable : RO; bitpos: [18]; default: 0;
          *  Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled.
          */
         uint32_t crypt_dpa_enable:1;
+        /** rpt4_reserved2_1 : RO; bitpos: [19]; default: 1;
+         *  Reserved.
+         */
+        uint32_t rpt4_reserved2_1:1;
         /** secure_boot_en : RO; bitpos: [20]; default: 0;
          *  Represents whether secure boot is enabled or disabled. 1: enabled. 0: disabled.
          */
@@ -386,11 +386,11 @@ typedef union {
          *  Represents whether direct boot mode is disabled or enabled. 1: disabled. 0: enabled.
          */
         uint32_t dis_direct_boot:1;
-        /** dis_usb_print : RO; bitpos: [2]; default: 0;
+        /** dis_usb_serial_jtag_rom_print : RO; bitpos: [2]; default: 0;
          *  Represents whether print from USB-Serial-JTAG is disabled or enabled. 1: disabled.
          *  0: enabled.
          */
-        uint32_t dis_usb_print:1;
+        uint32_t dis_usb_serial_jtag_rom_print:1;
         /** rpt4_reserved3_5 : RO; bitpos: [3]; default: 0;
          *  Reserved.
          */
@@ -454,10 +454,22 @@ typedef union {
  */
 typedef union {
     struct {
+        /** disable_wafer_version_major : R; bitpos: [0]; default: 0;
+         *  Disables check of wafer version major
+         */
         uint32_t disable_wafer_version_major:1;
-        uint32_t disable_blk_version_major: 1;
-        uint32_t rpt4_reserved4:22;                          /*Reserved.*/
-        uint32_t reserved24:8;                               /*Reserved.*/
+        /** disable_blk_version_major : R; bitpos: [1]; default: 0;
+         *  Disables check of blk version major
+         */
+        uint32_t disable_blk_version_major:1;
+        /** reserved_0_162 : R; bitpos: [23:2]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_0_162:22;
+        /** rpt4_reserved4_0 : RO; bitpos: [31:24]; default: 0;
+         *  Reserved.
+         */
+        uint32_t rpt4_reserved4_0:8;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;
@@ -484,10 +496,10 @@ typedef union {
          *  Stores the high 16 bits of MAC address.
          */
         uint32_t mac_1:16;
-        /** spi_pad_conf_0 : RO; bitpos: [31:16]; default: 0;
-         *  Stores the zeroth part of SPI_PAD_CONF.
+        /** mac_ext : RO; bitpos: [31:16]; default: 0;
+         *  Stores the extended bits of MAC address.
          */
-        uint32_t spi_pad_conf_0:16;
+        uint32_t mac_ext:16;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_1_reg_t;
@@ -497,7 +509,14 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved:32;
+        /** mac_spi_reserved : RO; bitpos: [13:0]; default: 0;
+         *  Reserved.
+         */
+        uint32_t mac_spi_reserved:14;
+        /** spi_pad_conf_1 : RO; bitpos: [31:14]; default: 0;
+         *  Stores the first part of SPI_PAD_CONF.
+         */
+        uint32_t spi_pad_conf_1:18;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_2_reg_t;
@@ -511,13 +530,22 @@ typedef union {
          *  Stores the second part of SPI_PAD_CONF.
          */
         uint32_t spi_pad_conf_2:18;
-        uint32_t wafer_version_minor_low:3;
-        uint32_t pkg_version:3;
-        uint32_t blk_version_minor:3;
-        /** sys_data_part0_0 : RO; bitpos: [31:27]; default: 0;
-         *  Stores the first 5 bits of the zeroth part of system data.
+        /** wafer_version_minor : R; bitpos: [21:18]; default: 0; */
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : R; bitpos: [23:22]; default: 0; */
+        uint32_t wafer_version_major:2;
+        /** pkg_version : R; bitpos: [26:24]; default: 0;
+         *  Package version
          */
-        uint32_t sys_data_part0_0:5;
+        uint32_t pkg_version:3;
+        /** blk_version_minor : R; bitpos: [29:27]; default: 0;
+         *  BLK_VERSION_MINOR of BLOCK2
+         */
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [31:30]; default: 0;
+         *  BLK_VERSION_MAJOR of BLOCK2
+         */
+        uint32_t blk_version_major:2;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_3_reg_t;
@@ -527,7 +555,16 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved:32;
+        /** flash_cap : R; bitpos: [2:0]; default: 0; */
+        uint32_t flash_cap:3;
+        /** flash_temp : R; bitpos: [4:3]; default: 0; */
+        uint32_t flash_temp:2;
+        /** flash_vendor : R; bitpos: [7:5]; default: 0; */
+        uint32_t flash_vendor:3;
+        /** reserved_1_136 : R; bitpos: [31:8]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_136:24;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_4_reg_t;
@@ -537,10 +574,10 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved1:23;
-        uint32_t wafer_version_minor_high:1;
-        uint32_t wafer_version_major:2;
-        uint32_t reserved2:6;
+        /** sys_data_part0_2 : RO; bitpos: [31:0]; default: 0;
+         *  Stores the second 32 bits of the zeroth part of system data.
+         */
+        uint32_t sys_data_part0_2:32;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_5_reg_t;
@@ -550,10 +587,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_0 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the zeroth 32 bits of the first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_0:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data0_reg_t;
@@ -563,10 +600,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_1 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the first 32 bits of the first part of system data.
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_1:32;
+        uint32_t optional_unique_id_1:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data1_reg_t;
@@ -576,10 +613,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_2 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the second 32 bits of the first part of system data.
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_2:32;
+        uint32_t optional_unique_id_2:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data2_reg_t;
@@ -589,10 +626,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_3 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the third 32 bits of the first part of system data.
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_3:32;
+        uint32_t optional_unique_id_3:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data3_reg_t;
@@ -602,8 +639,22 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t blk_version_major :2;
-        uint32_t reserved1:30;
+        /** temp_calib : R; bitpos: [8:0]; default: 0;
+         *  Temperature calibration data
+         */
+        uint32_t temp_calib:9;
+        /** ocode : R; bitpos: [16:9]; default: 0;
+         *  ADC OCode
+         */
+        uint32_t ocode:8;
+        /** adc1_init_code_atten0 : R; bitpos: [26:17]; default: 0;
+         *  ADC1 init code at atten0
+         */
+        uint32_t adc1_init_code_atten0:10;
+        /** adc1_init_code_atten1 : R; bitpos: [31:27]; default: 0;
+         *  ADC1 init code at atten1
+         */
+        uint32_t adc1_init_code_atten1:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -613,10 +664,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fifth 32 bits of the first part of system data.
+        /** adc1_init_code_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  ADC1 init code at atten1
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_init_code_atten1_1:5;
+        /** adc1_init_code_atten2 : R; bitpos: [14:5]; default: 0;
+         *  ADC1 init code at atten2
+         */
+        uint32_t adc1_init_code_atten2:10;
+        /** adc1_init_code_atten3 : R; bitpos: [24:15]; default: 0;
+         *  ADC1 init code at atten3
+         */
+        uint32_t adc1_init_code_atten3:10;
+        /** adc1_cal_vol_atten0 : R; bitpos: [31:25]; default: 0;
+         *  ADC1 calibration voltage at atten0
+         */
+        uint32_t adc1_cal_vol_atten0:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -626,10 +689,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of the first part of system data.
+        /** adc1_cal_vol_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  ADC1 calibration voltage at atten0
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_cal_vol_atten0_1:3;
+        /** adc1_cal_vol_atten1 : R; bitpos: [12:3]; default: 0;
+         *  ADC1 calibration voltage at atten1
+         */
+        uint32_t adc1_cal_vol_atten1:10;
+        /** adc1_cal_vol_atten2 : R; bitpos: [22:13]; default: 0;
+         *  ADC1 calibration voltage at atten2
+         */
+        uint32_t adc1_cal_vol_atten2:10;
+        /** adc1_cal_vol_atten3 : R; bitpos: [31:23]; default: 0;
+         *  ADC1 calibration voltage at atten3
+         */
+        uint32_t adc1_cal_vol_atten3:9;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -639,10 +714,42 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of the first part of system data.
+        /** adc1_cal_vol_atten3_1 : R; bitpos: [0]; default: 0;
+         *  ADC1 calibration voltage at atten3
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_cal_vol_atten3_1:1;
+        /** adc1_init_code_atten0_ch0 : R; bitpos: [4:1]; default: 0;
+         *  ADC1 init code at atten0 ch0
+         */
+        uint32_t adc1_init_code_atten0_ch0:4;
+        /** adc1_init_code_atten0_ch1 : R; bitpos: [8:5]; default: 0;
+         *  ADC1 init code at atten0 ch1
+         */
+        uint32_t adc1_init_code_atten0_ch1:4;
+        /** adc1_init_code_atten0_ch2 : R; bitpos: [12:9]; default: 0;
+         *  ADC1 init code at atten0 ch2
+         */
+        uint32_t adc1_init_code_atten0_ch2:4;
+        /** adc1_init_code_atten0_ch3 : R; bitpos: [16:13]; default: 0;
+         *  ADC1 init code at atten0 ch3
+         */
+        uint32_t adc1_init_code_atten0_ch3:4;
+        /** adc1_init_code_atten0_ch4 : R; bitpos: [20:17]; default: 0;
+         *  ADC1 init code at atten0 ch4
+         */
+        uint32_t adc1_init_code_atten0_ch4:4;
+        /** adc1_init_code_atten0_ch5 : R; bitpos: [24:21]; default: 0;
+         *  ADC1 init code at atten0 ch5
+         */
+        uint32_t adc1_init_code_atten0_ch5:4;
+        /** adc1_init_code_atten0_ch6 : R; bitpos: [28:25]; default: 0;
+         *  ADC1 init code at atten0 ch6
+         */
+        uint32_t adc1_init_code_atten0_ch6:4;
+        /** reserved_2_253 : R; bitpos: [31:29]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_253:3;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;
@@ -730,10 +837,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** usr_data6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of BLOCK3 (user).
+        /** reserved_3_192 : R; bitpos: [7:0]; default: 0;
+         *  reserved
          */
-        uint32_t usr_data6:32;
+        uint32_t reserved_3_192:8;
+        /** custom_mac : R; bitpos: [31:8]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac:24;
     };
     uint32_t val;
 } efuse_rd_usr_data6_reg_t;
@@ -743,10 +854,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** usr_data7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of BLOCK3 (user).
+        /** custom_mac_1 : R; bitpos: [23:0]; default: 0;
+         *  Custom MAC
          */
-        uint32_t usr_data7:32;
+        uint32_t custom_mac_1:24;
+        /** reserved_3_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_248:8;
     };
     uint32_t val;
 } efuse_rd_usr_data7_reg_t;
@@ -1479,6 +1594,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_sys_part2_data7_reg_t;
 
+
+/** Group: Report Register */
 /** Type of rd_repeat_err0 register
  *  Programming error record register 0 of BLOCK0.
  */
@@ -1853,6 +1970,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_rs_err1_reg_t;
 
+
+/** Group: Configuration Register */
 /** Type of clk register
  *  eFuse clcok configuration register.
  */
@@ -1894,48 +2013,6 @@ typedef union {
     uint32_t val;
 } efuse_conf_reg_t;
 
-/** Type of status register
- *  eFuse status register.
- */
-typedef union {
-    struct {
-        /** state : RO; bitpos: [3:0]; default: 0;
-         *  Indicates the state of the eFuse state machine.
-         */
-        uint32_t state:4;
-        /** otp_load_sw : RO; bitpos: [4]; default: 0;
-         *  The value of OTP_LOAD_SW.
-         */
-        uint32_t otp_load_sw:1;
-        /** otp_vddq_c_sync2 : RO; bitpos: [5]; default: 0;
-         *  The value of OTP_VDDQ_C_SYNC2.
-         */
-        uint32_t otp_vddq_c_sync2:1;
-        /** otp_strobe_sw : RO; bitpos: [6]; default: 0;
-         *  The value of OTP_STROBE_SW.
-         */
-        uint32_t otp_strobe_sw:1;
-        /** otp_csb_sw : RO; bitpos: [7]; default: 0;
-         *  The value of OTP_CSB_SW.
-         */
-        uint32_t otp_csb_sw:1;
-        /** otp_pgenb_sw : RO; bitpos: [8]; default: 0;
-         *  The value of OTP_PGENB_SW.
-         */
-        uint32_t otp_pgenb_sw:1;
-        /** otp_vddq_is_sw : RO; bitpos: [9]; default: 0;
-         *  The value of OTP_VDDQ_IS_SW.
-         */
-        uint32_t otp_vddq_is_sw:1;
-        /** blk0_valid_bit_cnt : RO; bitpos: [19:10]; default: 0;
-         *  Indicates the number of block valid bit.
-         */
-        uint32_t blk0_valid_bit_cnt:10;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} efuse_status_reg_t;
-
 /** Type of cmd register
  *  eFuse command register.
  */
@@ -1958,78 +2035,6 @@ typedef union {
     };
     uint32_t val;
 } efuse_cmd_reg_t;
-
-/** Type of int_raw register
- *  eFuse raw interrupt register.
- */
-typedef union {
-    struct {
-        /** read_done_int_raw : R/SS/WTC; bitpos: [0]; default: 0;
-         *  The raw bit signal for read_done interrupt.
-         */
-        uint32_t read_done_int_raw:1;
-        /** pgm_done_int_raw : R/SS/WTC; bitpos: [1]; default: 0;
-         *  The raw bit signal for pgm_done interrupt.
-         */
-        uint32_t pgm_done_int_raw:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} efuse_int_raw_reg_t;
-
-/** Type of int_st register
- *  eFuse interrupt status register.
- */
-typedef union {
-    struct {
-        /** read_done_int_st : RO; bitpos: [0]; default: 0;
-         *  The status signal for read_done interrupt.
-         */
-        uint32_t read_done_int_st:1;
-        /** pgm_done_int_st : RO; bitpos: [1]; default: 0;
-         *  The status signal for pgm_done interrupt.
-         */
-        uint32_t pgm_done_int_st:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} efuse_int_st_reg_t;
-
-/** Type of int_ena register
- *  eFuse interrupt enable register.
- */
-typedef union {
-    struct {
-        /** read_done_int_ena : R/W; bitpos: [0]; default: 0;
-         *  The enable signal for read_done interrupt.
-         */
-        uint32_t read_done_int_ena:1;
-        /** pgm_done_int_ena : R/W; bitpos: [1]; default: 0;
-         *  The enable signal for pgm_done interrupt.
-         */
-        uint32_t pgm_done_int_ena:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} efuse_int_ena_reg_t;
-
-/** Type of int_clr register
- *  eFuse interrupt clear register.
- */
-typedef union {
-    struct {
-        /** read_done_int_clr : WO; bitpos: [0]; default: 0;
-         *  The clear signal for read_done interrupt.
-         */
-        uint32_t read_done_int_clr:1;
-        /** pgm_done_int_clr : WO; bitpos: [1]; default: 0;
-         *  The clear signal for pgm_done interrupt.
-         */
-        uint32_t pgm_done_int_clr:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} efuse_int_clr_reg_t;
 
 /** Type of dac_conf register
  *  Controls the eFuse programming voltage.
@@ -2147,6 +2152,126 @@ typedef union {
     uint32_t val;
 } efuse_wr_tim_conf0_rs_bypass_reg_t;
 
+
+/** Group: Status Register */
+/** Type of status register
+ *  eFuse status register.
+ */
+typedef union {
+    struct {
+        /** state : RO; bitpos: [3:0]; default: 0;
+         *  Indicates the state of the eFuse state machine.
+         */
+        uint32_t state:4;
+        /** otp_load_sw : RO; bitpos: [4]; default: 0;
+         *  The value of OTP_LOAD_SW.
+         */
+        uint32_t otp_load_sw:1;
+        /** otp_vddq_c_sync2 : RO; bitpos: [5]; default: 0;
+         *  The value of OTP_VDDQ_C_SYNC2.
+         */
+        uint32_t otp_vddq_c_sync2:1;
+        /** otp_strobe_sw : RO; bitpos: [6]; default: 0;
+         *  The value of OTP_STROBE_SW.
+         */
+        uint32_t otp_strobe_sw:1;
+        /** otp_csb_sw : RO; bitpos: [7]; default: 0;
+         *  The value of OTP_CSB_SW.
+         */
+        uint32_t otp_csb_sw:1;
+        /** otp_pgenb_sw : RO; bitpos: [8]; default: 0;
+         *  The value of OTP_PGENB_SW.
+         */
+        uint32_t otp_pgenb_sw:1;
+        /** otp_vddq_is_sw : RO; bitpos: [9]; default: 0;
+         *  The value of OTP_VDDQ_IS_SW.
+         */
+        uint32_t otp_vddq_is_sw:1;
+        /** blk0_valid_bit_cnt : RO; bitpos: [19:10]; default: 0;
+         *  Indicates the number of block valid bit.
+         */
+        uint32_t blk0_valid_bit_cnt:10;
+        uint32_t reserved_20:12;
+    };
+    uint32_t val;
+} efuse_status_reg_t;
+
+
+/** Group: Interrupt Register */
+/** Type of int_raw register
+ *  eFuse raw interrupt register.
+ */
+typedef union {
+    struct {
+        /** read_done_int_raw : R/SS/WTC; bitpos: [0]; default: 0;
+         *  The raw bit signal for read_done interrupt.
+         */
+        uint32_t read_done_int_raw:1;
+        /** pgm_done_int_raw : R/SS/WTC; bitpos: [1]; default: 0;
+         *  The raw bit signal for pgm_done interrupt.
+         */
+        uint32_t pgm_done_int_raw:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} efuse_int_raw_reg_t;
+
+/** Type of int_st register
+ *  eFuse interrupt status register.
+ */
+typedef union {
+    struct {
+        /** read_done_int_st : RO; bitpos: [0]; default: 0;
+         *  The status signal for read_done interrupt.
+         */
+        uint32_t read_done_int_st:1;
+        /** pgm_done_int_st : RO; bitpos: [1]; default: 0;
+         *  The status signal for pgm_done interrupt.
+         */
+        uint32_t pgm_done_int_st:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} efuse_int_st_reg_t;
+
+/** Type of int_ena register
+ *  eFuse interrupt enable register.
+ */
+typedef union {
+    struct {
+        /** read_done_int_ena : R/W; bitpos: [0]; default: 0;
+         *  The enable signal for read_done interrupt.
+         */
+        uint32_t read_done_int_ena:1;
+        /** pgm_done_int_ena : R/W; bitpos: [1]; default: 0;
+         *  The enable signal for pgm_done interrupt.
+         */
+        uint32_t pgm_done_int_ena:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} efuse_int_ena_reg_t;
+
+/** Type of int_clr register
+ *  eFuse interrupt clear register.
+ */
+typedef union {
+    struct {
+        /** read_done_int_clr : WO; bitpos: [0]; default: 0;
+         *  The clear signal for read_done interrupt.
+         */
+        uint32_t read_done_int_clr:1;
+        /** pgm_done_int_clr : WO; bitpos: [1]; default: 0;
+         *  The clear signal for pgm_done interrupt.
+         */
+        uint32_t pgm_done_int_clr:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} efuse_int_clr_reg_t;
+
+
+/** Group: Version Register */
 /** Type of date register
  *  eFuse version register.
  */
@@ -2162,7 +2287,7 @@ typedef union {
 } efuse_date_reg_t;
 
 
-typedef struct efuse_dev_t {
+typedef struct {
     volatile efuse_pgm_data0_reg_t pgm_data0;
     volatile efuse_pgm_data1_reg_t pgm_data1;
     volatile efuse_pgm_data2_reg_t pgm_data2;

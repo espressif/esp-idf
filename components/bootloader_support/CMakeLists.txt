@@ -2,45 +2,59 @@ set(srcs
     "src/bootloader_common.c"
     "src/bootloader_common_loader.c"
     "src/bootloader_clock_init.c"
-    "bootloader_flash/src/bootloader_flash.c"
     "src/bootloader_mem.c"
     "src/bootloader_random.c"
     "src/bootloader_random_${IDF_TARGET}.c"
-    "src/bootloader_utility.c"
-    "src/esp_image_format.c"
+    "src/bootloader_efuse.c"
     "src/flash_encrypt.c"
     "src/secure_boot.c"
-    "src/flash_partitions.c"
-    "bootloader_flash/src/flash_qio_mode.c"
-    "bootloader_flash/src/bootloader_flash_config_${IDF_TARGET}.c"
-    "src/bootloader_efuse.c"
     )
 
-if(BOOTLOADER_BUILD)
+if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+    list(APPEND srcs
+        "bootloader_flash/src/bootloader_flash.c"
+        "bootloader_flash/src/flash_qio_mode.c"
+        "bootloader_flash/src/bootloader_flash_config_${IDF_TARGET}.c"
+        )
+endif()
+
+if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+    list(APPEND srcs
+        "src/bootloader_utility.c"
+        "src/flash_partitions.c"
+        "src/esp_image_format.c"
+        )
+endif()
+
+if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
-    set(priv_requires micro-ecc spi_flash efuse esp_app_format)
+    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
     "src/bootloader_console.c"
     "src/bootloader_console_loader.c"
-    "src/bootloader_panic.c"
     "src/${IDF_TARGET}/bootloader_sha.c"
     "src/${IDF_TARGET}/bootloader_soc.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
     )
     list(APPEND priv_requires hal)
+    if(CONFIG_ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE)
+        list(APPEND srcs
+            "src/${IDF_TARGET}/bootloader_ecdsa.c")
+    endif()
 else()
     list(APPEND srcs
         "src/idf/bootloader_sha.c")
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
-    set(priv_requires spi_flash mbedtls efuse heap esp_app_format)
+    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format)
 endif()
 
 if(BOOTLOADER_BUILD)
+    list(APPEND srcs "src/bootloader_panic.c")
     if(CONFIG_SECURE_FLASH_ENC_ENABLED)
         list(APPEND srcs "src/flash_encryption/flash_encrypt.c"
                          "src/${IDF_TARGET}/flash_encryption_secure_features.c")
@@ -150,12 +164,13 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
     target_add_binary_data(${COMPONENT_LIB} "${secure_boot_verification_key}" "BINARY"
         RENAME_TO signature_verification_key_bin)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${secure_boot_verification_key}")
 endif()
 
 if(BOOTLOADER_BUILD)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
+    # esp_bootloader_desc structure is added as an undefined symbol because otherwise the
+    # linker will ignore this structure as it has no other files depending on it.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_bootloader_desc")
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

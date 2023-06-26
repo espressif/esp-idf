@@ -13,6 +13,8 @@
 # This is an experimental feature, and if you found any bug or have any question, please report to
 # https://github.com/espressif/pytest-embedded/issues
 
+import glob
+import json
 import logging
 import os
 import re
@@ -36,11 +38,11 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
 
 try:
-    from idf_ci_utils import to_list
+    from idf_ci_utils import IDF_PATH, to_list
     from idf_unity_tester import CaseTester
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
-    from idf_ci_utils import to_list
+    from idf_ci_utils import IDF_PATH, to_list
     from idf_unity_tester import CaseTester
 
 try:
@@ -49,8 +51,8 @@ except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
     import common_test_methods  # noqa: F401
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6']
-PREVIEW_TARGETS = ['esp32h4']  # this PREVIEW_TARGETS excludes 'linux' target
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2']
+PREVIEW_TARGETS: List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
 
 TARGET_MARKERS = {
@@ -60,13 +62,13 @@ TARGET_MARKERS = {
     'esp32c3': 'support esp32c3 target',
     'esp32c2': 'support esp32c2 target',
     'esp32c6': 'support esp32c6 target',
-    'esp32h4': 'support esp32h4 target',
+    'esp32h2': 'support esp32h2 target',
     'linux': 'support linux target',
 }
 
 SPECIAL_MARKERS = {
     'supported_targets': "support all officially announced supported targets ('esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6')",
-    'preview_targets': "support all preview targets ('esp32h4')",
+    'preview_targets': "support all preview targets ('none')",
     'all_targets': 'support all targets, including supported ones and preview ones',
     'temp_skip_ci': 'temp skip tests for specified targets only in ci',
     'temp_skip': 'temp skip tests for specified targets both in ci and locally',
@@ -90,7 +92,7 @@ ENV_MARKERS = {
     'flash_encryption': 'Flash Encryption runners',
     'flash_encryption_f4r8': 'Flash Encryption runners with 4-line flash and 8-line psram',
     'flash_encryption_f8r8': 'Flash Encryption runners with 8-line flash and 8-line psram',
-    'flash_mutli': 'Multiple flash chips tests',
+    'flash_multi': 'Multiple flash chips tests',
     'psram': 'Chip has 4-line psram',
     'ir_transceiver': 'runners with a pair of IR transmitter and receiver',
     'twai_transceiver': 'runners with a TWAI PHY transceiver',
@@ -102,23 +104,32 @@ ENV_MARKERS = {
     'wifi_router': 'both the runner and dut connect to the same wifi router',
     'wifi_high_traffic': 'wifi high traffic runners',
     'wifi_wlan': 'wifi runner with a wireless NIC',
+    'Example_ShieldBox_Basic': 'basic configuration of the AP and ESP DUT placed in shielded box',
+    'Example_ShieldBox': 'multiple shielded APs connected to shielded ESP DUT via RF cable with programmable attenuator',
     'xtal_26mhz': 'runner with 26MHz xtal on board',
     'xtal_40mhz': 'runner with 40MHz xtal on board',
     'external_flash': 'external flash memory connected via VSPI (FSPI)',
     'sdcard_sdmode': 'sdcard running in SD mode',
     'sdcard_spimode': 'sdcard running in SPI mode',
+    'emmc': 'eMMC card',
     'MSPI_F8R8': 'runner with Octal Flash and Octal PSRAM',
     'MSPI_F4R8': 'runner with Quad Flash and Octal PSRAM',
     'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',
     'jtag': 'runner where the chip is accessible through JTAG as well',
+    'usb_serial_jtag': 'runner where the chip is accessible through builtin JTAG as well',
     'adc': 'ADC related tests should run on adc runners',
     'xtal32k': 'Runner with external 32k crystal connected',
     'no32kXtal': 'Runner with no external 32k crystal connected',
     'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
     'psramv0': 'Runner with PSRAM version 0',
+    'esp32eco3': 'Runner with esp32 eco3 connected',
+    'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
+    'ccs811': 'Runner with CCS811 connected',
+    'ethernet_w5500': 'SPI Ethernet module with two W5500',
+    'nvs_encr_hmac': 'Runner with test HMAC key programmed in efuse',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
-    'i154_multi_dut': 'tests should be used for i154, such as openthread.',
+    'openthread_br': 'tests should be used for openthread border router.',
     'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
@@ -243,7 +254,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 @pytest.fixture
 @multi_dut_fixture
-def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
+def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], config: Optional[str]) -> str:
     """
     Check local build dir with the following priority:
 
@@ -252,15 +263,9 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
     3. build_<config>
     4. build
 
-    Args:
-        app_path: app path
-        target: target
-        config: config
-
     Returns:
         valid build directory
     """
-
     check_dirs = []
     if target is not None and config is not None:
         check_dirs.append(f'build_{target}_{config}')
@@ -270,6 +275,25 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
         check_dirs.append(f'build_{config}')
     check_dirs.append('build')
 
+    idf_pytest_embedded = request.config.stash[_idf_pytest_embedded_key]
+
+    build_dir = None
+    if idf_pytest_embedded.apps_list is not None:
+        for check_dir in check_dirs:
+            binary_path = os.path.join(app_path, check_dir)
+            if binary_path in idf_pytest_embedded.apps_list:
+                build_dir = check_dir
+                break
+
+        if build_dir is None:
+            pytest.skip(
+                f'app path {app_path} with target {target} and config {config} is not listed in app info list files'
+            )
+            return ''  # not reachable, to fool mypy
+
+    if build_dir:
+        check_dirs = [build_dir]
+
     for check_dir in check_dirs:
         binary_path = os.path.join(app_path, check_dir)
         if os.path.isdir(binary_path):
@@ -278,9 +302,8 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
 
         logging.warning('checking binary path: %s... missing... try another place', binary_path)
 
-    recommend_place = check_dirs[0]
     raise ValueError(
-        f'no build dir valid. Please build the binary via "idf.py -B {recommend_place} build" and run pytest again'
+        f'no build dir valid. Please build the binary via "idf.py -B {check_dirs[0]} build" and run pytest again'
     )
 
 
@@ -327,6 +350,7 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
         :param target: target chip
         :raise: AssertionError: if check fails
         """
+
         def _find_perf_item(operator: str, path: str) -> float:
             with open(path, 'r') as f:
                 data = f.read()
@@ -389,19 +413,51 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
     return real_func
 
 
+@pytest.fixture
+def dev_password(request: FixtureRequest) -> str:
+    return request.config.getoption('dev_passwd') or ''
+
+
+@pytest.fixture
+def dev_user(request: FixtureRequest) -> str:
+    return request.config.getoption('dev_user') or ''
+
+
 ##################
 # Hook functions #
 ##################
 def pytest_addoption(parser: pytest.Parser) -> None:
-    base_group = parser.getgroup('idf')
-    base_group.addoption(
+    idf_group = parser.getgroup('idf')
+    idf_group.addoption(
         '--sdkconfig',
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
-    base_group.addoption('--known-failure-cases-file', help='known failure cases file path')
+    idf_group.addoption('--known-failure-cases-file', help='known failure cases file path')
+    idf_group.addoption(
+        '--dev-user',
+        help='user name associated with some specific device/service used during the test execution',
+    )
+    idf_group.addoption(
+        '--dev-passwd',
+        help='password associated with some specific device/service used during the test execution',
+    )
+    idf_group.addoption(
+        '--app-info-basedir',
+        default=IDF_PATH,
+        help='app info base directory. specify this value when you\'re building under a '
+        'different IDF_PATH. (Default: $IDF_PATH)',
+    )
+    idf_group.addoption(
+        '--app-info-filepattern',
+        help='glob pattern to specify the files that include built app info generated by '
+        '`idf-build-apps --collect-app-info ...`. will not raise ValueError when binary '
+        'paths not exist in local file system if not listed recorded in the app info.',
+    )
 
 
-_idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
+_idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']()
+_item_failed_cases_key = pytest.StashKey[list]()
+_item_failed_key = pytest.StashKey[bool]()
 
 
 def pytest_configure(config: Config) -> None:
@@ -417,10 +473,34 @@ def pytest_configure(config: Config) -> None:
     if not target:  # also could specify through markexpr via "-m"
         target = get_target_marker_from_expr(config.getoption('markexpr') or '')
 
+    apps_list = None
+    app_info_basedir = config.getoption('app_info_basedir')
+    app_info_filepattern = config.getoption('app_info_filepattern')
+    if app_info_filepattern:
+        apps_list = []
+        for file in glob.glob(os.path.join(IDF_PATH, app_info_filepattern)):
+            with open(file) as fr:
+                for line in fr.readlines():
+                    if not line.strip():
+                        continue
+
+                    # each line is a valid json
+                    app_info = json.loads(line.strip())
+                    if app_info_basedir and app_info['app_dir'].startswith(app_info_basedir):
+                        relative_app_dir = os.path.relpath(app_info['app_dir'], app_info_basedir)
+                        apps_list.append(os.path.join(IDF_PATH, os.path.join(relative_app_dir, app_info['build_dir'])))
+                        print('Detected app: ', apps_list[-1])
+                    else:
+                        print(
+                            f'WARNING: app_info base dir {app_info_basedir} not recognizable in {app_info["app_dir"]}, skipping...'
+                        )
+                        continue
+
     config.stash[_idf_pytest_embedded_key] = IdfPytestEmbedded(
         target=target,
         sdkconfig=config.getoption('sdkconfig'),
         known_failure_cases_file=config.getoption('known_failure_cases_file'),
+        apps_list=apps_list,
     )
     config.pluginmanager.register(config.stash[_idf_pytest_embedded_key])
 
@@ -441,11 +521,13 @@ class IdfPytestEmbedded:
         target: str,
         sdkconfig: Optional[str] = None,
         known_failure_cases_file: Optional[str] = None,
+        apps_list: Optional[List[str]] = None,
     ):
         # CLI options to filter the test cases
         self.target = target.lower()
         self.sdkconfig = sdkconfig
         self.known_failure_patterns = self._parse_known_failure_cases_file(known_failure_cases_file)
+        self.apps_list = apps_list
 
         self._failed_cases: List[Tuple[str, bool, bool]] = []  # (test_case_name, is_known_failure_cases, is_xfail)
 
@@ -547,11 +629,35 @@ class IdfPytestEmbedded:
 
     def pytest_runtest_makereport(self, item: Function, call: CallInfo[None]) -> Optional[TestReport]:
         report = TestReport.from_item_and_call(item, call)
+        if item.stash.get(_item_failed_key, None) is None:
+            item.stash[_item_failed_key] = False
+
         if report.outcome == 'failed':
-            test_case_name = item.funcargs.get('test_case_name', '')
-            is_known_failure = self._is_known_failure(test_case_name)
-            is_xfail = report.keywords.get('xfail', False)
-            self._failed_cases.append((test_case_name, is_known_failure, is_xfail))
+            # Mark the failed test cases
+            #
+            # This hook function would be called in 3 phases, setup, call, teardown.
+            # the report.outcome is the outcome of the single call of current phase, which is independent
+            # the call phase outcome is the test result
+            item.stash[_item_failed_key] = True
+
+        if call.when == 'teardown':
+            item_failed = item.stash[_item_failed_key]
+            if item_failed:
+                # unity real test cases
+                failed_sub_cases = item.stash.get(_item_failed_cases_key, [])
+                if failed_sub_cases:
+                    for test_case_name in failed_sub_cases:
+                        self._failed_cases.append((test_case_name, self._is_known_failure(test_case_name), False))
+                else:  # the case iteself is failing
+                    test_case_name = item.funcargs.get('test_case_name', '')
+                    if test_case_name:
+                        self._failed_cases.append(
+                            (
+                                test_case_name,
+                                self._is_known_failure(test_case_name),
+                                report.keywords.get('xfail', False),
+                            )
+                        )
 
         return report
 
@@ -576,16 +682,26 @@ class IdfPytestEmbedded:
         if not junits:
             return
 
+        failed_sub_cases = []
         target = item.funcargs['target']
         config = item.funcargs['config']
         for junit in junits:
             xml = ET.parse(junit)
             testcases = xml.findall('.//testcase')
             for case in testcases:
-                case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
+                # modify the junit files
+                new_case_name = format_case_id(target, config, case.attrib['name'])
+                case.attrib['name'] = new_case_name
                 if 'file' in case.attrib:
                     case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
+
+                # collect real failure cases
+                if case.find('failure') is not None:
+                    failed_sub_cases.append(new_case_name)
+
             xml.write(junit)
+
+        item.stash[_item_failed_cases_key] = failed_sub_cases
 
     def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
         if exitstatus != 0:

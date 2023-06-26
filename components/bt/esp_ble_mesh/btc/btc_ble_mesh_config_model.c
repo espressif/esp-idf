@@ -87,7 +87,7 @@ void btc_ble_mesh_config_client_arg_deep_free(btc_msg_t *msg)
 {
     btc_ble_mesh_config_client_args_t *arg = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -232,7 +232,7 @@ static void btc_ble_mesh_config_client_free_req_data(btc_msg_t *msg)
 {
     esp_ble_mesh_cfg_client_cb_param_t *arg = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -618,7 +618,7 @@ void btc_ble_mesh_config_client_call_handler(btc_msg_t *msg)
     btc_ble_mesh_config_client_args_t *arg = NULL;
     esp_ble_mesh_cfg_client_cb_param_t cb = {0};
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -656,7 +656,7 @@ void btc_ble_mesh_config_client_cb_handler(btc_msg_t *msg)
 {
     esp_ble_mesh_cfg_client_cb_param_t *param = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -748,7 +748,7 @@ void btc_ble_mesh_config_server_cb_handler(btc_msg_t *msg)
 {
     esp_ble_mesh_cfg_server_cb_param_t *param = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # I2S Basic PDM Mode Example
 
@@ -99,9 +99,9 @@ This example is going to show how to use the PDM TX and RX mode.
 #### PDM TX
 
 * An earphone or a speaker
-* An audio power amplifier that can input PDM signal. If the power amplifier can only receive the analog signal without PDM clock, a low-pass passive or active filter is required to restore the PDM data wave into analog signal, before it is transmitted to the power amplifier.
+* An audio power amplifier that can input PDM signal. If the power amplifier can only receive the analog signal without PDM clock (i.e. DAC line mode, otherwise codec line mode), a low-pass passive or active filter is required to restore the PDM data wave into analog signal, before it is transmitted to the power amplifier.
 
-**MAX98358**
+**MAX98358 (codec case)**
 
 Please refer to the [Datasheet of MAX98358](https://datasheets.maximintegrated.com/en/ds/MAX98358.pdf) for more details.
 
@@ -121,9 +121,9 @@ Please refer to the [Datasheet of MAX98358](https://datasheets.maximintegrated.c
 └────────────────────────┘               └───────────────┘
 ```
 
-**NS4150**
+**NS4150 (dac case)**
 
-Please refer to the [Datasheet of NS4150](http://www.nsiway.com.cn/product/44.html) for more details.
+Please refer to the NS4150 datasheet for more details.
 
 ```
 ┌────────────────────────┐                              ┌───────────────┐

@@ -1,5 +1,5 @@
 menu "Ultra Low Power (ULP) Co-processor"
-    depends on (SOC_ULP_SUPPORTED || SOC_RISCV_COPROC_SUPPORTED)
+    depends on (SOC_ULP_SUPPORTED || SOC_RISCV_COPROC_SUPPORTED || SOC_LP_CORE_SUPPORTED)
 
     config ULP_COPROC_ENABLED
         bool "Enable Ultra Low Power (ULP) Co-processor"
@@ -11,17 +11,19 @@ menu "Ultra Low Power (ULP) Co-processor"
     choice ULP_COPROC_TYPE
         prompt "ULP Co-processor type"
         depends on ULP_COPROC_ENABLED
-        default ULP_COPROC_TYPE_FSM if IDF_TARGET_ESP32
         default ULP_COPROC_TYPE_RISCV if (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)
         help
             Choose the ULP Coprocessor type: ULP FSM (Finite State Machine) or ULP RISC-V.
-            Please note that ESP32 only supports ULP FSM.
 
         config ULP_COPROC_TYPE_FSM
             bool "ULP FSM (Finite State Machine)"
+            depends on SOC_ULP_FSM_SUPPORTED
         config ULP_COPROC_TYPE_RISCV
             bool "ULP RISC-V"
-            depends on !IDF_TARGET_ESP32
+            depends on SOC_RISCV_COPROC_SUPPORTED
+        config ULP_COPROC_TYPE_LP_CORE
+            bool "LP core RISC-V"
+            depends on SOC_LP_CORE_SUPPORTED
     endchoice
 
     config ULP_COPROC_RESERVE_MEM
@@ -29,8 +31,9 @@ menu "Ultra Low Power (ULP) Co-processor"
         prompt "RTC slow memory reserved for coprocessor"
         depends on ULP_COPROC_ENABLED
         default 512 if IDF_TARGET_ESP32
-        default 4096 if (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)
-        range 32 8176
+        default 4096 if !IDF_TARGET_ESP32
+        range 32 8176 if !IDF_TARGET_ESP32C6
+        range 32 16352 if IDF_TARGET_ESP32C6
         help
             Bytes of memory to reserve for ULP Co-processor firmware & data.
             Data is reserved at the beginning of RTC slow memory.
@@ -46,7 +49,27 @@ menu "Ultra Low Power (ULP) Co-processor"
             help
                 The accuracy of the bitbanged UART driver is limited, it is not
                 recommend to increase the value above 19200.
+
+        config ULP_RISCV_I2C_RW_TIMEOUT
+            int
+            prompt "Set timeout for ULP RISC-V I2C transaction timeout in ticks."
+            default 500
+            range -1 4294967295
+            help
+                Set the ULP RISC-V I2C read/write timeout. Set this value to -1
+                if the ULP RISC-V I2C read and write APIs should wait forever.
+                Please note that the tick rate of the ULP co-processor would be
+                different than the OS tick rate of the main core and therefore
+                can have different timeout value depending on which core the API
+                is invoked on.
     endmenu
 
+    config ULP_SHARED_MEM
+        depends on ULP_COPROC_TYPE_LP_CORE
+        hex
+        default 0x8
+        help
+            Size of the shared memory defined in ulp_lp_core_memory_shared.c.
+            Size should be kept in-sync with the size of the struct defined there.
 
 endmenu  # Ultra Low Power (ULP) Co-processor

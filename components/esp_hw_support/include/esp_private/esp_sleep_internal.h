@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,8 +21,7 @@ extern "C" {
  */
 void esp_sleep_enable_adc_tsens_monitor(bool enable);
 
-// TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
  * @brief Isolate all digital IOs except those that are held during deep sleep
  *

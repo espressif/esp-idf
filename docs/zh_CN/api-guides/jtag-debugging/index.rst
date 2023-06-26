@@ -171,13 +171,15 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
     :start-after: run-openocd
     :end-before: ---
 
+{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg"}
+
 .. note::
 
     上述命令中 ``-f`` 选项后跟的配置文件专用于 |run-openocd-device-name|。基于具体使用的硬件，您可能需要选择不同的配置文件，具体内容请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
 
-    .. only:: esp32c3
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
-    例如，对于带有用于 JTAG 连接的 FT2232H 或 FT232H 芯片的定制板，或带有 ESP-Prog 的定制板，可使用 ``board/esp32c3-ftdi.cfg``。
+        例如，对于带有用于 JTAG 连接的 FT2232H 或 FT232H 芯片的定制板，或带有 ESP-Prog 的定制板，可使用 ``{IDF_TARGET_FTDI_CONFIG}``。
 
 .. highlight:: none
 
@@ -206,13 +208,15 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 其中 OpenOCD 的烧写命令 ``program_esp`` 格式如下：
 
-``program_esp <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
 
 -  ``image_file`` - 程序镜像文件存放的路径
 -  ``offset`` - 镜像烧写到 flash 中的偏移地址
 -  ``verify`` - 烧写完成后校验 flash 中的内容（可选）
 -  ``reset`` - 烧写完成后重启目标（可选）
 -  ``exit`` - 烧写完成后退出 OpenOCD（可选）
+- ``compress`` - 烧写开始前压缩镜像文件（可选）
+- ``encrypt`` - 烧写到 flash 前加密二进制文件，与 ``idf.py encrypted-flash`` 功能相同（可选）
 
 现在可以调试应用程序了，请按照以下章节中的步骤进行操作。
 
@@ -222,12 +226,13 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 启动调试器
 ----------
 
-{IDF_TARGET_NAME} 的工具链中带有 GNU 调试器（简称 GDB），它和其它工具链软件共同存放于 {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb 中。除了直接在命令行终端中调用并操作 GDB 外，也可以在 IDE (例如 Eclipse、Visual Studio Code 等）中进行调用，使用图形用户界面间接操作 GDB，这一方法无需在终端中输入任何命令。
+{IDF_TARGET_NAME} 的工具链中带有 GNU 调试器（简称 GDB），它和其它工具链软件共同存放于 {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb 中。除了直接在命令行终端中调用并操作 GDB 外，也可以在 IDE（例如 Eclipse、Visual Studio Code 等）中进行调用，使用图形用户界面间接操作 GDB，这一方法无需在终端中输入任何命令。
 
-关于以上两种调试器的使用方法，详见以下链接。
+关于调试器的使用方法，详见以下链接。
 
 * :ref:`jtag-debugging-using-debugger-eclipse`
 * :ref:`jtag-debugging-using-debugger-command-line`
+* `使用 VS Code 调试 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__
 
 建议首先检查调试器能否在 :ref:`命令行终端 <jtag-debugging-using-debugger-command-line>` 下正常工作，然后再使用 Eclipse :ref:`集成开发环境 <jtag-debugging-using-debugger-eclipse>` 进行调试工作。
 

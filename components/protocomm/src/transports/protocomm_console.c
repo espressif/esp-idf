@@ -112,7 +112,7 @@ static void protocomm_console_task(void *arg)
         }
         ret = esp_console_run((char *) linebuf, &cmd_ret);
         if (ret < 0) {
-            ESP_LOGE(TAG, "Console dispatcher error\n");
+            ESP_LOGE(TAG, "Console dispatcher error");
             break;
         }
     }

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) CO LTD
- * All rights reserved.
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -40,7 +40,8 @@
 
 /* Zigbee Configuration */
 #define MAX_CHILDREN                    10          /* the max amount of connected devices */
-#define INSTALLCODE_POLICY_ENABLE       false    /* enable the install code policy for security */
+#define INSTALLCODE_POLICY_ENABLE       false       /* enable the install code policy for security */
+#define ESP_ZB_PRIMARY_CHANNEL_MASK     (1l << 13)  /* Zigbee primary channel mask use in the example */
 
 #define ESP_ZB_ZC_CONFIG()                                                              \
     {                                                                                   \
@@ -50,6 +51,13 @@
             .max_children = MAX_CHILDREN,                                               \
         },                                                                              \
     }
+
+#if CONFIG_ZB_RADIO_NATIVE
+#define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
+    {                                                           \
+        .radio_mode = RADIO_MODE_NATIVE,                        \
+    }
+#else
 #define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
         .radio_mode = RADIO_MODE_UART_RCP,                      \
@@ -69,6 +77,7 @@
             .tx_pin = 5,                                        \
         },                                                      \
     }
+#endif
 
 #define ESP_ZB_DEFAULT_HOST_CONFIG()                            \
     {                                                           \

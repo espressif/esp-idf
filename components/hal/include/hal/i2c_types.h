@@ -19,11 +19,14 @@ extern "C" {
  * @brief I2C port number, can be I2C_NUM_0 ~ (I2C_NUM_MAX-1).
  */
 typedef enum {
-    I2C_NUM_0 = 0, /*!< I2C port 0 */
+    I2C_NUM_0 = 0,              /*!< I2C port 0 */
 #if SOC_I2C_NUM >= 2
-    I2C_NUM_1, /*!< I2C port 1 */
-#endif
-    I2C_NUM_MAX, /*!< I2C port max */
+    I2C_NUM_1,                  /*!< I2C port 1 */
+#endif /* SOC_I2C_NUM >= 2 */
+#if SOC_LP_I2C_NUM >= 1
+    LP_I2C_NUM_0,               /*< LP_I2C port 0 */
+#endif /* SOC_LP_I2C_NUM >= 1 */
+    I2C_NUM_MAX,                /*!< I2C port max */
 } i2c_port_t;
 
 /**

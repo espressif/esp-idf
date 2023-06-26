@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Peripheral Example
 
@@ -9,15 +9,13 @@ This example creates GATT server and then starts advertising, waiting to be conn
 
 It uses ESP32's Bluetooth controller and NimBLE stack based BLE host.
 
-This example aims at understanding GATT database configuration, advertisement and SMP related NimBLE APIs.
+This example aims at understanding GATT database configuration, handling GATT reads and writes, handling subscribe events, understanding advertisement and SMP related NimBLE APIs.
 
-It also demonstrates security features of NimBLE stack. SMP parameters like I/O capabilities of device, Bonding flag, MITM protection flag and Secure Connection only mode etc., can be configured through menuconfig options.
+It also demonstrates security features of NimBLE stack. SMP parameters like I/O capabilities of device, Bonding flag, MITM protection flag and Secure Connection only mode, Enabling Link Encryption etc., can be configured through menuconfig options.
 
 For RPA feature (currently Host based privacy feature is supported), use API `ble_hs_pvcy_rpa_config` to enable/disable host based privacy, `own_addr_type` needs to be set to `BLE_ADDR_RANDOM` to use this feature. Please include `ble_hs_pvcy.h` while using this API. As `ble_hs_pvcy_rpa_config` configures host privacy and sets address in controller, it is necessary to call this API after host-controller are synced (e.g. in `bleprph_on_sync` callback).
 
 To test this demo, any BLE scanner app can be used.
-
-A Python based utility `bleprph_test.py` is also provided (which will run as a BLE GATT Client) and can be used to test this example.
 
 Note :
 
@@ -34,7 +32,7 @@ idf.py set-target <chip_name>
 
 ### Configure the project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig
@@ -83,73 +81,13 @@ peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=6 conn_latency=0 supervision_timeout=50
 
 connection updated; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx
 peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=39 conn_latency=0 supervision_timeout=500 encrypted=1 authenticated=1 bonded=1
-```
 
-## Running Python Utility
-
-```bash
-python bleprph_test.py
-```
-
-## Python Utility Output
-
-This is this output seen on the python side on successful connection:
-
-```
-discovering adapter...
-bluetooth adapter discovered
-powering on adapter...
-bluetooth adapter powered on
-
-Started Discovery
-
-Connecting to device...
-
-Connected to device
-
-Services
-
-[dbus.String(u'00001801-0000-1000-8000-00805f9b34fb', variant_level=1), dbus.String(u'59462f12-9543-9999-12c8-58b459a2712d', variant_level=1)]
-
-Characteristics retrieved
-
-	Characteristic:  /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000b
-	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df6
-	Value:  dbus.Array([dbus.Byte(45), dbus.Byte(244), dbus.Byte(81), dbus.Byte(88)], signature=dbus.Signature('y'))
-	Properties: :  dbus.Array([dbus.String(u'read')], signature=dbus.Signature('s'), variant_level=1)
-
-	Characteristic:  /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000d
-	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df7
-	Value:  dbus.Array([dbus.Byte(0)], signature=dbus.Signature('y'))
-	Properties: :  dbus.Array([dbus.String(u'read'), dbus.String(u'write')], signature=dbus.Signature('s'), variant_level=1)
-
-	Characteristic:  /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service0006/char0007
-	Characteristic UUID:  00002a05-0000-1000-8000-00805f9b34fb
-	Value:  None
-	Properties: :  dbus.Array([dbus.String(u'indicate')], signature=dbus.Signature('s'), variant_level=1)
-
-Characteristics after write operation
-
-	Characteristic: /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000b
-	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df6
-	Value: dbus.Array([dbus.Byte(45), dbus.Byte(244), dbus.Byte(81), dbus.Byte(88)], signature=dbus.Signature('y'))
-	Properties: :  dbus.Array([dbus.String(u'read')], signature=dbus.Signature('s'), variant_level=1)
-
-	Characteristic: /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000d
-	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df7
-	Value: dbus.Array([dbus.Byte(65)], signature=dbus.Signature('y'))
-	Properties: :  dbus.Array([dbus.String(u'read'), dbus.String(u'write')], signature=dbus.Signature('s'), variant_level=1)
-
-	Characteristic: /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service0006/char0007
-	Characteristic UUID:  00002a05-0000-1000-8000-00805f9b34fb
-	Value: None
-	Properties: :  dbus.Array([dbus.String(u'indicate')], signature=dbus.Signature('s'), variant_level=1)
-
-exiting from test...
-disconnecting device...
-device disconnected
-powering off adapter...
-bluetooth adapter powered off
+subscribe event; conn_handle=1 attr_handle=19 reason=1 prevn=0 curn=1 previ=0 curi=0
+Subscribe to attribute (19) successful
+subscribe event; conn_handle=1 attr_handle=25 reason=1 prevn=0 curn=1 previ=0 curi=0
+Subscribe to attribute (25) successful
+GATT procedure initiated: notify; att_handle=25
+Notification sent succesfully
 ```
 
 ## Note

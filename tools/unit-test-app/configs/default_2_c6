@@ -1,3 +1,0 @@
-# This config is split between targets since different component needs to be included
-CONFIG_IDF_TARGET="esp32c6"
-TEST_COMPONENTS=app_trace esp_eth esp_hid esp_netif esp_phy esp_wifi espcoredump hal lwip mdns mqtt newlib nvs_flash partition_table sdmmc

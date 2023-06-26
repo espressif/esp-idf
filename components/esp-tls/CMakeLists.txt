@@ -32,7 +32,14 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
 # due to cyclic dependencies present in IDF for lwip/esp_netif/mbedtls
 idf_component_get_property(lwip lwip COMPONENT_LIB)
 set_property(TARGET ${lwip} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 5)
+else()
+    # Check if LWIP in the build for linux target to adapt esp-tls compatibility layer
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    if("lwip" IN_LIST build_components)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_TLS_WITH_LWIP=1)
+    endif()
 endif()
+
 
 if(CONFIG_ESP_TLS_USE_SECURE_ELEMENT)
     idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)

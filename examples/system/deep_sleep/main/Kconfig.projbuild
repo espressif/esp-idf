@@ -15,7 +15,7 @@ menu "Example Configuration"
         bool "Enable wakeup from GPIO (ext0)"
         default y if !IDF_TARGET_ESP32
         default n if IDF_TARGET_ESP32
-        depends on SOC_PM_SUPPORT_EXT_WAKEUP
+        depends on SOC_PM_SUPPORT_EXT0_WAKEUP
         help
             This option enables wake up from deep sleep from GPIO25(ESP32)/GPIO3(ESP32S2,S3). The pin should be
             connected to LOW to avoid being in a floating state. When triggering a wake up, connect the pin to HIGH.
@@ -26,7 +26,7 @@ menu "Example Configuration"
     config EXAMPLE_EXT1_WAKEUP
         bool "Enable wakeup from GPIO (ext1)"
         default y
-        depends on SOC_PM_SUPPORT_EXT_WAKEUP
+        depends on SOC_PM_SUPPORT_EXT1_WAKEUP
         help
             This option enables wake up from deep sleep from GPIO2 and GPIO4. They should be connected to LOW to avoid
             floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating
@@ -56,14 +56,15 @@ menu "Example Configuration"
             recommand you to connect external pull-up resistance.
 
     menu "GPIO wakeup configuration"
-        visible if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+        visible if EXAMPLE_GPIO_WAKEUP
 
         config EXAMPLE_GPIO_WAKEUP_PIN
             int "Enable wakeup from GPIO"
-            default 0 if !IDF_TARGET_ESP32H4_BETA_VERSION_2
-            default 7 if IDF_TARGET_ESP32H4_BETA_VERSION_2
-            range 0 5 if !IDF_TARGET_ESP32H4_BETA_VERSION_2
-            range 7 12 if IDF_TARGET_ESP32H4_BETA_VERSION_2
+            default 0 if !IDF_TARGET_ESP32H2
+            default 7 if IDF_TARGET_ESP32H2
+            range 0 7 if IDF_TARGET_ESP32C6
+            range 7 14 if IDF_TARGET_ESP32H2
+            range 0 5 if !IDF_TARGET_ESP32C6 && !IDF_TARGET_ESP32H2
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
             bool "Enable GPIO high-level wakeup"

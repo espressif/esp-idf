@@ -149,7 +149,7 @@
 #define HMAC_SET_MESSAGE_PAD_REG       ((DR_REG_HMAC_BASE) + 0xF0)
 #define HMAC_ONE_BLOCK_REG             ((DR_REG_HMAC_BASE) + 0xF4)
 
-/* AES-XTS registers */
+/* XTS-AES registers */
 #define AES_XTS_PLAIN_BASE        ((DR_REG_AES_BASE) + 0x100)
 #define AES_XTS_SIZE_REG          ((DR_REG_AES_BASE) + 0x140)
 #define AES_XTS_DESTINATION_REG   ((DR_REG_AES_BASE) + 0x144)

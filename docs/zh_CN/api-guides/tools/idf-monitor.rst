@@ -4,7 +4,7 @@ IDF 监视器
 
 :link_to_translation:`en:[English]`
 
-IDF 监视器是一个串行终端程序，用于收发目标设备串口的串行数据，IDF 监视器同时还兼具 IDF 的其他特性。
+IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用于收发目标设备串口的串行数据，IDF 监视器同时还兼具 IDF 的其他特性。
 
 在 IDF 中调用 ``idf.py monitor`` 可以启用此监视器。
 
@@ -182,12 +182,12 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 .. note::
 
-    将环境变量 ``ESP_MONITOR_DECODE`` 设置为 ``0`` 或者调用 idf_monitor.py 的特定命令行选项 ``idf_monitor.py --disable-address-decoding`` 来禁止地址解码。
+    将环境变量 ``ESP_MONITOR_DECODE`` 设置为 ``0`` 或者调用 esp_idf_monitor 的特定命令行选项 ``python -m esp_idf_monitor --disable-address-decoding`` 来禁止地址解码。
 
 连接时复位目标芯片
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf_monitor.py --no-reset``。
+默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf.py monitor --no-reset``。
 
 .. note::
 
@@ -281,6 +281,7 @@ Windows 环境下已知问题
 - GDB 运行时，可能会暂停一段时间，然后才开始与 GDBStub 进行通信。
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
+.. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm

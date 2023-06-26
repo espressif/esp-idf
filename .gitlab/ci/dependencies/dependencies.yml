@@ -3,7 +3,6 @@
   - esp32s2
   - esp32s3
   - esp32c3
-  - esp32h4
   - esp32c2
   - esp32c6
   - esp32h2
@@ -39,14 +38,6 @@
     - submodule
     - build_system
     - downloadable-tools
-
-"build:windows":
-  labels:
-    - build
-    - windows
-  patterns:
-    - build_system
-    - windows
 
 "build:macos":
   labels:
@@ -133,12 +124,15 @@ build:integration_test:
     - *target_test
     - *all_targets
     - - bt        # example_test_005
-      - wifi      # example_test_002, example_test*wifi*
-      - ethernet  # example_test*ethernet*
-      - sdio      # component_ut_pytest_esp32_sdio
+      - wifi      # pytest*wifi*
+      - ethernet  # pytest*ethernet*
+      - sdio      # pytest*sdio*
       - usb       # USB Device & Host tests
-      - adc       # component_ut_pytest_esp32x_adc
+      - adc       # pytest*adc*
       - i154
+      - flash_multi
+      - ecdsa
+      - nvs_encr_hmac
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
@@ -174,8 +168,9 @@ build:integration_test:
     - target_test
     - example_test
   included_in:
-    - "build:example_test-esp32h4"
     - "build:example_test-esp32s3"
+    - "build:example_test-esp32c6"
+    - "build:example_test-esp32h2"
     - "build:example_test"
     - build:target_test
 
@@ -211,30 +206,9 @@ build:integration_test:
 #################################
 # Triggered Only By Labels Jobs #
 #################################
-"labels:iperf_stress_test": # example_test
-  labels:
-    - iperf_stress_test
-  included_in:
-    - build:example_test
-    - build:example_test-esp32
-    - build:target_test
-
-"labels:weekend_test": # custom test
-  labels:
-    - weekend_test
-  included_in:
-    - build:custom_test
-    - build:custom_test-esp32
-    - build:target_test
-
 "labels:nvs_coverage": # host_test
   labels:
     - nvs_coverage
-
-"labels:fuzzer_test-weekend_test": # host test
-  labels:
-    - fuzzer_test
-    - weekend_test
 
 "labels-protected:lan8720":  # UT # FIXME: IDFCI-1176 temporary run this on master/release or with label
   labels:

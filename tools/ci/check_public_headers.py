@@ -176,7 +176,7 @@ class PublicHeaderChecker:
             temp_header = None
             try:
                 _, _, _, temp_header, _ = exec_cmd_to_temp_file(['sed', '/#include/d; /#error/d', header], suffix='.h')
-                res = self.preprocess_one_header(temp_header, num, ignore_sdkconfig_issue=True)
+                res = self.preprocess_one_header(temp_header, num, ignore_common_issues=True)
                 if res == self.PREPROC_OUT_SAME_HRD_FAILED:
                     raise HeaderFailedCppGuardMissing()
                 elif res == self.PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED:
@@ -196,22 +196,22 @@ class PublicHeaderChecker:
         self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
         raise HeaderFailedBuildError()
 
-    def preprocess_one_header(self, header: str, num: int, ignore_sdkconfig_issue: bool=False) -> int:
+    def preprocess_one_header(self, header: str, num: int, ignore_common_issues: bool=False) -> int:
         all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
         # just strip comments to check for CONFIG_... macros or static asserts
         rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
-        if not ignore_sdkconfig_issue:
+        if not ignore_common_issues:    # We ignore issues on sdkconfig and static asserts, as we're looking at "preprocessed output"
             if re.search(self.kconfig_macro, out):
                 # enable defined #error if sdkconfig.h not included
                 all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
-        # If the file contain _Static_assert or static_assert, make sure it does't not define ESP_STATIC_ASSERT and that it
-        # is not an automatically generated soc header file
-        grp = re.search(self.static_assert, out)
-        # Normalize the potential A//B, A/./B, A/../A, from the name
-        normalized_path = os.path.normpath(header)
-        if grp and not re.search(self.defines_assert, out) and not re.search(self.auto_soc_header, normalized_path):
-            self.log('{}: FAILED: contains {}. Please use ESP_STATIC_ASSERT'.format(header, grp.group(1)), True)
-            return self.HEADER_CONTAINS_STATIC_ASSERT
+            # If the file contain _Static_assert or static_assert, make sure it does't not define ESP_STATIC_ASSERT and that it
+            # is not an automatically generated soc header file
+            grp = re.search(self.static_assert, out)
+            # Normalize the potential A//B, A/./B, A/../A, from the name
+            normalized_path = os.path.normpath(header)
+            if grp and not re.search(self.defines_assert, out) and not re.search(self.auto_soc_header, normalized_path):
+                self.log('{}: FAILED: contains {}. Please use ESP_STATIC_ASSERT'.format(header, grp.group(1)), True)
+                return self.HEADER_CONTAINS_STATIC_ASSERT
         try:
             # compile with C++, check for errors, outputs for a temp file
             rc, cpp_out, err, cpp_out_file, cmd = exec_cmd_to_temp_file([self.gpp, '--std=c++17'] + all_compilation_flags)

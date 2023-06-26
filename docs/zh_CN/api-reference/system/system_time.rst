@@ -1,13 +1,14 @@
 系统时间
 =========
+
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_RTC_CLK_FRE:default="未更新", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz"}
-{IDF_TARGET_INT_OSC_FRE:default="未更新", esp32="8.5 MHz", esp32s2="8.5 MHz", esp32s3="17.5 MHz", esp32c3="17.5 MHz", esp32c2="17.5 MHz"}
+{IDF_TARGET_RTC_CLK_FRE:default="未更新", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz", esp32c6="150 kHz", esp32h2="150 kHz"}
+{IDF_TARGET_INT_OSC_FRE:default="未更新", esp32="8.5 MHz", esp32s2="8.5 MHz", esp32s3="17.5 MHz", esp32c3="17.5 MHz", esp32c2="17.5 MHz", esp32c6="20 MHz"}
 {IDF_TARGET_INT_OSC_FRE_DIVIDED:default="未更新", esp32="~33 kHz", esp32s2="~33 kHz", esp32s3="~68 kHz", esp32c3="~68 kHz", esp32c2="~68 kHz"}
-{IDF_TARGET_EXT_CRYSTAL_PIN:default="未更新", esp32="32K_XP 和 32K_XN", esp32s2="XTAL_32K_P 和 XTAL_32K_N", esp32s3="XTAL_32K_P 和 XTAL_32K_N", esp32c3="XTAL_32K_P 和 XTAL_32K_N"}
-{IDF_TARGET_EXT_OSC_PIN:default="未更新", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0"}
-{IDF_TARGET_HARDWARE_DESIGN_URL:default="未更新", esp32="`ESP32 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s2="`ESP32-S2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s3="`ESP32-S3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_cn.pdf#page=12>`_", esp32c3="`ESP32-C3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_hardware_design_guidelines_cn.pdf#page=9>`_"}
+{IDF_TARGET_EXT_CRYSTAL_PIN:default="未更新", esp32="32K_XP 和 32K_XN", esp32s2="XTAL_32K_P 和 XTAL_32K_N", esp32s3="XTAL_32K_P 和 XTAL_32K_N", esp32c3="XTAL_32K_P 和 XTAL_32K_N", esp32c6="XTAL_32K_P 和 XTAL_32K_N", esp32h2="XTAL_32K_P 和 XTAL_32K_N"}
+{IDF_TARGET_EXT_OSC_PIN:default="未更新", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0", esp32c6="XTAL_32K_P"}
+{IDF_TARGET_HARDWARE_DESIGN_URL:default="未更新", esp32="`ESP32 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s2="`ESP32-S2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s3="`ESP32-S3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_cn.pdf#page=12>`_", esp32c3="`ESP32-C3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_hardware_design_guidelines_cn.pdf#page=9>`_", esp32c2="`ESP8684 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp8684_hardware_design_guidelines_cn.pdf#page=10>`_", esp32c6="`ESP32-C6 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c6_hardware_design_guidelines_cn.pdf#page=12>`_", esp32h2="`ESP32-H2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-h2_hardware_design_guidelines_cn.pdf#page=11>`_"}
 
 
 概述
@@ -41,19 +42,16 @@ RTC 定时器有以下时钟源：
     - ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器`` （默认）：Deep-sleep 模式下电流消耗最低，不依赖任何外部元件。但由于温度波动会影响该时钟源的频率稳定性，在 Deep-sleep 和 Light-sleep 模式下都有可能发生时间偏移。
 
     :not esp32c2: - ``外置 32 kHz 晶振``：需要将一个 32 kHz 晶振连接到 {IDF_TARGET_EXT_CRYSTAL_PIN} 管脚。频率稳定性更高，但在 Deep-sleep 模式下电流消耗略高（比默认模式高 1 μA）。
-    
+
     - ``管脚 {IDF_TARGET_EXT_OSC_PIN} 外置 32 kHz 振荡器``：允许使用由外部电路产生的 32 kHz 时钟。外部时钟信号必须连接到管脚 {IDF_TARGET_EXT_OSC_PIN}。正弦波信号的振幅应小于 1.2 V，方波信号的振幅应小于 1 V。正常模式下，电压范围应为 0.1 < Vcm < 0.5 xVamp，其中 Vamp 代表信号振幅。使用此时钟源时，管脚 {IDF_TARGET_EXT_OSC_PIN} 无法用作 GPIO 管脚。
-    
-    - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
+
+    :not esp32c6 and not esp32h2: - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
+
+    :esp32c6 or esp32h2: - ``内置 32 kHz RC 振荡器``
 
 时钟源的选择取决于系统时间精度要求和睡眠模式下的功耗要求。要修改 RTC 时钟源，请在项目配置中设置 :ref:`CONFIG_RTC_CLK_SRC`。
 
-.. Need to add esp32c2 hardware design guideline link after it is publsihed.
-
-.. only:: not esp32c2
-
-    想要了解外置晶振或外置振荡器的更多布线要求，请参考 {IDF_TARGET_HARDWARE_DESIGN_URL}。
-
+想要了解外置晶振或外置振荡器的更多布线要求，请参考 {IDF_TARGET_HARDWARE_DESIGN_URL}。
 
 获取当前时间
 --------------
@@ -108,27 +106,45 @@ SNTP 时间同步
 
 要设置当前时间，可以使用 POSIX 函数 ``settimeofday()`` 和 ``adjtime()``。lwIP 中的 SNTP 库会在收到 NTP 服务器的响应报文后，调用这两个函数以更新当前的系统时间。当然，用户可以在 lwIP SNTP 库之外独立地使用这两个函数。
 
-在 lwIP SNTP 库内部调用的函数依赖于系统时间的同步模式。可使用函数 :cpp:func:`sntp_set_sync_mode` 来设置下列同步模式之一。
+包括 SNTP 函数在内的一些 lwIP API 并非线程安全，因此建议在与 SNTP 模块交互时使用 :doc:`esp_netif component <../network/esp_netif>`。
 
-- :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` （默认）：使用函数 ``settimeofday()`` 后，收到 SNTP 服务器响应时立即更新系统时间。
-- :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH`：使用函数 ``adjtime()`` 后，通过逐渐减小时间误差，平滑地更新时间。如果 SNTP 响应报文中的时间与当前系统时间相差大于 35 分钟，则会通过 ``settimeofday()`` 立即更新系统时间。
-
-lwIP SNTP 库提供了 API 函数，用于设置某个事件的回调函数。您可能需要使用以下函数：
-
-- :cpp:func:`sntp_set_time_sync_notification_cb()`：用于设置回调函数，通知时间同步的过程。
-- :cpp:func:`sntp_get_sync_status()` 和 :cpp:func:`sntp_set_sync_status()`：用于获取或设置时间同步状态。
-
-通过 SNTP 开始时间同步，只需调用以下三个函数：
+要初始化特定的 SNTP 服务器并启动 SNTP 服务，只需创建有特定服务器名称的默认 SNTP 服务器配置，然后调用 :cpp:func:`esp_netif_sntp_init()` 注册该服务器并启动 SNTP 服务。
 
 .. code-block:: c
 
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
-    sntp_init();
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_netif_sntp_init(&config);
+
+一旦收到 SNTP 服务器的响应，此代码会自动执行时间同步。有时等待时间同步很有意义，调用 :cpp:func:`esp_netif_sntp_sync_wait()` 可实现此目的：
+
+.. code-block:: c
+
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
+        printf("Failed to update system time within 10s timeout");
+    }
+
+要配置多个 NTP 服务器（或使用更高级的设置，例如 DHCP 提供的 NTP 服务器），请参考 :doc:`esp_netif <../network/esp_netif>` 文档 :ref:`esp_netif-sntp-api` 中的详细说明。
+
+lwIP SNTP 库可在下列任一同步模式下工作：
+
+- :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` （默认）：使用 ``settimeofday()``，收到 SNTP 服务器响应后立即更新系统时间。
+- :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH`：使用函数 ``adjtime()`` 逐渐减少时间误差以平滑更新时间。如果 SNTP 响应时间和系统时间之差超过 35 分钟，请立即使用 ``settimeofday()`` 更新系统时间。
+
+如要选择 :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH` 模式，请将 SNTP 配置结构体中的 :cpp:member:`esp_sntp_config::smooth` 设置为 ``true``，否则将默认使用 :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` 模式。
+
+设置时间同步时的回调函数，请使用配置结构体中的 :cpp:member:`esp_sntp_config::sync_cb` 字段。
 
 添加此初始化代码后，应用程序将定期同步时间。时间同步周期由 :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` 设置（默认为一小时）。如需修改，请在项目配置中设置 :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY`。
 
 如需查看示例代码，请前往 :example:`protocols/sntp` 目录。该目录下的示例展示了如何基于 lwIP SNTP 库实现时间同步。
+
+您也可以直接使用 lwIP API，但请务必注意线程安全。线程安全的 API 如下：
+
+- :cpp:func:`sntp_set_time_sync_notification_cb` 用于设置通知时间同步过程的回调函数。
+- :cpp:func:`sntp_get_sync_status` 和 :cpp:func:`sntp_set_sync_status` 用于获取/设置时间同步状态。
+- :cpp:func:`sntp_set_sync_mode` 用于设置同步模式。
+- :cpp:func:`esp_sntp_setoperatingmode` 用于设置首选操作模式。:cpp:enumerator:`ESP_SNTP_OPMODE_POLL` 和 :cpp:func:`esp_sntp_init` 可初始化 SNTP 模块。
+- :cpp:func:`esp_sntp_setservername` 用于配置特定 SNTP 服务器。
 
 
 时区
@@ -142,19 +158,21 @@ lwIP SNTP 库提供了 API 函数，用于设置某个事件的回调函数。�
 完成上述步骤后，请调用标准 C 库函数 ``localtime()``。该函数将返回排除时区偏差和夏令时干扰后的准确本地时间。
 
 
-64 位 ``time_t``
------------------
+2036 年和 2038 年溢出问题
+--------------------------------
 
-ESP-IDF 默认使用 32 位的 ``time_t`` 类型。为解决 Y2K38 漏洞，您在构建应用程序时可能需要使用 64 位的 ``time_t`` 类型。
+SNTP/NTP 2036 年溢出问题
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-目前，完成这一操作需要从头开始构建交叉编译器工具链，具体步骤请参阅 :doc:`/get-started/linux-macos-setup`。要在工具链中启用对 64 位 ``time_t`` 的支持，您需要在构建工具链之前从 ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` 文件中删除 ``--enable-newlib-long-time_t`` 选项。
+SNTP/NTP 时间戳为 64 位无符号定点数，其中前 32 位表示整数部分，后 32 位表示小数部分。该 64 位无符号定点数代表从 1900 年 1 月 1 日 00:00 起经过的秒数，因此 SNTP/NTP 时间将在 2036 年溢出。
 
-如需使程序同时兼容 32 位和 64 位的 ``time_t``，可以使用以下方法：
+为了解决这一问题，可以使用整数部分的 MSB（惯例为位 0）来表示 1968 年到 2104 年之间的时间范围（查看 `RFC2030 <https://www.rfc-editor.org/rfc/rfc2030>`_ 了解更多信息），这一惯例将使得 SNTP/NTP 时间戳的生命周期延长。该惯例会在 lwIP 库的 SNTP 模块中实现，因此 ESP-IDF 中 SNTP 相关功能在 2104 年之前能够经受住时间的考验。
 
-- 在 C 或 C++ 源文件中，如果 ``time_t`` 是 32 位的，编译器会预定义 ``_USE_LONG_TIME_T`` 宏，该宏定义在 ``<sys/types.h>`` 中。
-- 在 CMake 文件中，ESP-IDF 构建属性 ``TIME_T_SIZE`` 将被设置为 ``time_t`` 的大小，单位为字节。您可以调用 ``idf_build_get_property(var TIME_T_SIZE)`` 来获取该属性的值，并将其放入 CMake 变量 ``var`` 中。了解更多关于 ``idf_build_get_property`` 的信息，参见 :ref:`ESP-IDF CMake 构建系统 API <cmake_buildsystem_api>`。
 
-注意， ``time_t`` 类型的大小也会影响其他类型的大小，例如 ``struct timeval``、 ``struct stat`` 和 ``struct utimbuf``。
+Unix 时间 2038 年溢出问题
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unix 时间（类型 ``time_t``）此前为有符号的 32 位整数，因此将于 2038 年溢出（即 `Y2K38 问题 <https://zh.wikipedia.org/wiki/2038%E5%B9%B4%E9%97%AE%E9%A2%98>`_）。为了解决 Y2K38 问题，ESP-IDF 从 v5.0 版本起开始使用有符号的 64 位整数来表示 ``time_t``，从而将 ``time_t`` 溢出推迟 2920 亿年。
 
 
 API 参考

@@ -28,6 +28,8 @@
 #include "esp_system.h"
 #include "esp_efuse.h"
 #include "esp_attr.h"
+#include "esp_bootloader_desc.h"
+#include "esp_flash.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"
@@ -37,10 +39,12 @@
 #include "esp32c3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
 #endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
@@ -624,6 +628,32 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
 
     return default_ota;
 
+}
+
+esp_err_t esp_ota_get_bootloader_description(const esp_partition_t *bootloader_partition, esp_bootloader_desc_t *desc)
+{
+    if (desc == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_partition_t partition = { 0 };
+    if (bootloader_partition == NULL) {
+        partition.flash_chip = esp_flash_default_chip;
+        partition.encrypted = esp_flash_encryption_enabled();
+        partition.address = CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
+        partition.size = CONFIG_PARTITION_TABLE_OFFSET - CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
+    } else {
+        memcpy(&partition, bootloader_partition, sizeof(partition));
+    }
+    esp_err_t err = esp_partition_read(&partition, sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t), desc, sizeof(esp_bootloader_desc_t));
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (desc->magic_byte != ESP_BOOTLOADER_DESC_MAGIC_BYTE) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc)

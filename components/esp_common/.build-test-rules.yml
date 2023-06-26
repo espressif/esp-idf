@@ -1,0 +1,5 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_common/test_apps/esp_common:
+  disable:
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1

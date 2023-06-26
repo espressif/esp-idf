@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 /* Tests for FreeRTOS task suspend & resume */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -341,7 +342,7 @@ static void test_scheduler_suspend2(int cpu)
     vTaskDelay(waiting_ms * 2 / portTICK_PERIOD_MS);
     esp_deregister_freertos_tick_hook(tick_hook);
 
-    printf("tick_hook_ms[cpu0] = %d, tick_hook_ms[cpu1] = %d\n", tick_hook_ms[0], tick_hook_ms[1]);
+    printf("tick_hook_ms[cpu0] = %"PRIu32", tick_hook_ms[cpu1] = %"PRIu32"\n", tick_hook_ms[0], tick_hook_ms[1]);
 
     TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, waiting_ms * 2, tick_hook_ms[0]);
     TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, waiting_ms * 2, tick_hook_ms[1]);

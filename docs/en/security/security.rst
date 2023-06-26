@@ -86,6 +86,16 @@ Flash Encryption Best Practices
 
     .. note:: This feature can help to prevent the possibility of remote code injection due to the existing vulnerabilities in the software.
 
+.. only:: SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
+
+    DPA (Differential Power Analysis) Protection
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    {IDF_TARGET_NAME} has support for protection mechanisms against the Differential Power Analysis related security attacks. DPA protection dynamically adjusts the clock frequency of the crypto peripherals, thereby blurring the power consumption trajectory during its operation. Based on the configured DPA security level, the clock variation range changes. Please refer to the TRM for more details on this topic.
+    :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` can help to select the DPA level. Higher level means better security, but it can also have an associated performance impact. By default, the lowest DPA level is kept enabled but it can be modified based on the security requirement.
+
+    .. note:: Please note that hardware :doc:`RNG <../api-reference/system/random>` must be enabled for DPA protection to work correctly.
+
 Debug Interfaces
 ~~~~~~~~~~~~~~~~
 
@@ -205,7 +215,12 @@ Secure storage refers to the application specific data that can be stored in a s
 
 ESP-IDF provides "NVS (Non-volatile Storage)" management component which allows encrypted data partitions. This feature is tied with the platform :ref:`flash_enc-guide` feature described earlier.
 
-Please refer to the :ref:`NVS Encryption <nvs_encryption>` for detailed documentation on the working and instructions to enable this feature.
+.. only:: SOC_HMAC_SUPPORTED
+
+    This feature can also be used independent of the platform :ref:`flash_enc-guide` feature with the help of the {IDF_TARGET_NAME} HMAC peripheral.
+
+
+Please refer to the :doc:`NVS Encryption <../api-reference/storage/nvs_encryption>` for detailed documentation on the working and instructions to enable this feature.
 
 .. important::
 

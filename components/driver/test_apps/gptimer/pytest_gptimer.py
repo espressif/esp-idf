@@ -16,9 +16,7 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_gptimer(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.esp32c2
@@ -32,6 +30,4 @@ def test_gptimer(dut: Dut) -> None:
     indirect=True,
 )
 def test_gptimer_esp32c2_xtal_26mhz(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()

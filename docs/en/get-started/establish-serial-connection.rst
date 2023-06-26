@@ -141,14 +141,18 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
 
     For the {IDF_TARGET_NAME}, the USB peripheral is available, allowing you to flash the binaries without the need for an external USB-to-UART bridge.
 
-    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12"}
-    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13"}
+    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26"}
+    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27"}
 
     The USB on the {IDF_TARGET_NAME} uses the **{IDF_TARGET_USB_PIN_DP}** for **D+** and **{IDF_TARGET_USB_PIN_DM}** for **D-**.
 
-    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3
 
         .. note:: The {IDF_TARGET_NAME} supports only *USB CDC and JTAG*.
+
+        If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
+
+    .. only:: esp32s3
 
         If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
 

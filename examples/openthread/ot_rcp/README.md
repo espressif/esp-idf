@@ -1,4 +1,4 @@
-| Supported Targets | ESP32-C6 | ESP32-H4 |
+| Supported Targets | ESP32-C6 | ESP32-H2 |
 | ----------------- | -------- | -------- |
 
 # OpenThread Radio Co-Processor (RCP) Example
@@ -13,11 +13,11 @@ OpenThread RCP doesn't function alone, it needs to work together with a Host and
 
 ### Hardware Required
 
-To run this example, an ESP32-H4 board is required.
+To run this example, an ESP32-H2 board is required.
 
 ### Configure the project
 
-The default communication interface is port 0 of ESP32-H4 UART running at 115200 baud, change the configuration in [esp_ot_config.h](main/esp_ot_config.h) if you want to use another interface or need different communication parameters.
+The default communication interface is port 0 of ESP32-H2 UART running at 460800 baud, change the configuration in [esp_ot_config.h](main/esp_ot_config.h) if you want to use another interface or need different communication parameters.
 
 ### Build and Flash
 

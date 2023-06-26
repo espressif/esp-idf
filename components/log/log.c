@@ -62,6 +62,9 @@ typedef struct uncached_tag_entry_ {
     char tag[0];    // beginning of a zero-terminated string
 } uncached_tag_entry_t;
 
+#ifdef CONFIG_LOG_MASTER_LEVEL
+esp_log_level_t g_master_log_level = CONFIG_LOG_DEFAULT_LEVEL;
+#endif
 esp_log_level_t esp_log_default_level = CONFIG_LOG_DEFAULT_LEVEL;
 static SLIST_HEAD(log_tags_head, uncached_tag_entry_) s_log_tags = SLIST_HEAD_INITIALIZER(s_log_tags);
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];
@@ -90,6 +93,18 @@ vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
     esp_log_impl_unlock();
     return orig_func;
 }
+
+#ifdef CONFIG_LOG_MASTER_LEVEL
+esp_log_level_t esp_log_get_level_master(void)
+{
+    return g_master_log_level;
+}
+
+void esp_log_set_level_master(esp_log_level_t level)
+{
+    g_master_log_level = level;
+}
+#endif // CONFIG_LOG_MASTER_LEVEL
 
 void esp_log_level_set(const char *tag, esp_log_level_t level)
 {

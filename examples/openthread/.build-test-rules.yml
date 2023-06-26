@@ -1,27 +1,51 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+# TODO: Modify the configuration after the files matching rules are changed
+# Or delete TODO without modifying the configuration if it is sure that current rules are correct.
+.openthread_dependencies: &openthread_dependencies
+  depends_filepatterns:
+    - components/esp_coex/*
+    - components/esp_coex/**/*
+    - components/esp_netif/*
+    - components/esp_netif/**/*
+    - components/esp_phy/*
+    - components/esp_phy/**/*
+    - components/ieee802154/*
+    - components/ieee802154/**/*
+    - components/lwip/*
+    - components/lwip/**/*
+    - components/openthread/*
+    - components/openthread/**/*
+    - examples/common_components/iperf/*
+    - examples/common_components/iperf/**/*
+    - examples/openthread/*
+    - examples/openthread/**/*
+
 examples/openthread/ot_br:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2", "esp32c6"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c2", "esp32c6", "esp32s2"]
       temporary: true
       reason: only test on esp32s3
+  <<: *openthread_dependencies
 
 examples/openthread/ot_cli:
   enable:
-    - if: IDF_TARGET in ["esp32h4", "esp32c6"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
   disable_test:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
-      reason: only test on esp32h4
+      reason: only test on esp32h2
+  <<: *openthread_dependencies
 
 examples/openthread/ot_rcp:
   enable:
-    - if: IDF_TARGET in ["esp32h4", "esp32c6"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
   disable_test:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: only test on esp32h4
+      reason: only test on esp32c6
+  <<: *openthread_dependencies

@@ -9,6 +9,8 @@
    esp32s2/ulp.h and esp32s3/ulp.h
 */
 
+#include "esp_intr_alloc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,6 +27,32 @@ extern "C" {
 union ulp_insn;  // Declared in the chip-specific ulp.h header
 
 typedef union ulp_insn ulp_insn_t;
+
+/**
+ * @brief Register ULP wakeup signal ISR
+ *
+ * @note The ISR routine will only be active if the main CPU is not in deepsleep
+ *
+ * @param fn    ISR callback function
+ * @param arg   ISR callback function arguments
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if callback function is NULL
+ *      - ESP_ERR_NO_MEM if heap memory cannot be allocated for the interrupt
+ */
+esp_err_t ulp_isr_register(intr_handler_t fn, void *arg);
+
+/**
+ * @brief Deregister ULP wakeup signal ISR
+ *
+ * @param fn    ISR callback function
+ * @param arg   ISR callback function arguments
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if callback function is NULL
+ *      - ESP_ERR_INVALID_STATE if a handler matching both callback function and its arguments isn't registered
+ */
+esp_err_t ulp_isr_deregister(intr_handler_t fn, void *arg);
 
 /**
  * @brief Resolve all macro references in a program and load it into RTC memory

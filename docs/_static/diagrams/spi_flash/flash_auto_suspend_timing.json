@@ -1,0 +1,23 @@
+{
+    "signal": [
+    {
+        "name": "SPI1(flash)",
+        "wave": "x73...|.8x........8x3..",
+        "data": ["PE", "Programming...", "SUS", "RES", "CONTINUE.."],
+        "node":".........E.........FG" },
+    {
+        "name": "SPI0(cache)",
+        "wave": "x.........3...|.x......",
+        "data":["READ"], "node": "..........D" },
+    {
+        "name": "ISR", "wave": "0......1.........0...1.",
+        "data":["1"], "node": ".......a.........b...c" },
+    {
+        "node": ".......A.............C"}
+    ],
+    "edge": [
+        "A+C ISR interval",
+        "E~D tsus", "F~G tsus",
+        "a~b ISR time"
+    ]
+}

@@ -13,7 +13,7 @@ extern "C" {
 /**
  * @brief Number of WiFi interfaces used by wifi-netif abstraction
  */
-#define MAX_WIFI_IFS (2)
+#define MAX_WIFI_IFS WIFI_IF_MAX
 
 /**
  * @brief Forward declaration of WiFi interface handle

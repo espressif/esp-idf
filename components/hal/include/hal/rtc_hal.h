@@ -39,7 +39,7 @@ typedef struct rtc_cntl_sleep_retent {
 
 #define RTC_HAL_DMA_LINK_NODE_SIZE      (16)
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #define rtc_hal_ext1_get_wakeup_status()                  rtc_cntl_ll_ext1_get_wakeup_status()
 
@@ -51,9 +51,9 @@ typedef struct rtc_cntl_sleep_retent {
 
 #define rtc_hal_ext1_get_wakeup_pins()                    rtc_cntl_ll_ext1_get_wakeup_pins()
 
-#endif
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0)
 
 #define rtc_hal_gpio_get_wakeup_status()                  rtc_cntl_ll_gpio_get_wakeup_status()
 

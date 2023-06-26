@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -53,7 +53,14 @@
 #define ADC_TEST_HIGH_VAL        3400
 #define ADC_TEST_HIGH_THRESH     200
 
-#elif CONFIG_IDF_TARGET_ESP32C6  // TODO: IDF-5312
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      15
+
+#define ADC_TEST_HIGH_VAL        3350
+#define ADC_TEST_HIGH_THRESH     200
+
+#elif CONFIG_IDF_TARGET_ESP32H2  // TODO: IDF-6216
 #define ADC_TEST_LOW_VAL         2144
 #define ADC_TEST_LOW_THRESH      200
 
@@ -111,23 +118,23 @@ TEST_CASE("Legacy ADC oneshot high/low test", "[legacy_adc_oneshot]")
 
     test_adc_set_io_level(ADC_UNIT_1, (adc1_channel_t)ADC1_TEST_CHAN0, 0);
     adc_raw = adc1_get_raw(ADC1_TEST_CHAN0);
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d\n", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
 
     test_adc_set_io_level(ADC_UNIT_1, (adc1_channel_t)ADC1_TEST_CHAN0, 1);
     adc_raw = adc1_get_raw(ADC1_TEST_CHAN0);
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d\n", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
 
 #if ADC_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, (adc2_channel_t)ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc2_get_raw(ADC2_TEST_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc_raw));
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d\n", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
 
     test_adc_set_io_level(ADC_UNIT_2, (adc2_channel_t)ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc2_get_raw(ADC2_TEST_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc_raw));
-    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d\n", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);
+    ESP_LOGI(TAG, "ADC%d Channel %d raw: %d", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
 #endif
 }

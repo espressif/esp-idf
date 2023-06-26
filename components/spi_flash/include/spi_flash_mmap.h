@@ -34,8 +34,8 @@ extern "C" {
  * @brief Enumeration which specifies memory space requested in an mmap call
  */
 typedef enum {
-    SPI_FLASH_MMAP_DATA,    /**< map to data memory (Vaddr0), allows byte-aligned access, 4 MB total */
-    SPI_FLASH_MMAP_INST,    /**< map to instruction memory (Vaddr1-3), allows only 4-byte-aligned access, 11 MB total */
+    SPI_FLASH_MMAP_DATA,    /**< map to data memory, allows byte-aligned access*/
+    SPI_FLASH_MMAP_INST,    /**< map to instruction memory, allows only 4-byte-aligned access*/
 } spi_flash_mmap_memory_t;
 
 /**

@@ -1,5 +1,6 @@
 HTTP Server
 ===========
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -161,10 +162,12 @@ The HTTP server component provides websocket support. The websocket feature can 
 Event Handling
 --------------
 
-ESP HTTP Server has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTP Server.
-:cpp:enum:`esp_http_server_event_id_t` has all the events which can happen for ESP HTTP Server.
+ESP HTTP server has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTP server.
 
-Expected data type for different ESP HTTP Server events in event loop:
+:cpp:enum:`esp_http_server_event_id_t` has all the events which can happen for ESP HTTP server.
+
+Expected data type for different ESP HTTP server events in event loop:
+
     - HTTP_SERVER_EVENT_ERROR           :   ``httpd_err_code_t``
     - HTTP_SERVER_EVENT_START           :   ``NULL``
     - HTTP_SERVER_EVENT_ON_CONNECTED    :   ``int``

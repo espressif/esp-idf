@@ -7,21 +7,23 @@
 
 - :doc:`分区表 API <partition>` 基于 :doc:`分区表 </api-guides/partition-tables>` ，允许以块为单位访问 SPI Flash 。
 - :doc:`非易失性存储库 (NVS) <nvs_flash>` 在 SPI NOR Flash 上实现了一个有容错性，和磨损均衡功能的键值对存储。
-- :doc:`虚拟文件系统 (VFS) <vfs>` 库提供了一个用于注册文件系统驱动的接口。 SPIFFS 、 FAT 以及多种其他的文件系统库都基于 VFS 。
+- :doc:`虚拟文件系统 (VFS) <vfs>` 库提供了一个用于注册文件系统驱动的接口。 SPIFFS、FAT 以及多种其他的文件系统库都基于 VFS。
 - :doc:`SPIFFS <spiffs>` 是一个专为 SPI NOR Flash 优化的磨损均衡的文件系统，非常适用于小分区和低吞吐率的应用。
 - :doc:`FAT <fatfs>` 是一个可用于 SPI Flash 或者 SD/MMC 存储卡的标准文件系统。
-- :doc:`磨损均衡 <wear-levelling>` 库实现了一个适用于 SPI NOR Flash 的 Flash 翻译层 (FTL) 。它被用于 Flash 中的 FAT 分区的容器。
+- :doc:`磨损均衡 <wear-levelling>` 库实现了一个适用于 SPI NOR Flash 的 Flash 翻译层 (FTL)，用于 Flash 中 FAT 分区的容器。
 
 .. note::
     建议使用高层次的 API （ ``esp_partition`` 或者文件系统）而非低层次驱动 API 去访问 SPI NOR Flash 。
 
     由于 NOR Flash 和乐鑫硬件的一些限制，访问主 Flash 会影响各个系统的性能。关于这些限制的更多信息，参见 :doc:`SPI Flash Documents </api-reference/peripherals/spi_flash/index>` 。
+
 .. toctree::
    :maxdepth: 1
 
    fatfs
    mass_mfg.rst
    nvs_flash
+   nvs_encryption
    nvs_partition_gen.rst
    nvs_partition_parse.rst
    sdmmc
@@ -29,7 +31,5 @@
    spiffs
    vfs
    wear-levelling
-
-
 
 此部分 API 代码示例存放在 ESP-IDF 示例项目的 :example:`storage` 目录下。

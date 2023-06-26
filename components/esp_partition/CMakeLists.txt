@@ -3,6 +3,7 @@ set(priv_reqs esp_system bootloader_support spi_flash app_update partition_table
 set(reqs)
 set(include_dirs "include")
 
+idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
     list(APPEND srcs "partition_linux.c")
@@ -20,6 +21,19 @@ idf_component_register(SRCS "${srcs}"
     INCLUDE_DIRS ${include_dirs}
     REQUIRES ${reqs}
     PRIV_REQUIRES ${priv_reqs})
+
+if(${target} STREQUAL "linux")
+    # set BUILD_DIR because partition_linux.c uses a file created in the build directory
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE "BUILD_DIR=\"${build_dir}\"")
+
+    # link bsd library for strlcpy
+    find_library(LIB_BSD bsd)
+    if(LIB_BSD)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
+    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
+    endif()
+endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     # These flags are GCC specific

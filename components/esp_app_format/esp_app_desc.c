@@ -1,13 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <assert.h>
 #include <sys/param.h>
+#include <string.h>
 #include "esp_app_desc.h"
-#include "esp_attr.h"
 #include "sdkconfig.h"
 
 
@@ -33,7 +33,7 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
     .secure_version = 0,
 #endif
 
-#if defined(CONFIG_APP_COMPILE_TIME_DATE) && !defined(CONFIG_APP_REPRODUCIBLE_BUILD)
+#ifdef CONFIG_APP_COMPILE_TIME_DATE
     .time = __TIME__,
     .date = __DATE__,
 #else
@@ -56,48 +56,43 @@ const esp_app_desc_t *esp_app_get_description(void)
     return &esp_app_desc;
 }
 
-/* The following two functions may be called from the panic handler
- * or core dump, hence IRAM_ATTR.
- */
+char app_elf_sha256_str[CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1] = { 0 };
 
-static inline char IRAM_ATTR to_hex_digit(unsigned val)
-{
-    return (val < 10) ? ('0' + val) : ('a' + val - 10);
-}
-
-__attribute__((constructor)) void esp_init_app_elf_sha256(void)
-{
-    esp_app_get_elf_sha256(NULL, 0);
-}
-
-/* The esp_app_desc.app_elf_sha256 should be possible to print in panic handler during cache is disabled.
+/* The esp_app_desc.app_elf_sha256 should be possible to print in panic handler or core dump during cache is disabled.
  * But because the cache is disabled the reading esp_app_desc.app_elf_sha256 is not right and
  * can lead to a complete lock-up of the CPU.
- * For this reason we do a reading of esp_app_desc.app_elf_sha256 while start up in esp_init_app_elf_sha256()
- * and keep it in the static s_app_elf_sha256 value.
+ * For this reason we do a reading of esp_app_desc.app_elf_sha256 and convert to string while start up in esp_system_init_app_elf_sha256()
+ * and keep it in the static app_elf_sha256_str variable.
  */
-int IRAM_ATTR esp_app_get_elf_sha256(char* dst, size_t size)
+__attribute__((constructor)) void esp_app_format_init_elf_sha256(void)
 {
-    static char s_app_elf_sha256[CONFIG_APP_RETRIEVE_LEN_ELF_SHA / 2];
-    static bool first_call = true;
-    if (first_call) {
-        first_call = false;
-        // At -O2 optimization level, GCC optimizes out the copying of the first byte of the app_elf_sha256,
-        // because it is zero at compile time, and only modified afterwards by esptool.
-        // Casting to volatile disables the optimization.
-        const volatile uint8_t* src = (const volatile uint8_t*)esp_app_desc.app_elf_sha256;
-        for (size_t i = 0; i < sizeof(s_app_elf_sha256); ++i) {
-            s_app_elf_sha256[i] = src[i];
+    if (*((int *)&app_elf_sha256_str) != 0) {
+        // app_elf_sha256_str is already set
+        return;
+    }
+    // At -O2 optimization level, GCC optimizes out the copying of the first byte of the app_elf_sha256,
+    // because it is zero at compile time, and only modified afterwards by esptool.
+    // Casting to volatile disables the optimization.
+    const volatile char* src = (const volatile char*)esp_app_desc.app_elf_sha256;
+    for (size_t i = 0; i < sizeof(app_elf_sha256_str) / 2; ++i) {
+        char c = src[i];
+        for (size_t s = 0; s < 2; ++s) {
+            char val = (c >> 4) & 0xF;
+            app_elf_sha256_str[2 * i + s] = (val < 10) ? ('0' + val) : ('a' + val - 10);
+            c <<= 4;
         }
     }
-    if (dst == NULL || size == 0) {
+    app_elf_sha256_str[sizeof(app_elf_sha256_str) - 1] = 0;
+}
+
+int esp_app_get_elf_sha256(char* dst, size_t size)
+{
+    if (dst == NULL || size < 2) {
         return 0;
     }
-    size_t n = MIN((size - 1) / 2, sizeof(s_app_elf_sha256));
-    for (size_t i = 0; i < n; ++i) {
-        dst[2*i] = to_hex_digit(s_app_elf_sha256[i] >> 4);
-        dst[2*i + 1] = to_hex_digit(s_app_elf_sha256[i] & 0xf);
-    }
-    dst[2*n] = 0;
-    return 2*n + 1;
+    esp_app_format_init_elf_sha256();
+    size_t n = MIN(size, sizeof(app_elf_sha256_str));
+    memcpy(dst, app_elf_sha256_str, n);
+    dst[n - 1] = 0;
+    return n;
 }

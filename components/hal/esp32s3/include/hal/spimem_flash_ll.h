@@ -32,6 +32,8 @@ extern "C" {
 #define spimem_flash_ll_get_hw(host_id)  (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
 #define spimem_flash_ll_hw_get_id(dev)  ((dev) == (void*)&SPIMEM1? SPI1_HOST: -1)
 
+#define SPIMEM_FLASH_LL_SPI0_MAX_LOCK_VAL_MSPI_TICKS  (0x1f)
+
 typedef typeof(SPIMEM1.clock.val) spimem_flash_ll_clock_reg_t;
 
 /*------------------------------------------------------------------------------
@@ -120,6 +122,7 @@ static inline void spimem_flash_ll_resume(spi_mem_dev_t *dev)
 static inline void spimem_flash_ll_auto_suspend_init(spi_mem_dev_t *dev, bool auto_sus)
 {
     dev->flash_sus_ctrl.flash_pes_en = auto_sus; // enable Flash Auto-Suspend.
+    dev->flash_sus_cmd.pes_per_en = auto_sus;
 }
 
 /**
@@ -167,7 +170,7 @@ static inline void spimem_flash_ll_resume_cmd_setup(spi_mem_dev_t *dev, uint32_t
  */
 static inline void spimem_flash_ll_rd_sus_cmd_setup(spi_mem_dev_t *dev, uint32_t pesr_cmd)
 {
-    abort(); //Not support on esp32s3
+    //Not support on esp32s3
 }
 
 /**
@@ -201,7 +204,59 @@ static inline void spimem_flash_ll_res_check_sus_setup(spi_mem_dev_t *dev, bool 
  */
 static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint32_t sus_mask)
 {
-    abort();// Not supported on esp32s3
+    // Not supported on esp32s3
+}
+
+/**
+ * Configure the delay after Suspend/Resume
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param dly_val delay time
+ */
+static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dly_val)
+{
+    dev->ctrl1.cs_hold_dly_res = dly_val;
+    dev->sus_status.flash_per_dly_256 = 1;
+    dev->sus_status.flash_pes_dly_256 = 1;
+}
+
+/**
+ * Configure the cs hold delay time(used to set the minimum CS high time tSHSL)
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param cs_hold_delay cs hold delay time
+ */
+static inline void spimem_flash_set_cs_hold_delay(spi_mem_dev_t *dev, uint32_t cs_hold_delay)
+{
+    SPIMEM0.ctrl2.cs_hold_delay = cs_hold_delay;
+}
+
+/**
+ * @brief Set lock for SPI0 so that spi0 can request new cache request after a cache transfer.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param lock_time Lock delay time
+ */
+static inline void spimem_flash_ll_sus_set_spi0_lock_trans(spi_mem_dev_t *dev, uint32_t lock_time)
+{
+    // Not support on esp32s3
+}
+
+/**
+ * @brief Get tsus unit values in SPI_CLK cycles
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @return uint32_t tsus unit values
+ */
+static inline uint32_t spimem_flash_ll_get_tsus_unit_in_cycles(spi_mem_dev_t *dev)
+{
+    uint32_t tsus_unit = 0;
+    if (dev->sus_status.flash_pes_dly_256 == 1) {
+        tsus_unit = 128;
+    } else {
+        tsus_unit = 4;
+    }
+    return tsus_unit;
 }
 
 /**
@@ -214,6 +269,8 @@ static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool 
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05); // Set the command to send, to fetch flash status reg value.
     dev->flash_waiti_ctrl.waiti_en = auto_waiti;  // enable auto wait-idle function.
+    dev->flash_sus_cmd.flash_per_wait_en = 1;
+    dev->flash_sus_cmd.flash_pes_wait_en = 1;
 }
 
 /**
@@ -314,6 +371,17 @@ static inline void spimem_flash_ll_program_page(spi_mem_dev_t *dev, const void *
 static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev)
 {
     dev->cmd.usr = 1;
+}
+
+/**
+ * In user mode, it is set to indicate that program/erase operation will be triggered.
+ * This function is combined with `spimem_flash_ll_user_start`. The pe_bit will be cleared automatically once the operation done.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_set_pe_bit(spi_mem_dev_t *dev)
+{
+    dev->cmd.flash_pe = 1;
 }
 
 /**
@@ -574,6 +642,9 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
             break;
         case 2:
             clock_val = 160;
+            break;
+        case 3:
+            clock_val = 240;
             break;
         default:
             abort();

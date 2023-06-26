@@ -498,6 +498,11 @@ esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *lengt
      return BTA_GetAttributeValue(attr_handle, length, value);
 }
 
+esp_gatt_status_t btc_gatts_show_local_database(void)
+{
+    BTA_GATTS_ShowLocalDatabase();
+    return ESP_GATT_OK;
+}
 
 static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_src)
 {
@@ -741,6 +746,9 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         BTA_GATTS_SendServiceChangeIndication(arg->send_service_change.gatts_if, remote_bda);
         break;
     }
+    case BTC_GATTS_ACT_SHOW_LOCAL_DATABASE:
+        BTA_GATTS_ShowLocalDatabase();
+        break;
     default:
         break;
     }
@@ -898,6 +906,8 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.connect.conn_params.interval = p_data->conn.conn_params.interval;
         param.connect.conn_params.latency = p_data->conn.conn_params.latency;
         param.connect.conn_params.timeout = p_data->conn.conn_params.timeout;
+        param.connect.ble_addr_type = p_data->conn.ble_addr_type;
+        param.connect.conn_handle = p_data->conn.conn_handle;
         btc_gatts_cb_to_app(ESP_GATTS_CONNECT_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_DISCONNECT_EVT:

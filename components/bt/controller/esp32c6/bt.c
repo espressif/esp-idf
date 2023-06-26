@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,10 @@
 #include "hci_uart.h"
 #include "bt_osi_mem.h"
 
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#include "esp_private/sleep_retention.h"
+#endif
+
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "hci/hci_hal.h"
 #endif // CONFIG_BT_BLUEDROID_ENABLED
@@ -49,6 +53,8 @@
 
 #include "esp_private/periph_ctrl.h"
 #include "esp_sleep.h"
+
+#include "hal/efuse_hal.h"
 
 /* Macro definition
  ************************************************************************
@@ -67,7 +73,6 @@
 #define ACL_DATA_MBUF_LEADINGSPCAE    4
 #endif // CONFIG_BT_BLUEDROID_ENABLED
 
-#define PHY_ENABLE_VERSION_PRINT    (1)
 
 /* Types definition
  ************************************************************************
@@ -110,7 +115,6 @@ struct ext_funcs_t {
  ************************************************************************
  */
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
-extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
 extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
@@ -121,13 +125,15 @@ extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
-extern void bt_bb_v2_init_cmplx(uint8_t i);
 extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
 extern void ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg,
                                         void *w_arg, uint32_t us_to_enabled);
-extern void ble_rtc_wake_up_state_clr(void);
+extern void r_ble_rtc_wake_up_state_clr(void);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+extern const sleep_retention_entries_config_t *esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
@@ -170,7 +176,9 @@ static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
 static uint32_t osi_random_wrapper(void);
 static void esp_reset_rpa_moudle(void);
-
+static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
+static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                              const uint8_t *our_priv_key, uint8_t *out_dhkey);
 /* Local variable definition
  ***************************************************************************
  */
@@ -185,11 +193,13 @@ static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif // CONFIG_PM_ENABLE
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-#define BLE_RTC_DELAY_US                    (1100)
+#define BLE_RTC_DELAY_US_LIGHT_SLEEP        (2500)
+#define BLE_RTC_DELAY_US_MODEM_SLEEP        (500)
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
-#define BLE_RTC_DELAY_US                    (0)
+#define BLE_RTC_DELAY_US_LIGHT_SLEEP        (2000)
+#define BLE_RTC_DELAY_US_MODEM_SLEEP        (0)
 static void ble_sleep_timer_callback(void *arg);
 static DRAM_ATTR esp_timer_handle_t s_ble_sleep_timer = NULL;
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
@@ -221,8 +231,8 @@ struct ext_funcs_t ext_funcs_ro = {
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
-    ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
-    ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
+    ._ecc_gen_key_pair = esp_ecc_gen_key_pair,
+    ._ecc_gen_dh_key = esp_ecc_gen_dh_key,
     ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
@@ -309,7 +319,7 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     if (*(data) == DATA_TYPE_ACL) {
         struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPCAE);
         assert(om);
-        os_mbuf_append(om, &data[1], len - 1);
+        assert(os_mbuf_append(om, &data[1], len - 1) == 0);
         ble_hci_trans_hs_acl_tx(om);
     }
 }
@@ -336,6 +346,25 @@ static int task_create_wrapper(void *task_func, const char *name, uint32_t stack
 static void task_delete_wrapper(void *task_handle)
 {
     vTaskDelete(task_handle);
+}
+
+static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv)
+{
+    int rc = -1;
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    rc = ble_sm_alg_gen_key_pair(pub, priv);
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    return rc;
+}
+
+static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                              const uint8_t *our_priv_key, uint8_t *out_dhkey)
+{
+    int rc = -1;
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    rc = ble_sm_alg_gen_dhkey(peer_pub_key_x, peer_pub_key_y, our_priv_key, out_dhkey);
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+    return rc;
 }
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
@@ -409,8 +438,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
     if (!s_ble_active) {
         return;
     }
-
-#ifdef CONFIG_PM_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
     uint32_t delta_tick;
     uint32_t us_to_sleep;
@@ -431,7 +459,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
         esp_err_t err = esp_timer_start_once(s_ble_sleep_timer,
                                              us_to_sleep - BTDM_MIN_TIMER_UNCERTAINTY_US);
         if (err != ESP_OK) {
-            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ESP timer start failed\n");
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ESP timer start failed");
             return;
         }
     }
@@ -440,11 +468,14 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     r_ble_rtc_wake_up_state_clr();
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    sleep_retention_do_extra_retention(true);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+    esp_phy_disable();
+#ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(s_pm_lock);
 #endif // CONFIG_PM_ENABLE
-
-    esp_phy_disable();
     s_ble_active = false;
 }
 
@@ -453,37 +484,57 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
     if (s_ble_active) {
         return;
     }
-    esp_phy_enable();
-
 #ifdef CONFIG_PM_ENABLE
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     esp_pm_lock_acquire(s_pm_lock);
+    r_ble_rtc_wake_up_state_clr();
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG
+    sleep_retention_do_extra_retention(false);
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG */
 #endif //CONFIG_PM_ENABLE
-
+    esp_phy_enable();
     s_ble_active = true;
 }
 
-#ifdef CONFIG_PM_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 static void ble_sleep_timer_callback(void * arg)
 {
+    esp_pm_lock_acquire(s_pm_lock);
+}
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 
+esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
+{
+    uint8_t size;
+    const sleep_retention_entries_config_t *ble_mac_modem_config = esp_ble_mac_retention_link_get(&size, extra);
+    esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err == ESP_OK) {
+        ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Modem BLE MAC retention initialization");
+    }
+    return err;
 }
 
-#endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
-#endif // CONFIG_PM_ENABLE
+static void sleep_modem_ble_mac_modem_state_deinit(void)
+{
+    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_BLE_MAC);
+}
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 
 esp_err_t controller_sleep_init(void)
 {
     esp_err_t rc = 0;
 
 #ifdef CONFIG_BT_LE_SLEEP_ENABLE
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled\n");
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled");
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
-                                500 + BLE_RTC_DELAY_US);
-
-#ifdef CONFIG_PM_ENABLE
-    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
-#endif // CONFIG_PM_ENABLE
+                                BLE_RTC_DELAY_US_LIGHT_SLEEP);
+#else
+    ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
+                                BLE_RTC_DELAY_US_MODEM_SLEEP);
+#endif /* FREERTOS_USE_TICKLESS_IDLE */
 #endif // CONFIG_BT_LE_SLEEP_ENABLE
 
 #ifdef CONFIG_PM_ENABLE
@@ -492,7 +543,7 @@ esp_err_t controller_sleep_init(void)
         goto error;
     }
     esp_pm_lock_acquire(s_pm_lock);
-
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
     esp_timer_create_args_t create_args = {
         .callback = ble_sleep_timer_callback,
@@ -506,20 +557,23 @@ esp_err_t controller_sleep_init(void)
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is ESP timer");
 #endif //CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 
+    /* Create a new regdma link for BLE related register restoration */
+    rc = sleep_modem_ble_mac_modem_state_init(1);
+    assert(rc == 0);
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     return rc;
 
 error:
-    /*lock should release first and then delete*/
-    if (s_pm_lock != NULL) {
-        esp_pm_lock_release(s_pm_lock);
-        esp_pm_lock_delete(s_pm_lock);
-        s_pm_lock = NULL;
-    }
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
+    esp_sleep_disable_bt_wakeup();
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
+
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
     if (s_ble_sleep_timer != NULL) {
         esp_timer_stop(s_ble_sleep_timer);
@@ -527,34 +581,26 @@ error:
         s_ble_sleep_timer = NULL;
     }
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
-
-#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-    esp_sleep_disable_bt_wakeup();
-#endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-
-#endif //CONFIG_PM_ENABLE
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+    /*lock should release first and then delete*/
+    if (s_pm_lock != NULL) {
+        esp_pm_lock_release(s_pm_lock);
+        esp_pm_lock_delete(s_pm_lock);
+        s_pm_lock = NULL;
+    }
+#endif // CONFIG_PM_ENABLE
 
     return rc;
 }
 
 void controller_sleep_deinit(void)
 {
-#ifdef CONFIG_PM_ENABLE
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     r_ble_rtc_wake_up_state_clr();
     esp_sleep_disable_bt_wakeup();
 #endif //CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-
-    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_AUTO);
-
-    /* lock should be released first */
-    if (s_ble_active) {
-        esp_pm_lock_release(s_pm_lock);
-    }
-
-    esp_pm_lock_delete(s_pm_lock);
-    s_pm_lock = NULL;
-
+    sleep_modem_ble_mac_modem_state_deinit();
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
     if (s_ble_sleep_timer != NULL) {
         esp_timer_stop(s_ble_sleep_timer);
@@ -562,12 +608,19 @@ void controller_sleep_deinit(void)
         s_ble_sleep_timer = NULL;
     }
 #endif //CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#ifdef CONFIG_PM_ENABLE
+    /* lock should be released first */
+    esp_pm_lock_release(s_pm_lock);
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
 #endif //CONFIG_PM_ENABLE
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
+    uint32_t chip_version;
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
 
@@ -626,13 +679,38 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
      */
     ble_npl_eventq_init(nimble_port_get_dflt_eventq());
 #endif // CONFIG_BT_NIMBLE_ENABLED
-
     /* Enable BT-related clocks */
     modem_clock_module_enable(PERIPH_BT_MODULE);
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, 249);
+    chip_version = efuse_hal_chip_revision();
+    /* Select slow clock source for BT momdule */
+#if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
+    if (chip_version == 0) {
+        modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, (400 - 1));
+    } else{
+        modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, (5 - 1));
+    }
+#else
+#if CONFIG_RTC_CLK_SRC_INT_RC
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_RC_SLOW, (5 - 1));
+#elif CONFIG_RTC_CLK_SRC_EXT_CRYS
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
+    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_XTAL32K, (1 - 1));
+#elif CONFIG_RTC_CLK_SRC_INT_RC32K
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_RC32K, (1 - 1));
+#elif CONFIG_RTC_CLK_SRC_EXT_OSC
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_EXT32K, (1 - 1));
+#else
+    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported clock source");
+    assert(0);
+#endif
+#endif /* CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL */
     esp_phy_modem_init();
     esp_phy_enable();
-    bt_bb_v2_init_cmplx(PHY_ENABLE_VERSION_PRINT);
+    esp_btbb_enable();
     s_ble_active = true;
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
@@ -656,7 +734,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "controller_sleep_init failed %d", ret);
         goto free_controller;
     }
-
     ESP_ERROR_CHECK(esp_read_mac((uint8_t *)mac, ESP_MAC_BT));
     swap_in_place(mac, 6);
     esp_ble_ll_set_public_addr(mac);
@@ -670,6 +747,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 free_controller:
     controller_sleep_deinit();
     ble_controller_deinit();
+    esp_btbb_disable();
     esp_phy_disable();
     esp_phy_modem_deinit();
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
@@ -696,13 +774,15 @@ esp_err_t esp_bt_controller_deinit(void)
 
     controller_sleep_deinit();
 
+    esp_btbb_disable();
+
     if (s_ble_active) {
         esp_phy_disable();
-        esp_phy_modem_deinit();
-        modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
-        modem_clock_module_disable(PERIPH_BT_MODULE);
         s_ble_active = false;
     }
+    esp_phy_modem_deinit();
+    modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+    modem_clock_module_disable(PERIPH_BT_MODULE);
 
     ble_controller_deinit();
 
@@ -729,6 +809,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
+    esp_err_t ret = ESP_OK;
+
     if (mode != ESP_BT_MODE_BLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller mode");
         return ESP_FAIL;
@@ -743,10 +825,17 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 #endif // CONFIG_SW_COEXIST_ENABLE
 
     if (ble_controller_enable(mode) != 0) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto error;
     }
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
     return ESP_OK;
+
+error:
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
+    return ret;
 }
 
 esp_err_t esp_bt_controller_disable(void)
@@ -758,6 +847,9 @@ esp_err_t esp_bt_controller_disable(void)
     if (ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
 }

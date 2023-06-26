@@ -302,8 +302,14 @@ int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len)
     size_t flen;
 
     if (wpa_key_mgmt_sae(sm->key_mgmt) &&
-        (sm->sae_pwe == 1 || sm->sae_pwe == 2)) {
+        (sm->sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
+         sm->sae_pwe == SAE_PWE_BOTH)) {
         capab |= BIT(WLAN_RSNX_CAPAB_SAE_H2E);
+#ifdef CONFIG_SAE_PK
+        if (sm->sae_pk) {
+            capab |= BIT(WLAN_RSNX_CAPAB_SAE_PK);
+        }
+#endif /* CONFIG_SAE_PK */
     }
 
     flen = (capab & 0xff00) ? 2 : 1;
@@ -417,11 +423,9 @@ int  wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 			break;
 		}
 		if (pos + 2 + pos[1] > end) {
-		    #ifdef DEBUG_PRINT
 			wpa_printf(MSG_DEBUG, "WPA: EAPOL-Key Key Data "
 				   "underflow (ie=%d len=%d pos=%d)",
 				   pos[0], pos[1], (int) (pos - buf));
-		    #endif
 			wpa_hexdump(MSG_DEBUG, "WPA: Key Data",
 					buf, len);
 			ret = -1;

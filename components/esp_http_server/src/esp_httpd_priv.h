@@ -22,6 +22,14 @@
 extern "C" {
 #endif
 
+#if CONFIG_NEWLIB_NANO_FORMAT
+#define NEWLIB_NANO_COMPAT_FORMAT            PRIu32
+#define NEWLIB_NANO_COMPAT_CAST(size_t_var)  (uint32_t)size_t_var
+#else
+#define NEWLIB_NANO_COMPAT_FORMAT            "zu"
+#define NEWLIB_NANO_COMPAT_CAST(size_t_var)  size_t_var
+#endif
+
 /* Size of request data block/chunk (not to be confused with chunked encoded data)
  * that is received and parsed in one turn of the parsing process. This should not
  * exceed the scratch buffer size and should at least be 8 bytes */
@@ -64,6 +72,7 @@ struct sock_db {
     bool lru_socket;                        /*!< Flag indicating LRU socket */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
+    bool for_async_req;                     /*!< If true, the socket will not be LRU purged */
 #ifdef CONFIG_HTTPD_WS_SUPPORT
     bool ws_handshake_done;                 /*!< True if it has done WebSocket handshake (if this socket is a valid WS) */
     bool ws_close;                          /*!< Set to true to close the socket later (when WS Close frame received) */

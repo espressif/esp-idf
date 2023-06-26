@@ -12,6 +12,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.generic
@@ -23,9 +24,7 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_twai_self(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[twai-loop-back]')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases(group='twai-loop-back')
 
 
 @pytest.fixture(name='socket_can', scope='module')
@@ -39,6 +38,7 @@ def fixture_create_socket_can() -> Bus:
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.skip(reason='Runner not set up yet')
@@ -70,6 +70,7 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.skip(reason='Runner not set up yet')

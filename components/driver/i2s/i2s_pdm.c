@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,7 @@ static const char *TAG = "i2s_pdm";
   ---------------------------------------------------------------*/
 
 #if SOC_I2S_SUPPORTS_PDM_TX
+#define I2S_PDM_TX_BCLK_DIV_MIN    8  /*!< The minimum bclk_div for PDM TX mode */
 static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_pdm_tx_clk_config_t *clk_cfg, i2s_hal_clock_info_t *clk_info)
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
@@ -38,7 +39,7 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     // Over sampling ratio (integer, mostly should be 1 or 2)
     uint32_t over_sample_ratio = pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
     clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * over_sample_ratio;
-    clk_info->bclk_div = 8;
+    clk_info->bclk_div = clk_cfg->bclk_div < I2S_PDM_TX_BCLK_DIV_MIN ? I2S_PDM_TX_BCLK_DIV_MIN : clk_cfg->bclk_div;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
@@ -70,7 +71,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 #if SOC_I2S_HW_VERSION_2
     /* Work around for PDM TX clock, overwrite the raw division directly to reduce the noise
      * This set of coefficients is a special division to reduce the background noise in PDM TX mode */
-    i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, 1, 1, 0, 0);
+    i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, clk_info.mclk_div, 1, 1, 0, 0);
 #endif
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
@@ -180,7 +181,7 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     }
 #endif
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
-    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, ESP_INTR_FLAG_LEVEL1), err, TAG, "initialize dma interrupt failed");
+    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
     i2s_ll_tx_enable_pdm(handle->controller->hal.dev);
 #if SOC_I2S_HW_VERSION_2
@@ -318,13 +319,14 @@ err:
   ---------------------------------------------------------------*/
 
 #if SOC_I2S_SUPPORTS_PDM_RX
+#define I2S_PDM_RX_BCLK_DIV_MIN    8  /*!< The minimum bclk_div for PDM RX mode */
 static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_pdm_rx_clk_config_t *clk_cfg, i2s_hal_clock_info_t *clk_info)
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_pdm_rx_clk_config_t *pdm_rx_clk = (i2s_pdm_rx_clk_config_t *)clk_cfg;
 
     clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * (pdm_rx_clk->dn_sample_mode == I2S_PDM_DSR_16S ? 2 : 1);
-    clk_info->bclk_div = 8;
+    clk_info->bclk_div = clk_cfg->bclk_div < I2S_PDM_RX_BCLK_DIV_MIN ? I2S_PDM_RX_BCLK_DIV_MIN : clk_cfg->bclk_div;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
@@ -456,7 +458,7 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
     }
 #endif
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
-    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, ESP_INTR_FLAG_LEVEL1), err, TAG, "initialize dma interrupt failed");
+    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
     i2s_ll_rx_enable_pdm(handle->controller->hal.dev);
 #if SOC_I2S_HW_VERSION_2

@@ -47,7 +47,10 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
 
     itoa(line, lbuf, 10);
 
-    if (!spi_flash_cache_enabled()) {
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    if (!spi_flash_cache_enabled())
+#endif
+    {
        if (esp_ptr_in_drom(file)) {
            file = CACHE_DISABLED_STR;
        }

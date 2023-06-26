@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "ets_sys.h"
-#include "rsa_pss.h"
 #include "ecdsa.h"
 #include "esp_assert.h"
 
@@ -29,18 +28,6 @@ typedef enum {
     SB_FAILED = 0x7533885E,
 } ets_secure_boot_status_t;
 
-
-/* Verify and stage-load the bootloader image
-   (reconfigures cache to map, loads trusted key digests from efuse,
-   copies the bootloader into the staging buffer.)
-
-   If allow_key_revoke is true and aggressive revoke efuse is set,
-   any failed signature has its associated key revoked in efuse.
-
-   If result is SB_SUCCESS, the "simple hash" of the bootloader
-   is copied into verified_hash.
-*/
-ets_secure_boot_status_t ets_secure_boot_verify_stage_bootloader(uint8_t *verified_hash, bool allow_key_revoke);
 
 /* Verify bootloader image (reconfigures cache to map),
    with key digests provided as parameters.)
@@ -69,11 +56,6 @@ ETS_STATUS ets_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trust
    If result is SB_SUCCESS, the image_digest value is copied into verified_digest.
 */
 ets_secure_boot_status_t ets_secure_boot_verify_signature(const ets_secure_boot_signature_t *sig, const uint8_t *image_digest, const ets_secure_boot_key_digests_t *trusted_keys, uint8_t *verified_digest);
-
-/* Revoke a public key digest in efuse.
-   @param index Digest to revoke. Must be 0, 1 or 2.
- */
-void ets_secure_boot_revoke_public_key_digest(int index);
 
 #define CRC_SIGN_BLOCK_LEN 1196
 #define SIG_BLOCK_PADDING 4096

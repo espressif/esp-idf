@@ -3,7 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs "")
 set(includes "")
 
-if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
+if(CONFIG_ULP_COPROC_TYPE_FSM OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
 
     list(APPEND srcs
         "ulp_common/ulp_common.c"
@@ -34,10 +34,22 @@ if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
     endif()
 endif()
 
+if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+   list(APPEND includes
+        ulp_common/include
+        ulp_common/include/${target})
+
+    list(APPEND srcs
+        "lp_core/lp_core.c"
+        "lp_core/shared/ulp_lp_core_memory_shared.c"
+        "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+        "lp_core/lp_core_i2c.c")
+
+    list(APPEND includes
+        "lp_core/include"
+        "lp_core/shared/include")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        REQUIRES driver esp_adc)
-
-if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
-endif()

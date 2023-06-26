@@ -10,11 +10,10 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'release',
 ], indirect=True)
 def test_legacy_rmt(dut: Dut) -> None:
-    dut.expect('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(timeout=120)

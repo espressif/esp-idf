@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #ifdef __cplusplus
@@ -19,8 +11,8 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct emac_mac_dev_s {
-    union {
+typedef struct emac_mac_dev_s {
+    volatile union {
         struct {
             uint32_t pltf : 2;          /*These bits control the number of preamble bytes that are added to the beginning of every Transmit frame. The preamble reduction occurs only when the MAC is operating in the full-duplex mode.2'b00: 7 bytes of preamble. 2'b01: 5 bytes of preamble. 2'b10: 3 bytes of preamble.*/
             uint32_t rx : 1;            /*When this bit is set  the receiver state machine of the MAC is enabled for receiving frames from the MII. When this bit is reset  the MAC receive state machine is disabled after the completion of the reception of the current frame  and does not receive any further frames from the MII.*/
@@ -51,7 +43,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } gmacconfig;
-    union {
+    volatile union {
         struct {
             uint32_t pmode : 1; /*When this bit is set  the Address Filter module passes all incoming frames irrespective of the destination or source address. The SA or DA Filter Fails status bits of the Receive Status Word are always cleared when PR(PRI_RATIO) is set.*/
             uint32_t reserved1 : 1;
@@ -75,7 +67,7 @@ typedef volatile struct emac_mac_dev_s {
     } gmacff;
     uint32_t reserved_1008;
     uint32_t reserved_100c;
-    union {
+    volatile union {
         struct {
             uint32_t miibusy : 1;   /*This bit should read logic 0 before writing to PHY Addr Register and PHY data Register.During a PHY register access  the software sets this bit to 1'b1 to indicate that a Read or Write access is in progress. PHY data Register is invalid until this bit is cleared by the MAC. Therefore PHY data Register (MII Data) should be kept valid until the MAC clears this bit during a PHY Write operation. Similarly for a read operation  the contents of Register 5 are not valid until this bit is cleared. The subsequent read or write operation should happen only after the previous operation is complete. Because there is no acknowledgment from the PHY to MAC after a read or write operation is completed  there is no change in the functionality of this bit even when the PHY is not Present.*/
             uint32_t miiwrite : 1;  /*When set  this bit indicates to the PHY that this is a Write operation using the MII Data register. If this bit is not set  it indicates that this is a Read operation  that is  placing the data in the MII Data register.*/
@@ -86,14 +78,14 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } emacgmiiaddr;
-    union {
+    volatile union {
         struct {
             uint32_t mii_data : 16; /*This field contains the 16-bit data value read from the PHY after a Management Read operation or the 16-bit data value to be written to the PHY before a Management Write operation.*/
             uint32_t reserved16 : 16;
         };
         uint32_t val;
     } emacmiidata;
-    union {
+    volatile union {
         struct {
             uint32_t fcbba : 1; /*This bit initiates a Pause frame in the full-duplex mode and activates the backpressure function in the half-duplex mode if the TFCE bit is set. In the full-duplex mode  this bit should be read as 1'b0 before writing to the Flow Control register. To initiate a Pause frame  the Application must set this bit to 1'b1. During a transfer of the Control Frame  this bit continues to be set to signify that a frame transmission is in progress. After the completion of Pause frame transmission  the MAC resets this bit to 1'b0. The Flow Control register should not be written to until this bit is cleared. In the half-duplex mode  when this bit is set (and TFCE is set)  then backpressure is asserted by the MAC. During backpressure  when the MAC receives a new frame  the transmitter starts sending a JAM pattern resulting in a collision. When the MAC is configured for the full-duplex mode  the BPA(backpressure activate) is automatically disabled.*/
             uint32_t tfce : 1;  /*In the full-duplex mode  when this bit is set  the MAC enables the flow control operation to transmit Pause frames. When this bit is reset  the flow control operation in the MAC is disabled and the MAC does not transmit any Pause frames. In the half-duplex mode  when this bit is set the MAC enables the backpressure operation. When this bit is reset  the backpressure feature is Disabled.*/
@@ -109,7 +101,7 @@ typedef volatile struct emac_mac_dev_s {
     } gmacfc;
     uint32_t reserved_101c;
     uint32_t reserved_1020;
-    union {
+    volatile union {
         struct {
             uint32_t macrpes : 1;  /*When high  this bit indicates that the MAC MII receive protocol engine is actively receiving data and not in IDLE state.*/
             uint32_t macrffcs : 2; /*When high  this field indicates the active state of the FIFO Read and Write controllers of the MAC Receive Frame Controller Module. MACRFFCS[1] represents the status of FIFO Read controller. MACRFFCS[0] represents the status of small FIFO Write controller.*/
@@ -132,7 +124,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacdebug;
     uint32_t pmt_rwuffr; /*The MSB (31st bit) must be zero.Bit j[30:0] is the byte mask. If Bit 1/2/3/4 (byte number) of the byte mask is set  the CRC block processes the Filter 1/2/3/4 Offset + j of the incoming packet(PWKPTR is 0/1/2/3).RWKPTR is 0:Filter 0 Byte Mask .RWKPTR is 1:Filter 1 Byte Mask RWKPTR is 2:Filter 2 Byte Mask RWKPTR is 3:Filter 3 Byte Mask RWKPTR is 4:Bit 3/11/19/27 specifies the address type  defining the destination address type of the pattern.When the bit is set  the pattern applies to only multicast packets*/
-    union {
+    volatile union {
         struct {
             uint32_t pwrdwn : 1;   /*When set  the MAC receiver drops all received frames until it receives the expected magic packet or remote wake-up frame.This bit must only be set when MGKPKTEN  GLBLUCAST  or RWKPKTEN bit is set high.*/
             uint32_t mgkpkten : 1; /*When set  enables generation of a power management event because of magic packet reception.*/
@@ -149,7 +141,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } pmt_csr;
-    union {
+    volatile union {
         struct {
             uint32_t tlpien : 1; /*When set  this bit indicates that the MAC Transmitter has entered the LPI state because of the setting of the LPIEN bit. This bit is cleared by a read into this register.*/
             uint32_t tlpiex : 1; /*When set  this bit indicates that the MAC transmitter has exited the LPI state after the user has cleared the LPIEN bit and the LPI_TW_Timer has expired.This bit is cleared by a read into this register.*/
@@ -167,7 +159,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } gmaclpi_crs;
-    union {
+    volatile union {
         struct {
             uint32_t lpi_tw_timer : 16; /*This field specifies the minimum time (in microseconds) for which the MAC waits  after it stops transmitting the LPI pattern to the PHY and before it resumes the normal transmission. The TLPIEX status bit is set after the expiry of this timer.*/
             uint32_t lpi_ls_timer : 10; /*This field specifies the minimum time (in milliseconds) for which the link status from the PHY should be up (OKAY) before the LPI pattern can be transmitted to the PHY. The MAC does not transmit the LPI pattern even when the LPIEN bit is set unless the LPI_LS_Timer reaches the programmed terminal count. The default value of the LPI_LS_Timer is 1000 (1 sec) as defined in the IEEE standard.*/
@@ -175,7 +167,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } gmaclpitimerscontrol;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0 : 1;
             uint32_t reserved1 : 1;
@@ -193,7 +185,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } emacints;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0 : 1;
             uint32_t reserved1 : 1;
@@ -206,7 +198,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } emacintmask;
-    union {
+    volatile union {
         struct {
             uint32_t address0_hi : 16; /*This field contains the upper 16 bits (47:32) of the first 6-byte MAC address.The MAC uses this field for filtering the received frames and inserting the MAC address in the Transmit Flow Control (Pause) Frames.*/
             uint32_t reserved16 : 15;
@@ -215,7 +207,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr0high;
     uint32_t emacaddr0low; /*This field contains the lower 32 bits of the first 6-byte MAC address. This is used by the MAC for filtering the received frames and inserting the MAC address in the Transmit Flow Control (Pause) Frames.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address1_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the second 6-byte MAC Address.*/
             uint32_t reserved16 : 8;
@@ -226,7 +218,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr1high;
     uint32_t emacaddr1low; /*This field contains the lower 32 bits of the second 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address2_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the third 6-byte MAC address.*/
             uint32_t reserved16 : 8;
@@ -237,7 +229,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr2high;
     uint32_t emacaddr2low; /*This field contains the lower 32 bits of the third 6-byte MAC address. The content of this field is undefined  so the register needs to be configured after the initialization process.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address3_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the fourth 6-byte MAC address.*/
             uint32_t reserved16 : 8;
@@ -248,7 +240,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr3high;
     uint32_t emacaddr3low; /*This field contains the lower 32 bits of the fourth 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address4_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the fifth 6-byte MAC address.*/
             uint32_t reserved16 : 8;
@@ -259,7 +251,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr4high;
     uint32_t emacaddr4low; /*This field contains the lower 32 bits of the fifth 6-byte MAC address. The content of this field is undefined  so the register needs to be configured after the initialization process.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address5_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the sixth 6-byte MAC address.*/
             uint32_t reserved16 : 8;
@@ -270,7 +262,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr5high;
     uint32_t emacaddr5low; /*This field contains the lower 32 bits of the sixth 6-byte MAC address. The content of this field is undefined  so the register needs to be configured after the initialization process.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address6_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the seventh 6-byte MAC Address.*/
             uint32_t reserved16 : 8;
@@ -281,7 +273,7 @@ typedef volatile struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr6high;
     uint32_t emacaddr6low; /*This field contains the lower 32 bits of the seventh 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    union {
+    volatile union {
         struct {
             uint32_t mac_address7_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the eighth 6-byte MAC Address.*/
             uint32_t reserved16 : 8;
@@ -314,7 +306,7 @@ typedef volatile struct emac_mac_dev_s {
     uint32_t reserved_10cc;
     uint32_t reserved_10d0;
     uint32_t reserved_10d4;
-    union {
+    volatile union {
         struct {
             uint32_t link_mode : 1;  /*This bit indicates the current mode of operation of the link:   1'b0: Half-duplex mode.  1'b1: Full-duplex mode.*/
             uint32_t link_speed : 2; /*This bit indicates the current speed of the link:   2'b00: 2.5 MHz.  2'b01: 25 MHz.  2'b10: 125 MHz.*/
@@ -327,7 +319,7 @@ typedef volatile struct emac_mac_dev_s {
         };
         uint32_t val;
     } emaccstatus;
-    union {
+    volatile union {
         struct {
             uint32_t wdogto : 14; /*When Bit[16] (PWE) is set and Bit[23] (WD) of EMACCONFIG_REG is reset  this field is used as watchdog timeout for a received frame. If the length of a received frame exceeds the value of this field  such frame is terminated and declared as an error frame.*/
             uint32_t reserved14 : 2;

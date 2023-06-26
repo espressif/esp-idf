@@ -10,7 +10,7 @@ RF 共存
 
 {IDF_TARGET_NAME} 支持的共存场景
 ------------------------------------
-.. only:: esp32c3 or esp32s3 or esp32
+.. only:: esp32c3 or esp32s3 or esp32 or esp32c6
 
   .. table:: 表 1  Wi-Fi 和 BLE 共存支持功能
 
@@ -122,7 +122,7 @@ RF 共存
   Wi-Fi、BT、BLE 三者对于 RF 的使用，主要是按照时间片来划分的。在一个共存周期内，按照 Wi-Fi、BT、BLE 的顺序划分时间片。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，同理，BT/BLE 在自己的时间片内会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
   Wi-Fi、BLE 二者对于 RF 的使用，主要是按照时间片来划分的。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，在 Bluetooth 的时间片内，BLE 会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
@@ -130,7 +130,7 @@ RF 共存
 .. list::
 
   :esp32: 1) IDLE 状态：BT 和 BLE 共存由 Bluetooth 模块控制。
-  :esp32c3 or esp32s3: 1) IDLE 状态：RF 模块由 Bluetooth 模块控制。
+  :esp32c3 or esp32s3 or esp32c6: 1) IDLE 状态：RF 模块由 Bluetooth 模块控制。
   #) CONNECTED 状态：共存周期以目标信标传输时间 (Target Beacon Transmission Time, TBTT) 点为起始点，周期大于 100 ms。
   #) SCAN 状态：Wi-Fi 时间片以及共存周期都比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
   #) CONNECTING 状态：Wi-Fi 时间片比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
@@ -194,11 +194,11 @@ BLE MESH 共存状态描述
 
 .. list::
 
-    - 在完成共存程序编写的时候，您必须通过 menuconfig 选择 :ref:`CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE` 打开软件共存配置选项，否则就无法使用上文中提到的共存功能。
+    - 在完成共存程序编写的时候，您必须通过 menuconfig 选择 :ref:`CONFIG_ESP_COEX_SW_COEXIST_ENABLE` 打开软件共存配置选项，否则就无法使用上文中提到的共存功能。
 
-    :esp32: - 为了在共存情况下获得更好的 Wi-Fi 和蓝牙的通信性能，建议将 Wi-Fi 协议栈的 task 和蓝牙 Controller 以及 Host 协议栈的 task 运行在不同的 CPU 上。您可以通过 :ref:`CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE` 和 :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` （或者 :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）选择将蓝牙 controller 以及 host 协议栈的 task 放在同一个 CPU 上，再通过 :ref:`CONFIG_ESP32_WIFI_TASK_CORE_ID`  选择将 Wi-Fi 协议栈 task 放在另一个 CPU 上。
+    :esp32: - 为了在共存情况下获得更好的 Wi-Fi 和蓝牙的通信性能，建议将 Wi-Fi 协议栈的 task 和蓝牙 Controller 以及 Host 协议栈的 task 运行在不同的 CPU 上。您可以通过 :ref:`CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE` 和 :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` （或者 :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）选择将蓝牙 controller 以及 host 协议栈的 task 放在同一个 CPU 上，再通过 :ref:`CONFIG_ESP_WIFI_TASK_CORE_ID`  选择将 Wi-Fi 协议栈 task 放在另一个 CPU 上。
 
-    :esp32s3: - 为了在共存情况下获得更好的 Wi-Fi 和蓝牙的通信性能，建议将 Wi-Fi 协议栈的 task 和蓝牙 Controller 以及 Host 协议栈的 task 运行在不同的 CPU 上，您可以通过 :ref:`CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE` 和 :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` （或者 :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）选择将蓝牙 controller 以及 host 协议栈的 task 放在同一个 CPU 上，再通过 :ref:`CONFIG_ESP32_WIFI_TASK_CORE_ID`  选择将 Wi-Fi 协议栈 task 放在另一个 CPU 上。
+    :esp32s3: - 为了在共存情况下获得更好的 Wi-Fi 和蓝牙的通信性能，建议将 Wi-Fi 协议栈的 task 和蓝牙 Controller 以及 Host 协议栈的 task 运行在不同的 CPU 上，您可以通过 :ref:`CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE` 和 :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` （或者 :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）选择将蓝牙 controller 以及 host 协议栈的 task 放在同一个 CPU 上，再通过 :ref:`CONFIG_ESP_WIFI_TASK_CORE_ID`  选择将 Wi-Fi 协议栈 task 放在另一个 CPU 上。
 
     :esp32: - 在共存情况下 BLE SCAN 可能会被 Wi-Fi 打断且 Wi-Fi 在当前的 BLE scan window 结束前释放了 RF 资源。为了使 BLE 在当前的 scan window 内再次获取 RF 资源，您可以通过 :ref:`CONFIG_BTDM_CTRL_FULL_SCAN_SUPPORTED` 选择打开 FULL SCAN 配置选项。
 
@@ -207,14 +207,14 @@ BLE MESH 共存状态描述
     - 您可以通过修改以下 menuconfig 选项，以减小内存开销：
 
       1) :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` 选择打开蓝牙协议栈动态内存配置选项。
-      #) :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM`  选择减少 Wi-Fi 静态接收数据缓冲区的数量。
-      #) :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM` 选择减少 Wi-Fi 动态接收数据缓冲区的数量。
-      #) :ref:`CONFIG_ESP32_WIFI_TX_BUFFER` 选择使用动态分配发送数据缓冲区配置选项。
-      #) :ref:`CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM` 选择减少 Wi-Fi 动态发送数据缓冲区的数量。
-      #) :ref:`CONFIG_ESP32_WIFI_TX_BA_WIN` 选择减少 Wi-Fi Block Ack TX 窗口的数量。
-      #) :ref:`CONFIG_ESP32_WIFI_RX_BA_WIN` 选择减少 Wi-Fi Block Ack RX 窗口的数量。
-      #) :ref:`CONFIG_ESP32_WIFI_MGMT_SBUF_NUM` 选择减少 Wi-Fi 管理短缓冲区的数量。
-      #) :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT` 选择关闭此配置选项，关闭此配置选项将会减少大约 17 KB 的 IRAM 内存。
+      #) :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`  选择减少 Wi-Fi 静态接收数据缓冲区的数量。
+      #) :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM` 选择减少 Wi-Fi 动态接收数据缓冲区的数量。
+      #) :ref:`CONFIG_ESP_WIFI_TX_BUFFER` 选择使用动态分配发送数据缓冲区配置选项。
+      #) :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM` 选择减少 Wi-Fi 动态发送数据缓冲区的数量。
+      #) :ref:`CONFIG_ESP_WIFI_TX_BA_WIN` 选择减少 Wi-Fi Block Ack TX 窗口的数量。
+      #) :ref:`CONFIG_ESP_WIFI_RX_BA_WIN` 选择减少 Wi-Fi Block Ack RX 窗口的数量。
+      #) :ref:`CONFIG_ESP_WIFI_MGMT_SBUF_NUM` 选择减少 Wi-Fi 管理短缓冲区的数量。
+      #) :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 选择关闭此配置选项，关闭此配置选项将会减少大约 17 KB 的 IRAM 内存。
       #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT` 选择减小 TCP 套接字默认发送缓存区大小。
       #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT` 选择减小 TCP 套接字默认接收窗口的大小。
       #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 选择减小 TCP 接收邮箱的大小。

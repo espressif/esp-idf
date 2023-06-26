@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "hal/i2s_hal.h"
 
 #if SOC_I2S_HW_VERSION_2 && SOC_I2S_SUPPORTS_PDM_TX
-/* PDM tx high pass filter cut-off frequency and coeffecients list
+/* PDM tx high pass filter cut-off frequency and coefficients list
  * [0]: cut-off frequency; [1]: param0; [2]: param5 */
 static const float cut_off_coef[21][3] = {
     {185, 0, 0}, {172,  0, 1}, {160,  1, 1},
@@ -24,6 +24,53 @@ static const float cut_off_coef[21][3] = {
 };
 #endif
 
+/**
+ * @brief Calculate the precise mclk division by sclk and mclk
+ *
+ * @param sclk      system clock
+ * @param mclk      module clock
+ * @param integer   output the integer part of the division
+ * @param denominator   output the denominator part of the division
+ * @param numerator     output the numerator part of the division
+ */
+void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, i2s_ll_mclk_div_t *mclk_div)
+{
+    int ma = 0;
+    int mb = 0;
+    int min = INT32_MAX;
+    uint32_t div_denom = 1;
+    uint32_t div_numer = 0;
+    uint32_t div_inter = sclk / mclk;
+    uint32_t freq_diff = sclk % mclk;
+
+    if (freq_diff) {
+        float decimal = freq_diff / (float)mclk;
+        // Carry bit if the decimal is greater than 1.0 - 1.0 / (I2S_LL_MCLK_DIVIDER_MAX * 2)
+        if (decimal <= 1.0 - 1.0 / (float)(I2S_LL_MCLK_DIVIDER_MAX * 2)) {
+            for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
+                int b = (int)(a * (freq_diff / (double)mclk) + 0.5);
+                ma = freq_diff * a;
+                mb = mclk * b;
+                if (ma == mb) {
+                    div_denom = (uint32_t)a;
+                    div_numer = (uint32_t)b;
+                    break;
+                }
+                if (abs(mb - ma) < min) {
+                    div_denom = (uint32_t)a;
+                    div_numer = (uint32_t)b;
+                    min = abs(mb - ma);
+                }
+            }
+        } else {
+            div_inter++;
+        }
+    }
+    mclk_div->integ = div_inter;
+    mclk_div->denom = div_denom;
+    mclk_div->numer = div_numer;
+}
+
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
 {
     /* Get hardware instance */
@@ -32,23 +79,27 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
 
 void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
+    i2s_ll_mclk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
     i2s_ll_tx_enable_clock(hal->dev);
     i2s_ll_mclk_bind_to_tx_clk(hal->dev);
 #endif
     i2s_ll_tx_clk_set_src(hal->dev, clk_src);
-    i2s_ll_tx_set_mclk(hal->dev, clk_info->sclk, clk_info->mclk, clk_info->mclk_div);
+    i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+    i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
     i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
 }
 
 void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
+    i2s_ll_mclk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
     i2s_ll_rx_enable_clock(hal->dev);
     i2s_ll_mclk_bind_to_rx_clk(hal->dev);
 #endif
     i2s_ll_rx_clk_set_src(hal->dev, clk_src);
-    i2s_ll_rx_set_mclk(hal->dev, clk_info->sclk, clk_info->mclk, clk_info->mclk_div);
+    i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+    i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
     i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
 }
 
@@ -200,7 +251,7 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_rx_enable_msb_right(hal->dev, false);
     i2s_ll_rx_enable_right_first(hal->dev, false);
 #elif SOC_I2S_HW_VERSION_2
-    i2s_ll_tx_set_half_sample_bit(hal->dev, 16);
+    i2s_ll_rx_set_half_sample_bit(hal->dev, 16);
     i2s_ll_rx_enable_mono_mode(hal->dev, false);
 #if SOC_I2S_PDM_MAX_RX_LINES > 1
     uint32_t slot_mask = (slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO && slot_cfg->pdm_rx.slot_mask <= I2S_PDM_SLOT_BOTH) ?
@@ -251,7 +302,7 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ?
                                    I2S_TDM_SLOT0 : (uint32_t)slot_cfg->tdm.slot_mask);
     i2s_ll_tx_set_skip_mask(hal->dev, slot_cfg->tdm.skip_mask);
-    i2s_ll_tx_set_half_sample_bit(hal->dev, __builtin_popcount(slot_cfg->tdm.slot_mask) * slot_bit_width / 2);
+    i2s_ll_tx_set_half_sample_bit(hal->dev, total_slot * slot_bit_width / 2);
     i2s_ll_tx_set_bit_order(hal->dev, slot_cfg->tdm.bit_order_lsb);
     i2s_ll_tx_enable_left_align(hal->dev, slot_cfg->tdm.left_align);
     i2s_ll_tx_enable_big_endian(hal->dev, slot_cfg->tdm.big_endian);
@@ -284,7 +335,7 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     /* In mono mode, there only should be one slot enabled, other inactive slots will transmit same data as enabled slot */
     i2s_ll_rx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ?
                                    I2S_TDM_SLOT0 : (uint32_t)slot_cfg->tdm.slot_mask);
-    i2s_ll_rx_set_half_sample_bit(hal->dev, __builtin_popcount(slot_cfg->tdm.slot_mask) * slot_bit_width / 2);
+    i2s_ll_rx_set_half_sample_bit(hal->dev, total_slot * slot_bit_width / 2);
     i2s_ll_rx_set_bit_order(hal->dev, slot_cfg->tdm.bit_order_lsb);
     i2s_ll_rx_enable_left_align(hal->dev, slot_cfg->tdm.left_align);
     i2s_ll_rx_enable_big_endian(hal->dev, slot_cfg->tdm.big_endian);

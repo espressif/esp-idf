@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,7 +61,7 @@ static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_han
     rmt_bytes_encoder_t *bytes_encoder = __containerof(encoder, rmt_bytes_encoder_t, base);
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
     const uint8_t *nd = (const uint8_t *)primary_data;
-    rmt_encode_state_t state = 0;
+    rmt_encode_state_t state = RMT_ENCODING_RESET;
     dma_descriptor_t *desc0 = NULL;
     dma_descriptor_t *desc1 = NULL;
 
@@ -167,7 +167,7 @@ static size_t IRAM_ATTR rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_hand
     rmt_copy_encoder_t *copy_encoder = __containerof(encoder, rmt_copy_encoder_t, base);
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
     rmt_symbol_word_t *symbols = (rmt_symbol_word_t *)primary_data;
-    rmt_encode_state_t state = 0;
+    rmt_encode_state_t state = RMT_ENCODING_RESET;
     dma_descriptor_t *desc0 = NULL;
     dma_descriptor_t *desc1 = NULL;
 

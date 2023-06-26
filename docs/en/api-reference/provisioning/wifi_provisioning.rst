@@ -1,3 +1,5 @@
+:orphan:
+
 Wi-Fi Provisioning
 ==================
 

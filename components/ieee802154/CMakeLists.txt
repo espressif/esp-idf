@@ -1,31 +1,25 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-idf_component_register(
-    INCLUDE_DIRS include
-    REQUIRES esp_phy
-    )
+set(srcs "")
+set(include "include")
+set(private_include "")
 
 if(CONFIG_IEEE802154_ENABLED)
-    idf_component_get_property(esp_phy_lib esp_phy COMPONENT_LIB)
-    idf_component_get_property(esp_system_lib esp_system COMPONENT_LIB)
-    if($ENV{IEEE802154_LIB_FROM_INTERNAL_SRC})
-        idf_component_get_property(ieee802154_lib ieee802154_driver COMPONENT_LIB)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${ieee802154_lib}>
-                            $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a $<TARGET_FILE:${esp_phy_lib}>)
-    else()
-        if(IDF_TARGET STREQUAL "esp32h4")
-            if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-                target_link_libraries(${COMPONENT_LIB} INTERFACE
-                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1")
-            endif()
-            if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-                target_link_libraries(${COMPONENT_LIB} INTERFACE
-                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2")
-            endif()
-        else()
-            target_link_directories(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
-        endif()
-        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> lib802154.a libphy.a libbtbb.a
-                           $<TARGET_FILE:${esp_phy_lib}> $<TARGET_FILE:${esp_system_lib}>)
-    endif()
+    list(APPEND srcs "esp_ieee802154.c"
+        "driver/esp_ieee802154_ack.c"
+        "driver/esp_ieee802154_dev.c"
+        "driver/esp_ieee802154_frame.c"
+        "driver/esp_ieee802154_pib.c"
+        "driver/esp_ieee802154_util.c"
+        "driver/esp_ieee802154_sec.c"
+        "driver/esp_ieee802154_timer.c")
+    list(APPEND private_include "private_include")
 endif()
+
+idf_component_register(
+    SRCS "${srcs}"
+    INCLUDE_DIRS "${include}"
+    PRIV_INCLUDE_DIRS "${private_include}"
+    LDFRAGMENTS linker.lf
+    PRIV_REQUIRES esp_phy driver esp_timer esp_coex soc hal
+)

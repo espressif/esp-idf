@@ -15,14 +15,6 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
-#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
-#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
-#else
-#define ESP_BOOTLOADER_RESERVE_RTC 0
-#endif
-
 /**
  * physical memory is mapped twice to the vritual address (IRAM and DRAM).
  * `I_D_SRAM_OFFSET` is the offset between the two locations of the same physical memory
@@ -31,19 +23,15 @@
 #define SRAM_DRAM_START     0x3FC7C000
 #define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C3 */
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x403CF600 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x403CE710 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + ICACHE_SIZE)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START + ICACHE_SIZE)
 
 #define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
 
-#if CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
-ASSERT((CONFIG_ESP32C3_FIXED_STATIC_RAM_SIZE <= I_D_SRAM_SIZE), "Fixed static ram data does not fit.")
-#define DRAM0_0_SEG_LEN CONFIG_ESP3C3_FIXED_STATIC_RAM_SIZE
-#else
 #define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
-#endif // CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
+
 MEMORY
 {
   /**
@@ -84,15 +72,17 @@ MEMORY
   /**
    * RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
-}
+  rtc_iram_seg(RWX) :                org = 0x50000000, len = 0x2000 - RESERVE_RTC_MEM
 
-#if CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
-/* static data ends at defined address */
-_static_data_end = 0x3FCA0000 + DRAM0_0_SEG_LEN;
-#else
-_static_data_end = _bss_end;
-#endif // CONFIG_ESP32C3_USE_FIXED_STATIC_RAM_SIZE
+  /* We reduced the size of rtc_iram_seg by RESERVE_RTC_MEM value.
+     It reserves the amount of RTC fast memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+  */
+  rtc_reserved_seg(RW) :        org = 0x50000000 + 0x2000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
+}
 
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000;

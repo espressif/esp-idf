@@ -18,6 +18,9 @@ extern "C" {
 
 #define DEFAULT_HTTP_BUF_SIZE (512)
 
+#include "esp_event.h"
+ESP_EVENT_DECLARE_BASE(ESP_HTTP_CLIENT_EVENT);
+
 typedef struct esp_http_client *esp_http_client_handle_t;
 typedef struct esp_http_client_event *esp_http_client_event_handle_t;
 
@@ -50,6 +53,21 @@ typedef struct esp_http_client_event {
     char *header_value;                     /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header value */
 } esp_http_client_event_t;
 
+/**
+ * @brief      Argument structure for HTTP_EVENT_ON_DATA event
+ */
+typedef struct esp_http_client_on_data {
+    esp_http_client_handle_t client;    /*!< Client handle */
+    int64_t data_process;               /*!< Total data processed */
+} esp_http_client_on_data_t;
+
+/**
+ * @brief      Argument structure for HTTP_EVENT_REDIRECT event
+ */
+typedef struct esp_http_client_redirect_event_data {
+    esp_http_client_handle_t client;    /*!< Client handle */
+    int status_code;                    /*!< Status Code */
+} esp_http_client_redirect_event_data_t;
 
 /**
  * @brief      HTTP Client transport
@@ -365,6 +383,34 @@ esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const ch
 esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http_client_auth_type_t auth_type);
 
 /**
+ * @brief      Get http request user_data.
+ *             The value stored from the esp_http_client_config_t will be written
+ *             to the address passed into data.
+ *
+ * @param[in]  client       The esp_http_client handle
+ * @param[out]  data        A pointer to the pointer that will be set to user_data.
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_get_user_data(esp_http_client_handle_t client, void **data);
+
+/**
+ * @brief      Set http request user_data.
+ *             The value passed in +data+ will be available during event callbacks.
+ *             No memory management will be performed on the user's behalf.
+ *
+ * @param[in]  client     The esp_http_client handle
+ * @param[in]  data       The pointer to the user data
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_set_user_data(esp_http_client_handle_t client, void *data);
+
+/**
  * @brief      Get HTTP client session errno
  *
  * @param[in]  client  The esp_http_client handle
@@ -537,6 +583,7 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  * @brief      Set redirection URL.
  *             When received the 30x code from the server, the client stores the redirect URL provided by the server.
  *             This function will set the current URL to redirect to enable client to execute the redirection request.
+ *             When `disable_auto_redirect` is set, the client will not call this function but the event `HTTP_EVENT_REDIRECT` will be dispatched giving the user contol over the redirection event.
  *
  * @param[in]  client  The esp_http_client handle
  *

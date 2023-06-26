@@ -502,7 +502,7 @@ int bt_le_update_white_list(struct bt_mesh_white_list *wl)
     }
 
     if (BTM_BleUpdateAdvWhitelist(wl->add_remove, wl->remote_bda,
-            wl->addr_type, (tBTM_ADD_WHITELIST_CBACK *)wl->update_wl_comp_cb) == false) {
+            wl->addr_type, (tBTM_UPDATE_WHITELIST_CBACK *)wl->update_wl_comp_cb) == false) {
         return -EIO;
     }
 

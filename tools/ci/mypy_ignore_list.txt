@@ -62,7 +62,6 @@ examples/peripherals/sdio/sdio_test.py
 examples/peripherals/twai/twai_alert_and_recovery/example_test.py
 examples/peripherals/twai/twai_network/example_test.py
 examples/peripherals/twai/twai_self_test/example_test.py
-examples/protocols/cbor/example_test.py
 examples/protocols/esp_http_client/esp_http_client_test.py
 examples/protocols/esp_local_ctrl/example_test.py
 examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
@@ -110,7 +109,6 @@ examples/storage/semihost_vfs/semihost_vfs_example_test.py
 examples/storage/spiffs/spiffs_example_test.py
 examples/storage/spiffsgen/example_test.py
 examples/storage/wear_levelling/wear_levelling_example_test.py
-examples/system/app_trace_to_host/example_test.py
 examples/system/base_mac_address/example_test.py
 examples/system/console/example_test.py
 examples/system/deep_sleep/example_test.py
@@ -133,8 +131,8 @@ examples/system/startup_time/example_test.py
 examples/system/sysview_tracing/example_test.py
 examples/system/sysview_tracing_heap_log/example_test.py
 examples/system/task_watchdog/example_test.py
-examples/system/ulp_fsm/ulp/example_test.py
-examples/system/ulp_fsm/ulp_adc/example_test.py
+examples/system/ulp/ulp_fsm/ulp/example_test.py
+examples/system/ulp/ulp_fsm/ulp_adc/example_test.py
 examples/system/unit_test/example_test.py
 examples/wifi/iperf/iperf_test.py
 tools/ble/lib_ble_client.py
@@ -212,8 +210,6 @@ tools/test_apps/system/panic/app_test.py
 tools/test_apps/system/panic/panic_tests.py
 tools/test_apps/system/panic/test_panic_util/test_panic_util.py
 tools/test_apps/system/startup/app_test.py
-tools/test_idf_monitor/idf_monitor_wrapper.py
-tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py

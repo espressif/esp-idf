@@ -51,7 +51,7 @@ Depending on PMF configurations on Station and AP side, the resulting connection
 API & Usage
 +++++++++++
 
-{IDF_TARGET_NAME} supports PMF in both Station and SoftAP mode. For both, the default mode is PMF Optional and disabling PMF is not possible. For even higher security, PMF required mode can be enabled by setting the ``required`` flag in `pmf_cfg` while using the :cpp:func:`esp_wifi_set_config` API. This will result in the device only connecting to a PMF enabled device and rejecting others.
+{IDF_TARGET_NAME} supports PMF in both Station and SoftAP mode. For both, the default mode is PMF Optional. For even higher security, PMF required mode can be enabled by setting the ``required`` flag in `pmf_cfg` while using the :cpp:func:`esp_wifi_set_config` API. This will result in the device only connecting to a PMF enabled device and rejecting others. PMF optional can be disabled using :cpp:func:`esp_wifi_disable_pmf_config` API. If softAP is started in WPA3 or WPA2/WPA3 mixed mode trying to disable PMF will result in error.
 
 .. attention::
 
@@ -75,9 +75,12 @@ Please refer to `Security <https://www.wi-fi.org/discover-wi-fi/security>`_ sect
 Setting up WPA3 with {IDF_TARGET_NAME}
 ++++++++++++++++++++++++++++++++++++++
 
-In IDF Menuconfig under Wi-Fi component, a config option "Enable WPA3-Personal" is provided to Enable/Disable WPA3. By default it is kept enabled, if disabled {IDF_TARGET_NAME} will not be able to establish a WPA3 connection. Currently, WPA3 is supported only in the Station mode. Additionally, since PMF is mandated by WPA3 protocol, PMF Mode should be set to either Optional or Required while setting WiFi config.
+In IDF Menuconfig under Wi-Fi component, a config option "Enable WPA3-Personal" is provided to Enable/Disable WPA3 for station. By default it is kept enabled, if disabled {IDF_TARGET_NAME} will not be able to establish a WPA3 connection. Also under WI-FI component a config option "ESP_WIFI_SOFTAP_SAE_SUPPORT" is provided to Enable/Disable WPA3 for softAP. Additionally, since PMF is mandated by WPA3 protocol, PMF Mode Optional is set by default for station and softAP. PMF Required can be configured using WiFi config. For WPA3 softAP, PMF required is mandatory and will be configured and stored in NVS implicitly if not specified by user.
 
 Refer to `Protected Management Frames (PMF)`_ on how to set this mode.
 
-After these settings are done, Station is ready to use WPA3-Personal. Application developers need not worry about the underlying security mode of the AP. WPA3-Personal is now the highest supported protocol in terms of security, so it will be automatically selected for the connection whenever available. For example, if an AP is configured to be in WPA3 Transition Mode, where it will advertise as both WPA2 and WPA3 capable, Station will choose WPA3 for the connection with above settings.
-Note that Wi-Fi stack size requirement will increase 3kB when WPA3 is used.
+After configuring all required settings for WPA3-Personal station, application developers need not worry about the underlying security mode of the AP. WPA3-Personal is now the highest supported protocol in terms of security, so it will be automatically selected for the connection whenever available. For example, if an AP is configured to be in WPA3 Transition Mode, where it will advertise as both WPA2 and WPA3 capable, Station will choose WPA3 for the connection with above settings.
+Note that Wi-Fi stack size requirement will increase 3kB when "Enable WPA3-Personal" is used.
+
+After configuring all required setting for WPA3-Personal softAP, application developers have to set ``WIFI_AUTH_WPA3_PSK`` as WiFi config authmode to start AP in softAP. SoftAP can be also configured to use ``WIFI_AUTH_WPA2_WPA3_PSK`` mixed mode.
+Note that flash size will be increased by 6kB after enabling "ESP_WIFI_SOFTAP_SAE_SUPPORT".

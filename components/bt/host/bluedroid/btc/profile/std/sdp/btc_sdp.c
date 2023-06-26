@@ -1111,7 +1111,7 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         btc_sdp_cb_to_app(ESP_SDP_DEINIT_EVT, &param);
         break;
     case BTA_SDP_SEARCH_COMP_EVT:
-        param.search.status = p_data->status;
+        param.search.status = p_data->sdp_search_comp.status;
         if (param.search.status == ESP_SDP_SUCCESS) {
             memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
             memcpy(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid, sizeof(tSDP_UUID));
@@ -1131,8 +1131,8 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         }
         break;
     case BTA_SDP_CREATE_RECORD_USER_EVT:
-        param.create_record.status = p_data->status;
-        param.create_record.record_handle = p_data->handle;
+        param.create_record.status = p_data->sdp_create_record.status;
+        param.create_record.record_handle = p_data->sdp_create_record.handle;
         btc_sdp_cb_to_app(ESP_SDP_CREATE_RECORD_COMP_EVT, &param);
         break;
     case BTA_SDP_REMOVE_RECORD_USER_EVT:

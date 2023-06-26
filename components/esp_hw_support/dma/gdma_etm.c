@@ -46,6 +46,7 @@ static esp_err_t gdma_del_etm_task(esp_etm_task_t *task)
         gdma_ll_tx_enable_etm_task(group->hal.dev, pair->pair_id, false);
     }
     free(gdma_task);
+    dma_chan->flags.start_stop_by_etm = false;
     return ESP_OK;
 }
 
@@ -105,6 +106,8 @@ esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_
     }
     ESP_GOTO_ON_FALSE(task_id != 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported task type");
 
+    // set a flag, now the GDMA channel is start/stop by ETM subsystem
+    dma_chan->flags.start_stop_by_etm = true;
     // fill the ETM task object
     task->chan = dma_chan;
     task->base.task_id = task_id;

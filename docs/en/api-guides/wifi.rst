@@ -3,11 +3,15 @@ Wi-Fi Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
+{IDF_TARGET_MAX_CONN_STA_NUM:default="15", esp32c2="4", esp32c3="10", esp32c6="10"}
+
+{IDF_TARGET_SUB_MAX_NUM_FROM_KEYS:default="2", esp32c3="7", esp32c6="7"}
+
 {IDF_TARGET_NAME} Wi-Fi Feature List
 ------------------------------------
 The following features are supported:
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
     - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
     - Station-only mode, AP-only mode, station/AP-coexistence mode
@@ -22,13 +26,13 @@ The following features are supported:
     - Multiple antennas
     - Channel state information
 
-.. only:: esp32c3
+.. only:: esp32c6
 
     - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
     - Station-only mode, AP-only mode, station/AP-coexistence mode
-    - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
+    - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, IEEE 802.11ax, and APIs to configure the protocol mode
     - WPA/WPA2/WPA3/WPA2-Enterprise/WPA3-Enterprise/WAPI/WPS and DPP
-    - AMPDU, HT40, QoS, and other key features
+    - AMSDU, AMPDU, HT40, QoS, and other key features
     - Modem-sleep
     - The Espressif-specific ESP-NOW protocol and Long Range mode, which supports up to **1 km** of data traffic
     - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
@@ -36,6 +40,10 @@ The following features are supported:
     - Both fast scan and all-channel scan
     - Multiple antennas
     - Channel state information
+    - Support TWT
+    - Supoort downlink MU-MIMO
+    - Support OFDMA
+    - Support BSS Color
 
 .. only:: esp32c2
 
@@ -74,7 +82,7 @@ Refer to `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_ and `{IDF_TARGET_NA
 
 Event-Handling
 ++++++++++++++
-Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_ and `WIFI_EVENT_STA_CONNECTED`_. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
+Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_ and `WIFI_EVENT_STA_CONNECTED`_. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also the :doc:`overview of the Event Loop Library in ESP-IDF<../api-reference/system/esp_event>`.
 
 Write Error-Recovery Routines Correctly at All Times
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1079,7 +1087,7 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
    * - Reserved
      - 40 ~ 45
      - 40 ~ 45
-     - 
+     -
    * - PEER_INITIATED
      - 46
      - 46
@@ -1256,7 +1264,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the station. And 
    * - bssid
      - This is valid only when bssid_set is 1; see field “bssid_set”.
    * - channel
-     - If the channel is 0, the station scans the channel 1 ~ N to search for the target AP; otherwise, the station starts by scanning the channel whose value is the same as that of the “channel” field, and then scans others to find the target AP. If you do not know which channel the target AP is running on, set it to 0.
+     - If the channel is 0, the station scans the channel 1 ~ N to search for the target AP; otherwise, the station starts by scanning the channel whose value is the same as that of the “channel” field, and then scans the channel 1 ~ N but skip the specific channel to find the target AP. For example, if the channel is 3, the scan order will be 3, 1, 2, 4,..., N. If you do not know which channel the target AP is running on, set it to 0.
    * - sort_method
      - This field is only for WIFI_ALL_CHANNEL_SCAN.
 
@@ -1278,7 +1286,7 @@ AP Basic Configuration
 
 API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
 
     .. list-table::
       :header-rows: 1
@@ -1299,33 +1307,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the c
       * - ssid_hidden
         - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
       * - max_connection
-        - The max number of stations allowed to connect in, the default value is 10. ESP Wi-Fi supports up to 15 (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is 17, if :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= 2, the max_connection can be set up to 15, otherwise the max_connection can be set up to (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
-      * - beacon_interval
-        - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
-
-
-.. only:: esp32c3
-
-    .. list-table::
-      :header-rows: 1
-      :widths: 15 55
-
-      * - Field
-        - Description
-      * - ssid
-        - SSID of AP; if the ssid[0] is 0xFF and ssid[1] is 0xFF, the AP defaults the SSID to ESP_aabbcc, where “aabbcc” is the last three bytes of the AP MAC.
-      * - password
-        - Password of AP; if the auth mode is WIFI_AUTH_OPEN, this field will be ignored.
-      * - ssid_len
-        - Length of SSID; if ssid_len is 0, check the SSID until there is a termination character. If ssid_len > 32, change it to 32; otherwise, set the SSID length according to ssid_len.
-      * - channel
-        - Channel of AP; if the channel is out of range, the Wi-Fi driver defaults to channel 1. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
-      * - authmode
-        - Auth mode of ESP AP; currently, ESP AP does not support AUTH_WEP. If the authmode is an invalid value, AP defaults the value to WIFI_AUTH_OPEN.
-      * - ssid_hidden
-        - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
-      * - max_connection
-        - The max number of stations allowed to connect in, the default value is 10. ESP Wi-Fi supports up to 10 (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is 17, if :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= 7, the max_connection can be set up to 10, otherwise the max_connection can be set up to (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
+        - The max number of stations allowed to connect in, the default value is 10. ESP Wi-Fi supports up to {IDF_TARGET_MAX_CONN_STA_NUM} (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is 17, if :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= {IDF_TARGET_SUB_MAX_NUM_FROM_KEYS}, the max_connection can be set up to {IDF_TARGET_MAX_CONN_STA_NUM}, otherwise the max_connection can be set up to (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
       * - beacon_interval
         - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
 
@@ -1351,7 +1333,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the c
       * - ssid_hidden
         - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
       * - max_connection
-        - The max number of stations allowed to connect in, the default value is 2. ESP Wi-Fi supports up to 4 (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is 4, the max_connection can be set up to (4 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
+        - The max number of stations allowed to connect in, the default value is 2. ESP Wi-Fi supports up to {IDF_TARGET_MAX_CONN_STA_NUM} (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is {IDF_TARGET_MAX_CONN_STA_NUM}, the max_connection can be set up to ({IDF_TARGET_MAX_CONN_STA_NUM} - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
       * - beacon_interval
         - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
 
@@ -1386,7 +1368,34 @@ Currently, the ESP-IDF supports the following protocol modes:
 
           **This mode is an Espressif-patented mode which can achieve a one-kilometer line of sight range. Please make sure both the station and the AP are connected to an ESP device.**
 
+.. only:: esp32c6
 
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 55
+
+      * - Protocol Mode
+        - Description
+      * - 802.11b
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B) to set the station/AP to 802.11b-only mode.
+      * - 802.11bg
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) to set the station/AP to 802.11bg mode.
+      * - 802.11g
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) and esp_wifi_config_11b_rate(ifx, true) to set the station/AP to 802.11g mode.
+      * - 802.11bgn
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) to set the station/ AP to BGN mode.
+      * - 802.11gn
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) and esp_wifi_config_11b_rate(ifx, true) to set the station/AP to 802.11gn mode.
+      * - 802.11 BGNLR
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR) to set the station/AP to BGN and the LR mode.
+      * - 802.11bgnax
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX) to set the station/ AP to 802.11bgnax mode.
+      * - 802.11 BGNAXLR
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX|WIFI_PROTOCOL_LR) to set the station/ AP to 802.11bgnax and LR mode.
+      * - 802.11 LR
+        - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR) to set the station/AP only to the LR mode.
+
+          **This mode is an Espressif-patented mode which can achieve a one-kilometer line of sight range. Please make sure both the station and the AP are connected to an ESP device.**
 
 .. only:: esp32c2
 
@@ -1409,7 +1418,7 @@ Currently, the ESP-IDF supports the following protocol modes:
 
 
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6
 
     Long Range (LR)
     +++++++++++++++++++++++++
@@ -1419,27 +1428,53 @@ Currently, the ESP-IDF supports the following protocol modes:
     LR Compatibility
     *************************
 
-    Since LR is Espressif-unique Wi-Fi mode, only {IDF_TARGET_NAME} devices can transmit and receive the LR data. In other words, the {IDF_TARGET_NAME} device should NOT transmit the data in LR data rate if the connected device does not support LR. The application can achieve this by configuring suitable Wi-Fi mode. If the negotiated mode supports LR, the {IDF_TARGET_NAME} may transmit data in LR rate. Otherwise, {IDF_TARGET_NAME} will transmit all data in traditional Wi-Fi data rate.
+    Since LR is Espressif-unique Wi-Fi mode, only ESP32 chip series devices (except ESP32-C2) can transmit and receive the LR data. In other words, the ESP32 chip series devices (except ESP32-C2) should NOT transmit the data in LR data rate if the connected device does not support LR. The application can achieve this by configuring a suitable Wi-Fi mode. If the negotiated mode supports LR, the ESP32 chip series devices (except ESP32-C2) may transmit data in LR rate. Otherwise, ESP32 chip series devices (except ESP32-C2) will transmit all data in the traditional Wi-Fi data rate.
 
     The following table depicts the Wi-Fi mode negotiation:
 
-    +-------+-----+----+---+-------+------+-----+----+
-    |AP\STA | BGN | BG | B | BGNLR | BGLR | BLR | LR |
-    +=======+=====+====+===+=======+======+=====+====+
-    | BGN   | BGN | BG | B | BGN   | BG   | B   | -  |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BG    | BG  | BG | B | BG    | BG   | B   | -  |
-    +-------+-----+----+---+-------+------+-----+----+
-    | B     | B   | B  | B | B     | B    | B   | -  |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BGNLR | -   | -  | - | BGNLR | BGLR | BLR | LR |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BGLR  | -   | -  | - | BGLR  | BGLR | BLR | LR |
-    +-------+-----+----+---+-------+------+-----+----+
-    | BLR   | -   | -  | - | BLR   | BLR  | BLR | LR |
-    +-------+-----+----+---+-------+------+-----+----+
-    | LR    | -   | -  | - | LR    | LR   | LR  | LR |
-    +-------+-----+----+---+-------+------+-----+----+
+    .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+
+        +-------+-----+----+---+-------+------+-----+----+
+        |AP\STA | BGN | BG | B | BGNLR | BGLR | BLR | LR |
+        +=======+=====+====+===+=======+======+=====+====+
+        | BGN   | BGN | BG | B | BGN   | BG   | B   | -  |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BG    | BG  | BG | B | BG    | BG   | B   | -  |
+        +-------+-----+----+---+-------+------+-----+----+
+        | B     | B   | B  | B | B     | B    | B   | -  |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BGNLR | -   | -  | - | BGNLR | BGLR | BLR | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BGLR  | -   | -  | - | BGLR  | BGLR | BLR | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+        | BLR   | -   | -  | - | BLR   | BLR  | BLR | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+        | LR    | -   | -  | - | LR    | LR   | LR  | LR |
+        +-------+-----+----+---+-------+------+-----+----+
+
+    .. only:: esp32c6
+
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | AP\STA  | BGNAX | BGN | BG | B | BGNAXLR | BGNLR | BGLR | BLR | LR |
+        +=========+=======+=====+====+===+=========+=======+======+=====+====+
+        | BGNAX   | BGAX  | BGN | BG | B | BGAX    | BGN   | BG   | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGN     | BGN   | BGN | BG | B | BGN     | BGN   | BG   | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BG      | BG    | BG  | BG | B | BG      | BG    | BG   | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | B       | B     | B   | B  | B | B       | B     | B    | B   | -  |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGNAXLR | -     | -   | -  | - | BGAXLR  | BGNLR | BGLR | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGNLR   | -     | -   | -  | - | BGNLR   | BGNLR | BGLR | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BGLR    | -     | -   | -  | - | BGLR    | BGLR  | BGLR | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | BLR     | -     | -   | -  | - | BLR     | BLR   | BLR  | BLR | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
+        | LR      | -     | -   | -  | - | LR      | LR    | LR   | LR  | LR |
+        +---------+-------+-----+----+---+---------+-------+------+-----+----+
 
     In the above table, the row is the Wi-Fi mode of AP and the column is the Wi-Fi mode of station. The "-" indicates Wi-Fi mode of the AP and station are not compatible.
 
@@ -1447,7 +1482,7 @@ Currently, the ESP-IDF supports the following protocol modes:
 
     - For LR-enabled AP of {IDF_TARGET_NAME}, it is incompatible with traditional 802.11 mode, because the beacon is sent in LR mode.
     - For LR-enabled station of {IDF_TARGET_NAME} whose mode is NOT LR-only mode, it is compatible with traditional 802.11 mode.
-    - If both station and AP are {IDF_TARGET_NAME} devices and both of them have enabled LR mode, the negotiated mode supports LR.
+    - If both station and AP are ESP32 series chips devices (except ESP32-C2) and both of them have enabled LR mode, the negotiated mode supports LR.
 
     If the negotiated Wi-Fi mode supports both traditional 802.11 mode and LR mode, it is the Wi-Fi driver's responsibility to automatically select the best data rate in different Wi-Fi modes and the application can ignore it.
 
@@ -1479,7 +1514,6 @@ Currently, the ESP-IDF supports the following protocol modes:
     - Both the AP and station are Espressif devices.
     - Long distance Wi-Fi connection and data transmission is required.
     - Data throughput requirements are very small, such as remote device control.
-
 
 Wi-Fi Country Code
 +++++++++++++++++++++++++
@@ -1635,7 +1669,7 @@ Current implementation of 802.11k includes support for beacon measurement report
 
 Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and use these APIs. Example code only demonstrates how these APIs can be used, and the application should define its own algorithm and cases as required.
 
-.. only:: esp32s2 or esp32c3
+.. only:: SOC_WIFI_FTM_SUPPORT
 
     Wi-Fi Location
     -------------------------------
@@ -1654,7 +1688,7 @@ Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and 
     - {IDF_TARGET_NAME} as FTM Initiator in station mode.
     - {IDF_TARGET_NAME} as FTM Responder in AP mode.
 
-    Distance measurement using RTT is not accurate, and factors such as RF interference, multi-path travel, antenna orientation, and lack of calibration increase these inaccuracies. For better results, it is suggested to perform FTM between two {IDF_TARGET_NAME} devices as station and AP.
+    Distance measurement using RTT is not accurate, and factors such as RF interference, multi-path travel, antenna orientation, and lack of calibration increase these inaccuracies. For better results, it is suggested to perform FTM between two ESP32 chip series devices (except ESP32-C2) as station and AP.
 
     Refer to ESP-IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to set up and perform FTM.
 
@@ -1895,6 +1929,50 @@ The table below shows the best throughput results gained in Espressif's lab and 
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`.
 
+.. only:: esp32c6
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 45 MBit/s
+          - iperf example
+          - 420ebd20
+        * - UDP TX
+          - 30 MBit/s
+          - 40 MBit/s
+          - iperf example
+          - 420ebd20
+        * - TCP RX
+          - 20 MBit/s
+          - 30 MBit/s
+          - iperf example
+          - 420ebd20
+        * - TCP TX
+          - 20 MBit/s
+          - 31 MBit/s
+          - iperf example
+          - 420ebd20
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c6`.
+
 .. only:: esp32s3
 
      .. list-table::
@@ -2072,10 +2150,11 @@ Generally, following steps can be taken to configure the multiple antennas:
 
  - Configure which GPIOs are connected to the antenna_selects. For example, if four antennas are supported and GPIO20/GPIO21 are connected to antenna_select[0]/antenna_select[1], the configurations look like::
 
-     wifi_ant_gpio_config_t config = {
-         { .gpio_select = 1, .gpio_num = 20 },
-         { .gpio_select = 1, .gpio_num = 21 }
+     wifi_ant_gpio_config_t ant_gpio_config = {
+         .gpio_cfg[0] = { .gpio_select = 1, .gpio_num = 20 },
+         .gpio_cfg[1] = { .gpio_select = 1, .gpio_num = 21 }
      };
+
  - Configure which antennas are enabled and how RX/TX use the enabled antennas. For example, if antenna1 and antenna3 are enabled, the RX needs to select the better antenna automatically and uses antenna1 as its default antenna, the TX always selects the antenna3. The configuration looks like::
 
      wifi_ant_config_t config = {
@@ -2155,7 +2234,7 @@ Generally, following steps can be taken to configure the multiple antennas:
 Wi-Fi HT20/40
 -------------------------
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6
 
     {IDF_TARGET_NAME} supports Wi-Fi bandwidth HT20 or HT40 and does not support HT20/40 coexist. :cpp:func:`esp_wifi_set_bandwidth()` can be used to change the default bandwidth of station or AP. The default bandwidth for {IDF_TARGET_NAME} station and AP is HT40.
 
@@ -2205,12 +2284,16 @@ Theoretically, the higher priority AC has better performance than the lower prio
  - Avoid using more than two precedences supported by different AMPDUs, e.g., when socket A uses precedence 0, socket B uses precedence 1, and socket C uses precedence 2. This can be a bad design because it may need much more memory. To be specific, the Wi-Fi driver may generate a Block Ack session for each precedence and it needs more memory if the Block Ack session is set up.
 
 
+Wi-Fi AMSDU
+-------------------------
+
+.. only:: not SOC_SPIRAM_SUPPORTED
+
+    {IDF_TARGET_NAME} supports receiving AMSDU.
+
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    Wi-Fi AMSDU
-    -------------------------
-
-    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more internal memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more memory. Select :ref:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
 
 Wi-Fi Fragment
 -------------------------
@@ -2219,7 +2302,7 @@ Wi-Fi Fragment
 
     supports Wi-Fi receiving fragment, but does not support Wi-Fi transmitting fragment.
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
     {IDF_TARGET_NAME} supports Wi-Fi receiving and transmitting fragment.
 
@@ -2303,24 +2386,24 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 **RX direction:**
 
- - :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
     This parameter indicates the number of DMA buffer at the hardware layer. Increasing this parameter will increase the sender's one-time receiving throughput, thereby improving the Wi-Fi protocol stack ability to handle burst traffic.
 
- - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
     This parameter indicates the number of RX buffer in the Wi-Fi layer. Increasing this parameter will improve the performance of packet reception. This parameter needs to match the RX buffer size of the LwIP layer.
 
- - :ref:`CONFIG_ESP32_WIFI_RX_BA_WIN`
-    This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM` and :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`.
+ - :ref:`CONFIG_ESP_WIFI_RX_BA_WIN`
+    This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` and :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`.
 
  - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`
     This parameter represents the RX buffer size of the LwIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_RX_BUFFER_NUM (KB) to reach a high and stable performance. Meanwhile, in case of multiple streams, this value needs to be reduced proportionally.
 
 **TX direction:**
 
- - :ref:`CONFIG_ESP32_WIFI_TX_BUFFER`
+ - :ref:`CONFIG_ESP_WIFI_TX_BUFFER`
     This parameter indicates the type of TX buffer, it is recommended to configure it as a dynamic buffer, which can make full use of memory.
 
- - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
     This parameter indicates the number of TX buffer on the Wi-Fi layer. Increasing this parameter will improve the performance of packet sending. The parameter value needs to match the TX buffer size of the LwIP layer.
 
  - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
@@ -2330,14 +2413,25 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 .. only:: esp32 or esp32s2
 
-    - :ref:`CONFIG_ESP32_WIFI_IRAM_OPT`
+    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
         If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 15 kB.
 
-    - :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`
+    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 16 kB.
 
  - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
     If this option is enabled, some LwIP functions are moved to IRAM, improving throughput. This increases IRAM usage by 13 kB.
+
+.. only:: esp32c6
+
+    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
+        If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 13 kB.
+
+    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
+        If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 7 kB.
+
+ - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
+    If this option is enabled, some LwIP functions are moved to IRAM, improving throughput. This increases IRAM usage by 14 kB.
 
 .. only:: esp32s2
 
@@ -2679,6 +2773,65 @@ The parameters not mentioned in the following table should be set to the default
           - 44.5
           - 44.2
 
+.. only:: esp32c6
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15
+
+        * - Rank
+          - Iperf
+          - Default
+          - Minimum
+        * - Available memory (KB)
+          - 223
+          - 276
+          - 299
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 20
+          - 8
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 40
+          - 16
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 40
+          - 16
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 32
+          - 16
+          - 6
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 40
+          - 16
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 40
+          - 16
+          - 6
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+        * - TCP TX throughput (Mbit/s)
+          - 30.5
+          - 25.9
+          - 16.4
+        * - TCP RX throughput (Mbit/s)
+          - 27.8
+          - 21.6
+          - 14.3
+        * - UDP TX throughput (Mbit/s)
+          - 37.8
+          - 36.1
+          - 34.6
+        * - UDP RX throughput (Mbit/s)
+          - 41.5
+          - 36.8
+          - 36.7
+
 .. only:: esp32c2
 
      .. list-table::
@@ -2835,6 +2988,12 @@ The parameters not mentioned in the following table should be set to the default
         The test was performed with a single stream in a shielded box using an ASUS RT-N66U router.
         {IDF_TARGET_NAME}'s CPU is single core with 160 MHz. {IDF_TARGET_NAME}'s flash is in QIO mode with 80 MHz.
 
+.. only:: esp32c6
+
+    .. note::
+        The test was performed with a single stream in a shielded box using an XIAOMI AX-6000 router.
+        {IDF_TARGET_NAME}'s CPU is single core with 160 MHz. {IDF_TARGET_NAME}'s flash is in QIO mode with 80 MHz.
+
 .. only:: esp32c2
 
     .. note::
@@ -2879,7 +3038,7 @@ The parameters not mentioned in the following table should be set to the default
      - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios where there is no requirement for performance and the application requires lots of space.
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c3 or esp32s3 or esp32c6
 
     **Ranks:**
 
@@ -2897,7 +3056,7 @@ The parameters not mentioned in the following table should be set to the default
     Using PSRAM
     ++++++++++++++++++++++++++++
 
-    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP32_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, and increasing this parameter can improve performance.
+    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, and increasing this parameter can improve performance.
     The following are the recommended ranks for using PSRAM:
 
     .. only:: esp32

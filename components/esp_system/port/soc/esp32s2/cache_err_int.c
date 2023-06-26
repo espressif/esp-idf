@@ -67,7 +67,7 @@ void esp_cache_err_int_init(void)
     ESP_INTR_ENABLE(ETS_MEMACCESS_ERR_INUM);
 }
 
-int IRAM_ATTR esp_cache_err_get_cpuid(void)
+int esp_cache_err_get_cpuid(void)
 {
     if (REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG) != 0 ||
         REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG) != 0) {

@@ -51,7 +51,7 @@ static NOINLINE_ATTR void s_function_in_flash(void)
     s_flash_func_t2 = esp_cpu_get_cycle_count();
 }
 
-static IRAM_ATTR NOINLINE_ATTR void s_funtion_in_iram(void)
+static IRAM_ATTR NOINLINE_ATTR void s_function_in_iram(void)
 {
     /**
      * - Here we will have few instructions in .iram0.text
@@ -72,7 +72,7 @@ static bool IRAM_ATTR on_gptimer_alarm_cb(gptimer_handle_t timer, const gptimer_
     if (is_flash) {
         s_function_in_flash();
     } else {
-        s_funtion_in_iram();
+        s_function_in_iram();
     }
 
     return false;

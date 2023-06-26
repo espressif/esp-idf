@@ -24,9 +24,7 @@ public:
 
     esp_err_t init_custom(Partition *partition, uint32_t baseSector, uint32_t sectorCount);
 
-#ifdef CONFIG_NVS_ENCRYPTION
     esp_err_t secure_init_partition(const char *part_name, nvs_sec_cfg_t* cfg);
-#endif
 
     esp_err_t deinit_partition(const char *partition_label);
 

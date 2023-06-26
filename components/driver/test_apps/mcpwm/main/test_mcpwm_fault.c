@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,7 @@ TEST_CASE("mcpwm_fault_install_uninstall", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_fault(soft_fault));
 }
 
-static bool test_fault_enter_callback(mcpwm_fault_handle_t detector, const mcpwm_fault_event_data_t *status, void *user_data)
+static bool IRAM_ATTR test_fault_enter_callback(mcpwm_fault_handle_t detector, const mcpwm_fault_event_data_t *status, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup = pdFALSE;
@@ -46,7 +46,7 @@ static bool test_fault_enter_callback(mcpwm_fault_handle_t detector, const mcpwm
     return high_task_wakeup == pdTRUE;
 }
 
-static bool test_fault_exit_callback(mcpwm_fault_handle_t detector, const mcpwm_fault_event_data_t *status, void *user_data)
+static bool IRAM_ATTR test_fault_exit_callback(mcpwm_fault_handle_t detector, const mcpwm_fault_event_data_t *status, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup = pdFALSE;

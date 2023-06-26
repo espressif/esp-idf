@@ -1,5 +1,11 @@
 menu "Example CoAP Client Configuration"
 
+    # Hidden option that selects IPv4
+    config EXAMPLE_COAP_NEEDS_IPV4
+        bool
+        default true
+        select LWIP_IPV4
+
     config EXAMPLE_TARGET_DOMAIN_URI
         string "Target Uri"
         default "coaps://californium.eclipseprojects.io"

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,11 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** sd0_in : R/W; bitpos: [7:0]; default: 0;
+        /** duty : R/W; bitpos: [7:0]; default: 0;
          *  This field is used to configure the duty cycle of sigma delta modulation output.
          */
         uint32_t duty:8;
-        /** sd0_prescale : R/W; bitpos: [15:8]; default: 255;
+        /** prescale : R/W; bitpos: [15:8]; default: 255;
          *  This field is used to set a divider value to divide APB clock.
          */
         uint32_t prescale:8;
@@ -75,8 +75,8 @@ typedef union {
          */
         uint32_t xpd_comp:1;
         /** mode_comp : R/W; bitpos: [1]; default: 0;
-         *  1 to enable external reference from PAD[0]. 0 to enable internal reference,
-         *  meanwhile PAD[0] can be used as a regular GPIO.
+         *  1 to enable external reference from PAD[10]. 0 to enable internal reference,
+         *  meanwhile PAD[10] can be used as a regular GPIO.
          */
         uint32_t mode_comp:1;
         /** dref_comp : R/W; bitpos: [4:2]; default: 0;
@@ -112,22 +112,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** filter_ch0_en : R/W; bitpos: [0]; default: 0;
+        /** filter_chn_en : R/W; bitpos: [0]; default: 0;
          *  Glitch Filter channel enable bit.
          */
-        uint32_t filter_ch0_en:1;
-        /** filter_ch0_input_io_num : R/W; bitpos: [6:1]; default: 0;
+        uint32_t filter_chn_en:1;
+        /** filter_chn_input_io_num : R/W; bitpos: [6:1]; default: 0;
          *  Glitch Filter input io number.
          */
-        uint32_t filter_ch0_input_io_num:6;
-        /** filter_ch0_window_thres : R/W; bitpos: [12:7]; default: 0;
+        uint32_t filter_chn_input_io_num:6;
+        /** filter_chn_window_thres : R/W; bitpos: [12:7]; default: 0;
          *  Glitch Filter window threshold.
          */
-        uint32_t filter_ch0_window_thres:6;
-        /** filter_ch0_window_width : R/W; bitpos: [18:13]; default: 0;
+        uint32_t filter_chn_window_thres:6;
+        /** filter_chn_window_width : R/W; bitpos: [18:13]; default: 0;
          *  Glitch Filter window width.
          */
-        uint32_t filter_ch0_window_width:6;
+        uint32_t filter_chn_window_width:6;
         uint32_t reserved_19:13;
     };
     uint32_t val;
@@ -272,11 +272,11 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
-typedef struct {
+typedef struct gpio_sd_dev_t {
     volatile gpio_sigmadelta_chn_reg_t channel[4];
     uint32_t reserved_010[4];
-    volatile gpio_sigmadelta_misc_reg_t misc;
     volatile gpio_sigmadelta_clock_gate_reg_t clock_gate;
+    volatile gpio_sigmadelta_misc_reg_t misc;
 } gpio_sd_dev_t;
 
 typedef struct {
@@ -305,10 +305,15 @@ typedef struct {
     volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
+// analog comparator is a stand alone peripheral, but it is connected to GPIO
+// so we rename it to analog_cmpr_dev_t from user's perspective
+typedef gpio_ext_dev_t analog_cmpr_dev_t;
+
 extern gpio_sd_dev_t SDM;
 extern gpio_glitch_filter_dev_t GLITCH_FILTER;
 extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
+extern analog_cmpr_dev_t ANALOG_CMPR;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(gpio_ext_dev_t) == 0x100, "Invalid size of gpio_ext_dev_t structure");

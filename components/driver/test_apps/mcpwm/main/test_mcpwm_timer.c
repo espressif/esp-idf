@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,7 +100,7 @@ typedef struct {
     uint32_t accumulate_empty_counts;
 } test_mcpwm_timer_user_data_t;
 
-static bool test_on_stop(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
+IRAM_ATTR static bool test_on_stop(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
 {
     test_mcpwm_timer_user_data_t *udata = (test_mcpwm_timer_user_data_t *)user_data;
     BaseType_t high_task_wakeup = pdFALSE;
@@ -110,7 +110,7 @@ static bool test_on_stop(mcpwm_timer_handle_t timer, const mcpwm_timer_event_dat
     return high_task_wakeup == pdTRUE;
 }
 
-static bool test_on_full(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
+IRAM_ATTR static bool test_on_full(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
 {
     test_mcpwm_timer_user_data_t *udata = (test_mcpwm_timer_user_data_t *)user_data;
     BaseType_t high_task_wakeup = pdFALSE;
@@ -122,7 +122,7 @@ static bool test_on_full(mcpwm_timer_handle_t timer, const mcpwm_timer_event_dat
     return high_task_wakeup == pdTRUE;
 }
 
-static bool test_on_empty(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
+IRAM_ATTR static bool test_on_empty(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
 {
     test_mcpwm_timer_user_data_t *udata = (test_mcpwm_timer_user_data_t *)user_data;
     BaseType_t high_task_wakeup = pdFALSE;

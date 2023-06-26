@@ -181,7 +181,7 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO4、GPIO5、GPIO8、GPIO9 和 GPIO15 是 Strapping 管脚。更多信息请参考 `ESP32-C6 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-c6_datasheet_cn.pdf>`_。
+    - Strapping 管脚：GPIO4、GPIO5、GPIO8、GPIO9 和 GPIO15 是 Strapping 管脚。更多信息请参考 `ESP32-C6 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1：GPIO24-30 通常用于 SPI flash，不推荐用于其他用途。
     - USB-JTAG：GPIO12 和 GPIO13 默认用于 USB-JTAG。用做 GPIO 时驱动程序将禁用 USB-JTAG。
     - 对于内置 SiP flash 的芯片型号，GPIO24 ~ GPIO30 专门用于连接 SiP flash; 且 GPIO10 ~ GPIO11 未引出至芯片管脚。因此，对于这类芯片只有 22 个 GPIO 管脚可用。

@@ -53,7 +53,9 @@ struct wpa_sm {
     void *network_ctx;
 
     int rsn_enabled; /* Whether RSN is enabled in configuration */
-    int sae_pwe; /* SAE PWE generation options */
+    enum sae_pwe sae_pwe; /* SAE PWE generation options */
+
+    bool sae_pk; /* whether SAE-PK is used */
 
     int countermeasures; /*TKIP countermeasures state flag, 1:in countermeasures state*/
 
@@ -114,6 +116,8 @@ struct wpa_sm {
     u16 owe_group;
     struct wpabuf *owe_ie;
 #endif /* CONFIG_OWE_STA */
+    int (*wpa_sm_wps_disable)(void);
+    esp_err_t (*wpa_sm_wpa2_ent_disable)(void);
 };
 
 /**

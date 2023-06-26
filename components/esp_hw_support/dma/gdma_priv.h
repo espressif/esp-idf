@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,8 @@ typedef struct gdma_group_t {
     int group_id;           // Group ID, index from 0
     gdma_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;  // group level spinlock
+    uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
+    uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
     gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP];  // handles of GDMA pairs
     int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP]; // reference count used to protect pair install/uninstall
 } gdma_group_t;
@@ -65,18 +67,21 @@ struct gdma_channel_t {
     size_t sram_alignment;  // alignment for memory in SRAM
     size_t psram_alignment; // alignment for memory in PSRAM
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
+    struct {
+        uint32_t start_stop_by_etm: 1; // whether the channel is started/stopped by ETM
+    } flags;
 };
 
 struct gdma_tx_channel_t {
     gdma_channel_t base; // GDMA channel, base class
     void *user_data;     // user registered DMA event data
-    gdma_event_callback_t on_trans_eof; // TX EOF callback
+    gdma_tx_event_callbacks_t cbs;      // TX event callbacks
 };
 
 struct gdma_rx_channel_t {
     gdma_channel_t base; // GDMA channel, base class
     void *user_data;     // user registered DMA event data
-    gdma_event_callback_t on_recv_eof; // RX EOF callback
+    gdma_rx_event_callbacks_t cbs;      // RX event callbacks
 };
 
 #ifdef __cplusplus

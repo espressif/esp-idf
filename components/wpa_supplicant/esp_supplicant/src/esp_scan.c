@@ -24,7 +24,7 @@
 
 extern struct wpa_supplicant g_wpa_supp;
 
-static void scan_done_event_handler(void *arg, STATUS status)
+static void scan_done_event_handler(void *arg, ETS_STATUS status)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
@@ -37,7 +37,7 @@ static void scan_done_event_handler(void *arg, STATUS status)
 	esp_supplicant_handle_scan_done_evt();
 }
 
-#if defined(CONFIG_WPA_11KV_SUPPORT)
+#if defined(CONFIG_IEEE80211KV)
 static void handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
 {
 	struct wpa_bss *bss = wpa_bss_get_next_bss(wpa_s, wpa_s->current_bss);
@@ -73,7 +73,7 @@ void esp_supplicant_handle_scan_done_evt(void)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
 	wpa_printf(MSG_INFO, "scan done received");
-#if defined(CONFIG_WPA_11KV_SUPPORT)
+#if defined(CONFIG_IEEE80211KV)
 	/* Check which module started this, call the respective function */
 	if (wpa_s->scan_reason == REASON_RRM_BEACON_REPORT) {
 		wpas_beacon_rep_scan_process(wpa_s, wpa_s->scan_start_tsf);
@@ -95,6 +95,7 @@ void esp_scan_init(struct wpa_supplicant *wpa_s)
 	wpa_s->scanning = 0;
 	wpa_bss_init(wpa_s);
 	wpa_s->last_scan_res = NULL;
+	wpa_s->last_scan_res_used = 0;
 }
 
 void esp_scan_deinit(struct wpa_supplicant *wpa_s)
@@ -102,6 +103,7 @@ void esp_scan_deinit(struct wpa_supplicant *wpa_s)
 	wpa_bss_deinit(wpa_s);
 	os_free(wpa_s->last_scan_res);
 	wpa_s->last_scan_res = NULL;
+	wpa_s->last_scan_res_used = 0;
 }
 
 int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
@@ -224,7 +226,7 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 	wpa_s->type |= (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP);
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 
-	typedef void (* scan_done_cb_t)(void *arg, STATUS status);
+	typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
 	extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
 	/* issue scan */
 	if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) < 0) {
@@ -236,11 +238,13 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 	wpa_printf(MSG_INFO, "scan issued at time=%llu", wpa_s->scan_start_tsf);
 
 cleanup:
-	if (params->ssid)
-		os_free(params->ssid);
-	if (params->bssid)
-		os_free(params->bssid);
-	os_free(params);
+    if (params) {
+        if (params->ssid)
+            os_free(params->ssid);
+        if (params->bssid)
+            os_free(params->bssid);
+        os_free(params);
+    }
 
 	return ret;
 }

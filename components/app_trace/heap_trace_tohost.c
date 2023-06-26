@@ -8,7 +8,7 @@
 #define HEAP_TRACE_SRCFILE /* don't warn on inclusion here */
 #include "esp_heap_trace.h"
 #undef HEAP_TRACE_SRCFILE
-
+#include "esp_heap_caps.h"
 #if CONFIG_APPTRACE_SV_ENABLE
 #include "esp_app_trace.h"
 #include "esp_sysview_trace.h"
@@ -85,7 +85,7 @@ void heap_trace_dump_caps(__attribute__((unused)) const uint32_t caps)
 }
 
 /* Add a new allocation to the heap trace records */
-static IRAM_ATTR void record_allocation(const heap_trace_record_t *record)
+static HEAP_IRAM_ATTR void record_allocation(const heap_trace_record_t *record)
 {
     if (!s_tracing) {
         return;
@@ -100,7 +100,7 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *record)
    For HEAP_TRACE_ALL, this means filling in the freed_by pointer.
    For HEAP_TRACE_LEAKS, this means removing the record from the log.
 */
-static IRAM_ATTR void record_free(void *p, void **callers)
+static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
 {
     if (!s_tracing) {
         return;
