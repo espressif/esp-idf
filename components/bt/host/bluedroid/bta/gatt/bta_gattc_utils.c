@@ -322,6 +322,15 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
     }
 }
 
+void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id)
+{
+    tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+
+    if (p_clcb) {
+        bta_gattc_clcb_dealloc(p_clcb);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_find_srcb
@@ -421,6 +430,7 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
     {
         if (p_tcb->p_srvc_cache != NULL) {
             list_free(p_tcb->p_srvc_cache);
+            p_tcb->p_srvc_cache = NULL;
         }
         osi_free(p_tcb->p_srvc_list);
         p_tcb->p_srvc_list = NULL;
