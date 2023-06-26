@@ -3,7 +3,7 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_NO_STUB
         bool "Disable download stub"
-        default "y" if IDF_ENV_FPGA
+        default "y" if IDF_ENV_FPGA || IDF_ENV_BRINGUP
         default "n"
 
         help

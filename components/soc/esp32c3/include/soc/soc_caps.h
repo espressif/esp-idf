@@ -62,6 +62,7 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_MEMPROT_SUPPORTED           1
 #define SOC_BOD_SUPPORTED               1
+#define SOC_CLK_TREE_SUPPORTED          1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
