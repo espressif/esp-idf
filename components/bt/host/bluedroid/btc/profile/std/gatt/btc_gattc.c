@@ -922,6 +922,8 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     case BTA_GATTC_CLOSE_EVT: {
         tBTA_GATTC_CLOSE *close = &arg->close;
 
+        // Free gattc clcb in BTC task to avoid race condition
+        bta_gattc_clcb_dealloc_by_conn_id(close->conn_id);
         gattc_if = close->client_if;
         param.close.status = close->status;
         param.close.conn_id = BTC_GATT_GET_CONN_ID(close->conn_id);
