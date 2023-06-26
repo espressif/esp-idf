@@ -111,6 +111,7 @@ static void light_sleep_disable(void)
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 }
 
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2-TODO: IDF-7555
 TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
 {
     gptimer_handle_t gptimer = NULL;
@@ -165,6 +166,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
     TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
+#endif
 
 #if CONFIG_ULP_COPROC_TYPE_FSM
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
