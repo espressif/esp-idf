@@ -16,6 +16,7 @@
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_sleep.h"
+#include "hal/efuse_hal.h"
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -334,9 +335,15 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_clock_hal_set_ble_rtc_timer_divisor_value(MODEM_CLOCK_instance()->hal, divider);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, true);
-        if (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
-            pmu_sleep_enable_hp_sleep_sysclk(true);
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+        if (efuse_hal_chip_revision() != 0) {
+            if (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+                pmu_sleep_enable_hp_sleep_sysclk(true);
+            }
+            modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, true);
+            modem_clock_domain_clk_gate_disable(MODEM_CLOCK_DOMAIN_WIFIPWR, PMU_HP_ICG_MODEM_CODE_SLEEP);
         }
+#endif
         break;
 #endif // SOC_BT_SUPPORTED
 
@@ -390,9 +397,15 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     case PERIPH_BT_MODULE:
         modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, false);
-        if (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
-            pmu_sleep_enable_hp_sleep_sysclk(false);
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+        if (efuse_hal_chip_revision() != 0) {
+            if (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+                pmu_sleep_enable_hp_sleep_sysclk(false);
+            }
+            modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, false);
+            modem_clock_domain_clk_gate_enable(MODEM_CLOCK_DOMAIN_WIFI, PMU_HP_ICG_MODEM_CODE_SLEEP);
         }
+#endif
         break;
 #endif // SOC_BT_SUPPORTED
     case PERIPH_COEX_MODULE:
