@@ -1240,6 +1240,7 @@ extern BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, BD_ADDR addr);
 #define  L2CA_DECREASE_BTU_NUM 4
 #define  L2CA_BUFF_INI         5
 #define  L2CA_BUFF_DEINIT      6
+#define  L2CA_BUFF_FREE        7
 
 typedef struct {
     UINT16 conn_id;
