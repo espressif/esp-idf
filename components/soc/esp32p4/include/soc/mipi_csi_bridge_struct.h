@@ -23,7 +23,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} csi_brig_clk_en_reg_t;
+} csi_brg_clk_en_reg_t;
 
 
 /** Group: csi bridge control registers. */
@@ -32,14 +32,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** csi_brig_en : R/W; bitpos: [0]; default: 0;
+        /** csi_brg_en : R/W; bitpos: [0]; default: 0;
          *  0: disable csi bridge. 1: enable csi bridge.
          */
-        uint32_t csi_brig_en:1;
+        uint32_t csi_brg_en:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} csi_brig_csi_en_reg_t;
+} csi_brg_csi_en_reg_t;
 
 /** Type of buf_flow_ctl register
  *  csi bridge buffer control.
@@ -58,7 +58,7 @@ typedef union {
         uint32_t reserved_30:2;
     };
     uint32_t val;
-} csi_brig_buf_flow_ctl_reg_t;
+} csi_brg_buf_flow_ctl_reg_t;
 
 
 /** Group: csi bridge dma control registers. */
@@ -84,7 +84,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} csi_brig_dma_req_cfg_reg_t;
+} csi_brg_dma_req_cfg_reg_t;
 
 /** Type of dma_req_interval register
  *  DMA interval configuration.
@@ -98,7 +98,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} csi_brig_dma_req_interval_reg_t;
+} csi_brg_dma_req_interval_reg_t;
 
 /** Type of dmablk_size register
  *  DMA block size configuration.
@@ -112,7 +112,7 @@ typedef union {
         uint32_t reserved_13:19;
     };
     uint32_t val;
-} csi_brig_dmablk_size_reg_t;
+} csi_brg_dmablk_size_reg_t;
 
 
 /** Group: csi bridge frame format configuration registers. */
@@ -133,7 +133,7 @@ typedef union {
         uint32_t reserved_14:18;
     };
     uint32_t val;
-} csi_brig_data_type_cfg_reg_t;
+} csi_brg_data_type_cfg_reg_t;
 
 /** Type of frame_cfg register
  *  frame configuration.
@@ -159,7 +159,7 @@ typedef union {
         uint32_t reserved_26:6;
     };
     uint32_t val;
-} csi_brig_frame_cfg_reg_t;
+} csi_brg_frame_cfg_reg_t;
 
 /** Type of endian_mode register
  *  data endianness order configuration.
@@ -178,7 +178,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} csi_brig_endian_mode_reg_t;
+} csi_brg_endian_mode_reg_t;
 
 
 /** Group: csi bridge interrupt registers. */
@@ -214,7 +214,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} csi_brig_int_raw_reg_t;
+} csi_brg_int_raw_reg_t;
 
 /** Type of int_clr register
  *  csi bridge interrupt clr.
@@ -248,7 +248,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} csi_brig_int_clr_reg_t;
+} csi_brg_int_clr_reg_t;
 
 /** Type of int_st register
  *  csi bridge interrupt st.
@@ -282,7 +282,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} csi_brig_int_st_reg_t;
+} csi_brg_int_st_reg_t;
 
 /** Type of int_ena register
  *  csi bridge interrupt enable.
@@ -316,7 +316,7 @@ typedef union {
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} csi_brig_int_ena_reg_t;
+} csi_brg_int_ena_reg_t;
 
 
 /** Group: csi-host control registers from csi bridge regbank. */
@@ -340,30 +340,30 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} csi_brig_host_ctrl_reg_t;
+} csi_brg_host_ctrl_reg_t;
 
 
 typedef struct {
-    volatile csi_brig_clk_en_reg_t clk_en;
-    volatile csi_brig_csi_en_reg_t csi_en;
-    volatile csi_brig_dma_req_cfg_reg_t dma_req_cfg;
-    volatile csi_brig_buf_flow_ctl_reg_t buf_flow_ctl;
-    volatile csi_brig_data_type_cfg_reg_t data_type_cfg;
-    volatile csi_brig_frame_cfg_reg_t frame_cfg;
-    volatile csi_brig_endian_mode_reg_t endian_mode;
-    volatile csi_brig_int_raw_reg_t int_raw;
-    volatile csi_brig_int_clr_reg_t int_clr;
-    volatile csi_brig_int_st_reg_t int_st;
-    volatile csi_brig_int_ena_reg_t int_ena;
-    volatile csi_brig_dma_req_interval_reg_t dma_req_interval;
-    volatile csi_brig_dmablk_size_reg_t dmablk_size;
+    volatile csi_brg_clk_en_reg_t clk_en;
+    volatile csi_brg_csi_en_reg_t csi_en;
+    volatile csi_brg_dma_req_cfg_reg_t dma_req_cfg;
+    volatile csi_brg_buf_flow_ctl_reg_t buf_flow_ctl;
+    volatile csi_brg_data_type_cfg_reg_t data_type_cfg;
+    volatile csi_brg_frame_cfg_reg_t frame_cfg;
+    volatile csi_brg_endian_mode_reg_t endian_mode;
+    volatile csi_brg_int_raw_reg_t int_raw;
+    volatile csi_brg_int_clr_reg_t int_clr;
+    volatile csi_brg_int_st_reg_t int_st;
+    volatile csi_brg_int_ena_reg_t int_ena;
+    volatile csi_brg_dma_req_interval_reg_t dma_req_interval;
+    volatile csi_brg_dmablk_size_reg_t dmablk_size;
     uint32_t reserved_034[3];
-    volatile csi_brig_host_ctrl_reg_t host_ctrl;
-} csi_brig_dev_t;
+    volatile csi_brg_host_ctrl_reg_t host_ctrl;
+} csi_brg_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(csi_brig_dev_t) == 0x44, "Invalid size of csi_brig_dev_t structure");
+_Static_assert(sizeof(csi_brg_dev_t) == 0x44, "Invalid size of csi_brg_dev_t structure");
 #endif
 
 #ifdef __cplusplus
