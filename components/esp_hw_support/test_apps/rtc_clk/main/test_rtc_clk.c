@@ -12,7 +12,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #if SOC_ADC_RTC_CTRL_SUPPORTED
-#include "soc/sens_periph.h"
+#include "soc/sens_reg.h"
 #endif
 #include "soc/gpio_periph.h"
 #include "hal/gpio_ll.h"

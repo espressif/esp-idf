@@ -34,6 +34,7 @@ typedef struct {
     } panels[SOC_LCD_RGB_PANELS];
 } lcd_signal_conn_t;
 
+extern const lcd_signal_conn_t lcd_periph_signals;
 #endif // SOC_LCDCAM_SUPPORTED
 
 #if SOC_I2S_LCD_I80_VARIANT
@@ -45,9 +46,9 @@ typedef struct {
         const int wr_sig;
     } buses[SOC_LCD_I80_BUSES];
 } lcd_signal_conn_t;
-#endif // SOC_I2S_LCD_I80_VARIANT
 
 extern const lcd_signal_conn_t lcd_periph_signals;
+#endif // SOC_I2S_LCD_I80_VARIANT
 
 #ifdef __cplusplus
 }
