@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1000,42 +1000,42 @@ esp_err_t hcd_install(const hcd_config_t *config)
     HCD_EXIT_CRITICAL();
 
     esp_err_t err_ret;
-    // Allocate memory and resources for driver object and all port objects
+    // Allocate memory for the driver object
     hcd_obj_t *p_hcd_obj_dmy = calloc(1, sizeof(hcd_obj_t));
     if (p_hcd_obj_dmy == NULL) {
         return ESP_ERR_NO_MEM;
     }
-
-    // Allocate resources for each port (there's only one)
+    // Allocate each port object (the hardware currently only has one port)
     p_hcd_obj_dmy->port_obj = port_obj_alloc();
-    esp_err_t intr_alloc_ret = esp_intr_alloc(ETS_USB_INTR_SOURCE,
-                               config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  // The interrupt must be disabled until the port is initialized
-                               intr_hdlr_main,
-                               (void *)p_hcd_obj_dmy->port_obj,
-                               &p_hcd_obj_dmy->isr_hdl);
     if (p_hcd_obj_dmy->port_obj == NULL) {
         err_ret = ESP_ERR_NO_MEM;
+        goto port_alloc_err;
     }
-    if (intr_alloc_ret != ESP_OK) {
-        err_ret = intr_alloc_ret;
-        goto err;
+    // Allocate interrupt
+    err_ret = esp_intr_alloc(ETS_USB_INTR_SOURCE,
+                             config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  // The interrupt must be disabled until the port is initialized
+                             intr_hdlr_main,
+                             (void *)p_hcd_obj_dmy->port_obj,
+                             &p_hcd_obj_dmy->isr_hdl);
+    if (err_ret != ESP_OK) {
+        goto intr_alloc_err;
     }
-
+    // Assign the
     HCD_ENTER_CRITICAL();
     if (s_hcd_obj != NULL) {
         HCD_EXIT_CRITICAL();
         err_ret = ESP_ERR_INVALID_STATE;
-        goto err;
+        goto assign_err;
     }
     s_hcd_obj = p_hcd_obj_dmy;
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 
-err:
-    if (intr_alloc_ret == ESP_OK) {
-        esp_intr_free(p_hcd_obj_dmy->isr_hdl);
-    }
+assign_err:
+    esp_intr_free(p_hcd_obj_dmy->isr_hdl);
+intr_alloc_err:
     port_obj_free(p_hcd_obj_dmy->port_obj);
+port_alloc_err:
     free(p_hcd_obj_dmy);
     return err_ret;
 }

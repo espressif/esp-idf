@@ -15,7 +15,7 @@
 class Flash_Access
 {
 public:
-    virtual size_t chip_size() = 0;
+    virtual size_t get_flash_size() = 0;
 
     virtual esp_err_t erase_sector(size_t sector) = 0;
     virtual esp_err_t erase_range(size_t start_address, size_t size) = 0;
@@ -23,7 +23,7 @@ public:
     virtual esp_err_t write(size_t dest_addr, const void *src, size_t size) = 0;
     virtual esp_err_t read(size_t src_addr, void *dest, size_t size) = 0;
 
-    virtual size_t sector_size() = 0;
+    virtual size_t get_sector_size() = 0;
 
     virtual esp_err_t flush()
     {

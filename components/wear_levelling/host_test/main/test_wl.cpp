@@ -282,7 +282,7 @@ void calculate_wl_state_crc(WL_State_s *state_ptr)
 {
     int check_size = WL_STATE_CRC_LEN_V2;
     // Chech CRC and recover state
-    state_ptr->crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_ptr, check_size);
+    state_ptr->crc32 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_ptr, check_size);
  }
 
 TEST_CASE("power down during WL status 1 update", "[wear_levelling]")
@@ -403,7 +403,7 @@ TEST_CASE("power down between WL status 1 and WL status 2 update", "[wear_levell
 
     // change move count and recalc crc
     WL_State_s *state_ptr = (WL_State_s *) tmp_state;
-    state_ptr->move_count++;
+    state_ptr->wl_dummy_sec_move_count++;
     calculate_wl_state_crc(state_ptr);
 
     // write back modified status2

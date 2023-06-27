@@ -17,17 +17,6 @@ flash 加密
 
 flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 中的内容。启用 flash 加密功能后，固件会以明文形式烧录，然后在首次启动时将数据进行加密。因此，物理读取 flash 将无法恢复大部分 flash 内容。
 
-启用 flash 加密后，系统将默认加密下列类型的 flash 数据：
-
-- 固件引导加载程序
-- 分区表
-- 所有 “app” 类型的分区
-
-其他类型的数据将视情况进行加密：
-
-- 任何在分区表中标有“加密”标志的分区。详情请见 :ref:`encrypted-partition-flag`。
-- 如果启用了安全启动，则可以加密安全启动引导程序摘要（见下文）。
-
 .. only:: esp32
 
     :doc:`安全启动<secure-boot-v2>` 是一个独立的功能，可以与 flash 加密一起使用，从而创建更安全的环境。
@@ -39,6 +28,24 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 .. important::
 
     启用 flash 加密将限制后续 {IDF_TARGET_NAME} 更新。在使用 flash 加密功能前，请务必阅读本文档了解其影响。
+
+.. _encrypted-partitions:
+
+Encrypted Partitions
+--------------------
+
+启用 flash 加密后，系统将默认加密下列类型的 flash 数据：
+
+- 固件引导加载程序
+- 分区表
+- :ref:`nvs_encr_key_partition`
+- Otadata
+- 所有 “app” 类型的分区
+
+其他类型的数据将视情况进行加密：
+
+- 任何在分区表中标有“加密”标志的分区。详情请见 :ref:`encrypted-partition-flag`。
+- 如果启用了安全启动，则可以加密安全启动引导程序摘要（见下文）。
 
 .. _flash-encryption-efuse:
 
@@ -559,6 +566,11 @@ flash 加密设置
    :esp32: - 在使用 ESP32 V3 时，如果生产设备不需要 UART ROM 下载模式，那么则该禁用该模式以增加设备安全性。这可以通过在应用程序启动时调用 :cpp:func:`esp_efuse_disable_rom_download_mode` 来实现。或者，可将项目 :ref:`CONFIG_ESP32_REV_MIN` 级别配置为 3（仅针对 ESP32 V3），然后选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久性的禁用 ROM 下载模式（推荐）”。在早期的 ESP32 版本上无法禁用 ROM 下载模式。
    :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在更新 SPI 配置、更改波特率、基本的 flash 写入和使用 `get_security_info` 命令返回当前启用的安全功能摘要。默认在发布模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
    - 启用 :doc:`安全启动<secure-boot-v2>` 作为额外的保护层，防止攻击者在启动前有选择地破坏 flash 中某部分。
+
+Enable Flash Encryption Externally
+----------------------------------
+
+In the process mentioned above, flash encryption related eFuses which ultimately enable flash encryption are programmed through the firmware bootloader. Alternatively, all the eFuses can be programmed with the help of ``espefuse`` tool. Please refer :ref:`enable-flash-encryption-externally` for more details.
 
 可能出现的错误
 -----------------

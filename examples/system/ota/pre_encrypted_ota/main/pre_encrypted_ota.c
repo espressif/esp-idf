@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -109,8 +109,8 @@ void pre_encrypted_ota_task(void *pvParameter)
         .keep_alive_enable = true,
     };
     esp_decrypt_cfg_t cfg = {};
-    cfg.rsa_pub_key = rsa_private_pem_start;
-    cfg.rsa_pub_key_len = rsa_private_pem_end - rsa_private_pem_start;
+    cfg.rsa_priv_key = rsa_private_pem_start;
+    cfg.rsa_priv_key_len = rsa_private_pem_end - rsa_private_pem_start;
     esp_decrypt_handle_t decrypt_handle = esp_encrypted_img_decrypt_start(&cfg);
     if (!decrypt_handle) {
         ESP_LOGE(TAG, "OTA upgrade failed");
