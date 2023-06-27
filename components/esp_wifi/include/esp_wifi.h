@@ -584,7 +584,7 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
 /**
   * @brief     Set primary/secondary channel of device
   *
-  * @attention 1. This API should be called after esp_wifi_start()
+  * @attention 1. This API should be called after esp_wifi_start() and before esp_wifi_stop()
   * @attention 2. When device is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
   * @attention 3. When device is in softAP mode, this API should not be called when softAP has connected to external STAs
   * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
@@ -599,6 +599,7 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_IF: invalid interface
   *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   */
 esp_err_t esp_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
 
