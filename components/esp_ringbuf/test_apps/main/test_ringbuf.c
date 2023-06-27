@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "freertos/ringbuf.h"
 #include "driver/gptimer.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_memory_utils.h"
 #include "esp_heap_caps.h"
 #include "spi_flash_mmap.h"
 #include "unity.h"
@@ -1092,4 +1093,32 @@ TEST_CASE("Test ringbuffer 0 item size", "[esp_ringbuf]")
     vRingbufferDelete(no_split_rb);
     vRingbufferDelete(allow_split_rb);
     vRingbufferDelete(byte_rb);
+}
+
+/* --------------------- Test ring buffer create with caps ---------------------
+ * The following test case tests ring buffer creation with caps. Specifically
+ * the following APIs:
+ *
+ * - xRingbufferCreateWithCaps()
+ * - vRingbufferDeleteWithCaps()
+ * - xRingbufferGetStaticBuffer()
+ */
+
+TEST_CASE("Test ringbuffer with caps", "[esp_ringbuf]")
+{
+    RingbufHandle_t rb_handle;
+    uint8_t *rb_storage;
+    StaticRingbuffer_t *rb_obj;
+
+    // Create ring buffer with caps
+    rb_handle = xRingbufferCreateWithCaps(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT, (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT));
+    TEST_ASSERT_NOT_EQUAL(NULL, rb_handle);
+
+    // Get the ring buffer's memory
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferGetStaticBuffer(rb_handle, &rb_storage, &rb_obj));
+    TEST_ASSERT(esp_ptr_in_dram(rb_storage));
+    TEST_ASSERT(esp_ptr_in_dram(rb_obj));
+
+    // Free the ring buffer
+    vRingbufferDeleteWithCaps(rb_handle);
 }

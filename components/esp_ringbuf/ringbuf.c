@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
+#include "esp_heap_caps.h"
 
 // ------------------------------------------------- Macros and Types --------------------------------------------------
 
@@ -1359,4 +1360,67 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
            pxRingbuffer->pucFree - pxRingbuffer->pucHead,
            pxRingbuffer->pucWrite - pxRingbuffer->pucHead,
            pxRingbuffer->pucAcquire - pxRingbuffer->pucHead);
+}
+
+BaseType_t xRingbufferGetStaticBuffer(RingbufHandle_t xRingbuffer, uint8_t **ppucRingbufferStorage, StaticRingbuffer_t **ppxStaticRingbuffer)
+{
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    BaseType_t xReturn;
+
+    configASSERT(pxRingbuffer && ppucRingbufferStorage && ppxStaticRingbuffer);
+
+    if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG) {
+        *ppucRingbufferStorage = pxRingbuffer->pucHead;
+        *ppxStaticRingbuffer = (StaticRingbuffer_t *)pxRingbuffer;
+        xReturn = pdTRUE;
+    } else {
+        xReturn = pdFALSE;
+    }
+
+    return xReturn;
+}
+
+RingbufHandle_t xRingbufferCreateWithCaps(size_t xBufferSize, RingbufferType_t xBufferType, UBaseType_t uxMemoryCaps)
+{
+    RingbufHandle_t xRingbuffer;
+    StaticRingbuffer_t *pxStaticRingbuffer;
+    uint8_t *pucRingbufferStorage;
+
+    pxStaticRingbuffer = heap_caps_malloc(sizeof(StaticRingbuffer_t), (uint32_t)uxMemoryCaps);
+    pucRingbufferStorage = heap_caps_malloc(xBufferSize, (uint32_t)uxMemoryCaps);
+
+    if (pxStaticRingbuffer == NULL || pucRingbufferStorage == NULL) {
+        goto err;
+    }
+
+    // Create the ring buffer using static creation API
+    xRingbuffer = xRingbufferCreateStatic(xBufferSize, xBufferType, pucRingbufferStorage, pxStaticRingbuffer);
+    if (xRingbuffer == NULL) {
+        goto err;
+    }
+
+    return xRingbuffer;
+
+err:
+    heap_caps_free(pxStaticRingbuffer);
+    heap_caps_free(pucRingbufferStorage);
+    return NULL;
+}
+
+void vRingbufferDeleteWithCaps(RingbufHandle_t xRingbuffer)
+{
+    BaseType_t xResult;
+    StaticRingbuffer_t *pxStaticRingbuffer = NULL;
+    uint8_t *pucRingbufferStorage = NULL;
+
+    // Retrieve the buffers used to create the ring buffer before deleting it
+    xResult = xRingbufferGetStaticBuffer(xRingbuffer, &pucRingbufferStorage, &pxStaticRingbuffer);
+    configASSERT(xResult == pdTRUE);
+
+    // Delete the ring buffer
+    vRingbufferDelete(xRingbuffer);
+
+    // Free the memory buffers
+    heap_caps_free(pxStaticRingbuffer);
+    heap_caps_free(pucRingbufferStorage);
 }
