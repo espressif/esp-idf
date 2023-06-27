@@ -51,7 +51,7 @@ typedef union {
         uint32_t bod_mode0_reset_ena:1;
     };
     uint32_t val;
-} lp_ana_bod_mode0_cntl_reg_t;
+} lp_analog_peri_bod_mode0_cntl_reg_t;
 
 /** Type of bod_mode1_cntl register
  *  need_des
@@ -65,7 +65,7 @@ typedef union {
         uint32_t bod_mode1_reset_ena:1;
     };
     uint32_t val;
-} lp_ana_bod_mode1_cntl_reg_t;
+} lp_analog_peri_bod_mode1_cntl_reg_t;
 
 /** Type of vdd_source_cntl register
  *  need_des
@@ -90,7 +90,7 @@ typedef union {
         uint32_t bod_source_ena:8;
     };
     uint32_t val;
-} lp_ana_vdd_source_cntl_reg_t;
+} lp_analog_peri_vdd_source_cntl_reg_t;
 
 /** Type of vddbat_bod_cntl register
  *  need_des
@@ -120,7 +120,7 @@ typedef union {
         uint32_t vddbat_undervoltage_target:10;
     };
     uint32_t val;
-} lp_ana_vddbat_bod_cntl_reg_t;
+} lp_analog_peri_vddbat_bod_cntl_reg_t;
 
 /** Type of vddbat_charge_cntl register
  *  need_des
@@ -150,7 +150,7 @@ typedef union {
         uint32_t vddbat_charge_undervoltage_target:10;
     };
     uint32_t val;
-} lp_ana_vddbat_charge_cntl_reg_t;
+} lp_analog_peri_vddbat_charge_cntl_reg_t;
 
 /** Type of ck_glitch_cntl register
  *  need_des
@@ -164,7 +164,7 @@ typedef union {
         uint32_t ck_glitch_reset_ena:1;
     };
     uint32_t val;
-} lp_ana_ck_glitch_cntl_reg_t;
+} lp_analog_peri_ck_glitch_cntl_reg_t;
 
 /** Type of pg_glitch_cntl register
  *  need_des
@@ -178,7 +178,7 @@ typedef union {
         uint32_t power_glitch_reset_ena:1;
     };
     uint32_t val;
-} lp_ana_pg_glitch_cntl_reg_t;
+} lp_analog_peri_pg_glitch_cntl_reg_t;
 
 /** Type of fib_enable register
  *  need_des
@@ -191,7 +191,7 @@ typedef union {
         uint32_t ana_fib_ena:32;
     };
     uint32_t val;
-} lp_ana_fib_enable_reg_t;
+} lp_analog_peri_fib_enable_reg_t;
 
 /** Type of int_raw register
  *  need_des
@@ -221,7 +221,7 @@ typedef union {
         uint32_t bod_mode0_int_raw:1;
     };
     uint32_t val;
-} lp_ana_int_raw_reg_t;
+} lp_analog_peri_int_raw_reg_t;
 
 /** Type of int_st register
  *  need_des
@@ -251,7 +251,7 @@ typedef union {
         uint32_t bod_mode0_int_st:1;
     };
     uint32_t val;
-} lp_ana_int_st_reg_t;
+} lp_analog_peri_int_st_reg_t;
 
 /** Type of int_ena register
  *  need_des
@@ -281,7 +281,7 @@ typedef union {
         uint32_t bod_mode0_int_ena:1;
     };
     uint32_t val;
-} lp_ana_int_ena_reg_t;
+} lp_analog_peri_int_ena_reg_t;
 
 /** Type of int_clr register
  *  need_des
@@ -311,7 +311,7 @@ typedef union {
         uint32_t bod_mode0_int_clr:1;
     };
     uint32_t val;
-} lp_ana_int_clr_reg_t;
+} lp_analog_peri_int_clr_reg_t;
 
 /** Type of lp_int_raw register
  *  need_des
@@ -325,7 +325,7 @@ typedef union {
         uint32_t bod_mode0_lp_int_raw:1;
     };
     uint32_t val;
-} lp_ana_lp_int_raw_reg_t;
+} lp_analog_peri_lp_int_raw_reg_t;
 
 /** Type of lp_int_st register
  *  need_des
@@ -339,7 +339,7 @@ typedef union {
         uint32_t bod_mode0_lp_int_st:1;
     };
     uint32_t val;
-} lp_ana_lp_int_st_reg_t;
+} lp_analog_peri_lp_int_st_reg_t;
 
 /** Type of lp_int_ena register
  *  need_des
@@ -353,7 +353,7 @@ typedef union {
         uint32_t bod_mode0_lp_int_ena:1;
     };
     uint32_t val;
-} lp_ana_lp_int_ena_reg_t;
+} lp_analog_peri_lp_int_ena_reg_t;
 
 /** Type of lp_int_clr register
  *  need_des
@@ -367,7 +367,7 @@ typedef union {
         uint32_t bod_mode0_lp_int_clr:1;
     };
     uint32_t val;
-} lp_ana_lp_int_clr_reg_t;
+} lp_analog_peri_lp_int_clr_reg_t;
 
 /** Type of touch_approach_work_meas_num register
  *  need_des
@@ -389,7 +389,7 @@ typedef union {
         uint32_t reserved_30:2;
     };
     uint32_t val;
-} lp_ana_touch_approach_work_meas_num_reg_t;
+} lp_analog_peri_touch_approach_work_meas_num_reg_t;
 
 /** Type of touch_scan_ctrl1 register
  *  need_des
@@ -414,7 +414,7 @@ typedef union {
         uint32_t touch_xpd_wait:15;
     };
     uint32_t val;
-} lp_ana_touch_scan_ctrl1_reg_t;
+} lp_analog_peri_touch_scan_ctrl1_reg_t;
 
 /** Type of touch_scan_ctrl2 register
  *  need_des
@@ -445,7 +445,7 @@ typedef union {
         uint32_t reserved_30:2;
     };
     uint32_t val;
-} lp_ana_touch_scan_ctrl2_reg_t;
+} lp_analog_peri_touch_scan_ctrl2_reg_t;
 
 /** Type of touch_work register
  *  need_des
@@ -480,7 +480,7 @@ typedef union {
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} lp_ana_touch_work_reg_t;
+} lp_analog_peri_touch_work_reg_t;
 
 /** Type of touch_work_meas_num register
  *  need_des
@@ -502,7 +502,7 @@ typedef union {
         uint32_t reserved_30:2;
     };
     uint32_t val;
-} lp_ana_touch_work_meas_num_reg_t;
+} lp_analog_peri_touch_work_meas_num_reg_t;
 
 /** Type of touch_filter1 register
  *  need_des
@@ -555,7 +555,7 @@ typedef union {
         uint32_t touch_debounce_limit:3;
     };
     uint32_t val;
-} lp_ana_touch_filter1_reg_t;
+} lp_analog_peri_touch_filter1_reg_t;
 
 /** Type of touch_filter2 register
  *  need_des
@@ -577,7 +577,7 @@ typedef union {
         uint32_t touch_bypass_neg_noise_thres:1;
     };
     uint32_t val;
-} lp_ana_touch_filter2_reg_t;
+} lp_analog_peri_touch_filter2_reg_t;
 
 /** Type of touch_filter3 register
  *  need_des
@@ -595,7 +595,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} lp_ana_touch_filter3_reg_t;
+} lp_analog_peri_touch_filter3_reg_t;
 
 /** Type of touch_slp0 register
  *  need_des
@@ -617,7 +617,7 @@ typedef union {
         uint32_t reserved_21:11;
     };
     uint32_t val;
-} lp_ana_touch_slp0_reg_t;
+} lp_analog_peri_touch_slp0_reg_t;
 
 /** Type of touch_slp1 register
  *  need_des
@@ -634,7 +634,7 @@ typedef union {
         uint32_t touch_slp_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_slp1_reg_t;
+} lp_analog_peri_touch_slp1_reg_t;
 
 /** Type of touch_clr register
  *  need_des
@@ -652,7 +652,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} lp_ana_touch_clr_reg_t;
+} lp_analog_peri_touch_clr_reg_t;
 
 /** Type of touch_approach register
  *  need_des
@@ -678,7 +678,7 @@ typedef union {
         uint32_t reserved_13:19;
     };
     uint32_t val;
-} lp_ana_touch_approach_reg_t;
+} lp_analog_peri_touch_approach_reg_t;
 
 /** Type of touch_freq0_scan_para register
  *  need_des
@@ -708,7 +708,7 @@ typedef union {
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} lp_ana_touch_freq0_scan_para_reg_t;
+} lp_analog_peri_touch_freq0_scan_para_reg_t;
 
 /** Type of touch_freq1_scan_para register
  *  need_des
@@ -738,7 +738,7 @@ typedef union {
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} lp_ana_touch_freq1_scan_para_reg_t;
+} lp_analog_peri_touch_freq1_scan_para_reg_t;
 
 /** Type of touch_freq2_scan_para register
  *  need_des
@@ -768,7 +768,7 @@ typedef union {
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} lp_ana_touch_freq2_scan_para_reg_t;
+} lp_analog_peri_touch_freq2_scan_para_reg_t;
 
 /** Type of touch_ana_para register
  *  need_des
@@ -790,7 +790,7 @@ typedef union {
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} lp_ana_touch_ana_para_reg_t;
+} lp_analog_peri_touch_ana_para_reg_t;
 
 /** Type of touch_mux0 register
  *  need_des
@@ -832,7 +832,7 @@ typedef union {
         uint32_t touch_start_force:1;
     };
     uint32_t val;
-} lp_ana_touch_mux0_reg_t;
+} lp_analog_peri_touch_mux0_reg_t;
 
 /** Type of touch_mux1 register
  *  need_des
@@ -850,7 +850,7 @@ typedef union {
         uint32_t reserved_30:2;
     };
     uint32_t val;
-} lp_ana_touch_mux1_reg_t;
+} lp_analog_peri_touch_mux1_reg_t;
 
 /** Type of touch_pad0_th0 register
  *  need_des
@@ -864,7 +864,7 @@ typedef union {
         uint32_t touch_pad0_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad0_th0_reg_t;
+} lp_analog_peri_touch_pad0_th0_reg_t;
 
 /** Type of touch_pad0_th1 register
  *  need_des
@@ -878,7 +878,7 @@ typedef union {
         uint32_t touch_pad0_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad0_th1_reg_t;
+} lp_analog_peri_touch_pad0_th1_reg_t;
 
 /** Type of touch_pad0_th2 register
  *  need_des
@@ -892,7 +892,7 @@ typedef union {
         uint32_t touch_pad0_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad0_th2_reg_t;
+} lp_analog_peri_touch_pad0_th2_reg_t;
 
 /** Type of touch_pad1_th0 register
  *  need_des
@@ -906,7 +906,7 @@ typedef union {
         uint32_t touch_pad1_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad1_th0_reg_t;
+} lp_analog_peri_touch_pad1_th0_reg_t;
 
 /** Type of touch_pad1_th1 register
  *  need_des
@@ -920,7 +920,7 @@ typedef union {
         uint32_t touch_pad1_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad1_th1_reg_t;
+} lp_analog_peri_touch_pad1_th1_reg_t;
 
 /** Type of touch_pad1_th2 register
  *  need_des
@@ -934,7 +934,7 @@ typedef union {
         uint32_t touch_pad1_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad1_th2_reg_t;
+} lp_analog_peri_touch_pad1_th2_reg_t;
 
 /** Type of touch_pad2_th0 register
  *  need_des
@@ -948,7 +948,7 @@ typedef union {
         uint32_t touch_pad2_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad2_th0_reg_t;
+} lp_analog_peri_touch_pad2_th0_reg_t;
 
 /** Type of touch_pad2_th1 register
  *  need_des
@@ -962,7 +962,7 @@ typedef union {
         uint32_t touch_pad2_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad2_th1_reg_t;
+} lp_analog_peri_touch_pad2_th1_reg_t;
 
 /** Type of touch_pad2_th2 register
  *  need_des
@@ -976,7 +976,7 @@ typedef union {
         uint32_t touch_pad2_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad2_th2_reg_t;
+} lp_analog_peri_touch_pad2_th2_reg_t;
 
 /** Type of touch_pad3_th0 register
  *  need_des
@@ -990,7 +990,7 @@ typedef union {
         uint32_t touch_pad3_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad3_th0_reg_t;
+} lp_analog_peri_touch_pad3_th0_reg_t;
 
 /** Type of touch_pad3_th1 register
  *  need_des
@@ -1004,7 +1004,7 @@ typedef union {
         uint32_t touch_pad3_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad3_th1_reg_t;
+} lp_analog_peri_touch_pad3_th1_reg_t;
 
 /** Type of touch_pad3_th2 register
  *  need_des
@@ -1018,7 +1018,7 @@ typedef union {
         uint32_t touch_pad3_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad3_th2_reg_t;
+} lp_analog_peri_touch_pad3_th2_reg_t;
 
 /** Type of touch_pad4_th0 register
  *  need_des
@@ -1032,7 +1032,7 @@ typedef union {
         uint32_t touch_pad4_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad4_th0_reg_t;
+} lp_analog_peri_touch_pad4_th0_reg_t;
 
 /** Type of touch_pad4_th1 register
  *  need_des
@@ -1046,7 +1046,7 @@ typedef union {
         uint32_t touch_pad4_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad4_th1_reg_t;
+} lp_analog_peri_touch_pad4_th1_reg_t;
 
 /** Type of touch_pad4_th2 register
  *  need_des
@@ -1060,7 +1060,7 @@ typedef union {
         uint32_t touch_pad4_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad4_th2_reg_t;
+} lp_analog_peri_touch_pad4_th2_reg_t;
 
 /** Type of touch_pad5_th0 register
  *  need_des
@@ -1074,7 +1074,7 @@ typedef union {
         uint32_t touch_pad5_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad5_th0_reg_t;
+} lp_analog_peri_touch_pad5_th0_reg_t;
 
 /** Type of touch_pad5_th1 register
  *  need_des
@@ -1088,7 +1088,7 @@ typedef union {
         uint32_t touch_pad5_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad5_th1_reg_t;
+} lp_analog_peri_touch_pad5_th1_reg_t;
 
 /** Type of touch_pad5_th2 register
  *  need_des
@@ -1102,7 +1102,7 @@ typedef union {
         uint32_t touch_pad5_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad5_th2_reg_t;
+} lp_analog_peri_touch_pad5_th2_reg_t;
 
 /** Type of touch_pad6_th0 register
  *  need_des
@@ -1116,7 +1116,7 @@ typedef union {
         uint32_t touch_pad6_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad6_th0_reg_t;
+} lp_analog_peri_touch_pad6_th0_reg_t;
 
 /** Type of touch_pad6_th1 register
  *  need_des
@@ -1130,7 +1130,7 @@ typedef union {
         uint32_t touch_pad6_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad6_th1_reg_t;
+} lp_analog_peri_touch_pad6_th1_reg_t;
 
 /** Type of touch_pad6_th2 register
  *  need_des
@@ -1144,7 +1144,7 @@ typedef union {
         uint32_t touch_pad6_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad6_th2_reg_t;
+} lp_analog_peri_touch_pad6_th2_reg_t;
 
 /** Type of touch_pad7_th0 register
  *  need_des
@@ -1158,7 +1158,7 @@ typedef union {
         uint32_t touch_pad7_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad7_th0_reg_t;
+} lp_analog_peri_touch_pad7_th0_reg_t;
 
 /** Type of touch_pad7_th1 register
  *  need_des
@@ -1172,7 +1172,7 @@ typedef union {
         uint32_t touch_pad7_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad7_th1_reg_t;
+} lp_analog_peri_touch_pad7_th1_reg_t;
 
 /** Type of touch_pad7_th2 register
  *  need_des
@@ -1186,7 +1186,7 @@ typedef union {
         uint32_t touch_pad7_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad7_th2_reg_t;
+} lp_analog_peri_touch_pad7_th2_reg_t;
 
 /** Type of touch_pad8_th0 register
  *  need_des
@@ -1200,7 +1200,7 @@ typedef union {
         uint32_t touch_pad8_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad8_th0_reg_t;
+} lp_analog_peri_touch_pad8_th0_reg_t;
 
 /** Type of touch_pad8_th1 register
  *  need_des
@@ -1214,7 +1214,7 @@ typedef union {
         uint32_t touch_pad8_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad8_th1_reg_t;
+} lp_analog_peri_touch_pad8_th1_reg_t;
 
 /** Type of touch_pad8_th2 register
  *  need_des
@@ -1228,7 +1228,7 @@ typedef union {
         uint32_t touch_pad8_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad8_th2_reg_t;
+} lp_analog_peri_touch_pad8_th2_reg_t;
 
 /** Type of touch_pad9_th0 register
  *  need_des
@@ -1242,7 +1242,7 @@ typedef union {
         uint32_t touch_pad9_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad9_th0_reg_t;
+} lp_analog_peri_touch_pad9_th0_reg_t;
 
 /** Type of touch_pad9_th1 register
  *  need_des
@@ -1256,7 +1256,7 @@ typedef union {
         uint32_t touch_pad9_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad9_th1_reg_t;
+} lp_analog_peri_touch_pad9_th1_reg_t;
 
 /** Type of touch_pad9_th2 register
  *  need_des
@@ -1270,7 +1270,7 @@ typedef union {
         uint32_t touch_pad9_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad9_th2_reg_t;
+} lp_analog_peri_touch_pad9_th2_reg_t;
 
 /** Type of touch_pad10_th0 register
  *  need_des
@@ -1284,7 +1284,7 @@ typedef union {
         uint32_t touch_pad10_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad10_th0_reg_t;
+} lp_analog_peri_touch_pad10_th0_reg_t;
 
 /** Type of touch_pad10_th1 register
  *  need_des
@@ -1298,7 +1298,7 @@ typedef union {
         uint32_t touch_pad10_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad10_th1_reg_t;
+} lp_analog_peri_touch_pad10_th1_reg_t;
 
 /** Type of touch_pad10_th2 register
  *  need_des
@@ -1312,7 +1312,7 @@ typedef union {
         uint32_t touch_pad10_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad10_th2_reg_t;
+} lp_analog_peri_touch_pad10_th2_reg_t;
 
 /** Type of touch_pad11_th0 register
  *  need_des
@@ -1326,7 +1326,7 @@ typedef union {
         uint32_t touch_pad11_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad11_th0_reg_t;
+} lp_analog_peri_touch_pad11_th0_reg_t;
 
 /** Type of touch_pad11_th1 register
  *  need_des
@@ -1340,7 +1340,7 @@ typedef union {
         uint32_t touch_pad11_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad11_th1_reg_t;
+} lp_analog_peri_touch_pad11_th1_reg_t;
 
 /** Type of touch_pad11_th2 register
  *  need_des
@@ -1354,7 +1354,7 @@ typedef union {
         uint32_t touch_pad11_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad11_th2_reg_t;
+} lp_analog_peri_touch_pad11_th2_reg_t;
 
 /** Type of touch_pad12_th0 register
  *  need_des
@@ -1368,7 +1368,7 @@ typedef union {
         uint32_t touch_pad12_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad12_th0_reg_t;
+} lp_analog_peri_touch_pad12_th0_reg_t;
 
 /** Type of touch_pad12_th1 register
  *  need_des
@@ -1382,7 +1382,7 @@ typedef union {
         uint32_t touch_pad12_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad12_th1_reg_t;
+} lp_analog_peri_touch_pad12_th1_reg_t;
 
 /** Type of touch_pad12_th2 register
  *  need_des
@@ -1396,7 +1396,7 @@ typedef union {
         uint32_t touch_pad12_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad12_th2_reg_t;
+} lp_analog_peri_touch_pad12_th2_reg_t;
 
 /** Type of touch_pad13_th0 register
  *  need_des
@@ -1410,7 +1410,7 @@ typedef union {
         uint32_t touch_pad13_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad13_th0_reg_t;
+} lp_analog_peri_touch_pad13_th0_reg_t;
 
 /** Type of touch_pad13_th1 register
  *  need_des
@@ -1424,7 +1424,7 @@ typedef union {
         uint32_t touch_pad13_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad13_th1_reg_t;
+} lp_analog_peri_touch_pad13_th1_reg_t;
 
 /** Type of touch_pad13_th2 register
  *  need_des
@@ -1438,7 +1438,7 @@ typedef union {
         uint32_t touch_pad13_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad13_th2_reg_t;
+} lp_analog_peri_touch_pad13_th2_reg_t;
 
 /** Type of touch_pad14_th0 register
  *  need_des
@@ -1452,7 +1452,7 @@ typedef union {
         uint32_t touch_pad14_th0:16;
     };
     uint32_t val;
-} lp_ana_touch_pad14_th0_reg_t;
+} lp_analog_peri_touch_pad14_th0_reg_t;
 
 /** Type of touch_pad14_th1 register
  *  need_des
@@ -1466,7 +1466,7 @@ typedef union {
         uint32_t touch_pad14_th1:16;
     };
     uint32_t val;
-} lp_ana_touch_pad14_th1_reg_t;
+} lp_analog_peri_touch_pad14_th1_reg_t;
 
 /** Type of touch_pad14_th2 register
  *  need_des
@@ -1480,114 +1480,114 @@ typedef union {
         uint32_t touch_pad14_th2:16;
     };
     uint32_t val;
-} lp_ana_touch_pad14_th2_reg_t;
+} lp_analog_peri_touch_pad14_th2_reg_t;
 
 /** Type of date register
  *  need_des
  */
 typedef union {
     struct {
-        /** lp_ana_date : R/W; bitpos: [30:0]; default: 2294816;
+        /** lp_analog_peri_date : R/W; bitpos: [30:0]; default: 2294816;
          *  need_des
          */
-        uint32_t lp_ana_date:31;
+        uint32_t lp_analog_peri_date:31;
         /** clk_en : R/W; bitpos: [31]; default: 0;
          *  need_des
          */
         uint32_t clk_en:1;
     };
     uint32_t val;
-} lp_ana_date_reg_t;
+} lp_analog_peri_date_reg_t;
 
 
 typedef struct {
-    volatile lp_ana_bod_mode0_cntl_reg_t bod_mode0_cntl;
-    volatile lp_ana_bod_mode1_cntl_reg_t bod_mode1_cntl;
-    volatile lp_ana_vdd_source_cntl_reg_t vdd_source_cntl;
-    volatile lp_ana_vddbat_bod_cntl_reg_t vddbat_bod_cntl;
-    volatile lp_ana_vddbat_charge_cntl_reg_t vddbat_charge_cntl;
-    volatile lp_ana_ck_glitch_cntl_reg_t ck_glitch_cntl;
-    volatile lp_ana_pg_glitch_cntl_reg_t pg_glitch_cntl;
-    volatile lp_ana_fib_enable_reg_t fib_enable;
-    volatile lp_ana_int_raw_reg_t int_raw;
-    volatile lp_ana_int_st_reg_t int_st;
-    volatile lp_ana_int_ena_reg_t int_ena;
-    volatile lp_ana_int_clr_reg_t int_clr;
-    volatile lp_ana_lp_int_raw_reg_t lp_int_raw;
-    volatile lp_ana_lp_int_st_reg_t lp_int_st;
-    volatile lp_ana_lp_int_ena_reg_t lp_int_ena;
-    volatile lp_ana_lp_int_clr_reg_t lp_int_clr;
+    volatile lp_analog_peri_bod_mode0_cntl_reg_t bod_mode0_cntl;
+    volatile lp_analog_peri_bod_mode1_cntl_reg_t bod_mode1_cntl;
+    volatile lp_analog_peri_vdd_source_cntl_reg_t vdd_source_cntl;
+    volatile lp_analog_peri_vddbat_bod_cntl_reg_t vddbat_bod_cntl;
+    volatile lp_analog_peri_vddbat_charge_cntl_reg_t vddbat_charge_cntl;
+    volatile lp_analog_peri_ck_glitch_cntl_reg_t ck_glitch_cntl;
+    volatile lp_analog_peri_pg_glitch_cntl_reg_t pg_glitch_cntl;
+    volatile lp_analog_peri_fib_enable_reg_t fib_enable;
+    volatile lp_analog_peri_int_raw_reg_t int_raw;
+    volatile lp_analog_peri_int_st_reg_t int_st;
+    volatile lp_analog_peri_int_ena_reg_t int_ena;
+    volatile lp_analog_peri_int_clr_reg_t int_clr;
+    volatile lp_analog_peri_lp_int_raw_reg_t lp_int_raw;
+    volatile lp_analog_peri_lp_int_st_reg_t lp_int_st;
+    volatile lp_analog_peri_lp_int_ena_reg_t lp_int_ena;
+    volatile lp_analog_peri_lp_int_clr_reg_t lp_int_clr;
     uint32_t reserved_040[47];
-    volatile lp_ana_touch_approach_work_meas_num_reg_t touch_approach_work_meas_num;
-    volatile lp_ana_touch_scan_ctrl1_reg_t touch_scan_ctrl1;
-    volatile lp_ana_touch_scan_ctrl2_reg_t touch_scan_ctrl2;
-    volatile lp_ana_touch_work_reg_t touch_work;
-    volatile lp_ana_touch_work_meas_num_reg_t touch_work_meas_num;
-    volatile lp_ana_touch_filter1_reg_t touch_filter1;
-    volatile lp_ana_touch_filter2_reg_t touch_filter2;
-    volatile lp_ana_touch_filter3_reg_t touch_filter3;
-    volatile lp_ana_touch_slp0_reg_t touch_slp0;
-    volatile lp_ana_touch_slp1_reg_t touch_slp1;
-    volatile lp_ana_touch_clr_reg_t touch_clr;
-    volatile lp_ana_touch_approach_reg_t touch_approach;
-    volatile lp_ana_touch_freq0_scan_para_reg_t touch_freq0_scan_para;
-    volatile lp_ana_touch_freq1_scan_para_reg_t touch_freq1_scan_para;
-    volatile lp_ana_touch_freq2_scan_para_reg_t touch_freq2_scan_para;
-    volatile lp_ana_touch_ana_para_reg_t touch_ana_para;
-    volatile lp_ana_touch_mux0_reg_t touch_mux0;
-    volatile lp_ana_touch_mux1_reg_t touch_mux1;
-    volatile lp_ana_touch_pad0_th0_reg_t touch_pad0_th0;
-    volatile lp_ana_touch_pad0_th1_reg_t touch_pad0_th1;
-    volatile lp_ana_touch_pad0_th2_reg_t touch_pad0_th2;
-    volatile lp_ana_touch_pad1_th0_reg_t touch_pad1_th0;
-    volatile lp_ana_touch_pad1_th1_reg_t touch_pad1_th1;
-    volatile lp_ana_touch_pad1_th2_reg_t touch_pad1_th2;
-    volatile lp_ana_touch_pad2_th0_reg_t touch_pad2_th0;
-    volatile lp_ana_touch_pad2_th1_reg_t touch_pad2_th1;
-    volatile lp_ana_touch_pad2_th2_reg_t touch_pad2_th2;
-    volatile lp_ana_touch_pad3_th0_reg_t touch_pad3_th0;
-    volatile lp_ana_touch_pad3_th1_reg_t touch_pad3_th1;
-    volatile lp_ana_touch_pad3_th2_reg_t touch_pad3_th2;
-    volatile lp_ana_touch_pad4_th0_reg_t touch_pad4_th0;
-    volatile lp_ana_touch_pad4_th1_reg_t touch_pad4_th1;
-    volatile lp_ana_touch_pad4_th2_reg_t touch_pad4_th2;
-    volatile lp_ana_touch_pad5_th0_reg_t touch_pad5_th0;
-    volatile lp_ana_touch_pad5_th1_reg_t touch_pad5_th1;
-    volatile lp_ana_touch_pad5_th2_reg_t touch_pad5_th2;
-    volatile lp_ana_touch_pad6_th0_reg_t touch_pad6_th0;
-    volatile lp_ana_touch_pad6_th1_reg_t touch_pad6_th1;
-    volatile lp_ana_touch_pad6_th2_reg_t touch_pad6_th2;
-    volatile lp_ana_touch_pad7_th0_reg_t touch_pad7_th0;
-    volatile lp_ana_touch_pad7_th1_reg_t touch_pad7_th1;
-    volatile lp_ana_touch_pad7_th2_reg_t touch_pad7_th2;
-    volatile lp_ana_touch_pad8_th0_reg_t touch_pad8_th0;
-    volatile lp_ana_touch_pad8_th1_reg_t touch_pad8_th1;
-    volatile lp_ana_touch_pad8_th2_reg_t touch_pad8_th2;
-    volatile lp_ana_touch_pad9_th0_reg_t touch_pad9_th0;
-    volatile lp_ana_touch_pad9_th1_reg_t touch_pad9_th1;
-    volatile lp_ana_touch_pad9_th2_reg_t touch_pad9_th2;
-    volatile lp_ana_touch_pad10_th0_reg_t touch_pad10_th0;
-    volatile lp_ana_touch_pad10_th1_reg_t touch_pad10_th1;
-    volatile lp_ana_touch_pad10_th2_reg_t touch_pad10_th2;
-    volatile lp_ana_touch_pad11_th0_reg_t touch_pad11_th0;
-    volatile lp_ana_touch_pad11_th1_reg_t touch_pad11_th1;
-    volatile lp_ana_touch_pad11_th2_reg_t touch_pad11_th2;
-    volatile lp_ana_touch_pad12_th0_reg_t touch_pad12_th0;
-    volatile lp_ana_touch_pad12_th1_reg_t touch_pad12_th1;
-    volatile lp_ana_touch_pad12_th2_reg_t touch_pad12_th2;
-    volatile lp_ana_touch_pad13_th0_reg_t touch_pad13_th0;
-    volatile lp_ana_touch_pad13_th1_reg_t touch_pad13_th1;
-    volatile lp_ana_touch_pad13_th2_reg_t touch_pad13_th2;
-    volatile lp_ana_touch_pad14_th0_reg_t touch_pad14_th0;
-    volatile lp_ana_touch_pad14_th1_reg_t touch_pad14_th1;
-    volatile lp_ana_touch_pad14_th2_reg_t touch_pad14_th2;
+    volatile lp_analog_peri_touch_approach_work_meas_num_reg_t touch_approach_work_meas_num;
+    volatile lp_analog_peri_touch_scan_ctrl1_reg_t touch_scan_ctrl1;
+    volatile lp_analog_peri_touch_scan_ctrl2_reg_t touch_scan_ctrl2;
+    volatile lp_analog_peri_touch_work_reg_t touch_work;
+    volatile lp_analog_peri_touch_work_meas_num_reg_t touch_work_meas_num;
+    volatile lp_analog_peri_touch_filter1_reg_t touch_filter1;
+    volatile lp_analog_peri_touch_filter2_reg_t touch_filter2;
+    volatile lp_analog_peri_touch_filter3_reg_t touch_filter3;
+    volatile lp_analog_peri_touch_slp0_reg_t touch_slp0;
+    volatile lp_analog_peri_touch_slp1_reg_t touch_slp1;
+    volatile lp_analog_peri_touch_clr_reg_t touch_clr;
+    volatile lp_analog_peri_touch_approach_reg_t touch_approach;
+    volatile lp_analog_peri_touch_freq0_scan_para_reg_t touch_freq0_scan_para;
+    volatile lp_analog_peri_touch_freq1_scan_para_reg_t touch_freq1_scan_para;
+    volatile lp_analog_peri_touch_freq2_scan_para_reg_t touch_freq2_scan_para;
+    volatile lp_analog_peri_touch_ana_para_reg_t touch_ana_para;
+    volatile lp_analog_peri_touch_mux0_reg_t touch_mux0;
+    volatile lp_analog_peri_touch_mux1_reg_t touch_mux1;
+    volatile lp_analog_peri_touch_pad0_th0_reg_t touch_pad0_th0;
+    volatile lp_analog_peri_touch_pad0_th1_reg_t touch_pad0_th1;
+    volatile lp_analog_peri_touch_pad0_th2_reg_t touch_pad0_th2;
+    volatile lp_analog_peri_touch_pad1_th0_reg_t touch_pad1_th0;
+    volatile lp_analog_peri_touch_pad1_th1_reg_t touch_pad1_th1;
+    volatile lp_analog_peri_touch_pad1_th2_reg_t touch_pad1_th2;
+    volatile lp_analog_peri_touch_pad2_th0_reg_t touch_pad2_th0;
+    volatile lp_analog_peri_touch_pad2_th1_reg_t touch_pad2_th1;
+    volatile lp_analog_peri_touch_pad2_th2_reg_t touch_pad2_th2;
+    volatile lp_analog_peri_touch_pad3_th0_reg_t touch_pad3_th0;
+    volatile lp_analog_peri_touch_pad3_th1_reg_t touch_pad3_th1;
+    volatile lp_analog_peri_touch_pad3_th2_reg_t touch_pad3_th2;
+    volatile lp_analog_peri_touch_pad4_th0_reg_t touch_pad4_th0;
+    volatile lp_analog_peri_touch_pad4_th1_reg_t touch_pad4_th1;
+    volatile lp_analog_peri_touch_pad4_th2_reg_t touch_pad4_th2;
+    volatile lp_analog_peri_touch_pad5_th0_reg_t touch_pad5_th0;
+    volatile lp_analog_peri_touch_pad5_th1_reg_t touch_pad5_th1;
+    volatile lp_analog_peri_touch_pad5_th2_reg_t touch_pad5_th2;
+    volatile lp_analog_peri_touch_pad6_th0_reg_t touch_pad6_th0;
+    volatile lp_analog_peri_touch_pad6_th1_reg_t touch_pad6_th1;
+    volatile lp_analog_peri_touch_pad6_th2_reg_t touch_pad6_th2;
+    volatile lp_analog_peri_touch_pad7_th0_reg_t touch_pad7_th0;
+    volatile lp_analog_peri_touch_pad7_th1_reg_t touch_pad7_th1;
+    volatile lp_analog_peri_touch_pad7_th2_reg_t touch_pad7_th2;
+    volatile lp_analog_peri_touch_pad8_th0_reg_t touch_pad8_th0;
+    volatile lp_analog_peri_touch_pad8_th1_reg_t touch_pad8_th1;
+    volatile lp_analog_peri_touch_pad8_th2_reg_t touch_pad8_th2;
+    volatile lp_analog_peri_touch_pad9_th0_reg_t touch_pad9_th0;
+    volatile lp_analog_peri_touch_pad9_th1_reg_t touch_pad9_th1;
+    volatile lp_analog_peri_touch_pad9_th2_reg_t touch_pad9_th2;
+    volatile lp_analog_peri_touch_pad10_th0_reg_t touch_pad10_th0;
+    volatile lp_analog_peri_touch_pad10_th1_reg_t touch_pad10_th1;
+    volatile lp_analog_peri_touch_pad10_th2_reg_t touch_pad10_th2;
+    volatile lp_analog_peri_touch_pad11_th0_reg_t touch_pad11_th0;
+    volatile lp_analog_peri_touch_pad11_th1_reg_t touch_pad11_th1;
+    volatile lp_analog_peri_touch_pad11_th2_reg_t touch_pad11_th2;
+    volatile lp_analog_peri_touch_pad12_th0_reg_t touch_pad12_th0;
+    volatile lp_analog_peri_touch_pad12_th1_reg_t touch_pad12_th1;
+    volatile lp_analog_peri_touch_pad12_th2_reg_t touch_pad12_th2;
+    volatile lp_analog_peri_touch_pad13_th0_reg_t touch_pad13_th0;
+    volatile lp_analog_peri_touch_pad13_th1_reg_t touch_pad13_th1;
+    volatile lp_analog_peri_touch_pad13_th2_reg_t touch_pad13_th2;
+    volatile lp_analog_peri_touch_pad14_th0_reg_t touch_pad14_th0;
+    volatile lp_analog_peri_touch_pad14_th1_reg_t touch_pad14_th1;
+    volatile lp_analog_peri_touch_pad14_th2_reg_t touch_pad14_th2;
     uint32_t reserved_1f8[129];
-    volatile lp_ana_date_reg_t date;
-} lp_ana_dev_t;
+    volatile lp_analog_peri_date_reg_t date;
+} lp_analog_peri_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lp_ana_dev_t) == 0x400, "Invalid size of lp_ana_dev_t structure");
+_Static_assert(sizeof(lp_analog_peri_dev_t) == 0x400, "Invalid size of lp_analog_peri_dev_t structure");
 #endif
 
 #ifdef __cplusplus

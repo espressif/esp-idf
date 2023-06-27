@@ -14,7 +14,7 @@ extern "C" {
 /** LP_SPI_CMD_REG register
  *  Command control register
  */
-#define LP_SPI_CMD_REG (DR_REG_LP_BASE + 0x0)
+#define LP_SPI_CMD_REG (DR_REG_LP_SPI_BASE + 0x0)
 /** LP_REG_UPDATE : WT; bitpos: [23]; default: 0;
  *  Set this bit to synchronize SPI registers from APB clock domain into SPI module
  *  clock domain, which is only used in SPI master mode.
@@ -36,7 +36,7 @@ extern "C" {
 /** LP_SPI_ADDR_REG register
  *  Address value register
  */
-#define LP_SPI_ADDR_REG (DR_REG_LP_BASE + 0x4)
+#define LP_SPI_ADDR_REG (DR_REG_LP_SPI_BASE + 0x4)
 /** LP_REG_USR_ADDR_VALUE : R/W; bitpos: [31:0]; default: 0;
  *  Address to slave. Can be configured in CONF state.
  */
@@ -48,7 +48,7 @@ extern "C" {
 /** LP_SPI_CTRL_REG register
  *  SPI control register
  */
-#define LP_SPI_CTRL_REG (DR_REG_LP_BASE + 0x8)
+#define LP_SPI_CTRL_REG (DR_REG_LP_SPI_BASE + 0x8)
 /** LP_REG_DUMMY_OUT : R/W; bitpos: [3]; default: 0;
  *  In the dummy phase the signal level of spi is output by the spi controller. Can be
  *  configured in CONF state.
@@ -93,7 +93,7 @@ extern "C" {
 /** LP_SPI_CLOCK_REG register
  *  SPI clock control register
  */
-#define LP_SPI_CLOCK_REG (DR_REG_LP_BASE + 0xc)
+#define LP_SPI_CLOCK_REG (DR_REG_LP_SPI_BASE + 0xc)
 /** LP_REG_CLKCNT_L : R/W; bitpos: [5:0]; default: 3;
  *  In the master mode it must be equal to spi_clkcnt_N. In the slave mode it must be
  *  0. Can be configured in CONF state.
@@ -137,7 +137,7 @@ extern "C" {
 /** LP_SPI_USER_REG register
  *  SPI USER control register
  */
-#define LP_SPI_USER_REG (DR_REG_LP_BASE + 0x10)
+#define LP_SPI_USER_REG (DR_REG_LP_SPI_BASE + 0x10)
 /** LP_REG_DOUTDIN : R/W; bitpos: [0]; default: 0;
  *  Set the bit to enable full duplex communication. 1: enable 0: disable. Can be
  *  configured in CONF state.
@@ -259,7 +259,7 @@ extern "C" {
 /** LP_SPI_USER1_REG register
  *  SPI USER control register 1
  */
-#define LP_SPI_USER1_REG (DR_REG_LP_BASE + 0x14)
+#define LP_SPI_USER1_REG (DR_REG_LP_SPI_BASE + 0x14)
 /** LP_REG_USR_DUMMY_CYCLELEN : R/W; bitpos: [7:0]; default: 7;
  *  The length in spi_clk cycles of dummy phase. The register value shall be
  *  (cycle_num-1). Can be configured in CONF state.
@@ -305,7 +305,7 @@ extern "C" {
 /** LP_SPI_USER2_REG register
  *  SPI USER control register 2
  */
-#define LP_SPI_USER2_REG (DR_REG_LP_BASE + 0x18)
+#define LP_SPI_USER2_REG (DR_REG_LP_SPI_BASE + 0x18)
 /** LP_REG_USR_COMMAND_VALUE : R/W; bitpos: [15:0]; default: 0;
  *  The value of  command. Can be configured in CONF state.
  */
@@ -334,7 +334,7 @@ extern "C" {
 /** LP_SPI_MS_DLEN_REG register
  *  SPI data bit length control register
  */
-#define LP_SPI_MS_DLEN_REG (DR_REG_LP_BASE + 0x1c)
+#define LP_SPI_MS_DLEN_REG (DR_REG_LP_SPI_BASE + 0x1c)
 /** LP_REG_MS_DATA_BITLEN : R/W; bitpos: [17:0]; default: 0;
  *  The value of these bits is the configured SPI transmission data bit length in
  *  master mode DMA controlled transfer or CPU controlled transfer. The value is also
@@ -349,7 +349,7 @@ extern "C" {
 /** LP_SPI_MISC_REG register
  *  SPI misc register
  */
-#define LP_SPI_MISC_REG (DR_REG_LP_BASE + 0x20)
+#define LP_SPI_MISC_REG (DR_REG_LP_SPI_BASE + 0x20)
 /** LP_REG_CS0_DIS : R/W; bitpos: [0]; default: 0;
  *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
  *  be configured in CONF state.
@@ -400,7 +400,7 @@ extern "C" {
 /** LP_SPI_DIN_MODE_REG register
  *  SPI input delay mode configuration
  */
-#define LP_SPI_DIN_MODE_REG (DR_REG_LP_BASE + 0x24)
+#define LP_SPI_DIN_MODE_REG (DR_REG_LP_SPI_BASE + 0x24)
 /** LP_REG_DIN0_MODE : R/W; bitpos: [1:0]; default: 0;
  *  the input signals are delayed by SPI module clock cycles, 0: input without delayed,
  *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
@@ -449,7 +449,7 @@ extern "C" {
 /** LP_SPI_DIN_NUM_REG register
  *  SPI input delay number configuration
  */
-#define LP_SPI_DIN_NUM_REG (DR_REG_LP_BASE + 0x28)
+#define LP_SPI_DIN_NUM_REG (DR_REG_LP_SPI_BASE + 0x28)
 /** LP_REG_DIN0_NUM : R/W; bitpos: [1:0]; default: 0;
  *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
  *  delayed by 2 cycles,...  Can be configured in CONF state.
@@ -486,7 +486,7 @@ extern "C" {
 /** LP_SPI_DOUT_MODE_REG register
  *  SPI output delay mode configuration
  */
-#define LP_SPI_DOUT_MODE_REG (DR_REG_LP_BASE + 0x2c)
+#define LP_SPI_DOUT_MODE_REG (DR_REG_LP_SPI_BASE + 0x2c)
 /** LP_REG_DOUT0_MODE : R/W; bitpos: [0]; default: 0;
  *  The output signal $n is delayed by the SPI module clock, 0: output without delayed,
  *  1: output delay for a SPI module clock cycle at its negative edge. Can be
@@ -527,7 +527,7 @@ extern "C" {
 /** LP_SPI_DMA_CONF_REG register
  *  SPI DMA control register
  */
-#define LP_SPI_DMA_CONF_REG (DR_REG_LP_BASE + 0x30)
+#define LP_SPI_DMA_CONF_REG (DR_REG_LP_SPI_BASE + 0x30)
 /** LP_REG_RX_AFIFO_RST : WT; bitpos: [29]; default: 0;
  *  Set this bit to reset RX AFIFO, which is used to receive data in SPI master and
  *  slave mode transfer.
@@ -548,7 +548,7 @@ extern "C" {
 /** LP_SPI_DMA_INT_ENA_REG register
  *  SPI DMA interrupt enable register
  */
-#define LP_SPI_DMA_INT_ENA_REG (DR_REG_LP_BASE + 0x34)
+#define LP_SPI_DMA_INT_ENA_REG (DR_REG_LP_SPI_BASE + 0x34)
 /** LP_REG_SLV_RD_BUF_DONE_INT_ENA : R/W; bitpos: [10]; default: 0;
  *  The enable bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
  */
@@ -623,7 +623,7 @@ extern "C" {
 /** LP_SPI_DMA_INT_CLR_REG register
  *  SPI DMA interrupt clear register
  */
-#define LP_SPI_DMA_INT_CLR_REG (DR_REG_LP_BASE + 0x38)
+#define LP_SPI_DMA_INT_CLR_REG (DR_REG_LP_SPI_BASE + 0x38)
 /** LP_REG_SLV_RD_BUF_DONE_INT_CLR : WT; bitpos: [10]; default: 0;
  *  The clear bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
  */
@@ -698,7 +698,7 @@ extern "C" {
 /** LP_SPI_DMA_INT_RAW_REG register
  *  SPI DMA interrupt raw register
  */
-#define LP_SPI_DMA_INT_RAW_REG (DR_REG_LP_BASE + 0x3c)
+#define LP_SPI_DMA_INT_RAW_REG (DR_REG_LP_SPI_BASE + 0x3c)
 /** LP_REG_SLV_RD_BUF_DONE_INT_RAW : R/WTC/SS; bitpos: [10]; default: 0;
  *  The raw bit for SPI_SLV_RD_BUF_DONE_INT interrupt. 1: SPI slave mode Rd_BUF
  *  transmission is ended. 0: Others.
@@ -782,7 +782,7 @@ extern "C" {
 /** LP_SPI_DMA_INT_ST_REG register
  *  SPI DMA interrupt status register
  */
-#define LP_SPI_DMA_INT_ST_REG (DR_REG_LP_BASE + 0x40)
+#define LP_SPI_DMA_INT_ST_REG (DR_REG_LP_SPI_BASE + 0x40)
 /** LP_REG_SLV_RD_BUF_DONE_INT_ST : RO; bitpos: [10]; default: 0;
  *  The status bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
  */
@@ -857,7 +857,7 @@ extern "C" {
 /** LP_SPI_SLEEP_CONF0_REG register
  *  NA
  */
-#define LP_SPI_SLEEP_CONF0_REG (DR_REG_LP_BASE + 0x44)
+#define LP_SPI_SLEEP_CONF0_REG (DR_REG_LP_SPI_BASE + 0x44)
 /** LP_REG_SLV_WK_CHAR0 : R/W; bitpos: [7:0]; default: 10;
  *  NA
  */
@@ -911,7 +911,7 @@ extern "C" {
 /** LP_SPI_SLEEP_CONF1_REG register
  *  NA
  */
-#define LP_SPI_SLEEP_CONF1_REG (DR_REG_LP_BASE + 0x48)
+#define LP_SPI_SLEEP_CONF1_REG (DR_REG_LP_SPI_BASE + 0x48)
 /** LP_REG_SLV_WK_CHAR1 : R/W; bitpos: [7:0]; default: 11;
  *  NA
  */
@@ -944,7 +944,7 @@ extern "C" {
 /** LP_SPI_DMA_INT_SET_REG register
  *  SPI interrupt software set register
  */
-#define LP_SPI_DMA_INT_SET_REG (DR_REG_LP_BASE + 0x4c)
+#define LP_SPI_DMA_INT_SET_REG (DR_REG_LP_SPI_BASE + 0x4c)
 /** LP_SPI_SLV_RD_BUF_DONE_INT_SET : WT; bitpos: [10]; default: 0;
  *  The software set bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
  */
@@ -1012,7 +1012,7 @@ extern "C" {
 /** LP_SPI_W0_REG register
  *  SPI CPU-controlled buffer0
  */
-#define LP_SPI_W0_REG (DR_REG_LP_BASE + 0x98)
+#define LP_SPI_W0_REG (DR_REG_LP_SPI_BASE + 0x98)
 /** LP_REG_BUF0 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1024,7 +1024,7 @@ extern "C" {
 /** LP_SPI_W1_REG register
  *  SPI CPU-controlled buffer1
  */
-#define LP_SPI_W1_REG (DR_REG_LP_BASE + 0x9c)
+#define LP_SPI_W1_REG (DR_REG_LP_SPI_BASE + 0x9c)
 /** LP_REG_BUF1 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1036,7 +1036,7 @@ extern "C" {
 /** LP_SPI_W2_REG register
  *  SPI CPU-controlled buffer2
  */
-#define LP_SPI_W2_REG (DR_REG_LP_BASE + 0xa0)
+#define LP_SPI_W2_REG (DR_REG_LP_SPI_BASE + 0xa0)
 /** LP_REG_BUF2 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1048,7 +1048,7 @@ extern "C" {
 /** LP_SPI_W3_REG register
  *  SPI CPU-controlled buffer3
  */
-#define LP_SPI_W3_REG (DR_REG_LP_BASE + 0xa4)
+#define LP_SPI_W3_REG (DR_REG_LP_SPI_BASE + 0xa4)
 /** LP_REG_BUF3 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1060,7 +1060,7 @@ extern "C" {
 /** LP_SPI_W4_REG register
  *  SPI CPU-controlled buffer4
  */
-#define LP_SPI_W4_REG (DR_REG_LP_BASE + 0xa8)
+#define LP_SPI_W4_REG (DR_REG_LP_SPI_BASE + 0xa8)
 /** LP_REG_BUF4 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1072,7 +1072,7 @@ extern "C" {
 /** LP_SPI_W5_REG register
  *  SPI CPU-controlled buffer5
  */
-#define LP_SPI_W5_REG (DR_REG_LP_BASE + 0xac)
+#define LP_SPI_W5_REG (DR_REG_LP_SPI_BASE + 0xac)
 /** LP_REG_BUF5 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1084,7 +1084,7 @@ extern "C" {
 /** LP_SPI_W6_REG register
  *  SPI CPU-controlled buffer6
  */
-#define LP_SPI_W6_REG (DR_REG_LP_BASE + 0xb0)
+#define LP_SPI_W6_REG (DR_REG_LP_SPI_BASE + 0xb0)
 /** LP_REG_BUF6 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1096,7 +1096,7 @@ extern "C" {
 /** LP_SPI_W7_REG register
  *  SPI CPU-controlled buffer7
  */
-#define LP_SPI_W7_REG (DR_REG_LP_BASE + 0xb4)
+#define LP_SPI_W7_REG (DR_REG_LP_SPI_BASE + 0xb4)
 /** LP_REG_BUF7 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1108,7 +1108,7 @@ extern "C" {
 /** LP_SPI_W8_REG register
  *  SPI CPU-controlled buffer8
  */
-#define LP_SPI_W8_REG (DR_REG_LP_BASE + 0xb8)
+#define LP_SPI_W8_REG (DR_REG_LP_SPI_BASE + 0xb8)
 /** LP_REG_BUF8 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1120,7 +1120,7 @@ extern "C" {
 /** LP_SPI_W9_REG register
  *  SPI CPU-controlled buffer9
  */
-#define LP_SPI_W9_REG (DR_REG_LP_BASE + 0xbc)
+#define LP_SPI_W9_REG (DR_REG_LP_SPI_BASE + 0xbc)
 /** LP_REG_BUF9 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1132,7 +1132,7 @@ extern "C" {
 /** LP_SPI_W10_REG register
  *  SPI CPU-controlled buffer10
  */
-#define LP_SPI_W10_REG (DR_REG_LP_BASE + 0xc0)
+#define LP_SPI_W10_REG (DR_REG_LP_SPI_BASE + 0xc0)
 /** LP_REG_BUF10 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1144,7 +1144,7 @@ extern "C" {
 /** LP_SPI_W11_REG register
  *  SPI CPU-controlled buffer11
  */
-#define LP_SPI_W11_REG (DR_REG_LP_BASE + 0xc4)
+#define LP_SPI_W11_REG (DR_REG_LP_SPI_BASE + 0xc4)
 /** LP_REG_BUF11 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1156,7 +1156,7 @@ extern "C" {
 /** LP_SPI_W12_REG register
  *  SPI CPU-controlled buffer12
  */
-#define LP_SPI_W12_REG (DR_REG_LP_BASE + 0xc8)
+#define LP_SPI_W12_REG (DR_REG_LP_SPI_BASE + 0xc8)
 /** LP_REG_BUF12 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1168,7 +1168,7 @@ extern "C" {
 /** LP_SPI_W13_REG register
  *  SPI CPU-controlled buffer13
  */
-#define LP_SPI_W13_REG (DR_REG_LP_BASE + 0xcc)
+#define LP_SPI_W13_REG (DR_REG_LP_SPI_BASE + 0xcc)
 /** LP_REG_BUF13 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1180,7 +1180,7 @@ extern "C" {
 /** LP_SPI_W14_REG register
  *  SPI CPU-controlled buffer14
  */
-#define LP_SPI_W14_REG (DR_REG_LP_BASE + 0xd0)
+#define LP_SPI_W14_REG (DR_REG_LP_SPI_BASE + 0xd0)
 /** LP_REG_BUF14 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1192,7 +1192,7 @@ extern "C" {
 /** LP_SPI_W15_REG register
  *  SPI CPU-controlled buffer15
  */
-#define LP_SPI_W15_REG (DR_REG_LP_BASE + 0xd4)
+#define LP_SPI_W15_REG (DR_REG_LP_SPI_BASE + 0xd4)
 /** LP_REG_BUF15 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -1204,7 +1204,7 @@ extern "C" {
 /** LP_SPI_SLAVE_REG register
  *  SPI slave control register
  */
-#define LP_SPI_SLAVE_REG (DR_REG_LP_BASE + 0xe0)
+#define LP_SPI_SLAVE_REG (DR_REG_LP_SPI_BASE + 0xe0)
 /** LP_REG_CLK_MODE : R/W; bitpos: [1:0]; default: 0;
  *  SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed
  *  one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3:
@@ -1265,7 +1265,7 @@ extern "C" {
 /** LP_SPI_SLAVE1_REG register
  *  SPI slave control register 1
  */
-#define LP_SPI_SLAVE1_REG (DR_REG_LP_BASE + 0xe4)
+#define LP_SPI_SLAVE1_REG (DR_REG_LP_SPI_BASE + 0xe4)
 /** LP_REG_SLV_DATA_BITLEN : R/W/SS; bitpos: [17:0]; default: 0;
  *  The transferred data bit length in SPI slave FD and HD mode.
  */
@@ -1291,7 +1291,7 @@ extern "C" {
 /** LP_SPI_CLK_GATE_REG register
  *  SPI module clock and register clock control
  */
-#define LP_SPI_CLK_GATE_REG (DR_REG_LP_BASE + 0xe8)
+#define LP_SPI_CLK_GATE_REG (DR_REG_LP_SPI_BASE + 0xe8)
 /** LP_REG_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable clk gate
  */
@@ -1318,7 +1318,7 @@ extern "C" {
 /** LP_SPI_DATE_REG register
  *  Version control
  */
-#define LP_SPI_DATE_REG (DR_REG_LP_BASE + 0xf0)
+#define LP_SPI_DATE_REG (DR_REG_LP_SPI_BASE + 0xf0)
 /** LP_REG_DATE : R/W; bitpos: [27:0]; default: 33591360;
  *  SPI register version.
  */
@@ -1330,7 +1330,7 @@ extern "C" {
 /** LP_RND_ECO_CS_REG register
  *  NA
  */
-#define LP_RND_ECO_CS_REG (DR_REG_LP_BASE + 0xf4)
+#define LP_RND_ECO_CS_REG (DR_REG_LP_SPI_BASE + 0xf4)
 /** LP_REG_RND_ECO_EN : R/W; bitpos: [0]; default: 0;
  *  NA
  */
@@ -1349,7 +1349,7 @@ extern "C" {
 /** LP_RND_ECO_LOW_REG register
  *  NA
  */
-#define LP_RND_ECO_LOW_REG (DR_REG_LP_BASE + 0xf8)
+#define LP_RND_ECO_LOW_REG (DR_REG_LP_SPI_BASE + 0xf8)
 /** LP_REG_RND_ECO_LOW : R/W; bitpos: [31:0]; default: 0;
  *  NA
  */
@@ -1361,7 +1361,7 @@ extern "C" {
 /** LP_RND_ECO_HIGH_REG register
  *  NA
  */
-#define LP_RND_ECO_HIGH_REG (DR_REG_LP_BASE + 0xfc)
+#define LP_RND_ECO_HIGH_REG (DR_REG_LP_SPI_BASE + 0xfc)
 /** LP_REG_RND_ECO_HIGH : R/W; bitpos: [31:0]; default: 65535;
  *  NA
  */

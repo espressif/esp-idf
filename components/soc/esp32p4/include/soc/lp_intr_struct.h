@@ -23,7 +23,7 @@ typedef union {
         uint32_t lp_sw_int_raw:1;
     };
     uint32_t val;
-} lpintr_sw_int_raw_reg_t;
+} lp_intr_sw_int_raw_reg_t;
 
 /** Type of sw_int_st register
  *  need_des
@@ -37,7 +37,7 @@ typedef union {
         uint32_t lp_sw_int_st:1;
     };
     uint32_t val;
-} lpintr_sw_int_st_reg_t;
+} lp_intr_sw_int_st_reg_t;
 
 /** Type of sw_int_ena register
  *  need_des
@@ -51,7 +51,7 @@ typedef union {
         uint32_t lp_sw_int_ena:1;
     };
     uint32_t val;
-} lpintr_sw_int_ena_reg_t;
+} lp_intr_sw_int_ena_reg_t;
 
 /** Type of sw_int_clr register
  *  need_des
@@ -65,7 +65,7 @@ typedef union {
         uint32_t lp_sw_int_clr:1;
     };
     uint32_t val;
-} lpintr_sw_int_clr_reg_t;
+} lp_intr_sw_int_clr_reg_t;
 
 
 /** Group: Status Registers */
@@ -165,7 +165,7 @@ typedef union {
         uint32_t hp_intr_st:1;
     };
     uint32_t val;
-} lpintr_status_reg_t;
+} lp_intr_status_reg_t;
 
 
 /** Group: configure_register */
@@ -181,22 +181,22 @@ typedef union {
         uint32_t clk_en:1;
     };
     uint32_t val;
-} lpintr_date_reg_t;
+} lp_intr_date_reg_t;
 
 
 typedef struct {
-    volatile lpintr_sw_int_raw_reg_t sw_int_raw;
-    volatile lpintr_sw_int_st_reg_t sw_int_st;
-    volatile lpintr_sw_int_ena_reg_t sw_int_ena;
-    volatile lpintr_sw_int_clr_reg_t sw_int_clr;
-    volatile lpintr_status_reg_t status;
+    volatile lp_intr_sw_int_raw_reg_t sw_int_raw;
+    volatile lp_intr_sw_int_st_reg_t sw_int_st;
+    volatile lp_intr_sw_int_ena_reg_t sw_int_ena;
+    volatile lp_intr_sw_int_clr_reg_t sw_int_clr;
+    volatile lp_intr_status_reg_t status;
     uint32_t reserved_014[250];
-    volatile lpintr_date_reg_t date;
-} lpintr_dev_t;
+    volatile lp_intr_date_reg_t date;
+} lp_intr_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lpintr_dev_t) == 0x400, "Invalid size of lpintr_dev_t structure");
+_Static_assert(sizeof(lp_intr_dev_t) == 0x400, "Invalid size of lp_intr_dev_t structure");
 #endif
 
 #ifdef __cplusplus

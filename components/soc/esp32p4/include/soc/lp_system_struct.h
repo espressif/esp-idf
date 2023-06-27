@@ -22,7 +22,7 @@ typedef union {
         uint32_t ver_date:32;
     };
     uint32_t val;
-} lpsysreg_lp_sys_ver_date_reg_t;
+} lp_system_reg_lp_sys_ver_date_reg_t;
 
 /** Type of clk_sel_ctrl register
  *  need_des
@@ -41,7 +41,7 @@ typedef union {
         uint32_t reserved_18:14;
     };
     uint32_t val;
-} lpsysreg_clk_sel_ctrl_reg_t;
+} lp_system_reg_clk_sel_ctrl_reg_t;
 
 /** Type of sys_ctrl register
  *  need_des
@@ -92,7 +92,7 @@ typedef union {
         uint32_t systimer_stall_sel:1;
     };
     uint32_t val;
-} lpsysreg_sys_ctrl_reg_t;
+} lp_system_reg_sys_ctrl_reg_t;
 
 /** Type of lp_clk_ctrl register
  *  need_des
@@ -111,7 +111,7 @@ typedef union {
         uint32_t reserved_15:17;
     };
     uint32_t val;
-} lpsysreg_lp_clk_ctrl_reg_t;
+} lp_system_reg_lp_clk_ctrl_reg_t;
 
 /** Type of lp_rst_ctrl register
  *  need_des
@@ -133,7 +133,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} lpsysreg_lp_rst_ctrl_reg_t;
+} lp_system_reg_lp_rst_ctrl_reg_t;
 
 /** Type of lp_core_boot_addr register
  *  need_des
@@ -146,7 +146,7 @@ typedef union {
         uint32_t lp_cpu_boot_addr:32;
     };
     uint32_t val;
-} lpsysreg_lp_core_boot_addr_reg_t;
+} lp_system_reg_lp_core_boot_addr_reg_t;
 
 /** Type of ext_wakeup1 register
  *  need_des
@@ -164,7 +164,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} lpsysreg_ext_wakeup1_reg_t;
+} lp_system_reg_ext_wakeup1_reg_t;
 
 /** Type of ext_wakeup1_status register
  *  need_des
@@ -178,7 +178,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} lpsysreg_ext_wakeup1_status_reg_t;
+} lp_system_reg_ext_wakeup1_status_reg_t;
 
 /** Type of lp_tcm_pwr_ctrl register
  *  need_des
@@ -198,7 +198,7 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_pwr_ctrl_reg_t;
+} lp_system_reg_lp_tcm_pwr_ctrl_reg_t;
 
 /** Type of boot_addr_hp_lp_reg register
  *  need_des
@@ -211,7 +211,7 @@ typedef union {
         uint32_t boot_addr_hp_lp:32;
     };
     uint32_t val;
-} lpsysreg_boot_addr_hp_lp_reg_reg_t;
+} lp_system_reg_boot_addr_hp_lp_reg_reg_t;
 
 /** Type of lp_store0 register
  *  need_des
@@ -224,7 +224,7 @@ typedef union {
         uint32_t lp_scratch0:32;
     };
     uint32_t val;
-} lpsysreg_lp_store0_reg_t;
+} lp_system_reg_lp_store0_reg_t;
 
 /** Type of lp_store1 register
  *  need_des
@@ -237,7 +237,7 @@ typedef union {
         uint32_t lp_scratch1:32;
     };
     uint32_t val;
-} lpsysreg_lp_store1_reg_t;
+} lp_system_reg_lp_store1_reg_t;
 
 /** Type of lp_store2 register
  *  need_des
@@ -250,7 +250,7 @@ typedef union {
         uint32_t lp_scratch2:32;
     };
     uint32_t val;
-} lpsysreg_lp_store2_reg_t;
+} lp_system_reg_lp_store2_reg_t;
 
 /** Type of lp_store3 register
  *  need_des
@@ -263,7 +263,7 @@ typedef union {
         uint32_t lp_scratch3:32;
     };
     uint32_t val;
-} lpsysreg_lp_store3_reg_t;
+} lp_system_reg_lp_store3_reg_t;
 
 /** Type of lp_store4 register
  *  need_des
@@ -276,7 +276,7 @@ typedef union {
         uint32_t lp_scratch4:32;
     };
     uint32_t val;
-} lpsysreg_lp_store4_reg_t;
+} lp_system_reg_lp_store4_reg_t;
 
 /** Type of lp_store5 register
  *  need_des
@@ -289,7 +289,7 @@ typedef union {
         uint32_t lp_scratch5:32;
     };
     uint32_t val;
-} lpsysreg_lp_store5_reg_t;
+} lp_system_reg_lp_store5_reg_t;
 
 /** Type of lp_store6 register
  *  need_des
@@ -302,7 +302,7 @@ typedef union {
         uint32_t lp_scratch6:32;
     };
     uint32_t val;
-} lpsysreg_lp_store6_reg_t;
+} lp_system_reg_lp_store6_reg_t;
 
 /** Type of lp_store7 register
  *  need_des
@@ -315,7 +315,7 @@ typedef union {
         uint32_t lp_scratch7:32;
     };
     uint32_t val;
-} lpsysreg_lp_store7_reg_t;
+} lp_system_reg_lp_store7_reg_t;
 
 /** Type of lp_store8 register
  *  need_des
@@ -328,7 +328,7 @@ typedef union {
         uint32_t lp_scratch8:32;
     };
     uint32_t val;
-} lpsysreg_lp_store8_reg_t;
+} lp_system_reg_lp_store8_reg_t;
 
 /** Type of lp_store9 register
  *  need_des
@@ -341,7 +341,7 @@ typedef union {
         uint32_t lp_scratch9:32;
     };
     uint32_t val;
-} lpsysreg_lp_store9_reg_t;
+} lp_system_reg_lp_store9_reg_t;
 
 /** Type of lp_store10 register
  *  need_des
@@ -354,7 +354,7 @@ typedef union {
         uint32_t lp_scratch10:32;
     };
     uint32_t val;
-} lpsysreg_lp_store10_reg_t;
+} lp_system_reg_lp_store10_reg_t;
 
 /** Type of lp_store11 register
  *  need_des
@@ -367,7 +367,7 @@ typedef union {
         uint32_t lp_scratch11:32;
     };
     uint32_t val;
-} lpsysreg_lp_store11_reg_t;
+} lp_system_reg_lp_store11_reg_t;
 
 /** Type of lp_store12 register
  *  need_des
@@ -380,7 +380,7 @@ typedef union {
         uint32_t lp_scratch12:32;
     };
     uint32_t val;
-} lpsysreg_lp_store12_reg_t;
+} lp_system_reg_lp_store12_reg_t;
 
 /** Type of lp_store13 register
  *  need_des
@@ -393,7 +393,7 @@ typedef union {
         uint32_t lp_scratch13:32;
     };
     uint32_t val;
-} lpsysreg_lp_store13_reg_t;
+} lp_system_reg_lp_store13_reg_t;
 
 /** Type of lp_store14 register
  *  need_des
@@ -406,7 +406,7 @@ typedef union {
         uint32_t lp_scratch14:32;
     };
     uint32_t val;
-} lpsysreg_lp_store14_reg_t;
+} lp_system_reg_lp_store14_reg_t;
 
 /** Type of lp_store15 register
  *  need_des
@@ -419,7 +419,7 @@ typedef union {
         uint32_t lp_scratch15:32;
     };
     uint32_t val;
-} lpsysreg_lp_store15_reg_t;
+} lp_system_reg_lp_store15_reg_t;
 
 /** Type of lp_probea_ctrl register
  *  need_des
@@ -449,7 +449,7 @@ typedef union {
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} lpsysreg_lp_probea_ctrl_reg_t;
+} lp_system_reg_lp_probea_ctrl_reg_t;
 
 /** Type of lp_probeb_ctrl register
  *  need_des
@@ -471,7 +471,7 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} lpsysreg_lp_probeb_ctrl_reg_t;
+} lp_system_reg_lp_probeb_ctrl_reg_t;
 
 /** Type of lp_probe_out register
  *  need_des
@@ -484,7 +484,7 @@ typedef union {
         uint32_t probe_top_out:32;
     };
     uint32_t val;
-} lpsysreg_lp_probe_out_reg_t;
+} lp_system_reg_lp_probe_out_reg_t;
 
 /** Type of f2s_apb_brg_cntl register
  *  need_des
@@ -498,7 +498,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} lpsysreg_f2s_apb_brg_cntl_reg_t;
+} lp_system_reg_f2s_apb_brg_cntl_reg_t;
 
 /** Type of usb_ctrl register
  *  need_des
@@ -524,7 +524,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} lpsysreg_usb_ctrl_reg_t;
+} lp_system_reg_usb_ctrl_reg_t;
 
 /** Type of ana_xpd_pad_group register
  *  need_des
@@ -538,7 +538,7 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} lpsysreg_ana_xpd_pad_group_reg_t;
+} lp_system_reg_ana_xpd_pad_group_reg_t;
 
 /** Type of lp_tcm_ram_rdn_eco_cs register
  *  need_des
@@ -556,7 +556,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_ram_rdn_eco_cs_reg_t;
+} lp_system_reg_lp_tcm_ram_rdn_eco_cs_reg_t;
 
 /** Type of lp_tcm_ram_rdn_eco_low register
  *  need_des
@@ -569,7 +569,7 @@ typedef union {
         uint32_t lp_tcm_ram_rdn_eco_low:32;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_ram_rdn_eco_low_reg_t;
+} lp_system_reg_lp_tcm_ram_rdn_eco_low_reg_t;
 
 /** Type of lp_tcm_ram_rdn_eco_high register
  *  need_des
@@ -582,7 +582,7 @@ typedef union {
         uint32_t lp_tcm_ram_rdn_eco_high:32;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_ram_rdn_eco_high_reg_t;
+} lp_system_reg_lp_tcm_ram_rdn_eco_high_reg_t;
 
 /** Type of lp_tcm_rom_rdn_eco_cs register
  *  need_des
@@ -600,7 +600,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_rom_rdn_eco_cs_reg_t;
+} lp_system_reg_lp_tcm_rom_rdn_eco_cs_reg_t;
 
 /** Type of lp_tcm_rom_rdn_eco_low register
  *  need_des
@@ -613,7 +613,7 @@ typedef union {
         uint32_t lp_tcm_rom_rdn_eco_low:32;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_rom_rdn_eco_low_reg_t;
+} lp_system_reg_lp_tcm_rom_rdn_eco_low_reg_t;
 
 /** Type of lp_tcm_rom_rdn_eco_high register
  *  need_des
@@ -626,7 +626,7 @@ typedef union {
         uint32_t lp_tcm_rom_rdn_eco_high:32;
     };
     uint32_t val;
-} lpsysreg_lp_tcm_rom_rdn_eco_high_reg_t;
+} lp_system_reg_lp_tcm_rom_rdn_eco_high_reg_t;
 
 /** Type of hp_root_clk_ctrl register
  *  need_des
@@ -644,7 +644,7 @@ typedef union {
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} lpsysreg_hp_root_clk_ctrl_reg_t;
+} lp_system_reg_hp_root_clk_ctrl_reg_t;
 
 /** Type of lp_pmu_rdn_eco_low register
  *  need_des
@@ -657,7 +657,7 @@ typedef union {
         uint32_t pmu_rdn_eco_low:32;
     };
     uint32_t val;
-} lpsysreg_lp_pmu_rdn_eco_low_reg_t;
+} lp_system_reg_lp_pmu_rdn_eco_low_reg_t;
 
 /** Type of lp_pmu_rdn_eco_high register
  *  need_des
@@ -670,7 +670,7 @@ typedef union {
         uint32_t pmu_rdn_eco_high:32;
     };
     uint32_t val;
-} lpsysreg_lp_pmu_rdn_eco_high_reg_t;
+} lp_system_reg_lp_pmu_rdn_eco_high_reg_t;
 
 /** Type of pad_comp0 register
  *  need_des
@@ -692,7 +692,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} lpsysreg_pad_comp0_reg_t;
+} lp_system_reg_pad_comp0_reg_t;
 
 /** Type of pad_comp1 register
  *  need_des
@@ -714,7 +714,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} lpsysreg_pad_comp1_reg_t;
+} lp_system_reg_pad_comp1_reg_t;
 
 /** Type of backup_dma_cfg0 register
  *  need_des
@@ -739,7 +739,7 @@ typedef union {
         uint32_t link_tout_thres_aon:10;
     };
     uint32_t val;
-} lpsysreg_backup_dma_cfg0_reg_t;
+} lp_system_reg_backup_dma_cfg0_reg_t;
 
 /** Type of backup_dma_cfg1 register
  *  need_des
@@ -753,7 +753,7 @@ typedef union {
         uint32_t aon_bypass:1;
     };
     uint32_t val;
-} lpsysreg_backup_dma_cfg1_reg_t;
+} lp_system_reg_backup_dma_cfg1_reg_t;
 
 /** Type of backup_dma_cfg2 register
  *  need_des
@@ -766,7 +766,7 @@ typedef union {
         uint32_t link_addr_aon:32;
     };
     uint32_t val;
-} lpsysreg_backup_dma_cfg2_reg_t;
+} lp_system_reg_backup_dma_cfg2_reg_t;
 
 /** Type of boot_addr_hp_core1 register
  *  need_des
@@ -779,7 +779,7 @@ typedef union {
         uint32_t boot_addr_hp_core1:32;
     };
     uint32_t val;
-} lpsysreg_boot_addr_hp_core1_reg_t;
+} lp_system_reg_boot_addr_hp_core1_reg_t;
 
 /** Type of hp_mem_aux_ctrl register
  *  need_des
@@ -792,7 +792,7 @@ typedef union {
         uint32_t hp_mem_aux_ctrl:32;
     };
     uint32_t val;
-} lpsysreg_hp_mem_aux_ctrl_reg_t;
+} lp_system_reg_hp_mem_aux_ctrl_reg_t;
 
 /** Type of lp_mem_aux_ctrl register
  *  need_des
@@ -805,7 +805,7 @@ typedef union {
         uint32_t lp_mem_aux_ctrl:32;
     };
     uint32_t val;
-} lpsysreg_lp_mem_aux_ctrl_reg_t;
+} lp_system_reg_lp_mem_aux_ctrl_reg_t;
 
 /** Type of hp_rom_aux_ctrl register
  *  need_des
@@ -818,7 +818,7 @@ typedef union {
         uint32_t hp_rom_aux_ctrl:32;
     };
     uint32_t val;
-} lpsysreg_hp_rom_aux_ctrl_reg_t;
+} lp_system_reg_hp_rom_aux_ctrl_reg_t;
 
 /** Type of lp_rom_aux_ctrl register
  *  need_des
@@ -831,7 +831,7 @@ typedef union {
         uint32_t lp_rom_aux_ctrl:32;
     };
     uint32_t val;
-} lpsysreg_lp_rom_aux_ctrl_reg_t;
+} lp_system_reg_lp_rom_aux_ctrl_reg_t;
 
 /** Type of hp_por_rst_bypass_ctrl register
  *  need_des
@@ -864,7 +864,7 @@ typedef union {
         uint32_t hp_po_rstn_bypass_ctrl:8;
     };
     uint32_t val;
-} lpsysreg_hp_por_rst_bypass_ctrl_reg_t;
+} lp_system_reg_hp_por_rst_bypass_ctrl_reg_t;
 
 /** Type of lp_core_ahb_timeout register
  *  need_des
@@ -890,7 +890,7 @@ typedef union {
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} lpsysreg_lp_core_ahb_timeout_reg_t;
+} lp_system_reg_lp_core_ahb_timeout_reg_t;
 
 /** Type of lp_core_ibus_timeout register
  *  need_des
@@ -908,7 +908,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} lpsysreg_lp_core_ibus_timeout_reg_t;
+} lp_system_reg_lp_core_ibus_timeout_reg_t;
 
 /** Type of lp_core_dbus_timeout register
  *  need_des
@@ -926,7 +926,7 @@ typedef union {
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} lpsysreg_lp_core_dbus_timeout_reg_t;
+} lp_system_reg_lp_core_dbus_timeout_reg_t;
 
 
 /** Group: status_register */
@@ -941,7 +941,7 @@ typedef union {
         uint32_t lp_addrhole_addr:32;
     };
     uint32_t val;
-} lpsysreg_lp_addrhole_addr_reg_t;
+} lp_system_reg_lp_addrhole_addr_reg_t;
 
 /** Type of lp_addrhole_info register
  *  need_des
@@ -965,7 +965,7 @@ typedef union {
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} lpsysreg_lp_addrhole_info_reg_t;
+} lp_system_reg_lp_addrhole_info_reg_t;
 
 /** Type of lp_cpu_dbg_pc register
  *  need_des
@@ -978,7 +978,7 @@ typedef union {
         uint32_t lp_cpu_dbg_pc:32;
     };
     uint32_t val;
-} lpsysreg_lp_cpu_dbg_pc_reg_t;
+} lp_system_reg_lp_cpu_dbg_pc_reg_t;
 
 /** Type of lp_cpu_exc_pc register
  *  need_des
@@ -991,7 +991,7 @@ typedef union {
         uint32_t lp_cpu_exc_pc:32;
     };
     uint32_t val;
-} lpsysreg_lp_cpu_exc_pc_reg_t;
+} lp_system_reg_lp_cpu_exc_pc_reg_t;
 
 /** Type of idbus_addrhole_addr register
  *  need_des
@@ -1004,7 +1004,7 @@ typedef union {
         uint32_t idbus_addrhole_addr:32;
     };
     uint32_t val;
-} lpsysreg_idbus_addrhole_addr_reg_t;
+} lp_system_reg_idbus_addrhole_addr_reg_t;
 
 /** Type of idbus_addrhole_info register
  *  need_des
@@ -1026,7 +1026,7 @@ typedef union {
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} lpsysreg_idbus_addrhole_info_reg_t;
+} lp_system_reg_idbus_addrhole_info_reg_t;
 
 /** Type of rng_data register
  *  rng data register
@@ -1039,7 +1039,7 @@ typedef union {
         uint32_t rnd_data:32;
     };
     uint32_t val;
-} lpsysreg_rng_data_reg_t;
+} lp_system_reg_rng_data_reg_t;
 
 
 /** Group: Interrupt Registers */
@@ -1080,7 +1080,7 @@ typedef union {
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} lpsysreg_int_raw_reg_t;
+} lp_system_reg_int_raw_reg_t;
 
 /** Type of int_st register
  *  masked interrupt register
@@ -1119,7 +1119,7 @@ typedef union {
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} lpsysreg_int_st_reg_t;
+} lp_system_reg_int_st_reg_t;
 
 /** Type of int_ena register
  *  masked interrupt register
@@ -1157,7 +1157,7 @@ typedef union {
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} lpsysreg_int_ena_reg_t;
+} lp_system_reg_int_ena_reg_t;
 
 /** Type of int_clr register
  *  interrupt clear register
@@ -1195,7 +1195,7 @@ typedef union {
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} lpsysreg_int_clr_reg_t;
+} lp_system_reg_int_clr_reg_t;
 
 
 /** Group: control registers */
@@ -1212,7 +1212,7 @@ typedef union {
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} lpsysreg_lp_core_err_resp_dis_reg_t;
+} lp_system_reg_lp_core_err_resp_dis_reg_t;
 
 /** Type of rng_cfg register
  *  rng cfg register
@@ -1239,93 +1239,93 @@ typedef union {
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} lpsysreg_rng_cfg_reg_t;
+} lp_system_reg_rng_cfg_reg_t;
 
 
 typedef struct {
-    volatile lpsysreg_lp_sys_ver_date_reg_t lp_sys_ver_date;
-    volatile lpsysreg_clk_sel_ctrl_reg_t clk_sel_ctrl;
-    volatile lpsysreg_sys_ctrl_reg_t sys_ctrl;
-    volatile lpsysreg_lp_clk_ctrl_reg_t lp_clk_ctrl;
-    volatile lpsysreg_lp_rst_ctrl_reg_t lp_rst_ctrl;
+    volatile lp_system_reg_lp_sys_ver_date_reg_t lp_sys_ver_date;
+    volatile lp_system_reg_clk_sel_ctrl_reg_t clk_sel_ctrl;
+    volatile lp_system_reg_sys_ctrl_reg_t sys_ctrl;
+    volatile lp_system_reg_lp_clk_ctrl_reg_t lp_clk_ctrl;
+    volatile lp_system_reg_lp_rst_ctrl_reg_t lp_rst_ctrl;
     uint32_t reserved_014;
-    volatile lpsysreg_lp_core_boot_addr_reg_t lp_core_boot_addr;
-    volatile lpsysreg_ext_wakeup1_reg_t ext_wakeup1;
-    volatile lpsysreg_ext_wakeup1_status_reg_t ext_wakeup1_status;
-    volatile lpsysreg_lp_tcm_pwr_ctrl_reg_t lp_tcm_pwr_ctrl;
-    volatile lpsysreg_boot_addr_hp_lp_reg_reg_t boot_addr_hp_lp_reg;
-    volatile lpsysreg_lp_store0_reg_t lp_store0;
-    volatile lpsysreg_lp_store1_reg_t lp_store1;
-    volatile lpsysreg_lp_store2_reg_t lp_store2;
-    volatile lpsysreg_lp_store3_reg_t lp_store3;
-    volatile lpsysreg_lp_store4_reg_t lp_store4;
-    volatile lpsysreg_lp_store5_reg_t lp_store5;
-    volatile lpsysreg_lp_store6_reg_t lp_store6;
-    volatile lpsysreg_lp_store7_reg_t lp_store7;
-    volatile lpsysreg_lp_store8_reg_t lp_store8;
-    volatile lpsysreg_lp_store9_reg_t lp_store9;
-    volatile lpsysreg_lp_store10_reg_t lp_store10;
-    volatile lpsysreg_lp_store11_reg_t lp_store11;
-    volatile lpsysreg_lp_store12_reg_t lp_store12;
-    volatile lpsysreg_lp_store13_reg_t lp_store13;
-    volatile lpsysreg_lp_store14_reg_t lp_store14;
-    volatile lpsysreg_lp_store15_reg_t lp_store15;
-    volatile lpsysreg_lp_probea_ctrl_reg_t lp_probea_ctrl;
-    volatile lpsysreg_lp_probeb_ctrl_reg_t lp_probeb_ctrl;
-    volatile lpsysreg_lp_probe_out_reg_t lp_probe_out;
+    volatile lp_system_reg_lp_core_boot_addr_reg_t lp_core_boot_addr;
+    volatile lp_system_reg_ext_wakeup1_reg_t ext_wakeup1;
+    volatile lp_system_reg_ext_wakeup1_status_reg_t ext_wakeup1_status;
+    volatile lp_system_reg_lp_tcm_pwr_ctrl_reg_t lp_tcm_pwr_ctrl;
+    volatile lp_system_reg_boot_addr_hp_lp_reg_reg_t boot_addr_hp_lp_reg;
+    volatile lp_system_reg_lp_store0_reg_t lp_store0;
+    volatile lp_system_reg_lp_store1_reg_t lp_store1;
+    volatile lp_system_reg_lp_store2_reg_t lp_store2;
+    volatile lp_system_reg_lp_store3_reg_t lp_store3;
+    volatile lp_system_reg_lp_store4_reg_t lp_store4;
+    volatile lp_system_reg_lp_store5_reg_t lp_store5;
+    volatile lp_system_reg_lp_store6_reg_t lp_store6;
+    volatile lp_system_reg_lp_store7_reg_t lp_store7;
+    volatile lp_system_reg_lp_store8_reg_t lp_store8;
+    volatile lp_system_reg_lp_store9_reg_t lp_store9;
+    volatile lp_system_reg_lp_store10_reg_t lp_store10;
+    volatile lp_system_reg_lp_store11_reg_t lp_store11;
+    volatile lp_system_reg_lp_store12_reg_t lp_store12;
+    volatile lp_system_reg_lp_store13_reg_t lp_store13;
+    volatile lp_system_reg_lp_store14_reg_t lp_store14;
+    volatile lp_system_reg_lp_store15_reg_t lp_store15;
+    volatile lp_system_reg_lp_probea_ctrl_reg_t lp_probea_ctrl;
+    volatile lp_system_reg_lp_probeb_ctrl_reg_t lp_probeb_ctrl;
+    volatile lp_system_reg_lp_probe_out_reg_t lp_probe_out;
     uint32_t reserved_078[9];
-    volatile lpsysreg_f2s_apb_brg_cntl_reg_t f2s_apb_brg_cntl;
+    volatile lp_system_reg_f2s_apb_brg_cntl_reg_t f2s_apb_brg_cntl;
     uint32_t reserved_0a0[24];
-    volatile lpsysreg_usb_ctrl_reg_t usb_ctrl;
+    volatile lp_system_reg_usb_ctrl_reg_t usb_ctrl;
     uint32_t reserved_104[2];
-    volatile lpsysreg_ana_xpd_pad_group_reg_t ana_xpd_pad_group;
-    volatile lpsysreg_lp_tcm_ram_rdn_eco_cs_reg_t lp_tcm_ram_rdn_eco_cs;
-    volatile lpsysreg_lp_tcm_ram_rdn_eco_low_reg_t lp_tcm_ram_rdn_eco_low;
-    volatile lpsysreg_lp_tcm_ram_rdn_eco_high_reg_t lp_tcm_ram_rdn_eco_high;
-    volatile lpsysreg_lp_tcm_rom_rdn_eco_cs_reg_t lp_tcm_rom_rdn_eco_cs;
-    volatile lpsysreg_lp_tcm_rom_rdn_eco_low_reg_t lp_tcm_rom_rdn_eco_low;
-    volatile lpsysreg_lp_tcm_rom_rdn_eco_high_reg_t lp_tcm_rom_rdn_eco_high;
+    volatile lp_system_reg_ana_xpd_pad_group_reg_t ana_xpd_pad_group;
+    volatile lp_system_reg_lp_tcm_ram_rdn_eco_cs_reg_t lp_tcm_ram_rdn_eco_cs;
+    volatile lp_system_reg_lp_tcm_ram_rdn_eco_low_reg_t lp_tcm_ram_rdn_eco_low;
+    volatile lp_system_reg_lp_tcm_ram_rdn_eco_high_reg_t lp_tcm_ram_rdn_eco_high;
+    volatile lp_system_reg_lp_tcm_rom_rdn_eco_cs_reg_t lp_tcm_rom_rdn_eco_cs;
+    volatile lp_system_reg_lp_tcm_rom_rdn_eco_low_reg_t lp_tcm_rom_rdn_eco_low;
+    volatile lp_system_reg_lp_tcm_rom_rdn_eco_high_reg_t lp_tcm_rom_rdn_eco_high;
     uint32_t reserved_128[2];
-    volatile lpsysreg_hp_root_clk_ctrl_reg_t hp_root_clk_ctrl;
+    volatile lp_system_reg_hp_root_clk_ctrl_reg_t hp_root_clk_ctrl;
     uint32_t reserved_134;
-    volatile lpsysreg_lp_pmu_rdn_eco_low_reg_t lp_pmu_rdn_eco_low;
-    volatile lpsysreg_lp_pmu_rdn_eco_high_reg_t lp_pmu_rdn_eco_high;
+    volatile lp_system_reg_lp_pmu_rdn_eco_low_reg_t lp_pmu_rdn_eco_low;
+    volatile lp_system_reg_lp_pmu_rdn_eco_high_reg_t lp_pmu_rdn_eco_high;
     uint32_t reserved_140[2];
-    volatile lpsysreg_pad_comp0_reg_t pad_comp0;
-    volatile lpsysreg_pad_comp1_reg_t pad_comp1;
+    volatile lp_system_reg_pad_comp0_reg_t pad_comp0;
+    volatile lp_system_reg_pad_comp1_reg_t pad_comp1;
     uint32_t reserved_150;
-    volatile lpsysreg_backup_dma_cfg0_reg_t backup_dma_cfg0;
-    volatile lpsysreg_backup_dma_cfg1_reg_t backup_dma_cfg1;
-    volatile lpsysreg_backup_dma_cfg2_reg_t backup_dma_cfg2;
+    volatile lp_system_reg_backup_dma_cfg0_reg_t backup_dma_cfg0;
+    volatile lp_system_reg_backup_dma_cfg1_reg_t backup_dma_cfg1;
+    volatile lp_system_reg_backup_dma_cfg2_reg_t backup_dma_cfg2;
     uint32_t reserved_160;
-    volatile lpsysreg_boot_addr_hp_core1_reg_t boot_addr_hp_core1;
-    volatile lpsysreg_lp_addrhole_addr_reg_t lp_addrhole_addr;
-    volatile lpsysreg_lp_addrhole_info_reg_t lp_addrhole_info;
-    volatile lpsysreg_int_raw_reg_t int_raw;
-    volatile lpsysreg_int_st_reg_t int_st;
-    volatile lpsysreg_int_ena_reg_t int_ena;
-    volatile lpsysreg_int_clr_reg_t int_clr;
-    volatile lpsysreg_hp_mem_aux_ctrl_reg_t hp_mem_aux_ctrl;
-    volatile lpsysreg_lp_mem_aux_ctrl_reg_t lp_mem_aux_ctrl;
-    volatile lpsysreg_hp_rom_aux_ctrl_reg_t hp_rom_aux_ctrl;
-    volatile lpsysreg_lp_rom_aux_ctrl_reg_t lp_rom_aux_ctrl;
-    volatile lpsysreg_lp_cpu_dbg_pc_reg_t lp_cpu_dbg_pc;
-    volatile lpsysreg_lp_cpu_exc_pc_reg_t lp_cpu_exc_pc;
-    volatile lpsysreg_idbus_addrhole_addr_reg_t idbus_addrhole_addr;
-    volatile lpsysreg_idbus_addrhole_info_reg_t idbus_addrhole_info;
-    volatile lpsysreg_hp_por_rst_bypass_ctrl_reg_t hp_por_rst_bypass_ctrl;
-    volatile lpsysreg_rng_data_reg_t rng_data;
+    volatile lp_system_reg_boot_addr_hp_core1_reg_t boot_addr_hp_core1;
+    volatile lp_system_reg_lp_addrhole_addr_reg_t lp_addrhole_addr;
+    volatile lp_system_reg_lp_addrhole_info_reg_t lp_addrhole_info;
+    volatile lp_system_reg_int_raw_reg_t int_raw;
+    volatile lp_system_reg_int_st_reg_t int_st;
+    volatile lp_system_reg_int_ena_reg_t int_ena;
+    volatile lp_system_reg_int_clr_reg_t int_clr;
+    volatile lp_system_reg_hp_mem_aux_ctrl_reg_t hp_mem_aux_ctrl;
+    volatile lp_system_reg_lp_mem_aux_ctrl_reg_t lp_mem_aux_ctrl;
+    volatile lp_system_reg_hp_rom_aux_ctrl_reg_t hp_rom_aux_ctrl;
+    volatile lp_system_reg_lp_rom_aux_ctrl_reg_t lp_rom_aux_ctrl;
+    volatile lp_system_reg_lp_cpu_dbg_pc_reg_t lp_cpu_dbg_pc;
+    volatile lp_system_reg_lp_cpu_exc_pc_reg_t lp_cpu_exc_pc;
+    volatile lp_system_reg_idbus_addrhole_addr_reg_t idbus_addrhole_addr;
+    volatile lp_system_reg_idbus_addrhole_info_reg_t idbus_addrhole_info;
+    volatile lp_system_reg_hp_por_rst_bypass_ctrl_reg_t hp_por_rst_bypass_ctrl;
+    volatile lp_system_reg_rng_data_reg_t rng_data;
     uint32_t reserved_1a8[2];
-    volatile lpsysreg_lp_core_ahb_timeout_reg_t lp_core_ahb_timeout;
-    volatile lpsysreg_lp_core_ibus_timeout_reg_t lp_core_ibus_timeout;
-    volatile lpsysreg_lp_core_dbus_timeout_reg_t lp_core_dbus_timeout;
-    volatile lpsysreg_lp_core_err_resp_dis_reg_t lp_core_err_resp_dis;
-    volatile lpsysreg_rng_cfg_reg_t rng_cfg;
-} lpsysreg_dev_t;
+    volatile lp_system_reg_lp_core_ahb_timeout_reg_t lp_core_ahb_timeout;
+    volatile lp_system_reg_lp_core_ibus_timeout_reg_t lp_core_ibus_timeout;
+    volatile lp_system_reg_lp_core_dbus_timeout_reg_t lp_core_dbus_timeout;
+    volatile lp_system_reg_lp_core_err_resp_dis_reg_t lp_core_err_resp_dis;
+    volatile lp_system_reg_rng_cfg_reg_t rng_cfg;
+} lp_system_reg_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lpsysreg_dev_t) == 0x1c4, "Invalid size of lpsysreg_dev_t structure");
+_Static_assert(sizeof(lp_system_reg_dev_t) == 0x1c4, "Invalid size of lp_system_reg_dev_t structure");
 #endif
 
 #ifdef __cplusplus

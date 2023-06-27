@@ -1393,6 +1393,8 @@ typedef struct {
     volatile spi_date_reg_t date;
 } spi_dev_t;
 
+extern spi_dev_t GPSPI2;
+extern spi_dev_t GPSPI3;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(spi_dev_t) == 0xf4, "Invalid size of spi_dev_t structure");
