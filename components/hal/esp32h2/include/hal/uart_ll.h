@@ -16,6 +16,7 @@
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "soc/pcr_struct.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,7 +86,7 @@ typedef enum {
  *
  * @return None.
  */
-static inline void uart_ll_update(uart_dev_t *hw)
+FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
 {
     hw->reg_update.reg_update = 1;
     while (hw->reg_update.reg_update);
@@ -1052,7 +1053,7 @@ static inline void uart_ll_force_xoff(uart_port_t uart_num)
  *
  * @return None.
  */
-static inline void uart_ll_force_xon(uart_port_t uart_num)
+FORCE_INLINE_ATTR void uart_ll_force_xon(uart_port_t uart_num)
 {
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XOFF);
     REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
