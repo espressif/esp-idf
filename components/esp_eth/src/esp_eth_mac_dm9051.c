@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,10 +48,22 @@ typedef struct {
 } dm9051_rx_header_t;
 
 typedef struct {
+    spi_device_handle_t hdl;
+    SemaphoreHandle_t lock;
+} eth_spi_info_t;
+
+typedef struct {
+    void *ctx;
+    void *(*init)(const void *spi_config);
+    esp_err_t (*deinit)(void *spi_ctx);
+    esp_err_t (*read)(void *spi_ctx, uint32_t cmd, uint32_t addr, void *data, uint32_t data_len);
+    esp_err_t (*write)(void *spi_ctx, uint32_t cmd, uint32_t addr, const void *data, uint32_t data_len);
+} eth_spi_custom_driver_t;
+
+typedef struct {
     esp_eth_mac_t parent;
     esp_eth_mediator_t *eth;
-    spi_device_handle_t spi_hdl;
-    SemaphoreHandle_t spi_lock;
+    eth_spi_custom_driver_t spi;
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     int int_gpio_num;
@@ -61,14 +73,113 @@ typedef struct {
     uint8_t *rx_buffer;
 } emac_dm9051_t;
 
-static inline bool dm9051_lock(emac_dm9051_t *emac)
+static void *dm9051_spi_init(const void *spi_config)
 {
-    return xSemaphoreTake(emac->spi_lock, pdMS_TO_TICKS(DM9051_SPI_LOCK_TIMEOUT_MS)) == pdTRUE;
+    void *ret = NULL;
+    eth_dm9051_config_t *dm9051_config = (eth_dm9051_config_t *)spi_config;
+    eth_spi_info_t *spi = calloc(1, sizeof(eth_spi_info_t));
+    ESP_GOTO_ON_FALSE(spi, NULL, err, TAG, "no memory for SPI context data");
+
+    /* SPI device init */
+    spi_device_interface_config_t spi_devcfg;
+    spi_devcfg = *(dm9051_config->spi_devcfg);
+    if (dm9051_config->spi_devcfg->command_bits == 0 && dm9051_config->spi_devcfg->address_bits == 0) {
+        /* configure default SPI frame format */
+        spi_devcfg.command_bits = 1;
+        spi_devcfg.address_bits = 7;
+    } else {
+        ESP_GOTO_ON_FALSE(dm9051_config->spi_devcfg->command_bits == 1 && dm9051_config->spi_devcfg->address_bits == 7,
+                            NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
+    }
+    ESP_GOTO_ON_FALSE(spi_bus_add_device(dm9051_config->spi_host_id, &spi_devcfg, &spi->hdl) == ESP_OK,
+                                            NULL, err, TAG, "adding device to SPI host #%d failed", dm9051_config->spi_host_id + 1);
+
+    /* create mutex */
+    spi->lock = xSemaphoreCreateMutex();
+    ESP_GOTO_ON_FALSE(spi->lock, NULL, err, TAG, "create lock failed");
+
+    ret = spi;
+    return ret;
+err:
+    if (spi) {
+        if (spi->lock) {
+            vSemaphoreDelete(spi->lock);
+        }
+        free(spi);
+    }
+    return ret;
 }
 
-static inline bool dm9051_unlock(emac_dm9051_t *emac)
+static esp_err_t dm9051_spi_deinit(void *spi_ctx)
 {
-    return xSemaphoreGive(emac->spi_lock) == pdTRUE;
+    esp_err_t ret = ESP_OK;
+    eth_spi_info_t *spi = (eth_spi_info_t *)spi_ctx;
+
+    spi_bus_remove_device(spi->hdl);
+    vSemaphoreDelete(spi->lock);
+
+    free(spi);
+    return ret;
+}
+
+static inline bool dm9051_spi_lock(eth_spi_info_t *spi)
+{
+    return xSemaphoreTake(spi->lock, pdMS_TO_TICKS(DM9051_SPI_LOCK_TIMEOUT_MS)) == pdTRUE;
+}
+
+static inline bool dm9051_spi_unlock(eth_spi_info_t *spi)
+{
+    return xSemaphoreGive(spi->lock) == pdTRUE;
+}
+
+static esp_err_t dm9051_spi_write(void *spi_ctx, uint32_t cmd, uint32_t addr, const void *value, uint32_t len)
+{
+    esp_err_t ret = ESP_OK;
+    eth_spi_info_t *spi = (eth_spi_info_t *)spi_ctx;
+
+    spi_transaction_t trans = {
+        .cmd = cmd,
+        .addr = addr,
+        .length = 8 * len,
+        .tx_buffer = value
+    };
+    if (dm9051_spi_lock(spi)) {
+        if (spi_device_polling_transmit(spi->hdl, &trans) != ESP_OK) {
+            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
+            ret = ESP_FAIL;
+        }
+        dm9051_spi_unlock(spi);
+    } else {
+        ret = ESP_ERR_TIMEOUT;
+    }
+    return ret;
+}
+
+static esp_err_t dm9051_spi_read(void *spi_ctx, uint32_t cmd, uint32_t addr, void *value, uint32_t len)
+{
+    esp_err_t ret = ESP_OK;
+    eth_spi_info_t *spi = (eth_spi_info_t *)spi_ctx;
+
+    spi_transaction_t trans = {
+        .flags = len <= 4 ? SPI_TRANS_USE_RXDATA : 0, // use direct reads for registers to prevent overwrites by 4-byte boundary writes
+        .cmd = cmd,
+        .addr = addr,
+        .length = 8 * len,
+        .rx_buffer = value
+    };
+    if (dm9051_spi_lock(spi)) {
+        if (spi_device_polling_transmit(spi->hdl, &trans) != ESP_OK) {
+            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
+            ret = ESP_FAIL;
+        }
+        dm9051_spi_unlock(spi);
+    } else {
+        ret = ESP_ERR_TIMEOUT;
+    }
+    if ((trans.flags&SPI_TRANS_USE_RXDATA) && len <= 4) {
+        memcpy(value, trans.rx_data, len);  // copy register values to output
+    }
+    return ret;
 }
 
 /**
@@ -76,24 +187,7 @@ static inline bool dm9051_unlock(emac_dm9051_t *emac)
  */
 static esp_err_t dm9051_register_write(emac_dm9051_t *emac, uint8_t reg_addr, uint8_t value)
 {
-    esp_err_t ret = ESP_OK;
-    spi_transaction_t trans = {
-        .cmd = DM9051_SPI_WR,
-        .addr = reg_addr,
-        .length = 8,
-        .flags = SPI_TRANS_USE_TXDATA
-    };
-    trans.tx_data[0] = value;
-    if (dm9051_lock(emac)) {
-        if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
-            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
-            ret = ESP_FAIL;
-        }
-        dm9051_unlock(emac);
-    } else {
-        ret = ESP_ERR_TIMEOUT;
-    }
-    return ret;
+    return emac->spi.write(emac->spi.ctx, DM9051_SPI_WR, reg_addr, &value, 1);
 }
 
 /**
@@ -101,25 +195,7 @@ static esp_err_t dm9051_register_write(emac_dm9051_t *emac, uint8_t reg_addr, ui
  */
 static esp_err_t dm9051_register_read(emac_dm9051_t *emac, uint8_t reg_addr, uint8_t *value)
 {
-    esp_err_t ret = ESP_OK;
-    spi_transaction_t trans = {
-        .cmd = DM9051_SPI_RD,
-        .addr = reg_addr,
-        .length = 8,
-        .flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA
-    };
-    if (dm9051_lock(emac)) {
-        if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
-            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
-            ret = ESP_FAIL;
-        } else {
-            *value = trans.rx_data[0];
-        }
-        dm9051_unlock(emac);
-    } else {
-        ret = ESP_ERR_TIMEOUT;
-    }
-    return ret;
+    return emac->spi.read(emac->spi.ctx, DM9051_SPI_RD, reg_addr, value, 1);
 }
 
 /**
@@ -127,23 +203,7 @@ static esp_err_t dm9051_register_read(emac_dm9051_t *emac, uint8_t reg_addr, uin
  */
 static esp_err_t dm9051_memory_write(emac_dm9051_t *emac, uint8_t *buffer, uint32_t len)
 {
-    esp_err_t ret = ESP_OK;
-    spi_transaction_t trans = {
-        .cmd = DM9051_SPI_WR,
-        .addr = DM9051_MWCMD,
-        .length = len * 8,
-        .tx_buffer = buffer
-    };
-    if (dm9051_lock(emac)) {
-        if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
-            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
-            ret = ESP_FAIL;
-        }
-        dm9051_unlock(emac);
-    } else {
-        ret = ESP_ERR_TIMEOUT;
-    }
-    return ret;
+    return emac->spi.write(emac->spi.ctx, DM9051_SPI_WR, DM9051_MWCMD, buffer, len);
 }
 
 /**
@@ -151,23 +211,7 @@ static esp_err_t dm9051_memory_write(emac_dm9051_t *emac, uint8_t *buffer, uint3
  */
 static esp_err_t dm9051_memory_read(emac_dm9051_t *emac, uint8_t *buffer, uint32_t len)
 {
-    esp_err_t ret = ESP_OK;
-    spi_transaction_t trans = {
-        .cmd = DM9051_SPI_RD,
-        .addr = DM9051_MRCMD,
-        .length = len * 8,
-        .rx_buffer = buffer
-    };
-    if (dm9051_lock(emac)) {
-        if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
-            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
-            ret = ESP_FAIL;
-        }
-        dm9051_unlock(emac);
-    } else {
-        ret = ESP_ERR_TIMEOUT;
-    }
-    return ret;
+    return emac->spi.read(emac->spi.ctx, DM9051_SPI_RD, DM9051_MRCMD, buffer, len);
 }
 
 /**
@@ -175,23 +219,7 @@ static esp_err_t dm9051_memory_read(emac_dm9051_t *emac, uint8_t *buffer, uint32
  */
 static esp_err_t dm9051_memory_peek(emac_dm9051_t *emac, uint8_t *buffer, uint32_t len)
 {
-    esp_err_t ret = ESP_OK;
-    spi_transaction_t trans = {
-        .cmd = DM9051_SPI_RD,
-        .addr = DM9051_MRCMDX1,
-        .length = len * 8,
-        .rx_buffer = buffer
-    };
-    if (dm9051_lock(emac)) {
-        if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
-            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
-            ret = ESP_FAIL;
-        }
-        dm9051_unlock(emac);
-    } else {
-        ret = ESP_ERR_TIMEOUT;
-    }
-    return ret;
+    return emac->spi.read(emac->spi.ctx, DM9051_SPI_RD, DM9051_MRCMDX1, buffer, len);
 }
 
 /**
@@ -840,8 +868,7 @@ static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
 {
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     vTaskDelete(emac->rx_task_hdl);
-    spi_bus_remove_device(emac->spi_hdl);
-    vSemaphoreDelete(emac->spi_lock);
+    emac->spi.deinit(emac->spi.ctx);
     heap_caps_free(emac->rx_buffer);
     free(emac);
     return ESP_OK;
@@ -857,19 +884,6 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "calloc emac failed");
     /* dm9051 receive is driven by interrupt only for now*/
     ESP_GOTO_ON_FALSE(dm9051_config->int_gpio_num >= 0, NULL, err, TAG, "error interrupt gpio number");
-    /* SPI device init */
-    spi_device_interface_config_t spi_devcfg;
-    memcpy(&spi_devcfg, dm9051_config->spi_devcfg, sizeof(spi_device_interface_config_t));
-    if (dm9051_config->spi_devcfg->command_bits == 0 && dm9051_config->spi_devcfg->address_bits == 0) {
-        /* configure default SPI frame format */
-        spi_devcfg.command_bits = 1;
-        spi_devcfg.address_bits = 7;
-    } else {
-        ESP_GOTO_ON_FALSE(dm9051_config->spi_devcfg->command_bits == 1 || dm9051_config->spi_devcfg->address_bits == 7,
-                            NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
-    }
-    ESP_GOTO_ON_FALSE(spi_bus_add_device(dm9051_config->spi_host_id, &spi_devcfg, &emac->spi_hdl) == ESP_OK,
-                                            NULL, err, TAG, "adding device to SPI host #%d failed", dm9051_config->spi_host_id + 1);
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num = dm9051_config->int_gpio_num;
@@ -891,9 +905,26 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->parent.enable_flow_ctrl = emac_dm9051_enable_flow_ctrl;
     emac->parent.transmit = emac_dm9051_transmit;
     emac->parent.receive = emac_dm9051_receive;
-    /* create mutex */
-    emac->spi_lock = xSemaphoreCreateMutex();
-    ESP_GOTO_ON_FALSE(emac->spi_lock, NULL, err, TAG, "create lock failed");
+
+    if (dm9051_config->custom_spi_driver.init != NULL && dm9051_config->custom_spi_driver.deinit != NULL
+        && dm9051_config->custom_spi_driver.read != NULL && dm9051_config->custom_spi_driver.write != NULL) {
+        ESP_LOGD(TAG, "Using user's custom SPI Driver");
+        emac->spi.init = dm9051_config->custom_spi_driver.init;
+        emac->spi.deinit = dm9051_config->custom_spi_driver.deinit;
+        emac->spi.read = dm9051_config->custom_spi_driver.read;
+        emac->spi.write = dm9051_config->custom_spi_driver.write;
+        /* Custom SPI driver device init */
+        ESP_GOTO_ON_FALSE((emac->spi.ctx = emac->spi.init(dm9051_config->custom_spi_driver.config)) != NULL, NULL, err, TAG, "SPI initialization failed");
+    } else {
+        ESP_LOGD(TAG, "Using default SPI Driver");
+        emac->spi.init = dm9051_spi_init;
+        emac->spi.deinit = dm9051_spi_deinit;
+        emac->spi.read = dm9051_spi_read;
+        emac->spi.write = dm9051_spi_write;
+        /* SPI device init */
+        ESP_GOTO_ON_FALSE((emac->spi.ctx = emac->spi.init(dm9051_config)) != NULL, NULL, err, TAG, "SPI initialization failed");
+    }
+
     /* create dm9051 task */
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
@@ -913,8 +944,8 @@ err:
         if (emac->rx_task_hdl) {
             vTaskDelete(emac->rx_task_hdl);
         }
-        if (emac->spi_lock) {
-            vSemaphoreDelete(emac->spi_lock);
+        if (emac->spi.ctx) {
+            emac->spi.deinit(emac->spi.ctx);
         }
         heap_caps_free(emac->rx_buffer);
         free(emac);
