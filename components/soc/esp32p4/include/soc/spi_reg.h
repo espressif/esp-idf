@@ -18,6 +18,7 @@ extern "C" {
 /** SPI_CONF_BITLEN : R/W; bitpos: [17:0]; default: 0;
  *  Define the APB cycles of  SPI_CONF state. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_CONF_BITLEN    0x0003FFFFU
 #define SPI_CONF_BITLEN_M  (SPI_CONF_BITLEN_V << SPI_CONF_BITLEN_S)
 #define SPI_CONF_BITLEN_V  0x0003FFFFU
@@ -84,6 +85,7 @@ extern "C" {
  *  Apply 8 signals during addr phase 1:enable 0: disable. Can be configured in CONF
  *  state.
  */
+//this field is only for GPSPI2
 #define SPI_FADDR_OCT    (BIT(7))
 #define SPI_FADDR_OCT_M  (SPI_FADDR_OCT_V << SPI_FADDR_OCT_S)
 #define SPI_FADDR_OCT_V  0x00000001U
@@ -108,6 +110,7 @@ extern "C" {
  *  Apply 8 signals during command phase 1:enable 0: disable. Can be configured in CONF
  *  state.
  */
+//this field is only for GPSPI2
 #define SPI_FCMD_OCT    (BIT(10))
 #define SPI_FCMD_OCT_M  (SPI_FCMD_OCT_V << SPI_FCMD_OCT_S)
 #define SPI_FCMD_OCT_V  0x00000001U
@@ -132,6 +135,7 @@ extern "C" {
  *  In the read operations read-data phase apply 8 signals. 1: enable 0: disable.  Can
  *  be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_FREAD_OCT    (BIT(16))
 #define SPI_FREAD_OCT_M  (SPI_FREAD_OCT_V << SPI_FREAD_OCT_S)
 #define SPI_FREAD_OCT_V  0x00000001U
@@ -253,6 +257,7 @@ extern "C" {
  *  Just for master mode. 1: spi controller is in OPI mode (all in 8-b-m). 0: others.
  *  Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_OPI_MODE    (BIT(4))
 #define SPI_OPI_MODE_M  (SPI_OPI_MODE_V << SPI_OPI_MODE_S)
 #define SPI_OPI_MODE_V  0x00000001U
@@ -317,6 +322,7 @@ extern "C" {
  *  In the write operations read-data phase apply 8 signals. Can be configured in CONF
  *  state.
  */
+//this field is only for GPSPI2
 #define SPI_FWRITE_OCT    (BIT(14))
 #define SPI_FWRITE_OCT_M  (SPI_FWRITE_OCT_V << SPI_FWRITE_OCT_S)
 #define SPI_FWRITE_OCT_V  0x00000001U
@@ -326,6 +332,7 @@ extern "C" {
  *  will continue. 0: The seg-trans will end after the current SPI seg-trans or this is
  *  not seg-trans mode. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_USR_CONF_NXT    (BIT(15))
 #define SPI_USR_CONF_NXT_M  (SPI_USR_CONF_NXT_V << SPI_USR_CONF_NXT_S)
 #define SPI_USR_CONF_NXT_V  0x00000001U
@@ -522,6 +529,7 @@ extern "C" {
  *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
  *  be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_CS3_DIS    (BIT(3))
 #define SPI_CS3_DIS_M  (SPI_CS3_DIS_V << SPI_CS3_DIS_S)
 #define SPI_CS3_DIS_V  0x00000001U
@@ -530,6 +538,7 @@ extern "C" {
  *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
  *  be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_CS4_DIS    (BIT(4))
 #define SPI_CS4_DIS_M  (SPI_CS4_DIS_V << SPI_CS4_DIS_S)
 #define SPI_CS4_DIS_V  0x00000001U
@@ -538,6 +547,7 @@ extern "C" {
  *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
  *  be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_CS5_DIS    (BIT(5))
 #define SPI_CS5_DIS_M  (SPI_CS5_DIS_V << SPI_CS5_DIS_S)
 #define SPI_CS5_DIS_V  0x00000001U
@@ -553,6 +563,7 @@ extern "C" {
  *  In the master mode the bits are the polarity of spi cs line, the value is
  *  equivalent to spi_cs ^ spi_master_cs_pol. Can be configured in CONF state.
  */
+//This field for GPSPI3 is only 3-bit-width
 #define SPI_MASTER_CS_POL    0x0000003FU
 #define SPI_MASTER_CS_POL_M  (SPI_MASTER_CS_POL_V << SPI_MASTER_CS_POL_S)
 #define SPI_MASTER_CS_POL_V  0x0000003FU
@@ -561,6 +572,7 @@ extern "C" {
  *  1: SPI master DTR mode is applied to SPI clk, data and spi_dqs.  0: SPI master DTR
  *  mode is  only applied to spi_dqs. This bit should be used with bit 17/18/19.
  */
+//this field is only for GPSPI2
 #define SPI_CLK_DATA_DTR_EN    (BIT(16))
 #define SPI_CLK_DATA_DTR_EN_M  (SPI_CLK_DATA_DTR_EN_V << SPI_CLK_DATA_DTR_EN_S)
 #define SPI_CLK_DATA_DTR_EN_V  0x00000001U
@@ -570,6 +582,7 @@ extern "C" {
  *  1/2/4/8-bm.  0:  SPI clk and data of SPI_DOUT and SPI_DIN state are in STR mode.
  *  Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DATA_DTR_EN    (BIT(17))
 #define SPI_DATA_DTR_EN_M  (SPI_DATA_DTR_EN_V << SPI_DATA_DTR_EN_S)
 #define SPI_DATA_DTR_EN_V  0x00000001U
@@ -579,6 +592,7 @@ extern "C" {
  *  1/2/4/8-bm.  0:  SPI clk and data of SPI_SEND_ADDR state are in STR mode. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_ADDR_DTR_EN    (BIT(18))
 #define SPI_ADDR_DTR_EN_M  (SPI_ADDR_DTR_EN_V << SPI_ADDR_DTR_EN_S)
 #define SPI_ADDR_DTR_EN_V  0x00000001U
@@ -588,6 +602,7 @@ extern "C" {
  *  1/2/4/8-bm. 0:  SPI clk and data of SPI_SEND_CMD state are in STR mode. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_CMD_DTR_EN    (BIT(19))
 #define SPI_CMD_DTR_EN_M  (SPI_CMD_DTR_EN_V << SPI_CMD_DTR_EN_S)
 #define SPI_CMD_DTR_EN_V  0x00000001U
@@ -603,6 +618,7 @@ extern "C" {
 /** SPI_DQS_IDLE_EDGE : R/W; bitpos: [24]; default: 0;
  *  The default value of spi_dqs. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DQS_IDLE_EDGE    (BIT(24))
 #define SPI_DQS_IDLE_EDGE_M  (SPI_DQS_IDLE_EDGE_V << SPI_DQS_IDLE_EDGE_S)
 #define SPI_DQS_IDLE_EDGE_V  0x00000001U
@@ -676,6 +692,7 @@ extern "C" {
  *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
  *  with the spi_clk. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN4_MODE    0x00000003U
 #define SPI_DIN4_MODE_M  (SPI_DIN4_MODE_V << SPI_DIN4_MODE_S)
 #define SPI_DIN4_MODE_V  0x00000003U
@@ -685,6 +702,7 @@ extern "C" {
  *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
  *  with the spi_clk. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN5_MODE    0x00000003U
 #define SPI_DIN5_MODE_M  (SPI_DIN5_MODE_V << SPI_DIN5_MODE_S)
 #define SPI_DIN5_MODE_V  0x00000003U
@@ -694,6 +712,7 @@ extern "C" {
  *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
  *  with the spi_clk. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN6_MODE    0x00000003U
 #define SPI_DIN6_MODE_M  (SPI_DIN6_MODE_V << SPI_DIN6_MODE_S)
 #define SPI_DIN6_MODE_V  0x00000003U
@@ -703,6 +722,7 @@ extern "C" {
  *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
  *  with the spi_clk. Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN7_MODE    0x00000003U
 #define SPI_DIN7_MODE_M  (SPI_DIN7_MODE_V << SPI_DIN7_MODE_S)
 #define SPI_DIN7_MODE_V  0x00000003U
@@ -756,6 +776,7 @@ extern "C" {
  *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
  *  delayed by 2 cycles,...  Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN4_NUM    0x00000003U
 #define SPI_DIN4_NUM_M  (SPI_DIN4_NUM_V << SPI_DIN4_NUM_S)
 #define SPI_DIN4_NUM_V  0x00000003U
@@ -764,6 +785,7 @@ extern "C" {
  *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
  *  delayed by 2 cycles,...  Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN5_NUM    0x00000003U
 #define SPI_DIN5_NUM_M  (SPI_DIN5_NUM_V << SPI_DIN5_NUM_S)
 #define SPI_DIN5_NUM_V  0x00000003U
@@ -772,6 +794,7 @@ extern "C" {
  *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
  *  delayed by 2 cycles,...  Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN6_NUM    0x00000003U
 #define SPI_DIN6_NUM_M  (SPI_DIN6_NUM_V << SPI_DIN6_NUM_S)
 #define SPI_DIN6_NUM_V  0x00000003U
@@ -780,6 +803,7 @@ extern "C" {
  *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
  *  delayed by 2 cycles,...  Can be configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DIN7_NUM    0x00000003U
 #define SPI_DIN7_NUM_M  (SPI_DIN7_NUM_V << SPI_DIN7_NUM_S)
 #define SPI_DIN7_NUM_V  0x00000003U
@@ -830,6 +854,7 @@ extern "C" {
  *  1: output delay for a SPI module clock cycle at its negative edge. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DOUT4_MODE    (BIT(4))
 #define SPI_DOUT4_MODE_M  (SPI_DOUT4_MODE_V << SPI_DOUT4_MODE_S)
 #define SPI_DOUT4_MODE_V  0x00000001U
@@ -839,6 +864,7 @@ extern "C" {
  *  1: output delay for a SPI module clock cycle at its negative edge. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DOUT5_MODE    (BIT(5))
 #define SPI_DOUT5_MODE_M  (SPI_DOUT5_MODE_V << SPI_DOUT5_MODE_S)
 #define SPI_DOUT5_MODE_V  0x00000001U
@@ -848,6 +874,7 @@ extern "C" {
  *  1: output delay for a SPI module clock cycle at its negative edge. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DOUT6_MODE    (BIT(6))
 #define SPI_DOUT6_MODE_M  (SPI_DOUT6_MODE_V << SPI_DOUT6_MODE_S)
 #define SPI_DOUT6_MODE_V  0x00000001U
@@ -857,6 +884,7 @@ extern "C" {
  *  1: output delay for a SPI module clock cycle at its negative edge. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_DOUT7_MODE    (BIT(7))
 #define SPI_DOUT7_MODE_M  (SPI_DOUT7_MODE_V << SPI_DOUT7_MODE_S)
 #define SPI_DOUT7_MODE_V  0x00000001U
@@ -866,6 +894,7 @@ extern "C" {
  *  delayed, 1: output delay for a SPI module clock cycle at its negative edge. Can be
  *  configured in CONF state.
  */
+//this field is only for GPSPI2
 #define SPI_D_DQS_MODE    (BIT(8))
 #define SPI_D_DQS_MODE_M  (SPI_D_DQS_MODE_V << SPI_D_DQS_MODE_S)
 #define SPI_D_DQS_MODE_V  0x00000001U
@@ -1068,6 +1097,7 @@ extern "C" {
 /** SPI_SEG_MAGIC_ERR_INT_ENA : R/W; bitpos: [14]; default: 0;
  *  The enable bit for SPI_SEG_MAGIC_ERR_INT interrupt.
  */
+//this field is only for GPSPI2
 #define SPI_SEG_MAGIC_ERR_INT_ENA    (BIT(14))
 #define SPI_SEG_MAGIC_ERR_INT_ENA_M  (SPI_SEG_MAGIC_ERR_INT_ENA_V << SPI_SEG_MAGIC_ERR_INT_ENA_S)
 #define SPI_SEG_MAGIC_ERR_INT_ENA_V  0x00000001U
@@ -1220,6 +1250,7 @@ extern "C" {
 /** SPI_SEG_MAGIC_ERR_INT_CLR : WT; bitpos: [14]; default: 0;
  *  The clear bit for SPI_SEG_MAGIC_ERR_INT interrupt.
  */
+//this field is only for GPSPI2
 #define SPI_SEG_MAGIC_ERR_INT_CLR    (BIT(14))
 #define SPI_SEG_MAGIC_ERR_INT_CLR_M  (SPI_SEG_MAGIC_ERR_INT_CLR_V << SPI_SEG_MAGIC_ERR_INT_CLR_S)
 #define SPI_SEG_MAGIC_ERR_INT_CLR_V  0x00000001U
@@ -1389,6 +1420,7 @@ extern "C" {
  *  The raw bit for SPI_SEG_MAGIC_ERR_INT interrupt. 1: The magic value in CONF buffer
  *  is error in the DMA seg-conf-trans. 0: others.
  */
+//this field is only for GPSPI2
 #define SPI_SEG_MAGIC_ERR_INT_RAW    (BIT(14))
 #define SPI_SEG_MAGIC_ERR_INT_RAW_M  (SPI_SEG_MAGIC_ERR_INT_RAW_V << SPI_SEG_MAGIC_ERR_INT_RAW_S)
 #define SPI_SEG_MAGIC_ERR_INT_RAW_V  0x00000001U
@@ -1546,6 +1578,7 @@ extern "C" {
 /** SPI_SEG_MAGIC_ERR_INT_ST : RO; bitpos: [14]; default: 0;
  *  The status bit for SPI_SEG_MAGIC_ERR_INT interrupt.
  */
+//this field is only for GPSPI2
 #define SPI_SEG_MAGIC_ERR_INT_ST    (BIT(14))
 #define SPI_SEG_MAGIC_ERR_INT_ST_M  (SPI_SEG_MAGIC_ERR_INT_ST_V << SPI_SEG_MAGIC_ERR_INT_ST_S)
 #define SPI_SEG_MAGIC_ERR_INT_ST_V  0x00000001U
@@ -1698,6 +1731,7 @@ extern "C" {
 /** SPI_SEG_MAGIC_ERR_INT_SET : WT; bitpos: [14]; default: 0;
  *  The software set bit for SPI_SEG_MAGIC_ERR_INT interrupt.
  */
+//this field is only for GPSPI2
 #define SPI_SEG_MAGIC_ERR_INT_SET    (BIT(14))
 #define SPI_SEG_MAGIC_ERR_INT_SET_M  (SPI_SEG_MAGIC_ERR_INT_SET_V << SPI_SEG_MAGIC_ERR_INT_SET_S)
 #define SPI_SEG_MAGIC_ERR_INT_SET_V  0x00000001U
@@ -2009,6 +2043,7 @@ extern "C" {
 /** SPI_DMA_SEG_MAGIC_VALUE : R/W; bitpos: [25:22]; default: 10;
  *  The magic value of BM table in master DMA seg-trans.
  */
+//this field is only for GPSPI2
 #define SPI_DMA_SEG_MAGIC_VALUE    0x0000000FU
 #define SPI_DMA_SEG_MAGIC_VALUE_M  (SPI_DMA_SEG_MAGIC_VALUE_V << SPI_DMA_SEG_MAGIC_VALUE_S)
 #define SPI_DMA_SEG_MAGIC_VALUE_V  0x0000000FU
@@ -2032,6 +2067,7 @@ extern "C" {
  *  1: Enable the DMA CONF phase of current seg-trans operation, which means seg-trans
  *  will start. 0: This is not seg-trans mode.
  */
+//this field is only for GPSPI2
 #define SPI_USR_CONF    (BIT(28))
 #define SPI_USR_CONF_M  (SPI_USR_CONF_V << SPI_USR_CONF_S)
 #define SPI_USR_CONF_V  0x00000001U

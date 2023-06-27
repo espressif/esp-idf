@@ -16,7 +16,11 @@ extern "C" {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:23;
+        /** conf_bitlen : R/W; bitpos: [17:0]; default: 0;
+         *  Define the APB cycles of  SPI_CONF state. Can be configured in CONF state.
+         */
+        uint32_t conf_bitlen:18;  //this field is only for GPSPI2
+        uint32_t reserved_18:5;
         /** update : WT; bitpos: [23]; default: 0;
          *  Set this bit to synchronize SPI registers from APB clock domain into SPI module
          *  clock domain, which is only used in SPI master mode.
@@ -62,7 +66,11 @@ typedef union {
          *  Can be configured in CONF state.
          */
         uint32_t qpi_mode:1;
-        uint32_t reserved_4:1;
+        /** opi_mode : R/W; bitpos: [4]; default: 0;
+         *  Just for master mode. 1: spi controller is in OPI mode (all in 8-b-m). 0: others.
+         *  Can be configured in CONF state.
+         */
+        uint32_t opi_mode:1;  //this field is only for GPSPI2
         /** tsck_i_edge : R/W; bitpos: [5]; default: 0;
          *  In the slave mode, this bit can be used to change the polarity of tsck. 0: tsck =
          *  spi_ck_i. 1:tsck = !spi_ck_i.
@@ -99,7 +107,18 @@ typedef union {
          *  state.
          */
         uint32_t fwrite_quad:1;
-        uint32_t reserved_14:3;
+        /** fwrite_oct : R/W; bitpos: [14]; default: 0;
+         *  In the write operations read-data phase apply 8 signals. Can be configured in CONF
+         *  state.
+         */
+        uint32_t fwrite_oct:1;  //this field is only for GPSPI2
+        /** usr_conf_nxt : R/W; bitpos: [15]; default: 0;
+         *  1: Enable the DMA CONF phase of next seg-trans operation, which means seg-trans
+         *  will continue. 0: The seg-trans will end after the current SPI seg-trans or this is
+         *  not seg-trans mode. Can be configured in CONF state.
+         */
+        uint32_t usr_conf_nxt:1;  //this field is only for GPSPI2
+        uint32_t reserved_16:1;
         /** sio : R/W; bitpos: [17]; default: 0;
          *  Set the bit to enable 3-line half duplex communication mosi and miso signals share
          *  the same pin. 1: enable 0: disable. Can be configured in CONF state.
@@ -232,7 +251,11 @@ typedef union {
          *  state.
          */
         uint32_t faddr_quad:1;
-        uint32_t reserved_7:1;
+        /** faddr_oct : R/W; bitpos: [7]; default: 0;
+         *  Apply 8 signals during addr phase 1:enable 0: disable. Can be configured in CONF
+         *  state.
+         */
+        uint32_t faddr_oct:1;  //this field is only for GPSPI2
         /** fcmd_dual : R/W; bitpos: [8]; default: 0;
          *  Apply 2 signals during command phase 1:enable 0: disable. Can be configured in CONF
          *  state.
@@ -243,7 +266,12 @@ typedef union {
          *  state.
          */
         uint32_t fcmd_quad:1;
-        uint32_t reserved_10:4;
+        /** fcmd_oct : R/W; bitpos: [10]; default: 0;
+         *  Apply 8 signals during command phase 1:enable 0: disable. Can be configured in CONF
+         *  state.
+         */
+        uint32_t fcmd_oct:1;  //this field is only for GPSPI2
+        uint32_t reserved_11:3;
         /** fread_dual : R/W; bitpos: [14]; default: 0;
          *  In the read operations, read-data phase apply 2 signals. 1: enable 0: disable. Can
          *  be configured in CONF state.
@@ -254,7 +282,12 @@ typedef union {
          *  be configured in CONF state.
          */
         uint32_t fread_quad:1;
-        uint32_t reserved_16:2;
+        /** fread_oct : R/W; bitpos: [16]; default: 0;
+         *  In the read operations read-data phase apply 8 signals. 1: enable 0: disable.  Can
+         *  be configured in CONF state.
+         */
+        uint32_t fread_oct:1;  //this field is only for GPSPI2
+        uint32_t reserved_17:1;
         /** q_pol : R/W; bitpos: [18]; default: 1;
          *  The bit is used to set MISO line polarity, 1: high 0, low. Can be configured in
          *  CONF state.
@@ -328,23 +361,65 @@ typedef union {
          *  be configured in CONF state.
          */
         uint32_t cs2_dis:1;
-        uint32_t reserved_3:3;
+        /** cs3_dis : R/W; bitpos: [3]; default: 1;
+         *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
+         *  be configured in CONF state.
+         */
+        uint32_t cs3_dis:1;  //this field is only for GPSPI2
+        /** cs4_dis : R/W; bitpos: [4]; default: 1;
+         *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
+         *  be configured in CONF state.
+         */
+        uint32_t cs4_dis:1;  //this field is only for GPSPI2
+        /** cs5_dis : R/W; bitpos: [5]; default: 1;
+         *  SPI CS$n pin enable, 1: disable CS$n, 0: spi_cs$n signal is from/to CS$n pin. Can
+         *  be configured in CONF state.
+         */
+        uint32_t cs5_dis:1;  //this field is only for GPSPI2
         /** ck_dis : R/W; bitpos: [6]; default: 0;
          *  1: spi clk out disable,  0: spi clk out enable. Can be configured in CONF state.
          */
         uint32_t ck_dis:1;
-        /** master_cs_pol : R/W; bitpos: [9:7]; default: 0;
+        /** master_cs_pol : R/W; bitpos: [12:7]; default: 0;
          *  In the master mode the bits are the polarity of spi cs line, the value is
          *  equivalent to spi_cs ^ spi_master_cs_pol. Can be configured in CONF state.
          */
-        uint32_t master_cs_pol:3;
-        uint32_t reserved_10:13;
+        uint32_t master_cs_pol:6;  //This field for GPSPI3 is only 3-bit-width
+        uint32_t reserved_13:3;
+        /** clk_data_dtr_en : R/W; bitpos: [16]; default: 0;
+         *  1: SPI master DTR mode is applied to SPI clk, data and spi_dqs.  0: SPI master DTR
+         *  mode is  only applied to spi_dqs. This bit should be used with bit 17/18/19.
+         */
+        uint32_t clk_data_dtr_en:1;  //this field is only for GPSPI2
+        /** data_dtr_en : R/W; bitpos: [17]; default: 0;
+         *  1: SPI clk and data of SPI_DOUT and SPI_DIN state are in DTR mode, including master
+         *  1/2/4/8-bm.  0:  SPI clk and data of SPI_DOUT and SPI_DIN state are in STR mode.
+         *  Can be configured in CONF state.
+         */
+        uint32_t data_dtr_en:1;  //this field is only for GPSPI2
+        /** addr_dtr_en : R/W; bitpos: [18]; default: 0;
+         *  1: SPI clk and data of SPI_SEND_ADDR state are in DTR mode, including master
+         *  1/2/4/8-bm.  0:  SPI clk and data of SPI_SEND_ADDR state are in STR mode. Can be
+         *  configured in CONF state.
+         */
+        uint32_t addr_dtr_en:1;  //this field is only for GPSPI2
+        /** cmd_dtr_en : R/W; bitpos: [19]; default: 0;
+         *  1: SPI clk and data of SPI_SEND_CMD state are in DTR mode, including master
+         *  1/2/4/8-bm. 0:  SPI clk and data of SPI_SEND_CMD state are in STR mode. Can be
+         *  configured in CONF state.
+         */
+        uint32_t cmd_dtr_en:1;  //this field is only for GPSPI2
+        uint32_t reserved_20:3;
         /** slave_cs_pol : R/W; bitpos: [23]; default: 0;
          *  spi slave input cs polarity select. 1: inv  0: not change. Can be configured in
          *  CONF state.
          */
         uint32_t slave_cs_pol:1;
-        uint32_t reserved_24:5;
+        /** dqs_idle_edge : R/W; bitpos: [24]; default: 0;
+         *  The default value of spi_dqs. Can be configured in CONF state.
+         */
+        uint32_t dqs_idle_edge:1;  //this field is only for GPSPI2
+        uint32_t reserved_25:4;
         /** ck_idle_edge : R/W; bitpos: [29]; default: 0;
          *  1: spi clk line is high when idle     0: spi clk line is low when idle. Can be
          *  configured in CONF state.
@@ -355,8 +430,8 @@ typedef union {
          */
         uint32_t cs_keep_active:1;
         /** quad_din_pin_swap : R/W; bitpos: [31]; default: 0;
-         *  1:  spi quad input swap enable  0:  spi quad input swap disable. Can be configured
-         *  in CONF state.
+         *  1: SPI quad input swap enable, swap FSPID with FSPIQ, swap FSPIWP with FSPIHD. 0:
+         *  spi quad input swap disable. Can be configured in CONF state.
          */
         uint32_t quad_din_pin_swap:1;
     };
@@ -475,7 +550,11 @@ typedef union {
          *  mode.
          */
         uint32_t slv_last_byte_strb:8;
-        uint32_t reserved_20:6;
+        uint32_t reserved_20:2;
+        /** dma_seg_magic_value : R/W; bitpos: [25:22]; default: 10;
+         *  The magic value of BM table in master DMA seg-trans.
+         */
+        uint32_t dma_seg_magic_value:4;  //this field is only for GPSPI2
         /** slave_mode : R/W; bitpos: [26]; default: 0;
          *  Set SPI work mode. 1: slave mode 0: master mode.
          */
@@ -485,7 +564,11 @@ typedef union {
          *  configured in CONF state.
          */
         uint32_t soft_reset:1;
-        uint32_t reserved_28:1;
+        /** usr_conf : R/W; bitpos: [28]; default: 0;
+         *  1: Enable the DMA CONF phase of current seg-trans operation, which means seg-trans
+         *  will start. 0: This is not seg-trans mode.
+         */
+        uint32_t usr_conf:1;  //this field is only for GPSPI2
         /** mst_fd_wait_dma_tx_data : R/W; bitpos: [29]; default: 0;
          *  In master full-duplex mode, 1: GP-SPI will wait DMA TX data is ready before
          *  starting SPI transfer. 0: GP-SPI does not wait DMA TX data before starting SPI
@@ -608,7 +691,30 @@ typedef union {
          *  with the spi_clk. Can be configured in CONF state.
          */
         uint32_t din3_mode:2;
-        uint32_t reserved_8:8;
+        /** din4_mode : R/W; bitpos: [9:8]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: input without delayed,
+         *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
+         *  with the spi_clk. Can be configured in CONF state.
+         */
+        uint32_t din4_mode:2;  //this field is only for GPSPI2
+        /** din5_mode : R/W; bitpos: [11:10]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: input without delayed,
+         *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
+         *  with the spi_clk. Can be configured in CONF state.
+         */
+        uint32_t din5_mode:2;  //this field is only for GPSPI2
+        /** din6_mode : R/W; bitpos: [13:12]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: input without delayed,
+         *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
+         *  with the spi_clk. Can be configured in CONF state.
+         */
+        uint32_t din6_mode:2;  //this field is only for GPSPI2
+        /** din7_mode : R/W; bitpos: [15:14]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: input without delayed,
+         *  1: input with the posedge of clk_apb,2 input with the negedge of clk_apb, 3: input
+         *  with the spi_clk. Can be configured in CONF state.
+         */
+        uint32_t din7_mode:2;  //this field is only for GPSPI2
         /** timing_hclk_active : R/W; bitpos: [16]; default: 0;
          *  1:enable hclk in SPI input timing module.  0: disable it. Can be configured in CONF
          *  state.
@@ -644,7 +750,27 @@ typedef union {
          *  delayed by 2 cycles,...  Can be configured in CONF state.
          */
         uint32_t din3_num:2;
-        uint32_t reserved_8:24;
+        /** din4_num : R/W; bitpos: [9:8]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
+         *  delayed by 2 cycles,...  Can be configured in CONF state.
+         */
+        uint32_t din4_num:2;  //this field is only for GPSPI2
+        /** din5_num : R/W; bitpos: [11:10]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
+         *  delayed by 2 cycles,...  Can be configured in CONF state.
+         */
+        uint32_t din5_num:2;  //this field is only for GPSPI2
+        /** din6_num : R/W; bitpos: [13:12]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
+         *  delayed by 2 cycles,...  Can be configured in CONF state.
+         */
+        uint32_t din6_num:2;  //this field is only for GPSPI2
+        /** din7_num : R/W; bitpos: [15:14]; default: 0;
+         *  the input signals are delayed by SPI module clock cycles, 0: delayed by 1 cycle, 1:
+         *  delayed by 2 cycles,...  Can be configured in CONF state.
+         */
+        uint32_t din7_num:2;  //this field is only for GPSPI2
+        uint32_t reserved_16:16;
     };
     uint32_t val;
 } spi_din_num_reg_t;
@@ -678,7 +804,37 @@ typedef union {
          *  configured in CONF state.
          */
         uint32_t dout3_mode:1;
-        uint32_t reserved_4:28;
+        /** dout4_mode : R/W; bitpos: [4]; default: 0;
+         *  The output signal $n is delayed by the SPI module clock, 0: output without delayed,
+         *  1: output delay for a SPI module clock cycle at its negative edge. Can be
+         *  configured in CONF state.
+         */
+        uint32_t dout4_mode:1;  //this field is only for GPSPI2
+        /** dout5_mode : R/W; bitpos: [5]; default: 0;
+         *  The output signal $n is delayed by the SPI module clock, 0: output without delayed,
+         *  1: output delay for a SPI module clock cycle at its negative edge. Can be
+         *  configured in CONF state.
+         */
+        uint32_t dout5_mode:1;  //this field is only for GPSPI2
+        /** dout6_mode : R/W; bitpos: [6]; default: 0;
+         *  The output signal $n is delayed by the SPI module clock, 0: output without delayed,
+         *  1: output delay for a SPI module clock cycle at its negative edge. Can be
+         *  configured in CONF state.
+         */
+        uint32_t dout6_mode:1;  //this field is only for GPSPI2
+        /** dout7_mode : R/W; bitpos: [7]; default: 0;
+         *  The output signal $n is delayed by the SPI module clock, 0: output without delayed,
+         *  1: output delay for a SPI module clock cycle at its negative edge. Can be
+         *  configured in CONF state.
+         */
+        uint32_t dout7_mode:1;  //this field is only for GPSPI2
+        /** d_dqs_mode : R/W; bitpos: [8]; default: 0;
+         *  The output signal SPI_DQS is delayed by the SPI module clock, 0: output without
+         *  delayed, 1: output delay for a SPI module clock cycle at its negative edge. Can be
+         *  configured in CONF state.
+         */
+        uint32_t d_dqs_mode:1;  //this field is only for GPSPI2
+        uint32_t reserved_9:23;
     };
     uint32_t val;
 } spi_dout_mode_reg_t;
@@ -746,7 +902,10 @@ typedef union {
          *  The enable bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
          */
         uint32_t dma_seg_trans_done_int_ena:1;
-        uint32_t reserved_14:1;
+        /** seg_magic_err_int_ena : R/W; bitpos: [14]; default: 0;
+         *  The enable bit for SPI_SEG_MAGIC_ERR_INT interrupt.
+         */
+        uint32_t seg_magic_err_int_ena:1;  //this field is only for GPSPI2
         /** slv_buf_addr_err_int_ena : R/W; bitpos: [15]; default: 0;
          *  The enable bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
          */
@@ -837,7 +996,10 @@ typedef union {
          *  The clear bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
          */
         uint32_t dma_seg_trans_done_int_clr:1;
-        uint32_t reserved_14:1;
+        /** seg_magic_err_int_clr : WT; bitpos: [14]; default: 0;
+         *  The clear bit for SPI_SEG_MAGIC_ERR_INT interrupt.
+         */
+        uint32_t seg_magic_err_int_clr:1;  //this field is only for GPSPI2
         /** slv_buf_addr_err_int_clr : WT; bitpos: [15]; default: 0;
          *  The clear bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
          */
@@ -944,7 +1106,11 @@ typedef union {
          *  is not ended or not occurred.
          */
         uint32_t dma_seg_trans_done_int_raw:1;
-        uint32_t reserved_14:1;
+        /** seg_magic_err_int_raw : R/WTC/SS; bitpos: [14]; default: 0;
+         *  The raw bit for SPI_SEG_MAGIC_ERR_INT interrupt. 1: The magic value in CONF buffer
+         *  is error in the DMA seg-conf-trans. 0: others.
+         */
+        uint32_t seg_magic_err_int_raw:1;  //this field is only for GPSPI2
         /** slv_buf_addr_err_int_raw : R/WTC/SS; bitpos: [15]; default: 0;
          *  The raw bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt. 1: The accessing data address
          *  of the current SPI slave mode CPU controlled FD, Wr_BUF or Rd_BUF transmission is
@@ -1040,7 +1206,10 @@ typedef union {
          *  The status bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
          */
         uint32_t dma_seg_trans_done_int_st:1;
-        uint32_t reserved_14:1;
+        /** seg_magic_err_int_st : RO; bitpos: [14]; default: 0;
+         *  The status bit for SPI_SEG_MAGIC_ERR_INT interrupt.
+         */
+        uint32_t seg_magic_err_int_st:1;  //this field is only for GPSPI2
         /** slv_buf_addr_err_int_st : RO; bitpos: [15]; default: 0;
          *  The status bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
          */
@@ -1131,7 +1300,10 @@ typedef union {
          *  The software set bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
          */
         uint32_t dma_seg_trans_done_int_set:1;
-        uint32_t reserved_14:1;
+        /** seg_magic_err_int_set : WT; bitpos: [14]; default: 0;
+         *  The software set bit for SPI_SEG_MAGIC_ERR_INT interrupt.
+         */
+        uint32_t seg_magic_err_int_set:1;  //this field is only for GPSPI2
         /** slv_buf_addr_err_int_set : WT; bitpos: [15]; default: 0;
          *  The software set bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
          */
@@ -1162,214 +1334,18 @@ typedef union {
 } spi_dma_int_set_reg_t;
 
 
-/** Group: CPU-controlled data buffer */
-/** Type of w0 register
- *  SPI CPU-controlled buffer0
- */
-typedef union {
-    struct {
-        /** buf0 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf0:32;
-    };
-    uint32_t val;
-} spi_w0_reg_t;
-
-/** Type of w1 register
- *  SPI CPU-controlled buffer1
- */
-typedef union {
-    struct {
-        /** buf1 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf1:32;
-    };
-    uint32_t val;
-} spi_w1_reg_t;
-
-/** Type of w2 register
- *  SPI CPU-controlled buffer2
- */
-typedef union {
-    struct {
-        /** buf2 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf2:32;
-    };
-    uint32_t val;
-} spi_w2_reg_t;
-
-/** Type of w3 register
- *  SPI CPU-controlled buffer3
- */
-typedef union {
-    struct {
-        /** buf3 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf3:32;
-    };
-    uint32_t val;
-} spi_w3_reg_t;
-
-/** Type of w4 register
- *  SPI CPU-controlled buffer4
- */
-typedef union {
-    struct {
-        /** buf4 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf4:32;
-    };
-    uint32_t val;
-} spi_w4_reg_t;
-
-/** Type of w5 register
- *  SPI CPU-controlled buffer5
- */
-typedef union {
-    struct {
-        /** buf5 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf5:32;
-    };
-    uint32_t val;
-} spi_w5_reg_t;
-
-/** Type of w6 register
- *  SPI CPU-controlled buffer6
- */
-typedef union {
-    struct {
-        /** buf6 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf6:32;
-    };
-    uint32_t val;
-} spi_w6_reg_t;
-
-/** Type of w7 register
- *  SPI CPU-controlled buffer7
- */
-typedef union {
-    struct {
-        /** buf7 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf7:32;
-    };
-    uint32_t val;
-} spi_w7_reg_t;
-
-/** Type of w8 register
- *  SPI CPU-controlled buffer8
- */
-typedef union {
-    struct {
-        /** buf8 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf8:32;
-    };
-    uint32_t val;
-} spi_w8_reg_t;
-
-/** Type of w9 register
- *  SPI CPU-controlled buffer9
- */
-typedef union {
-    struct {
-        /** buf9 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf9:32;
-    };
-    uint32_t val;
-} spi_w9_reg_t;
-
-/** Type of w10 register
- *  SPI CPU-controlled buffer10
- */
-typedef union {
-    struct {
-        /** buf10 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf10:32;
-    };
-    uint32_t val;
-} spi_w10_reg_t;
-
-/** Type of w11 register
- *  SPI CPU-controlled buffer11
- */
-typedef union {
-    struct {
-        /** buf11 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf11:32;
-    };
-    uint32_t val;
-} spi_w11_reg_t;
-
-/** Type of w12 register
- *  SPI CPU-controlled buffer12
- */
-typedef union {
-    struct {
-        /** buf12 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf12:32;
-    };
-    uint32_t val;
-} spi_w12_reg_t;
-
-/** Type of w13 register
- *  SPI CPU-controlled buffer13
- */
-typedef union {
-    struct {
-        /** buf13 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf13:32;
-    };
-    uint32_t val;
-} spi_w13_reg_t;
-
-/** Type of w14 register
- *  SPI CPU-controlled buffer14
- */
-typedef union {
-    struct {
-        /** buf14 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t buf14:32;
-    };
-    uint32_t val;
-} spi_w14_reg_t;
-
-/** Type of w15 register
- *  SPI CPU-controlled buffer15
+/** Type of wn register
+ *  SPI CPU-controlled buffer
  */
 typedef union {
     struct {
         /** buf15 : R/W/SS; bitpos: [31:0]; default: 0;
          *  data buffer
          */
-        uint32_t buf15:32;
+        uint32_t buf:32;
     };
     uint32_t val;
-} spi_w15_reg_t;
+} spi_wn_reg_t;
 
 
 /** Group: Version register */
@@ -1408,22 +1384,7 @@ typedef struct {
     volatile spi_dma_int_st_reg_t dma_int_st;
     volatile spi_dma_int_set_reg_t dma_int_set;
     uint32_t reserved_048[20];
-    volatile spi_w0_reg_t w0;
-    volatile spi_w1_reg_t w1;
-    volatile spi_w2_reg_t w2;
-    volatile spi_w3_reg_t w3;
-    volatile spi_w4_reg_t w4;
-    volatile spi_w5_reg_t w5;
-    volatile spi_w6_reg_t w6;
-    volatile spi_w7_reg_t w7;
-    volatile spi_w8_reg_t w8;
-    volatile spi_w9_reg_t w9;
-    volatile spi_w10_reg_t w10;
-    volatile spi_w11_reg_t w11;
-    volatile spi_w12_reg_t w12;
-    volatile spi_w13_reg_t w13;
-    volatile spi_w14_reg_t w14;
-    volatile spi_w15_reg_t w15;
+    volatile spi_wn_reg_t data_buf[16];
     uint32_t reserved_0d8[2];
     volatile spi_slave_reg_t slave;
     volatile spi_slave1_reg_t slave1;
