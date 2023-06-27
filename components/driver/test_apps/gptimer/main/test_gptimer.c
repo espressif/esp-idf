@@ -84,44 +84,44 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_start(timers[i]));
         }
-        vTaskDelay(pdMS_TO_TICKS(20)); // 20ms = 20_000 ticks
+        esp_rom_delay_us(20 * 1000); // 20ms = 20_000 ticks
         uint64_t value = 0;
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_get_raw_count(timers[i], &value));
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(1100, 20000, value);
+            TEST_ASSERT_UINT_WITHIN(300, 20000, value);
         }
         printf("stop timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_stop(timers[i]));
         }
         printf("check whether timers have stopped\r\n");
-        vTaskDelay(pdMS_TO_TICKS(20));
+        esp_rom_delay_us(20 * 1000);
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_get_raw_count(timers[i], &value));
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(1000, 20000, value);
+            TEST_ASSERT_UINT_WITHIN(300, 20000, value);
         }
         printf("restart timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_start(timers[i]));
         }
-        vTaskDelay(pdMS_TO_TICKS(20));
+        esp_rom_delay_us(20 * 1000);
         printf("stop timers again\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_stop(timers[i]));
         }
         printf("check whether timers have stopped\r\n");
-        vTaskDelay(pdMS_TO_TICKS(20));
+        esp_rom_delay_us(20 * 1000);
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_get_raw_count(timers[i], &value));
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(2500, 40000, value);
+            TEST_ASSERT_UINT_WITHIN(600, 40000, value);
         }
         printf("disable timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
@@ -141,7 +141,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
 #if CONFIG_PM_ENABLE
 #define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  150
 #else
-#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  50
+#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  30
 #endif // CONFIG_PM_ENABLE
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_stop_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
@@ -226,7 +226,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
 #if CONFIG_PM_ENABLE
 #define GPTIMER_AUTO_RELOAD_ON_ALARM_COUNT_DELTA  200
 #else
-#define GPTIMER_AUTO_RELOAD_ON_ALARM_COUNT_DELTA  30
+#define GPTIMER_AUTO_RELOAD_ON_ALARM_COUNT_DELTA  20
 #endif // CONFIG_PM_ENABLE
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_reload_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
