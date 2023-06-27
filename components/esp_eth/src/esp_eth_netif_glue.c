@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,10 +78,7 @@ static void eth_action_start(void *handler_args, esp_event_base_t base, int32_t 
     esp_eth_netif_glue_t *netif_glue = handler_args;
     ESP_LOGD(TAG, "eth_action_start: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
     if (netif_glue->eth_driver == eth_handle) {
-        eth_speed_t speed;
-        esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
         esp_netif_action_start(netif_glue->base.netif, base, event_id, event_data);
-        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_100M ? 100000000 : 10000000);
     }
 }
 
@@ -101,6 +98,9 @@ static void eth_action_connected(void *handler_args, esp_event_base_t base, int3
     esp_eth_netif_glue_t *netif_glue = handler_args;
     ESP_LOGD(TAG, "eth_action_connected: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
     if (netif_glue->eth_driver == eth_handle) {
+        eth_speed_t speed;
+        esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
+        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_100M ? 100000000 : 10000000);
         esp_netif_action_connected(netif_glue->base.netif, base, event_id, event_data);
     }
 }
