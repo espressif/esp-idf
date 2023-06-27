@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import copy
 import json
@@ -22,8 +22,8 @@ SYSVIEW_EVTID_TRACE_STOP          = 11
 SYSVIEW_EVTID_SYSTIME_CYCLES      = 12
 SYSVIEW_EVTID_SYSTIME_US          = 13
 SYSVIEW_EVTID_SYSDESC             = 14
-SYSVIEW_EVTID_USER_START          = 15
-SYSVIEW_EVTID_USER_STOP           = 16
+SYSVIEW_EVTID_MARK_START          = 15
+SYSVIEW_EVTID_MARK_STOP           = 16
 SYSVIEW_EVTID_IDLE                = 17
 SYSVIEW_EVTID_ISR_TO_SCHEDULER    = 18
 SYSVIEW_EVTID_TIMER_ENTER         = 19
@@ -59,8 +59,8 @@ _sysview_events_map = {
     'SYS_SYSTIME_CYCLES': SYSVIEW_EVTID_SYSTIME_CYCLES,
     'SYS_SYSTIME_US': SYSVIEW_EVTID_SYSTIME_US,
     'SYS_SYSDESC': SYSVIEW_EVTID_SYSDESC,
-    'SYS_USER_START': SYSVIEW_EVTID_USER_START,
-    'SYS_USER_STOP': SYSVIEW_EVTID_USER_STOP,
+    'SYS_USER_START': SYSVIEW_EVTID_MARK_START,
+    'SYS_USER_STOP': SYSVIEW_EVTID_MARK_STOP,
     'SYS_IDLE': SYSVIEW_EVTID_IDLE,
     'SYS_ISR_TO_SCHEDULER': SYSVIEW_EVTID_ISR_TO_SCHEDULER,
     'SYS_TIMER_ENTER': SYSVIEW_EVTID_TIMER_ENTER,
@@ -493,8 +493,8 @@ class SysViewPredefinedEvent(SysViewEvent):
         SYSVIEW_EVTID_SYSTIME_CYCLES:   ('svSysTimeCycles', [SysViewEventParamSimple('cycles', _decode_u32)]),
         SYSVIEW_EVTID_SYSTIME_US:       ('svSysTimeUs', [SysViewEventParamSimple('time', _decode_u64)]),
         SYSVIEW_EVTID_SYSDESC:          ('svSysDesc', [SysViewEventParamSimple('desc', _decode_str)]),
-        SYSVIEW_EVTID_USER_START:       ('svUserStart', [SysViewEventParamSimple('user_id', _decode_u32)]),
-        SYSVIEW_EVTID_USER_STOP:        ('svUserStart', [SysViewEventParamSimple('user_id', _decode_u32)]),
+        SYSVIEW_EVTID_MARK_START:       ('svUserStart', [SysViewEventParamSimple('user_id', _decode_u32)]),
+        SYSVIEW_EVTID_MARK_STOP:        ('svUserStop', [SysViewEventParamSimple('user_id', _decode_u32)]),
         SYSVIEW_EVTID_IDLE:             ('svIdle', []),
         SYSVIEW_EVTID_ISR_TO_SCHEDULER: ('svExitIsrToScheduler', []),
         SYSVIEW_EVTID_TIMER_ENTER:      ('svTimerEnter', [SysViewEventParamSimple('tim_id', _decode_u32)]),
