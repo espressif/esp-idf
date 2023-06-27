@@ -613,7 +613,7 @@ void IRAM_ATTR call_start_cpu0(void)
     if (esp_mprot_is_conf_locked_any(&is_locked) != ESP_OK || is_locked) {
 #endif
         ESP_EARLY_LOGE(TAG, "Memprot feature locked after the system reset! Potential safety corruption, rebooting.");
-        esp_restart_noos_dig();
+        esp_restart_noos();
     }
 
     //default configuration of PMS Memprot
@@ -634,7 +634,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
     if (memp_err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (0x%08X: %s), rebooting.", memp_err, esp_err_to_name(memp_err));
-        esp_restart_noos_dig();
+        esp_restart_noos();
     }
 #endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
 
