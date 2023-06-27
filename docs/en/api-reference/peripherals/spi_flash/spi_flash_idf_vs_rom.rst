@@ -13,7 +13,7 @@ Feature Supported by ESP-IDF but not in Chip-ROM
 .. list::
 
     - Octal Flash chip support. See :ref:`oct-flash-doc` for details.
-    - 32-bit-address support for GD25Q256. See :ref:`32-bit-flash-doc` for details.
+    - 32-bit-address support for GD25Q256. Note this feature is an optional feature, please do read :ref:`32-bit-flash-doc` for details.
     - TH Flash chip support.
     - Kconfig option :ref:`CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED`.
     - :ref:`CONFIG_SPI_FLASH_VERIFY_WRITE`, enabling this option helps you detect bad writing.
@@ -21,6 +21,7 @@ Feature Supported by ESP-IDF but not in Chip-ROM
     - :ref:`CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE`, enabling this option will check if you're writing zero to one.
     - :ref:`CONFIG_SPI_FLASH_DANGEROUS_WRITE`, enabling this option will check for flash programming to certain protected regions like bootloader, partition table or application itself.
     - :ref:`CONFIG_SPI_FLASH_ENABLE_COUNTERS`, enabling this option to collect performance data for ESP-IDF SPI Flash driver APIs.
+    - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`, enabling this option to automatically suspend / resume a long Flash operation when short Flash operation happens. Note this feature is an optional feature, please do read :ref:`auto-suspend-intro` for more limitations.
 
 Bugfixes Introduced in ESP-IDF but not in Chip-ROM
 --------------------------------------------------

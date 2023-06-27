@@ -25,6 +25,8 @@ Some features are not supported on all ESP chips and Flash chips. You can check 
 
     This document only shows that IDF code has supported the features of those flash chips. It's not a list of stable flash chips certified by Espressif. If you build your own hardware from flash chips with your own brought flash chips (even with flash listed in this page), you need to validate the reliability of flash chips yourself.
 
+.. _auto-suspend-intro:
+
 Auto Suspend & Resume
 ---------------------
 
