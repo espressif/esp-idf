@@ -43,7 +43,6 @@ examples/storage/parttool/parttool_example.sh
 examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
-examples/wifi/wifi_enterprise/generate_certs/generate_certs.sh
 install.fish
 install.sh
 tools/check_python_dependencies.py
