@@ -1,33 +1,25 @@
+const { minimumSummaryChars } = require("./mrCommitsConstants.js");
+const { maximumSummaryChars } = require("./mrCommitsConstants.js");
+const { maximumBodyLineChars } = require("./mrCommitsConstants.js");
+const { allowedTypes } = require("./mrCommitsConstants.js");
+
 /**
- * Check that commit messages are based on the Espressif ESP-IDF project's internal rules for git commit messages.
+ * Check that commit messages are based on the Espressif ESP-IDF project's rules for git commit messages.
  *
  * @dangerjs WARN
  */
-
 module.exports = async function () {
     const mrCommits = danger.gitlab.commits;
     const lint = require("@commitlint/lint").default;
 
-    const allowedTypes = [
-        "change",
-        "ci",
-        "docs",
-        "feat",
-        "fix",
-        "refactor",
-        "remove",
-        "revert",
-    ];
     const lintingRules = {
         // rule definition: [(0-1 = off/on), (always/never = must be/mustn't be), (value)]
-        "body-max-line-length": [1, "always", 100], // Max length of the body line
+        "body-max-line-length": [1, "always", maximumBodyLineChars], // Max length of the body line
         "footer-leading-blank": [1, "always"], // Always have a blank line before the footer section
-        "footer-max-line-length": [1, "always", 100], // Max length of the footer line
-        "subject-max-length": [1, "always", 50], // Max length of the "Summary"
-        "subject-min-length": [1, "always", 20], // Min length of the "Summary"
+        "footer-max-line-length": [1, "always", maximumBodyLineChars], // Max length of the footer line
+        "subject-max-length": [1, "always", maximumSummaryChars], // Max length of the "Summary"
+        "subject-min-length": [1, "always", minimumSummaryChars], // Min length of the "Summary"
         "scope-case": [1, "always", "lower-case"], // "scope/component" must start with lower-case
-        // "scope-empty": [1, "never"], // "scope/component" is mandatory
-        "subject-case": [1, "always", ["sentence-case"]], // "Summary" must start with upper-case
         "subject-full-stop": [1, "never", "."], // "Summary" must not end with a full stop (period)
         "subject-empty": [1, "never"], // "Summary" is mandatory
         "type-case": [1, "always", "lower-case"], // "type/action" must start with lower-case
@@ -35,6 +27,9 @@ module.exports = async function () {
         "type-enum": [1, "always", allowedTypes], // "type/action" must be one of the allowed types
         "body-leading-blank": [1, "always"], // Always have a blank line before the body section
     };
+
+    // Switcher for AI suggestions (for poor messages)
+    let generateAISuggestion = false;
 
     // Search for the messages in each commit
     let issuesAllCommitMessages = [];
@@ -90,11 +85,13 @@ module.exports = async function () {
                     break;
                 case "subject-empty":
                     issuesSingleCommitMessage.push(`- *summary* looks empty`);
+                    generateAISuggestion = true;
                     break;
                 case "subject-min-length":
                     issuesSingleCommitMessage.push(
                         `- *summary* looks too short`
                     );
+                    generateAISuggestion = true;
                     break;
                 case "subject-case":
                     issuesSingleCommitMessage.push(
@@ -131,8 +128,9 @@ module.exports = async function () {
     if (issuesAllCommitMessages.length) {
         issuesAllCommitMessages.sort();
         const basicTips = [
-            `- correct format of commit message should be: \`<type/action>(<scope/component>): <Summary>\`, for example \`fix(esp32): Fixed startup timeout issue\``,
-            `- sufficiently descriptive message summary should be between 20 to 50 characters and start with upper case letter`,
+            `- correct format of commit message should be: \`<type/action>(<scope/component>): <summary>\`, for example \`fix(esp32): Fixed startup timeout issue\``,
+            `- allowed types are: \`${allowedTypes}\``,
+            `- sufficiently descriptive message summary should be between ${minimumSummaryChars} to ${maximumSummaryChars} characters and start with upper case letter`,
             `- avoid Jira references in commit messages (unavailable/irrelevant for our customers)`,
             `- follow this [commit messages guide](${process.env.DANGER_GITLAB_HOST}/espressif/esp-idf/-/wikis/dev-proc/Commit-messages)`,
         ];
@@ -146,10 +144,12 @@ module.exports = async function () {
             \n***
             `;
 
-        // Create AI generated suggestion for git commit message based of gitDiff and current commit messages
-        const AImessageSuggestion =
-            await require("./aiGenerateGitMessage.js")();
-        dangerMessage += AImessageSuggestion;
+        if (generateAISuggestion) {
+            // Create AI generated suggestion for git commit message based of gitDiff and current commit messages
+            const AImessageSuggestion =
+                await require("./aiGenerateGitMessage.js")();
+            dangerMessage += AImessageSuggestion;
+        }
 
         warn(dangerMessage);
     }
