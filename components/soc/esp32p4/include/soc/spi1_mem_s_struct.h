@@ -1257,7 +1257,7 @@ typedef struct {
     volatile spi_mem_clock_gate_reg_t clock_gate;
     uint32_t reserved_204[126];
     volatile spi_mem_date_reg_t date;
-} spi_mem_dev_t;
+} spi1_mem_s_dev_t;
 
 
 #ifndef __cplusplus

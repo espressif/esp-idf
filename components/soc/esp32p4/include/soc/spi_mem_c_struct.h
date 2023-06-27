@@ -2016,7 +2016,7 @@ typedef struct {
     volatile spi_mem_dpa_ctrl_reg_t mem_dpa_ctrl;
     uint32_t reserved_38c[28];
     volatile spi_mem_date_reg_t mem_date;
-} spi_dev_t;
+} spi_mem_c_dev_t;
 
 
 #ifndef __cplusplus
