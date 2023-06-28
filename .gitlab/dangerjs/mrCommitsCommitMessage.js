@@ -1,7 +1,9 @@
-const { minimumSummaryChars } = require("./mrCommitsConstants.js");
-const { maximumSummaryChars } = require("./mrCommitsConstants.js");
-const { maximumBodyLineChars } = require("./mrCommitsConstants.js");
-const { allowedTypes } = require("./mrCommitsConstants.js");
+const {
+    minimumSummaryChars,
+    maximumSummaryChars,
+    maximumBodyLineChars,
+    allowedTypes,
+} = require("./mrCommitsConstants.js");
 
 /**
  * Check that commit messages are based on the Espressif ESP-IDF project's rules for git commit messages.
@@ -141,6 +143,7 @@ module.exports = async function () {
 			\n**Please consider updating these commit messages** - here are some basic tips:\n${basicTips.join(
                 "\n"
             )}
+            \n \`TIP:\` You can install commit-msg pre-commit hook (\`pre-commit install -t pre-commit -t commit-msg\`) to run this check when committing.
             \n***
             `;
 

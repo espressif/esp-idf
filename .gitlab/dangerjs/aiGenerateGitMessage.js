@@ -1,7 +1,9 @@
-const { minimumSummaryChars } = require("./mrCommitsConstants.js");
-const { maximumSummaryChars } = require("./mrCommitsConstants.js");
-const { maximumBodyLineChars } = require("./mrCommitsConstants.js");
-const { allowedTypes } = require("./mrCommitsConstants.js");
+const {
+    minimumSummaryChars,
+    maximumSummaryChars,
+    maximumBodyLineChars,
+    allowedTypes,
+} = require("./mrCommitsConstants.js");
 const { gptStandardModelTokens } = require("./mrCommitsConstants.js");
 
 const { ChatPromptTemplate } = require("langchain/prompts");
