@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -334,7 +334,7 @@ typedef union {
 } pau_date_reg_t;
 
 
-typedef struct {
+typedef struct pau_dev_t {
     volatile pau_regdma_conf_reg_t regdma_conf;
     volatile pau_regdma_clk_conf_reg_t regdma_clk_conf;
     volatile pau_regdma_etm_ctrl_reg_t regdma_etm_ctrl;

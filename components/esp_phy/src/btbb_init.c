@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@ static _lock_t s_btbb_access_lock;
 static uint8_t s_btbb_access_ref = 0;
 
 
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && !CONFIG_IDF_TARGET_ESP32H2
 #include "esp_private/sleep_retention.h"
 #include "btbb_retention_reg.h"
 static const char* TAG = "btbb_init";
@@ -45,7 +45,7 @@ static void btbb_sleep_retention_deinit(void)
 {
     sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_BLE_BB);
 }
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && !CONFIG_IDF_TARGET_ESP32H2
 
 
 void esp_btbb_enable(void)
@@ -53,9 +53,9 @@ void esp_btbb_enable(void)
     _lock_acquire(&s_btbb_access_lock);
     if (s_btbb_access_ref == 0) {
         bt_bb_v2_init_cmplx(BTBB_ENABLE_VERSION_PRINT);
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && !CONFIG_IDF_TARGET_ESP32H2
         btbb_sleep_retention_init();
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && !CONFIG_IDF_TARGET_ESP32H2
     }
     s_btbb_access_ref++;
     _lock_release(&s_btbb_access_lock);
@@ -65,9 +65,9 @@ void esp_btbb_disable(void)
 {
     _lock_acquire(&s_btbb_access_lock);
     if (s_btbb_access_ref && (--s_btbb_access_ref == 0)) {
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && !CONFIG_IDF_TARGET_ESP32H2
         btbb_sleep_retention_deinit();
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && !CONFIG_IDF_TARGET_ESP32H2
     }
     _lock_release(&s_btbb_access_lock);
 }

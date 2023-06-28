@@ -30,8 +30,8 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     endif()
 endif()
 
-if(${target} STREQUAL "esp32c6")
-    list(APPEND srcs "esp32c6/lp_timer_hal.c")
+if(CONFIG_SOC_LP_TIMER_SUPPORTED)
+    list(APPEND srcs "lp_timer_hal.c")
 endif()
 
 if(NOT BOOTLOADER_BUILD)
@@ -142,10 +142,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
-    if(CONFIG_SOC_LP_TIMER_SUPPORTED)
-        list(APPEND srcs "${target}/lp_timer_hal.c")
-    endif()
-
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "${target}/pau_hal.c")
     endif()
@@ -245,7 +241,6 @@ if(NOT BOOTLOADER_BUILD)
 
         list(REMOVE_ITEM srcs
                 "esp32h2/rtc_cntl_hal.c"
-                "esp32h2/pmu_hal.c" # TODO: IDF-6267
                 )
     endif()
 endif()

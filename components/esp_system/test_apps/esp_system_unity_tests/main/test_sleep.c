@@ -41,7 +41,7 @@
 
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 
 static void check_sleep_reset(void)
 {
@@ -308,7 +308,7 @@ static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
-#if !CONFIG_IDF_TARGET_ESP32S3
+#if !CONFIG_IDF_TARGET_ESP32S3 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
     /* ROM code clears wake stub entry address */
     TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
 #endif
@@ -463,7 +463,7 @@ __attribute__((unused)) static uint32_t get_cause(void)
     return wakeup_cause;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C6, ESP32H2)
 // Fails on S2 IDF-2903
 
 // This test case verifies deactivation of trigger for wake up sources
@@ -658,4 +658,4 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
     esp_deep_sleep_start();
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2) TODO: IDF-5349
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2) TODO: IDF-6268
