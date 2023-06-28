@@ -131,7 +131,8 @@ MAC,                                             EFUSE_BLK1,  40,   8, [MAC_FACT
 ,                                                EFUSE_BLK1,  16,   8, [MAC_FACTORY] MAC address
 ,                                                EFUSE_BLK1,   8,   8, [MAC_FACTORY] MAC address
 ,                                                EFUSE_BLK1,   0,   8, [MAC_FACTORY] MAC address
-MAC_EXT,                                         EFUSE_BLK1,  48,  16, [] Stores the extended bits of MAC address
+MAC_EXT,                                         EFUSE_BLK1,  56,   8, [] Stores the extended bits of MAC address
+,                                                EFUSE_BLK1,  48,   8, [] Stores the extended bits of MAC address
 WAFER_VERSION_MINOR,                             EFUSE_BLK1, 114,   3, []
 WAFER_VERSION_MAJOR,                             EFUSE_BLK1, 117,   2, []
 DISABLE_WAFER_VERSION_MAJOR,                     EFUSE_BLK1, 119,   1, [] Disables check of wafer version major

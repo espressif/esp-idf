@@ -18,7 +18,7 @@
 #define MAC_ADDR_UNIVERSE_BT_OFFSET 1
 #endif
 
-#if CONFIG_IEEE802154_ENABLED
+#if CONFIG_SOC_IEEE802154_SUPPORTED
 #define ESP_MAC_ADDRESS_LEN 8
 #else
 #define ESP_MAC_ADDRESS_LEN 6
@@ -39,29 +39,35 @@ typedef struct {
 } mac_t;
 
 static mac_t s_mac_table[] = {
-#ifdef CONFIG_ESP_WIFI_ENABLED
-    {ESP_MAC_WIFI_STA,      STATE_INIT, 6,                   {0}},
-    {ESP_MAC_WIFI_SOFTAP,   STATE_INIT, 6,                   {0}},
+#if CONFIG_SOC_WIFI_SUPPORTED
+    {ESP_MAC_WIFI_STA,      STATE_INIT, 6, {0}},
+    {ESP_MAC_WIFI_SOFTAP,   STATE_INIT, 6, {0}},
 #endif
 
 #ifdef CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
-    {ESP_MAC_BT,            STATE_INIT, 6,                   {0}},
+    {ESP_MAC_BT,            STATE_INIT, 6, {0}},
 #endif
 
-    {ESP_MAC_ETH,           STATE_INIT, 6,                   {0}},
+    {ESP_MAC_ETH,           STATE_INIT, 6, {0}},
 
-#ifdef CONFIG_ESP_MAC_ADDR_UNIVERSE_IEEE802154
-    {ESP_MAC_IEEE802154,    STATE_INIT, 8,                   {0}},
+#ifdef CONFIG_SOC_IEEE802154_SUPPORTED
+    {ESP_MAC_IEEE802154,    STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
+    {ESP_MAC_EFUSE_EXT,     STATE_INIT, 2, {0}},
 #endif
 
-    {ESP_MAC_BASE,          STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
-    {ESP_MAC_EFUSE_FACTORY, STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
-    {ESP_MAC_EFUSE_CUSTOM,  STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
+    {ESP_MAC_BASE,          STATE_INIT, 6, {0}},
+    {ESP_MAC_EFUSE_FACTORY, STATE_INIT, 6, {0}},
+    {ESP_MAC_EFUSE_CUSTOM,  STATE_INIT, 6, {0}},
 };
 
 #define ITEMS_IN_MAC_TABLE (sizeof(s_mac_table) / sizeof(mac_t))
 
 static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type_t type);
+static esp_err_t get_efuse_mac_get_default(uint8_t *mac);
+static esp_err_t get_efuse_mac_custom(uint8_t *mac);
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+static esp_err_t get_efuse_mac_ext(uint8_t *mac);
+#endif
 
 static int get_idx(esp_mac_type_t type)
 {
@@ -70,7 +76,7 @@ static int get_idx(esp_mac_type_t type)
             return idx;
         }
     }
-    ESP_LOGE(TAG, "mac type is incorrect (not found)");
+    ESP_LOGE(TAG, "%d mac type is incorrect (not found)", type);
     return -1;
 }
 
@@ -81,13 +87,18 @@ static esp_err_t get_mac_addr_from_mac_table(uint8_t *mac, int idx, bool silent)
     }
     if (!(s_mac_table[idx].state & STATE_SET)) {
         esp_mac_type_t type = s_mac_table[idx].type;
-        if (type == ESP_MAC_BASE || type == ESP_MAC_EFUSE_FACTORY || type == ESP_MAC_EFUSE_CUSTOM) {
+        if (ESP_MAC_BASE <= type && type <= ESP_MAC_EFUSE_EXT) {
             esp_err_t err = ESP_OK;
             if (type == ESP_MAC_BASE || type == ESP_MAC_EFUSE_FACTORY) {
-                err = esp_efuse_mac_get_default(s_mac_table[idx].mac);
+                err = get_efuse_mac_get_default(s_mac_table[idx].mac);
             } else if (type == ESP_MAC_EFUSE_CUSTOM) {
-                err = esp_efuse_mac_get_custom(s_mac_table[idx].mac);
+                err = get_efuse_mac_custom(s_mac_table[idx].mac);
             }
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+            else if (type == ESP_MAC_EFUSE_EXT) {
+                err = get_efuse_mac_ext(s_mac_table[idx].mac);
+            }
+#endif
             if (err != ESP_OK) {
                 return err;
             }
@@ -151,7 +162,45 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
     return esp_read_mac(mac, ESP_MAC_BASE);
 }
 
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+static esp_err_t get_efuse_mac_ext(uint8_t *mac)
+{
+    // ff:fe
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, mac, 16);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Reading MAC_EXT failed, error=%d", err);
+        return err;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t insert_mac_ext_into_mac(uint8_t *mac)
+{
+    uint8_t mac_tmp[3];
+    memcpy(mac_tmp, &mac[3], 3);
+    esp_err_t err = get_efuse_mac_ext(&mac[3]);
+    if (err != ESP_OK) {
+        return err;
+    }
+    memcpy(&mac[5], mac_tmp, 3);
+    return err;
+}
+#endif
+
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
+{
+    esp_err_t err = get_efuse_mac_custom(mac);
+    if (err != ESP_OK) {
+        return err;
+    }
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+    return insert_mac_ext_into_mac(mac);
+#else
+    return ESP_OK;
+#endif
+}
+
+static esp_err_t get_efuse_mac_custom(uint8_t *mac)
 {
 #if !CONFIG_IDF_TARGET_ESP32
     size_t size_bits = esp_efuse_get_field_size(ESP_EFUSE_USER_DATA_MAC_CUSTOM);
@@ -165,14 +214,6 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
         ESP_LOGE(TAG, "eFuse MAC_CUSTOM is empty");
         return ESP_ERR_INVALID_MAC;
     }
-#if (ESP_MAC_ADDRESS_LEN == 8)
-    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN * 8 - size_bits);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Reading MAC_EXT failed, error=%d", err);
-        return err;
-    }
-#endif
-    return ESP_OK;
 #else
     uint8_t version;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_VER, &version, 8);
@@ -199,11 +240,24 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
         return ESP_ERR_INVALID_CRC;
 #endif
     }
+#endif
+    return ESP_OK;
+}
+
+esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
+{
+    esp_err_t err = get_efuse_mac_get_default(mac);
+    if (err != ESP_OK) {
+        return err;
+    }
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+    return insert_mac_ext_into_mac(mac);
+#else
     return ESP_OK;
 #endif
 }
 
-esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
+static esp_err_t get_efuse_mac_get_default(uint8_t *mac)
 {
     size_t size_bits = esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY);
     assert((size_bits % 8) == 0);
@@ -211,13 +265,6 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
     if (err != ESP_OK) {
         return err;
     }
-#if (ESP_MAC_ADDRESS_LEN == 8)
-    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN * 8 - size_bits);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Reading MAC_EXT failed, error=%d", err);
-        return err;
-    }
-#endif
 #ifdef CONFIG_IDF_TARGET_ESP32
 // Only ESP32 has MAC CRC in efuse
     uint8_t efuse_crc;
@@ -349,9 +396,15 @@ static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type
         esp_derive_local_mac(mac, base_mac_addr);
 #endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
         break;
-#if CONFIG_IEEE802154_ENABLED
+#if CONFIG_SOC_IEEE802154_SUPPORTED
     case ESP_MAC_IEEE802154:
-        memcpy(mac, base_mac_addr, 8);
+        // 60:55:f9
+        memcpy(mac, base_mac_addr, 3);
+        // 60:55:f9 + ff:fe
+        esp_read_mac(&mac[3], ESP_MAC_EFUSE_EXT);
+        // 60:55:f9:ff:fe + f7:2c:a2
+        memcpy(&mac[5], &base_mac_addr[3], 3);
+        // 60:55:f9:ff:fe:f7:2c:a2
         break;
 #endif
     default:

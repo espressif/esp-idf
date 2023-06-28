@@ -6,12 +6,6 @@ examples/system/app_trace_basic:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
-examples/system/base_mac_address:
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: cannot pass, IDF-6809
-
 examples/system/console/advanced:
   disable:
     - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
