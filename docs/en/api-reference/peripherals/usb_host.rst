@@ -169,7 +169,7 @@ With reference the graph above, the typical lifecycle involves the following key
 2. Once the Host Library is installed, the clients can be registered by calling :cpp:func:`usb_host_client_register`.
     - This is typically called from the client task (where the client task waits for a signal from the Daemon Task).
     - This can be called elsewhere if necessary as long it is called after :cpp:func:`usb_host_install`.
-3. Device 1 connects and is then enumerated. 
+3. Device 1 connects and is then enumerated.
     - Each registered client (in this case Client 1 and Client 2) are notified of the new device by way of the :cpp:enumerator:`USB_HOST_CLIENT_EVENT_NEW_DEV` event.
     - Client 1 opens Device 1 and begins communication with it.
 4. Similarly Device 2 connects and is enumerated.
@@ -365,9 +365,10 @@ The USB Host Stack provides a number examples that implement host class drivers 
 CDC-ACM
 """""""
 
-* A host class driver for the Communication Device Class (Abstract Control Model) is currently implemented as an example component (found via :example:`peripherals/usb/host/cdc/common/cdc_acm_host`).
+* A host class driver for the Communication Device Class (Abstract Control Model) is deployed to `IDF component registry <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__.
 * The :example:`peripherals/usb/host/cdc/cdc_acm_host` example uses the CDC-ACM host driver component to communicate with CDC-ACM devices
-* The :example:`peripherals/usb/host/cdc/cdc_acm_bg96` example uses the CDC-ACM host driver component to communicate with non-compliant CDC-ACM devices (i.e., vendor-specific classes that support a subset of CDC-ACM features) such as the Quectel BG96 modem.
+* The :example:`peripherals/usb/host/cdc/cdc_acm_vcp` example shows how can you extend the CDC-ACM host driver to interface Virtual COM Port devices.
+* The CDC-ACM driver is also used in `esp_modem examples <https://github.com/espressif/esp-protocols/tree/master/components/esp_modem/examples>`__, where it is used for communication with cellular modems.
 
 MSC
 """
