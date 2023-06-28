@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -2078,6 +2078,13 @@ def action_install_python_env(args):  # type: ignore
             warn('pip is not available in the existing virtual environment, new virtual environment will be created.')
             # Reinstallation of the virtual environment could help if pip was installed for the main Python
             reinstall = True
+
+        if sys.platform != 'win32':
+            try:
+                subprocess.check_call([virtualenv_python, '-c', 'import curses'], stdout=sys.stdout, stderr=sys.stderr)
+            except subprocess.CalledProcessError:
+                warn('curses can not be imported, new virtual environment will be created.')
+                reinstall = True
 
     if reinstall and os.path.exists(idf_python_env_path):
         warn('Removing the existing Python environment in {}'.format(idf_python_env_path))

@@ -703,7 +703,7 @@ def main() -> None:
     try:
         os.getcwd()
     except FileNotFoundError as e:
-        raise FatalError(f'ERROR: {e}. Working directory cannot be established. Check it\'s existence.')
+        raise FatalError(f'ERROR: {e}. Working directory cannot be established. Check its existence.')
 
     try:
         cli = init_cli(verbose_output=checks_output)
