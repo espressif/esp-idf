@@ -399,6 +399,26 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
     portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
 }
 
+#if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND) \
+    || CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+static int s_cache_suspend_cnt = 0;
+
+static void IRAM_ATTR suspend_cache(void) {
+    s_cache_suspend_cnt++;
+    if (s_cache_suspend_cnt == 1) {
+        cache_hal_suspend(CACHE_TYPE_ALL);
+    }
+}
+
+static void IRAM_ATTR resume_cache(void) {
+    s_cache_suspend_cnt--;
+    assert(s_cache_suspend_cnt >= 0 && "cache resume doesn't match suspend ops");
+    if (s_cache_suspend_cnt == 0) {
+        cache_hal_resume(CACHE_TYPE_ALL);
+    }
+}
+#endif
+
 // [refactor-todo] provide target logic for body of uart functions below
 static void IRAM_ATTR flush_uarts(void)
 {
@@ -753,6 +773,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
         }
 
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+        /* Cache Suspend 2: If previous sleep powerdowned the flash, suspend cache here so that the
+           access to flash before flash ready can be explicitly exposed. */
+        suspend_cache();
+    }
+#endif
+
 #if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
             if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
                 rtc_sleep_systimer_enable(true);
@@ -897,6 +925,13 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         esp_rom_delay_us(flash_enable_time_us);
     }
 
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+        /* Cache Resume 2: flash is ready now, we can resume the cache and access flash safely after */
+        resume_cache();
+    }
+#endif
+
     return reject;
 }
 
@@ -960,6 +995,12 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
     esp_ipc_isr_stall_other_cpu();
+
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
+    /* Cache Suspend 0: if CONFIG_PM_SLP_IRAM_OPT is enabled, suspend cache here so that the access to flash
+       during the sleep process can be explicitly exposed. */
+    suspend_cache();
+#endif
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
@@ -1113,6 +1154,12 @@ esp_err_t esp_light_sleep_start(void)
 
     esp_clk_private_unlock();
     esp_timer_private_unlock();
+
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
+    /* Cache Resume 0: sleep process done, resume cache for continue running */
+    resume_cache();
+#endif
+
     esp_ipc_isr_release_other_cpu();
     if (!wdt_was_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);

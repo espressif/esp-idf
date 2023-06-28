@@ -155,6 +155,16 @@ menu "Hardware Settings"
 
                 If you are seeing "flash read err, 1000" message printed to the
                 console after deep sleep reset, try increasing this value.
+
+        config ESP_SLEEP_CACHE_SAFE_ASSERTION
+            bool "Check the cache safety of the sleep wakeup code in sleep process"
+            default n
+            help
+                Enabling it will check the cache safety of the code before the flash power is ready after
+                light sleep wakeup, and check PM_SLP_IRAM_OPT related code cache safety. This option is
+                only for code quality inspection. Enabling it will increase the time overhead of entering
+                and exiting sleep. It is not recommended to enable it in the release version.
+
     endmenu
 
     menu "ESP_SLEEP_WORKAROUND"
