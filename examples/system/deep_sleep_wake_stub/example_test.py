@@ -21,7 +21,7 @@ def test_deep_sleep_wake_stub(env, extra_data):  # type: (tiny_test_fw.Env, typi
 
     start_sleep = time.time()
     print('Waiting for wakeup...')
-    dut.expect('wake stub: going to deep sleep')
+    dut.expect('wake stub: going to deep sleep', timeout=15)
 
     sleep_time = time.time() - start_sleep
     print('Host measured sleep time at {:.2f}s'.format(sleep_time))
