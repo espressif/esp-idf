@@ -207,5 +207,5 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
     .. include:: inc/external-ram-esp32-notes.rst
 
-.. _ESP32 ECO: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_cn.pdf
-.. _ESP32 ECO V3 User Guide: https://www.espressif.com/sites/default/files/documentation/ESP32_ECO_V3_User_Guide__CN.pdf
+.. _ESP32 系列芯⽚勘误表: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_cn.pdf
+.. _ESP32 芯⽚版本 v3.0 使⽤指南: https://www.espressif.com/sites/default/files/documentation/ESP32_ECO_V3_User_Guide__CN.pdf
