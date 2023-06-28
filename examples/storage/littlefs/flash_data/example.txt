@@ -1,0 +1,1 @@
+Example text to compile into a LittleFS disk image to be flashed to the ESP device.
