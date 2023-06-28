@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import logging
+import os
 import time
 from multiprocessing import Manager, Process, Semaphore
 from multiprocessing.managers import SyncManager
@@ -304,6 +306,13 @@ class MultiDevCaseTester(BaseTester):
                     break
 
         # The case finished, release the semaphore to unblock the '_wait_multi_dev_case_finish'
+        #
+        # Manually to create the real test case junit report
+        # The child process attributes won't be reflected to the parent one.
+        junit_report = os.path.splitext(dut.logfile)[0] + f'_{case.index}_{sub_case_index}.xml'
+        dut.testsuite.dump(junit_report)
+        logging.info(f'Created unity output junit report: {junit_report}')
+
         dev_res.sem.release()
 
     def run_all_multi_dev_cases(self, reset: bool = False, timeout: int = 60) -> None:
