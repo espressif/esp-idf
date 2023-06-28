@@ -145,26 +145,33 @@ static void rmt_tx_unregister_from_group(rmt_channel_t *channel, rmt_group_t *gr
 
 static esp_err_t rmt_tx_create_trans_queue(rmt_tx_channel_t *tx_channel, const rmt_tx_channel_config_t *config)
 {
+    esp_err_t ret;
+
     tx_channel->queue_size = config->trans_queue_depth;
-    // the queue only saves transaction description pointers
-    tx_channel->queues_storage = heap_caps_calloc(config->trans_queue_depth * RMT_TX_QUEUE_MAX, sizeof(rmt_tx_trans_desc_t *), RMT_MEM_ALLOC_CAPS);
-    ESP_RETURN_ON_FALSE(tx_channel->queues_storage, ESP_ERR_NO_MEM, TAG, "no mem for queue storage");
-    rmt_tx_trans_desc_t **pp_trans_desc = (rmt_tx_trans_desc_t **)tx_channel->queues_storage;
+    // Allocate transaction queues. Each queue only holds pointers to the transaction descriptors
     for (int i = 0; i < RMT_TX_QUEUE_MAX; i++) {
-        tx_channel->trans_queues[i] = xQueueCreateStatic(config->trans_queue_depth, sizeof(rmt_tx_trans_desc_t *),
-                                      (uint8_t *)pp_trans_desc, &tx_channel->trans_queue_structs[i]);
-        pp_trans_desc += config->trans_queue_depth;
-        // sanity check
-        assert(tx_channel->trans_queues[i]);
+        tx_channel->trans_queues[i] = xQueueCreateWithCaps(config->trans_queue_depth, sizeof(rmt_tx_trans_desc_t *), RMT_MEM_ALLOC_CAPS);
+        ESP_GOTO_ON_FALSE(tx_channel->trans_queues[i], ESP_ERR_NO_MEM, exit, TAG, "no mem for queues");
     }
-    // initialize the ready queue
+
+    // Initialize the ready queue
     rmt_tx_trans_desc_t *p_trans_desc = NULL;
     for (int i = 0; i < config->trans_queue_depth; i++) {
         p_trans_desc = &tx_channel->trans_desc_pool[i];
-        ESP_RETURN_ON_FALSE(xQueueSend(tx_channel->trans_queues[RMT_TX_QUEUE_READY], &p_trans_desc, 0) == pdTRUE,
-                            ESP_ERR_INVALID_STATE, TAG, "ready queue full");
+        ESP_GOTO_ON_FALSE(xQueueSend(tx_channel->trans_queues[RMT_TX_QUEUE_READY], &p_trans_desc, 0) == pdTRUE,
+                          ESP_ERR_INVALID_STATE, exit, TAG, "ready queue full");
     }
+
     return ESP_OK;
+
+exit:
+    for (int i = 0; i < RMT_TX_QUEUE_MAX; i++) {
+        if (tx_channel->trans_queues[i]) {
+            vQueueDeleteWithCaps(tx_channel->trans_queues[i]);
+            tx_channel->trans_queues[i] = NULL;
+        }
+    }
+    return ret;
 }
 
 static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
@@ -182,11 +189,8 @@ static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
 #endif // SOC_RMT_SUPPORT_DMA
     for (int i = 0; i < RMT_TX_QUEUE_MAX; i++) {
         if (tx_channel->trans_queues[i]) {
-            vQueueDelete(tx_channel->trans_queues[i]);
+            vQueueDeleteWithCaps(tx_channel->trans_queues[i]);
         }
-    }
-    if (tx_channel->queues_storage) {
-        free(tx_channel->queues_storage);
     }
     if (tx_channel->base.dma_mem_base) {
         free(tx_channel->base.dma_mem_base);
@@ -379,7 +383,6 @@ esp_err_t rmt_new_sync_manager(const rmt_sync_manager_config_t *config, rmt_sync
         rmt_ll_tx_reset_pointer(group->hal.regs, config->tx_channel_array[i]->channel_id);
     }
     portEXIT_CRITICAL(&group->spinlock);
-
 
     *ret_synchro = synchro;
     ESP_LOGD(TAG, "new sync manager at %p, with channel mask:%02"PRIx32, synchro, synchro->channel_mask);

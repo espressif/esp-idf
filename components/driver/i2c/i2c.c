@@ -16,6 +16,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
+#include "freertos/idf_additions.h"
 #include "esp_pm.h"
 #include "soc/soc_memory_layout.h"
 #include "hal/i2c_hal.h"
@@ -104,6 +105,11 @@ static const char *I2C_TAG = "i2c";
 
 #define I2C_CLOCK_INVALID                 (-1)
 
+#if CONFIG_SPIRAM_USE_MALLOC
+#define I2C_MEM_ALLOC_CAPS_INTERNAL     (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#endif
+#define I2C_MEM_ALLOC_CAPS_DEFAULT      MALLOC_CAP_DEFAULT
+
 /**
  * I2C bus are defined in the header files, let's check that the values are correct
  */
@@ -169,9 +175,7 @@ typedef struct {
     i2c_cmd_desc_t cmd_link;         /*!< I2C command link */
     QueueHandle_t cmd_evt_queue;     /*!< I2C command event queue */
 #if CONFIG_SPIRAM_USE_MALLOC
-    uint8_t *evt_queue_storage;      /*!< The buffer that will hold the items in the queue */
     int intr_alloc_flags;            /*!< Used to allocate the interrupt */
-    StaticQueue_t evt_queue_buffer;  /*!< The buffer that will hold the queue structure*/
 #endif
     SemaphoreHandle_t cmd_mux;        /*!< semaphore to lock command process */
 #ifdef CONFIG_PM_ENABLE
@@ -274,16 +278,13 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     esp_err_t ret = ESP_OK;
 
     if (p_i2c_obj[i2c_num] == NULL) {
-
-#if !CONFIG_SPIRAM_USE_MALLOC
-        p_i2c_obj[i2c_num] = (i2c_obj_t *) calloc(1, sizeof(i2c_obj_t));
+        uint32_t alloc_caps;
+#if CONFIG_SPIRAM_USE_MALLOC
+        alloc_caps = (intr_alloc_flags & ESP_INTR_FLAG_IRAM) ? I2C_MEM_ALLOC_CAPS_INTERNAL : I2C_MEM_ALLOC_CAPS_DEFAULT;
 #else
-        if ( !(intr_alloc_flags & ESP_INTR_FLAG_IRAM) ) {
-            p_i2c_obj[i2c_num] = (i2c_obj_t *) calloc(1, sizeof(i2c_obj_t));
-        } else {
-            p_i2c_obj[i2c_num] = (i2c_obj_t *) heap_caps_calloc(1, sizeof(i2c_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        }
+        alloc_caps = I2C_MEM_ALLOC_CAPS_DEFAULT;
 #endif
+        p_i2c_obj[i2c_num] = (i2c_obj_t *) heap_caps_calloc(1, sizeof(i2c_obj_t), alloc_caps);
         if (p_i2c_obj[i2c_num] == NULL) {
             ESP_LOGE(I2C_TAG, I2C_DRIVER_MALLOC_ERR_STR);
             return ESP_FAIL;
@@ -348,21 +349,13 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
                 goto err;
             }
 #endif
-#if !CONFIG_SPIRAM_USE_MALLOC
-            p_i2c->cmd_evt_queue = xQueueCreate(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t));
+            uint32_t alloc_caps;
+#if CONFIG_SPIRAM_USE_MALLOC
+            alloc_caps = (intr_alloc_flags & ESP_INTR_FLAG_IRAM) ? I2C_MEM_ALLOC_CAPS_INTERNAL : I2C_MEM_ALLOC_CAPS_DEFAULT;
 #else
-            if ( !(intr_alloc_flags & ESP_INTR_FLAG_IRAM) ) {
-                p_i2c->cmd_evt_queue = xQueueCreate(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t));
-            } else {
-                p_i2c->evt_queue_storage = (uint8_t *)heap_caps_calloc(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-                if ( p_i2c->evt_queue_storage == NULL ) {
-                    ESP_LOGE(I2C_TAG, I2C_DRIVER_MALLOC_ERR_STR);
-                    goto err;
-                }
-                memset(&p_i2c->evt_queue_buffer, 0, sizeof(StaticQueue_t));
-                p_i2c->cmd_evt_queue =  xQueueCreateStatic(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t), p_i2c->evt_queue_storage, &p_i2c->evt_queue_buffer);
-            }
+            alloc_caps = I2C_MEM_ALLOC_CAPS_DEFAULT;
 #endif
+            p_i2c->cmd_evt_queue = xQueueCreateWithCaps(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t), alloc_caps);
             if (p_i2c->cmd_mux == NULL || p_i2c->cmd_evt_queue == NULL) {
                 ESP_LOGE(I2C_TAG, I2C_SEM_ERR_STR);
                 goto err;
@@ -413,7 +406,7 @@ err:
             p_i2c_obj[i2c_num]->tx_buf_length = 0;
         }
         if (p_i2c_obj[i2c_num]->cmd_evt_queue) {
-            vQueueDelete(p_i2c_obj[i2c_num]->cmd_evt_queue);
+            vQueueDeleteWithCaps(p_i2c_obj[i2c_num]->cmd_evt_queue);
             p_i2c_obj[i2c_num]->cmd_evt_queue = NULL;
         }
         if (p_i2c_obj[i2c_num]->cmd_mux) {
@@ -431,12 +424,6 @@ err:
         if (p_i2c_obj[i2c_num]->pm_lock) {
             esp_pm_lock_delete(p_i2c_obj[i2c_num]->pm_lock);
             p_i2c_obj[i2c_num]->pm_lock = NULL;
-        }
-#endif
-#if CONFIG_SPIRAM_USE_MALLOC
-        if (p_i2c_obj[i2c_num]->evt_queue_storage) {
-            free(p_i2c_obj[i2c_num]->evt_queue_storage);
-            p_i2c_obj[i2c_num]->evt_queue_storage = NULL;
         }
 #endif
     }
@@ -462,7 +449,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
         vSemaphoreDelete(p_i2c->cmd_mux);
     }
     if (p_i2c_obj[i2c_num]->cmd_evt_queue) {
-        vQueueDelete(p_i2c_obj[i2c_num]->cmd_evt_queue);
+        vQueueDeleteWithCaps(p_i2c_obj[i2c_num]->cmd_evt_queue);
         p_i2c_obj[i2c_num]->cmd_evt_queue = NULL;
     }
 #if SOC_I2C_SUPPORT_SLAVE
@@ -488,12 +475,6 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     if (p_i2c->pm_lock) {
         esp_pm_lock_delete(p_i2c->pm_lock);
         p_i2c->pm_lock = NULL;
-    }
-#endif
-#if CONFIG_SPIRAM_USE_MALLOC
-    if (p_i2c_obj[i2c_num]->evt_queue_storage) {
-        free(p_i2c_obj[i2c_num]->evt_queue_storage);
-        p_i2c_obj[i2c_num]->evt_queue_storage = NULL;
     }
 #endif
 
@@ -1122,11 +1103,13 @@ i2c_cmd_handle_t i2c_cmd_link_create_static(uint8_t* buffer, uint32_t size)
 
 i2c_cmd_handle_t i2c_cmd_link_create(void)
 {
-#if !CONFIG_SPIRAM_USE_MALLOC
-    i2c_cmd_desc_t *cmd_desc = (i2c_cmd_desc_t *) calloc(1, sizeof(i2c_cmd_desc_t));
+    uint32_t alloc_caps;
+#if CONFIG_SPIRAM_USE_MALLOC
+    alloc_caps = I2C_MEM_ALLOC_CAPS_INTERNAL;
 #else
-    i2c_cmd_desc_t *cmd_desc = (i2c_cmd_desc_t *) heap_caps_calloc(1, sizeof(i2c_cmd_desc_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    alloc_caps = I2C_MEM_ALLOC_CAPS_DEFAULT;
 #endif
+    i2c_cmd_desc_t *cmd_desc = (i2c_cmd_desc_t *) heap_caps_calloc(1, sizeof(i2c_cmd_desc_t), alloc_caps);
     return (i2c_cmd_handle_t) cmd_desc;
 }
 
@@ -1182,11 +1165,13 @@ static esp_err_t i2c_cmd_allocate(i2c_cmd_desc_t *cmd_desc, size_t n, size_t siz
             cmd_desc->free_size -= required;
         }
     } else {
-#if !CONFIG_SPIRAM_USE_MALLOC
-        *outptr = calloc(n, size);
+        uint32_t alloc_caps;
+#if CONFIG_SPIRAM_USE_MALLOC
+        alloc_caps = I2C_MEM_ALLOC_CAPS_INTERNAL;
 #else
-        *outptr = heap_caps_calloc(n, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        alloc_caps = I2C_MEM_ALLOC_CAPS_DEFAULT;
 #endif
+        *outptr = heap_caps_calloc(n, size, alloc_caps);
         if (*outptr == NULL) {
             err = ESP_FAIL;
         }

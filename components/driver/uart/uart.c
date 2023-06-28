@@ -13,8 +13,10 @@
 #include "esp_check.h"
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
+#include "freertos/idf_additions.h"
 #include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
@@ -144,19 +146,6 @@ typedef struct {
     SemaphoreHandle_t tx_fifo_sem;      /*!< UART TX FIFO semaphore*/
     SemaphoreHandle_t tx_done_sem;      /*!< UART TX done semaphore*/
     SemaphoreHandle_t tx_brk_sem;       /*!< UART TX send break done semaphore*/
-#if CONFIG_UART_ISR_IN_IRAM
-    void *event_queue_storage;
-    void *event_queue_struct;
-    void *rx_ring_buf_storage;
-    void *rx_ring_buf_struct;
-    void *tx_ring_buf_storage;
-    void *tx_ring_buf_struct;
-    void *rx_mux_struct;
-    void *tx_mux_struct;
-    void *tx_fifo_sem_struct;
-    void *tx_done_sem_struct;
-    void *tx_brk_sem_struct;
-#endif
 } uart_obj_t;
 
 typedef struct {
@@ -1480,44 +1469,32 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
 static void uart_free_driver_obj(uart_obj_t *uart_obj)
 {
     if (uart_obj->tx_fifo_sem) {
-        vSemaphoreDelete(uart_obj->tx_fifo_sem);
+        vSemaphoreDeleteWithCaps(uart_obj->tx_fifo_sem);
     }
     if (uart_obj->tx_done_sem) {
-        vSemaphoreDelete(uart_obj->tx_done_sem);
+        vSemaphoreDeleteWithCaps(uart_obj->tx_done_sem);
     }
     if (uart_obj->tx_brk_sem) {
-        vSemaphoreDelete(uart_obj->tx_brk_sem);
+        vSemaphoreDeleteWithCaps(uart_obj->tx_brk_sem);
     }
     if (uart_obj->tx_mux) {
-        vSemaphoreDelete(uart_obj->tx_mux);
+        vSemaphoreDeleteWithCaps(uart_obj->tx_mux);
     }
     if (uart_obj->rx_mux) {
-        vSemaphoreDelete(uart_obj->rx_mux);
+        vSemaphoreDeleteWithCaps(uart_obj->rx_mux);
     }
     if (uart_obj->event_queue) {
-        vQueueDelete(uart_obj->event_queue);
+        vQueueDeleteWithCaps(uart_obj->event_queue);
     }
     if (uart_obj->rx_ring_buf) {
-        vRingbufferDelete(uart_obj->rx_ring_buf);
+        vRingbufferDeleteWithCaps(uart_obj->rx_ring_buf);
     }
     if (uart_obj->tx_ring_buf) {
-        vRingbufferDelete(uart_obj->tx_ring_buf);
+        vRingbufferDeleteWithCaps(uart_obj->tx_ring_buf);
     }
-#if CONFIG_UART_ISR_IN_IRAM
-    free(uart_obj->event_queue_storage);
-    free(uart_obj->event_queue_struct);
-    free(uart_obj->tx_ring_buf_storage);
-    free(uart_obj->tx_ring_buf_struct);
-    free(uart_obj->rx_ring_buf_storage);
-    free(uart_obj->rx_ring_buf_struct);
-    free(uart_obj->rx_mux_struct);
-    free(uart_obj->tx_mux_struct);
-    free(uart_obj->tx_brk_sem_struct);
-    free(uart_obj->tx_done_sem_struct);
-    free(uart_obj->tx_fifo_sem_struct);
-#endif
-    free(uart_obj->rx_data_buf);
-    free(uart_obj);
+
+    heap_caps_free(uart_obj->rx_data_buf);
+    heap_caps_free(uart_obj);
 }
 
 static uart_obj_t *uart_alloc_driver_obj(uart_port_t uart_num, int event_queue_size, int tx_buffer_size, int rx_buffer_size)
@@ -1530,82 +1507,29 @@ static uart_obj_t *uart_alloc_driver_obj(uart_port_t uart_num, int event_queue_s
     if (!uart_obj->rx_data_buf) {
         goto err;
     }
-#if CONFIG_UART_ISR_IN_IRAM
     if (event_queue_size > 0) {
-        uart_obj->event_queue_storage = heap_caps_calloc(event_queue_size, sizeof(uart_event_t), UART_MALLOC_CAPS);
-        uart_obj->event_queue_struct = heap_caps_calloc(1, sizeof(StaticQueue_t), UART_MALLOC_CAPS);
-        if (!uart_obj->event_queue_storage || !uart_obj->event_queue_struct) {
-            goto err;
-        }
-    }
-    if (tx_buffer_size > 0) {
-        uart_obj->tx_ring_buf_storage = heap_caps_calloc(1, tx_buffer_size, UART_MALLOC_CAPS);
-        uart_obj->tx_ring_buf_struct = heap_caps_calloc(1, sizeof(StaticRingbuffer_t), UART_MALLOC_CAPS);
-        if (!uart_obj->tx_ring_buf_storage || !uart_obj->tx_ring_buf_struct) {
-            goto err;
-        }
-    }
-    uart_obj->rx_ring_buf_storage = heap_caps_calloc(1, rx_buffer_size, UART_MALLOC_CAPS);
-    uart_obj->rx_ring_buf_struct = heap_caps_calloc(1, sizeof(StaticRingbuffer_t), UART_MALLOC_CAPS);
-    uart_obj->rx_mux_struct = heap_caps_calloc(1, sizeof(StaticSemaphore_t), UART_MALLOC_CAPS);
-    uart_obj->tx_mux_struct = heap_caps_calloc(1, sizeof(StaticSemaphore_t), UART_MALLOC_CAPS);
-    uart_obj->tx_brk_sem_struct = heap_caps_calloc(1, sizeof(StaticSemaphore_t), UART_MALLOC_CAPS);
-    uart_obj->tx_done_sem_struct = heap_caps_calloc(1, sizeof(StaticSemaphore_t), UART_MALLOC_CAPS);
-    uart_obj->tx_fifo_sem_struct = heap_caps_calloc(1, sizeof(StaticSemaphore_t), UART_MALLOC_CAPS);
-    if (!uart_obj->rx_ring_buf_storage || !uart_obj->rx_ring_buf_struct || !uart_obj->rx_mux_struct ||
-            !uart_obj->tx_mux_struct || !uart_obj->tx_brk_sem_struct || !uart_obj->tx_done_sem_struct ||
-            !uart_obj->tx_fifo_sem_struct) {
-        goto err;
-    }
-    if (event_queue_size > 0) {
-        uart_obj->event_queue = xQueueCreateStatic(event_queue_size, sizeof(uart_event_t),
-                                uart_obj->event_queue_storage, uart_obj->event_queue_struct);
+        uart_obj->event_queue = xQueueCreateWithCaps(event_queue_size, sizeof(uart_event_t), UART_MALLOC_CAPS);
         if (!uart_obj->event_queue) {
             goto err;
         }
     }
     if (tx_buffer_size > 0) {
-        uart_obj->tx_ring_buf = xRingbufferCreateStatic(tx_buffer_size, RINGBUF_TYPE_NOSPLIT,
-                                uart_obj->tx_ring_buf_storage, uart_obj->tx_ring_buf_struct);
+        uart_obj->tx_ring_buf = xRingbufferCreateWithCaps(tx_buffer_size, RINGBUF_TYPE_NOSPLIT, UART_MALLOC_CAPS);
         if (!uart_obj->tx_ring_buf) {
             goto err;
         }
     }
-    uart_obj->rx_ring_buf = xRingbufferCreateStatic(rx_buffer_size, RINGBUF_TYPE_BYTEBUF,
-                            uart_obj->rx_ring_buf_storage, uart_obj->rx_ring_buf_struct);
-    uart_obj->rx_mux = xSemaphoreCreateMutexStatic(uart_obj->rx_mux_struct);
-    uart_obj->tx_mux = xSemaphoreCreateMutexStatic(uart_obj->tx_mux_struct);
-    uart_obj->tx_brk_sem = xSemaphoreCreateBinaryStatic(uart_obj->tx_brk_sem_struct);
-    uart_obj->tx_done_sem = xSemaphoreCreateBinaryStatic(uart_obj->tx_done_sem_struct);
-    uart_obj->tx_fifo_sem = xSemaphoreCreateBinaryStatic(uart_obj->tx_fifo_sem_struct);
+    uart_obj->rx_ring_buf = xRingbufferCreateWithCaps(rx_buffer_size, RINGBUF_TYPE_BYTEBUF, UART_MALLOC_CAPS);
+    uart_obj->tx_mux = xSemaphoreCreateMutexWithCaps(UART_MALLOC_CAPS);
+    uart_obj->rx_mux = xSemaphoreCreateMutexWithCaps(UART_MALLOC_CAPS);
+    uart_obj->tx_brk_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
+    uart_obj->tx_done_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
+    uart_obj->tx_fifo_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
     if (!uart_obj->rx_ring_buf || !uart_obj->rx_mux || !uart_obj->tx_mux || !uart_obj->tx_brk_sem ||
             !uart_obj->tx_done_sem || !uart_obj->tx_fifo_sem) {
         goto err;
     }
-#else
-    if (event_queue_size > 0) {
-        uart_obj->event_queue = xQueueCreate(event_queue_size, sizeof(uart_event_t));
-        if (!uart_obj->event_queue) {
-            goto err;
-        }
-    }
-    if (tx_buffer_size > 0) {
-        uart_obj->tx_ring_buf = xRingbufferCreate(tx_buffer_size, RINGBUF_TYPE_NOSPLIT);
-        if (!uart_obj->tx_ring_buf) {
-            goto err;
-        }
-    }
-    uart_obj->rx_ring_buf = xRingbufferCreate(rx_buffer_size, RINGBUF_TYPE_BYTEBUF);
-    uart_obj->tx_mux = xSemaphoreCreateMutex();
-    uart_obj->rx_mux = xSemaphoreCreateMutex();
-    uart_obj->tx_brk_sem = xSemaphoreCreateBinary();
-    uart_obj->tx_done_sem = xSemaphoreCreateBinary();
-    uart_obj->tx_fifo_sem = xSemaphoreCreateBinary();
-    if (!uart_obj->rx_ring_buf || !uart_obj->rx_mux || !uart_obj->tx_mux || !uart_obj->tx_brk_sem ||
-            !uart_obj->tx_done_sem || !uart_obj->tx_fifo_sem) {
-        goto err;
-    }
-#endif
+
     return uart_obj;
 
 err:

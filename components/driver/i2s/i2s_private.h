@@ -100,12 +100,6 @@ struct i2s_channel_obj_t {
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t    pm_lock;        /*!< Power management lock, to avoid apb clock frequency changes while i2s is working */
 #endif
-#if CONFIG_I2S_ISR_IRAM_SAFE
-    StaticSemaphore_t       *mutex_struct;      /*!< Static mutex struct */
-    StaticSemaphore_t       *binary_struct;     /*!< Static binary struct */
-    StaticQueue_t           *msg_que_struct;    /*!< Static message queue struct */
-    void                    *msg_que_storage;   /*!< Static message queue storage */
-#endif
     QueueHandle_t           msg_queue;      /*!< Message queue handler, used for transporting data between interrupt and read/write task */
     i2s_event_callbacks_t   callbacks;      /*!< Callback functions */
     void                    *user_data;     /*!< User data for callback functions */

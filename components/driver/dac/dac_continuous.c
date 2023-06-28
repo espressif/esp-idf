@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "sdkconfig.h"
 
 #include "rom/lldesc.h"
@@ -70,12 +71,8 @@ struct dac_continuous_s {
     esp_pm_lock_handle_t    pm_lock;
 #endif
     SemaphoreHandle_t       mutex;
-    StaticSemaphore_t       mutex_struct;               /* Static mutex struct */
-
     QueueHandle_t           desc_pool;                  /* The pool of available descriptors
                                                          * The descriptors in the pool are not linked in to pending chain */
-    StaticQueue_t           desc_pool_struct;           /* Static message queue struct */
-    void                    *desc_pool_storage;         /* Static message queue storage */
 
     lldesc_t                **desc;
     uint8_t                 **bufs;
@@ -224,14 +221,10 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     dac_continuous_handle_t handle = heap_caps_calloc(1, sizeof(struct dac_continuous_s), DAC_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_NO_MEM, TAG, "no memory for the dac continuous mode structure");
 
-    /* Allocate static queue */
-    handle->desc_pool_storage = (uint8_t *)heap_caps_calloc(cont_cfg->desc_num, sizeof(lldesc_t *), DAC_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(handle->desc_pool_storage, ESP_ERR_NO_MEM, err3, TAG, "no memory for message queue storage");
-    handle->desc_pool = xQueueCreateStatic(cont_cfg->desc_num, sizeof(lldesc_t *), handle->desc_pool_storage, &handle->desc_pool_struct);
+    /* Allocate queue and mutex*/
+    handle->desc_pool = xQueueCreateWithCaps(cont_cfg->desc_num, sizeof(lldesc_t *), DAC_MEM_ALLOC_CAPS);
+    handle->mutex = xSemaphoreCreateMutexWithCaps(DAC_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(handle->desc_pool, ESP_ERR_NO_MEM, err3, TAG, "no memory for message queue");
-
-    /* Allocate static mutex */
-    handle->mutex = xSemaphoreCreateMutexStatic(&handle->mutex_struct);
     ESP_GOTO_ON_FALSE(handle->mutex, ESP_ERR_NO_MEM, err3, TAG, "no memory for channels mutex");
 
     /* Create PM lock */
@@ -273,13 +266,10 @@ err2:
     s_dac_free_dma_desc(handle);
 err3:
     if (handle->desc_pool) {
-        vQueueDelete(handle->desc_pool);
-    }
-    if (handle->desc_pool_storage) {
-        free(handle->desc_pool_storage);
+        vQueueDeleteWithCaps(handle->desc_pool);
     }
     if (handle->mutex) {
-        vSemaphoreDelete(handle->mutex);
+        vSemaphoreDeleteWithCaps(handle->mutex);
     }
     free(handle);
 err4:
@@ -312,15 +302,11 @@ esp_err_t dac_continuous_del_channels(dac_continuous_handle_t handle)
     /* Free allocated resources */
     s_dac_free_dma_desc(handle);
     if (handle->desc_pool) {
-        vQueueDelete(handle->desc_pool);
+        vQueueDeleteWithCaps(handle->desc_pool);
         handle->desc_pool = NULL;
     }
-    if (handle->desc_pool_storage) {
-        free(handle->desc_pool_storage);
-        handle->desc_pool_storage = NULL;
-    }
     if (handle->mutex) {
-        vSemaphoreDelete(handle->mutex);
+        vSemaphoreDeleteWithCaps(handle->mutex);
         handle->mutex = NULL;
     }
 #if CONFIG_PM_ENABLE

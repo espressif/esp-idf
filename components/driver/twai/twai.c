@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "esp_types.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
@@ -71,13 +72,6 @@ typedef struct {
     uint32_t bus_error_count;
     intr_handle_t isr_handle;
     //TX and RX
-#ifdef CONFIG_TWAI_ISR_IN_IRAM
-    void *tx_queue_buff;
-    void *tx_queue_struct;
-    void *rx_queue_buff;
-    void *rx_queue_struct;
-    void *semphr_struct;
-#endif
     QueueHandle_t tx_queue;
     QueueHandle_t rx_queue;
     int tx_msg_count;
@@ -331,23 +325,15 @@ static void twai_free_driver_obj(twai_obj_t *p_obj)
     }
     //Delete queues and semaphores
     if (p_obj->tx_queue != NULL) {
-        vQueueDelete(p_obj->tx_queue);
+        vQueueDeleteWithCaps(p_obj->tx_queue);
     }
     if (p_obj->rx_queue != NULL) {
-        vQueueDelete(p_obj->rx_queue);
+        vQueueDeleteWithCaps(p_obj->rx_queue);
     }
     if (p_obj->alert_semphr != NULL) {
-        vSemaphoreDelete(p_obj->alert_semphr);
+        vSemaphoreDeleteWithCaps(p_obj->alert_semphr);
     }
-#ifdef CONFIG_TWAI_ISR_IN_IRAM
-    //Free memory used by static queues and semaphores. free() allows freeing NULL pointers
-    free(p_obj->tx_queue_buff);
-    free(p_obj->tx_queue_struct);
-    free(p_obj->rx_queue_buff);
-    free(p_obj->rx_queue_struct);
-    free(p_obj->semphr_struct);
-#endif  //CONFIG_TWAI_ISR_IN_IRAM
-    free(p_obj);
+    heap_caps_free(p_obj);
 }
 
 static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, twai_clock_source_t clk_src, int controller_id,  twai_obj_t **p_twai_obj_ret)
@@ -360,48 +346,15 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (p_obj == NULL) {
         return ESP_ERR_NO_MEM;
     }
-#ifdef CONFIG_TWAI_ISR_IN_IRAM
-    //Allocate memory for queues and semaphores in DRAM
     if (g_config->tx_queue_len > 0) {
-        p_obj->tx_queue_buff = heap_caps_calloc(g_config->tx_queue_len, sizeof(twai_hal_frame_t), TWAI_MALLOC_CAPS);
-        p_obj->tx_queue_struct = heap_caps_calloc(1, sizeof(StaticQueue_t), TWAI_MALLOC_CAPS);
-        if (p_obj->tx_queue_buff == NULL || p_obj->tx_queue_struct == NULL) {
-            ret = ESP_ERR_NO_MEM;
-            goto err;
-        }
+        p_obj->tx_queue = xQueueCreateWithCaps(g_config->tx_queue_len, sizeof(twai_hal_frame_t), TWAI_MALLOC_CAPS);
     }
-    p_obj->rx_queue_buff = heap_caps_calloc(g_config->rx_queue_len, sizeof(twai_hal_frame_t), TWAI_MALLOC_CAPS);
-    p_obj->rx_queue_struct = heap_caps_calloc(1, sizeof(StaticQueue_t), TWAI_MALLOC_CAPS);
-    p_obj->semphr_struct = heap_caps_calloc(1, sizeof(StaticSemaphore_t), TWAI_MALLOC_CAPS);
-    if (p_obj->rx_queue_buff == NULL || p_obj->rx_queue_struct == NULL || p_obj->semphr_struct == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto err;
-    }
-    //Create static queues and semaphores
-    if (g_config->tx_queue_len > 0) {
-        p_obj->tx_queue = xQueueCreateStatic(g_config->tx_queue_len, sizeof(twai_hal_frame_t), p_obj->tx_queue_buff, p_obj->tx_queue_struct);
-        if (p_obj->tx_queue == NULL) {
-            ret = ESP_ERR_NO_MEM;
-            goto err;
-        }
-    }
-    p_obj->rx_queue = xQueueCreateStatic(g_config->rx_queue_len, sizeof(twai_hal_frame_t), p_obj->rx_queue_buff, p_obj->rx_queue_struct);
-    p_obj->alert_semphr = xSemaphoreCreateBinaryStatic(p_obj->semphr_struct);
-    if (p_obj->rx_queue == NULL || p_obj->alert_semphr == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto err;
-    }
-#else   //CONFIG_TWAI_ISR_IN_IRAM
-    if (g_config->tx_queue_len > 0) {
-        p_obj->tx_queue = xQueueCreate(g_config->tx_queue_len, sizeof(twai_hal_frame_t));
-    }
-    p_obj->rx_queue = xQueueCreate(g_config->rx_queue_len, sizeof(twai_hal_frame_t));
-    p_obj->alert_semphr = xSemaphoreCreateBinary();
+    p_obj->rx_queue = xQueueCreateWithCaps(g_config->rx_queue_len, sizeof(twai_hal_frame_t), TWAI_MALLOC_CAPS);
+    p_obj->alert_semphr = xSemaphoreCreateBinaryWithCaps(TWAI_MALLOC_CAPS);
     if ((g_config->tx_queue_len > 0 && p_obj->tx_queue == NULL) || p_obj->rx_queue == NULL || p_obj->alert_semphr == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto err;
     }
-#endif  //CONFIG_TWAI_ISR_IN_IRAM
     //Allocate interrupt
     ret = esp_intr_alloc(twai_controller_periph_signals.controllers[controller_id].irq_id,
                          g_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,

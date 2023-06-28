@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/idf_additions.h"
 #if CONFIG_PARLIO_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
@@ -59,9 +60,7 @@ typedef struct parlio_tx_unit_t {
     size_t max_transfer_bits;  // maximum transfer size in bits
     size_t queue_depth;        // size of transaction queue
     size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
-    void *queues_storage;      // storage of transaction queues
     QueueHandle_t trans_queues[PARLIO_TX_QUEUE_MAX]; // transaction queues
-    StaticQueue_t trans_queue_structs[PARLIO_TX_QUEUE_MAX]; // memory to store the static structure for trans_queues
     parlio_tx_trans_desc_t *cur_trans; // points to current transaction
     uint32_t idle_value_mask;          // mask of idle value
     _Atomic parlio_tx_fsm_t fsm;       // Driver FSM state
@@ -113,26 +112,33 @@ static void parlio_tx_unregister_to_group(parlio_tx_unit_t *unit, parlio_group_t
 
 static esp_err_t parlio_tx_create_trans_queue(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
+    esp_err_t ret;
+
     tx_unit->queue_depth = config->trans_queue_depth;
-    // the queue only saves transaction description pointers
-    tx_unit->queues_storage = heap_caps_calloc(config->trans_queue_depth * PARLIO_TX_QUEUE_MAX, sizeof(parlio_tx_trans_desc_t *), PARLIO_MEM_ALLOC_CAPS);
-    ESP_RETURN_ON_FALSE(tx_unit->queues_storage, ESP_ERR_NO_MEM, TAG, "no mem for queue storage");
-    parlio_tx_trans_desc_t **pp_trans_desc = (parlio_tx_trans_desc_t **)tx_unit->queues_storage;
+    // Allocate transaction queues. Each queue only holds pointers to the transaction descriptors
     for (int i = 0; i < PARLIO_TX_QUEUE_MAX; i++) {
-        tx_unit->trans_queues[i] = xQueueCreateStatic(config->trans_queue_depth, sizeof(parlio_tx_trans_desc_t *),
-                                   (uint8_t *)pp_trans_desc, &tx_unit->trans_queue_structs[i]);
-        pp_trans_desc += config->trans_queue_depth;
-        // because trans_queue_structs is guaranteed to be non-NULL, so the trans_queues will also not be NULL
-        assert(tx_unit->trans_queues[i]);
+        tx_unit->trans_queues[i] = xQueueCreateWithCaps(config->trans_queue_depth, sizeof(parlio_tx_trans_desc_t *), PARLIO_MEM_ALLOC_CAPS);
+        ESP_GOTO_ON_FALSE(tx_unit->trans_queues[i], ESP_ERR_NO_MEM, exit, TAG, "no mem for queue");
     }
-    // initialize the ready queue
+
+    // Initialize the ready queue
     parlio_tx_trans_desc_t *p_trans_desc = NULL;
     for (int i = 0; i < config->trans_queue_depth; i++) {
         p_trans_desc = &tx_unit->trans_desc_pool[i];
-        ESP_RETURN_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_READY], &p_trans_desc, 0) == pdTRUE,
-                            ESP_ERR_INVALID_STATE, TAG, "ready queue full");
+        ESP_GOTO_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_READY], &p_trans_desc, 0) == pdTRUE,
+                          ESP_ERR_INVALID_STATE, exit, TAG, "ready queue full");
     }
+
     return ESP_OK;
+
+exit:
+    for (int i = 0; i < PARLIO_TX_QUEUE_MAX; i++) {
+        if (tx_unit->trans_queues[i]) {
+            vQueueDeleteWithCaps(tx_unit->trans_queues[i]);
+            tx_unit->trans_queues[i] = NULL;
+        }
+    }
+    return ret;
 }
 
 static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
@@ -149,14 +155,13 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
     }
     for (int i = 0; i < PARLIO_TX_QUEUE_MAX; i++) {
         if (tx_unit->trans_queues[i]) {
-            vQueueDelete(tx_unit->trans_queues[i]);
+            vQueueDeleteWithCaps(tx_unit->trans_queues[i]);
         }
     }
     if (tx_unit->group) {
         // de-register from group
         parlio_tx_unregister_to_group(tx_unit, tx_unit->group);
     }
-    free(tx_unit->queues_storage);
     free(tx_unit->dma_nodes);
     free(tx_unit);
     return ESP_OK;
