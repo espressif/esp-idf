@@ -74,7 +74,6 @@ menu "IEEE 802.15.4"
             Enabling this option increases throughput by ~5% at the expense of ~2.1k
             IRAM code size increase.
 
-
     config IEEE802154_SLEEP_ENABLE
         # Todo: Remove when support safe power-down of the power domain (IDF-7317)
         bool "Enable IEEE802154 light sleep"
