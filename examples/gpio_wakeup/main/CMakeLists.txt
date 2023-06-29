@@ -1,6 +1,7 @@
 set(srcs "gpio_wakeup_example_main.c"
-         "gpio_wakeup.c"
-         "timer_wakeup.c")
+         "light_sleep.c"
+         "gpio_wakeup_sleep.c"
+         "timer_wakeup_sleep.c")
 
 set(TOUCH_ELEMENT_COMPATIBLE_TARGETS "esp32s2" "esp32s3")
 
