@@ -69,6 +69,8 @@
 #define SDSPI_TEST_CS_PIN GPIO_NUM_13
 #endif
 
+#define GPIO_ACTIVE_LOW     0
+#define GPIO_ACTIVE_HIGH    1
 
 TEST_CASE("MMC_RSP_BITS", "[sd]")
 {
@@ -595,7 +597,7 @@ static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
     free(card);
 }
 
-static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
+static void test_wp_input(int gpio_wp_num, bool gpio_wp_polarity, const sdmmc_host_t* config)
 {
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -613,12 +615,12 @@ static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
     uint32_t* data = heap_caps_calloc(1, 512, MALLOC_CAP_DMA);
 
     // Check that card write succeeds if WP is high
-    REG_WRITE(GPIO_OUT_W1TS_REG, BIT(gpio_wp_num));
+    REG_WRITE((gpio_wp_polarity? GPIO_OUT_W1TC_REG : GPIO_OUT_W1TS_REG), BIT(gpio_wp_num));
     usleep(1000);
     TEST_ESP_OK(sdmmc_write_sectors(card, &data, 0, 1));
 
     // Check that write fails if WP is low
-    REG_WRITE(GPIO_OUT_W1TC_REG, BIT(gpio_wp_num));
+    REG_WRITE((gpio_wp_polarity? GPIO_OUT_W1TS_REG : GPIO_OUT_W1TC_REG), BIT(gpio_wp_num));
     usleep(1000);
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, sdmmc_write_sectors(card, &data, 0, 1));
     // ...but reads still work
@@ -652,11 +654,17 @@ TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
     slot_config.gpio_wp = CD_WP_TEST_GPIO;
+    bool gpio_wp_polarity = GPIO_ACTIVE_LOW;
+    if (gpio_wp_polarity) {
+        slot_config.flags |= SDMMC_SLOT_FLAG_WP_ACTIVE_HIGH;
+    } else {
+        slot_config.flags &= ~(SDMMC_SLOT_FLAG_WP_ACTIVE_HIGH);
+    }
     TEST_ESP_OK(sdmmc_host_init());
     usleep(10000);
     TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
 
-    test_wp_input(CD_WP_TEST_GPIO, &config);
+    test_wp_input(slot_config.gpio_wp, gpio_wp_polarity, &config);
 
     TEST_ESP_OK(sdmmc_host_deinit());
     sd_test_board_power_off();
@@ -697,6 +705,7 @@ TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
     dev_config.host_id = config.slot;
     dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
     dev_config.gpio_wp = CD_WP_TEST_GPIO;
+    dev_config.gpio_wp_polarity = GPIO_ACTIVE_LOW;
     test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
 
     TEST_ESP_OK(sdspi_host_init());
@@ -704,7 +713,7 @@ TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 
     config.slot = handle;
 
-    test_wp_input(CD_WP_TEST_GPIO, &config);
+    test_wp_input(dev_config.gpio_wp, dev_config.gpio_wp_polarity, &config);
 
     TEST_ESP_OK(sdspi_host_deinit());
     test_sdspi_deinit_bus(dev_config.host_id);
