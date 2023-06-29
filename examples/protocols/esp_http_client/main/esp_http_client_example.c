@@ -67,6 +67,11 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             break;
         case HTTP_EVENT_ON_DATA:
             ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+            // Clean the buffer in case of a new request
+            if (output_len == 0 && evt->user_data) {
+                // we are just starting to copy the output data into the use
+                memset(evt->user_data, 0, MAX_HTTP_OUTPUT_BUFFER);
+            }
             /*
              *  Check for chunked encoding is added as the URL for chunked encoding used in this example returns binary data.
              *  However, event handler can also be used in case chunked encoding is used.
@@ -75,21 +80,23 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                 // If user_data buffer is configured, copy the response into the buffer
                 int copy_len = 0;
                 if (evt->user_data) {
+                    // The last byte in evt->user_data is kept for the NULL character in case of out-of-bound access.
                     copy_len = MIN(evt->data_len, (MAX_HTTP_OUTPUT_BUFFER - output_len));
                     if (copy_len) {
                         memcpy(evt->user_data + output_len, evt->data, copy_len);
                     }
                 } else {
-                    const int buffer_len = esp_http_client_get_content_length(evt->client);
+                    int content_len = esp_http_client_get_content_length(evt->client);
                     if (output_buffer == NULL) {
-                        output_buffer = (char *) malloc(buffer_len);
+                        // We initialize output_buffer with 0 because it is used by strlen() and similar functions therefore should be null terminated.
+                        output_buffer = (char *) calloc(content_len + 1, sizeof(char));
                         output_len = 0;
                         if (output_buffer == NULL) {
                             ESP_LOGE(TAG, "Failed to allocate memory for output buffer");
                             return ESP_FAIL;
                         }
                     }
-                    copy_len = MIN(evt->data_len, (buffer_len - output_len));
+                    copy_len = MIN(evt->data_len, (content_len - output_len));
                     if (copy_len) {
                         memcpy(output_buffer + output_len, evt->data, copy_len);
                     }
@@ -134,7 +141,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
 static void http_rest_with_url(void)
 {
-    char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
+    // Declare local_response_buffer with size (MAX_HTTP_OUTPUT_BUFFER + 1) to prevent out of bound access when
+    // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
+    char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
     /**
      * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
      * If host and path parameters are not set, query parameter will be ignored. In such cases,
@@ -651,7 +660,9 @@ static void https_with_invalid_url(void)
  */
 static void http_native_request(void)
 {
-    char output_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};   // Buffer to store response of http request
+    // Declare local_response_buffer with size (MAX_HTTP_OUTPUT_BUFFER + 1) to prevent out of bound access when
+    // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
+    char output_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};   // Buffer to store response of http request
     int content_length = 0;
     esp_http_client_config_t config = {
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get",
