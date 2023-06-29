@@ -84,19 +84,22 @@ esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src)
     return ESP_OK;
 }
 
-esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
+esp_err_t adc_i2s_mode_init_multi(adc_unit_t adc_unit, size_t pattern_count, adc_digi_pattern_table_t *patterns)
 {
+    ADC_CHECK(pattern_count <= 16, "ADC only supports max 16 patterns", ESP_ERR_INVALID_ARG);
     if (adc_unit & ADC_UNIT_1) {
         ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_NUM_1)), "ADC1 not support DMA for now.", ESP_ERR_INVALID_ARG);
-        ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
+        for (int i = 0; i < pattern_count; i++) {
+            ADC_CHANNEL_CHECK(ADC_NUM_1, patterns[i].channel);
+        }
     }
     if (adc_unit & ADC_UNIT_2) {
         ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_NUM_2)), "ADC2 not support DMA for now.", ESP_ERR_INVALID_ARG);
-        ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
+        for (int i = 0; i < pattern_count; i++) {
+            ADC_CHANNEL_CHECK(ADC_NUM_2, patterns[i].channel);
+        }
     }
 
-    adc_digi_pattern_table_t adc1_pattern[1];
-    adc_digi_pattern_table_t adc2_pattern[1];
     adc_digi_config_t dig_cfg = {
         .conv_limit_en = ADC_MEAS_NUM_LIM_DEFAULT,
         .conv_limit_num = ADC_MAX_MEAS_NUM_DEFAULT,
@@ -105,26 +108,34 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     };
 
     if (adc_unit & ADC_UNIT_1) {
-        adc1_pattern[0].atten = DIG_ADC_ATTEN_DEFUALT;
-        adc1_pattern[0].bit_width = DIG_ADC_BIT_WIDTH_DEFUALT;
-        adc1_pattern[0].channel = channel;
-        dig_cfg.adc1_pattern_len = 1;
-        dig_cfg.adc1_pattern = adc1_pattern;
+        dig_cfg.adc1_pattern_len = pattern_count;
+        dig_cfg.adc1_pattern = patterns;
     }
     if (adc_unit & ADC_UNIT_2) {
-        adc2_pattern[0].atten = DIG_ADC_ATTEN_DEFUALT;
-        adc2_pattern[0].bit_width = DIG_ADC_BIT_WIDTH_DEFUALT;
-        adc2_pattern[0].channel = channel;
-        dig_cfg.adc2_pattern_len = 1;
-        dig_cfg.adc2_pattern = adc2_pattern;
+        dig_cfg.adc2_pattern_len = pattern_count;
+        dig_cfg.adc2_pattern = patterns;
     }
-    adc_gpio_init(adc_unit, channel);
+    for (int i = 0; i < pattern_count; i++) {
+        adc_gpio_init(adc_unit, patterns[i].channel);
+    }
     ADC_ENTER_CRITICAL();
     adc_hal_digi_init();
     adc_hal_digi_controller_config(&dig_cfg);
     ADC_EXIT_CRITICAL();
 
     return ESP_OK;
+}
+
+esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    adc_digi_pattern_table_t channels[] = {
+        {
+            .atten = DIG_ADC_ATTEN_DEFUALT,
+            .bit_width = DIG_ADC_BIT_WIDTH_DEFUALT,
+            .channel = channel,
+        }
+    };
+    return adc_i2s_mode_init_multi(adc_unit, 1, &channels);
 }
 
 esp_err_t adc_digi_init(void)

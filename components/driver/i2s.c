@@ -100,7 +100,9 @@ static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
 static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX];
 #if SOC_I2S_SUPPORTS_ADC_DAC
 static int _i2s_adc_unit = -1;
-static int _i2s_adc_channel = -1;
+static int _i2s_adc_pattern_count = -1;
+static adc_digi_pattern_table_t *_i2s_adc_patterns = NULL;
+static adc1_channel_t _i2s_adc_single_channel;
 #endif
 
 static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, int dma_buf_len);
@@ -728,16 +730,31 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
 
 static esp_err_t _i2s_adc_mode_recover(void)
 {
-    I2S_CHECK(((_i2s_adc_unit != -1) && (_i2s_adc_channel != -1)), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
-    return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_channel);
+    I2S_CHECK((_i2s_adc_unit != -1), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
+    if (_i2s_adc_patterns && _i2s_adc_pattern_count > 0) {
+        return adc_i2s_mode_init_multi(_i2s_adc_unit, _i2s_adc_pattern_count, _i2s_adc_patterns);
+    } else {
+        return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_single_channel);
+    }
+}
+
+
+esp_err_t i2s_set_adc_mode_multi(adc_unit_t adc_unit, size_t pattern_count, adc_digi_pattern_table_t *patterns)
+{
+    I2S_CHECK((adc_unit < ADC_UNIT_2), "i2s ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG);
+    // For now, we only support SAR ADC1.
+    _i2s_adc_unit = adc_unit;
+    _i2s_adc_pattern_count = pattern_count;
+    _i2s_adc_patterns = patterns;
+    return adc_i2s_mode_init_multi(adc_unit, pattern_count, patterns);
 }
 
 esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel)
 {
     I2S_CHECK((adc_unit < ADC_UNIT_2), "i2s ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG);
-    // For now, we only support SAR ADC1.
-    _i2s_adc_unit = adc_unit;
-    _i2s_adc_channel = adc_channel;
+    _i2s_adc_single_channel = adc_channel;
+    _i2s_adc_patterns = NULL;
+    _i2s_adc_pattern_count = 0;
     return adc_i2s_mode_init(adc_unit, adc_channel);
 }
 #endif
