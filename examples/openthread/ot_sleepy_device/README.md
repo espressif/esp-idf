@@ -8,28 +8,22 @@ The example demonstrates the Thread Sleepy End Device (SED), the device will ent
 
 ### Hardware Required
 
-* Prepare an ESP32-C6 development board as an OpenThread Sleepy End Device (SED).   
-* Connect the board using a USB cable for power supply and programming.  
-* Choose another ESP32-C6 as the OpenThread Leader.  
-
+* Prepare an 802.15.4 SoC development board as an OpenThread Sleepy End Device (SED).
+* Connect the board using a USB cable for power supply and programming.
+* Choose another 802.15.4 SoC as the OpenThread Leader.
 
 ## Configure the Openthread Dataset
 
-* Run [ot_cli](../ot_cli/) on another ESP32-C6 device to create openthread dataset configuration and start an openthread network as the leader.  
-* Configure the Openthread dataset using `idf.py menuconfig` in `Component config ---> Openthread ---> Thread Operation Dataset`, ensuring that the openthread sleepy device's dataset matches the dataset of the leader.  
-
-## Erase the ot_storage
-
-If desired, erase the ot_storage by running `idf.py -p <PORT> erase-flash` before flashing the board to remove previous examples or other project data.
+* Run [ot_cli](../ot_cli/) on another 802.15.4 SoC device to create openthread dataset configuration and start an openthread network as the leader.
+* Configure the Openthread dataset using `idf.py menuconfig` in `Component config ---> Openthread ---> Thread Operation Dataset`, ensuring that the openthread sleepy device's dataset matches the dataset of the leader.
 
 ### Build and Flash
 
- Build the project and flash it to the board. Use the following command: `idf.py -p <PORT> build flash monitor`.  
-
+Build the project and flash it to the board. Use the following command: `idf.py -p <PORT> erase-flash flash monitor`.
 
 ### Example Output
 
-As the example runs, you will see the log output indicating the initialization and operation of OpenThread, including the device joining the OpenThread network as a Sleepy End Device (SED) and periodic polling of the leader.  
+As the example runs, you will see the log output indicating the initialization and operation of OpenThread, including the device joining the OpenThread network as a Sleepy End Device (SED) and periodic polling of the leader.
 
 ```
 I (769) btbb_init: btbb sleep retention initialization
