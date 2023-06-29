@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #define TRACEMEM_MUX_BLK0_NUM                   22
-#define TRACEMEM_MUX_BLK1_NUM                   23
+#define TRACEMEM_MUX_BLK1_NUM                   26
 
 #if (TRACEMEM_MUX_BLK0_NUM < 6) || (TRACEMEM_MUX_BLK0_NUM > 29)
 #error Invalid TRAX block 0 num!
