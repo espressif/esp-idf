@@ -1,11 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/ethernet/eth2ap:
-  disable:
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: esp32h2 is not supported
-
 examples/ethernet/iperf:
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
