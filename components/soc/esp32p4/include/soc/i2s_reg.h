@@ -14,7 +14,7 @@ extern "C" {
 /** I2S_INT_RAW_REG register
  *  I2S interrupt raw register, valid in level.
  */
-#define I2S_INT_RAW_REG (DR_REG_I2S_BASE + 0xc)
+#define I2S_INT_RAW_REG(i) (REG_I2S_BASE(i) + 0xc)
 /** I2S_RX_DONE_INT_RAW : RO/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt status bit  for the i2s_rx_done_int interrupt
  */
@@ -47,7 +47,7 @@ extern "C" {
 /** I2S_INT_ST_REG register
  *  I2S interrupt status register.
  */
-#define I2S_INT_ST_REG (DR_REG_I2S_BASE + 0x10)
+#define I2S_INT_ST_REG(i) (REG_I2S_BASE(i) + 0x10)
 /** I2S_RX_DONE_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit  for the i2s_rx_done_int interrupt
  */
@@ -80,7 +80,7 @@ extern "C" {
 /** I2S_INT_ENA_REG register
  *  I2S interrupt enable register.
  */
-#define I2S_INT_ENA_REG (DR_REG_I2S_BASE + 0x14)
+#define I2S_INT_ENA_REG(i) (REG_I2S_BASE(i) + 0x14)
 /** I2S_RX_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit  for the i2s_rx_done_int interrupt
  */
@@ -113,7 +113,7 @@ extern "C" {
 /** I2S_INT_CLR_REG register
  *  I2S interrupt clear register.
  */
-#define I2S_INT_CLR_REG (DR_REG_I2S_BASE + 0x18)
+#define I2S_INT_CLR_REG(i) (REG_I2S_BASE(i) + 0x18)
 /** I2S_RX_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the i2s_rx_done_int interrupt
  */
@@ -146,7 +146,7 @@ extern "C" {
 /** I2S_RX_CONF_REG register
  *  I2S RX configure register
  */
-#define I2S_RX_CONF_REG (DR_REG_I2S_BASE + 0x20)
+#define I2S_RX_CONF_REG(i) (REG_I2S_BASE(i) + 0x20)
 /** I2S_RX_RESET : WT; bitpos: [0]; default: 0;
  *  Set this bit to reset receiver
  */
@@ -290,7 +290,7 @@ extern "C" {
 /** I2S_TX_CONF_REG register
  *  I2S TX configure register
  */
-#define I2S_TX_CONF_REG (DR_REG_I2S_BASE + 0x24)
+#define I2S_TX_CONF_REG(i) (REG_I2S_BASE(i) + 0x24)
 /** I2S_TX_RESET : WT; bitpos: [0]; default: 0;
  *  Set this bit to reset transmitter
  */
@@ -466,7 +466,7 @@ extern "C" {
 /** I2S_RX_CONF1_REG register
  *  I2S RX configure register 1
  */
-#define I2S_RX_CONF1_REG (DR_REG_I2S_BASE + 0x28)
+#define I2S_RX_CONF1_REG(i) (REG_I2S_BASE(i) + 0x28)
 /** I2S_RX_TDM_WS_WIDTH : R/W; bitpos: [8:0]; default: 0;
  *  The width of rx_ws_out at idle level in TDM mode is (I2S_RX_TDM_WS_WIDTH[8:0] +1) *
  *  T_bck
@@ -503,7 +503,7 @@ extern "C" {
 /** I2S_TX_CONF1_REG register
  *  I2S TX configure register 1
  */
-#define I2S_TX_CONF1_REG (DR_REG_I2S_BASE + 0x2c)
+#define I2S_TX_CONF1_REG(i) (REG_I2S_BASE(i) + 0x2c)
 /** I2S_TX_TDM_WS_WIDTH : R/W; bitpos: [8:0]; default: 0;
  *  The width of tx_ws_out at idle level in TDM mode is (I2S_TX_TDM_WS_WIDTH[8:0] +1) *
  *  T_bck
@@ -540,7 +540,7 @@ extern "C" {
 /** I2S_TX_PCM2PDM_CONF_REG register
  *  I2S TX PCM2PDM configuration register
  */
-#define I2S_TX_PCM2PDM_CONF_REG (DR_REG_I2S_BASE + 0x40)
+#define I2S_TX_PCM2PDM_CONF_REG(i) (REG_I2S_BASE(i) + 0x40)
 /** I2S_TX_PDM_SINC_OSR2 : R/W; bitpos: [4:1]; default: 2;
  *  I2S TX PDM OSR2 value
  */
@@ -622,7 +622,7 @@ extern "C" {
 /** I2S_TX_PCM2PDM_CONF1_REG register
  *  I2S TX PCM2PDM configuration register
  */
-#define I2S_TX_PCM2PDM_CONF1_REG (DR_REG_I2S_BASE + 0x44)
+#define I2S_TX_PCM2PDM_CONF1_REG(i) (REG_I2S_BASE(i) + 0x44)
 /** I2S_TX_PDM_FP : R/W; bitpos: [9:0]; default: 960;
  *  I2S TX PDM Fp
  */
@@ -657,7 +657,7 @@ extern "C" {
 /** I2S_RX_PDM2PCM_CONF_REG register
  *  I2S RX configure register
  */
-#define I2S_RX_PDM2PCM_CONF_REG (DR_REG_I2S_BASE + 0x48)
+#define I2S_RX_PDM2PCM_CONF_REG(i) (REG_I2S_BASE(i) + 0x48)
 /** I2S_RX_PDM2PCM_EN : R/W; bitpos: [19]; default: 0;
  *  1: Enable PDM2PCM RX mode. 0: DIsable.
  */
@@ -707,7 +707,7 @@ extern "C" {
 /** I2S_RX_TDM_CTRL_REG register
  *  I2S TX TDM mode control register
  */
-#define I2S_RX_TDM_CTRL_REG (DR_REG_I2S_BASE + 0x50)
+#define I2S_RX_TDM_CTRL_REG(i) (REG_I2S_BASE(i) + 0x50)
 /** I2S_RX_TDM_PDM_CHAN0_EN : R/W; bitpos: [0]; default: 1;
  *  1: Enable the valid data input of I2S RX TDM or PDM channel $n. 0:  Disable, just
  *  input 0 in this channel.
@@ -847,7 +847,7 @@ extern "C" {
 /** I2S_TX_TDM_CTRL_REG register
  *  I2S TX TDM mode control register
  */
-#define I2S_TX_TDM_CTRL_REG (DR_REG_I2S_BASE + 0x54)
+#define I2S_TX_TDM_CTRL_REG(i) (REG_I2S_BASE(i) + 0x54)
 /** I2S_TX_TDM_CHAN0_EN : R/W; bitpos: [0]; default: 1;
  *  1: Enable the valid data output of I2S TX TDM channel $n. 0:  Disable, just output
  *  0 in this channel.
@@ -996,7 +996,7 @@ extern "C" {
 /** I2S_RX_TIMING_REG register
  *  I2S RX timing control register
  */
-#define I2S_RX_TIMING_REG (DR_REG_I2S_BASE + 0x58)
+#define I2S_RX_TIMING_REG(i) (REG_I2S_BASE(i) + 0x58)
 /** I2S_RX_SD_IN_DM : R/W; bitpos: [1:0]; default: 0;
  *  The delay mode of I2S Rx SD input signal. 0: bypass. 1: delay by pos edge.  2:
  *  delay by neg edge. 3: not used.
@@ -1065,7 +1065,7 @@ extern "C" {
 /** I2S_TX_TIMING_REG register
  *  I2S TX timing control register
  */
-#define I2S_TX_TIMING_REG (DR_REG_I2S_BASE + 0x5c)
+#define I2S_TX_TIMING_REG(i) (REG_I2S_BASE(i) + 0x5c)
 /** I2S_TX_SD_OUT_DM : R/W; bitpos: [1:0]; default: 0;
  *  The delay mode of I2S TX SD output signal. 0: bypass. 1: delay by pos edge.  2:
  *  delay by neg edge. 3: not used.
@@ -1118,7 +1118,7 @@ extern "C" {
 /** I2S_LC_HUNG_CONF_REG register
  *  I2S HUNG configure register.
  */
-#define I2S_LC_HUNG_CONF_REG (DR_REG_I2S_BASE + 0x60)
+#define I2S_LC_HUNG_CONF_REG(i) (REG_I2S_BASE(i) + 0x60)
 /** I2S_LC_FIFO_TIMEOUT : R/W; bitpos: [7:0]; default: 16;
  *  the i2s_tx_hung_int interrupt or the i2s_rx_hung_int interrupt will be triggered
  *  when fifo hung counter is equal to this value
@@ -1146,7 +1146,7 @@ extern "C" {
 /** I2S_RXEOF_NUM_REG register
  *  I2S RX data number control register.
  */
-#define I2S_RXEOF_NUM_REG (DR_REG_I2S_BASE + 0x64)
+#define I2S_RXEOF_NUM_REG(i) (REG_I2S_BASE(i) + 0x64)
 /** I2S_RX_EOF_NUM : R/W; bitpos: [11:0]; default: 64;
  *  The receive data bit length is (I2S_RX_BITS_MOD[4:0] + 1) * (REG_RX_EOF_NUM[11:0] +
  *  1) . It will trigger in_suc_eof interrupt in the configured DMA RX channel.
@@ -1159,7 +1159,7 @@ extern "C" {
 /** I2S_CONF_SIGLE_DATA_REG register
  *  I2S signal data register
  */
-#define I2S_CONF_SIGLE_DATA_REG (DR_REG_I2S_BASE + 0x68)
+#define I2S_CONF_SIGLE_DATA_REG(i) (REG_I2S_BASE(i) + 0x68)
 /** I2S_SINGLE_DATA : R/W; bitpos: [31:0]; default: 0;
  *  The configured constant channel data to be sent out.
  */
@@ -1171,7 +1171,7 @@ extern "C" {
 /** I2S_STATE_REG register
  *  I2S TX status register
  */
-#define I2S_STATE_REG (DR_REG_I2S_BASE + 0x6c)
+#define I2S_STATE_REG(i) (REG_I2S_BASE(i) + 0x6c)
 /** I2S_TX_IDLE : RO; bitpos: [0]; default: 1;
  *  1: i2s_tx is idle state. 0: i2s_tx is working.
  */
@@ -1183,7 +1183,7 @@ extern "C" {
 /** I2S_ETM_CONF_REG register
  *  I2S ETM configure register
  */
-#define I2S_ETM_CONF_REG (DR_REG_I2S_BASE + 0x70)
+#define I2S_ETM_CONF_REG(i) (REG_I2S_BASE(i) + 0x70)
 /** I2S_ETM_TX_SEND_WORD_NUM : R/W; bitpos: [9:0]; default: 64;
  *  I2S ETM send x words event. When sending word number of
  *  reg_etm_tx_send_word_num[9:0], i2s will trigger an etm event.
@@ -1204,7 +1204,7 @@ extern "C" {
 /** I2S_FIFO_CNT_REG register
  *  I2S sync counter register
  */
-#define I2S_FIFO_CNT_REG (DR_REG_I2S_BASE + 0x74)
+#define I2S_FIFO_CNT_REG(i) (REG_I2S_BASE(i) + 0x74)
 /** I2S_TX_FIFO_CNT : RO; bitpos: [30:0]; default: 0;
  *  tx fifo counter value.
  */
@@ -1223,7 +1223,7 @@ extern "C" {
 /** I2S_BCK_CNT_REG register
  *  I2S sync counter register
  */
-#define I2S_BCK_CNT_REG (DR_REG_I2S_BASE + 0x78)
+#define I2S_BCK_CNT_REG(i) (REG_I2S_BASE(i) + 0x78)
 /** I2S_TX_BCK_CNT : RO; bitpos: [30:0]; default: 0;
  *  tx bck counter value.
  */
@@ -1242,7 +1242,7 @@ extern "C" {
 /** I2S_CLK_GATE_REG register
  *  Clock gate register
  */
-#define I2S_CLK_GATE_REG (DR_REG_I2S_BASE + 0x7c)
+#define I2S_CLK_GATE_REG(i) (REG_I2S_BASE(i) + 0x7c)
 /** I2S_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  set this bit to enable clock gate
  */
@@ -1254,7 +1254,7 @@ extern "C" {
 /** I2S_DATE_REG register
  *  Version control register
  */
-#define I2S_DATE_REG (DR_REG_I2S_BASE + 0x80)
+#define I2S_DATE_REG(i) (REG_I2S_BASE(i) + 0x80)
 /** I2S_DATE : R/W; bitpos: [27:0]; default: 36713024;
  *  I2S version control register
  */
