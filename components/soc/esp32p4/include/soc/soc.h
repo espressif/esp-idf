@@ -21,7 +21,7 @@
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_BASE(i) + 0x0)
 #define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1000)         // only one I2S on C6
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
-#define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE + (i) * 0x1000)        // SPIMEM0 and SPIMEM1
+#define REG_SPI_MEM_BASE(i)                     (DR_REG_FLASH_SPI0_BASE + (i) * 0x1000)  // SPIMEM0 and SPIMEM1
 #define REG_SPI_BASE(i)                         (DR_REG_SPI2_BASE + (i) * 0x1000)        // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE + (i) * 0x1000)
