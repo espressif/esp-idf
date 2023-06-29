@@ -114,7 +114,6 @@ esp_err_t esp_ieee802154_sleep(void);
 /**
  * @brief  The IEEE 802.15.4 enter sleep.
  */
-
 void esp_ieee802154_enter_sleep(void);
 
 /**

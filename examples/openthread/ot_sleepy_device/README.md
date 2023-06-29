@@ -3,7 +3,7 @@
 
 # OpenThread Sleepy Device Example
 
-The example demonstrates the Thread Sleepy End Device (SED), the device will enter [Light Sleep mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32h2/api-reference/system/sleep_modes.html#sleep-modes) during idle state.  
+The example demonstrates the Thread Sleepy End Device (SED), the device will enter [Light Sleep mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/system/sleep_modes.html#sleep-modes) during idle state.
 ## How to use example
 
 ### Hardware Required

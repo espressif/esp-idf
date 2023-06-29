@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -41,8 +40,7 @@
 
 static void create_config_network(otInstance *instance)
 {
-    otLinkModeConfig linkMode;
-    memset(&linkMode, 0, sizeof(otLinkModeConfig));
+    otLinkModeConfig linkMode = { 0 };
 
     linkMode.mRxOnWhenIdle = false;
     linkMode.mDeviceType = false;
@@ -136,7 +134,6 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
-
     ESP_ERROR_CHECK(ot_power_save_init());
 
     xTaskCreate(ot_task_worker, "ot_power_save_main", 4096, NULL, 5, NULL);

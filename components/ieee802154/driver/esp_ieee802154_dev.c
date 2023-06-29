@@ -609,7 +609,7 @@ esp_err_t ieee802154_mac_init(void)
     ret = esp_intr_alloc(ieee802154_periph.irq_id, 0, ieee802154_isr, NULL, NULL);
     ESP_RETURN_ON_FALSE(ret == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC init failed");
 
-    ret = ieee802154_sleep_init();
+    ESP_RETURN_ON_FALSE(ieee802154_sleep_init() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep init failed");
 
     return ret;
 }
@@ -740,7 +740,6 @@ static esp_err_t ieee802154_sleep_init(void)
     const static sleep_retention_entries_config_t ieee802154_mac_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = ENTRY(3) },
     };
-
     err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
     ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
     ESP_LOGI(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");

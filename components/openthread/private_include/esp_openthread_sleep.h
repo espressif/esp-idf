@@ -7,6 +7,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {

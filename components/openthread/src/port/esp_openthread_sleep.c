@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_ieee802154.h"
-
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_pm.h"
 static esp_pm_lock_handle_t s_pm_lock = NULL;
 static const char* TAG = "esp openthread sleep";
