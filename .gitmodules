@@ -95,12 +95,12 @@
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
 	url = ../../protobuf-c/protobuf-c.git
-	sbom-version = 1.3.0
+	sbom-version = 1.4.1
 	sbom-cpe = cpe:2.3:a:protobuf-c_project:protobuf-c:{}:*:*:*:*:*:*:*
 	sbom-supplier = Organization: protobuf-c community <https://groups.google.com/g/protobuf-c>
 	sbom-url = https://github.com/protobuf-c/protobuf-c
 	sbom-description = Protocol Buffers implementation in C
-	sbom-hash = dac1a65feac4ad72f612aab99f487056fbcf5c1a
+	sbom-hash = abc67a11c6db271bedbb9f58be85d6f4e2ea8389
 
 [submodule "components/unity/unity"]
 	path = components/unity/unity
