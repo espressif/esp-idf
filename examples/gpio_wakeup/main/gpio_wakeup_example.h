@@ -5,12 +5,15 @@
  */
 
 #pragma once
+#include "esp_pm.h"
+
+static esp_pm_lock_handle_t light_sleep_handle; 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void example_wait_gpio_inactive(void);
+esp_err_t light_sleep_config(void);
 
 esp_err_t example_register_gpio_wakeup(void);
 
