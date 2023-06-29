@@ -71,18 +71,21 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
              *  Check for chunked encoding is added as the URL for chunked encoding used in this example returns binary data.
              *  However, event handler can also be used in case chunked encoding is used.
              */
+            int buffer_len = 0;
             if (!esp_http_client_is_chunked_response(evt->client)) {
                 // If user_data buffer is configured, copy the response into the buffer
                 int copy_len = 0;
+                buffer_len = esp_http_client_get_content_length(evt->client);
                 if (evt->user_data) {
-                    copy_len = MIN(evt->data_len, (MAX_HTTP_OUTPUT_BUFFER - output_len));
+                    copy_len = MIN(evt->data_len, (MAX_HTTP_OUTPUT_BUFFER - 1 - output_len));
                     if (copy_len) {
                         memcpy(evt->user_data + output_len, evt->data, copy_len);
                     }
+                    if(buffer_len == (output_len + copy_len - 1))
+                        memset(evt->user_data + output_len + copy_len, 0, 1);
                 } else {
-                    const int buffer_len = esp_http_client_get_content_length(evt->client);
                     if (output_buffer == NULL) {
-                        output_buffer = (char *) malloc(buffer_len);
+                        output_buffer = (char *) malloc(buffer_len + 1);
                         output_len = 0;
                         if (output_buffer == NULL) {
                             ESP_LOGE(TAG, "Failed to allocate memory for output buffer");
@@ -93,6 +96,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                     if (copy_len) {
                         memcpy(output_buffer + output_len, evt->data, copy_len);
                     }
+                    if(buffer_len == (output_len + copy_len))
+                        memset(output_buffer + output_len + copy_len, 0, 1);
                 }
                 output_len += copy_len;
             }
@@ -668,7 +673,7 @@ static void http_native_request(void)
         if (content_length < 0) {
             ESP_LOGE(TAG, "HTTP client fetch headers failed");
         } else {
-            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
+            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER - 1);
             if (data_read >= 0) {
                 ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %"PRId64,
                 esp_http_client_get_status_code(client),
@@ -698,7 +703,7 @@ static void http_native_request(void)
         if (content_length < 0) {
             ESP_LOGE(TAG, "HTTP client fetch headers failed");
         } else {
-            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
+            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER - 1);
             if (data_read >= 0) {
                 ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %"PRId64,
                 esp_http_client_get_status_code(client),
