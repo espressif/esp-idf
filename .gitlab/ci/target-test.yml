@@ -35,7 +35,7 @@
     - run_cmd pytest $TEST_DIR
       -m \"${markers}\"
       --junitxml=XUNIT_RESULT.xml
-      --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}

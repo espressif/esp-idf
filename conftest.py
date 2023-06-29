@@ -251,7 +251,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--sdkconfig',
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
-    idf_group.addoption('--known-failure-cases-file', help='known failure cases file path')
     idf_group.addoption(
         '--dev-user',
         help='user name associated with some specific device/service used during the test execution',
@@ -313,7 +312,6 @@ def pytest_configure(config: Config) -> None:
     config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
         target=target,
         sdkconfig=config.getoption('sdkconfig'),
-        known_failure_cases_file=config.getoption('known_failure_cases_file'),
         apps_list=apps_list,
     )
     config.pluginmanager.register(config.stash[IDF_PYTEST_EMBEDDED_KEY])

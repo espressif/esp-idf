@@ -4,18 +4,17 @@
 import logging
 import os
 import typing as t
-from fnmatch import fnmatch
 from xml.etree import ElementTree as ET
 
 import pytest
 from _pytest.config import ExitCode
 from _pytest.main import Session
 from _pytest.python import Function
-from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
-from _pytest.terminal import TerminalReporter
+from pytest_embedded import Dut
 from pytest_embedded.plugin import parse_multi_dut_args
 from pytest_embedded.utils import find_by_suffix, to_list
+from pytest_ignore_test_results.ignore_results import ChildCase, ChildCasesStashKey
 
 from .constants import DEFAULT_SDKCONFIG, PREVIEW_TARGETS, SUPPORTED_TARGETS, PytestApp, PytestCase
 from .utils import format_case_id, merge_junit_files
@@ -26,54 +25,24 @@ ITEM_FAILED_KEY = pytest.StashKey[bool]()
 
 
 class IdfPytestEmbedded:
+    UNITY_RESULT_MAPPINGS = {
+        'PASS': 'passed',
+        'FAIL': 'failed',
+        'IGNORE': 'skipped',
+    }
+
     def __init__(
         self,
         target: str,
         sdkconfig: t.Optional[str] = None,
-        known_failure_cases_file: t.Optional[str] = None,
         apps_list: t.Optional[t.List[str]] = None,
     ):
         # CLI options to filter the test cases
         self.target = target.lower()
         self.sdkconfig = sdkconfig
-        self.known_failure_patterns = self._parse_known_failure_cases_file(known_failure_cases_file)
         self.apps_list = apps_list
 
         self.cases: t.List[PytestCase] = []
-
-        self._failed_cases: t.List[t.Tuple[str, bool, bool]] = []  # (test_case_name, is_known_failure_cases, is_xfail)
-
-    @property
-    def failed_cases(self) -> t.List[str]:
-        return [case for case, is_known, is_xfail in self._failed_cases if not is_known and not is_xfail]
-
-    @property
-    def known_failure_cases(self) -> t.List[str]:
-        return [case for case, is_known, _ in self._failed_cases if is_known]
-
-    @property
-    def xfail_cases(self) -> t.List[str]:
-        return [case for case, _, is_xfail in self._failed_cases if is_xfail]
-
-    @staticmethod
-    def _parse_known_failure_cases_file(
-        known_failure_cases_file: t.Optional[str] = None,
-    ) -> t.List[str]:
-        if not known_failure_cases_file or not os.path.isfile(known_failure_cases_file):
-            return []
-
-        patterns = []
-        with open(known_failure_cases_file) as fr:
-            for line in fr.readlines():
-                if not line:
-                    continue
-                if not line.strip():
-                    continue
-                without_comments = line.split('#')[0].strip()
-                if without_comments:
-                    patterns.append(without_comments)
-
-        return patterns
 
     @staticmethod
     def get_param(item: Function, key: str, default: t.Any = None) -> t.Any:
@@ -214,54 +183,46 @@ class IdfPytestEmbedded:
         for item in items:
             self.cases.append(self.item_to_pytest_case(item))
 
-    def pytest_runtest_makereport(self, item: Function, call: CallInfo[None]) -> t.Optional[TestReport]:
-        report = TestReport.from_item_and_call(item, call)
-        if item.stash.get(ITEM_FAILED_KEY, None) is None:
-            item.stash[ITEM_FAILED_KEY] = False
+    def pytest_custom_test_case_name(self, item: Function) -> str:
+        return item.funcargs.get('test_case_name', item.nodeid)  # type: ignore
 
-        if report.outcome == 'failed':
-            # Mark the failed test cases
-            #
-            # This hook function would be called in 3 phases, setup, call, teardown.
-            # the report.outcome is the outcome of the single call of current phase, which is independent
-            # the call phase outcome is the test result
-            item.stash[ITEM_FAILED_KEY] = True
+    def pytest_runtest_makereport(self, item: Function, call: CallInfo[None]) -> None:
+        if call.when == 'call':
+            target = item.funcargs['target']
+            config = item.funcargs['config']
+            is_qemu = item.get_closest_marker('qemu') is not None
 
-        if call.when == 'teardown':
-            item_failed = item.stash[ITEM_FAILED_KEY]
-            if item_failed:
-                # unity real test cases
-                failed_sub_cases = item.stash.get(ITEM_FAILED_CASES_KEY, [])
-                if failed_sub_cases:
-                    for test_case_name in failed_sub_cases:
-                        self._failed_cases.append((test_case_name, self._is_known_failure(test_case_name), False))
-                else:  # the case iteself is failing
-                    test_case_name = item.funcargs.get('test_case_name', '')
-                    if test_case_name:
-                        self._failed_cases.append(
-                            (
-                                test_case_name,
-                                self._is_known_failure(test_case_name),
-                                report.keywords.get('xfail', False),
+            dut: t.Union[Dut, t.Tuple[Dut]] = item.funcargs['dut']  # type: ignore
+            if isinstance(dut, (list, tuple)):
+                res = []
+                for i, _dut in enumerate(dut):
+                    res.extend(
+                        [
+                            ChildCase(
+                                format_case_id(target, config, case.name + f' {i}', is_qemu=is_qemu),
+                                self.UNITY_RESULT_MAPPINGS[case.result],
                             )
+                            for case in _dut.testsuite.testcases
+                        ]
+                    )
+                item.config.stash[ChildCasesStashKey] = {item.nodeid: res}
+            else:
+                item.config.stash[ChildCasesStashKey] = {
+                    item.nodeid: [
+                        ChildCase(
+                            format_case_id(target, config, case.name, is_qemu=is_qemu),
+                            self.UNITY_RESULT_MAPPINGS[case.result],
                         )
-
-        return report
-
-    def _is_known_failure(self, case_id: str) -> bool:
-        for pattern in self.known_failure_patterns:
-            if case_id == pattern:
-                return True
-            if fnmatch(case_id, pattern):
-                return True
-        return False
+                        for case in dut.testsuite.testcases
+                    ]
+                }
 
     @pytest.hookimpl(trylast=True)
     def pytest_runtest_teardown(self, item: Function) -> None:
         """
-        Format the test case generated junit reports
+        Modify the junit reports. Format the unity c test case names.
         """
-        tempdir = item.funcargs.get('test_case_tempdir')
+        tempdir: t.Optional[str] = item.funcargs.get('test_case_tempdir')  # type: ignore
         if not tempdir:
             return
 
@@ -273,8 +234,8 @@ class IdfPytestEmbedded:
             merge_junit_files(junits, os.path.join(tempdir, 'dut.xml'))
             junits = [os.path.join(tempdir, 'dut.xml')]
 
+        # unity cases
         is_qemu = item.get_closest_marker('qemu') is not None
-        failed_sub_cases = []
         target = item.funcargs['target']
         config = item.funcargs['config']
         for junit in junits:
@@ -287,30 +248,9 @@ class IdfPytestEmbedded:
                 if 'file' in case.attrib:
                     case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
 
-                # collect real failure cases
-                if case.find('failure') is not None:
-                    failed_sub_cases.append(new_case_name)
-
             xml.write(junit)
-
-        item.stash[ITEM_FAILED_CASES_KEY] = failed_sub_cases
 
     def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
         if exitstatus != 0:
             if exitstatus == ExitCode.NO_TESTS_COLLECTED:
                 session.exitstatus = 0
-            elif self.known_failure_cases and not self.failed_cases:
-                session.exitstatus = 0
-
-    def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
-        if self.known_failure_cases:
-            terminalreporter.section('Known failure cases', bold=True, yellow=True)
-            terminalreporter.line('\n'.join(self.known_failure_cases))
-
-        if self.xfail_cases:
-            terminalreporter.section('xfail cases', bold=True, yellow=True)
-            terminalreporter.line('\n'.join(self.xfail_cases))
-
-        if self.failed_cases:
-            terminalreporter.section('Failed cases', bold=True, red=True)
-            terminalreporter.line('\n'.join(self.failed_cases))
