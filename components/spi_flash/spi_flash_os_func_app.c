@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,8 +22,12 @@
 
 #include "esp_private/spi_common_internal.h"
 
-#define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA))
+#define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA) || CONFIG_APP_BUILD_TYPE_RAM)
 static const char TAG[] = "spi_flash";
+
+#if SPI_FLASH_CACHE_NO_DISABLE
+static _lock_t s_spi1_flash_mutex;
+#endif  //  #if SPI_FLASH_CACHE_NO_DISABLE
 
 /*
  * OS functions providing delay service and arbitration among chips, and with the cache.
@@ -55,21 +59,19 @@ static inline void on_spi_acquired(app_func_arg_t* ctx);
 static inline void on_spi_yielded(app_func_arg_t* ctx);
 static inline bool on_spi_check_yield(app_func_arg_t* ctx);
 
+#if !SPI_FLASH_CACHE_NO_DISABLE
 IRAM_ATTR static void cache_enable(void* arg)
 {
-#if !SPI_FLASH_CACHE_NO_DISABLE
     spi_flash_enable_interrupts_caches_and_other_cpu();
-#endif
 }
 
 IRAM_ATTR static void cache_disable(void* arg)
 {
-#if !SPI_FLASH_CACHE_NO_DISABLE
     spi_flash_disable_interrupts_caches_and_other_cpu();
-#endif
 }
+#endif  //#if !SPI_FLASH_CACHE_NO_DISABLE
 
-static IRAM_ATTR esp_err_t spi_start(void *arg)
+static IRAM_ATTR esp_err_t acquire_spi_bus_lock(void *arg)
 {
     spi_bus_lock_dev_handle_t dev_lock = ((app_func_arg_t *)arg)->dev_lock;
 
@@ -82,41 +84,58 @@ static IRAM_ATTR esp_err_t spi_start(void *arg)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t spi_end(void *arg)
+static IRAM_ATTR esp_err_t release_spi_bus_lock(void *arg)
 {
     return spi_bus_lock_acquire_end(((app_func_arg_t *)arg)->dev_lock);
 }
 
 static IRAM_ATTR esp_err_t spi23_start(void *arg){
-    esp_err_t ret = spi_start(arg);
+    esp_err_t ret = acquire_spi_bus_lock(arg);
     on_spi_acquired((app_func_arg_t*)arg);
     return ret;
 }
 
 static IRAM_ATTR esp_err_t spi23_end(void *arg){
-    esp_err_t ret = spi_end(arg);
+    esp_err_t ret = release_spi_bus_lock(arg);
     on_spi_released((app_func_arg_t*)arg);
     return ret;
 }
 
 static IRAM_ATTR esp_err_t spi1_start(void *arg)
 {
+    esp_err_t ret = ESP_OK;
+    /**
+     * There are three ways for ESP Flash API lock:
+     * 1. spi bus lock, this is used when SPI1 is shared with GPSPI Master Driver
+     * 2. mutex, this is used when the Cache isn't need to be disabled.
+     * 3. cache lock (from cache_utils.h), this is used when we need to disable Cache to avoid access from SPI0
+     *
+     * From 1 to 3, the lock efficiency decreases.
+     */
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     //use the lock to disable the cache and interrupts before using the SPI bus
-    return spi_start(arg);
+    ret = acquire_spi_bus_lock(arg);
+#elif SPI_FLASH_CACHE_NO_DISABLE
+    _lock_acquire(&s_spi1_flash_mutex);
 #else
     //directly disable the cache and interrupts when lock is not used
     cache_disable(NULL);
-    on_spi_acquired((app_func_arg_t*)arg);
-    return ESP_OK;
 #endif
+    on_spi_acquired((app_func_arg_t*)arg);
+    return ret;
 }
 
 static IRAM_ATTR esp_err_t spi1_end(void *arg)
 {
     esp_err_t ret = ESP_OK;
+
+    /**
+     * There are three ways for ESP Flash API lock, see `spi1_start`
+     */
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
-    ret = spi_end(arg);
+    ret = release_spi_bus_lock(arg);
+#elif SPI_FLASH_CACHE_NO_DISABLE
+    _lock_release(&s_spi1_flash_mutex);
 #else
     cache_enable(NULL);
 #endif
