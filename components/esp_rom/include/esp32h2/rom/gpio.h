@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@ typedef enum {
 
 
 /**
-  * @brief Change GPIO(0-31) pin output by setting, clearing, or disabling pins, GPIO0<->BIT(0).
+  * @brief Change GPIO(0-27) pin output by setting, clearing, or disabling pins, GPIO0<->BIT(0).
   *         There is no particular ordering guaranteed; so if the order of writes is significant,
   *         calling code should divide a single call into multiple calls.
   *
@@ -64,7 +64,7 @@ typedef enum {
 void gpio_output_set(uint32_t set_mask, uint32_t clear_mask, uint32_t enable_mask, uint32_t disable_mask);
 
 /**
-  * @brief Sample the value of GPIO input pins(0-31) and returns a bitmask.
+  * @brief Sample the value of GPIO input pins(0-27) and returns a bitmask.
   *
   * @param None
   *
@@ -97,7 +97,7 @@ void gpio_pin_wakeup_disable(void);
 /**
   * @brief set gpio input to a signal, one gpio can input to several signals.
   *
-  * @param uint32_t gpio : gpio number, 0~0x2f
+  * @param uint32_t gpio : gpio number, 0~27
   *                        gpio == 0x3C, input 0 to signal
   *                        gpio == 0x3A, input nothing to signal
   *                        gpio == 0x38, input 1 to signal
@@ -113,10 +113,10 @@ void gpio_matrix_in(uint32_t gpio, uint32_t signal_idx, bool inv);
 /**
   * @brief set signal output to gpio, one signal can output to several gpios.
   *
-  * @param uint32_t gpio : gpio number, 0~0x2f
+  * @param uint32_t gpio : gpio number, 0~27
   *
   * @param uint32_t signal_idx : signal index.
-  *                        signal_idx == 0x100, cancel output put to the gpio
+  *                        signal_idx == 0x80, cancel output put to the gpio
   *
   * @param bool out_inv : the signal output is invert or not
   *
@@ -129,7 +129,7 @@ void gpio_matrix_out(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_
 /**
   * @brief Select pad as a gpio function from IOMUX.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */
@@ -138,7 +138,7 @@ void gpio_pad_select_gpio(uint32_t gpio_num);
 /**
   * @brief Set pad driver capability.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @param uint32_t drv : 0-3
   *
@@ -149,7 +149,7 @@ void gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
 /**
   * @brief Pull up the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */
@@ -158,7 +158,7 @@ void gpio_pad_pullup(uint32_t gpio_num);
 /**
   * @brief Pull down the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */
@@ -167,7 +167,7 @@ void gpio_pad_pulldown(uint32_t gpio_num);
 /**
   * @brief Unhold the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */
@@ -176,7 +176,7 @@ void gpio_pad_unhold(uint32_t gpio_num);
 /**
   * @brief Hold the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */
@@ -185,7 +185,7 @@ void gpio_pad_hold(uint32_t gpio_num);
 /**
   * @brief enable gpio pad input.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */
@@ -194,7 +194,7 @@ void gpio_pad_input_enable(uint32_t gpio_num);
 /**
   * @brief disable gpio pad input.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~27
   *
   * @return None
   */

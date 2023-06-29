@@ -3,7 +3,7 @@
 */
 
 /*
- * SPDX-FileCopyrightText: 2013-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,6 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/efuse.h"
-#include "esp32/rom/gpio.h"
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
@@ -190,12 +189,12 @@ typedef struct {
 #define PSRAM_SPICLKEN      DPORT_SPI01_CLK_EN
 #endif
 
-static const char* TAG = "quad_psram";
+static const char *TAG = "quad_psram";
 typedef enum {
     PSRAM_SPI_1  = 0x1,
     PSRAM_SPI_2,
     PSRAM_SPI_3,
-    PSRAM_SPI_MAX ,
+    PSRAM_SPI_MAX,
 } psram_spi_num_t;
 
 static psram_cache_speed_t s_psram_mode = PSRAM_CACHE_MAX;
@@ -225,7 +224,7 @@ typedef struct {
 
 static void psram_cache_init(psram_cache_speed_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
 
-static uint8_t s_psram_cs_io = (uint8_t)-1;
+static uint8_t s_psram_cs_io = (uint8_t) -1;
 
 uint8_t esp_psram_impl_get_cs_io(void)
 {
@@ -236,7 +235,7 @@ static void psram_clear_spi_fifo(psram_spi_num_t spi_num)
 {
     int i;
     for (i = 0; i < 16; i++) {
-        WRITE_PERI_REG(SPI_W0_REG(spi_num)+i*4, 0);
+        WRITE_PERI_REG(SPI_W0_REG(spi_num) + i * 4, 0);
     }
 }
 
@@ -275,7 +274,7 @@ static void psram_set_basic_read_mode(psram_spi_num_t spi_num)
 
 
 //start sending cmd/addr and optionally, receiving data
-static void IRAM_ATTR psram_cmd_recv_start(psram_spi_num_t spi_num, uint32_t* pRxData, uint16_t rxByteLen,
+static void IRAM_ATTR psram_cmd_recv_start(psram_spi_num_t spi_num, uint32_t *pRxData, uint16_t rxByteLen,
         psram_cmd_mode_t cmd_mode)
 {
     //get cs1
@@ -302,8 +301,8 @@ static void IRAM_ATTR psram_cmd_recv_start(psram_spi_num_t spi_num, uint32_t* pR
     DPORT_CLEAR_PERI_REG_MASK(DPORT_HOST_INF_SEL_REG, 1 << 14);
 
     //recover spi mode
-    SET_PERI_REG_BITS(SPI_USER_REG(spi_num), (pRxData?SPI_FWRITE_DUAL_M:0xf), mode_backup, SPI_FWRITE_DUAL_S);
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spi_num), (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M));
+    SET_PERI_REG_BITS(SPI_USER_REG(spi_num), (pRxData ? SPI_FWRITE_DUAL_M : 0xf), mode_backup, SPI_FWRITE_DUAL_S);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spi_num), (SPI_FREAD_DIO_M | SPI_FREAD_DUAL_M | SPI_FREAD_QUAD_M | SPI_FREAD_QIO_M));
     SET_PERI_REG_MASK(SPI_CTRL_REG(spi_num), rd_mode_backup);
 
     //return cs to cs0
@@ -324,17 +323,17 @@ static uint32_t backup_usr1[3];
 static uint32_t backup_usr2[3];
 
 //setup spi command/addr/data/dummy in user mode
-static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
+static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t *pInData)
 {
     while (READ_PERI_REG(SPI_CMD_REG(spi_num)) & SPI_USR);
-    backup_usr[spi_num]=READ_PERI_REG(SPI_USER_REG(spi_num));
-    backup_usr1[spi_num]=READ_PERI_REG(SPI_USER1_REG(spi_num));
-    backup_usr2[spi_num]=READ_PERI_REG(SPI_USER2_REG(spi_num));
+    backup_usr[spi_num] = READ_PERI_REG(SPI_USER_REG(spi_num));
+    backup_usr1[spi_num] = READ_PERI_REG(SPI_USER1_REG(spi_num));
+    backup_usr2[spi_num] = READ_PERI_REG(SPI_USER2_REG(spi_num));
     // Set command by user.
     if (pInData->cmdBitLen != 0) {
         // Max command length 16 bits.
         SET_PERI_REG_BITS(SPI_USER2_REG(spi_num), SPI_USR_COMMAND_BITLEN, pInData->cmdBitLen - 1,
-                SPI_USR_COMMAND_BITLEN_S);
+                          SPI_USR_COMMAND_BITLEN_S);
         // Enable command
         SET_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_USR_COMMAND);
         // Load command,bit15-0 is cmd value.
@@ -355,18 +354,18 @@ static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
         SET_PERI_REG_BITS(SPI_USER1_REG(spi_num), SPI_USR_ADDR_BITLEN, 0, SPI_USR_ADDR_BITLEN_S);
     }
     // Set data by user.
-    uint32_t* p_tx_val = pInData->txData;
+    uint32_t *p_tx_val = pInData->txData;
     if (pInData->txDataBitLen != 0) {
         // Enable MOSI
         SET_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_USR_MOSI);
         // Load send buffer
         int len = (pInData->txDataBitLen + 31) / 32;
         if (p_tx_val != NULL) {
-            memcpy((void*)SPI_W0_REG(spi_num), p_tx_val, len * 4);
+            memcpy((void *)SPI_W0_REG(spi_num), p_tx_val, len * 4);
         }
         // Set data send buffer length.Max data length 64 bytes.
         SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(spi_num), SPI_USR_MOSI_DBITLEN, (pInData->txDataBitLen - 1),
-                SPI_USR_MOSI_DBITLEN_S);
+                          SPI_USR_MOSI_DBITLEN_S);
     } else {
         CLEAR_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_USR_MOSI);
         SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(spi_num), SPI_USR_MOSI_DBITLEN, 0, SPI_USR_MOSI_DBITLEN_S);
@@ -377,7 +376,7 @@ static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
         SET_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_USR_MISO);
         // Set data send buffer length.Max data length 64 bytes.
         SET_PERI_REG_BITS(SPI_MISO_DLEN_REG(spi_num), SPI_USR_MISO_DBITLEN, (pInData->rxDataBitLen - 1),
-                SPI_USR_MISO_DBITLEN_S);
+                          SPI_USR_MISO_DBITLEN_S);
     } else {
         CLEAR_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_USR_MISO);
         SET_PERI_REG_BITS(SPI_MISO_DLEN_REG(spi_num), SPI_USR_MISO_DBITLEN, 0, SPI_USR_MISO_DBITLEN_S);
@@ -385,7 +384,7 @@ static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
     if (pInData->dummyBitLen != 0) {
         SET_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_USR_DUMMY); // dummy en
         SET_PERI_REG_BITS(SPI_USER1_REG(PSRAM_SPI_1), SPI_USR_DUMMY_CYCLELEN_V, pInData->dummyBitLen - 1,
-                SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+                          SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
     } else {
         CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_USR_DUMMY); // dummy en
         SET_PERI_REG_BITS(SPI_USER1_REG(PSRAM_SPI_1), SPI_USR_DUMMY_CYCLELEN_V, 0, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
@@ -393,7 +392,8 @@ static int psram_cmd_config(psram_spi_num_t spi_num, psram_cmd_t* pInData)
     return 0;
 }
 
-static void psram_cmd_end(int spi_num) {
+static void psram_cmd_end(int spi_num)
+{
     while (READ_PERI_REG(SPI_CMD_REG(spi_num)) & SPI_USR);
     WRITE_PERI_REG(SPI_USER_REG(spi_num), backup_usr[spi_num]);
     WRITE_PERI_REG(SPI_USER1_REG(spi_num), backup_usr1[spi_num]);
@@ -409,14 +409,14 @@ static void psram_disable_qio_mode(psram_spi_num_t spi_num)
     ps_cmd.txDataBitLen = 8;
     if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
         switch (s_psram_mode) {
-            case PSRAM_CACHE_F80M_S80M:
-                break;
-            case PSRAM_CACHE_F80M_S40M:
-            case PSRAM_CACHE_F40M_S40M:
-            default:
-                cmd_exit_qpi = PSRAM_EXIT_QMODE << 8;
-                ps_cmd.txDataBitLen = 16;
-                break;
+        case PSRAM_CACHE_F80M_S80M:
+            break;
+        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_F40M_S40M:
+        default:
+            cmd_exit_qpi = PSRAM_EXIT_QMODE << 8;
+            ps_cmd.txDataBitLen = 16;
+            break;
         }
     }
     ps_cmd.txData = &cmd_exit_qpi;
@@ -433,7 +433,7 @@ static void psram_disable_qio_mode(psram_spi_num_t spi_num)
 }
 
 //read psram id, should issue `psram_disable_qio_mode` before calling this
-static void psram_read_id(psram_spi_num_t spi_num, uint64_t* dev_id)
+static void psram_read_id(psram_spi_num_t spi_num, uint64_t *dev_id)
 {
     uint32_t dummy_bits = 0 + extra_dummy;
     uint32_t psram_id[2] = {0};
@@ -445,16 +445,16 @@ static void psram_read_id(psram_spi_num_t spi_num, uint64_t* dev_id)
     ps_cmd.cmdBitLen = 8;
     if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
         switch (s_psram_mode) {
-            case PSRAM_CACHE_F80M_S80M:
-                break;
-            case PSRAM_CACHE_F80M_S40M:
-            case PSRAM_CACHE_F40M_S40M:
-            default:
-                ps_cmd.cmdBitLen = 2;   //this two bits is used to delay 2 clock cycle
-                ps_cmd.cmd = 0;
-                addr = (PSRAM_DEVICE_ID << 24) | 0;
-                ps_cmd.addrBitLen = 4 * 8;
-                break;
+        case PSRAM_CACHE_F80M_S80M:
+            break;
+        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_F40M_S40M:
+        default:
+            ps_cmd.cmdBitLen = 2;   //this two bits is used to delay 2 clock cycle
+            ps_cmd.cmd = 0;
+            addr = (PSRAM_DEVICE_ID << 24) | 0;
+            ps_cmd.addrBitLen = 4 * 8;
+            break;
         }
     }
     ps_cmd.addr = &addr;
@@ -480,13 +480,13 @@ static esp_err_t IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spi_num)
     ps_cmd.cmdBitLen = 0;
     if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
         switch (s_psram_mode) {
-            case PSRAM_CACHE_F80M_S80M:
-                break;
-            case PSRAM_CACHE_F80M_S40M:
-            case PSRAM_CACHE_F40M_S40M:
-            default:
-                ps_cmd.cmdBitLen = 2;
-                break;
+        case PSRAM_CACHE_F80M_S80M:
+            break;
+        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_F40M_S40M:
+        default:
+            ps_cmd.cmdBitLen = 2;
+            break;
         }
     }
     ps_cmd.cmd = 0;
@@ -519,7 +519,7 @@ static void spi_user_psram_write(psram_spi_num_t spi_num, uint32_t address, uint
     ps_cmd.rxData = NULL;
     ps_cmd.dummyBitLen = 0;
 
-    for(uint32_t i=0; i<data_len; i+=32) {
+    for (uint32_t i = 0; i < data_len; i += 32) {
         psram_clear_spi_fifo(spi_num);
         addr = (PSRAM_QUAD_WRITE << 24) | ((address & 0x7fffff) + i);
         ps_cmd.txData = data_buffer + (i / 4);
@@ -544,7 +544,7 @@ static void spi_user_psram_read(psram_spi_num_t spi_num, uint32_t address, uint3
     ps_cmd.rxDataBitLen = 32 * 8;
     ps_cmd.dummyBitLen = dummy_bits + extra_dummy;
 
-    for(uint32_t i=0; i<data_len; i+=32) {
+    for (uint32_t i = 0; i < data_len; i += 32) {
         psram_clear_spi_fifo(spi_num);
         addr = (PSRAM_FAST_READ_QUAD << 24) | ((address & 0x7fffff) + i);
         ps_cmd.rxData = data_buffer + (i / 4);
@@ -572,7 +572,7 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
     ps_cmd.addr = 0;
     ps_cmd.txDataBitLen = 0;
     ps_cmd.txData = NULL;
-    ps_cmd.rxDataBitLen =0;
+    ps_cmd.rxDataBitLen = 0;
     ps_cmd.rxData = NULL;
     ps_cmd.dummyBitLen = 1;
     psram_cmd_config(spi_num, &ps_cmd);
@@ -591,7 +591,10 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
     // setp3: keep cs as high level
     //        send 128 cycles clock
     //        send 1 bit high levle in ninth clock from the back to PSRAM SIO1
-    GPIO_OUTPUT_SET(D0WD_PSRAM_CS_IO, 1);
+    static gpio_hal_context_t _gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+    };
+    gpio_hal_set_level(&_gpio_hal, D0WD_PSRAM_CS_IO, 1);
     esp_rom_gpio_connect_out_signal(D0WD_PSRAM_CS_IO, SIG_GPIO_OUT_IDX, 0, 0);
 
     esp_rom_gpio_connect_out_signal(PSRAM_SPID_SD1_IO, SPIQ_OUT_IDX, 0, 0);
@@ -632,15 +635,15 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
 
     // configure psram clock back to the default value
     switch (s_psram_mode) {
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, spi_num);
-            break;
-        case PSRAM_CACHE_F80M_S80M:
-            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, spi_num);
-            break;
-        default:
-            break;
+    case PSRAM_CACHE_F80M_S40M:
+    case PSRAM_CACHE_F40M_S40M:
+        esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, spi_num);
+        break;
+    case PSRAM_CACHE_F80M_S80M:
+        esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, spi_num);
+        break;
+    default:
+        break;
     }
     psram_enable_qio_mode(spi_num);
     return ESP_OK;
@@ -656,19 +659,19 @@ static esp_err_t psram_2t_mode_check(psram_spi_num_t spi_num)
     uint8_t w_check_data[CHECK_DATA_LEN] = {0};
     uint8_t r_check_data[CHECK_DATA_LEN] = {0};
 
-    for (uint32_t addr=0; addr<SIZE_32MBIT; addr+=CHECK_ADDR_STEP) {
+    for (uint32_t addr = 0; addr < SIZE_32MBIT; addr += CHECK_ADDR_STEP) {
         spi_user_psram_write(spi_num, addr, (uint32_t *)w_check_data, CHECK_DATA_LEN);
     }
 
     memset(w_check_data, 0xff, sizeof(w_check_data));
 
-    for (uint32_t addr=SIZE_32MBIT; addr<SIZE_64MBIT; addr+=CHECK_ADDR_STEP) {
+    for (uint32_t addr = SIZE_32MBIT; addr < SIZE_64MBIT; addr += CHECK_ADDR_STEP) {
         spi_user_psram_write(spi_num, addr, (uint32_t *)w_check_data, CHECK_DATA_LEN);
     }
 
-    for (uint32_t addr=0; addr<SIZE_32MBIT; addr+=CHECK_ADDR_STEP) {
+    for (uint32_t addr = 0; addr < SIZE_32MBIT; addr += CHECK_ADDR_STEP) {
         spi_user_psram_read(spi_num, addr, (uint32_t *)r_check_data, CHECK_DATA_LEN);
-        for (uint32_t j=0; j<CHECK_DATA_LEN; j++) {
+        for (uint32_t j = 0; j < CHECK_DATA_LEN; j++) {
             if (r_check_data[j] != 0xff) {
                 return ESP_FAIL;
             }
@@ -707,7 +710,7 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spi_num, psram_cache_speed_t mode)
     WRITE_PERI_REG(SPI_USER1_REG(spi_num), 0);
     // SPI mode type
     CLEAR_PERI_REG_MASK(SPI_SLAVE_REG(spi_num), SPI_SLAVE_MODE);
-    memset((void*)SPI_W0_REG(spi_num), 0, 16 * 4);
+    memset((void *)SPI_W0_REG(spi_num), 0, 16 * 4);
     psram_set_cs_timing(spi_num, s_clk_mode);
 }
 
@@ -728,41 +731,41 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
     }
 
     switch (mode) {
-        case PSRAM_CACHE_F80M_S40M:
-            extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
-            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-            SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
-            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
-            //set drive ability for clock
-            SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUN_DRV, 3, FUN_DRV_S);
-            SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], FUN_DRV, 2, FUN_DRV_S);
-            break;
-        case PSRAM_CACHE_F80M_S80M:
-            extra_dummy = PSRAM_IO_MATRIX_DUMMY_80M;
-            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
-            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
-            SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
-            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
-            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_FLASH_PORT);
-            //set drive ability for clock
-            SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUN_DRV, 3, FUN_DRV_S);
-            SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], FUN_DRV, 3, FUN_DRV_S);
-            break;
-        case PSRAM_CACHE_F40M_S40M:
-            extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-            SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_40M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_CACHE_PORT);
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
-            //set drive ability for clock
-            SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUN_DRV, 2, FUN_DRV_S);
-            SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], FUN_DRV, 2, FUN_DRV_S);
-            break;
-        default:
-            break;
+    case PSRAM_CACHE_F80M_S40M:
+        extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
+        g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+        g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+        SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+        esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
+        esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
+        //set drive ability for clock
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], FUN_DRV, 2, FUN_DRV_S);
+        break;
+    case PSRAM_CACHE_F80M_S80M:
+        extra_dummy = PSRAM_IO_MATRIX_DUMMY_80M;
+        g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+        g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+        SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+        esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
+        esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_FLASH_PORT);
+        //set drive ability for clock
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], FUN_DRV, 3, FUN_DRV_S);
+        break;
+    case PSRAM_CACHE_F40M_S40M:
+        extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
+        g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+        g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+        SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_40M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+        esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_CACHE_PORT);
+        esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
+        //set drive ability for clock
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUN_DRV, 2, FUN_DRV_S);
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], FUN_DRV, 2, FUN_DRV_S);
+        break;
+    default:
+        break;
     }
     SET_PERI_REG_MASK(SPI_USER_REG(0), SPI_USR_DUMMY); // dummy enable
 
@@ -832,7 +835,7 @@ bool psram_is_32mbit_ver0(void)
 esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psram init
 {
     psram_cache_speed_t mode = PSRAM_SPEED;
-    psram_io_t psram_io={0};
+    psram_io_t psram_io = {0};
     uint32_t pkg_ver = efuse_ll_get_chip_ver_pkg();
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D2WD");
@@ -866,11 +869,11 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
         s_clk_mode = PSRAM_CLK_MODE_NORM;
         psram_io.psram_clk_io = PICO_V3_02_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = PICO_V3_02_PSRAM_CS_IO;
-    } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5)){
+    } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5)) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WD");
         psram_io.psram_clk_io = D0WD_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WD_PSRAM_CS_IO;
-    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3){
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3) {
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WDR2-V3");
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
         if (cfg.tieh != RTC_VDDSDIO_TIEH_3_3V) {
@@ -919,28 +922,28 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
     psram_spi_init(PSRAM_SPI_1, mode);
 
     switch (mode) {
-        case PSRAM_CACHE_F80M_S80M:
+    case PSRAM_CACHE_F80M_S80M:
+        esp_rom_gpio_connect_out_signal(psram_io.psram_clk_io, SPICLK_OUT_IDX, 0, 0);
+        break;
+    case PSRAM_CACHE_F80M_S40M:
+    case PSRAM_CACHE_F40M_S40M:
+    default:
+        if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
+            /* We need to delay CLK to the PSRAM with respect to the clock signal as output by the SPI peripheral.
+            We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through
+            the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in
+            silicon) as a temporary pad for this. So the signal path is:
+            SPI CLK --> GPIO28 --> signal224(in then out) --> internal GPIO29 --> signal225(in then out) --> GPIO17(PSRAM CLK)
+            */
+            esp_rom_gpio_connect_out_signal(PSRAM_INTERNAL_IO_28,  SPICLK_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(PSRAM_INTERNAL_IO_28,   SIG_IN_FUNC224_IDX, 0);
+            esp_rom_gpio_connect_out_signal(PSRAM_INTERNAL_IO_29,  SIG_IN_FUNC224_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(PSRAM_INTERNAL_IO_29,   SIG_IN_FUNC225_IDX, 0);
+            esp_rom_gpio_connect_out_signal(psram_io.psram_clk_io, SIG_IN_FUNC225_IDX, 0, 0);
+        } else {
             esp_rom_gpio_connect_out_signal(psram_io.psram_clk_io, SPICLK_OUT_IDX, 0, 0);
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
-                /* We need to delay CLK to the PSRAM with respect to the clock signal as output by the SPI peripheral.
-                We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through
-                the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in
-                silicon) as a temporary pad for this. So the signal path is:
-                SPI CLK --> GPIO28 --> signal224(in then out) --> internal GPIO29 --> signal225(in then out) --> GPIO17(PSRAM CLK)
-                */
-                esp_rom_gpio_connect_out_signal(PSRAM_INTERNAL_IO_28,  SPICLK_OUT_IDX, 0, 0);
-                esp_rom_gpio_connect_in_signal(PSRAM_INTERNAL_IO_28,   SIG_IN_FUNC224_IDX, 0);
-                esp_rom_gpio_connect_out_signal(PSRAM_INTERNAL_IO_29,  SIG_IN_FUNC224_IDX, 0, 0);
-                esp_rom_gpio_connect_in_signal(PSRAM_INTERNAL_IO_29,   SIG_IN_FUNC225_IDX, 0);
-                esp_rom_gpio_connect_out_signal(psram_io.psram_clk_io, SIG_IN_FUNC225_IDX, 0, 0);
-            } else {
-                esp_rom_gpio_connect_out_signal(psram_io.psram_clk_io, SPICLK_OUT_IDX, 0, 0);
-            }
-            break;
+        }
+        break;
     }
 
     // Rise VDDSIO for 1.8V psram.
@@ -975,7 +978,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
                  Application code should never touch HSPI/VSPI hardware in this case.  We try to stop applications
                  from doing this using the drivers by claiming the port for ourselves */
             periph_module_enable(PSRAM_SPI_MODULE);
-            bool r=spicommon_periph_claim(PSRAM_SPI_HOST, "psram");
+            bool r = spicommon_periph_claim(PSRAM_SPI_HOST, "psram");
             if (!r) {
                 return ESP_ERR_INVALID_STATE;
             }
@@ -1008,7 +1011,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
     psram_set_cs_timing(_SPI_CACHE_PORT, s_clk_mode);
     psram_enable_qio_mode(PSRAM_SPI_1);
 
-    if(((PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_64MBITS) || PSRAM_IS_64MBIT_TRIAL(s_psram_id))) {
+    if (((PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_64MBITS) || PSRAM_IS_64MBIT_TRIAL(s_psram_id))) {
 #if CONFIG_SPIRAM_2T_MODE
 #if CONFIG_SPIRAM_BANKSWITCH_ENABLE
         ESP_EARLY_LOGE(TAG, "PSRAM 2T mode and SPIRAM bank switching can not enabled meanwhile. Please read the help text for SPIRAM_2T_MODE in the project configuration menu.");
@@ -1036,24 +1039,24 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
 static void IRAM_ATTR psram_cache_init(psram_cache_speed_t psram_cache_mode, psram_vaddr_mode_t vaddrmode)
 {
     switch (psram_cache_mode) {
-        case PSRAM_CACHE_F80M_S80M:
-            CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(31));   //flash 1 div clk,80+40;
-            CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(30)); //pre clk div , ONLY IF SPI/SRAM@ DIFFERENT SPEED,JUST FOR SPI0. FLASH DIV 2+SRAM DIV4
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-            CLEAR_PERI_REG_MASK(SPI_CLOCK_REG(0), SPI_CLK_EQU_SYSCLK_M);
-            SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKDIV_PRE_V, 0, SPI_CLKDIV_PRE_S);
-            SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKCNT_N, 1, SPI_CLKCNT_N_S);
-            SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKCNT_H, 0, SPI_CLKCNT_H_S);
-            SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKCNT_L, 1, SPI_CLKCNT_L_S);
-            SET_PERI_REG_MASK(SPI_DATE_REG(0), BIT(31)); //flash 1 div clk
-            CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(30)); //pre clk div , ONLY IF SPI/SRAM@ DIFFERENT SPEED,JUST FOR SPI0.
-            break;
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(31)); //flash 1 div clk
-            CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(30)); //pre clk div
-            break;
+    case PSRAM_CACHE_F80M_S80M:
+        CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(31));   //flash 1 div clk,80+40;
+        CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(30)); //pre clk div , ONLY IF SPI/SRAM@ DIFFERENT SPEED,JUST FOR SPI0. FLASH DIV 2+SRAM DIV4
+        break;
+    case PSRAM_CACHE_F80M_S40M:
+        CLEAR_PERI_REG_MASK(SPI_CLOCK_REG(0), SPI_CLK_EQU_SYSCLK_M);
+        SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKDIV_PRE_V, 0, SPI_CLKDIV_PRE_S);
+        SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKCNT_N, 1, SPI_CLKCNT_N_S);
+        SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKCNT_H, 0, SPI_CLKCNT_H_S);
+        SET_PERI_REG_BITS(SPI_CLOCK_REG(0), SPI_CLKCNT_L, 1, SPI_CLKCNT_L_S);
+        SET_PERI_REG_MASK(SPI_DATE_REG(0), BIT(31)); //flash 1 div clk
+        CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(30)); //pre clk div , ONLY IF SPI/SRAM@ DIFFERENT SPEED,JUST FOR SPI0.
+        break;
+    case PSRAM_CACHE_F40M_S40M:
+    default:
+        CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(31)); //flash 1 div clk
+        CLEAR_PERI_REG_MASK(SPI_DATE_REG(0), BIT(30)); //pre clk div
+        break;
     }
 
     CLEAR_PERI_REG_MASK(SPI_CACHE_SCTRL_REG(0), SPI_USR_SRAM_DIO_M);       //disable dio mode for cache command
@@ -1065,39 +1068,39 @@ static void IRAM_ATTR psram_cache_init(psram_cache_speed_t psram_cache_mode, psr
 
     //config sram cache r/w command
     SET_PERI_REG_BITS(SPI_SRAM_DRD_CMD_REG(0), SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_V, 7,
-            SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_S);
+                      SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_S);
     SET_PERI_REG_BITS(SPI_SRAM_DRD_CMD_REG(0), SPI_CACHE_SRAM_USR_RD_CMD_VALUE_V, PSRAM_FAST_READ_QUAD,
-            SPI_CACHE_SRAM_USR_RD_CMD_VALUE_S); //0xEB
+                      SPI_CACHE_SRAM_USR_RD_CMD_VALUE_S); //0xEB
     SET_PERI_REG_BITS(SPI_SRAM_DWR_CMD_REG(0), SPI_CACHE_SRAM_USR_WR_CMD_BITLEN, 7,
-            SPI_CACHE_SRAM_USR_WR_CMD_BITLEN_S);
+                      SPI_CACHE_SRAM_USR_WR_CMD_BITLEN_S);
     SET_PERI_REG_BITS(SPI_SRAM_DWR_CMD_REG(0), SPI_CACHE_SRAM_USR_WR_CMD_VALUE, PSRAM_QUAD_WRITE,
-            SPI_CACHE_SRAM_USR_WR_CMD_VALUE_S); //0x38
+                      SPI_CACHE_SRAM_USR_WR_CMD_VALUE_S); //0x38
     SET_PERI_REG_BITS(SPI_CACHE_SCTRL_REG(0), SPI_SRAM_DUMMY_CYCLELEN_V, PSRAM_FAST_READ_QUAD_DUMMY + extra_dummy,
-            SPI_SRAM_DUMMY_CYCLELEN_S); //dummy, psram cache : 40m--+1dummy; 80m--+2dummy
+                      SPI_SRAM_DUMMY_CYCLELEN_S); //dummy, psram cache : 40m--+1dummy; 80m--+2dummy
 
     switch (psram_cache_mode) {
-        case PSRAM_CACHE_F80M_S80M: //in this mode , no delay is needed
-            break;
-        case PSRAM_CACHE_F80M_S40M: //if sram is @40M, need 2 cycles of delay
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
-                SET_PERI_REG_BITS(SPI_SRAM_DRD_CMD_REG(0), SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_V, 15,
-                        SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_S); //read command length, 2 bytes(1byte for delay),sending in qio mode in cache
-                SET_PERI_REG_BITS(SPI_SRAM_DRD_CMD_REG(0), SPI_CACHE_SRAM_USR_RD_CMD_VALUE_V, ((PSRAM_FAST_READ_QUAD) << 8),
-                        SPI_CACHE_SRAM_USR_RD_CMD_VALUE_S); //0xEB, read command value,(0x00 for delay,0xeb for cmd)
-                SET_PERI_REG_BITS(SPI_SRAM_DWR_CMD_REG(0), SPI_CACHE_SRAM_USR_WR_CMD_BITLEN, 15,
-                        SPI_CACHE_SRAM_USR_WR_CMD_BITLEN_S); //write command length,2 bytes(1byte for delay,send in qio mode in cache)
-                SET_PERI_REG_BITS(SPI_SRAM_DWR_CMD_REG(0), SPI_CACHE_SRAM_USR_WR_CMD_VALUE, ((PSRAM_QUAD_WRITE) << 8),
-                        SPI_CACHE_SRAM_USR_WR_CMD_VALUE_S); //0x38, write command value,(0x00 for delay)
-                SET_PERI_REG_BITS(SPI_CACHE_SCTRL_REG(0), SPI_SRAM_DUMMY_CYCLELEN_V, PSRAM_FAST_READ_QUAD_DUMMY + extra_dummy,
-                        SPI_SRAM_DUMMY_CYCLELEN_S); //dummy, psram cache : 40m--+1dummy; 80m--+2dummy
-            }
-            break;
+    case PSRAM_CACHE_F80M_S80M: //in this mode , no delay is needed
+        break;
+    case PSRAM_CACHE_F80M_S40M: //if sram is @40M, need 2 cycles of delay
+    case PSRAM_CACHE_F40M_S40M:
+    default:
+        if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
+            SET_PERI_REG_BITS(SPI_SRAM_DRD_CMD_REG(0), SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_V, 15,
+                              SPI_CACHE_SRAM_USR_RD_CMD_BITLEN_S); //read command length, 2 bytes(1byte for delay),sending in qio mode in cache
+            SET_PERI_REG_BITS(SPI_SRAM_DRD_CMD_REG(0), SPI_CACHE_SRAM_USR_RD_CMD_VALUE_V, ((PSRAM_FAST_READ_QUAD) << 8),
+                              SPI_CACHE_SRAM_USR_RD_CMD_VALUE_S); //0xEB, read command value,(0x00 for delay,0xeb for cmd)
+            SET_PERI_REG_BITS(SPI_SRAM_DWR_CMD_REG(0), SPI_CACHE_SRAM_USR_WR_CMD_BITLEN, 15,
+                              SPI_CACHE_SRAM_USR_WR_CMD_BITLEN_S); //write command length,2 bytes(1byte for delay,send in qio mode in cache)
+            SET_PERI_REG_BITS(SPI_SRAM_DWR_CMD_REG(0), SPI_CACHE_SRAM_USR_WR_CMD_VALUE, ((PSRAM_QUAD_WRITE) << 8),
+                              SPI_CACHE_SRAM_USR_WR_CMD_VALUE_S); //0x38, write command value,(0x00 for delay)
+            SET_PERI_REG_BITS(SPI_CACHE_SCTRL_REG(0), SPI_SRAM_DUMMY_CYCLELEN_V, PSRAM_FAST_READ_QUAD_DUMMY + extra_dummy,
+                              SPI_SRAM_DUMMY_CYCLELEN_S); //dummy, psram cache : 40m--+1dummy; 80m--+2dummy
+        }
+        break;
     }
 
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_HL|DPORT_PRO_DRAM_SPLIT);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_HL|DPORT_APP_DRAM_SPLIT);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_HL | DPORT_PRO_DRAM_SPLIT);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_HL | DPORT_APP_DRAM_SPLIT);
     if (vaddrmode == PSRAM_VADDR_MODE_LOWHIGH) {
         DPORT_SET_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_HL);
         DPORT_SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_HL);
@@ -1106,10 +1109,10 @@ static void IRAM_ATTR psram_cache_init(psram_cache_speed_t psram_cache_mode, psr
         DPORT_SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_SPLIT);
     }
 
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DRAM1|DPORT_PRO_CACHE_MASK_OPSDRAM); //use Dram1 to visit ext sram.
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DRAM1 | DPORT_PRO_CACHE_MASK_OPSDRAM); //use Dram1 to visit ext sram.
     //cache page mode : 1 -->16k  4 -->2k  0-->32k,(accord with the settings in cache_sram_mmu_set)
     DPORT_SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CMMU_SRAM_PAGE_MODE, 0, DPORT_PRO_CMMU_SRAM_PAGE_MODE_S);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1|DPORT_APP_CACHE_MASK_OPSDRAM); //use Dram1 to visit ext sram.
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1 | DPORT_APP_CACHE_MASK_OPSDRAM); //use Dram1 to visit ext sram.
     //cache page mode : 1 -->16k  4 -->2k  0-->32k,(accord with the settings in cache_sram_mmu_set)
     DPORT_SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CMMU_SRAM_PAGE_MODE, 0, DPORT_APP_CMMU_SRAM_PAGE_MODE_S);
 

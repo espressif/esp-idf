@@ -1,16 +1,8 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -75,7 +67,7 @@ void esp_rom_gpio_connect_in_signal(uint32_t gpio_num, uint32_t signal_idx, bool
  *
  * @note There's no limitation on the number of signals that a GPIO can combine with.
  *
- * @param gpio_num GPIO number
+ * @param gpio_num GPIO number, especially, `SIG_GPIO_OUT_IDX` means disconnect GPIO and other peripherals. Only the GPIO driver can control the output level.
  * @param signal_idx Peripheral signal index (tagged as output attribute)
  * @param out_inv Whether to signal to be inverted or not
  * @param oen_inv Whether the output enable control is inverted or not
