@@ -243,7 +243,11 @@ class RunTool:
             p = await asyncio.create_subprocess_exec(*cmd, env=env_copy, limit=1024 * 256, cwd=self.cwd, stdout=asyncio.subprocess.PIPE,
                                                      stderr=asyncio.subprocess.PIPE)
         except NotImplementedError:
-            sys.exit(f'ERROR: {sys.executable} doesn\'t support asyncio. The issue can be worked around by re-running idf.py with the "--no-hints" argument.')
+            message = f'ERROR: {sys.executable} doesn\'t support asyncio. The issue can be worked around by re-running idf.py with the "--no-hints" argument.'
+            if sys.platform == 'win32':
+                message += ' To fix the issue use the Windows Installer for setting up your python environment, ' \
+                    'available from: https://dl.espressif.com/dl/esp-idf/'
+            sys.exit(message)
 
         stderr_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stderr_output_{p.pid}')
         stdout_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stdout_output_{p.pid}')
