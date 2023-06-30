@@ -5,7 +5,7 @@ dependencies:
 
 # After enabling Board Support Packages support in menuconfig, you can pick you specific BSP here
   espressif/esp-box:
-    version: "2.3.3" # TODO: IDFCI-1678
+    version: "^2.4.2"
     rules:
       - if: "target in [esp32s3]"
   #espressif/esp32_s2_kaluga_kit:
