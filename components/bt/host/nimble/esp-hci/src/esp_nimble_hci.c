@@ -68,6 +68,7 @@ const static char *TAG = "NimBLE";
 
 int os_msys_buf_alloc(void);
 void os_msys_buf_free(void);
+extern uint8_t ble_hs_enabled_state;
 
 void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
                      void *cmd_arg,
@@ -340,6 +341,11 @@ static void controller_rcv_pkt_ready(void)
  */
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
+    if(!ble_hs_enabled_state) {
+        /* If host is not enabled, drop the packet */
+        ESP_LOGE(TAG, "Host not enabled. Dropping the packet!");
+        return 0;
+    }
 
     if (data[0] == BLE_HCI_UART_H4_EVT) {
         uint8_t *evbuf;
