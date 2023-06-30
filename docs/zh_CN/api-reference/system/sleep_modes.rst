@@ -225,7 +225,7 @@ Flash 断电
 
 一些 {IDF_TARGET_NAME} IO 在默认情况下启用内部上拉或下拉电阻。如果这些管脚在 Deep-sleep 模式下中受外部电路驱动，电流流经这些上下拉电阻时，可能会增加电流消耗。
 
-.. only:: SOC_RTCIO_HOLD_SUPPORTED
+.. only:: SOC_RTCIO_HOLD_SUPPORTED and SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
     想要隔离这些管脚以避免额外的电流消耗，请调用 :cpp:func:`rtc_gpio_isolate` 函数。
 

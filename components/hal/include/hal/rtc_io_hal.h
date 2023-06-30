@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,16 +18,18 @@
 #include "sdkconfig.h"
 
 #include "soc/soc_caps.h"
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_PIN_COUNT > 0
 #include "hal/rtc_io_ll.h"
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "hal/rtc_io_types.h"
 #endif
+#endif //SOC_RTCIO_PIN_COUNT > 0
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_PIN_COUNT > 0
 /**
  * Select the rtcio function.
  *
@@ -37,6 +39,7 @@ extern "C" {
  */
 #define rtcio_hal_function_select(rtcio_num, func) rtcio_ll_function_select(rtcio_num, func)
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 /**
  * Enable rtcio output.
  *
@@ -235,7 +238,7 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
 
 #endif
 
-#if SOC_RTCIO_HOLD_SUPPORTED || SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_HOLD_SUPPORTED && SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 /**
  * Helper function to disconnect internal circuits from an RTC IO
@@ -253,6 +256,8 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
 void rtcio_hal_isolate(int rtc_num);
 
 #endif
+
+#endif //SOC_RTCIO_PIN_COUNT > 0
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
 
@@ -283,7 +288,8 @@ void rtcio_hal_isolate(int rtc_num);
  */
 #define rtcio_hal_clear_interrupt_status()      rtcio_ll_clear_interrupt_status()
 
-#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+
 #ifdef __cplusplus
 }
 #endif
