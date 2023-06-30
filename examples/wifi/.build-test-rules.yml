@@ -17,6 +17,8 @@ examples/wifi/getting_started:
     - if: IDF_TARGET not in  ["esp32", "esp32c3", "esp32c2", "esp32s3"]
       temporary: true
       reason: lack of runners
+  depends_filepatterns:
+    - examples/wifi/getting_started/**/*
 
 examples/wifi/iperf:
   disable:
