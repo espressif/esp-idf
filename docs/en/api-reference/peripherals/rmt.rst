@@ -141,6 +141,10 @@ Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandato
     };
     ESP_ERROR_CHECK(rmt_new_rx_channel(&rx_chan_config, &rx_chan));
 
+.. note::
+
+    Due to a software limitation in the GPIO driver, when both TX and RX channels are bound to the same GPIO, ensure the RX Channel is initialized before the TX Channel. If the TX Channel was set up first, then during the RX Channel setup, the previous RMT TX Channel signal will be overridden by the GPIO control signal.
+
 Uninstall RMT Channel
 ~~~~~~~~~~~~~~~~~~~~~
 
