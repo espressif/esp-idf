@@ -1293,11 +1293,11 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_PIN_COUNT > 0
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);
-#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#endif
 }
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP

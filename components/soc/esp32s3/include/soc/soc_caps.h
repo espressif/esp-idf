@@ -277,7 +277,7 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT   22
-#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1 // The target has separate RTC IOMUX
 #define SOC_RTCIO_HOLD_SUPPORTED 1
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 

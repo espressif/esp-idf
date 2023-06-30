@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,7 @@ bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num);
 
 #define RTC_GPIO_IS_VALID_GPIO(gpio_num) rtc_gpio_is_valid_gpio(gpio_num)
 
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_PIN_COUNT > 0
 /**
  * @brief Get RTC IO index number by gpio number.
  *
@@ -63,6 +63,7 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num);
  */
 esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num);
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 /**
  * @brief Get the RTC IO input level
  *
@@ -244,24 +245,6 @@ esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num);
 esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num);
 
 /**
- * @brief Helper function to disconnect internal circuits from an RTC IO
- * This function disables input, output, pullup, pulldown, and enables
- * hold feature for an RTC IO.
- * Use this function if an RTC IO needs to be disconnected from internal
- * circuits in deep sleep, to minimize leakage current.
- *
- * In particular, for ESP32-WROVER module, call
- * rtc_gpio_isolate(GPIO_NUM_12) before entering deep sleep, to reduce
- * deep sleep current.
- *
- * @param gpio_num GPIO number (e.g. GPIO_NUM_12).
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if GPIO is not an RTC IO
- */
-esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
-
-/**
  * @brief Enable force hold signal for all RTC IOs
  *
  * Each RTC pad has a "force hold" input signal from the RTC controller.
@@ -278,6 +261,26 @@ esp_err_t rtc_gpio_force_hold_en_all(void);
 esp_err_t rtc_gpio_force_hold_dis_all(void);
 
 #endif // SOC_RTCIO_HOLD_SUPPORTED
+
+#if SOC_RTCIO_HOLD_SUPPORTED && SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+/**
+ * @brief Helper function to disconnect internal circuits from an RTC IO
+ * This function disables input, output, pullup, pulldown, and enables
+ * hold feature for an RTC IO.
+ * Use this function if an RTC IO needs to be disconnected from internal
+ * circuits in deep sleep, to minimize leakage current.
+ *
+ * In particular, for ESP32-WROVER module, call
+ * rtc_gpio_isolate(GPIO_NUM_12) before entering deep sleep, to reduce
+ * deep sleep current.
+ *
+ * @param gpio_num GPIO number (e.g. GPIO_NUM_12).
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if GPIO is not an RTC IO
+ */
+esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
+#endif // SOC_RTCIO_HOLD_SUPPORTED && SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_RTCIO_WAKE_SUPPORTED
 
@@ -303,6 +306,8 @@ esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num);
 
 #endif // SOC_RTCIO_WAKE_SUPPORTED
+
+#endif // SOC_RTCIO_PIN_COUNT > 0
 
 #ifdef __cplusplus
 }
