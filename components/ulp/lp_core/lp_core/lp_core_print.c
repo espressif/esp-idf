@@ -266,4 +266,6 @@ int lp_core_printf(const char* format, ...)
     int ret = lp_core_ets_vprintf(lp_uart_send_char, format, ap);
 
     va_end(ap);
+
+    return ret;
 }
