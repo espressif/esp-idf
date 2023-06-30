@@ -68,11 +68,11 @@ Security, Tampering, and Robustness
 
 .. only:: not SOC_HMAC_SUPPORTED
 
-    NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption. Please refer to :doc:`NVS Encryption <nvs_encryption>` for more details.
+    NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption. Please refer to :doc:`nvs_encryption` for more details.
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption or with the help of the HMAC peripheral. Please refer to :doc:`NVS Encryption <nvs_encryption>` for more details.
+    NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption or with the help of the HMAC peripheral. Please refer to :doc:`nvs_encryption` for more details.
 
 If NVS encryption is not used, it is possible for anyone with physical access to the flash chip to alter, erase, or add key-value pairs. With NVS encryption enabled, it is not possible to alter or add a key-value pair and get recognized as a valid pair without knowing corresponding NVS encryption keys. However, there is no tamper-resistance against the erase operation.
 
@@ -84,12 +84,12 @@ The library does try to recover from conditions when flash memory is in an incon
 NVS Encryption
 --------------
 
-Please refer to the :doc:`NVS Encryption <nvs_encryption>` guide for more details.
+Please refer to the :doc:`nvs_encryption` guide for more details.
 
 NVS Partition Generator Utility
 -------------------------------
 
-This utility helps generate NVS partition binary files which can be flashed separately on a dedicated partition via a flashing utility. Key-value pairs to be flashed onto the partition can be provided via a CSV file. For more details, please refer to :doc:`NVS Partition Generator Utility <nvs_partition_gen>`.
+This utility helps generate NVS partition binary files which can be flashed separately on a dedicated partition via a flashing utility. Key-value pairs to be flashed onto the partition can be provided via a CSV file. For more details, please refer to :doc:`nvs_partition_gen`.
 
 Application Example
 -------------------

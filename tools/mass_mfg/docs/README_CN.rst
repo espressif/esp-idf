@@ -213,7 +213,7 @@ CSV 配置文件示例如下::
 
     python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000 --keygen
 
-.. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<prefix>-<fileid>.bin``。加密密钥存储于新建文件的 ``keys/`` 目录下，与 NVS 密钥分区结构兼容。更多信息请参考 :ref:`nvs_key_partition`。
+.. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<prefix>-<fileid>.bin``。加密密钥存储于新建文件的 ``keys/`` 目录下，与 NVS 密钥分区结构兼容。更多信息请参考 :ref:`nvs_encr_key_partition`。
 
 - 提供加密密钥用作二进制输入文件来进行加密::
 
