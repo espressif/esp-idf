@@ -1,0 +1,94 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+PROVIDE ( UART0             = 0x500CA000 );
+PROVIDE ( UART1             = 0x500CB000 );
+PROVIDE ( UART2             = 0x500CC000 );
+PROVIDE ( UART3             = 0x500CD000 );
+PROVIDE ( UART4             = 0x500CE000 );
+PROVIDE ( SPIMEM0           = 0x5008C000 );
+PROVIDE ( SPIMEM1           = 0x5008D000 );
+PROVIDE ( I2C0              = 0x500C4000 );
+PROVIDE ( I2C1              = 0x500C5000 );
+PROVIDE ( UHCI0             = 0x500DF000 );
+PROVIDE ( RMT               = 0x500D4000 );
+PROVIDE ( RMTMEM            = 0x500D4800 );
+PROVIDE ( LEDC              = 0x500D3000 );
+PROVIDE ( TIMERG0           = 0x500C2000 );
+PROVIDE ( TIMERG1           = 0x500C3000 );
+PROVIDE ( SYSTIMER          = 0x500E2000 );
+PROVIDE ( TWAI0             = 0x500D7000 );
+PROVIDE ( I2S0              = 0x500C6000 );
+PROVIDE ( I2S1              = 0x500C7000 );
+PROVIDE ( I2S2              = 0x500C8000 );
+PROVIDE ( TWAI1             = 0x500D8000 );
+PROVIDE ( TWAI2             = 0x500D9000 );
+PROVIDE ( APB_SARADC        = 0x6000E000 ); /* need remove */
+PROVIDE ( USB_SERIAL_JTAG   = 0x500D2000 );
+PROVIDE ( SDMMC             = 0x50083000 );
+
+PROVIDE ( INTMTX        = 0x500D6000 );
+PROVIDE ( ATOMIC_LOCKER = 0x60011000 ); /* need remove */
+PROVIDE ( PCNT          = 0x500C9000 );
+PROVIDE ( SOC_ETM       = 0x500D5000 );
+PROVIDE ( MCPWM0        = 0x500C0000 );
+PROVIDE ( MCPWM1        = 0x500C1000 );
+PROVIDE ( PARL_IO       = 0x500CF000 );
+PROVIDE ( PVT_MONITOR   = 0x5009E000 );
+
+PROVIDE ( GDMA      = 0x50081000 );
+PROVIDE ( GPSPI2    = 0x500D0000 );
+
+PROVIDE ( AES       = 0x50090000 );
+PROVIDE ( SHA       = 0x50091000 );
+PROVIDE ( RSA       = 0x50092000 );
+PROVIDE ( ECC       = 0x50093000 );
+PROVIDE ( DS        = 0x50094000 );
+PROVIDE ( HMAC      = 0x50095000 );
+PROVIDE ( ECDSA     = 0x50096000 );
+
+PROVIDE ( IO_MUX         = 0x500e1000 );
+PROVIDE ( IOMUX          = 0x500e1000 );
+PROVIDE ( GPIO           = 0x500E0000 );
+PROVIDE ( SIGMADELTA     = 0x500E0F00 );
+
+PROVIDE ( HP_SYSTEM         = 0x500E5000 );
+PROVIDE ( TEE               = 0x60098000 ); /* need update */
+PROVIDE ( HP_APM            = 0x60099000 ); /* need update */
+
+PROVIDE ( PMU           = 0x50115000 );
+PROVIDE ( LP_AON_CLKRST = 0x50111000 );
+PROVIDE ( EFUSE         = 0x5012D000 );
+PROVIDE ( LP_TIMER      = 0x50112000 );
+PROVIDE ( LP_UART       = 0x50121000 );
+PROVIDE ( LP_I2C        = 0x50122000 );
+PROVIDE ( LP_WDT        = 0x50116000 );
+PROVIDE ( LP_I2S        = 0x50125000 );
+PROVIDE ( LP_GPIO         = 0x5012A000 );
+PROVIDE ( LP_I2C_ANA_MST = 0x50124000 );
+PROVIDE ( LP_ANA_PERI   = 0x50113000 );
+PROVIDE ( LP_APM        = 0x600B3800 ); /* need update */
+PROVIDE ( AHB_DMA      =  0x50085000 );
+PROVIDE ( AXI_DMA      =  0x5008a000 );
+PROVIDE ( LCD_CAM      = 0x500dc000 );
+PROVIDE ( LP_IOMUX      = 0x5012B000 );
+
+PROVIDE ( MIPI_CSI_BRIDGE    = 0x5009F800 );
+PROVIDE ( MIPI_CSI_HOST      = 0x5009F000 );
+PROVIDE ( MIPI_DSI_BRIDGE    = 0x500A0800 );
+PROVIDE ( MIPI_DSI_HOST      = 0x500A0000 );
+PROVIDE ( MIPI_CSI_MEM       = 0x50104000 );
+PROVIDE ( MIPI_DSI_MEM       = 0x50105000 );
+PROVIDE ( ISP                = 0x500A1000 );
+PROVIDE ( GDMA               = 0x50081000 );
+PROVIDE ( I3C_MST            = 0x500DA000 );
+PROVIDE ( I3C_MST_MEM        = 0x500DA000 );
+PROVIDE ( I3C_SLV            = 0x500DB000 );
+
+PROVIDE ( PPA                = 0x50087000 );
+PROVIDE ( DMA2D              = 0x50088000 );
+PROVIDE ( JPEG               = 0x50086000 );
