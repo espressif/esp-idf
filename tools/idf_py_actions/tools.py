@@ -316,7 +316,7 @@ class RunTool:
                     if len(buffer) > 4:
                         # Multi-byte character contain up to 4 bytes and if buffer have more then 4 bytes
                         # and still can not decode it we can just ignore some bytes
-                        return buffer.decode(errors='ignore')
+                        return buffer.decode(errors='replace')
 
         # use ANSI color converter for Monitor on Windows
         output_converter = get_ansi_converter(output_stream) if self.convert_output else output_stream
