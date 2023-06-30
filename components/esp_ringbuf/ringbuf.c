@@ -1244,14 +1244,11 @@ void vRingbufferDelete(RingbufHandle_t xRingbuffer)
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
     configASSERT(pxRingbuffer);
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-    if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG) {
-        //Ring buffer was statically allocated, no need to free
-        return;
+    //Ring buffer was not statically allocated. Free its memory.
+    if ( !( pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG ) ) {
+        free(pxRingbuffer->pucHead);
+        free(pxRingbuffer);
     }
-#endif
-    free(pxRingbuffer->pucHead);
-    free(pxRingbuffer);
 }
 
 size_t xRingbufferGetMaxItemSize(RingbufHandle_t xRingbuffer)
