@@ -235,6 +235,7 @@ static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num,
  * @param timer_num Timer number in the group
  * @return reload count value
  */
+__attribute__((always_inline))
 static inline uint64_t timer_ll_get_reload_value(timg_dev_t *hw, uint32_t timer_num)
 {
     return ((uint64_t)hw->hw_timer[timer_num].loadhi.tx_load_hi << 32) | (hw->hw_timer[timer_num].loadlo.tx_load_lo);
@@ -246,6 +247,7 @@ static inline uint64_t timer_ll_get_reload_value(timg_dev_t *hw, uint32_t timer_
  * @param hw Timer Group register base address
  * @param timer_num Timer number in the group
  */
+__attribute__((always_inline))
 static inline void timer_ll_trigger_soft_reload(timg_dev_t *hw, uint32_t timer_num)
 {
     hw->hw_timer[timer_num].load.tx_load = 1;
