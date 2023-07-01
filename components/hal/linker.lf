@@ -30,8 +30,6 @@ entries:
         twai_hal_iram (noflash)
     if IDF_TARGET_ESP32 = n:
         spi_flash_hal_gpspi (noflash)
-    if GPTIMER_CTRL_FUNC_IN_IRAM = y:
-        timer_hal_iram (noflash)
     if GPIO_CTRL_FUNC_IN_IRAM = y:
         gpio_hal: gpio_hal_intr_disable (noflash)
     if LCD_RGB_ISR_IRAM_SAFE = y:
