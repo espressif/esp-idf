@@ -39,6 +39,7 @@ To minimize static memory use:
 
    - Declare structures, buffers, or other variables ``const`` whenever possible. Constant data can be stored in flash not RAM. This may require changing functions in the firmware to take ``const *`` arguments instead of mutable pointer arguments. These changes can also reduce the stack usage of some functions.
    :SOC_BT_SUPPORTED: - If using Bluedroid, setting the option :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` will cause Bluedroid to allocate memory on initialization and free it on deinitialization. This doesn't necessarily reduce the peak memory usage, but changes it from static memory usage to runtime memory usage.
+   - If :doc:`Coredump </api-guides/core_dump>` component is enabled, `ESP_COREDUMP_LOG` macros will use ~5KB internal memory to place strings into DRAM. By disabling :ref:`CONFIG_ESP_COREDUMP_LOGS` option, these logs are disabled and the memory is reclaimed.
 
 .. _optimize-stack-sizes:
 
