@@ -42,10 +42,7 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 10. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
 
-The convenience functions ``esp_vfs_fat_sdmmc_mount``, ``esp_vfs_fat_sdspi_mount``, and ``esp_vfs_fat_sdcard_unmount`` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
-
-.. doxygenfunction:: esp_vfs_fat_register
-.. doxygenfunction:: esp_vfs_fat_unregister_path
+The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
 
 
 Using FatFs with VFS and SD Cards
@@ -55,21 +52,11 @@ The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience fu
 
 The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the filesystem and releases the resources acquired by :cpp:func:`esp_vfs_fat_sdmmc_mount`.
 
-.. doxygenfunction:: esp_vfs_fat_sdmmc_mount
-.. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
-.. doxygenfunction:: esp_vfs_fat_sdspi_mount
-.. doxygenstruct:: esp_vfs_fat_mount_config_t
-    :members:
-.. doxygenfunction:: esp_vfs_fat_sdcard_unmount
-
 
 Using FatFs with VFS in Read-Only Mode
 --------------------------------------
 
 The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_spiflash_mount_ro` and :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning, which will not be changed by production application throughout the lifetime of the hardware.
-
-.. doxygenfunction:: esp_vfs_fat_spiflash_mount_ro
-.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_ro
 
 
 FatFS Disk IO Layer
@@ -148,3 +135,9 @@ It is a reverse tool of (:component_file:`fatfsgen.py <fatfs/fatfsgen.py>`), i.e
 Usage::
 
     ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
+
+
+High-level API Reference
+------------------------
+
+.. include-build-file:: inc/esp_vfs_fat.inc

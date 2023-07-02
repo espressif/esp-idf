@@ -19,13 +19,7 @@ Header Files
 
 * :component_file:`fatfs/vfs/esp_vfs_fat.h`
 
-Functions
-^^^^^^^^^
-
-.. doxygenfunction:: esp_vfs_fat_spiflash_mount_rw_wl
-.. doxygenstruct:: esp_vfs_fat_mount_config_t
-    :members:
-.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_rw_wl
+High level wear-levelling functions :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl`, :cpp:func:`esp_vfs_fat_spiflash_unmount_rw_wl` and struct :cpp:class:`esp_vfs_fat_mount_config_t` are described in :doc:`FAT Filesystem </api-reference/storage/fatfs>` documentation page.
 
 Mid-Level API Reference
 -----------------------
