@@ -1307,7 +1307,6 @@ r_ble_phy_sequence_is_waiting_rsp = 0x40001878;
 r_ble_phy_sequence_single_end = 0x4000187c;
 r_ble_phy_sequence_tx_end_invoke = 0x40001880;
 r_ble_phy_sequence_update_conn_ind_params = 0x40001884;
-r_ble_phy_set_adv_mode = 0x40001888;
 r_ble_phy_set_coex_pti = 0x4000188c;
 r_ble_phy_set_conn_ind_pdu = 0x40001890;
 r_ble_phy_set_conn_mode = 0x40001894;
