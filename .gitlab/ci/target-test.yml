@@ -359,7 +359,7 @@ example_test_pytest_esp32_ethernet_bridge:
     - .rules:test:example_test-esp32
   needs:
     - build_pytest_examples_esp32
-  tags: [ esp32, ethernet_w5500 ]
+  tags: [ esp32, eth_w5500 ]
   variables:
     PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER}"
 

@@ -125,7 +125,7 @@ ENV_MARKERS = {
     'esp32eco3': 'Runner with esp32 eco3 connected',
     'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
     'ccs811': 'Runner with CCS811 connected',
-    'ethernet_w5500': 'SPI Ethernet module with two W5500',
+    'eth_w5500': 'SPI Ethernet module with two W5500',
     'nvs_encr_hmac': 'Runner with test HMAC key programmed in efuse',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',

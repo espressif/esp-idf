@@ -172,7 +172,7 @@ def run_iperf(proto: str, endnode: EndnodeSsh, server_ip: str, bandwidth_lim:int
         # Configure Multicast Client
         endnode_ip = get_endnode_ip_by_interface(endnode, client_if)
         if endnode_ip == '':
-            raise Exception('End node IP address not found')
+            raise RuntimeError('End node IP address not found')
         client_res = endnode.exec_cmd('iperf -u -c %s -t %i -i 1 -b %iM --ttl 5 -B %s' % (server_ip, interval, bandwidth_lim, endnode_ip))
         if server_proc.wait(10) is None:  # Process did not finish.
             server_proc.terminate()
@@ -215,6 +215,7 @@ def send_brcast_msg_host_to_endnode(endnode: EndnodeSsh, host_brcast_ip: str, te
         raise Exception('Host brcast send failed %s' % e)
 
     nc_endnode_out = endnode.get_async_res()
+    sock.close()
     return nc_endnode_out
 
 
@@ -231,13 +232,14 @@ def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, te
     try:
         nc_host_out = sock.recv(1500).decode('utf-8')
     except socket.error as e:
-        raise Exception('Host recv failed %s' % e)
+        raise Exception('Host recv failed %s', e)
 
+    sock.close()
     return nc_host_out
 
 
 @pytest.mark.esp32
-@pytest.mark.ethernet_w5500
+@pytest.mark.eth_w5500
 @pytest.mark.parametrize('config', [
     'w5500',
 ], indirect=True)
@@ -254,7 +256,7 @@ def test_esp_eth_bridge(
     regex = r'ethVM-(\d+)-(\d+)'
     sw_info = re.search(regex, host_name, re.DOTALL)
     if sw_info is None:
-        raise Exception('Unexpected hostname')
+        raise RuntimeError('Unexpected hostname')
 
     sw_num = int(sw_info.group(1))
     port_num = int(sw_info.group(2))
@@ -309,7 +311,7 @@ def test_esp_eth_bridge(
         time.sleep(1)
         logging.info('End node waiting for DHCP IP addr, %isec...', i)
     else:
-        raise Exception('End node IP address not found')
+        raise RuntimeError('End node IP address not found')
     logging.info('Endnode IP %s', endnode_ip)
 
     # --------------------------------------------------
@@ -318,12 +320,12 @@ def test_esp_eth_bridge(
     # ping bridge
     ping_test = subprocess.call(f'ping {br_ip} -c 2', shell=True)
     if ping_test != 0:
-        raise Exception('ESP bridge is not reachable')
+        raise RuntimeError('ESP bridge is not reachable')
 
     # ping the end nodes of the network
     ping_test = subprocess.call(f'ping {endnode_ip} -c 2', shell=True)
     if ping_test != 0:
-        raise Exception('End node is not reachable')
+        raise RuntimeError('End node is not reachable')
 
     # -------------------------------------------------
     # TEST Objective 2: Ports Link Up/Down combinations
@@ -376,11 +378,11 @@ def test_esp_eth_bridge(
     logging.info('Multicast UDP average bandwidth: %s Mbits/s', bandwidth_mcast_udp)
 
     if bandwidth_udp < MIN_UDP_THROUGHPUT:
-        raise Exception('Unicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_udp) + ' Mbits/s')
+        raise RuntimeError('Unicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_udp) + ' Mbits/s')
     if bandwidth_tcp < MIN_TCP_THROUGHPUT:
-        raise Exception('Unicast TCP throughput expected %.2f, actual %.2f' % (MIN_TCP_THROUGHPUT, bandwidth_tcp) + ' Mbits/s')
+        raise RuntimeError('Unicast TCP throughput expected %.2f, actual %.2f' % (MIN_TCP_THROUGHPUT, bandwidth_tcp) + ' Mbits/s')
     if bandwidth_mcast_udp < MIN_UDP_THROUGHPUT:
-        raise Exception('Multicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_mcast_udp) + ' Mbits/s')
+        raise RuntimeError('Multicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_mcast_udp) + ' Mbits/s')
 
     # ------------------------------------------------
     # TEST Objective 4: adding/deleting entries in FDB
@@ -466,13 +468,13 @@ def test_esp_eth_bridge(
     dut.expect_exact('Bridge Config OK!')
     ping_test = subprocess.call(f'ping {endnode_ip} -c 2', shell=True)
     if ping_test == 0:
-        raise Exception('End node should not be reachable')
+        raise RuntimeError('End node should not be reachable')
     logging.info('Remove Drop `Endnode` MAC entry')
     dut.write('remove --addr=' + endnode_mac)
     dut.expect_exact('Bridge Config OK!')
     ping_test = subprocess.call(f'ping {endnode_ip} -c 2', shell=True)
     if ping_test != 0:
-        raise Exception('End node is not reachable')
+        raise RuntimeError('End node is not reachable')
 
     # Since we have only two ports on DUT, it is kind of tricky to verify the forwarding directly with devices'
     # specific MAC addresses. However, we can verify it using broadcast address and to observe the system
@@ -483,7 +485,10 @@ def test_esp_eth_bridge(
     host_brcast_ip = get_host_brcast_ip_by_interface(host_if, netifaces.AF_INET)
     endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, TEST_MSG)
     if endnode_recv != TEST_MSG:
-        raise Exception('Broadcast message was not received by endnode')
+        raise RuntimeError('Broadcast message was not received by endnode')
+    host_recv = send_brcast_msg_endnode_to_host(endnode, host_brcast_ip, TEST_MSG)
+    if host_recv != TEST_MSG:
+        raise RuntimeError('Broadcast message was not received by host')
 
     # now, configure forward the broadcast only to port #1
     dut.write('add --addr=ff:ff:ff:ff:ff:ff -p 1')
@@ -491,12 +496,12 @@ def test_esp_eth_bridge(
     # we should not be able to receive a message at endnode (no forward to port #2)...
     endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, TEST_MSG)
     if endnode_recv != '':
-        raise Exception('Broadcast message should not be received by endnode')
+        raise RuntimeError('Broadcast message should not be received by endnode')
 
     # ... but we should be able to do the same in opposite direction (forward to port #1)
     host_recv = send_brcast_msg_endnode_to_host(endnode, host_brcast_ip, TEST_MSG)
     if host_recv != TEST_MSG:
-        raise Exception('Broadcast message was not received by host')
+        raise RuntimeError('Broadcast message was not received by host')
 
     # Remove ARP record from Test host computer. ARP is broadcasted, hence Bridge port does not reply to a request since
     # it does not receive it (no forward to Bridge port). As a result, Bridge is not pingable.
@@ -504,7 +509,7 @@ def test_esp_eth_bridge(
     subprocess.call('arp -a', shell=True)
     ping_test = subprocess.call(f'ping {br_ip} -c 2', shell=True)
     if ping_test == 0:
-        raise Exception('Bridge should not be reachable')
+        raise RuntimeError('Bridge should not be reachable')
 
     # Remove current broadcast entry and replace it with extended one which includes Bridge port
     # Now, we should be able to ping the Bridge...
@@ -514,12 +519,12 @@ def test_esp_eth_bridge(
     dut.expect_exact('Bridge Config OK!')
     ping_test = subprocess.call(f'ping {br_ip} -c 2', shell=True)
     if ping_test != 0:
-        raise Exception('Bridge is not reachable')
+        raise RuntimeError('Bridge is not reachable')
 
     # ...but we should still not be able to receive a message at endnode (no forward to port #2)
     endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, TEST_MSG)
     if endnode_recv != '':
-        raise Exception('Broadcast message should not be received by endnode')
+        raise RuntimeError('Broadcast message should not be received by endnode')
 
     endnode.close()
     switch1.close()
