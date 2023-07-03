@@ -92,7 +92,10 @@ void vPortSetupTimer(void)
         systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
 
         for (cpuid = 0; cpuid < SOC_CPU_CORES_NUM; cpuid++) {
+            // Set stall option and alarm mode to default state. Below they will be set to a required state.
             systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, cpuid, false);
+            uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + cpuid;
+            systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_ONESHOT);
         }
 
         for (cpuid = 0; cpuid < portNUM_PROCESSORS; ++cpuid) {
