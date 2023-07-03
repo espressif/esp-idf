@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,19 @@ typedef enum {
     ESP_IMAGE_BOOTLOADER,
     ESP_IMAGE_APPLICATION
 } esp_image_type;
+
+/**
+ * @brief Read ota_info partition and fill array from two otadata structures.
+ *
+ * @param[in]   ota_info It is a pointer to the OTA data partition.
+ *                       The "otadata" partition (Type = "data" and SubType = "ota")
+ *                       is defined in the CSV partition table.
+ * @param[out]  two_otadata Pointer to array of OTA selection structure.
+ * @return      - ESP_OK: On success
+ *              - ESP_ERR_NOT_FOUND: Partition table does not have otadata partition
+ *              - ESP_FAIL: On failure
+ */
+esp_err_t bootloader_common_read_otadata(const esp_partition_pos_t *ota_info, esp_ota_select_entry_t *two_otadata);
 
 /**
  * @brief Calculate crc for the OTA data select.
