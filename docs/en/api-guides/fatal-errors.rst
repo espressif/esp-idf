@@ -7,7 +7,7 @@ Fatal Errors
 Overview
 --------
 
-In certain situations, execution of the program can not be continued in a well defined way. In ESP-IDF, these situations include:
+In certain situations, the execution of the program can not be continued in a well-defined way. In ESP-IDF, these situations include:
 
 - CPU Exceptions: |CPU_EXCEPTIONS_LIST|
 - System level checks and safeguards:
@@ -67,7 +67,7 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
 - Invoke dynamic GDB Stub (``ESP_SYSTEM_GDBSTUB_RUNTIME``)
 
-  Start GDB server which can communicate with GDB over console UART port. This option allows the user to debug a program at run time and set break points, alter the execution, etc. See `GDB Stub`_ for more details.
+  Start the GDB server which can communicate with GDB over the console UART port. This option allows the user to debug a program at run time and set breakpoints, alter the execution, etc. See `GDB Stub`_ for more details.
 
 The behavior of the panic handler is affected by three other configuration options.
 
@@ -216,7 +216,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
         MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000
         MHARTID : 0x00000000
 
-    Moreover, the :doc:`IDF Monitor <tools/idf-monitor>` is also capable of generating and printing a backtrace thanks to the stack dump provided by the board in the panic handler.
+    Moreover, :doc:`IDF Monitor <tools/idf-monitor>` is also capable of generating and printing a backtrace thanks to the stack dump provided by the board in the panic handler.
     The output looks like this:
 
     ::
@@ -313,7 +313,7 @@ This section explains the meaning of different error causes, printed in parens a
 |ILLEGAL_INSTR_MSG|
 ^^^^^^^^^^^^^^^^^^^
 
-This CPU exception indicates that the instruction which was executed was not a valid instruction. Most common reasons for this error include:
+This CPU exception indicates that the instruction which was executed was not a valid instruction. The most common reasons for this error include:
 
 - FreeRTOS task function has returned. In FreeRTOS, if a task function needs to terminate, it should call :cpp:func:`vTaskDelete` and delete itself, instead of returning.
 
@@ -361,11 +361,7 @@ This CPU exception indicates that the instruction which was executed was not a v
     Unhandled debug exception
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    This will usually be followed by a message like::
-
-        Debug exception reason: Stack canary watchpoint triggered (task_name)
-
-    This error indicates that the application has written past the end of the stack of the task with name ``task_name``. Note that not every stack overflow is guaranteed to trigger this error. It is possible that the task writes to memory beyond the stack canary location, in which case the watchpoint will not be triggered.
+    This CPU exception happens when the instruction ``BREAK`` is executed.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
@@ -382,7 +378,7 @@ This CPU exception indicates that the instruction which was executed was not a v
     Breakpoint
     ^^^^^^^^^^
 
-    This CPU exception happens when the instruction ``EBREAK`` is executed.
+    This CPU exception happens when the instruction ``EBREAK`` is executed. See also :ref:`FreeRTOS-End-Of-Stack-Watchpoint`.
 
     Load address misaligned, Store address misaligned
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -440,6 +436,64 @@ ESP-IDF's heap implementation contains a number of run-time checks of the heap s
 
 Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` documentation for further information.
 
+|STACK_OVERFLOW|
+^^^^^^^^^^^^^^^^
+
+.. only:: SOC_ASSIST_DEBUG_SUPPORTED
+
+    Hardware Stack Guard
+    """"""""""""""""""""
+
+    {IDF_TARGET_NAME} has an integrated assist-debug module that can watch the SP register to ensure that it is within the bounds of allocated stack memory. The assist-debug module needs to set new stack bounds on every interrupt handling and FreeRTOS context switch. This can have a small impact on performance.
+
+    Here are some additional details about the assist-debug module:
+
+    - Implemented in hardware
+    - Watches Stack Pointer register value
+    - Requires no additional CPU time or memory while watching stack bounds
+
+    When the assist-debug module detects a stack overflow, the panic handler will run and display a message that resembles the following:
+
+    .. parsed-literal::
+
+        Guru Meditation Error: Core 0 panic'ed (Stack protection fault).
+
+    Hardware stack guard can be disabled using :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` options.
+
+.. _FreeRTOS-End-Of-Stack-Watchpoint:
+
+FreeRTOS End of Stack Watchpoint
+""""""""""""""""""""""""""""""""
+
+ESP-IDF provides a custom FreeRTOS stack overflow detecting mechanism based on watchpoints. Every time FreeRTOS switches task context, one of the watchpoints is set to watch the last 32 bytes of stack.
+
+Generally, this may cause the watchpoint to be triggered up to 28 bytes earlier than expected. The value 32 is chosen because it is larger than the stack canary size in FreeRTOS (20 bytes). Adopting this approach ensures that the watchpoint triggers before the stack canary is corrupted, not after.
+
+.. note::
+    Not every stack overflow is guaranteed to trigger the watchpoint. It is possible that the task writes to memory beyond the stack canary location, in which case the watchpoint will not be triggered.
+
+If watchpoint triggers, the message will be similar to:
+
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    ::
+
+        Debug exception reason: Stack canary watchpoint triggered (task_name)
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    ::
+
+        Guru Meditation Error: Core  0 panic'ed (Breakpoint). Exception was unhandled.
+
+This feature can be enabled by using the :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option.
+
+
+FreeRTOS Stack Checks
+"""""""""""""""""""""
+
+See :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`
+
 Stack Smashing
 ^^^^^^^^^^^^^^
 
@@ -459,12 +513,14 @@ The backtrace should point to the function where stack smashing has occurred. Ch
     .. |CPU_EXCEPTIONS_LIST| replace:: Illegal Instruction, Load/Store Alignment Error, Load/Store Prohibited error, Double Exception.
     .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
     .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
+    .. |STACK_OVERFLOW| replace:: Stack overflow
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
     .. |CPU_EXCEPTIONS_LIST| replace:: Illegal Instruction, Load/Store Alignment Error, Load/Store Prohibited error.
     .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
     .. |CACHE_ERR_MSG| replace:: Cache error
+    .. |STACK_OVERFLOW| replace:: Stack overflow
 
 Undefined Behavior Sanitizer (UBSAN) Checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

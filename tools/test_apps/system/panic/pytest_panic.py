@@ -52,6 +52,21 @@ CONFIGS_EXTRAM_STACK = [
     pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.psram, pytest.mark.esp32s3, pytest.mark.quad_psram])
 ]
 
+TARGETS_HW_STACK_GUARD = [
+    pytest.mark.esp32c2,
+    pytest.mark.esp32c3,
+    pytest.mark.esp32c6,
+    pytest.mark.esp32h2,
+]
+
+CONFIGS_HW_STACK_GUARD = [
+    pytest.param('coredump_flash_bin_crc', marks=TARGETS_HW_STACK_GUARD),
+    pytest.param('coredump_uart_bin_crc', marks=TARGETS_HW_STACK_GUARD),
+    pytest.param('coredump_uart_elf_crc', marks=TARGETS_HW_STACK_GUARD),
+    pytest.param('gdbstub', marks=TARGETS_HW_STACK_GUARD),
+    pytest.param('panic', marks=TARGETS_HW_STACK_GUARD),
+]
+
 
 def get_default_backtrace(config: str) -> List[str]:
     return [config, 'app_main', 'main_task', 'vPortTaskWrapper']
@@ -773,3 +788,15 @@ def test_gdbstub_coredump(dut: PanicTestDut) -> None:
     dut.verify_gdb_backtrace(frames, get_default_backtrace(test_func_name))
     dut.revert_log_level()
     return  # don't expect "Rebooting" output below
+
+
+@pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
+@pytest.mark.generic
+def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_exact('Guru Meditation Error: Core  0 panic\'ed (Stack protection fault).')
+    dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occured!')
+    dut.expect(r'Detected in task(.*)at 0x')
+    dut.expect_exact('Stack pointer: 0x')
+    dut.expect(r'Stack bounds: 0x(.*) - 0x')
+    common_test(dut, config)

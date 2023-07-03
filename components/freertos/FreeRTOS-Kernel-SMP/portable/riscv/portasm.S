@@ -1,8 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+#include "portmacro.h"
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+#include "esp_private/hw_stack_guard.h"
+#endif
 
     .global uxInterruptNesting
     .global uxSchedulerRunning
@@ -10,23 +15,26 @@
     .global pxCurrentTCBs
     .global vTaskSwitchContext
     .global xPortSwitchFlag
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    .global xIsrStack
+    .global port_offset_pxStack
+    .global port_offset_pxEndOfStack
+    .global esp_hw_stack_guard_monitor_stop
+    .global esp_hw_stack_guard_monitor_start
+    .global esp_hw_stack_guard_set_bounds
+#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
     .section .text
 
 /**
  * This function makes the RTOS aware about a ISR entering, it takes the
- * current task stack saved, places into the TCB, loads the ISR stack
- * the interrupted stack must be passed in a0. It needs to receive the
- * ISR nesting code improvements
+ * current task stack saved, places into the TCB, loads the ISR stack.
+ * TODO: ISR nesting code improvements ?
  */
 
     .global rtos_int_enter
     .type rtos_int_enter, @function
 rtos_int_enter:
-    /* preserve the return address */
-    mv t1, ra
-    mv t2, a0
-
     /* scheduler not enabled, jump directly to ISR handler */
     lw t0, uxSchedulerRunning
     beq t0,zero, rtos_enter_end
@@ -40,19 +48,30 @@ rtos_int_enter:
     /* If reached here from another low-prio ISR, skip stack pushing to TCB */
 	bne t4,zero, rtos_enter_end
 
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* esp_hw_stack_guard_monitor_stop(); */
+    ESP_HW_STACK_GUARD_MONITOR_STOP_CPU0
+#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
+
     /* Save current TCB and load the ISR stack */
     lw  t0, pxCurrentTCBs
-    sw 	t2, 0x0(t0)
+    sw  sp, 0x0(t0)
     lw  sp, xIsrStackTop
 
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* esp_hw_stack_guard_set_bounds(xIsrStack, xIsrStackTop); */
+    la      a0, xIsrStack
+    mv      a1, sp
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CPU0
+    /* esp_hw_stack_guard_monitor_start(); */
+    ESP_HW_STACK_GUARD_MONITOR_START_CPU0
+#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
+
 rtos_enter_end:
-    mv  ra, t1
     ret
 
 /**
- * Recovers the next task to run stack pointer and place it into
- * a0, then the interrupt handler can restore the context of
- * the next task
+ * Restores the context of the next task.
  */
     .global rtos_int_exit
     .type rtos_int_exit, @function
@@ -96,9 +115,26 @@ isr_skip_decrement:
     sw  t2, 0x0(t0)
 
 no_switch:
-    /* Recover the stack of next task and prepare to exit : */
-    lw a0, pxCurrentTCBs
-    lw a0, 0x0(a0)
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* esp_hw_stack_guard_monitor_stop(); */
+    ESP_HW_STACK_GUARD_MONITOR_STOP_CPU0
+#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
+
+    /* Recover the stack of next task */
+    lw t0, pxCurrentTCBs
+    lw sp, 0x0(t0)
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* esp_hw_stack_guard_set_bounds(pxCurrentTCBs[0]->pxStack,
+     *                               pxCurrentTCBs[0]->pxEndOfStack);
+     */
+    lw      a0, PORT_OFFSET_PX_STACK(t0)
+    lw      a1, PORT_OFFSET_PX_END_OF_STACK(t0)
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CPU0
+    /* esp_hw_stack_guard_monitor_start(); */
+    ESP_HW_STACK_GUARD_MONITOR_START_CPU0
+#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
 rtos_exit_end:
     ret

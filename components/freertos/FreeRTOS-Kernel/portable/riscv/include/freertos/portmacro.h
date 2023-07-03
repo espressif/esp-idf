@@ -35,9 +35,17 @@
 #ifndef PORTMACRO_H
 #define PORTMACRO_H
 
+#include "sdkconfig.h"
+
+/* Macros used instead ofsetoff() for better performance of interrupt handler */
+#define PORT_OFFSET_PX_STACK 0x30
+#define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
+                                     /* void * pxDummy6 */ 4 + \
+                                     /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \
+                                     /* BaseType_t xDummyCoreID */ 4)
+
 #ifndef __ASSEMBLER__
 
-#include "sdkconfig.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>

@@ -124,18 +124,26 @@ _vector_table:
     .option push
     .option norvc
     j _panic_handler			/* exception handler, entry 0 */
+#if ETS_INT_WDT_INUM != 24
+    #error "ETS_INT_WDT_INUM expected to be 24"
+#endif
     .rept (ETS_INT_WDT_INUM - 1)
-    j _interrupt_handler		/* 24 identical entries, all pointing to the interrupt handler */
+    j _interrupt_handler		/* 23 identical entries, all pointing to the interrupt handler */
     .endr
-    j _panic_handler			/* Call panic handler for ETS_INT_WDT_INUM interrupt (soc-level panic)*/
-    j _panic_handler			/* Call panic handler for ETS_CACHEERR_INUM interrupt (soc-level panic)*/
-    #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    j _panic_handler			/* Call panic handler for ETS_MEMPROT_ERR_INUM interrupt (soc-level panic)*/
-    .rept (ETS_MAX_INUM - ETS_MEMPROT_ERR_INUM)
-    #else
-    .rept (ETS_MAX_INUM - ETS_CACHEERR_INUM)
-    #endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    j _interrupt_handler		/* 6 identical entries, all pointing to the interrupt handler */
+    j _panic_handler			/* 24: ETS_INT_WDT_INUM panic-interrupt (soc-level panic) */
+    j _panic_handler			/* 25: ETS_CACHEERR_INUM panic-interrupt (soc-level panic) */
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+    j _panic_handler			/* 26: ETS_MEMPROT_ERR_INUM panic-interrupt (soc-level panic) */
+#else
+    j _interrupt_handler		/* 26: interrupt-handler */
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    j _panic_handler			/* 27: ETS_ASSIST_DEBUG_INUM panic-interrupt (soc-level panic) */
+#else
+    j _interrupt_handler		/* 27: interrupt-handler */
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    .rept (ETS_MAX_INUM - ETS_ASSIST_DEBUG_INUM)
+    j _interrupt_handler		/* remain entries are identical, all pointing to the interrupt handler */
     .endr
 
     .option pop
@@ -241,9 +249,6 @@ _interrupt_handler:
     /* Save SP */
     sw    t0, RV_STK_SP(sp)
 
-    /* Before doing anythig preserve the stack pointer */
-    /* It will be saved in current TCB, if needed */
-    mv      a0, sp
     call    rtos_int_enter
     /* If this is a non-nested interrupt, SP now points to the interrupt stack */
 
@@ -305,13 +310,7 @@ _interrupt_handler:
     sw      s3, 0(t0)
     fence
 
-    /* Yield to the next task is needed: */
-    mv      a0, sp
     call    rtos_int_exit
-    /* If this is a non-nested interrupt, context switch called, SP now points to back to task stack. */
-
-    /* The next (or current) stack pointer is returned in a0 */
-    mv      sp, a0
 
     /* restore the rest of the registers */
     csrw    mcause, s1

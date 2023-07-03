@@ -561,6 +561,14 @@ menu "ESP System Settings"
             (2). For special workflow, the chip needs do more things instead of restarting directly. This part
                  needs to be done in callback function of interrupt.
 
+    config ESP_SYSTEM_HW_STACK_GUARD
+        bool "Hardware stack guard"
+        depends on SOC_ASSIST_DEBUG_SUPPORTED
+        default y
+        help
+            This config allows to trigger a panic interrupt when Stack Pointer register goes out of allocated stack
+            memory bounds.
+
 endmenu  # ESP System Settings
 
 menu "IPC (Inter-Processor Call)"
