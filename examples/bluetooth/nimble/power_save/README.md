@@ -8,8 +8,9 @@ This example is based on the [bleprph](../bleprph) example to show how to use th
 
 If the modem sleep mode is enabled, bluetooth will switch periodically between active and sleep.
 In sleep state, RF, PHY and BB are turned off in order to reduce power consumption.
+For more information about sleep modes, please refer to [Sleep Modes](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html).
 
-This example contains five build configurations. For each configuration, a few configuration options are set:
+This example contains some build configurations. For each configuration, a few configuration options are set:
 - `sdkconfig.defaults.esp32`: ESP32 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32c3`: ESP32C3 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.40m.esp32c3`: ESP32C3 uses main XTAL as low power clock in light sleep enabled.
@@ -18,7 +19,7 @@ This example contains five build configurations. For each configuration, a few c
 - `sdkconfig.defaults.esp32s3`: ESP32S3 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.40m.esp32s3`: ESP32S3 uses main XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32h2`: ESP32H2 uses 32kHz XTAL as low power clock in light sleep enabled.
-- `sdkconfig.40m.esp32h2`: ESP32H2 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.32m.esp32h2`: ESP32H2 uses main XTAL as low power clock in light sleep enabled.
 ## How to use example
 
 ### Hardware Required
@@ -40,7 +41,7 @@ idf.py menuconfig
       -  `(1000) configTICK_RATE_HZ`
       -  `[*] configUSE_TICKLESS_IDLE`
       -  `(3)     configEXPECTED_IDLE_TIME_BEFORE_SLEEP`
-#### For Chip ESP32/ESP32-C3/ESP32-S3:
+#### For Chip ESP32/ESP32-C3/ESP32-S3
 
 4. Enable power down MAC and baseband:
    - `Component config > PHY > [*] Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled`
@@ -59,14 +60,14 @@ idf.py menuconfig
    - `Component config > Bluetooth > Controller Options`
      - `[*] Enable BLE sleep`
 5. Configure bluetooth low power clock:
-   - `Component config → Bluetooth → Controller Options → BLE low power clock source`
+   - `Component config > Bluetooth > Controller Options > BLE low power clock source`
    - Use main XTAL as low power clock source during light sleep:
      - `(X) Use main XTAL as RTC clock source`
    - Use RTC clock source as low power clock sourceduring light sleep:
      - `(X) Use system RTC slow clock source`
 6. Power down flash during light sleep:
-   * `Component config → Hardware Settings → Sleep Config`
-     * `[*] Power down flash in light sleep when there is no SPIRAM`
+   - `Component config > Hardware Settings > Sleep Config`
+     - `[*] Power down flash in light sleep when there is no SPIRAM`
 
 ### Build and Flash
 
@@ -128,8 +129,8 @@ I (463) NimBLE:
 | ESP32C3                                     | 262 mA      | 12 mA       | 2.3 mA                  | 140 uA                   |
 | ESP32S3                                     | 240 mA      | 17.9 mA     | 3.3 mA                  | 230 uA                   |
 | ESP32C6                                     | 240 mA      | 22 mA       | 3.3 mA                  | 34  uA                   |
-| ESP32H2 | 82 mA       | 16.0 mA      | 4.0 mA                 | 24 uA                   |
-X: This feature is currently not supported. 
+| ESP32H2                                     | 82 mA       | 16.0 mA     | 4.0 mA                  | 24 uA                    |
+X: This feature is currently not supported.
 
 ## Example Breakdown
 
