@@ -3,11 +3,12 @@ COMPONENT_SRCDIRS := patches .
 
 COMPONENT_OBJEXCLUDE := patches/esp_rom_cache_writeback_esp32s3.o
 
+COMPONENT_OBJEXCLUDE += patches/esp_rom_mmap.o
+
 ifdef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE += patches/esp_rom_longjmp.o
 endif
 
-COMPONENT_OBJEXCLUDE := patches/esp_rom_mmap.o
 
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader

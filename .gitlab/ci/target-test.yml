@@ -363,7 +363,6 @@ test_app_test_003:
 
 test_app_test_004:
   extends: .test_app_esp32s2_template
-  parallel: 2
   tags:
     - ESP32S2
     - Example_GENERIC
@@ -407,17 +406,11 @@ test_app_test_flash_psram_f8r8:
     - ESP32S3
     - MSPI_F8R8
 
-test_app_test_xip_psram_esp32s2:
-  extends: .test_app_esp32s2_template
+test_app_test_flash_psram_esp32:
+  extends: .test_app_esp32_template
   tags:
-    - ESP32S2
-    - Example_GENERIC
-
-test_app_test_xip_psram_esp32s3:
-  extends: .test_app_esp32s3_template
-  tags:
-    - ESP32S3
-    - MSPI_F4R8
+    - ESP32
+    - psram
 
 .component_ut_template:
   extends: .target_test_job_template
