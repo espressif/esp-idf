@@ -645,7 +645,7 @@ void ble_controller_scan_duplicate_config(void)
 
     duplicate_mode |= FILTER_DUPLICATE_EXCEPTION_FOR_MESH;
 
-    ble_vhci_disc_duplicate_mode_disable(0xFF);
+    ble_vhci_disc_duplicate_mode_disable(0xFFFFFFFF);
     ble_vhci_disc_duplicate_mode_enable(duplicate_mode);
     ble_vhci_disc_duplicate_set_max_cache_size(cache_size);
     ble_vhci_disc_duplicate_set_period_refresh_time(CONFIG_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD);
