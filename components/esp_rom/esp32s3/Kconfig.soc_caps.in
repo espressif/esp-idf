@@ -66,3 +66,7 @@ config ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
 config ESP_ROM_HAS_CACHE_WRITEBACK_BUG
     bool
     default y
+
+config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+    bool
+    default y

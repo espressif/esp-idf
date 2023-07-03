@@ -11,3 +11,5 @@ entries:
         esp_rom_tlsf (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         esp_rom_systimer (noflash)
+    if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE = y:
+        esp_rom_mmap (noflash)

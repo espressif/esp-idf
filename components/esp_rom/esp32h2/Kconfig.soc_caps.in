@@ -42,3 +42,7 @@ config ESP_ROM_GET_CLK_FREQ
 config ESP_ROM_HAS_ETS_PRINTF_BUG
     bool
     default y
+
+config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+    bool
+    default y
