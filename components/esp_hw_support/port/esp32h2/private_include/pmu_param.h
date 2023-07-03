@@ -337,34 +337,33 @@ typedef struct {
             .pd_cur          = 1,                           \
             .bias_sleep      = 1,                           \
             .xpd             = 0,                           \
-            .dbias           = 0x15,                        \
-            .slp_mem_xpd     = 1,                           \
-            .slp_mem_dbias   = 0xc,                         \
-            .slp_logic_xpd   = 1,                           \
-            .slp_logic_dbias = 0x5,                         \
-            .drv_b           = 0x18c                        \
+            .dbias           = 0,                           \
+            .slp_mem_xpd     = 0,                           \
+            .slp_mem_dbias   = 0,                           \
+            .slp_logic_xpd   = 0,                           \
+            .slp_logic_dbias = 0,                           \
+            .drv_b           = 0xFFFFFF                     \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_ACTIVE] = {                         \
         .analog = {                                         \
             .xpd           = 1,                             \
-            .dbias         = 0x1a,                          \
+            .dbias         = 0xe,                           \
             .slp_xpd       = 0,                             \
             .slp_dbias     = 0,                             \
-            .drv_b         = 0x7                            \
+            .drv_b         = 0                              \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
             .xpd_bias      = 0,                             \
-            .dbg_atten     = 0xe,                           \
             .pd_cur        = 1,                             \
             .bias_sleep    = 1,                             \
             .xpd           = 0,                             \
             .dbias         = 0,                             \
             .slp_xpd       = 1,                             \
-            .slp_dbias     = 0xe,                           \
-            .drv_b         = 0                              \
+            .slp_dbias     = 5,                             \
+            .drv_b         = 7                              \
         }                                                   \
     }                                                       \
 }
