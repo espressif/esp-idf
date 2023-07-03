@@ -1075,6 +1075,10 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
+config SOC_PM_SUPPORT_EXT1_WAKEUP
+    bool
+    default n
+
 config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y

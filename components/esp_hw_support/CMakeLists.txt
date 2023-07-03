@@ -114,12 +114,6 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
         list(APPEND srcs "sleep_wake_stub.c")
     endif()
-
-    if(CONFIG_IDF_TARGET_ESP32H2)
-        list(REMOVE_ITEM srcs
-                "sleep_wake_stub.c"   # TODO: IDF-6268
-            )
-    endif()
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")
