@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "driver/rtc_io.h"
 
+
 #if CONFIG_EXAMPLE_EXT0_WAKEUP
 #if CONFIG_IDF_TARGET_ESP32
     const int ext_wakeup_pin_0 = 25;
@@ -32,11 +33,16 @@ void example_deep_sleep_register_ext0_wakeup(void)
 #if CONFIG_EXAMPLE_EXT1_WAKEUP
 void example_deep_sleep_register_ext1_wakeup(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32H2
     const int ext_wakeup_pin_1 = 2;
-    const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
     const int ext_wakeup_pin_2 = 4;
-    const uint64_t ext_wakeup_pin_2_mask = 1ULL << ext_wakeup_pin_2;
+#else
+    const int ext_wakeup_pin_1 = 10;
+    const int ext_wakeup_pin_2 = 11;
+#endif
 
+    const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
+    const uint64_t ext_wakeup_pin_2_mask = 1ULL << ext_wakeup_pin_2;
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
     ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH));
 
@@ -44,11 +50,18 @@ void example_deep_sleep_register_ext1_wakeup(void)
      * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
      * increase some power comsumption. */
 #if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
+#if !CONFIG_IDF_TARGET_ESP32H2
     ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
     ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_1));
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_2));
     ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_2));
+#else
+    gpio_pullup_dis(ext_wakeup_pin_1);
+    gpio_pulldown_en(ext_wakeup_pin_1);
+    gpio_pullup_dis(ext_wakeup_pin_2);
+    gpio_pulldown_en(ext_wakeup_pin_2);
+#endif
 #endif //CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 }
 

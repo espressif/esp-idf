@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,10 +26,17 @@ typedef void (*esp_deep_sleep_cb_t)(void);
 /**
  * @brief Logic function used for EXT1 wakeup mode.
  */
+#if CONFIG_IDF_TARGET_ESP32
 typedef enum {
     ESP_EXT1_WAKEUP_ALL_LOW = 0,    //!< Wake the chip when all selected GPIOs go low
     ESP_EXT1_WAKEUP_ANY_HIGH = 1    //!< Wake the chip when any of the selected GPIOs go high
 } esp_sleep_ext1_wakeup_mode_t;
+#else
+typedef enum {
+    ESP_EXT1_WAKEUP_ANY_LOW = 0,    //!< Wake the chip when any of the selected GPIOs go low
+    ESP_EXT1_WAKEUP_ANY_HIGH = 1    //!< Wake the chip when any of the selected GPIOs go high
+} esp_sleep_ext1_wakeup_mode_t;
+#endif
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 typedef enum {
