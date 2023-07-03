@@ -10,7 +10,7 @@
 #include "esp_ieee802154_dev.h"
 #include "esp_ieee802154_frame.h"
 
- const char *TAG = "ieee802154 frame";
+static const char *TAG = "ieee802154 frame";
 
 IEEE802154_STATIC IEEE802154_INLINE bool is_security_enabled(const uint8_t *frame)
 {
