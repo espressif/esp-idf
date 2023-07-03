@@ -631,7 +631,7 @@ int ble_vhci_disc_duplicate_set_period_refresh_time(int refresh_period_time){
 /**
  * @brief Config scan duplicate option mode from menuconfig (Adapt to the old configuration method.)
  */
-void ble_controller_scan_duplicate_config()
+void ble_controller_scan_duplicate_config(void)
 {
     uint32_t duplicate_mode = FILTER_DUPLICATE_DEFAULT;
     uint32_t cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
