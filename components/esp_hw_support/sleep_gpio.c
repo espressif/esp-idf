@@ -20,13 +20,12 @@
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
+#include "soc/rtc_io_periph.h"
 
 #if SOC_LP_AON_SUPPORTED
 #include "hal/lp_aon_hal.h"
 #else
-#if !CONFIG_IDF_TARGET_ESP32H2
 #include "hal/rtc_hal.h"
-#endif
 #endif
 
 #include "esp_private/gpio.h"
