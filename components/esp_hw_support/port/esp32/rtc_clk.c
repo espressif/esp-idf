@@ -22,7 +22,6 @@
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_gpio.h"
-#include "esp32/rom/ets_sys.h" // for ets_update_cpu_frequency
 #include "esp32/rom/rtc.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc_cntl_reg.h"
@@ -354,7 +353,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
  */
 void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
-    ets_update_cpu_frequency(cpu_freq);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq);
     /* set divider from XTAL to APB clock */
     clk_ll_cpu_set_divider(div);
     /* adjust ref_tick */
@@ -369,7 +368,7 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 
 static void rtc_clk_cpu_freq_to_8m(void)
 {
-    ets_update_cpu_frequency(8);
+    esp_rom_set_cpu_ticks_per_us(8);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
     clk_ll_cpu_set_divider(1);
     /* adjust ref_tick */
@@ -394,7 +393,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
     rtc_clk_apb_freq_update(80 * MHZ);
-    ets_update_cpu_frequency(cpu_freq_mhz);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
     rtc_clk_wait_for_slow_cycle();
 }
 

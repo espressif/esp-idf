@@ -120,6 +120,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp32/rom/cache.h"
 #endif
 #include "esp_rom_spiflash.h"
+#include "esp_rom_sys.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
