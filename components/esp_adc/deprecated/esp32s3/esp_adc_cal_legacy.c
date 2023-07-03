@@ -167,7 +167,7 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
     uint64_t v_cali_1 = 0;
 
     //raw * gradient * 1000000
-    v_cali_1 = adc_reading * chars->coeff_a;
+    v_cali_1 = (uint64_t)adc_reading * chars->coeff_a;
     //convert to real number
     v_cali_1 = v_cali_1 / coeff_a_scaling;
     ESP_LOGV(LOG_TAG, "v_cali_1 is %llu", v_cali_1);

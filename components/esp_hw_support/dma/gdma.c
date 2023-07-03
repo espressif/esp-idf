@@ -716,7 +716,7 @@ static void IRAM_ATTR gdma_default_rx_isr(void *args)
     gdma_ll_rx_clear_interrupt_status(group->hal.dev, pair->pair_id, intr_status);
 
     if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
-        if (rx_chan && rx_chan->on_recv_eof) {
+        if (rx_chan->on_recv_eof) {
             uint32_t eof_addr = gdma_ll_rx_get_success_eof_desc_addr(group->hal.dev, pair->pair_id);
             gdma_event_data_t edata = {
                 .rx_eof_desc_addr = eof_addr
