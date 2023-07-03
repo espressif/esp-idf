@@ -260,7 +260,6 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2
 #if SOC_RTC_FAST_MEM_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
@@ -366,7 +365,6 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
 #endif // SOC_RTC_FAST_MEM_SUPPORTED
-#endif // !CONFIG_IDF_TARGET_ESP32H2
 
 void esp_deep_sleep(uint64_t time_in_us)
 {
@@ -641,7 +639,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
     }
 #endif
-
     misc_modules_sleep_prepare(deep_sleep);
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -681,7 +678,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     if (periph_using_8m) {
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
-
     // Enter sleep
     esp_err_t result;
 #if SOC_PMU_SUPPORTED
@@ -721,7 +717,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_isolate_digital_gpio();
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
             esp_set_deep_sleep_wake_stub_default_entry();
             // Enter Deep Sleep
@@ -742,9 +737,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-#else  // !CONFIG_IDF_TARGET_ESP32H2
-            result = ESP_OK;
-#endif // !CONFIG_IDF_TARGET_ESP32H2
         } else {
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
@@ -858,6 +850,8 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     if (esp_get_deep_sleep_wake_stub() == NULL) {
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
     }
+        // assert(0);
+
 #endif // SOC_RTC_FAST_MEM_SUPPORTED
 
     // Decide which power domains can be powered down

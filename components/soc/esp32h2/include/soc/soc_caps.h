@@ -462,6 +462,7 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (0)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 // #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1) // TODO: IDF-6268
 #define SOC_PM_SUPPORT_CPU_PD           (1)
