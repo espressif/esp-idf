@@ -31,6 +31,7 @@ extern "C" {
 #define SOC_MMU_INVALID_ENTRY_VAL               MMU_TABLE_INVALID_VAL
 #define SOC_MMU_ADDR_MASK                       MMU_ADDRESS_MASK
 #define SOC_MMU_PAGE_IN_FLASH(page)             ((page) | MMU_ACCESS_FLASH)
+#define SOC_MMU_PAGE_IN_PSRAM(page)             ((page) | MMU_ACCESS_SPIRAM)
 #define SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE       FLASH_MMU_TABLE
 #define SOC_MMU_VADDR1_START_ADDR               IRAM0_CACHE_ADDRESS_LOW
 #define SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE     SOC_MMU_IROM0_PAGES_START

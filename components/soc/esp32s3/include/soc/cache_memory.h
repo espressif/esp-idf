@@ -53,7 +53,7 @@ extern "C" {
 #define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
 #define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
 
-#define CACHE_DROM_MMU_START            CACHE_IROM_MMU_END
+#define CACHE_DROM_MMU_START            0
 #define CACHE_DROM_MMU_END              Cache_Get_DROM_MMU_End()
 #define CACHE_DROM_MMU_SIZE             (CACHE_DROM_MMU_END - CACHE_DROM_MMU_START)
 

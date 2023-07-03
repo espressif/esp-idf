@@ -29,6 +29,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
 #include "cache_utils.h"
+#include "soc/cache_memory.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -41,24 +42,20 @@
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/spiram.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/spiram.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/spi_flash.h"
-#include "soc/cache_memory.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/spi_flash.h"
-#include "soc/cache_memory.h"
 #include "soc/mmu.h"
 #endif
 
@@ -207,6 +204,13 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
         for (pos = start; pos < start + page_count; ++pos, ++pageno) {
             int table_val = (int) DPORT_SEQUENCE_REG_READ((uint32_t)&SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE[pos]);
             uint8_t refcnt = s_mmap_page_refcnt[pos];
+
+#if !CONFIG_IDF_TARGET_ESP32 && SOC_SPIRAM_SUPPORTED
+            if (table_val & MMU_ACCESS_SPIRAM) {
+                break;
+            }
+#endif  //#if !CONFIG_IDF_TARGET_ESP32
+
             if (refcnt != 0 && table_val != SOC_MMU_PAGE_IN_FLASH(pages[pageno])) {
                 break;
             }
@@ -237,6 +241,10 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
 #endif
                     ));
             if (s_mmap_page_refcnt[i] == 0) {
+                assert(DPORT_SEQUENCE_REG_READ((uint32_t)&SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE[i]) & MMU_INVALID);
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
+                assert(DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[i]) & MMU_INVALID);
+#endif
                 if (entry_pro != SOC_MMU_PAGE_IN_FLASH(pages[pageno])
 #if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
                 || entry_app != SOC_MMU_PAGE_IN_FLASH(pages[pageno])

@@ -7,6 +7,8 @@ ifdef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE += patches/esp_rom_longjmp.o
 endif
 
+COMPONENT_OBJEXCLUDE := patches/esp_rom_mmap.o
+
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
