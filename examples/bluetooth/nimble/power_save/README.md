@@ -8,9 +8,9 @@ This example is based on the [bleprph](../bleprph) example to show how to use th
 
 If the modem sleep mode is enabled, bluetooth will switch periodically between active and sleep.
 In sleep state, RF, PHY and BB are turned off in order to reduce power consumption.
+For more information about sleep modes, please refer to [Sleep Modes](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html).
 
-This example contains five build configurations. For each configuration, a few configuration options are set:
-
+This example contains some build configurations. For each configuration, a few configuration options are set:
 - `sdkconfig.defaults.esp32`: ESP32 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32c3`: ESP32C3 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.40m.esp32c3`: ESP32C3 uses main XTAL as low power clock in light sleep enabled.
@@ -66,8 +66,8 @@ idf.py menuconfig
    - Use RTC clock source as low power clock sourceduring light sleep:
      - `(X) Use system RTC slow clock source`
 6. Power down flash during light sleep:
-   * `Component config > Hardware Settings > Sleep Config`
-     * `[*] Power down flash in light sleep when there is no SPIRAM`
+   - `Component config > Hardware Settings > Sleep Config`
+     - `[*] Power down flash in light sleep when there is no SPIRAM`
 
 ### Build and Flash
 
