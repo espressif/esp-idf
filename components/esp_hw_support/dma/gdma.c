@@ -739,16 +739,7 @@ void gdma_default_rx_isr(void *args)
     uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX);
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, intr_status);
 
-    if ((intr_status & GDMA_LL_EVENT_RX_SUC_EOF) && rx_chan->cbs.on_recv_eof) {
-        uint32_t eof_addr = gdma_hal_get_eof_desc_addr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX);
-        gdma_event_data_t edata = {
-            .rx_eof_desc_addr = eof_addr
-        };
-        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &edata, rx_chan->user_data);
-    }
-    if ((intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) && rx_chan->cbs.on_descr_err) {
-        need_yield |= rx_chan->cbs.on_descr_err(&rx_chan->base, NULL, rx_chan->user_data);
-    }
+    /* Call on_recv_done before eof callbacks to ensure a correct sequence */
     if ((intr_status & GDMA_LL_EVENT_RX_DONE) && rx_chan->cbs.on_recv_done) {
         /* Here we don't return an event data in this callback.
          * Because we can't get a determinant descriptor address
@@ -759,6 +750,24 @@ void gdma_default_rx_isr(void *args)
          * Therefore, instead of returning an unreliable descriptor, we choose to return nothing.
          */
         need_yield |= rx_chan->cbs.on_recv_done(&rx_chan->base, NULL, rx_chan->user_data);
+    }
+    if ((intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) && rx_chan->cbs.on_descr_err) {
+        need_yield |= rx_chan->cbs.on_descr_err(&rx_chan->base, NULL, rx_chan->user_data);
+    }
+    if ((intr_status & GDMA_LL_EVENT_RX_SUC_EOF) && rx_chan->cbs.on_recv_eof) {
+        uint32_t eof_addr = gdma_ll_rx_get_success_eof_desc_addr(group->hal.dev, pair->pair_id);
+        gdma_event_data_t suc_eof_data = {
+            .rx_eof_desc_addr = eof_addr,
+        };
+        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &suc_eof_data, rx_chan->user_data);
+    }
+    if ((intr_status & GDMA_LL_EVENT_RX_ERR_EOF) && rx_chan->cbs.on_recv_eof) {
+        uint32_t eof_addr = gdma_ll_rx_get_error_eof_desc_addr(group->hal.dev, pair->pair_id);
+        gdma_event_data_t err_eof_data = {
+            .rx_eof_desc_addr = eof_addr,
+            .flags.abnormal_eof = true,
+        };
+        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &err_eof_data, rx_chan->user_data);
     }
 
     if (need_yield) {
@@ -781,7 +790,7 @@ void gdma_default_tx_isr(void *args)
     if ((intr_status & GDMA_LL_EVENT_TX_EOF) && tx_chan->cbs.on_trans_eof) {
         uint32_t eof_addr = gdma_hal_get_eof_desc_addr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX);
         gdma_event_data_t edata = {
-            .tx_eof_desc_addr = eof_addr
+            .tx_eof_desc_addr = eof_addr,
         };
         need_yield |= tx_chan->cbs.on_trans_eof(&tx_chan->base, &edata, tx_chan->user_data);
     }
