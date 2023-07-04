@@ -166,6 +166,19 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
             analog_default.hp_sys.analog.xpd = 1;
             analog_default.hp_sys.analog.dbias = 2;
         }
+
+        if (!(pd_flags & PMU_SLEEP_PD_XTAL)){
+            analog_default.hp_sys.analog.xpd = 1;
+            analog_default.hp_sys.analog.pd_cur = 0;
+            analog_default.hp_sys.analog.bias_sleep = 0;
+            analog_default.hp_sys.analog.dbias = 25;
+
+            analog_default.lp_sys[LP(SLEEP)].analog.xpd = 1;
+            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = 0;
+            analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = 0;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = 26;
+        }
+
         config->analog = analog_default;
     }
     return config;
