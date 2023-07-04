@@ -586,7 +586,7 @@ static void trigger_deepsleep(void)
     // Deinit NVS to prevent Unity from complaining "The test leaked too much memory"
     TEST_ESP_OK(nvs_flash_deinit());
 
-    esp_sleep_enable_timer_wakeup(1000);
+    esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();

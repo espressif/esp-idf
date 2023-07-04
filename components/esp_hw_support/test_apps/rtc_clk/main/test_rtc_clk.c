@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -384,11 +384,11 @@ static void trigger_deepsleep(void)
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() / 2);
 
     // Delay for error accumulation.
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(10*1000));
 
     // Save start time. Deep sleep.
     start = esp_rtc_get_time_us();
-    esp_sleep_enable_timer_wakeup(1000);
+    esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
@@ -404,11 +404,11 @@ static void check_time_deepsleep_1(void)
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
 
     // Delay for error accumulation.
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(10*1000));
 
     start = esp_rtc_get_time_us();
 
-    esp_sleep_enable_timer_wakeup(1000);
+    esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
