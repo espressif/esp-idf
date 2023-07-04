@@ -512,7 +512,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
-    // Turn down mspi clock speed
+    // Will switch to XTAL turn down MSPI speed
 #if SOC_SPI_MEM_SUPPORT_TIME_TUNING
     mspi_timing_change_speed_mode_cache_safe(true);
 #endif
@@ -704,14 +704,15 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 
     // Set mspi clock to ROM default one.
+    if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
 #if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
-    spi_flash_set_clock_src(MSPI_CLK_SRC_DEFAULT);
+        spi_flash_set_clock_src(MSPI_CLK_SRC_DEFAULT);
 #endif
-
-    // Speed up mspi clock freq
 #if SOC_SPI_MEM_SUPPORT_TIME_TUNING
-    mspi_timing_change_speed_mode_cache_safe(false);
+        // Turn up MSPI speed if switch to PLL
+        mspi_timing_change_speed_mode_cache_safe(false);
 #endif
+    }
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
