@@ -499,8 +499,8 @@ Secure Boot Best Practices
     2. The new OTA update is written to an unused OTA app partition.
     3. The new application's signature block is validated. The public keys are checked against the digests programmed in the eFuse & the application is verified using the verified public key.
     4. The active partition is set to the new OTA application's partition.
-    5. Device resets, loads the bootloader (verified with key #N-1) which then boots new app (verified with key #N).
-    6. The new app verifies bootloader with key #N (as a final check) and then runs code to revoke key #N-1 (sets KEY_REVOKE eFuse bit).
+    5. Device resets, loads the bootloader (verified with key #N-1 and #N) which then boots new app (verified with key #N).
+    6. The new app verifies bootloader and application with key #N (as a final check) and then runs code to revoke key #N-1 (sets KEY_REVOKE eFuse bit).
     7. The API `esp_ota_revoke_secure_boot_public_key()` can be used to revoke the key #N-1.
 
     * A similar approach can also be used to physically re-flash with a new key. For physical re-flashing, the bootloader content can also be changed at the same time.
