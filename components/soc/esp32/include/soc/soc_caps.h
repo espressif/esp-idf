@@ -276,6 +276,9 @@
 /* ESP32 style SHA engine, where multiple states can be stored in parallel */
 #define SOC_SHA_SUPPORT_PARALLEL_ENG    (1)
 
+/* ESP32's SHA peripheral processes and stores data in big-endian format */
+#define SOC_SHA_ENDIANNESS_BE           (1)
+
 /* Supported HW algorithms */
 #define SOC_SHA_SUPPORT_SHA1            (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
