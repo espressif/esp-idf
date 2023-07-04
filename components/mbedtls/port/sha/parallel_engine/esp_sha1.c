@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-1 standard was published by NIST in 1993.
@@ -120,30 +120,6 @@ int mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
     return 0;
 }
 
-
-static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsigned char data[64] );
-
-int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
-{
-    bool first_block = false;
-    if (ctx->mode == ESP_MBEDTLS_SHA1_UNUSED) {
-        /* try to use hardware for this digest */
-        if (esp_sha_try_lock_engine(SHA1)) {
-            ctx->mode = ESP_MBEDTLS_SHA1_HARDWARE;
-            first_block = true;
-        } else {
-            ctx->mode = ESP_MBEDTLS_SHA1_SOFTWARE;
-        }
-    }
-
-    if (ctx->mode == ESP_MBEDTLS_SHA1_HARDWARE) {
-        esp_sha_block(SHA1, data, first_block);
-    } else {
-        mbedtls_sha1_software_process(ctx, data);
-    }
-
-    return 0;
-}
 
 static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
 {
@@ -301,12 +277,46 @@ static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsi
     ctx->state[4] += E;
 }
 
+
+static int esp_internal_sha1_parallel_engine_process( mbedtls_sha1_context *ctx, const unsigned char data[64], bool read_digest )
+{
+    bool first_block = false;
+
+    if (ctx->mode == ESP_MBEDTLS_SHA1_UNUSED) {
+        /* try to use hardware for this digest */
+        if (esp_sha_try_lock_engine(SHA1)) {
+            ctx->mode = ESP_MBEDTLS_SHA1_HARDWARE;
+            first_block = true;
+        } else {
+            ctx->mode = ESP_MBEDTLS_SHA1_SOFTWARE;
+        }
+    }
+
+    if (ctx->mode == ESP_MBEDTLS_SHA1_HARDWARE) {
+        esp_sha_block(SHA1, data, first_block);
+        if (read_digest) {
+            esp_sha_read_digest_state(SHA1, ctx->state);
+        }
+    } else {
+        mbedtls_sha1_software_process(ctx, data);
+    }
+
+    return 0;
+}
+
+
+int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
+{
+    return esp_internal_sha1_parallel_engine_process(ctx, data, true);
+}
+
+
 /*
  * SHA-1 process buffer
  */
 int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
 {
-    int ret;
+    int ret = -1;
     size_t fill;
     uint32_t left;
 
@@ -327,7 +337,7 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
     if ( left && ilen >= fill ) {
         memcpy( (void *) (ctx->buffer + left), input, fill );
 
-        if ( ( ret = mbedtls_internal_sha1_process( ctx, ctx->buffer ) ) != 0 ) {
+        if ( ( ret = esp_internal_sha1_parallel_engine_process( ctx, ctx->buffer, false ) ) != 0 ) {
             return ret;
         }
 
@@ -337,12 +347,16 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
     }
 
     while ( ilen >= 64 ) {
-        if ( ( ret = mbedtls_internal_sha1_process( ctx, input ) ) != 0 ) {
+        if ( ( ret = esp_internal_sha1_parallel_engine_process( ctx, input, false ) ) != 0 ) {
             return ret;
         }
 
         input += 64;
         ilen  -= 64;
+    }
+
+    if (ctx->mode == ESP_MBEDTLS_SHA1_HARDWARE) {
+        esp_sha_read_digest_state(SHA1, ctx->state);
     }
 
     if ( ilen > 0 ) {
@@ -364,7 +378,7 @@ static const unsigned char sha1_padding[64] = {
  */
 int mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
 {
-    int ret;
+    int ret = -1;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];
