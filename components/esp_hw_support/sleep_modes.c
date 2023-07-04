@@ -1646,7 +1646,8 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
 /**
  * The modules in the CPU and modem power domains still depend on the top power domain.
  * To be safe, the CPU and Modem power domains must also be powered off and saved when
- * the TOP is powered off.
+ * the TOP is powered off. If not power down XTAL, power down TOP is meaningless, and
+ * the XTAL clock control of some chips(esp32c6/esp32h2) depends on the top domain.
  */
 #if SOC_PM_SUPPORT_TOP_PD
 static inline bool top_domain_pd_allowed(void) {
