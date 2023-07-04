@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -281,6 +281,23 @@ esp_err_t esp_secure_boot_enable_secure_features(void);
  *  - False - not all eFuses are configured correctly.
  */
 bool esp_secure_boot_cfg_verify_release_mode(void);
+
+
+#if !defined(BOOTLOADER_BUILD) && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY && CONFIG_SECURE_BOOT_V2_ENABLED
+
+/** @brief Returns the verification status of the image pointed by the part_pos argument against the public key digest present at index `efuse_digest_index`
+ *
+ * @param index[in]         Index of public key digest present in efuse against which the image is to be verified
+ * @param part_pos[in]      It is a pointer to the bootloader/app partition.
+ *
+ * @return
+ *  - ESP_OK - if the image can be verified by the key at efuse_index.
+ *  - ESP_FAIL - if the image cannot be verified by the key at efuse_index.
+ *  - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ */
+esp_err_t esp_secure_boot_verify_with_efuse_digest_index(int efuse_digest_index, esp_partition_pos_t *part_pos);
+
+#endif // !defined(BOOTLOADER_BUILD) && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY && CONFIG_SECURE_BOOT_V2_ENABLED
 
 #ifdef __cplusplus
 }
