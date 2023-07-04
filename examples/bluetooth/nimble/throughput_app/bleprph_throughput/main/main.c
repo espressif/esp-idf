@@ -210,6 +210,7 @@ notify_task(void *arg)
                     ESP_LOGE(tag, "Not enough OS_MBUFs available; reduce notify count ");
                     xSemaphoreGive(notify_sem);
                     notify_count -= 1;
+                    vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
 
                 end_time = esp_timer_get_time();
