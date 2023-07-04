@@ -58,6 +58,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/examples/apps/ncp")
 
         list(APPEND exclude_srcs
+            "src/port/esp_openthread_state.c"
             "openthread/examples/apps/ncp/main.c"
             "openthread/src/core/api/backbone_router_api.cpp"
             "openthread/src/core/api/child_supervision_api.cpp"

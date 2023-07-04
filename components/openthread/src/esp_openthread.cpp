@@ -12,6 +12,7 @@
 #include "esp_openthread_lock.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_sleep.h"
+#include "esp_openthread_state.h"
 #include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
@@ -69,6 +70,10 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
     ESP_RETURN_ON_ERROR(esp_openthread_dns64_client_init(), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread dns64 client");
+#endif
+#if !CONFIG_OPENTHREAD_RADIO
+    ESP_RETURN_ON_ERROR(esp_openthread_state_event_init(esp_openthread_get_instance()), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread state event");
 #endif
     esp_openthread_lock_release();
 
