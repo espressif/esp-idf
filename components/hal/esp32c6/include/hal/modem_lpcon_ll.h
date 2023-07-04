@@ -217,6 +217,34 @@ static inline void modem_lpcon_ll_set_lp_apb_icg_bitmap(modem_lpcon_dev_t *hw, u
 }
 
 __attribute__((always_inline))
+static inline void modem_lpcon_ll_reset_wifipwr(modem_lpcon_dev_t *hw)
+{
+    hw->rst_conf.rst_wifipwr = 1;
+    hw->rst_conf.rst_wifipwr = 0;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_reset_coex(modem_lpcon_dev_t *hw)
+{
+    hw->rst_conf.rst_coex = 1;
+    hw->rst_conf.rst_coex = 0;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_reset_i2c_master(modem_lpcon_dev_t *hw)
+{
+    hw->rst_conf.rst_i2c_mst = 1;
+    hw->rst_conf.rst_i2c_mst = 0;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_reset_ble_rtc_timer(modem_lpcon_dev_t *hw)
+{
+    hw->rst_conf.rst_lp_timer = 1;
+    hw->rst_conf.rst_lp_timer = 0;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_reset_all(modem_lpcon_dev_t *hw)
 {
     hw->rst_conf.val = 0xf;

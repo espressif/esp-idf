@@ -29,6 +29,16 @@ extern "C" {
  * module depends on the wifi mac, wifi baseband and FE, when wifi module
  * clock is enabled, the wifi MAC, baseband and FE clocks will be enabled
  *
+ * This interface and modem_clock_module_disable will jointly maintain the
+ * ref_cnt of each device clock source. The ref_cnt indicates how many modules
+ * are relying on the clock source. Each enable ops will add 1 to the ref_cnt of
+ * the clock source that the module depends on, and only when the ref_cnt of
+ * the module is from 0 to 1 will the clock enable be actually configured.
+ *
+ * !!! Do not use the hal/ll layer interface to configure the clock for the
+ * consistency of the hardware state maintained in the driver and the hardware
+ * actual state.
+ *
  * @param module  modem module
  */
 void modem_clock_module_enable(periph_module_t module);
@@ -36,9 +46,27 @@ void modem_clock_module_enable(periph_module_t module);
 /**
  * @brief Disable the clock of modem module
  *
+ * This interface and modem_clock_module_enable will jointly maintain the ref_cnt
+ * of each device clock source. The ref_cnt indicates how many modules are relying
+ * on the clock source. Each disable ops will minus 1 to the ref_cnt of the clock
+ * source that the module depends on, and only when the ref_cnt of the module is
+ * from 1 to 0 will the clock disable be actually configured.
+ *
+ * !!! Do not use the hal/ll layer interface to configure the clock for the
+ * consistency of the hardware state maintained in the driver and the hardware
+ * actual state.
+ *
  * @param module  modem module
  */
 void modem_clock_module_disable(periph_module_t module);
+
+/**
+ * @brief Reset the mac of modem module
+ *
+ * @param module  modem module, must be one of
+ *    PERIPH_WIFI_MODULE / PERIPH_BT_MODULE /PERIPH_IEEE802154_MODULE
+ */
+void modem_clock_module_mac_reset(periph_module_t module);
 
 /**
  * @brief Initialize the clock gating control signal of each clock domain of the modem
