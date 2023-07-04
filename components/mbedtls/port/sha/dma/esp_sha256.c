@@ -125,11 +125,30 @@ void mbedtls_sha256_starts( mbedtls_sha256_context *ctx,
 #endif
 
 
+static void esp_internal_sha_update_state(mbedtls_sha256_context *ctx)
+{
+    if (ctx->sha_state == ESP_SHA256_STATE_INIT) {
+        ctx->first_block = true;
+        ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
+    } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
+        ctx->first_block = false;
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
+    }
+}
+
 int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx, const unsigned char data[64] )
 {
-    int ret;
+    int ret = -1;
     esp_sha_acquire_hardware();
+    esp_internal_sha_update_state(ctx);
+
     ret = esp_sha_dma(ctx->mode, data, 64, 0, 0, ctx->first_block);
+    if (ret != 0) {
+        esp_sha_release_hardware();
+        return ret;
+    }
+
+    esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
 
     return ret;
@@ -149,7 +168,6 @@ void mbedtls_sha256_process( mbedtls_sha256_context *ctx,
 int mbedtls_sha256_update_ret( mbedtls_sha256_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
-    int ret = 0;
     size_t fill;
     uint32_t left, len, local_len = 0;
 
@@ -181,24 +199,18 @@ int mbedtls_sha256_update_ret( mbedtls_sha256_context *ctx, const unsigned char 
 
     if ( len || local_len) {
         esp_sha_acquire_hardware();
+        esp_internal_sha_update_state(ctx);
 
-        if (ctx->sha_state == ESP_SHA256_STATE_INIT) {
-            ctx->first_block = true;
-            ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
-        } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
-            ctx->first_block = false;
-            esp_sha_write_digest_state(ctx->mode, ctx->state);
+        int ret = esp_sha_dma(ctx->mode, input, len,  ctx->buffer, local_len, ctx->first_block);
+
+        if (ret != 0) {
+            esp_sha_release_hardware();
+            return ret;
         }
-
-        ret = esp_sha_dma(ctx->mode, input, len,  ctx->buffer, local_len, ctx->first_block);
 
         esp_sha_read_digest_state(ctx->mode, ctx->state);
 
         esp_sha_release_hardware();
-
-        if (ret != 0) {
-            return ret;
-        }
     }
 
     if ( ilen > 0 ) {
@@ -229,7 +241,7 @@ static const unsigned char sha256_padding[64] = {
  */
 int mbedtls_sha256_finish_ret( mbedtls_sha256_context *ctx, unsigned char output[32] )
 {
-    int ret;
+    int ret = -1;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];
