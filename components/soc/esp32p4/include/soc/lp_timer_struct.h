@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -329,7 +329,7 @@ typedef union {
 } lp_timer_date_reg_t;
 
 
-typedef struct lp_timer_dev_t {
+typedef struct {
     volatile lp_timer_tar0_low_reg_t tar0_low;
     volatile lp_timer_tar0_high_reg_t tar0_high;
     volatile lp_timer_tar1_low_reg_t tar1_low;
@@ -352,7 +352,6 @@ typedef struct lp_timer_dev_t {
     volatile lp_timer_date_reg_t date;
 } lp_timer_dev_t;
 
-extern lp_timer_dev_t LP_TIMER;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_timer_dev_t) == 0x400, "Invalid size of lp_timer_dev_t structure");
