@@ -41,15 +41,21 @@ typedef struct {
      * The PMU module triggers REGDMA to use the corresponding linked list when
      * swtiching between different power states. For example:
      *
-     *  Current power state     Next power state   This entry will be used by REGDMA
-     *     PMU_HP_ACTIVE          PMU_HP_SLEEP       entry0
-     *     PMU_HP_SLEEP           PMU_HP_ACTIVE      entry0
-     *     PMU_HP_MODEM           PMU_HP_SLEEP       entry1
-     *     PMU_HP_SLEEP           PMU_HP_MODEM       entry1
-     *     PMU_HP_MODEM           PMU_HP_ACTIVE      entry2
+     * +---------------+---------------+-------------------+-----------+
+     * |    Current    |   The next    | The entry will be | Retention |
+     * |   PMU state   |   PMU state   |  used by REGDMA   |   clock   |
+     * +---------------+---------------+-------------------+-----------+
+     * | PMU_HP_ACTIVE | PMU_HP_SLEEP  |     entry0        |    XTAL   |
+     * | PMU_HP_SLEEP  | PMU_HP_ACTIVE |     entry0        |    XTAL   |
+     * | PMU_HP_MODEM  | PMU_HP_SLEEP  |     ------        |    XTAL   |
+     * | PMU_HP_SLEEP  | PMU_HP_MODEM  |     entry1        |    XTAL   |
+     * | PMU_HP_MODEM  | PMU_HP_ACTIVE |     entry2        |    PLL    |
+     * |---------------------------------------------------------------|
+     * | PMU_HP_ACTIVE | PMU_HP_ACTIVE |     entry3        |    PLL    | (Clock BUG)
+     * +---------------+---------------+-------------------+-----------+
      *
      *           +--------+    +-------------------------+    +-------------+                            +-----------+    +--------+    +-----+
-     * entry2 -> |        | -> | WiFi MAC Minimum System | -> |             | -------------------------> |           | -> |        | -> | End |
+     * entry2 -> |        | -> | WiFi MAC Minimum System | -> |             | -------------------------> | ######### | -> | ###### | -> | End |
      *           |  SOC   |    +-------------------------+    |   Digital   |                            | Bluetooth |    | Zigbee |    +-----+
      *           | System |             +--------+            | Peripherals |    +------+    +------+    |   / BLE   |    |        |    +-----+
      * entry0 -> |        | ----------> |        | ---------> |             | -> |      | -> |      | -> |           | -> |        | -> | End |
@@ -57,6 +63,22 @@ typedef struct {
      *                                  | System |                               | MAC  |    |  BB  |    +-----+
      * entry1 ------------------------> |        |-----------------------------> |      | -> |      | -> | End |
      *                                  +--------+                               +------+    +------+    +-----+
+     *
+     * The entry3 (alias: extra linked list) is used for backup and restore of
+     * modules (such as BLE or 15.4 modules) with retention clock bugs.
+     *
+     *           +---------+    +----------+    +-------------+    +-----+
+     * entry3 -> | BLE MAC | -> | 15.4 MAC | -> | BLE/15.4 BB | -> | End |
+     *           +---------+    +----------+    +-------------+    +-----+
+     *
+     * Using it (extra linked list) for retention has the following constraints:
+     * 1. The PLL clock must be enabled (can be done with esp_pm_lock_acquire()
+     *    interface to acquire a pm lock of type ESP_PM_APB_FREQ_MAX.
+     * 2. When using the sleep_retention_entries_create() interface to create an
+     *    extra linked list, the node owner must be equal to BIT(3).
+     * 3. Use the sleep_retention_do_extra_retention() interface to backup or
+     *    restore the register context, which ensures only one backup or restore
+     *    when multiple modules (BLE and 15.4) exists.
      */
 #define SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES       (8u)
 #define SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY    (0)
@@ -71,9 +93,18 @@ typedef struct {
     _lock_t lock;
     regdma_link_priority_t highpri;
     uint32_t modules;
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+#define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
+    int extra_refs;
+#endif
 } sleep_retention_t;
 
-static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = { .highpri = (uint8_t)-1, .modules = 0 };
+static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
+    .highpri = (uint8_t)-1, .modules = 0
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    , .extra_refs = 0
+#endif
+};
 
 #define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
 #define SLEEP_RETENTION_ENTRY_BITMAP(bitmap)    ((bitmap) & SLEEP_RETENTION_ENTRY_BITMAP_MASK)
@@ -326,13 +357,21 @@ static void sleep_retention_entries_all_destroy_wrapper(uint32_t module)
     _lock_release_recursive(&s_retention.lock);
 }
 
-void sleep_retention_entries_destroy(int module)
+static void sleep_retention_entries_do_destroy(int module)
 {
     assert(module != 0);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_join();
     sleep_retention_entries_stats();
     sleep_retention_entries_all_destroy_wrapper(module);
+    _lock_release_recursive(&s_retention.lock);
+}
+
+void sleep_retention_entries_destroy(int module)
+{
+    assert(module != 0);
+    _lock_acquire_recursive(&s_retention.lock);
+    sleep_retention_entries_do_destroy(module);
     if (s_retention.modules == 0) {
         sleep_retention_entries_check_and_distroy_final_default();
         pmu_sleep_disable_regdma_backup();
@@ -350,10 +389,17 @@ static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entri
 {
     _lock_acquire_recursive(&s_retention.lock);
     for (int i = num - 1; i >= 0; i--) {
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+        if ((retent[i].owner > BIT(EXTRA_LINK_NUM)) && (retent[i].config.id != 0xffff)) {
+            _lock_release_recursive(&s_retention.lock);
+            sleep_retention_entries_do_destroy(module);
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+#endif
         void *link = sleep_retention_entries_try_create(&retent[i].config, retent[i].owner, priority, module);
         if (link == NULL) {
             _lock_release_recursive(&s_retention.lock);
-            sleep_retention_entries_destroy(module);
+            sleep_retention_entries_do_destroy(module);
             return ESP_ERR_NO_MEM;
         }
         sleep_retention_entries_update(retent[i].owner, link, priority);
@@ -370,7 +416,7 @@ static esp_err_t sleep_retention_entries_create_bonding(regdma_link_priority_t p
     void *link = sleep_retention_entries_try_create_bonding(&bonding_dummy.config, bonding_dummy.owner, priority, module);
     if (link == NULL) {
         _lock_release_recursive(&s_retention.lock);
-        sleep_retention_entries_destroy(module);
+        sleep_retention_entries_do_destroy(module);
         return ESP_ERR_NO_MEM;
     }
     sleep_retention_entries_update(bonding_dummy.owner, link, priority);
@@ -456,3 +502,31 @@ uint32_t IRAM_ATTR sleep_retention_get_modules(void)
 {
     return s_retention.modules;
 }
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+void sleep_retention_do_extra_retention(bool backup_or_restore)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.highpri < SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY ||
+        s_retention.highpri > SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        _lock_release_recursive(&s_retention.lock);
+        return;
+    }
+    const uint32_t clk_bug_modules = SLEEP_RETENTION_MODULE_BLE_MAC | SLEEP_RETENTION_MODULE_802154_MAC;
+    const int cnt_modules = __builtin_popcount(clk_bug_modules & s_retention.modules);
+    // Set extra linked list head pointer to hardware
+    pau_regdma_set_extra_link_addr(s_retention.lists[s_retention.highpri].entries[EXTRA_LINK_NUM]);
+    if (backup_or_restore) {
+        if (s_retention.extra_refs++ == (cnt_modules - 1)) {
+            pau_regdma_trigger_extra_link_backup();
+        }
+    } else {
+        if (--s_retention.extra_refs == (cnt_modules - 1)) {
+            pau_regdma_trigger_extra_link_restore();
+        }
+    }
+    int refs = s_retention.extra_refs;
+    _lock_release_recursive(&s_retention.lock);
+    assert(refs >= 0 && refs <= cnt_modules);
+}
+#endif
