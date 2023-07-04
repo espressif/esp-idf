@@ -26,10 +26,3 @@
 #define ANA_CONFIG2_M    BIT(18)
 
 #define ANA_I2C_SAR_FORCE_PU BIT(16)
-
-/**
- * Restore regi2c analog calibration related configuration registers.
- * This is a workaround, and is fixed on later chips
- */
-#define REGI2C_ANA_CALI_PD_WORKAROUND    1
-#define REGI2C_ANA_CALI_BYTE_NUM         8
