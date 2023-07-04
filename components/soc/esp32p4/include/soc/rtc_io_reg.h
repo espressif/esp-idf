@@ -5,4 +5,5 @@
  */
 #pragma once
 
-#include "soc/lp_io_reg.h"
+#include "soc/lp_gpio_reg.h"
+#include "soc/lp_iomux_reg.h"

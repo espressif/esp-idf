@@ -5,4 +5,5 @@
  */
 #pragma once
 
-// ESP32C6 CLKOUT signals has no corresponding iomux pins
+//Copied from C6, please check. TODO: IDF-7526
+// ESP32P4 CLKOUT signals has no corresponding iomux pins

@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-//#define DR_REG_PLIC_MX_BASE                     0x20001000
-//#define DR_REG_PLIC_UX_BASE                     0x20001400
-//#define DR_REG_CLINT_M_BASE                     0x20001800
-//#define DR_REG_CLINT_U_BASE                     0x20001C00
-
 /* Basic address */
 #define DR_REG_HPCPUTCP_BASE          0x3FF00000
 #define DR_REG_HPPERIPH0_BASE         0x50000000
@@ -127,7 +122,7 @@
  * @size: 64KB
  */
 #define DR_REG_LP_SYS_BASE            (DR_REG_LPAON_BASE + 0x0)
-#define DR_REG_LP_AONCLKRST_BASE      (DR_REG_LPAON_BASE + 0x1000)
+#define DR_REG_LP_CLKRST_BASE         (DR_REG_LPAON_BASE + 0x1000)
 #define DR_REG_LP_TIMER_BASE          (DR_REG_LPAON_BASE + 0x2000)
 #define DR_REG_LP_ANAPERI_BASE        (DR_REG_LPAON_BASE + 0x3000)
 #define DR_REG_LP_HUK_BASE            (DR_REG_LPAON_BASE + 0x4000)
@@ -153,30 +148,24 @@
 #define DR_REG_LP_ADC_BASE            (DR_REG_LPPERIPH_BASE + 0x7000)
 #define DR_REG_LP_TOUCH_BASE          (DR_REG_LPPERIPH_BASE + 0x8000)
 #define DR_REG_LP_GPIO_BASE           (DR_REG_LPPERIPH_BASE + 0xA000)
+#define DR_REG_LP_IOMUX_BASE          (DR_REG_LPPERIPH_BASE + 0xB000)
 #define DR_REG_LP_INTR_BASE           (DR_REG_LPPERIPH_BASE + 0xC000)
-#define DR_REG_LP_IOMUX_BASE          0 // just for compile, need remove later
 #define DR_REG_EFUSE_BASE             (DR_REG_LPPERIPH_BASE + 0xD000)
 #define DR_REG_LP_PERI_PMS_BASE       (DR_REG_LPPERIPH_BASE + 0xE000)
 #define DR_REG_HP2LP_PERI_PMS_BASE    (DR_REG_LPPERIPH_BASE + 0xE800)
 #define DR_REG_LP_TSENSOR_BASE        (DR_REG_LPPERIPH_BASE + 0xF000)
 
-/* this is some module helper MACROs for quick module reference
+/**
+ * This are module helper MACROs for quick module reference
  * including some module(renamed) address
  */
 #define DR_REG_UART_BASE                        DR_REG_UART0_BASE
-// ESP32P4-TODO: check this
-#define DR_REG_I2C_EXT_BASE                     0x60004000
 #define DR_REG_UHCI0_BASE                       DR_REG_UHCI_BASE
 #define DR_REG_TIMERGROUP0_BASE                 DR_REG_TIMG0_BASE
 #define DR_REG_TIMERGROUP1_BASE                 DR_REG_TIMG1_BASE
 #define DR_REG_I2S_BASE                         DR_REG_I2S0_BASE
-// ESP32P4-TODO: check this
-#define DR_REG_APB_SARADC_BASE                  0x6000E000
 #define DR_REG_USB_SERIAL_JTAG_BASE             DR_REG_USB2JTAG_BASE
 #define DR_REG_INTERRUPT_MATRIX_BASE            DR_REG_INTR_BASE
-// ESP32P4-TODO: check this
-#define DR_REG_ATOMIC_BASE                      0x60011000
-// ESP32P4-TODO: check this
 #define DR_REG_SOC_ETM_BASE                     DR_REG_ETM_BASE
 #define DR_REG_MCPWM_BASE                       DR_REG_MCPWM0_BASE
 #define DR_REG_PARL_IO_BASE                     DR_REG_PARIO_BASE
@@ -189,41 +178,31 @@
 #define DR_REG_DIGITAL_SIGNATURE_BASE           DR_REG_DS_BASE
 #define DR_REG_HMAC_BASE                        (DR_REG_CRYPTO_BASE + 0x5000)
 #define DR_REG_ECDSA_BASE                       (DR_REG_CRYPTO_BASE + 0x6000)
-// ESP32P4-TODO: check this
-#define DR_REG_GPIO_EXT_BASE                    0x60091f00 //ESP32C6-TODO
 #define DR_REG_MEM_MONITOR_BASE                 DR_REG_L2MEM_MON_BASE
-// ESP32P4-TODO: check this
-#define DR_REG_PAU_BASE                         0x60093000
-// ESP32P4-TODO: check this
-#define DR_REG_HP_SYSTEM_BASE                   0x60095000
-// ESP32P4-TODO: should remove this
-#define DR_REG_SYSTEM_BASE                      DR_REG_HP_SYS_BASE
-// ESP32P4-TODO: should remove this
-#define DR_REG_RTCCNTL_BASE                     0x60008000
-// ESP32P4-TODO: should remove this
-#define DR_REG_AES_XTS_BASE                     0x600CC000
-#define DR_REG_PCR_BASE                         0x60096000
-#define DR_REG_TEE_BASE                         0x60098000
-#define DR_REG_HP_APM_BASE                      0x60099000
-#define DR_REG_LP_APM0_BASE                     0x60099800
-#define DR_REG_MISC_BASE                        0x6009F000
-
 #define DR_REG_HP_CLKRST_BASE                   DR_REG_HP_SYS_CLKRST_BASE
-#define DR_REG_DSPI_MEM_BASE                    (DR_REG_PSRAM_MSPI0_BASE)
+#define DR_REG_DSPI_MEM_BASE                    DR_REG_PSRAM_MSPI0_BASE
 #define DR_REG_INTERRUPT_CORE0_BASE             DR_REG_INTR_BASE
 #define DR_REG_INTERRUPT_CORE1_BASE             (DR_REG_INTR_BASE + 0x800)
-
-#define DR_REG_LP_CLKRST_BASE                   0x600B0400
-#define DR_REG_LP_AON_BASE                      0x600B1000
-#define DR_REG_LP_IO_BASE                       0x600B2000
-#define DR_REG_LP_I2C_ANA_MST_BASE              0x600B2400
 #define DR_REG_LPPERI_BASE                      DR_REG_LP_PERI_CLKRST_BASE
-#define DR_REG_LP_ANALOG_PERI_BASE              0x600B2C00
-#define DR_REG_LP_TEE_BASE                      0x600B3400
-#define DR_REG_LP_APM_BASE                      0x600B3800
-#define DR_REG_OPT_DEBUG_BASE                   0x600B3C00
+#define DR_REG_CPU_BUS_MONITOR_BASE             DR_REG_CPU_BUS_MON_BASE
 
-#define DR_REG_TRACE_BASE                       0x600C0000
+
+//TODO: IDF-7481, TODO: IDF-7479, TODO: IDF-7551
+// #define DR_REG_GPIO_EXT_BASE                    0x60091f00
+
+//TODO: IDF-7542
+// #define DR_REG_TEE_BASE                         0x60098000
+// #define DR_REG_HP_APM_BASE                      0x60099000
+// #define DR_REG_LP_APM0_BASE                     0x60099800
+// #define DR_REG_LP_TEE_BASE                      0x600B3400
+// #define DR_REG_LP_APM_BASE                      0x600B3800
+
+//TODO: IDF-7531
+// #define DR_REG_PAU_BASE                         0x60093000
+// #define DR_REG_LP_ANALOG_PERI_BASE              0x600B2C00
+// #define DR_REG_LP_I2C_ANA_MST_BASE              0x600B2400
+// #define DR_REG_LP_AON_BASE                      0x600B1000
+
+//TODO: IDF-7688
+// #define DR_REG_TRACE_BASE                       0x600C0000
 #define DR_REG_ASSIST_DEBUG_BASE                0x3FF06000
-#define DR_REG_CPU_BUS_MONITOR_BASE             0x600C2000
-#define DR_REG_INTPRI_BASE                      0x600C5000

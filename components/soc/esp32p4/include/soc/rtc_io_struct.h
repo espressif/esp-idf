@@ -5,14 +5,14 @@
  */
 #pragma once
 
-#include "soc/lp_io_struct.h"
+#include "soc/lp_gpio_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef lp_io_dev_t     rtc_io_dev_t;
-#define RTCIO           LP_IO
+typedef lp_gpio_dev_t   rtc_io_dev_t;
+#define RTCIO           LP_GPIO
 
 #ifdef __cplusplus
 }

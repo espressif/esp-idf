@@ -14,7 +14,7 @@ extern "C" {
 /** Type of rx_cfg0 register
  *  Parallel RX module configuration register0.
  */
-typedef volatile union {
+typedef union {
     struct {
         /** rx_eof_gen_sel : R/W; bitpos: [0]; default: 0;
          *  Write 0 to select eof generated manchnism by configured data byte length. Write 1

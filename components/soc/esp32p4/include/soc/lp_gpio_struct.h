@@ -1449,7 +1449,7 @@ typedef union {
 } lp_gpio_func15_out_sel_cfg_reg_t;
 
 
-typedef struct {
+typedef struct lp_gpio_dev_t {
     volatile lp_gpio_clk_en_reg_t clk_en;
     volatile lp_gpio_ver_date_reg_t ver_date;
     volatile lp_gpio_out_reg_t out;
@@ -1511,6 +1511,8 @@ typedef struct {
     volatile lp_gpio_func14_out_sel_cfg_reg_t func14_out_sel_cfg;
     volatile lp_gpio_func15_out_sel_cfg_reg_t func15_out_sel_cfg;
 } lp_gpio_dev_t;
+
+extern lp_gpio_dev_t LP_GPIO;
 
 
 #ifndef __cplusplus

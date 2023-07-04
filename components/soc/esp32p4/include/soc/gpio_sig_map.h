@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_GPIO_SIG_MAP_H_
-#define _SOC_GPIO_SIG_MAP_H_
+#pragma once
 
 #define SD_CARD_CCLK_2_PAD_OUT_IDX                         0
 #define SD_CARD_CCMD_2_PAD_IN_IDX                          1
@@ -486,4 +485,3 @@
 #define SIG_IN_FUNC254_IDX                                 254
 #define SIG_IN_FUNC255_IDX                                 255
 #define SIG_IN_FUNC255_IDX                                 255
-#endif  /* _SOC_GPIO_SIG_MAP_H_ */

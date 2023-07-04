@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define _CLIC_REG_H_
+#pragma once
 
-
+#include <stdint.h>
+#include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -106,5 +107,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /*_CLIC_REG_H_ */

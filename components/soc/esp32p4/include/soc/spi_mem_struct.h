@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct spi_mem_dev_s {
     union {
         struct {
             uint32_t mst_st                        :    4;  /*The current status of SPI0 master FSM: spi0_mst_st. 0: idle state, 1:SPI0_GRANT , 2: program/erase suspend state, 3: SPI0 read data state, 4: wait cache/EDMA sent data is stored in SPI0 TX FIFO, 5: SPI0 write data state.*/

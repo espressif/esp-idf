@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 
-// TODO: IDF-5719
+// TODO: IDF-7791
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter

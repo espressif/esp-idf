@@ -51,7 +51,7 @@ extern "C" {
 #define OTHER_BLOCKS_POWERUP        1
 #define OTHER_BLOCKS_WAIT           1
 
-// TODO: IDF-5781
+// TODO: IDF-7528, TODO: IDF-7529
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
  */
@@ -75,7 +75,7 @@ extern "C" {
 #define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 #define SOC_DELAY_RC32K_ENABLE              300
 
-/* Core voltage: // TODO: IDF-5781
+/* Core voltage: // TODO: IDF-7528, TODO: IDF-7529
  * Currently, ESP32C6 never adjust its wake voltage in runtime
  * Only sets dig/rtc voltage dbias at startup time
  */

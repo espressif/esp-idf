@@ -92,11 +92,12 @@ typedef struct {
     int timeout; /*!< timeout value */
 } i2c_hal_timing_config_t;
 
-
+#if SOC_I2C_SUPPORTED
 /**
  * @brief I2C group clock source
  */
 typedef soc_periph_i2c_clk_src_t i2c_clock_source_t;
+#endif
 
 
 #ifdef __cplusplus

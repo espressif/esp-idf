@@ -27,12 +27,11 @@ PROVIDE ( I2S1              = 0x500C7000 );
 PROVIDE ( I2S2              = 0x500C8000 );
 PROVIDE ( TWAI1             = 0x500D8000 );
 PROVIDE ( TWAI2             = 0x500D9000 );
-PROVIDE ( APB_SARADC        = 0x6000E000 ); /* need remove */
+PROVIDE ( ADC               = 0x500DE000 );
 PROVIDE ( USB_SERIAL_JTAG   = 0x500D2000 );
 PROVIDE ( SDMMC             = 0x50083000 );
 
 PROVIDE ( INTMTX        = 0x500D6000 );
-PROVIDE ( ATOMIC_LOCKER = 0x60011000 ); /* need remove */
 PROVIDE ( PCNT          = 0x500C9000 );
 PROVIDE ( SOC_ETM       = 0x500D5000 );
 PROVIDE ( MCPWM0        = 0x500C0000 );
@@ -42,6 +41,7 @@ PROVIDE ( PVT_MONITOR   = 0x5009E000 );
 
 PROVIDE ( GDMA      = 0x50081000 );
 PROVIDE ( GPSPI2    = 0x500D0000 );
+PROVIDE ( GPSPI3    = 0x500D1000 );
 
 PROVIDE ( AES       = 0x50090000 );
 PROVIDE ( SHA       = 0x50091000 );
@@ -51,14 +51,13 @@ PROVIDE ( DS        = 0x50094000 );
 PROVIDE ( HMAC      = 0x50095000 );
 PROVIDE ( ECDSA     = 0x50096000 );
 
-PROVIDE ( IO_MUX         = 0x500e1000 );
 PROVIDE ( IOMUX          = 0x500e1000 );
 PROVIDE ( GPIO           = 0x500E0000 );
 PROVIDE ( SIGMADELTA     = 0x500E0F00 );
 
 PROVIDE ( HP_SYSTEM         = 0x500E5000 );
-PROVIDE ( TEE               = 0x60098000 ); /* need update */
-PROVIDE ( HP_APM            = 0x60099000 ); /* need update */
+PROVIDE ( TEE               = 0x60098000 ); /* TODO: IDF-7542 */
+PROVIDE ( HP_APM            = 0x60099000 ); /* TODO: IDF-7542 */
 
 PROVIDE ( PMU           = 0x50115000 );
 PROVIDE ( LP_AON_CLKRST = 0x50111000 );
@@ -66,12 +65,13 @@ PROVIDE ( EFUSE         = 0x5012D000 );
 PROVIDE ( LP_TIMER      = 0x50112000 );
 PROVIDE ( LP_UART       = 0x50121000 );
 PROVIDE ( LP_I2C        = 0x50122000 );
+PROVIDE ( LP_SPI        = 0x50123000 );
 PROVIDE ( LP_WDT        = 0x50116000 );
 PROVIDE ( LP_I2S        = 0x50125000 );
 PROVIDE ( LP_GPIO         = 0x5012A000 );
 PROVIDE ( LP_I2C_ANA_MST = 0x50124000 );
 PROVIDE ( LP_ANA_PERI   = 0x50113000 );
-PROVIDE ( LP_APM        = 0x600B3800 ); /* need update */
+PROVIDE ( LP_APM        = 0x600B3800 ); /* TODO: IDF-7542 */
 PROVIDE ( AHB_DMA      =  0x50085000 );
 PROVIDE ( AXI_DMA      =  0x5008a000 );
 PROVIDE ( LCD_CAM      = 0x500dc000 );

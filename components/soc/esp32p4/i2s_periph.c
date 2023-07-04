@@ -11,24 +11,4 @@
  Bunch of constants for every I2S peripheral: GPIO signals, irqs, hw addr of registers etc
 */
 const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
-    {
-        .mck_out_sig  = 0,
-
-        .m_tx_bck_sig = 0,
-        .m_rx_bck_sig = 0,
-        .m_tx_ws_sig  = 0,
-        .m_rx_ws_sig  = 0,
-
-        .s_tx_bck_sig = 0,
-        .s_rx_bck_sig = 0,
-        .s_tx_ws_sig  = 0,
-        .s_rx_ws_sig  = 0,
-
-        .data_out_sigs[0] = 0,
-        .data_out_sigs[1] = 0,
-        .data_in_sig  = 0,
-
-        .irq          = -1,
-        .module       = PERIPH_I2S1_MODULE,
-    }
 };

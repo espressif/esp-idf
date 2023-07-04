@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-#define GPIO_MATRIX_CONST_ONE_INPUT   (0x38)
-#define GPIO_MATRIX_CONST_ZERO_INPUT  (0x3C)
 
 #ifdef __cplusplus
 }
