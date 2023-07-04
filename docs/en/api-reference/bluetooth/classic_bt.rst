@@ -12,5 +12,6 @@ CLASSIC BT
    BT HFP Client <esp_hf_client>
    BT HFP AG <esp_hf_ag>
    BT HID DEVICE <esp_hidd>
+   BT HID HOST <esp_hidh>
    BT L2CAP <esp_l2cap_bt>
    BT SDP <esp_sdp>
