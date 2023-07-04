@@ -320,6 +320,9 @@ When flashing, you will see the output log similar to the following:
 
 .. only:: esp32h2
 
+    .. code-block:: none
+
+        ...
         esptool esp32h2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 48m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
         esptool.py v4.6
         Serial port /dev/ttyUSB0
