@@ -14,6 +14,7 @@ from string import Template
 # The following header files in soc component is treated as stable, so is allowed to be used in any public header files
 allowed_soc_headers = (
     'soc/soc_caps.h',
+    'soc/gpio_num.h',
     'soc/reset_reasons.h',
     'soc/reg_base.h',
     'soc/clk_tree_defs.h',
