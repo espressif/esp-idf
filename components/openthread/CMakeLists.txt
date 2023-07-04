@@ -139,6 +139,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "src/esp_openthread_dns64.c")
     endif()
 
+    if(NOT CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+        list(APPEND exclude_srcs
+            "src/port/esp_openthread_sleep.c")
+    endif()
+
     if(CONFIG_OPENTHREAD_FTD)
         set(device_type "OPENTHREAD_FTD=1")
     elseif(CONFIG_OPENTHREAD_MTD)

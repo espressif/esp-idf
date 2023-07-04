@@ -41,6 +41,7 @@ extern "C" {
 #define REGDMA_SYSTIMER_LINK(_pri)          ((0x14 << 8) | _pri)
 #define REGDMA_BLE_MAC_LINK(_pri)           ((0x15 << 8) | _pri)
 #define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x16 << 8) | _pri)
+#define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 typedef enum {
