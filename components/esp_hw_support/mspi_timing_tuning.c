@@ -333,6 +333,7 @@ static void select_best_tuning_config(mspi_timing_config_t *config, uint32_t con
         best_point = select_best_tuning_config_str(config, consecutive_length, end);
 #endif
         s_flash_best_timing_tuning_config = config->tuning_config_table[best_point];
+        ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %d", best_point);
     } else {
 #if MSPI_TIMING_PSRAM_DTR_MODE
         best_point = select_best_tuning_config_dtr(config, consecutive_length, end, reference_data, is_flash);
@@ -340,6 +341,7 @@ static void select_best_tuning_config(mspi_timing_config_t *config, uint32_t con
         best_point = select_best_tuning_config_str(config, consecutive_length, end);
 #endif
         s_psram_best_timing_tuning_config = config->tuning_config_table[best_point];
+        ESP_EARLY_LOGI(TAG, "PSRAM timing tuning index: %d", best_point);
     }
 }
 
