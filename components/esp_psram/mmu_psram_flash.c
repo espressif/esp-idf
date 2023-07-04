@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,13 +49,6 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 {
     uint32_t page_id = start_page;
 
-    /**
-     * TODO IDF-4387
-     * `Cache_Count_Flash_Pages` seems give wrong results. Need to confirm this.
-     * FOR NOW, leave these logics just as it used to be.
-     *
-     * The rom API will be redesigned into a MMU driver layer function
-     */
     uint32_t flash_pages = 0;
 #if CONFIG_IDF_TARGET_ESP32S2
     flash_pages += Cache_Count_Flash_Pages(PRO_CACHE_IBUS0, &page0_mapped);
@@ -100,13 +93,6 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
 {
     uint32_t page_id = start_page;
 
-    /**
-     * TODO IDF-4387
-     * `Cache_Count_Flash_Pages` seems give wrong results. Need to confirm this.
-     * FOR NOW, leave these logics just as it used to be.
-     *
-     * The rom API will be redesigned into a MMU driver layer function
-     */
     uint32_t flash_pages = 0;
 #if CONFIG_IDF_TARGET_ESP32S2
     flash_pages += Cache_Count_Flash_Pages(PRO_CACHE_IBUS2, &page0_mapped);

@@ -46,6 +46,10 @@ if(CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND sources "patches/esp_rom_wdt.c")
 endif()
 
+if(CONFIG_ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG)
+    list(APPEND sources "patches/esp_rom_cache_esp32s2_esp32s3.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
