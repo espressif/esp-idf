@@ -94,7 +94,8 @@ const tBTA_AV_CFG bta_av_cfg = {
     6,                      /* AVDTP audio channel max data queue size */
     BTA_AV_MAX_VDP_MTU,     /* AVDTP video transport channel MTU at L2CAP */
     600,                    /* AVDTP video transport channel flush timeout */
-    FALSE,                   /* TRUE, to accept AVRC 1.3 group nevigation command */
+    FALSE,                  /* TRUE, to accept AVRC 1.3 group nevigation command */
+    FALSE,                  /* FALSE, does not support browsing channel */
     2,                      /* company id count in p_meta_co_ids */
     BTA_AV_RC_PASS_RSP_CODE,/* the default response code for pass through commands */
     bta_av_meta_caps_co_ids,/* the metadata Get Capabilities response for company id */

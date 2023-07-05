@@ -195,6 +195,8 @@ extern "C"
 **
 **                      sdp_handle:  SDP handle returned by SDP_CreateRecord().
 **
+**                      browsing_en:  Supported browsing
+**
 **                  Output Parameters:
 **                      None.
 **
@@ -202,8 +204,8 @@ extern "C"
 **                  AVRC_NO_RESOURCES if not enough resources to build the SDP record.
 **
 ******************************************************************************/
-extern UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
-                             char *p_provider_name, UINT16 categories, UINT32 sdp_handle);
+extern UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_provider_name,
+                             UINT16 categories, UINT32 sdp_handle, BOOLEAN browsing_en);
 
 /******************************************************************************
 **
