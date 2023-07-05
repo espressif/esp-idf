@@ -5,8 +5,8 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
+@pytest.mark.esp32c3
+@pytest.mark.i2c_oled
 @pytest.mark.parametrize(
     'config',
     [
