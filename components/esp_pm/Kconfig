@@ -135,8 +135,7 @@ menu "Power Management"
             be powered down, the uart FIFO will be flushed before sleep to avoid data loss, however, this has the
             potential to block the sleep process and cause the wakeup time to be skipped, which will cause the tick
             of freertos to not be compensated correctly when returning from sleep and cause the system to crash.
-            To avoid this, you can use ESP_PM_NO_LIGHT_SLEEP to protect your UART transmission, fflush the stdout
-            after printing, or increase FREERTOS_IDLE_TIME_BEFORE_SLEEP threshold in menuconfig.
+            To avoid this, you can increase FREERTOS_IDLE_TIME_BEFORE_SLEEP threshold in menuconfig.
 
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool
