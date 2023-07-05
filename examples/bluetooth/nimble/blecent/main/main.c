@@ -671,6 +671,24 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             blecent_power_control(event->connect.conn_handle);
 #endif
 
+#if MYNEWT_VAL(BLE_HCI_VS)
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+           int8_t vs_cmd[10]= {0, 0,-70,-60,-68,-58,-75,-65,-80,-70};
+
+           vs_cmd[0] = ((uint8_t)(event->connect.conn_handle & 0xFF));
+           vs_cmd[1] = ((uint8_t)(event->connect.conn_handle >> 8) & 0xFF);
+
+           rc = ble_hs_hci_send_vs_cmd(BLE_HCI_OCF_VS_PCL_SET_RSSI ,
+                                       &vs_cmd, sizeof(vs_cmd), NULL, 0);
+           if (rc != 0) {
+               MODLOG_DFLT(INFO, "Failed to send VSC  %x \n", rc);
+               return 0;
+           }
+           else
+               MODLOG_DFLT(INFO, "Successfully issued VSC , rc = %d \n", rc);
+#endif
+#endif
+
 #if CONFIG_EXAMPLE_ENCRYPTION
             /** Initiate security - It will perform
              * Pairing (Exchange keys)
