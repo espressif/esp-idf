@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/tcp_transport/test_apps:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: false
+      reason: Not needed to test on all targets (chosen two, one for each architecture)
