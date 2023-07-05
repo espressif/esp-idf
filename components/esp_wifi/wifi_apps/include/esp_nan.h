@@ -161,6 +161,8 @@ void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr
 /**
  * brief         Get own Service information from Service ID OR Name.
  *
+ * @attention    If service information is to be fetched from service name, set own_svc_id as zero.
+ *
  * @param[inout] own_svc_id As input, it indicates Service ID to search for.
  *                          As output, it indicates Service ID of the service found using Service Name.
  * @param[inout] svc_name   As input, it indicates Service Name to search for.

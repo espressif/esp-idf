@@ -22,6 +22,10 @@ The following features are supported:
     - Multiple antennas
     - Channel state information
 
+    .. only:: SOC_WIFI_NAN_SUPPORT
+
+     - Wi-Fi Aware (NAN)
+
 .. only:: esp32c6
 
     - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
@@ -1673,6 +1677,19 @@ For establishing a secure connection, AP and station negotiate and agree on the 
   - EAP-FAST: This is an authentication method based on Protected Access Credentials (PAC) which also uses identity and password. Currently, USE_MBEDTLS_CRYPTO flag should be disabled to use this feature.
 
 Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wifi_enterprise`.
+
+.. only:: SOC_WIFI_NAN_SUPPORT
+
+    Wi-Fi Aware\ :sup:`TM` (NAN)
+    ----------------------------
+
+    Wi-Fi Aware\ :sup:`TM` or NAN (Neighbor Awareness Networking) is a protocol that allows Wi-Fi devices to discover services in their proximity. NAN uses direct device-to-device communication and does not require any Internet or AP connection.
+
+    Multiple NAN devices in the vicinity will form a NAN cluster which allows them to communicate with each other. NAN devices in a cluster synchronise their clocks and listen to each other periodically on Channel 6. Devices can advertise (Publish) or seek for (Subscribe) services within their NAN Cluster using Service Discovery protocols. Matching of services is done by service name and optionally matching filters. Once a Subscriber gets a match with a Publisher, it can either send a message (Follow-up) or establish a datapath (NDP) with the Publisher. After NDP is setup both devices will obtain an IPv6 address and can use it for communication.
+
+    Please note that NAN Datapath security is not supported i.e. the data packets will go out unencrypted. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP. NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported.
+
+    Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md` to setup a NAN Publisher and Subscriber.
 
 Wireless Network Management
 ----------------------------

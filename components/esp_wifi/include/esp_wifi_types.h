@@ -1063,6 +1063,7 @@ typedef struct {
     uint8_t subscribe_id;       /**< Subscribe Service Identifier */
     uint8_t publish_id;         /**< Publish Service Identifier */
     uint8_t pub_if_mac[6];      /**< NAN Interface MAC of the Publisher */
+    bool update_pub_id;         /**< Indicates whether publisher's service ID needs to be updated */
 } wifi_event_nan_svc_match_t;
 
 /** Argument structure for WIFI_EVENT_NAN_REPLIED event */
