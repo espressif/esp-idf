@@ -372,9 +372,9 @@ esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
 
-    if (atomic_load(&eth_driver->fsm) != ESP_ETH_FSM_START) {
+    if (atomic_load(&eth_driver->link) != ETH_LINK_UP) {
         ret = ESP_ERR_INVALID_STATE;
-        ESP_LOGD(TAG, "Ethernet is not started");
+        ESP_LOGD(TAG, "Ethernet link is not up, can't transmit");
         goto err;
     }
 

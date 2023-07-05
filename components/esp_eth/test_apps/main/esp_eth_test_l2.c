@@ -315,6 +315,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
         poke_and_wait(eth_handle, &rx_i, sizeof(rx_i), eth_event_rx_group);
 
         // wait for dummy traffic
+        xEventGroupClearBits(eth_event_rx_group, ETH_UNICAST_RECV_BIT);
         recv_info.unicast_rx_cnt = 0;
         bits = xEventGroupWaitBits(eth_event_rx_group, ETH_UNICAST_RECV_BIT, true, true, pdMS_TO_TICKS(3000));
         TEST_ASSERT((bits & ETH_UNICAST_RECV_BIT) == ETH_UNICAST_RECV_BIT);
