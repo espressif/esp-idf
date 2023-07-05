@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ extern "C" {
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 24)    //reg len: 24 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_MOSI_FREE_LEVEL    0            //Default level after bus initialized
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -123,21 +124,21 @@ static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
 }
 
 /**
- * Trigger start of user-defined transaction for master.
+ * Apply the register configurations and wait until it's done
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_master_user_start(spi_dev_t *hw)
+static inline void spi_ll_apply_config(spi_dev_t *hw)
 {
-    hw->cmd.usr = 1;
+    // 32 don't need this option
 }
 
 /**
- * Trigger start of user-defined transaction for slave.
+ * Trigger start of user-defined transaction.
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_slave_user_start(spi_dev_t *hw)
+static inline void spi_ll_user_start(spi_dev_t *hw)
 {
     hw->cmd.usr = 1;
 }
