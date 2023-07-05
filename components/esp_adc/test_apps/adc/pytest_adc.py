@@ -35,3 +35,15 @@ def test_adc(dut: Dut) -> None:
 )
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)
+
+
+@pytest.mark.esp32s3
+@pytest.mark.esp32c3
+@pytest.mark.esp32c6
+@pytest.mark.esp32h2
+@pytest.mark.adc
+@pytest.mark.parametrize('config', [
+    'gdma_iram_safe',
+], indirect=True)
+def test_adc_gdma_iram(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=120)
