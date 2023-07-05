@@ -119,12 +119,22 @@ int console_access(const char *path, int amode)
 static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
         esp_vfs_select_sem_t select_sem, void **end_select_args)
 {
-    return get_vfs_for_index(primary_vfs_index)->vfs.start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
+    const vfs_entry_t* vfs_entry = get_vfs_for_index(primary_vfs_index);
+    // start_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
+    if (vfs_entry && vfs_entry->vfs.start_select) {
+        return vfs_entry->vfs.start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
+    }
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 esp_err_t console_end_select(void *end_select_args)
 {
-    return get_vfs_for_index(primary_vfs_index)->vfs.end_select(end_select_args);
+    const vfs_entry_t* vfs_entry = get_vfs_for_index(primary_vfs_index);
+    // end_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
+    if (vfs_entry && vfs_entry->vfs.end_select) {
+        return vfs_entry->vfs.end_select(end_select_args);
+    }
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
