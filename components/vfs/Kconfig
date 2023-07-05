@@ -71,6 +71,14 @@ menu "Virtual file system"
         help
             Disabling this option can save memory when the support for termios.h is not required.
 
+    config VFS_MAX_COUNT
+        int "Maximum Number of Virtual Filesystems"
+        default 8
+        range 1 20
+        depends on VFS_SUPPORT_IO
+        help
+            Define maximum number of virtual filesystems that can be registered.
+
 
     menu "Host File System I/O (Semihosting)"
         depends on VFS_SUPPORT_IO
