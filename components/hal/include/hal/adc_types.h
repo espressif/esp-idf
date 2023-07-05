@@ -12,6 +12,10 @@
 #include "soc/clk_tree_defs.h"
 #include "esp_attr.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief ADC unit
  */
@@ -240,4 +244,8 @@ typedef struct {
     uint32_t div_b;     /*!<Division factor. Range: 1 ~ 63. */
     uint32_t div_a;     /*!<Division factor. Range: 0 ~ 63. */
 } adc_digi_clk_t;
+#endif
+
+#ifdef __cplusplus
+}
 #endif

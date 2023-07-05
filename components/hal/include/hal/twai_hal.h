@@ -15,12 +15,17 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
+#if SOC_TWAI_SUPPORTED
 #include "hal/twai_types.h"
 #include "hal/twai_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_TWAI_SUPPORTED
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
@@ -376,6 +381,8 @@ static inline uint32_t twai_hal_get_reset_lost_rx_cnt(twai_hal_context_t *hal_ct
     return hal_ctx->rx_msg_cnt_save;
 }
 #endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+
+#endif
 
 #ifdef __cplusplus
 }

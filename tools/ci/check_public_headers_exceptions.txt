@@ -17,8 +17,6 @@ components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 components/log/include/esp_log_internal.h
 
-components/hal/
-
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
 components/esp_common/include/esp_private/

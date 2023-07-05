@@ -16,7 +16,7 @@
 
 #include "soc/system_reg.h"
 #include "soc/hwcrypto_reg.h"
-#include "hal/hmac_hal.h"
+#include "hal/hmac_types.h"
 
 #define SHA256_BLOCK_SZ 64
 #define SHA256_DIGEST_SZ 32

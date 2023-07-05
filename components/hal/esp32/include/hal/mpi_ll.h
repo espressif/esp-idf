@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "hal/assert.h"
+#include "hal/mpi_types.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_periph.h"
 #include "soc/mpi_periph.h"

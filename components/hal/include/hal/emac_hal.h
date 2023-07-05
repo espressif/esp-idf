@@ -6,16 +6,21 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_assert.h"
 #include "esp_err.h"
 #include "hal/eth_types.h"
+#include "soc/soc_caps.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if SOC_EMAC_SUPPORTED
 #include "hal/emac_ll.h"
+
+
 
 /**
  * @brief Indicate to ::emac_hal_receive_frame that receive frame buffer was allocated by ::emac_hal_alloc_recv_buf
@@ -376,6 +381,8 @@ static inline void emac_hal_clear_all_intr(emac_hal_context_t *hal)
 {
     emac_ll_clear_all_pending_intr(hal->dma_regs);
 }
+
+#endif  // SOC_EMAC_SUPPORTED
 
 #ifdef __cplusplus
 }

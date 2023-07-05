@@ -14,13 +14,16 @@
 
 #pragma once
 
+#if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_ll.h"
 #include "hal/touch_sensor_types.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_TOUCH_SENSOR_SUPPORTED
 typedef struct {
     touch_high_volt_t refh;
     touch_low_volt_t refl;
@@ -211,6 +214,8 @@ void touch_hal_deinit(void);
  * Configure touch sensor for each channel.
  */
 void touch_hal_config(touch_pad_t touch_num);
+
+#endif
 
 #ifdef __cplusplus
 }

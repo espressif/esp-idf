@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"

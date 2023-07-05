@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-static uint32_t lp_periph_ll_get_clk_en_mask(lp_periph_module_t lp_periph)
+static inline uint32_t lp_periph_ll_get_clk_en_mask(lp_periph_module_t lp_periph)
 {
     switch (lp_periph) {
     case LP_PERIPH_I2C0_MODULE:
@@ -30,7 +30,7 @@ static uint32_t lp_periph_ll_get_clk_en_mask(lp_periph_module_t lp_periph)
     }
 }
 
-static uint32_t lp_periph_ll_get_rst_en_mask(lp_periph_module_t lp_periph)
+static inline uint32_t lp_periph_ll_get_rst_en_mask(lp_periph_module_t lp_periph)
 {
     switch (lp_periph) {
     case LP_PERIPH_I2C0_MODULE:

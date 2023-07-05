@@ -8,6 +8,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "hal/cache_types.h"
 
 #ifdef __cplusplus

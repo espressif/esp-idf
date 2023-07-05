@@ -48,6 +48,10 @@
 #include "hal/spi_ll.h"
 #include "hal/spi_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Type of dma descriptor with appended members
  *        this structure inherits DMA descriptor, with a pointer to the transaction descriptor passed from users.
@@ -306,3 +310,7 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
  *        - ESP_ERR_INVALID_STATE: Function called in invalid state.
  */
 esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len, void *arg);
+
+#ifdef __cplusplus
+}
+#endif

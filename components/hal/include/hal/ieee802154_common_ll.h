@@ -8,13 +8,19 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "soc/soc_caps.h"
+
+#if SOC_IEEE802154_SUPPORTED
 #include "soc/ieee802154_reg.h"
 #include "soc/ieee802154_struct.h"
 #include "esp_attr.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_IEEE802154_SUPPORTED
 
 /**
  * @brief IEEE802154 opcode.
@@ -448,6 +454,8 @@ static inline void ieee802154_ll_disable_coex(void)
     IEEE802154.pti.pti = 1;
     IEEE802154.pti.hw_ack_pti = 1;
 }
+
+#endif
 
 #ifdef __cplusplus
 }

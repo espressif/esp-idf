@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/ext_mem_defs.h"
 #include "soc/memprot_defs.h"
+#include "soc/periph_defs.h"
 #include "hal/memprot_types.h"
 
 #ifdef __cplusplus

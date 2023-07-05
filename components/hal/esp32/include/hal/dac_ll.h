@@ -13,6 +13,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "hal/misc.h"
 #include "soc/dac_periph.h"
 #include "soc/rtc_io_struct.h"

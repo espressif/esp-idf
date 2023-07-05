@@ -141,9 +141,18 @@ The HAL is used as below:
 
 #pragma once
 #include <esp_err.h>
+#include <stdbool.h>
+#include "soc/soc_caps.h"
+#if SOC_SDIO_SLAVE_SUPPORTED
 #include "hal/sdio_slave_types.h"
 #include "hal/sdio_slave_ll.h"
+#endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if SOC_SDIO_SLAVE_SUPPORTED
 /// Space used for each sending descriptor. Should initialize the sendbuf accoring to this size.
 #define SDIO_SLAVE_SEND_DESC_SIZE   sizeof(sdio_slave_hal_send_desc_t)
 
@@ -522,3 +531,9 @@ uint8_t sdio_slave_hal_host_get_reg(sdio_slave_context_t *hal, int pos);
  * @param reg Value to set.
  */
 void sdio_slave_hal_host_set_reg(sdio_slave_context_t *hal, int pos, uint8_t reg);
+
+#endif  // SOC_SDIO_SLAVE_SUPPORTED
+
+#ifdef __cplusplus
+}
+#endif

@@ -8,19 +8,26 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "soc/soc_caps.h"
 
+#if SOC_XT_WDT_SUPPORTED
 #include "hal/xt_wdt_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+#if SOC_XT_WDT_SUPPORTED
+
 typedef struct {
     rtc_cntl_dev_t *dev;    /* Pointer to the RTC register struct */
 } xt_wdt_hal_context_t;     /* HAL context struct */
 
+
 typedef struct {
-    uint32_t timeout;       /* Watchdog timer timeout in RTC_CLK cycles*/
+    uint32_t timeout;       /* Watchdog timer timeout in RTC_CLK cycles */
 } xt_wdt_hal_config_t;      /* HAL config parameter struct */
 
 /* ---------------------------- Init and Config ----------------------------- */
@@ -55,6 +62,8 @@ void xt_wdt_hal_enable(xt_wdt_hal_context_t *hal, bool enable);
  * @return uint32_t the calculated clock factor value
  */
 uint32_t xt_wdt_hal_enable_backup_clk(xt_wdt_hal_context_t *hal, uint32_t rtc_clk_frequency_khz);
+
+#endif
 
 #ifdef __cplusplus
 }

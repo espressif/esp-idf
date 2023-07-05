@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "stdint.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/assert.h"

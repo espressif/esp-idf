@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/ext_mem_defs.h"
 #include "soc/memprot_defs.h"
 #include "hal/memprot_types.h"
 #include "soc/sensitive_reg.h"
+#include "soc/periph_defs.h"
 
 /* Uncomment to enable MPS debug assertions on false register writes.
  * It irregularly happens the PMS registers cannot be written which causes unpredictable malfunction of the Memprot feature
@@ -27,15 +29,14 @@ extern "C" {
 
 //highest address of each Level slot in the SRAM's 3rd memory region (I/D access, 416kB)
 //quick resolver of split-address category bits
-static const intptr_t sram_rg3_level_hlimits[] = {
-        0x4037FFFF, //level 2 (32KB)
-        0x4038FFFF, //level 3 (64KB)
-        0x4039FFFF, //level 4 (64KB)
-        0x403AFFFF, //level 5 (64KB)
-        0x403BFFFF, //level 6 (64KB)
-        0x403CFFFF, //level 7 (64KB)
-        0x403DFFFF  //level 8 (64KB)
-};
+//         0x4037FFFF   level 2 (32KB)
+//         0x4038FFFF   level 3 (64KB)
+//         0x4039FFFF   level 4 (64KB)
+//         0x403AFFFF   level 5 (64KB)
+//         0x403BFFFF   level 6 (64KB)
+//         0x403CFFFF   level 7 (64KB)
+//         0x403DFFFF   level 8 (64KB)
+#define SRAM_RG3_LEVEL_HLIMITS(level) ((intptr_t[]) {0x4037FFFF,0x4038FFFF,0x4039FFFF,0x403AFFFF,0x403BFFFF,0x403CFFFF,0x403DFFFF} [(level)])
 
 /* ******************************************************************************************************
  * *** COMMON ***
@@ -178,7 +179,7 @@ static inline void memprot_ll_prepare_iram0_split_line_regval(const uint32_t add
     //set category bits for given split line
     uint32_t cat[7] = {[0 ... 6]=MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA};
     for (size_t x=0; x<7; x++) {
-        if (addr <= sram_rg3_level_hlimits[x]) {
+        if (addr <= SRAM_RG3_LEVEL_HLIMITS(x)) {
             cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA;
             break;
         } else {
@@ -1252,7 +1253,7 @@ static inline void memprot_ll_prepare_dram0_split_line_regval(const uint32_t add
     //set category bits for given split line
     uint32_t cat[7] = {[0 ... 6]=MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA};
     for (size_t x=0; x<7; x++) {
-        if (addr <= MAP_IRAM_TO_DRAM(sram_rg3_level_hlimits[x])) {
+        if (addr <= MAP_IRAM_TO_DRAM(SRAM_RG3_LEVEL_HLIMITS(x))) {
             cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA;
             break;
         } else {

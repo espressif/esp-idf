@@ -7,11 +7,16 @@
 #pragma once
 
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
+#if SOC_MEMPROT_SUPPORTED
 #include "soc/memprot_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_MEMPROT_SUPPORTED
 
 /**
  * @brief Memprot LL error codes
@@ -58,6 +63,8 @@ typedef enum {
 #define MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_BELOW_SA  0x0 //0b00
 #define MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA  0x2 //0b10
 #define MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA  0x3 //0b11
+
+#endif
 
 #ifdef __cplusplus
 }

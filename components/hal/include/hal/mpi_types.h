@@ -5,6 +5,11 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef enum {
     MPI_MULT = 0x0,             // (X * Y)
     MPI_MODMULT,                // (X * Y) Mod M
@@ -17,3 +22,7 @@ typedef enum {
     MPI_PARAM_Z,
     MPI_PARAM_M,
 } mpi_param_t;
+
+#ifdef __cplusplus
+}
+#endif
