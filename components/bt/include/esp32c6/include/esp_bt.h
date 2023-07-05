@@ -256,7 +256,7 @@ typedef struct {
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
-    .ble_scan_classify_filter_enable         = 0,                                       \
+    .ble_scan_classify_filter_enable         = 1,                                       \
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .version_num                = efuse_hal_chip_revision(),                            \
     .cpu_freq_mhz               = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,                      \
