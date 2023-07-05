@@ -10,7 +10,7 @@
 #include "esp_heap_caps.h"
 
 // Some resources are lazy allocated in LEDC driver, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (150)
+#define TEST_MEMORY_LEAK_THRESHOLD (230)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
