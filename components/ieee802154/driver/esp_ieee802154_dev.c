@@ -107,14 +107,9 @@ static bool stop_rx(void)
 
 static bool stop_tx_ack(void)
 {
-    ieee802154_ll_events events;
-
     ieee802154_ll_set_cmd(IEEE802154_CMD_STOP);
 
-    events = ieee802154_ll_get_events();
-    if (events & IEEE802154_EVENT_ACK_TX_DONE) {
-        esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
-    }
+    esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
 
     ieee802154_ll_clear_events(IEEE802154_EVENT_ACK_TX_DONE | IEEE802154_EVENT_RX_ABORT | IEEE802154_EVENT_TX_SFD_DONE); // ZB-81: clear TX_SFD_DONE event
 
@@ -170,12 +165,10 @@ static bool stop_rx_ack(void)
     ieee802154_timer0_stop();
     ieee802154_ll_disable_events(IEEE802154_EVENT_TIMER0_OVERFLOW);
 
-    if (events & IEEE802154_EVENT_TIMER0_OVERFLOW) {
-        esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
-    }
-
     if (events & IEEE802154_EVENT_ACK_RX_DONE) {
         esp_ieee802154_transmit_done(s_tx_frame, (uint8_t *)&s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+    } else {
+        esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
     }
 
     ieee802154_ll_clear_events(IEEE802154_EVENT_ACK_RX_DONE | IEEE802154_EVENT_RX_SFD_DONE | IEEE802154_EVENT_TX_ABORT);
