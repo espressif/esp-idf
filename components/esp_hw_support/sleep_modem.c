@@ -276,8 +276,15 @@ bool IRAM_ATTR modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     const uint32_t modules = sleep_retention_get_modules();
-    const uint32_t mask = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC | SLEEP_RETENTION_MODULE_WIFI_BB);
-    return ((modules & mask) == mask);
+    const uint32_t mask_wifi = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC |
+                                                 SLEEP_RETENTION_MODULE_WIFI_BB);
+    const uint32_t mask_ble = (const uint32_t) (SLEEP_RETENTION_MODULE_BLE_MAC |
+                                                SLEEP_RETENTION_MODULE_BLE_BB);
+    const uint32_t mask_154 = (const uint32_t) (SLEEP_RETENTION_MODULE_802154_MAC |
+                                                SLEEP_RETENTION_MODULE_802154_BB);
+    return (((modules & mask_wifi) == mask_wifi) ||
+            ((modules & mask_ble)  == mask_ble) ||
+            ((modules & mask_154)  == mask_154));
 #else
     return false; /* MODEM power domain is controlled by each module (WiFi, Bluetooth or 15.4) of modem */
 #endif
