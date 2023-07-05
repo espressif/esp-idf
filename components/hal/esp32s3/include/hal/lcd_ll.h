@@ -77,6 +77,7 @@ static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t 
  * @param div_a denominator of the divider
  * @param div_b numerator of the divider
  */
+__attribute__((always_inline))
 static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num, int div_a, int div_b)
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)

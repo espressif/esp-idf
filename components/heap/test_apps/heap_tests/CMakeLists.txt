@@ -12,7 +12,7 @@ project(test_heap)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dir ${CMAKE_BINARY_DIR}/esp-idf/heap/
+                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/heap/
                       --elf-file ${CMAKE_BINARY_DIR}/test_heap.elf
                       find-refs
                       --from-sections=.iram0.text
