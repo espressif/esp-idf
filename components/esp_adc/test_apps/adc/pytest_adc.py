@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
@@ -35,6 +35,18 @@ def test_adc(dut: Dut) -> None:
     indirect=True,
 )
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('*')
+    dut.expect_unity_test_output(timeout=120)
+
+
+@pytest.mark.esp32s3
+@pytest.mark.esp32c3
+@pytest.mark.adc
+@pytest.mark.parametrize('config', [
+    'gdma_iram_safe',
+], indirect=True)
+def test_adc_gdma_iram(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('*')
     dut.expect_unity_test_output(timeout=120)
