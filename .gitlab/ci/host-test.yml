@@ -192,9 +192,17 @@ test_idf_tools:
     - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif" | tr "\n" ":"); echo ${p%:})
     - cd ${IDF_PATH}/tools/test_idf_tools
     - ./test_idf_tools.py
+
+test_install_python_env:
+  extends: .host_test_template
+  script:
     # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
+    # Remove tools gdbgui, pygdbmi, python-socketio, jinja2, itsdangerous, pygdbmi for virtualenv test to reduce virtualenv setup time
+    # since they are not necessary for this test and are tested elsewhere
+    - sed -E -i '/(^gdbgui|^pygdbmi|^python-socketio|^jinja2|^itsdangerous|^pygdbmi)/d' $IDF_PATH/requirements.txt
     - cd ${IDF_PATH}/tools
     - python3 ./idf_tools.py install-python-env
+  timeout: 4 hours # this requires longer timeout
 
 .test_efuse_table_on_host_template:
   extends: .host_test_template
