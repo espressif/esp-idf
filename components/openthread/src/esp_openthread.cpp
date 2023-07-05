@@ -58,12 +58,12 @@ static size_t hex_string_to_binary(const char *hex_string, uint8_t *buf, size_t 
 
 esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 {
-    ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread platform driver");
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ESP_RETURN_ON_ERROR(esp_openthread_sleep_init(), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread esp pm_lock");
 #endif
+    ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread platform driver");
     esp_openthread_lock_acquire(portMAX_DELAY);
     ESP_RETURN_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread instance");
