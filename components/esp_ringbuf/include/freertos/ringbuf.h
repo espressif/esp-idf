@@ -57,8 +57,8 @@ typedef struct xSTATIC_RINGBUFFER {
     /** @cond */    //Doxygen command to hide this structure from API Reference
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
-    BaseType_t xDummy3;
-    void *pvDummy4[11];
+    void *pvDummy3[11];
+    BaseType_t xDummy4;
     StaticList_t xDummy5[2];
     void * pvDummy6;
     portMUX_TYPE muxDummy;
