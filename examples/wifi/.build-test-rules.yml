@@ -5,10 +5,9 @@ examples/wifi:
     - if: SOC_WIFI_SUPPORTED != 1
 
 examples/wifi/ftm:
-  enable:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
-      temporary: true
-      reason: the other targets are not tested yet
+  disable:
+    - if: SOC_WIFI_FTM_SUPPORT != 1
+      reason: requires hardware support
 
 examples/wifi/getting_started:
   disable:
