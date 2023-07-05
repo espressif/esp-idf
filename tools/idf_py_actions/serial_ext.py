@@ -126,7 +126,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         target_arch_riscv = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV')
         monitor_args += ['--target', project_desc['target']]
-        revision = project_desc.get('rev')
+        revision = project_desc.get('min_rev')
         if revision:
             monitor_args += ['--revision', revision]
 
