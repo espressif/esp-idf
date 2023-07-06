@@ -59,7 +59,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_GPTIMER_SUPPORTED)
-        list(APPEND srcs "timer_hal.c" "timer_hal_iram.c")
+        list(APPEND srcs "timer_hal.c")
     endif()
 
     if(CONFIG_SOC_LEDC_SUPPORTED)
