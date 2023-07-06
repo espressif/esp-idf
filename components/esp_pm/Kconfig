@@ -152,4 +152,18 @@ menu "Power Management"
         bool
         default y if PM_ENABLE && BTDM_CTRL_HLI
 
+    config PM_LIGHT_SLEEP_CALLBACKS
+        bool "Enable registration of auto light sleep callbacks"
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        default n
+        help
+            If enabled, it allows user to register entry and exit callbacks which are called before and after
+            entering auto light sleep.
+
+            NOTE: These callbacks are executed from the IDLE task context hence you cannot have any blocking calls
+            in your callbacks.
+
+            NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in callback and
+            hence it is highly recommended to keep them as short as possible
+
 endmenu # "Power Management"

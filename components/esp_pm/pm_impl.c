@@ -43,6 +43,7 @@
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
 #include "esp_sleep.h"
+#include "esp_memory_utils.h"
 
 #include "sdkconfig.h"
 
@@ -202,6 +203,146 @@ pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg)
         abort();
     }
 }
+
+#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
+/**
+ * @brief Function entry parameter types for light sleep callback functions (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+ */
+typedef struct {
+    /**
+     * Callback function defined by user.
+     */
+    esp_pm_light_sleep_cb_t cb;
+    /**
+     * Input parameters of callback function defined by user.
+     */
+    void *arg;
+    /**
+     * Execution priority of callback function defined by user.
+     */
+    uint32_t prior;
+    /**
+     * Next callback function defined by user.
+     */
+    struct _esp_pm_sleep_cb_config_t *next;
+} esp_pm_sleep_cb_config_t;
+
+static esp_pm_sleep_cb_config_t *s_light_sleep_enter_cb_config;
+static esp_pm_sleep_cb_config_t *s_light_sleep_exit_cb_config;
+static portMUX_TYPE s_sleep_pm_cb_mutex = portMUX_INITIALIZER_UNLOCKED;
+
+esp_err_t esp_pm_light_sleep_register_cbs(esp_pm_sleep_cbs_register_config_t *cbs_conf)
+{
+    if (cbs_conf->enter_cb == NULL && cbs_conf->exit_cb == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    portENTER_CRITICAL(&s_sleep_pm_cb_mutex);
+    if (cbs_conf->enter_cb != NULL) {
+        esp_pm_sleep_cb_config_t **current_enter_ptr = &(s_light_sleep_enter_cb_config);
+        while (*current_enter_ptr != NULL) {
+            if (((*current_enter_ptr)->cb) == (cbs_conf->enter_cb)) {
+                portEXIT_CRITICAL(&s_sleep_pm_cb_mutex);
+                return ESP_FAIL;
+            }
+            current_enter_ptr = &((*current_enter_ptr)->next);
+        }
+        esp_pm_sleep_cb_config_t *new_enter_config = (esp_pm_sleep_cb_config_t *)heap_caps_malloc(sizeof(esp_pm_sleep_cb_config_t), MALLOC_CAP_INTERNAL);
+        if (new_enter_config == NULL) {
+            portEXIT_CRITICAL(&s_sleep_pm_cb_mutex);
+            return ESP_ERR_NO_MEM; /* Memory allocation failed */
+        }
+        new_enter_config->cb = cbs_conf->enter_cb;
+        new_enter_config->arg = cbs_conf->enter_cb_user_arg;
+        new_enter_config->prior = cbs_conf->enter_cb_prior;
+        while (*current_enter_ptr != NULL && (*current_enter_ptr)->prior <= new_enter_config->prior) {
+            current_enter_ptr = &((*current_enter_ptr)->next);
+        }
+        new_enter_config->next = *current_enter_ptr;
+        *current_enter_ptr = new_enter_config;
+    }
+
+    if (cbs_conf->exit_cb != NULL) {
+        esp_pm_sleep_cb_config_t **current_exit_ptr = &(s_light_sleep_exit_cb_config);
+        while (*current_exit_ptr != NULL) {
+            if (((*current_exit_ptr)->cb) == (cbs_conf->exit_cb)) {
+                portEXIT_CRITICAL(&s_sleep_pm_cb_mutex);
+                return ESP_FAIL;
+            }
+            current_exit_ptr = &((*current_exit_ptr)->next);
+        }
+        esp_pm_sleep_cb_config_t *new_exit_config = (esp_pm_sleep_cb_config_t *)heap_caps_malloc(sizeof(esp_pm_sleep_cb_config_t), MALLOC_CAP_INTERNAL);
+        if (new_exit_config == NULL) {
+            portEXIT_CRITICAL(&s_sleep_pm_cb_mutex);
+            return ESP_ERR_NO_MEM; /* Memory allocation failed */
+        }
+        new_exit_config->cb = cbs_conf->exit_cb;
+        new_exit_config->arg = cbs_conf->exit_cb_user_arg;
+        new_exit_config->prior = cbs_conf->exit_cb_prior;
+        while (*current_exit_ptr != NULL && (*current_exit_ptr)->prior <= new_exit_config->prior) {
+            current_exit_ptr = &((*current_exit_ptr)->next);
+        }
+        new_exit_config->next = *current_exit_ptr;
+        *current_exit_ptr = new_exit_config;
+    }
+    portEXIT_CRITICAL(&s_sleep_pm_cb_mutex);
+    return ESP_OK;
+}
+
+esp_err_t esp_pm_light_sleep_unregister_cbs(esp_pm_sleep_cbs_register_config_t *cbs_conf)
+{
+    if (cbs_conf->enter_cb == NULL && cbs_conf->exit_cb == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    portENTER_CRITICAL(&s_sleep_pm_cb_mutex);
+    if (cbs_conf->enter_cb != NULL) {
+        esp_pm_sleep_cb_config_t **current_enter_ptr = &(s_light_sleep_enter_cb_config);
+        while (*current_enter_ptr != NULL) {
+            if ((*current_enter_ptr)->cb == cbs_conf->enter_cb) {
+                esp_pm_sleep_cb_config_t *temp = *current_enter_ptr;
+                *current_enter_ptr = (*current_enter_ptr)->next;
+                free(temp);
+                break;
+            }
+            current_enter_ptr = &((*current_enter_ptr)->next);
+        }
+    }
+
+    if (cbs_conf->exit_cb != NULL) {
+        esp_pm_sleep_cb_config_t **current_exit_ptr = &(s_light_sleep_exit_cb_config);
+        while (*current_exit_ptr != NULL) {
+            if ((*current_exit_ptr)->cb == cbs_conf->exit_cb) {
+                esp_pm_sleep_cb_config_t *temp = *current_exit_ptr;
+                *current_exit_ptr = (*current_exit_ptr)->next;
+                free(temp);
+                break;
+            }
+            current_exit_ptr = &((*current_exit_ptr)->next);
+        }
+    }
+    portEXIT_CRITICAL(&s_sleep_pm_cb_mutex);
+    return ESP_OK;
+}
+
+static esp_err_t IRAM_ATTR esp_pm_execute_enter_sleep_callbacks(int64_t sleep_time_us)
+{
+    esp_pm_sleep_cb_config_t *enter_current = s_light_sleep_enter_cb_config;
+    while (enter_current != NULL) {
+        enter_current->cb(sleep_time_us, enter_current->arg);
+        enter_current = enter_current->next;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t IRAM_ATTR esp_pm_execute_exit_sleep_callbacks(int64_t sleep_time_us)
+{
+    esp_pm_sleep_cb_config_t *exit_current = s_light_sleep_exit_cb_config;
+    while (exit_current != NULL) {
+        exit_current->cb(sleep_time_us, exit_current->arg);
+        exit_current = exit_current->next;
+    }
+    return ESP_OK;
+}
+#endif
 
 static esp_err_t esp_pm_sleep_configure(const void *vconfig)
 {
@@ -629,6 +770,20 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
         int64_t wakeup_delay_us = portTICK_PERIOD_MS * 1000LL * xExpectedIdleTime;
         int64_t sleep_time_us = MIN(wakeup_delay_us, time_until_next_alarm);
         if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL) {
+            int64_t slept_us = 0;
+#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
+            if (s_light_sleep_enter_cb_config != NULL && s_light_sleep_enter_cb_config->cb) {
+                uint32_t cycle = esp_cpu_get_cycle_count();
+                esp_err_t err = esp_pm_execute_enter_sleep_callbacks(sleep_time_us);
+                if (err != ESP_OK) {
+                    portEXIT_CRITICAL(&s_switch_lock);
+                    return;
+                }
+                sleep_time_us -= (esp_cpu_get_cycle_count() - cycle) / (esp_clk_cpu_freq() / 1000000ULL);
+            }
+            if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL)
+            {
+#endif
             esp_sleep_enable_timer_wakeup(sleep_time_us - LIGHT_SLEEP_EARLY_WAKEUP_US);
 #if CONFIG_PM_TRACE && SOC_PM_SUPPORT_RTC_PERIPH_PD
             /* to force tracing GPIOs to keep state */
@@ -644,7 +799,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 s_light_sleep_counts++;
 #endif
             }
-            int64_t slept_us = esp_timer_get_time() - sleep_start;
+            slept_us = esp_timer_get_time() - sleep_start;
             ESP_PM_TRACE_EXIT(SLEEP, core_id);
 
             uint32_t slept_ticks = slept_us / (portTICK_PERIOD_MS * 1000LL);
@@ -667,6 +822,12 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 #endif
             }
             other_core_should_skip_light_sleep(core_id);
+#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
+            }
+            if (s_light_sleep_exit_cb_config != NULL && s_light_sleep_exit_cb_config->cb) {
+                esp_pm_execute_exit_sleep_callbacks(slept_us);
+            }
+#endif
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
