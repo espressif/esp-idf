@@ -18,6 +18,7 @@ import json
 import locale
 import os
 import os.path
+import shlex
 import subprocess
 import sys
 from collections import Counter, OrderedDict, _OrderedDictKeysView
@@ -695,7 +696,7 @@ def init_cli(verbose_output: List=None) -> Any:
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
-def main() -> None:
+def main(argv=None) -> None:
     # Check the environment only when idf.py is invoked regularly from command line.
     checks_output = None if SHELL_COMPLETE_RUN else check_environment()
 
@@ -713,7 +714,54 @@ def main() -> None:
         else:
             raise
     else:
-        cli(sys.argv[1:], prog_name=PROG, complete_var=SHELL_COMPLETE_VAR)
+        argv = expand_file_arguments(argv or sys.argv[1:])
+
+        cli(argv, prog_name=PROG, complete_var=SHELL_COMPLETE_VAR)
+
+
+def expand_file_arguments(argv):
+    """
+    Any argument starting with "@" gets replaced with all values read from a text file.
+    Text file arguments can be split by newline or by space.
+    Values are added "as-is", as if they were specified in this order
+    on the command line.
+    """
+    visited = set()
+    expanded = False
+
+    def expand_args(args, parent_path, file_stack):
+        expanded_args = []
+        for arg in args:
+            if not arg.startswith("@"):
+                expanded_args.append(arg)
+            else:
+                nonlocal expanded, visited
+                expanded = True
+
+                file_name = arg[1:]
+                rel_path = os.path.normpath(os.path.join(parent_path, file_name))
+
+                if rel_path in visited:
+                    file_stack_str = ' -> '.join(['@' + f for f in file_stack + [file_name]])
+                    raise FatalError(f'Circular dependency in file argument expansion: {file_stack_str}')
+                visited.add(rel_path)
+
+                try:
+                    with open(rel_path, "r") as f:
+                        for line in f:
+                            expanded_args.extend(expand_args(shlex.split(line), os.path.dirname(rel_path), file_stack + [file_name]))
+                except IOError:
+                    file_stack_str = ' -> '.join(['@' + f for f in file_stack + [file_name]])
+                    raise FatalError(f"File '{rel_path}' (expansion of {file_stack_str}) could not be opened. "
+                                     "Please ensure the file exists and you have the necessary permissions to read it.")
+        return expanded_args
+
+    argv = expand_args(argv, os.getcwd(), [])
+
+    if expanded:
+        print(f'Running: idf.py {" ".join(argv)}')
+
+    return argv
 
 
 def _valid_unicode_config() -> Union[codecs.CodecInfo, bool]:
