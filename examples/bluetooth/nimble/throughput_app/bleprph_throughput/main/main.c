@@ -185,14 +185,14 @@ notify_task(void *arg)
 
                 /* Check if the MBUFs are available */
                 if (os_msys_num_free() >= MIN_REQUIRED_MBUF) {
-                    om = ble_hs_mbuf_from_flat(payload, sizeof(payload));
-                    if (om == NULL) {
-                        /* Memory not available for mbuf */
-                        ESP_LOGE(tag, "No MBUFs available from pool, retry..");
-                        vTaskDelay(100 / portTICK_PERIOD_MS);
+                    do {
                         om = ble_hs_mbuf_from_flat(payload, sizeof(payload));
-                        assert(om != NULL);
-                    }
+                        if (om == NULL) {
+                            /* Memory not available for mbuf */
+                            ESP_LOGE(tag, "No MBUFs available from pool, retry..");
+                            vTaskDelay(100 / portTICK_PERIOD_MS);
+                        }
+                    } while (om == NULL);
 
                     rc = ble_gatts_notify_custom(conn_handle, notify_handle, om);
                     if (rc != 0) {
