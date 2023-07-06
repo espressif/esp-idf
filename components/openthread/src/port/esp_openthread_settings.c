@@ -153,7 +153,9 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint
     if (ret != ESP_OK) {
         return OT_ERROR_NOT_FOUND;
     }
-    ret = nvs_get_blob(s_ot_nvs_handle, ot_nvs_key, aValue, (size_t *)aValueLength);
+    size_t length = *aValueLength;
+    ret = nvs_get_blob(s_ot_nvs_handle, ot_nvs_key, aValue, &length);
+    *aValueLength = (uint16_t) length;
     ESP_RETURN_ON_FALSE((ret == ESP_OK), OT_ERROR_NOT_FOUND, OT_PLAT_LOG_TAG, "Data not found, err: %d", ret);
     return OT_ERROR_NONE;
 }
