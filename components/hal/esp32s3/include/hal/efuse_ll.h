@@ -84,7 +84,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_versi
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    return 0;
+    return EFUSE.rd_mac_spi_sys_3.pkg_version;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
