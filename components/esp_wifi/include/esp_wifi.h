@@ -1,9 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 /*               Notes about WiFi Programming
  *
@@ -1342,6 +1341,21 @@ esp_err_t esp_wifi_sta_get_aid(uint16_t *aid);
   *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
+
+/**
+  * @brief      Get the rssi info after station connected to AP
+  *
+  * @attention  This API should be called after station connected to AP.
+  *
+  * @param      rssi store the rssi info received from last beacon.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_FAIL: failed
+  */
+esp_err_t esp_wifi_sta_get_rssi(int *rssi);
+
 #ifdef __cplusplus
 }
 #endif
