@@ -65,10 +65,14 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
 
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t *out_digi, uint32_t *out_vol_mv)
 {
-    assert((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-           (version <= ESP_EFUSE_ADC_CALIB_VER_MAX));
-    assert(atten <= ADC_ATTEN_DB_11);
     (void) adc_unit;
+    if ((version < ESP_EFUSE_ADC_CALIB_VER_MIN) ||
+        (version > ESP_EFUSE_ADC_CALIB_VER_MAX)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (atten >= 4 || atten < 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (atten == ADC_ATTEN_DB_2_5 || atten == ADC_ATTEN_DB_6) {
         /**

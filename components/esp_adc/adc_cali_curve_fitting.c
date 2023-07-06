@@ -59,7 +59,7 @@ typedef struct {
 /* ----------------------- Characterization Functions ----------------------- */
 static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, adc_atten_t atten, adc_calib_info_t *calib_info);
 static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, cali_chars_curve_fitting_t *chars);
-static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param, adc_atten_t atten);
+static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param);
 static esp_err_t check_valid(const adc_cali_curve_fitting_config_t *config);
 
 /* ------------------------ Interface Functions --------------------------- */
@@ -140,7 +140,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 #endif  // SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
 
     uint64_t v_cali_1 = (uint64_t)raw * ctx->chars_first_step.coeff_a / coeff_a_scaling + ctx->chars_first_step.coeff_b;
-    int32_t error = get_reading_error(v_cali_1, &(ctx->chars_second_step), ctx->atten);
+    int32_t error = get_reading_error(v_cali_1, &(ctx->chars_second_step));
 
     *voltage = (int32_t)v_cali_1 - error;
 
@@ -179,9 +179,9 @@ static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, ca
 }
 
 
-static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param, adc_atten_t atten)
+static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param)
 {
-    if (v_cali_1 == 0) {
+    if (v_cali_1 == 0 || param->term_num == 0) {
         return 0;
     }
 
@@ -193,19 +193,23 @@ static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step
     memset(variable, 0, term_num * sizeof(uint64_t));
     memset(term, 0, term_num * sizeof(uint64_t));
 
+    /**
+     *  The scheme formula is:
+     *  error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + ... +  (Kn * X^n);
+     */
     variable[0] = 1;
-    coeff = (*param->coeff)[atten][0][0];
-    term[0] = variable[0] * coeff / (*param->coeff)[atten][0][1];
-    error = (int32_t)term[0] * (*param->sign)[atten][0];
+    coeff = (param->coeff)[0][0];
+    term[0] = variable[0] * coeff / (param->coeff)[0][1];
+    error = (int32_t)term[0] * (param->sign)[0];
 
     for (int i = 1; i < term_num; i++) {
         variable[i] = variable[i - 1] * v_cali_1;
-        coeff = (*param->coeff)[atten][i][0];
+        coeff = (param->coeff)[i][0];
         term[i] = variable[i] * coeff;
         ESP_LOGV(TAG, "big coef is %llu, big term%d is %llu, coef_id is %d", coeff, i, term[i], i);
 
-        term[i] = term[i] / (*param->coeff)[atten][i][1];
-        error += (int32_t)term[i] * (*param->sign)[atten][i];
+        term[i] = term[i] / (param->coeff)[i][1];
+        error += (int32_t)term[i] * (param->sign)[i];
         ESP_LOGV(TAG, "term%d is %llu, error is %"PRId32, i, term[i], error);
     }
 

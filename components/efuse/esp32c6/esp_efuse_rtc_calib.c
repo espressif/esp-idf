@@ -34,8 +34,7 @@ int esp_efuse_rtc_calib_get_ver(void)
 
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
-    assert((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-           (version <= ESP_EFUSE_ADC_CALIB_VER_MAX));
+    /* Version validation should be guaranteed in the caller */
     assert(atten >=0 && atten < 4);
     (void) adc_unit;
 
@@ -60,8 +59,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
 
 int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_t adc_channel, int atten)
 {
-    assert((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-           (version <= ESP_EFUSE_ADC_CALIB_VER_MAX));
+    /* Version validation should be guaranteed in the caller */
     assert(atten < 4);
     assert(adc_channel < SOC_ADC_CHANNEL_NUM(adc_unit));
 
