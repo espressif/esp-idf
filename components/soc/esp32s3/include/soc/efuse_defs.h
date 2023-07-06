@@ -12,6 +12,9 @@ extern "C" {
 #define EFUSE_WRITE_OP_CODE 0x5a5a
 #define EFUSE_READ_OP_CODE 0x5aa5
 
+#define EFUSE_PKG_VERSION_ESP32S3       0 // QFN56
+#define EFUSE_PKG_VERSION_ESP32S3PICO   1 // LGA56
+
 /** EFUSE_RD_MAC_SPI_SYS_2_REG register
  *  BLOCK1 data register 2.
  */
