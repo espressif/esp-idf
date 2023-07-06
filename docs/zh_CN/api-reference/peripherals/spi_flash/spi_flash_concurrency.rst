@@ -3,6 +3,8 @@
 SPI1 flash 并发约束
 =========================================
 
+:link_to_translation:`en:[English]`
+
 指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，SPI1 外设上的操作会对整个系统造成显著的影响。这类操作包括调用 SPI flash API 或者 SPI1 总线上的其他驱动、任何 flash 操作（如读取、写入、擦除）或是由其他用户定义的 SPI 操作（对主 flash 或是其他 SPI 从机）。
 
 .. only:: not (esp32c3 or SOC_SPIRAM_XIP_SUPPORTED)
