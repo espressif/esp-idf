@@ -166,8 +166,15 @@ wait_sync_done:
 
     .section    .iram1,"ax"
     .global     rv_core_critical_regs_restore
+    .weak       rv_core_critical_regs_restore
     .type       rv_core_critical_regs_restore,@function
+    .global     _rv_core_critical_regs_restore
+    .type       _rv_core_critical_regs_restore,@function
     .align      4
+
+_rv_core_critical_regs_restore: /* export a strong symbol to jump to here, used
+                                 * for a static callback */
+    nop
 
 rv_core_critical_regs_restore:
 
