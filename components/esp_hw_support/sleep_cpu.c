@@ -20,6 +20,7 @@
 #include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
 #include "esp_private/sleep_cpu.h"
+#include "esp_private/sleep_event.h"
 #include "sdkconfig.h"
 
 #if SOC_PMU_SUPPORTED
@@ -685,6 +686,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
 {
     RvCoreCriticalSleepFrame * frame = rv_core_critical_regs_save();
     if ((frame->pmufunc & 0x3) == 0x1) {
+        esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_END, (void *)0);
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
         /* Minus 2 * sizeof(long) is for bypass `pmufunc` and `frame_crc` field */
         update_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_FRMSZ - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
@@ -704,6 +706,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
 esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_START, (void *)0);
     uint32_t mstatus = save_mstatus_and_disable_global_int();
 
     cpu_domain_dev_regs_save(s_cpu_retention.retent.plic_frame);
@@ -728,7 +731,6 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.intpri_frame);
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.clint_frame);
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.plic_frame);
-
     restore_mstatus(mstatus);
     return err;
 }

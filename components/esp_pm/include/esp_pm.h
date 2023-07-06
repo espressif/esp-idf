@@ -192,6 +192,7 @@ esp_err_t esp_pm_lock_delete(esp_pm_lock_handle_t handle);
  */
 esp_err_t esp_pm_dump_locks(FILE* stream);
 
+#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
 /**
  * @brief Function prototype for light sleep callback functions (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
  *

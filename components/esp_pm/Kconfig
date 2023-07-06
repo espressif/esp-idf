@@ -153,7 +153,7 @@ menu "Power Management"
         default y if PM_ENABLE && BTDM_CTRL_HLI
 
     config PM_LIGHT_SLEEP_CALLBACKS
-        bool "Enable registration of auto light sleep callbacks"
+        bool "Enable registration of pm light sleep callbacks"
         depends on FREERTOS_USE_TICKLESS_IDLE
         default n
         help
