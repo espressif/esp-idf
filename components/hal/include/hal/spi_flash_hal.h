@@ -19,6 +19,10 @@
 #include "hal/spi_flash_types.h"
 #include "esp_assert.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Hardware host-specific constants */
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
 #define SPI_FLASH_HAL_MAX_READ_BYTES 64
@@ -273,3 +277,7 @@ void spi_flash_hal_suspend(spi_flash_host_inst_t *host);
  * @return Always ESP_OK
  */
 esp_err_t spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf);
+
+#ifdef __cplusplus
+}
+#endif

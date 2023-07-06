@@ -13,8 +13,10 @@ extern "C" {
 #endif
 
 #include "soc/soc_caps.h"
+#if SOC_PAU_SUPPORTED
 #include "hal/pau_ll.h"
 #include "hal/pau_types.h"
+
 
 typedef struct {
     pau_dev_t *dev;
@@ -107,6 +109,8 @@ void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal);
  * @param hal           regdma hal context
  */
 void pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable);
+#endif
+
 #endif
 
 #ifdef __cplusplus

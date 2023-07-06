@@ -16,6 +16,10 @@
 extern "C" {
 #endif
 
+#include "soc/soc_caps.h"
+
+#if SOC_GDMA_SUPPORTED
+
 #include "soc/gdma_struct.h"
 
 typedef struct {
@@ -23,6 +27,8 @@ typedef struct {
 } gdma_hal_context_t;
 
 void gdma_hal_init(gdma_hal_context_t *hal, int group_id);
+
+#endif
 
 #ifdef __cplusplus
 }

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "hal/assert.h"
+#include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
 
 #ifdef __cplusplus

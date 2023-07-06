@@ -12,7 +12,10 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
+#if SOC_USB_OTG_SUPPORTED
 #include "soc/usb_dwc_struct.h"
+#endif
 #include "hal/usb_types_private.h"
 #include "hal/misc.h"
 
@@ -95,6 +98,7 @@ extern "C" {
 #define USB_DWC_LL_INTR_CHAN_CHHLTD         (1 << 1)
 #define USB_DWC_LL_INTR_CHAN_XFERCOMPL      (1 << 0)
 
+#if SOC_USB_OTG_SUPPORTED
 /*
  * QTD (Queue Transfer Descriptor) structure used in Scatter/Gather DMA mode.
  * Each QTD describes one transfer. Scatter gather mode will automatically split
@@ -929,6 +933,8 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     //Clear the QTD just for safety
     qtd->buffer_status_val = 0;
 }
+
+#endif
 
 #ifdef __cplusplus
 }

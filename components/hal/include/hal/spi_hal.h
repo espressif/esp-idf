@@ -32,6 +32,10 @@
 #include "soc/soc_caps.h"
 #include "hal/spi_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration
  */
@@ -264,3 +268,7 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
  *                       allowed. Left 0 if not known.
  */
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns);
+
+#ifdef __cplusplus
+}
+#endif

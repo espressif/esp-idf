@@ -14,6 +14,7 @@
 #include "soc/lp_timer_struct.h"
 #include "soc/lp_aon_reg.h"
 #include "hal/lp_timer_types.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {

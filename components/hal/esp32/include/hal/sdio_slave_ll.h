@@ -16,13 +16,17 @@
 
 #pragma once
 
-#include "hal/sdio_slave_hal.h"
+#include "hal/sdio_slave_types.h"
 #include "soc/slc_struct.h"
 #include "soc/slc_reg.h"
 #include "soc/host_struct.h"
 #include "soc/host_reg.h"
 #include "soc/hinf_struct.h"
 #include "soc/lldesc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// Get address of the only SLC registers for ESP32
 #define sdio_slave_ll_get_slc(ID)   (&SLC)
@@ -507,3 +511,7 @@ static inline void sdio_slave_ll_slvint_fetch_clear(slc_dev_t *slc, sdio_slave_l
     *out_slv_int = slv_int;
     slc->slc0_int_clr.val = slv_int;
 }
+
+#ifdef __cplusplus
+}
+#endif

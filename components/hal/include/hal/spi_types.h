@@ -13,6 +13,10 @@
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Enum with the three SPI peripherals that are software-accessible in it
  */
@@ -88,3 +92,7 @@ typedef enum {
 #endif
 
 /** @endcond */
+
+#ifdef __cplusplus
+}
+#endif

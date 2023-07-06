@@ -30,6 +30,10 @@
 #include "soc/soc_caps.h"
 #include "hal/spi_ll.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Context that should be maintained by both the driver and the HAL.
  */
@@ -155,3 +159,7 @@ uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal);
  */
 bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal);
 #endif //#if CONFIG_IDF_TARGET_ESP32
+
+#ifdef __cplusplus
+}
+#endif

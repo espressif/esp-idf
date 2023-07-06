@@ -198,7 +198,7 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     }
 }
 
-static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
+static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {// ESP32H2-TODO: IDF-6400
     switch (periph) {
     // case PERIPH_RNG_MODULE:
@@ -274,7 +274,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     }
 }
 
-static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
+static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     // ESP32H2-TODO: IDF-6400
     switch (periph) {

@@ -8,7 +8,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "esp_attr.h"
+#include "soc/soc_caps.h"
+#if SOC_ASSIST_DEBUG_SUPPORTED
 #include "hal/assist_debug_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

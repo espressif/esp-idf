@@ -9,9 +9,16 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
+
+#if !SOC_LP_TIMER_SUPPORTED
 #include "hal/rtc_cntl_ll.h"
+#endif
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "hal/rtc_io_ll.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef struct rtc_cntl_sleep_retent {
@@ -87,3 +94,7 @@ void rtc_cntl_hal_disable_tagmem_retention(void *addr);
 #define rtc_hal_ulp_wakeup_enable()                       rtc_cntl_ll_ulp_wakeup_enable()
 
 #define rtc_hal_ulp_int_clear()                           rtc_cntl_ll_ulp_int_clear()
+
+#ifdef __cplusplus
+}
+#endif

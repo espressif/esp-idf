@@ -16,13 +16,16 @@
 #pragma once
 
 #include "soc/soc_caps.h"
+#if SOC_I2S_SUPPORTED
 #include "hal/i2s_types.h"
 #include "hal/i2s_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_I2S_SUPPORTED
 /**
  * @brief General slot configuration information
  * @note It is a general purpose struct, not supposed to be used directly by user
@@ -453,6 +456,8 @@ void i2s_hal_tdm_enable_rx_channel(i2s_hal_context_t *hal);
  */
 #define i2s_hal_get_in_eof_des_addr(hal, addr) i2s_ll_rx_get_eof_des_addr((hal)->dev, addr)
 #endif
+
+#endif // SOC_I2S_SUPPORTED
 
 #ifdef __cplusplus
 }

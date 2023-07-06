@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/ext_mem_defs.h"
 #include "soc/dport_reg.h"
 #include "soc/dport_access.h"

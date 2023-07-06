@@ -19,6 +19,10 @@
 #include "hal/ledc_types.h"
 #include "soc/soc_caps.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Context that should be maintained by both the driver and the HAL
  */
@@ -434,3 +438,7 @@ void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_channel_t
  * @return None
  */
 void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_clk_cfg_t *clk_cfg);
+
+#ifdef __cplusplus
+}
+#endif

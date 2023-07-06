@@ -5,11 +5,13 @@
  */
 #pragma once
 
-#include "hal/apm_ll.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "soc/soc_caps.h"
+#if SOC_APM_SUPPORTED
+#include "hal/apm_ll.h"
 
 /**
  * @brief Region configuration data.
@@ -128,6 +130,8 @@ void apm_hp_hal_master_sec_mode_config(apm_hp_secure_mode_config_t *sec_mode_dat
  * @param enable   Flag for event bypass enable/disable
  */
 void apm_hp_hal_reset_event_enable(bool enable);
+
+#endif
 
 #ifdef __cplusplus
 }
