@@ -100,8 +100,7 @@ static void set_cache_and_start_app(uint32_t drom_addr,
                                     uint32_t irom_size,
                                     uint32_t entry_addr);
 
-// Read ota_info partition and fill array from two otadata structures.
-static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_select_entry_t *two_otadata)
+esp_err_t bootloader_common_read_otadata(const esp_partition_pos_t *ota_info, esp_ota_select_entry_t *two_otadata)
 {
     const esp_ota_select_entry_t *ota_select_map;
     if (ota_info->offset == 0) {
@@ -361,7 +360,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         return FACTORY_INDEX;
     }
 
-    if (read_otadata(&bs->ota_info, otadata) != ESP_OK) {
+    if (bootloader_common_read_otadata(&bs->ota_info, otadata) != ESP_OK) {
         return INVALID_INDEX;
     }
     ota_has_initial_contents = false;
