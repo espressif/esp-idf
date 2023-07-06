@@ -173,12 +173,6 @@ tools/test_apps/system/panic:
       temporary: true
       reason: target(s) not supported yet # TODO: IDF-7511
 
-tools/test_apps/system/ram_loadable_app:
-  disable:
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: lack of runners
-
 tools/test_apps/system/startup:
   disable:
     - if: CONFIG_NAME == "main_task_cpu1" and IDF_TARGET not in ["esp32", "esp32s3"]
