@@ -15,3 +15,6 @@ CONFIG_FREERTOS_USE_TRACE_FACILITY=y
 CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# On chips with USB serial, disable secondary console which does not make sense when using console component
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y

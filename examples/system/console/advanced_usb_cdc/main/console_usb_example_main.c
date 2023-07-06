@@ -27,6 +27,17 @@
 #include "cmd_system.h"
 #include "cmd_wifi.h"
 
+/*
+ * We warn if a secondary serial console is enabled. A secondary serial console is always output-only and
+ * hence not very useful for interactive console applications. If you encounter this warning, consider disabling
+ * the secondary serial console in menuconfig unless you know what you are doing.
+ */
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#if !CONFIG_ESP_CONSOLE_SECONDARY_NONE
+#warning "A secondary serial console is not useful when using the console component. Please disable it in menuconfig."
+#endif
+#endif
+
 static void initialize_nvs(void)
 {
     esp_err_t err = nvs_flash_init();
