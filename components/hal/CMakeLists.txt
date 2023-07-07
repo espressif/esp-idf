@@ -39,8 +39,7 @@ if(NOT BOOTLOADER_BUILD)
         "rtc_io_hal.c"
         "gpio_hal.c"
         "uart_hal.c"
-        "uart_hal_iram.c"
-        "${target}/clk_tree_hal.c")
+        "uart_hal_iram.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         list(APPEND srcs
@@ -50,6 +49,10 @@ if(NOT BOOTLOADER_BUILD)
         if(CONFIG_SOC_FLASH_ENC_SUPPORTED)
             list(APPEND srcs "spi_flash_encrypt_hal_iram.c")
         endif()
+    endif()
+
+    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
+        list(APPEND srcs "${target}/clk_tree_hal.c")
     endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
@@ -231,6 +234,12 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(${target} STREQUAL "esp32c6")
+        list(APPEND srcs
+              "spi_flash_hal_gpspi.c")
+
+    endif()
+
+    if(${target} STREQUAL "esp32p4")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c")
 

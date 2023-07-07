@@ -11,8 +11,8 @@ extern "C" {
 #endif
 
 typedef enum {
-    PERIPH_MSPI_MODULE                      = 0,
-    PERIPH_DUALMSPI_MODULE,
+    PERIPH_MSPI_FLASH_MODULE                = 0,
+    PERIPH_MSPI_PSRAM_MODULE,
     PERIPH_EMAC_MODULE,
     PERIPH_MIPI_DSI_MODULE,
     PERIPH_MIPI_CSI_MODULE,

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,16 @@
 
 void mmu_hal_init(void)
 {
-#if CONFIG_ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+//TODO: IDF-7509
+#if CONFIG_ESP_ROM_RAM_APP_NEEDS_MMU_INIT || CONFIG_IDF_TARGET_ESP32P4
     ROM_Boot_Cache_Init();
 #endif
+
+//TODO: IDF-7509
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+#endif
+
     mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
     mmu_hal_unmap_all();
 }
@@ -83,6 +90,11 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t entry_id = 0;
     uint32_t mmu_val;     //This is the physical address in the format that MMU supported
 
+//TODO: IDF-7509
+#if CONFIG_IDF_TARGET_ESP32P4
+    uint32_t vaddr_orig = vaddr;
+#endif
+
     *out_len = mmu_hal_pages_to_bytes(mmu_id, page_num);
     mmu_val = mmu_ll_format_paddr(mmu_id, paddr, mem_type);
 
@@ -93,11 +105,22 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
         mmu_val++;
         page_num--;
     }
+
+//TODO: IDF-7509
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, vaddr_orig, len);
+#endif
 }
 
 void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 {
     uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
+
+//TODO: IDF-7509
+#if CONFIG_IDF_TARGET_ESP32P4
+    uint32_t vaddr_orig = vaddr;
+#endif
+
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
     HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, len, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
 
@@ -109,6 +132,11 @@ void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
         vaddr += page_size_in_bytes;
         page_num--;
     }
+
+//TODO: IDF-7509
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, vaddr_orig, len);
+#endif
 }
 
 bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target)
