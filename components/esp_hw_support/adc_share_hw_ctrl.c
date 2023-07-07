@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,9 @@ void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 
     uint32_t init_code = 0;
 
-    if (version == ESP_EFUSE_ADC_CALIB_VER) {
+    if ((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
+        (version <= ESP_EFUSE_ADC_CALIB_VER_MAX)) {
+        // Guarantee the calibration version before calling efuse function
         init_code = esp_efuse_rtc_calib_get_init_code(version, adc_n, atten);
     }
 #if SOC_ADC_SELF_HW_CALI_SUPPORTED
@@ -96,6 +98,25 @@ void IRAM_ATTR adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 {
     adc_hal_set_calibration_param(adc_n, s_adc_cali_param[adc_n][atten]);
 }
+
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+static int s_adc_cali_chan_compens[SOC_ADC_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
+void adc_load_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
+{
+    int version = esp_efuse_rtc_calib_get_ver();
+    if ((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
+        (version <= ESP_EFUSE_ADC_CALIB_VER_MAX)) {
+        // Guarantee the calibration version before calling efuse function
+        s_adc_cali_chan_compens[chan][atten] = esp_efuse_rtc_calib_get_chan_compens(version, adc_n, chan, atten);
+    }
+    // No warning when version doesn't match because should has warned in adc_calc_hw_calibration_code
+}
+
+int IRAM_ATTR adc_get_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
+{
+    return s_adc_cali_chan_compens[chan][atten];
+}
+#endif  // SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
 
