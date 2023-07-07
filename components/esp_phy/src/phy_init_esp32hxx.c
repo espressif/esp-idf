@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,14 +12,13 @@
 #define PHY_ENABLE_VERSION_PRINT 1
 
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
-extern void phy_version_print(void);
 
+extern void phy_version_print(void);
 static _lock_t s_phy_access_lock;
 
 /* Reference count of enabling PHY */
 static uint8_t s_phy_access_ref = 0;
-
-extern void bt_bb_v2_init_cmplx(int print_version);
+static bool s_phy_is_enabled = false;
 
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
@@ -47,17 +46,32 @@ void esp_phy_enable(void)
 {
     _lock_acquire(&s_phy_access_lock);
     if (s_phy_access_ref == 0) {
-        register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
-        phy_version_print();
+        if (!s_phy_is_enabled) {
+            register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
+            phy_version_print();
+            s_phy_is_enabled = true;
+        } else {
+            phy_wakeup_init();
+        }
     }
 
     s_phy_access_ref++;
 
     _lock_release(&s_phy_access_lock);
-    // ESP32H2-TODO: enable common clk.
 }
 
 void esp_phy_disable(void)
 {
-    // ESP32H2-TODO: close rf and disable clk for modem sleep and light sleep
+    _lock_acquire(&s_phy_access_lock);
+
+    if (s_phy_access_ref) {
+        s_phy_access_ref--;
+    }
+
+    if (s_phy_access_ref == 0) {
+        phy_close_rf();
+        phy_xpd_tsens();
+    }
+
+    _lock_release(&s_phy_access_lock);
 }
