@@ -40,8 +40,6 @@ if(NOT BOOTLOADER_BUILD)
         "gpio_hal.c"
         "uart_hal.c"
         "uart_hal_iram.c"
-        "adc_hal_common.c"
-        "adc_oneshot_hal.c"
         "${target}/clk_tree_hal.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
@@ -108,6 +106,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_PARLIO_SUPPORTED)
         list(APPEND srcs "parlio_hal.c")
+    endif()
+
+    if(CONFIG_SOC_ADC_SUPPORTED)
+        list(APPEND srcs "adc_hal_common.c" "adc_oneshot_hal.c")
     endif()
 
     if(CONFIG_SOC_ADC_DMA_SUPPORTED)

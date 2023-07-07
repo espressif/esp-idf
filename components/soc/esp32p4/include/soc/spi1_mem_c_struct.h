@@ -29,7 +29,7 @@ typedef union {
         uint32_t reserved_8:9;
         /** flash_pe : R/W/SC; bitpos: [17]; default: 0;
          *  In user mode, it is set to indicate that program/erase operation will be triggered.
-         *  The bit is combined with spi_mem_usr bit. The bit will be cleared once the
+         *  The bit is combined with spi1_mem_c_usr bit. The bit will be cleared once the
          *  operation done.1: enable 0: disable.
          */
         uint32_t flash_pe:1;
@@ -107,7 +107,7 @@ typedef union {
         uint32_t flash_read:1;
     };
     uint32_t val;
-} spi_mem_cmd_reg_t;
+} spi1_mem_c_cmd_reg_t;
 
 /** Type of addr register
  *  SPI1 address register
@@ -121,7 +121,7 @@ typedef union {
         uint32_t usr_addr_value:32;
     };
     uint32_t val;
-} spi_mem_addr_reg_t;
+} spi1_mem_c_addr_reg_t;
 
 /** Type of user register
  *  SPI1 user register.
@@ -130,7 +130,7 @@ typedef union {
     struct {
         uint32_t reserved_0:9;
         /** ck_out_edge : R/W; bitpos: [9]; default: 0;
-         *  the bit combined with spi_mem_mosi_delay_mode bits to set mosi signal delay mode.
+         *  the bit combined with spi1_mem_c_mosi_delay_mode bits to set mosi signal delay mode.
          */
         uint32_t ck_out_edge:1;
         uint32_t reserved_10:2;
@@ -152,12 +152,12 @@ typedef union {
         uint32_t fwrite_qio:1;
         uint32_t reserved_16:8;
         /** usr_miso_highpart : HRO; bitpos: [24]; default: 0;
-         *  read-data phase only access to high-part of the buffer spi_mem_w8~spi_mem_w15. 1:
+         *  read-data phase only access to high-part of the buffer spi1_mem_c_w8~spi1_mem_c_w15. 1:
          *  enable 0: disable.
          */
         uint32_t usr_miso_highpart:1;
         /** usr_mosi_highpart : HRO; bitpos: [25]; default: 0;
-         *  write-data phase only access to high-part of the buffer spi_mem_w8~spi_mem_w15. 1:
+         *  write-data phase only access to high-part of the buffer spi1_mem_c_w8~spi1_mem_c_w15. 1:
          *  enable 0: disable.
          */
         uint32_t usr_mosi_highpart:1;
@@ -187,7 +187,7 @@ typedef union {
         uint32_t usr_command:1;
     };
     uint32_t val;
-} spi_mem_user_reg_t;
+} spi1_mem_c_user_reg_t;
 
 /** Type of user1 register
  *  SPI1 user1 register.
@@ -195,7 +195,7 @@ typedef union {
 typedef union {
     struct {
         /** usr_dummy_cyclelen : R/W; bitpos: [5:0]; default: 7;
-         *  The length in spi_mem_clk cycles of dummy phase. The register value shall be
+         *  The length in spi1_mem_c_clk cycles of dummy phase. The register value shall be
          *  (cycle_num-1).
          */
         uint32_t usr_dummy_cyclelen:6;
@@ -206,7 +206,7 @@ typedef union {
         uint32_t usr_addr_bitlen:6;
     };
     uint32_t val;
-} spi_mem_user1_reg_t;
+} spi1_mem_c_user1_reg_t;
 
 /** Type of user2 register
  *  SPI1 user2 register.
@@ -224,7 +224,7 @@ typedef union {
         uint32_t usr_command_bitlen:4;
     };
     uint32_t val;
-} spi_mem_user2_reg_t;
+} spi1_mem_c_user2_reg_t;
 
 
 /** Group: Control and configuration registers */
@@ -276,8 +276,8 @@ typedef union {
         uint32_t tx_crc_en:1;
         uint32_t reserved_12:1;
         /** fastrd_mode : R/W; bitpos: [13]; default: 1;
-         *  This bit enable the bits: spi_mem_fread_qio, spi_mem_fread_dio, spi_mem_fread_qout
-         *  and spi_mem_fread_dout. 1: enable 0: disable.
+         *  This bit enable the bits: spi1_mem_c_fread_qio, spi1_mem_c_fread_dio, spi1_mem_c_fread_qout
+         *  and spi1_mem_c_fread_dout. 1: enable 0: disable.
          */
         uint32_t fastrd_mode:1;
         /** fread_dual : R/W; bitpos: [14]; default: 0;
@@ -285,8 +285,8 @@ typedef union {
          */
         uint32_t fread_dual:1;
         /** resandres : R/W; bitpos: [15]; default: 1;
-         *  The Device ID is read out to SPI_MEM_RD_STATUS register,  this bit combine with
-         *  spi_mem_flash_res bit. 1: enable 0: disable.
+         *  The Device ID is read out to SPI1_MEM_C_RD_STATUS register,  this bit combine with
+         *  spi1_mem_c_flash_res bit. 1: enable 0: disable.
          */
         uint32_t resandres:1;
         uint32_t reserved_16:2;
@@ -324,7 +324,7 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} spi_mem_ctrl_reg_t;
+} spi1_mem_c_ctrl_reg_t;
 
 /** Type of ctrl1 register
  *  SPI1 control1 register.
@@ -338,14 +338,14 @@ typedef union {
          */
         uint32_t clk_mode:2;
         /** cs_hold_dly_res : R/W; bitpos: [11:2]; default: 1023;
-         *  After RES/DP/HPM command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 512)
+         *  After RES/DP/HPM command is sent, SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 512)
          *  SPI_CLK cycles.
          */
         uint32_t cs_hold_dly_res:10;
         uint32_t reserved_12:20;
     };
     uint32_t val;
-} spi_mem_ctrl1_reg_t;
+} spi1_mem_c_ctrl1_reg_t;
 
 /** Type of ctrl2 register
  *  SPI1 control2 register.
@@ -359,7 +359,7 @@ typedef union {
         uint32_t sync_reset:1;
     };
     uint32_t val;
-} spi_mem_ctrl2_reg_t;
+} spi1_mem_c_ctrl2_reg_t;
 
 /** Type of clock register
  *  SPI1 clock division control register.
@@ -367,16 +367,16 @@ typedef union {
 typedef union {
     struct {
         /** clkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  In the master mode it must be equal to spi_mem_clkcnt_N.
+         *  In the master mode it must be equal to spi1_mem_c_clkcnt_N.
          */
         uint32_t clkcnt_l:8;
         /** clkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  In the master mode it must be floor((spi_mem_clkcnt_N+1)/2-1).
+         *  In the master mode it must be floor((spi1_mem_c_clkcnt_N+1)/2-1).
          */
         uint32_t clkcnt_h:8;
         /** clkcnt_n : R/W; bitpos: [23:16]; default: 3;
-         *  In the master mode it is the divider of spi_mem_clk. So spi_mem_clk frequency is
-         *  system/(spi_mem_clkcnt_N+1)
+         *  In the master mode it is the divider of spi1_mem_c_clk. So spi1_mem_c_clk frequency is
+         *  system/(spi1_mem_c_clkcnt_N+1)
          */
         uint32_t clkcnt_n:8;
         uint32_t reserved_24:7;
@@ -386,7 +386,7 @@ typedef union {
         uint32_t clk_equ_sysclk:1;
     };
     uint32_t val;
-} spi_mem_clock_reg_t;
+} spi1_mem_c_clock_reg_t;
 
 /** Type of mosi_dlen register
  *  SPI1 send data bit length control register.
@@ -400,7 +400,7 @@ typedef union {
         uint32_t reserved_10:22;
     };
     uint32_t val;
-} spi_mem_mosi_dlen_reg_t;
+} spi1_mem_c_mosi_dlen_reg_t;
 
 /** Type of miso_dlen register
  *  SPI1 receive data bit length control register.
@@ -414,7 +414,7 @@ typedef union {
         uint32_t reserved_10:22;
     };
     uint32_t val;
-} spi_mem_miso_dlen_reg_t;
+} spi1_mem_c_miso_dlen_reg_t;
 
 /** Type of rd_status register
  *  SPI1 status register.
@@ -422,17 +422,17 @@ typedef union {
 typedef union {
     struct {
         /** status : R/W/SS; bitpos: [15:0]; default: 0;
-         *  The value is stored when set spi_mem_flash_rdsr bit and spi_mem_flash_res bit.
+         *  The value is stored when set spi1_mem_c_flash_rdsr bit and spi1_mem_c_flash_res bit.
          */
         uint32_t status:16;
         /** wb_mode : R/W; bitpos: [23:16]; default: 0;
-         *  Mode bits in the flash fast read mode  it is combined with spi_mem_fastrd_mode bit.
+         *  Mode bits in the flash fast read mode  it is combined with spi1_mem_c_fastrd_mode bit.
          */
         uint32_t wb_mode:8;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} spi_mem_rd_status_reg_t;
+} spi1_mem_c_rd_status_reg_t;
 
 /** Type of misc register
  *  SPI1 misc register
@@ -461,7 +461,7 @@ typedef union {
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} spi_mem_misc_reg_t;
+} spi1_mem_c_misc_reg_t;
 
 /** Type of cache_fctrl register
  *  SPI1 bit mode control register.
@@ -476,38 +476,38 @@ typedef union {
         uint32_t reserved_2:1;
         /** fdin_dual : R/W; bitpos: [3]; default: 0;
          *  For SPI1, din phase apply 2 signals. 1: enable 0: disable. The bit is the same with
-         *  spi_mem_fread_dio.
+         *  spi1_mem_c_fread_dio.
          */
         uint32_t fdin_dual:1;
         /** fdout_dual : R/W; bitpos: [4]; default: 0;
          *  For SPI1, dout phase apply 2 signals. 1: enable 0: disable. The bit is the same
-         *  with spi_mem_fread_dio.
+         *  with spi1_mem_c_fread_dio.
          */
         uint32_t fdout_dual:1;
         /** faddr_dual : R/W; bitpos: [5]; default: 0;
          *  For SPI1, address phase apply 2 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi_mem_fread_dio.
+         *  with spi1_mem_c_fread_dio.
          */
         uint32_t faddr_dual:1;
         /** fdin_quad : R/W; bitpos: [6]; default: 0;
          *  For SPI1, din phase apply 4 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi_mem_fread_qio.
+         *  with spi1_mem_c_fread_qio.
          */
         uint32_t fdin_quad:1;
         /** fdout_quad : R/W; bitpos: [7]; default: 0;
          *  For SPI1, dout phase apply 4 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi_mem_fread_qio.
+         *  with spi1_mem_c_fread_qio.
          */
         uint32_t fdout_quad:1;
         /** faddr_quad : R/W; bitpos: [8]; default: 0;
          *  For SPI1, address phase apply 4 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi_mem_fread_qio.
+         *  with spi1_mem_c_fread_qio.
          */
         uint32_t faddr_quad:1;
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} spi_mem_cache_fctrl_reg_t;
+} spi1_mem_c_cache_fctrl_reg_t;
 
 /** Type of flash_waiti_ctrl register
  *  SPI1 wait idle control register
@@ -530,9 +530,9 @@ typedef union {
          */
         uint32_t waiti_addr_en:1;
         /** waiti_addr_cyclelen : R/W; bitpos: [4:3]; default: 0;
-         *  When SPI_MEM_WAITI_ADDR_EN is set, the  cycle length of sent out address is
-         *  (SPI_MEM_WAITI_ADDR_CYCLELEN[1:0] + 1) SPI  bus clock cycles. It is not active when
-         *  SPI_MEM_WAITI_ADDR_EN is cleared.
+         *  When SPI1_MEM_C_WAITI_ADDR_EN is set, the  cycle length of sent out address is
+         *  (SPI1_MEM_C_WAITI_ADDR_CYCLELEN[1:0] + 1) SPI  bus clock cycles. It is not active when
+         *  SPI1_MEM_C_WAITI_ADDR_EN is cleared.
          */
         uint32_t waiti_addr_cyclelen:2;
         uint32_t reserved_5:4;
@@ -550,7 +550,7 @@ typedef union {
         uint32_t waiti_cmd:16;
     };
     uint32_t val;
-} spi_mem_flash_waiti_ctrl_reg_t;
+} spi1_mem_c_flash_waiti_ctrl_reg_t;
 
 /** Type of flash_sus_ctrl register
  *  SPI1 flash suspend control register
@@ -570,13 +570,13 @@ typedef union {
          */
         uint32_t flash_pes:1;
         /** flash_per_wait_en : R/W; bitpos: [2]; default: 0;
-         *  1: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4 or *128) SPI_CLK cycles after
+         *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4 or *128) SPI_CLK cycles after
          *  program erase resume command is sent. 0: SPI1 does not wait after program erase
          *  resume command is sent.
          */
         uint32_t flash_per_wait_en:1;
         /** flash_pes_wait_en : R/W; bitpos: [3]; default: 0;
-         *  1: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4 or *128) SPI_CLK cycles after
+         *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4 or *128) SPI_CLK cycles after
          *  program erase suspend command is sent. 0: SPI1 does not wait after program erase
          *  suspend command is sent.
          */
@@ -594,7 +594,7 @@ typedef union {
          *  The mask value when check SUS/SUS1/SUS2 status bit. If the read status value is
          *  status_in[15:0](only status_in[7:0] is valid when only one byte of data is read
          *  out, status_in[15:0] is valid when two bytes of data are read out), SUS/SUS1/SUS2 =
-         *  status_in[15:0]^ SPI_MEM_PESR_END_MSK[15:0].
+         *  status_in[15:0]^ SPI1_MEM_C_PESR_END_MSK[15:0].
          */
         uint32_t pesr_end_msk:16;
         /** fmem_rd_sus_2b : R/W; bitpos: [22]; default: 0;
@@ -613,13 +613,13 @@ typedef union {
          */
         uint32_t pes_end_en:1;
         /** sus_timeout_cnt : R/W; bitpos: [31:25]; default: 4;
-         *  When SPI1 checks SUS/SUS1/SUS2 bits fail for SPI_MEM_SUS_TIMEOUT_CNT[6:0] times, it
+         *  When SPI1 checks SUS/SUS1/SUS2 bits fail for SPI1_MEM_C_SUS_TIMEOUT_CNT[6:0] times, it
          *  will be treated as check pass.
          */
         uint32_t sus_timeout_cnt:7;
     };
     uint32_t val;
-} spi_mem_flash_sus_ctrl_reg_t;
+} spi1_mem_c_flash_sus_ctrl_reg_t;
 
 /** Type of flash_sus_cmd register
  *  SPI1 flash suspend command register
@@ -637,7 +637,7 @@ typedef union {
         uint32_t wait_pesr_command:16;
     };
     uint32_t val;
-} spi_mem_flash_sus_cmd_reg_t;
+} spi1_mem_c_flash_sus_cmd_reg_t;
 
 /** Type of sus_status register
  *  SPI1 flash suspend status register
@@ -649,39 +649,39 @@ typedef union {
          */
         uint32_t flash_sus:1;
         /** wait_pesr_cmd_2b : R/W; bitpos: [1]; default: 0;
-         *  1: SPI1 sends out SPI_MEM_WAIT_PESR_COMMAND[15:0] to check SUS/SUS1/SUS2 bit. 0:
-         *  SPI1 sends out SPI_MEM_WAIT_PESR_COMMAND[7:0] to check SUS/SUS1/SUS2 bit.
+         *  1: SPI1 sends out SPI1_MEM_C_WAIT_PESR_COMMAND[15:0] to check SUS/SUS1/SUS2 bit. 0:
+         *  SPI1 sends out SPI1_MEM_C_WAIT_PESR_COMMAND[7:0] to check SUS/SUS1/SUS2 bit.
          */
         uint32_t wait_pesr_cmd_2b:1;
         /** flash_hpm_dly_128 : R/W; bitpos: [2]; default: 0;
-         *  1: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after HPM
-         *  command is sent. 0: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
+         *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after HPM
+         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
          *  after HPM command is sent.
          */
         uint32_t flash_hpm_dly_128:1;
         /** flash_res_dly_128 : R/W; bitpos: [3]; default: 0;
-         *  1: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after RES
-         *  command is sent. 0: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
+         *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after RES
+         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
          *  after RES command is sent.
          */
         uint32_t flash_res_dly_128:1;
         /** flash_dp_dly_128 : R/W; bitpos: [4]; default: 0;
-         *  1: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after DP
-         *  command is sent. 0: SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
+         *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after DP
+         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
          *  after DP command is sent.
          */
         uint32_t flash_dp_dly_128:1;
         /** flash_per_dly_128 : R/W; bitpos: [5]; default: 0;
-         *  Valid when SPI_MEM_FLASH_PER_WAIT_EN is 1. 1: SPI1 waits
-         *  (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PER command is sent. 0:
-         *  SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PER command is
+         *  Valid when SPI1_MEM_C_FLASH_PER_WAIT_EN is 1. 1: SPI1 waits
+         *  (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PER command is sent. 0:
+         *  SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PER command is
          *  sent.
          */
         uint32_t flash_per_dly_128:1;
         /** flash_pes_dly_128 : R/W; bitpos: [6]; default: 0;
-         *  Valid when SPI_MEM_FLASH_PES_WAIT_EN is 1. 1: SPI1 waits
-         *  (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PES command is sent. 0:
-         *  SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PES command is
+         *  Valid when SPI1_MEM_C_FLASH_PES_WAIT_EN is 1. 1: SPI1 waits
+         *  (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PES command is sent. 0:
+         *  SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PES command is
          *  sent.
          */
         uint32_t flash_pes_dly_128:1;
@@ -701,7 +701,7 @@ typedef union {
         uint32_t flash_per_command:16;
     };
     uint32_t val;
-} spi_mem_sus_status_reg_t;
+} spi1_mem_c_sus_status_reg_t;
 
 /** Type of ddr register
  *  SPI1 DDR control register
@@ -739,7 +739,7 @@ typedef union {
         uint32_t fmem_usr_ddr_dqs_thd:7;
         /** fmem_ddr_dqs_loop : HRO; bitpos: [21]; default: 0;
          *  1: Do not need the input of SPI_DQS signal, SPI0 starts to receive data when
-         *  spi0_slv_st is in SPI_MEM_DIN state. It is used when there is no SPI_DQS signal or
+         *  spi0_slv_st is in SPI1_MEM_C_DIN state. It is used when there is no SPI_DQS signal or
          *  SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
          *  negative edge of SPI_DQS.
          */
@@ -776,7 +776,7 @@ typedef union {
         uint32_t reserved_31:1;
     };
     uint32_t val;
-} spi_mem_ddr_reg_t;
+} spi1_mem_c_ddr_reg_t;
 
 /** Type of clock_gate register
  *  SPI1 clk_gate register
@@ -790,7 +790,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} spi_mem_clock_gate_reg_t;
+} spi1_mem_c_clock_gate_reg_t;
 
 
 /** Group: Status register */
@@ -805,7 +805,7 @@ typedef union {
         uint32_t tx_crc_data:32;
     };
     uint32_t val;
-} spi_mem_tx_crc_reg_t;
+} spi1_mem_c_tx_crc_reg_t;
 
 
 /** Group: Memory data buffer register */
@@ -820,7 +820,7 @@ typedef union {
         uint32_t buf0:32;
     };
     uint32_t val;
-} spi_mem_w0_reg_t;
+} spi1_mem_c_w0_reg_t;
 
 /** Type of w1 register
  *  SPI1 memory data buffer1
@@ -833,7 +833,7 @@ typedef union {
         uint32_t buf1:32;
     };
     uint32_t val;
-} spi_mem_w1_reg_t;
+} spi1_mem_c_w1_reg_t;
 
 /** Type of w2 register
  *  SPI1 memory data buffer2
@@ -846,7 +846,7 @@ typedef union {
         uint32_t buf2:32;
     };
     uint32_t val;
-} spi_mem_w2_reg_t;
+} spi1_mem_c_w2_reg_t;
 
 /** Type of w3 register
  *  SPI1 memory data buffer3
@@ -859,7 +859,7 @@ typedef union {
         uint32_t buf3:32;
     };
     uint32_t val;
-} spi_mem_w3_reg_t;
+} spi1_mem_c_w3_reg_t;
 
 /** Type of w4 register
  *  SPI1 memory data buffer4
@@ -872,7 +872,7 @@ typedef union {
         uint32_t buf4:32;
     };
     uint32_t val;
-} spi_mem_w4_reg_t;
+} spi1_mem_c_w4_reg_t;
 
 /** Type of w5 register
  *  SPI1 memory data buffer5
@@ -885,7 +885,7 @@ typedef union {
         uint32_t buf5:32;
     };
     uint32_t val;
-} spi_mem_w5_reg_t;
+} spi1_mem_c_w5_reg_t;
 
 /** Type of w6 register
  *  SPI1 memory data buffer6
@@ -898,7 +898,7 @@ typedef union {
         uint32_t buf6:32;
     };
     uint32_t val;
-} spi_mem_w6_reg_t;
+} spi1_mem_c_w6_reg_t;
 
 /** Type of w7 register
  *  SPI1 memory data buffer7
@@ -911,7 +911,7 @@ typedef union {
         uint32_t buf7:32;
     };
     uint32_t val;
-} spi_mem_w7_reg_t;
+} spi1_mem_c_w7_reg_t;
 
 /** Type of w8 register
  *  SPI1 memory data buffer8
@@ -924,7 +924,7 @@ typedef union {
         uint32_t buf8:32;
     };
     uint32_t val;
-} spi_mem_w8_reg_t;
+} spi1_mem_c_w8_reg_t;
 
 /** Type of w9 register
  *  SPI1 memory data buffer9
@@ -937,7 +937,7 @@ typedef union {
         uint32_t buf9:32;
     };
     uint32_t val;
-} spi_mem_w9_reg_t;
+} spi1_mem_c_w9_reg_t;
 
 /** Type of w10 register
  *  SPI1 memory data buffer10
@@ -950,7 +950,7 @@ typedef union {
         uint32_t buf10:32;
     };
     uint32_t val;
-} spi_mem_w10_reg_t;
+} spi1_mem_c_w10_reg_t;
 
 /** Type of w11 register
  *  SPI1 memory data buffer11
@@ -963,7 +963,7 @@ typedef union {
         uint32_t buf11:32;
     };
     uint32_t val;
-} spi_mem_w11_reg_t;
+} spi1_mem_c_w11_reg_t;
 
 /** Type of w12 register
  *  SPI1 memory data buffer12
@@ -976,7 +976,7 @@ typedef union {
         uint32_t buf12:32;
     };
     uint32_t val;
-} spi_mem_w12_reg_t;
+} spi1_mem_c_w12_reg_t;
 
 /** Type of w13 register
  *  SPI1 memory data buffer13
@@ -989,7 +989,7 @@ typedef union {
         uint32_t buf13:32;
     };
     uint32_t val;
-} spi_mem_w13_reg_t;
+} spi1_mem_c_w13_reg_t;
 
 /** Type of w14 register
  *  SPI1 memory data buffer14
@@ -1002,7 +1002,7 @@ typedef union {
         uint32_t buf14:32;
     };
     uint32_t val;
-} spi_mem_w14_reg_t;
+} spi1_mem_c_w14_reg_t;
 
 /** Type of w15 register
  *  SPI1 memory data buffer15
@@ -1015,7 +1015,7 @@ typedef union {
         uint32_t buf15:32;
     };
     uint32_t val;
-} spi_mem_w15_reg_t;
+} spi1_mem_c_w15_reg_t;
 
 
 /** Group: Interrupt registers */
@@ -1025,34 +1025,34 @@ typedef union {
 typedef union {
     struct {
         /** per_end_int_ena : R/W; bitpos: [0]; default: 0;
-         *  The enable bit for SPI_MEM_PER_END_INT interrupt.
+         *  The enable bit for SPI1_MEM_C_PER_END_INT interrupt.
          */
         uint32_t per_end_int_ena:1;
         /** pes_end_int_ena : R/W; bitpos: [1]; default: 0;
-         *  The enable bit for SPI_MEM_PES_END_INT interrupt.
+         *  The enable bit for SPI1_MEM_C_PES_END_INT interrupt.
          */
         uint32_t pes_end_int_ena:1;
         /** wpe_end_int_ena : R/W; bitpos: [2]; default: 0;
-         *  The enable bit for SPI_MEM_WPE_END_INT interrupt.
+         *  The enable bit for SPI1_MEM_C_WPE_END_INT interrupt.
          */
         uint32_t wpe_end_int_ena:1;
         /** slv_st_end_int_ena : R/W; bitpos: [3]; default: 0;
-         *  The enable bit for SPI_MEM_SLV_ST_END_INT interrupt.
+         *  The enable bit for SPI1_MEM_C_SLV_ST_END_INT interrupt.
          */
         uint32_t slv_st_end_int_ena:1;
         /** mst_st_end_int_ena : R/W; bitpos: [4]; default: 0;
-         *  The enable bit for SPI_MEM_MST_ST_END_INT interrupt.
+         *  The enable bit for SPI1_MEM_C_MST_ST_END_INT interrupt.
          */
         uint32_t mst_st_end_int_ena:1;
         uint32_t reserved_5:5;
         /** brown_out_int_ena : R/W; bitpos: [10]; default: 0;
-         *  The enable bit for SPI_MEM_BROWN_OUT_INT interrupt.
+         *  The enable bit for SPI1_MEM_C_BROWN_OUT_INT interrupt.
          */
         uint32_t brown_out_int_ena:1;
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} spi_mem_int_ena_reg_t;
+} spi1_mem_c_int_ena_reg_t;
 
 /** Type of int_clr register
  *  SPI1 interrupt clear register
@@ -1060,34 +1060,34 @@ typedef union {
 typedef union {
     struct {
         /** per_end_int_clr : WT; bitpos: [0]; default: 0;
-         *  The clear bit for SPI_MEM_PER_END_INT interrupt.
+         *  The clear bit for SPI1_MEM_C_PER_END_INT interrupt.
          */
         uint32_t per_end_int_clr:1;
         /** pes_end_int_clr : WT; bitpos: [1]; default: 0;
-         *  The clear bit for SPI_MEM_PES_END_INT interrupt.
+         *  The clear bit for SPI1_MEM_C_PES_END_INT interrupt.
          */
         uint32_t pes_end_int_clr:1;
         /** wpe_end_int_clr : WT; bitpos: [2]; default: 0;
-         *  The clear bit for SPI_MEM_WPE_END_INT interrupt.
+         *  The clear bit for SPI1_MEM_C_WPE_END_INT interrupt.
          */
         uint32_t wpe_end_int_clr:1;
         /** slv_st_end_int_clr : WT; bitpos: [3]; default: 0;
-         *  The clear bit for SPI_MEM_SLV_ST_END_INT interrupt.
+         *  The clear bit for SPI1_MEM_C_SLV_ST_END_INT interrupt.
          */
         uint32_t slv_st_end_int_clr:1;
         /** mst_st_end_int_clr : WT; bitpos: [4]; default: 0;
-         *  The clear bit for SPI_MEM_MST_ST_END_INT interrupt.
+         *  The clear bit for SPI1_MEM_C_MST_ST_END_INT interrupt.
          */
         uint32_t mst_st_end_int_clr:1;
         uint32_t reserved_5:5;
         /** brown_out_int_clr : WT; bitpos: [10]; default: 0;
-         *  The status bit for SPI_MEM_BROWN_OUT_INT interrupt.
+         *  The status bit for SPI1_MEM_C_BROWN_OUT_INT interrupt.
          */
         uint32_t brown_out_int_clr:1;
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} spi_mem_int_clr_reg_t;
+} spi1_mem_c_int_clr_reg_t;
 
 /** Type of int_raw register
  *  SPI1 interrupt raw register
@@ -1095,34 +1095,34 @@ typedef union {
 typedef union {
     struct {
         /** per_end_int_raw : R/WTC/SS; bitpos: [0]; default: 0;
-         *  The raw bit for SPI_MEM_PER_END_INT interrupt. 1: Triggered when Auto Resume
+         *  The raw bit for SPI1_MEM_C_PER_END_INT interrupt. 1: Triggered when Auto Resume
          *  command (0x7A) is sent and flash is resumed successfully. 0: Others.
          */
         uint32_t per_end_int_raw:1;
         /** pes_end_int_raw : R/WTC/SS; bitpos: [1]; default: 0;
-         *  The raw bit for SPI_MEM_PES_END_INT interrupt.1: Triggered when Auto Suspend
+         *  The raw bit for SPI1_MEM_C_PES_END_INT interrupt.1: Triggered when Auto Suspend
          *  command (0x75) is sent and flash is suspended successfully. 0: Others.
          */
         uint32_t pes_end_int_raw:1;
         /** wpe_end_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
-         *  The raw bit for SPI_MEM_WPE_END_INT interrupt. 1: Triggered when WRSR/PP/SE/BE/CE
+         *  The raw bit for SPI1_MEM_C_WPE_END_INT interrupt. 1: Triggered when WRSR/PP/SE/BE/CE
          *  is sent and flash is already idle. 0: Others.
          */
         uint32_t wpe_end_int_raw:1;
         /** slv_st_end_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
-         *  The raw bit for SPI_MEM_SLV_ST_END_INT interrupt. 1: Triggered when spi1_slv_st is
+         *  The raw bit for SPI1_MEM_C_SLV_ST_END_INT interrupt. 1: Triggered when spi1_slv_st is
          *  changed from non idle state to idle state. It means that SPI_CS raises high. 0:
          *  Others
          */
         uint32_t slv_st_end_int_raw:1;
         /** mst_st_end_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
-         *  The raw bit for SPI_MEM_MST_ST_END_INT interrupt. 1: Triggered when spi1_mst_st is
+         *  The raw bit for SPI1_MEM_C_MST_ST_END_INT interrupt. 1: Triggered when spi1_mst_st is
          *  changed from non idle state to idle state. 0: Others.
          */
         uint32_t mst_st_end_int_raw:1;
         uint32_t reserved_5:5;
         /** brown_out_int_raw : R/WTC/SS; bitpos: [10]; default: 0;
-         *  The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that
+         *  The raw bit for SPI1_MEM_C_BROWN_OUT_INT interrupt. 1: Triggered condition is that
          *  chip is loosing power and RTC module sends out brown out close flash request to
          *  SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered
          *  and MSPI returns to idle state. 0: Others.
@@ -1131,7 +1131,7 @@ typedef union {
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} spi_mem_int_raw_reg_t;
+} spi1_mem_c_int_raw_reg_t;
 
 /** Type of int_st register
  *  SPI1 interrupt status register
@@ -1139,34 +1139,34 @@ typedef union {
 typedef union {
     struct {
         /** per_end_int_st : RO; bitpos: [0]; default: 0;
-         *  The status bit for SPI_MEM_PER_END_INT interrupt.
+         *  The status bit for SPI1_MEM_C_PER_END_INT interrupt.
          */
         uint32_t per_end_int_st:1;
         /** pes_end_int_st : RO; bitpos: [1]; default: 0;
-         *  The status bit for SPI_MEM_PES_END_INT interrupt.
+         *  The status bit for SPI1_MEM_C_PES_END_INT interrupt.
          */
         uint32_t pes_end_int_st:1;
         /** wpe_end_int_st : RO; bitpos: [2]; default: 0;
-         *  The status bit for SPI_MEM_WPE_END_INT interrupt.
+         *  The status bit for SPI1_MEM_C_WPE_END_INT interrupt.
          */
         uint32_t wpe_end_int_st:1;
         /** slv_st_end_int_st : RO; bitpos: [3]; default: 0;
-         *  The status bit for SPI_MEM_SLV_ST_END_INT interrupt.
+         *  The status bit for SPI1_MEM_C_SLV_ST_END_INT interrupt.
          */
         uint32_t slv_st_end_int_st:1;
         /** mst_st_end_int_st : RO; bitpos: [4]; default: 0;
-         *  The status bit for SPI_MEM_MST_ST_END_INT interrupt.
+         *  The status bit for SPI1_MEM_C_MST_ST_END_INT interrupt.
          */
         uint32_t mst_st_end_int_st:1;
         uint32_t reserved_5:5;
         /** brown_out_int_st : RO; bitpos: [10]; default: 0;
-         *  The status bit for SPI_MEM_BROWN_OUT_INT interrupt.
+         *  The status bit for SPI1_MEM_C_BROWN_OUT_INT interrupt.
          */
         uint32_t brown_out_int_st:1;
         uint32_t reserved_11:21;
     };
     uint32_t val;
-} spi_mem_int_st_reg_t;
+} spi1_mem_c_int_st_reg_t;
 
 
 /** Group: Timing registers */
@@ -1187,7 +1187,7 @@ typedef union {
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} spi_mem_timing_cali_reg_t;
+} spi1_mem_c_timing_cali_reg_t;
 
 
 /** Group: Version register */
@@ -1203,65 +1203,65 @@ typedef union {
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} spi_mem_date_reg_t;
+} spi1_mem_c_date_reg_t;
 
 
-typedef struct {
-    volatile spi_mem_cmd_reg_t cmd;
-    volatile spi_mem_addr_reg_t addr;
-    volatile spi_mem_ctrl_reg_t ctrl;
-    volatile spi_mem_ctrl1_reg_t ctrl1;
-    volatile spi_mem_ctrl2_reg_t ctrl2;
-    volatile spi_mem_clock_reg_t clock;
-    volatile spi_mem_user_reg_t user;
-    volatile spi_mem_user1_reg_t user1;
-    volatile spi_mem_user2_reg_t user2;
-    volatile spi_mem_mosi_dlen_reg_t mosi_dlen;
-    volatile spi_mem_miso_dlen_reg_t miso_dlen;
-    volatile spi_mem_rd_status_reg_t rd_status;
+typedef struct spi1_mem_c_dev_s {
+    volatile spi1_mem_c_cmd_reg_t cmd;
+    volatile spi1_mem_c_addr_reg_t addr;
+    volatile spi1_mem_c_ctrl_reg_t ctrl;
+    volatile spi1_mem_c_ctrl1_reg_t ctrl1;
+    volatile spi1_mem_c_ctrl2_reg_t ctrl2;
+    volatile spi1_mem_c_clock_reg_t clock;
+    volatile spi1_mem_c_user_reg_t user;
+    volatile spi1_mem_c_user1_reg_t user1;
+    volatile spi1_mem_c_user2_reg_t user2;
+    volatile spi1_mem_c_mosi_dlen_reg_t mosi_dlen;
+    volatile spi1_mem_c_miso_dlen_reg_t miso_dlen;
+    volatile spi1_mem_c_rd_status_reg_t rd_status;
     uint32_t reserved_030;
-    volatile spi_mem_misc_reg_t misc;
-    volatile spi_mem_tx_crc_reg_t tx_crc;
-    volatile spi_mem_cache_fctrl_reg_t cache_fctrl;
+    volatile spi1_mem_c_misc_reg_t misc;
+    volatile spi1_mem_c_tx_crc_reg_t tx_crc;
+    volatile spi1_mem_c_cache_fctrl_reg_t cache_fctrl;
     uint32_t reserved_040[6];
-    volatile spi_mem_w0_reg_t w0;
-    volatile spi_mem_w1_reg_t w1;
-    volatile spi_mem_w2_reg_t w2;
-    volatile spi_mem_w3_reg_t w3;
-    volatile spi_mem_w4_reg_t w4;
-    volatile spi_mem_w5_reg_t w5;
-    volatile spi_mem_w6_reg_t w6;
-    volatile spi_mem_w7_reg_t w7;
-    volatile spi_mem_w8_reg_t w8;
-    volatile spi_mem_w9_reg_t w9;
-    volatile spi_mem_w10_reg_t w10;
-    volatile spi_mem_w11_reg_t w11;
-    volatile spi_mem_w12_reg_t w12;
-    volatile spi_mem_w13_reg_t w13;
-    volatile spi_mem_w14_reg_t w14;
-    volatile spi_mem_w15_reg_t w15;
-    volatile spi_mem_flash_waiti_ctrl_reg_t flash_waiti_ctrl;
-    volatile spi_mem_flash_sus_ctrl_reg_t flash_sus_ctrl;
-    volatile spi_mem_flash_sus_cmd_reg_t flash_sus_cmd;
-    volatile spi_mem_sus_status_reg_t sus_status;
+    volatile spi1_mem_c_w0_reg_t w0;
+    volatile spi1_mem_c_w1_reg_t w1;
+    volatile spi1_mem_c_w2_reg_t w2;
+    volatile spi1_mem_c_w3_reg_t w3;
+    volatile spi1_mem_c_w4_reg_t w4;
+    volatile spi1_mem_c_w5_reg_t w5;
+    volatile spi1_mem_c_w6_reg_t w6;
+    volatile spi1_mem_c_w7_reg_t w7;
+    volatile spi1_mem_c_w8_reg_t w8;
+    volatile spi1_mem_c_w9_reg_t w9;
+    volatile spi1_mem_c_w10_reg_t w10;
+    volatile spi1_mem_c_w11_reg_t w11;
+    volatile spi1_mem_c_w12_reg_t w12;
+    volatile spi1_mem_c_w13_reg_t w13;
+    volatile spi1_mem_c_w14_reg_t w14;
+    volatile spi1_mem_c_w15_reg_t w15;
+    volatile spi1_mem_c_flash_waiti_ctrl_reg_t flash_waiti_ctrl;
+    volatile spi1_mem_c_flash_sus_ctrl_reg_t flash_sus_ctrl;
+    volatile spi1_mem_c_flash_sus_cmd_reg_t flash_sus_cmd;
+    volatile spi1_mem_c_sus_status_reg_t sus_status;
     uint32_t reserved_0a8[6];
-    volatile spi_mem_int_ena_reg_t int_ena;
-    volatile spi_mem_int_clr_reg_t int_clr;
-    volatile spi_mem_int_raw_reg_t int_raw;
-    volatile spi_mem_int_st_reg_t int_st;
+    volatile spi1_mem_c_int_ena_reg_t int_ena;
+    volatile spi1_mem_c_int_clr_reg_t int_clr;
+    volatile spi1_mem_c_int_raw_reg_t int_raw;
+    volatile spi1_mem_c_int_st_reg_t int_st;
     uint32_t reserved_0d0;
-    volatile spi_mem_ddr_reg_t ddr;
+    volatile spi1_mem_c_ddr_reg_t ddr;
     uint32_t reserved_0d8[42];
-    volatile spi_mem_timing_cali_reg_t timing_cali;
+    volatile spi1_mem_c_timing_cali_reg_t timing_cali;
     uint32_t reserved_184[31];
-    volatile spi_mem_clock_gate_reg_t clock_gate;
+    volatile spi1_mem_c_clock_gate_reg_t clock_gate;
     uint32_t reserved_204[126];
-    volatile spi_mem_date_reg_t date;
+    volatile spi1_mem_c_date_reg_t date;
 } spi1_mem_c_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(spi_mem_dev_t) == 0x400, "Invalid size of spi_mem_dev_t structure");
+_Static_assert(sizeof(spi1_mem_c_dev_t) == 0x400, "Invalid size of spi1_mem_c_dev_t structure");
 #endif
 
 #ifdef __cplusplus
