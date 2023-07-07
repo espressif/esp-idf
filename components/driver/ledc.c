@@ -339,9 +339,9 @@ static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz
      * high.
      *
      * NOTE: We are also going to round up the value when necessary, thanks to:
-     * (freq_hz * precision) / 2
+     * (freq_hz * precision / 2)
      */
-    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + ((freq_hz * precision) / 2 ) )
+    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + freq_hz * precision / 2 )
            / (freq_hz * precision);
 }
 
@@ -488,7 +488,7 @@ extern void esp_sleep_periph_use_8m(bool use_or_not);
  */
 static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_clk_cfg_t clk_cfg, int freq_hz, int duty_resolution)
 {
-    uint32_t div_param = 0;
+    uint32_t div_param = LEDC_CLK_NOT_FOUND;
     const uint32_t precision = ( 0x1 << duty_resolution );
     /* The clock sources are not initialized on purpose. To produce compiler warning if used but the selector functions
      * don't set them properly. */
@@ -518,7 +518,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         /* We have the RTC clock frequency now. */
         div_param = ledc_calculate_divisor(s_ledc_slow_clk_8M, freq_hz, precision);
         if (LEDC_IS_DIV_INVALID(div_param)) {
-            div_param = LEDC_CLK_NOT_FOUND;
+            goto error;
         }
     } else {
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
@@ -538,7 +538,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         uint32_t src_clk_freq = ledc_get_src_clk_freq(clk_cfg);
         div_param = ledc_calculate_divisor(src_clk_freq, freq_hz, precision);
         if (LEDC_IS_DIV_INVALID(div_param)) {
-            div_param = LEDC_CLK_NOT_FOUND;
+            goto error;
         }
     }
 
@@ -840,7 +840,34 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
         ESP_LOGW(LEDC_TAG, "LEDC timer not configured, call ledc_timer_config to set timer frequency");
         return 0;
     }
-    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + (uint64_t) precision * clock_divider / 2) / precision / clock_divider;
+    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + precision * clock_divider / 2) / (precision * clock_divider);
+}
+
+static inline uint32_t ilog2(uint32_t i)
+{
+    assert(i > 0);
+    uint32_t log = 0;
+    while (i >>= 1) {
+        ++log;
+    }
+    return log;
+}
+
+// https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#ledpwm
+uint32_t ledc_calc_duty_resolution(uint32_t src_clk_freq, uint32_t freq_hz)
+{
+    uint32_t div = (src_clk_freq + freq_hz / 2) / freq_hz; // rounded
+    uint32_t duty_resolution = ilog2(div);
+    uint32_t div_param = ledc_calculate_divisor(src_clk_freq, freq_hz, 1 << duty_resolution);
+    if (LEDC_IS_DIV_INVALID(div_param)) {
+        div = src_clk_freq / freq_hz; // truncated
+        duty_resolution = ilog2(div);
+        div_param = ledc_calculate_divisor(src_clk_freq, freq_hz, 1 << duty_resolution);
+        if (LEDC_IS_DIV_INVALID(div_param)) {
+            duty_resolution = 0;
+        }
+    }
+    return duty_resolution;
 }
 
 static inline void ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
