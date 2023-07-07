@@ -1,5 +1,11 @@
-[mapping:esp_lcd]
+[mapping:esp_lcd_driver]
 archive: libesp_lcd.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
         esp_lcd_common: lcd_com_mount_dma_data (noflash)
+
+[mapping:esp_lcd_hal]
+archive: libhal.a
+entries:
+    if LCD_RGB_ISR_IRAM_SAFE = y:
+        lcd_hal: lcd_hal_cal_pclk_freq (noflash)
