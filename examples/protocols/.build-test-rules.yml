@@ -16,12 +16,6 @@ examples/protocols/esp_local_ctrl:
       temporary: true
       reason: lack of runners
 
-examples/protocols/http2_request:
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: only test on esp32
-
 examples/protocols/http_request:
   disable_test:
     - if: IDF_TARGET != "esp32"
