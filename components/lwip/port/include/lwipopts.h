@@ -1127,6 +1127,15 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * LWIP_ND6==1: Enable ND6 protocol in IPv6
+ */
+#ifdef CONFIG_LWIP_ND6
+#define LWIP_ND6                        1
+#else
+#define LWIP_ND6                        0
+#endif
+
+/**
  * LWIP_IPV6_NUM_ADDRESSES: Number of IPv6 addresses per netif.
  */
 #define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
