@@ -81,7 +81,7 @@ menu "Heap memory debugging"
             Heap trace standalone supports storing records as a list, or a list + hash map.
 
             Using only a list takes less memory, but calls to 'free' will get slower as the
-            list grows. This is particiularly affected by HEAP_TRACE_ALL mode.
+            list grows. This is particularly affected when using HEAP_TRACE_ALL mode.
 
             By using a list + hash map, calls to 'free' remain fast, at the cost of
             additional memory to store the hash map.
