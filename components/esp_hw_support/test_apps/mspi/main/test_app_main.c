@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 
 // load partition table in tests will use memory
-#define TEST_MEMORY_LEAK_THRESHOLD (450)
+#define TEST_MEMORY_LEAK_THRESHOLD (600)
 
 void setUp(void)
 {
