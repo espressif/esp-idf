@@ -202,6 +202,8 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
         2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
+The LEDC driver offers a helper function :cpp:func:`ledc_find_suitable_duty_resolution` to find the maximum possible resolution for the timer, given the source clock frequency and the desired PWM signal frequency.
+
 When a timer is no longer needed by any channel, it can be deconfigured by calling the same function :cpp:func:`ledc_timer_config`. The configuration structure :cpp:type:`ledc_timer_config_t` passes in should be:
 
 -  :cpp:member:`ledc_timer_config_t::speed_mode` The speed mode of the timer which wants to be deconfigured belongs to (:cpp:type:`ledc_mode_t`)
