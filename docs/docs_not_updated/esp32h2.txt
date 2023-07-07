@@ -28,5 +28,4 @@ api-reference/system/inc/power_management_esp32
 api-reference/system/inc/power_management_esp32s2_and_later
 api-reference/protocols/esp_serial_slave_link
 api-reference/protocols/esp_sdio_slave_protocol
-api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/index

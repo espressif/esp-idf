@@ -8,6 +8,9 @@ The half duplex (HD) mode is a special mode provided by ESP SPI Slave peripheral
 
 There are several different types of transactions, determined by the *command* phase of the transaction. Each transaction may consist of the following phases: command, address, dummy, data. The command phase is mandatory, while the other fields may be determined by the command field. During the command, address, dummy phases, the bus is always controlled by the master, while the direction of the data phase depends on the command. The data phase can be either an in phase, for the master to write data to the slave; or an out phase, for the master to read data from the slave.
 
+Protocol
+^^^^^^^^
+
 About the details of how master should communicate with the SPI Slave, see :doc:`/api-reference/protocols/esp_spi_slave_protocol`.
 
 By these different transactions, the slave provide these services to the master:
