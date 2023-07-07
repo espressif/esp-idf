@@ -30,6 +30,8 @@
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1  //TODO: IDF-7552
 #define SOC_UART_SUPPORTED              1
 // #define SOC_GDMA_SUPPORTED              1  //TODO: IDF-6504
+// #define SOC_AHB_GDMA_SUPPORTED          1
+// #define SOC_AXI_GDMA_SUPPORTED          1
 // #define SOC_GPTIMER_SUPPORTED           1  //TODO: IDF-6515
 // #define SOC_PCNT_SUPPORTED              1  //TODO: IDF-7475
 // #define SOC_MCPWM_SUPPORTED             1  //TODO: IDF-7493
@@ -154,9 +156,10 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
-#define SOC_GDMA_SUPPORT_ETM            (0)  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION            2
+#define SOC_GDMA_NUM_GROUPS_MAX         2
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
+#define SOC_GDMA_SUPPORT_ETM            1  // Both AHB-DMA and AXI-DMA supports ETM
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -420,7 +423,6 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
-
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-P4 has 2 UARTs
