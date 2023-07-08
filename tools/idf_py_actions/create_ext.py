@@ -40,7 +40,11 @@ def is_empty_and_create(path: str, action: str) -> None:
 
 
 def create_project(target_path: str, name: str) -> None:
-    copy_tree(os.path.join(os.environ['IDF_PATH'], 'examples', 'get-started', 'sample_project'), target_path)
+    copy_tree(
+        os.path.join(os.environ['IDF_PATH'], 'examples', 'get-started', 'sample_project'),
+        target_path,
+        preserve_mode=0,
+    )
     main_folder = os.path.join(target_path, 'main')
     os.rename(os.path.join(main_folder, 'main.c'), os.path.join(main_folder, '.'.join((name, 'c'))))
     replace_in_file(os.path.join(main_folder, 'CMakeLists.txt'), 'main', name)
@@ -49,7 +53,11 @@ def create_project(target_path: str, name: str) -> None:
 
 
 def create_component(target_path: str, name: str) -> None:
-    copy_tree(os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_component'), target_path)
+    copy_tree(
+        os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_component'),
+        target_path,
+        preserve_mode=0,
+    )
     os.rename(os.path.join(target_path, 'main.c'), os.path.join(target_path, '.'.join((name, 'c'))))
     os.rename(os.path.join(target_path, 'include', 'main.h'),
               os.path.join(target_path, 'include', '.'.join((name, 'h'))))
