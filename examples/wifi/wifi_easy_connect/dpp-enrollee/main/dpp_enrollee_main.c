@@ -80,7 +80,7 @@ void dpp_enrollee_event_cb(esp_supp_dpp_event_t event, void *data)
         if (data != NULL) {
             esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
 
-            ESP_LOGI(TAG, "Scan below QR Code to configure the enrollee:\n");
+            ESP_LOGI(TAG, "Scan below QR Code to configure the enrollee:");
             esp_qrcode_generate(&cfg, (const char *)data);
         }
         break;

@@ -78,7 +78,7 @@ static void wdt_reset_info_dump(int cpu)
         lsaddr  = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGLS0ADDR_REG);
         lsdata  = REG_READ(ASSIST_DEBUG_CORE_1_RCD_PDEBUGLS0DATA_REG);
 #else
-        ESP_LOGE(TAG, "WDT reset info: %s CPU not support!\n", cpu_name);
+        ESP_LOGE(TAG, "WDT reset info: %s CPU not support!", cpu_name);
         return;
 #endif
     }

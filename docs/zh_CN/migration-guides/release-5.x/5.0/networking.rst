@@ -141,13 +141,13 @@ TCP/IP 适配器是在 ESP-IDF v4.1 之前使用的网络接口抽象组件。�
 
 .. code-block:: c
 
-    ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
+    ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
 
 不建议使用下述方式：
 
 .. code-block:: c
 
-    ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
+    ESP_LOGI(TAG, "got ip:%s", ip4addr_ntoa(&event->ip_info.ip));
 
 ``ip4addr_ntoa()`` 为 LwIP API，因此 esp-netif 还提供了替代函数 ``esp_ip4addr_ntoa()``，然而总得来说仍推荐使用 ``IP2STR()`` 这一方法。
 

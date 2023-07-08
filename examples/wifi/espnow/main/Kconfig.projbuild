@@ -58,4 +58,29 @@ menu "Example Configuration"
         help
             When enable long range, the PHY rate of ESP32 will be 512Kbps or 256Kbps
 
+    config ESPNOW_ENABLE_POWER_SAVE
+        bool "Enable ESPNOW Power Save"
+        default "n"
+        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
+        depends on ESPNOW_WIFI_MODE_STATION
+        help
+            With ESPNOW power save enabled, chip would be able to wakeup and sleep periodically
+            Notice ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is essential at Wi-Fi disconnected
+
+    config ESPNOW_WAKE_WINDOW
+        int "ESPNOW wake window, unit in millisecond"
+        range 0 65535
+        default 50
+        depends on ESPNOW_ENABLE_POWER_SAVE
+        help
+            ESPNOW wake window
+
+    config ESPNOW_WAKE_INTERVAL
+        int "ESPNOW wake interval, unit in millisecond"
+        range 1 65535
+        default 100
+        depends on ESPNOW_ENABLE_POWER_SAVE
+        help
+            ESPNOW wake interval
+
 endmenu

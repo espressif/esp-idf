@@ -104,7 +104,7 @@ static void adc_dma_intr_handler(void *arg);
 
 static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 {
-    assert(adc_unit <= SOC_ADC_PERIPH_NUM);
+    assert(adc_unit < SOC_ADC_PERIPH_NUM);
     uint8_t adc_n = (adc_unit == ADC_UNIT_1) ? 0 : 1;
     return adc_channel_io_map[adc_n][adc_channel];
 }
@@ -209,7 +209,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     //malloc dma descriptor
     uint32_t dma_desc_num_per_frame = (init_config->conv_num_each_intr + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     uint32_t dma_desc_max_num = dma_desc_num_per_frame * INTERNAL_BUF_NUM;
-    s_adc_digi_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * dma_desc_max_num, MALLOC_CAP_DMA);
+    s_adc_digi_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * dma_desc_max_num, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     if (!s_adc_digi_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;

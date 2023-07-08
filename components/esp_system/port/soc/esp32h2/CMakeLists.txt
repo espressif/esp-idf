@@ -4,7 +4,6 @@ set(srcs
          "system_internal.c"
          "cache_err_int.c"
          "../../arch/riscv/expression_with_stack.c"
-         "../../arch/riscv/expression_with_stack_asm.S"
          "../../arch/riscv/panic_arch.c"
          "../../arch/riscv/debug_stubs.c")
 

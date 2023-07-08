@@ -11,7 +11,6 @@
 #include "soc/periph_defs.h"
 #include "soc/pcr_reg.h"
 #include "soc/soc.h"
-#include "soc/lpperi_reg.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -19,7 +18,7 @@ extern "C" {
 #endif
 
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
-{ // TODO: IDF-5713
+{
     switch (periph) {
         case PERIPH_SARADC_MODULE:
             return PCR_SARADC_CLK_EN;
@@ -79,28 +78,15 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_SDIO_SLAVE_CLK_EN;
         case PERIPH_REGDMA_MODULE:
             return PCR_REGDMA_CLK_EN;
-        //TODO: LP_PERIPH modules are added temporarily and will be moved to a separate API (IDF-7374).
-        case PERIPH_LP_I2C0_MODULE:
-            return LPPERI_LP_EXT_I2C_CK_EN;
-        // case PERIPH_RNG_MODULE:
-        //     return PCR_WIFI_CLK_RNG_EN;
-        // case PERIPH_WIFI_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_EN_M;
-        // case PERIPH_BT_MODULE:
-        //     return PCR_WIFI_CLK_BT_EN_M;
-        // case PERIPH_WIFI_BT_COMMON_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_BT_COMMON_M;
-        // case PERIPH_BT_BASEBAND_MODULE:
-        //     return PCR_BT_BASEBAND_EN;
-        // case PERIPH_BT_LC_MODULE:
-        //     return PCR_BT_LC_EN;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_CLK_EN;
         default:
             return 0;
     }
 }
 
 static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool enable)
-{ // TODO: IDF-5713
+{
     (void)enable; // unused
 
     switch (periph) {
@@ -175,37 +161,16 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_SDIO_SLAVE_RST_EN;
         case PERIPH_REGDMA_MODULE:
             return PCR_REGDMA_RST_EN;
-        //TODO: LP_PERIPH modules are added temporarily and will be moved to a separate API (IDF-7374).
-        case PERIPH_LP_I2C0_MODULE:
-            return LPPERI_LP_EXT_I2C_RESET_EN;
-        // case PERIPH_RNG_MODULE:
-        //     return PCR_WIFI_CLK_RNG_EN;
-        // case PERIPH_WIFI_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_EN_M;
-        // case PERIPH_BT_MODULE:
-        //     return PCR_WIFI_CLK_BT_EN_M;
-        // case PERIPH_WIFI_BT_COMMON_MODULE:
-        //     return PCR_WIFI_CLK_WIFI_BT_COMMON_M;
-        // case PERIPH_BT_BASEBAND_MODULE:
-        //     return PCR_BT_BASEBAND_EN;
-        // case PERIPH_BT_LC_MODULE:
-        //     return PCR_BT_LC_EN;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_RST_EN;
         default:
             return 0;
     }
 }
 
 static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
-{ // TODO: IDF-5713
+{
     switch (periph) {
-    // case PERIPH_RNG_MODULE:
-    // case PERIPH_WIFI_MODULE:
-    // case PERIPH_BT_MODULE:
-    // case PERIPH_WIFI_BT_COMMON_MODULE:
-    // case PERIPH_BT_BASEBAND_MODULE:
-    // case PERIPH_BT_LC_MODULE:
-    //      return SYSTEM_WIFI_CLK_EN_REG;
-
         case PERIPH_SARADC_MODULE:
             return PCR_SARADC_CONF_REG;
         case PERIPH_RMT_MODULE:
@@ -264,16 +229,15 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_SDIO_SLAVE_CONF_REG;
         case PERIPH_REGDMA_MODULE:
             return PCR_REGDMA_CONF_REG;
-        //TODO: LP_PERIPH modules are added temporarily and will be moved to a separate API (IDF-7374).
-        case PERIPH_LP_I2C0_MODULE:
-            return LPPERI_CLK_EN_REG;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_CONF_REG;
     default:
         return 0;
     }
 }
 
 static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
-{ // TODO: IDF-5713
+{
     switch (periph) {
         case PERIPH_SARADC_MODULE:
             return PCR_SARADC_CONF_REG;
@@ -333,9 +297,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_SDIO_SLAVE_CONF_REG;
         case PERIPH_REGDMA_MODULE:
             return PCR_REGDMA_CONF_REG;
-        //TODO: LP_PERIPH modules are added temporarily and will be moved to a separate API (IDF-7374).
-        case PERIPH_LP_I2C0_MODULE:
-            return LPPERI_RESET_EN_REG;
+        case PERIPH_ASSIST_DEBUG_MODULE:
+            return PCR_ASSIST_CONF_REG;
     default:
         return 0;
     }

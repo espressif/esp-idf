@@ -91,14 +91,14 @@ static int process_run_tc_cmd(int argc, char **argv)
     if (tc_run_args.wifi_tc_idx->count == 1) {
         msg.case_id = atoi(tc_run_args.wifi_tc_idx->sval[0]);
         if (xQueueSend(xTaskQueue, &msg, portMAX_DELAY) != pdTRUE) {
-            ESP_LOGE(TAG_CNSL, "xTaskQueue Post failed\n");
+            ESP_LOGE(TAG_CNSL, "xTaskQueue Post failed");
         }
     }
 
     if (tc_run_args.bt_tc_idx->count == 1) {
         msg.case_id = atoi(tc_run_args.bt_tc_idx->sval[0]);
         if (xQueueSend(xTaskQueue, &msg, portMAX_DELAY) != pdTRUE) {
-            ESP_LOGE(TAG_CNSL, "xTaskQueue Post failed\n");
+            ESP_LOGE(TAG_CNSL, "xTaskQueue Post failed");
         }
     }
 
@@ -110,7 +110,7 @@ static int process_get_mac_addr_cmd(int argc, char **argv)
     const uint8_t *mac = esp_bt_dev_get_address();
 
     if (mac != NULL) {
-        ESP_LOGI(TAG_CNSL, "+BTMAC:"MACSTR"\n", MAC2STR(mac));
+        ESP_LOGI(TAG_CNSL, "+BTMAC:"MACSTR, MAC2STR(mac));
     }
     return 0;
 }

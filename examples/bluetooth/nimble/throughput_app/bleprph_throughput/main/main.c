@@ -124,7 +124,7 @@ gatts_advertise(void)
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
-        ESP_LOGE(tag, "Error setting advertisement data; rc=%d\n", rc);
+        ESP_LOGE(tag, "Error setting advertisement data; rc=%d", rc);
         return;
     }
 
@@ -135,7 +135,7 @@ gatts_advertise(void)
     rc = ble_gap_adv_start(gatts_addr_type, NULL, BLE_HS_FOREVER,
                            &adv_params, gatts_gap_event, NULL);
     if (rc != 0) {
-        ESP_LOGE(tag, "Error enabling advertisement; rc=%d\n", rc);
+        ESP_LOGE(tag, "Error enabling advertisement; rc=%d", rc);
         return;
     }
 }
@@ -210,6 +210,7 @@ notify_task(void *arg)
                     ESP_LOGE(tag, "Not enough OS_MBUFs available; reduce notify count ");
                     xSemaphoreGive(notify_sem);
                     notify_count -= 1;
+                    vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
 
                 end_time = esp_timer_get_time();
@@ -343,7 +344,7 @@ gatts_on_sync(void)
 static void
 gatts_on_reset(int reason)
 {
-    ESP_LOGE(tag, "Resetting state; reason=%d\n", reason);
+    ESP_LOGE(tag, "Resetting state; reason=%d", reason);
 }
 
 void gatts_host_task(void *param)

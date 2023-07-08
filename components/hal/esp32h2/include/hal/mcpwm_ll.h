@@ -321,7 +321,7 @@ static inline void mcpwm_ll_timer_set_start_stop_command(mcpwm_dev_t *mcpwm, int
         break;
     default:
         HAL_ASSERT(false);
-        break;;
+        break;
     }
 }
 
@@ -939,7 +939,7 @@ static inline void mcpwm_ll_operator_set_deadtime_clock_src(mcpwm_dev_t *mcpwm, 
         break;
     case MCPWM_LL_DEADTIME_CLK_SRC_TIMER:
         mcpwm->operators[operator_id].dt_cfg.db_clk_sel = 1;
-        break;;
+        break;
     default:
         HAL_ASSERT(false);
     }

@@ -82,7 +82,7 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
     char buf[BLE_UUID_STR_LEN];
     switch (ctxt->op) {
     case BLE_GATT_REGISTER_OP_SVC:
-        ESP_LOGI(TAG, "registered service %s with handle=%d\n",
+        ESP_LOGI(TAG, "registered service %s with handle=%d",
                  ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
                  ctxt->svc.handle);
         break;
@@ -96,7 +96,7 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
         break;
 
     case BLE_GATT_REGISTER_OP_DSC:
-        ESP_LOGI(TAG, "registering descriptor %s with handle=%d\n",
+        ESP_LOGI(TAG, "registering descriptor %s with handle=%d",
                  ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
                  ctxt->dsc.handle);
         break;
@@ -245,7 +245,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
     case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
-        ESP_LOGI(TAG, "connection %s; status=%d\n",
+        ESP_LOGI(TAG, "connection %s; status=%d",
                  event->connect.status == 0 ? "established" : "failed",
                  event->connect.status);
         if (event->connect.status == 0) {
@@ -273,7 +273,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         }
         return 0;
     case BLE_GAP_EVENT_DISCONNECT:
-        ESP_LOGI(TAG, "disconnect; reason=%d\n", event->disconnect.reason);
+        ESP_LOGI(TAG, "disconnect; reason=%d", event->disconnect.reason);
         memcpy(blufi_env.remote_bda, event->disconnect.conn.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
         blufi_env.is_connected = false;
         blufi_env.recv_seq = blufi_env.send_seq = 0;
@@ -297,7 +297,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
     case BLE_GAP_EVENT_CONN_UPDATE:
         /* The central has updated the connection parameters. */
-        ESP_LOGI(TAG, "connection updated; status=%d\n",
+        ESP_LOGI(TAG, "connection updated; status=%d",
                  event->conn_update.status);
         return 0;
 
@@ -320,7 +320,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_MTU:
-        ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
+        ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d",
                  event->mtu.conn_handle,
                  event->mtu.channel_id,
                  event->mtu.value);
@@ -390,7 +390,7 @@ void esp_blufi_adv_start(void)
     fields.uuids16_is_complete = 1;
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
-        ESP_LOGE(TAG, "error setting advertisement data; rc=%d\n", rc);
+        ESP_LOGE(TAG, "error setting advertisement data; rc=%d", rc);
         return;
     }
 
@@ -401,7 +401,7 @@ void esp_blufi_adv_start(void)
     rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
                            &adv_params, esp_blufi_gap_event, NULL);
     if (rc != 0) {
-        ESP_LOGE(TAG, "error enabling advertisement; rc=%d\n", rc);
+        ESP_LOGE(TAG, "error enabling advertisement; rc=%d", rc);
         return;
     }
 }

@@ -31,6 +31,10 @@
 #include "xtensa/core-macros.h"
 #endif
 
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
+#include "esp_private/mspi_timing_tuning.h"
+#endif
+
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_private.h"
@@ -270,7 +274,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const int apb_clk_freq = MAX(soc_apb_clk_freq, modem_apb_clk_freq);
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
 #else
-    int apb_max_freq = MIN(max_freq_mhz, 80); /* CPU frequency in APB_MAX mode */
+    int apb_max_freq = MIN(max_freq_mhz, APB_CLK_FREQ / MHZ); /* CPU frequency in APB_MAX mode */
 #endif
 
     apb_max_freq = MAX(apb_max_freq, min_freq_mhz);
@@ -475,7 +479,17 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
-        rtc_clk_cpu_freq_set_config_fast(&new_config);
+        if (new_config.source == SOC_CPU_CLK_SRC_PLL) {
+            rtc_clk_cpu_freq_set_config_fast(&new_config);
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
+            mspi_timing_change_speed_mode_cache_safe(false);
+#endif
+        } else {
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
+            mspi_timing_change_speed_mode_cache_safe(true);
+#endif
+            rtc_clk_cpu_freq_set_config_fast(&new_config);
+        }
         if (!switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
@@ -714,7 +728,7 @@ void esp_pm_impl_init(void)
 #endif // SOC_UART_SUPPORT_xxx
     while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
-    uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
+    uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
 
     uint32_t sclk_freq;
     esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);

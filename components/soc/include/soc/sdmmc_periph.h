@@ -1,29 +1,25 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
+#if SOC_SDMMC_HOST_SUPPORTED
 #include "soc/sdmmc_reg.h"
 #include "soc/sdmmc_struct.h"
 #include "soc/gpio_sig_map.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_SDMMC_HOST_SUPPORTED
 
 /**
  * Common SDMMC slot info, doesn't depend on SOC_SDMMC_USE_{IOMUX,GPIO_MATRIX}
@@ -69,7 +65,7 @@ extern const sdmmc_slot_io_info_t sdmmc_slot_gpio_num[SOC_SDMMC_NUM_SLOTS];
 extern const sdmmc_slot_io_info_t sdmmc_slot_gpio_sig[SOC_SDMMC_NUM_SLOTS];
 
 #endif // SOC_SDMMC_USE_{IOMUX,GPIO_MATRIX}
-
+#endif // SOC_SDMMC_HOST_SUPPORTED
 #ifdef __cplusplus
 }
 #endif

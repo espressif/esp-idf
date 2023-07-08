@@ -134,7 +134,7 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
 
     rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
     if (rc != 0) {
-        return rc;
+        return 0;
     }
 
     /* The device has to advertise support for the SPP
@@ -339,7 +339,7 @@ void ble_spp_client_host_task(void *param)
 }
 void ble_client_uart_task(void *pvParameters)
 {
-    ESP_LOGI(tag, "BLE client UART task started\n");
+    ESP_LOGI(tag, "BLE client UART task started");
     int rc;
     int i;
     uart_event_t event;
@@ -355,7 +355,7 @@ void ble_client_uart_task(void *pvParameters)
                     uint8_t *temp = NULL;
                     temp = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
                     if (temp == NULL) {
-                        ESP_LOGE(tag, "malloc failed,%s L#%d\n", __func__, __LINE__);
+                        ESP_LOGE(tag, "malloc failed,%s L#%d", __func__, __LINE__);
                         break;
                     }
                     memset(temp, 0x0, event.size);

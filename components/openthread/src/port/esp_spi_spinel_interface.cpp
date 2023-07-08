@@ -227,9 +227,9 @@ otError SpiSpinelInterface::WaitForFrame(uint64_t timeout_us)
         int ret = select(m_event_fd + 1, &read_fds, NULL, &error_fds, &timeout);
         if (ret <= 0 || !FD_ISSET(m_event_fd, &read_fds)) {
             if (FD_ISSET(m_event_fd, &error_fds)) {
-                ESP_LOGW(OT_PLAT_LOG_TAG, "FD error!\n");
+                ESP_LOGW(OT_PLAT_LOG_TAG, "FD error!");
             }
-            ESP_LOGW(OT_PLAT_LOG_TAG, "SPI transaction timeout for %llu us, result %d\n", timeout_us, ret);
+            ESP_LOGW(OT_PLAT_LOG_TAG, "SPI transaction timeout for %llu us, result %d", timeout_us, ret);
             return OT_ERROR_RESPONSE_TIMEOUT;
         }
         read(m_event_fd, &event, sizeof(event));

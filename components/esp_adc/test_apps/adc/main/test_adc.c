@@ -232,7 +232,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
         for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
             TEST_ASSERT_EQUAL(regi2c_cali_val_before[i], regi2c_cali_val_after[i]);
         }
-        ESP_LOGI(TAG, "Cali register settings unchanged\n");
+        ESP_LOGI(TAG, "Cali register settings unchanged");
 
     }
     TEST_ESP_OK(adc_oneshot_del_unit(adc_handle));

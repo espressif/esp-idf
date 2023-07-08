@@ -124,7 +124,7 @@ static int blecent_write(uint16_t conn_handle, uint16_t val_handle,
 		goto label;
 	    }
 	    else if (rc != 0) {
-            	ESP_LOGE(tag, "Error: Failed to write characteristic; rc=%d\n",rc);
+            	ESP_LOGE(tag, "Error: Failed to write characteristic; rc=%d",rc);
             	goto err;
         }
 
@@ -401,7 +401,7 @@ blecent_scan(void)
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       blecent_gap_event, NULL);
     if (rc != 0) {
-        ESP_LOGE(tag, "Error initiating GAP discovery procedure; rc=%d\n",
+        ESP_LOGE(tag, "Error initiating GAP discovery procedure; rc=%d",
                  rc);
     }
 }
@@ -420,7 +420,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 
     rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
     if (rc != 0) {
-        return rc;
+        return 0;
     }
 
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
@@ -481,7 +481,7 @@ blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
     /* Figure out address to use for connect (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
-        ESP_LOGE(tag, "error determining address type; rc=%d\n", rc);
+        ESP_LOGE(tag, "error determining address type; rc=%d", rc);
         return;
     }
 
@@ -592,9 +592,9 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_DISCONNECT:
         /* Connection terminated. */
-        ESP_LOGI(tag, "disconnect; reason=%d ", event->disconnect.reason);
+        ESP_LOGI(tag, "disconnect; reason=%d", event->disconnect.reason);
         print_conn_desc(&event->disconnect.conn);
-        ESP_LOGI(tag, "\n");
+        ESP_LOGI(tag, " ");
 
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
@@ -609,7 +609,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_ENC_CHANGE:
         /* Encryption has been enabled or disabled for this connection. */
-        ESP_LOGI(tag, "encryption change event; status = %d ",
+        ESP_LOGI(tag, "encryption change event; status = %d",
                  event->enc_change.status);
         rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
         assert(rc == 0);
@@ -646,7 +646,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 static void
 blecent_on_reset(int reason)
 {
-    ESP_LOGE(tag, "Resetting state; reason=%d\n", reason);
+    ESP_LOGE(tag, "Resetting state; reason=%d", reason);
 }
 
 static void

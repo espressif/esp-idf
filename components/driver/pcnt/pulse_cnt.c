@@ -133,7 +133,6 @@ static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit)
         portEXIT_CRITICAL(&group->spinlock);
         if (unit_id < 0) {
             pcnt_release_group_handle(group);
-            group = NULL;
         } else {
             unit->group = group;
             unit->unit_id = unit_id;

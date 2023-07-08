@@ -3,12 +3,16 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+#"Trim" the build. Include the minimal set of components, main, and anything it depends on.
+set(COMPONENTS main)
+
 project(test_heap)
 
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dir ${CMAKE_BINARY_DIR}/esp-idf/heap/
+                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/heap/
                       --elf-file ${CMAKE_BINARY_DIR}/test_heap.elf
                       find-refs
                       --from-sections=.iram0.text

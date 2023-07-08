@@ -491,6 +491,7 @@ static inline void ledc_ll_get_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool sig_out_en)
 {
     hw->channel_group[speed_mode].channel[channel_num].conf0.sig_out_en = sig_out_en;
@@ -521,6 +522,7 @@ static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void ledc_ll_set_idle_level(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t idle_level)
 {
     hw->channel_group[speed_mode].channel[channel_num].conf0.idle_lv = idle_level & 0x1;

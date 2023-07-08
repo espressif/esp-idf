@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,8 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
 #define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str)
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
+#define LEDC_CHECK_ISR(a, str, ret_val) ESP_RETURN_ON_FALSE_ISR(a, ret_val, LEDC_TAG, "%s", str)
+#define LEDC_ARG_CHECK_ISR(a, param) ESP_RETURN_ON_FALSE_ISR(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
 
 #define LEDC_CLK_NOT_FOUND  0
 #define LEDC_SLOW_CLK_UNINIT -1
@@ -347,7 +349,7 @@ static inline uint32_t ledc_auto_global_clk_divisor(int freq_hz, uint32_t precis
         /* Before calculating the divisor, we need to have the RC_FAST frequency.
          * If it hasn't been measured yet, try calibrating it now. */
         if (s_glb_clks[i] == LEDC_SLOW_CLK_RC_FAST && s_ledc_slow_clk_rc_fast_freq == 0 && !ledc_slow_clk_calibrate()) {
-            ESP_LOGD(LEDC_TAG, "Unable to retrieve RC_FAST clock frequency, skipping it\n");
+            ESP_LOGD(LEDC_TAG, "Unable to retrieve RC_FAST clock frequency, skipping it");
             continue;
         }
 
@@ -438,9 +440,7 @@ static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint3
     return ret;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267 Remove when H2 light sleep supported
 extern void esp_sleep_periph_use_8m(bool use_or_not);
-#endif
 
 /**
  * @brief Function setting the LEDC timer divisor with the given source clock,
@@ -557,9 +557,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
         /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267 Remove when H2 light sleep supported
         esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
-#endif
     }
 
     /* The divisor is correct, we can write in the hardware. */
@@ -705,26 +703,26 @@ static void _ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 
 esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
-    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    portENTER_CRITICAL(&ledc_spinlock);
+    LEDC_ARG_CHECK_ISR(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK_ISR(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK_ISR(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    portENTER_CRITICAL_SAFE(&ledc_spinlock);
     _ledc_update_duty(speed_mode, channel);
-    portEXIT_CRITICAL(&ledc_spinlock);
+    portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idle_level)
 {
-    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
-    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    portENTER_CRITICAL(&ledc_spinlock);
+    LEDC_ARG_CHECK_ISR(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK_ISR(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK_ISR(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    portENTER_CRITICAL_SAFE(&ledc_spinlock);
     ledc_hal_set_idle_level(&(p_ledc_obj[speed_mode]->ledc_hal), channel, idle_level);
     ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
     ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
     ledc_ls_channel_update(speed_mode, channel);
-    portEXIT_CRITICAL(&ledc_spinlock);
+    portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
 }
 
@@ -1069,7 +1067,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur, dir, step_num, cycle_num, scale);
         portEXIT_CRITICAL(&ledc_spinlock);
-        ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d\n",
+        ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d",
                  duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
         portENTER_CRITICAL(&ledc_spinlock);

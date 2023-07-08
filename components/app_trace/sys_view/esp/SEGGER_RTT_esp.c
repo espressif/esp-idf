@@ -72,13 +72,13 @@ void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
     if (s_events_buf_filled > 0) {
       res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, s_events_buf, s_events_buf_filled, tmo);
       if (res != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to flush buffered events (%d)!\n", res);
+        ESP_LOGE(TAG, "Failed to flush buffered events (%d)!", res);
       }
     }
     // flush even if we failed to write buffered events, because no new events will be sent after STOP
     res = esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_SYSVIEW, min_sz, tmo);
     if (res != ESP_OK) {
-      ESP_LOGE(TAG, "Failed to flush apptrace data (%d)!\n", res);
+      ESP_LOGE(TAG, "Failed to flush apptrace data (%d)!", res);
     }
     s_events_buf_filled = 0;
 }
@@ -167,8 +167,8 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
       (event_id == SYSVIEW_EVTID_TASK_STOP_EXEC) ||
       (event_id == SYSVIEW_EVTID_TASK_START_READY) ||
       (event_id == SYSVIEW_EVTID_TASK_STOP_READY) ||
-      (event_id == SYSVIEW_EVTID_USER_START) ||
-      (event_id == SYSVIEW_EVTID_USER_STOP) ||
+      (event_id == SYSVIEW_EVTID_MARK_START) ||
+      (event_id == SYSVIEW_EVTID_MARK_STOP) ||
       (event_id == SYSVIEW_EVTID_TIMER_ENTER) ||
       (event_id == SYSVIEW_EVTID_TIMER_EXIT) ||
       (event_id == SYSVIEW_EVTID_STACK_INFO) ||

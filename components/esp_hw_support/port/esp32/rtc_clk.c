@@ -11,7 +11,7 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
+#include "soc/sens_reg.h"
 #include "soc/soc_caps.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_ll.h"

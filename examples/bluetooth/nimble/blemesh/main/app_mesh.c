@@ -62,7 +62,7 @@ fault_get_cur(struct bt_mesh_model *model,
 {
     uint8_t reg_faults[FAULT_ARR_SIZE] = { [0 ... FAULT_ARR_SIZE - 1] = 0xff };
 
-    ESP_LOGI(tag, "fault_get_cur() has_reg_fault %u\n", has_reg_fault);
+    ESP_LOGI(tag, "fault_get_cur() has_reg_fault %u", has_reg_fault);
 
     *test_id = recent_test_id;
     *company_id = CID_VENDOR;
@@ -84,7 +84,7 @@ fault_get_reg(struct bt_mesh_model *model,
         return -BLE_HS_EINVAL;
     }
 
-    ESP_LOGI(tag, "fault_get_reg() has_reg_fault %u\n", has_reg_fault);
+    ESP_LOGI(tag, "fault_get_reg() has_reg_fault %u", has_reg_fault);
 
     *test_id = recent_test_id;
 
@@ -161,14 +161,14 @@ static void gen_onoff_status(struct bt_mesh_model *model,
     struct os_mbuf *msg = NET_BUF_SIMPLE(3);
     uint8_t *status;
 
-    ESP_LOGI(tag, "#mesh-onoff STATUS\n");
+    ESP_LOGI(tag, "#mesh-onoff STATUS");
 
     bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
     status = net_buf_simple_add(msg, 1);
     *status = gen_on_off_state;
 
     if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-        ESP_LOGI(tag, "#mesh-onoff STATUS: send status failed\n");
+        ESP_LOGI(tag, "#mesh-onoff STATUS: send status failed");
     }
 
     os_mbuf_free_chain(msg);
@@ -178,7 +178,7 @@ static void gen_onoff_get(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct os_mbuf *buf)
 {
-    ESP_LOGI(tag, "#mesh-onoff GET\n");
+    ESP_LOGI(tag, "#mesh-onoff GET");
 
     gen_onoff_status(model, ctx);
 }
@@ -187,7 +187,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct os_mbuf *buf)
 {
-    ESP_LOGI(tag, "#mesh-onoff SET\n");
+    ESP_LOGI(tag, "#mesh-onoff SET");
 
     gen_on_off_state = buf->om_data[0];
 
@@ -198,7 +198,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
                                 struct bt_mesh_msg_ctx *ctx,
                                 struct os_mbuf *buf)
 {
-    ESP_LOGI(tag, "#mesh-onoff SET-UNACK\n");
+    ESP_LOGI(tag, "#mesh-onoff SET-UNACK");
 
     gen_on_off_state = buf->om_data[0];
 }
@@ -215,13 +215,13 @@ static void gen_level_status(struct bt_mesh_model *model,
 {
     struct os_mbuf *msg = NET_BUF_SIMPLE(4);
 
-    ESP_LOGI(tag, "#mesh-level STATUS\n");
+    ESP_LOGI(tag, "#mesh-level STATUS");
 
     bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x08));
     net_buf_simple_add_le16(msg, gen_level_state);
 
     if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-        ESP_LOGI(tag, "#mesh-level STATUS: send status failed\n");
+        ESP_LOGI(tag, "#mesh-level STATUS: send status failed");
     }
 
     os_mbuf_free_chain(msg);
@@ -231,7 +231,7 @@ static void gen_level_get(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct os_mbuf *buf)
 {
-    ESP_LOGI(tag, "#mesh-level GET\n");
+    ESP_LOGI(tag, "#mesh-level GET");
 
     gen_level_status(model, ctx);
 }
@@ -243,12 +243,12 @@ static void gen_level_set(struct bt_mesh_model *model,
     int16_t level;
 
     level = (int16_t) net_buf_simple_pull_le16(buf);
-    ESP_LOGI(tag, "#mesh-level SET: level=%d\n", level);
+    ESP_LOGI(tag, "#mesh-level SET: level=%d", level);
 
     gen_level_status(model, ctx);
 
     gen_level_state = level;
-    ESP_LOGI(tag, "#mesh-level: level=%d\n", gen_level_state);
+    ESP_LOGI(tag, "#mesh-level: level=%d", gen_level_state);
 }
 
 static void gen_level_set_unack(struct bt_mesh_model *model,
@@ -258,10 +258,10 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
     int16_t level;
 
     level = (int16_t) net_buf_simple_pull_le16(buf);
-    ESP_LOGI(tag, "#mesh-level SET-UNACK: level=%d\n", level);
+    ESP_LOGI(tag, "#mesh-level SET-UNACK: level=%d", level);
 
     gen_level_state = level;
-    ESP_LOGI(tag, "#mesh-level: level=%d\n", gen_level_state);
+    ESP_LOGI(tag, "#mesh-level: level=%d", gen_level_state);
 }
 
 static void gen_delta_set(struct bt_mesh_model *model,
@@ -271,12 +271,12 @@ static void gen_delta_set(struct bt_mesh_model *model,
     int16_t delta_level;
 
     delta_level = (int16_t) net_buf_simple_pull_le16(buf);
-    ESP_LOGI(tag, "#mesh-level DELTA-SET: delta_level=%d\n", delta_level);
+    ESP_LOGI(tag, "#mesh-level DELTA-SET: delta_level=%d", delta_level);
 
     gen_level_status(model, ctx);
 
     gen_level_state += delta_level;
-    ESP_LOGI(tag, "#mesh-level: level=%d\n", gen_level_state);
+    ESP_LOGI(tag, "#mesh-level: level=%d", gen_level_state);
 }
 
 static void gen_delta_set_unack(struct bt_mesh_model *model,
@@ -286,10 +286,10 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
     int16_t delta_level;
 
     delta_level = (int16_t) net_buf_simple_pull_le16(buf);
-    ESP_LOGI(tag, "#mesh-level DELTA-SET: delta_level=%d\n", delta_level);
+    ESP_LOGI(tag, "#mesh-level DELTA-SET: delta_level=%d", delta_level);
 
     gen_level_state += delta_level;
-    ESP_LOGI(tag, "#mesh-level: level=%d\n", gen_level_state);
+    ESP_LOGI(tag, "#mesh-level: level=%d", gen_level_state);
 }
 
 static void gen_move_set(struct bt_mesh_model *model,
@@ -369,14 +369,14 @@ static const struct bt_mesh_comp comp = {
 
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
-    ESP_LOGI(tag, "OOB Number: %" PRIu32 "\n", number);
+    ESP_LOGI(tag, "OOB Number: %" PRIu32, number);
 
     return 0;
 }
 
 static void prov_complete(uint16_t net_idx, uint16_t addr)
 {
-    ESP_LOGI(tag, "Local node provisioned, primary address 0x%04x\n", addr);
+    ESP_LOGI(tag, "Local node provisioned, primary address 0x%04x", addr);
 }
 
 static const uint8_t dev_uuid[16] = MYNEWT_VAL(BLE_MESH_DEV_UUID);
@@ -401,7 +401,7 @@ blemesh_on_sync(void)
     int err;
     ble_addr_t addr;
 
-    ESP_LOGI(tag, "Bluetooth initialized\n");
+    ESP_LOGI(tag, "Bluetooth initialized");
 
     /* Use NRPA */
     err = ble_hs_id_gen_rnd(1, &addr);
@@ -411,7 +411,7 @@ blemesh_on_sync(void)
 
     err = bt_mesh_init(addr.type, &prov, &comp);
     if (err) {
-        ESP_LOGI(tag, "Initializing mesh failed (err %d)\n", err);
+        ESP_LOGI(tag, "Initializing mesh failed (err %d)", err);
         return;
     }
 
@@ -419,14 +419,14 @@ blemesh_on_sync(void)
     shell_register_default_module("mesh");
 #endif
 
-    ESP_LOGI(tag, "Mesh initialized\n");
+    ESP_LOGI(tag, "Mesh initialized");
 
     if (IS_ENABLED(CONFIG_SETTINGS)) {
         settings_load();
     }
 
     if (bt_mesh_is_provisioned()) {
-        ESP_LOGI(tag, "Mesh network restored from flash\n");
+        ESP_LOGI(tag, "Mesh network restored from flash");
     }
 }
 

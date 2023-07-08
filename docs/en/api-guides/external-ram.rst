@@ -10,7 +10,7 @@ Introduction
 ============
 {IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB"}
 
-{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (Psuedostatic RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
 
 .. only:: esp32s3
 
@@ -19,7 +19,7 @@ Introduction
 Hardware
 ========
 
-{IDF_TARGET_NAME} supports SPI PSRAM (Psuedostatic RAM) connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
+{IDF_TARGET_NAME} supports PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
 
 .. note::
 
@@ -46,8 +46,8 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
     :esp32: * :ref:`external_ram_config_noinit`
-    :esp32s2 or esp32s3: * :ref:`external_ram_config_instructions`
-    :esp32s2 or esp32s3: * :ref:`external_ram_config_rodata`
+    :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_instructions`
+    :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_rodata`
 
 .. _external_ram_config_memory_map:
 
@@ -55,15 +55,15 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
 Integrate RAM into the {IDF_TARGET_NAME} Memory Map
 ---------------------------------------------------
 
-{IDF_TARGET_PSRAM_ADDR_START:default="Value not updated", esp32="0x3F800000", esp32s2="0x3F500000", esp32s3="0x3D000000"}
+Select this option by choosing ``Integrate RAM into memory map`` from :ref:`CONFIG_SPIRAM_USE`.
 
-Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
+This is the most basic option for external RAM integration. Most likely, you will need another, more advanced option.
 
-This is the most basic option for external SPI RAM integration. Most likely, you will need another, more advanced option.
+During the ESP-IDF startup, external RAM is mapped into the data virtual address space. The address space is dynamically allocated. The length will be the mininum length between the PSRAM size and the available data virtual address space size.
 
-During the ESP-IDF startup, external RAM is mapped into the data address space, starting at address {IDF_TARGET_PSRAM_ADDR_START} (byte-accessible). The length of this region is the same as the SPI RAM size (up to the limit of {IDF_TARGET_PSRAM_VADDR_SIZE}).
+Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external RAM: coordinating buffer usage, preventing corruption, etc.
 
-Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external SPI RAM: coordinating buffer usage, preventing corruption, etc.
+It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next chapter).
 
 .. _external_ram_config_capability_allocator:
 
@@ -71,9 +71,9 @@ Applications can manually place data in external memory by creating pointers to 
 Add External RAM to the Capability Allocator
 --------------------------------------------
 
-Select this option by choosing "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`` from :ref:`CONFIG_SPIRAM_USE`.
 
-When enabled, memory is mapped to address {IDF_TARGET_PSRAM_ADDR_START} and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
 
 To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
 
@@ -83,7 +83,7 @@ To allocate memory from external RAM, a program should call ``heap_caps_malloc(s
 Provide External RAM via malloc()
 ---------------------------------
 
-Select this option by choosing "Make RAM allocatable using malloc() as well" from :ref:`CONFIG_SPIRAM_USE`. This is the default option.
+Select this option by choosing ``Make RAM allocatable using malloc() as well`` from :ref:`CONFIG_SPIRAM_USE`. This is the default option.
 
 In this case, memory is added to the capability allocator as described for the previous option. However, it is also added to the pool of RAM that can be returned by the standard ``malloc()`` function.
 
@@ -105,7 +105,7 @@ Allow .bss Segment to Be Placed in External Memory
 
 Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
-If enabled, a region of the address space starting from {IDF_TARGET_PSRAM_ADDR_START} will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
 Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
@@ -122,7 +122,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
     Allow .noinit Segment to Be Placed in External Memory
     --------------------------------------------------------------
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the address space provided in external RAM will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
+    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
 
     By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
 
@@ -207,5 +207,5 @@ Failure to Initialize
 
     .. include:: inc/external-ram-esp32-notes.rst
 
-.. _ESP32 ECO: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf
-.. _ESP32 ECO V3 User Guide: https://www.espressif.com/sites/default/files/documentation/ESP32_ECO_V3_User_Guide__EN.pdf
+.. _ESP32 Series SoC Errata: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf
+.. _ESP32 Chip Revision v3.0 User Guide: https://www.espressif.com/sites/default/files/documentation/ESP32_ECO_V3_User_Guide__EN.pdf

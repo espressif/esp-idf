@@ -326,7 +326,7 @@ static float test_adc_oneshot_std(adc_atten_t atten, bool is_performance_test)
     adc_cali_handle_t cali_handle = NULL;
     do_calibration = test_adc_calibration_init(ADC_UNIT_1, channel, atten, ADC_BITWIDTH_DEFAULT, &cali_handle);
     if (!do_calibration) {
-        ESP_LOGW(TAG, "calibration fail, jump calibration\n");
+        ESP_LOGW(TAG, "calibration fail, jump calibration");
     }
 
     //-------------ADC1 Channel Config---------------//

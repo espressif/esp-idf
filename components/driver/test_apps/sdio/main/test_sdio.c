@@ -161,14 +161,14 @@ static void init_essl(essl_handle_t *out_handle, const sdio_test_config_t *conf)
 
     switch (conf->sdio_mode) {
     case SDIO_4BIT:
-        ESP_LOGI(MASTER_TAG, "Probe using SD 4-bit...\n");
+        ESP_LOGI(MASTER_TAG, "Probe using SD 4-bit...");
         config = (sdmmc_host_t)SDMMC_HOST_DEFAULT();
         config.flags = SDMMC_HOST_FLAG_4BIT;
         config.max_freq_khz = conf->freq;
         init_sdmmc_host();
         break;
     case SDIO_1BIT:
-        ESP_LOGI(MASTER_TAG, "Probe using SD 1-bit...\n");
+        ESP_LOGI(MASTER_TAG, "Probe using SD 1-bit...");
         config = (sdmmc_host_t)SDMMC_HOST_DEFAULT();
         config.flags = SDMMC_HOST_FLAG_1BIT;
         config.max_freq_khz = conf->freq;
@@ -199,7 +199,7 @@ static void init_essl(essl_handle_t *out_handle, const sdio_test_config_t *conf)
         err = sdspi_host_init_device(&device_config, &sdspi_handle);
         TEST_ESP_OK(err);
 
-        ESP_LOGI(MASTER_TAG, "Probe using SPI...\n");
+        ESP_LOGI(MASTER_TAG, "Probe using SPI...");
 
         config = (sdmmc_host_t)SDSPI_HOST_DEFAULT();
         config.slot = sdspi_handle;

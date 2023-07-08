@@ -43,6 +43,12 @@ const ip6_addr_t *lwip_hook_nd6_get_gw(struct netif *netif, const ip6_addr_t *de
 #define LWIP_HOOK_ND6_GET_GW lwip_hook_nd6_get_gw
 #endif /* CONFIG_LWIP_HOOK_ND6_GET_GATEWAY... */
 
+#if defined(CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR_CUSTOM) || defined(CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR_DEFAULT)
+const ip_addr_t *lwip_hook_ip6_select_source_address(struct netif *netif, const ip6_addr_t *dest);
+
+#define LWIP_HOOK_IP6_SELECT_SRC_ADDR lwip_hook_ip6_select_source_address
+#endif /* CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR... */
+
 #if defined(CONFIG_LWIP_HOOK_NETCONN_EXT_RESOLVE_CUSTOM) || defined(CONFIG_LWIP_HOOK_NETCONN_EXT_RESOLVE_DEFAULT)
 int lwip_hook_netconn_external_resolve(const char *name, ip_addr_t *addr, u8_t addrtype, err_t *err);
 

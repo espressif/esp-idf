@@ -12,7 +12,9 @@ extern "C" {
 #endif
 
 //This is the ADC calibration value version burnt in efuse
-#define ESP_EFUSE_ADC_CALIB_VER     1
+#define ESP_EFUSE_ADC_CALIB_VER      1
+#define ESP_EFUSE_ADC_CALIB_VER_MIN  ESP_EFUSE_ADC_CALIB_VER
+#define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER
 
 /**
  * @brief Get the RTC calibration efuse version

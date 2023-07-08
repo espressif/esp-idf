@@ -51,7 +51,7 @@ def get_security(secver, username, password, pop='', verbose=False):
 async def get_transport(sel_transport, service_name):
     try:
         tp = None
-        if (sel_transport == 'softap'):
+        if (sel_transport in ['softap', 'httpd']):
             if service_name is None:
                 service_name = '192.168.4.1:80'
             tp = transport.Transport_HTTP(service_name)
@@ -188,8 +188,8 @@ async def scan_wifi_APs(sel_transport, tp, sec):
     APs = []
     group_channels = 0
     readlen = 100
-    if sel_transport == 'softap':
-        # In case of softAP we must perform the scan on individual channels, one by one,
+    if sel_transport in ['softap', 'httpd']:
+        # In case of softAP/httpd we must perform the scan on individual channels, one by one,
         # so that the Wi-Fi controller gets ample time to send out beacons (necessary to
         # maintain connectivity with authenticated stations. As scanning one channel at a
         # time will be slow, we can group more than one channels to be scanned in quick
@@ -329,14 +329,14 @@ async def main():
     parser.add_argument('--transport', required=True, dest='mode', type=str,
                         help=desc_format(
                             'Mode of transport over which provisioning is to be performed.',
-                            'This should be one of "softap", "ble" or "console"'))
+                            'This should be one of "softap", "ble", "console" (or "httpd" which is an alias of softap)'))
 
     parser.add_argument('--service_name', dest='name', type=str,
                         help=desc_format(
                             'This specifies the name of the provisioning service to connect to, '
                             'depending upon the mode of transport :',
-                            '\t- transport "ble"    : The BLE Device Name',
-                            '\t- transport "softap" : HTTP Server hostname or IP',
+                            '\t- transport "ble"          : The BLE Device Name',
+                            '\t- transport "softap/httpd" : HTTP Server hostname or IP',
                             '\t                       (default "192.168.4.1:80")'))
 
     parser.add_argument('--proto_ver', dest='version', type=str, default='',

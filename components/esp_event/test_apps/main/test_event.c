@@ -1538,12 +1538,12 @@ static void performance_test(bool dedicated_task)
 #endif // CONFIG_ESP_EVENT_LOOP_PROFILING
 }
 
-TEST_CASE("performance test - dedicated task", "[event]")
+TEST_CASE("performance test - dedicated task", "[event][qemu-ignore]")
 {
     performance_test(true);
 }
 
-TEST_CASE("performance test - no dedicated task", "[event]")
+TEST_CASE("performance test - no dedicated task", "[event][qemu-ignore]")
 {
     performance_test(false);
 }

@@ -26,8 +26,11 @@ Protocomm provides framework for various transports :
 
 Note that the client still needs to establish session (for protocomm_security1 and protocomm_security2) by performing the two way handshake. See :doc:`provisioning` for more details about the secure handshake logic.
 
+.. _enabling-protocomm-security-version:
+
 Enabling protocomm security version
 -----------------------------------
+
 Protocomm component provides project configuration menu to enable/disable support of respective security versions.
 The respective configuration options can be found as follows:
 

@@ -256,7 +256,7 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_MTU:
-        ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
+        ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d",
                  event->mtu.conn_handle,
                  event->mtu.channel_id,
                  event->mtu.value);
@@ -453,7 +453,7 @@ gatt_svr_init(const simple_ble_cfg_t *config)
 static void
 simple_ble_on_reset(int reason)
 {
-    ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
+    ESP_LOGE(TAG, "Resetting state; reason=%d", reason);
 }
 
 static void
@@ -470,7 +470,7 @@ simple_ble_on_sync(void)
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
-        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc);
+        ESP_LOGE(TAG, "error determining address type; rc=%d", rc);
         return;
     }
 

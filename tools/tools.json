@@ -92,7 +92,8 @@
         "esp32c3",
         "esp32c2",
         "esp32c6",
-        "esp32h2"
+        "esp32h2",
+        "esp32p4"
       ],
       "version_cmd": [
         "riscv32-esp-elf-gdb-no-python",
@@ -557,6 +558,11 @@
             "sha256": "6c6dd25477b2e758d4669da3774bf664d1f012442c880f17dfdf0339e9c3dae9",
             "size": 9591791,
             "url": "https://github.com/espressif/binutils-gdb/releases/download/esp32ulp-elf-v2.35_20220830/esp32ulp-elf-2.35_20220830-linux-armhf.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "beb9b6737c975369b6959007739c88f44eb5afbb220f40737071540b2c1a9064",
+            "size": 10596533,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp32ulp-elf-v2.35_20220830/esp32ulp-elf-2.35_20220830-linux-i686.tar.gz"
           },
           "macos": {
             "sha256": "5a952087b621ced16af1e375feac1371a61cb51ab7e7b44cbefb5afda2d573de",

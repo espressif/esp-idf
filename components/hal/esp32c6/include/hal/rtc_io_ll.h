@@ -47,6 +47,17 @@ typedef enum {
 } rtcio_ll_out_mode_t;
 
 /**
+ * @brief Select a RTC IOMUX function for the RTC IO
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param func Function to assign to the pin
+ */
+static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
+{
+    LP_IO.gpio[rtcio_num].mcu_sel = func;
+}
+
+/**
  * @brief Select the rtcio function.
  *
  * @note The RTC function must be selected before the pad analog function is enabled.
@@ -64,7 +75,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         sel_mask |= BIT(rtcio_num);
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
         //0:RTC FUNCTION 1,2,3:Reserved
-        LP_IO.gpio[rtcio_num].mcu_sel = RTCIO_LL_PIN_FUNC;
+        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_FUNC_DIGITAL) {
         // Clear the bit to use digital GPIO module
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);

@@ -329,5 +329,5 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%" PRId32 "\n",  esp_get_free_heap_size());
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%" PRId32,  esp_get_free_heap_size());
 }

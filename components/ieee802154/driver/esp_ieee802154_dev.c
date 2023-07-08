@@ -24,6 +24,13 @@
 #include "esp_ieee802154_timer.h"
 #include "hal/ieee802154_ll.h"
 #include "esp_attr.h"
+#include "esp_phy_init.h"
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#include "esp_pm.h"
+#include "esp_private/esp_clk.h"
+#include "esp_private/sleep_retention.h"
+#endif
 
 #define CCA_DETECTION_TIME 8
 
@@ -37,6 +44,8 @@ static uint8_t s_rx_index = 0;
 static uint8_t s_enh_ack_frame[128];
 static uint8_t s_recent_rx_frame_info_index;
 static portMUX_TYPE s_ieee802154_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+static esp_err_t ieee802154_sleep_init(void);
 
 static IRAM_ATTR void event_end_process(void)
 {
@@ -193,7 +202,11 @@ static bool stop_current_operation(void)
         break;
 
     case IEEE802154_STATE_IDLE:
-        // do nothing
+        ieee802154_ll_set_cmd(IEEE802154_CMD_STOP);
+        break;
+
+    case IEEE802154_STATE_SLEEP:
+        // Do nothing
         break;
 
     case IEEE802154_STATE_RX:
@@ -555,10 +568,12 @@ static IRAM_ATTR void ieee802154_exit_critical(void)
 void ieee802154_enable(void)
 {
     modem_clock_module_enable(ieee802154_periph.module);
+    s_ieee802154_state = IEEE802154_STATE_IDLE;
 }
 
 void ieee802154_disable(void)
 {
+    modem_clock_module_disable(ieee802154_periph.module);
     s_ieee802154_state = IEEE802154_STATE_DISABLE;
 }
 
@@ -589,11 +604,12 @@ esp_err_t ieee802154_mac_init(void)
 #endif
 
     memset(s_rx_frame, 0, sizeof(s_rx_frame));
-    s_ieee802154_state = IEEE802154_STATE_IDLE;
 
     // TODO: Add flags for IEEE802154 ISR allocating. TZ-102
     ret = esp_intr_alloc(ieee802154_periph.irq_id, 0, ieee802154_isr, NULL, NULL);
     ESP_RETURN_ON_FALSE(ret == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC init failed");
+
+    ESP_RETURN_ON_FALSE(ieee802154_sleep_init() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep init failed");
 
     return ret;
 }
@@ -716,12 +732,49 @@ esp_err_t ieee802154_receive_at(uint32_t time)
     return ESP_OK;
 }
 
+static esp_err_t ieee802154_sleep_init(void)
+{
+    esp_err_t err = ESP_OK;
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    #define N_REGS_IEEE802154() (((IEEE802154_MAC_DATE_REG - IEEE802154_REG_BASE) / 4) + 1)
+    const static sleep_retention_entries_config_t ieee802154_mac_regs_retention[] = {
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = ENTRY(3) },
+    };
+    err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
+    ESP_LOGI(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
+#endif
+    return err;
+}
+
+IRAM_ATTR void ieee802154_enter_sleep(void)
+{
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    esp_phy_disable();
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    sleep_retention_do_extra_retention(true);// backup
+#endif
+    ieee802154_disable(); // IEEE802154 CLOCK Disable
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+}
+
+IRAM_ATTR void ieee802154_wakeup(void)
+{
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    ieee802154_enable(); // IEEE802154 CLOCK Enable
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    sleep_retention_do_extra_retention(false);// restore
+#endif
+    esp_phy_enable();
+#endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
+}
+
 esp_err_t ieee802154_sleep(void)
 {
     ieee802154_enter_critical();
 
     stop_current_operation();
-    s_ieee802154_state = IEEE802154_STATE_IDLE;
+    s_ieee802154_state = IEEE802154_STATE_SLEEP;
 
     ieee802154_exit_critical();
     return ESP_OK;

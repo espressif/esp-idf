@@ -263,12 +263,12 @@ static int wifi_cmd_reg_rw(int argc, char **argv)
     }
     if (reg_rw_args.read->count) {
         addr = (uint32_t) reg_rw_args.read->dval[0];
-        ESP_LOGW(TAG, "reg read 0x%08lx : 0x%08lx\n", addr, REG_READ(addr));
+        ESP_LOGW(TAG, "reg read 0x%08lx : 0x%08lx", addr, REG_READ(addr));
     } else if (reg_rw_args.write->count && (uint32_t) reg_rw_args.value->count) {
         addr = (uint32_t) reg_rw_args.write->dval[0];
-        ESP_LOGW(TAG, "reg write 0x%8lx : 0x%8lx\n", addr, (uint32_t) reg_rw_args.value->dval[0]);
+        ESP_LOGW(TAG, "reg write 0x%8lx : 0x%8lx", addr, (uint32_t) reg_rw_args.value->dval[0]);
         REG_WRITE(addr, (uint32_t ) reg_rw_args.value->dval[0]);
-        ESP_LOGW(TAG, "reg read 0x%08lx : 0x%08lx\n", addr, REG_READ(addr));
+        ESP_LOGW(TAG, "reg read 0x%08lx : 0x%08lx", addr, REG_READ(addr));
     } else {
         printf("Input Error\n");
     }
@@ -734,18 +734,18 @@ static int wifi_cmd_inactive_time(int argc, char **argv)
     if ((mode & WIFI_MODE_AP) && inactive_time_args.val->count) {
         err = esp_wifi_set_inactive_time(ESP_IF_WIFI_AP, inactive_time_args.val->ival[0]);
         if (err != ESP_OK) {
-            ESP_LOGW(TAG, "set softAP inactive time to %d seconds, err:0x%x\n", inactive_time_args.val->ival[0], err);
+            ESP_LOGW(TAG, "set softAP inactive time to %d seconds, err:0x%x", inactive_time_args.val->ival[0], err);
         } else {
-            ESP_LOGI(TAG, "set softAP inactive time to %d seconds\n", inactive_time_args.val->ival[0]);
+            ESP_LOGI(TAG, "set softAP inactive time to %d seconds", inactive_time_args.val->ival[0]);
         }
     }
     //WIFI_MODE_STA or WIFI_MODE_APSTA
     if ((mode & WIFI_MODE_STA) && inactive_time_args.val->count) {
         err = esp_wifi_set_inactive_time(ESP_IF_WIFI_STA, inactive_time_args.val->ival[0]);
         if (err != ESP_OK) {
-            ESP_LOGW(TAG, "set STA inactive time to %d seconds, err:0x%x\n", inactive_time_args.val->ival[0], err);
+            ESP_LOGW(TAG, "set STA inactive time to %d seconds, err:0x%x", inactive_time_args.val->ival[0], err);
         } else {
-            ESP_LOGI(TAG, "set STA inactive time to %d seconds\n", inactive_time_args.val->ival[0]);
+            ESP_LOGI(TAG, "set STA inactive time to %d seconds", inactive_time_args.val->ival[0]);
         }
     }
     uint16_t secs = 0;

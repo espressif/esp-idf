@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -89,7 +89,7 @@ static int cmd_br_fdb_add(int argc, char **argv)
                         1, TAG, "Adding FDB entry failed");
 
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, mac_addr, ETH_ADDR_LEN, ESP_LOG_DEBUG);
-    ESP_LOGD(TAG, "portmask 0x%" PRIu64 "\n", port_mask);
+    ESP_LOGD(TAG, "portmask 0x%" PRIu64, port_mask);
     ESP_LOGI(TAG, "Bridge Config OK!");
 
     return 0;

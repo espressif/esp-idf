@@ -76,7 +76,7 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
     psa_status_t status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d\n", (int) status);
+        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d", (int) status);
         return esp_ret;
     }
 #endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3

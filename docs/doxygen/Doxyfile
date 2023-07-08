@@ -55,6 +55,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hidd_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hidh_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_l2cap_bt_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_sdp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
@@ -177,6 +178,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_systick_etm.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_task.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_now.h \
@@ -255,6 +257,7 @@ INPUT = \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \

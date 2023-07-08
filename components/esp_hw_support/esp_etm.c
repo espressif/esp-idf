@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,7 +145,7 @@ static esp_err_t etm_chan_register_to_group(esp_etm_channel_t *chan)
         } else {
             chan->chan_id = chan_id;
             chan->group = group;
-            break;;
+            break;
         }
     }
     ESP_RETURN_ON_FALSE(chan_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free channel");

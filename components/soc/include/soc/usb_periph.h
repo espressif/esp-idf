@@ -9,12 +9,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc_pins.h"
+#include "soc/soc_caps.h"
 #include "soc/gpio_sig_map.h"
+#if SOC_USB_OTG_SUPPORTED
 #include "soc/usb_reg.h"
 #include "soc/usb_types.h"
 #include "soc/usb_struct.h"
 #include "soc/usb_wrap_reg.h"
 #include "soc/usb_wrap_struct.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

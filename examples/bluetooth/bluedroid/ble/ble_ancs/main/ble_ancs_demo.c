@@ -243,7 +243,7 @@ static void periodic_timer_callback(void* arg)
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    ESP_LOGV(BLE_ANCS_TAG, "GAP_EVT, event %d\n", event);
+    ESP_LOGV(BLE_ANCS_TAG, "GAP_EVT, event %d", event);
 
     switch (event) {
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
@@ -640,7 +640,7 @@ void app_main(void)
     //register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if (ret) {
-        ESP_LOGE(BLE_ANCS_TAG, "%s gattc register error, error code = %x\n", __func__, ret);
+        ESP_LOGE(BLE_ANCS_TAG, "%s gattc register error, error code = %x", __func__, ret);
         return;
     }
 
@@ -652,7 +652,7 @@ void app_main(void)
 
     ret = esp_ble_gattc_app_register(PROFILE_A_APP_ID);
     if (ret) {
-        ESP_LOGE(BLE_ANCS_TAG, "%s gattc app register error, error code = %x\n", __func__, ret);
+        ESP_LOGE(BLE_ANCS_TAG, "%s gattc app register error, error code = %x", __func__, ret);
     }
 
     ret = esp_ble_gatt_set_local_mtu(500);

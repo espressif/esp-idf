@@ -119,4 +119,14 @@ void app_main(void)
     ESP_LOGI("New Ethernet MAC", "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x",
              derived_mac_addr[0], derived_mac_addr[1], derived_mac_addr[2],
              derived_mac_addr[3], derived_mac_addr[4], derived_mac_addr[5]);
+
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+    uint8_t mac_ext[2] = {0};
+    ESP_ERROR_CHECK(esp_read_mac(mac_ext, ESP_MAC_EFUSE_EXT));
+    ESP_LOGI("MAC_EXT", "0x%x, 0x%x", mac_ext[0], mac_ext[1]);
+    uint8_t eui64[8] = {0};
+    ESP_ERROR_CHECK(esp_read_mac(eui64, ESP_MAC_IEEE802154));
+    ESP_LOGI("IEEE802154", "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x",
+             eui64[0], eui64[1], eui64[2], eui64[3], eui64[4], eui64[5], eui64[6], eui64[7]);
+#endif
 }

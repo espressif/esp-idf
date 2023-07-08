@@ -27,3 +27,7 @@ entries:
         dac_continuous: dac_continuous_write_asynchronously (noflash)
     if MCPWM_CTRL_FUNC_IN_IRAM = y:
         mcpwm_cmpr: mcpwm_comparator_set_compare_value (noflash)
+    if LEDC_CTRL_FUNC_IN_IRAM = y:
+        ledc: ledc_stop (noflash)
+        ledc: ledc_update_duty (noflash)
+        ledc: _ledc_update_duty (noflash)

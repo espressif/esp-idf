@@ -6,15 +6,15 @@
 
 #pragma once
 
+#include <stdint.h>
 #include "soc/soc_caps.h"
-#include "soc/mcpwm_reg.h"
-#include "soc/mcpwm_struct.h"
 #include "soc/periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_MCPWM_SUPPORTED
 typedef struct {
     struct {
         const periph_module_t module; // Peripheral module
@@ -37,6 +37,7 @@ typedef struct {
 } mcpwm_signal_conn_t;
 
 extern const mcpwm_signal_conn_t mcpwm_periph_signals;
+#endif // SOC_MCPWM_SUPPORTED
 
 #ifdef __cplusplus
 }

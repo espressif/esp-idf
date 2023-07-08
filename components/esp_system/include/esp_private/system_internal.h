@@ -18,6 +18,14 @@ extern "C" {
  * @note This function should not be called from FreeRTOS applications.
  *       Use esp_restart instead.
  *
+ * This function executes a CPU reset (see TRM).
+ *
+ * CPU resets do not reset digital peripherals, but this function will
+ * manually reset a subset of digital peripherals (depending on target) before
+ * carrying out the CPU reset.
+ *
+ * Memory protection is also cleared by a CPU reset.
+ *
  * This is an internal function called by esp_restart. It is called directly
  * by the panic handler and brownout detector interrupt.
  */

@@ -27,23 +27,23 @@ esp_err_t esp_ble_helper_init(void)
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     err = esp_bt_controller_init(&bt_cfg);
     if (err) {
-        ESP_LOGE(TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(err));
+        ESP_LOGE(TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(err));
         return err;
     }
 
     err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (err) {
-        ESP_LOGE(TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(err));
+        ESP_LOGE(TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(err));
         return err;
     }
     err = esp_bluedroid_init();
     if (err) {
-        ESP_LOGE(TAG, "%s init bluetooth failed: %s\n", __func__, esp_err_to_name(err));
+        ESP_LOGE(TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(err));
         return err;
     }
     err = esp_bluedroid_enable();
     if (err) {
-        ESP_LOGE(TAG, "%s enable bluetooth failed: %s\n", __func__, esp_err_to_name(err));
+        ESP_LOGE(TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(err));
         return err;
     }
 

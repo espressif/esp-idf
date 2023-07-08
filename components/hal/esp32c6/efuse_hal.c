@@ -4,17 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sdkconfig.h"
 #include <sys/param.h>
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
+#include "esp_attr.h"
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x08 << (4 * (block))))
 #define ESP_EFUSE_BLOCK_ERROR_NUM_BITS(error_reg, block) ((error_reg) & (0x07 << (4 * (block))))
 
-uint32_t efuse_hal_get_major_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
 {
 #ifdef CONFIG_ESP_REV_NEW_CHIP_TEST
     return CONFIG_ESP_REV_MIN_FULL / 100;
@@ -23,7 +24,7 @@ uint32_t efuse_hal_get_major_chip_version(void)
 #endif
 }
 
-uint32_t efuse_hal_get_minor_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_minor_chip_version(void)
 {
 #ifdef CONFIG_ESP_REV_NEW_CHIP_TEST
     return CONFIG_ESP_REV_MIN_FULL % 100;

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 Bluetooth Power Save Example
 =================================
@@ -10,16 +10,20 @@ If the modem sleep mode is enabled, bluetooth will switch periodically between a
 In sleep state, RF, PHY and BB are turned off in order to reduce power consumption.
 
 This example contains five build configurations. For each configuration, a few configuration options are set:
+
 - `sdkconfig.defaults.esp32`: ESP32 uses 32kHz XTAL as low power clock in light sleep enabled.
-- `sdkconfig.40m.esp32c3`: ESP32C3 uses 32kHz XTAL as low power clock in light sleep enabled.
-- `sdkconfig.esp32c3_40m`: ESP32C3 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32c3`: ESP32C3 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.40m.esp32c3`: ESP32C3 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32c6`: ESP32C6 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.40m.esp32c6`: ESP32C6 uses main XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32s3`: ESP32S3 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.40m.esp32s3`: ESP32S3 uses main XTAL as low power clock in light sleep enabled.
+
 ## How to use example
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP32/ESP32-C3/ESP32-S3 development board.
+This example should be able to run on any commonly available ESP32/ESP32-C3/ESP32-S3/ESP32-C6 development board.
 
 ### Configure the project
 
@@ -33,9 +37,12 @@ idf.py menuconfig
    - `Component config > Power Management > [*] Support for power management`
 3. Configure FreeRTOS:
    - `Component config > FreeRTOS > Kernel`
-      -  `(1000) configTICK_RATE_HZ`
-      -  `[*] configUSE_TICKLESS_IDLE`
-      -  `(3)     configEXPECTED_IDLE_TIME_BEFORE_SLEEP`
+     -  `(1000) configTICK_RATE_HZ`
+     -  `[*] configUSE_TICKLESS_IDLE`
+     -  `(3)     configEXPECTED_IDLE_TIME_BEFORE_SLEEP`
+
+#### For ESP32/ESP32-C3/ESP32-S3 Chip:
+
 4. Enable power down MAC and baseband:
    - `Component config > PHY > [*] Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled`
 5. Enable bluetooth modem sleep:
@@ -46,6 +53,21 @@ idf.py menuconfig
    - `Component config > Bluetooth > Controller Options > MODEM SLEEP Options > Bluetooth modem sleep > Bluetooth Modem sleep Mode 1 > Bluetooth low power clock`
 7. Enable power up main XTAL during light sleep:
    - `Component config > Bluetooth > Controller Options > MODEM SLEEP Options > [*] power up main XTAL during light sleep`
+
+#### For ESP32-C6 Chip:
+
+4. Enable bluetooth modem sleep:
+   - `Component config > Bluetooth > Controller Options`
+     - `[*] Enable BLE sleep`
+5. Configure bluetooth low power clock:
+   - `Component config → Bluetooth → Controller Options → BLE low power clock source`
+   - Use main XTAL as low power clock source during light sleep:
+     - `(X) Use main XTAL as RTC clock source`
+   - Use RTC clock source as low power clock sourceduring light sleep:
+     - `(X) Use system RTC slow clock source`
+6. Power down flash during light sleep:
+   * `Component config → Hardware Settings → Sleep Config`
+     * `[*] Power down flash in light sleep when there is no SPIRAM`
 
 ### Build and Flash
 
@@ -101,12 +123,13 @@ I (463) NimBLE:
 
 ## Typical current consumption with management enabled
 
-|         | max current | modem sleep  | light sleep (main XTAL)| light sleep (32KHz XTAL)|
-|-------- | ----------- | ------------ | ---------------------- |------------------------ |
-| ESP32   | 231 mA      | 14.1 mA      | X                      | 1.9 mA                  |
-| ESP32C3 | 262 mA      | 12 mA        | 2.3 mA                 | 140 uA                  |
-| ESP32S3 | 240 mA      | 17.9 mA      | 3.3 mA                 | 230 uA                  |
-X: This feature is currently not supported.
+|                                             | max current | modem sleep | light sleep (main XTAL) | light sleep (32KHz XTAL) |
+| ------------------------------------------- | ----------- | ----------- | ----------------------- | ------------------------ |
+| ESP32                                       | 231 mA      | 14.1 mA     | X                       | 1.9 mA                   |
+| ESP32C3                                     | 262 mA      | 12 mA       | 2.3 mA                  | 140 uA                   |
+| ESP32S3                                     | 240 mA      | 17.9 mA     | 3.3 mA                  | 230 uA                   |
+| ESP32C6                                     | 240 mA      | 22 mA       | 3.3 mA                  | 34  uA                   |
+X: This feature is currently not supported. 
 
 ## Example Breakdown
 

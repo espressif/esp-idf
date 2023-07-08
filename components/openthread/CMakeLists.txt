@@ -58,6 +58,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/examples/apps/ncp")
 
         list(APPEND exclude_srcs
+            "src/port/esp_openthread_state.c"
             "openthread/examples/apps/ncp/main.c"
             "openthread/src/core/api/backbone_router_api.cpp"
             "openthread/src/core/api/child_supervision_api.cpp"
@@ -139,6 +140,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "src/esp_openthread_dns64.c")
     endif()
 
+    if(NOT CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+        list(APPEND exclude_srcs
+            "src/port/esp_openthread_sleep.c")
+    endif()
+
     if(CONFIG_OPENTHREAD_FTD)
         set(device_type "OPENTHREAD_FTD=1")
     elseif(CONFIG_OPENTHREAD_MTD)
@@ -174,7 +180,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        REQUIRES esp_netif lwip driver
                        LDFRAGMENTS linker.lf
                        PRIV_REQUIRES console esp_event esp_partition esp_timer
-                                     ieee802154 mbedtls spi_flash)
+                                     ieee802154 mbedtls nvs_flash)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)

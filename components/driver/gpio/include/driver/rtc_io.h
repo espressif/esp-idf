@@ -198,6 +198,18 @@ esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t st
  */
 esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
 
+/**
+ * @brief Select a RTC IOMUX function for the RTC IO
+ *
+ * @param gpio_num GPIO number
+ * @param func Function to assign to the pin
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func);
+
 #endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_RTCIO_HOLD_SUPPORTED

@@ -57,8 +57,8 @@ typedef struct xSTATIC_RINGBUFFER {
     /** @cond */    //Doxygen command to hide this structure from API Reference
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
-    BaseType_t xDummy3;
-    void *pvDummy4[11];
+    void *pvDummy3[11];
+    BaseType_t xDummy4;
     StaticList_t xDummy5[2];
     void * pvDummy6;
     portMUX_TYPE muxDummy;
@@ -512,6 +512,40 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
  * @param   xRingbuffer Ring buffer to show
  */
 void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer);
+
+/**
+ * @brief Retrieve the pointers to a statically created ring buffer
+ *
+ * @param[in] xRingbuffer Ring buffer
+ * @param[out] ppucRingbufferStorage Used to return a pointer to the queue's storage area buffer
+ * @param[out] ppxStaticRingbuffer Used to return a pointer to the queue's data structure buffer
+ * @return pdTRUE if buffers were retrieved, pdFALSE otherwise.
+ */
+BaseType_t xRingbufferGetStaticBuffer(RingbufHandle_t xRingbuffer, uint8_t **ppucRingbufferStorage, StaticRingbuffer_t **ppxStaticRingbuffer);
+
+/**
+ * @brief Creates a ring buffer with specific memory capabilities
+ *
+ * This function is similar to xRingbufferCreate(), except that it allows the
+ * memory allocated for the ring buffer to have specific capabilities (e.g.,
+ * MALLOC_CAP_INTERNAL).
+ *
+ * @note A queue created using this function must only be deleted using
+ * vRingbufferDeleteWithCaps()
+ * @param[in] xBufferSize Size of the buffer in bytes
+ * @param[in] xBufferType Type of ring buffer, see documentation.
+ * @param[in] uxMemoryCaps Memory capabilities of the queue's memory (see
+ * esp_heap_caps.h)
+ * @return Handle to the created ring buffer or NULL on failure.
+ */
+RingbufHandle_t xRingbufferCreateWithCaps(size_t xBufferSize, RingbufferType_t xBufferType, UBaseType_t uxMemoryCaps);
+
+/**
+ * @brief Deletes a ring buffer previously created using xRingbufferCreateWithCaps()
+ *
+ * @param xRingbuffer Ring buffer
+ */
+void vRingbufferDeleteWithCaps(RingbufHandle_t xRingbuffer);
 
 #ifdef __cplusplus
 }

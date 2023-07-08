@@ -28,7 +28,7 @@ static __attribute__((unused)) const char *ADC_TAG = "ADC";
 
 #define ADC_CHECK_RET(fun_ret) ({                  \
     if (fun_ret != ESP_OK) {                                \
-        ESP_LOGE(ADC_TAG,"%s:%d\n",__FUNCTION__,__LINE__);  \
+        ESP_LOGE(ADC_TAG,"%s:%d",__FUNCTION__,__LINE__);  \
         return ESP_FAIL;                                    \
     }                                                       \
 })

@@ -2,38 +2,15 @@ SPI Master Driver
 =================
 :link_to_translation:`zh_CN:[中文]`
 
-SPI Master driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals while they function as masters.
-
-
-Overview of {IDF_TARGET_NAME}'s SPI Peripherals
------------------------------------------------
-
-{IDF_TARGET_SPI2_CS_NUM:default="6", esp32="3"}
-{IDF_TARGET_SPI3_CS_NUM:default="3"}
-
-{IDF_TARGET_NAME} integrates {IDF_TARGET_SOC_SPI_PERIPH_NUM} SPI peripherals.
-
-- SPI0 and SPI1 are used internally to access the {IDF_TARGET_NAME}'s attached flash memory. Both controllers share the same SPI bus signals, and there is an arbiter to determine which can access the bus.
-
-  .. only:: esp32
-
-      There are quite a few limitations when using SPI Master driver on the SPI1 bus, see :ref:`spi_master_on_spi1_bus`.
-
-  .. only:: not esp32
-
-      Currently, SPI Master driver does not support SPI1 bus.
+SPI Master driver is a program that controls {IDF_TARGET_NAME}'s General Purpose SPI (GP-SPI) peripheral(s) when it functions as a master.
 
 .. only:: esp32
 
-    - SPI2 and SPI3 are general-purpose SPI controllers, sometimes referred to as HSPI and VSPI. They are open to users. SPI2 and SPI3 have independent bus signals with the same respective names. Each bus has three CS lines to drive up to a same number of SPI slaves.
+    .. note::
+    
+        SPI1 is not a GP-SPI. SPI Master driver also supports SPI1 but with quite a few limitations, see :ref:`spi_master_on_spi1_bus`.
 
-.. only:: esp32s2 or esp32s3
-
-    - SPI2 and SPI3 are general-purpose SPI controllers. They are open to users. SPI2 and SPI3 have independent signal buses with the same respective names. SPI2 has {IDF_TARGET_SPI2_CS_NUM} CS lines. SPI3 has {IDF_TARGET_SPI3_CS_NUM} CS lines. Each CS line can be used to drive one SPI slave.
-
-.. only:: esp32c3 or esp32c2 or esp32c6 or esp32h2
-
-    - SPI2 is a general-purpose SPI controller. It has an independent signal bus with the same name. The bus has {IDF_TARGET_SPI2_CS_NUM} CS lines to drive up to {IDF_TARGET_SPI2_CS_NUM} SPI slaves.
+For more hardware information about the GP-SPI peripheral(s), see *{IDF_TARGET_NAME} Technical Reference Manual* > *SPI Controller* [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
 
 Terminology
 -----------

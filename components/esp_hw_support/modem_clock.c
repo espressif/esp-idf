@@ -214,15 +214,34 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
     assert(refs >= 0);
 }
 
-void IRAM_ATTR modem_clock_wifi_mac_reset(void)
+void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 {
-#if SOC_WIFI_SUPPORTED
     modem_clock_context_t *ctx = MODEM_CLOCK_instance();
     portENTER_CRITICAL_SAFE(&ctx->lock);
-    //TODO: IDF-5713
-    modem_syscon_ll_reset_wifimac(ctx->hal->syscon_dev);
-    portEXIT_CRITICAL_SAFE(&ctx->lock);
+    switch (module)
+    {
+#if SOC_WIFI_SUPPORTED
+        case PERIPH_WIFI_MODULE:
+            modem_syscon_ll_reset_wifimac(ctx->hal->syscon_dev);
+            break;
 #endif
+#if SOC_BT_SUPPORTED
+        case PERIPH_BT_MODULE:
+            modem_syscon_ll_reset_btmac(ctx->hal->syscon_dev);
+            modem_syscon_ll_reset_btmac_apb(ctx->hal->syscon_dev);
+            modem_syscon_ll_reset_ble_timer(ctx->hal->syscon_dev);
+            modem_syscon_ll_reset_modem_sec(ctx->hal->syscon_dev);
+            break;
+#endif
+#if SOC_IEEE802154_SUPPORTED
+        case PERIPH_IEEE802154_MODULE:
+            modem_syscon_ll_reset_zbmac(ctx->hal->syscon_dev);
+            break;
+        default:
+#endif
+            assert(0);
+    }
+    portEXIT_CRITICAL_SAFE(&ctx->lock);
 }
 
 #define WIFI_CLOCK_DEPS       (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_FE) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_COEXIST))
@@ -299,7 +318,6 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
     MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = src;
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267
     /* The power domain of the low-power clock source required by the modem
      * module remains powered on during sleep */
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) ( \
@@ -316,9 +334,6 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
             : ESP_PD_DOMAIN_MAX);
     esp_sleep_pd_config(pd_domain, ESP_PD_OPTION_OFF);
     esp_sleep_pd_config(pu_domain, ESP_PD_OPTION_ON);
-#else
-    (void)last_src; // Only for bypass compile warning, delete if IDF-6267 resloved
-#endif //!CONFIG_IDF_TARGET_ESP32H2
 }
 
 void modem_clock_deselect_lp_clock_source(periph_module_t module)
@@ -351,7 +366,6 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = MODEM_CLOCK_LPCLK_SRC_INVALID;
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) ( \
               (last_src == MODEM_CLOCK_LPCLK_SRC_RC_FAST)  ? ESP_PD_DOMAIN_RC_FAST  \
             : (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) ? ESP_PD_DOMAIN_XTAL    \
@@ -359,7 +373,4 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
             : (last_src == MODEM_CLOCK_LPCLK_SRC_XTAL32K)   ? ESP_PD_DOMAIN_XTAL32K \
             : ESP_PD_DOMAIN_MAX);
     esp_sleep_pd_config(pd_domain, ESP_PD_OPTION_OFF);
-#else
-    (void)last_src; // Only for bypass compile warning, delete if IDF-6267 resloved
-#endif //!CONFIG_IDF_TARGET_ESP32H2
 }

@@ -9,12 +9,12 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
-#include "soc/pcnt_reg.h"
-#include "soc/pcnt_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_PCNT_SUPPORTED
 
 typedef struct {
     struct {
@@ -30,6 +30,8 @@ typedef struct {
 } pcnt_signal_conn_t;
 
 extern const pcnt_signal_conn_t pcnt_periph_signals;
+
+#endif // SOC_PCNT_SUPPORTED
 
 #ifdef __cplusplus
 }

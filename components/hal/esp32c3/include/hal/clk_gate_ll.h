@@ -75,6 +75,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_BT_LC_EN;
     case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_TSENS_CLK_EN;
+    case PERIPH_ASSIST_DEBUG_MODULE:
+        return SYSTEM_CLK_EN_ASSIST_DEBUG;
     default:
         return 0;
     }
@@ -150,6 +152,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         }
     case PERIPH_DS_MODULE:
         return SYSTEM_CRYPTO_DS_RST;
+    case PERIPH_ASSIST_DEBUG_MODULE:
+        return SYSTEM_RST_EN_ASSIST_DEBUG;
     default:
         return 0;
     }
@@ -174,6 +178,10 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_GDMA_MODULE:
     case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
+
+    case PERIPH_ASSIST_DEBUG_MODULE:
+        return SYSTEM_CPU_PERI_CLK_EN_REG;
+
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
     }
@@ -198,6 +206,10 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_GDMA_MODULE:
     case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
+
+    case PERIPH_ASSIST_DEBUG_MODULE:
+        return SYSTEM_CPU_PERI_RST_EN_REG;
+
     default:
         return SYSTEM_PERIP_RST_EN0_REG;
     }

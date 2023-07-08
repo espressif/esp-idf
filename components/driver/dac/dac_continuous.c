@@ -134,7 +134,7 @@ static esp_err_t s_dac_alloc_dma_desc(dac_continuous_handle_t handle)
         /* Allocate DMA descriptor */
         handle->desc[cnt] = &descs[cnt];
         ESP_GOTO_ON_FALSE(handle->desc[cnt], ESP_ERR_NO_MEM, err, TAG,  "failed to allocate dma descriptor");
-        ESP_LOGD(TAG, "desc[%d] %p\n", cnt, handle->desc[cnt]);
+        ESP_LOGD(TAG, "desc[%d] %p", cnt, handle->desc[cnt]);
         /* Allocate DMA buffer */
         handle->bufs[cnt] = (uint8_t *) heap_caps_calloc(1, handle->cfg.buf_size, DAC_DMA_ALLOC_CAPS);
         ESP_GOTO_ON_FALSE(handle->bufs[cnt], ESP_ERR_NO_MEM, err, TAG,  "failed to allocate dma buffer");

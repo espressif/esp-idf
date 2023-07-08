@@ -213,6 +213,14 @@ test_mkuf2:
     - cd ${IDF_PATH}/tools/test_mkuf2
     - ./test_mkuf2.py
 
+test_sbom:
+  extends:
+    - .host_test_template
+    - .rules:patterns:sbom
+  script:
+    - cd ${IDF_PATH}/tools/test_sbom
+    - pytest
+
 test_autocomplete:
   extends:
     - .host_test_template
@@ -301,14 +309,17 @@ test_pytest_qemu:
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32c3]
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
-      --target esp32
+      --target $IDF_TARGET
       --pytest-apps
       -m qemu
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - pytest
-      --target esp32
+      --target $IDF_TARGET
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml

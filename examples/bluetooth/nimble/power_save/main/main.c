@@ -379,7 +379,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         return BLE_GAP_REPEAT_PAIRING_RETRY;
 
     case BLE_GAP_EVENT_PASSKEY_ACTION:
-        ESP_LOGI(tag, "PASSKEY_ACTION_EVENT started \n");
+        ESP_LOGI(tag, "PASSKEY_ACTION_EVENT started ");
         struct ble_sm_io pkey = {0};
         int key = 0;
 
@@ -388,7 +388,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             pkey.passkey = 123456; // This is the passkey to be entered on peer
             ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
-            ESP_LOGI(tag, "ble_sm_inject_io result: %d\n", rc);
+            ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         } else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
             ESP_LOGI(tag, "Passkey on device's display: %" PRIu32 , event->passkey.params.numcmp);
             ESP_LOGI(tag, "Accept or reject the passkey through console in this format -> key Y or key N");
@@ -400,7 +400,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                 ESP_LOGE(tag, "Timeout! Rejecting the key");
             }
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
-            ESP_LOGI(tag, "ble_sm_inject_io result: %d\n", rc);
+            ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         } else if (event->passkey.params.action == BLE_SM_IOACT_OOB) {
             static uint8_t tem_oob[16] = {0};
             pkey.action = event->passkey.params.action;
@@ -408,7 +408,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                 pkey.oob[i] = tem_oob[i];
             }
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
-            ESP_LOGI(tag, "ble_sm_inject_io result: %d\n", rc);
+            ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         } else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
             ESP_LOGI(tag, "Enter the passkey through console in this format-> key 123456");
             pkey.action = event->passkey.params.action;
@@ -419,7 +419,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                 ESP_LOGE(tag, "Timeout! Passing 0 as the key");
             }
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
-            ESP_LOGI(tag, "ble_sm_inject_io result: %d\n", rc);
+            ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         }
         return 0;
 

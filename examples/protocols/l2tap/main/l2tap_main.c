@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -129,7 +129,7 @@ static void echo_l2tap_task(void *pvParameters)
             // Send the echo message
             ssize_t ret = write(eth_tap_fd, &echo_msg, len);
             if (ret == -1) {
-                ESP_LOGE(TAG, "L2 TAP fd %d write error: errno: %d\n", eth_tap_fd, errno);
+                ESP_LOGE(TAG, "L2 TAP fd %d write error: errno: %d", eth_tap_fd, errno);
                 break;
             }
         } else {
@@ -177,7 +177,7 @@ static void nonblock_l2tap_echo_task(void *pvParameters)
                 // Send the echo message
                 ssize_t ret = write(eth_tap_fd, &echo_msg, len);
                 if (ret == -1) {
-                    ESP_LOGE(TAG, "L2 TAP fd %d write error: errno: %d\n", eth_tap_fd, errno);
+                    ESP_LOGE(TAG, "L2 TAP fd %d write error: errno: %d", eth_tap_fd, errno);
                     break;
                 }
             } else {
@@ -223,7 +223,7 @@ static void hello_tx_l2tap_task(void *pvParameters)
         // Send the Hello frame
         ssize_t ret = write(eth_tap_fd, &hello_msg, ETH_HEADER_LEN + strlen(hello_msg.payload));
         if (ret == -1) {
-            ESP_LOGE(TAG, "L2 TAP fd %d write error: errno: %d\n", eth_tap_fd, errno);
+            ESP_LOGE(TAG, "L2 TAP fd %d write error: errno: %d", eth_tap_fd, errno);
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(3000));

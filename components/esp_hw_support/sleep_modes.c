@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,8 +32,10 @@
 #if SOC_LP_AON_SUPPORTED
 #include "hal/lp_aon_hal.h"
 #else
+#if !CONFIG_IDF_TARGET_ESP32H2
 #include "hal/rtc_cntl_ll.h"
 #include "hal/rtc_hal.h"
+#endif
 #endif
 
 #include "driver/uart.h"
@@ -81,14 +83,26 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
 #include "hal/lp_timer_hal.h"
-#include "esp_private/esp_pmu.h"
-#include "esp_private/sleep_sys_periph.h"
-#include "esp_private/sleep_clock.h"
+#include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#endif
+
+#if SOC_LP_TIMER_SUPPORTED
+#include "hal/lp_timer_hal.h"
+#endif
+
+#if SOC_PMU_SUPPORTED
+#include "esp_private/esp_pmu.h"
+#include "esp_private/sleep_sys_periph.h"
+#include "esp_private/sleep_clock.h"
+#endif
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#include "esp_private/sleep_retention.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -245,6 +259,7 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32H2
 #if SOC_RTC_FAST_MEM_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
@@ -350,6 +365,7 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
 #endif // SOC_RTC_FAST_MEM_SUPPORTED
+#endif // !CONFIG_IDF_TARGET_ESP32H2
 
 void esp_deep_sleep(uint64_t time_in_us)
 {
@@ -386,7 +402,7 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
 // [refactor-todo] provide target logic for body of uart functions below
 static void IRAM_ATTR flush_uarts(void)
 {
-    for (int i = 0; i < SOC_UART_NUM; ++i) {
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
 #ifdef CONFIG_IDF_TARGET_ESP32
         esp_rom_uart_tx_wait_idle(i);
 #else
@@ -405,7 +421,7 @@ static uint32_t s_suspended_uarts_bmap = 0;
 static IRAM_ATTR void suspend_uarts(void)
 {
     s_suspended_uarts_bmap = 0;
-    for (int i = 0; i < SOC_UART_NUM; ++i) {
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
 #ifndef CONFIG_IDF_TARGET_ESP32
         if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
             continue;
@@ -426,7 +442,7 @@ static IRAM_ATTR void suspend_uarts(void)
 
 static void IRAM_ATTR resume_uarts(void)
 {
-    for (int i = 0; i < SOC_UART_NUM; ++i) {
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
         if (s_suspended_uarts_bmap & 0x1) {
             uart_ll_force_xon(i);
         }
@@ -497,6 +513,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+        sleep_retention_do_system_retention(true);
+#endif
     }
 
     // TODO: IDF-7370
@@ -510,6 +529,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+    sleep_retention_do_system_retention(false);
+#endif
     sar_periph_ctrl_power_enable();
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
@@ -527,7 +549,7 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 
 inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp);
 
-static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mode)
+static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mode)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
@@ -551,15 +573,15 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
-    //turn down MSPI speed
-    mspi_timing_change_speed_mode_cache_safe(true);
-
     // Sleep UART prepare
     if (deep_sleep) {
         flush_uarts();
     } else {
         should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
     }
+
+    // Will switch to XTAL turn down MSPI speed
+    mspi_timing_change_speed_mode_cache_safe(true);
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
@@ -618,13 +640,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 #endif
 
-    uint32_t reject_triggers = 0;
-    if (!deep_sleep) {
-        /* Light sleep, enable sleep reject for faster return from this function,
-         * in case the wakeup is already triggerred.
-         */
-        reject_triggers = (s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK) | sleep_modem_reject_triggers();
-    }
+    /* Enable sleep reject for faster return from this function,
+     * in case the wakeup is already triggerred.
+     */
+    uint32_t reject_triggers = (s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK) | sleep_modem_reject_triggers();
 
     //Append some flags in addition to power domains
     uint32_t sleep_flags = pd_flags;
@@ -677,6 +696,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
             esp_sleep_isolate_digital_gpio();
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
             esp_set_deep_sleep_wake_stub_default_entry();
             // Enter Deep Sleep
@@ -697,21 +717,26 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
             result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-
+#else  // !CONFIG_IDF_TARGET_ESP32H2
+            result = ESP_OK;
+#endif // !CONFIG_IDF_TARGET_ESP32H2
         } else {
-
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
-                rtcio_ll_force_hold_enable(SPI_CS0_GPIO_NUM);
+                gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
             }
 #endif
+#endif
 
+#if SOC_PMU_SUPPORTED
 #if SOC_PM_CPU_RETENTION_BY_SW
             if (pd_flags & PMU_SLEEP_PD_CPU) {
                 result = esp_sleep_cpu_retention(pmu_sleep_start, s_config.wakeup_triggers, reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             } else {
+#endif
                 result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             }
 #else
@@ -720,9 +745,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 
             /* Unhold the SPI CS pin */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
-                rtcio_ll_force_hold_disable(SPI_CS0_GPIO_NUM);
+                gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
             }
+#endif
 #endif
         }
 
@@ -743,8 +770,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
 
-    //restore MSPI speed
-    mspi_timing_change_speed_mode_cache_safe(false);
+    if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
+        // Turn up MSPI speed if switch to PLL
+        mspi_timing_change_speed_mode_cache_safe(false);
+    }
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
@@ -754,7 +783,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     // re-enable UART output
     resume_uarts();
     s_lightsleep_cnt++;
-    return result;
+    return result ? ESP_ERR_SLEEP_REJECT : ESP_OK;
 }
 
 inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp)
@@ -808,7 +837,6 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 #else
     uint32_t force_pd_flags = RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | RTC_SLEEP_PD_INT_8M | RTC_SLEEP_PD_XTAL;
 #endif
-
     /**
      * If all wireless modules share one power domain, we name this power domain "modem".
      * If wireless modules have their own power domain, we give these power domains separate
@@ -827,7 +855,9 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 #endif
 
     // Enter sleep
-    esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP);
+    if (esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP) == ESP_ERR_SLEEP_REJECT) {
+        ESP_EARLY_LOGW(TAG, "Deep sleep request is rejected");
+    }
 
     // Because RTC is in a slower clock domain than the CPU, it
     // can take several CPU cycles for the sleep mode to start.
@@ -850,7 +880,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
                                        uint32_t flash_enable_time_us)
 {
     // Enter sleep
-    uint32_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP);
+    esp_err_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP);
 
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
@@ -867,7 +897,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         esp_rom_delay_us(flash_enable_time_us);
     }
 
-    return reject ? ESP_ERR_SLEEP_REJECT : ESP_OK;
+    return reject;
 }
 
 /**
@@ -1390,15 +1420,20 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
 {
+#if CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
+    return 0;
+#else
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO) {
         return 0;
     }
 
     return rtc_hal_gpio_get_wakeup_status();
+#endif // !CONFIG_IDF_TARGET_ESP32H2
 }
 
 static void gpio_deep_sleep_wakeup_prepare(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
     for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++) {
         if (((1ULL << gpio_idx) & s_config.gpio_wakeup_mask) == 0) {
             continue;
@@ -1414,6 +1449,7 @@ static void gpio_deep_sleep_wakeup_prepare(void)
     }
     // Clear state from previous wakeup
     rtc_hal_gpio_clear_wakeup_status();
+#endif // !CONFIG_IDF_TARGET_ESP32H2
 }
 
 esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode)
@@ -1534,9 +1570,6 @@ esp_err_t esp_sleep_disable_bt_wakeup(void)
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
-#if CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5645
-    return ESP_SLEEP_WAKEUP_UNDEFINED;
-#else
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -1590,7 +1623,6 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
-#endif
 }
 
 esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_t option)
@@ -1599,6 +1631,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
         return ESP_ERR_INVALID_ARG;
     }
     portENTER_CRITICAL_SAFE(&s_config.lock);
+
     int refs = (option == ESP_PD_OPTION_ON)  ? s_config.domain[domain].refs++ \
              : (option == ESP_PD_OPTION_OFF) ? --s_config.domain[domain].refs \
              : s_config.domain[domain].refs;
@@ -1609,6 +1642,21 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     assert(refs >= 0);
     return ESP_OK;
 }
+
+/**
+ * The modules in the CPU and modem power domains still depend on the top power domain.
+ * To be safe, the CPU and Modem power domains must also be powered off and saved when
+ * the TOP is powered off.
+ */
+#if SOC_PM_SUPPORT_TOP_PD
+static inline bool top_domain_pd_allowed(void) {
+    return (cpu_domain_pd_allowed() && \
+            clock_domain_pd_allowed() && \
+            peripheral_domain_pd_allowed() && \
+            modem_domain_pd_allowed() && \
+            s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON);
+}
+#endif
 
 static uint32_t get_power_down_flags(void)
 {
@@ -1671,11 +1719,6 @@ static uint32_t get_power_down_flags(void)
     }
 #endif // SOC_PM_SUPPORT_RTC_PERIPH_PD
 
-#if SOC_PM_SUPPORT_CPU_PD
-    if (!cpu_domain_pd_allowed()) {
-        s_config.domain[ESP_PD_DOMAIN_CPU].pd_option = ESP_PD_OPTION_ON;
-    }
-#endif
     /**
      * VDD_SDIO power domain shall be kept on during the light sleep
      * when CONFIG_ESP_SLEEP_POWER_DOWN_FLASH is not set and off when it is set.
@@ -1692,23 +1735,7 @@ static uint32_t get_power_down_flags(void)
 #endif
     }
 #endif
-#if SOC_PM_SUPPORT_MODEM_PD
-    if (!modem_domain_pd_allowed()) {
-        s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option = ESP_PD_OPTION_ON;
-    }
-#endif
 
-/**
- * The modules in the CPU and modem power domains still depend on the top power domain.
- * To be safe, the CPU and Modem power domains must also be powered off and saved when
- * the TOP is powered off.
- */
-#if SOC_PM_SUPPORT_TOP_PD
-    if (!cpu_domain_pd_allowed() || !clock_domain_pd_allowed() ||
-        !peripheral_domain_pd_allowed() || !modem_domain_pd_allowed()) {
-        s_config.domain[ESP_PD_DOMAIN_TOP].pd_option = ESP_PD_OPTION_ON;
-    }
-#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option = ESP_PD_OPTION_OFF;
@@ -1745,7 +1772,7 @@ static uint32_t get_power_down_flags(void)
 #endif
 
 #if SOC_PM_SUPPORT_CPU_PD
-    if (s_config.domain[ESP_PD_DOMAIN_CPU].pd_option != ESP_PD_OPTION_ON) {
+    if ((s_config.domain[ESP_PD_DOMAIN_CPU].pd_option != ESP_PD_OPTION_ON) && cpu_domain_pd_allowed()) {
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
 #endif
@@ -1768,13 +1795,13 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_XTAL;
     }
 #if SOC_PM_SUPPORT_TOP_PD
-    if (s_config.domain[ESP_PD_DOMAIN_TOP].pd_option != ESP_PD_OPTION_ON) {
+    if ((s_config.domain[ESP_PD_DOMAIN_TOP].pd_option != ESP_PD_OPTION_ON) && top_domain_pd_allowed()) {
         pd_flags |= PMU_SLEEP_PD_TOP;
     }
 #endif
 
 #if SOC_PM_SUPPORT_MODEM_PD
-    if (s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) {
+    if ((s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) && modem_domain_pd_allowed()) {
         pd_flags |= RTC_SLEEP_PD_MODEM;
     }
 #endif

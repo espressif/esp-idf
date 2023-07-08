@@ -63,12 +63,15 @@ esp_err_t nvs_sec_provider_register_flash_enc(const nvs_sec_config_flash_enc_t *
 
     sec_scheme->scheme_data = calloc(1, sizeof(nvs_sec_config_flash_enc_t));
     if (sec_scheme->scheme_data == NULL) {
+        free(sec_scheme);
         return ESP_ERR_NO_MEM;
     }
     memcpy(sec_scheme->scheme_data, (void *)sec_scheme_cfg, sizeof(nvs_sec_config_flash_enc_t));
 
     esp_err_t err = nvs_flash_register_security_scheme(sec_scheme);
     if (err != ESP_OK) {
+        free(sec_scheme->scheme_data);
+        free(sec_scheme);
         return err;
     }
 
@@ -230,6 +233,7 @@ esp_err_t nvs_sec_provider_register_hmac(const nvs_sec_config_hmac_t *sec_scheme
 
     sec_scheme->scheme_data = calloc(1, sizeof(nvs_sec_config_hmac_t));
     if (sec_scheme->scheme_data == NULL) {
+        free(sec_scheme);
         return ESP_ERR_NO_MEM;
     }
 
@@ -237,6 +241,8 @@ esp_err_t nvs_sec_provider_register_hmac(const nvs_sec_config_hmac_t *sec_scheme
 
     esp_err_t err = nvs_flash_register_security_scheme(sec_scheme);
     if (err != ESP_OK) {
+        free(sec_scheme->scheme_data);
+        free(sec_scheme);
         return err;
     }
 

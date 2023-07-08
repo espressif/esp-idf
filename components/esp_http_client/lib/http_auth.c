@@ -88,7 +88,7 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
         goto _digest_exit;
     }
 
-    ESP_LOGD(TAG, "%s %s %s %s\r\n", "Digest", username, auth_data->realm, password);
+    ESP_LOGD(TAG, "%s %s %s %s", "Digest", username, auth_data->realm, password);
     if (strcasecmp(auth_data->algorithm, "md5-sess") == 0) {
         if (md5_printf(ha1, "%s:%s:%016llx", ha1, auth_data->nonce, auth_data->cnonce) <= 0) {
             goto _digest_exit;

@@ -441,7 +441,8 @@ Application Examples
 
   * Ethernet basic example: :example:`ethernet/basic`
   * Ethernet iperf example: :example:`ethernet/iperf`
-  * Ethernet to Wi-Fi AP "router": :example:`ethernet/eth2ap`
+  * Ethernet to Wi-Fi AP "router": :example:`network/eth2ap`
+  * Wi-Fi station to Ethernet "bridge": :example:`network/sta2eth`
   * Most protocol examples should also work for Ethernet: :example:`protocols`
 
 .. ------------------------------ Advanced Topics -------------------------------

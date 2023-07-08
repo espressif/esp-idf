@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 import pytest
-from test_build_system_helpers import IdfPyFunc, append_to_file, replace_in_file
+from test_build_system_helpers import EnvDict, IdfPyFunc, append_to_file, replace_in_file
 
 
 def test_component_extra_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -83,3 +83,46 @@ def test_component_properties_are_set(idf_py: IdfPyFunc, test_app_copy: Path) ->
                                                                 'message(STATUS SRCS:${srcs})']))
     ret = idf_py('reconfigure')
     assert 'SRCS:{}'.format(test_app_copy / 'main' / 'build_test_app.c') in ret.stdout, 'Component properties should be set'
+
+
+def test_component_overriden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict) -> None:
+    logging.info('Getting component overriden dir')
+    (test_app_copy / 'components' / 'hal').mkdir(parents=True)
+    (test_app_copy / 'components' / 'hal' / 'CMakeLists.txt').write_text('\n'.join([
+        'idf_component_get_property(overriden_dir ${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)',
+        'message(STATUS overriden_dir:${overriden_dir})']))
+    ret = idf_py('reconfigure')
+    idf_path = Path(default_idf_env.get('IDF_PATH'))
+    # no registration, overrides registration as well
+    assert 'overriden_dir:{}'.format(idf_path / 'components' / 'hal') in ret.stdout, 'Failed to get overriden dir'
+    append_to_file((test_app_copy / 'components' / 'hal' / 'CMakeLists.txt'), '\n'.join([
+        '',
+        'idf_component_register(KCONFIG ${overriden_dir}/Kconfig)',
+        'idf_component_get_property(kconfig ${COMPONENT_NAME} KCONFIG)',
+        'message(STATUS kconfig:${overriden_dir}/Kconfig)']))
+    ret = idf_py('reconfigure', check=False)
+    assert 'kconfig:{}'.format(idf_path / 'components' / 'hal') in ret.stdout, 'Failed to verify original `main` directory'
+
+
+def test_components_prioritizer_over_extra_components_dir(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Project components prioritized over EXTRA_COMPONENT_DIRS')
+    (test_app_copy / 'extra_dir' / 'my_component').mkdir(parents=True)
+    (test_app_copy / 'extra_dir' / 'my_component' / 'CMakeLists.txt').write_text('idf_component_register()')
+    replace_in_file(test_app_copy / 'CMakeLists.txt',
+                    '# placeholder_before_include_project_cmake',
+                    'set(EXTRA_COMPONENT_DIRS extra_dir)')
+    ret = idf_py('reconfigure')
+    assert str(test_app_copy / 'extra_dir' / 'my_component') in ret.stdout, 'Unable to find component specified in EXTRA_COMPONENT_DIRS'
+    (test_app_copy / 'components' / 'my_component').mkdir(parents=True)
+    (test_app_copy / 'components' / 'my_component' / 'CMakeLists.txt').write_text('idf_component_register()')
+    ret = idf_py('reconfigure')
+    assert str(test_app_copy / 'components' / 'my_component') in ret.stdout, 'Project components should be prioritized over EXTRA_COMPONENT_DIRS'
+
+
+def test_exclude_components_not_passed(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Components in EXCLUDE_COMPONENTS not passed to idf_component_manager')
+    idf_py('create-component', '-C', 'components', 'to_be_excluded')
+    (test_app_copy / 'components' / 'to_be_excluded' / 'idf_component.yml').write_text('invalid syntax..')
+    ret = idf_py('reconfigure', check=False)
+    assert ret.returncode == 2, 'Reconfigure should have failed due to invalid syntax in idf_component.yml'
+    idf_py('-DEXCLUDE_COMPONENTS=to_be_excluded', 'reconfigure')

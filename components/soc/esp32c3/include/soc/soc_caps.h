@@ -16,7 +16,7 @@
  * If this file is changed the script will automatically run the script
  * and generate the kconfig variables as part of the pre-commit hooks.
  *
- * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32c3/include/soc/'`
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/esp32c3/include/soc/'`
  *
  * For more information see `tools/gen_soc_caps_kconfig/README.md`
  *
@@ -62,6 +62,8 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_MEMPROT_SUPPORTED           1
 #define SOC_BOD_SUPPORTED               1
+#define SOC_CLK_TREE_SUPPORTED          1
+#define SOC_ASSIST_DEBUG_SUPPORTED      1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -365,6 +367,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C3 has 2 UARTs
 #define SOC_UART_NUM                (2)
+#define SOC_UART_HP_NUM             (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 

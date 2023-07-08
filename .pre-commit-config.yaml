@@ -152,13 +152,24 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
           - ruamel.yaml
+      - id: submodule-sbom-hash-check
+        name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
+        entry: python tools/test_sbom/test_submodules.py
+        language: python
+        always_run: true
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
         files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
   - repo: https://github.com/espressif/check-copyright/
-    rev: v1.0.1
+    rev: v1.0.2
     hooks:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
+  - repo: https://github.com/espressif/conventional-precommit-linter
+    rev: v1.2.0
+    hooks:
+      - id: conventional-precommit-linter
+        stages: [commit-msg]

@@ -104,7 +104,7 @@ static void start_wifi_as_sta(void)
 static void stop_wifi(void)
 {
     esp_event_loop_delete_default();
-    ESP_LOGI(TAG, "Stop wifi\n");
+    ESP_LOGI(TAG, "Stop wifi");
     TEST_ESP_OK(esp_wifi_stop());
     TEST_ESP_OK(esp_wifi_deinit());
     esp_wifi_clear_default_wifi_driver_and_handlers(wifi_netif);

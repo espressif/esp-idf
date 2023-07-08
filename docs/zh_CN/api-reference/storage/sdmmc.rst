@@ -54,7 +54,7 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
     用于 eMMC 芯片的 API
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    从协议层的角度而言，eMMC 存储芯片与 SD 存储卡相同。尽管 eMMC 是芯片，不具备卡的外形，但由于协议相似 (`sdmmc_card_t`, `sdmmc_card_init`)，用于 SD 卡的一些概念同样适用于 eMMC 芯片。注意，eMMC 芯片不可通过 SPI 使用，因此它与 SD API 主机驱动不兼容。
+    从协议层的角度而言，eMMC 存储芯片与 SD 存储卡相同。尽管 eMMC 是芯片，不具备卡的外形，但由于协议相似 (`sdmmc_card_t`, `sdmmc_card_init`)，用于 SD 卡的一些概念同样适用于 eMMC 芯片。注意，eMMC 芯片不可通过 SPI 使用，因此它与 SD SPI 主机驱动不兼容。
 
     如需初始化 eMMC 内存并执行读/写操作，请参照上一章节 SD 卡操作步骤。
 

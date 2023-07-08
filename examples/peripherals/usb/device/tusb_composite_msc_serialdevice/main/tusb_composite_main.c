@@ -58,7 +58,7 @@ static void file_operations(void)
     bool directory_exists = stat(directory, &s) == 0;
     if (!directory_exists) {
         if (mkdir(directory, 0775) != 0) {
-            ESP_LOGE(TAG, "mkdir failed with errno: %s\n", strerror(errno));
+            ESP_LOGE(TAG, "mkdir failed with errno: %s", strerror(errno));
         }
     }
 

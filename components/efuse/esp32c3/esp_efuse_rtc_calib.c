@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,8 @@ int esp_efuse_rtc_calib_get_ver(void)
 
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
-    assert(version == ESP_EFUSE_ADC_CALIB_VER);
+    assert((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
+           (version <= ESP_EFUSE_ADC_CALIB_VER_MAX));
     (void) adc_unit;
     const esp_efuse_desc_t** init_code_efuse;
     assert(atten < 4);
@@ -51,7 +52,8 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
     (void)adc_unit;    //On esp32c3,  V1 we don't have calibration data for ADC2, using the efuse data of ADC1
     const esp_efuse_desc_t** cal_vol_efuse;
     uint32_t calib_vol_expected_mv;
-    if (version != ESP_EFUSE_ADC_CALIB_VER) {
+    if ((version < ESP_EFUSE_ADC_CALIB_VER_MIN) ||
+        (version > ESP_EFUSE_ADC_CALIB_VER_MAX)) {
         return ESP_ERR_INVALID_ARG;
     }
     if (atten >= 4) {

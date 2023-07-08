@@ -35,6 +35,10 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c")
 
+    if(CONFIG_SOC_LP_PERIPHERALS_SUPPORTED)
+        list(APPEND srcs "lp_periph_ctrl.c")
+    endif()
+
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
     endif()
@@ -120,10 +124,7 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_IDF_TARGET_ESP32H2)
         list(REMOVE_ITEM srcs
-                "sleep_cpu.c"         # TODO: IDF-6267
-                "sleep_modes.c"       # TODO: IDF-6267
-                "sleep_wake_stub.c"   # TODO: IDF-6267
-                "sleep_gpio.c"        # TODO: IDF-6267
+                "sleep_wake_stub.c"   # TODO: IDF-6268
             )
     endif()
 else()

@@ -73,7 +73,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
                 && get_name_from_eir(param->disc_res.prop[i].val, peer_bdname, &peer_bdname_len)){
                 if (strcmp(peer_bdname, remote_device_name) == 0) {
                     memcpy(peer_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
-                    ESP_LOGI(BT_HF_TAG, "Found a target device address: \n");
+                    ESP_LOGI(BT_HF_TAG, "Found a target device address:");
                     esp_log_buffer_hex(BT_HF_TAG, peer_addr, ESP_BD_ADDR_LEN);
                     ESP_LOGI(BT_HF_TAG, "Found a target device name: %s", peer_bdname);
                     printf("Connect.\n");
@@ -164,22 +164,22 @@ void app_main(void)
     esp_err_t err;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if ((err = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-        ESP_LOGE(BT_HF_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(BT_HF_TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((err = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
-        ESP_LOGE(BT_HF_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(BT_HF_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((err = esp_bluedroid_init()) != ESP_OK) {
-        ESP_LOGE(BT_HF_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(BT_HF_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((err = esp_bluedroid_enable()) != ESP_OK) {
-        ESP_LOGE(BT_HF_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(BT_HF_TAG, "%s enable bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 

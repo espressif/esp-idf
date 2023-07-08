@@ -272,39 +272,39 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
 
     switch (event) {
     case ESP_BT_L2CAP_INIT_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_INIT_EVT: status:%d\n", l2cap_param->init.status);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_INIT_EVT: status:%d", l2cap_param->init.status);
         if (l2cap_param->init.status == ESP_BT_L2CAP_SUCCESS) {
             esp_bt_l2cap_vfs_register();
         }
         break;
     case ESP_BT_L2CAP_UNINIT_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_UNINIT_EVT: status:%d\n", l2cap_param->uninit.status);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_UNINIT_EVT: status:%d", l2cap_param->uninit.status);
         break;
     case ESP_BT_L2CAP_OPEN_EVT:
         if (l2cap_param->open.status == ESP_BT_L2CAP_SUCCESS) {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d, fd = %d, tx mtu = %"PRId32", remote_address:%s\n", l2cap_param->open.status,
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d, fd = %d, tx mtu = %"PRId32", remote_address:%s", l2cap_param->open.status,
                     l2cap_param->open.fd, l2cap_param->open.tx_mtu, bda2str(l2cap_param->open.rem_bda, bda_str, sizeof(bda_str)));
             l2cap_wr_task_start_up(l2cap_write_handle, l2cap_param->open.fd);
         } else {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d\n", l2cap_param->open.status);
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d", l2cap_param->open.status);
         }
         break;
     case ESP_BT_L2CAP_CLOSE_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CLOSE_EVT: status:%d\n", l2cap_param->close.status);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CLOSE_EVT: status:%d", l2cap_param->close.status);
         break;
     case ESP_BT_L2CAP_CL_INIT_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CL_INIT_EVT: status:%d\n", l2cap_param->cl_init.status);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CL_INIT_EVT: status:%d", l2cap_param->cl_init.status);
         break;
     case ESP_BT_L2CAP_START_EVT:
         if (l2cap_param->start.status == ESP_BT_L2CAP_SUCCESS) {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d, hdl:0x%"PRIx32", sec_id:0x%x\n",
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d, hdl:0x%"PRIx32", sec_id:0x%x",
                 l2cap_param->start.status, l2cap_param->start.handle, l2cap_param->start.sec_id);
         } else {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d\n", l2cap_param->start.status);
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d", l2cap_param->start.status);
         }
         break;
     case ESP_BT_L2CAP_SRV_STOP_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CLOSE_EVT: status:%d, psm = 0x%x\n", l2cap_param->srv_stop.status, l2cap_param->srv_stop.psm);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CLOSE_EVT: status:%d, psm = 0x%x", l2cap_param->srv_stop.status, l2cap_param->srv_stop.psm);
         break;
     default:
         break;
@@ -337,7 +337,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
 
     switch (event) {
     case ESP_SDP_INIT_EVT:
-        ESP_LOGI(SDP_TAG, "ESP_SDP_INIT_EVT: status:%d\n", sdp_param->init.status);
+        ESP_LOGI(SDP_TAG, "ESP_SDP_INIT_EVT: status:%d", sdp_param->init.status);
         if (sdp_param->init.status == ESP_SDP_SUCCESS) {
             record.hdr.type = ESP_SDP_TYPE_RAW;
             record.hdr.uuid.len = sizeof(UUID_UNKNOWN);
@@ -351,20 +351,20 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
         }
         break;
     case ESP_SDP_DEINIT_EVT:
-        ESP_LOGI(SDP_TAG, "ESP_SDP_DEINIT_EVT: status:%d\n", sdp_param->deinit.status);
+        ESP_LOGI(SDP_TAG, "ESP_SDP_DEINIT_EVT: status:%d", sdp_param->deinit.status);
         break;
     case ESP_SDP_SEARCH_COMP_EVT:
-        ESP_LOGI(SDP_TAG, "ESP_SDP_SEARCH_COMP_EVT: status:%d\n", sdp_param->search.status);
+        ESP_LOGI(SDP_TAG, "ESP_SDP_SEARCH_COMP_EVT: status:%d", sdp_param->search.status);
         if (sdp_param->search.status == ESP_SDP_SUCCESS) {
-            ESP_LOGI(SDP_TAG, "Remote device address: %s\n", bda2str(sdp_param->search.remote_addr, bda_str, sizeof(bda_str)));
-            ESP_LOGI(SDP_TAG, "Remote device record count: %d\n", sdp_param->search.record_count);
-            ESP_LOGI(SDP_TAG, "Remote device rfcomm channel number: %"PRId32"\n", sdp_param->search.records->hdr.rfcomm_channel_number);
-            ESP_LOGI(SDP_TAG, "Remote device l2cap psm: 0x%04"PRIx32"\n", sdp_param->search.records->hdr.l2cap_psm);
+            ESP_LOGI(SDP_TAG, "Remote device address: %s", bda2str(sdp_param->search.remote_addr, bda_str, sizeof(bda_str)));
+            ESP_LOGI(SDP_TAG, "Remote device record count: %d", sdp_param->search.record_count);
+            ESP_LOGI(SDP_TAG, "Remote device rfcomm channel number: %"PRId32, sdp_param->search.records->hdr.rfcomm_channel_number);
+            ESP_LOGI(SDP_TAG, "Remote device l2cap psm: 0x%04"PRIx32, sdp_param->search.records->hdr.l2cap_psm);
             esp_bt_l2cap_connect(sec_mask, sdp_param->search.records->hdr.l2cap_psm, sdp_param->search.remote_addr);
         }
         break;
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
-        ESP_LOGI(SDP_TAG, "ESP_SDP_CREATE_RECORD_COMP_EVT: status:%d\n", sdp_param->create_record.status);
+        ESP_LOGI(SDP_TAG, "ESP_SDP_CREATE_RECORD_COMP_EVT: status:%d", sdp_param->create_record.status);
         if (sdp_param->create_record.status == ESP_SDP_SUCCESS) {
             esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
@@ -372,7 +372,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
         }
         break;
     case ESP_SDP_REMOVE_RECORD_COMP_EVT:
-        ESP_LOGI(SDP_TAG, "ESP_SDP_REMOVE_RECORD_COMP_EVT: status:%d\n", sdp_param->remove_record.status);
+        ESP_LOGI(SDP_TAG, "ESP_SDP_REMOVE_RECORD_COMP_EVT: status:%d", sdp_param->remove_record.status);
         break;
     default:
         break;
@@ -393,49 +393,49 @@ void app_main(void)
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bluedroid_init()) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bluedroid_enable()) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s enable bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     bt_app_task_start_up();
 
     if ((ret = esp_bt_gap_register_callback(esp_bt_gap_cb)) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s gap register failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s gap register failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bt_l2cap_register_callback(esp_bt_l2cap_cb)) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s l2cap register failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s l2cap register failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_bt_l2cap_init()) != ESP_OK) {
-        ESP_LOGE(L2CAP_TAG, "%s l2cap init failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(L2CAP_TAG, "%s l2cap init failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_sdp_register_callback(esp_sdp_cb)) != ESP_OK) {
-        ESP_LOGE(SDP_TAG, "%s sdp register failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(SDP_TAG, "%s sdp register failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     if ((ret = esp_sdp_init()) != ESP_OK) {
-        ESP_LOGE(SDP_TAG, "%s sdp init failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(SDP_TAG, "%s sdp init failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 

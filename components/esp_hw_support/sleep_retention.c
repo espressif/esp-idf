@@ -21,7 +21,6 @@
 #include "sdkconfig.h"
 #include "esp_pmu.h"
 
-
 static __attribute__((unused)) const char *TAG = "sleep";
 
 /**
@@ -528,5 +527,22 @@ void sleep_retention_do_extra_retention(bool backup_or_restore)
     int refs = s_retention.extra_refs;
     _lock_release_recursive(&s_retention.lock);
     assert(refs >= 0 && refs <= cnt_modules);
+}
+#endif
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+void IRAM_ATTR sleep_retention_do_system_retention(bool backup_or_restore)
+{
+    #define SYSTEM_LINK_NUM (0)
+    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY &&
+        s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
+        // Set extra linked list head pointer to hardware
+        pau_regdma_set_system_link_addr(s_retention.lists[s_retention.highpri].entries[SYSTEM_LINK_NUM]);
+        if (backup_or_restore) {
+            pau_regdma_trigger_system_link_backup();
+        } else {
+            pau_regdma_trigger_system_link_restore();
+        }
+    }
 }
 #endif

@@ -13,7 +13,6 @@
 
 #include "driver/touch_pad.h"
 #include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 
 static const char *TAG = "Touch pad";
 

@@ -36,33 +36,33 @@ TEST_CASE("MSPI: Test_SPI0_PSRAM", "[mspi]")
 {
     printf("----------SPI0 PSRAM Test----------\n");
 
-    uint8_t *psram_wr_buf = (uint8_t *)heap_caps_malloc(LENGTH_PER_TIME, MALLOC_CAP_32BIT | MALLOC_CAP_SPIRAM);
-    if (!psram_wr_buf) {
+    uint8_t *psram_rd_buf = (uint8_t *)heap_caps_malloc(LENGTH_PER_TIME, MALLOC_CAP_32BIT | MALLOC_CAP_SPIRAM);
+    if (!psram_rd_buf) {
         printf("no memory\n");
         abort();
     }
 
-    uint32_t *psram_rd_buf = (uint32_t *)heap_caps_malloc(SPI0_PSRAM_TEST_LEN, MALLOC_CAP_32BIT | MALLOC_CAP_SPIRAM);
-    if (!psram_rd_buf) {
+    uint8_t *psram_wr_buf = (uint8_t *)heap_caps_malloc(SPI0_PSRAM_TEST_LEN, MALLOC_CAP_32BIT | MALLOC_CAP_SPIRAM);
+    if (!psram_wr_buf) {
         printf("no memory\n");
         abort();
     }
 
     srand(399);
     for (int i = 0; i < SPI0_PSRAM_TEST_LEN / LENGTH_PER_TIME; i++) {
-        for (int j = 0; j < sizeof(psram_wr_buf); j++) {
-            psram_wr_buf[j] = rand();
+        for (int j = 0; j < sizeof(psram_rd_buf); j++) {
+            psram_rd_buf[j] = rand();
         }
-        memcpy(psram_rd_buf + i * LENGTH_PER_TIME, psram_wr_buf, LENGTH_PER_TIME);
+        memcpy(psram_wr_buf + i * LENGTH_PER_TIME, psram_rd_buf, LENGTH_PER_TIME);
 
-        if (memcmp(psram_rd_buf + i * LENGTH_PER_TIME, psram_wr_buf, LENGTH_PER_TIME) != 0) {
-            free(psram_rd_buf);
+        if (memcmp(psram_wr_buf + i * LENGTH_PER_TIME, psram_rd_buf, LENGTH_PER_TIME) != 0) {
             free(psram_wr_buf);
+            free(psram_rd_buf);
             TEST_FAIL_MESSAGE("SPI0 PSRAM Test Fail");
         }
     }
-    free(psram_rd_buf);
     free(psram_wr_buf);
+    free(psram_rd_buf);
     printf(DRAM_STR("----------SPI0 PSRAM Test Success----------\n\n"));
 }
 #endif

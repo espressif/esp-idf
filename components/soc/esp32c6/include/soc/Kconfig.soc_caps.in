@@ -183,7 +183,19 @@ config SOC_LP_AON_SUPPORTED
     bool
     default y
 
+config SOC_LP_PERIPHERALS_SUPPORTED
+    bool
+    default y
+
 config SOC_LP_I2C_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_TREE_SUPPORTED
+    bool
+    default y
+
+config SOC_ASSIST_DEBUG_SUPPORTED
     bool
     default y
 
@@ -1061,11 +1073,23 @@ config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
 
 config SOC_UART_NUM
     int
+    default 3
+
+config SOC_UART_HP_NUM
+    int
     default 2
+
+config SOC_UART_LP_NUM
+    int
+    default 1
 
 config SOC_UART_FIFO_LEN
     int
     default 128
+
+config SOC_LP_UART_FIFO_LEN
+    int
+    default 16
 
 config SOC_UART_BITRATE_MAX
     int
@@ -1144,6 +1168,10 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
     default y
 
 config SOC_PM_SUPPORT_TOP_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_HP_AON_PD
     bool
     default y
 

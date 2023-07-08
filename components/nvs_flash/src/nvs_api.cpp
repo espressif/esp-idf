@@ -309,7 +309,7 @@ extern "C" void nvs_close(nvs_handle_t handle)
 extern "C" esp_err_t nvs_erase_key(nvs_handle_t c_handle, const char* key)
 {
     Lock lock;
-    ESP_LOGD(TAG, "%s %s\r\n", __func__, key);
+    ESP_LOGD(TAG, "%s %s", __func__, key);
     NVSHandleSimple *handle;
     auto err = nvs_find_ns_handle(c_handle, &handle);
     if (err != ESP_OK) {
@@ -322,7 +322,7 @@ extern "C" esp_err_t nvs_erase_key(nvs_handle_t c_handle, const char* key)
 extern "C" esp_err_t nvs_erase_all(nvs_handle_t c_handle)
 {
     Lock lock;
-    ESP_LOGD(TAG, "%s\r\n", __func__);
+    ESP_LOGD(TAG, "%s", __func__);
     NVSHandleSimple *handle;
     auto err = nvs_find_ns_handle(c_handle, &handle);
     if (err != ESP_OK) {

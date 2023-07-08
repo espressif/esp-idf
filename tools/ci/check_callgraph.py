@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Based on cally.py (https://github.com/chaudron/cally/), Copyright 2018, Eelco Chaudron
-# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -357,7 +357,7 @@ def main() -> None:
         type=argparse.FileType('r'),
     )
     parser.add_argument(
-        '--rtl-dir', help='Directory where to look for RTL files, recursively'
+        '--rtl-dirs', help='comma-separated list of directories where to look for RTL files, recursively'
     )
     parser.add_argument(
         '--elf-file',
@@ -397,9 +397,12 @@ def main() -> None:
         with open(args.rtl_list, 'r') as rtl_list_file:
             rtl_list = [line.strip() for line in rtl_list_file]
     else:
-        if not args.rtl_dir:
-            raise RuntimeError('Either --rtl-list or --rtl-dir must be specified')
-        rtl_list = list(find_files_recursive(args.rtl_dir, '.expand'))
+        if not args.rtl_dirs:
+            raise RuntimeError('Either --rtl-list or --rtl-dirs must be specified')
+        rtl_dirs = args.rtl_dirs.split(',')
+        rtl_list = []
+        for dir in rtl_dirs:
+            rtl_list.extend(list(find_files_recursive(dir, '.expand')))
 
     if not rtl_list:
         raise RuntimeError('No RTL files specified')

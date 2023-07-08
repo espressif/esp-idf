@@ -65,11 +65,10 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
         portEXIT_CRITICAL(&group->spinlock);
         if (timer_id < 0) {
             gptimer_release_group_handle(group);
-            group = NULL;
         } else {
             timer->timer_id = timer_id;
             timer->group = group;
-            break;;
+            break;
         }
     }
     ESP_RETURN_ON_FALSE(timer_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free timer");

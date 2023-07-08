@@ -524,7 +524,7 @@ void dispose_stats(t_stats *p_stats)
 
 void print_stats(const t_stats *p_stats)
 {
-    ESP_LOGI(TAG, "read_ops:%06lu write_ops:%06lu erase_ops:%06lu read_bytes:%06lu write_bytes:%06lu total_time:%06lu\n",
+    ESP_LOGI(TAG, "read_ops:%06lu write_ops:%06lu erase_ops:%06lu read_bytes:%06lu write_bytes:%06lu total_time:%06lu",
              p_stats->read_ops,
              p_stats->write_ops,
              p_stats->erase_ops,

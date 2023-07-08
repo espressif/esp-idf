@@ -109,5 +109,7 @@ I (926) example: Display LVGL Scatter Chart
 * Low PCLK frequency
   * Enable `CONFIG_EXAMPLE_USE_BOUNCE_BUFFER`, which will make the LCD controller fetch data from internal SRAM (instead of the PSRAM), but at the cost of increasing CPU usage.
   * Enable `CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and `CONFIG_SPIRAM_RODATA` can also help if the you're not using the bounce buffer mode. These two configurations can save some **SPI0** bandwidth from being consumed by ICache.
+* Why the RGB timing is correct but the LCD doesn't show anything?
+  * Please read the datasheet of the IC used by your LCD module, and check if it needs a special initialization sequence. The initialization is usually done by sending some specific SPI commands and parameters to the IC. After the initialization, the LCD will be ready to receive RGB data. For simplicity, this example only works out of the box for those LCD modules which don't need extra initialization.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

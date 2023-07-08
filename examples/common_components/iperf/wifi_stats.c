@@ -148,7 +148,7 @@ int wifi_cmd_get_tx_statistics(int argc, char **argv)
 {
     uint8_t i, h, j, k;
 
-    ESP_LOGW(TAG, "Get tx statistics\n");
+    ESP_LOGW(TAG, "Get tx statistics");
     esp_test_tx_tb_statistics_t tb_stats = { 0, };               //32 bytes
     esp_test_tx_statistics_t tx_stats = { 0, };                  //136 bytes
     esp_test_tx_fail_statistics_t tx_fail[TEST_TX_FAIL_MAX] = { 0, }; //TEST_TX_FAIL_MAX * 164 bytes

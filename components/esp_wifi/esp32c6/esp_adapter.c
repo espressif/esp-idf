@@ -28,6 +28,7 @@
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "esp_private/esp_modem_clock.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
@@ -297,9 +298,7 @@ static void IRAM_ATTR timer_arm_wrapper(void *timer, uint32_t tmout, bool repeat
 
 static void wifi_reset_mac_wrapper(void)
 {
-    // TODO: IDF-5713
-    modem_clock_wifi_mac_reset();
-    ESP_LOGW(TAG, "wifi_reset_mac_wrapper() has not been implemented yet");
+    modem_clock_module_mac_reset(PERIPH_WIFI_MODULE);
 }
 
 static void wifi_clock_enable_wrapper(void)
@@ -394,13 +393,6 @@ static IRAM_ATTR uint32_t coex_status_get_wrapper(void)
     return coex_status_get();
 #else
     return 0;
-#endif
-}
-
-static void coex_condition_set_wrapper(uint32_t type, bool dissatisfy)
-{
-#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
-    coex_condition_set(type, dissatisfy);
 #endif
 }
 
@@ -633,7 +625,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_enable = coex_enable_wrapper,
     ._coex_disable = coex_disable_wrapper,
     ._coex_status_get = coex_status_get_wrapper,
-    ._coex_condition_set = coex_condition_set_wrapper,
     ._coex_wifi_request = coex_wifi_request_wrapper,
     ._coex_wifi_release = coex_wifi_release_wrapper,
     ._coex_wifi_channel_set = coex_wifi_channel_set_wrapper,

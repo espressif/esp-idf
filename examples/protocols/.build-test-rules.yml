@@ -1,11 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/protocols/coap_client:
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: running this test on single platform is sufficient for coverage
-
-
 examples/protocols/esp_http_client:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
@@ -99,10 +93,6 @@ examples/protocols/l2tap:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
-
-examples/protocols/modbus:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/mqtt/ssl:
   disable_test:

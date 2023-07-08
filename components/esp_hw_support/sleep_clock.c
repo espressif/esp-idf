@@ -27,8 +27,11 @@ static __attribute__((unused)) const char *TAG = "sleep_clock";
 
 esp_err_t sleep_clock_system_retention_init(void)
 {
+#if CONFIG_IDF_TARGET_ESP32C6
     #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
-
+#elif CONFIG_IDF_TARGET_ESP32H2
+    #define N_REGS_PCR()    (((PCR_PWDET_SAR_CLK_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
+#endif
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* pcr */
     };
@@ -68,21 +71,21 @@ bool IRAM_ATTR clock_domain_pd_allowed(void)
     const uint32_t modules = sleep_retention_get_modules();
     const uint32_t mask = (const uint32_t) (
             SLEEP_RETENTION_MODULE_CLOCK_SYSTEM
-#if CONFIG_MAC_BB_PD
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
           | SLEEP_RETENTION_MODULE_CLOCK_MODEM
 #endif
           );
     return ((modules & mask) == mask);
 }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP || CONFIG_MAC_BB_PD
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP || CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
 ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, BIT(0), 106)
 {
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     sleep_clock_system_retention_init();
 #endif
 
-#if CONFIG_MAC_BB_PD
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
     sleep_clock_modem_retention_init();
 #endif
     return ESP_OK;

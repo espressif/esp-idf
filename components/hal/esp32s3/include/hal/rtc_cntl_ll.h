@@ -9,7 +9,7 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -57,7 +57,7 @@ FORCE_INLINE_ATTR uint32_t rtc_cntl_ll_ext1_get_wakeup_pins(void)
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_set_tagmem_retention_link_addr(uint32_t link_addr)
 {
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL1_REG, APB_CTRL_RETENTION_TAG_LINK_ADDR, link_addr);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL1_REG, SYSCON_RETENTION_TAG_LINK_ADDR, link_addr);
 }
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_enable_tagmem_retention(void)
@@ -69,18 +69,18 @@ FORCE_INLINE_ATTR void rtc_cntl_ll_enable_tagmem_retention(void)
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_enable_icache_tagmem_retention(uint32_t start_point, uint32_t vld_size, uint32_t size)
 {
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL2_REG, APB_CTRL_RET_ICACHE_START_POINT, start_point);
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL2_REG, APB_CTRL_RET_ICACHE_VLD_SIZE, vld_size);
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL2_REG, APB_CTRL_RET_ICACHE_SIZE, size);
-    REG_SET_BIT(APB_CTRL_RETENTION_CTRL2_REG, APB_CTRL_RET_ICACHE_ENABLE);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL2_REG, SYSCON_RET_ICACHE_START_POINT, start_point);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL2_REG, SYSCON_RET_ICACHE_VLD_SIZE, vld_size);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL2_REG, SYSCON_RET_ICACHE_SIZE, size);
+    REG_SET_BIT(SYSCON_RETENTION_CTRL2_REG, SYSCON_RET_ICACHE_ENABLE);
 }
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_enable_dcache_tagmem_retention(uint32_t start_point, uint32_t vld_size, uint32_t size)
 {
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL3_REG, APB_CTRL_RET_DCACHE_START_POINT, start_point);
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL3_REG, APB_CTRL_RET_DCACHE_VLD_SIZE, vld_size);
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL3_REG, APB_CTRL_RET_DCACHE_SIZE, size);
-    REG_SET_BIT(APB_CTRL_RETENTION_CTRL3_REG, APB_CTRL_RET_DCACHE_ENABLE);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL3_REG, SYSCON_RET_DCACHE_START_POINT, start_point);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL3_REG, SYSCON_RET_DCACHE_VLD_SIZE, vld_size);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL3_REG, SYSCON_RET_DCACHE_SIZE, size);
+    REG_SET_BIT(SYSCON_RETENTION_CTRL3_REG, SYSCON_RET_DCACHE_ENABLE);
 }
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_disable_tagmem_retention(void)
@@ -92,17 +92,17 @@ FORCE_INLINE_ATTR void rtc_cntl_ll_disable_tagmem_retention(void)
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_disable_icache_tagmem_retention(void)
 {
-    REG_CLR_BIT(APB_CTRL_RETENTION_CTRL2_REG, APB_CTRL_RET_ICACHE_ENABLE);
+    REG_CLR_BIT(SYSCON_RETENTION_CTRL2_REG, SYSCON_RET_ICACHE_ENABLE);
 }
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_disable_dcache_tagmem_retention(void)
 {
-    REG_CLR_BIT(APB_CTRL_RETENTION_CTRL3_REG, APB_CTRL_RET_DCACHE_ENABLE);
+    REG_CLR_BIT(SYSCON_RETENTION_CTRL3_REG, SYSCON_RET_DCACHE_ENABLE);
 }
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_set_cpu_retention_link_addr(uint32_t link_addr)
 {
-    REG_SET_FIELD(APB_CTRL_RETENTION_CTRL_REG, APB_CTRL_RETENTION_CPU_LINK_ADDR, link_addr);
+    REG_SET_FIELD(SYSCON_RETENTION_CTRL_REG, SYSCON_RETENTION_CPU_LINK_ADDR, link_addr);
 }
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_enable_cpu_retention_clock(void)

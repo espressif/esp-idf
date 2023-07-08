@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,7 +145,14 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20230113
+/**
+ * @brief Get version number from chip revision number
+ *
+ * @return uint8_t version_number
+ */
+uint8_t esp_ble_get_chip_rev_version(void);
+
+#define CONFIG_VERSION  0x20230629
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -203,10 +210,10 @@ typedef struct {
     uint8_t cca_drop_mode;
     int8_t cca_low_tx_pwr;
     uint8_t main_xtal_freq;
+    uint8_t version_num;
     uint8_t ignore_wl_for_direct_adv;
     uint32_t config_magic;
 } esp_bt_controller_config_t;
-
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                           \
     .config_version = CONFIG_VERSION,                                                   \
@@ -255,6 +262,7 @@ typedef struct {
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
     .ble_scan_classify_filter_enable         = 0,                                       \
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
+    .version_num                = esp_ble_get_chip_rev_version(),                       \
     .ignore_wl_for_direct_adv   = 0,                                                    \
     .config_magic = CONFIG_MAGIC,                                                       \
 }

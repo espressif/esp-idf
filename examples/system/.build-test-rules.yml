@@ -6,12 +6,6 @@ examples/system/app_trace_basic:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
-examples/system/base_mac_address:
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: cannot pass, IDF-6809
-
 examples/system/console/advanced:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
@@ -77,12 +71,6 @@ examples/system/ipc/ipc_isr:
     - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s3"
       temporary: true
       reason: the other targets are not tested yet
-
-examples/system/light_sleep:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: target(s) not supported yet
 
 examples/system/ota/advanced_https_ota:
   disable:
@@ -178,6 +166,14 @@ examples/system/ulp/lp_core/gpio:
 examples/system/ulp/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
+  enable:
+    - if: SOC_UART_LP_NUM > 0
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_print:
+  enable:
+    - if: SOC_UART_LP_NUM > 0
 
 examples/system/ulp/ulp_fsm/ulp:
   disable:

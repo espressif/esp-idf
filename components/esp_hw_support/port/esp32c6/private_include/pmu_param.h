@@ -62,6 +62,8 @@ typedef struct {
 
 const pmu_lp_system_power_param_t* pmu_lp_system_power_param_default(pmu_lp_mode_t mode);
 
+
+
 typedef struct {
     pmu_lp_bias_reg_t       bias;
     pmu_lp_regulator0_reg_t regulator0;
@@ -69,6 +71,128 @@ typedef struct {
 } pmu_lp_system_analog_param_t;
 
 const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mode_t mode);
+
+
+
+/* Following software configuration instance type from pmu_struct.h used for the PMU state machine in sleep flow*/
+typedef union {
+    struct {
+        uint32_t reserved0    : 21;
+        uint32_t vdd_spi_pd_en: 1;
+        uint32_t mem_dslp     : 1;
+        uint32_t mem_pd_en    : 4;
+        uint32_t wifi_pd_en   : 1;
+        uint32_t reserved1    : 1;
+        uint32_t cpu_pd_en    : 1;
+        uint32_t aon_pd_en    : 1;
+        uint32_t top_pd_en    : 1;
+    };
+    struct {
+        uint32_t reserved2    : 26;
+        uint32_t i2c_iso_en   : 1;
+        uint32_t i2c_retention: 1;
+        uint32_t xpd_bb_i2c   : 1;
+        uint32_t xpd_bbpll_i2c: 1;
+        uint32_t xpd_bbpll    : 1;
+        uint32_t reserved3    : 1;
+    };
+    struct {
+        uint32_t reserved4    : 31;
+        uint32_t xpd_xtal     : 1;
+    };
+    uint32_t val;
+} pmu_hp_power_t;
+
+typedef union {
+    struct {
+        uint32_t reserved0 : 30;
+        uint32_t mem_dslp  : 1;
+        uint32_t peri_pd_en: 1;
+    };
+    struct {
+        uint32_t reserved1  : 28;
+        uint32_t xpd_xtal32k: 1;
+        uint32_t xpd_rc32k  : 1;
+        uint32_t xpd_fosc   : 1;
+        uint32_t pd_osc     : 1;
+    };
+    struct {
+        uint32_t reserved2  : 31;
+        uint32_t xpd_xtal   : 1;
+    };
+    uint32_t val;
+} pmu_lp_power_t;
+
+typedef struct {
+    struct {
+        uint32_t reserved0 : 25;
+        uint32_t xpd_bias  : 1;
+        uint32_t dbg_atten : 4;
+        uint32_t pd_cur    : 1;
+        uint32_t bias_sleep: 1;
+    };
+    struct {
+        uint32_t reserved1      : 16;
+        uint32_t slp_mem_xpd    : 1;
+        uint32_t slp_logic_xpd  : 1;
+        uint32_t xpd            : 1;
+        uint32_t slp_mem_dbias  : 4;
+        uint32_t slp_logic_dbias: 4;
+        uint32_t dbias          : 5;
+    };
+    struct {
+        uint32_t reserved2: 8;
+        uint32_t drv_b    : 24;
+    };
+} pmu_hp_analog_t;
+
+typedef struct {
+    struct {
+        uint32_t reserved0 : 25;
+        uint32_t xpd_bias  : 1;
+        uint32_t dbg_atten : 4;
+        uint32_t pd_cur    : 1;
+        uint32_t bias_sleep: 1;
+    };
+    struct {
+        uint32_t reserved1: 21;
+        uint32_t slp_xpd  : 1;
+        uint32_t xpd	  : 1;
+        uint32_t slp_dbias: 4;
+        uint32_t dbias    : 5;
+    };
+    struct {
+        uint32_t reserved2: 28;
+        uint32_t drv_b    : 4;
+    };
+} pmu_lp_analog_t;
+
+typedef struct {
+    uint32_t    modem_wakeup_wait_cycle;
+    uint16_t    analog_wait_target_cycle;
+    uint16_t    digital_power_down_wait_cycle;
+    uint16_t    digital_power_supply_wait_cycle;
+    uint16_t    digital_power_up_wait_cycle;
+    uint16_t    pll_stable_wait_cycle;
+    uint8_t     modify_icg_cntl_wait_cycle;
+    uint8_t     switch_icg_cntl_wait_cycle;
+    uint8_t     min_slp_slow_clk_cycle;
+} pmu_hp_param_t;
+
+typedef struct {
+    uint16_t    digital_power_supply_wait_cycle;
+    uint8_t     min_slp_slow_clk_cycle;
+    uint8_t     analog_wait_target_cycle;
+    uint8_t     digital_power_down_wait_cycle;
+    uint8_t     digital_power_up_wait_cycle;
+} pmu_lp_param_t;
+
+typedef struct {
+    union {
+        uint16_t    xtal_stable_wait_slow_clk_cycle;
+        uint16_t    xtal_stable_wait_cycle;
+    };
+} pmu_hp_lp_param_t;
 
 #define PMU_HP_SLEEP_MIN_SLOW_CLK_CYCLES        (10)
 #define PMU_LP_SLEEP_MIN_SLOW_CLK_CYCLES        (10)
@@ -107,7 +231,7 @@ typedef struct {
             .vdd_spi_pd_en = ((pd_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 0,   \
             .wifi_pd_en    = ((pd_flags) & PMU_SLEEP_PD_MODEM)   ? 1 : 0,   \
             .cpu_pd_en     = ((pd_flags) & PMU_SLEEP_PD_CPU)     ? 1 : 0,   \
-            .aon_pd_en     = ((pd_flags) & PMU_SLEEP_PD_AON)     ? 1 : 0,   \
+            .aon_pd_en     = ((pd_flags) & PMU_SLEEP_PD_HP_AON)  ? 1 : 0,   \
             .top_pd_en     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,   \
             .mem_pd_en     = 0,                                             \
             .mem_dslp      = 0                                              \

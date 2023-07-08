@@ -207,6 +207,10 @@ config SOC_BOD_SUPPORTED
     bool
     default y
 
+config SOC_CLK_TREE_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -884,6 +888,10 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
     default y
 
 config SOC_UART_NUM
+    int
+    default 3
+
+config SOC_UART_HP_NUM
     int
     default 3
 

@@ -32,9 +32,8 @@ typedef enum sleep_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_WIFI_MAC     = BIT(10),
     SLEEP_RETENTION_MODULE_WIFI_BB      = BIT(11),
     SLEEP_RETENTION_MODULE_BLE_MAC      = BIT(12),
-    SLEEP_RETENTION_MODULE_BLE_BB       = BIT(13),
+    SLEEP_RETENTION_MODULE_BT_BB        = BIT(13),
     SLEEP_RETENTION_MODULE_802154_MAC   = BIT(14),
-    SLEEP_RETENTION_MODULE_802154_BB    = BIT(15),
 
     /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
      * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */
@@ -122,6 +121,16 @@ void sleep_retention_do_extra_retention(bool backup_or_restore);
  * @return the bitmap of all modules requiring sleep retention
  */
 uint32_t sleep_retention_get_modules(void);
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+/**
+ * @brief Software trigger REGDMA to do system linked list retention
+ *
+ * @param backup_or_restore true for backup register context to memory
+ *                          or false for restore to register from memory
+ */
+void sleep_retention_do_system_retention(bool backup_or_restore);
+#endif
 
 #endif // SOC_PAU_SUPPORTED
 
