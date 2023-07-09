@@ -8,7 +8,7 @@
 # The bundle will have the format: number of certificates; crt 1 subject name length; crt 1 public key length;
 # crt 1 subject name; crt 1 public key; crt 2...
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import with_statement
@@ -53,9 +53,6 @@ class CertificateBundle:
     def __init__(self):
         self.certificates = []
         self.compressed_crts = []
-
-        if os.path.isfile(ca_bundle_bin_file):
-            os.remove(ca_bundle_bin_file)
 
     def add_from_path(self, crts_path):
 
@@ -120,7 +117,10 @@ class CertificateBundle:
         # Sort certificates in order to do binary search when looking up certificates
         self.certificates = sorted(self.certificates, key=lambda cert: cert.subject.public_bytes(default_backend()))
 
-        bundle = struct.pack('>H', len(self.certificates))
+        # List of offsets in bytes from the start of the bundle to each certificate inside
+        offsets = []
+
+        bundle = struct.pack('<H', len(self.certificates))
 
         for crt in self.certificates:
             """ Read the public key as DER format """
@@ -132,11 +132,18 @@ class CertificateBundle:
 
             name_len = len(sub_name_der)
             key_len = len(pub_key_der)
-            len_data = struct.pack('>HH', name_len, key_len)
+            len_data = struct.pack('<HH', name_len, key_len)
+
+            # Certificate starts at this position in the bundle
+            offsets.append(len(bundle))
 
             bundle += len_data
             bundle += sub_name_der
             bundle += pub_key_der
+
+        # Store offsets for all certificates at the end of the bundle
+        for off in offsets:
+            bundle += struct.pack('<L',off)
 
         return bundle
 
@@ -180,6 +187,10 @@ def main():
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--input', '-i', nargs='+', required=True,
                         help='Paths to the custom certificate folders or files to parse, parses all .pem or .der files')
+    parser.add_argument('--output', '-o', default=ca_bundle_bin_file,
+                        help='Name of the output file (default: %s), or - for stdout' % ca_bundle_bin_file)
+    parser.add_argument('--arr', '-a', help='Output result as comma-separated list of byte values suitable for array initialization', action='store_true')
+    parser.add_argument('--dec', '-d', help='Output byte values in decimal instead of hex; only valid if used with -a', action='store_true')
     parser.add_argument('--filter', '-f', help='Path to CSV-file where the second columns contains the name of the certificates \
                         that should be included from cacrt_all.pem')
 
@@ -204,8 +215,35 @@ def main():
 
     crt_bundle = bundle.create_bundle()
 
-    with open(ca_bundle_bin_file, 'wb') as f:
-        f.write(crt_bundle)
+    # By default, the output is the crt_bundle's binary data
+    result = crt_bundle
+
+    # Transform binary to array initialization if requested
+    if args.arr:
+        # Default: hex
+        fmt = '0x{0:02x}, '
+        if args.dec:
+            fmt = '{0:d}, '
+        cnt = 0
+        result = ''
+        for b in crt_bundle:
+            result += fmt.format(b)
+            cnt += 1
+            if (cnt % 20) == 0:
+                result += '\n'
+        # Remove trailing comma
+        if result.endswith(', '):
+            result = result[:len(result) - 2]
+        result = bytes(result, 'utf-8')
+
+    # Output to file or stdout as needed
+    if args.output == '-':
+        sys.stdout.buffer.write(result)
+    else:
+        # if os.path.isfile(args.output):
+        #     os.remove(args.output)
+        with open(args.output, 'wb') as f:
+            f.write(result)
 
 
 if __name__ == '__main__':
