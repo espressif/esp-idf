@@ -61,7 +61,7 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         list(APPEND crt_paths ${custom_bundle_path})
 
     endif()
-    list(APPEND args --input ${crt_paths} -q)
+    list(APPEND args --input ${crt_paths} -q --max-certs "${CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS}")
 
     get_filename_component(crt_bundle
         ${bundle_name}
