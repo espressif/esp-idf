@@ -1,0 +1,29 @@
+menu "Example Configuration"
+
+    config EXAMPLE_TOUCH_WAKEUP
+        bool "Enable touch wake up"
+        default y
+        depends on SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
+        help
+            This option enables wake up from deep sleep using touch pads.
+            ESP32 - TOUCH8 and TOUCH9, which correspond to GPIO33 and GPIO32.
+            ESP32S2/S3 - TOUCH9, which corresponds to GPIO9.
+
+            Note: On ESP32, touch wakeup source can not be used together with ext0 wakeup source.
+
+    menu "GPIO wakeup configuration"
+
+        config EXAMPLE_GPIO_WAKEUP_SLEEP_NUM
+            int "Enable wakeup from GPIO"
+            default 6 if IDF_TARGET_ESP32S3
+            range 0 15 if IDF_TARGET_ESP32S3
+
+        config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
+            bool "Enable GPIO high-level wakeup"
+            default y
+            help
+                This option set the gpio wake-up trigger signal, In deep sleep, only high or low level wake-up is
+                supported. If this option is enabled, it is a high level wake up, otherwise it is a low level wake up.
+    endmenu
+
+endmenu

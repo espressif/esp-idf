@@ -9,31 +9,28 @@
 
 static const char *TAG = "power_config";
 
-extern esp_pm_lock_handle_t light_sleep_handle;
-extern software_state_t sys_state;
-
-esp_err_t power_config(void)
+/* pm config */
+esp_err_t power_config(gpio_ws_t* arg)
 {
+    gpio_ws_t* gpio_ws = arg;
     /* Initialize pm lock */
-    esp_pm_lock_type_t pm_lock = PM_LOCK_TYPE;
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock, 0, "contorl_light_sleep", &light_sleep_handle), TAG, "create lock failed");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(EXAMPLE_PM_LOCK_TYPE, 0, "contorl_light_sleep", &(gpio_ws->pm_lock)), TAG, "create lock failed");
     ESP_LOGI(TAG, "create %s lock success!", PM_LOCK_TYPE_TO_STRING);
 
-    /* Initialize pm for auto light sleep */
+    /* Initialize pm configure,eg: auto light sleep */
     esp_pm_config_t pm_conf = {};
-    pm_conf.max_freq_mhz = PM_CONFIG_MAX_FREQ_MHZ;
-    pm_conf.min_freq_mhz = PM_CONFIG_MIN_FREQ_MHZ;
-    pm_conf.light_sleep_enable = true;// enable auto light sleep
-
+    pm_conf.max_freq_mhz = EXAMPLE_PM_CONFIG_MAX_FREQ_MHZ;
+    pm_conf.min_freq_mhz = EXAMPLE_PM_CONFIG_MIN_FREQ_MHZ;
+    pm_conf.light_sleep_enable = true;
     ESP_RETURN_ON_ERROR(esp_pm_configure(&pm_conf), TAG, "auto light sleep config failed");
 
-    //系统上电后，应保持active，所以应acquire lock
-    ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(light_sleep_handle), TAG, "acquire %s lock failed", PM_LOCK_TYPE_TO_STRING);
+    // after power on, it should remain active, so it should acquire lock
+    ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(gpio_ws->pm_lock), TAG, "acquire %s lock failed", PM_LOCK_TYPE_TO_STRING);
     ESP_LOGI(TAG, "acquired %s lock, system is active", PM_LOCK_TYPE_TO_STRING);
 
-    //设置初始的软件状态
-    MARK_SOFTWARE_STATE(ACTIVE_STATE);
-    ESP_LOGI(TAG, "Set software state success: %s", sys_state ? "active" : "sleep");
+    // set the initial software state: hold lock
+    gpio_ws->hold_lock_state = HOLD_LOCK_STATE;
+    ESP_LOGI(TAG, "Set software state success: %s", gpio_ws->hold_lock_state ? "hold lock" : "no lock");
 
     return ESP_OK;
 }
