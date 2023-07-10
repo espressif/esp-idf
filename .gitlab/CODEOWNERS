@@ -200,6 +200,7 @@
 
 ## Note: owners here should be the same as the owners for the same example subdir, above
 /tools/test_apps/build_system/       @esp-idf-codeowners/build-config
+/tools/test_apps/linux_compatible/   @esp-idf-codeowners/system
 /tools/test_apps/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
 /tools/test_apps/security/           @esp-idf-codeowners/security
 /tools/test_apps/system/             @esp-idf-codeowners/system
