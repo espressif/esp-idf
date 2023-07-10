@@ -1728,7 +1728,11 @@ Modem-sleep 模式包括最小和最大节能模式。在最小节能模式下�
 
 调用 :cpp:func:`esp_wifi_init()` 后，调用 ``esp_wifi_set_ps(WIFI_PS_MIN_MODEM)`` 可使能 Modem-sleep 最小节能模式。调用 ``esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`` 可使能 Modem-sleep 最大节能模式。station 连接到 AP 时，Modem-sleep 模式将启动。station 与 AP 断开连接时，Modem-sleep 模式将停止。
 
-调用 ``esp_wifi_set_ps(WIFI_PS_NONE)`` 可以完全禁用 Modem-sleep 模式。禁用会增大功耗，但可以最大限度减少实时接收 Wi-Fi 数据的延迟。使能 Modem-sleep 时，接收 Wi-Fi 数据的延迟时间可能与 DTIM 周期（最小节能模式）或监听间隔（最大节能模式）相同。在 Wi-Fi 与 Bluetooth LE 共存模式下，无法完全禁用 modem-sleep 模式。
+调用 ``esp_wifi_set_ps(WIFI_PS_NONE)`` 可以完全禁用 Modem-sleep 模式。禁用会增大功耗，但可以最大限度减少实时接收 Wi-Fi 数据的延迟。使能 Modem-sleep 模式时，接收 Wi-Fi 数据的延迟时间可能与 DTIM 周期（最小节能模式）或监听间隔（最大节能模式）相同。
+
+.. only:: SOC_SUPPORT_COEXISTENCE
+
+    注意在共存模式下, 即使调用 ``esp_wifi_set_ps(WIFI_PS_NONE)``, Wi-Fi 也仅会在 Wi-Fi 时间片内保持活动状态, 非 Wi-Fi 时间片内仍然睡眠。请参照 :ref:`共存策略 <coexist_policy-cn>`。
 
 默认的 Modem-sleep 模式是 WIFI_PS_MIN_MODEM。
 

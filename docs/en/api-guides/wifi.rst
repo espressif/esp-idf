@@ -22,6 +22,10 @@ The following features are supported:
     - Multiple antennas
     - Channel state information
 
+    .. only:: SOC_WIFI_NAN_SUPPORT
+
+     - Wi-Fi Aware (NAN)
+
 .. only:: esp32c6
 
     - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
@@ -1674,6 +1678,19 @@ For establishing a secure connection, AP and station negotiate and agree on the 
 
 Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wifi_enterprise`.
 
+.. only:: SOC_WIFI_NAN_SUPPORT
+
+    Wi-Fi Aware\ :sup:`TM` (NAN)
+    ----------------------------
+
+    Wi-Fi Aware\ :sup:`TM` or NAN (Neighbor Awareness Networking) is a protocol that allows Wi-Fi devices to discover services in their proximity. NAN uses direct device-to-device communication and does not require any Internet or AP connection.
+
+    Multiple NAN devices in the vicinity will form a NAN cluster which allows them to communicate with each other. NAN devices in a cluster synchronise their clocks and listen to each other periodically on Channel 6. Devices can advertise (Publish) or seek for (Subscribe) services within their NAN Cluster using Service Discovery protocols. Matching of services is done by service name and optionally matching filters. Once a Subscriber gets a match with a Publisher, it can either send a message (Follow-up) or establish a datapath (NDP) with the Publisher. After NDP is setup both devices will obtain an IPv6 address and can use it for communication.
+
+    Please note that NAN Datapath security is not supported i.e. the data packets will go out unencrypted. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP. NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported.
+
+    Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md` to setup a NAN Publisher and Subscriber.
+
 Wireless Network Management
 ----------------------------
 
@@ -1728,7 +1745,11 @@ In maximum power-saving mode, station wakes up in every listen interval to recei
 
 Call ``esp_wifi_set_ps(WIFI_PS_MIN_MODEM)`` to enable Modem-sleep minimum power-saving mode or ``esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`` to enable Modem-sleep maximum power-saving mode after calling :cpp:func:`esp_wifi_init()`. When station connects to AP, Modem-sleep will start. When station disconnects from AP, Modem-sleep will stop.
 
-Call ``esp_wifi_set_ps(WIFI_PS_NONE)`` to disable Modem-sleep entirely. This has much higher power consumption, but provides minimum latency for receiving Wi-Fi data in real time. When Modem-sleep is enabled, received Wi-Fi data can be delayed for as long as the DTIM period (minimum power-saving mode) or the listen interval (maximum power-saving mode). Disabling Modem-sleep entirely is not possible for Wi-Fi and Bluetooth coexist mode.
+Call ``esp_wifi_set_ps(WIFI_PS_NONE)`` to disable Modem-sleep mode entirely. Disabling it increases power consumption, but minimizes the delay in receiving Wi-Fi data in real time. When Modem-sleep mode is enabled, the delay in receiving Wi-Fi data may be the same as the DTIM cycle (minimum power-saving mode) or the listening interval (maximum power-saving mode).
+
+.. only:: SOC_SUPPORT_COEXISTENCE
+
+    Note that in coexist mode, Wi-Fi will remain active only during Wi-Fi time slice, and sleep during non Wi-Fi time slice even if ``esp_wifi_set_ps(WIFI_PS_NONE)`` is called. Please refer to :ref:`coexist policy <coexist_policy>`.
 
 The default Modem-sleep mode is WIFI_PS_MIN_MODEM.
 
