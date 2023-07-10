@@ -64,3 +64,6 @@ I (1403) L2CAP_TAG: Own address:[c4:dd:57:5b:e7:46]
 ## Troubleshooting
 * This example just demonstrates how to use the SDP and L2CAP APIs. This example cannot establish an l2cap connection with other devices (smartphones, computers, etc.) because the UUID is unknown and does not conform to the Bluetooth protocol standard.
 * You can complete OBEX related profiles through SPP, SDP and L2CAP APIs.
+
+## Workflow of an L2CAP Connection
+* This [example_workflow](./tutorial/example_workflow.md) file describes the workflow of a L2CAP connection.
