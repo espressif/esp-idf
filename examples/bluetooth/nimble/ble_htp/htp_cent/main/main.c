@@ -1,20 +1,7 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_log.h"
@@ -26,227 +13,45 @@
 #include "host/util/util.h"
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
-#include "blecent.h"
+#include "ble_htp_cent.h"
 
-/*** The UUID of the service containing the subscribable characterstic ***/
-static const ble_uuid_t * remote_svc_uuid =
-    BLE_UUID128_DECLARE(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
-                     	0x99, 0x99, 0x43, 0x95, 0x12, 0x2f, 0x46, 0x59);
-
-/*** The UUID of the subscribable chatacteristic ***/
-static const ble_uuid_t * remote_chr_uuid =
-    BLE_UUID128_DECLARE(0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11,
-                     	0x22, 0x22, 0x22, 0x22, 0x33, 0x33, 0x33, 0x33);
-
-static const char *tag = "NimBLE_BLE_CENT";
-static int blecent_gap_event(struct ble_gap_event *event, void *arg);
+static const char *tag = "NimBLE_HTP_CENT";
+static int ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t peer_addr[6];
 
 void ble_store_config_init(void);
-
+static void ble_htp_cent_scan(void);
 /**
- * Application Callback. Called when the custom subscribable chatacteristic
- * in the remote GATT server is read.
- * Expect to get the recently written data.
- **/
+ * Application callback.  Called when the attempt to subscribe to notifications
+ * for the HTP intermediate temperature characteristic has completed.
+ */
 static int
-blecent_on_custom_read(uint16_t conn_handle,
-                       const struct ble_gatt_error *error,
-                       struct ble_gatt_attr *attr,
-                       void *arg)
+ble_htp_cent_on_subscribe_temp(uint16_t conn_handle,
+                               const struct ble_gatt_error *error,
+                               struct ble_gatt_attr *attr,
+                               void *arg)
 {
-    MODLOG_DFLT(INFO,
-                "Read complete for the subscribable characteristic; "
-                "status=%d conn_handle=%d", error->status, conn_handle);
-    if (error->status == 0) {
-        MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
-        print_mbuf(attr->om);
-    }
-    MODLOG_DFLT(INFO, "\n");
-
-    return 0;
-}
-
-/**
- * Application Callback. Called when the custom subscribable characteristic
- * in the remote GATT server is written to.
- * Client has previously subscribed to this characeteristic,
- * so expect a notification from the server.
- **/
-static int
-blecent_on_custom_write(uint16_t conn_handle,
-                        const struct ble_gatt_error *error,
-                        struct ble_gatt_attr *attr,
-                        void *arg)
-{
-    const struct peer_chr *chr;
-    const struct peer *peer;
-    int rc;
-
-    MODLOG_DFLT(INFO,
-                "Write to the custom subscribable characteristic complete; "
-                "status=%d conn_handle=%d attr_handle=%d\n",
+    MODLOG_DFLT(INFO, "Subscribe to intermediate temperature char completed; status=%d "
+                "conn_handle=%d attr_handle=%d\n",
                 error->status, conn_handle, attr->handle);
-
-    peer = peer_find(conn_handle);
-    chr = peer_chr_find_uuid(peer,
-                             remote_svc_uuid,
-                             remote_chr_uuid);
-    if (chr == NULL) {
-        MODLOG_DFLT(ERROR,
-                    "Error: Peer doesn't have the custom subscribable characteristic\n");
-        goto err;
-    }
-
-    /*** Performs a read on the characteristic, the result is handled in blecent_on_new_read callback ***/
-    rc = ble_gattc_read(conn_handle, chr->chr.val_handle,
-                        blecent_on_custom_read, NULL);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR,
-                    "Error: Failed to read the custom subscribable characteristic; "
-                    "rc=%d\n", rc);
-        goto err;
-    }
-
     return 0;
-err:
-    /* Terminate the connection */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-}
-
-/**
- * Application Callback. Called when the custom subscribable characteristic
- * is subscribed to.
- **/
-static int
-blecent_on_custom_subscribe(uint16_t conn_handle,
-                            const struct ble_gatt_error *error,
-                            struct ble_gatt_attr *attr,
-                            void *arg)
-{
-    const struct peer_chr *chr;
-    uint8_t value;
-    int rc;
-    const struct peer *peer;
-
-    MODLOG_DFLT(INFO,
-                "Subscribe to the custom subscribable characteristic complete; "
-                "status=%d conn_handle=%d", error->status, conn_handle);
-
-    if (error->status == 0) {
-        MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
-        print_mbuf(attr->om);
-    }
-    MODLOG_DFLT(INFO, "\n");
-
-    peer = peer_find(conn_handle);
-    chr = peer_chr_find_uuid(peer,
-                             remote_svc_uuid,
-                             remote_chr_uuid);
-    if (chr == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer doesn't have the subscribable characteristic\n");
-        goto err;
-    }
-
-    /* Write 1 byte to the new characteristic to test if it notifies after subscribing */
-    value = 0x19;
-    rc = ble_gattc_write_flat(conn_handle, chr->chr.val_handle,
-                              &value, sizeof(value), blecent_on_custom_write, NULL);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR,
-                    "Error: Failed to write to the subscribable characteristic; "
-                    "rc=%d\n", rc);
-        goto err;
-    }
-
-    return 0;
-err:
-    /* Terminate the connection */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-}
-
-/**
- * Performs 3 operations on the remote GATT server.
- * 1. Subscribes to a characteristic by writing 0x10 to it's CCCD.
- * 2. Writes to the characteristic and expect a notification from remote.
- * 3. Reads the characteristic and expect to get the recently written information.
- **/
-static void
-blecent_custom_gatt_operations(const struct peer* peer)
-{
-    const struct peer_dsc *dsc;
-    int rc;
-    uint8_t value[2];
-
-    dsc = peer_dsc_find_uuid(peer,
-                             remote_svc_uuid,
-                             remote_chr_uuid,
-                             BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
-    if (dsc == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characterstic\n");
-        goto err;
-    }
-
-    /*** Write 0x00 and 0x01 (The subscription code) to the CCCD ***/
-    value[0] = 1;
-    value[1] = 0;
-    rc = ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
-                              value, sizeof(value), blecent_on_custom_subscribe, NULL);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR,
-                    "Error: Failed to subscribe to the subscribable characteristic; "
-                    "rc=%d\n", rc);
-        goto err;
-    }
-
-    return;
-err:
-    /* Terminate the connection */
-    ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 /**
  * Application callback.  Called when the attempt to subscribe to notifications
- * for the ANS Unread Alert Status characteristic has completed.
+ * for the HTP temperature measurement characteristic has completed.
  */
 static int
-blecent_on_subscribe(uint16_t conn_handle,
-                     const struct ble_gatt_error *error,
-                     struct ble_gatt_attr *attr,
-                     void *arg)
+ble_htp_cent_on_subscribe(uint16_t conn_handle,
+                          const struct ble_gatt_error *error,
+                          struct ble_gatt_attr *attr,
+                          void *arg)
 {
-    struct peer *peer;
-
-    MODLOG_DFLT(INFO, "Subscribe complete; status=%d conn_handle=%d "
-                "attr_handle=%d\n",
+    MODLOG_DFLT(INFO, "Subscribe to temperature measurement char completed; status=%d "
+                "conn_handle=%d attr_handle=%d\n",
                 error->status, conn_handle, attr->handle);
 
-    peer = peer_find(conn_handle);
-    if (peer == NULL) {
-        MODLOG_DFLT(ERROR, "Error in finding peer, aborting...");
-        ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-    }
-    /* Subscribe to, write to, and read the custom characteristic*/
-    blecent_custom_gatt_operations(peer);
-
-    return 0;
-}
-
-/**
- * Application callback.  Called when the write to the ANS Alert Notification
- * Control Point characteristic has completed.
- */
-static int
-blecent_on_write(uint16_t conn_handle,
-                 const struct ble_gatt_error *error,
-                 struct ble_gatt_attr *attr,
-                 void *arg)
-{
-    MODLOG_DFLT(INFO,
-                "Write complete; status=%d conn_handle=%d attr_handle=%d\n",
-                error->status, conn_handle, attr->handle);
-
-    /* Subscribe to notifications for the Unread Alert Status characteristic.
+    /* Subscribe to notifications for the intermediate temperature characteristic.
      * A central enables notifications by writing two bytes (1, 0) to the
      * characteristic's client-characteristic-configuration-descriptor (CCCD).
      */
@@ -256,19 +61,69 @@ blecent_on_write(uint16_t conn_handle,
     const struct peer *peer = peer_find(conn_handle);
 
     dsc = peer_dsc_find_uuid(peer,
-                             BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
-                             BLE_UUID16_DECLARE(BLECENT_CHR_UNR_ALERT_STAT_UUID),
-                             BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_CHR_UUID16_INTERMEDIATE_TEMP),
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_DSC_CLT_CFG_UUID16));
     if (dsc == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the Unread Alert "
-                    "Status characteristic\n");
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD characteristic\n ");
         goto err;
     }
 
     value[0] = 1;
     value[1] = 0;
     rc = ble_gattc_write_flat(conn_handle, dsc->dsc.handle,
-                              value, sizeof value, blecent_on_subscribe, NULL);
+                              &value, sizeof value, ble_htp_cent_on_subscribe_temp, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Error: Failed to subscribe to characteristic; "
+                    "rc=%d\n", rc);
+        goto err;
+    }
+
+    return 0;
+err:
+    /* Terminate the connection. */
+    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+
+    return 0;
+}
+
+/**
+ * Application callback.  Called when the write to the HTP measurement interval
+ * characteristic has completed.
+ */
+static int
+ble_htp_cent_on_write(uint16_t conn_handle,
+                      const struct ble_gatt_error *error,
+                      struct ble_gatt_attr *attr,
+                      void *arg)
+{
+    MODLOG_DFLT(INFO, "Write to measurement interval char completed; status=%d "
+                "conn_handle=%d attr_handle=%d\n",
+                error->status, conn_handle, attr->handle);
+
+    /* Subscribe to notifications for the temperature measurement characteristic.
+     * A central enables notifications by writing two bytes (1, 0) to the
+     * characteristic's client-characteristic-configuration-descriptor (CCCD).
+     */
+    const struct peer_dsc *dsc;
+    uint8_t value[2];
+    int rc;
+    const struct peer *peer = peer_find(conn_handle);
+
+    dsc = peer_dsc_find_uuid(peer,
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_CHR_UUID16_TEMP_MEASUREMENT),
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_DSC_CLT_CFG_UUID16));
+    if (dsc == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD characteristic\n ");
+        goto err;
+    }
+
+    value[0] = 2;
+    value[1] = 0;
+
+    rc = ble_gattc_write_flat(conn_handle, dsc->dsc.handle,
+                              &value, sizeof value, ble_htp_cent_on_subscribe, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to subscribe to characteristic; "
                     "rc=%d\n", rc);
@@ -282,44 +137,44 @@ err:
 }
 
 /**
- * Application callback.  Called when the read of the ANS Supported New Alert
- * Category characteristic has completed.
+ * Application callback.  Called when the read of the HTP temperature type
+ * characteristic has completed.
  */
 static int
-blecent_on_read(uint16_t conn_handle,
-                const struct ble_gatt_error *error,
-                struct ble_gatt_attr *attr,
-                void *arg)
+ble_htp_cent_on_read(uint16_t conn_handle,
+                     const struct ble_gatt_error *error,
+                     struct ble_gatt_attr *attr,
+                     void *arg)
 {
-    MODLOG_DFLT(INFO, "Read complete; status=%d conn_handle=%d", error->status,
-                conn_handle);
+    MODLOG_DFLT(INFO, "Read temperature type char completed; status=%d conn_handle=%d",
+                error->status, conn_handle);
     if (error->status == 0) {
         MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
         print_mbuf(attr->om);
     }
     MODLOG_DFLT(INFO, "\n");
 
-    /* Write two bytes (99, 100) to the alert-notification-control-point
+    /* Write two bytes (99, 100) to the measurement interval
      * characteristic.
      */
     const struct peer_chr *chr;
-    uint8_t value[2];
+    uint16_t value;
     int rc;
     const struct peer *peer = peer_find(conn_handle);
 
     chr = peer_chr_find_uuid(peer,
-                             BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
-                             BLE_UUID16_DECLARE(BLECENT_CHR_ALERT_NOT_CTRL_PT));
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_CHR_UUID16_MEASUREMENT_ITVL));
     if (chr == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the Alert "
-                    "Notification Control Point characteristic\n");
+        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the"
+                    "measurement interval characteristic\n");
         goto err;
     }
 
-    value[0] = 99;
-    value[1] = 100;
+    value = 2; /* Set measurement interval as 2 secs */
+
     rc = ble_gattc_write_flat(conn_handle, chr->chr.val_handle,
-                              value, sizeof value, blecent_on_write, NULL);
+                              &value, sizeof value, ble_htp_cent_on_write, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to write characteristic; rc=%d\n",
                     rc);
@@ -334,34 +189,34 @@ err:
 
 /**
  * Performs three GATT operations against the specified peer:
- * 1. Reads the ANS Supported New Alert Category characteristic.
- * 2. After read is completed, writes the ANS Alert Notification Control Point characteristic.
- * 3. After write is completed, subscribes to notifications for the ANS Unread Alert Status
- *    characteristic.
+ * 1. Reads the HTP temparature type characteristic.
+ * 2. After read is completed, writes the HTP temperature measurement interval characteristic.
+ * 3. After write is completed, subscribes to notifications for the HTP intermediate temperature
+ *    and temperature measurement characteristic.
  *
  * If the peer does not support a required service, characteristic, or
- * descriptor, then the peer lied when it claimed support for the alert
- * notification service!  When this happens, or if a GATT procedure fails,
+ * descriptor, then the peer lied when it claimed support for the health
+ * thermometer service!  When this happens, or if a GATT procedure fails,
  * this function immediately terminates the connection.
  */
 static void
-blecent_read_write_subscribe(const struct peer *peer)
+ble_htp_cent_read_write_subscribe(const struct peer *peer)
 {
     const struct peer_chr *chr;
     int rc;
 
-    /* Read the supported-new-alert-category characteristic. */
+    /* Read the Temparature Type characteristic. */
     chr = peer_chr_find_uuid(peer,
-                             BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
-                             BLE_UUID16_DECLARE(BLECENT_CHR_SUP_NEW_ALERT_CAT_UUID));
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
+                             BLE_UUID16_DECLARE(BLE_SVC_HTP_CHR_UUID16_TEMP_TYPE));
     if (chr == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the Supported New "
-                    "Alert Category characteristic\n");
+        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the Temparature Type"
+                    " characteristic\n");
         goto err;
     }
 
     rc = ble_gattc_read(peer->conn_handle, chr->chr.val_handle,
-                        blecent_on_read, NULL);
+                        ble_htp_cent_on_read, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to read characteristic; rc=%d\n",
                     rc);
@@ -378,7 +233,7 @@ err:
  * Called when service discovery of the specified peer has completed.
  */
 static void
-blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
+ble_htp_cent_on_disc_complete(const struct peer *peer, int status, void *arg)
 {
 
     if (status != 0) {
@@ -397,16 +252,16 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
                 "conn_handle=%d\n", status, peer->conn_handle);
 
     /* Now perform three GATT procedures against the peer: read,
-     * write, and subscribe to notifications for the ANS service.
+     * write, and subscribe to notifications for the HTP service.
      */
-    blecent_read_write_subscribe(peer);
+    ble_htp_cent_read_write_subscribe(peer);
 }
 
 /**
  * Initiates the GAP general discovery procedure.
  */
 static void
-blecent_scan(void)
+ble_htp_cent_scan(void)
 {
     uint8_t own_addr_type;
     struct ble_gap_disc_params disc_params;
@@ -437,7 +292,7 @@ blecent_scan(void)
     disc_params.limited = 0;
 
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                      blecent_gap_event, NULL);
+                      ble_htp_cent_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error initiating GAP discovery procedure; rc=%d\n",
                     rc);
@@ -447,11 +302,12 @@ blecent_scan(void)
 /**
  * Indicates whether we should try to connect to the sender of the specified
  * advertisement.  The function returns a positive result if the device
- * advertises connectability and support for the Alert Notification service.
+ * advertises connectability and support for the Health Thermometer service.
  */
+
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static int
-ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
+ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
@@ -471,8 +327,8 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
     }
 
-    /* The device has to advertise support for the Alert Notification
-    * service (0x1811).
+    /* The device has to advertise support for the Health thermometer
+    * service (0x1809).
     */
     do {
         ad_struct_len = disc->data[offset];
@@ -481,22 +337,23 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             break;
         }
 
-	/* Search if ANS UUID is advertised */
+        /* Search if HTP UUID is advertised */
         if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x11 ) {
+            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x09 ) {
                 return 1;
             }
         }
 
         offset += ad_struct_len + 1;
 
-     } while ( offset < disc->length_data );
+    } while ( offset < disc->length_data );
 
     return 0;
 }
 #else
+
 static int
-blecent_should_connect(const struct ble_gap_disc_desc *disc)
+ble_htp_cent_should_connect(const struct ble_gap_disc_desc *disc)
 {
     struct ble_hs_adv_fields fields;
     int rc;
@@ -525,11 +382,11 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         }
     }
 
-    /* The device has to advertise support for the Alert Notification
-     * service (0x1811).
+    /* The device has to advertise support for the Health Thermometer
+     * service (0x1809).
      */
     for (i = 0; i < fields.num_uuids16; i++) {
-        if (ble_uuid_u16(&fields.uuids16[i].u) == BLECENT_SVC_ALERT_UUID) {
+        if (ble_uuid_u16(&fields.uuids16[i].u) == BLE_SVC_HTP_UUID16) {
             return 1;
         }
     }
@@ -541,10 +398,10 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 /**
  * Connects to the sender of the specified advertisement of it looks
  * interesting.  A device is "interesting" if it advertises connectability and
- * support for the Alert Notification service.
+ * support for the Health Thermometer service.
  */
 static void
-blecent_connect_if_interesting(void *disc)
+ble_htp_cent_connect_if_interesting(void *disc)
 {
     uint8_t own_addr_type;
     int rc;
@@ -552,11 +409,11 @@ blecent_connect_if_interesting(void *disc)
 
     /* Don't do anything if we don't care about this advertiser. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-    if (!ext_blecent_should_connect((struct ble_gap_ext_disc_desc *)disc)) {
+    if (!ext_ble_htp_cent_should_connect((struct ble_gap_ext_disc_desc *)disc)) {
         return;
     }
 #else
-    if (!blecent_should_connect((struct ble_gap_disc_desc *)disc)) {
+    if (!ble_htp_cent_should_connect((struct ble_gap_disc_desc *)disc)) {
         return;
     }
 #endif
@@ -583,9 +440,8 @@ blecent_connect_if_interesting(void *disc)
 #else
     addr = &((struct ble_gap_disc_desc *)disc)->addr;
 #endif
-
     rc = ble_gap_connect(own_addr_type, addr, 30000, NULL,
-                         blecent_gap_event, NULL);
+                         ble_htp_cent_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
@@ -594,33 +450,14 @@ blecent_connect_if_interesting(void *disc)
     }
 }
 
-#if MYNEWT_VAL(BLE_POWER_CONTROL)
-static void blecent_power_control(uint16_t conn_handle)
-{
-    int rc;
-
-    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
-    assert (rc == 0);
-
-    rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x01, 0x01);
-    assert (rc == 0);
-
-    rc = ble_gap_set_path_loss_reporting_param(conn_handle, 60, 10, 30, 10, 2 ); //demo values
-    assert (rc == 0);
-
-    rc = ble_gap_set_path_loss_reporting_enable(conn_handle, 0x01);
-    assert (rc == 0);
-}
-#endif
-
 /**
  * The nimble host executes this callback when a GAP event occurs.  The
  * application associates a GAP event callback with each connection that is
- * established.  blecent uses the same callback for all connections.
+ * established.  ble_htp_cent uses the same callback for all connections.
  *
  * @param event                 The event being signalled.
  * @param arg                   Application-specified argument; unused by
- *                                  blecent.
+ *                                  ble_htp_cent.
  *
  * @return                      0 if the application successfully handled the
  *                                  event; nonzero on failure.  The semantics
@@ -628,7 +465,7 @@ static void blecent_power_control(uint16_t conn_handle)
  *                                  particular GAP event being signalled.
  */
 static int
-blecent_gap_event(struct ble_gap_event *event, void *arg)
+ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
     struct ble_hs_adv_fields fields;
@@ -646,7 +483,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         print_adv_fields(&fields);
 
         /* Try to connect to the advertiser if it looks interesting. */
-        blecent_connect_if_interesting(&event->disc);
+        ble_htp_cent_connect_if_interesting(&event->disc);
         return 0;
 
     case BLE_GAP_EVENT_CONNECT:
@@ -667,28 +504,6 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 
-#if MYNEWT_VAL(BLE_POWER_CONTROL)
-            blecent_power_control(event->connect.conn_handle);
-#endif
-
-#if MYNEWT_VAL(BLE_HCI_VS)
-#if MYNEWT_VAL(BLE_POWER_CONTROL)
-           int8_t vs_cmd[10]= {0, 0,-70,-60,-68,-58,-75,-65,-80,-70};
-
-           vs_cmd[0] = ((uint8_t)(event->connect.conn_handle & 0xFF));
-           vs_cmd[1] = ((uint8_t)(event->connect.conn_handle >> 8) & 0xFF);
-
-           rc = ble_hs_hci_send_vs_cmd(BLE_HCI_OCF_VS_PCL_SET_RSSI ,
-                                       &vs_cmd, sizeof(vs_cmd), NULL, 0);
-           if (rc != 0) {
-               MODLOG_DFLT(INFO, "Failed to send VSC  %x \n", rc);
-               return 0;
-           }
-           else
-               MODLOG_DFLT(INFO, "Successfully issued VSC , rc = %d \n", rc);
-#endif
-#endif
-
 #if CONFIG_EXAMPLE_ENCRYPTION
             /** Initiate security - It will perform
              * Pairing (Exchange keys)
@@ -707,8 +522,8 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 #else
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
-                        blecent_on_disc_complete, NULL);
-            if(rc != 0) {
+                               ble_htp_cent_on_disc_complete, NULL);
+            if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
@@ -717,7 +532,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
                         event->connect.status);
-            blecent_scan();
+            ble_htp_cent_scan();
         }
 
         return 0;
@@ -732,7 +547,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         peer_delete(event->disconnect.conn.conn_handle);
 
         /* Resume scanning. */
-        blecent_scan();
+        ble_htp_cent_scan();
         return 0;
 
     case BLE_GAP_EVENT_DISC_COMPLETE:
@@ -750,7 +565,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 #if CONFIG_EXAMPLE_ENCRYPTION
         /*** Go for service discovery after encryption has been successfully enabled ***/
         rc = peer_disc_all(event->connect.conn_handle,
-                           blecent_on_disc_complete, NULL);
+                           ble_htp_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
@@ -801,44 +616,23 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         /* An advertisment report was received during GAP discovery. */
         ext_print_adv_report(&event->disc);
 
-        blecent_connect_if_interesting(&event->disc);
+        ble_htp_cent_connect_if_interesting(&event->disc);
         return 0;
 #endif
 
-#if MYNEWT_VAL(BLE_POWER_CONTROL)
-    case BLE_GAP_EVENT_TRANSMIT_POWER:
-	MODLOG_DFLT(INFO, "Transmit power event : status=%d conn_handle=%d reason=%d "
-                          "phy=%d power_level=%x power_level_flag=%d delta=%d",
-		    event->transmit_power.status,
-		    event->transmit_power.conn_handle,
-		    event->transmit_power.reason,
-		    event->transmit_power.phy,
-		    event->transmit_power.transmit_power_level,
-		    event->transmit_power.transmit_power_level_flag,
-		    event->transmit_power.delta);
-	return 0;
-
-    case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
-	MODLOG_DFLT(INFO, "Pathloss threshold event : conn_handle=%d current path loss=%d "
-                          "zone_entered =%d",
-		    event->pathloss_threshold.conn_handle,
-		    event->pathloss_threshold.current_path_loss,
-		    event->pathloss_threshold.zone_entered);
-	return 0;
-#endif
     default:
         return 0;
     }
 }
 
 static void
-blecent_on_reset(int reason)
+ble_htp_cent_on_reset(int reason)
 {
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
 }
 
 static void
-blecent_on_sync(void)
+ble_htp_cent_on_sync(void)
 {
     int rc;
 
@@ -846,13 +640,11 @@ blecent_on_sync(void)
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
-#if !CONFIG_EXAMPLE_INIT_DEINIT_LOOP
     /* Begin scanning for a peripheral to connect to. */
-    blecent_scan();
-#endif
+    ble_htp_cent_scan();
 }
 
-void blecent_host_task(void *param)
+void ble_htp_cent_host_task(void *param)
 {
     ESP_LOGI(tag, "BLE Host Task Started");
     /* This function will return only when nimble_port_stop() is executed */
@@ -860,42 +652,6 @@ void blecent_host_task(void *param)
 
     nimble_port_freertos_deinit();
 }
-
-#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
-/* This function showcases stack init and deinit procedure. */
-static void stack_init_deinit(void)
-{
-    int rc;
-    while(1) {
-
-        vTaskDelay(1000);
-
-        ESP_LOGI(tag, "Deinit host");
-
-        rc = nimble_port_stop();
-        if (rc == 0) {
-            nimble_port_deinit();
-        } else {
-            ESP_LOGI(tag, "Nimble port stop failed, rc = %d", rc);
-            break;
-        }
-
-        vTaskDelay(1000);
-
-        ESP_LOGI(tag, "Init host");
-
-        rc = nimble_port_init();
-        if (rc != ESP_OK) {
-            ESP_LOGI(tag, "Failed to init nimble %d ", rc);
-            break;
-        }
-
-        nimble_port_freertos_init(blecent_host_task);
-
-        ESP_LOGI(tag, "Waiting for 1 second");
-    }
-}
-#endif
 
 void
 app_main(void)
@@ -916,8 +672,8 @@ app_main(void)
     }
 
     /* Configure the host. */
-    ble_hs_cfg.reset_cb = blecent_on_reset;
-    ble_hs_cfg.sync_cb = blecent_on_sync;
+    ble_hs_cfg.reset_cb = ble_htp_cent_on_reset;
+    ble_hs_cfg.sync_cb = ble_htp_cent_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
@@ -925,16 +681,11 @@ app_main(void)
     assert(rc == 0);
 
     /* Set the default device name. */
-    rc = ble_svc_gap_device_name_set("nimble-blecent");
+    rc = ble_svc_gap_device_name_set("nimble-htp-cent");
     assert(rc == 0);
 
     /* XXX Need to have template for store */
     ble_store_config_init();
 
-    nimble_port_freertos_init(blecent_host_task);
-
-#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
-    stack_init_deinit();
-#endif
-
+    nimble_port_freertos_init(ble_htp_cent_host_task);
 }
