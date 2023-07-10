@@ -137,7 +137,7 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-static void connect_handler(void *arg, esp_event_base_t event_base,
+static void start_handler(void *arg, esp_event_base_t event_base,
                             int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "sta connect to %s", DEFAULT_SSID);
@@ -204,7 +204,7 @@ static void wifi_itwt(void)
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                     WIFI_EVENT_STA_START,
-                    &connect_handler,
+                    &start_handler,
                     NULL,
                     NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
