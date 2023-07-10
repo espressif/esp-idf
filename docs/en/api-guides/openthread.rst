@@ -1,7 +1,7 @@
 OpenThread
 ==========
 
-`OpenThread <https://github.com/openthread/openthread>`_ is a IP stack running on the 802.15.4 MAC layer which features mesh network and low power consumption.
+`OpenThread <https://github.com/openthread/openthread>`_ is an IP stack running on the 802.15.4 MAC layer which features mesh network and low power consumption.
 
 Mode of the OpenThread stack
 ----------------------------
@@ -11,12 +11,12 @@ OpenThread can run under the following modes on Espressif chips:
 Standalone node
 +++++++++++++++
 
-The full OpenThread stack and the application layer runs on the same chip. This mode is available on chips with 15.4 radio such as {IDF_TARGET}.
+The full OpenThread stack and the application layer runs on the same chip. This mode is available on chips with 15.4 radio such as ESP32-H2, ESP32-C6.
 
 Radio Co-Processor (RCP)
 ++++++++++++++++++++++++
 
-The chip will be connected to another host running the OpenThread IP stack. It will send and received 15.4 packets on behalf of the host. This mode is available on chips with 15.4 radio such as {IDF_TARGET}. The underlying transport between the chip and the host can be SPI or UART. For sake of latency, we recommend to use SPI as the underlying transport.
+The chip will be connected to another host running the OpenThread IP stack. It will send and received 15.4 packets on behalf of the host. This mode is available on chips with 15.4 radio such as ESP32-H2, ESP32-C6. The underlying transport between the chip and the host can be SPI or UART. For sake of latency, we recommend to use SPI as the underlying transport.
 
 OpenThread host
 +++++++++++++++

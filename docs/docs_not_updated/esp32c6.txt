@@ -1,4 +1,0 @@
-api-guides/openthread
-api-reference/network
-api-reference/network/esp_openthread
-api-reference/network/index
