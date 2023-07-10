@@ -393,3 +393,13 @@ __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame,
 {
     return ESP_OK;
 }
+
+__attribute__((weak)) void esp_ieee802154_timer0_done(void)
+{
+
+}
+
+__attribute__((weak)) void esp_ieee802154_timer1_done(void)
+{
+
+}
