@@ -605,6 +605,7 @@ void ieee802154_disable(void)
 esp_err_t ieee802154_mac_init(void)
 {
     esp_err_t ret = ESP_OK;
+    modem_clock_module_mac_reset(PERIPH_IEEE802154_MODULE); // reset ieee802154 MAC
     ieee802154_pib_init();
 
     ieee802154_ll_enable_events(IEEE802154_EVENT_MASK);
