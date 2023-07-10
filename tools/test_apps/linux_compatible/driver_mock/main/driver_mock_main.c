@@ -10,8 +10,19 @@
 #include "driver/spi_master.h"
 #include "driver/spi_common.h"
 
+#include "Mockrmt_encoder.h"
+#include "Mockrmt_common.h"
+#include "Mockrmt_tx.h"
+#include "Mockrmt_rx.h"
+
+/*Test that mock functions exist*/
 void app_main(void)
 {
-    /*Test that mock functions exist*/
     i2c_driver_delete(0);
+
+    rmt_channel_handle_t channel = 0;
+    rmt_new_bytes_encoder(NULL, NULL);
+    rmt_new_rx_channel(NULL, NULL);
+    rmt_del_channel(channel);
+    rmt_new_tx_channel(NULL, NULL);
 }
