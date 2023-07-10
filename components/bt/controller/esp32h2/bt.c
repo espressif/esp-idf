@@ -615,6 +615,74 @@ void controller_sleep_deinit(void)
 #endif //CONFIG_PM_ENABLE
 }
 
+typedef enum {
+    FILTER_DUPLICATE_PDUTYPE = BIT(0),
+    FILTER_DUPLICATE_LENGTH  = BIT(1),
+    FILTER_DUPLICATE_ADDRESS = BIT(2),
+    FILTER_DUPLICATE_ADVDATA = BIT(3),
+    FILTER_DUPLICATE_DEFAULT = FILTER_DUPLICATE_PDUTYPE | FILTER_DUPLICATE_ADDRESS,
+    FILTER_DUPLICATE_PDU_ALL = 0xF,
+    FILTER_DUPLICATE_EXCEPTION_FOR_MESH = BIT(4),
+    FILTER_DUPLICATE_AD_TYPE = BIT(5),
+}disc_duplicate_mode_t;
+
+
+extern void filter_duplicate_mode_enable(disc_duplicate_mode_t mode);
+extern void filter_duplicate_mode_disable(disc_duplicate_mode_t mode);
+extern void filter_duplicate_set_ring_list_max_num(uint32_t max_num);
+extern void scan_duplicate_cache_refresh_set_time(uint32_t period_time);
+
+int
+ble_vhci_disc_duplicate_mode_enable(int mode)
+{
+    // TODO: use vendor hci to update
+    filter_duplicate_mode_enable(mode);
+    return true;
+}
+
+int
+ble_vhci_disc_duplicate_mode_disable(int mode)
+{
+    // TODO: use vendor hci to update
+    filter_duplicate_mode_disable(mode);
+    return true;
+}
+
+int ble_vhci_disc_duplicate_set_max_cache_size(int max_cache_size){
+    // TODO: use vendor hci to update
+    filter_duplicate_set_ring_list_max_num(max_cache_size);
+    return true;
+}
+
+int ble_vhci_disc_duplicate_set_period_refresh_time(int refresh_period_time){
+    // TODO: use vendor hci to update
+    scan_duplicate_cache_refresh_set_time(refresh_period_time);
+    return true;
+}
+
+/**
+ * @brief Config scan duplicate option mode from menuconfig (Adapt to the old configuration method.)
+ */
+void ble_controller_scan_duplicate_config(void)
+{
+    uint32_t duplicate_mode = FILTER_DUPLICATE_DEFAULT;
+    uint32_t cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
+    if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 0) {
+        duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_PDUTYPE;
+    } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 1) {
+        duplicate_mode = FILTER_DUPLICATE_ADVDATA;
+    } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 2) {
+        duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_ADVDATA;
+    }
+
+    duplicate_mode |= FILTER_DUPLICATE_EXCEPTION_FOR_MESH;
+
+    ble_vhci_disc_duplicate_mode_disable(0xFFFFFFFF);
+    ble_vhci_disc_duplicate_mode_enable(duplicate_mode);
+    ble_vhci_disc_duplicate_set_max_cache_size(cache_size);
+    ble_vhci_disc_duplicate_set_period_refresh_time(CONFIG_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD);
+}
+
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
@@ -719,6 +787,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
         goto free_controller;
     }
+
+    ble_controller_scan_duplicate_config();
 
     ret = controller_sleep_init();
     if (ret != ESP_OK) {
