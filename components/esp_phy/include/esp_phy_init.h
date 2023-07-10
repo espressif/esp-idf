@@ -258,6 +258,17 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
  */
 char * get_phy_version_str(void);
 
+/**
+ * @brief Enable phy track pll
+ *
+ */
+void phy_track_pll_init(void);
+
+/**
+ * @brief Disable phy track pll
+ *
+ */
+void phy_track_pll_deinit(void);
 #ifdef __cplusplus
 }
 #endif
