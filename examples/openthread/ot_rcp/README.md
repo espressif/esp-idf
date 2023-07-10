@@ -13,7 +13,7 @@ OpenThread RCP doesn't function alone, it needs to work together with a Host and
 
 ### Hardware Required
 
-To run this example, an ESP32-H2 board is required.
+To run this example, a board with IEEE 802.15.4 module (for example ESP32-H2) is required.
 
 ### Configure the project
 
