@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,11 +12,12 @@
 extern "C" {
 #endif
 
-#define SUPPORT_BTDM            1
-#define SUPPORT_BTBB            1
+#define SUPPORT_BTDM            0
+#define SUPPORT_BTBB            0
 #define SUPPORT_WIFI            1
-#define SUPPORT_USB_DEVICE      1
+#define SUPPORT_USB_DWCOTG      0
 #define SUPPORT_COEXIST         1
+#define SUPPORT_MBEDTLS         0
 
 /* Structure and functions for returning ROM global layout
  *
@@ -79,9 +80,15 @@ typedef struct {
     void *dram_end_mbedtls_rom;
 #endif
 
-#if SUPPORT_USB_DEVICE
-    void *dram_start_usbdev_rom;
-    void *dram_end_usbdev_rom;
+#if SUPPORT_USB_DWCOTG
+    void *dram_start_usb_dwcotg_rom;
+    void *dram_end_usb_dwcotg_rom;
+#else
+    //Two reserved members are defined here, so the structure will not be broken,
+    //please keep in mind that there is no memory can be released between
+    //dram_start_usb_reserved_rom ~ dram_end_usb_reserved_rom.
+    void *dram_start_usb_reserved_rom;
+    void *dram_end_usb_reserved_rom;
 #endif
 
     void *dram_start_uart_rom;
