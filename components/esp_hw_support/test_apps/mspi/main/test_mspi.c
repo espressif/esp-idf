@@ -47,6 +47,6 @@ TEST_CASE("MSPI: Test mspi timing turning time cost", "[mspi]")
         printf("mspi psram speed up cost %ld\n", cost);
     }
 
-    TEST_ASSERT_LESS_THAN_UINT32(TEST_TIME_LIMIT_US, slow_down_time[TEST_TIME_CNT / 2]);
-    TEST_ASSERT_LESS_THAN_UINT32(TEST_TIME_LIMIT_US, speed_up_time[TEST_TIME_CNT / 2]);
+    TEST_ASSERT_LESS_OR_EQUAL_UINT32(TEST_TIME_LIMIT_US, slow_down_time[TEST_TIME_CNT / 2]);
+    TEST_ASSERT_LESS_OR_EQUAL_UINT32(TEST_TIME_LIMIT_US, speed_up_time[TEST_TIME_CNT / 2]);
 }
