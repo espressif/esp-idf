@@ -22,6 +22,7 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_conf.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/esp_sleep_internal.h"
 
 #if SOC_DAC_SUPPORTED
 #include "driver/dac.h"
@@ -437,6 +438,8 @@ void adc1_ulp_enable(void)
     adc_ll_amp_disable();
 #endif
     SARADC1_EXIT();
+
+    esp_sleep_enable_adc_tsens_monitor(true);
 }
 #endif
 
