@@ -48,6 +48,7 @@ typedef struct {
                                                                  will be reset when all data filled in the infinite transaction */
     struct {
         uint32_t                    infinite : 1;           /*!< Whether this is an infinite transaction */
+        uint32_t                    indirect_mount : 1;     /*!< Whether the user payload mount to the descriptor indirectly via an internal DMA buffer */
     } flags;
 } parlio_rx_transaction_t;
 
@@ -144,6 +145,7 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
     }
     size_t mount_size = 0;
     size_t offset = 0;
+    /* Loop the descriptors to assign the data */
     for (int i = 0; i < desc_num; i++) {
         size_t rest_size = trans->size - offset;
         if (rest_size >= 2 * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
@@ -235,13 +237,14 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 {
     int group_id = rx_unit->group->group_id;
     int unit_id = rx_unit->unit_id;
-
+    /* Default GPIO configuration */
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .pull_down_en = false,
         .pull_up_en = true,
     };
 
+    /* When the source clock comes from external, enable the gpio input direction and connect to the clock input signal */
     if (config->clk_src == PARLIO_CLK_SRC_EXTERNAL) {
         ESP_RETURN_ON_FALSE(config->clk_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_gpio_num must be set while the clock input from external");
         /* Connect the clock in signal to the GPIO matrix if it is set */
@@ -249,17 +252,17 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
             gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
             gpio_conf.pin_bit_mask = BIT64(config->clk_gpio_num);
             ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->clk_gpio_num], PIN_FUNC_GPIO);
         }
         esp_rom_gpio_connect_in_signal(config->clk_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_in_sig, false);
     }
+    /* When the source clock comes from internal and supported to output the internal clock,
+     * enable the gpio output direction and connect to the clock output signal */
     else if (config->clk_gpio_num >= 0) {
 #if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
-        gpio_conf.mode = GPIO_MODE_OUTPUT;
+        gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT;
         gpio_conf.pin_bit_mask = BIT64(config->clk_gpio_num);
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->clk_gpio_num], PIN_FUNC_GPIO);
+        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk out GPIO failed");
         esp_rom_gpio_connect_out_signal(config->clk_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
 #else
@@ -267,16 +270,17 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 #endif // SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
     }
 
-    gpio_conf.mode = GPIO_MODE_INPUT;
+    gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
+    /* Initialize the valid GPIO as input */
     if (config->valid_gpio_num >= 0) {
         if (!config->flags.io_no_init) {
             gpio_conf.pin_bit_mask = BIT64(config->valid_gpio_num);
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->valid_gpio_num], PIN_FUNC_GPIO);
+            ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
         }
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
         /* Not connect the signal here, the signal is lazy connected until the delimiter takes effect */
     }
 
+    /* Initialize the data GPIO as input and bind them to the corresponding data line signals */
     for (int i = 0; i < config->data_width; i++) {
         /* Loop the data_gpio_nums to connect data and valid signals via GPIO matrix */
         if (config->data_gpio_nums[i] >= 0) {
@@ -295,21 +299,29 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     return ESP_OK;
 }
 
-static IRAM_ATTR bool s_parlio_rx_default_trans_done_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t )user_data;
     BaseType_t high_task_woken = pdFALSE;
     bool need_yield = false;
 
-    /* If configured on_receive_done callback and transaction just done */
-    if (rx_unit->cbs.on_receive_done) {
-        parlio_rx_event_data_t evt_data = {
-            .delimiter = rx_unit->curr_trans.delimiter,
-            .data = rx_unit->usr_recv_buf,
-            .size = rx_unit->curr_trans.size,
-            .recv_bytes = rx_unit->curr_trans.recv_bytes,
-        };
-        need_yield |= rx_unit->cbs.on_receive_done(rx_unit, &evt_data, rx_unit->user_data);
+    parlio_rx_event_data_t evt_data = {
+        .delimiter = rx_unit->curr_trans.delimiter,
+    };
+
+    if (event_data->flags.abnormal_eof) {
+        /* If received an abnormal EOF, it's a timeout event on parlio RX */
+        if (rx_unit->cbs.on_timeout) {
+            need_yield |= rx_unit->cbs.on_timeout(rx_unit, &evt_data, rx_unit->user_data);
+        }
+    } else {
+        /* If received a normal EOF, it's a receive done event on parlio RX */
+        if (rx_unit->cbs.on_receive_done) {
+            evt_data.data = rx_unit->usr_recv_buf;
+            evt_data.size = rx_unit->curr_trans.size;
+            evt_data.recv_bytes = rx_unit->curr_trans.recv_bytes;
+            need_yield |= rx_unit->cbs.on_receive_done(rx_unit, &evt_data, rx_unit->user_data);
+        }
     }
 
     if (rx_unit->curr_trans.flags.infinite) {
@@ -333,7 +345,6 @@ static IRAM_ATTR bool s_parlio_rx_default_trans_done_callback(gdma_channel_handl
                 parlio_ll_rx_start(rx_unit->group->hal.regs, true);
                 parlio_ll_rx_enable_clock(rx_unit->group->hal.regs, true);
             }
-
         } else {
             /* No more transaction pending to receive, clear the current transaction */
             rx_unit->curr_trans.delimiter->under_using = false;
@@ -355,6 +366,7 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
     dma_descriptor_t *finished_desc = rx_unit->curr_desc;
     parlio_rx_event_data_t evt_data = {
         .delimiter = rx_unit->curr_trans.delimiter,
+        // TODO: The current descriptor is not able to access when error EOF occur
         .data = finished_desc->buffer,
         .size = finished_desc->dw0.size,
         .recv_bytes = finished_desc->dw0.length,
@@ -363,7 +375,7 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
         need_yield |= rx_unit->cbs.on_partial_receive(rx_unit, &evt_data, rx_unit->user_data);
     }
     /* For the infinite transaction, need to copy the data in DMA buffer to the user receiving buffer */
-    if (rx_unit->curr_trans.flags.infinite) {
+    if (rx_unit->curr_trans.flags.infinite && rx_unit->curr_trans.flags.indirect_mount) {
         memcpy(rx_unit->usr_recv_buf + rx_unit->curr_trans.recv_bytes, evt_data.data, evt_data.recv_bytes);
     } else {
         rx_unit->curr_trans.delimiter->under_using = false;
@@ -376,20 +388,6 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
     /* Move to the next DMA descriptor */
     rx_unit->curr_desc = rx_unit->curr_desc->next;
 
-    return need_yield;
-}
-
-static IRAM_ATTR bool s_parlio_rx_default_timeout_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
-{
-    parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t )user_data;
-    bool need_yield = false;
-    parlio_rx_delimiter_handle_t deli = rx_unit->curr_trans.delimiter;
-    if (rx_unit->cbs.on_timeout && deli) {
-        parlio_rx_event_data_t evt_data = {
-            .delimiter = deli,
-        };
-        need_yield |= rx_unit->cbs.on_timeout(rx_unit, &evt_data, rx_unit->user_data);
-    }
     return need_yield;
 }
 
@@ -431,11 +429,8 @@ static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
 
     /* Register callbacks */
     gdma_rx_event_callbacks_t cbs = {
-        .on_recv_eof = s_parlio_rx_default_trans_done_callback,
+        .on_recv_eof = s_parlio_rx_default_eof_callback,
         .on_recv_done = s_parlio_rx_default_desc_done_callback,
-        // TODO: not on_err_desc, wait for GDMA supports on_err_eof
-        // .on_err_eof = s_parlio_rx_default_timeout_callback,
-        .on_descr_err = s_parlio_rx_default_timeout_callback,
     };
     gdma_register_rx_event_callbacks(rx_unit->dma_chan, &cbs, rx_unit);
 
@@ -808,6 +803,7 @@ static esp_err_t s_parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit
         s_parlio_mount_transaction_buffer(rx_unit, trans);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
         if (rx_unit->cfg.flags.free_clk) {
+            printf("enable start\n");
             parlio_ll_rx_start(rx_unit->group->hal.regs, true);
             parlio_ll_rx_enable_clock(rx_unit->group->hal.regs, true);
         }
@@ -863,6 +859,7 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         .size = payload_size,
         .recv_bytes = 0,
         .flags.infinite = recv_cfg->flags.is_infinite,
+        .flags.indirect_mount = recv_cfg->flags.indirect_mount,
     };
     rx_unit->usr_recv_buf = payload;
 

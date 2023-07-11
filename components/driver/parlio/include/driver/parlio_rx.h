@@ -22,7 +22,7 @@ extern "C" {
 typedef struct {
     size_t                  trans_queue_depth;      /*!< Depth of internal transaction queue */
     size_t                  max_recv_size;          /*!< Maximum receive size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
-    size_t                  data_width;             /*!< Parallel IO data width, can set to 1/2/4/8/..., but can't bigger than PARLIO_RX_UNIT_MAX_DATA_WIDTH */
+    size_t                  data_width;             /*!< Parallel IO data width, can set to 1/2/4/8/..., but can't be greater than PARLIO_RX_UNIT_MAX_DATA_WIDTH */
     parlio_clock_source_t   clk_src;                /*!< Parallel IO clock source */
     uint32_t                clk_freq_hz;            /*!< The source clock frequency for external when the clock source is selected as PARLIO_CLK_SRC_EXTERNAL;
                                                          The expected output clock frequency when the clock source is from internal */
