@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import ctypes
@@ -62,12 +62,15 @@ class ANSIColorConverter(object):
             self.decode_output = False
         self.handle = GetStdHandle(STD_ERROR_HANDLE if self.output == sys.stderr else STD_OUTPUT_HANDLE)
         self.matched = b''
+        self.decode_buffer = b''
         self.force_color = force_color  # always print ANSI for colors if true
 
     def _output_write(self, data):  # type: (Union[str, bytes]) -> None
         try:
             if self.decode_output:
+                data = self.decode_buffer + data  # type: ignore
                 self.output.write(data.decode())  # type: ignore
+                self.decode_buffer = b''
             else:
                 self.output.write(data)  # type: ignore
         except (IOError, OSError):
@@ -79,8 +82,12 @@ class ANSIColorConverter(object):
             # (garbage bytes, etc)
             pass
         except UnicodeDecodeError:
-            # In case of double byte Unicode characters display '?'
-            self.output.write('?')  # type: ignore
+            self.decode_buffer += data  # type: ignore
+            if len(self.decode_buffer) > 4:
+                # Multi-byte character contain up to 4 bytes and if buffer have more then 4 bytes
+                # and still can not decode it we can just ignore some bytes
+                self.output.write(self.decode_buffer.decode(errors='replace'))  # type: ignore
+                self.decode_buffer = b''
 
     def write(self, data):  # type: ignore
         if isinstance(data, bytes):
