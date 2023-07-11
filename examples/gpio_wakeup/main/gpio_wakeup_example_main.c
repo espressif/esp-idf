@@ -8,15 +8,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/uart.h"
-#include "esp_sleep.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_timer.h"
 #include "gpio_wakeup_example.h"
 
 static const char *TAG = "gpio_wake_up_main";
