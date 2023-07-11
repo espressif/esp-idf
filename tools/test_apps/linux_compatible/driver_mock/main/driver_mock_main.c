@@ -9,6 +9,7 @@
 #include "driver/i2c.h"
 #include "driver/spi_master.h"
 #include "driver/spi_common.h"
+#include "driver/usb_serial_jtag.h"
 
 #include "Mockrmt_encoder.h"
 #include "Mockrmt_common.h"
@@ -25,4 +26,6 @@ void app_main(void)
     rmt_new_rx_channel(NULL, NULL);
     rmt_del_channel(channel);
     rmt_new_tx_channel(NULL, NULL);
+
+    usb_serial_jtag_driver_install(NULL);
 }
