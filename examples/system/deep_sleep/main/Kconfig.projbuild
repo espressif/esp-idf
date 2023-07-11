@@ -244,9 +244,10 @@ menu "Example Configuration"
                 When using EXT1 wakeup source without external pull-up/downs, you may want to make use of
                 the internal ones.
 
-                However, the RTC IO reside in the RTC Periph power domain. Enable this option to force that
-                power domain ON during deep sleep. Note that this will increase some power comsumption, so
-                it's still suggested to use external ones instead.
+                if we turn off the RTC_PERIPH domain or if certain chips lack the RTC_PERIPH domain,
+                we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep.
+                but if we turn on the RTC_PERIPH domain, we don not need to use HOLD feature and this will
+                increase some power comsumption.
 
                 EXT0 wakeup source resides in the same power domain as RTCIO (RTC Periph), so internal
                 pull-up/downs are always available. There's no need to explicitly force it on for EXT0.

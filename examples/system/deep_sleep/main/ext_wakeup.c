@@ -49,19 +49,33 @@ void example_deep_sleep_register_ext1_wakeup(void)
 
     /* If there are no external pull-up/downs, tie wakeup pins to inactive level with internal pull-up/downs via RTC IO
      * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
-     * increase some power comsumption. */
+     * increase some power comsumption. However, if we turn off the RTC_PERIPH domain or if certain chips lack the RTC_PERIPH
+     * domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep.*/
 #if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
-#if !CONFIG_IDF_TARGET_ESP32H2
-    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
-    ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
-    ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_1));
-    ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_2));
-    ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_2));
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    if (ext_wakeup_mode) {
+        ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_2));
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_2));
+    } else {
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_dis(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_pullup_en(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_dis(ext_wakeup_pin_2));
+        ESP_ERROR_CHECK(rtc_gpio_pullup_en(ext_wakeup_pin_2));
+    }
 #else
-    gpio_pullup_dis(ext_wakeup_pin_1);
-    gpio_pulldown_en(ext_wakeup_pin_1);
-    gpio_pullup_dis(ext_wakeup_pin_2);
-    gpio_pulldown_en(ext_wakeup_pin_2);
+    if (ext_wakeup_mode) {
+        ESP_ERROR_CHECK(gpio_pullup_dis(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(gpio_pulldown_en(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(gpio_pullup_dis(ext_wakeup_pin_2));
+        ESP_ERROR_CHECK(gpio_pulldown_en(ext_wakeup_pin_2));
+    } else {
+        ESP_ERROR_CHECK(gpio_pulldown_dis(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(gpio_pullup_en(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(gpio_pulldown_dis(ext_wakeup_pin_2));
+        ESP_ERROR_CHECK(gpio_pullup_en(ext_wakeup_pin_2));
+    }
 #endif
 #endif //CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 }
