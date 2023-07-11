@@ -63,6 +63,14 @@ menu "Core dump"
         help
             Enables/disable core dump module.
 
+    config ESP_COREDUMP_LOGS
+        bool "Enable coredump logs for debugging"
+        depends on ESP_COREDUMP_ENABLE
+        default y
+        help
+            Enable/disable coredump logs. Logs strings from espcoredump component are
+            placed in DRAM. Disabling these helps to save ~5KB of internal memory.
+
     config ESP_COREDUMP_MAX_TASKS_NUM
         int "Maximum number of tasks"
         depends on ESP_COREDUMP_ENABLE
