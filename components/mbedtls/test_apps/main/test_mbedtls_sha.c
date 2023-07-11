@@ -229,7 +229,7 @@ TEST_CASE("mbedtls SHA512 clone", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_thousand_bs, sha512, 64, "SHA512 cloned calculation");
 }
 
-TEST_CASE("mbedtls SHA384 clone", "[mbedtls][")
+TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
 {
     mbedtls_sha512_context ctx;
     mbedtls_sha512_context clone;

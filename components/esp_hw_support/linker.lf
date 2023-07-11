@@ -31,11 +31,6 @@ entries:
     if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
-    if GDMA_CTRL_FUNC_IN_IRAM = y:
-        gdma: gdma_start (noflash)
-        gdma: gdma_stop (noflash)
-        gdma: gdma_append (noflash)
-        gdma: gdma_reset (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
     if APP_BUILD_TYPE_PURE_RAM_APP = n:

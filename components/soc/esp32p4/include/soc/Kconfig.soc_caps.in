@@ -195,17 +195,21 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
-config SOC_GDMA_GROUPS
+config SOC_AHB_GDMA_VERSION
     int
-    default 1
+    default 2
 
-config SOC_GDMA_PAIRS_PER_GROUP
+config SOC_GDMA_NUM_GROUPS_MAX
+    int
+    default 2
+
+config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 3
 
 config SOC_GDMA_SUPPORT_ETM
     bool
-    default n
+    default y
 
 config SOC_ETM_GROUPS
     int

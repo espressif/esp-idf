@@ -47,7 +47,7 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     uint8_t *dst_buf = NULL;
     uint8_t *from_addr = NULL;
     uint8_t *to_addr = NULL;
-#if CONFIG_SPIRAM && SOC_GDMA_SUPPORT_PSRAM
+#if CONFIG_SPIRAM && SOC_AHB_GDMA_SUPPORT_PSRAM
     if (test_context->src_in_psram) {
         src_buf = heap_caps_malloc(buffer_size, MALLOC_CAP_SPIRAM);
     } else {
@@ -249,7 +249,7 @@ static void memcpy_performance_test(uint32_t buffer_size)
     IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: SRAM->SRAM, size: %zu Bytes", throughput, test_context.buffer_size);
     async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.buffer_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
 
-#if CONFIG_SPIRAM && SOC_GDMA_SUPPORT_PSRAM
+#if CONFIG_SPIRAM && SOC_AHB_GDMA_SUPPORT_PSRAM
     // 2. PSRAM->PSRAM
     test_context.src_in_psram = true;
     test_context.dst_in_psram = true;

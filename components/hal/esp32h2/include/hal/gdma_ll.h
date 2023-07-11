@@ -42,6 +42,10 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_SUC_EOF    (1<<1)
 #define GDMA_LL_EVENT_RX_DONE       (1<<0)
 
+#define GDMA_LL_AHB_GROUP_START_ID    0 // AHB GDMA group ID starts from 0
+#define GDMA_LL_AHB_NUM_GROUPS        1 // Number of AHB GDMA groups
+#define GDMA_LL_AHB_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AHB group
+
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
     (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH0, \
@@ -88,9 +92,9 @@ extern "C" {
 
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
- * @brief Enable DMA clock gating
+ * @brief Force enable register clock
  */
-static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
+static inline void gdma_ll_force_enable_reg_clock(gdma_dev_t *dev, bool enable)
 {
     dev->misc_conf.clk_en = enable;
 }
@@ -102,7 +106,7 @@ static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
 __attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->in_intr[channel].st.val & GDMA_LL_RX_EVENT_MASK;
+    return dev->in_intr[channel].st.val;
 }
 
 /**
@@ -111,9 +115,9 @@ static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t
 static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
     if (enable) {
-        dev->in_intr[channel].ena.val |= (mask & GDMA_LL_RX_EVENT_MASK);
+        dev->in_intr[channel].ena.val |= mask;
     } else {
-        dev->in_intr[channel].ena.val &= ~(mask & GDMA_LL_RX_EVENT_MASK);
+        dev->in_intr[channel].ena.val &= ~mask;
     }
 }
 
@@ -123,7 +127,7 @@ static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel
 __attribute__((always_inline))
 static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    dev->in_intr[channel].clr.val = (mask & GDMA_LL_RX_EVENT_MASK);
+    dev->in_intr[channel].clr.val = mask;
 }
 
 /**
@@ -326,7 +330,7 @@ static inline void gdma_ll_rx_enable_etm_task(gdma_dev_t *dev, uint32_t channel,
 __attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
-    return dev->out_intr[channel].st.val & GDMA_LL_TX_EVENT_MASK;
+    return dev->out_intr[channel].st.val;
 }
 
 /**
@@ -335,9 +339,9 @@ static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t
 static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
     if (enable) {
-        dev->out_intr[channel].ena.val |= (mask & GDMA_LL_TX_EVENT_MASK);
+        dev->out_intr[channel].ena.val |= mask;
     } else {
-        dev->out_intr[channel].ena.val &= ~(mask & GDMA_LL_TX_EVENT_MASK);
+        dev->out_intr[channel].ena.val &= ~mask;
     }
 }
 
@@ -347,7 +351,7 @@ static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel
 __attribute__((always_inline))
 static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    dev->out_intr[channel].clr.val = (mask & GDMA_LL_TX_EVENT_MASK);
+    dev->out_intr[channel].clr.val = mask;
 }
 
 /**

@@ -13,7 +13,7 @@
 #include "soc/clk_tree_defs.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_GDMA_SUPPORTED
+#if SOC_AHB_GDMA_VERSION == 1
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 

@@ -15,6 +15,8 @@
 #include "soc/soc_caps.h"
 #include "hal/gdma_hal.h"
 #include "hal/gdma_ll.h"
+#include "hal/gdma_hal_ahb.h"
+#include "hal/gdma_hal_axi.h"
 #include "soc/gdma_periph.h"
 #include "esp_private/gdma.h"
 
@@ -40,13 +42,14 @@ typedef struct gdma_tx_channel_t gdma_tx_channel_t;
 typedef struct gdma_rx_channel_t gdma_rx_channel_t;
 
 typedef struct gdma_group_t {
-    int group_id;           // Group ID, index from 0
+    int group_id; // Group ID, index from 0
+    int bus_id;   // which system does the GDMA instance attached to
     gdma_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;  // group level spinlock
     uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
     uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
-    gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP];  // handles of GDMA pairs
-    int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP]; // reference count used to protect pair install/uninstall
+    gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP_MAX];  // handles of GDMA pairs
+    int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP_MAX]; // reference count used to protect pair install/uninstall
 } gdma_group_t;
 
 struct gdma_pair_t {

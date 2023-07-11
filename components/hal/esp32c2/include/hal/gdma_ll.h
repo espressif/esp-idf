@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,11 +41,16 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_SUC_EOF    (1<<1)
 #define GDMA_LL_EVENT_RX_DONE       (1<<0)
 
+#define GDMA_LL_AHB_GROUP_START_ID    0       // AHB GDMA group ID starts from 0
+#define GDMA_LL_AHB_NUM_GROUPS        1       // Number of AHB GDMA groups
+#define GDMA_LL_AHB_PAIRS_PER_GROUP   1       // Number of GDMA pairs in each AHB group
+#define GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT  1  // TX and RX channel in the same pair will share the same interrupt source number
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
- * @brief Enable DMA clock gating
+ * @brief Force enable register clock
  */
-static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
+static inline void gdma_ll_force_enable_reg_clock(gdma_dev_t *dev, bool enable)
 {
     dev->misc_conf.clk_en = enable;
 }

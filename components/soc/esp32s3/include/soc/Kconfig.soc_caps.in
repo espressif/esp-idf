@@ -47,6 +47,10 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
     bool
     default y
@@ -363,15 +367,19 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
-config SOC_GDMA_GROUPS
-    bool
-    default y
+config SOC_AHB_GDMA_VERSION
+    int
+    default 1
 
-config SOC_GDMA_PAIRS_PER_GROUP
+config SOC_GDMA_NUM_GROUPS_MAX
+    int
+    default 1
+
+config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 5
 
-config SOC_GDMA_SUPPORT_PSRAM
+config SOC_AHB_GDMA_SUPPORT_PSRAM
     bool
     default y
 

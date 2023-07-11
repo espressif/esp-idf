@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,3 +12,13 @@
 #define SOC_GDMA_TRIG_PERIPH_UHCI0   (2)
 #define SOC_GDMA_TRIG_PERIPH_SHA0    (7)
 #define SOC_GDMA_TRIG_PERIPH_ADC0    (8)
+
+// On which system bus is the DMA instance of the peripheral connection mounted
+#define SOC_GDMA_BUS_ANY (-1)
+#define SOC_GDMA_BUS_AHB (0)
+
+#define SOC_GDMA_TRIG_PERIPH_M2M0_BUS     SOC_GDMA_BUS_ANY
+#define SOC_GDMA_TRIG_PERIPH_SPI2_BUS     SOC_GDMA_BUS_AHB
+#define SOC_GDMA_TRIG_PERIPH_UHCI0_BUS    SOC_GDMA_BUS_AHB
+#define SOC_GDMA_TRIG_PERIPH_SHA0_BUS     SOC_GDMA_BUS_AHB
+#define SOC_GDMA_TRIG_PERIPH_ADC0_BUS     SOC_GDMA_BUS_AHB
