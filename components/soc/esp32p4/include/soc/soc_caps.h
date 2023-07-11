@@ -29,16 +29,16 @@
 // #define SOC_ANA_CMPR_SUPPORTED          1  //TODO: IDF-7479
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1  //TODO: IDF-7552
 #define SOC_UART_SUPPORTED              1
-// #define SOC_GDMA_SUPPORTED              1  //TODO: IDF-6504
-// #define SOC_AHB_GDMA_SUPPORTED          1
-// #define SOC_AXI_GDMA_SUPPORTED          1
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
+#define SOC_AXI_GDMA_SUPPORTED          1
 // #define SOC_GPTIMER_SUPPORTED           1  //TODO: IDF-6515
 // #define SOC_PCNT_SUPPORTED              1  //TODO: IDF-7475
 // #define SOC_MCPWM_SUPPORTED             1  //TODO: IDF-7493
 // #define SOC_TWAI_SUPPORTED              1  //TODO: IDF-7470
 // #define SOC_ETM_SUPPORTED               1  //TODO: IDF-7478
 // #define SOC_PARLIO_SUPPORTED            1  //TODO: IDF-7471, TODO: IDF-7472
-#define SOC_ASYNC_MEMCPY_SUPPORTED      1
+// #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // disable usb serial jtag for esp32p4, current image does not support
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  //TODO: IDF-7496
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  //TODO: IDF-7482
@@ -160,7 +160,7 @@
 #define SOC_AHB_GDMA_VERSION            2
 #define SOC_GDMA_NUM_GROUPS_MAX         2
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-// #define SOC_GDMA_SUPPORT_ETM            1  // Both AHB-DMA and AXI-DMA supports ETM  //TODO: IDF-6504
+// #define SOC_GDMA_SUPPORT_ETM            1  // Both AHB-DMA and AXI-DMA supports ETM  //TODO: IDF-7478
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups

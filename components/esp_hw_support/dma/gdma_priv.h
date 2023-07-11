@@ -45,7 +45,7 @@ typedef struct gdma_group_t {
     int group_id; // Group ID, index from 0
     int bus_id;   // which system does the GDMA instance attached to
     gdma_hal_context_t hal; // HAL instance is at group level
-    portMUX_TYPE spinlock;  // group level spinlock
+    portMUX_TYPE spinlock;  // group level spinlock, protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair
     uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
     uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
     gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP_MAX];  // handles of GDMA pairs
@@ -58,7 +58,7 @@ struct gdma_pair_t {
     gdma_tx_channel_t *tx_chan; // pointer of tx channel in the pair
     gdma_rx_channel_t *rx_chan; // pointer of rx channel in the pair
     int occupy_code;            // each bit indicates which channel has been occupied (an occupied channel will be skipped during channel search)
-    portMUX_TYPE spinlock;      // pair level spinlock
+    portMUX_TYPE spinlock;      // pair level spinlock, protect pair level stuffs, e.g. channel handle slots, occupy code
 };
 
 struct gdma_channel_t {

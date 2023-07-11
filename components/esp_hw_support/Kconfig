@@ -218,6 +218,13 @@ menu "Hardware Settings"
                 This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
                 cache misses, and also be able to run whilst the cache is disabled.
                 (e.g. SPI Flash write).
+
+        config GDMA_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for GDMA driver.
+                Note that, this option only controls the GDMA driver log, won't affect other drivers.
     endmenu # GDMA Configuration
 
     menu "Main XTAL Config"

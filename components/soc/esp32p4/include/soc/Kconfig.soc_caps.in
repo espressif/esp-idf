@@ -7,7 +7,15 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
-config SOC_ASYNC_MEMCPY_SUPPORTED
+config SOC_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_AXI_GDMA_SUPPORTED
     bool
     default y
 
