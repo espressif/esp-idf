@@ -15,6 +15,7 @@
 #include "ieee802154_cmd.h"
 #include "esp_phy_init.h"
 #include "soc/soc.h"
+#include "soc/ieee802154_reg.h"
 
 static uint8_t s_tx_frame[131] = { 0 };
 static const char* TAG = "i154test";
@@ -34,6 +35,7 @@ static void register_cca(void);
 static void register_esp154(void);
 static void register_reg(void);
 static void register_free(void);
+static void register_restart(void);
 
 void register_ieee802154_cmd(void)
 {
@@ -52,6 +54,7 @@ void register_ieee802154_cmd(void)
     register_esp154();
     register_reg();
     register_free();
+    register_restart();
 }
 
 static struct {
@@ -670,9 +673,7 @@ static void register_free()
 }
 
 /* 'reg' command reads/writes the registers */
-extern uint32_t IEEE802154;
 static struct {
-    struct arg_lit *base;
     struct arg_int *get_reg;
     struct arg_int *set_reg;
     struct arg_int *value;
@@ -681,7 +682,7 @@ static struct {
 
 static int process_reg(int argc, char **argv)
 {
-    uint32_t *base = &IEEE802154;
+    uint32_t base = IEEE802154_REG_BASE;
 
     int nerrors = arg_parse(argc, argv, (void **) &reg_args);
     if (nerrors != 0) {
@@ -836,6 +837,24 @@ static void register_rx(void)
         .hint = NULL,
         .func = &process_rx,
         .argtable = &rx_args
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+
+/* 'restart' command restarts the program */
+static int restart(int argc, char **argv)
+{
+    ESP_EARLY_LOGI(TAG, "Restarting");
+    esp_restart();
+}
+
+static void register_restart(void)
+{
+    const esp_console_cmd_t cmd = {
+        .command = "restart",
+        .help = "Restart the program",
+        .hint = NULL,
+        .func = &restart
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }

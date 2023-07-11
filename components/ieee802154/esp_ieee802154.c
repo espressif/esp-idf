@@ -21,7 +21,6 @@
 
 esp_err_t esp_ieee802154_enable(void)
 {
-
     ieee802154_enable();
     esp_phy_enable();
     esp_btbb_enable();
@@ -380,4 +379,14 @@ __attribute__((weak)) void esp_ieee802154_ed_failed(uint16_t error)
 __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame)
 {
     return ESP_OK;
+}
+
+__attribute__((weak)) void esp_ieee802154_timer0_done(void)
+{
+
+}
+
+__attribute__((weak)) void esp_ieee802154_timer1_done(void)
+{
+
 }
