@@ -78,7 +78,7 @@ JTAG 调试
 
     .. note::
 
-        {IDF_TARGET_NAME} 中的 USB 接口只能用于调试版本 3 或更新版本的芯片，对于版本 1 或 2 的芯片，请使用其他调试板（例如 ESP-Prog）。确定芯片版本最简单的方法是通过 `idf.py flash` 完成芯片烧写，并在底部寻找类似 `芯片为 ESP32-C3 (版本 3)` 信息。
+        {IDF_TARGET_NAME} 的 USB 接口仅适用于调试版本为 0.3 或更高版本的芯片，对于版本为 0.1 或 0.2 的芯片，请使用其他调试方法（例如 ESP-Prog）。要确定芯片版本，可以在 boot log 开头查看类似 ``boot: chip revision: v0.3`` 的信息。更多详情，请参考 ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`_。
 
 .. _jtag-debugging-selecting-jtag-adapter:
 
