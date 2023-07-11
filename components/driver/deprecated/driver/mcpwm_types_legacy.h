@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,9 +130,9 @@ typedef enum {
 } mcpwm_sync_signal_t;
 
 // backward compatibility
-#define MCPWM_SELCT_SYNC0 MCPWM_SELCT_GPIO_SYNC0
-#define MCPWM_SELCT_SYNC1 MCPWM_SELCT_GPIO_SYNC1
-#define MCPWM_SELCT_SYNC2 MCPWM_SELCT_GPIO_SYNC2
+#define MCPWM_SELECT_SYNC0 MCPWM_SELECT_GPIO_SYNC0
+#define MCPWM_SELECT_SYNC1 MCPWM_SELECT_GPIO_SYNC1
+#define MCPWM_SELECT_SYNC2 MCPWM_SELECT_GPIO_SYNC2
 
 /**
  * @brief MCPWM timer sync event trigger
