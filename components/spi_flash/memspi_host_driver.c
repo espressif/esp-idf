@@ -34,6 +34,7 @@ extern uint32_t spi_flash_hal_gpspi_check_status(spi_flash_host_inst_t *host);
 extern bool spi_flash_hal_gpspi_supports_direct_write(spi_flash_host_inst_t *host, const void *p);
 extern bool spi_flash_hal_gpspi_supports_direct_read(spi_flash_host_inst_t *host, const void *p);
 
+#if SOC_GPSPI_SUPPORTED
 /** Default configuration for GPSPI */
 static const spi_flash_host_driver_t esp_flash_gpspi_host = {
         .dev_config = spi_flash_hal_gpspi_device_config,
@@ -58,6 +59,9 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {
         .resume = spi_flash_hal_resume,
         .suspend = spi_flash_hal_suspend,
 };
+#else
+static const spi_flash_host_driver_t esp_flash_gpspi_host = {};
+#endif
 #endif
 
 esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg)

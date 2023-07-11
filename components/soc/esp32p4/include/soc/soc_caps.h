@@ -69,6 +69,7 @@
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
 // #define SOC_SDMMC_HOST_SUPPORTED        1  //TODO: IDF-6502
 // #define SOC_CLK_TREE_SUPPORTED          1  //TODO: IDF-7526
+// #define SOC_ASSIST_DEBUG_SUPPORTED      1  //TODO: IDF-7565
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1

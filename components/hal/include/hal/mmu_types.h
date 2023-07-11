@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include "esp_bit_defs.h"
+#include "sdkconfig.h"  //To remove, TODO: IDF-7509
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +19,10 @@ typedef enum {
     MMU_MEM_CAP_WRITE = BIT(2),
     MMU_MEM_CAP_32BIT = BIT(3),
     MMU_MEM_CAP_8BIT  = BIT(4),
+#if CONFIG_IDF_TARGET_ESP32P4        //TODO: IDF-7509
+    MMU_MEM_CAP_FLASH = BIT(5),
+    MMU_MEM_CAP_PSRAM = BIT(5),
+#endif
 } mmu_mem_caps_t;
 
 /**
@@ -36,6 +41,10 @@ typedef enum {
 typedef enum {
     MMU_VADDR_DATA        = BIT(0),
     MMU_VADDR_INSTRUCTION = BIT(1),
+#if CONFIG_IDF_TARGET_ESP32P4        //TODO: IDF-7509
+    MMU_VADDR_FLASH       = BIT(2),
+    MMU_VADDR_PSRAM       = BIT(3),
+#endif
 } mmu_vaddr_t;
 
 /**

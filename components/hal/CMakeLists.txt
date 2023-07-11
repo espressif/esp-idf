@@ -39,8 +39,7 @@ if(NOT BOOTLOADER_BUILD)
         "rtc_io_hal.c"
         "gpio_hal.c"
         "uart_hal.c"
-        "uart_hal_iram.c"
-        "${target}/clk_tree_hal.c")
+        "uart_hal_iram.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         list(APPEND srcs
@@ -50,6 +49,10 @@ if(NOT BOOTLOADER_BUILD)
         if(CONFIG_SOC_FLASH_ENC_SUPPORTED)
             list(APPEND srcs "spi_flash_encrypt_hal_iram.c")
         endif()
+    endif()
+
+    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
+        list(APPEND srcs "${target}/clk_tree_hal.c")
     endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
@@ -164,6 +167,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "spi_slave_hd_hal.c")
     endif()
 
+    if(CONFIG_SOC_GPSPI_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32)
+        list(APPEND srcs "spi_flash_hal_gpspi.c")
+    endif()
+
     if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
         list(APPEND srcs "sdio_slave_hal.c")
     endif()
@@ -195,7 +202,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "spi_flash_hal_gpspi.c"
                     "touch_sensor_hal.c"
                     "usb_hal.c"
                     "usb_phy_hal.c"
@@ -207,7 +213,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "spi_flash_hal_gpspi.c"
             "touch_sensor_hal.c"
             "usb_hal.c"
             "usb_phy_hal.c"
@@ -219,28 +224,16 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c3")
         list(APPEND srcs
-              "spi_flash_hal_gpspi.c"
               "xt_wdt_hal.c"
               "esp32c3/rtc_cntl_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
-              "spi_flash_hal_gpspi.c"
               "esp32c2/rtc_cntl_hal.c")
     endif()
 
-    if(${target} STREQUAL "esp32c6")
-        list(APPEND srcs
-              "spi_flash_hal_gpspi.c")
-
-    endif()
-
     if(${target} STREQUAL "esp32h2")
-        list(APPEND srcs
-              "spi_flash_hal_gpspi.c"
-            )
-
         list(REMOVE_ITEM srcs
                 "esp32h2/rtc_cntl_hal.c"
                 )
