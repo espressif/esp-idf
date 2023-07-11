@@ -13,10 +13,6 @@ examples/openthread/ot_br:
 examples/openthread/ot_cli:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: only test on esp32h2
 
 examples/openthread/ot_rcp:
   enable:
@@ -37,7 +33,3 @@ examples/openthread/ot_sleepy_device/deep_sleep:
 examples/openthread/ot_sleepy_device/light_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
-  disable_test:
-    - if: SOC_IEEE802154_SUPPORTED == 1
-      temporary: true
-      reason: Unsupport # TO-DO: TZ-134

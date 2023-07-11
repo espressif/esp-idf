@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 
@@ -91,9 +91,9 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     cli_list = [cli_h2]
     router_extaddr_list = ['7766554433221101']
 
-    ocf.reset_thread(br)
+    ocf.init_thread(br)
     for cli in cli_list:
-        ocf.reset_thread(cli)
+        ocf.init_thread(cli)
     br_ot_para = default_br_ot_para
     ocf.joinThreadNetwork(br, br_ot_para)
     cli_ot_para = default_cli_ot_para
@@ -125,8 +125,8 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
 #        /    \
 # Wi-FI_Host   Thread_End_Device
 def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
-    ocf.reset_thread(br)
-    ocf.reset_thread(cli)
+    ocf.init_thread(br)
+    ocf.init_thread(cli)
     ocf.joinWiFiNetwork(br, default_br_wifi_para)
     ocf.joinThreadNetwork(br, default_br_ot_para)
     ot_para = default_cli_ot_para
@@ -540,3 +540,95 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)
     assert b'hello' in mytcp.tcp_bytes
+
+
+# Case 10: Sleepy device test
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
+@pytest.mark.openthread_sleep
+@pytest.mark.parametrize(
+    'config, count, app_path, target', [
+        ('cli_h2|sleepy_c6', 2,
+         f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+         'esp32h2|esp32c6'),
+        ('cli_c6|sleepy_h2', 2,
+         f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+         'esp32c6|esp32h2'),
+    ],
+    indirect=True,
+)
+def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
+    leader = dut[0]
+    sleepy_device = dut[1]
+    fail_info = re.compile(r'Core\W*?\d\W*?register dump')
+    try:
+        ocf.init_thread(leader)
+        time.sleep(3)
+        leader_para = ocf.thread_parameter('leader', '', '12', '7766554433221100', False)
+        leader_para.setnetworkname('OpenThread-ESP')
+        leader_para.setpanid('0x1234')
+        leader_para.setextpanid('dead00beef00cafe')
+        leader_para.setnetworkkey('aabbccddeeff00112233445566778899')
+        leader_para.setpskc('104810e2315100afd6bc9215a6bfac53')
+        ocf.joinThreadNetwork(leader, leader_para)
+        ocf.wait(leader, 5)
+        output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
+        assert not bool(fail_info.search(str(output)))
+        ocf.clean_buffer(sleepy_device)
+        sleepy_device.serial.hard_reset()
+        info = sleepy_device.expect(r'(.+)detached -> child', timeout=20)[1].decode(errors='replace')
+        assert not bool(fail_info.search(str(info)))
+        info = sleepy_device.expect(r'(.+)PMU_SLEEP_PD_TOP: True', timeout=10)[1].decode(errors='replace')
+        assert not bool(fail_info.search(str(info)))
+        info = sleepy_device.expect(r'(.+)PMU_SLEEP_PD_MODEM: True', timeout=20)[1].decode(errors='replace')
+        assert not bool(fail_info.search(str(info)))
+        output = sleepy_device.expect(pexpect.TIMEOUT, timeout=20)
+        assert not bool(fail_info.search(str(output)))
+        ocf.clean_buffer(sleepy_device)
+        ocf.execute_command(leader, 'factoryreset')
+        output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
+        assert not bool(fail_info.search(str(output)))
+    finally:
+        ocf.execute_command(leader, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 11: Basic startup Test of BR
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
+@pytest.mark.openthread_br
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.parametrize(
+    'config, count, app_path, target', [
+        ('rcp|br', 2,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32c6|esp32s3'),
+    ],
+    indirect=True,
+)
+def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
+    br = dut[1]
+    dut[0].serial.stop_redirect_thread()
+    try:
+        ocf.init_thread(br)
+        time.sleep(3)
+        ocf.clean_buffer(br)
+        ocf.execute_command(br, 'ifconfig up')
+        br.expect('Done', timeout=5)
+        ocf.execute_command(br, 'thread start')
+        br.expect('Done', timeout=5)
+        assert ocf.wait_for_join(br, 'leader')
+        ocf.reset_thread(br)
+        ocf.joinWiFiNetwork(br, default_br_wifi_para)
+        ocf.execute_command(br, 'ifconfig up')
+        br.expect('Done', timeout=5)
+        ocf.execute_command(br, 'thread start')
+        br.expect('Done', timeout=5)
+        assert ocf.wait_for_join(br, 'leader')
+    finally:
+        ocf.execute_command(br, 'factoryreset')
+        time.sleep(3)

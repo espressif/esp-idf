@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
@@ -23,6 +23,26 @@ class thread_parameter:
         self.channel = channel
         self.exaddr = exaddr
         self.bbr = bbr
+        self.networkname = ''
+        self.panid = ''
+        self.extpanid = ''
+        self.networkkey = ''
+        self.pskc = ''
+
+    def setnetworkname(self, networkname:str) -> None:
+        self.networkname = networkname
+
+    def setpanid(self, panid:str) -> None:
+        self.panid = panid
+
+    def setextpanid(self, extpanid:str) -> None:
+        self.extpanid = extpanid
+
+    def setnetworkkey(self, networkkey:str) -> None:
+        self.networkkey = networkkey
+
+    def setpskc(self, pskc:str) -> None:
+        self.pskc = pskc
 
 
 class wifi_parameter:
@@ -34,23 +54,43 @@ class wifi_parameter:
 
 
 def joinThreadNetwork(dut:IdfDut, thread:thread_parameter) -> None:
-    if thread.dataset != '':
+    if thread.dataset:
         command = 'dataset set active ' + thread.dataset
         execute_command(dut, command)
         dut.expect('Done', timeout=5)
     else:
         execute_command(dut, 'dataset init new')
         dut.expect('Done', timeout=5)
-        execute_command(dut, 'dataset commit active')
-        dut.expect('Done', timeout=5)
-    if thread.channel != '':
-        command = 'channel ' + thread.channel
+    if thread.channel:
+        command = 'dataset channel ' + thread.channel
         execute_command(dut, command)
         dut.expect('Done', timeout=5)
-    if thread.exaddr != '':
+    if thread.exaddr:
         command = 'extaddr ' + thread.exaddr
         execute_command(dut, command)
         dut.expect('Done', timeout=5)
+    if thread.networkname:
+        command = 'dataset networkname ' + thread.networkname
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    if thread.panid:
+        command = 'dataset panid ' + thread.panid
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    if thread.extpanid:
+        command = 'dataset extpanid ' + thread.extpanid
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    if thread.networkkey:
+        command = 'dataset networkkey ' + thread.networkkey
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    if thread.pskc:
+        command = 'dataset pskc ' + thread.pskc
+        execute_command(dut, command)
+        dut.expect('Done', timeout=5)
+    execute_command(dut, 'dataset commit active')
+    dut.expect('Done', timeout=5)
     if thread.bbr:
         execute_command(dut, 'bbr enable')
         dut.expect('Done', timeout=5)
@@ -109,9 +149,13 @@ def getDataset(dut:IdfDut) -> str:
     return str(dut_data)
 
 
-def reset_thread(dut:IdfDut) -> None:
+def init_thread(dut:IdfDut) -> None:
     dut.expect('>', timeout=10)
     wait(dut, 3)
+    reset_thread(dut)
+
+
+def reset_thread(dut:IdfDut) -> None:
     clean_buffer(dut)
     execute_command(dut, 'factoryreset')
     dut.expect('OpenThread attached to netif', timeout=20)
