@@ -1369,6 +1369,12 @@ static void ext1_wakeup_prepare(void)
         rtcio_hal_function_select(rtc_pin, RTCIO_FUNC_RTC);
         // set input enable in sleep mode
         rtcio_hal_input_enable(rtc_pin);
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+        // Pad configuration depends on RTC_PERIPH state in sleep mode
+        if (s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option != ESP_PD_OPTION_ON) {
+            rtcio_hal_hold_enable(rtc_pin);
+        }
+#endif
 #else
         /* ESP32H2 use hp iomux to config rtcio, and there is no complete
         * rtcio functionality. In the case of EXT1 wakeup, rtcio only provides
@@ -1380,19 +1386,6 @@ static void ext1_wakeup_prepare(void)
         gpio_ll_input_enable(&GPIO, gpio);
         // hold rtc_pin to use it during sleep state
         rtcio_hal_hold_enable(rtc_pin);
-#endif
-#if SOC_PM_SUPPORT_RTC_PERIPH_PD
-        // Pad configuration depends on RTC_PERIPH state in sleep mode
-        if (s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option != ESP_PD_OPTION_ON) {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-            // RTC_PERIPH will be powered down, so RTC_IO_ registers will
-            // loose their state. Lock pad configuration.
-            // Pullups/pulldowns also need to be disabled.
-            rtcio_hal_pullup_disable(rtc_pin);
-            rtcio_hal_pulldown_disable(rtc_pin);
-#endif
-            rtcio_hal_hold_enable(rtc_pin);
-        }
 #endif
         // Keep track of pins which are processed to bail out early
         rtc_gpio_mask &= ~BIT(rtc_pin);
