@@ -19,6 +19,7 @@
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"
@@ -124,6 +125,8 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
+    } else {
+        esp_sleep_enable_adc_tsens_monitor(true);
     }
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
@@ -223,6 +226,8 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 
     if (ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_release();
+    } else {
+        esp_sleep_enable_adc_tsens_monitor(false);
     }
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
