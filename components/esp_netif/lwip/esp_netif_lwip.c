@@ -1218,8 +1218,12 @@ esp_err_t esp_netif_transmit_wrap(esp_netif_t *esp_netif, void *data, size_t len
 
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb)
 {
+#ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
+    return esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
+#else
     esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
     return ESP_OK;
+#endif
 }
 
 #if CONFIG_LWIP_IPV4
