@@ -1,29 +1,119 @@
 menu "Example Configuration"
 
-    config EXAMPLE_TOUCH_WAKEUP
-        bool "Enable touch wake up"
-        default y
-        depends on SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
-        help
-            This option enables wake up from deep sleep using touch pads.
-            ESP32 - TOUCH8 and TOUCH9, which correspond to GPIO33 and GPIO32.
-            ESP32S2/S3 - TOUCH9, which corresponds to GPIO9.
-
-            Note: On ESP32, touch wakeup source can not be used together with ext0 wakeup source.
-
     menu "GPIO wakeup configuration"
 
         config EXAMPLE_GPIO_WAKEUP_SLEEP_NUM
             int "Enable wakeup from GPIO"
             default 6 if IDF_TARGET_ESP32S3
             range 0 15 if IDF_TARGET_ESP32S3
+            help
+                This option is used to set the wakeup and sleep pin.
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
             bool "Enable GPIO high-level wakeup"
             default y
             help
-                This option set the gpio wake-up trigger signal, In deep sleep, only high or low level wake-up is
+                This option set the gpio wake-up trigger signal, In light sleep, only high or low level wake-up is
                 supported. If this option is enabled, it is a high level wake up, otherwise it is a low level wake up.
+
+        config EXAMPLE_USE_INTERNAL_PU_PD
+            bool "Use internal pull up and pull down"
+            default y
+            help
+                This option set the pull-down mode of the gpio. If this option is enabled, 
+                then the internal pull-down is used, otherwise the external access pull-down is used.
     endmenu
+
+    menu "event configuration"
+
+        config EXAMPLE_EVENT_QUEUE_LEN
+            int "event queue length"
+            default 5
+            range 1 15
+            help
+                This option is used to set the length of the queue in which events are stored.
+                It is recommended to set it to between 5 and 10. 
+                Because if it is too small, it is easy to cause the system to crash; too big is also useless.
+
+        config EXAMPLE_EVENT_TASK_STACK_SIZE
+            int "event task`s stack size"
+            default 4096
+            range 1 8192
+            help
+                This option is used to set the stack size of the task that handles the event.
+                When there is extra heap space requested in the task, it should be set larger.
+
+        config EXAMPLE_EVENT_TASK_PRIORITY
+            int "event task`s priority"
+            default 10
+            range 1 15
+            help
+                This option is used to set the priority of the task.
+                The higher the value, the higher the priority. A value of 10 is usually sufficient.
+    endmenu
+
+    menu "power manager configuration"
+
+        choice EXAMPLE_PM_LOCK_TYPE
+            prompt "set pm lock"
+            default EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
+            help
+                set lock in pm config.
+        
+            config EXAMPLE_PM_LOCK_TYPE_CPU_FREQ_MAX
+                bool "CPU_FREQ_MAX lock"
+            config EXAMPLE_PM_LOCK_TYPE_APB_FREQ_MAX
+                bool "APB_FREQ_MAX lock"
+            config EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
+                bool "NO_LIGHT_SLEEP lock"
+        endchoice
+        
+        config EXAMPLE_PM_LOCK_TYPE
+            int
+            default 0 if EXAMPLE_PM_LOCK_TYPE_CPU_FREQ_MAX
+            default 1 if EXAMPLE_PM_LOCK_TYPE_APB_FREQ_MAX
+            default 2 if EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
+        
+        choice EXAMPLE_PM_MAX_FREQ_MHZ
+            prompt "set max freq in pm config"
+            default EXAMPLE_PM_MAX_FREQ_MHZ_80
+            help
+                set max freq in pm config.
+        
+            config EXAMPLE_PM_MAX_FREQ_MHZ_80
+                bool "80 MHz"
+            config EXAMPLE_PM_MAX_FREQ_MHZ_160
+                bool "160 MHz"
+            config EXAMPLE_PM_MAX_FREQ_MHZ_240
+                bool "240 MHz"
+        endchoice
+        
+        config EXAMPLE_PM_MAX_FREQ_MHZ
+            int
+            default 80 if EXAMPLE_PM_MAX_FREQ_MHZ_80
+            default 160 if EXAMPLE_PM_MAX_FREQ_MHZ_160
+            default 240 if EXAMPLE_PM_MAX_FREQ_MHZ_240
+
+        choice EXAMPLE_PM_MIN_FREQ_MHZ
+            prompt "set min freq in pm config"
+            default EXAMPLE_PM_MIN_FREQ_MHZ_40
+            help
+                set min freq in pm config.
+            
+            config EXAMPLE_PM_MIN_FREQ_MHZ_40
+                bool "40 MHz"
+            config EXAMPLE_PM_MIN_FREQ_MHZ_80
+                bool "80 MHz"
+            config EXAMPLE_PM_MIN_FREQ_MHZ_160
+                bool "160 MHz"
+        endchoice
+            
+        config EXAMPLE_PM_MIN_FREQ_MHZ
+            int
+            default 40 if EXAMPLE_PM_MIN_FREQ_MHZ_40
+            default 80 if EXAMPLE_PM_MIN_FREQ_MHZ_80
+            default 160 if EXAMPLE_PM_MIN_FREQ_MHZ_160
+    
+        endmenu
 
 endmenu
