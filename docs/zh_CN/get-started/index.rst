@@ -87,10 +87,10 @@
 ~~~~~~~~~~~~~~~~
 
 * 一款 **{IDF_TARGET_NAME}** 开发板
-* **USB 数据线**  (A 转 Micro-B)
+* **USB 数据线** （A 转 Micro-B）
 * 电脑（Windows、Linux 或 macOS）
 
-.. note:: 目前一些开发板使用的是 USB Type C 接口。请确保使用合适的数据线来连接开发板!
+.. note:: 目前一些开发板使用的是 USB Type C 接口。请确保使用合适的数据线来连接开发板！
 
 以下是 {IDF_TARGET_NAME} 官方开发板，点击链接可了解更多硬件信息。
 
@@ -172,12 +172,12 @@
 安装
 ============
 
-我们提供以下方法帮助安装所有需要的软件，可根据需要选择其中之一。
+为安装所需软件，乐鑫提供了以下方法，可根据需要选择其中之一。
 
 IDE
 ~~~~~~
 
-.. note:: 建议您通过自己喜欢的集成开发环境 (IDE) 安装 ESP-IDF。
+.. note:: 建议通过自己喜欢的集成开发环境 (IDE) 安装 ESP-IDF。
 
 * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
 * `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
@@ -185,7 +185,7 @@ IDE
 手动安装
 ~~~~~~~~~~~~~~~~~~~
 
-请根据您的操作系统选择对应的手动安装流程。
+请根据操作系统，选择对应的手动安装流程。
 
 .. toctree::
     :maxdepth: 1
@@ -196,6 +196,6 @@ IDE
 编译第一个工程
 ===================
 
-如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
+如果已经安装好 ESP-IDF，且没有使用集成开发环境 (IDE)，请在命令提示行中，按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/

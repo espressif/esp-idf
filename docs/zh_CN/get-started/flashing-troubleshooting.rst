@@ -14,11 +14,11 @@
 
 一般来说，使用官方的 ESP-IDF 开发板不会出现问题。但是， ``esptool.py`` 在以下情况下不能自动重置硬件：
 
-- 您的硬件没有连接到 ``{IDF_TARGET_STRAP_GPIO}`` 和 ``CIHP_PU`` 的 DTR 和 RTS 控制线。
+- 硬件未连接到 ``{IDF_TARGET_STRAP_GPIO}`` 和 ``CIHP_PU`` 的 DTR 和 RTS 控制线。
 - DTR 和 RTS 控制线的配置方式不同。
 - 不存在这样的串行控制线路。
 
-根据硬件的种类，也可以将您的 {IDF_TARGET_NAME} 开发板手动设置为固件下载模式（复位）。
+根据硬件的种类，也可以将 {IDF_TARGET_NAME} 开发板手动设置为固件下载模式（复位）。
 
-- 对于乐鑫开发板，您可以参考对应开发板的入门指南或用户指南。例如，可以通过按住 ``Boot`` 按钮 (``{IDF_TARGET_STRAP_GPIO}``) 再按住 ``EN`` 按钮 (``CHIP_PU``) 来手动复位 ESP-IDF 开发板。
+- 对于乐鑫开发板，可以参考对应开发板的入门指南或用户指南。例如，可以通过按住 ``Boot`` 按钮 (``{IDF_TARGET_STRAP_GPIO}``) 再按住 ``EN`` 按钮 (``CHIP_PU``) 来手动复位 ESP-IDF 开发板。
 - 对于其他类型的硬件，可以尝试将 ``{IDF_TARGET_STRAP_GPIO}`` 拉低。
