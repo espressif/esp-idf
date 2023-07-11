@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ esp_err_t UartSpinelInterface::Deinit(void)
 otError UartSpinelInterface::SendFrame(const uint8_t *frame, uint16_t length)
 {
     otError error = OT_ERROR_NONE;
-    ot::Hdlc::FrameBuffer<kMaxFrameSize> encoder_buffer;
+    ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
     ot::Hdlc::Encoder hdlc_encoder(encoder_buffer);
 
     SuccessOrExit(error = hdlc_encoder.BeginFrame());
@@ -88,21 +88,21 @@ exit:
     return error;
 }
 
-void UartSpinelInterface::Process(const esp_openthread_mainloop_context_t &mainloop)
+void UartSpinelInterface::Process(const void *mainloop)
 {
-    if (FD_ISSET(m_uart_fd, &mainloop.read_fds)) {
+    if (FD_ISSET(m_uart_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds)) {
         ESP_LOGD(OT_PLAT_LOG_TAG, "radio uart read event");
         TryReadAndDecode();
     }
 }
 
-void UartSpinelInterface::Update(esp_openthread_mainloop_context_t &mainloop)
+void UartSpinelInterface::Update(void *mainloop)
 {
     // Register only READ events for radio UART and always wait
     // for a radio WRITE to complete.
-    FD_SET(m_uart_fd, &mainloop.read_fds);
-    if (m_uart_fd > mainloop.max_fd) {
-        mainloop.max_fd = m_uart_fd;
+    FD_SET(m_uart_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds);
+    if (m_uart_fd > ((esp_openthread_mainloop_context_t *)mainloop)->max_fd) {
+        ((esp_openthread_mainloop_context_t *)mainloop)->max_fd = m_uart_fd;
     }
 }
 
@@ -285,12 +285,13 @@ esp_err_t UartSpinelInterface::TryRecoverUart(void)
     return ESP_OK;
 }
 
-void UartSpinelInterface::OnRcpReset(void)
+otError UartSpinelInterface::HardwareReset(void)
 {
     if (mRcpFailureHandler) {
         mRcpFailureHandler();
         TryRecoverUart();
     }
+    return OT_ERROR_NONE;
 }
 
 } // namespace openthread
