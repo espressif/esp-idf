@@ -5,6 +5,9 @@ setuptools>=21
 # The setuptools package is required to install source distributions and on some systems is not installed by default.
 # Please keep it as the first item of this list. Version 21 is required to handle PEP 508 environment markers.
 #
+# importlib_metadata: is part of python3.8 and newer as importlib.metadata
+importlib_metadata; python_version < "3.8"
+packaging
 click>=7.0
 pyserial>=3.3
 future>=0.15.2
