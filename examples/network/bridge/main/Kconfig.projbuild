@@ -1,0 +1,45 @@
+menu "Example Bridge Configuration"
+    config EXAMPLE_BR_DHCPS
+        bool "Enable DHCP Server"
+        default n
+        help
+            Enable DHCP Server on the device.
+endmenu
+
+menu "Example AP Wifi Configuration"
+    config EXAMPLE_BR_WIFI
+        depends on SOC_WIFI_SUPPORTED
+        default n
+        bool "Bridge WiFi interface"
+        help
+            Add WiFi interface to be bridged.
+
+    config EXAMPLE_BR_WIFI_SSID
+        depends on EXAMPLE_BR_WIFI
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_BR_WIFI_PASSWORD
+        depends on EXAMPLE_BR_WIFI
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_BR_WIFI_CHANNEL
+        depends on EXAMPLE_BR_WIFI
+        int "WiFi Channel"
+        range 1 13
+        default 1
+        help
+            WiFi channel (network channel) for the example to use.
+
+    config EXAMPLE_BR_MAX_STA_CONN
+        depends on EXAMPLE_BR_WIFI
+        int "Maximal STA connections"
+        default 4
+        help
+            Max number of the STA connects to AP.
+endmenu

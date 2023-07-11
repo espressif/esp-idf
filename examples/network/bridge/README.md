@@ -14,32 +14,32 @@ Performance of this type of "software" bridge is limited by the performance of E
 
 ## How to use example
 
+The bellow sections demonstrate just two basic bridge configurations. However, note that additional combinations are possible.
+
+### Example 1 - Ethernet Interfaces, DHCP Client
+
 You need one ESP32 with at least two Ethernet ports and two PCs (or other Ethernet capable devices). Connect the network as shown in figure below, configure PC#1 as DHCP server and PC#2 as DHCP client.
 
-```mermaid
-graph TD;
-   classDef classPing fill:#0000,stroke-width:0px;
-   esp32["ESP32 w/ 2 bridged<br/>Ethernet ports<br/>(DHCP Client)"];
-   pc1["PC#1<br/>(DHCP Server)"];
-   pc2["PC#2<br/>(DHCP Client)"];
-   ping1["ping"]:::classPing
-   ping2["ping"]:::classPing
-   ping3["ping"]:::classPing
-   esp32 -.- ping1;
-   ping1 -.- pc1;
-   esp32 == Eth === pc2;
-   esp32 == Eth === pc1;
-   esp32 -.- ping2;
-   ping2 -.- pc2;
-   pc1 <-.- ping3;
-   pc2 <-.- ping3;
-```
+![network_1](./docs/network_1.png)
 
 The work flow of the example is then as follows:
 
-1. Install the Ethernet ports drivers in ESP32.
+1. Install the Ethernet ports in ESP32.
 2. Configure bridge.
 3. Wait for a DHCP leases in ESP32 and PC#2.
+4. If get IP addresses successfully, then you will be able to ping the ESP32 device and PC#2 from PC#1 (and vice versa).
+
+### Example 2 - Ethernet & WiFi AP, DHCP Server
+
+You need one ESP32 with at least one Ethernet port and WiFi, and two PCs (or other Ethernet/WiFi capable devices). Connect the network as shown in figure below, configure PC#1 and PC#2 as DHCP clients. Enable DHCP server option in example menuconfig.
+
+![network_2](./docs/network_2.png)
+
+The work flow of the example is then as follows:
+
+1. Install the Ethernet ports & WiFi AP in ESP32.
+2. Configure bridge.
+3. Wait for a DHCP leases in PC#1 and PC#2.
 4. If get IP addresses successfully, then you will be able to ping the ESP32 device and PC#2 from PC#1 (and vice versa).
 
 ## Hardware Required
@@ -159,8 +159,9 @@ Now you can ping your ESP32 in PC#1 terminal by entering `ping 192.168.20.105` a
 
 ## Known Limitations
 
-* Currently only Ethernet interfaces can be bridged using LwIP bridge.
-* If you need to stop just one Ethernet interface which is bridged to perform some action like speed/duplex setting, **all remaining interfaces** associated with the bridge need to be stopped as well to the bridge work properly after the interfaces are started again.
+* Only Ethernet and WiFi AP interfaces can be bridged using LwIP bridge since ESP WiFi station will only receive packets destined to it due to operating in 3 address system.
+* If you need to stop just one network interface which is bridged to perform some action (like speed/duplex setting in Ethernet case), **all remaining interfaces** associated with the bridge need to be stopped as well to the bridge work properly after the interfaces are started again.
+* No traffic balancing is implemented between faster and slower interface.
 
 ## Troubleshooting
 
