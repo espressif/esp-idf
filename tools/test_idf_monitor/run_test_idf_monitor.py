@@ -9,7 +9,6 @@ import errno
 import filecmp
 import os
 import pty
-import re
 import socket
 import subprocess
 import sys
@@ -17,22 +16,16 @@ import tempfile
 import threading
 import time
 from builtins import object
-from io import open
-
-XTENSA_ARGS = '--toolchain-prefix xtensa-esp32-elf-'
-RISCV_ARGS = '--decode-panic backtrace --target esp32c3 --toolchain-prefix riscv32-esp-elf-'
 
 test_list = (
     # Add new tests here. All files should be placed in IN_DIR. Columns are
-    # Input file            Filter string                                File with expected output   Timeout    ELF file        Extra args
-    ('in1.txt',             '',                                          'in1f1.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('in1.txt',             '*:V',                                       'in1f1.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('in1.txt',             'hello_world',                               'in1f2.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('in1.txt',             '*:N',                                       'in1f3.txt',                60,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',     'in2f1.txt',               420,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('in2.txt',             'vfs',                                       'in2f2.txt',               420,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('core1.txt',           '',                                          'core1_out.txt',            60,    'dummy_xtensa.elf',       XTENSA_ARGS),
-    ('riscv_panic1.txt',    '',                                          'riscv_panic1_out.txt',     60,    'dummy_riscv.elf',        RISCV_ARGS),
+    # Input file            Filter string                                File with expected output   Timeout
+    ('in1.txt',             '',                                          'in1f1.txt',                60,),
+    ('in1.txt',             '*:V',                                       'in1f1.txt',                60,),
+    ('in1.txt',             'hello_world',                               'in1f2.txt',                60,),
+    ('in1.txt',             '*:N',                                       'in1f3.txt',                60,),
+    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',     'in2f1.txt',               420,),
+    ('in2.txt',             'vfs',                                       'in2f2.txt',               420,),
 )
 
 IN_DIR = 'tests/'       # tests are in this directory
@@ -47,22 +40,6 @@ HOST = 'localhost'
 SOCKET_TIMEOUT = 30
 # the test is restarted after failure (idf_monitor has to be killed):
 RETRIES_PER_TEST = 2
-
-COREDUMP_VERSION_REGEX = r'espcoredump\.py v\d+\.[\d\w-]+(\.[\d\w-]+)?'
-
-
-def remove_coredump_version_string(file_path):
-    with open(file_path, 'r') as file:
-        init_text = file.read()
-        modified_text = re.sub(COREDUMP_VERSION_REGEX, '', init_text, re.MULTILINE)
-
-        if not init_text != modified_text:
-            return None
-
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            temp_file.write(modified_text.encode())
-
-        return temp_file.name
 
 
 def monitor_timeout(process):
@@ -114,10 +91,8 @@ def test_iteration(runner, test):
                 tempfile.NamedTemporaryFile(dir=OUT_DIR, prefix=ERR_OUT, mode='w', delete=False) as e_f:
             monitor_cmd = [sys.executable, IDF_MONITOR_WAPPER,
                            '--port', 'socket://{}:{}?logging=debug'.format(HOST, runner.port),
-                           '--print_filter', test[1],
                            '--serial_alive_file', SERIAL_ALIVE_FILE,
-                           '--elf-file', test[4]]
-            monitor_cmd += test[5].split()
+                           '--print_filter', test[1]]
             (master_fd, slave_fd) = pty.openpty()
             print('\t', ' '.join(monitor_cmd), sep='')
             print('\tstdout="{}" stderr="{}" stdin="{}"'.format(o_f.name, e_f.name, os.ttyname(slave_fd)))
@@ -173,10 +148,7 @@ def test_iteration(runner, test):
         print('\tThe client was closed successfully')
     f1 = IN_DIR + test[2]
     f2 = OUT_DIR + test[2]
-    temp_f1, temp_f2 = remove_coredump_version_string(f1), remove_coredump_version_string(f2)
     print('\tdiff {} {}'.format(f1, f2))
-    if temp_f1 and temp_f2:
-        f1, f2 = temp_f1, temp_f2
     if filecmp.cmp(f1, f2, shallow=False):
         print('\tTest has passed')
     else:
