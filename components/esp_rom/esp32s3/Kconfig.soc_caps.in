@@ -82,3 +82,7 @@ config ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG
 config ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
     bool
     default y
+
+config ESP_ROM_HAS_CACHE_WRITEBACK_BUG
+    bool
+    default y
