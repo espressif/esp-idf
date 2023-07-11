@@ -1863,9 +1863,9 @@ struct ble_hci_ev_le_subev_transmit_power_report {
     uint16_t conn_handle;
     uint8_t  reason;
     uint8_t  phy;
-    uint8_t  transmit_power_level;
+    int8_t  transmit_power_level;
     uint8_t  transmit_power_level_flag;
-    uint8_t delta;
+    int8_t delta;
 } __attribute__((packed));
 
 #define BLE_HCI_LE_SUBEV_BIGINFO_ADV_REPORT         (0x22)
