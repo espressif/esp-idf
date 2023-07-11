@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -271,6 +271,17 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
  */
 char * get_phy_version_str(void);
 
+/**
+ * @brief Enable phy track pll
+ *
+ */
+void phy_track_pll_init(void);
+
+/**
+ * @brief Disable phy track pll
+ *
+ */
+void phy_track_pll_deinit(void);
 #ifdef __cplusplus
 }
 #endif
