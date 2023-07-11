@@ -553,7 +553,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     uint32_t clk_src_freq = 0;
     esp_clk_tree_src_get_freq_hz((soc_module_clk_t)TEST_DEFAULT_CLK_CFG, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &clk_src_freq);
     if (clk_src_freq == 80 * 1000 * 1000) {
-        theoretical_freq = 8992;
+        theoretical_freq = 8993;
     } else if (clk_src_freq == 96 * 1000 * 1000) {
         theoretical_freq = 9009;
     }
