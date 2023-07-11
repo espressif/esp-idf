@@ -40,6 +40,7 @@ examples/build_system/cmake/idf_as_lib/run.sh
 examples/common_components/protocol_examples_tapif_io/make_tap_netif
 examples/storage/parttool/parttool_example.py
 examples/storage/parttool/parttool_example.sh
+examples/system/app_trace_to_plot/read_trace.py
 examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
