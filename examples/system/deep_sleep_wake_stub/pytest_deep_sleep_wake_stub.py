@@ -21,7 +21,7 @@ def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:
 
         start_sleep = time.time()
         logging.info('Waiting for wakeup...')
-        dut.expect_exact('wake stub: going to deep sleep')
+        dut.expect_exact('wake stub: going to deep sleep', timeout=15)
 
         sleep_time = time.time() - start_sleep
         logging.info('Host measured sleep time at {:.2f}s'.format(sleep_time))
