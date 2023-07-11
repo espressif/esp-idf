@@ -169,13 +169,13 @@ static inline void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk
     switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
         default:
         case 1:
-            *source_clk = UART_SCLK_PLL_F48M;
+            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F48M;
             break;
         case 2:
-            *source_clk = UART_SCLK_RTC;
+            *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
             break;
         case 3:
-            *source_clk = UART_SCLK_XTAL;
+            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
             break;
     }
 }

@@ -96,10 +96,10 @@ static inline void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_
     switch (LP_CLKRST.lpperi.lp_uart_clk_sel) {
     default:
     case 0:
-        *source_clk = LP_UART_SCLK_LP_FAST;
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_FAST;
         break;
     case 1:
-        *source_clk = LP_UART_SCLK_XTAL_D2;
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
         break;
     }
 }
@@ -224,13 +224,13 @@ static inline void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk
         switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
         default:
         case 1:
-            *source_clk = UART_SCLK_PLL_F80M;
+            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F80M;
             break;
         case 2:
-            *source_clk = UART_SCLK_RTC;
+            *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
             break;
         case 3:
-            *source_clk = UART_SCLK_XTAL;
+            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
             break;
         }
     } else {
