@@ -583,7 +583,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
 #if SOC_SPI_MEM_SUPPORT_TIME_TUNING
     // Restore mspi clock freq
-    spi_timing_change_speed_mode_cache_safe(false);
+   if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
+        spi_timing_change_speed_mode_cache_safe(false);
+    }
 #endif
 
     if (!deep_sleep) {
