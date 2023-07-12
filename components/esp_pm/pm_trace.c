@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,13 @@ static const int DRAM_ATTR s_trace_io[] = {
     BIT(15), BIT(15), // ESP_PM_TRACE_CCOMPARE_UPDATE
     BIT(16), BIT(17), // ESP_PM_TRACE_ISR_HOOK
     BIT(18), BIT(18), // ESP_PM_TRACE_SLEEP
+#elif CONFIG_IDF_TARGET_ESP32H2
+    BIT(2),  BIT(3),  // ESP_PM_TRACE_IDLE
+    BIT(4),  BIT(5),  // ESP_PM_TRACE_TICK
+    BIT(6),  BIT(6),  // ESP_PM_TRACE_FREQ_SWITCH
+    BIT(7),  BIT(7),  // ESP_PM_TRACE_CCOMPARE_UPDATE
+    BIT(8),  BIT(9),  // ESP_PM_TRACE_ISR_HOOK
+    BIT(10), BIT(10), // ESP_PM_TRACE_SLEEP
 #else
     BIT(2),  BIT(3),  // ESP_PM_TRACE_IDLE
     BIT(4),  BIT(5),  // ESP_PM_TRACE_TICK

@@ -46,6 +46,14 @@
 #include "soc/plic_reg.h"
 #include "soc/clint_reg.h"
 #include "esp32c6/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/rtc.h"
+#include "riscv/rvsleep-frames.h"
+#include "soc/intpri_reg.h"
+#include "soc/extmem_reg.h"
+#include "soc/plic_reg.h"
+#include "soc/clint_reg.h"
+#include "esp32h2/rom/cache.h"
 #endif
 
 static __attribute__((unused)) const char *TAG = "sleep";
@@ -317,8 +325,13 @@ static inline void * cpu_domain_intpri_sleep_frame_alloc_and_init(void)
 static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
+#if CONFIG_IDF_TARGET_ESP32C6
         { .start = EXTMEM_L1_CACHE_CTRL_REG, .end = EXTMEM_L1_CACHE_CTRL_REG + 4 },
         { .start = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
+#elif CONFIG_IDF_TARGET_ESP32H2
+        { .start = CACHE_L1_CACHE_CTRL_REG, .end = CACHE_L1_CACHE_CTRL_REG + 4 },
+        { .start = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
+#endif
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }

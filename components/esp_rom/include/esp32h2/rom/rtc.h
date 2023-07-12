@@ -42,14 +42,15 @@ extern "C" {
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     RTC_CNTL_STORE0_REG     Reserved
-  *     RTC_CNTL_STORE1_REG     RTC_SLOW_CLK calibration value
-  *     RTC_CNTL_STORE2_REG     Boot time, low word
-  *     RTC_CNTL_STORE3_REG     Boot time, high word
-  *     RTC_CNTL_STORE4_REG     External XTAL frequency
-  *     RTC_CNTL_STORE5_REG     APB bus frequency
-  *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
-  *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE0_REG     Reserved
+  *     LP_AON_STORE1_REG     RTC_SLOW_CLK calibration value
+  *     LP_AON_STORE2_REG     Boot time, low word
+  *     LP_AON_STORE3_REG     Boot time, high word
+  *     LP_AON_STORE4_REG     External XTAL frequency
+  *     LP_AON_STORE5_REG     APB bus frequency
+  *     LP_AON_STORE6_REG     FAST_RTC_MEMORY_ENTRY
+  *     LP_AON_STORE7_REG     FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE8_REG     Store light sleep wake stub addr
   *************************************************************************************
   */
 
@@ -61,6 +62,7 @@ extern "C" {
 #define RTC_ENTRY_ADDR_REG      LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG     LP_AON_STORE6_REG
 #define RTC_MEMORY_CRC_REG      LP_AON_STORE7_REG
+#define LIGHT_SLEEP_WAKE_STUB_ADDR_REG  LP_AON_STORE8_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 

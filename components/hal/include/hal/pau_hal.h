@@ -28,6 +28,7 @@ typedef struct {
  */
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr);
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 /**
  * @brief Set regdma modem link address
  *
@@ -50,6 +51,31 @@ void pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_rest
  * @param hal           regdma hal context
  */
 void pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal);
+#endif
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+/**
+ * @brief Set regdma system link address
+ *
+ * @param hal           regdma hal context
+ * @param link_addr     main link address value
+ */
+#define pau_hal_set_regdma_system_link_addr(hal, addr)   pau_ll_set_regdma_link0_addr(hal->dev, (addr))
+
+/**
+ * @brief Start transmission on regdma system link
+ *
+ * @param hal           regdma hal context
+ * @param backup_or_restore        false:restore true:backup
+ */
+void pau_hal_start_regdma_system_link(pau_hal_context_t *hal, bool backup_or_restore);
+/**
+ * @brief Stop transmission on regdma system link
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_stop_regdma_system_link(pau_hal_context_t *hal);
+#endif
 
 /**
  * @brief Set regdma extra link address
@@ -73,6 +99,15 @@ void pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_rest
  * @param hal           regdma hal context
  */
 void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal);
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+/**
+ * @brief Enable or disable PAU module clock
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable);
+#endif
 
 #ifdef __cplusplus
 }

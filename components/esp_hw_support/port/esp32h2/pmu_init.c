@@ -18,8 +18,6 @@
 #include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
 
-// TODO: IDF-6267
-
 static __attribute__((unused)) const char *TAG = "pmu_init";
 
 typedef struct {
@@ -40,10 +38,8 @@ pmu_context_t * __attribute__((weak)) IRAM_ATTR PMU_instance(void)
     /* It should be explicitly defined in the internal RAM, because this
      * instance will be used in pmu_sleep.c */
     static DRAM_ATTR pmu_hal_context_t pmu_hal = { .dev = &PMU };
-    // static DRAM_ATTR pmu_sleep_machine_constant_t pmu_mc = PMU_SLEEP_MC_DEFAULT();
-    static DRAM_ATTR pmu_context_t pmu_context = { .hal = &pmu_hal,
-                                                //    .mc = (void *)&pmu_mc
-                                                 };
+    static DRAM_ATTR pmu_sleep_machine_constant_t pmu_mc = PMU_SLEEP_MC_DEFAULT();
+    static DRAM_ATTR pmu_context_t pmu_context = { .hal = &pmu_hal, .mc = (void *)&pmu_mc };
     return &pmu_context;
 }
 
@@ -99,11 +95,11 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     pmu_ll_hp_set_retention_param(ctx->hal->dev, mode, ret->retention.val);
     pmu_ll_hp_set_backup_icg_func(ctx->hal->dev, mode, ret->backup_clk);
 
-    // /* Some PMU initial parameter configuration */
-    // pmu_ll_imm_update_dig_icg_modem_code(ctx->hal->dev, true);
-    // pmu_ll_imm_update_dig_icg_switch(ctx->hal->dev, true);
+    /* Some PMU initial parameter configuration */
+    pmu_ll_imm_update_dig_icg_modem_code(ctx->hal->dev, true);
+    pmu_ll_imm_update_dig_icg_switch(ctx->hal->dev, true);
 
-    // pmu_ll_hp_set_sleep_protect_mode(ctx->hal->dev, PMU_SLEEP_PROTECT_HP_LP_SLEEP);
+    pmu_ll_hp_set_sleep_protect_mode(ctx->hal->dev, PMU_SLEEP_PROTECT_HP_LP_SLEEP);
 }
 
 void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, pmu_lp_system_param_t *param)
@@ -135,7 +131,6 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     // for bypass reserved power domain
     const pmu_hp_power_domain_t pmu_hp_domains[] = {
         PMU_HP_PD_TOP,
-        PMU_HP_PD_AON,
         PMU_HP_PD_CPU,
         PMU_HP_PD_WIFI
     };
@@ -148,8 +143,9 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
         pmu_ll_hp_set_power_force_no_isolate(ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_power_down(ctx->hal->dev, pmu_hp_domains[idx], false);
     }
-    // /* Isolate all memory banks while sleeping, avoid memory leakage current */
-    // pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
+
+    /* Isolate all memory banks while sleeping, avoid memory leakage current */
+    pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
 
     pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
@@ -219,7 +215,4 @@ void pmu_init()
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
-
-    REG_SET_FIELD(PMU_SLP_WAKEUP_CNTL5_REG, PMU_LP_ANA_WAIT_TARGET, 15);    // wait lp ldo stable when wakeup from sleep, need about 100us (slow clk)
-    REG_SET_FIELD(PMU_SLP_WAKEUP_CNTL7_REG, PMU_ANA_WAIT_TARGET, 1700);   // wait hp ldo stable when wakeup from sleep, need about 100us (fast clk)
 }

@@ -404,9 +404,7 @@ static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint3
     return ret;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267 Remove when H2 light sleep supported
 extern void esp_sleep_periph_use_8m(bool use_or_not);
-#endif
 
 /**
  * @brief Function setting the LEDC timer divisor with the given source clock,
@@ -504,9 +502,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
         /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6267 Remove when H2 light sleep supported
         esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
-#endif
 
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);

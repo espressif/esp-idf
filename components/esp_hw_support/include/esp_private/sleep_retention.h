@@ -123,6 +123,16 @@ void sleep_retention_do_extra_retention(bool backup_or_restore);
  */
 uint32_t sleep_retention_get_modules(void);
 
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+/**
+ * @brief Software trigger REGDMA to do system linked list retention
+ *
+ * @param backup_or_restore true for backup register context to memory
+ *                          or false for restore to register from memory
+ */
+void sleep_retention_do_system_retention(bool backup_or_restore);
+#endif
+
 #endif // SOC_PAU_SUPPORTED
 
 #ifdef __cplusplus

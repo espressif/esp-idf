@@ -32,8 +32,10 @@
 #if SOC_LP_AON_SUPPORTED
 #include "hal/lp_aon_hal.h"
 #else
+#if !CONFIG_IDF_TARGET_ESP32H2
 #include "hal/rtc_cntl_ll.h"
 #include "hal/rtc_hal.h"
+#endif
 #endif
 
 #include "driver/uart.h"
@@ -81,14 +83,26 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
 #include "hal/lp_timer_hal.h"
-#include "esp_private/esp_pmu.h"
-#include "esp_private/sleep_sys_periph.h"
-#include "esp_private/sleep_clock.h"
+#include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#endif
+
+#if SOC_LP_TIMER_SUPPORTED
+#include "hal/lp_timer_hal.h"
+#endif
+
+#if SOC_PMU_SUPPORTED
+#include "esp_private/esp_pmu.h"
+#include "esp_private/sleep_sys_periph.h"
+#include "esp_private/sleep_clock.h"
+#endif
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#include "esp_private/sleep_retention.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -243,6 +257,7 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32H2
 #if SOC_RTC_FAST_MEM_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
@@ -348,6 +363,7 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
 #endif // SOC_RTC_FAST_MEM_SUPPORTED
+#endif // !CONFIG_IDF_TARGET_ESP32H2
 
 void esp_deep_sleep(uint64_t time_in_us)
 {
@@ -495,6 +511,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+        sleep_retention_do_system_retention(true);
+#endif
     }
 
     // TODO: IDF-7370
@@ -508,6 +527,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+    sleep_retention_do_system_retention(false);
+#endif
     sar_periph_ctrl_power_enable();
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
@@ -679,6 +701,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_isolate_digital_gpio();
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
             esp_set_deep_sleep_wake_stub_default_entry();
             // Enter Deep Sleep
@@ -699,21 +722,26 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-
+#else  // !CONFIG_IDF_TARGET_ESP32H2
+            result = ESP_OK;
+#endif // !CONFIG_IDF_TARGET_ESP32H2
         } else {
-
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
-                rtcio_ll_force_hold_enable(SPI_CS0_GPIO_NUM);
+                gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
             }
 #endif
+#endif
 
+#if SOC_PMU_SUPPORTED
 #if SOC_PM_CPU_RETENTION_BY_SW
             if (pd_flags & PMU_SLEEP_PD_CPU) {
                 result = esp_sleep_cpu_retention(pmu_sleep_start, s_config.wakeup_triggers, reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             } else {
+#endif
                 result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             }
 #else
@@ -722,9 +750,11 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
             /* Unhold the SPI CS pin */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
-                rtcio_ll_force_hold_disable(SPI_CS0_GPIO_NUM);
+                gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
             }
+#endif
 #endif
         }
 
@@ -817,7 +847,6 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 #else
     uint32_t force_pd_flags = RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | RTC_SLEEP_PD_INT_8M | RTC_SLEEP_PD_XTAL;
 #endif
-
     /**
      * If all wireless modules share one power domain, we name this power domain "modem".
      * If wireless modules have their own power domain, we give these power domains separate
@@ -1391,15 +1420,20 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
 {
+#if CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
+    return 0;
+#else
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO) {
         return 0;
     }
 
     return rtc_hal_gpio_get_wakeup_status();
+#endif // !CONFIG_IDF_TARGET_ESP32H2
 }
 
 static void gpio_deep_sleep_wakeup_prepare(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
     for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++) {
         if (((1ULL << gpio_idx) & s_config.gpio_wakeup_mask) == 0) {
             continue;
@@ -1415,6 +1449,7 @@ static void gpio_deep_sleep_wakeup_prepare(void)
     }
     // Clear state from previous wakeup
     rtc_hal_gpio_clear_wakeup_status();
+#endif // !CONFIG_IDF_TARGET_ESP32H2
 }
 
 esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode)
@@ -1535,9 +1570,6 @@ esp_err_t esp_sleep_disable_bt_wakeup(void)
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
-#if CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5645
-    return ESP_SLEEP_WAKEUP_UNDEFINED;
-#else
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -1591,7 +1623,6 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
-#endif
 }
 
 esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_t option)
@@ -1600,6 +1631,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
         return ESP_ERR_INVALID_ARG;
     }
     portENTER_CRITICAL_SAFE(&s_config.lock);
+
     int refs = (option == ESP_PD_OPTION_ON)  ? s_config.domain[domain].refs++ \
              : (option == ESP_PD_OPTION_OFF) ? --s_config.domain[domain].refs \
              : s_config.domain[domain].refs;
