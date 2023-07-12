@@ -670,6 +670,10 @@ static int wifi_cmd_proto(int argc, char **argv)
     }
     wifi_mode_t mode;
     esp_wifi_get_mode(&mode);
+    if(WIFI_MODE_NULL == mode) {
+        ESP_LOGI(TAG, "current wifi mode is null");
+        return 1;
+    }
     int ifx = (WIFI_MODE_STA == mode) ? 0 : 1;
     if (proto_args.proto->count) {
         if (!strcmp(proto_args.proto->sval[0], "ax")) {
