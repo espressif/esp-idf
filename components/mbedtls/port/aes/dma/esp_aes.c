@@ -628,7 +628,7 @@ int esp_internal_aes_encrypt(esp_aes_context *ctx,
                              const unsigned char input[16],
                              unsigned char output[16] )
 {
-    int r;
+    int r = -1;
 
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -662,7 +662,7 @@ int esp_internal_aes_decrypt(esp_aes_context *ctx,
                              const unsigned char input[16],
                              unsigned char output[16] )
 {
-    int r;
+    int r = -1;
 
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -698,7 +698,7 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
                       const unsigned char input[16],
                       unsigned char output[16] )
 {
-    int r;
+    int r = -1;
 
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -728,7 +728,7 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
                       const unsigned char *input,
                       unsigned char *output )
 {
-    int r = 0;
+    int r = -1;
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
@@ -757,13 +757,13 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
 
     r = esp_aes_process_dma(ctx, input, output, length, NULL);
     if (r != 0) {
-        esp_aes_release_hardware();
-        return r;
+        goto cleanup;
     }
 
     aes_hal_read_iv(iv);
-    esp_aes_release_hardware();
 
+cleanup:
+    esp_aes_release_hardware();
     return r;
 }
 
@@ -777,9 +777,9 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
+    int r = -1;
     unsigned char c;
     unsigned char ov[17];
-    int r = 0;
     size_t block_bytes = length - (length % AES_BLOCK_BYTES);
 
     if (esp_aes_validate_input(ctx, input, output)) {
@@ -809,8 +809,7 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
         aes_hal_set_iv(iv);
         r = esp_aes_process_dma(ctx, input, output, block_bytes, NULL);
         if (r != 0) {
-            esp_aes_release_hardware();
-            return r;
+            goto cleanup;
         }
 
         aes_hal_read_iv(iv);
@@ -831,8 +830,7 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
 
             r = esp_aes_process_dma(ctx, iv, iv, AES_BLOCK_BYTES, NULL);
             if (r != 0) {
-                esp_aes_release_hardware();
-                return r;
+                goto cleanup;
             }
 
             if ( mode == MBEDTLS_AES_DECRYPT ) {
@@ -848,8 +846,10 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
         }
 
     }
-    esp_aes_release_hardware();
+    r = 0;
 
+cleanup:
+    esp_aes_release_hardware();
     return r;
 }
 
@@ -866,7 +866,6 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
 
 {
     uint8_t c;
-    int r = 0;
     size_t stream_bytes = 0;
     size_t n;
 
@@ -914,7 +913,7 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
         aes_hal_mode_init(ESP_AES_BLOCK_MODE_CFB128);
         aes_hal_set_iv(iv);
 
-        r = esp_aes_process_dma(ctx, input, output, length, iv);
+        int r = esp_aes_process_dma(ctx, input, output, length, iv);
         if (r != 0) {
             esp_aes_release_hardware();
             return r;
@@ -937,7 +936,7 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     }
 
     *iv_off = n + stream_bytes;
-    return r;
+    return 0;
 }
 
 /*
@@ -951,7 +950,6 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
                       const unsigned char *input,
                       unsigned char *output )
 {
-    int r = 0;
     size_t n;
     size_t stream_bytes = 0;
 
@@ -987,7 +985,7 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
         aes_hal_mode_init(ESP_AES_BLOCK_MODE_OFB);
         aes_hal_set_iv(iv);
 
-        r = esp_aes_process_dma(ctx, input, output, length, iv);
+        int r = esp_aes_process_dma(ctx, input, output, length, iv);
         if (r != 0) {
             esp_aes_release_hardware();
             return r;
@@ -999,7 +997,7 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
 
     *iv_off = n + stream_bytes;
 
-    return r;
+    return 0;
 }
 
 /*
@@ -1013,7 +1011,6 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
                       const unsigned char *input,
                       unsigned char *output )
 {
-    int r = 0;
     size_t n;
 
     if (esp_aes_validate_input(ctx, input, output)) {
@@ -1058,7 +1055,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
         aes_hal_mode_init(ESP_AES_BLOCK_MODE_CTR);
         aes_hal_set_iv(nonce_counter);
 
-        r = esp_aes_process_dma(ctx, input, output, length, stream_block);
+        int r = esp_aes_process_dma(ctx, input, output, length, stream_block);
 
         if (r != 0) {
             esp_aes_release_hardware();
@@ -1072,7 +1069,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
     }
     *nc_off = n + (length % AES_BLOCK_BYTES);
 
-    return r;
+    return 0;
 }
 
 static bool s_check_dma_capable(const void *p)
