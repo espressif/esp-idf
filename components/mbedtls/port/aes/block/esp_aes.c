@@ -153,7 +153,7 @@ int esp_internal_aes_encrypt(esp_aes_context *ctx,
                              const unsigned char input[16],
                              unsigned char output[16] )
 {
-    int r;
+    int r = -1;
 
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -186,7 +186,7 @@ int esp_internal_aes_decrypt(esp_aes_context *ctx,
                              const unsigned char input[16],
                              unsigned char output[16] )
 {
-    int r;
+    int r = -1;
 
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -212,7 +212,7 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
                       const unsigned char input[16],
                       unsigned char output[16] )
 {
-    int r;
+    int r = -1;
 
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
