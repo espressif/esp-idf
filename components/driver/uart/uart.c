@@ -1641,7 +1641,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         uart_pattern_queue_reset(uart_num, UART_PATTERN_DET_QLEN_DEFAULT);
         if (uart_queue) {
             *uart_queue = p_uart_obj[uart_num]->event_queue;
-            ESP_LOGI(UART_TAG, "queue free spaces: %d", uxQueueSpacesAvailable(p_uart_obj[uart_num]->event_queue));
+            ESP_LOGI(UART_TAG, "queue free spaces: %" PRIu32, (uint32_t)uxQueueSpacesAvailable(p_uart_obj[uart_num]->event_queue));
         }
     } else {
         ESP_LOGE(UART_TAG, "UART driver already installed");
