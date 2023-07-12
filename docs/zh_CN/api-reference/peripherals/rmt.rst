@@ -141,6 +141,10 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
     };
     ESP_ERROR_CHECK(rmt_new_rx_channel(&rx_chan_config, &rx_chan));
 
+.. note::
+
+    由于 GPIO 驱动程序中的软件限制，当 TX 和 RX 通道都绑定到同一 GPIO 时，请确保在 TX 通道之前初始化 RX 通道。如果先设置 TX 通道，那么在 RX 通道设置期间，GPIO 控制信号将覆盖先前的 RMT TX 通道信号。
+    
 卸载 RMT 通道
 ~~~~~~~~~~~~~~~~~~~~~
 
