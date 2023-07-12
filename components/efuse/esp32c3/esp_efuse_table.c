@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 661eec06c4c442af5baa0c947029db74
+// md5_digest_table f41d6027e08973065c84a93ebd369dee
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -221,6 +221,18 @@ static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
 
 static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_VENDOR,
 };
 
 static const esp_efuse_desc_t WR_DIS_K_RTC_LDO[] = {
@@ -600,6 +612,18 @@ static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
     {EFUSE_BLK1, 120, 3}, 	 // [] BLK_VERSION_MINOR,
 };
 
+static const esp_efuse_desc_t FLASH_CAP[] = {
+    {EFUSE_BLK1, 123, 3}, 	 // [] Flash capacity {0: "None"; 1: "4M"; 2: "2M"; 3: "1M"; 4: "8M"},
+};
+
+static const esp_efuse_desc_t FLASH_TEMP[] = {
+    {EFUSE_BLK1, 126, 2}, 	 // [] Flash temperature {0: "None"; 1: "105C"; 2: "85C"},
+};
+
+static const esp_efuse_desc_t FLASH_VENDOR[] = {
+    {EFUSE_BLK1, 128, 3}, 	 // [] Flash vendor {0: "None"; 1: "XMC"; 2: "GD"; 3: "FM"; 4: "TT"; 5: "ZBIT"},
+};
+
 static const esp_efuse_desc_t K_RTC_LDO[] = {
     {EFUSE_BLK1, 135, 7}, 	 // [] BLOCK1 K_RTC_LDO,
 };
@@ -977,6 +1001,21 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
     &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[] = {
+    &WR_DIS_FLASH_CAP[0],    		// [] wr_dis of FLASH_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[] = {
+    &WR_DIS_FLASH_TEMP[0],    		// [] wr_dis of FLASH_TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[] = {
+    &WR_DIS_FLASH_VENDOR[0],    		// [] wr_dis of FLASH_VENDOR
     NULL
 };
 
@@ -1447,6 +1486,21 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
     &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
+    &FLASH_CAP[0],    		// [] Flash capacity {0: "None"; 1: "4M"; 2: "2M"; 3: "1M"; 4: "8M"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[] = {
+    &FLASH_TEMP[0],    		// [] Flash temperature {0: "None"; 1: "105C"; 2: "85C"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
+    &FLASH_VENDOR[0],    		// [] Flash vendor {0: "None"; 1: "XMC"; 2: "GD"; 3: "FM"; 4: "TT"; 5: "ZBIT"}
     NULL
 };
 
