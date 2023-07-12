@@ -114,7 +114,6 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
 
 #if SOC_GDMA_SUPPORTED
 static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
-static bool adc_dma_descr_err_callback(gdma_channel_handle_t dma_chan, void *user_data);
 #else
 static IRAM_ATTR void adc_dma_intr_handler(void *arg);
 #endif
@@ -231,8 +230,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     gdma_apply_strategy(s_adc_digi_ctx->rx_dma_channel, &strategy_config);
 
     gdma_rx_event_callbacks_t cbs = {
-        .on_recv_eof = adc_dma_in_suc_eof_callback,
-        .on_descr_err = adc_dma_descr_err_callback
+        .on_recv_eof = adc_dma_in_suc_eof_callback
     };
     gdma_register_rx_event_callbacks(s_adc_digi_ctx->rx_dma_channel, &cbs, s_adc_digi_ctx);
 
@@ -314,13 +312,6 @@ static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan
     s_adc_digi_ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
     return s_adc_dma_intr(user_data);
 }
-
-static bool adc_dma_descr_err_callback(gdma_channel_handle_t dma_chan, void *user_data)
-{
-    ESP_EARLY_LOGE(ADC_TAG, "GDMA descriptor error occurred, probable ADC data loss, CPU load too high?");
-    return false;
-}
-
 #else
 static IRAM_ATTR void adc_dma_intr_handler(void *arg)
 {
@@ -358,7 +349,6 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
         }
 
         ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
-        adc_hal_read_desc_finish (&adc_digi_ctx->hal);
         if (ret == pdFALSE) {
             //ringbuffer overflow
             adc_digi_ctx->ringbuf_overflow_flag = 1;
