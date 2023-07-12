@@ -26,6 +26,4 @@
 
 #define SOC_ADC_PWDET_CCT_DEFAULT           (4)
 
-#define SOC_ADC_SAR_CLK_DIV_DEFAULT(PERIPH_NUM) ((PERIPH_NUM==0)? 2 : 1)
-
 #define SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT     (1)
