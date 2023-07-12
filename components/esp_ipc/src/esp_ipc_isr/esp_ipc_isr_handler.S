@@ -96,6 +96,7 @@ esp_ipc_isr_handler:
 
     /* set the start flag */
     movi    a0, esp_ipc_isr_start_fl
+    memw
     s32i    a0, a0, 0
 
     /* Call the esp_ipc_function(void* arg) */
@@ -113,6 +114,7 @@ esp_ipc_isr_handler:
 
     /* set the end flag */
     movi    a0, esp_ipc_isr_end_fl
+    memw
     s32i    a0, a0, 0
 
     /* restore a0 */
