@@ -5,6 +5,7 @@
  */
 
 #include "esp_openthread_dns64.h"
+#include "esp_openthread_state.h"
 
 #include "esp_check.h"
 #include "esp_event.h"
@@ -16,34 +17,9 @@
 #include "lwip/dns.h"
 
 #define TAG "OT_DNS64"
-// The network data change callback sets the dns server address of index 0, while the CLI sets the dns server address of index 1.
-#define OPENTHREAD_DNS_SERVER_INDEX 0
-
-static void esp_openthread_netdata_change_callback(otChangedFlags changed_flags, void *ctx)
-{
-    if (OT_CHANGED_THREAD_NETDATA & changed_flags) {
-        ip_addr_t dns_server_addr = *IP_ADDR_ANY;
-        if (esp_openthread_get_nat64_prefix(&dns_server_addr.u_addr.ip6) == ESP_OK) {
-            dns_server_addr.type = IPADDR_TYPE_V6;
-            dns_server_addr.u_addr.ip6.addr[3] = ipaddr_addr(CONFIG_OPENTHREAD_DNS_SERVER_ADDR);
-            const ip_addr_t *dnsserver = dns_getserver(OPENTHREAD_DNS_SERVER_INDEX);
-            if (memcmp(dnsserver, &dns_server_addr, sizeof(ip_addr_t)) != 0) {
-                ESP_LOGI(TAG, "Set dns server address: %s", ipaddr_ntoa(&dns_server_addr));
-                dns_setserver(OPENTHREAD_DNS_SERVER_INDEX, &dns_server_addr);
-                if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_SET_DNS_SERVER, NULL, 0, 0) != ESP_OK) {
-                    ESP_LOGE(TAG, "Failed to post OpenThread set DNS server event");
-                }
-            }
-        }
-    }
-}
 
 esp_err_t esp_openthread_dns64_client_init(void)
 {
-    otInstance *instance = esp_openthread_get_instance();
-    ESP_RETURN_ON_FALSE(otSetStateChangedCallback(instance, esp_openthread_netdata_change_callback, NULL) ==
-                            OT_ERROR_NONE,
-                        ESP_FAIL, TAG, "Failed to install network data change callback");
     dns_setserver(OPENTHREAD_DNS_SERVER_INDEX, NULL);
     return ESP_OK;
 }

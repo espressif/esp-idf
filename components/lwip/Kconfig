@@ -1024,6 +1024,26 @@ menu "LWIP"
 
         endchoice
 
+        choice LWIP_HOOK_IP6_SELECT_SRC_ADDR
+            prompt "IPv6 source address selection Hook"
+            depends on LWIP_IPV6
+            default LWIP_HOOK_IP6_SELECT_SRC_ADDR_NONE
+            help
+                Enables custom IPv6 source address selection.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_IP6_SELECT_SRC_ADDR_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_IP6_SELECT_SRC_ADDR_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_IP6_SELECT_SRC_ADDR_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
         choice LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE
             prompt "Netconn external resolve Hook"
             default LWIP_HOOK_NETCONN_EXT_RESOLVE_DEFAULT if OPENTHREAD_DNS64_CLIENT

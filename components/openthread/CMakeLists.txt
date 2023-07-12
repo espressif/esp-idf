@@ -16,7 +16,8 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "private_include")
 
         set(src_dirs
-        "port"
+        "src"
+        "src/port"
         "openthread/examples/platforms/utils"
         "openthread/src/core/api"
         "openthread/src/core/common"
@@ -57,6 +58,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/examples/apps/ncp")
 
         list(APPEND exclude_srcs
+            "src/port/esp_openthread_state.c"
             "openthread/examples/apps/ncp/main.c"
             "openthread/src/core/api/backbone_router_api.cpp"
             "openthread/src/core/api/child_supervision_api.cpp"
@@ -113,13 +115,13 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_RADIO_NATIVE)
         list(APPEND exclude_srcs
-            "port/esp_openthread_radio_spinel.cpp"
-            "port/esp_spi_spinel_interface.cpp"
-            "port/esp_uart_spinel_interface.cpp"
+            "src/port/esp_openthread_radio_spinel.cpp"
+            "src/port/esp_spi_spinel_interface.cpp"
+            "src/port/esp_uart_spinel_interface.cpp"
             )
     elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
         list(APPEND exclude_srcs
-            "port/esp_openthread_radio.c")
+            "src/port/esp_openthread_radio.c")
     endif()
 
     if(CONFIG_OPENTHREAD_BORDER_ROUTER)
@@ -135,7 +137,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(NOT CONFIG_OPENTHREAD_DNS64_CLIENT)
         list(APPEND exclude_srcs
-            "port/esp_openthread_dns64.c")
+            "src/esp_openthread_dns64.c")
     endif()
 
     if(CONFIG_OPENTHREAD_FTD)
@@ -173,7 +175,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        REQUIRES esp_netif lwip driver
                        LDFRAGMENTS linker.lf
                        PRIV_REQUIRES console esp_event esp_partition esp_timer
-                                     ieee802154 mbedtls spi_flash)
+                                     ieee802154 mbedtls nvs_flash)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)
