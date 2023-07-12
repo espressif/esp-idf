@@ -45,7 +45,7 @@ TEST_CASE("async_memcpy_eof_event", "[etm]")
     TEST_ESP_OK(gpio_set_level(output_gpio, 1));
 
     printf("install async memcpy context\r\n");
-    async_memcpy_t mcp_ctx = NULL;
+    async_memcpy_handle_t mcp_ctx = NULL;
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     TEST_ESP_OK(esp_async_memcpy_install(&config, &mcp_ctx));
 
