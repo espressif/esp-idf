@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,13 +109,13 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
     switch (hw->clk_conf.sclk_sel) {
         default:
         case 1:
-            *source_clk = UART_SCLK_APB;
+            *source_clk = (soc_module_clk_t)UART_SCLK_APB;
             break;
         case 2:
-            *source_clk = UART_SCLK_RTC;
+            *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
             break;
         case 3:
-            *source_clk = UART_SCLK_XTAL;
+            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
             break;
     }
 }
@@ -552,7 +552,6 @@ FORCE_INLINE_ATTR void uart_ll_set_data_bit_num(uart_dev_t *hw, uart_word_length
 }
 
 /**
-FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
  * @brief  Set the rts active level.
  *
  * @param  hw Beginning address of the peripheral registers.
