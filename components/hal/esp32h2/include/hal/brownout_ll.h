@@ -97,6 +97,16 @@ static inline void brownout_ll_intr_enable(bool enable)
 }
 
 /**
+ * @brief Enable brownout hardware reset
+ *
+ * @param enable
+ */
+static inline void brownout_ll_ana_reset_enable(bool enable)
+{
+    LP_ANA_PERI.bod_mode1_cntl.bod_mode1_reset_ena = enable;
+}
+
+/**
  * @brief Clear interrupt bits.
  */
 __attribute__((always_inline))
