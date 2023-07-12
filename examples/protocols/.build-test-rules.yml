@@ -1,21 +1,14 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/protocols/coap_client:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: running this test on single platform is sufficient for coverage
 
-examples/protocols/coap_server:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/esp_http_client:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "linux"]
       temporary: true
@@ -30,24 +23,18 @@ examples/protocols/esp_local_ctrl:
       reason: lack of runners
 
 examples/protocols/http2_request:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
 
 examples/protocols/http_request:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
 
 examples/protocols/http_server:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -61,81 +48,63 @@ examples/protocols/http_server/captive_portal:
       temporary: true
       reason: only test on esp32
 
-examples/protocols/http_server/ws_echo_server:
+examples/protocols/http_server/restful_server:
   disable:
     - if: IDF_TARGET in ["esp32h2"]
+
+examples/protocols/http_server/ws_echo_server:
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
 
 examples/protocols/https_mbedtls:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/https_request:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/https_server/simple:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
 examples/protocols/https_server/wss_server:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
 
 examples/protocols/https_x509_bundle:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/icmp_echo:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
 examples/protocols/l2tap:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
-
-examples/protocols/mdns:
-  disable:
-    - if: IDF_TARGET == "esp32h2"
 
 examples/protocols/modbus:
   disable:
     - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/mqtt/ssl:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -147,41 +116,25 @@ examples/protocols/mqtt/ssl_ds:
       temporary: false
       reason: DS not present
 
-examples/protocols/mqtt/ssl_mutual_auth:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-
-examples/protocols/mqtt/ssl_psk:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-
 examples/protocols/mqtt/tcp:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/mqtt/ws:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/mqtt/wss:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/mqtt5:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -193,31 +146,20 @@ examples/protocols/slip/slip_udp:
       temporary: true
       reason: target esp32c2 is not supported yet
 
-examples/protocols/smtp_client:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-
 examples/protocols/sntp:
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
 
-examples/protocols/sockets/icmpv6_ping:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/sockets/non_blocking:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/sockets/tcp_client:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -225,37 +167,21 @@ examples/protocols/sockets/tcp_client:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
 
-examples/protocols/sockets/tcp_client_multi_net:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/sockets/tcp_server:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
-examples/protocols/sockets/tcp_transport_client:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
 
 examples/protocols/sockets/udp_client:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
-examples/protocols/sockets/udp_multicast:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-
 examples/protocols/sockets/udp_server:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
