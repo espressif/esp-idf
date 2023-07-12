@@ -186,6 +186,13 @@ if(CONFIG_COMPILER_DISABLE_GCC12_WARNINGS)
                                 "-Wno-use-after-free")
 endif()
 
+if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
+    list(APPEND compile_options "-Wno-xor-used-as-pow")
+    list(APPEND c_compile_options "-Wno-enum-int-mismatch")
+    list(APPEND cxx_compile_options "-Wno-self-move"
+                                    "-Wno-dangling-reference")
+endif()
+
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields"

@@ -12,17 +12,7 @@
 
 ---
 
-.. tool-xtensa-esp32-elf-notes
-
-
----
-
-.. tool-xtensa-esp32s2-elf-notes
-
-
----
-
-.. tool-xtensa-esp32s3-elf-notes
+.. tool-xtensa-esp-elf-notes
 
 
 ---
