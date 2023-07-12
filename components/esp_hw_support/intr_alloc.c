@@ -542,6 +542,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         //None found. Bail out.
         portEXIT_CRITICAL(&spinlock);
         free(ret);
+        ESP_LOGE(TAG, "No free interrupt inputs for %s interrupt (flags 0x%X)", esp_isr_names[source], flags);
         return ESP_ERR_NOT_FOUND;
     }
     //Get an int vector desc for int.
