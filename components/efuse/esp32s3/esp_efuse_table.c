@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 7f80667718451ae522bb4d60ced03d49
+// md5_digest_table e0674ff40a1e124670c6eecf33410e76
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -273,6 +273,30 @@ static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
 
 static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_VENDOR,
 };
 
 static const esp_efuse_desc_t WR_DIS_K_RTC_LDO[] = {
@@ -730,6 +754,30 @@ static const esp_efuse_desc_t PKG_VERSION[] = {
 
 static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
     {EFUSE_BLK1, 120, 3}, 	 // [] BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t FLASH_CAP[] = {
+    {EFUSE_BLK1, 123, 3}, 	 // [] Flash capacity {0: "None"; 1: "8M"; 2: "4M"},
+};
+
+static const esp_efuse_desc_t FLASH_TEMP[] = {
+    {EFUSE_BLK1, 126, 2}, 	 // [] Flash temperature {0: "None"; 1: "105C"; 2: "85C"},
+};
+
+static const esp_efuse_desc_t FLASH_VENDOR[] = {
+    {EFUSE_BLK1, 128, 3}, 	 // [] Flash vendor {0: "None"; 1: "XMC"; 2: "GD"; 3: "FM"; 4: "TT"; 5: "BY"},
+};
+
+static const esp_efuse_desc_t PSRAM_CAP[] = {
+    {EFUSE_BLK1, 131, 2}, 	 // [] PSRAM capacity {0: "None"; 1: "8M"; 2: "2M"},
+};
+
+static const esp_efuse_desc_t PSRAM_TEMP[] = {
+    {EFUSE_BLK1, 133, 2}, 	 // [] PSRAM temperature {0: "None"; 1: "105C"; 2: "85C"},
+};
+
+static const esp_efuse_desc_t PSRAM_VENDOR[] = {
+    {EFUSE_BLK1, 135, 2}, 	 // [] PSRAM vendor {0: "None"; 1: "AP_3v3"; 2: "AP_1v8"},
 };
 
 static const esp_efuse_desc_t K_RTC_LDO[] = {
@@ -1202,6 +1250,36 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
     &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[] = {
+    &WR_DIS_FLASH_CAP[0],    		// [] wr_dis of FLASH_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[] = {
+    &WR_DIS_FLASH_TEMP[0],    		// [] wr_dis of FLASH_TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[] = {
+    &WR_DIS_FLASH_VENDOR[0],    		// [] wr_dis of FLASH_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_CAP[] = {
+    &WR_DIS_PSRAM_CAP[0],    		// [] wr_dis of PSRAM_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_TEMP[] = {
+    &WR_DIS_PSRAM_TEMP[0],    		// [] wr_dis of PSRAM_TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[] = {
+    &WR_DIS_PSRAM_VENDOR[0],    		// [] wr_dis of PSRAM_VENDOR
     NULL
 };
 
@@ -1772,6 +1850,36 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
     &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
+    &FLASH_CAP[0],    		// [] Flash capacity {0: "None"; 1: "8M"; 2: "4M"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[] = {
+    &FLASH_TEMP[0],    		// [] Flash temperature {0: "None"; 1: "105C"; 2: "85C"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
+    &FLASH_VENDOR[0],    		// [] Flash vendor {0: "None"; 1: "XMC"; 2: "GD"; 3: "FM"; 4: "TT"; 5: "BY"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[] = {
+    &PSRAM_CAP[0],    		// [] PSRAM capacity {0: "None"; 1: "8M"; 2: "2M"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_TEMP[] = {
+    &PSRAM_TEMP[0],    		// [] PSRAM temperature {0: "None"; 1: "105C"; 2: "85C"}
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[] = {
+    &PSRAM_VENDOR[0],    		// [] PSRAM vendor {0: "None"; 1: "AP_3v3"; 2: "AP_1v8"}
     NULL
 };
 
