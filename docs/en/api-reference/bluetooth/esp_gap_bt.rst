@@ -1,5 +1,5 @@
-CLASSIC BLUETOOTH GAP API
-=========================
+Classic Bluetooth® GAP API
+==========================
 
 API Reference
 -------------

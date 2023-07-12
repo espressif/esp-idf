@@ -1,5 +1,5 @@
-Bluetooth A2DP API
-==================
+Bluetooth® A2DP API
+===================
 
 Application Example
 -------------------

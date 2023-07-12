@@ -1,4 +1,4 @@
-HFP DEFINES
+HFP Defines
 ===========
 
 API Reference

@@ -18,7 +18,7 @@ GATT 服务器 API
     - :example:`bluetooth/bluedroid/ble/gatt_server`
     - :example_file:`GATT 服务器示例 <bluetooth/bluedroid/ble/gatt_server/tutorial/Gatt_Server_Example_Walkthrough.md>`
 
-* 以下示例与 Bluetooth SPP 类似。在该示例中，GATT 服务器可以接收来自 UART 的数据，并将数据自动发送到对端设备。
+* 以下示例与低功耗蓝牙 (Bluetooth® LE) SPP 类似。在该示例中，GATT 服务器可以接收来自 UART 的数据，并将数据自动发送到对端设备。
 
     - :example:`bluetooth/bluedroid/ble/ble_spp_server`
 

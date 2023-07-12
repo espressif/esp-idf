@@ -1,8 +1,9 @@
 GAP API
 =======
+
 :link_to_translation:`en:[English]`
 
-应用实例
+应用示例
 -------------------
 
 以下示例及其教程存放在 ESP-IDF 项目示例的 :example:`bluetooth/bluedroid/ble` 目录下。

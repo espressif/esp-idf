@@ -1,5 +1,5 @@
-BT MAIN API
-===========
+Bluetooth® Main API
+===================
 
 API Reference
 -------------

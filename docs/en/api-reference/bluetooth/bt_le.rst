@@ -1,11 +1,11 @@
-BT LE
-=========
+Bluetooth® Low Energy (Bluetooth LE)
+====================================
 
 .. toctree::
-   :caption: Bluetooth LE
+   :caption: Bluetooth Low Energy
 
-   BLE GAP <esp_gap_ble>
-   BLE GATT DEFINE <esp_gatt_defs>
-   BLE GATT SERVER <esp_gatts>
-   BLE GATT CLIENT <esp_gattc>
-   :SOC_BLUFI_SUPPORTED: BLE BLUFI <esp_blufi>
+   Bluetooth Low Energy GAP <esp_gap_ble>
+   Bluetooth Low Energy GATT Define <esp_gatt_defs>
+   Bluetooth Low Energy GATT Server <esp_gatts>
+   Bluetooth Low Energy GATT Client <esp_gattc>
+   :SOC_BLUFI_SUPPORTED: Bluetooth Low Energy BluFi <esp_blufi>

@@ -1,4 +1,4 @@
-Bluetooth HID Host API
+Bluetooth® HID Host API
 ========================
 
 Overview

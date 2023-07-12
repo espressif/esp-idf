@@ -1,5 +1,5 @@
-Bluetooth API
-*************
+Bluetooth® API
+**************
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -13,10 +13,10 @@ Bluetooth API
     :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh
     nimble/index
 
-ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) supports classic Bluetooth as well as BLE. On the other hand, Apache NimBLE based stack is BLE only. For users to make a choice:
+ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) supports classic Bluetooth as well as Bluetooth Low Energy (Bluetooth LE). On the other hand, Apache NimBLE based stack is Bluetooth Low Energy only. For users to make a choice:
 
-* For usecases involving classic Bluetooth as well as BLE, Bluedroid should be used.
-* For BLE-only usecases, using NimBLE is recommended. It is less demanding in terms of code footprint and runtime memory, making it suitable for such scenarios.
+* For usecases involving classic Bluetooth as well as Bluetooth Low Energy, Bluedroid should be used.
+* For Bluetooth Low Energy-only usecases, using NimBLE is recommended. It is less demanding in terms of code footprint and runtime memory, making it suitable for such scenarios.
 
 .. only:: esp32
 

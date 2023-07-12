@@ -18,7 +18,7 @@ Check :example:`bluetooth/bluedroid/ble` folder in ESP-IDF examples, which conta
     - :example:`bluetooth/bluedroid/ble/gatt_server`
     - :example_file:`GATT Server Example Walkthrough <bluetooth/bluedroid/ble/gatt_server/tutorial/Gatt_Server_Example_Walkthrough.md>`
 
-* This is a demo similar to Bluetooth SPP. In this demo, GATT server can receive data from UART and then send the data to the peer device automatically.
+* This is a demo similar to Bluetooth® Low Energy (Bluetooth LE) SPP. In this demo, GATT server can receive data from UART and then send the data to the peer device automatically.
 
     - :example:`bluetooth/bluedroid/ble/ble_spp_server`
 

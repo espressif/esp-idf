@@ -1,20 +1,15 @@
 ESP-BLE-MESH
 ============
 
-With various features of ESP-BLE-MESH, users can create a managed flooding mesh network for several
-scenarios, such as lighting, sensor and etc.
+With various features of ESP-BLE-MESH, users can create a managed flooding mesh network for several scenarios, such as lighting, sensor and etc.
 
-For an ESP32 to join and work on a ESP-BLE-MESH network, it must be provisioned firstly. By provisioning,
-the ESP32, as an unprovisioned device, will join the ESP-BLE-MESH network and become a ESP-BLE-MESH node,
-communicating with other nodes within or beyond the radio range.
+For an ESP32 to join and work on a ESP-BLE-MESH network, it must be provisioned firstly. By provisioning, the ESP32, as an unprovisioned device, will join the ESP-BLE-MESH network and become a ESP-BLE-MESH node, communicating with other nodes within or beyond the radio range.
 
-Apart from ESP-BLE-MESH nodes, inside ESP-BLE-MESH network, there is also ESP32 that works as ESP-BLE-MESH
-Provisioner, which could provision unprovisioned devices into ESP-BLE-MESH nodes and configure the nodes
-with various features.
+Apart from ESP-BLE-MESH nodes, inside ESP-BLE-MESH network, there is also ESP32 that works as ESP-BLE-MESH provisioner, which could provision unprovisioned devices into ESP-BLE-MESH nodes and configure the nodes with various features.
 
 For information how to start using ESP32 and ESP-BLE-MESH, please see the Section :ref:`getting-started-with-ble-mesh`. If you are interested in information on ESP-BLE-MESH architecture, including some details of software implementation, please see Section :doc:`../../api-guides/esp-ble-mesh/ble-mesh-architecture`.
 
- 
+
 Application Examples and Demos
 ------------------------------
 
@@ -48,8 +43,7 @@ This section contains only one header file, which lists the following items of E
 ESP-BLE-MESH Core API Reference
 -------------------------------
 
-This section contains ESP-BLE-MESH Core related APIs, which can be used to initialize ESP-BLE-MESH
-stack, provision, send/publish messages, etc.
+This section contains ESP-BLE-MESH Core related APIs, which can be used to initialize ESP-BLE-MESH stack, provision, send/publish messages, etc.
 
 This API reference covers six components:
 
@@ -79,7 +73,7 @@ Low Power Operation (Updating)
 .. include-build-file:: inc/esp_ble_mesh_low_power_api.inc
 
 
-Send/Publish Messages, add Local AppKey, etc.
+Send/Publish Messages, Add Local AppKey, Etc.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. include-build-file:: inc/esp_ble_mesh_networking_api.inc
