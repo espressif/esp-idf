@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -1009,6 +1009,12 @@ _xt_coproc_exc:
     s32i    a2,  sp, XT_STK_A2
     s32i    a3,  sp, XT_STK_A3
     s32i    a4,  sp, XT_STK_A4
+#if portNUM_PROCESSORS > 1
+    /* If multicore, we must save two more interruptee's register to use as
+     * scratch when taking/releasing the _xt_coproc_owner_sa_lock spinlock. */
+    s32i    a6,  sp, XT_STK_A6
+    s32i    a7,  sp, XT_STK_A7
+#endif /* portNUM_PROCESSORS > 1 */
     s32i    a15, sp, XT_STK_A15
 
     /* Call the RTOS coprocessor exception hook */
@@ -1039,7 +1045,7 @@ _xt_coproc_exc:
 #if portNUM_PROCESSORS > 1
     /* If multicore, we must also acquire the _xt_coproc_owner_sa_lock spinlock
      * to ensure thread safe access of _xt_coproc_owner_sa between cores. */
-    spinlock_take a0 a2 _xt_coproc_owner_sa_lock
+    spinlock_take a6 a7 _xt_coproc_owner_sa_lock
 #endif /* portNUM_PROCESSORS > 1 */
 
     /* Get old coprocessor owner thread (save area ptr) and assign new one.  */
@@ -1050,7 +1056,7 @@ _xt_coproc_exc:
 
 #if portNUM_PROCESSORS > 1
     /* Release previously taken spinlock */
-    spinlock_release a0 a2 _xt_coproc_owner_sa_lock
+    spinlock_release a6 a7 _xt_coproc_owner_sa_lock
 #endif /* portNUM_PROCESSORS > 1 */
 
     /* Only need to context switch if new owner != old owner. */
@@ -1133,6 +1139,10 @@ _xt_coproc_exc:
     /* Can omit rsync for wsr.CPENABLE here because _xt_user_exit does it. */
 .L_xt_coproc_done:
     l32i    a15, sp, XT_STK_A15
+#if portNUM_PROCESSORS > 1
+    l32i    a6,  sp, XT_STK_A6
+    l32i    a7,  sp, XT_STK_A7
+#endif /* portNUM_PROCESSORS > 1 */
     l32i    a5,  sp, XT_STK_A5
     l32i    a4,  sp, XT_STK_A4
     l32i    a3,  sp, XT_STK_A3
