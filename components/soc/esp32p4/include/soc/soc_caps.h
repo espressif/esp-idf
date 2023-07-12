@@ -32,7 +32,7 @@
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_AXI_GDMA_SUPPORTED          1
-// #define SOC_GPTIMER_SUPPORTED           1  //TODO: IDF-6515
+#define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1  //TODO: IDF-7475
 // #define SOC_MCPWM_SUPPORTED             1  //TODO: IDF-7493
 // #define SOC_TWAI_SUPPORTED              1  //TODO: IDF-7470
@@ -389,13 +389,12 @@
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
-#define SOC_TIMER_GROUPS                  (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
-#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
-#define SOC_TIMER_SUPPORT_ETM             (0)
+#define SOC_TIMER_GROUPS                  2
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  2
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH 54
+#define SOC_TIMER_GROUP_SUPPORT_XTAL      1
+#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   1
+#define SOC_TIMER_GROUP_TOTAL_TIMERS      4
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         2
@@ -470,7 +469,7 @@
 #define SOC_PM_PAU_LINK_NUM             (4)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (0)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
