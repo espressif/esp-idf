@@ -73,6 +73,10 @@ void esp_aes_release_hardware( void )
 /* Run a single 16 byte block of AES, using the hardware engine.
  *
  * Call only while holding esp_aes_acquire_hardware().
+ *
+ * The function esp_aes_block zeroises the output buffer in the case of following conditions:
+ * 1. If key is not written in the hardware
+ * 2. If the fault injection check failed
  */
 static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
 {
@@ -86,7 +90,7 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
        key write to hardware. Treat this as a fatal error and zero the output block.
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
-        bzero(output, 16);
+        mbedtls_platform_zeroize(output, 16);
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
     i0 = input_words[0];
@@ -190,7 +194,6 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
     ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, mode);
     r = esp_aes_block(ctx, input, output);
     esp_aes_release_hardware();
-
     return r;
 }
 
@@ -205,6 +208,7 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
                       const unsigned char *input,
                       unsigned char *output )
 {
+    int ret = -1;
     uint32_t *output_words = (uint32_t *)output;
     const uint32_t *input_words = (const uint32_t *)input;
     uint32_t *iv_words = (uint32_t *)iv;
@@ -226,7 +230,10 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length > 0 ) {
             memcpy(temp, input_words, 16);
-            esp_aes_block(ctx, input_words, output_words);
+            ret = esp_aes_block(ctx, input_words, output_words);
+            if (ret != 0) {
+                goto cleanup;
+            }
 
             output_words[0] = output_words[0] ^ iv_words[0];
             output_words[1] = output_words[1] ^ iv_words[1];
@@ -247,7 +254,11 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
             output_words[2] = input_words[2] ^ iv_words[2];
             output_words[3] = input_words[3] ^ iv_words[3];
 
-            esp_aes_block(ctx, output_words, output_words);
+            ret = esp_aes_block(ctx, output_words, output_words);
+            if (ret != 0) {
+                goto cleanup;
+            }
+
             memcpy( iv_words, output_words, 16 );
 
             input_words  += 4;
@@ -255,10 +266,11 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
             length -= 16;
         }
     }
+    ret = 0;
 
+cleanup:
     esp_aes_release_hardware();
-
-    return 0;
+    return ret;
 }
 
 /*
@@ -272,7 +284,7 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
                          const unsigned char *input,
                          unsigned char *output )
 {
-    int c;
+    int c, ret = -1;
     size_t n = *iv_off;
 
     if (!valid_key_length(ctx)) {
@@ -286,7 +298,10 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length-- ) {
             if ( n == 0 ) {
-                esp_aes_block(ctx, iv, iv);
+                ret = esp_aes_block(ctx, iv, iv);
+                if (ret != 0) {
+                    goto cleanup;
+                }
             }
 
             c = *input++;
@@ -298,7 +313,10 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     } else {
         while ( length-- ) {
             if ( n == 0 ) {
-                esp_aes_block(ctx, iv, iv);
+                ret = esp_aes_block(ctx, iv, iv);
+                if (ret != 0) {
+                    goto cleanup;
+                }
             }
 
             iv[n] = *output++ = (unsigned char)( iv[n] ^ *input++ );
@@ -308,10 +326,11 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     }
 
     *iv_off = n;
+    ret = 0;
 
+cleanup:
     esp_aes_release_hardware();
-
-    return 0;
+    return ret;
 }
 
 /*
@@ -324,6 +343,7 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
+    int ret = -1;
     unsigned char c;
     unsigned char ov[17];
 
@@ -338,7 +358,10 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
 
     while ( length-- ) {
         memcpy( ov, iv, 16 );
-        esp_aes_block(ctx, iv, iv);
+        ret = esp_aes_block(ctx, iv, iv);
+        if (ret != 0) {
+            goto cleanup;
+        }
 
         if ( mode == ESP_AES_DECRYPT ) {
             ov[16] = *input;
@@ -352,10 +375,11 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
 
         memcpy( iv, ov + 1, 16 );
     }
+    ret = 0;
 
+cleanup:
     esp_aes_release_hardware();
-
-    return 0;
+    return ret;
 }
 
 /*
@@ -370,6 +394,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
                       unsigned char *output )
 {
     int c, i;
+    int ret = -1;
     size_t n = *nc_off;
 
     if (!valid_key_length(ctx)) {
@@ -383,7 +408,10 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
 
     while ( length-- ) {
         if ( n == 0 ) {
-            esp_aes_block(ctx, nonce_counter, stream_block);
+            ret = esp_aes_block(ctx, nonce_counter, stream_block);
+            if (ret != 0) {
+                goto cleanup;
+            }
 
             for ( i = 16; i > 0; i-- ) {
                 if ( ++nonce_counter[i - 1] != 0 ) {
@@ -398,10 +426,11 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
     }
 
     *nc_off = n;
+    ret = 0;
 
+cleanup:
     esp_aes_release_hardware();
-
-    return 0;
+    return ret;
 }
 
 /*
@@ -414,7 +443,7 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
                       const unsigned char *input,
                       unsigned char *output )
 {
-    int ret = 0;
+    int ret = -1;
     size_t n;
 
     if (ctx == NULL || iv_off == NULL || iv == NULL ||
@@ -439,7 +468,10 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
 
     while (length--) {
         if ( n == 0 ) {
-            esp_aes_block(ctx, iv, iv);
+            ret = esp_aes_block(ctx, iv, iv);
+            if (ret != 0) {
+                goto cleanup;
+            }
         }
         *output++ =  *input++ ^ iv[n];
 
@@ -447,7 +479,9 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
     }
 
     *iv_off = n;
+    ret = 0;
 
+cleanup:
     esp_aes_release_hardware();
 
     return ( ret );
