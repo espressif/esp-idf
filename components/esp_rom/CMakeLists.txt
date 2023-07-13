@@ -122,6 +122,13 @@ if(BOOTLOADER_BUILD)
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")
         endif()
+
+    elseif(target STREQUAL "esp32p4")
+        rom_linker_script("newlib")
+        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+            rom_linker_script("wdt")
+        endif()
+        rom_linker_script("version")
     endif()
 
 else() # Regular app build
@@ -248,6 +255,21 @@ else() # Regular app build
         if(CONFIG_SPI_FLASH_ROM_IMPL)
             rom_linker_script("spiflash")
         endif()
+
+        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+            rom_linker_script("wdt")
+        endif()
+
+        if(CONFIG_NEWLIB_NANO_FORMAT)
+            # nano formatting functions in ROM are also built for 64-bit time_t.
+            rom_linker_script("newlib-nano")
+        endif()
+
+    elseif(target STREQUAL "esp32p4")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+
+        # esp32p4 rom doesn't have esp_flash driver
 
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")

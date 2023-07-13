@@ -3148,13 +3148,13 @@ extern "C" {
  *  This register is used to clear ch0 crc result
  */
 #define AHB_DMA_OUT_CRC_CLEAR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x2c4)
-/** AHB_DMA_OUT_CRC_CLEAR_CH0_REG : R/W; bitpos: [0]; default: 0;
+/** AHB_DMA_OUT_CRC_CLEAR_CH0 : R/W; bitpos: [0]; default: 0;
  *  This register is used to clear ch0 of tx crc result
  */
-#define AHB_DMA_OUT_CRC_CLEAR_CH0_REG    (BIT(0))
-#define AHB_DMA_OUT_CRC_CLEAR_CH0_REG_M  (AHB_DMA_OUT_CRC_CLEAR_CH0_REG_V << AHB_DMA_OUT_CRC_CLEAR_CH0_REG_S)
-#define AHB_DMA_OUT_CRC_CLEAR_CH0_REG_V  0x00000001U
-#define AHB_DMA_OUT_CRC_CLEAR_CH0_REG_S  0
+#define AHB_DMA_OUT_CRC_CLEAR_CH0    (BIT(0))
+#define AHB_DMA_OUT_CRC_CLEAR_CH0_M  (AHB_DMA_OUT_CRC_CLEAR_CH0_V << AHB_DMA_OUT_CRC_CLEAR_CH0_S)
+#define AHB_DMA_OUT_CRC_CLEAR_CH0_V  0x00000001U
+#define AHB_DMA_OUT_CRC_CLEAR_CH0_S  0
 
 /** AHB_DMA_OUT_CRC_FINAL_RESULT_CH0_REG register
  *  This register is used to store ch0 crc result
@@ -3277,13 +3277,13 @@ extern "C" {
  *  This register is used to clear ch0 crc result
  */
 #define AHB_DMA_OUT_CRC_CLEAR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x2ec)
-/** AHB_DMA_OUT_CRC_CLEAR_CH1_REG : R/W; bitpos: [0]; default: 0;
+/** AHB_DMA_OUT_CRC_CLEAR_CH1 : R/W; bitpos: [0]; default: 0;
  *  This register is used to clear ch0 of tx crc result
  */
-#define AHB_DMA_OUT_CRC_CLEAR_CH1_REG    (BIT(0))
-#define AHB_DMA_OUT_CRC_CLEAR_CH1_REG_M  (AHB_DMA_OUT_CRC_CLEAR_CH1_REG_V << AHB_DMA_OUT_CRC_CLEAR_CH1_REG_S)
-#define AHB_DMA_OUT_CRC_CLEAR_CH1_REG_V  0x00000001U
-#define AHB_DMA_OUT_CRC_CLEAR_CH1_REG_S  0
+#define AHB_DMA_OUT_CRC_CLEAR_CH1    (BIT(0))
+#define AHB_DMA_OUT_CRC_CLEAR_CH1_M  (AHB_DMA_OUT_CRC_CLEAR_CH1_V << AHB_DMA_OUT_CRC_CLEAR_CH1_S)
+#define AHB_DMA_OUT_CRC_CLEAR_CH1_V  0x00000001U
+#define AHB_DMA_OUT_CRC_CLEAR_CH1_S  0
 
 /** AHB_DMA_OUT_CRC_FINAL_RESULT_CH1_REG register
  *  This register is used to store ch0 crc result
@@ -3406,15 +3406,15 @@ extern "C" {
  *  This register is used to clear ch0 crc result
  */
 #define AHB_DMA_OUT_CRC_CLEAR_CH2_REG (DR_REG_AHB_DMA_BASE + 0x314)
-/** AHB_DMA_OUT_CRC_CLEAR_CH2_REG : R/W; bitpos: [0]; default: 0;
+/** AHB_DMA_OUT_CRC_CLEAR_CH2 : R/W; bitpos: [0]; default: 0;
  *  This register is used to clear ch0 of tx crc result
  */
-#define AHB_DMA_OUT_CRC_CLEAR_CH2_REG    (BIT(0))
-#define AHB_DMA_OUT_CRC_CLEAR_CH2_REG_M  (AHB_DMA_OUT_CRC_CLEAR_CH2_REG_V << AHB_DMA_OUT_CRC_CLEAR_CH2_REG_S)
-#define AHB_DMA_OUT_CRC_CLEAR_CH2_REG_V  0x00000001U
-#define AHB_DMA_OUT_CRC_CLEAR_CH2_REG_S  0
+#define AHB_DMA_OUT_CRC_CLEAR_CH2    (BIT(0))
+#define AHB_DMA_OUT_CRC_CLEAR_CH2_M  (AHB_DMA_OUT_CRC_CLEAR_CH2_V << AHB_DMA_OUT_CRC_CLEAR_CH2_S)
+#define AHB_DMA_OUT_CRC_CLEAR_CH2_V  0x00000001U
+#define AHB_DMA_OUT_CRC_CLEAR_CH2_S  0
 
-/** AHB_DMA_OUT_CRC_FINAL_RESULT_CH2_REG register
+/** AHB_DMA_OUT_CRC_FINAL_RESULT_CH2 register
  *  This register is used to store ch0 crc result
  */
 #define AHB_DMA_OUT_CRC_FINAL_RESULT_CH2_REG (DR_REG_AHB_DMA_BASE + 0x318)
@@ -3535,13 +3535,13 @@ extern "C" {
  *  This register is used to clear ch0 crc result
  */
 #define AHB_DMA_IN_CRC_CLEAR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x33c)
-/** AHB_DMA_IN_CRC_CLEAR_CH0_REG : R/W; bitpos: [0]; default: 0;
+/** AHB_DMA_IN_CRC_CLEAR_CH0 : R/W; bitpos: [0]; default: 0;
  *  This register is used to clear ch0 of rx crc result
  */
-#define AHB_DMA_IN_CRC_CLEAR_CH0_REG    (BIT(0))
-#define AHB_DMA_IN_CRC_CLEAR_CH0_REG_M  (AHB_DMA_IN_CRC_CLEAR_CH0_REG_V << AHB_DMA_IN_CRC_CLEAR_CH0_REG_S)
-#define AHB_DMA_IN_CRC_CLEAR_CH0_REG_V  0x00000001U
-#define AHB_DMA_IN_CRC_CLEAR_CH0_REG_S  0
+#define AHB_DMA_IN_CRC_CLEAR_CH0    (BIT(0))
+#define AHB_DMA_IN_CRC_CLEAR_CH0_M  (AHB_DMA_IN_CRC_CLEAR_CH0_V << AHB_DMA_IN_CRC_CLEAR_CH0_S)
+#define AHB_DMA_IN_CRC_CLEAR_CH0_V  0x00000001U
+#define AHB_DMA_IN_CRC_CLEAR_CH0_S  0
 
 /** AHB_DMA_IN_CRC_FINAL_RESULT_CH0_REG register
  *  This register is used to store ch0 crc result
@@ -3664,13 +3664,13 @@ extern "C" {
  *  This register is used to clear ch0 crc result
  */
 #define AHB_DMA_IN_CRC_CLEAR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x364)
-/** AHB_DMA_IN_CRC_CLEAR_CH1_REG : R/W; bitpos: [0]; default: 0;
+/** AHB_DMA_IN_CRC_CLEAR_CH1 : R/W; bitpos: [0]; default: 0;
  *  This register is used to clear ch0 of rx crc result
  */
-#define AHB_DMA_IN_CRC_CLEAR_CH1_REG    (BIT(0))
-#define AHB_DMA_IN_CRC_CLEAR_CH1_REG_M  (AHB_DMA_IN_CRC_CLEAR_CH1_REG_V << AHB_DMA_IN_CRC_CLEAR_CH1_REG_S)
-#define AHB_DMA_IN_CRC_CLEAR_CH1_REG_V  0x00000001U
-#define AHB_DMA_IN_CRC_CLEAR_CH1_REG_S  0
+#define AHB_DMA_IN_CRC_CLEAR_CH1    (BIT(0))
+#define AHB_DMA_IN_CRC_CLEAR_CH1_M  (AHB_DMA_IN_CRC_CLEAR_CH1_V << AHB_DMA_IN_CRC_CLEAR_CH1_S)
+#define AHB_DMA_IN_CRC_CLEAR_CH1_V  0x00000001U
+#define AHB_DMA_IN_CRC_CLEAR_CH1_S  0
 
 /** AHB_DMA_IN_CRC_FINAL_RESULT_CH1_REG register
  *  This register is used to store ch0 crc result
@@ -3793,13 +3793,13 @@ extern "C" {
  *  This register is used to clear ch0 crc result
  */
 #define AHB_DMA_IN_CRC_CLEAR_CH2_REG (DR_REG_AHB_DMA_BASE + 0x38c)
-/** AHB_DMA_IN_CRC_CLEAR_CH2_REG : R/W; bitpos: [0]; default: 0;
+/** AHB_DMA_IN_CRC_CLEAR_CH2 : R/W; bitpos: [0]; default: 0;
  *  This register is used to clear ch0 of rx crc result
  */
-#define AHB_DMA_IN_CRC_CLEAR_CH2_REG    (BIT(0))
-#define AHB_DMA_IN_CRC_CLEAR_CH2_REG_M  (AHB_DMA_IN_CRC_CLEAR_CH2_REG_V << AHB_DMA_IN_CRC_CLEAR_CH2_REG_S)
-#define AHB_DMA_IN_CRC_CLEAR_CH2_REG_V  0x00000001U
-#define AHB_DMA_IN_CRC_CLEAR_CH2_REG_S  0
+#define AHB_DMA_IN_CRC_CLEAR_CH2    (BIT(0))
+#define AHB_DMA_IN_CRC_CLEAR_CH2_M  (AHB_DMA_IN_CRC_CLEAR_CH2_V << AHB_DMA_IN_CRC_CLEAR_CH2_S)
+#define AHB_DMA_IN_CRC_CLEAR_CH2_V  0x00000001U
+#define AHB_DMA_IN_CRC_CLEAR_CH2_S  0
 
 /** AHB_DMA_IN_CRC_FINAL_RESULT_CH2_REG register
  *  This register is used to store ch0 crc result

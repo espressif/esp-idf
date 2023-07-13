@@ -160,7 +160,7 @@
 #define SOC_AHB_GDMA_VERSION            2
 #define SOC_GDMA_NUM_GROUPS_MAX         2
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-#define SOC_GDMA_SUPPORT_ETM            1  // Both AHB-DMA and AXI-DMA supports ETM
+// #define SOC_GDMA_SUPPORT_ETM            1  // Both AHB-DMA and AXI-DMA supports ETM  //TODO: IDF-6504
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
