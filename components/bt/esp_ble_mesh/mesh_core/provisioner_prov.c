@@ -3470,7 +3470,7 @@ void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, int8_t r
     uint16_t oob_info = 0U;
 
     if (!(prov_ctx.bearers & BLE_MESH_PROV_ADV)) {
-        BT_WARN("Not support PB-ADV bearer");
+        BT_INFO("Not support PB-ADV bearer");
         return;
     }
 
@@ -3506,7 +3506,7 @@ void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
     uint16_t oob_info = 0U;
 
     if (!(prov_ctx.bearers & BLE_MESH_PROV_GATT)) {
-        BT_WARN("Not support PB-GATT bearer");
+        BT_INFO("Not support PB-GATT bearer");
         return;
     }
 
