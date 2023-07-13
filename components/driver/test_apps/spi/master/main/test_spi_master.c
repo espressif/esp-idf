@@ -1644,7 +1644,7 @@ TEST_CASE("test_master_isr_pin_to_core","[spi]")
 
 
     //-------------------------------------CPU1---------------------------------------
-    buscfg.isr_cpu_id = INTR_CPU_ID_1;
+    buscfg.isr_cpu_id = ESP_INTR_CPU_AFFINITY_1;
 
     master_expect = 0;
     for (int i = 0; i < TEST_ISR_CNT; i++) {

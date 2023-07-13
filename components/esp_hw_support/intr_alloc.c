@@ -83,10 +83,11 @@ struct vector_desc_t {
     vector_desc_t *next;
 };
 
-struct intr_handle_data_t {
+/** Interrupt handler associated data structure */
+typedef struct intr_handle_data_t {
     vector_desc_t *vector_desc;
     shared_vector_desc_t *shared_vector_desc;
-};
+} intr_handle_data_t;
 
 typedef struct non_shared_isr_arg_t non_shared_isr_arg_t;
 

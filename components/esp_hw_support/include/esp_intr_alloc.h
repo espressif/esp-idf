@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "esp_err.h"
+#include "esp_intr_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,15 +79,6 @@ extern "C" {
 
 /** Disable interrupt by interrupt number */
 #define ESP_INTR_DISABLE(inum) esp_intr_disable_source(inum)
-
-/** Function prototype for interrupt handler function */
-typedef void (*intr_handler_t)(void *arg);
-
-/** Interrupt handler associated data structure */
-typedef struct intr_handle_data_t intr_handle_data_t;
-
-/** Handle to an interrupt handler */
-typedef intr_handle_data_t *intr_handle_t ;
 
 /**
  * @brief Mark an interrupt as a shared interrupt

@@ -232,13 +232,13 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
     // interrupts are not allowed on SPI1 bus
     if (host_id != SPI1_HOST) {
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
-        if(bus_attr->bus_cfg.isr_cpu_id > INTR_CPU_ID_AUTO) {
-            SPI_CHECK(bus_attr->bus_cfg.isr_cpu_id <= INTR_CPU_ID_1, "invalid core id", ESP_ERR_INVALID_ARG);
+        if (bus_attr->bus_cfg.isr_cpu_id > ESP_INTR_CPU_AFFINITY_AUTO) {
+            SPI_CHECK(bus_attr->bus_cfg.isr_cpu_id <= ESP_INTR_CPU_AFFINITY_1, "invalid core id", ESP_ERR_INVALID_ARG);
             spi_ipc_param_t ipc_arg = {
                 .spi_host = host,
                 .err = &err,
             };
-            esp_ipc_call_blocking(INTR_CPU_CONVERT_ID(bus_attr->bus_cfg.isr_cpu_id), ipc_isr_reg_to_core, (void *) &ipc_arg);
+            esp_ipc_call_blocking(ESP_INTR_CPU_AFFINITY_TO_CORE_ID(bus_attr->bus_cfg.isr_cpu_id), ipc_isr_reg_to_core, (void *) &ipc_arg);
         } else
 #endif
         {
