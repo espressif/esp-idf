@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include <stdint.h>
 #include "soc/soc_caps.h"
+#include "esp_rom_caps.h"
 #include "soc/extmem_reg.h"
 #include "xtensa/xtruntime.h"
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -34,7 +35,7 @@ uint32_t Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped)
 }
 extern uint32_t Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped);
 
-#if CONFIG_ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
+#if ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
 static inline void Cache_Wait_Idle(int icache)
 {
     if (icache) {
@@ -85,10 +86,10 @@ void Cache_Freeze_DCache_Enable(cache_freeze_mode_t mode)
     Cache_Wait_Idle(0);
 }
 extern void Cache_Freeze_DCache_Enable(cache_freeze_mode_t mode);
-#endif
-#endif
+#endif  //#if SOC_CACHE_FREEZE_SUPPORTED
+#endif  //#if ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
 
-#if CONFIG_ESP_ROM_HAS_CACHE_WRITEBACK_BUG
+#if ESP_ROM_HAS_CACHE_WRITEBACK_BUG
 static void __attribute__((optimize("-O2"))) Cache_WriteBack_Items_Freeze(uint32_t addr, uint32_t items)
 {
     /* Please do not modify this function, it must strictly follow the current execution sequence,
@@ -172,4 +173,4 @@ int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
     return ret;
 }
 extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
-#endif
+#endif  //#if ESP_ROM_HAS_CACHE_WRITEBACK_BUG
