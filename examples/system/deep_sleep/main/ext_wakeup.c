@@ -12,9 +12,9 @@
 
 #if CONFIG_EXAMPLE_EXT0_WAKEUP
 #if CONFIG_IDF_TARGET_ESP32
-    const int ext_wakeup_pin_0 = 25;
+const int ext_wakeup_pin_0 = 25;
 #else
-    const int ext_wakeup_pin_0 = 3;
+const int ext_wakeup_pin_0 = 3;
 #endif
 
 void example_deep_sleep_register_ext0_wakeup(void)
@@ -38,9 +38,15 @@ void example_deep_sleep_register_ext1_wakeup(void)
     const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
     const uint64_t ext_wakeup_pin_2_mask = 1ULL << ext_wakeup_pin_2;
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
-    const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE;
 
+#if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    const uint64_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1 << ext_wakeup_pin_1 | \
+                                     CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2 << ext_wakeup_pin_2;
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_with_level_mask(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ext_wakeup_mode));
+#else
+    const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE;
     ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ext_wakeup_mode));
+#endif
 
     /* If there are no external pull-up/downs, tie wakeup pins to inactive level with internal pull-up/downs via RTC IO
      * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
@@ -48,7 +54,23 @@ void example_deep_sleep_register_ext1_wakeup(void)
      * domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep.*/
 #if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-    if (ext_wakeup_mode) {
+#if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1) {
+        ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_1));
+    } else {
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_dis(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_pullup_en(ext_wakeup_pin_1));
+    }
+    if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2) {
+        ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_2));
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_2));
+    } else {
+        ESP_ERROR_CHECK(rtc_gpio_pulldown_dis(ext_wakeup_pin_2));
+        ESP_ERROR_CHECK(rtc_gpio_pullup_en(ext_wakeup_pin_2));
+    }
+#else // !SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE) {
         ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
         ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_1));
         ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_2));
@@ -59,8 +81,25 @@ void example_deep_sleep_register_ext1_wakeup(void)
         ESP_ERROR_CHECK(rtc_gpio_pulldown_dis(ext_wakeup_pin_2));
         ESP_ERROR_CHECK(rtc_gpio_pullup_en(ext_wakeup_pin_2));
     }
+#endif
+#else // ! SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1) {
+        gpio_pullup_dis(ext_wakeup_pin_1);
+        gpio_pulldown_en(ext_wakeup_pin_1);
+    } else {
+        gpio_pulldown_dis(ext_wakeup_pin_1);
+        gpio_pullup_en(ext_wakeup_pin_1);
+    }
+    if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2) {
+        gpio_pullup_dis(ext_wakeup_pin_2);
+        gpio_pulldown_en(ext_wakeup_pin_2);
+    } else {
+        gpio_pulldown_dis(ext_wakeup_pin_2);
+        gpio_pullup_en(ext_wakeup_pin_2);
+    }
 #else
-    if (ext_wakeup_mode) {
+    if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE) {
         ESP_ERROR_CHECK(gpio_pullup_dis(ext_wakeup_pin_1));
         ESP_ERROR_CHECK(gpio_pulldown_en(ext_wakeup_pin_1));
         ESP_ERROR_CHECK(gpio_pullup_dis(ext_wakeup_pin_2));
@@ -72,7 +111,7 @@ void example_deep_sleep_register_ext1_wakeup(void)
         ESP_ERROR_CHECK(gpio_pullup_en(ext_wakeup_pin_2));
     }
 #endif
+#endif
 #endif // CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 }
-
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP

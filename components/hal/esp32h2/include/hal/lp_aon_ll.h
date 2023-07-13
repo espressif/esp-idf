@@ -39,22 +39,22 @@ static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
 
 /**
  * @brief Set the wake-up LP_IO of the ext1 wake-up source
- * @param mask wakeup LP_IO bitmap, bit 0~7 corresponds to LP_IO 0~7
- * @param mode 0: Wake the chip when any of the selected GPIOs go low
- *             1: Wake the chip when any of the selected GPIOs go high
+ * @param io_mask     wakeup LP_IO bitmap, bit 0~7 corresponds to LP_IO 0~7
+ * @param level_mask  LP_IO wakeup level bitmap, bit 0~7 corresponds to LP_IO 0~7 wakeup level
+ *                    each bit's corresponding position is set to 0, the wakeup level will be low
+ *                    on the contrary, each bit's corresponding position is set to 1, the wakeup
+ *                    level will be high
  */
-static inline  void lp_aon_ll_ext1_set_wakeup_pins(uint32_t mask, int mode)
+static inline void lp_aon_ll_ext1_set_wakeup_pins(uint32_t io_mask, uint32_t level_mask)
 {
     uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
-    wakeup_sel_mask |= mask;
+    wakeup_sel_mask |= io_mask;
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
 
     uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv);
-    if (mode) {
-        wakeup_level_mask |= mask;
-    } else {
-        wakeup_level_mask &= ~mask;
-    }
+    wakeup_level_mask |= io_mask & level_mask;
+    wakeup_level_mask &= ~(io_mask & ~level_mask);
+
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, wakeup_level_mask);
 }
 
