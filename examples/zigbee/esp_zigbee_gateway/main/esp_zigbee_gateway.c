@@ -35,6 +35,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <fcntl.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -46,11 +47,40 @@
 #include "esp_coexist_internal.h"
 #include "esp_zigbee_gateway.h"
 
+#include "esp_vfs_dev.h"
+#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag.h"
+
 #if (!defined ZB_MACSPLIT_HOST && defined ZB_MACSPLIT_DEVICE)
 #error Only Zigbee gateway host device should be defined
 #endif
 
 static const char *TAG = "ESP_ZB_GATEWAY";
+
+/* Note: Please select the correct console output port based on the development board in menuconfig */
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+esp_err_t esp_zb_gateway_console_init(void)
+{
+    esp_err_t ret = ESP_OK;
+    /* Disable buffering on stdin */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    /* Move the caret to the beginning of the next line on '\n' */
+    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+
+    /* Enable non-blocking mode on stdin and stdout */
+    fcntl(fileno(stdout), F_SETFL, O_NONBLOCK);
+    fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
+
+    usb_serial_jtag_driver_config_t usb_serial_jtag_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+    ret = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
+    esp_vfs_usb_serial_jtag_use_driver();
+    esp_vfs_dev_uart_register();
+    return ret;
+}
+#endif
 
 /********************* Define functions **************************/
 static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
@@ -136,6 +166,9 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    ESP_ERROR_CHECK(esp_zb_gateway_console_init());
+#endif
 #if CONFIG_EXAMPLE_CONNECT_WIFI
     ESP_ERROR_CHECK(example_connect());
 #if CONFIG_ESP_COEX_SW_COEXIST_ENABLE

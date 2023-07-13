@@ -995,6 +995,16 @@ pytest_examples_openthread_br:
     - esp32c6
     - openthread_br
 
+pytest_examples_zigbee:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32h2
+  needs:
+    - build_pytest_examples_esp32h2
+  tags:
+    - esp32h2
+    - zigbee_multi_dut
+
 pytest_components_esp32s3_usb_host:
   extends:
     - .pytest_components_dir_template
