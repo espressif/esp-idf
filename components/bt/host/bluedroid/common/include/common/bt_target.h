@@ -519,6 +519,12 @@
 #define BTM_BLE_PRIVATE_ADDR_INT UC_BT_BLE_RPA_TIMEOUT
 #endif
 
+#if (UC_BT_BQB_ENABLED == TRUE)
+#define BT_BQB_INCLUDED TRUE
+#else
+#define BT_BQB_INCLUDED FALSE
+#endif
+
 /* This feature is used to eanble interleaved scan*/
 #ifndef BTA_HOST_INTERLEAVE_SEARCH
 #define BTA_HOST_INTERLEAVE_SEARCH FALSE
