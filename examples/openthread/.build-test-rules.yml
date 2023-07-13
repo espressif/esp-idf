@@ -52,7 +52,7 @@ examples/openthread/ot_rcp:
 
 examples/openthread/ot_sleepy_device:
   enable:
-    - if: IDF_TARGET  == "esp32c6"
+    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
   disable_test:
     - if: IDF_TARGET in ["esp32h2", "esp32c6"]
       temporary: true
