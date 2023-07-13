@@ -8,7 +8,6 @@ if BLE_MESH
 
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
-        depends on BT_BLUEDROID_ENABLED
         select BTDM_BLE_SCAN_DUPL if IDF_TARGET_ESP32
         select BTDM_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32
         select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3
