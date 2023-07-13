@@ -6,7 +6,7 @@ ESP-IDF is the development framework for Espressif SoCs supported on Windows, Li
 
 # ESP-IDF Release Support Schedule
 
-![Support Schedule](https://dl.espressif.com/dl/esp-idf/support-periods.svg)
+![Support Schedule](https://dl.espressif.com/dl/esp-idf/support-periods.svg?v=1)
 
 - Please read [the support policy](SUPPORT_POLICY.md) and [the documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) for more information about ESP-IDF versions.
 - Please see the [End-of-Life Advisories](https://www.espressif.com/en/support/documents/advisories?keys=&field_type_of_advisory_tid%5B%5D=817) for information about ESP-IDF releases with discontinued support.
