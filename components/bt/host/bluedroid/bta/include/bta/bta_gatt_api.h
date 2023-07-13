@@ -1569,6 +1569,8 @@ extern void BTA_GATTS_Listen(tBTA_GATTS_IF server_if, BOOLEAN start,
 *******************************************************************************/
 extern void BTA_GATTS_ShowLocalDatabase(void);
 
+extern void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id);
+
 #ifdef __cplusplus
 
 }
