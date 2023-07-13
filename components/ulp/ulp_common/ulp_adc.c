@@ -52,8 +52,6 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
     adc_set_hw_calibration_code(cfg->adc_n, cfg->atten);
 #endif
 
-    esp_sleep_enable_adc_tsens_monitor(true);
-
 err:
     return ret;
 }
