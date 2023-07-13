@@ -10,7 +10,6 @@
                     Single Read
 ---------------------------------------------------------------*/
 #define ADC_HAL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
-#define ADC_HAL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         ((PERIPH_NUM==0)? 2 : 1)
 
 /*---------------------------------------------------------------
                     DMA Read
