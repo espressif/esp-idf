@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <sys/cdefs.h>
 #include "sdkconfig.h"
 #if CONFIG_LCD_ENABLE_DEBUG_LOG
@@ -137,15 +138,18 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
     esp_lcd_panel_io_handle_t io = ssd1306->io;
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, NULL, 0);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, (uint8_t[]) {
-        0x00 // horizontal addressing mode
-    }, 1);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CHARGE_PUMP, (uint8_t[]) {
-        0x14 // enable charge pump
-    }, 1);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_X_OFF, NULL, 0);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_Y_OFF, NULL, 0);
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_DISP_OFF failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, (uint8_t[]) {
+            0x00 // horizontal addressing mode
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_MEMORY_ADDR_MODE failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CHARGE_PUMP, (uint8_t[]) {
+            0x14 // enable charge pump
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_CHARGE_PUMP failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_X_OFF, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_MIRROR_X_OFF failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_Y_OFF, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_MIRROR_Y_OFF failed");
     return ESP_OK;
 }
 
@@ -174,17 +178,17 @@ static esp_err_t panel_ssd1306_draw_bitmap(esp_lcd_panel_t *panel, int x_start, 
     uint8_t page_start = y_start / 8;
     uint8_t page_end = (y_end - 1) / 8;
     // define an area of frame memory where MCU can access
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_COLUMN_RANGE, (uint8_t[]) {
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_COLUMN_RANGE, (uint8_t[]) {
         (x_start & 0x7F),
         ((x_end - 1) & 0x7F),
-    }, 2);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_PAGE_RANGE, (uint8_t[]) {
+    }, 2), TAG, "io tx param SSD1306_CMD_SET_COLUMN_RANGE failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_PAGE_RANGE, (uint8_t[]) {
         (page_start & 0x07),
         (page_end & 0x07),
-    }, 2);
+    }, 2), TAG, "io tx param SSD1306_CMD_SET_PAGE_RANGE failed");
     // transfer frame buffer
     size_t len = (y_end - y_start) * (x_end - x_start) * ssd1306->bits_per_pixel / 8;
-    esp_lcd_panel_io_tx_color(io, -1, color_data, len);
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_color(io, -1, color_data, len), TAG, "io tx color failed");
 
     return ESP_OK;
 }
@@ -199,7 +203,8 @@ static esp_err_t panel_ssd1306_invert_color(esp_lcd_panel_t *panel, bool invert_
     } else {
         command = SSD1306_CMD_INVERT_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_INVERT_ON/OFF failed");
     return ESP_OK;
 }
 
@@ -214,13 +219,15 @@ static esp_err_t panel_ssd1306_mirror(esp_lcd_panel_t *panel, bool mirror_x, boo
     } else {
         command = SSD1306_CMD_MIRROR_X_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_MIRROR_X_ON/OFF failed");
     if (mirror_y) {
         command = SSD1306_CMD_MIRROR_Y_ON;
     } else {
         command = SSD1306_CMD_MIRROR_Y_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_MIRROR_Y_ON/OFF failed");
     return ESP_OK;
 }
 
@@ -250,7 +257,8 @@ static esp_err_t panel_ssd1306_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
     } else {
         command = SSD1306_CMD_DISP_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG,
+                        "io tx param SSD1306_CMD_DISP_ON/OFF failed");
     // SEG/COM will be ON/OFF after 100ms after sending DISP_ON/OFF command
     vTaskDelay(pdMS_TO_TICKS(100));
     return ESP_OK;

@@ -813,6 +813,14 @@ pytest_components_esp32c3_generic:
   tags: [ esp32c3, generic ]
   parallel: 3
 
+pytest_components_esp32c3_i2c_oled:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, i2c_oled ]
+
 pytest_components_esp32c3_generic_multi_device:
   extends:
     - .pytest_components_dir_template
