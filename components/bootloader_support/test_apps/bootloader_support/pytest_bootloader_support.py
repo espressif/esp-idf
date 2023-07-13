@@ -7,7 +7,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.nightly_run
 def test_bootloader_support(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

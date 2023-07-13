@@ -312,6 +312,7 @@ test_pytest_qemu:
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
+  allow_failure: true # IDFCI-1752
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
