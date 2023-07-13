@@ -6,7 +6,7 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 
 # ESP-IDF 版本支持期限
 
-![支持期限](https://dl.espressif.com/dl/esp-idf/support-periods.svg)
+![支持期限](https://dl.espressif.com/dl/esp-idf/support-periods.svg?v=1)
 
 - 请参考 [ESP-IDF 支持政策](SUPPORT_POLICY_CN.md) 以及 [相关文档](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/versions.html) 了解更多关于 ESP-IDF 版本的信息。
 - 请参考 [ESP-IDF 版本停止维护 (EOL) 公告](https://www.espressif.com/zh-hans/support/documents/advisories?keys=&field_type_of_advisory_tid%5B%5D=817)。
