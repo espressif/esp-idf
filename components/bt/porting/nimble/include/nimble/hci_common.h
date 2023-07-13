@@ -1136,6 +1136,12 @@ struct ble_hci_vs_rd_static_addr_rp {
     uint8_t addr[6];
 } __attribute__((packed));
 
+#define BLE_HCI_OCF_VS_DUPLICATE_EXCEPTION_LIST         (MYNEWT_VAL(BLE_HCI_VS_OCF_OFFSET) + (0x0108))
+struct ble_hci_vs_duplicate_exception_list_cp {
+    uint8_t operation;
+    uint32_t type;
+    uint8_t device_info[6];
+} __attribute__((packed));
 
 #if SOC_BLE_POWER_CONTROL_SUPPORTED && MYNEWT_VAL(BLE_HCI_VS)
 #define BLE_HCI_OCF_VS_PCL_SET_RSSI 			(MYNEWT_VAL(BLE_HCI_VS_OCF_OFFSET) + (0x0111))
