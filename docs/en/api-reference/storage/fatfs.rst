@@ -7,6 +7,7 @@ ESP-IDF uses the `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ library to
 
 Additionally, FatFs has been modified to support the runtime pluggable disk I/O layer. This allows mapping of FatFs drives to physical disks at runtime.
 
+.. _using-fatfs-with-vfs:
 
 Using FatFs with VFS
 --------------------
@@ -47,6 +48,8 @@ The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vf
    Because FAT filesystem does not support hardlinks, :cpp:func:`link` copies contents of the file instead. (This only applies to files on FatFs volumes.)
 
 
+.. _using-fatfs-with-vfs-and-sdcards:
+
 Using FatFs with VFS and SD Cards
 ---------------------------------
 
@@ -69,6 +72,8 @@ The following configuration options are available for the FatFs component:
 * :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs will automatically call :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate` and :cpp:func:`ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price on decreased performance due to frequent disk operations.
 * :ref:`CONFIG_FATFS_LINK_LOCK` - If enabled, this option guarantees the API thread safety, while disabling this option might be necessary for applications that require fast frequent small file operations (e.g., logging to a file). Note that if this option is disabled, the copying performed by :cpp:func:`link` will be non-atomic. In such case, using :cpp:func:`link` on a large file on the same volume in a different task is not guaranteed to be thread safe.
 
+
+.. _fatfs-diskio-layer:
 
 FatFS Disk IO Layer
 -------------------
@@ -136,6 +141,8 @@ If FLASH_IN_PROJECT is not specified, the image will still be generated, but you
 
 For an example, see :example:`storage/fatfsgen`.
 
+
+.. _fatfs-partition-analyzer:
 
 FatFs Partition Analyzer
 ------------------------
