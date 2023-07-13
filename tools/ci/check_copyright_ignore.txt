@@ -506,7 +506,6 @@ components/esp_rom/include/esp32s3/rom/rsa_pss.h
 components/esp_rom/include/esp32s3/rom/sha.h
 components/esp_rom/include/esp32s3/rom/tjpgd.h
 components/esp_rom/include/esp_rom_crc.h
-components/esp_rom/include/esp_rom_gpio.h
 components/esp_rom/include/linux/soc/reset_reasons.h
 components/esp_rom/linux/esp_rom_crc.c
 components/esp_rom/linux/esp_rom_md5.c
@@ -714,7 +713,6 @@ components/soc/esp32/include/soc/bb_reg.h
 components/soc/esp32/include/soc/boot_mode.h
 components/soc/esp32/include/soc/fe_reg.h
 components/soc/esp32/include/soc/flash_encryption_reg.h
-components/soc/esp32/include/soc/gpio_pins.h
 components/soc/esp32/include/soc/gpio_reg.h
 components/soc/esp32/include/soc/gpio_sig_map.h
 components/soc/esp32/include/soc/gpio_struct.h
@@ -766,7 +764,6 @@ components/soc/esp32c3/include/soc/bb_reg.h
 components/soc/esp32c3/include/soc/boot_mode.h
 components/soc/esp32c3/include/soc/extmem_reg.h
 components/soc/esp32c3/include/soc/fe_reg.h
-components/soc/esp32c3/include/soc/gpio_pins.h
 components/soc/esp32c3/include/soc/gpio_reg.h
 components/soc/esp32c3/include/soc/gpio_struct.h
 components/soc/esp32c3/include/soc/i2c_reg.h
@@ -808,7 +805,6 @@ components/soc/esp32s2/include/soc/dedic_gpio_reg.h
 components/soc/esp32s2/include/soc/dedic_gpio_struct.h
 components/soc/esp32s2/include/soc/extmem_reg.h
 components/soc/esp32s2/include/soc/fe_reg.h
-components/soc/esp32s2/include/soc/gpio_pins.h
 components/soc/esp32s2/include/soc/gpio_reg.h
 components/soc/esp32s2/include/soc/gpio_sig_map.h
 components/soc/esp32s2/include/soc/i2c_reg.h
@@ -855,7 +851,6 @@ components/soc/esp32s3/include/soc/cpu.h
 components/soc/esp32s3/include/soc/extmem_reg.h
 components/soc/esp32s3/include/soc/extmem_struct.h
 components/soc/esp32s3/include/soc/fe_reg.h
-components/soc/esp32s3/include/soc/gpio_pins.h
 components/soc/esp32s3/include/soc/gpio_reg.h
 components/soc/esp32s3/include/soc/hinf_reg.h
 components/soc/esp32s3/include/soc/hinf_struct.h

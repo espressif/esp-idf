@@ -11,7 +11,6 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
-#include "esp32h2/rom/gpio.h"
 #include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/efuse.h"
 #include "soc/gpio_periph.h"
