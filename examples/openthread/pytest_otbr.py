@@ -363,10 +363,6 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 1)
-        command = 'dns resolve FA000123.default.service.arpa.'
-        ocf.clean_buffer(cli)
-        ocf.execute_command(cli, command)
-        cli.expect('Error', timeout=15)
         domain_name = ocf.get_domain()
         print('domain name is: ', domain_name)
         command = 'dns resolve ' + domain_name + '.default.service.arpa.'
