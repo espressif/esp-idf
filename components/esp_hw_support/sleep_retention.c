@@ -21,7 +21,6 @@
 #include "sdkconfig.h"
 #include "esp_pmu.h"
 
-
 static __attribute__((unused)) const char *TAG = "sleep";
 
 /**

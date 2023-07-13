@@ -31,6 +31,7 @@ extern "C" {
 typedef enum {
     IEEE802154_STATE_DISABLE,               /*!< IEEE802154 radio state disable */
     IEEE802154_STATE_IDLE,                  /*!< IEEE802154 radio state idle */
+    IEEE802154_STATE_SLEEP,                 /*!< IEEE802154 radio state sleep */
     IEEE802154_STATE_RX,                    /*!< IEEE802154 radio state rx */
     IEEE802154_STATE_TX_ACK,                /*!< IEEE802154 radio state tx ack */
     IEEE802154_STATE_TX_ENH_ACK,            /*!< IEEE802154 radio state tx enh-ack */
@@ -176,6 +177,18 @@ uint8_t ieee802154_get_recent_lqi(void);
  *
  */
 ieee802154_state_t ieee802154_get_state(void);
+
+/**
+ * @brief  The IEEE 802.15.4 enter sleep.
+ *
+ */
+void ieee802154_enter_sleep(void);
+
+/**
+ * @brief  The IEEE 802.15.4 wakeup.
+ *
+ */
+void ieee802154_wakeup(void);
 
 /** The following three functions are only used for internal test. **/
 /**
