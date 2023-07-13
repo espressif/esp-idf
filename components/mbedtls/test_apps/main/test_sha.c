@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,6 +129,9 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     r = mbedtls_sha512(ptr, LEN, sha512_mbedtls, 0);
     TEST_ASSERT_EQUAL(0, r);
 #endif
+
+    /* munmap() 1MB of flash when the usge of memory-mapped ptr is over */
+    spi_flash_munmap(handle);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha1_espsha, sha1_mbedtls, sizeof(sha1_espsha), "SHA1 results should match");
 
