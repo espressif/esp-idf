@@ -17,6 +17,7 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "hal/modem_lpcon_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/lp_aon_reg.h"
 
@@ -142,6 +143,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
     /* Analog part */
+    modem_lpcon_ll_enable_i2c_master_clock(&MODEM_LPCON, true);
     /* BBPLL CALIBRATION START */
     regi2c_ctrl_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
@@ -149,6 +151,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
     /* BBPLL CALIBRATION STOP */
     regi2c_ctrl_ll_bbpll_calibration_stop();
+    modem_lpcon_ll_enable_i2c_master_clock(&MODEM_LPCON, false);
 
     s_cur_pll_freq = pll_freq;
 }
