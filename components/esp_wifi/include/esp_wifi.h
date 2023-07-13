@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -625,7 +625,7 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
   *               it's up to the user to fill in all fields according to local regulations.
   *               Please use esp_wifi_set_country_code instead.
   * @attention 2. The default country is "01" (world safe mode) {.cc="01", .schan=1, .nchan=11, .policy=WIFI_COUNTRY_POLICY_AUTO}.
-  * @attention 3. The third octect of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '.
+  * @attention 3. The third octet of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '.
   * @attention 4. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
   *               the station is connected is used. E.g. if the configured country info is {.cc="US", .schan=1, .nchan=11}
   *               and the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14}
@@ -1276,7 +1276,7 @@ esp_err_t esp_wifi_connectionless_module_set_wake_interval(uint16_t wake_interva
   *
   * @attention 7. When country code "01" (world safe mode) is set, SoftAP mode won't contain country IE.
   * @attention 8. The default country is "01" (world safe mode) and ieee80211d_enabled is TRUE.
-  * @attention 9. The third octect of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '.
+  * @attention 9. The third octet of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '.
   *
   * @param     country   the configured country ISO code
   * @param     ieee80211d_enabled   802.11d is enabled or not
@@ -1363,6 +1363,20 @@ esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
   *    - others: failed
   */
 esp_err_t esp_wifi_set_dynamic_cs(bool enabled);
+
+/**
+  * @brief      Get the rssi info after station connected to AP
+  *
+  * @attention  This API should be called after station connected to AP.
+  *
+  * @param      rssi store the rssi info received from last beacon.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_FAIL: failed
+  */
+esp_err_t esp_wifi_sta_get_rssi(int *rssi);
 
 #ifdef __cplusplus
 }
