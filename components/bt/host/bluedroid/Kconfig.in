@@ -47,6 +47,14 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_BQB_ENABLED
+    bool "BT HOST BQB"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BQB support.
+        Only for bt BQB test.
+
 config BT_A2DP_ENABLE
     bool "A2DP"
     depends on BT_CLASSIC_ENABLED
