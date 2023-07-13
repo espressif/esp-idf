@@ -32,20 +32,225 @@ menu "Example Configuration"
             floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating
             pins may trigger a wake up.
 
-    config EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
-        bool "Use internal pull-up/downs for EXT1 wakeup source"
-        default n
-        depends on EXAMPLE_EXT1_WAKEUP
-        help
-            When using EXT1 wakeup source without external pull-up/downs, you may want to make use of the internal
-            ones.
+    menu "EXT1 wakeup configuration"
+        visible if EXAMPLE_EXT1_WAKEUP
 
-            However, the RTC IO reside in the RTC Periph power domain. Enable this option to force that power domain
-            ON during deep sleep. Note that this will increase some power comsumption, so it's still suggested to use
-            external ones instead.
+        config EXAMPLE_EXT1_WAKEUP_PIN_1
+            int "Enable wakeup from PIN_1"
+            depends on !IDF_TARGET_ESP32
+            default 2 if !IDF_TARGET_ESP32H2
+            default 10 if IDF_TARGET_ESP32H2
+            range 0 7 if IDF_TARGET_ESP32C6
+            range 7 14 if IDF_TARGET_ESP32H2
+            range 0 21 if IDF_TARGET_ESP32S2
+            range 0 21 if IDF_TARGET_ESP32S3
 
-            EXT0 wakeup source resides in the same power domain as RTCIO (RTC Periph), so internal pull-up/downs are
-            always available. There's no need to explicitly force it on for EXT0.
+        choice EXAMPLE_EXT1_WAKEUP_PIN_1_SEL
+            prompt "Enable wakeup from PIN_1"
+            default EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_2
+            depends on IDF_TARGET_ESP32
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_0
+                bool "GPIO 0"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_2
+                bool "GPIO 2"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_4
+                bool "GPIO 4"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_12
+                bool "GPIO 12"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_13
+                bool "GPIO 13"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_14
+                bool "GPIO 14"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_15
+                bool "GPIO 15"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_25
+                bool "GPIO 25"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_26
+                bool "GPIO 26"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_27
+                bool "GPIO 27"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_32
+                bool "GPIO 32"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_33
+                bool "GPIO 33"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_34
+                bool "GPIO 34"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_35
+                bool "GPIO 35"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_36
+                bool "GPIO 36"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_37
+                bool "GPIO 37"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_38
+                bool "GPIO 38"
+            config EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_39
+                bool "GPIO 39"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_PIN_1
+            int
+            depends on IDF_TARGET_ESP32
+            default 0 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_0
+            default 2 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_2
+            default 4 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_4
+            default 12 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_12
+            default 13 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_13
+            default 14 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_14
+            default 15 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_15
+            default 25 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_25
+            default 26 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_26
+            default 27 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_27
+            default 32 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_32
+            default 33 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_33
+            default 34 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_34
+            default 35 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_35
+            default 36 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_36
+            default 37 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_37
+            default 38 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_38
+            default 39 if EXAMPLE_EXT1_WAKEUP_PIN_1_SEL_39
+
+        config EXAMPLE_EXT1_WAKEUP_PIN_2
+            int "Enable wakeup from PIN_2"
+            depends on !IDF_TARGET_ESP32
+            default 4 if !IDF_TARGET_ESP32H2
+            default 11 if IDF_TARGET_ESP32H2
+            range 0 7 if IDF_TARGET_ESP32C6
+            range 7 14 if IDF_TARGET_ESP32H2
+            range 0 21 if IDF_TARGET_ESP32S2
+            range 0 21 if IDF_TARGET_ESP32S3
+
+        choice EXAMPLE_EXT1_WAKEUP_PIN_2_SEL
+            prompt "Enable wakeup from PIN_2"
+            default EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_4
+            depends on IDF_TARGET_ESP32
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_0
+                bool "GPIO 0"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_2
+                bool "GPIO 2"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_4
+                bool "GPIO 4"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_12
+                bool "GPIO 12"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_13
+                bool "GPIO 13"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_14
+                bool "GPIO 14"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_15
+                bool "GPIO 15"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_25
+                bool "GPIO 25"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_26
+                bool "GPIO 26"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_27
+                bool "GPIO 27"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_32
+                bool "GPIO 32"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_33
+                bool "GPIO 33"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_34
+                bool "GPIO 34"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_35
+                bool "GPIO 35"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_36
+                bool "GPIO 36"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_37
+                bool "GPIO 37"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_38
+                bool "GPIO 38"
+            config EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_39
+                bool "GPIO 39"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_PIN_2
+            int
+            depends on IDF_TARGET_ESP32
+            default 0 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_0
+            default 2 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_2
+            default 4 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_4
+            default 12 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_12
+            default 13 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_13
+            default 14 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_14
+            default 15 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_15
+            default 25 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_25
+            default 26 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_26
+            default 27 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_27
+            default 32 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_32
+            default 33 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_33
+            default 34 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_34
+            default 35 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_35
+            default 36 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_36
+            default 37 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_37
+            default 38 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_38
+            default 39 if EXAMPLE_EXT1_WAKEUP_PIN_2_SEL_39
+
+        choice EXAMPLE_EXT1_WAKEUP_MODE_SEL
+            prompt "Select wakeup mode from EXT1"
+            default ESP_EXT1_WAKEUP_ANY_HIGH
+            depends on !SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+            config ESP_EXT1_WAKEUP_ANY_LOW
+                bool "GPIO any low level"
+                depends on !IDF_TARGET_ESP32
+            config ESP_EXT1_WAKEUP_ALL_LOW
+                bool "GPIO all low level"
+                depends on IDF_TARGET_ESP32
+            config ESP_EXT1_WAKEUP_ANY_HIGH
+                bool "GPIO any high level"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_MODE
+            int
+            depends on !SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+            default 0 if ESP_EXT1_WAKEUP_ANY_LOW
+            default 0 if ESP_EXT1_WAKEUP_ALL_LOW
+            default 1 if ESP_EXT1_WAKEUP_ANY_HIGH
+
+        choice EXAMPLE_EXT1_WAKEUP_PIN_1_MODE_SEL
+            prompt "Select pin_1 wakeup mode from EXT1"
+            default ESP_EXT1_WAKEUP_PIN_1_HIGH
+            depends on SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+            config ESP_EXT1_WAKEUP_PIN_1_LOW
+                bool "GPIO low level"
+            config ESP_EXT1_WAKEUP_PIN_1_HIGH
+                bool "GPIO high level"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_MODE_PIN_1
+            int
+            depends on SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+            default 0 if ESP_EXT1_WAKEUP_PIN_1_LOW
+            default 1 if ESP_EXT1_WAKEUP_PIN_1_HIGH
+
+        choice EXAMPLE_EXT1_WAKEUP_PIN_2_MODE_SEL
+            prompt "Select pin_2 wakeup mode from EXT1"
+            default ESP_EXT1_WAKEUP_PIN_2_HIGH
+            depends on SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+            config ESP_EXT1_WAKEUP_PIN_2_LOW
+                bool "GPIO low level"
+            config ESP_EXT1_WAKEUP_PIN_2_HIGH
+                bool "GPIO high level"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_MODE_PIN_2
+            int
+            depends on SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+            default 0 if ESP_EXT1_WAKEUP_PIN_2_LOW
+            default 1 if ESP_EXT1_WAKEUP_PIN_2_HIGH
+
+        config EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
+            bool "Use internal pull-up/downs for EXT1 wakeup source"
+            default n
+            depends on EXAMPLE_EXT1_WAKEUP
+            help
+                When using EXT1 wakeup source without external pull-up/downs, you may want to make use of
+                the internal ones.
+
+                However, the RTC IO reside in the RTC Periph power domain. Enable this option to force that
+                power domain ON during deep sleep. Note that this will increase some power comsumption, so
+                it's still suggested to use external ones instead.
+
+                EXT0 wakeup source resides in the same power domain as RTCIO (RTC Periph), so internal
+                pull-up/downs are always available. There's no need to explicitly force it on for EXT0.
+    endmenu
 
     config EXAMPLE_GPIO_WAKEUP
         bool "Enable wakeup from GPIO"

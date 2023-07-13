@@ -33,18 +33,19 @@ void example_deep_sleep_register_ext0_wakeup(void)
 #if CONFIG_EXAMPLE_EXT1_WAKEUP
 void example_deep_sleep_register_ext1_wakeup(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32H2
-    const int ext_wakeup_pin_1 = 2;
-    const int ext_wakeup_pin_2 = 4;
-#else
-    const int ext_wakeup_pin_1 = 10;
-    const int ext_wakeup_pin_2 = 11;
-#endif
-
+    const int ext_wakeup_pin_1 = CONFIG_EXAMPLE_EXT1_WAKEUP_PIN_1;
+    const int ext_wakeup_pin_2 = CONFIG_EXAMPLE_EXT1_WAKEUP_PIN_2;
     const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
     const uint64_t ext_wakeup_pin_2_mask = 1ULL << ext_wakeup_pin_2;
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH));
+#if SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
+    const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE;
+#else
+    const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1 << ext_wakeup_pin_1 | \
+                                                        CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2 << ext_wakeup_pin_2;
+#endif
+
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ext_wakeup_mode));
 
     /* If there are no external pull-up/downs, tie wakeup pins to inactive level with internal pull-up/downs via RTC IO
      * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
