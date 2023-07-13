@@ -1607,7 +1607,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         i2s_obj->i2s_queue = xQueueCreate(queue_size, sizeof(i2s_event_t));
         ESP_GOTO_ON_FALSE(i2s_obj->i2s_queue, ESP_ERR_NO_MEM, err, TAG, "I2S queue create failed");
         *((QueueHandle_t *) i2s_queue) = i2s_obj->i2s_queue;
-        ESP_LOGD(TAG, "queue free spaces: %d", uxQueueSpacesAvailable(i2s_obj->i2s_queue));
+        ESP_LOGD(TAG, "queue free spaces: %" PRIu32, (uint32_t)uxQueueSpacesAvailable(i2s_obj->i2s_queue));
     } else {
         i2s_obj->i2s_queue = NULL;
     }
