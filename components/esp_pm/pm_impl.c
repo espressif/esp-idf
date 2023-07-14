@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -266,15 +266,14 @@ esp_err_t esp_pm_configure(const void* vconfig)
          */
         apb_max_freq = 80;
     }
-#elif CONFIG_IDF_TARGET_ESP32C6
+#else
     /* Maximum SOC APB clock frequency is 40 MHz, maximum Modem (WiFi,
      * Bluetooth, etc..) APB clock frequency is 80 MHz */
-    const int soc_apb_clk_freq = esp_clk_apb_freq() / MHZ;
-    const int modem_apb_clk_freq = MODEM_APB_CLK_FREQ / MHZ;
-    const int apb_clk_freq = MAX(soc_apb_clk_freq, modem_apb_clk_freq);
+    int apb_clk_freq = esp_clk_apb_freq() / MHZ;
+#if CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED
+    apb_clk_freq = MAX(apb_clk_freq, MODEM_REQUIRED_MIN_APB_CLK_FREQ / MHZ);
+#endif
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
-#else
-    int apb_max_freq = MIN(max_freq_mhz, APB_CLK_FREQ / MHZ); /* CPU frequency in APB_MAX mode */
 #endif
 
     apb_max_freq = MAX(apb_max_freq, min_freq_mhz);
