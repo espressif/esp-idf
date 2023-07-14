@@ -82,4 +82,81 @@ menu "IEEE 802.15.4"
         help
             Enabling this option allows the IEEE802.15.4 module to be powered down during automatic light sleep,
             which reduces current consumption.
+
+    menuconfig IEEE802154_DEBUG
+        bool "Enable IEEE802154 Debug"
+        default n
+        help
+            Enabling this option allows different kinds of IEEE802154 debug output.
+            All IEEE802154 debug features increase the size of the final binary.
+
+    config IEEE802154_ASSERT
+        bool "Enrich the assert information with IEEE802154 state and event"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to add some probe codes in the driver, and these informations
+            will be printed when assert.
+
+    config IEEE802154_RECORD_EVENT
+        bool "Enable record event information for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record event, when assert, the recorded event will be printed.
+
+    config IEEE802154_RECORD_EVENT_SIZE
+        int "Record event table size"
+        depends on IEEE802154_RECORD_EVENT
+        range 1 50
+        default 30
+        help
+            set the record event table size
+
+    config IEEE802154_RECORD_STATE
+        bool "Enable record state information for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record state, when assert, the recorded state will be printed.
+
+    config IEEE802154_RECORD_STATE_SIZE
+        int "Record state table size"
+        depends on IEEE802154_RECORD_STATE
+        range 1 50
+        default 10
+        help
+            set the record state table size
+
+    config IEEE802154_RECORD_CMD
+        bool "Enable record command information for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record the command, when assert, the recorded
+            command will be printed.
+
+    config IEEE802154_RECORD_CMD_SIZE
+        int "Record command table size"
+        depends on IEEE802154_RECORD_CMD
+        range 1 50
+        default 10
+        help
+            set the record command table size
+
+    config IEEE802154_RECORD_ABORT
+        bool "Enable record abort information for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record the abort, when assert, the recorded
+            abort will be printed.
+
+    config IEEE802154_RECORD_ABORT_SIZE
+        int "Record abort table size"
+        depends on IEEE802154_RECORD_ABORT
+        range 1 50
+        default 10
+        help
+            set the record abort table size
 endmenu  # IEEE 802.15.4
