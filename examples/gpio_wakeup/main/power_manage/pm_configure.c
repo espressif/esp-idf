@@ -31,7 +31,7 @@ esp_err_t power_config(gpio_ws_t* arg)
 
     // after power on, it should remain active, so it should acquire lock
     ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(gpio_ws->pm_lock), TAG, "acquire %s lock failed", PM_LOCK_TYPE_TO_STRING);
-    ESP_LOGI(TAG, "acquired %s lock, system is active", PM_LOCK_TYPE_TO_STRING);
+    ESP_LOGI(TAG, "acquired %s lock, can to do something...", PM_LOCK_TYPE_TO_STRING);
 
     // set the initial software state: hold lock
     gpio_ws->hold_lock_state = HOLD_LOCK_STATE;
