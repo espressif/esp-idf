@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -27,4 +27,17 @@ print_addr(const void *addr)
     u8p = addr;
     MODLOG_DFLT(INFO, "%02x:%02x:%02x:%02x:%02x:%02x",
                 u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+}
+
+char *
+addr_str(const void *addr)
+{
+    static char buf[6 * 2 + 5 + 1];
+    const uint8_t *u8p;
+
+    u8p = addr;
+    sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+            u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+
+    return buf;
 }
