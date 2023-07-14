@@ -10,9 +10,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "hal/modem_clock_types.h"
+#include "esp_private/esp_pmu.h"
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
 #include "hal/modem_clock_hal.h"
@@ -76,6 +78,32 @@ void modem_clock_module_mac_reset(periph_module_t module);
  * use this interface.
  */
 void modem_clock_domain_pmu_state_icg_map_init(void);
+
+#if SOC_PMU_SUPPORTED
+/**
+ * @brief Enable modem clock domain clock gate to gate it's output
+ *
+ * @param domain modem module clock domain
+ * @param mode   PMU HP system ACTIVE, MODEM and SLEEP state
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the argument value are not correct
+ */
+esp_err_t modem_clock_domain_clk_gate_enable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode);
+
+/**
+ * @brief Disable modem clock domain clock gate to ungate it's output
+ *
+ * @param domain modem module clock domain
+ * @param mode   PMU HP system ACTIVE, MODEM and SLEEP state
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the argument value are not correct
+ */
+esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode);
+#endif
 
 /**
  * @brief Select the modem module lowpower clock source and configure the clock divider

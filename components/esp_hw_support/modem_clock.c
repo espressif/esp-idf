@@ -16,6 +16,7 @@
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_sleep.h"
+#include "hal/efuse_hal.h"
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -180,6 +181,38 @@ void modem_clock_domain_pmu_state_icg_map_init(void)
 {
     modem_clock_domain_power_state_icg_map_init(MODEM_CLOCK_instance());
 }
+
+esp_err_t modem_clock_domain_clk_gate_enable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode)
+{
+    if (domain >= MODEM_CLOCK_DOMAIN_MAX || domain < MODEM_CLOCK_DOMAIN_MODEM_APB) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (mode > PMU_HP_ICG_MODEM_CODE_ACTIVE || mode < PMU_HP_ICG_MODEM_CODE_SLEEP) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
+    modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, (code & ~BIT(mode)));
+    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    return ESP_OK;
+}
+
+esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode)
+{
+    if (domain >= MODEM_CLOCK_DOMAIN_MAX || domain < MODEM_CLOCK_DOMAIN_MODEM_APB) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (mode > PMU_HP_ICG_MODEM_CODE_ACTIVE || mode < PMU_HP_ICG_MODEM_CODE_SLEEP) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
+    modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, (code | BIT(mode)));
+    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    return ESP_OK;
+}
 #endif // #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)
@@ -292,7 +325,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_select_wifi_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_lpcon_ll_set_wifi_lpclk_divisor_value(MODEM_CLOCK_instance()->hal->lpcon_dev, divider);
-        modem_lpcon_ll_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, true);
+        modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, true);
         break;
 #endif // SOC_WIFI_SUPPORTED
 
@@ -302,6 +335,15 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_clock_hal_set_ble_rtc_timer_divisor_value(MODEM_CLOCK_instance()->hal, divider);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, true);
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+        if (efuse_hal_chip_revision() != 0) {
+            if (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+                pmu_sleep_enable_hp_sleep_sysclk(true);
+            }
+            modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, true);
+            modem_clock_domain_clk_gate_disable(MODEM_CLOCK_DOMAIN_WIFIPWR, PMU_HP_ICG_MODEM_CODE_SLEEP);
+        }
+#endif
         break;
 #endif // SOC_BT_SUPPORTED
 
@@ -340,12 +382,14 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
+    MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = MODEM_CLOCK_LPCLK_SRC_INVALID;
     switch (module)
     {
 #if SOC_WIFI_SUPPORTED
     case PERIPH_WIFI_MODULE:
         modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
-        modem_lpcon_ll_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false);
+        modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, false);
         break;
 #endif // SOC_WIFI_SUPPORTED
 
@@ -353,6 +397,15 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     case PERIPH_BT_MODULE:
         modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, false);
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+        if (efuse_hal_chip_revision() != 0) {
+            if (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+                pmu_sleep_enable_hp_sleep_sysclk(false);
+            }
+            modem_clock_hal_enable_wifipwr_clock(MODEM_CLOCK_instance()->hal, false);
+            modem_clock_domain_clk_gate_enable(MODEM_CLOCK_DOMAIN_WIFI, PMU_HP_ICG_MODEM_CODE_SLEEP);
+        }
+#endif
         break;
 #endif // SOC_BT_SUPPORTED
     case PERIPH_COEX_MODULE:
@@ -362,8 +415,6 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     default:
         break;
     }
-    modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
-    MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = MODEM_CLOCK_LPCLK_SRC_INVALID;
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) ( \

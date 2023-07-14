@@ -249,6 +249,15 @@ bool pmu_sleep_finish(void);
  */
 void pmu_init(void);
 
+/**
+ * @brief Enable or disable system clock in PMU HP sleep state
+ *
+ * This API only used for fix BLE 40 MHz low power clock source issue
+ *
+ * @param enable  true to enable, false to disable
+ */
+void pmu_sleep_enable_hp_sleep_sysclk(bool enable);
+
 
 #endif //#if SOC_PMU_SUPPORTED
 
