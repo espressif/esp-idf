@@ -56,6 +56,13 @@ void sleep_modem_wifi_do_phy_retention(bool restore);
  */
 bool sleep_modem_wifi_modem_state_enabled(void);
 
+/**
+ * @brief Get WiFi modem link done state
+ *
+ * @return true or false for WiFi modem link can be used to enable RF by REGDMA or can not be used
+ */
+bool sleep_modem_wifi_modem_link_done(void);
+
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
 
 /**
