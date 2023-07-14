@@ -706,10 +706,6 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
 {
     uint32_t mstatus = save_mstatus_and_disable_global_int();
 
-    /* wait cache idle */
-    Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
-    Cache_Freeze_ICache_Disable();
-
     cpu_domain_dev_regs_save(s_cpu_retention.retent.plic_frame);
     cpu_domain_dev_regs_save(s_cpu_retention.retent.clint_frame);
     cpu_domain_dev_regs_save(s_cpu_retention.retent.intpri_frame);
