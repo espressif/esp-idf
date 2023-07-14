@@ -62,6 +62,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         Menuconfig target is build_target extended with the style argument for setting the value for the environment
         variable.
         """
+        if sys.platform != 'win32':
+            try:
+                import curses  # noqa: F401
+            except ImportError:
+                raise FatalError('\n'.join(
+                    ['', "menuconfig failed to import the standard Python 'curses' library.",
+                     'Please re-run the install script which might be able to fix the issue.']))
         if sys.version_info[0] < 3:
             # The subprocess lib cannot accept environment variables as "unicode".
             # This encoding step is required only in Python 2.
