@@ -46,3 +46,9 @@ entries:
         sar_periph_ctrl (noflash)
     else:
         sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
+
+[mapping:soc_pm]
+archive: libsoc.a
+entries:
+    if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND:
+        gpio_periph: GPIO_HOLD_MASK (noflash)
