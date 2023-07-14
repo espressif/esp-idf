@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -371,6 +371,7 @@
  */
 #define OPENTHREAD_CONFIG_PING_SENDER_ENABLE 1
 
+#if CONFIG_OPENTHREAD_DUA_ENABLE
 /**
  * @def OPENTHREAD_CONFIG_DUA_ENABLE
  *
@@ -378,8 +379,9 @@
  *
  */
 #ifndef OPENTHREAD_CONFIG_DUA_ENABLE
-#define OPENTHREAD_CONFIG_DUA_ENABLE 0
+#define OPENTHREAD_CONFIG_DUA_ENABLE 1
 #endif
+#endif //CONFIG_OPENTHREAD_DUA_ENABLE
 
 /**
  * @def OPENTHREAD_CONFIG_MLR_ENABLE
@@ -494,5 +496,15 @@
 #define OPENTHREAD_CONFIG_MLE_LINK_METRICS_INITIATOR_ENABLE 1
 #endif
 #endif //CONFIG_OPENTHREAD_LINK_METRICS
+
+/**
+ * @def OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT
+ *
+ * Define as 1 to enable support for locally initializing an Active Operational Dataset.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT
+#define OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT 1
+#endif
 
 #define OPENTHREAD_FTD 1
