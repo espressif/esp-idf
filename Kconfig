@@ -66,6 +66,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
         string
         default "$IDF_TARGET"
 
+    config IDF_INIT_VERSION
+        # This option records the IDF version when sdkconfig is generated the first time.
+        # It is not updated if environment variable $IDF_VERSION changes later
+        string
+        default "$IDF_INIT_VERSION"
+
     config IDF_TARGET_LINUX
         bool
         default "y" if IDF_TARGET="linux"
