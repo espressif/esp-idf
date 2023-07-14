@@ -236,7 +236,7 @@ error:
     return err;
 }
 
-bool IRAM_ATTR peripheral_domain_pd_allowed(void)
+bool peripheral_domain_pd_allowed(void)
 {
     const uint32_t modules = sleep_retention_get_modules();
     const uint32_t mask = (const uint32_t) (

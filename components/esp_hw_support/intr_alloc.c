@@ -893,12 +893,12 @@ void IRAM_ATTR ets_isr_mask(uint32_t mask) {
     esp_cpu_intr_disable(mask);
 }
 
-void esp_intr_enable_source(int inum)
+void IRAM_ATTR esp_intr_enable_source(int inum)
 {
     esp_cpu_intr_enable(1 << inum);
 }
 
-void esp_intr_disable_source(int inum)
+void IRAM_ATTR esp_intr_disable_source(int inum)
 {
     esp_cpu_intr_disable(1 << inum);
 }

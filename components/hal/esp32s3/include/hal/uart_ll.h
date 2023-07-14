@@ -934,7 +934,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_low_pulse_cnt(uart_dev_t *hw)
  *
  * @return None.
  */
-static inline void uart_ll_force_xoff(uart_port_t uart_num)
+FORCE_INLINE_ATTR void uart_ll_force_xoff(uart_port_t uart_num)
 {
     REG_CLR_BIT(UART_FLOW_CONF_REG(uart_num), UART_FORCE_XON);
     REG_SET_BIT(UART_FLOW_CONF_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);

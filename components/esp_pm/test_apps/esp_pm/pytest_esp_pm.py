@@ -9,6 +9,7 @@ from pytest_embedded import Dut
 @pytest.mark.supported_targets
 @pytest.mark.parametrize('config', [
     'default',
+    'slp_iram_opt',
     'limits',
     'options',
 ], indirect=True)

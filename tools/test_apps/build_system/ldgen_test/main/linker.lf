@@ -5,4 +5,5 @@ entries:
     src1 (default)
     src1:func1 (noflash);
         text->iram0_text KEEP() ALIGN(9) ALIGN(12, post) SURROUND(sym1)
-    src1:func2 (rtc)
+    if SOC_RTC_MEM_SUPPORTED = y:
+        src1:func2 (rtc)

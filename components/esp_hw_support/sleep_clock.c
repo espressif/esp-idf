@@ -76,7 +76,7 @@ void sleep_clock_modem_retention_deinit(void)
     sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_CLOCK_MODEM);
 }
 
-bool IRAM_ATTR clock_domain_pd_allowed(void)
+bool clock_domain_pd_allowed(void)
 {
     const uint32_t modules = sleep_retention_get_modules();
     const uint32_t mask = (const uint32_t) (
