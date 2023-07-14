@@ -187,8 +187,17 @@ TEST_CASE("dhcp server start/stop on localhost", "[lwip]")
     // Class C: IP: 192.168.1.1, Mask: 255.255.255.0
     dhcps_test_net_classes(0xC0A80101, 0xFFFFFF00, true);
 
+    // Class C: IP: 192.168.4.1, Mask: 255.255.0.0
+    dhcps_test_net_classes(0xC0A80401, 0xFFFF0000, true);
+
+    // Class C: IP: 192.168.4.1, Mask: 255.0.0.0
+    dhcps_test_net_classes(0xC0A80401, 0xFF000000, true);
 
     // Class A: IP: 127.0.0.1, with inaccurate Mask: 255.248.255.0
     // expect dhcps_start() to fail
     dhcps_test_net_classes(0x7f000001, 0xFFF8FF00, false);
+
+    // Class C: IP: 192.168.200.8, with inaccurate Mask: 255.255.255.248
+    // expect dhcps_start() to fail
+    dhcps_test_net_classes(0xC0A8C808, 0xFFFFFFF8, false);
 }
