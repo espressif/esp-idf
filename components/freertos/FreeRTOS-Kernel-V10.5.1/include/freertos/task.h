@@ -1514,6 +1514,36 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) PRIVILEGED_FUNCTION; /*lint !e
 TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /**
+ * task. h
+ * @code{c}
+ * BaseType_t xTaskGetStaticBuffers( TaskHandle_t xTask,
+ *                                   StackType_t ** ppuxStackBuffer,
+ *                                   StaticTask_t ** ppxTaskBuffer );
+ * @endcode
+ *
+ * Retrieve pointers to a statically created task's data structure
+ * buffer and stack buffer. These are the same buffers that are supplied
+ * at the time of creation.
+ *
+ * @param xTask The task for which to retrieve the buffers.
+ *
+ * @param ppuxStackBuffer Used to return a pointer to the task's stack buffer.
+ *
+ * @param ppxTaskBuffer Used to return a pointer to the task's data structure
+ * buffer.
+ *
+ * @return pdTRUE if buffers were retrieved, pdFALSE otherwise.
+ *
+ * \defgroup xTaskGetStaticBuffers xTaskGetStaticBuffers
+ * \ingroup TaskUtils
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    BaseType_t xTaskGetStaticBuffers( TaskHandle_t xTask,
+                                      StackType_t ** ppuxStackBuffer,
+                                      StaticTask_t ** ppxTaskBuffer ) PRIVILEGED_FUNCTION;
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+/**
  * task.h
  * @code{c}
  * UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask );
