@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-1 standard was published by NIST in 1993.
@@ -88,6 +88,16 @@ int mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
     return 0;
 }
 
+static void esp_internal_sha_update_state(mbedtls_sha1_context *ctx)
+{
+    if (ctx->sha_state == ESP_SHA1_STATE_INIT) {
+        ctx->first_block = true;
+        ctx->sha_state = ESP_SHA1_STATE_IN_PROCESS;
+    } else if (ctx->sha_state == ESP_SHA1_STATE_IN_PROCESS) {
+        ctx->first_block = false;
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
+    }
+}
 
 static int esp_internal_sha1_dma_process(mbedtls_sha1_context *ctx,
         const uint8_t *data, size_t len,
@@ -98,16 +108,23 @@ static int esp_internal_sha1_dma_process(mbedtls_sha1_context *ctx,
 
 int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
 {
-    int ret;
+    int ret = -1;
     esp_sha_acquire_hardware();
+    esp_internal_sha_update_state(ctx);
+
     ret = esp_sha_dma(ctx->mode, data, 64, 0, 0, ctx->first_block);
+    if (ret != 0) {
+        esp_sha_release_hardware();
+        return ret;
+    }
+
+    esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
     return ret;
 }
 
 int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
 {
-    int ret;
     size_t fill;
     uint32_t left, len, local_len = 0;
 
@@ -138,24 +155,18 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
     if ( len || local_len) {
 
         esp_sha_acquire_hardware();
-        if (ctx->sha_state == ESP_SHA1_STATE_INIT) {
-            ctx->first_block = true;
 
-            ctx->sha_state = ESP_SHA1_STATE_IN_PROCESS;
-        } else if (ctx->sha_state == ESP_SHA1_STATE_IN_PROCESS) {
-            ctx->first_block = false;
-            esp_sha_write_digest_state(SHA1, ctx->state);
+        esp_internal_sha_update_state(ctx);
+
+        int ret = esp_internal_sha1_dma_process(ctx, input, len, ctx->buffer, local_len);
+        if (ret != 0) {
+            esp_sha_release_hardware();
+            return ret;
         }
-
-        ret = esp_internal_sha1_dma_process(ctx, input, len, ctx->buffer, local_len);
 
         esp_sha_read_digest_state(SHA1, ctx->state);
 
         esp_sha_release_hardware();
-
-        if (ret != 0) {
-            return ret;
-        }
 
     }
 
@@ -178,7 +189,7 @@ static const unsigned char sha1_padding[64] = {
  */
 int mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
 {
-    int ret;
+    int ret = -1;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];
