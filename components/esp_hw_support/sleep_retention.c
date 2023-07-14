@@ -528,6 +528,15 @@ void sleep_retention_do_extra_retention(bool backup_or_restore)
     _lock_release_recursive(&s_retention.lock);
     assert(refs >= 0 && refs <= cnt_modules);
 }
+
+void sleep_retention_module_deinit(void)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    if (s_retention.extra_refs) {
+        s_retention.extra_refs--;
+    }
+    _lock_release_recursive(&s_retention.lock);
+}
 #endif
 
 #if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG

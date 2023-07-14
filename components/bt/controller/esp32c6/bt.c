@@ -186,6 +186,10 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
 /* This variable tells if BLE is running */
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+static bool s_ble_backed_up = false;
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+
 static bool s_ble_active = false;
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
@@ -470,6 +474,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
     sleep_retention_do_extra_retention(true);
+    s_ble_backed_up = true;
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     esp_phy_disable();
@@ -491,6 +496,7 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG
     sleep_retention_do_extra_retention(false);
+    s_ble_backed_up = false;
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG */
 #endif //CONFIG_PM_ENABLE
     esp_phy_enable();
@@ -596,6 +602,10 @@ error:
 void controller_sleep_deinit(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    if (s_ble_backed_up) {
+        sleep_retention_module_deinit();
+        s_ble_backed_up = false;
+    }
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     r_ble_rtc_wake_up_state_clr();
     esp_sleep_disable_bt_wakeup();
