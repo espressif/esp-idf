@@ -691,6 +691,10 @@ config SOC_SHA_SUPPORT_PARALLEL_ENG
     bool
     default y
 
+config SOC_SHA_ENDIANNESS_BE
+    bool
+    default y
+
 config SOC_SHA_SUPPORT_SHA1
     bool
     default y

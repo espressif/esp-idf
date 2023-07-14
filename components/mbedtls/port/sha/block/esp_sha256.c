@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-256 Secure Hash Standard was published by NIST in 2002.
@@ -103,6 +103,17 @@ int mbedtls_sha256_starts( mbedtls_sha256_context *ctx, int is224 )
     return 0;
 }
 
+static void esp_internal_sha_update_state(mbedtls_sha256_context *ctx)
+{
+    if (ctx->sha_state == ESP_SHA256_STATE_INIT) {
+        ctx->first_block = true;
+        ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
+    } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
+        ctx->first_block = false;
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
+    }
+}
+
 static void esp_internal_sha256_block_process(mbedtls_sha256_context *ctx, const uint8_t *data)
 {
     esp_sha_block(ctx->mode, data, ctx->first_block);
@@ -115,7 +126,9 @@ static void esp_internal_sha256_block_process(mbedtls_sha256_context *ctx, const
 int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx, const unsigned char data[64] )
 {
     esp_sha_acquire_hardware();
+    esp_internal_sha_update_state(ctx);
     esp_sha_block(ctx->mode, data, ctx->first_block);
+    esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
     return 0;
 }
@@ -156,13 +169,8 @@ int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *inp
     if ( (ilen >= 64) || local_len) {
 
         esp_sha_acquire_hardware();
-        if (ctx->sha_state == ESP_SHA256_STATE_INIT) {
-            ctx->first_block = true;
 
-            ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
-        } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
-            esp_sha_write_digest_state(ctx->mode, ctx->state);
-        }
+        esp_internal_sha_update_state(ctx);
 
         /* First process buffered block, if any */
         if ( local_len ) {
@@ -200,7 +208,7 @@ static const unsigned char sha256_padding[64] = {
  */
 int mbedtls_sha256_finish( mbedtls_sha256_context *ctx, unsigned char *output )
 {
-    int ret;
+    int ret = -1;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];

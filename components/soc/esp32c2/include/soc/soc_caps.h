@@ -185,6 +185,9 @@
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
+/* Due to very limited availability of the DMA channels, DMA support for the SHA peripheral is disabled */
+// #define SOC_SHA_SUPPORT_DMA             (1)
+
 /* The SHA engine is able to resume hashing from a user */
 #define SOC_SHA_SUPPORT_RESUME          (1)
 
