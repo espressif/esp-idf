@@ -4,14 +4,17 @@ menu "Example Configuration"
 
         config EXAMPLE_GPIO_WAKEUP_SLEEP_NUM
             int "Enable wakeup from GPIO"
-            default 6 if IDF_TARGET_ESP32S3
-            range 0 15 if IDF_TARGET_ESP32S3
+            default 6  if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
+            default 5  if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32H2
+            default 4  if IDF_TARGET_ESP32
+            default 0
+            range 0 15
             help
                 This option is used to set the wakeup and sleep pin.
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
             bool "Enable GPIO high-level wakeup"
-            default y
+            default n
             help
                 This option set the gpio wake-up trigger signal, In light sleep, only high or low level wake-up is
                 supported. If this option is enabled, it is a high level wake up, otherwise it is a low level wake up.
@@ -76,43 +79,66 @@ menu "Example Configuration"
         
         choice EXAMPLE_PM_MAX_FREQ_MHZ
             prompt "set max freq in pm config"
-            default EXAMPLE_PM_MAX_FREQ_MHZ_80
+            default EXAMPLE_PM_MAX_FREQ_MHZ_96 if IDF_TARGET_ESP32H2
+            default EXAMPLE_PM_MAX_FREQ_MHZ_120 if IDF_TARGET_ESP32C2
+            default EXAMPLE_PM_MAX_FREQ_MHZ_160 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
+            default EXAMPLE_PM_MAX_FREQ_MHZ_240
             help
                 set max freq in pm config.
         
             config EXAMPLE_PM_MAX_FREQ_MHZ_80
-                bool "80 MHz"
+                bool "80 MHz" if !IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_120
+                bool "120 MHz" if IDF_TARGET_ESP32C2
             config EXAMPLE_PM_MAX_FREQ_MHZ_160
-                bool "160 MHz"
+                bool "160 MHz" if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
             config EXAMPLE_PM_MAX_FREQ_MHZ_240
-                bool "240 MHz"
+                bool "240 MHz" if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32C6
+
+            config EXAMPLE_PM_MAX_FREQ_MHZ_96
+                bool "96 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_64
+                bool "64 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_48
+                bool "48 MHz" if IDF_TARGET_ESP32H2
         endchoice
         
         config EXAMPLE_PM_MAX_FREQ_MHZ
             int
             default 80 if EXAMPLE_PM_MAX_FREQ_MHZ_80
+            default 120 if EXAMPLE_PM_MAX_FREQ_MHZ_120
             default 160 if EXAMPLE_PM_MAX_FREQ_MHZ_160
             default 240 if EXAMPLE_PM_MAX_FREQ_MHZ_240
+            default 96 if EXAMPLE_PM_MAX_FREQ_MHZ_96
+            default 64 if EXAMPLE_PM_MAX_FREQ_MHZ_64
+            default 48 if EXAMPLE_PM_MAX_FREQ_MHZ_48
 
         choice EXAMPLE_PM_MIN_FREQ_MHZ
             prompt "set min freq in pm config"
+            default EXAMPLE_PM_MIN_FREQ_MHZ_32 if IDF_TARGET_ESP32H2
             default EXAMPLE_PM_MIN_FREQ_MHZ_40
             help
                 set min freq in pm config.
             
             config EXAMPLE_PM_MIN_FREQ_MHZ_40
-                bool "40 MHz"
+                bool "40 MHz" if !IDF_TARGET_ESP32H2
             config EXAMPLE_PM_MIN_FREQ_MHZ_80
-                bool "80 MHz"
-            config EXAMPLE_PM_MIN_FREQ_MHZ_160
-                bool "160 MHz"
+                bool "80 MHz" if !IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_32
+                bool "32 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_48
+                bool "48 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_64
+                bool "64 MHz" if IDF_TARGET_ESP32H2
         endchoice
             
         config EXAMPLE_PM_MIN_FREQ_MHZ
             int
             default 40 if EXAMPLE_PM_MIN_FREQ_MHZ_40
             default 80 if EXAMPLE_PM_MIN_FREQ_MHZ_80
-            default 160 if EXAMPLE_PM_MIN_FREQ_MHZ_160
+            default 32 if EXAMPLE_PM_MIN_FREQ_MHZ_32
+            default 48 if EXAMPLE_PM_MIN_FREQ_MHZ_48
+            default 64 if EXAMPLE_PM_MIN_FREQ_MHZ_64
     
         endmenu
 
