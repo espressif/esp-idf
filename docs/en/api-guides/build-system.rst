@@ -141,6 +141,9 @@ An example project directory tree might look like this::
     - myProject/
                  - CMakeLists.txt
                  - sdkconfig
+                 - bootloader_components/ - boot_component/ - CMakeLists.txt
+                                                            - Kconfig
+                                                            - src1.c
                  - components/ - component1/ - CMakeLists.txt
                                              - Kconfig
                                              - src1.c
@@ -159,6 +162,8 @@ This example "myProject" contains the following elements:
 - A top-level project CMakeLists.txt file. This is the primary file which CMake uses to learn how to build the project; and may set project-wide CMake variables. It includes the file :idf_file:`/tools/cmake/project.cmake` which implements the rest of the build system. Finally, it sets the project name and defines the project.
 
 - "sdkconfig" project configuration file. This file is created/updated when ``idf.py menuconfig`` runs, and holds the configuration for all of the components in the project (including ESP-IDF itself). The "sdkconfig" file may or may not be added to the source control system of the project.
+
+- Optional "bootloader_components" directory contains components that need to be compiled and linked inside the bootloader project. A project does not have to contain custom bootloader components of this kind, but it can be useful in case the bootloader needs to be modified to embed new features.
 
 - Optional "components" directory contains components that are part of the project. A project does not have to contain custom components of this kind, but it can be useful for structuring reusable code or including third-party components that aren't part of ESP-IDF. Alternatively, ``EXTRA_COMPONENT_DIRS`` can be set in the top-level CMakeLists.txt to look for components in other places.
 
@@ -209,6 +214,8 @@ These variables all have default values that can be overridden for custom behavi
 - ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components. Paths can be relative to the project directory, or absolute.
 
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via the REQUIRES or PRIV_REQUIRES arguments on component registration will automatically have it added to this list, so the ``COMPONENTS`` list can be very short.
+
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``: A list of components, placed in ``bootloader_components/``, that should be ignored by the bootloader compilation. Use this variable if a bootloader component needs to be included conditionally inside the project.
 
 Any paths in these variables can be absolute paths, or set relative to the project directory.
 
@@ -671,6 +678,39 @@ Where ``function_to_redefine`` is the name of the function to redefine or extend
 The linker will provide a new symbol named ``__real_function_to_redefine`` which points to the former implementation of the function to redefine. It can be called from the new implementation, making it an extension of the former one.
 
 This mechanism is shown in the example :example:`build_system/wrappers`. Check :idf_file:`examples/build_system/wrappers/README.md` for more details.
+
+Override the default Bootloader
+-------------------------------
+
+Thanks to the optional ``bootloader_components`` directory present in your ESP-IDf project, it is possible to override the default ESP-IDF bootloader. To do so, a new ``bootloader_components/main`` component should be defined, which will make the project directory tree look like the following:
+
+    - myProject/
+                 - CMakeLists.txt
+                 - sdkconfig
+                 - bootloader_components/ - main/ - CMakeLists.txt
+                                                  - Kconfig
+                                                  - my_bootloader.c
+                 - main/       - CMakeLists.txt
+                               - app_main.c
+
+                 - build/
+
+
+Here the ``my_bootloader.c`` file becomes source code for the new bootloader, which means that it will need to perform all the required operations to set up and load the ``main`` application from flash.
+
+It is also possible to conditionally replace the bootloader depending on a certain condition, such as the target for example. This can be achieved thanks to the ``BOOTLOADER_IGNORE_EXTRA_COMPONENT`` CMake variable. This list can be used to tell the ESP-IDF bootloader project to ignore and not compile the given components present in ``bootloader_components``. For example, if one wants to use the default bootloader for ESP32 target, then ``myProject/CMakeLists.txt`` should look like the following::
+
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+    if(${IDF_TARGET} STREQUAL "esp32")
+        set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")
+    endif()
+
+    project(main)
+
+It is important to note that this can also be used for any other bootloader components than `main`. In all cases, the prefix `bootloader_component` must not be specified.
+
+See :example:`custom_bootloader/bootloader_override` for an example of overriding the default bootloader.
 
 .. _config_only_component:
 
