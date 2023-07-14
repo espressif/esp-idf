@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_openthread_types.h"
 #include "hal/uart_types.h"
 #include "lib/spinel/spinel_interface.hpp"
+#include "lib/hdlc/hdlc.hpp"
 #include "openthread/error.h"
 
 namespace esp {
@@ -90,7 +91,7 @@ public:
      * @param[in]  mainloop     The mainloop context
      *
      */
-    void Process(const esp_openthread_mainloop_context_t &mainloop);
+    void Process(const void *mainloop);
 
     /**
      * This methods updates the mainloop context.
@@ -98,7 +99,7 @@ public:
      * @param[inout] mainloop   The mainloop context.
      *
      */
-    void Update(esp_openthread_mainloop_context_t &mainloop);
+    void Update(void *mainloop);
 
     /**
      * This methods registers the callback for RCP failure.
@@ -108,8 +109,17 @@ public:
      */
     void RegisterRcpFailureHandler(esp_openthread_rcp_failure_handler handler) { mRcpFailureHandler = handler; }
 
-    void OnRcpReset(void);
+    /**
+     * This method is called when RCP failure detected and resets internal states of the interface.
+     *
+     */
+    otError HardwareReset(void);
 
+    /**
+     * This method is called when RCP is reset to recreate the connection with it.
+     * Intentionally empty.
+     *
+     */
     otError ResetConnection(void) { return OT_ERROR_NONE; }
 
 private:

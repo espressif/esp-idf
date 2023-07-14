@@ -85,7 +85,7 @@ public:
      * @param[in]  mainloop     The mainloop context
      *
      */
-    void Process(const esp_openthread_mainloop_context_t &mainloop);
+    void Process(const void *mainloop);
 
     /**
      * This methods updates the mainloop context.
@@ -93,7 +93,7 @@ public:
      * @param[inout] mainloop   The mainloop context.
      *
      */
-    void Update(esp_openthread_mainloop_context_t &mainloop);
+    void Update(void *mainloop);
 
     /**
      * This methods registers the callback for RCP failure.
@@ -114,7 +114,7 @@ public:
      * This method is called when RCP failure detected and resets internal states of the interface.
      *
      */
-    void OnRcpReset(void);
+    otError HardwareReset(void);
 
 private:
     static constexpr uint8_t kSPIFrameHeaderSize = 5;

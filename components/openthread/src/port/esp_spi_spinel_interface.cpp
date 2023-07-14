@@ -19,7 +19,7 @@
 #include "hal/gpio_types.h"
 #include "ncp/ncp_spi.hpp"
 
-using ot::Ncp::SpiFrame;
+using ot::Spinel::SpiFrame;
 using ot::Spinel::SpinelInterface;
 
 namespace esp {
@@ -180,26 +180,26 @@ void SpiSpinelInterface::GpioIntrHandler(void *arg)
     write(instance->m_event_fd, &event, sizeof(event));
 }
 
-void SpiSpinelInterface::Update(esp_openthread_mainloop_context_t &mainloop)
+void SpiSpinelInterface::Update(void *mainloop)
 {
     if (m_pending_data_len > 0) {
-        mainloop.timeout.tv_sec = 0;
-        mainloop.timeout.tv_usec = 0;
+        ((esp_openthread_mainloop_context_t *)mainloop)->timeout.tv_sec = 0;
+        ((esp_openthread_mainloop_context_t *)mainloop)->timeout.tv_usec = 0;
     }
-    FD_SET(m_event_fd, &mainloop.read_fds);
-    FD_SET(m_event_fd, &mainloop.error_fds);
-    if (m_event_fd > mainloop.max_fd) {
-        mainloop.max_fd = m_event_fd;
+    FD_SET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds);
+    FD_SET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->error_fds);
+    if (m_event_fd > ((esp_openthread_mainloop_context_t *)mainloop)->max_fd) {
+        ((esp_openthread_mainloop_context_t *)mainloop)->max_fd = m_event_fd;
     }
 }
 
-void SpiSpinelInterface::Process(const esp_openthread_mainloop_context_t &mainloop)
+void SpiSpinelInterface::Process(const void *mainloop)
 {
-    if (FD_ISSET(m_event_fd, &mainloop.error_fds)) {
+    if (FD_ISSET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->error_fds)) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "SPI INTR GPIO error event");
         return;
     }
-    if (FD_ISSET(m_event_fd, &mainloop.read_fds)) {
+    if (FD_ISSET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds)) {
         uint64_t event;
         read(m_event_fd, &event, sizeof(event));
         m_pending_data_len = SpinelInterface::kMaxFrameSize;
@@ -240,13 +240,14 @@ otError SpiSpinelInterface::WaitForFrame(uint64_t timeout_us)
     return OT_ERROR_NONE;
 }
 
-void SpiSpinelInterface::OnRcpReset(void)
+otError SpiSpinelInterface::HardwareReset(void)
 {
     if (mRcpFailureHandler) {
         mRcpFailureHandler();
         ConductSPITransaction(true, 0, 0); // clear
     }
+    return OT_ERROR_NONE;
+}
 
 } // namespace openthread
 } // namespace esp
-}

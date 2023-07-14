@@ -25,10 +25,10 @@ using ot::Spinel::RadioSpinel;
 
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
 using esp::openthread::UartSpinelInterface;
-static RadioSpinel<UartSpinelInterface, esp_openthread_mainloop_context_t> s_radio;
+static RadioSpinel<UartSpinelInterface> s_radio;
 #else // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
 using esp::openthread::SpiSpinelInterface;
-static RadioSpinel<SpiSpinelInterface, esp_openthread_mainloop_context_t> s_radio;
+static RadioSpinel<SpiSpinelInterface> s_radio;
 #endif // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
 
 static const char *radiospinel_workflow = "radio_spinel";
@@ -42,7 +42,7 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
     ESP_RETURN_ON_ERROR(s_radio.GetSpinelInterface().Init(config->radio_config.radio_spi_config), OT_PLAT_LOG_TAG,
                         "Spinel interface init failed");
 #endif  // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
-    s_radio.Init(/*reset_radio=*/true, /*restore_dataset_from_ncp=*/false, /*skip_rcp_compatibility_check=*/false);
+    s_radio.Init(/*reset_radio=*/true, /*skip_rcp_compatibility_check=*/false);
     return esp_openthread_platform_workflow_register(&esp_openthread_radio_update, &esp_openthread_radio_process,
                                                      radiospinel_workflow);
 }
@@ -65,14 +65,14 @@ void esp_openthread_radio_deinit(void)
 
 esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
 {
-    s_radio.Process(*mainloop);
+    s_radio.Process((void *)mainloop);
 
     return ESP_OK;
 }
 
 void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop)
 {
-    s_radio.GetSpinelInterface().Update(*mainloop);
+    s_radio.GetSpinelInterface().Update((void *)mainloop);
 }
 
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
