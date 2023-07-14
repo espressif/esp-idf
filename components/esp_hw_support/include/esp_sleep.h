@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -415,9 +415,12 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
 /**
  * @brief Enter deep sleep with the configured wakeup options
  *
- * This function does not return.
+ * @note In general, the function does not return, but if the sleep is rejected,
+ * then it returns from it.
+ *
+ * The reason for the rejection can be such as a short sleep time.
  */
-void esp_deep_sleep_start(void) __attribute__((__noreturn__));
+void esp_deep_sleep_start(void);
 
 /**
  * @brief Enter light sleep with the configured wakeup options
@@ -441,9 +444,14 @@ esp_err_t esp_light_sleep_start(void);
  * Call to this function is equivalent to a call to esp_deep_sleep_enable_timer_wakeup
  * followed by a call to esp_deep_sleep_start.
  *
+ * @note In general, the function does not return, but if the sleep is rejected,
+ * then it returns from it.
+ *
+ * The reason for the rejection can be such as a short sleep time.
+ *
  * @param time_in_us  deep-sleep time, unit: microsecond
  */
-void esp_deep_sleep(uint64_t time_in_us) __attribute__((__noreturn__));
+void esp_deep_sleep(uint64_t time_in_us);
 
 
 /**
