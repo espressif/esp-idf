@@ -66,7 +66,13 @@ NVS 迭代器
 安全性、篡改性及鲁棒性
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。但如果 NVS 加密与 {IDF_TARGET_NAME} flash 加密一起使用时，数据仍可以加密形式存储。详情请参阅 :ref:`nvs_encryption`。
+.. only:: not SOC_HMAC_SUPPORTED
+
+    NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。然而，如果 NVS 加密与 {IDF_TARGET_NAME} flash 加密一起使用，数据仍可以加密形式存储。详情请参考 :doc:`nvs_encryption`。
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。然而，如果 NVS 加密与 {IDF_TARGET_NAME} flash 加密或 HMAC 外设一起使用，数据仍可以加密形式存储。详情请参考 :doc:`nvs_encryption`。
 
 如果未启用 NVS 加密，任何对 flash 芯片有物理访问权限的用户都可以修改、擦除或添加键值对。NVS 加密启用后，如果不知道相应的 NVS 加密密钥，则无法修改或添加键值对并将其识别为有效键值对。但是，针对擦除操作没有相应的防篡改功能。
 
@@ -78,91 +84,12 @@ NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。但如果 NVS 加�
 NVS 加密
 --------------
 
-NVS 分区内存储的数据可使用 XTS-AES 进行加密，类似于 IEEE P1619 磁盘加密标准中提到的加密方式。为了实现加密，每个条目被均视为一个扇区，并将条目相对地址（相对于分区开头）传递给加密算法，用作扇区号。可通过 :ref:`CONFIG_NVS_ENCRYPTION` 启用 NVS 加密。NVS 加密所需的密钥存储于其他分区，并且被 :doc:`Flash 加密 <../../security/flash-encryption>` 保护。因此，在使用 NVS 加密前应先启用 :doc:`Flash 加密 <../../security/flash-encryption>`。
-
-启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和密码）。如已启用平台级加密，那么同时默认启用 NVS 加密有其必要性。
-
-使用 NVS 加密，分区表必须包含 :ref:`nvs_key_partition`。在分区表选项 (``menuconfig`` > ``Partition Table``) 下，为 NVS 加密提供了两个包含 :ref:`nvs_key_partition` 的分区表，您可以通过工程配置菜单 (``idf.py menuconfig``) 进行选择。请参考 :example:`security/flash_encryption` 中的例子，了解如何配置和使用 NVS 加密功能。
-
-.. _nvs_key_partition:
-
-NVS 密钥分区
-^^^^^^^^^^^^^^^^^
-
-应用程序如果想使用 NVS 加密，则需要编译进一个类型为 `data`，子类型为 `key` 的密钥分区。该分区应标记为 `已加密` 且最小为 4096 字节。如需了解更多详细信息，请参考 :doc:`分区表 <../../api-guides/partition-tables>`。在分区表选项 (``menuconfig`` > ``Partition Table``) 下提供了两个包含 :ref:`nvs_key_partition` 的额外分区表，可以直接用于 :ref:`nvs_encryption`。这些分区的具体结构见下表：
-
-.. highlight:: none
-
-::
-
-    +-----------+--------------+-------------+----+
-    |              XTS encryption key (32)        |
-    +---------------------------------------------+
-    |              XTS tweak key (32)             |
-    +---------------------------------------------+
-    |                  CRC32 (4)                  |
-    +---------------------------------------------+
-
-可以通过以下两种方式生成 :ref:`nvs_key_partition` 中的 XTS 加密密钥：
-
-1. 在 ESP 芯片上生成密钥：
-
-    启用 NVS 加密时，可用 :cpp:func:`nvs_flash_init` API 函数来初始化加密的默认 NVS 分区，在内部生成 ESP 芯片上的 XTS 加密密钥。在找到 :ref:`nvs_key_partition` 后，API 函数利用 :component_file:`nvs_flash/include/nvs_flash.h` 提供的 :cpp:func:`nvs_flash_generate_keys` 函数，自动生成并存储该分区中的 NVS 密钥。只有当各自的密钥分区为空时，才会生成并存储新的密钥。可以借助 :cpp:func:`nvs_flash_secure_init_partition` 用同一个密钥分区来读取安全配置，以初始化一个定制的加密 NVS 分区。
-
-    API 函数 :cpp:func:`nvs_flash_secure_init` 和 :cpp:func:`nvs_flash_secure_init_partition` 不在内部产生密钥。当这些 API 函数用于初始化加密的 NVS 分区时，可以在启动后使用 `nvs_flash.h` 提供的 :cpp:func:`nvs_flash_generate_keys` API 函数生成密钥，以加密的形式把密钥写到密钥分区上。
-
-    .. note:: 请注意，使用该方法启动应用前，必须先完全擦除 `nvs_keys` 分区，否则该应用可能会认为 `nvs_keys` 分区不为空，并且包含数据格式错误，从而导致 :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` 报错。如果遇到这种情况，可以使用以下命令：
-        ::
-
-            parttool.py --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys
-
-2. 使用预先生成的密钥分区：
-
-    若 :ref:`nvs_key_partition` 中的密钥不是由应用程序生成，则需要使用预先生成的密钥分区。可以使用 :doc:`NVS 分区生成工具 </api-reference/storage/nvs_partition_gen>` 生成包含 XTS 加密密钥的 :ref:`nvs_key_partition`。用户可以借助以下两个命令，将预先生成的密钥分区储存在 flash 上：
-
-    i) 建立并烧录分区表
-    ::
-
-        idf.py partition-table partition-table-flash
-
-    ii) 调用 :component_file:`parttool.py<partition_table/parttool.py>`，将密钥存储在 flash 上的 :ref:`nvs_key_partition` 中。详见 :doc:` 分区表 </api-guides/partition-tables>` 的分区工具部分。
-    ::
-
-        parttool.py --port PORT --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
-
-    .. note:: 如需在设备处于 flash 加密开发模式时更新 NVS 密钥分区，请调用 :component_file:`parttool.py <partition_table/parttool.py>` 对 NVS 密钥分区进行加密。同时，由于设备上的分区表也已加密，您还需要在构建目录（build/partition_table）中提供一个指向未加密分区表的指针。您可以使用如下命令：
-        ::
-
-            parttool.py --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
-
-由于分区已标记为 `已加密`，而且启用了 :doc:`Flash 加密 <../../security/flash-encryption>`，引导程序在首次启动时将使用 flash 加密对密钥分区进行加密。
-
-应用程序可以使用不同的密钥对不同的 NVS 分区进行加密，这样就会需要多个加密密钥分区。应用程序应为加解密操作提供正确的密钥或密钥分区。
-
-加密读取/写入
-^^^^^^^^^^^^^^^^^^^^
-
-``nvs_get_*`` 和 ``nvs_set_*`` 等 NVS API 函数同样可以对 NVS 加密分区执行读写操作。
-
-**加密默认的 NVS 分区：**
-无需额外步骤即可启用默认 NVS 分区的加密。启用 :ref:`CONFIG_NVS_ENCRYPTION` 时， :cpp:func:`nvs_flash_init` API 函数会在内部使用找到的第一个 :ref:`nvs_key_partition` 执行额外步骤，以启用默认 NVS 分区的加密（详情请参考 API 文档）。另外，:cpp:func:`nvs_flash_secure_init` API 函数也可以用来启用默认 NVS 分区的加密。
-
-**加密一个自定义的 NVS 分区：**
-使用 :cpp:func:`nvs_flash_secure_init_partition` API 函数启用自定义 NVS 分区的加密，而非 :cpp:func:`nvs_flash_init_partition`。
-
-使用 :cpp:func:`nvs_flash_secure_init` 和 :cpp:func:`nvs_flash_secure_init_partition` API 函数时，应用程序如需在加密状态下执行 NVS 读写操作，应遵循以下步骤：
-
-    1. 使用 ``esp_partition_find*`` API 查找密钥分区和 NVS 数据分区；
-    2. 使用 ``nvs_flash_read_security_cfg`` 或 ``nvs_flash_generate_keys`` API 填充 ``nvs_sec_cfg_t`` 结构；
-    3. 使用 ``nvs_flash_secure_init`` 或 ``nvs_flash_secure_init_partition`` API 初始化 NVS flash 分区；
-    4. 使用 ``nvs_open`` 或 ``nvs_open_from_partition`` API 打开命名空间；
-    5. 使用 ``nvs_get_*`` 或 ``nvs_set_*`` API 执行 NVS 读取/写入操作；
-    6. 使用 ``nvs_flash_deinit`` API 释放已初始化的 NVS 分区。
+详情请参考 :doc:`nvs_encryption`。
 
 NVS 分区生成程序
 ------------------
 
-NVS 分区生成程序帮助生成 NVS 分区二进制文件，可使用烧录程序将二进制文件单独烧录至特定分区。烧录至分区上的键值对由 CSV 文件提供，详情请参考 :doc:`NVS 分区生成程序 <nvs_partition_gen>`。
+NVS 分区生成程序帮助生成 NVS 分区二进制文件，可使用烧录程序将二进制文件单独烧录至特定分区。烧录至分区上的键值对由 CSV 文件提供，详情请参考 :doc:`nvs_partition_gen`。
 
 应用示例
 -------------------

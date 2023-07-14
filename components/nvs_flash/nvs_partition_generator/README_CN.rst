@@ -244,7 +244,7 @@ NVS 分区生成程序还可使用 XTS-AES 加密生成二进制加密文件。�
     python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen --keyfile sample_keys.bin
 
 .. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<timestamp>.bin``。
-.. note:: 加密密钥存储于新建文件的 ``keys/`` 目录下，与 NVS 密钥分区结构兼容。更多信息请参考 :ref:`nvs_key_partition`。
+.. note:: 加密密钥存储于新建文件的 ``keys/`` 目录下，与 NVS 密钥分区结构兼容。更多信息请参考 :ref:`nvs_encr_key_partition`。
 
 - 将加密密钥用作二进制输入文件来进行加密::
 

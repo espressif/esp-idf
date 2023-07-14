@@ -738,7 +738,7 @@ flash 加密范围
 - 通过函数 :cpp:func:`esp_flash_read` 读取不会被解密的原（加密）数据。
 - 通过函数 :cpp:func:`esp_flash_read_encrypted` 读取和解密数据。
 
-使用非易失性存储器 (NVS) API 存储的数据始终从 flash 加密的角度进行存储和读取解密。如有需要，则由库提供加密功能。详情可参考 :ref:`NVS 加密 <nvs_encryption>`。
+使用非易失性存储器 (NVS) API 存储的数据始终从 flash 加密的角度进行存储和读取解密。如有需要，则由库提供加密功能。详情可参考 :doc:`../api-reference/storage/nvs_encryption`。
 
 
 写入加密的 flash
