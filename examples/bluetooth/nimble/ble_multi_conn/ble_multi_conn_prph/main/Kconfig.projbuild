@@ -1,0 +1,20 @@
+menu "Example Configuration"
+
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        depends on SOC_BLE_50_SUPPORTED
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        select BT_NIMBLE_EXT_ADV
+        prompt "Enable Extended Adv"
+        help
+            Use this option to enable extended advertising in the example
+
+    config EXAMPLE_RESTART_ADV_AFTER_CONNECTED
+        bool
+        default y
+        prompt "Restart advertisement when connected"
+        help
+            To simulate multiple connections with only one device,
+            restart the advertisement once a connection has been established.
+
+endmenu
