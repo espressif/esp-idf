@@ -15,7 +15,8 @@ entries:
     rtc_clk (noflash)
     esp_gpio_reserve: esp_gpio_reserve_pins (noflash)
     esp_gpio_reserve: esp_gpio_is_pin_reserved (noflash)
-    if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED:
+    if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y && (PM_SLP_IRAM_OPT = y || ESP_SLEEP_POWER_DOWN_FLASH = y):
+        rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
     if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n: # TODO: IDF-5645
         rtc_sleep (noflash_text)
@@ -45,3 +46,9 @@ entries:
         sar_periph_ctrl (noflash)
     else:
         sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
+
+[mapping:soc_pm]
+archive: libsoc.a
+entries:
+    if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND:
+        gpio_periph: GPIO_HOLD_MASK (noflash)
