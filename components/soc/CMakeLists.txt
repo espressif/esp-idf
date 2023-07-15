@@ -131,6 +131,8 @@ idf_component_register(SRCS ${srcs}
 # Replace this value in an adaptive way, if Kconfig isn't available on your platform
 target_compile_definitions(${COMPONENT_LIB} INTERFACE SOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE)
 
+target_compile_definitions(${COMPONENT_LIB} INTERFACE SOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ)
+
 if(target STREQUAL "esp32")
     # esp_dport_access_reg_read is added as an undefined symbol because otherwise
     # the linker can ignore dport_access.c as it would no other files depending on any symbols in it.
