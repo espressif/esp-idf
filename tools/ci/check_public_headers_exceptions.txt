@@ -17,8 +17,6 @@ components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 components/log/include/esp_log_internal.h
 
-components/hal/
-
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
 components/esp_common/include/esp_private/
@@ -108,6 +106,7 @@ components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp_rom/include/esp32c6/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
+components/esp_rom/include/esp32p4/rom/rtc.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h

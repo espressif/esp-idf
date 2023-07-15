@@ -7,6 +7,17 @@
 #pragma once
 
 #include "sdkconfig.h"
+
+/* Macros used instead ofsetoff() for better performance of interrupt handler */
+#define PORT_OFFSET_PX_STACK 0x30
+#define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
+                                     /* void * pxDummy6 */ 4 + \
+                                     /* BaseType_t xDummy23[ 2 ] */ 8 + \
+                                     /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \
+                                     /* BaseType_t xDummy24 */ 4)
+
+#ifndef __ASSEMBLER__
+
 #include <stdint.h>
 #include "spinlock.h"
 #include "soc/interrupt_reg.h"
@@ -355,3 +366,5 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #ifdef __cplusplus
 }
 #endif
+
+#endif // __ASSEMBLER__

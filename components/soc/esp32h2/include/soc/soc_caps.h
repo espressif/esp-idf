@@ -16,7 +16,7 @@
  * If this file is changed the script will automatically run the script
  * and generate the kconfig variables as part of the pre-commit hooks.
  *
- * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32h2/include/soc/'`
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/esp32h2/include/soc/'`
  *
  * For more information see `tools/gen_soc_caps_kconfig/README.md`
  *
@@ -30,6 +30,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
@@ -70,6 +71,7 @@
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_PAU_SUPPORTED               1
 #define SOC_CLK_TREE_SUPPORTED          1
+#define SOC_ASSIST_DEBUG_SUPPORTED      1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
@@ -160,9 +162,10 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
-#define SOC_GDMA_SUPPORT_ETM            (1)  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION            1U
+#define SOC_GDMA_NUM_GROUPS_MAX         1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
+#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -181,14 +184,15 @@
 #define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
 #define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
-// Target has no full LP IO subsystem, GPIO7~14 remain LP function (powered by VDD3V3_LP, and can be used as deep-sleep wakeup pins)
+// Target has no full LP IO subsystem, GPIO7~14 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
+// Digital IOs have their own registers to control pullup/down/capability
+// However, there is no way to control pullup/down/capability for IOs under LP function since there is no LP_IOMUX registers
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 
-// GPIO7~14 on ESP32H2 can support chip deep sleep wakeup
-#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
+// GPIO7~14 on ESP32H2 can support chip deep sleep wakeup through EXT1 wake up
 
-#define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
+#define SOC_GPIO_VALID_GPIO_MASK        ((1U << SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT7 | BIT8 | BIT9 | BIT10 | BIT11 | BIT12 | BIT13 | BIT14)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_0~6. GPIO_NUM_15~27)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000000FFF807FULL
@@ -197,6 +201,12 @@
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
+
+/*-------------------------- RTCIO CAPS --------------------------------------*/
+/* No dedicated LP_IOMUX subsystem on ESP32-H2. LP functions are still supported
+ * for hold, wake & 32kHz crystal functions - via LP_AON registers */
+#define SOC_RTCIO_PIN_COUNT         (8U)
+#define SOC_RTCIO_HOLD_SUPPORTED    (1)
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -299,11 +309,6 @@
 #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    8  /*!< Number of data lines of the RX unit */
 #define SOC_PARLIO_TX_CLK_SUPPORT_GATING     1  /*!< Support gating TX clock */
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
-
-/*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated LP_IO subsystem on ESP32-H2. LP functions are still supported
- * for hold, wake & 32kHz crystal functions - via LP_AON registers */
-#define SOC_RTCIO_PIN_COUNT    (0U)
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM (4)
@@ -448,12 +453,17 @@
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
+/*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
+#define SOC_EXTERNAL_COEX_ADVANCE              (1) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */
+#define SOC_EXTERNAL_COEX_LEADER_TX_LINE       (0) /*!< EXTERNAL COEXISTENCE TX LINE CAPS */
+
 // TODO: IDF-6337
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
+// #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1) // TODO: IDF-6268
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1) /*!<modem includes BLE and 15.4 */
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)

@@ -249,7 +249,7 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT   22
-#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1 // The target has separate RTC IOMUX
 #define SOC_RTCIO_HOLD_SUPPORTED 1
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
@@ -455,6 +455,10 @@
 #define SOC_COEX_HW_PTI                 (1)
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents
+
+/*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
+#define SOC_EXTERNAL_COEX_ADVANCE              (0) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */
+#define SOC_EXTERNAL_COEX_LEADER_TX_LINE       (1) /*!< EXTERNAL COEXISTENCE TX LINE CAPS */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

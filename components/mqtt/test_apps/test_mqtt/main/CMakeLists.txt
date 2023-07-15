@@ -6,4 +6,3 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES cmock test_utils mqtt nvs_flash app_update esp_eth esp_netif spi_flash common)
- target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

@@ -12,6 +12,7 @@
 
 #include "soc/hwcrypto_reg.h"
 #include "soc/soc_caps.h"
+#include "hal/ds_types.h"
 
 #ifdef __cplusplus
 extern "C" {

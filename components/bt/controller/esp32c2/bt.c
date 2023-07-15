@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,8 @@
 
 #include "soc/syscon_reg.h"
 #include "soc/dport_access.h"
+
+#include "hal/efuse_ll.h"
 /* Macro definition
  ************************************************************************
  */
@@ -991,6 +993,11 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
     }
 
     return (esp_power_level_t)tx_level;
+}
+
+uint8_t esp_ble_get_chip_rev_version(void)
+{
+    return efuse_ll_get_chip_wafer_version_minor();
 }
 
 

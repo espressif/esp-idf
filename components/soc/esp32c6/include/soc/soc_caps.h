@@ -16,7 +16,7 @@
  * If this file is changed the script will automatically run the script
  * and generate the kconfig variables as part of the pre-commit hooks.
  *
- * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32c6/include/soc/'`
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/esp32c6/include/soc/'`
  *
  * For more information see `tools/gen_soc_caps_kconfig/README.md`
  *
@@ -29,6 +29,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
@@ -73,6 +74,7 @@
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
 #define SOC_CLK_TREE_SUPPORTED          1
+#define SOC_ASSIST_DEBUG_SUPPORTED      1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -160,9 +162,10 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
-#define SOC_GDMA_SUPPORT_ETM            (1)  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION            1U
+#define SOC_GDMA_NUM_GROUPS_MAX         1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
+#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -200,7 +203,7 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8
-#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1 // The target has separate LP(RTC) IOMUX
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
 
@@ -458,6 +461,10 @@
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
+/*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
+#define SOC_EXTERNAL_COEX_ADVANCE              (1) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */
+#define SOC_EXTERNAL_COEX_LEADER_TX_LINE       (0) /*!< EXTERNAL COEXISTENCE TX LINE CAPS */
+
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
@@ -510,7 +517,7 @@
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT                (1)    /*!< Support FTM */
+#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */

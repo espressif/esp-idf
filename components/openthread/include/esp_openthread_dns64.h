@@ -12,6 +12,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+// The network data change callback sets the dns server address of index 0, while the CLI sets the dns server address of index 1.
+#define OPENTHREAD_DNS_SERVER_INDEX 0
 
 /**
  * @brief This function initiizes the dns64 client.

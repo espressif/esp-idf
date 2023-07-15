@@ -7,10 +7,15 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
 #include "soc/soc_caps.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Touch pad channel */
 typedef enum {
@@ -290,3 +295,7 @@ typedef struct {
 } touch_pad_sleep_channel_t;
 
 #endif // !CONFIG_IDF_TARGET_ESP32
+
+#ifdef __cplusplus
+}
+#endif

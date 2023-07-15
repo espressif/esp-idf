@@ -1,6 +1,9 @@
 # Enable USB console
 CONFIG_ESP_CONSOLE_USB_CDC=y
 
+# On chips with USB serial, disable secondary console which does not make sense when using console component
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
 # Reduce bootloader log verbosity
 CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
 CONFIG_BOOTLOADER_LOG_LEVEL=2

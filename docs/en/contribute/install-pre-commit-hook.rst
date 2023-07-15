@@ -18,7 +18,7 @@ Install pre-commit hook
 
 1. Go to the IDF Project Directory
 
-2. Run ``pre-commit install --allow-missing-config``. Install hook by this approach will let you commit successfully even in branches without the ``.pre-commit-config.yaml``
+2. Run ``pre-commit install --allow-missing-config -t pre-commit -t commit-msg``. Install hook by this approach will let you commit successfully even in branches without the ``.pre-commit-config.yaml``
 
 3. pre-commit hook will run automatically when you're running ``git commit`` command
 

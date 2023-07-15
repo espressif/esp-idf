@@ -26,28 +26,24 @@
 #include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/crc.h"
 #include "esp32c3/rom/uart.h"
-#include "esp32c3/rom/gpio.h"
 #include "esp32c3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/efuse.h"
 #include "esp32c2/rom/crc.h"
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/uart.h"
-#include "esp32c2/rom/gpio.h"
 #include "esp32c2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/efuse.h"
 #include "esp32c6/rom/crc.h"
 #include "esp32c6/rom/rtc.h"
 #include "esp32c6/rom/uart.h"
-#include "esp32c6/rom/gpio.h"
 #include "esp32c6/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/efuse.h"
 #include "esp32h2/rom/crc.h"
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/uart.h"
-#include "esp32h2/rom/gpio.h"
 #include "esp32h2/rom/secure_boot.h"
 
 #else // CONFIG_IDF_TARGET_*
@@ -57,7 +53,6 @@
 
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/gpio_periph.h"
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
 #include "soc/timer_periph.h"
@@ -100,8 +95,7 @@ static void set_cache_and_start_app(uint32_t drom_addr,
                                     uint32_t irom_size,
                                     uint32_t entry_addr);
 
-// Read ota_info partition and fill array from two otadata structures.
-static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_select_entry_t *two_otadata)
+esp_err_t bootloader_common_read_otadata(const esp_partition_pos_t *ota_info, esp_ota_select_entry_t *two_otadata)
 {
     const esp_ota_select_entry_t *ota_select_map;
     if (ota_info->offset == 0) {
@@ -361,7 +355,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         return FACTORY_INDEX;
     }
 
-    if (read_otadata(&bs->ota_info, otadata) != ESP_OK) {
+    if (bootloader_common_read_otadata(&bs->ota_info, otadata) != ESP_OK) {
         return INVALID_INDEX;
     }
     ota_has_initial_contents = false;

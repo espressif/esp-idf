@@ -546,10 +546,14 @@ typedef union {
          *  BLK_VERSION_MINOR
          */
         uint32_t blk_version_minor:3;
-        /** reserved_1_123 : R; bitpos: [31:27]; default: 0;
-         *  reserved
+        /** flash_cap : R; bitpos: [29:27]; default: 0;
+         *  Flash capacity
          */
-        uint32_t reserved_1_123:5;
+        uint32_t flash_cap:3;
+        /** flash_temp : R; bitpos: [31:30]; default: 0;
+         *  Flash temperature
+         */
+        uint32_t flash_temp:2;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_3_reg_t;
@@ -559,10 +563,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reserved_1_128 : R; bitpos: [6:0]; default: 0;
+        /** flash_vendor : R; bitpos: [2:0]; default: 0;
+         *  Flash vendor
+         */
+        uint32_t flash_vendor:3;
+        /** reserved_1_131 : R; bitpos: [6:3]; default: 0;
          *  reserved
          */
-        uint32_t reserved_1_128:7;
+        uint32_t reserved_1_131:4;
         /** k_rtc_ldo : R; bitpos: [13:7]; default: 0;
          *  BLOCK1 K_RTC_LDO
          */

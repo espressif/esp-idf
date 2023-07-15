@@ -11,7 +11,6 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
-#include "esp32c6/rom/gpio.h"
 #include "esp32c6/rom/spi_flash.h"
 #include "esp32c6/rom/efuse.h"
 #include "soc/gpio_periph.h"
@@ -205,6 +204,12 @@ esp_err_t bootloader_init_spi_flash(void)
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();
+#endif
+
+    // Since the workaround in IDF-6709, the spi_speed value in the bootloader header
+    // is not the real value, overwrite it.
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    bootloader_image_hdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_1;
 #endif
 
     print_flash_info(&bootloader_image_hdr);

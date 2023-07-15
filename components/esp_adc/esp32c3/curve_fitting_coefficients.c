@@ -7,6 +7,9 @@
 #include <stdint.h>
 #include "../curve_fitting_coefficients.h"
 
+#define COEFF_GROUP_NUM    4
+#define TERM_MAX           5
+
 /**
  * @note Error Calculation
  * Coefficients for calculating the reading voltage error.
@@ -41,6 +44,6 @@ void curve_fitting_get_second_step_coeff(const adc_cali_curve_fitting_config_t *
     ctx->term_num = (config->atten == 3) ? 5 : 3;
     // On esp32c3, ADC1 and ADC2 share the second step coefficients
     // And if the target only has 1 ADC peripheral, just use the ADC1 directly
-    ctx->coeff = &adc1_error_coef_atten;
-    ctx->sign = &adc1_error_sign;
+    ctx->coeff = adc1_error_coef_atten[config->atten];
+    ctx->sign = adc1_error_sign[config->atten];
 }

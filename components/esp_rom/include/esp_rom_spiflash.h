@@ -29,6 +29,7 @@ typedef enum {
     ESP_ROM_SPIFLASH_OIO_STR_MODE,
     ESP_ROM_SPIFLASH_OIO_DTR_MODE,
     ESP_ROM_SPIFLASH_QPI_MODE,
+    ESP_ROM_SPIFLASH_OPI_HEX_DTR_MODE,
 } esp_rom_spiflash_read_mode_t;
 
 typedef struct {

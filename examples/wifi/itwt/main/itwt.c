@@ -46,6 +46,7 @@ static const char *TAG = "itwt";
 /*set the ssid and password via "idf.py menuconfig"*/
 #define DEFAULT_SSID CONFIG_EXAMPLE_WIFI_SSID
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
+#define ITWT_SETUP_SUCCESS 1
 
 #if CONFIG_EXAMPLE_ITWT_TRIGGER_ENABLE
 uint8_t trigger_enabled = 1;
@@ -123,6 +124,7 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
             .twt_id = CONFIG_EXAMPLE_ITWT_ID,
             .flow_type = flow_type_announced ? 0 : 1,
             .min_wake_dura = CONFIG_EXAMPLE_ITWT_MIN_WAKE_DURA,
+            .wake_duration_unit = CONFIG_EXAMPLE_ITWT_WAKE_DURATION_UNIT,
             .wake_invl_expn = CONFIG_EXAMPLE_ITWT_WAKE_INVL_EXPN,
             .wake_invl_mant = CONFIG_EXAMPLE_ITWT_WAKE_INVL_MANT,
             .trigger = trigger_enabled,
@@ -137,7 +139,7 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-static void connect_handler(void *arg, esp_event_base_t event_base,
+static void start_handler(void *arg, esp_event_base_t event_base,
                             int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "sta connect to %s", DEFAULT_SSID);
@@ -156,14 +158,23 @@ static void itwt_setup_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
     wifi_event_sta_itwt_setup_t *setup = (wifi_event_sta_itwt_setup_t *) event_data;
-    if (setup->config.setup_cmd == TWT_ACCEPT) {
+    if (setup->status == ITWT_SETUP_SUCCESS) {
         /* TWT Wake Interval = TWT Wake Interval Mantissa * (2 ^ TWT Wake Interval Exponent) */
-        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, flow_id:%d, %s, %s, wake_dura:%d, wake_invl_e:%d, wake_invl_m:%d", setup->config.twt_id,
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, flow_id:%d, %s, %s, wake_dura:%d, wake_dura_unit:%d, wake_invl_e:%d, wake_invl_m:%d", setup->config.twt_id,
                 setup->config.flow_id, setup->config.trigger ? "trigger-enabled" : "non-trigger-enabled", setup->config.flow_type ? "unannounced" : "announced",
-                setup->config.min_wake_dura, setup->config.wake_invl_expn, setup->config.wake_invl_mant);
-        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>wake duration:%d us, service period:%d us", setup->config.min_wake_dura << 8, setup->config.wake_invl_mant << setup->config.wake_invl_expn);
+                setup->config.min_wake_dura, setup->config.wake_duration_unit, setup->config.wake_invl_expn, setup->config.wake_invl_mant);
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_SETUP>target wake time:%lld, wake duration:%d us, service period:%d us", setup->target_wake_time, setup->config.min_wake_dura << (setup->config.wake_duration_unit == 1 ? 10 : 8),
+                setup->config.wake_invl_mant << setup->config.wake_invl_expn);
     } else {
-        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, unexpected setup command:%d", setup->config.twt_id, setup->config.setup_cmd);
+        if (setup->status == ESP_ERR_WIFI_TWT_SETUP_TIMEOUT) {
+            ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, timeout of receiving twt setup response frame", setup->config.twt_id);
+        } else if (setup->status == ESP_ERR_WIFI_TWT_SETUP_TXFAIL) {
+            ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, twt setup frame tx failed, reason: %d", setup->config.twt_id, setup->reason);
+        } else if (setup->status == ESP_ERR_WIFI_TWT_SETUP_REJECT) {
+            ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, twt setup request was rejected, setup cmd: %d", setup->config.twt_id, setup->config.setup_cmd);
+        } else {
+            ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_SETUP>twt_id:%d, twt setup failed, status: %d", setup->config.twt_id, setup->status);
+        }
     }
 }
 
@@ -204,7 +215,7 @@ static void wifi_itwt(void)
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                     WIFI_EVENT_STA_START,
-                    &connect_handler,
+                    &start_handler,
                     NULL,
                     NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,

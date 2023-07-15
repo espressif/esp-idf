@@ -14,6 +14,10 @@ ESP-IDF provides ``console`` component, which includes building blocks needed to
 
   These features can be used together or independently. For example, it is possible to use line editing and command registration features, but use ``getopt`` or custom code for argument parsing, instead of `argtable3`_. Likewise, it is possible to use simpler means of command input (such as ``fgets``) together with the rest of the means for command splitting and argument parsing.
 
+.. note::
+
+  When using a console application on a chip that supports a hardware USB serial interface, we suggest to disable the secondary serial console output. The secondary output will be output-only and consequently does not make sense in an interactive application.
+
 Line editing
 ------------
 

@@ -14,6 +14,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "esp_assert.h"
 
 /**
  * @brief UART port number, can be UART_NUM_0 ~ (UART_NUM_MAX -1).
@@ -30,7 +31,7 @@ typedef enum {
     UART_NUM_MAX,                       /*!< UART port max */
 } uart_port_t;
 
-_Static_assert(UART_NUM_MAX == SOC_UART_NUM, "UART_NUM_MAX does not match SOC_UART_NUM");
+ESP_STATIC_ASSERT(UART_NUM_MAX == SOC_UART_NUM, "UART_NUM_MAX does not match SOC_UART_NUM");
 
 /**
  * @brief UART mode selection

@@ -8,5 +8,8 @@ updates:
       - directory: ".gitlab/dangerjs"
         patterns:
           - "package-lock.json"
+      - directory: ".github/dangerjs"
+        patterns:
+          - "package-lock.json"
     # Disable "version updates" (keep only "security updates")
     open-pull-requests-limit: 0

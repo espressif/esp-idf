@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,15 +13,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief The state handler to be called when OpenThread state changes
- *
- * @param[in] changed_flags The changed Openthread states
- * @param[in] ctx           A pointer to application-specific context
- *
- */
-void esp_openthread_netif_glue_state_callback(otChangedFlags changed_flags, void *ctx);
 
 /**
  * @brief This function updates the netif fds and timeouts to the main loop.

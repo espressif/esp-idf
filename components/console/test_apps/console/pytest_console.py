@@ -7,14 +7,12 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.nightly_run
 def test_console(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.nightly_run
 def test_console_repl(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"esp console repl test"')

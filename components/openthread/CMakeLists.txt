@@ -58,6 +58,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/examples/apps/ncp")
 
         list(APPEND exclude_srcs
+            "src/port/esp_openthread_state.c"
             "openthread/examples/apps/ncp/main.c"
             "openthread/src/core/api/backbone_router_api.cpp"
             "openthread/src/core/api/child_supervision_api.cpp"
@@ -120,7 +121,8 @@ if(CONFIG_OPENTHREAD_ENABLED)
             )
     elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
         list(APPEND exclude_srcs
-            "src/port/esp_openthread_radio.c")
+            "src/port/esp_openthread_radio.c"
+            "src/port/esp_openthread_sleep.c")
     endif()
 
     if(CONFIG_OPENTHREAD_BORDER_ROUTER)
@@ -137,6 +139,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
     if(NOT CONFIG_OPENTHREAD_DNS64_CLIENT)
         list(APPEND exclude_srcs
             "src/esp_openthread_dns64.c")
+    endif()
+
+    if(NOT CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+        list(APPEND exclude_srcs
+            "src/port/esp_openthread_sleep.c")
     endif()
 
     if(CONFIG_OPENTHREAD_FTD)

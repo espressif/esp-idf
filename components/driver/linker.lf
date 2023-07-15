@@ -1,21 +1,11 @@
 [mapping:driver]
 archive: libdriver.a
 entries:
-    if GPTIMER_CTRL_FUNC_IN_IRAM = y:
-        gptimer: gptimer_set_raw_count (noflash)
-        gptimer: gptimer_get_raw_count (noflash)
-        gptimer: gptimer_get_captured_count (noflash)
-        gptimer: gptimer_set_alarm_action (noflash)
-        gptimer: gptimer_start (noflash)
-        gptimer: gptimer_stop (noflash)
     if PCNT_CTRL_FUNC_IN_IRAM = y:
         pulse_cnt: pcnt_unit_start (noflash)
         pulse_cnt: pcnt_unit_stop (noflash)
         pulse_cnt: pcnt_unit_clear_count (noflash)
         pulse_cnt: pcnt_unit_get_count (noflash)
-    if GPIO_CTRL_FUNC_IN_IRAM = y:
-        gpio: gpio_set_level (noflash)
-        gpio: gpio_intr_disable (noflash)
     if SDM_CTRL_FUNC_IN_IRAM = y:
         sdm: sdm_channel_set_pulse_density (noflash)
     if ANA_CMPR_CTRL_FUNC_IN_IRAM = y:

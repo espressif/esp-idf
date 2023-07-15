@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,9 +104,6 @@ extern "C" {
     }
 #endif /* CONFIG_PPP_SUPPORT */
 
-
-
-
 #define ESP_NETIF_INHERENT_DEFAULT_BR() \
     {   \
         .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_DEFAULT_ARP_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED | ESP_NETIF_FLAG_IS_BRIDGE), \
@@ -114,8 +111,21 @@ extern "C" {
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_ETH_GOT_IP, \
         .lost_ip_event = IP_EVENT_ETH_LOST_IP, \
-        .if_key = "BR", \
-        .if_desc = "br", \
+        .if_key = "BR0", \
+        .if_desc = "br0", \
+        .route_prio = 70, \
+        .bridge_info = NULL \
+    }
+
+#define ESP_NETIF_INHERENT_DEFAULT_BR_DHCPS() \
+    {   \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_IS_BRIDGE), \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        .ip_info = &_g_esp_netif_soft_ap_ip, \
+        .get_ip_event = 0, \
+        .lost_ip_event = 0, \
+        .if_key = "BR1", \
+        .if_desc = "br1", \
         .route_prio = 70, \
         .bridge_info = NULL \
     }

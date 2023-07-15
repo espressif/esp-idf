@@ -90,10 +90,10 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
     switch (hw->conf0.tick_ref_always_on) {
         default:
         case 0:
-            *source_clk = UART_SCLK_REF_TICK;
+            *source_clk = (soc_module_clk_t)UART_SCLK_REF_TICK;
             break;
         case 1:
-            *source_clk = UART_SCLK_APB;
+            *source_clk = (soc_module_clk_t)UART_SCLK_APB;
             break;
     }
 }

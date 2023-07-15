@@ -32,9 +32,8 @@ typedef enum sleep_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_WIFI_MAC     = BIT(10),
     SLEEP_RETENTION_MODULE_WIFI_BB      = BIT(11),
     SLEEP_RETENTION_MODULE_BLE_MAC      = BIT(12),
-    SLEEP_RETENTION_MODULE_BLE_BB       = BIT(13),
+    SLEEP_RETENTION_MODULE_BT_BB        = BIT(13),
     SLEEP_RETENTION_MODULE_802154_MAC   = BIT(14),
-    SLEEP_RETENTION_MODULE_802154_BB    = BIT(15),
 
     /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
      * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */

@@ -165,6 +165,7 @@ typedef struct {
     bool show_hidden;            /**< enable to scan AP whose SSID is hidden */
     wifi_scan_type_t scan_type;  /**< scan type, active or passive */
     wifi_scan_time_t scan_time;  /**< scan time per channel */
+    uint8_t home_chan_dwell_time;/**< time spent at home channel between scanning consecutive channels.*/
 } wifi_scan_config_t;
 
 typedef enum {
@@ -968,6 +969,7 @@ typedef struct {
     uint8_t mac[6];           /**< MAC address of the station disconnects to soft-AP */
     uint8_t aid;              /**< the aid that soft-AP gave to the station disconnects to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
+    uint8_t reason;           /**< reason of disconnection */
 } wifi_event_ap_stadisconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
@@ -1063,6 +1065,7 @@ typedef struct {
     uint8_t subscribe_id;       /**< Subscribe Service Identifier */
     uint8_t publish_id;         /**< Publish Service Identifier */
     uint8_t pub_if_mac[6];      /**< NAN Interface MAC of the Publisher */
+    bool update_pub_id;         /**< Indicates whether publisher's service ID needs to be updated */
 } wifi_event_nan_svc_match_t;
 
 /** Argument structure for WIFI_EVENT_NAN_REPLIED event */

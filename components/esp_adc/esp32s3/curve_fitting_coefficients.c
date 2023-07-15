@@ -5,7 +5,11 @@
  */
 
 #include <stdint.h>
+#include "hal/adc_types.h"
 #include "../curve_fitting_coefficients.h"
+
+#define COEFF_GROUP_NUM    4
+#define TERM_MAX           5
 
 /**
  * @note Error Calculation
@@ -50,6 +54,10 @@ const static int32_t adc2_error_sign[COEFF_GROUP_NUM][TERM_MAX] = {
 void curve_fitting_get_second_step_coeff(const adc_cali_curve_fitting_config_t *config, cali_chars_second_step_t *ctx)
 {
     ctx->term_num = (config->atten == 3) ? 5 : 3;
-    ctx->coeff = (config->unit_id == ADC_UNIT_1) ? &adc1_error_coef_atten : &adc2_error_coef_atten;
-    ctx->sign = (config->unit_id == ADC_UNIT_1) ? &adc1_error_sign : &adc2_error_sign;
+    ctx->coeff = config->unit_id == ADC_UNIT_1 ?
+                 adc1_error_coef_atten[config->atten] :
+                 adc2_error_coef_atten[config->atten];
+    ctx->sign = config->unit_id == ADC_UNIT_1 ?
+                adc1_error_sign[config->atten] :
+                adc2_error_sign[config->atten];
 }

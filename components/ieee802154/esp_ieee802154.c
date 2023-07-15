@@ -21,7 +21,6 @@
 
 esp_err_t esp_ieee802154_enable(void)
 {
-
     ieee802154_enable();
     esp_phy_enable();
     esp_btbb_enable();
@@ -281,6 +280,9 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
         return ESP_IEEE802154_RADIO_DISABLE;
 
     case IEEE802154_STATE_IDLE:
+        return ESP_IEEE802154_RADIO_IDLE;
+
+    case IEEE802154_STATE_SLEEP:
         return ESP_IEEE802154_RADIO_SLEEP;
 
     case IEEE802154_STATE_RX:
@@ -332,6 +334,16 @@ uint8_t esp_ieee802154_get_recent_lqi(void)
     return ieee802154_get_recent_lqi();
 }
 
+void esp_ieee802154_enter_sleep(void)
+{
+    ieee802154_enter_sleep();
+}
+
+void esp_ieee802154_wakeup(void)
+{
+    ieee802154_wakeup();
+}
+
 __attribute__((weak)) void esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
 
@@ -380,4 +392,14 @@ __attribute__((weak)) void esp_ieee802154_ed_failed(uint16_t error)
 __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame)
 {
     return ESP_OK;
+}
+
+__attribute__((weak)) void esp_ieee802154_timer0_done(void)
+{
+
+}
+
+__attribute__((weak)) void esp_ieee802154_timer1_done(void)
+{
+
 }

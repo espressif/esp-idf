@@ -32,6 +32,8 @@
 #define MACADDR_EQUAL(a1, a2)   (memcmp(a1, a2, MACADDR_LEN))
 #define MACADDR_COPY(dst, src)  (memcpy(dst, src, MACADDR_LEN))
 #define NAN_DW_INTVL_MS 524     /* NAN DW interval (512 TU's ~= 524 mSec) */
+#define NAN_NDP_RESP_TIMEOUT_DW 4
+#define NAN_NDP_RESP_TIMEOUT    NAN_NDP_RESP_TIMEOUT_DW*NAN_DW_INTVL_MS
 
 /* Global Variables */
 static const char *TAG = "nan_app";
@@ -178,6 +180,16 @@ static struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_
         }
     }
     return p_peer_svc;
+}
+
+static bool nan_update_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
+{
+    struct peer_svc_info *peer_info = nan_find_peer_svc(own_svc_id, 0, peer_nmi);
+    if (peer_info) {
+        peer_info->svc_id = peer_svc_id;
+        return true;
+    }
+    return false;
 }
 
 static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
@@ -388,6 +400,11 @@ static void nan_fill_params_from_event(void *evt_data, uint8_t event)
     case WIFI_EVENT_NAN_SVC_MATCH: {
         wifi_event_nan_svc_match_t *evt = (wifi_event_nan_svc_match_t *)evt_data;
 
+        if (evt->update_pub_id) {
+            if (nan_update_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac)) {
+                break;
+            }
+        }
         if (!nan_find_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac)) {
             nan_record_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac);
         }
@@ -867,7 +884,7 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
     nan_record_new_ndl(ndp_id, req->pub_id, req->peer_mac, ESP_WIFI_NDP_ROLE_INITIATOR);
     ESP_LOGD(TAG, "Requested NDP with "MACSTR" [NDP ID - %d]", MAC2STR(req->peer_mac), ndp_id);
 
-    EventBits_t bits = os_event_group_wait_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED, pdFALSE, pdFALSE, pdMS_TO_TICKS(2*NAN_DW_INTVL_MS));
+    EventBits_t bits = os_event_group_wait_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED, pdFALSE, pdFALSE, pdMS_TO_TICKS(NAN_NDP_RESP_TIMEOUT));
     if (bits & NDP_ACCEPTED) {
         os_event_group_clear_bits(nan_event_group, NDP_ACCEPTED);
         return ndp_id;

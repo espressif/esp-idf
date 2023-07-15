@@ -146,9 +146,22 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         coredump_to_flash = coredump_to_flash_config.rstrip().endswith('y') if coredump_to_flash_config else False
 
         prog = os.path.join(project_desc['build_dir'], project_desc['app_elf'])
-        args.port = args.port or get_default_serial_port()
 
-        espcoredump_kwargs = dict()
+        espcoredump_kwargs: Dict[str, Any] = dict()
+        core_format = None
+
+        if core:
+            espcoredump_kwargs['core'] = core
+            espcoredump_kwargs['chip'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET')
+            core_format = get_core_file_format(core)
+        elif coredump_to_flash:
+            #  If the core dump is read from flash, we don't need to specify the --core-format argument at all.
+            #  The format will be determined automatically
+            args.port = args.port or get_default_serial_port()
+        else:
+            print('Path to core dump file is not provided. '
+                  "Core dump can't be read from flash since this option is not enabled in menuconfig")
+            sys.exit(1)
 
         espcoredump_kwargs['port'] = args.port
         espcoredump_kwargs['baud'] = args.baud
@@ -160,20 +173,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if extra_gdbinit_file:
             espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
 
-        core_format = None
-
-        if core:
-            espcoredump_kwargs['core'] = core
-            espcoredump_kwargs['chip'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET')
-            core_format = get_core_file_format(core)
-        elif coredump_to_flash:
-            #  If the core dump is read from flash, we don't need to specify the --core-format argument at all.
-            #  The format will be determined automatically
-            pass
-        else:
-            print('Path to core dump file is not provided. '
-                  "Core dump can't be read from flash since this option is not enabled in menuconfig")
-            sys.exit(1)
+        espcoredump_kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_PARTITION_TABLE_OFFSET')
 
         if core_format:
             espcoredump_kwargs['core_format'] = core_format
@@ -183,7 +183,18 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         espcoredump_kwargs['prog'] = prog
 
-        return CoreDump(**espcoredump_kwargs)
+        # compatibility check for esp-coredump < 1.5.2
+        try:
+            coredump = CoreDump(**espcoredump_kwargs)
+        except TypeError as e:
+            # 'parttable_off' was added in esp-coredump 1.5.2
+            # remove argument and retry without it
+            if 'parttable_off' in str(e):
+                espcoredump_kwargs.pop('parttable_off')
+                coredump = CoreDump(**espcoredump_kwargs)
+            else:
+                raise
+        return coredump
 
     def get_core_file_format(core_file: str) -> str:
         bin_v1 = 1

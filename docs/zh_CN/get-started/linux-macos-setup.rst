@@ -25,7 +25,7 @@ Linux 和 macOS 平台工具链的标准设置
 第一步：安装准备
 =============================
 
-为了在 {IDF_TARGET_NAME} 中使用 ESP-IDF，需要根据操作系统安装一些软件包。以下安装指南可协助您安装 Linux 和 macOS 的系统上所有需要的软件包。
+为了在 {IDF_TARGET_NAME} 中使用 ESP-IDF，需要根据操作系统安装一些软件包。可以参考以下安装指南，安装 Linux 和 macOS 的系统上所有需要的软件包。
 
 Linux 用户
 ~~~~~~~~~~~~~~~~~~~~
@@ -48,7 +48,7 @@ Linux 用户
 
 .. note::
     - 使用 ESP-IDF 需要 CMake 3.16 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
-    - 如果上述列表中没有您使用的系统，请参考您所用系统的相关文档，查看安装软件包所用的命令。
+    - 如果上述列表中没有当前所用系统，请参考所用系统的相关文档，查看安装软件包所用的命令。
 
 macOS 用户
 ~~~~~~~~~~~~~~~
@@ -57,11 +57,11 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
 - 安装 CMake 和 Ninja 编译工具：
 
-    - 若有 HomeBrew_，您可以运行::
+    - 若有 HomeBrew_，可以运行::
 
         brew install cmake ninja dfu-util
 
-    - 若有 MacPorts_，您可以运行::
+    - 若有 MacPorts_，可以运行::
 
         sudo port install cmake ninja dfu-util
 
@@ -70,7 +70,7 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 - 强烈建议同时安装 ccache_ 以获得更快的编译速度。如有 HomeBrew_，可通过 MacPorts_ 上的 ``brew install ccache`` 或 ``sudo port install ccache`` 完成安装。
 
 .. note::
-    如您在上述任何步骤中遇到以下错误::
+    如在上述任何步骤中遇到以下错误::
 
      xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
 
@@ -79,7 +79,7 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 Apple M1 用户
 ~~~~~~~~~~~~~~~~~~
 
-如果您使用的是 Apple M1 系列且看到如下错误提示::
+如果使用的是 Apple M1 系列且看到如下错误提示::
 
       WARNING: directory for tool xtensa-esp32-elf version esp-2021r2-patch3-8.4.0 is present, but tool was not found
       ERROR: tool xtensa-esp32-elf has no installed versions. Please run 'install.sh' to install it.
@@ -88,7 +88,7 @@ Apple M1 用户
 
       zsh: bad CPU type in executable: ~/.espressif/tools/xtensa-esp32-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
 
-您需要运行如下命令来安装 Apple Rosetta 2：
+运行如下命令，安装 Apple Rosetta 2：
 
 .. code-block:: bash
 
@@ -98,11 +98,11 @@ Apple M1 用户
 安装 Python 3
 ---------------------------------------------
 
-`Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python 2.7。执行以下命令来检查您当前使用的 Python 版本::
+`Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python 2.7。执行以下命令来检查当前使用的 Python 版本::
 
   python --version
 
-如果输出结果是 ``Python 2.7.17``，则代表您的默认解析器是 Python 2.7。这时需要您运行以下命令检查电脑上是否已经安装过 Python 3::
+如果输出结果是 ``Python 2.7.17``，则代表默认解析器是 Python 2.7。这时需要运行以下命令检查电脑上是否已经安装过 Python 3::
 
   python3 --version
 
@@ -125,7 +125,7 @@ Apple M1 用户
 
 在围绕 {IDF_TARGET_NAME} 构建应用程序之前，请先获取乐鑫提供的软件库文件 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_。
 
-获取 ESP-IDF 的本地副本：打开终端，切换到您要保存 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库。针对不同操作系统的详细步骤，请见下文。
+获取 ESP-IDF 的本地副本：打开终端，切换到要保存 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库。针对不同操作系统的详细步骤，请见下文。
 
 打开终端，运行以下命令：
 
@@ -140,7 +140,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 第三步：设置工具
 =================================
 
-除了 ESP-IDF 本身，您还需要为支持 {IDF_TARGET_NAME} 的项目安装 ESP-IDF 使用的各种工具，比如编译器、调试器、Python 包等。
+除了 ESP-IDF 本身，还需要为支持 {IDF_TARGET_NAME} 的项目安装 ESP-IDF 使用的各种工具，比如编译器、调试器、Python 包等。
 
 .. code-block:: bash
 
@@ -183,11 +183,11 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
     ./install.fish all
 
 .. note::
-    对于 macOS 用户，如您在上述任何步骤中遇到以下错误::
+    对于 macOS 用户，如在上述任何步骤中遇到以下错误::
 
      <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:xxx)
 
-    可运行您电脑 Python 文件夹中的 ``Install Certificates.command`` 安装证书。了解更多信息，请参考 `安装 ESP-IDF 工具时出现的下载错误 <https://github.com/espressif/esp-idf/issues/4775>`_。
+    可运行电脑 Python 文件夹中的 ``Install Certificates.command`` 安装证书。了解更多信息，请参考 `安装 ESP-IDF 工具时出现的下载错误 <https://github.com/espressif/esp-idf/issues/4775>`_。
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,16 +207,16 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 自定义工具安装路径
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-本步骤中介绍的脚本将 ESP-IDF 所需的编译工具默认安装在用户的根目录中，即 Linux 系统中的 ``$HOME/.espressif`` 目录。您可以选择将工具安装到其他目录中，但请在运行安装脚本前，重新设置环境变量 ``IDF_TOOLS_PATH``。注意，请确保您的用户账号已经具备了读写该路径的权限。
+本步骤中介绍的脚本将 ESP-IDF 所需的编译工具默认安装在用户的根目录中，即 Linux 系统中的 ``$HOME/.espressif`` 目录。可以选择将工具安装到其他目录中，但请在运行安装脚本前，重新设置环境变量 ``IDF_TOOLS_PATH``。注意，请确保用户账号已经具备了读写该路径的权限。
 
-如果修改了 ``IDF_TOOLS_PATH`` 变量，请确保该变量在每次执行安装脚本 (``install.bat``、``install.ps1`` 或 ``install.sh``) 和导出脚本 (``export.bat``、``export.ps1`` 或 ``export.sh``) 均保持一致。
+如果修改了 ``IDF_TOOLS_PATH`` 变量，请确保该变量在每次执行安装脚本（``install.bat``、``install.ps1`` 或 ``install.sh``）和导出脚本（``export.bat``、``export.ps1`` 或 ``export.sh``）均保持一致。
 
 .. _get-started-set-up-env:
 
 第四步：设置环境变量
 =======================================
 
-此时，您刚刚安装的工具尚未添加至 PATH 环境变量，无法通过“命令窗口”使用这些工具。因此，必须设置一些环境变量。这可以通过 ESP-IDF 提供的另一个脚本进行设置。
+此时，刚刚安装的工具尚未添加至 PATH 环境变量，无法通过“命令窗口”使用这些工具。因此，必须设置一些环境变量。这可以通过 ESP-IDF 提供的另一个脚本进行设置。
 
 请在需要运行 ESP-IDF 的终端窗口运行以下命令：
 
@@ -232,7 +232,7 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 
 注意，命令开始的 "." 与路径之间应有一个空格！
 
-如果您需要经常运行 ESP-IDF，您可以为执行 ``export.sh`` 创建一个别名，具体步骤如下：
+如果需要经常运行 ESP-IDF，可以为执行 ``export.sh`` 创建一个别名，具体步骤如下：
 
 1. 复制并粘贴以下命令到 shell 配置文件中（``.profile``、``.bashrc``、``.zprofile`` 等）
 
@@ -242,9 +242,9 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 
 2. 通过重启终端窗口或运行 ``source [path to profile]``，如 ``source ~/.bashrc`` 来刷新配置文件。
 
-现在您可以在任何终端窗口中运行 ``get_idf`` 来设置或刷新 esp-idf 环境。
+现在可以在任何终端窗口中运行 ``get_idf`` 来设置或刷新 ESP-IDF 环境。
 
-不建议直接将 ``export.sh`` 添加到 shell 的配置文件。这样做会导致在每个终端会话中都激活 IDF 虚拟环境（包括无需使用 IDF 的会话）。这违背了使用虚拟环境的目的，还可能影响其他软件的使用。
+不建议直接将 ``export.sh`` 添加到 shell 的配置文件。这样做会导致在每个终端会话中都激活 IDF 虚拟环境（包括无需使用 ESP-IDF 的会话）。这违背了使用虚拟环境的目的，还可能影响其他软件的使用。
 
 .. _get-started-start-a-project:
 .. _get-started-build:
@@ -261,11 +261,11 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 建议：更新 ESP-IDF
 ======================
 
-乐鑫会不时推出新版本的 ESP-IDF，修复 bug 或提供新的功能。请注意，EESP-IDF 的每个主要版本和次要版本都有相应的支持期限。支持期限满后，版本停止更新维护，用户可将项目升级到最新的 ESP-IDF 版本。更多关于支持期限的信息，请参考 :doc:`ESP-IDF 版本 <../versions>`。
+乐鑫会不时推出新版本的 ESP-IDF，修复 bug 或提供新的功能。请注意，ESP-IDF 的每个主要版本和次要版本都有相应的支持期限。支持期限满后，版本停止更新维护，用户可将项目升级到最新的 ESP-IDF 版本。更多关于支持期限的信息，请参考 :doc:`ESP-IDF 版本 <../versions>`。
 
-因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
+因此，在使用时，也应注意更新本地版本。最简单的方法是：直接删除本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
 
-另一种方法是仅更新变更的部分。具体方式，请前往 :ref:`更新 ESP-IDF <updating>` 章节查看。具体更新步骤会根据您使用的 ESP-IDF 版本有所不同。
+另一种方法是仅更新变更的部分，具体方式请前往 :ref:`更新 ESP-IDF <updating>` 章节查看。具体更新步骤会根据使用的 ESP-IDF 版本有所不同。
 
 注意，更新完成后，请再次运行安装脚本，以防新版 ESP-IDF 所需的工具也有所更新。具体请参考 :ref:`get-started-set-up-tools`。
 

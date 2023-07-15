@@ -926,7 +926,7 @@ typedef union {
 } lp_iomux_lp_pad_hys_reg_t;
 
 
-typedef struct {
+typedef struct lp_iomux_dev_t {
     volatile lp_iomux_clk_en_reg_t clk_en;
     volatile lp_iomux_ver_date_reg_t ver_date;
     volatile lp_iomux_pad0_reg_t pad0;

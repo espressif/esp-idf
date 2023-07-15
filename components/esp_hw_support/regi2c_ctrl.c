@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +79,7 @@ void IRAM_ATTR regi2c_analog_cali_reg_write(void)
         regi2c_ctrl_write_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i, reg_val[i]);
     }
 }
-
+#endif   //#if ADC_CALI_PD_WORKAROUND
 
 /**
  * REGI2C_SARADC reference count
@@ -109,6 +109,3 @@ void regi2c_saradc_disable(void)
     regi2c_exit_critical();
 
 }
-
-
-#endif   //#if ADC_CALI_PD_WORKAROUND

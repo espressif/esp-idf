@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,7 @@ typedef struct {
 typedef struct {
     gdma_trigger_peripheral_t periph; /*!< Target peripheral which will trigger DMA operations */
     int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `soc/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UHCI0 */
+    int bus_id;                       /*!< Which system bus should the DMA attached to */
 } gdma_trigger_t;
 
 /**
@@ -107,7 +108,7 @@ typedef struct {
  *
  */
 #define GDMA_MAKE_TRIGGER(peri, id) \
-    (gdma_trigger_t) { .periph = peri, .instance_id = SOC_##peri##id }
+    (gdma_trigger_t) { .periph = peri, .instance_id = SOC_##peri##id, .bus_id = SOC_##peri##id##_BUS }
 
 /**
  * @brief A collection of strategy item that each GDMA channel could apply
@@ -118,20 +119,39 @@ typedef struct {
     bool auto_update_desc; /*!< If set / clear, DMA channel enables / disables hardware to update descriptor automatically (TX channel only) */
 } gdma_strategy_config_t;
 
+/** @cond */
+esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
+/** @endcond */
+
 /**
- * @brief Create GDMA channel
+ * @brief Create AHB-GDMA channel
  * @note This API won't install interrupt service for the allocated channel.
  *       If interrupt service is needed, user has to register GDMA event callback by `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`.
  *
  * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
- * @param[out] ret_chan Returnned channel handle
+ * @param[out] ret_chan Returned channel handle
  * @return
  *      - ESP_OK: Create DMA channel successfully
  *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
  *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
  *      - ESP_FAIL: Create DMA channel failed because of other error
  */
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
+esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
+
+/**
+ * @brief Create AXI-GDMA channel
+ * @note This API won't install interrupt service for the allocated channel.
+ *       If interrupt service is needed, user has to register GDMA event callback by `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`.
+ *
+ * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
+ * @param[out] ret_chan Returned channel handle
+ * @return
+ *      - ESP_OK: Create DMA channel successfully
+ *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
+ *      - ESP_FAIL: Create DMA channel failed because of other error
+ */
+esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
 
 /**
  * @brief Connect GDMA channel to trigger peripheral

@@ -19,6 +19,10 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
     bool
     default y
@@ -88,6 +92,10 @@ config SOC_BOD_SUPPORTED
     default y
 
 config SOC_CLK_TREE_SUPPORTED
+    bool
+    default y
+
+config SOC_ASSIST_DEBUG_SUPPORTED
     bool
     default y
 
@@ -211,17 +219,17 @@ config SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK
     bool
     default y
 
-config SOC_GDMA_GROUPS
+config SOC_AHB_GDMA_VERSION
     int
     default 1
 
-config SOC_GDMA_PAIRS_PER_GROUP
+config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 1
 
-config SOC_GDMA_TX_RX_SHARE_INTERRUPT
-    bool
-    default y
+config SOC_GDMA_PAIRS_PER_GROUP_MAX
+    int
+    default 1
 
 config SOC_GPIO_PORT
     int
@@ -603,6 +611,10 @@ config SOC_EXTERNAL_COEX_ADVANCE
     bool
     default y
 
+config SOC_EXTERNAL_COEX_LEADER_TX_LINE
+    bool
+    default n
+
 config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
@@ -644,6 +656,10 @@ config SOC_CLK_OSC_SLOW_SUPPORTED
     default y
 
 config SOC_WIFI_HW_TSF
+    bool
+    default y
+
+config SOC_WIFI_FTM_SUPPORT
     bool
     default y
 

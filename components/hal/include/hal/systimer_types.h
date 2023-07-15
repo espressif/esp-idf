@@ -18,6 +18,7 @@ extern "C" {
  * @brief The structure of the counter value in systimer
  *
  */
+#if SOC_SYSTIMER_SUPPORTED
 typedef struct {
     union {
         struct {
@@ -31,9 +32,12 @@ typedef struct {
     };
 } systimer_counter_value_t;
 
+
 /** @cond */
 ESP_STATIC_ASSERT(sizeof(systimer_counter_value_t) == 8, "systimer_counter_value_t should occupy 8 bytes in memory");
 /** @endcond */
+
+#endif
 
 /**
  * @brief systimer alarm mode

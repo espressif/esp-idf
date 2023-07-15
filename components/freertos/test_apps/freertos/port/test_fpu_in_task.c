@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -183,6 +183,69 @@ TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         vTaskDelay(10); // Short delay to allow task memory to be freed
     }
+}
+
+typedef struct {
+    bool negative;
+    TaskHandle_t main;
+} ParamsFPU;
+
+
+/**
+ * @brief Function performing some simple calculation using several FPU registers.
+ *        The goal is to be preempted by a task that also uses the FPU on the same core.
+ */
+void fpu_calculation(void* arg)
+{
+    ParamsFPU* p = (ParamsFPU*) arg;
+    const bool negative = p->negative;
+    const float init = negative ? -1.f : 1.f;
+    float f = init;
+
+    for(int i = 0; i < 10; i++)
+    {
+        /* The following calculation doesn't really have any meaning, we try to use several FPU registers and operations */
+        float delta = negative ? -1.1f : 1.1f;
+        for (int i = 0; i < 1000; i++) {
+            f += delta;
+            delta += negative ? -0.1f : 0.1f;
+        }
+        /* Give some time to the other to interrupt us before checking `f` value */
+        esp_rom_delay_us(1000);
+
+        /**
+         * If the FPU context was not saved properly by FreeRTOS, our value `f` will not have to correct sign!
+         * It'll have the sign of the other tasks' `f` value.
+         * Use assert to make sure the sign is correct. Using TEST_ASSERT_TRUE triggers a stack overflow.
+         */
+        assert( (negative && f < 0.0f) || (!negative && f > 0.0f) );
+        f = init;
+
+        /* Give the hand back to FreeRTOS to avoid any watchdog */
+        vTaskDelay(2);
+    }
+
+    xTaskNotifyGive(p->main);
+    vTaskDelete(NULL);
+}
+
+
+
+TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]")
+{
+    /* Create two tasks that are on the same core and use the same FPU */
+    TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
+    TaskHandle_t tasks[2];
+    ParamsFPU params[2] = {
+        { .negative = false, .main = unity_task_handle },
+        { .negative = true,  .main = unity_task_handle },
+    };
+
+    xTaskCreatePinnedToCore(fpu_calculation, "Task1", 2048, params + 0, UNITY_FREERTOS_PRIORITY + 1, &tasks[0], 1);
+    xTaskCreatePinnedToCore(fpu_calculation, "Task2", 2048, params + 1, UNITY_FREERTOS_PRIORITY + 2, &tasks[2], 1);
+
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
 #endif // configNUM_CORES > 1

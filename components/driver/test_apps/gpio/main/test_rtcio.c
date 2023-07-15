@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,12 +16,6 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/rtc_io_periph.h"
-
-#define RTCIO_CHECK(condition) TEST_ASSERT_MESSAGE((condition == ESP_OK), "ret is not ESP_OK")
-#define RTCIO_VERIFY(condition, msg) TEST_ASSERT_MESSAGE((condition), msg)
-
-#define TEST_COUNT 10
-static const char *TAG = "rtcio_test";
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 // The input-only rtcio pins do not have pull-up/down resistors (not support pull-up/down)
@@ -117,7 +111,26 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_6,    //GPIO6
     GPIO_NUM_7,    //GPIO7
 };
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define TEST_GPIO_PIN_COUNT 8
+const int s_test_map[TEST_GPIO_PIN_COUNT] = {
+    GPIO_NUM_7,    //GPIO7
+    GPIO_NUM_8,    //GPIO8
+    GPIO_NUM_9,    //GPIO9
+    GPIO_NUM_10,   //GPIO10
+    GPIO_NUM_11,   //GPIO11
+    GPIO_NUM_12,   //GPIO12
+    GPIO_NUM_13,   //GPIO13
+    GPIO_NUM_14,   //GPIO14
+};
 #endif
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+static const char *TAG = "rtcio_test";
+
+#define RTCIO_CHECK(condition) TEST_ASSERT_MESSAGE((condition == ESP_OK), "ret is not ESP_OK")
+
+#define TEST_COUNT 10
 
 /*
  * Test output/input function.
@@ -325,10 +338,13 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
     }
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
+#endif //SOC_RTCIO_HOLD_SUPPORTED
+#endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
+#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
-// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5) these pads' default configuration is low level
+// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5, H2: IO12) these pads' default configuration is low level
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
 
 static void rtcio_deep_sleep_hold_test_first_stage(void)
@@ -374,4 +390,4 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
 TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
                          rtcio_deep_sleep_hold_test_first_stage,
                          rtcio_deep_sleep_hold_test_second_stage)
-#endif //SOC_RTCIO_HOLD_SUPPORTED
+#endif

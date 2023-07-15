@@ -237,7 +237,7 @@ Configuring IOs (Deep-sleep only)
 
 Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled by default. If an external circuit drives this pin in Deep-sleep mode, current consumption may increase due to current flowing through these pullups and pulldowns.
 
-.. only:: SOC_RTCIO_HOLD_SUPPORTED
+.. only:: SOC_RTCIO_HOLD_SUPPORTED and SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
     To isolate a pin to prevent extra current draw, call :cpp:func:`rtc_gpio_isolate` function.
 

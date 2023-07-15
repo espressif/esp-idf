@@ -17,13 +17,16 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 
 #include <stdlib.h>
 #include <stddef.h>
+#include "soc/soc_caps.h"
+#if SOC_USB_OTG_SUPPORTED
 #include "soc/usb_dwc_struct.h"
 #include "hal/usb_dwc_ll.h"
+#endif
 #include "hal/usb_types_private.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
-
+#if SOC_USB_OTG_SUPPORTED
 // ------------------ Constants/Configs --------------------
 
 #define USB_DWC_HAL_DMA_MEM_ALIGN              512
@@ -784,6 +787,8 @@ usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal
  * @return usb_dwc_hal_chan_event_t Channel event
  */
 usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj);
+
+#endif
 
 #ifdef __cplusplus
 }

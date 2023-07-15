@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "esp_openthread_dns64.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_platform.h"
+#include "esp_openthread_sleep.h"
+#include "esp_openthread_state.h"
 #include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
@@ -56,6 +58,10 @@ static size_t hex_string_to_binary(const char *hex_string, uint8_t *buf, size_t 
 
 esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 {
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE
+    ESP_RETURN_ON_ERROR(esp_openthread_sleep_init(), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread esp pm_lock");
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
     ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread platform driver");
     esp_openthread_lock_acquire(portMAX_DELAY);
@@ -64,6 +70,10 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
     ESP_RETURN_ON_ERROR(esp_openthread_dns64_client_init(), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread dns64 client");
+#endif
+#if !CONFIG_OPENTHREAD_RADIO
+    ESP_RETURN_ON_ERROR(esp_openthread_state_event_init(esp_openthread_get_instance()), OT_PLAT_LOG_TAG,
+                        "Failed to initialize OpenThread state event");
 #endif
     esp_openthread_lock_release();
 
@@ -154,11 +164,17 @@ esp_err_t esp_openthread_launch_mainloop(void)
             mainloop.timeout.tv_sec = 0;
             mainloop.timeout.tv_usec = 0;
         }
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE
+        esp_openthread_sleep_process();
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
         esp_openthread_lock_release();
 
         if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
                    &mainloop.timeout) >= 0) {
             esp_openthread_lock_acquire(portMAX_DELAY);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE
+            esp_openthread_wakeup_process();
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
             error = esp_openthread_platform_process(instance, &mainloop);
             while (otTaskletsArePending(instance)) {
                 otTaskletsProcess(instance);

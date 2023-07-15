@@ -360,7 +360,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
             assert(io_reg != (intptr_t)NULL);
 
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_PIN_COUNT > 0
             if (rtc_gpio_is_valid_gpio(io_num)) {
                 rtc_gpio_deinit(io_num);
             }

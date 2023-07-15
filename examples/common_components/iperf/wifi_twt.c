@@ -31,12 +31,13 @@ typedef struct {
     struct arg_int *setup;
     struct arg_int *teardown;
     struct arg_int *suspend;
-    struct arg_int *trigger;     //1-trigger-enabled, 0-non-trigger-enabled, setup
-    struct arg_int *flowtype;    //1-unannounced, 0-announced, setup
+    struct arg_int *trigger;      //1-trigger-enabled, 0-non-trigger-enabled, setup
+    struct arg_int *flowtype;     //1-unannounced, 0-announced, setup
     struct arg_int *negtype;
-    struct arg_int *wakeinvlexp; //setup
-    struct arg_int *wakeinvlman; //setup
-    struct arg_int *minwakedur;  //setup
+    struct arg_int *wakeinvlexp;  //setup
+    struct arg_int *wakeduraunit; //1-TU, 0-256us
+    struct arg_int *wakeinvlman;  //setup
+    struct arg_int *minwakedur;   //setup
     struct arg_int *flowid;
     struct arg_int *twtid;
     struct arg_int *setup_timeout_time_ms;
@@ -91,6 +92,12 @@ static int wifi_cmd_itwt(int argc, char **argv)
                 return 1;
             }
         }
+        if (itwt_args.wakeduraunit->count) {
+            if (itwt_args.wakeduraunit->ival[0] < 0 || itwt_args.wakeduraunit->ival[0] > 1) {
+                ESP_LOGE(TAG, "(itwt)expect [0, 1], wake duration unit: %d", itwt_args.wakeduraunit->ival[0]);
+                return 1;
+            }
+        }
         if (itwt_args.twtid->count) {
             if (itwt_args.twtid->ival[0] < 0 || itwt_args.twtid->ival[0] > 32767) {
                 ESP_LOGE(TAG, "(itwt)expect [0, 32767], twt id: %d", itwt_args.twtid->ival[0]);
@@ -109,6 +116,7 @@ static int wifi_cmd_itwt(int argc, char **argv)
             .twt_id = itwt_args.twtid->count ? itwt_args.twtid->ival[0] : 0,
             .flow_type = itwt_args.flowtype->count ? ((itwt_args.flowtype->ival[0] == 0) ? 0 : 1) : 0,
             .min_wake_dura = itwt_args.minwakedur->count ? itwt_args.minwakedur->ival[0] : 255,
+            .wake_duration_unit = itwt_args.wakeduraunit->count ? itwt_args.wakeduraunit->ival[0] : 0,
             .wake_invl_expn = itwt_args.wakeinvlexp->count ? itwt_args.wakeinvlexp->ival[0] : 10,
             .wake_invl_mant = itwt_args.wakeinvlman->count ? itwt_args.wakeinvlman->ival[0] : 512,
             .trigger = itwt_args.trigger->count ? (itwt_args.trigger->ival[0] ? 1 : 0) : 1,
@@ -178,6 +186,7 @@ void register_wifi_itwt(void)
     itwt_args.flowtype = arg_int0("f", NULL, "<flow_type>", "flow type: 0-announced, 1-unannounced");
     itwt_args.negtype = arg_int0("n", NULL, "<neg_type>", "negotiate type");
     itwt_args.minwakedur = arg_int0("d", NULL, "<minwakedur>", "Norminal Min. Wake Duration");
+    itwt_args.wakeduraunit = arg_int0("u", NULL, "<wakeduraunit>", "wake duration unit 0-256us, 1-TU (TU = 1024us)");
     itwt_args.wakeinvlexp = arg_int0("e", NULL, "<wakeinvlexp>", "Wake Interval Exponent");
     itwt_args.wakeinvlman = arg_int0("m", NULL, "<wakeinvlman>", "Wake Interval Mantissa");
     itwt_args.flowid = arg_int0("i", NULL, "<flow_id>", "Flow ID");

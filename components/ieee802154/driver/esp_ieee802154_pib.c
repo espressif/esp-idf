@@ -47,15 +47,15 @@ void ieee802154_pib_init(void)
 
 static uint8_t ieee802154_txpower_convert(int8_t txpower)
 {
-    uint8_t ieee820154_txpower_value = 0;
-    if (txpower > IEEE802154_TXPOWER_VALUE_MAX) {
-        ieee820154_txpower_value = 15;
-    } else if (txpower < IEEE802154_TXPOWER_VALUE_MIN) {
-        ieee820154_txpower_value = 0;
+    uint8_t ieee820154_txpower_index = 0;
+    if (txpower >= IEEE802154_TXPOWER_VALUE_MAX) {
+        ieee820154_txpower_index = 15;
+    } else if (txpower <= IEEE802154_TXPOWER_VALUE_MIN) {
+        ieee820154_txpower_index = IEEE802154_TXPOWER_INDEX_MIN;
     } else {
-        ieee820154_txpower_value = (uint8_t)((txpower - IEEE802154_TXPOWER_VALUE_MIN) / 3);
+        ieee820154_txpower_index = (uint8_t)((txpower - IEEE802154_TXPOWER_VALUE_MIN) / 3) + IEEE802154_TXPOWER_INDEX_MIN;
     }
-    return ieee820154_txpower_value;
+    return ieee820154_txpower_index;
 }
 
 void ieee802154_pib_update(void)

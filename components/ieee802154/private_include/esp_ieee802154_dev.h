@@ -31,6 +31,7 @@ extern "C" {
 typedef enum {
     IEEE802154_STATE_DISABLE,               /*!< IEEE802154 radio state disable */
     IEEE802154_STATE_IDLE,                  /*!< IEEE802154 radio state idle */
+    IEEE802154_STATE_SLEEP,                 /*!< IEEE802154 radio state sleep */
     IEEE802154_STATE_RX,                    /*!< IEEE802154 radio state rx */
     IEEE802154_STATE_TX_ACK,                /*!< IEEE802154 radio state tx ack */
     IEEE802154_STATE_TX_ENH_ACK,            /*!< IEEE802154 radio state tx enh-ack */
@@ -177,6 +178,18 @@ uint8_t ieee802154_get_recent_lqi(void);
  */
 ieee802154_state_t ieee802154_get_state(void);
 
+/**
+ * @brief  The IEEE 802.15.4 enter sleep.
+ *
+ */
+void ieee802154_enter_sleep(void);
+
+/**
+ * @brief  The IEEE 802.15.4 wakeup.
+ *
+ */
+void ieee802154_wakeup(void);
+
 /** The following three functions are only used for internal test. **/
 /**
  * @brief  The clear channel assessment done.
@@ -201,6 +214,17 @@ extern void esp_ieee802154_receive_failed(uint16_t error);
  *
  */
 extern void esp_ieee802154_ed_failed(uint16_t error);
+
+#if CONFIG_IEEE802154_TEST
+#define IEEE802154_STATIC
+#define IEEE802154_INLINE
+extern void esp_ieee802154_timer0_done(void);
+extern void esp_ieee802154_timer1_done(void);
+#else
+#define IEEE802154_STATIC  static
+#define IEEE802154_INLINE  inline
+#endif // CONFIG_IEEE802154_TEST
+
 #ifdef __cplusplus
 }
 #endif

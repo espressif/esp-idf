@@ -21,6 +21,8 @@ When UART interface is used, this example should run on any commonly available E
 
 ### Using with USB_SERIAL_JTAG
 
+*NOTE: We recommend to disable the secondary console output on chips with USB_SERIAL_JTAG since the secondary serial is output-only and would not be very useful when using a console application. This is why the secondary console output is deactivated per default (CONFIG_ESP_CONSOLE_SECONDARY_NONE=y)*
+
 On chips with USB_SERIAL_JTAG peripheral, console example can be used over the USB serial port.
 
 * First, connect the USB cable to the USB_SERIAL_JTAG interface.

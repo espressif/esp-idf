@@ -7,6 +7,10 @@
 
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HAL_SWAP16(d) __builtin_bswap16((d))
 #define HAL_SWAP32(d) __builtin_bswap32((d))
 #define HAL_SWAP64(d) __builtin_bswap64((d))
@@ -83,3 +87,7 @@ __attribute__((always_inline)) static inline void *hal_memset(void *dst_mem, int
     asm("" : "+r"(dst_mem));
     return memset(dst_mem, value, len);
 }
+
+#ifdef __cplusplus
+}
+#endif

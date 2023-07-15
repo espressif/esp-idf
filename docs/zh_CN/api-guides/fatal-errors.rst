@@ -361,11 +361,7 @@ Guru Meditation 错误
     Unhandled debug exception
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    这后面通常会再跟一条消息::
-
-        Debug exception reason: Stack canary watchpoint triggered (task_name)
-
-    此错误表示应用程序写入的位置越过了 ``task_name`` 任务堆栈的末尾，请注意，并非每次堆栈溢出都会触发此错误。任务有可能会绕过堆栈金丝雀（stack canary）的位置访问内存，在这种情况下，监视点就不会被触发。
+    执行指令 ``BREAK`` 时，会发生此 CPU 异常。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
@@ -382,7 +378,7 @@ Guru Meditation 错误
     Breakpoint
     ^^^^^^^^^^
 
-    当执行 ``EBREAK`` 指令时，会发生此 CPU 异常。
+    执行 ``EBREAK`` 指令时，会发生此 CPU 异常。请参见 :ref:`FreeRTOS-End-Of-Stack-Watchpoint`。
 
     Load address misaligned, Store address misaligned
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -440,6 +436,64 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
 
 更多详细信息，请查阅 :doc:`堆内存调试 <../api-reference/system/heap_debug>` 文档。
 
+|STACK_OVERFLOW|
+^^^^^^^^^^^^^^^^
+
+.. only:: SOC_ASSIST_DEBUG_SUPPORTED
+
+    硬件堆栈保护
+    """"""""""""""""""""
+
+    {IDF_TARGET_NAME} 集成了辅助调试模块，支持监测堆栈指针 (SP) 寄存器，确保其值位于已分配给堆栈的内存范围内。发生中断处理或 FreeRTOS 切换上下文时，辅助调试模块都会设置新的堆栈监测范围。注意，该操作会对性能产生一定影响。
+
+    以下为辅助调试模块的部分相关特性：
+
+    - 采用硬件实现
+    - 支持监测堆栈指针寄存器的值
+    - 无需占用额外 CPU 时间或内存，即可监测堆栈内存范围
+
+    当辅助调试模块检测到堆栈溢出时，将触发紧急处理程序并打印类似如下信息：
+
+    .. parsed-literal::
+
+        Guru Meditation Error: Core 0 panic'ed (Stack protection fault).
+
+    可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项，禁用硬件堆栈保护。
+
+.. _FreeRTOS-End-Of-Stack-Watchpoint:
+
+FreeRTOS 任务堆栈末尾监视点
+""""""""""""""""""""""""""""""""
+
+ESP-IDF 支持基于监视点的 FreeRTOS 堆栈溢出检测机制。每次 FreeRTOS 切换任务上下文时，都会设置一个监视点，用于监视堆栈的最后 32 字节。
+
+通常，该设置会提前触发监视点，触发点可能会比预期提前多达 28 字节。基于 FreeRTOS 中堆栈金丝雀的大小为 20 字节，故将观察范围设置为 32 字节，确保可以在堆栈金丝雀遭到破坏前及时触发监测点。
+
+.. note::
+    并非每次堆栈溢出都能触发监视点。如果任务绕过堆栈金丝雀的位置访问堆栈，则无法触发监视点。
+
+监视点触发后，将打印类似如下信息：
+
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    ::
+
+        Debug exception reason: Stack canary watchpoint triggered (task_name)
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    ::
+
+        Guru Meditation Error: Core  0 panic'ed (Breakpoint). Exception was unhandled.
+
+可以通过 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项启用该功能。
+
+
+FreeRTOS 堆栈检查
+"""""""""""""""""""""
+
+请参见 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`。
+
 堆栈粉碎
 ^^^^^^^^^^
 
@@ -457,16 +511,18 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误，双重异常。
-    .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
-    .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
+    .. |ILLEGAL_INSTR_MSG| replace:: 非法指令
+    .. |CACHE_ERR_MSG| replace:: cache 已禁用，但仍可访问缓存内存区域
+    .. |STACK_OVERFLOW| replace:: 堆栈溢出
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
     .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误。
-    .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
-    .. |CACHE_ERR_MSG| replace:: Cache error
+    .. |ILLEGAL_INSTR_MSG| replace:: 非法指令
+    .. |CACHE_ERR_MSG| replace:: cache 错误
+    .. |STACK_OVERFLOW| replace:: 堆栈溢出
 
-未定义行为清理器（UBSAN）检查
+未定义行为清理器 (UBSAN) 检查
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 未定义行为清理器 (UBSAN) 是一种编译器功能，它会为可能不正确的操作添加运行时检查，例如：

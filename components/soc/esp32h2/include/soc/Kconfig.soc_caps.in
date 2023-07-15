@@ -23,6 +23,10 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -176,6 +180,10 @@ config SOC_PAU_SUPPORTED
     default y
 
 config SOC_CLK_TREE_SUPPORTED
+    bool
+    default y
+
+config SOC_ASSIST_DEBUG_SUPPORTED
     bool
     default y
 
@@ -363,11 +371,15 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
-config SOC_GDMA_GROUPS
+config SOC_AHB_GDMA_VERSION
     int
     default 1
 
-config SOC_GDMA_PAIRS_PER_GROUP
+config SOC_GDMA_NUM_GROUPS_MAX
+    int
+    default 1
+
+config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 3
 
@@ -415,13 +427,9 @@ config SOC_GPIO_ETM_TASKS_PER_GROUP
     int
     default 8
 
-config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
     default y
-
-config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
-    int
-    default 0
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
@@ -432,6 +440,14 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     default y
 
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    bool
+    default y
+
+config SOC_RTCIO_PIN_COUNT
+    int
+    default 8
+
+config SOC_RTCIO_HOLD_SUPPORTED
     bool
     default y
 
@@ -730,10 +746,6 @@ config SOC_PARLIO_TX_CLK_SUPPORT_GATING
 config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
-
-config SOC_RTCIO_PIN_COUNT
-    int
-    default 0
 
 config SOC_MPI_MEM_BLOCKS_NUM
     int
@@ -1074,6 +1086,14 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
 config SOC_COEX_HW_PTI
     bool
     default y
+
+config SOC_EXTERNAL_COEX_ADVANCE
+    bool
+    default y
+
+config SOC_EXTERNAL_COEX_LEADER_TX_LINE
+    bool
+    default n
 
 config SOC_PHY_DIG_REGS_MEM_SIZE
     int

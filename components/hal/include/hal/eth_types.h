@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
 * @brief Ethernet interface
 *
@@ -61,3 +65,7 @@ typedef enum {
     ETH_DMA_BURST_LEN_2,
     ETH_DMA_BURST_LEN_1,
 } eth_mac_dma_burst_len_t;
+
+#ifdef __cplusplus
+}
+#endif

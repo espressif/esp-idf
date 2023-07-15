@@ -18,6 +18,18 @@
  * additional API.
  */
 
+/* ------------------------------------------------- Static asserts ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+/**
+ * Both StaticTask_t and TCB_t structures are provided by FreeRTOS sources.
+ * This is just an additional check of the consistency of these structures.
+ */
+
+_Static_assert(offsetof( StaticTask_t, pxDummy6 ) == offsetof( TCB_t, pxStack ));
+_Static_assert(offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfStack ));
+
 /* ----------------------------------------------------- Newlib --------------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */

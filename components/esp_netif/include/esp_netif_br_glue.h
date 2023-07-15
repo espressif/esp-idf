@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,13 +28,22 @@ typedef struct esp_netif_br_glue_t* esp_netif_br_glue_handle_t;
 esp_netif_br_glue_handle_t esp_netif_br_glue_new(void);
 
 /**
- * @brief Add a port to the bridge netif glue
+ * @brief Add Ethernet port to the bridge netif glue
  *
  * @param netif_br_glue bridge netif glue
- * @param esp_netif_port port netif
+ * @param esp_netif_port Ethernet port netif
  * @return - ESP_OK on success
  */
 esp_err_t esp_netif_br_glue_add_port(esp_netif_br_glue_handle_t netif_br_glue, esp_netif_t *esp_netif_port);
+
+/**
+ * @brief Add WiFi port to the bridge netif glue
+ *
+ * @param netif_br_glue bridge netif glue
+ * @param esp_netif_port WiFi port netif
+ * @return - ESP_OK on success
+ */
+esp_err_t esp_netif_br_glue_add_wifi_port(esp_netif_br_glue_handle_t netif_br_glue, esp_netif_t *esp_netif_port);
 
 /**
  * @brief Delete netif glue of bridge

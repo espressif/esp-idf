@@ -94,7 +94,7 @@ static HEAP_IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **calle
     TEST_STACK(31);
 }
 
-ESP_STATIC_ASSERT(STACK_DEPTH >= 0 && STACK_DEPTH <= 32, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-10");
+ESP_STATIC_ASSERT(STACK_DEPTH >= 0 && STACK_DEPTH <= 32, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-32");
 
 
 typedef enum {

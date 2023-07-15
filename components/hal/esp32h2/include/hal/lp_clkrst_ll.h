@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "soc/soc.h"
 #include "soc/lp_clkrst_struct.h"

@@ -5,9 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to blink a LED using GPIO or using the [led_strip](https://components.espressif.com/component/espressif/led_strip) component for the addressable LED, i.e. [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf).
-
-The `led_strip` is installed via [component manager](main/idf_component.yml).
+This example demonstrates how to blink a LED by using the GPIO driver or using the [led_strip](https://components.espressif.com/component/espressif/led_strip) library if the LED is addressable e.g. [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf). The `led_strip` library is installed via [component manager](main/idf_component.yml).
 
 ## How to Use Example
 
@@ -15,18 +13,8 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Hardware Required
 
-* A development board with Espressif SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with normal LED or addressable LED on-board (e.g., ESP32-S3-DevKitC, ESP32-C6-DevKitC etc.)
 * A USB cable for Power supply and programming
-
-Some development boards use an addressable LED instead of a regular one. These development boards include:
-
-| Board                | LED type             | Pin                  |
-| -------------------- | -------------------- | -------------------- |
-| ESP32-C3-DevKitC-1   | Addressable          | GPIO8                |
-| ESP32-C3-DevKitM-1   | Addressable          | GPIO8                |
-| ESP32-S2-DevKitM-1   | Addressable          | GPIO18               |
-| ESP32-S2-Saola-1     | Addressable          | GPIO18               |
-| ESP32-S3-DevKitC-1   | Addressable          | GPIO48               |
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
 
@@ -37,7 +25,11 @@ Open the project configuration menu (`idf.py menuconfig`).
 In the `Example Configuration` menu:
 
 * Select the LED type in the `Blink LED type` option.
-  * Use `GPIO` for regular LED blink.
+  * Use `GPIO` for regular LED
+  * Use `LED strip` for addressable LED
+* If the LED type is `LED strip`, select the backend peripheral
+  * `RMT` is only available for ESP targets with RMT peripheral supported
+  * `SPI` is available for all ESP targets
 * Set the GPIO number used for the signal in the `Blink GPIO number` option.
 * Set the blinking period in the `Blink period in ms` option.
 

@@ -6,10 +6,13 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "usb_types_private.h"
 #include "usb_phy_types.h"
 #include "soc/soc_caps.h"
+#if SOC_USB_OTG_SUPPORTED
 #include "soc/usb_wrap_struct.h"
+#endif
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 #include "soc/usb_serial_jtag_struct.h"
 #endif
@@ -18,15 +21,18 @@
 extern "C" {
 #endif
 
+#if SOC_USB_OTG_SUPPORTED
 /**
  * Context that should be maintained by both the driver and the HAL
  */
+
 typedef struct {
     usb_wrap_dev_t *wrap_dev;                   /**< Pointer to base address of USB Wrapper registers */
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
     usb_serial_jtag_dev_t *jtag_dev;            /**< Pointer to base address of USB Serial JTAG registers */
 #endif
 } usb_phy_hal_context_t;
+
 
 /**
  * @brief Init the USB PHY hal. This function should be called first before other hal layer function is called
@@ -75,6 +81,8 @@ void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_priv_speed_t 
  * @param disconn Whether to disconnect
  */
 void usb_phy_hal_int_mimick_disconn(usb_phy_hal_context_t *hal, bool disconn);
+
+#endif
 
 #ifdef __cplusplus
 }

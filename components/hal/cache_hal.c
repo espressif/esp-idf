@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,8 +34,13 @@
  * #define DATA_AUTOLOAD_FLAG      BIT(2)
  * #define INST_AUTOLOAD_FLAG      BIT(2)
  */
-#define DATA_AUTOLOAD_FLAG      Cache_Disable_DCache()
+#if CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7516
+#define DATA_AUTOLOAD_FLAG      Cache_Disable_L2_Cache()
+#define INST_AUTOLOAD_FLAG      Cache_Disable_L2_Cache()
+#else
+#define DATA_AUTOLOAD_FLAG      Cache_Disable_ICache()
 #define INST_AUTOLOAD_FLAG      Cache_Disable_ICache()
+#endif
 
 /**
  * Necessary hal contexts, could be maintained by upper layer in the future
@@ -55,7 +60,11 @@ void cache_hal_init(void)
 {
 #if SOC_SHARED_IDCACHE_SUPPORTED
     ctx.data_autoload_flag = INST_AUTOLOAD_FLAG;
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Enable_L2_Cache(ctx.data_autoload_flag);
+#else
     Cache_Enable_ICache(ctx.data_autoload_flag);
+#endif
 #else
     ctx.data_autoload_flag = DATA_AUTOLOAD_FLAG;
     Cache_Enable_DCache(ctx.data_autoload_flag);
@@ -79,7 +88,11 @@ void cache_hal_init(void)
 void cache_hal_disable(cache_type_t type)
 {
 #if SOC_SHARED_IDCACHE_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Disable_L2_Cache();
+#else
     Cache_Disable_ICache();
+#endif
 #else
     if (type == CACHE_TYPE_DATA) {
         Cache_Disable_DCache();
@@ -99,7 +112,11 @@ void cache_hal_disable(cache_type_t type)
 void cache_hal_enable(cache_type_t type)
 {
 #if SOC_SHARED_IDCACHE_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Enable_L2_Cache(ctx.inst_autoload_flag);
+#else
     Cache_Enable_ICache(ctx.inst_autoload_flag);
+#endif
 #else
     if (type == CACHE_TYPE_DATA) {
         Cache_Enable_DCache(ctx.data_autoload_flag);
@@ -118,7 +135,9 @@ void cache_hal_enable(cache_type_t type)
 
 void cache_hal_suspend(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
+#if SOC_CACHE_L2_SUPPORTED
+    Cache_Suspend_L2_Cache();
+#elif SOC_SHARED_IDCACHE_SUPPORTED
     Cache_Suspend_ICache();
 #else
     if (type == CACHE_TYPE_DATA) {
@@ -138,7 +157,9 @@ void cache_hal_suspend(cache_type_t type)
 
 void cache_hal_resume(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
+#if SOC_CACHE_L2_SUPPORTED
+    Cache_Resume_L2_Cache(ctx.inst_autoload_flag);
+#elif SOC_SHARED_IDCACHE_SUPPORTED
     Cache_Resume_ICache(ctx.inst_autoload_flag);
 #else
     if (type == CACHE_TYPE_DATA) {
@@ -169,14 +190,23 @@ void cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)
 {
     //Now only esp32 has 2 MMUs, this file doesn't build on esp32
     HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(0, vaddr, size, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, vaddr, size);
+#else
     Cache_Invalidate_Addr(vaddr, size);
+#endif
 }
 
 #if SOC_CACHE_WRITEBACK_SUPPORTED
 void cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
 {
     HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(0, vaddr, size, MMU_VADDR_DATA));
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, vaddr, size);
+    Cache_WriteBack_Addr(CACHE_MAP_L2_CACHE, vaddr, size);
+#else
     Cache_WriteBack_Addr(vaddr, size);
+#endif
 }
 #endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
 
@@ -185,7 +215,11 @@ void cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
 void cache_hal_freeze(cache_type_t type)
 {
 #if SOC_SHARED_IDCACHE_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Freeze_L2_Cache_Enable(CACHE_FREEZE_ACK_BUSY);
+#else
     Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+#endif
 #else
     if (type == CACHE_TYPE_DATA) {
         Cache_Freeze_DCache_Enable(CACHE_FREEZE_ACK_BUSY);
@@ -201,7 +235,11 @@ void cache_hal_freeze(cache_type_t type)
 void cache_hal_unfreeze(cache_type_t type)
 {
 #if SOC_SHARED_IDCACHE_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Freeze_L2_Cache_Disable();
+#else
     Cache_Freeze_ICache_Disable();
+#endif
 #else
     if (type == CACHE_TYPE_DATA) {
         Cache_Freeze_DCache_Disable();
@@ -218,7 +256,11 @@ void cache_hal_unfreeze(cache_type_t type)
 uint32_t cache_hal_get_cache_line_size(cache_type_t type)
 {
 #if SOC_SHARED_IDCACHE_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    return Cache_Get_L2_Cache_Line_Size();
+#else
     return Cache_Get_ICache_Line_Size();
+#endif
 #else
     uint32_t size = 0;
     if (type == CACHE_TYPE_DATA) {

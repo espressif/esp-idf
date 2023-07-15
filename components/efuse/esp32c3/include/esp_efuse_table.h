@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 661eec06c4c442af5baa0c947029db74
+// md5_digest_table f41d6027e08973065c84a93ebd369dee
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -81,6 +81,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_PAD_CONFIG_D7[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR_LO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_K_RTC_LDO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_K_DIG_LDO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_V_RTC_DBIAS20[];
@@ -203,6 +206,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR_LO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_K_RTC_LDO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_K_DIG_LDO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_V_RTC_DBIAS20[];

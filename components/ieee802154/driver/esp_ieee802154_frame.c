@@ -12,45 +12,45 @@
 
 static const char *TAG = "ieee802154 frame";
 
-static inline bool is_security_enabled(const uint8_t *frame)
+IEEE802154_STATIC IEEE802154_INLINE bool is_security_enabled(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_SECURITY_OFFSET] & IEEE802154_FRAME_SECURITY_BIT;
 }
 
-static inline bool is_ie_present(const uint8_t *frame)
+IEEE802154_STATIC IEEE802154_INLINE bool is_ie_present(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_IE_OFFSET] & IEEE802154_FRAME_IE_BIT;
 }
 
-static inline bool is_dsn_present(const uint8_t *frame)
+IEEE802154_STATIC IEEE802154_INLINE bool is_dsn_present(const uint8_t *frame)
 {
     return ((ieee802154_frame_get_version(frame) != IEEE802154_FRAME_VERSION_2) ||
             !(frame[IEEE802154_FRAME_DSN_OFFSET] & IEEE802154_FRAME_DSN_BIT));
 }
 
-static inline uint8_t dst_addr_mode(const uint8_t *frame)
+IEEE802154_STATIC IEEE802154_INLINE uint8_t dst_addr_mode(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_DST_MODE_OFFSET] & IEEE802154_FRAME_DST_MODE_MASK;
 }
 
-static inline uint8_t src_addr_mode(const uint8_t *frame)
+IEEE802154_STATIC IEEE802154_INLINE uint8_t src_addr_mode(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_SRC_MODE_OFFSET] & IEEE802154_FRAME_SRC_MODE_MASK;
 }
 
-static inline bool is_panid_compression(const uint8_t *frame)
+IEEE802154_STATIC IEEE802154_INLINE bool is_panid_compression(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_PANID_COMP_OFFSET] & IEEE802154_FRAME_PANID_COMP_BIT;
 }
 
-static inline bool is_suported_frame_type(uint8_t frame_type)
+IEEE802154_STATIC IEEE802154_INLINE bool is_suported_frame_type(uint8_t frame_type)
 {
     // HW supports 4 kinds of frame type: Beacon, Ack, Data, Command.
     return (frame_type == IEEE802154_FRAME_TYPE_BEACON || frame_type == IEEE802154_FRAME_TYPE_DATA ||
             frame_type == IEEE802154_FRAME_TYPE_ACK || frame_type == IEEE802154_FRAME_TYPE_COMMAND);
 }
 
-static bool is_dst_panid_present(const uint8_t *frame)
+IEEE802154_STATIC bool is_dst_panid_present(const uint8_t *frame)
 {
     uint8_t dst_mode = dst_addr_mode(frame);
     bool dst_panid_present = false;
@@ -80,7 +80,7 @@ static bool is_dst_panid_present(const uint8_t *frame)
     return dst_panid_present;
 }
 
-static bool is_src_panid_present(const uint8_t *frame)
+IEEE802154_STATIC bool is_src_panid_present(const uint8_t *frame)
 {
     uint8_t src_mode = src_addr_mode(frame);
     bool panid_compression = is_panid_compression(frame);
@@ -109,12 +109,12 @@ static bool is_src_panid_present(const uint8_t *frame)
     return src_panid_present;
 }
 
-static uint8_t inline ieee802154_frame_address_offset(const uint8_t *frame)
+IEEE802154_STATIC uint8_t IEEE802154_INLINE ieee802154_frame_address_offset(const uint8_t *frame)
 {
     return IEEE802154_FRAME_PHR_SIZE + IEEE802154_FRAME_FCF_SIZE + (is_dsn_present(frame) ? IEEE802154_FRAME_DSN_SIZE : 0);
 }
 
-static IRAM_ATTR uint8_t ieee802154_frame_address_size(const uint8_t *frame)
+IEEE802154_STATIC IRAM_ATTR uint8_t ieee802154_frame_address_size(const uint8_t *frame)
 {
     uint8_t address_size = 0;
 
@@ -161,7 +161,7 @@ static IRAM_ATTR uint8_t ieee802154_frame_address_size(const uint8_t *frame)
     return address_size;
 }
 
-static uint8_t ieee802154_frame_security_header_offset(const uint8_t *frame)
+IEEE802154_STATIC uint8_t ieee802154_frame_security_header_offset(const uint8_t *frame)
 {
     ESP_RETURN_ON_FALSE_ISR(is_suported_frame_type(ieee802154_frame_get_type(frame)), IEEE802154_FRAME_INVALID_ADDR_MODE, TAG, "invalid frame type");
     uint8_t offset = ieee802154_frame_address_offset(frame);
@@ -175,7 +175,7 @@ static uint8_t ieee802154_frame_security_header_offset(const uint8_t *frame)
     return offset;
 }
 
-static uint8_t ieee802154_frame_get_security_field_len(const uint8_t *frame)
+IEEE802154_STATIC uint8_t ieee802154_frame_get_security_field_len(const uint8_t *frame)
 {
     ESP_RETURN_ON_FALSE_ISR(is_suported_frame_type(ieee802154_frame_get_type(frame)), IEEE802154_FRAME_INVALID_OFFSET, TAG, "invalid frame type");
 
@@ -211,7 +211,7 @@ static uint8_t ieee802154_frame_get_security_field_len(const uint8_t *frame)
     return security_field_len;
 }
 
-static uint8_t ieee802154_frame_ie_header_offset(const uint8_t *frame)
+IEEE802154_STATIC uint8_t ieee802154_frame_ie_header_offset(const uint8_t *frame)
 {
     uint8_t offset = ieee802154_frame_security_header_offset(frame);
     uint8_t security_field_len = ieee802154_frame_get_security_field_len(frame);
@@ -221,7 +221,7 @@ static uint8_t ieee802154_frame_ie_header_offset(const uint8_t *frame)
     return offset;
 }
 
-static uint8_t ieee802154_frame_get_mic_len(const uint8_t *frame)
+IEEE802154_STATIC uint8_t ieee802154_frame_get_mic_len(const uint8_t *frame)
 {
     uint8_t offset = ieee802154_frame_security_header_offset(frame);
     uint8_t mic_len = 0;
@@ -247,7 +247,7 @@ static uint8_t ieee802154_frame_get_mic_len(const uint8_t *frame)
     return mic_len;
 }
 
-static uint8_t ieee802154_frame_get_ie_field_len(const uint8_t *frame)
+IEEE802154_STATIC uint8_t ieee802154_frame_get_ie_field_len(const uint8_t *frame)
 {
     uint8_t offset = ieee802154_frame_ie_header_offset(frame);
     uint8_t ie_field_len = 0;
@@ -274,7 +274,7 @@ static uint8_t ieee802154_frame_get_ie_field_len(const uint8_t *frame)
     return ie_field_len;
 }
 
-static IRAM_ATTR uint8_t ieee802154_frame_payload_offset(const uint8_t *frame)
+IEEE802154_STATIC IRAM_ATTR uint8_t ieee802154_frame_payload_offset(const uint8_t *frame)
 {
     uint8_t offset = ieee802154_frame_security_header_offset(frame);
     if (is_security_enabled(frame)) {
@@ -298,17 +298,17 @@ static IRAM_ATTR uint8_t ieee802154_frame_payload_offset(const uint8_t *frame)
     return offset - 1;
 }
 
-uint8_t inline ieee802154_frame_get_type(const uint8_t *frame)
+uint8_t IEEE802154_INLINE ieee802154_frame_get_type(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_TYPE_OFFSET] & IEEE802154_FRAME_TYPE_MASK;
 }
 
-uint8_t inline ieee802154_frame_get_version(const uint8_t *frame)
+uint8_t IEEE802154_INLINE ieee802154_frame_get_version(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_VERSION_OFFSET] & IEEE802154_FRAME_VERSION_MASK;
 }
 
-bool inline ieee802154_frame_is_ack_required(const uint8_t *frame)
+bool IEEE802154_INLINE ieee802154_frame_is_ack_required(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_AR_OFFSET] & IEEE802154_FRAME_AR_BIT;
 }

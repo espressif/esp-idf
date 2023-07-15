@@ -9,7 +9,6 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s2
 @pytest.mark.esp32c3
 @pytest.mark.generic
-@pytest.mark.nightly_run
 @pytest.mark.parametrize(
     'config',
     [

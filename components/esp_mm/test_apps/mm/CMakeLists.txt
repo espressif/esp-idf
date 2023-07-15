@@ -9,7 +9,7 @@ project(mm_test)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dir ${CMAKE_BINARY_DIR}/esp-idf/esp_mm/
+                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_mm/,${CMAKE_BINARY_DIR}/esp-idf/hal/
                       --elf-file ${CMAKE_BINARY_DIR}/mm_test.elf
                       find-refs
                       --from-sections=.iram0.text

@@ -53,6 +53,10 @@ else()
         list(APPEND srcs "systick_etm.c")
     endif()
 
+    if(CONFIG_ESP_SYSTEM_HW_STACK_GUARD)
+        list(APPEND srcs "hw_stack_guard.c")
+    endif()
+
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include
                         PRIV_REQUIRES spi_flash esp_timer esp_mm

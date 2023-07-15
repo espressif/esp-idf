@@ -167,8 +167,8 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
       (event_id == SYSVIEW_EVTID_TASK_STOP_EXEC) ||
       (event_id == SYSVIEW_EVTID_TASK_START_READY) ||
       (event_id == SYSVIEW_EVTID_TASK_STOP_READY) ||
-      (event_id == SYSVIEW_EVTID_USER_START) ||
-      (event_id == SYSVIEW_EVTID_USER_STOP) ||
+      (event_id == SYSVIEW_EVTID_MARK_START) ||
+      (event_id == SYSVIEW_EVTID_MARK_STOP) ||
       (event_id == SYSVIEW_EVTID_TIMER_ENTER) ||
       (event_id == SYSVIEW_EVTID_TIMER_EXIT) ||
       (event_id == SYSVIEW_EVTID_STACK_INFO) ||

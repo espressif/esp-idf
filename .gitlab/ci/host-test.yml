@@ -301,6 +301,9 @@ test_pytest_qemu:
     - .host_test_template
     - .before_script_build_jobs
   image: $QEMU_IMAGE
+  needs:
+   - job: mr_variables
+     optional: true  # only MR pipelines would have this
   artifacts:
     when: always
     paths:
@@ -309,6 +312,7 @@ test_pytest_qemu:
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
+  allow_failure: true # IDFCI-1752
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
@@ -317,6 +321,9 @@ test_pytest_qemu:
       --target $IDF_TARGET
       --pytest-apps
       -m qemu
+      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - pytest
       --target $IDF_TARGET
@@ -324,11 +331,15 @@ test_pytest_qemu:
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
       --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+      --app-info-filepattern \"list_job_*.txt\"
 
 test_pytest_linux:
   extends:
     - .host_test_template
     - .before_script_build_jobs
+  needs:
+    - job: mr_variables
+      optional: true  # only MR pipelines would have this
   artifacts:
     when: always
     paths:
@@ -342,6 +353,13 @@ test_pytest_linux:
       --target linux
       --pytest-apps
       -m host_test
+      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
-    - run_cmd pytest --target linux -m host_test --junitxml=XUNIT_RESULT.xml
+    - run_cmd pytest
+      --target linux
+      -m host_test
+      --junitxml=XUNIT_RESULT.xml
       --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+      --app-info-filepattern \"list_job_*.txt\"

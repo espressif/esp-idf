@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import print_function
 
@@ -288,7 +288,7 @@ class TCPReader(NetReader, SocketServer.TCPServer):
     """
         TCP socket reader class
     """
-    def __init__(self, host, port, tmo):
+    def __init__(self, host, port, tmo, handler=TCPRequestHandler):
         """
             Constructor
 
@@ -301,7 +301,7 @@ class TCPReader(NetReader, SocketServer.TCPServer):
             tmo : int
                 see Reader.__init__()
         """
-        SocketServer.TCPServer.__init__(self, (host, port), TCPRequestHandler)
+        SocketServer.TCPServer.__init__(self, (host, port), handler)
         NetReader.__init__(self, tmo)
 
 
@@ -316,7 +316,7 @@ class UDPReader(NetReader, SocketServer.UDPServer):
     """
         UDP socket reader class
     """
-    def __init__(self, host, port, tmo):
+    def __init__(self, host, port, tmo, handler=UDPRequestHandler):
         """
             Constructor
 
@@ -329,11 +329,11 @@ class UDPReader(NetReader, SocketServer.UDPServer):
             tmo : int
                 see Reader.__init__()
         """
-        SocketServer.UDPServer.__init__(self, (host, port), UDPRequestHandler)
+        SocketServer.UDPServer.__init__(self, (host, port), handler)
         NetReader.__init__(self, tmo)
 
 
-def reader_create(trc_src, tmo):
+def reader_create(trc_src, tmo, handler=None):
     """
         Creates trace reader.
 
@@ -357,8 +357,12 @@ def reader_create(trc_src, tmo):
         else:
             return FileReader(url.path, tmo)
     if url.scheme == 'tcp':
+        if handler is not None:
+            return TCPReader(url.hostname, url.port, tmo, handler)
         return TCPReader(url.hostname, url.port, tmo)
     if url.scheme == 'udp':
+        if handler is not None:
+            return UDPReader(url.hostname, url.port, tmo, handler)
         return UDPReader(url.hostname, url.port, tmo)
     return None
 

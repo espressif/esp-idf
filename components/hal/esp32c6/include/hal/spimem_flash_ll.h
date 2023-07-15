@@ -22,6 +22,7 @@
 #include "soc/spi_periph.h"
 #include "soc/spi_mem_struct.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include "soc/pcr_struct.h"

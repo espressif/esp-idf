@@ -13,10 +13,11 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/param.h>
 #include "hal/mpi_types.h"
+#include "sdkconfig.h"
 
-#include "stdint.h"
 
 #ifdef __cplusplus
 extern "C" {
