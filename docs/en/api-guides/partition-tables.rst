@@ -166,11 +166,21 @@ If you want the partitions in the partition table to work relative to any placem
 Flags
 ~~~~~
 
-Only one flag is currently supported, ``encrypted``. If this field is set to ``encrypted``, this partition will be encrypted if :doc:`/security/flash-encryption` is enabled.
+Two flags are currently supported, ``encrypted`` and ``readonly``: 
+  
+  - If ``encrypted`` flag is set, the partition will be encrypted if :doc:`/security/flash-encryption` is enabled.
 
-.. note::
+  .. note::
 
-    ``app`` type partitions will always be encrypted, regardless of whether this flag is set or not.
+      ``app`` type partitions will always be encrypted, regardless of whether this flag is set or not.
+
+  - If ``readonly`` flag is set, the partition will be read-only. This flag is only supported for ``data`` type partitions except ``ota``` and ``coredump``` subtypes. This flag can help to protect against the accidental writes to partition that contains critical device specific configuration data, e.g., factory data partition.
+
+  .. note::
+
+      Using C file I/O API to open a file (``fopen```) in any write mode (``w``, ``w+``, ``a``, ``a+``, ``r+``) will fail and return ``NULL``. Using ``open`` with any other flag than ``O_RDONLY`` will fail and return ``-1`` while ``errno`` global variable will be set to ``EACCES``. This is also true for any other POSIX syscall function performing write or erase operations. Opening a handle in read-write mode for NVS on a read-only partition will fail and return :c:macro:`ESP_ERR_NOT_ALLOWED` error code. Using a lower level API like ``esp_partition``, ``spi_flash``, ``wear_levelling``, etc. to write to a read-only partition will result in :c:macro:`ESP_ERR_NOT_ALLOWED` error code.
+
+You can specify multiple flags by separating them with a colon. For example, ``encrypted:readonly``.
 
 Generating Binary Partition Table
 ---------------------------------

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,11 @@ public:
     uint32_t get_size() override
     {
         return size;
+    }
+
+    bool get_readonly() override
+    {
+        return partition.readonly;
     }
 
     const esp_partition_t partition;

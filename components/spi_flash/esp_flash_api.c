@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,25 +47,26 @@ DRAM_ATTR static const char TAG[] = "spi_flash";
 /* CHECK_WRITE_ADDRESS macro to fail writes which land in the
    bootloader, partition table, or running application region.
 */
-#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
-#define CHECK_WRITE_ADDRESS(CHIP, ADDR, SIZE)
-#else /* FAILS or ABORTS */
-#define CHECK_WRITE_ADDRESS(CHIP, ADDR, SIZE) do {                            \
-        if (CHIP && CHIP->os_func->region_protected && CHIP->os_func->region_protected(CHIP->os_func_data, ADDR, SIZE)) {                       \
-            UNSAFE_WRITE_ADDRESS;                                 \
-        }                                                               \
+#define CHECK_WRITE_ADDRESS(CHIP, ADDR, SIZE) do { \
+        if (CHIP && CHIP->os_func->region_protected) { \
+            esp_err_t ret = CHIP->os_func->region_protected(CHIP->os_func_data, ADDR, SIZE); \
+            if (ret == ESP_ERR_NOT_ALLOWED) { \
+                return ret; /* ESP_ERR_NOT_ALLOWED from read-only partition check */ \
+            } else if (ret != ESP_OK) { \
+                UNSAFE_WRITE_ADDRESS; /* FAILS or ABORTS */ \
+            } \
+        } \
     } while(0)
-#endif // CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
 
 /* Convenience macro for beginning of all API functions.
  * Check the return value of `rom_spiflash_api_funcs->chip_check` is correct,
  * and the chip supports the operation in question.
  */
-#define VERIFY_CHIP_OP(op) do {                                  \
+#define VERIFY_CHIP_OP(op) do { \
         if (err != ESP_OK) return err; \
-        if (chip->chip_drv->op == NULL) {                        \
-            return ESP_ERR_FLASH_UNSUPPORTED_CHIP;              \
-        }                                                   \
+        if (chip->chip_drv->op == NULL) { \
+            return ESP_ERR_FLASH_UNSUPPORTED_CHIP; \
+        } \
     } while (0)
 
 

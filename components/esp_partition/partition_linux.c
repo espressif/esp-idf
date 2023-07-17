@@ -369,6 +369,9 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 {
     assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
 
+    if (partition->readonly) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
     if (partition->encrypted) {
         return ESP_ERR_NOT_SUPPORTED;
     }
@@ -450,6 +453,9 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
 {
     assert(partition != NULL);
 
+    if (partition->readonly) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
     if (offset > partition->size || offset % partition->erase_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }

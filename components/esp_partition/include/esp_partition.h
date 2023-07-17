@@ -132,6 +132,7 @@ typedef struct {
     uint32_t erase_size;                /*!< size the erase operation should be aligned to */
     char label[17];                     /*!< partition label, zero-terminated ASCII string */
     bool encrypted;                     /*!< flag is set to true if partition is encrypted */
+    bool readonly;                      /*!< flag is set to true if partition is read-only */
 } esp_partition_t;
 
 /**
@@ -270,6 +271,7 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
  * @return ESP_OK, if data was written successfully;
  *         ESP_ERR_INVALID_ARG, if dst_offset exceeds partition size;
  *         ESP_ERR_INVALID_SIZE, if write would go out of bounds of the partition;
+ *         ESP_ERR_NOT_ALLOWED, if partition is read-only;
  *         or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_write(const esp_partition_t* partition,
@@ -322,6 +324,7 @@ esp_err_t esp_partition_read_raw(const esp_partition_t* partition,
  * @return ESP_OK, if data was written successfully;
  *         ESP_ERR_INVALID_ARG, if dst_offset exceeds partition size;
  *         ESP_ERR_INVALID_SIZE, if write would go out of bounds of the partition;
+ *         ESP_ERR_NOT_ALLOWED, if partition is read-only;
  *         or one of the error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
@@ -341,6 +344,7 @@ esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
  * @return ESP_OK, if the range was erased successfully;
  *         ESP_ERR_INVALID_ARG, if iterator or dst are NULL;
  *         ESP_ERR_INVALID_SIZE, if erase would go out of bounds of the partition;
+ *         ESP_ERR_NOT_ALLOWED, if partition is read-only;
  *         or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,

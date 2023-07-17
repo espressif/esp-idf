@@ -22,7 +22,7 @@ public :
     WL_Flash();
     ~WL_Flash() override;
 
-    virtual esp_err_t config(wl_config_t *cfg, Partition *flash_drv);
+    virtual esp_err_t config(wl_config_t *cfg, Partition *partition);
     virtual esp_err_t init();
 
     size_t get_flash_size() override;

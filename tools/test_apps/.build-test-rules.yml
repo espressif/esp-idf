@@ -74,6 +74,23 @@ tools/test_apps/security/signed_app_no_secure_boot:
       temporary: true
       reason: No need to test on all targets
 
+tools/test_apps/storage/partition_table_readonly:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: these chips should be sufficient for test coverage (Xtensa and RISC-V, single and dual core)
+  disable:
+    - if: CONFIG_NAME == "encrypted"
+      temporary: true
+      reason: there are potential bugs with pytest when using flash encryption and NVS partition with nvs_create_partition_image #TODO: IDF-8300
+  depends_components:
+    - partition_table
+    - spi_flash
+    - esp_partition
+    - nvs_flash
+    - vfs
+    - fatfs
+    - spiffs
+
 tools/test_apps/system/bootloader_sections:
   disable:
     - if: IDF_TARGET == "esp32c2"

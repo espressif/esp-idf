@@ -135,6 +135,7 @@ typedef struct nvs_opaque_iterator_t *nvs_iterator_t;
  *             - ESP_ERR_NO_MEM in case memory could not be allocated for the internal structures
  *             - ESP_ERR_NVS_NOT_ENOUGH_SPACE if there is no space for a new entry or there are too many different
  *                                  namespaces (maximum allowed different namespaces: 254)
+ *             - ESP_ERR_NOT_ALLOWED if the NVS partition is read-only and mode is NVS_READWRITE
  *             - other error codes from the underlying storage driver
  */
 esp_err_t nvs_open(const char* namespace_name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle);
@@ -166,6 +167,7 @@ esp_err_t nvs_open(const char* namespace_name, nvs_open_mode_t open_mode, nvs_ha
  *             - ESP_ERR_NO_MEM in case memory could not be allocated for the internal structures
  *             - ESP_ERR_NVS_NOT_ENOUGH_SPACE if there is no space for a new entry or there are too many different
  *                                  namespaces (maximum allowed different namespaces: 254)
+ *             - ESP_ERR_NOT_ALLOWED if the NVS partition is read-only and mode is NVS_READWRITE
  *             - other error codes from the underlying storage driver
  */
 esp_err_t nvs_open_from_partition(const char *part_name, const char* namespace_name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle);

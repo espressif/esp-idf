@@ -174,10 +174,12 @@ esp_err_t wl_unmount(wl_handle_t handle)
     _lock_acquire(&s_instances_lock);
     result = check_handle(handle, __func__);
     if (result == ESP_OK) {
-        // We have to flush state of the component
-        result = s_instances[handle].instance->flush();
         // We use placement new in wl_mount, so call destructor directly
         Partition *part = s_instances[handle].instance->get_part();
+        // We have to flush state of the component
+        if (!part->is_readonly()) {
+            result = s_instances[handle].instance->flush();
+        }
         part->~Partition();
         free(part);
         s_instances[handle].instance->~WL_Flash();
