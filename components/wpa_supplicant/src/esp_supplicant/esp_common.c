@@ -28,6 +28,7 @@ struct wpa_supplicant g_wpa_supp;
 static TaskHandle_t s_supplicant_task_hdl = NULL;
 static void *s_supplicant_evt_queue = NULL;
 static void *s_supplicant_api_lock = NULL;
+static bool s_supplicant_task_init_done;
 
 static int handle_action_frm(u8 *frame, size_t len,
 			     u8 *sender, u32 rssi, u8 channel)
@@ -136,11 +137,6 @@ static void btm_rrm_task(void *pvParameters)
 	vQueueDelete(s_supplicant_evt_queue);
 	s_supplicant_evt_queue = NULL;
 
-	if (s_supplicant_api_lock) {
-		vSemaphoreDelete(s_supplicant_api_lock);
-		s_supplicant_api_lock = NULL;
-	}
-
 	/* At this point, we completed */
 	vTaskDelete(NULL);
 }
@@ -223,7 +219,9 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	int ret;
 
 #if defined(CONFIG_WPA_11KV_SUPPORT)
-	s_supplicant_api_lock = xSemaphoreCreateRecursiveMutex();
+	if (!s_supplicant_api_lock) {
+		s_supplicant_api_lock = xSemaphoreCreateRecursiveMutex();
+	}
 	if (!s_supplicant_api_lock) {
 		wpa_printf(MSG_ERROR, "%s: failed to create Supplicant API lock", __func__);
 		ret = -1;
@@ -244,6 +242,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 		goto err;
 	}
 
+	s_supplicant_task_init_done = true;
 	esp_scan_init(wpa_s);
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
@@ -277,17 +276,21 @@ void esp_supplicant_common_deinit(void)
 		esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 	}
 #if defined(CONFIG_WPA_11KV_SUPPORT)
-	if (!s_supplicant_task_hdl && esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
+	if (!s_supplicant_task_hdl) {
+	/*We have failed to create a task, delete queue and exit*/
 		if (s_supplicant_evt_queue) {
 			vQueueDelete(s_supplicant_evt_queue);
 			s_supplicant_evt_queue = NULL;
 		}
-		if (s_supplicant_api_lock) {
-			vSemaphoreDelete(s_supplicant_api_lock);
-			s_supplicant_api_lock = NULL;
+	}else if (esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
+	/*Failed to post delete event, just delete the event queue and exit*/
+		if (s_supplicant_evt_queue) {
+			vQueueDelete(s_supplicant_evt_queue);
+			s_supplicant_evt_queue = NULL;
 		}
 		wpa_printf(MSG_ERROR, "failed to send task delete event");
 	}
+	s_supplicant_task_init_done = false;
 #endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
 }
 
@@ -585,16 +588,17 @@ cleanup:
 int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 {
 	supplicant_event_t *evt = os_zalloc(sizeof(supplicant_event_t));
-	if (evt == NULL) {
+	if (!evt) {
+		wpa_printf(MSG_ERROR, "Failed to allocate memory.");
 		return -1;
 	}
 	evt->id = evt_id;
 	evt->data = data;
 
-	/* Make sure lock exists before taking it */
-	if (s_supplicant_api_lock) {
-		SUPPLICANT_API_LOCK();
-	} else {
+	SUPPLICANT_API_LOCK();
+	/*Make sure no event can be sent when deletion event is sent or the task is not initialized*/
+	if (!s_supplicant_task_init_done) {
+		SUPPLICANT_API_UNLOCK();
 		os_free(evt);
 		return -1;
 	}
@@ -603,9 +607,10 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 		os_free(evt);
 		return -1;
 	}
-	if (evt_id != SIG_SUPPLICANT_DEL_TASK) {
-	    SUPPLICANT_API_UNLOCK();
+	if (evt_id == SIG_SUPPLICANT_DEL_TASK) {
+		s_supplicant_task_init_done = false;
 	}
+	SUPPLICANT_API_UNLOCK();
 	return 0;
 }
 #endif
