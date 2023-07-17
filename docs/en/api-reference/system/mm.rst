@@ -153,6 +153,11 @@ SPI Flash can be accessed by SPI1 (ESP-IDF `esp_flash` driver APIs), or by point
 
    PSRAM can also be accessed by EDMA. Data desynchronisation may happen because hardware does not guarantee the data consistency under such condition. You should call :cpp:func:`esp_cache_msync` to synchronise the Cache and the PSRAM.
 
+   :cpp:func:`esp_cache_msync` has two synchronization directions,
+
+   * c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M`: from cache to memory. By default (if you don't specify a direction), the synchronization is in this direction. Content in the address you specified will be written back to the memory.
+   * c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_M2C`: from memory to cache. By default, content in the address you specified will be invalidated from the cache.
+
 
 Thread Safety
 =============

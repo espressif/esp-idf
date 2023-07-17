@@ -77,13 +77,13 @@ TEST_CASE("test cache msync short enough when suspending an ISR", "[cache]")
 
     //Do msync first, as the first writeback / invalidate takes long time, next msyncs will be shorter and they keep unchanged almost
     RECORD_TIME_START();
-    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_INVALIDATE));
+    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE));
     RECORD_TIME_END(sync_time);
     sync_time_us = GET_US_BY_CCOUNT(sync_time);
     printf("first sync_time_us: %"PRId32"\n", sync_time_us);
 
     RECORD_TIME_START();
-    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_INVALIDATE));
+    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE));
     RECORD_TIME_END(sync_time);
     sync_time_us = GET_US_BY_CCOUNT(sync_time);
     printf("sync_time_us: %"PRId32"\n", sync_time_us);
@@ -103,7 +103,7 @@ TEST_CASE("test cache msync short enough when suspending an ISR", "[cache]")
 
     RECORD_TIME_START();
     sync_flag = true;
-    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
     sync_flag = false;
     RECORD_TIME_END(sync_time);
 
@@ -132,7 +132,7 @@ TEST_CASE("test cache msync short enough to be in an ISR", "[cache]")
     RECORD_TIME_PREPARE();
 
     RECORD_TIME_START();
-    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
     RECORD_TIME_END(sync_time);
     sync_time_us = GET_US_BY_CCOUNT(sync_time);
     printf("sync_time_us: %"PRId32"\n", sync_time_us);
@@ -175,7 +175,7 @@ TEST_CASE("test cache msync work with Flash operation when XIP from PSRAM", "[ca
     RECORD_TIME_PREPARE();
 
     RECORD_TIME_START();
-    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_INVALIDATE));
+    TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE));
     RECORD_TIME_END(sync_time);
     uint32_t sync_time_us = GET_US_BY_CCOUNT(sync_time);
     printf("sync_time_us: %"PRId32"\n", sync_time_us);
