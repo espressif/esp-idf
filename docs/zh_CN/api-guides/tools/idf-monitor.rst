@@ -180,6 +180,47 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
   {IDF_TARGET_TOOLCHAIN_PREFIX}-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+
+  如果在应用程序源代码中找不到匹配的地址，IDF 监视器还会检查 ROM 代码。此时不会打印源文件名和行号，只显示 ``函数名 in ROM``::
+
+    abort() was called at PC 0x40007c69 on core 0
+    0x40007c69: ets_write_char in ROM
+
+    Backtrace: 0x40081656:0x3ffb4ac0 0x40085729:0x3ffb4ae0 0x4008a7ce:0x3ffb4b00 0x40007c69:0x3ffb4b70 0x40008148:0x3ffb4b90 0x400d51d7:0x3ffb4c20 0x400e31bc:0x3ffb4c50 0x40087bc5:0x3ffb4c80
+    0x40081656: panic_abort at /Users/espressif/esp-idf/components/esp_system/panic.c:452
+    0x40085729: esp_system_abort at /Users/espressif/esp-idf/components/esp_system/port/esp_system_chip.c:90
+    0x4008a7ce: abort at /Users/espressif/esp-idf/components/newlib/abort.c:38
+    0x40007c69: ets_write_char in ROM
+    0x40008148: ets_printf in ROM
+    0x400d51d7: app_main at /Users/espressif/esp-idf/examples/get-started/hello_world/main/hello_world_main.c:49
+    0x400e31bc: main_task at /Users/espressif/esp-idf/components/freertos/app_startup.c:208 (discriminator 13)
+    0x40087bc5: vPortTaskWrapper at /Users/espressif/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:162
+    .....
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+  如果在应用程序源代码中找不到匹配的地址，IDF 监视器还会检查 ROM 代码。此时不会打印源文件名和行号，只显示 ``函数名 in ROM``::
+
+    abort() was called at PC 0x400481c1 on core 0
+    0x400481c1: ets_rsa_pss_verify in ROM
+
+    Stack dump detected
+    Core  0 register dump:
+    MEPC    : 0x4038051c  RA      : 0x40383840  SP      : 0x3fc8f6b0  GP      : 0x3fc8b000
+    0x4038051c: panic_abort at /Users/espressif/esp-idf/components/esp_system/panic.c:452
+    0x40383840: __ubsan_include at /Users/espressif/esp-idf/components/esp_system/ubsan.c:313
+
+    TP      : 0x3fc8721c  T0      : 0x37363534  T1      : 0x7271706f  T2      : 0x33323130
+    S0/FP   : 0x00000004  S1      : 0x3fc8f714  A0      : 0x3fc8f6dc  A1      : 0x3fc8f712
+    A2      : 0x00000000  A3      : 0x3fc8f709  A4      : 0x00000001  A5      : 0x3fc8c000
+    A6      : 0x7a797877  A7      : 0x76757473  S2      : 0x00000000  S3      : 0x3fc8f750
+    S4      : 0x3fc8f7e4  S5      : 0x00000000  S6      : 0x400481b0  S7      : 0x3c025841
+    0x400481b0: ets_rsa_pss_verify in ROM
+    .....
+
+ROM ELF 文件会根据 ``IDF_PATH`` 和 ``ESP_ROM_ELF_DIR`` 环境变量的路径自动加载。如需覆盖此行为，可以通过调用 ``esp_idf_monitor`` 并指定特定的 ROM ELF 文件路径：``python -m esp_idf_monitor --rom-elf-file [ROM ELF 文件的路径]``。
+
 .. note::
 
     将环境变量 ``ESP_MONITOR_DECODE`` 设置为 ``0`` 或者调用 esp_idf_monitor 的特定命令行选项 ``python -m esp_idf_monitor --disable-address-decoding`` 来禁止地址解码。
