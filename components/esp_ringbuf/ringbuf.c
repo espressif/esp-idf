@@ -29,13 +29,8 @@
 #define rbITEM_WRITTEN_FLAG         ( ( UBaseType_t ) 8 )   //Item has been written to by the application, thus can be read
 
 //Static allocation related
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 #define rbGET_TX_SEM_HANDLE( pxRingbuffer ) ( (SemaphoreHandle_t) &(pxRingbuffer->xTransSemStatic) )
 #define rbGET_RX_SEM_HANDLE( pxRingbuffer ) ( (SemaphoreHandle_t) &(pxRingbuffer->xRecvSemStatic) )
-#else
-#define rbGET_TX_SEM_HANDLE( pxRingbuffer ) ( pxRingbuffer->xTransSemHandle )
-#define rbGET_RX_SEM_HANDLE( pxRingbuffer ) ( pxRingbuffer->xRecvSemHandle )
-#endif
 
 typedef struct {
     //This size of this structure must be 32-bit aligned
@@ -87,21 +82,13 @@ typedef struct RingbufferDefinition {
      *        making the ring buffer's control structure slightly smaller when
      *        static allocation is disabled.
      */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
     StaticSemaphore_t xTransSemStatic;
     StaticSemaphore_t xRecvSemStatic;
-#else
-    SemaphoreHandle_t xTransSemHandle;
-    SemaphoreHandle_t xRecvSemHandle;
-#endif
     portMUX_TYPE mux;                           //Spinlock required for SMP
 } Ringbuffer_t;
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-#if __GNUC_PREREQ(4, 6)
 _Static_assert(sizeof(StaticRingbuffer_t) == sizeof(Ringbuffer_t), "StaticRingbuffer_t != Ringbuffer_t");
-#endif
-#endif
+
 /*
 Remark: A counting semaphore for items_buffered_sem would be more logical, but counting semaphores in
 FreeRTOS need a maximum count, and allocate more memory the larger the maximum count is. Here, we
@@ -885,23 +872,9 @@ RingbufHandle_t xRingbufferCreate(size_t xBufferSize, RingbufferType_t xBufferTy
     }
 
     //Initialize Semaphores
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
     //We don't use the handles for static semaphores, and xSemaphoreCreateBinaryStatic will never fail thus no need to check static case
     xSemaphoreCreateBinaryStatic(&(pxNewRingbuffer->xTransSemStatic));
     xSemaphoreCreateBinaryStatic(&(pxNewRingbuffer->xRecvSemStatic));
-#else
-    pxNewRingbuffer->xTransSemHandle = xSemaphoreCreateBinary();
-    pxNewRingbuffer->xRecvSemHandle = xSemaphoreCreateBinary();
-    if (pxNewRingbuffer->xTransSemHandle == NULL || pxNewRingbuffer->xRecvSemHandle == NULL) {
-        if (pxNewRingbuffer->xTransSemHandle != NULL) {
-            vSemaphoreDelete(pxNewRingbuffer->xTransSemHandle);
-        }
-        if (pxNewRingbuffer->xRecvSemHandle != NULL) {
-            vSemaphoreDelete(pxNewRingbuffer->xRecvSemHandle);
-        }
-        goto err;
-    }
-#endif
 
     prvInitializeNewRingbuffer(xBufferSize, xBufferType, pxNewRingbuffer, pucRingbufferStorage);
     return (RingbufHandle_t)pxNewRingbuffer;
@@ -918,7 +891,6 @@ RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum)
     return xRingbufferCreate((rbALIGN_SIZE(xItemSize) + rbHEADER_SIZE) * xItemNum, RINGBUF_TYPE_NOSPLIT);
 }
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
                                         RingbufferType_t xBufferType,
                                         uint8_t *pucRingbufferStorage,
@@ -940,7 +912,6 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
     pxNewRingbuffer->uxRingbufferFlags |= rbBUFFER_STATIC_FLAG;
     return (RingbufHandle_t)pxNewRingbuffer;
 }
-#endif
 
 BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, size_t xItemSize, TickType_t xTicksToWait)
 {
@@ -1317,12 +1288,11 @@ void vRingbufferDelete(RingbufHandle_t xRingbuffer)
     vSemaphoreDelete(rbGET_TX_SEM_HANDLE(pxRingbuffer));
     vSemaphoreDelete(rbGET_RX_SEM_HANDLE(pxRingbuffer));
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
     if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG) {
         //Ring buffer was statically allocated, no need to free
         return;
     }
-#endif
+
     free(pxRingbuffer->pucHead);
     free(pxRingbuffer);
 }
