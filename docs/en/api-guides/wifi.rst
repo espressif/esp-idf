@@ -2155,7 +2155,7 @@ If the RX antenna mode is :cpp:enumerator:`WIFI_ANT_MODE_AUTO`, the default ante
 Some limitations need to be considered:
 
  - The TX antenna can be set to :cpp:enumerator:`WIFI_ANT_MODE_AUTO` only if the RX antenna mode is :cpp:enumerator:`WIFI_ANT_MODE_AUTO`, because TX antenna selecting algorithm is based on RX antenna in :cpp:enumerator:`WIFI_ANT_MODE_AUTO` type.
- - The TX antenna mode or RX antenna mode is configured to :cpp:enumerator:`WIFI_ANT_MODE_AUTO`. The auto switching mode is easy to trigger the switching phase, as long as there is deterioration of RF signal. This causes in some situation where the RF signal is not stable, the antenna switching will be caused frequently, the total RF performance can't meet expectation.
+ - When the TX antenna mode or RX antenna mode is configured to :cpp:enumerator:`WIFI_ANT_MODE_AUTO` the switching mode will easily trigger the switching phase, as long as there is deterioration of the RF signal. So in situations where the RF signal is not stable, the antenna switching will occur frequently, resulting in an RF performance that may not meet expectations.
  - Currently, Bluetooth® does not support the multiple antennas feature, so please do not use multiple antennas related APIs.
 
 Following is the recommended scenarios to use the multiple antennas:
