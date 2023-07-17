@@ -18,9 +18,10 @@
 #include "lwip/ethip6.h"
 #include "netif/etharp.h"
 
+#include "esp_compiler.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
-#include "esp_compiler.h"
+#include "lwip/esp_netif_net_stack.h"
 #include "lwip/esp_pbuf_ref.h"
 
 /* Define those to better describe your network interface. */
@@ -115,7 +116,7 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * @param len length of buffer
  * @param l2_buff Placeholder for a separate L2 buffer. Unused for ethernet interface
  */
-void ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
+esp_netif_recv_ret_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
 {
     struct netif *netif = h;
     esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
@@ -125,21 +126,23 @@ void ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
         if (buffer) {
             esp_netif_free_rx_buffer(esp_netif, buffer);
         }
-        return;
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
     }
 
     /* allocate custom pbuf to hold  */
     p = esp_pbuf_allocate(esp_netif, buffer, len, buffer);
     if (p == NULL) {
         esp_netif_free_rx_buffer(esp_netif, buffer);
-        return;
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_ERR_NO_MEM);
     }
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
         pbuf_free(p);
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
     }
     /* the pbuf will be free in upper layer, eg: ethernet_input */
+    return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_OK);
 }
 
 /**

@@ -126,7 +126,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
  * @param len length of buffer
  * @param l2_buff wlan's L2 buffer pointer
  */
-void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
+esp_netif_recv_ret_t wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
 {
     struct netif * netif = h;
     esp_netif_t *esp_netif = netif->state;
@@ -136,14 +136,14 @@ void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
         if (l2_buff) {
             esp_netif_free_rx_buffer(esp_netif, l2_buff);
         }
-        return;
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
     }
 
 #ifdef CONFIG_LWIP_L2_TO_L3_COPY
     p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
     if (p == NULL) {
         esp_netif_free_rx_buffer(esp_netif, l2_buff);
-        return;
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_ERR_NO_MEM);
     }
     memcpy(p->payload, buffer, len);
     esp_netif_free_rx_buffer(esp_netif, l2_buff);
@@ -151,7 +151,7 @@ void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
     p = esp_pbuf_allocate(esp_netif, buffer, len, l2_buff);
     if (p == NULL) {
         esp_netif_free_rx_buffer(esp_netif, l2_buff);
-        return;
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_ERR_NO_MEM);
     }
 
 #endif
@@ -160,8 +160,9 @@ void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("wlanif_input: IP input error\n"));
         pbuf_free(p);
+        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
     }
-
+    return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_OK);
 }
 
 /**

@@ -5,8 +5,8 @@
  */
 
 #include "esp_netif.h"
-#include "esp_netif_lwip_internal.h"
 #include "lwip/esp_netif_net_stack.h"
+#include "esp_netif_lwip_internal.h"
 #if defined(CONFIG_PPP_SUPPORT)
 #include "esp_netif_lwip_ppp.h"
 #endif
