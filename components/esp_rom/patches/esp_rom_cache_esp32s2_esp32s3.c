@@ -90,27 +90,8 @@ extern void Cache_Freeze_DCache_Enable(cache_freeze_mode_t mode);
 #endif  //#if ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
 
 #if ESP_ROM_HAS_CACHE_WRITEBACK_BUG
-static void __attribute__((optimize("-O2"))) Cache_WriteBack_Items_Freeze(uint32_t addr, uint32_t items)
-{
-    /* Please do not modify this function, it must strictly follow the current execution sequence,
-     * otherwise it may cause unexpected errors.
-     */
-    REG_WRITE(EXTMEM_DCACHE_SYNC_ADDR_REG, addr);
-    REG_SET_FIELD(EXTMEM_DCACHE_SYNC_SIZE_REG, EXTMEM_DCACHE_SYNC_SIZE, items);
-
-    /*enable dcache freeze, mode = CACHE_FREEZE_ACK_BUSY*/
-    REG_CLR_BIT(EXTMEM_DCACHE_FREEZE_REG, EXTMEM_DCACHE_FREEZE_MODE);
-    REG_SET_BIT(EXTMEM_DCACHE_FREEZE_REG, EXTMEM_DCACHE_FREEZE_ENA);
-    while (!REG_GET_BIT(EXTMEM_DCACHE_FREEZE_REG, EXTMEM_DCACHE_FREEZE_DONE));
-
-    REG_SET_BIT(EXTMEM_DCACHE_SYNC_CTRL_REG, EXTMEM_DCACHE_WRITEBACK_ENA);
-    while(!REG_GET_BIT(EXTMEM_DCACHE_SYNC_CTRL_REG, EXTMEM_DCACHE_SYNC_DONE));
-
-    /*disable dcache freeze*/
-    REG_CLR_BIT(EXTMEM_DCACHE_FREEZE_REG, EXTMEM_DCACHE_FREEZE_ENA);
-    while (REG_GET_BIT(EXTMEM_DCACHE_FREEZE_REG, EXTMEM_DCACHE_FREEZE_DONE));
-}
-
+/* Defined in esp_rom_cache_writeback_esp32s3.S */
+extern void cache_writeback_items_freeze(uint32_t addr, uint32_t items);
 // renamed for patch
 extern int rom_Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
@@ -141,7 +122,7 @@ int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
 
         /*writeback start unaligned mem, one cacheline*/
         irq_status = XTOS_SET_INTLEVEL(XCHAL_NMILEVEL);//mask all interrupts
-        Cache_WriteBack_Items_Freeze(start, 1);
+        cache_writeback_items_freeze(start, 1);
         XTOS_RESTORE_INTLEVEL(irq_status);
 
         if (size == 0) {
@@ -157,7 +138,7 @@ int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
 
         /*writeback end unaligned mem, one cacheline*/
         irq_status = XTOS_SET_INTLEVEL(XCHAL_NMILEVEL);//mask all interrupts
-        Cache_WriteBack_Items_Freeze(end, 1);
+        cache_writeback_items_freeze(end, 1);
         XTOS_RESTORE_INTLEVEL(irq_status);
 
         if (size == 0) {

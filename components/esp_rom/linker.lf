@@ -4,6 +4,8 @@ entries:
     esp_rom_spiflash (noflash)
     if ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG = y:
         esp_rom_cache_esp32s2_esp32s3 (noflash)
+    if ESP_ROM_HAS_CACHE_WRITEBACK_BUG = y:
+        esp_rom_cache_writeback_esp32s3 (noflash)
     if HEAP_TLSF_USE_ROM_IMPL = y && ESP_ROM_TLSF_CHECK_PATCH = y:
         esp_rom_tlsf (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
