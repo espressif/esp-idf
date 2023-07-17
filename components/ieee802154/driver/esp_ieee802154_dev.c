@@ -804,7 +804,7 @@ esp_err_t ieee802154_sleep(void)
     ieee802154_enter_critical();
 
     stop_current_operation();
-    ieee802154_set_state(IEEE802154_STATE_IDLE);
+    ieee802154_set_state(IEEE802154_STATE_SLEEP);
 
     ieee802154_exit_critical();
     return ESP_OK;
