@@ -484,11 +484,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 if task.name in ('gdb', 'gdbgui', 'gdbtui'):
                     task.action_args['require_openocd'] = True
 
-    def run_gdb(gdb_args: List) -> int:
-        p = subprocess.Popen(gdb_args)
-        processes['gdb'] = p
-        return p.wait()
-
     def gdbtui(action: str, ctx: Context, args: PropertyDict, gdbinit: str, require_openocd: bool) -> None:
         """
         Synchronous GDB target with text ui mode
@@ -510,11 +505,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             args += ['-tui']
         if batch:
             args += ['--batch']
-        t = Thread(target=run_gdb, args=(args,))
-        t.start()
+        p = subprocess.Popen(args)
+        processes['gdb'] = p
         while True:
             try:
-                t.join()
+                p.wait()
                 break
             except KeyboardInterrupt:
                 # Catching Keyboard interrupt, as this is used for breaking running program in gdb
