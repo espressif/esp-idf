@@ -57,6 +57,12 @@ TEST_CASE("test cache msync short enough to be in an ISR", "[cache]")
     uint32_t sync_time_us = 200;
     RECORD_TIME_PREPARE();
 
+#if CONFIG_SPIRAM
+    //prepare the cache
+    TEST_ESP_OK(test_set_buffer_dirty(TEST_SYNC_START, TEST_SYNC_SIZE));
+#endif
+
+    //do once to record time
     RECORD_TIME_START();
     TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
     RECORD_TIME_END(sync_time);
@@ -72,11 +78,17 @@ TEST_CASE("test cache msync short enough to be in an ISR", "[cache]")
     };
     TEST_ESP_OK(esp_timer_create(&oneshot_timer_args, &timer));
 
+#if CONFIG_SPIRAM
+    //prepare the cache
+    TEST_ESP_OK(test_set_buffer_dirty(TEST_SYNC_START, TEST_SYNC_SIZE));
+#endif
+
+    //start timer
     uint32_t period = sync_time_us * 2;
     TEST_ESP_OK(esp_timer_start_periodic(timer, period));
 
-    //1ms
-    esp_rom_delay_us(1000);
+    //10ms
+    esp_rom_delay_us(10 * 1000);
     TEST_ESP_OK(esp_timer_stop(timer));
 
     ESP_LOGI(TAG, "Finish");
@@ -100,6 +112,10 @@ TEST_CASE("test cache msync work with Flash operation when XIP from PSRAM", "[ca
     uint32_t sync_time = 0;
     RECORD_TIME_PREPARE();
 
+    //prepare the cache
+    TEST_ESP_OK(test_set_buffer_dirty(TEST_SYNC_START, TEST_SYNC_SIZE));
+
+    //do once to record time
     RECORD_TIME_START();
     TEST_ESP_OK(esp_cache_msync((void *)TEST_SYNC_START, TEST_SYNC_SIZE, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE));
     RECORD_TIME_END(sync_time);
@@ -121,9 +137,14 @@ TEST_CASE("test cache msync work with Flash operation when XIP from PSRAM", "[ca
     };
     TEST_ESP_OK(esp_timer_create(&oneshot_timer_args, &timer));
 
+    //prepare the cache
+    TEST_ESP_OK(test_set_buffer_dirty(TEST_SYNC_START, TEST_SYNC_SIZE));
+
+    //start timer
     uint32_t period = sync_time_us * 2;
     TEST_ESP_OK(esp_timer_start_periodic(timer, period));
 
+    //erase
     ESP_ERROR_CHECK(esp_flash_erase_region(part->flash_chip, part->address, part->size));
 
     TEST_ESP_OK(esp_timer_stop(timer));
