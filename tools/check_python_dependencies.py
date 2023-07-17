@@ -20,12 +20,20 @@ import re
 import sys
 
 try:
-    import pkg_resources
-except Exception:
-    print('pkg_resources cannot be imported probably because the pip package is not installed and/or using a '
-          'legacy Python interpreter. Please refer to the Get Started section of the ESP-IDF Programming Guide for '
-          'setting up the required packages.')
+    from packaging.requirements import Requirement
+    from packaging.version import Version
+except ImportError:
+    print('packaging cannot be imported. '
+          'If you\'ve installed a custom Python then this package is provided separately and have to be installed as well. '
+          'Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required packages.')
     sys.exit(1)
+
+try:
+    from importlib.metadata import requires
+    from importlib.metadata import version as get_version
+except ImportError:
+    from importlib_metadata import requires  # type: ignore
+    from importlib_metadata import version as get_version  # type: ignore
 
 
 def escape_backslash(path):
@@ -46,19 +54,40 @@ if __name__ == '__main__':
                         help='Path to the requirements file',
                         default=default_requirements_path)
     args = parser.parse_args()
-
     not_satisfied = []
+
+    def version_check(requirement):  # type(Requirement) -> None
+        # compare installed version with required
+        version = Version(get_version(requirement.name))
+        if version.base_version not in requirement.specifier:
+            not_satisfied.append("Requirement '{}' was not met. Installed version: {}".format(requirement, version))
+
     with open(args.requirements) as f:
         for line in f:
             line = line.strip()
-            # pkg_resources.require() cannot handle the full requirements file syntax so we need to make
+            # requires() cannot handle the full requirements file syntax so we need to make
             # adjustments for options which we use.
             if line.startswith('file://'):
                 line = os.path.basename(line)
+            if line.startswith('--only-binary') or line.startswith('#') or len(line) == 0:
+                continue
             if line.startswith('-e') and '#egg=' in line:  # version control URLs, take the egg= part at the end only
-                line = re.search(r'#egg=([^\s]+)', line).group(1)
+                line = re.search(r'#egg=([^\s]+)', line).group(1)  # type: ignore
+            # remove comments
+            line = line.partition(' #')[0]
             try:
-                pkg_resources.require(line)
+                requirement = Requirement(line)
+                extras = requirement.extras
+                if requirement.marker and not requirement.marker.evaluate():
+                    continue
+                version_check(requirement)
+                for name in requires(requirement.name) or []:
+                    sub_req = Requirement(name)
+                    # check extras e.g. esptool[hsm]
+                    for extra in extras:
+                        # evaluate markers if present
+                        if not sub_req.marker or sub_req.marker.evaluate(environment={'extra': extra}):
+                            version_check(sub_req)
             except Exception:
                 not_satisfied.append(line)
 
