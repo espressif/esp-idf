@@ -411,6 +411,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_TWT_SETUP_REJECT
     ERR_TBL_IT(ESP_ERR_WIFI_TWT_SETUP_REJECT),                  /* 12314 0x301a The twt setup request was rejected by the AP */
 #   endif
+#   ifdef      ESP_ERR_WIFI_DISCARD
+    ERR_TBL_IT(ESP_ERR_WIFI_DISCARD),                           /* 12315 0x301b Discard frame */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */
