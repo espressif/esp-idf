@@ -304,18 +304,31 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
     }
 
     if (*sta && !esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
-       ap_free_sta(hapd, *sta);
+        ap_free_sta(hapd, *sta);
     }
 
     sta_info = ap_sta_add(hapd, bssid);
     if (!sta_info) {
         wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
-        goto fail;
+        return false;
     }
+
+#ifdef CONFIG_SAE
+    if (sta_info->lock && os_semphr_take(sta_info->lock, 0) != TRUE) {
+        wpa_printf(MSG_INFO, "Ignore assoc request as softap is busy with sae calculation for station "MACSTR, MAC2STR(bssid));
+        return false;
+    }
+#endif /* CONFIG_SAE */
+
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {
         if (sta_info->eapol_sm) {
             *sta = sta_info;
+#ifdef CONFIG_SAE
+            if (sta_info->lock) {
+                os_semphr_give(sta_info->lock);
+            }
+#endif /* CONFIG_SAE */
             return true;
         }
     } else {
@@ -324,6 +337,11 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
 #endif
     if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype)) {
         *sta = sta_info;
+#ifdef CONFIG_SAE
+        if (sta_info->lock) {
+            os_semphr_give(sta_info->lock);
+        }
+#endif /* CONFIG_SAE */
         return true;
     }
 
