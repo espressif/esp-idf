@@ -84,7 +84,7 @@ extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_
 
 extern const uint8_t local_server_cert_pem_start[] asm("_binary_local_server_cert_pem_start");
 extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cert_pem_end");
-static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, 0};
+static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, 0};
 static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
 static esp_tls_client_session_t *tls_client_session = NULL;
