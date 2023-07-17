@@ -94,6 +94,12 @@ struct mcpwm_timer_t {
     void *user_data;                     // user data which would be passed to the timer callbacks
 };
 
+typedef enum {
+    MCPWM_TRIGGER_NO_ASSIGN,    //default trigger source
+    MCPWM_TRIGGER_GPIO_FAULT,   //trigger assigned to gpio fault
+    MCPWM_TRIGGER_SYNC_EVENT,   //trigger assigned to sync event
+} mcpwm_trigger_source_t;
+
 struct mcpwm_oper_t {
     int oper_id;           // operator ID, index from 0
     mcpwm_group_t *group;  // which group the timer belongs to
@@ -102,6 +108,7 @@ struct mcpwm_oper_t {
     intr_handle_t intr;    // interrupt handle
     mcpwm_gen_t *generators[SOC_MCPWM_GENERATORS_PER_OPERATOR];    // mcpwm generator array
     mcpwm_cmpr_t *comparators[SOC_MCPWM_COMPARATORS_PER_OPERATOR]; // mcpwm comparator array
+    mcpwm_trigger_source_t triggers[SOC_MCPWM_TRIGGERS_PER_OPERATOR];                 // mcpwm trigger array, can be either a fault or a sync
     mcpwm_soft_fault_t *soft_fault;                                // mcpwm software fault
     mcpwm_operator_brake_mode_t brake_mode_on_soft_fault;          // brake mode on software triggered fault
     mcpwm_operator_brake_mode_t brake_mode_on_gpio_fault[SOC_MCPWM_GPIO_FAULTS_PER_GROUP]; // brake mode on GPIO triggered faults
