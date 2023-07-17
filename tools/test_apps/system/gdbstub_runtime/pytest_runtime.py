@@ -11,7 +11,6 @@ from test_panic_util import PanicTestDut  # noqa: E402
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c2', 'esp32h2'], reason='resolve IDF-7264')
 @pytest.mark.generic
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     dut.expect_exact('tested app is runnig.')
