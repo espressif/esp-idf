@@ -297,7 +297,41 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 需注意，:cpp:func:`mcpwm_generator_set_actions_on_compare_event` 的参数列表 **必须** 以 :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION_END` 结束。
 
-也可以调用 :cpp:func:`mcpwm_generator_set_action_on_compare_event` 逐一设置定时器操作，无需涉及变量参数。
+也可以调用 :cpp:func:`mcpwm_generator_set_action_on_compare_event` 逐一设置比较器操作，无需涉及变量参数。
+
+设置生成器对故障事件执行的操作
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+调用 :cpp:func:`mcpwm_generator_set_action_on_fault_event` 并辅以操作配置，可以针对故障事件，为生成器设置操作。操作配置定义在 :cpp:type:`mcpwm_gen_fault_event_action_t` 中：
+
+- :cpp:member:`mcpwm_gen_fault_event_action_t::direction` 指定定时器计数方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
+- :cpp:member:`mcpwm_gen_fault_event_action_t::fault` 指定用于触发器的故障。有关分配故障的方法，请参见 `MCPWM 故障`_。
+- :cpp:member:`mcpwm_gen_fault_event_action_t::action` 指定随即进行的生成器操作，可以调用 :cpp:type:`mcpwm_generator_action_t` 查看支持的操作。
+
+当生成器所属的操作器中没有空闲触发器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
+
+触发器支持的故障仅为 GPIO 故障，当传入故障不为 GPIO 故障时，将返回 :c:macro:`ESP_ERR_NOT_SUPPORTED` 错误。
+
+可借助辅助宏 :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` 构建触发事件操作条目。
+
+需注意，故障事件没有类似 :cpp:func:`mcpwm_generator_set_actions_on_fault_event` 这样的可变参数函数。
+
+设置生成器对同步事件执行的操作
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+调用 :cpp:func:`mcpwm_generator_set_action_on_sync_event` 并辅以操作配置，可以针对同步事件，为生成器设置操作。操作配置定义在 :cpp:type:`mcpwm_gen_sync_event_action_t` 中：
+
+- :cpp:member:`mcpwm_gen_sync_event_action_t::direction` 指定定时器计数方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
+- :cpp:member:`mcpwm_gen_sync_event_action_t::sync` 指定用于触发器的同步源。有关分配同步源的方法，请参见 `MCPWM 同步源`_。
+- :cpp:member:`mcpwm_gen_sync_event_action_t::action` 指定随即进行的生成器操作，可以调用 :cpp:type:`mcpwm_generator_action_t` 查看支持的操作。
+
+当生成器所属的操作器中没有空闲触发器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
+
+无论同步为何种类型，触发器仅支持一种同步操作，如果多次设置同步操作，将返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
+
+可借助辅助宏 :c:macro:`MCPWM_GEN_SYNC_EVENT_ACTION` 构建触发事件操作条目。
+
+需注意，同步事件没有类似 :cpp:func:`mcpwm_generator_set_actions_on_sync_event` 这样的可变参数函数。
 
 
 .. _mcpwm-classical-pwm-waveforms-and-generator-configurations:
@@ -957,7 +991,7 @@ API Reference
 
 
 .. [1]
-   不同的 ESP 芯片上的 MCPWM 资源数量可能存在差异（如组、定时器、比较器、操作器、生成器等）。详情请参见 [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__]。当分配了超出资源数量的 MCPWM 资源时，在检测到没有可用硬件资源后，驱动程序将返回错误。请在进行 :ref:`mcpwm-resource-allocation-and-initialization` 时务必检查返回值。
+   不同的 ESP 芯片上的 MCPWM 资源数量可能存在差异（如组、定时器、比较器、操作器、生成器、触发器等）。详情请参见 [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__]。当分配了超出资源数量的 MCPWM 资源时，在检测到没有可用硬件资源后，驱动程序将返回错误。请在进行 :ref:`mcpwm-resource-allocation-and-initialization` 时务必检查返回值。
 
 .. [2]
    回调函数及其调用的子函数需手动存放进 IRAM 中。

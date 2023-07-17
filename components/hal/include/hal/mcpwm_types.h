@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,7 +84,7 @@ typedef enum {
  */
 typedef enum {
     MCPWM_OPER_BRAKE_MODE_CBC,     /*!< Brake mode: CBC (cycle by cycle)*/
-    MCPWM_OPER_BRAKE_MODE_OST,     /*!< Brake mode, OST (one shot) */
+    MCPWM_OPER_BRAKE_MODE_OST,     /*!< Brake mode: OST (one shot) */
     MCPWM_OPER_BRAKE_MODE_INVALID, /*!< MCPWM operator invalid brake mode */
 } mcpwm_operator_brake_mode_t;
 
