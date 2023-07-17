@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-256 Secure Hash Standard was published by NIST in 2002.
@@ -179,30 +179,6 @@ static const uint32_t K[] = {
     d += temp1; h = temp1 + temp2;              \
 }
 
-static void mbedtls_sha256_software_process( mbedtls_sha256_context *ctx, const unsigned char data[64] );
-
-int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx, const unsigned char data[64] )
-{
-    bool first_block = false;
-
-    if (ctx->mode == ESP_MBEDTLS_SHA256_UNUSED) {
-        /* try to use hardware for this digest */
-        if (!ctx->is224 && esp_sha_try_lock_engine(SHA2_256)) {
-            ctx->mode = ESP_MBEDTLS_SHA256_HARDWARE;
-            first_block = true;
-        } else {
-            ctx->mode = ESP_MBEDTLS_SHA256_SOFTWARE;
-        }
-    }
-
-    if (ctx->mode == ESP_MBEDTLS_SHA256_HARDWARE) {
-        esp_sha_block(SHA2_256, data, first_block);
-    } else {
-        mbedtls_sha256_software_process(ctx, data);
-    }
-
-    return 0;
-}
 
 static void mbedtls_sha256_software_process( mbedtls_sha256_context *ctx, const unsigned char data[64] )
 {
@@ -260,13 +236,47 @@ static void mbedtls_sha256_software_process( mbedtls_sha256_context *ctx, const 
     }
 }
 
+
+static int esp_internal_sha256_parallel_engine_process( mbedtls_sha256_context *ctx, const unsigned char data[64], bool read_digest )
+{
+    bool first_block = false;
+
+    if (ctx->mode == ESP_MBEDTLS_SHA256_UNUSED) {
+        /* try to use hardware for this digest */
+        if (!ctx->is224 && esp_sha_try_lock_engine(SHA2_256)) {
+            ctx->mode = ESP_MBEDTLS_SHA256_HARDWARE;
+            first_block = true;
+        } else {
+            ctx->mode = ESP_MBEDTLS_SHA256_SOFTWARE;
+        }
+    }
+
+    if (ctx->mode == ESP_MBEDTLS_SHA256_HARDWARE) {
+        esp_sha_block(SHA2_256, data, first_block);
+        if (read_digest) {
+            esp_sha_read_digest_state(SHA2_256, ctx->state);
+        }
+    } else {
+        mbedtls_sha256_software_process(ctx, data);
+    }
+
+    return 0;
+}
+
+
+int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx, const unsigned char data[64] )
+{
+    return esp_internal_sha256_parallel_engine_process(ctx, data, true);
+}
+
+
 /*
  * SHA-256 process buffer
  */
 int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
-    int ret;
+    int ret = -1;
     size_t fill;
     uint32_t left;
 
@@ -287,7 +297,7 @@ int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *inp
     if ( left && ilen >= fill ) {
         memcpy( (void *) (ctx->buffer + left), input, fill );
 
-        if ( ( ret = mbedtls_internal_sha256_process( ctx, ctx->buffer ) ) != 0 ) {
+        if ( ( ret = esp_internal_sha256_parallel_engine_process( ctx, ctx->buffer, false ) ) != 0 ) {
             return ret;
         }
 
@@ -297,12 +307,16 @@ int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *inp
     }
 
     while ( ilen >= 64 ) {
-        if ( ( ret = mbedtls_internal_sha256_process( ctx, input ) ) != 0 ) {
+        if ( ( ret = esp_internal_sha256_parallel_engine_process( ctx, input, false ) ) != 0 ) {
             return ret;
         }
 
         input += 64;
         ilen  -= 64;
+    }
+
+    if (ctx->mode == ESP_MBEDTLS_SHA256_HARDWARE) {
+        esp_sha_read_digest_state(SHA2_256, ctx->state);
     }
 
     if ( ilen > 0 ) {
@@ -324,7 +338,7 @@ static const unsigned char sha256_padding[64] = {
  */
 int mbedtls_sha256_finish( mbedtls_sha256_context *ctx, unsigned char *output )
 {
-    int ret;
+    int ret = -1;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];

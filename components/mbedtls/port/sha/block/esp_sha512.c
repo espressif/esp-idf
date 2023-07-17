@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-512 Secure Hash Standard was published by NIST in 2002.
@@ -125,9 +125,28 @@ int mbedtls_sha512_starts( mbedtls_sha512_context *ctx, int is384 )
     return 0;
 }
 
-static int esp_internal_sha512_block_process(mbedtls_sha512_context *ctx,
-        const uint8_t *data, size_t len,
-        uint8_t *buf, size_t buf_len)
+static int esp_internal_sha_update_state(mbedtls_sha512_context *ctx)
+{
+    if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
+        if (ctx->mode == SHA2_512T) {
+            int ret = -1;
+            if ((ret = esp_sha_512_t_init_hash(ctx->t_val)) != 0) {
+                return ret;
+            }
+            ctx->first_block = false;
+        } else {
+            ctx->first_block = true;
+        }
+        ctx->sha_state = ESP_SHA512_STATE_IN_PROCESS;
+
+    } else if (ctx->sha_state == ESP_SHA512_STATE_IN_PROCESS) {
+        ctx->first_block = false;
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
+    }
+    return 0;
+}
+
+static void esp_internal_sha512_block_process(mbedtls_sha512_context *ctx, const uint8_t *data)
 {
     esp_sha_block(ctx->mode, data, ctx->first_block);
 
@@ -138,10 +157,19 @@ static int esp_internal_sha512_block_process(mbedtls_sha512_context *ctx,
 
 int mbedtls_internal_sha512_process( mbedtls_sha512_context *ctx, const unsigned char data[128] )
 {
+    int ret = -1;
     esp_sha_acquire_hardware();
+
+    ret = esp_internal_sha_update_state(ctx);
+    if (ret != 0) {
+        esp_sha_release_hardware();
+        return ret;
+    }
+
     esp_sha_block(ctx->mode, data, ctx->first_block);
+    esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
-    return 0;
+    return ret;
 }
 
 /*
@@ -181,18 +209,11 @@ int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *inp
 
         esp_sha_acquire_hardware();
 
-        if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
+        int ret = esp_internal_sha_update_state(ctx);
 
-            if (ctx->mode == SHA2_512T) {
-                esp_sha_512_t_init_hash(ctx->t_val);
-                ctx->first_block = false;
-            } else {
-                ctx->first_block = true;
-            }
-            ctx->sha_state = ESP_SHA512_STATE_IN_PROCESS;
-
-        } else if (ctx->sha_state == ESP_SHA512_STATE_IN_PROCESS) {
-            esp_sha_write_digest_state(ctx->mode, ctx->state);
+        if (ret != 0) {
+            esp_sha_release_hardware();
+            return ret;
         }
 
         /* First process buffered block, if any */
@@ -209,7 +230,6 @@ int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *inp
         esp_sha_read_digest_state(ctx->mode, ctx->state);
 
         esp_sha_release_hardware();
-
     }
 
     if ( ilen > 0 ) {
@@ -235,7 +255,7 @@ static const unsigned char sha512_padding[128] = {
  */
 int mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char *output )
 {
-    int ret;
+    int ret = -1;
     size_t last, padn;
     uint64_t high, low;
     unsigned char msglen[16];

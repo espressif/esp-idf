@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-1 standard was published by NIST in 1993.
@@ -90,6 +90,16 @@ int mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
     return 0;
 }
 
+static void esp_internal_sha_update_state(mbedtls_sha1_context *ctx)
+{
+    if (ctx->sha_state == ESP_SHA1_STATE_INIT) {
+        ctx->first_block = true;
+        ctx->sha_state = ESP_SHA1_STATE_IN_PROCESS;
+    } else if (ctx->sha_state == ESP_SHA1_STATE_IN_PROCESS) {
+        ctx->first_block = false;
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
+    }
+}
 
 static void esp_internal_sha1_block_process(mbedtls_sha1_context *ctx, const uint8_t *data)
 {
@@ -103,7 +113,9 @@ static void esp_internal_sha1_block_process(mbedtls_sha1_context *ctx, const uin
 int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
 {
     esp_sha_acquire_hardware();
+    esp_internal_sha_update_state(ctx);
     esp_sha_block(ctx->mode, data, ctx->first_block);
+    esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
     return 0;
 }
@@ -138,12 +150,8 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
     if ( (ilen >= 64) || local_len) {
 
         esp_sha_acquire_hardware();
-        if (ctx->sha_state == ESP_SHA1_STATE_INIT) {
-            ctx->first_block = true;
-            ctx->sha_state = ESP_SHA1_STATE_IN_PROCESS;
-        } else if (ctx->sha_state == ESP_SHA1_STATE_IN_PROCESS) {
-           esp_sha_write_digest_state(SHA1, ctx->state);
-        }
+
+        esp_internal_sha_update_state(ctx);
 
         /* First process buffered block, if any */
         if ( local_len ) {
@@ -181,7 +189,7 @@ static const unsigned char sha1_padding[64] = {
  */
 int mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
 {
-    int ret;
+    int ret = -1;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];
