@@ -497,6 +497,7 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_n
  */
 void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num, bool enable);
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
 /**
  * @brief Set gpio hysteresis enable/disable by efuse.
  *
@@ -504,6 +505,7 @@ void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num,
  * @param gpio_num GPIO number
  */
 #define gpio_hal_hysteresis_from_efuse(hal, gpio_num) gpio_ll_pin_input_hysteresis_ctrl_sel_efuse((hal)->dev, gpio_num)
+#endif
 #endif  // SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 
 #ifdef __cplusplus

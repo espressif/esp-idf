@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
     if (func == RTCIO_FUNC_RTC) {
         // Disable USB Serial JTAG if pin 19 or pin 20 needs to select the rtc function
-        if (rtcio_num == rtc_io_num_map[USB_DM_GPIO_NUM] || rtcio_num == rtc_io_num_map[USB_DP_GPIO_NUM]) {
+        if (rtcio_num == rtc_io_num_map[USB_INT_PHY0_DM_GPIO_NUM] || rtcio_num == rtc_io_num_map[USB_INT_PHY0_DP_GPIO_NUM]) {
             USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
         }
         SENS.sar_peri_clk_gate_conf.iomux_clk_en = 1;
@@ -202,8 +202,8 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
     // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
     // USB DP pin is default to PU enabled
     // Note that from esp32s3 ECO1, USB_EXCHG_PINS feature has been supported. If this efuse is burnt, the gpio pin
-    // which should be checked is USB_DM_GPIO_NUM instead.
-    if (rtcio_num == USB_DP_GPIO_NUM) {
+    // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
+    if (rtcio_num == USB_INT_PHY0_DP_GPIO_NUM) {
         SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
         CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
     }

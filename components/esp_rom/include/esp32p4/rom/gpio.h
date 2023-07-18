@@ -30,8 +30,8 @@ extern "C" {
 #define GPIO_ID_PIN(n)                  (GPIO_ID_PIN0+(n))
 #define GPIO_PIN_ADDR(i)                (GPIO_PIN0_REG + i*4)
 
-#define GPIO_FUNC_IN_HIGH               0x38
-#define GPIO_FUNC_IN_LOW                0x3C
+#define GPIO_FUNC_IN_HIGH               0x3F
+#define GPIO_FUNC_IN_LOW                0x3E
 
 #define GPIO_ID_IS_PIN_REGISTER(reg_id) \
     ((reg_id >= GPIO_ID_PIN0) && (reg_id <= GPIO_ID_PIN(GPIO_PIN_COUNT-1)))
@@ -85,7 +85,7 @@ void gpio_init(void);
 void gpio_output_set(uint32_t set_mask, uint32_t clear_mask, uint32_t enable_mask, uint32_t disable_mask);
 
 /**
-  * @brief Change GPIO(32-39) pin output by setting, clearing, or disabling pins, GPIO32<->BIT(0).
+  * @brief Change GPIO(32-56) pin output by setting, clearing, or disabling pins, GPIO32<->BIT(0).
   *         There is no particular ordering guaranteed; so if the order of writes is significant,
   *         calling code should divide a single call into multiple calls.
   *
@@ -111,7 +111,7 @@ void gpio_output_set_high(uint32_t set_mask, uint32_t clear_mask, uint32_t enabl
 uint32_t gpio_input_get(void);
 
 /**
-  * @brief Sample the value of GPIO input pins(32-39) and returns a bitmask.
+  * @brief Sample the value of GPIO input pins(32-56) and returns a bitmask.
   *
   * @param None
   *
@@ -173,7 +173,7 @@ void gpio_intr_ack(uint32_t ack_mask);
 void gpio_intr_ack_high(uint32_t ack_mask);
 
 /**
-  * @brief Set GPIO to wakeup the ESP32.
+  * @brief Set GPIO to wakeup the ESP32P4.
   *        Please do not call this function in SDK.
   *
   * @param uint32_t i: gpio number.
@@ -185,7 +185,7 @@ void gpio_intr_ack_high(uint32_t ack_mask);
 void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
 
 /**
-  * @brief disable GPIOs to wakeup the ESP32.
+  * @brief disable GPIOs to wakeup the ESP32P4.
   *        Please do not call this function in SDK.
   *
   * @param None
@@ -197,10 +197,9 @@ void gpio_pin_wakeup_disable(void);
 /**
   * @brief set gpio input to a signal, one gpio can input to several signals.
   *
-  * @param uint32_t gpio : gpio number, 0~0x2f
-  *                        gpio == 0x3C, input 0 to signal
-  *                        gpio == 0x3A, input nothing to signal
-  *                        gpio == 0x38, input 1 to signal
+  * @param uint32_t gpio : gpio number, 0~56
+  *                        gpio == 0x3E, input 0 to signal
+  *                        gpio == 0x3F, input 1 to signal
   *
   * @param uint32_t signal_idx : signal index.
   *
@@ -213,7 +212,7 @@ void gpio_matrix_in(uint32_t gpio, uint32_t signal_idx, bool inv);
 /**
   * @brief set signal output to gpio, one signal can output to several gpios.
   *
-  * @param uint32_t gpio : gpio number, 0~0x2f
+  * @param uint32_t gpio : gpio number, 0~56
   *
   * @param uint32_t signal_idx : signal index.
   *                        signal_idx == 0x100, cancel output put to the gpio
@@ -229,7 +228,7 @@ void gpio_matrix_out(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_
 /**
   * @brief Select pad as a gpio function from IOMUX.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */
@@ -238,7 +237,7 @@ void gpio_pad_select_gpio(uint32_t gpio_num);
 /**
   * @brief Set pad driver capability.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @param uint32_t drv : 0-3
   *
@@ -249,7 +248,7 @@ void gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
 /**
   * @brief Pull up the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */
@@ -258,7 +257,7 @@ void gpio_pad_pullup(uint32_t gpio_num);
 /**
   * @brief Pull down the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */
@@ -267,7 +266,7 @@ void gpio_pad_pulldown(uint32_t gpio_num);
 /**
   * @brief Unhold the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */
@@ -276,7 +275,7 @@ void gpio_pad_unhold(uint32_t gpio_num);
 /**
   * @brief Hold the pad from gpio number.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */
@@ -285,7 +284,7 @@ void gpio_pad_hold(uint32_t gpio_num);
 /**
   * @brief enable gpio pad input.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */
@@ -294,7 +293,7 @@ void gpio_pad_input_enable(uint32_t gpio_num);
 /**
   * @brief disable gpio pad input.
   *
-  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  * @param uint32_t gpio_num : gpio number, 0~56
   *
   * @return None
   */

@@ -35,7 +35,7 @@ extern "C" {
  */
 static inline void gpio_ll_etm_event_channel_set_gpio(gpio_etm_dev_t *dev, uint32_t chan, uint32_t gpio_num)
 {
-    dev->etm_event_chn_cfg[chan].etm_ch0_event_sel = gpio_num;
+    dev->etm_event_chn_cfg[chan].etm_chn_event_sel = gpio_num;
 }
 
 /**
@@ -47,7 +47,7 @@ static inline void gpio_ll_etm_event_channel_set_gpio(gpio_etm_dev_t *dev, uint3
  */
 static inline void gpio_ll_etm_enable_event_channel(gpio_etm_dev_t *dev, uint32_t chan, bool enable)
 {
-    dev->etm_event_chn_cfg[chan].etm_ch0_event_en = enable;
+    dev->etm_event_chn_cfg[chan].etm_chn_event_en = enable;
 }
 
 /**

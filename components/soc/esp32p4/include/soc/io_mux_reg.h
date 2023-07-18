@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,11 @@
 #define MCU_SEL_M (MCU_SEL_V << MCU_SEL_S)
 #define MCU_SEL_V 0x7
 #define MCU_SEL_S 12
+/* Pin filter (Pulse width shorter than 2 clock cycles will be filtered out) */
+#define FILTER_EN (BIT(15))
+#define FILTER_EN_M (FILTER_EN_V << FILTER_EN_S)
+#define FILTER_EN_V 1
+#define FILTER_EN_S 15
 
 #define PIN_SLP_INPUT_ENABLE(PIN_NAME)      SET_PERI_REG_MASK(PIN_NAME,SLP_IE)
 #define PIN_SLP_INPUT_DISABLE(PIN_NAME)     CLEAR_PERI_REG_MASK(PIN_NAME,SLP_IE)
@@ -75,14 +80,16 @@
 #define PIN_SLP_SEL_ENABLE(PIN_NAME)        SET_PERI_REG_MASK(PIN_NAME,SLP_SEL)
 #define PIN_SLP_SEL_DISABLE(PIN_NAME)       CLEAR_PERI_REG_MASK(PIN_NAME,SLP_SEL)
 
-#define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_SET_DRV(PIN_NAME, drv)            REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
-#define PIN_PULLUP_DIS(PIN_NAME)                 REG_CLR_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLUP_EN(PIN_NAME)                  REG_SET_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLDWN_DIS(PIN_NAME)             REG_CLR_BIT(PIN_NAME, FUN_PD)
-#define PIN_PULLDWN_EN(PIN_NAME)              REG_SET_BIT(PIN_NAME, FUN_PD)
-#define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
+#define PIN_INPUT_ENABLE(PIN_NAME)          SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_INPUT_DISABLE(PIN_NAME)         CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_SET_DRV(PIN_NAME, drv)          REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
+#define PIN_PULLUP_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLUP_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLDWN_DIS(PIN_NAME)           REG_CLR_BIT(PIN_NAME, FUN_PD)
+#define PIN_PULLDWN_EN(PIN_NAME)            REG_SET_BIT(PIN_NAME, FUN_PD)
+#define PIN_FUNC_SELECT(PIN_NAME, FUNC)     REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
+#define PIN_FILTER_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FILTER_EN)
+#define PIN_FILTER_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FILTER_EN)
 
 #define IO_MUX_GPIO0_REG                    PERIPHS_IO_MUX_U_PAD_GPIO0
 #define IO_MUX_GPIO1_REG                    PERIPHS_IO_MUX_U_PAD_GPIO1
@@ -142,13 +149,15 @@
 #define IO_MUX_GPIO55_REG                   PERIPHS_IO_MUX_U_PAD_GPIO55
 #define IO_MUX_GPIO56_REG                   PERIPHS_IO_MUX_U_PAD_GPIO56
 
-#define FUNC_GPIO_GPIO                              1
 #define PIN_FUNC_GPIO								1
 
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
+// TODO: IDF-7499, IDF-7495
+// Pins defined here are all wrong (Ln153-164). On P4, these pins are individual pins, don't use normal GPIO pins anymore.
+// Please check iomux_mspi_pin_struct/reg.h
 #define SPI_CS1_GPIO_NUM 26
 #define SPI_HD_GPIO_NUM  27
 #define SPI_WP_GPIO_NUM  28
@@ -191,44 +200,37 @@
 #define PSRAM_DP15_DEBUG_GPIO_NUM 46
 #define PSRAM_DQS1_DEBUG_GPIO_NUM 47
 
-#define SD_CLK_GPIO_NUM 12
-#define SD_CMD_GPIO_NUM 11
-#define SD_DATA0_GPIO_NUM 13
-#define SD_DATA1_GPIO_NUM 14
-#define SD_DATA2_GPIO_NUM 9
-#define SD_DATA3_GPIO_NUM 10
+#define SD_CLK_GPIO_NUM           43
+#define SD_CMD_GPIO_NUM           44
+#define SD_DATA0_GPIO_NUM         39
+#define SD_DATA1_GPIO_NUM         40
+#define SD_DATA2_GPIO_NUM         41
+#define SD_DATA3_GPIO_NUM         42
+#define SD_DATA4_GPIO_NUM         45
+#define SD_DATA5_GPIO_NUM         46
+#define SD_DATA6_GPIO_NUM         47
+#define SD_DATA7_GPIO_NUM         48
 
-#define MAX_RTC_GPIO_NUM             15
+#define USB_INT_PHY0_DM_GPIO_NUM  24
+#define USB_INT_PHY0_DP_GPIO_NUM  25
+#define USB_INT_PHY1_DM_GPIO_NUM  26
+#define USB_INT_PHY1_DP_GPIO_NUM  27
+
+// We would fix the USB PHY usage on P4: PHY0 -> USJ, PHY1 -> USB_OTG
+#define USB_USJ_INT_PHY_DM_GPIO_NUM     USB_INT_PHY0_DM_GPIO_NUM
+#define USB_USJ_INT_PHY_DP_GPIO_NUM     USB_INT_PHY0_DP_GPIO_NUM
+#define USB_OTG_INT_PHY_DM_GPIO_NUM     USB_INT_PHY1_DM_GPIO_NUM
+#define USB_OTG_INT_PHY_DP_GPIO_NUM     USB_INT_PHY1_DP_GPIO_NUM
+
+// #define EXT_OSC_SLOW_GPIO_NUM     1 // TODO: IDF-7526
+
+#define MAX_RTC_GPIO_NUM             16
 #define MAX_PAD_GPIO_NUM             56
 #define MAX_GPIO_NUM                 56
 #define HIGH_IO_HOLD_BIT_SHIFT       32
 
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
-#define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
-#define PAD_POWER_SEL                               BIT(15)
-#define PAD_POWER_SEL_V                             0x1
-#define PAD_POWER_SEL_M                             BIT(15)
-#define PAD_POWER_SEL_S                             15
-
-#define PAD_POWER_SWITCH_DELAY                      0x7
-#define PAD_POWER_SWITCH_DELAY_V                    0x7
-#define PAD_POWER_SWITCH_DELAY_M                    (PAD_POWER_SWITCH_DELAY_V << PAD_POWER_SWITCH_DELAY_S)
-#define PAD_POWER_SWITCH_DELAY_S                    12
-
-#define CLK_OUT3                                    IO_MUX_CLK_OUT3
-#define CLK_OUT3_V                                  IO_MUX_CLK_OUT3_V
-#define CLK_OUT3_S                                  IO_MUX_CLK_OUT3_S
-#define CLK_OUT3_M                                  IO_MUX_CLK_OUT3_M
-#define CLK_OUT2                                    IO_MUX_CLK_OUT2
-#define CLK_OUT2_V                                  IO_MUX_CLK_OUT2_V
-#define CLK_OUT2_S                                  IO_MUX_CLK_OUT2_S
-#define CLK_OUT2_M                                  IO_MUX_CLK_OUT2_M
-#define CLK_OUT1                                    IO_MUX_CLK_OUT1
-#define CLK_OUT1_V                                  IO_MUX_CLK_OUT1_V
-#define CLK_OUT1_S                                  IO_MUX_CLK_OUT1_S
-#define CLK_OUT1_M                                  IO_MUX_CLK_OUT1_M
-// definitions above are inherited from previous version of code, should double check
 
 // definitions below are generated from pin_txt.csv
 #define PERIPHS_IO_MUX_U_PAD_GPIO0                 (REG_IO_MUX_BASE + 0x4)

@@ -3733,7 +3733,7 @@ typedef union {
 } pmu_xtal_slp_reg_t;
 
 
-typedef struct {
+typedef struct pmu_dev_t {
     volatile pmu_hp_active_dig_power_reg_t hp_active_dig_power;
     volatile pmu_hp_active_icg_hp_func_reg_t hp_active_icg_hp_func;
     volatile pmu_hp_active_icg_hp_apb_reg_t hp_active_icg_hp_apb;

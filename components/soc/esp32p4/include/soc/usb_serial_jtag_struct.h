@@ -996,7 +996,7 @@ typedef union {
 } usb_serial_jtag_date_reg_t;
 
 
-typedef struct {
+typedef struct usb_serial_jtag_dev_t {
     volatile usb_serial_jtag_ep1_reg_t ep1;
     volatile usb_serial_jtag_ep1_conf_reg_t ep1_conf;
     volatile usb_serial_jtag_int_raw_reg_t int_raw;
@@ -1034,6 +1034,7 @@ typedef struct {
     volatile usb_serial_jtag_date_reg_t date;
 } usb_serial_jtag_dev_t;
 
+extern usb_serial_jtag_dev_t USB_SERIAL_JTAG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(usb_serial_jtag_dev_t) == 0x8c, "Invalid size of usb_serial_jtag_dev_t structure");

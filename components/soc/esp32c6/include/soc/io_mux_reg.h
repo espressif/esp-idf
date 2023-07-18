@@ -143,8 +143,8 @@
 #define SD_DATA2_GPIO_NUM            22
 #define SD_DATA3_GPIO_NUM            23
 
-#define USB_DM_GPIO_NUM              12
-#define USB_DP_GPIO_NUM              13
+#define USB_INT_PHY0_DM_GPIO_NUM              12
+#define USB_INT_PHY0_DP_GPIO_NUM              13
 
 #define EXT_OSC_SLOW_GPIO_NUM        0
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -791,21 +791,28 @@ TEST_CASE("GPIO_drive_capability_test", "[gpio][ignore]")
     prompt_to_continue("If this test finishes");
 }
 
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#if SOC_USB_SERIAL_JTAG_SUPPORTED // TODO: replace with a more proper soc_caps (USB_PHY_INTERNAL_NUM > 0)
 TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 {
-    const int test_pins[] = {USB_DP_GPIO_NUM, USB_DM_GPIO_NUM};
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pin_bit_mask = (BIT64(test_pins[0]) | BIT64(test_pins[1])),
-        .pull_down_en = 0,
-        .pull_up_en = 0,
-    };
-    gpio_config(&io_conf);
+    const int test_pins[] = {USB_INT_PHY0_DP_GPIO_NUM,
+                             USB_INT_PHY0_DM_GPIO_NUM,
+#if CONFIG_IDF_TARGET_ESP32P4 // TODO: Use proper soc_caps macro
+                             USB_INT_PHY1_DP_GPIO_NUM,
+                             USB_INT_PHY1_DM_GPIO_NUM
+#endif
+                            };
 
     for (int i = 0; i < sizeof(test_pins) / sizeof(int); i++) {
         int pin = test_pins[i];
+        gpio_config_t io_conf = {
+            .intr_type = GPIO_INTR_DISABLE,
+            .mode = GPIO_MODE_INPUT_OUTPUT,
+            .pin_bit_mask = BIT64(pin),
+            .pull_down_en = 0,
+            .pull_up_en = 0,
+        };
+        gpio_config(&io_conf);
+
         // test pin
         gpio_set_level(pin, 0);
         esp_rom_delay_us(10);
@@ -834,16 +841,26 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
     // USB D+ pull-up value is default to 1 (USB_SERIAL_JTAG_DP_PULLUP)
     // Therefore, when D+ pin's pull-up value is set to 0, it will also clear USB D+ pull-up value to allow
     // its full functionality as a normal gpio pin
-    gpio_config_t input_io = test_init_io(USB_DP_GPIO_NUM);
-    input_io.mode = GPIO_MODE_INPUT;
-    input_io.pull_up_en = 0;
-    input_io.pull_down_en = 1;
-    gpio_config(&input_io);
+    const int test_pins[] = {USB_INT_PHY0_DP_GPIO_NUM,
+#if CONFIG_IDF_TARGET_ESP32P4 // TODO: Use proper soc_caps macro
+                             USB_INT_PHY1_DP_GPIO_NUM,
+#endif
+                            };
 
-    TEST_ASSERT_EQUAL_INT(0, gpio_get_level(USB_DP_GPIO_NUM));
+    for (int i = 0; i < sizeof(test_pins) / sizeof(int); i++) {
+        int pin = test_pins[i];
+        gpio_config_t input_io = test_init_io(pin);
+        input_io.mode = GPIO_MODE_INPUT;
+        input_io.pull_up_en = 0;
+        input_io.pull_down_en = 1;
+        gpio_config(&input_io);
+
+        TEST_ASSERT_EQUAL_INT(0, gpio_get_level(pin));
+    }
 }
 #endif //SOC_USB_SERIAL_JTAG_SUPPORTED
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO: IDF-7528 Remove when light sleep is supported on ESP32P4
 // Ignored in CI because it needs manually connect TEST_GPIO_INPUT_LEVEL_LOW_PIN to 3.3v to wake up from light sleep
 TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
 {
@@ -860,3 +877,4 @@ TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
     printf("Waked up from light sleep\n");
     TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)

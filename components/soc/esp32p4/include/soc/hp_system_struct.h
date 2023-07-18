@@ -1915,7 +1915,7 @@ typedef union {
 } hp_system_gpio_o_hys_ctrl1_reg_t;
 
 
-typedef struct {
+typedef struct hp_system_dev_t {
     volatile hp_system_ver_date_reg_t sys_ver_date;
     volatile hp_system_clk_en_reg_t clk_en;
     uint32_t reserved_008[2];
@@ -2023,6 +2023,7 @@ typedef struct {
     volatile hp_system_peri_mem_clk_force_on_reg_t peri_mem_clk_force_on;
 } hp_system_dev_t;
 
+extern hp_system_dev_t HP_SYSTEM;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(hp_system_dev_t) == 0x1e4, "Invalid size of hp_system_dev_t structure");

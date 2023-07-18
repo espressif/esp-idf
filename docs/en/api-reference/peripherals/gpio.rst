@@ -56,13 +56,19 @@ GPIO Summary
     GPIO Hysteresis Filter
     ----------------------
 
-    {IDF_TARGET_NAME} support the hardware hysteresis of the input pin, which can reduce the GPIO interrupt shoot by accident due to unstable sampling when the input voltage is near the critical of logic 0 and 1, especially when the input logic level conversion is slow or the voltage setup time is too long.
+    {IDF_TARGET_NAME} support the hardware hysteresis of the input pin, which can reduce the GPIO interrupt shoot by accident due to unstable sampling when the input voltage is near the criteria of logic 0 and 1, especially when the input logic level conversion is slow or the voltage setup time is too long.
 
-    Each pin can enable hysteresis function independently. By default, it controlled by eFuse and been closed, but it can also be enabled or disabled by software manually. You can select the hysteresis control mode by configuring :cpp:member:`gpio_config_t::hys_ctrl_mode`.
+    .. only:: SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
 
-    .. note::
+        Each pin can enable hysteresis function independently. By default, it controlled by eFuse and been closed, but it can also be enabled or disabled by software manually. You can select the hysteresis control mode by configuring :cpp:member:`gpio_config_t::hys_ctrl_mode`. Hysteresis control mode is set along with all the other GPIO configurations in :cpp:func:`gpio_config`.
 
-        When the hysteresis function is controlled by eFuse, this feature can still be controlled independently for each pin, you need to `burn the eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ to enable the hysteresis function on specific GPIO additionally.
+        .. note::
+
+            When the hysteresis function is controlled by eFuse, this feature can still be controlled independently for each pin, you need to `burn the eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ to enable the hysteresis function on specific GPIO additionally.
+
+    .. only:: not SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
+
+        Each pin can enable hysteresis function independently. By default, the function is not enabled. You can select the hysteresis control mode by configuring :cpp:member:`gpio_config_t::hys_ctrl_mode`. Hysteresis control mode is set along with all the other GPIO configurations in :cpp:func:`gpio_config`.
 
 
 Application Example

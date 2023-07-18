@@ -58,11 +58,18 @@ GPIO 汇总
 
     {IDF_TARGET_NAME} 支持输入引脚的硬件迟滞，这可以减少由于输入电压在逻辑 0、1 临界值附近时采样不稳定造成的 GPIO 中断误触，尤其是当输入逻辑电平转换较慢，电平建立时间较长时。
 
-    每个引脚可以独立启用迟滞功能。默认情况下，它由 eFuse 控制，且处于关闭状态，但也可以由软件控制启用或禁用。您可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择迟滞控制模式。
+    .. only:: SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
 
-    .. note::
+        每个引脚可以独立启用迟滞功能。默认情况下，它由 eFuse 控制，且处于关闭状态，但也可以由软件控制启用或禁用。您可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择迟滞控制模式。迟滞控制模式会和其余 GPIO 配置一起在 :cpp:func:`gpio_config` 中生效。
 
-        当迟滞功能由 eFuse 控制时，仍然可以独立的控制每个引脚的该功能，您需要 `烧断 eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ ，以在特定 GPIO上 启用迟滞功能。
+
+        .. note::
+
+            当迟滞功能由 eFuse 控制时，仍然可以独立的控制每个引脚的该功能，您需要 `烧断 eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ ，以在特定 GPIO上 启用迟滞功能。
+
+    .. only:: not SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
+
+        每个引脚可以独立启用迟滞功能。默认情况下，它处于关闭状态。您可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择启用与否。迟滞控制模式会和其余 GPIO 配置一起在 :cpp:func:`gpio_config` 中生效。
 
 
 应用示例

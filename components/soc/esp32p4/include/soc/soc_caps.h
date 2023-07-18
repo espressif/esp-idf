@@ -171,30 +171,36 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-P4 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
-#define SOC_GPIO_PIN_COUNT                 64
+#define SOC_GPIO_PIN_COUNT                 57
 // #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1  //TODO: IDF-7481
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8  //TODO: IDF-7481
+#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1
+// #define SOC_GPIO_SUPPORT_ETM          1  //TODO: IDF-7841
 #define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
 #define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has the full LP IO subsystem
 // On ESP32-P4, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
-// GPIO0~7 on ESP32P4 can support chip deep sleep wakeup
-// #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
+// GPIO0~15 on ESP32P4 can support chip deep sleep wakeup
+// #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1) // TODO: IDF-7480
 
-#define SOC_GPIO_VALID_GPIO_MASK        (0xFFFFFFFFFFFFFFFF)
+#define SOC_GPIO_VALID_GPIO_MASK        (0x01FFFFFFFFFFFFFF)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | 0xFFFF)
 
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_30)
-#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000007FFFFF00ULL
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_16~GPIO_NUM_56)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x01FFFFFFFFFF0000ULL
+
+// Support to force hold all IOs
+#define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+// Support to hold a single digital I/O when the digital domain is powered off
+#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-// #define SOC_RTCIO_PIN_COUNT                 8  //TODO: IDF-7480
+// #define SOC_RTCIO_PIN_COUNT                 16  //TODO: IDF-7480
 // #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  //TODO: IDF-7480
 // #define SOC_RTCIO_HOLD_SUPPORTED            1  //TODO: IDF-7480
 // #define SOC_RTCIO_WAKE_SUPPORTED            1  //TODO: IDF-7480

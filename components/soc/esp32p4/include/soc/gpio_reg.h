@@ -3710,33 +3710,6 @@ extern "C" {
 #define GPIO_PIN56_INT_ENA_V  0x0000001FU
 #define GPIO_PIN56_INT_ENA_S  13
 
-/** GPIO_FUNC0_IN_SEL_CFG_REG register
- *  GPIO input function configuration register
- */
-#define GPIO_FUNC0_IN_SEL_CFG_REG (DR_REG_GPIO_BASE + 0x15c)
-/** GPIO_FUNC0_IN_SEL : R/W; bitpos: [5:0]; default: 63;
- *  set this value: s=0-56: connect GPIO[s] to this port. s=0x3F: set this port always
- *  high level. s=0x3E: set this port always low level.
- */
-#define GPIO_FUNC0_IN_SEL    0x0000003FU
-#define GPIO_FUNC0_IN_SEL_M  (GPIO_FUNC0_IN_SEL_V << GPIO_FUNC0_IN_SEL_S)
-#define GPIO_FUNC0_IN_SEL_V  0x0000003FU
-#define GPIO_FUNC0_IN_SEL_S  0
-/** GPIO_FUNC0_IN_INV_SEL : R/W; bitpos: [6]; default: 0;
- *  set this bit to invert input signal. 1:invert. 0:not invert.
- */
-#define GPIO_FUNC0_IN_INV_SEL    (BIT(6))
-#define GPIO_FUNC0_IN_INV_SEL_M  (GPIO_FUNC0_IN_INV_SEL_V << GPIO_FUNC0_IN_INV_SEL_S)
-#define GPIO_FUNC0_IN_INV_SEL_V  0x00000001U
-#define GPIO_FUNC0_IN_INV_SEL_S  6
-/** GPIO_SIG0_IN_SEL : R/W; bitpos: [7]; default: 0;
- *  set this bit to bypass GPIO. 1:do not bypass GPIO. 0:bypass GPIO.
- */
-#define GPIO_SIG0_IN_SEL    (BIT(7))
-#define GPIO_SIG0_IN_SEL_M  (GPIO_SIG0_IN_SEL_V << GPIO_SIG0_IN_SEL_S)
-#define GPIO_SIG0_IN_SEL_V  0x00000001U
-#define GPIO_SIG0_IN_SEL_S  7
-
 /** GPIO_FUNC1_IN_SEL_CFG_REG register
  *  GPIO input function configuration register
  */

@@ -140,15 +140,15 @@ typedef union {
  */
 typedef union {
     struct {
-        /** etm_ch0_event_sel : R/W; bitpos: [4:0]; default: 0;
+        /** etm_chn_event_sel : R/W; bitpos: [4:0]; default: 0;
          *  Etm event channel select gpio.
          */
-        uint32_t etm_ch0_event_sel:5;
+        uint32_t etm_chn_event_sel:5;
         uint32_t reserved_5:2;
-        /** etm_ch0_event_en : R/W; bitpos: [7]; default: 0;
+        /** etm_chn_event_en : R/W; bitpos: [7]; default: 0;
          *  Etm event send enable bit.
          */
-        uint32_t etm_ch0_event_en:1;
+        uint32_t etm_chn_event_en:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;

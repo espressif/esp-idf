@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_LP_GPIO_SIG_MAP_H_
-#define _SOC_LP_GPIO_SIG_MAP_H_
+#pragma once
 
 #define LP_I2C_SCL_PAD_IN_IDX                             0
 #define LP_I2C_SCL_PAD_OUT_IDX                            0
@@ -51,5 +50,4 @@
 #define LP_PROBE_TOP_OUT14_IDX                            28
 #define LP_PROBE_TOP_OUT15_IDX                            29
 #define PROBE_CHAIN_CLK_PAD_OUT_IDX                       30
-#define GPIO_MAP_DATE_IDX                                 0x230323
-#endif  /* _SOC_LP_GPIO_SIG_MAP_H_ */
+#define LP_GPIO_MAP_DATE_IDX                              0x230323
