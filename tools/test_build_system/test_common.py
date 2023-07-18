@@ -241,11 +241,12 @@ def test_create_project_with_idf_readonly(idf_copy: Path) -> None:
     def change_to_readonly(src: Path) -> None:
         for root, dirs, files in os.walk(src):
             for name in dirs:
-                os.chmod(os.path.join(root, name), 0o555) # read & execute
+                os.chmod(os.path.join(root, name), 0o555)  # read & execute
             for name in files:
                 path = os.path.join(root, name)
-                if '/bin/' in path: continue  # skip excutables
-                os.chmod(os.path.join(root, name), 0o444) # readonly
+                if '/bin/' in path:
+                    continue  # skip excutables
+                os.chmod(os.path.join(root, name), 0o444)  # readonly
     logging.info('Check that command for creating new project will success if the IDF itself is readonly.')
     change_to_readonly(idf_copy)
     run_idf_py('create-project', '--path', str(idf_copy / 'example_proj'), 'temp_test_project')
