@@ -13,7 +13,8 @@ This section contains reference of the high-level storage APIs. They are based o
 - :doc:`Wear Levelling <wear-levelling>` library implements a flash translation layer (FTL) suitable for SPI NOR Flash. It is used as a container for FAT partitions in Flash.
 
 .. note::
-    It's suggested to use high-level APIs (``esp_partition`` or file system) instead of low-level driver APIs to access the SPI NOR Flash.
+
+    It is suggested to use high-level APIs (``esp_partition`` or file system) instead of low-level driver APIs to access the SPI NOR Flash.
 
     Due to the restriction of NOR Flash and ESP hardware, accessing the main flash will affect the performance of the whole system. See :doc:`SPI Flash Documents </api-reference/peripherals/spi_flash/index>` to learn more about the limitations.
 

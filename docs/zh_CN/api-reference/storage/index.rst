@@ -13,6 +13,7 @@
 - :doc:`磨损均衡 <wear-levelling>` 库实现了一个适用于 SPI NOR Flash 的 Flash 翻译层 (FTL)，用于 Flash 中 FAT 分区的容器。
 
 .. note::
+
     建议使用高层次的 API （ ``esp_partition`` 或者文件系统）而非低层次驱动 API 去访问 SPI NOR Flash 。
 
     由于 NOR Flash 和乐鑫硬件的一些限制，访问主 Flash 会影响各个系统的性能。关于这些限制的更多信息，参见 :doc:`SPI Flash Documents </api-reference/peripherals/spi_flash/index>` 。

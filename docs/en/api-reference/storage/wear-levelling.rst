@@ -1,6 +1,6 @@
 .. include:: ../../../../components/wear_levelling/README.rst
 
-See also
+See Also
 --------
 
 - :doc:`FAT Filesystem <./fatfs>`
@@ -11,7 +11,7 @@ Application Example
 
 An example which combines the wear levelling driver with the FATFS library is provided in the :example:`storage/wear_levelling` directory. This example initializes the wear levelling driver, mounts FATFS partition, as well as writes and reads data from it using POSIX and C library APIs. See the :example_file:`storage/wear_levelling/README.md` file for more information.
 
-High level API Reference
+High-Level API Reference
 ------------------------
 
 Header Files
@@ -27,7 +27,7 @@ Functions
     :members:
 .. doxygenfunction:: esp_vfs_fat_spiflash_unmount_rw_wl
 
-Mid level API Reference
+Mid-Level API Reference
 -----------------------
 
 .. include-build-file:: inc/wear_levelling.inc

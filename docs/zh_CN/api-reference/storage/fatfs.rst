@@ -3,7 +3,7 @@ FAT 文件系统
 
 :link_to_translation:`en:[English]`
 
-ESP-IDF 使用 `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ 库来实现 FAT 文件系统。FatFs 库位于 ``fatfs`` 组件中，您可以直接使用，也可以借助 C 标准库和 POSIX API 通过 VFS（虚拟文件系统）使用 FatFs 库的大多数功能。
+ESP-IDF 使用 `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ 库来实现 FAT 文件系统。FatFs 库位于 ``fatfs`` 组件中，支持直接使用，也可以借助 C 标准库和 POSIX API 通过 VFS（虚拟文件系统）使用 FatFs 库的大多数功能。
 
 此外，我们对 FatFs 库进行了扩展，新增了支持可插拔磁盘 I/O 调度层，从而允许在运行时将 FatFs 驱动映射到物理磁盘。
 
@@ -28,11 +28,11 @@ FatFs 与 VFS 配合使用
 
 3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
 
-4. 调用 C 标准库和 POSIX API 对路径中带有步骤 1 中所述前缀的文件（例如，``"/sdcard/hello.txt"``）执行打开、读取、写入、擦除、复制等操作。文件系统默认使用 `8.3 文件名 <https://en.wikipedia.org/wiki/8.3_filename>`_ 格式 (SFN)。若您需要使用长文件名 (LFN)，启用 :ref:`CONFIG_FATFS_LONG_FILENAMES` 选项。请参考 `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_，查看更多信息；
+4. 调用 C 标准库和 POSIX API 对路径中带有步骤 1 中所述前缀的文件（例如，``"/sdcard/hello.txt"``）执行打开、读取、写入、擦除、复制等操作。文件系统默认使用 `8.3 文件名 <https://en.wikipedia.org/wiki/8.3_filename>`_ 格式 (SFN)。如需使用长文件名 (LFN)，启用 :ref:`CONFIG_FATFS_LONG_FILENAMES` 选项。请参考 `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_，查看更多信息；
 
-5. 您可以选择启用 :ref:`CONFIG_FATFS_USE_FASTSEEK` 选项，使用 POSIX lseek 来快速执行。快速查找不适用于编辑模式下的文件，所以，使用快速查找时，应在只读模式下打开（或者关闭然后重新打开）文件；
+5. 选择启用 :ref:`CONFIG_FATFS_USE_FASTSEEK` 选项，可以使用 POSIX lseek 实现快速执行。快速查找不适用于编辑模式下的文件，所以，使用快速查找时，应在只读模式下打开（或者关闭然后重新打开）文件；
 
-6. 您也可以选择直接调用 FatFs 库函数，但需要使用没有 VFS 前缀的路径（例如，``"/hello.txt"``）；
+6. 也可选择直接调用 FatFs 库函数，但需要使用没有 VFS 前缀的路径（例如，``"/hello.txt"``）；
 
 7. 关闭所有打开的文件；
 
@@ -100,7 +100,7 @@ FatFs 分区生成器
 
 目前的最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 ``.`` 字符以及其他字符，如 ``+``、``,``、``;``、``=``、``[`` and ``]`` 等。
 
-如您想进一步了解 FatFs 分区生成器或分区分析器，请查看 :doc:`Generating and parsing FAT partition on host <./fatfsgen>`。
+如需进一步了解 FatFs 分区生成器或分区分析器，请查看 :doc:`Generating and parsing FAT partition on host <./fatfsgen>`。
 
 构建系统中使用 FatFs 分区生成器
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,7 +115,7 @@ FatFs 分区生成器
 
 ``fatfs_create_spiflash_image`` 以及 ``fatfs_create_rawflash_image`` 必须从项目的 CMakeLists.txt 中调用。
 
-如果您决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它仅支持在设备中以只读模式安装。
+如果决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它仅支持在设备中以只读模式安装。
 
 
 该函数的参数如下：
@@ -145,6 +145,6 @@ FatFs 分区分析器
 
 该分析器为 FatFs 分区生成器 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) 的逆向工具，可以根据 FatFs 镜像在主机上生成文件夹结构。
 
-您可以使用::
+可以使用::
 
     ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
