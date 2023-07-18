@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +41,6 @@
 #define MXIC_ID                0xC2
 #define GD_Q_ID_HIGH           0xC8
 #define GD_Q_ID_MID            0x40
-#define GD_LQ_ID_MID           0x60
 #define GD_Q_ID_LOW            0x16
 
 #define ESP_BOOTLOADER_SPIFLASH_BP_MASK_ISSI    (BIT7 | BIT5 | BIT4 | BIT3 | BIT2)
@@ -468,11 +467,6 @@ FORCE_INLINE_ATTR bool is_gd_q_chip(const esp_rom_spiflash_chip_t* chip)
     return BYTESHIFT(chip->device_id, 2) == GD_Q_ID_HIGH && BYTESHIFT(chip->device_id, 1) == GD_Q_ID_MID && BYTESHIFT(chip->device_id, 0) >= GD_Q_ID_LOW;
 }
 
-FORCE_INLINE_ATTR bool is_gd_lq_chip(const esp_rom_spiflash_chip_t* chip)
-{
-    return BYTESHIFT(chip->device_id, 2) == GD_Q_ID_HIGH && BYTESHIFT(chip->device_id, 1) == GD_LQ_ID_MID && BYTESHIFT(chip->device_id, 0) >= GD_Q_ID_LOW;
-}
-
 FORCE_INLINE_ATTR bool is_mxic_chip(const esp_rom_spiflash_chip_t* chip)
 {
     return BYTESHIFT(chip->device_id, 2) == MXIC_ID;
@@ -500,7 +494,7 @@ esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
         */
         sr1_bit_num = 8;
         new_status = status & (~ESP_BOOTLOADER_SPIFLASH_BP_MASK_ISSI);
-    } else if (is_gd_q_chip(&g_rom_flashchip) || is_gd_lq_chip(&g_rom_flashchip)) {
+    } else if (is_gd_q_chip(&g_rom_flashchip)) {
         /* The GD chips behaviour is to clear all bits in SR1 and clear bits in SR2 except QE bit.
            Use 01H to write SR1 and 31H to write SR2.
         */
