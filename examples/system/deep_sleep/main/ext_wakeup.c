@@ -38,12 +38,7 @@ void example_deep_sleep_register_ext1_wakeup(void)
     const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
     const uint64_t ext_wakeup_pin_2_mask = 1ULL << ext_wakeup_pin_2;
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
-#if SOC_PM_SUPPORT_EXT1_MULTI_BIT_TRIGGER
     const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE;
-#else
-    const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1 << ext_wakeup_pin_1 | \
-                                                        CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2 << ext_wakeup_pin_2;
-#endif
 
     ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ext_wakeup_mode));
 
@@ -77,7 +72,7 @@ void example_deep_sleep_register_ext1_wakeup(void)
         ESP_ERROR_CHECK(gpio_pullup_en(ext_wakeup_pin_2));
     }
 #endif
-#endif //CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
+#endif // CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 }
 
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP

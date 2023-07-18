@@ -1393,7 +1393,7 @@ static void ext1_wakeup_prepare(void)
 
     // Clear state from previous wakeup
     rtc_hal_ext1_clear_wakeup_status();
-    // Set RTC IO pins and mode (any high, all low) to be used for wakeup
+    // Set RTC IO pins and mode to be used for wakeup
     rtc_hal_ext1_set_wakeup_pins(s_config.ext1_rtc_gpio_mask, s_config.ext1_trigger_mode);
 }
 

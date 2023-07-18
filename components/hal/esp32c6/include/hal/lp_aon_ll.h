@@ -40,7 +40,7 @@ static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
 /**
  * @brief Set the wake-up LP_IO of the ext1 wake-up source
  * @param mask wakeup LP_IO bitmap, bit 0~7 corresponds to LP_IO 0~7
- * @param mode 0: Wake the chip when all selected GPIOs go low
+ * @param mode 0: Wake the chip when any of the selected GPIOs go low
  *             1: Wake the chip when any of the selected GPIOs go high
  */
 static inline  void lp_aon_ll_ext1_set_wakeup_pins(uint32_t mask, int mode)
