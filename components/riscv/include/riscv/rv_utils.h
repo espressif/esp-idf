@@ -36,6 +36,15 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_wait_for_intr(voi
     asm volatile ("wfi\n");
 }
 
+/* ------------------------------------------------- Memory Barrier ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+//TODO: IDF-7898
+FORCE_INLINE_ATTR void rv_utils_memory_barrier(void)
+{
+    asm volatile("fence iorw, iorw" : : : "memory");
+}
+
 /* -------------------------------------------------- CPU Registers ----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -139,6 +148,16 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
     old_thresh = old_thresh >> (24 + (8 - NLBITS));
 
     REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((intlevel << (8 - NLBITS))) | 0x1f);
+    /**
+     * TODO: IDF-7898
+     * Here is an issue that,
+     * 1. Set the CLIC_INT_THRESH_REG to mask off interrupts whose level is lower than `intlevel`.
+     * 2. Set MSTATUS_MIE (global interrupt), then program may jump to interrupt vector.
+     * 3. The register value change in Step 1 may happen during Step 2.
+     *
+     * To prevent this, here a fence is used
+     */
+    rv_utils_memory_barrier();
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 
     return old_thresh;

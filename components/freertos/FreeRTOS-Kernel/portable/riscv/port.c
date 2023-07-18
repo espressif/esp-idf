@@ -439,6 +439,16 @@ int vPortSetInterruptMask(void)
     #define RVHAL_EXCM_THRESHOLD_VALUE   (((RVHAL_EXCM_LEVEL << (8 - NLBITS)) | 0x1f) << CLIC_CPU_INT_THRESH_S)
 
     REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_THRESHOLD_VALUE);
+    /**
+     * TODO: IDF-7898
+     * Here is an issue that,
+     * 1. Set the CLIC_INT_THRESH_REG to mask off interrupts whose level is lower than `intlevel`.
+     * 2. Set MSTATUS_MIE (global interrupt), then program may jump to interrupt vector.
+     * 3. The register value change in Step 1 may happen during Step 2.
+     *
+     * To prevent this, here a fence is used
+     */
+    rv_utils_memory_barrier();
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 #endif
     /**
