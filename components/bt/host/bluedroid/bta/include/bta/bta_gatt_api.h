@@ -1543,6 +1543,8 @@ extern void BTA_GATTS_Listen(tBTA_GATTS_IF server_if, BOOLEAN start,
                              BD_ADDR_PTR target_bda);
 
 
+extern void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id);
+
 #ifdef __cplusplus
 
 }

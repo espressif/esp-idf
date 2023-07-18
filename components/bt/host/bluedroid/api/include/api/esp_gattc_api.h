@@ -133,7 +133,7 @@ typedef union {
     } search_res;                       /*!< Gatt client callback param of ESP_GATTC_SEARCH_RES_EVT */
 
     /**
-     * @brief ESP_GATTC_READ_CHAR_EVT,  ESP_GATTC_READ_DESCR_EVT
+     * @brief ESP_GATTC_READ_CHAR_EVT, ESP_GATTC_READ_DESCR_EVT, ESP_GATTC_READ_MULTIPLE_EVT, ESP_GATTC_READ_MULTI_VAR_EVT
      */
     struct gattc_read_char_evt_param {
 
