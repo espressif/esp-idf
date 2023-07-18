@@ -1,9 +1,11 @@
 Analog Comparator
 =================
 
-{IDF_TARGET_ANA_CMPR_NUM: default="NOT UPDATED", esp32h2="one"}
-{IDF_TARGET_ANA_CMPR_SRC_CHAN: default="NOT UPDATED", esp32h2="GPIO11"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN: default="NOT UPDATED", esp32h2="GPIO10"}
+{IDF_TARGET_ANA_CMPR_NUM: default="NOT UPDATED", esp32h2="one", esp32p4="two"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="NOT UPDATED", esp32h2="GPIO11", esp32p4="GPIO52"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="NOT UPDATED", esp32h2="GPIO10", esp32p4="GPIO51"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="NOT UPDATED", esp32p4="GPIO54"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="NOT UPDATED", esp32p4="GPIO53"}
 
 Introduction
 ------------
@@ -16,9 +18,17 @@ Analog Comparator on {IDF_TARGET_NAME} has {IDF_TARGET_ANA_CMPR_NUM} unit(s), th
 
 **UNIT0**
 
-- Source Channel: {IDF_TARGET_ANA_CMPR_SRC_CHAN}
-- External Reference Channel: {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN}
+- Source Channel: {IDF_TARGET_ANA_CMPR_SRC_CHAN0}
+- External Reference Channel: {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0}
 - Internal Reference Channel: Range 0% ~ 70% VDD, step 10% VDD
+
+.. only:: esp32p4
+
+    **UNIT1**
+
+    - Source Channel: {IDF_TARGET_ANA_CMPR_SRC_CHAN1}
+    - External Reference Channel: {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1}
+    - Internal Reference Channel: Range 0% ~ 70% VDD, step 10% VDD
 
 Functional Overview
 -------------------
@@ -32,6 +42,10 @@ The following sections of this document cover the typical steps to install and o
 -  `IRAM Safe <#iram-safe>`__ - lists which functions are supposed to work even when the cache is disabled.
 -  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 -  `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
+
+.. only:: SOC_ANA_CMPR_SUPPORT_ETM
+
+    - `ETM Events <#etm-events>`__ -
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -179,6 +193,13 @@ Kconfig Options
 - :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` controls where to place the Analog Comparator control functions (IRAM or Flash), see `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enabling this option increases the firmware binary size.
+
+.. only:: SOC_ANA_CMPR_SUPPORT_ETM
+
+    ETM Events
+    ^^^^^^^^^^
+
+    To create an analog comparator cross event, you need to include ``driver/ana_cmpr_etm.h`` additionally, and allocate the event by :cpp:func:`ana_cmpr_new_etm_event`. You can refer to :doc:`GPTimer </api-reference/peripherals/etm>` for how to connect an event to a task.
 
 Application Example
 -------------------

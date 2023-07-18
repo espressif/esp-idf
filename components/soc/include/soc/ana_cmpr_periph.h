@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "soc/soc_caps.h"
+#include "soc/periph_defs.h"
 #if SOC_ANA_CMPR_SUPPORTED
 #include "soc/ana_cmpr_channel.h"
 #endif
@@ -20,6 +21,7 @@ extern "C" {
 typedef struct {
     int src_gpio;
     int ext_ref_gpio;
+    int intr_src;
 } ana_cmpr_conn_t;
 
 extern const ana_cmpr_conn_t ana_cmpr_io_map[SOC_ANA_CMPR_NUM];

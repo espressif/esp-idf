@@ -90,7 +90,10 @@ typedef int ana_cmpr_clk_src_t;
  *
  */
 typedef struct {
-    // No data for now
+#if SOC_ANA_CMPR_SUPPORT_MULTI_INTR
+    ana_cmpr_cross_type_t cross_type;   /*!< The cross type of the target signal to the reference signal.
+                                         *   Will either be ANA_CMPR_CROSS_POS or ANA_CMPR_CROSS_NEG */
+#endif
 } ana_cmpr_cross_event_data_t;
 
 /**

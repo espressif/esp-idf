@@ -35,6 +35,7 @@ struct ana_cmpr_t {
     bool                        is_enabled;         /*!< Whether the Analog comparator unit is enabled */
     ana_cmpr_event_callbacks_t  cbs;                /*!< The callback group that set by user */
     intr_handle_t               intr_handle;        /*!< Interrupt handle */
+    uint32_t                    intr_mask;          /*!< Interrupt mask */
     void                        *user_data;         /*!< User data that passed to the callbacks */
     uint32_t                    src_clk_freq_hz;    /*!< Source clock frequency of the Analog Comparator unit */
     esp_pm_lock_handle_t        pm_lock;            /*!< The Power Management lock that used to avoid unexpected power down of the clock domain */
@@ -76,7 +77,14 @@ static void IRAM_ATTR s_ana_cmpr_default_intr_handler(void *usr_data)
     analog_cmpr_ll_clear_intr(cmpr_handle->dev, status);
 
     /* Call the user callback function if it is specified and the corresponding event triggers*/
-    if (cmpr_handle->cbs.on_cross && (status & ANALOG_CMPR_LL_EVENT_CROSS)) {
+    if (cmpr_handle->cbs.on_cross && (status & cmpr_handle->intr_mask)) {
+#if SOC_ANA_CMPR_SUPPORT_MULTI_INTR
+        if (status & ANALOG_CMPR_LL_POS_CROSS_MASK(cmpr_handle->unit)) {
+            evt_data.cross_type = ANA_CMPR_CROSS_POS;
+        } else if (status & ANALOG_CMPR_LL_NEG_CROSS_MASK(cmpr_handle->unit)) {
+            evt_data.cross_type = ANA_CMPR_CROSS_NEG;
+        }
+#endif  // SOC_ANA_CMPR_SUPPORT_MULTI_INTR
         need_yield = cmpr_handle->cbs.on_cross(cmpr_handle, &evt_data, cmpr_handle->user_data);
     }
     if (need_yield) {
@@ -102,7 +110,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     ESP_RETURN_ON_FALSE(s_ana_cmpr[unit], ESP_ERR_NO_MEM, TAG, "no memory for analog comparator struct");
 
     /* Assign analog comparator unit */
-    s_ana_cmpr[unit]->dev = ANALOG_CMPR_LL_GET_HW();
+    s_ana_cmpr[unit]->dev = ANALOG_CMPR_LL_GET_HW(unit);
     s_ana_cmpr[unit]->ref_src = config->ref_src;
     s_ana_cmpr[unit]->is_enabled = false;
     s_ana_cmpr[unit]->pm_lock = NULL;
@@ -126,12 +134,15 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     /* Configure the register */
     portENTER_CRITICAL(&s_spinlock);
     analog_cmpr_ll_set_ref_source(s_ana_cmpr[unit]->dev, config->ref_src);
+#if !SOC_ANA_CMPR_SUPPORT_MULTI_INTR
     analog_cmpr_ll_set_cross_type(s_ana_cmpr[unit]->dev, config->cross_type);
+#endif  // SOC_ANA_CMPR_SUPPORT_MULTI_INTR
     portEXIT_CRITICAL(&s_spinlock);
 
     /* Allocate the interrupt, currently the interrupt source of Analog Comparator is shared with GPIO interrupt source */
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(ETS_GPIO_INTR_SOURCE, ANA_CMPR_INTR_FLAG, (uint32_t)analog_cmpr_ll_get_intr_status_reg(s_ana_cmpr[unit]->dev),
-                      ANALOG_CMPR_LL_EVENT_CROSS, s_ana_cmpr_default_intr_handler, s_ana_cmpr[unit], &s_ana_cmpr[unit]->intr_handle),
+    s_ana_cmpr[unit]->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(s_ana_cmpr[unit]->dev, config->cross_type);
+    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(ana_cmpr_io_map[unit].intr_src, ANA_CMPR_INTR_FLAG, (uint32_t)analog_cmpr_ll_get_intr_status_reg(s_ana_cmpr[unit]->dev),
+                      s_ana_cmpr[unit]->intr_mask, s_ana_cmpr_default_intr_handler, s_ana_cmpr[unit], &s_ana_cmpr[unit]->intr_handle),
                       err, TAG, "allocate interrupt failed");
 
     if (config->ref_src == ANA_CMPR_REF_SRC_INTERNAL) {
@@ -224,7 +235,10 @@ esp_err_t ana_cmpr_set_cross_type(ana_cmpr_handle_t cmpr, ana_cmpr_cross_type_t 
                             ESP_ERR_INVALID_ARG, TAG, "invalid cross type");
 
     portENTER_CRITICAL_SAFE(&s_spinlock);
+#if !SOC_ANA_CMPR_SUPPORT_MULTI_INTR
     analog_cmpr_ll_set_cross_type(cmpr->dev, cross_type);
+#endif
+    cmpr->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(cmpr->dev, cross_type);
     portEXIT_CRITICAL_SAFE(&s_spinlock);
 
     ESP_EARLY_LOGD(TAG, "unit %d cross type updated to %d", (int)cmpr->unit, cross_type);
@@ -273,7 +287,7 @@ esp_err_t ana_cmpr_enable(ana_cmpr_handle_t cmpr)
 
     /* Enable the Analog Comparator */
     portENTER_CRITICAL(&s_spinlock);
-    analog_cmpr_ll_enable_intr(cmpr->dev, ANALOG_CMPR_LL_EVENT_CROSS, !!(cmpr->cbs.on_cross));
+    analog_cmpr_ll_enable_intr(cmpr->dev, cmpr->intr_mask, true);
     analog_cmpr_ll_enable(cmpr->dev, true);
     portEXIT_CRITICAL(&s_spinlock);
 
@@ -289,7 +303,7 @@ esp_err_t ana_cmpr_disable(ana_cmpr_handle_t cmpr)
                         "the analog comparator not enabled yet");
     /* Disable the Analog Comparator */
     portENTER_CRITICAL(&s_spinlock);
-    analog_cmpr_ll_enable_intr(cmpr->dev, ANALOG_CMPR_LL_EVENT_CROSS, false);
+    analog_cmpr_ll_enable_intr(cmpr->dev, cmpr->intr_mask, false);
     analog_cmpr_ll_enable(cmpr->dev, false);
     portEXIT_CRITICAL(&s_spinlock);
 
