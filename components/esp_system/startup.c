@@ -167,6 +167,7 @@ size_t __cxx_eh_arena_size_get(void)
  * over in ascending direction instead of descending direction.
  * The RISC-V-specific behavior is dependent on the linker script ld/esp32c3/sections.ld.in.
  */
+__attribute__((no_sanitize_undefined)) /* TODO: IDF-8133 */
 static void do_global_ctors(void)
 {
 #if __riscv
@@ -209,6 +210,7 @@ static void do_global_ctors(void)
  * The sequence of the init function calls (sorted by priority) is documented in
  * system_init_fn.txt file.
  */
+__attribute__((no_sanitize_undefined)) /* TODO: IDF-8133 */
 static void do_system_init_fn(void)
 {
     extern esp_system_init_fn_t _esp_system_init_fn_array_start;
