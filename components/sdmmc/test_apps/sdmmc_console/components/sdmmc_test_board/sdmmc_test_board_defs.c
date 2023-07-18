@@ -145,6 +145,8 @@ static const sdmmc_test_board_info_t s_board_info = {
 
 #define SD_TEST_BOARD_EN_GPIO  47
 #define SD_TEST_BOARD_EN_LEVEL 0
+// Pin pulled down to discharge VDD_SDIO capacitors. CMD pin used here.
+#define SD_TEST_BOARD_DISCHARGE_GPIO 4
 #define SD_TEST_BOARD_PWR_RST_DELAY_MS  100
 #define SD_TEST_BOARD_PWR_ON_DELAY_MS   100
 
@@ -155,13 +157,27 @@ static void card_power_set_esp32s3_emmc(bool en)
         gpio_reset_pin(SD_TEST_BOARD_EN_GPIO);
         gpio_set_direction(SD_TEST_BOARD_EN_GPIO, GPIO_MODE_OUTPUT);
         gpio_set_level(SD_TEST_BOARD_EN_GPIO, !SD_TEST_BOARD_EN_LEVEL);
+        /* discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_DISCHARGE_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_DISCHARGE_GPIO, 0);
         usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
         /* power on */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
         gpio_set_level(SD_TEST_BOARD_EN_GPIO, SD_TEST_BOARD_EN_LEVEL);
         usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
     } else {
+        /* power off the card */
         gpio_set_level(SD_TEST_BOARD_EN_GPIO, !SD_TEST_BOARD_EN_LEVEL);
         gpio_set_direction(SD_TEST_BOARD_EN_GPIO, GPIO_MODE_INPUT);
+        /* discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_DISCHARGE_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_DISCHARGE_GPIO, 0);
+        usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
+        /* reset the pin but leaving it floating so that VDD_SDIO won't be charged again */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_pullup_dis(SD_TEST_BOARD_DISCHARGE_GPIO);
     }
 }
 
@@ -239,6 +255,8 @@ static const sdmmc_test_board_info_t s_board_info = {
 
 #define SD_BREAKOUT_BOARD_EN_GPIO  10
 #define SD_BREAKOUT_BOARD_EN_LEVEL 0
+// Pin pulled down to discharge VDD_SDIO capacitors. CMD pin used here.
+#define SD_TEST_BOARD_DISCHARGE_GPIO 4
 #define SD_BREAKOUT_BOARD_PWR_RST_DELAY_MS  100
 #define SD_BREAKOUT_BOARD_PWR_ON_DELAY_MS   100
 
@@ -246,26 +264,30 @@ static void card_power_set_esp32c3_breakout(bool en)
 {
     if (en) {
         /* power off to make sure card is reset */
+        gpio_reset_pin(SD_BREAKOUT_BOARD_EN_GPIO);
         gpio_set_direction(SD_BREAKOUT_BOARD_EN_GPIO, GPIO_MODE_OUTPUT);
         gpio_set_level(SD_BREAKOUT_BOARD_EN_GPIO, !SD_BREAKOUT_BOARD_EN_LEVEL);
-        /* set CMD low to discharge capacitors on VDD_SDIO */
-        gpio_reset_pin(4);
-        gpio_set_direction(4, GPIO_MODE_OUTPUT);
-        gpio_set_level(4, 0);
+        /* discharge capacitors on VDD_SDIO */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_DISCHARGE_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_DISCHARGE_GPIO, 0);
         usleep(SD_BREAKOUT_BOARD_PWR_RST_DELAY_MS * 1000);
         /* power on */
-        gpio_reset_pin(4);
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
         gpio_set_level(SD_BREAKOUT_BOARD_EN_GPIO, SD_BREAKOUT_BOARD_EN_LEVEL);
         usleep(SD_BREAKOUT_BOARD_PWR_ON_DELAY_MS * 1000);
     } else {
+        /* power off the card */
         gpio_set_level(SD_BREAKOUT_BOARD_EN_GPIO, !SD_BREAKOUT_BOARD_EN_LEVEL);
         gpio_set_direction(SD_BREAKOUT_BOARD_EN_GPIO, GPIO_MODE_INPUT);
         /* set CMD low to discharge capacitors on VDD_SDIO */
-        gpio_reset_pin(4);
-        gpio_set_direction(4, GPIO_MODE_OUTPUT);
-        gpio_set_level(4, 0);
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_set_direction(SD_TEST_BOARD_DISCHARGE_GPIO, GPIO_MODE_OUTPUT);
+        gpio_set_level(SD_TEST_BOARD_DISCHARGE_GPIO, 0);
         usleep(SD_BREAKOUT_BOARD_PWR_RST_DELAY_MS * 1000);
-        gpio_reset_pin(4);
+        /* reset the pin but leaving it floating so that VDD_SDIO won't be charged again */
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
+        gpio_reset_pin(SD_TEST_BOARD_DISCHARGE_GPIO);
     }
 }
 
