@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
+
 #ifndef __HWCRYPTO_REG_H__
 #define __HWCRYPTO_REG_H__
 

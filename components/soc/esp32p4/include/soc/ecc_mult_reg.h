@@ -162,6 +162,24 @@ extern "C" {
 #define ECC_MULT_PY_MEM (DR_REG_ECC_MULT_BASE + 0x140)
 #define ECC_MULT_PY_MEM_SIZE_BYTES 32
 
+/** ECC_MULT_QX_MEM register
+ *  The memory that stores Qx.
+ */
+#define ECC_MULT_QX_MEM (DR_REG_ECC_MULT_BASE + 0x160)
+#define ECC_MULT_QX_MEM_SIZE_BYTES 32
+
+/** ECC_MULT_QY_MEM register
+ *  The memory that stores Qy.
+ */
+#define ECC_MULT_QY_MEM (DR_REG_ECC_MULT_BASE + 0x180)
+#define ECC_MULT_QY_MEM_SIZE_BYTES 32
+
+/** ECC_MULT_QZ_MEM register
+ *  The memory that stores Qz.
+ */
+#define ECC_MULT_QZ_MEM (DR_REG_ECC_MULT_BASE + 0x1A0)
+#define ECC_MULT_QZ_MEM_SIZE_BYTES 32
+
 #ifdef __cplusplus
 }
 #endif
