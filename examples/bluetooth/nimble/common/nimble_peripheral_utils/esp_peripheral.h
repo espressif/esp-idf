@@ -21,6 +21,7 @@ int scli_receive_key(int *key);
 /** Misc. */
 void print_bytes(const uint8_t *bytes, int len);
 void print_addr(const void *addr);
+char *addr_str(const void *addr);
 
 #ifdef __cplusplus
 }

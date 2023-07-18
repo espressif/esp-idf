@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1705,6 +1705,14 @@
 #define MYNEWT_VAL_BLE_HCI_VS_OCF_OFFSET (0)
 #else
 #define MYNEWT_VAL_BLE_HCI_VS    (0)
+#endif
+
+#ifndef MYNEWT_VAL_OPTIMIZE_MULTI_CONN
+#ifdef CONFIG_BT_NIMBLE_OPTIMIZE_MULTI_CONN
+#define MYNEWT_VAL_OPTIMIZE_MULTI_CONN  CONFIG_BT_NIMBLE_OPTIMIZE_MULTI_CONN
+#else
+#define MYNEWT_VAL_OPTIMIZE_MULTI_CONN (0)
+#endif
 #endif
 
 #endif

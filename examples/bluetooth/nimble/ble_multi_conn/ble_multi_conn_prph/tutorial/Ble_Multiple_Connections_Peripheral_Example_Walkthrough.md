@@ -1,0 +1,234 @@
+# BLE Multiple Connections Peripheral Example Walkthrough
+
+## Introduction
+
+In this tutorial, the multiple connection example code for the espressif chipsets with BLE5.0 support is reviewed. The example demonstrates a scenario where dozens of connections are working simultaneously to showcase how to invoke vendor APIs to establish connections and enhance connection stability. While acting as a central device to connect multiple peripherals, it also broadcasts itself as connectable and can be connected by a phone. Once the phone successfully connects, it can perform write operations on all connected devices.  
+
+To minimize the number of development boards, the central and peripheral devices can simulate multiple connections by changing their static random addresses. Therefore, this example only requires two Espressif development boards. Multiple development boards can also be used to simulate a real-world usage scenario.
+
+## Includes
+
+This example is located in the examples folder of the ESP-IDF under the [ble_multi_conn_prph/main](../main/). The [main.c](../main/main.c) file located in the main folder contains all the functionality that we are going to review. The header files contained in [main.c](../main/main.c) are:
+
+```c
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "esp_random.h"
+/* BLE */
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#include "services/gap/ble_svc_gap.h"
+#include "ble_multi_conn_prph.h"
+```
+
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“nimble_port.h”`, `“nimble_port_freertos.h”`, `"ble_hs.h"` and `“ble_svc_gap.h”`, `“ble_multi_conn_prph.h”` which expose the BLE APIs required to implement this example.
+
+* `nimble_port.h`: Includes the declaration of functions required for the initialization of the nimble stack.
+* `nimble_port_freertos.h`: Initializes and enables nimble host task.
+* `ble_hs.h`: Defines the functionalities to handle the host event
+* `ble_svc_gap.h`:Defines the macros for device name and device appearance and declares the function to set them.
+* `ble_multi_conn_prph.h`: Defines the functions used for multiple connections.
+
+## Main Entry Point
+
+The program’s entry point is the app_main() function:
+
+```c
+void
+app_main(void)
+{
+   int rc;
+
+    /* Initialize NVS — it is used to store PHY calibration data */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    s_sem_restart_adv = xSemaphoreCreateBinary();
+    assert(s_sem_restart_adv);
+
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to init nimble %d ", ret);
+        return;
+    }
+    /* Initialize the NimBLE host configuration. */
+    ble_hs_cfg.reset_cb = bleprph_on_reset;
+    ble_hs_cfg.sync_cb = bleprph_on_sync;
+    ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+
+    rc = gatt_svr_init();
+    assert(rc == 0);
+
+    /* Set the default device name. */
+    rc = ble_svc_gap_device_name_set("esp-multi-conn");
+    assert(rc == 0);
+
+    /* XXX Need to have template for store */
+    ble_store_config_init();
+
+    nimble_port_freertos_init(bleprph_host_task);
+
+#if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
+    int delay_ms;
+
+    /* Restart the advertising if the connection has been established successfully. This can
+     * help to simulate multiple devices with only one peripheral development board.
+     */
+    while (true)
+    {
+        if (xSemaphoreTake(s_sem_restart_adv, portMAX_DELAY)) {
+            /* Delay a random time to increase the randomness of the test. */
+            delay_ms = (esp_random() % 300) + 100;
+            vTaskDelay(pdMS_TO_TICKS(delay_ms));
+            ble_prph_advertise();
+        } else {
+            ESP_LOGE(TAG, "Failed to take Semaphor");
+        }
+    }
+#endif // CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
+}
+```
+
+The main function starts by initializing the non-volatile storage library. This library allows us to save the key-value pairs in flash memory.`nvs_flash_init()` stores the PHY calibration data.
+
+```c
+esp_err_t ret = nvs_flash_init();
+if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+}
+ESP_ERROR_CHECK( ret );
+```
+
+## BT Controller and Stack Initialization
+
+The main function calls `nimble_port_init()` to initialize BT Controller and nimble stack. This function initializes the BT controller by first creating its configuration structure named `esp_bt_controller_config_t` with default settings generated by the `BT_CONTROLLER_INIT_CONFIG_DEFAULT()` macro. It implements the Host Controller Interface (HCI) on the controller side, the Link Layer (LL), and the Physical Layer (PHY). The BT Controller is invisible to the user applications and deals with the lower layers of the BLE stack. The controller configuration includes setting the BT controller stack size, priority. With the settings created, the BT controller is initialized and enabled with the `esp_bt_controller_init()` and `esp_bt_controller_enable()` functions:
+
+```c
+esp_bt_controller_config_t config_opts = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+ret = esp_bt_controller_init(&config_opts);
+```
+
+Next, the controller is enabled in BLE Mode.
+
+```c
+ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+```
+>The controller should be enabled in `ESP_BT_MODE_BLE` if you want to use the BLE mode.
+
+There are four Bluetooth modes supported:
+
+1. `ESP_BT_MODE_IDLE`: Bluetooth not running
+2. `ESP_BT_MODE_BLE`: BLE mode
+3. `ESP_BT_MODE_CLASSIC_BT`: BT Classic mode
+4. `ESP_BT_MODE_BTDM`: Dual mode (BLE + BT Classic)
+
+After the initialization of the BT controller, the nimble stack, which includes the common definitions and APIs for BLE, is initialized by using `esp_nimble_init()`:
+
+```c
+esp_err_t esp_nimble_init(void)
+{
+#if !SOC_ESP_NIMBLE_CONTROLLER
+    /* Initialize the function pointers for OS porting */
+    npl_freertos_funcs_init();
+
+    npl_freertos_mempool_init();
+
+    if(esp_nimble_hci_init() != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "hci inits failed\n");
+        return ESP_FAIL;
+    }
+
+    /* Initialize default event queue */
+    ble_npl_eventq_init(&g_eventq_dflt);
+    /* Initialize the global memory pool */
+    os_mempool_module_init();
+    os_msys_init();
+
+#endif
+    /* Initialize the host */
+    ble_transport_hs_init();
+
+    return ESP_OK;
+}
+```
+
+The host is configured by setting up the callbacks on Stack-reset, Stack-sync, registration of each GATT resource, and storage status.
+
+```c
+ ble_hs_cfg.reset_cb = ble_multi_adv_on_reset;
+ ble_hs_cfg.sync_cb = ble_multi_adv_on_sync;
+ ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+ ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+```
+
+The main function calls `ble_svc_gap_device_name_set()` to set the default device name. 'esp-multi-conn' is passed as the default device name to this function.
+
+```c
+rc = ble_svc_gap_device_name_set("esp-multi-conn");
+```
+
+main function calls  `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
+
+```c
+/* XXX Need to have a template for store */
+ble_store_config_init();
+```
+
+The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`.
+
+```c
+nimble_port_freertos_init(ble_multi_adv_host_task);
+```
+
+`esp_nimble_enable()` create a task where the nimble host will run. It is not strictly necessary to have a separate task for the nimble host, but since something needs to handle the default queue, it is easier to create a separate task.
+
+## Multiple Connections
+
+This example will be executed according to the following steps:
+
+* Set the advertising data (Adv data) and enable connectable advertising
+
+  > Set the “name” field in the Adv data as “esp-multi-conn” to allow the counterpart devices to recognize and initiate a connection.
+  
+* After a successful connection, call "ble_prph_gap_event" and send a semaphore to the main task.
+
+* To simulate a multi-connection scenario using a development board,  "app_main" function is modified to receive a semaphore and perform a random delay. This approach will increase the randomness of the example and better simulate real-world usage scenarios. 
+
+  You can enable or disable this functionality through the "EXAMPLE_RESTART_ADV_AFTER_CONNECTED" in the menuconfig. Additionally, using multiple development boards will further enhance the simulation of real-world usage scenarios.
+
+  ```c
+    int delay_ms;
+
+    /* Restart the advertising if the connection has been established successfully. This can
+     * help to simulate multiple devices with only one peripheral development board.
+     */
+    while (true)
+    {
+        if (xSemaphoreTake(s_sem_restart_adv, portMAX_DELAY)) {
+            /* Delay a random time to increase the randomness of the test. */
+            delay_ms = (esp_random() % 300) + 100;
+            vTaskDelay(pdMS_TO_TICKS(delay_ms));
+            ble_prph_advertise();
+        } else {
+            ESP_LOGE(TAG, "Failed to take Semaphor");
+        }
+    }
+  ```
+
+* Connections will be created automatically. When the maximum number of connections is reached, sending connectable advertisements will be stopped.
+
+* You can use a mobile phone to connect to the central device and perform write operations on all local connections.
+
+  > For more details, please check [Central tutorial](../../ble_multi_conn_cent/tutorial/Ble_Multiple_Connections_Central_Example_Walkthrough.md) 
+
+## Conclusion
+
+Users can use this example to understand how to use the vendor APIs and experience the stability of multiple connections it brings.
+
