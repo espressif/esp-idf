@@ -6,13 +6,13 @@ from __future__ import print_function
 
 import socket
 
-from future.utils import tobytes
-
 try:
     from http.client import HTTPConnection, HTTPSConnection
 except ImportError:
     # Python 2 fallback
     from httplib import HTTPConnection, HTTPSConnection  # type: ignore
+
+from utils import str_to_bytes
 
 from .transport import Transport
 
@@ -36,8 +36,9 @@ class Transport_HTTP(Transport):
         self.headers = {'Content-type': 'application/x-www-form-urlencoded','Accept': 'text/plain'}
 
     def _send_post_request(self, path, data):
+        data = str_to_bytes(data) if isinstance(data, str) else data
         try:
-            self.conn.request('POST', path, tobytes(data), self.headers)
+            self.conn.request('POST', path, data, self.headers)
             response = self.conn.getresponse()
             if response.status == 200:
                 return response.read().decode('latin-1')
