@@ -124,6 +124,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE
+ *
+ * Define to 1 to enable Border Agent ID support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
  *
  * Define to 1 to enable Border Router support.
