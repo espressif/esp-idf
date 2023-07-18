@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeRTOS Kernel V10.4.3
@@ -56,6 +56,10 @@
 #include "portmacro.h"
 #include "port_systick.h"
 #include "esp_memory_utils.h"
+#if CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-7566
+#include "soc/hp_system_reg.h"
+#endif
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -74,6 +78,8 @@ _Static_assert(offsetof( StaticTask_t, pxDummy8 ) == PORT_OFFSET_PX_END_OF_STACK
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 /**
  * @brief A variable is used to keep track of the critical section nesting.
  * @note This variable has to be stored as part of the task context and must be initialized to a non zero value
@@ -88,6 +94,25 @@ BaseType_t xPortSwitchFlag = 0;
 __attribute__((aligned(16))) StackType_t xIsrStack[configISR_STACK_SIZE];
 StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
 
+#else
+/* uxCriticalNesting will be increased by 1 each time one processor is entering a critical section
+ * and will be decreased by 1 each time one processor is exiting a critical section
+ */
+volatile UBaseType_t uxCriticalNesting[portNUM_PROCESSORS] = {0};
+volatile UBaseType_t uxSavedInterruptState[portNUM_PROCESSORS] = {0};
+volatile BaseType_t uxSchedulerRunning[portNUM_PROCESSORS] = {0};
+volatile UBaseType_t uxInterruptNesting[portNUM_PROCESSORS] = {0};
+volatile BaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
+/* core0 interrupt stack space */
+__attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
+/* core1 interrupt stack space */
+__attribute__((aligned(16))) static StackType_t xIsrStack1[configISR_STACK_SIZE];
+/* core0 interrupt stack top, passed to sp */
+StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
+/* core1 interrupt stack top, passed to sp */
+StackType_t *xIsrStackTop1 = &xIsrStack1[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
+#endif
+
 
 
 /* ------------------------------------------------ FreeRTOS Portable --------------------------------------------------
@@ -97,11 +122,19 @@ StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOIN
 
 // ----------------- Scheduler Start/End -------------------
 
+//TODO: IDF-7566
 BaseType_t xPortStartScheduler(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32P4
     uxInterruptNesting = 0;
     uxCriticalNesting = 0;
     uxSchedulerRunning = 0;
+#else
+    BaseType_t coreID = xPortGetCoreID();
+    uxInterruptNesting[coreID] = 0;
+    uxCriticalNesting[coreID] = 0;
+    uxSchedulerRunning[coreID] = 0;
+#endif
 
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
@@ -312,15 +345,26 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
 
 // --------------------- Interrupts ------------------------
 
+//TODO: IDF-7566
 BaseType_t xPortInIsrContext(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32P4
     return uxInterruptNesting;
+#else
+    BaseType_t coreID = xPortGetCoreID();
+    return uxInterruptNesting[coreID];
+#endif
 }
 
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
     /* For single core, this can be the same as xPortInIsrContext() because reading it is atomic */
+#if !CONFIG_IDF_TARGET_ESP32P4
     return uxInterruptNesting;
+#else
+    BaseType_t coreID = xPortGetCoreID();
+    return uxInterruptNesting[coreID];
+#endif
 }
 
 // ---------------------- Spinlocks ------------------------
@@ -329,6 +373,8 @@ BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 
 // ------------------ Critical Sections --------------------
 
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 void vPortEnterCritical(void)
 {
     BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -349,15 +395,52 @@ void vPortExitCritical(void)
     }
 }
 
+#else
+void vPortEnterCritical(portMUX_TYPE *mux)
+{
+    BaseType_t coreID = xPortGetCoreID();
+    BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+
+    spinlock_acquire((spinlock_t *)mux, SPINLOCK_WAIT_FOREVER);
+    uxCriticalNesting[coreID]++;
+
+    if (uxCriticalNesting[coreID] == 1) {
+        uxSavedInterruptState[coreID] = state;
+    }
+}
+
+void vPortExitCritical(portMUX_TYPE *mux)
+{
+    spinlock_release((spinlock_t *)mux);
+
+    BaseType_t coreID = xPortGetCoreID();
+    if (uxCriticalNesting[coreID] > 0) {
+        uxCriticalNesting[coreID]--;
+        if (uxCriticalNesting[coreID] == 0) {
+            portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptState[coreID]);
+        }
+    }
+}
+#endif
+
 // ---------------------- Yielding -------------------------
 
+//TODO: IDF-7566
 int vPortSetInterruptMask(void)
 {
     int ret;
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     ret = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
+
+#if !CONFIG_IDF_TARGET_ESP32P4
     REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+#else
+    #define RVHAL_EXCM_THRESHOLD_VALUE   (((RVHAL_EXCM_LEVEL << (8 - NLBITS)) | 0x1f) << CLIC_CPU_INT_THRESH_S)
+
+    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_THRESHOLD_VALUE);
+    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+#endif
     /**
      * In theory, this function should not return immediately as there is a
      * delay between the moment we mask the interrupt threshold register and
@@ -395,6 +478,8 @@ void vPortClearInterruptMask(int mask)
     asm volatile ( "nop" );
 }
 
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 void vPortYield(void)
 {
     if (uxInterruptNesting) {
@@ -422,6 +507,37 @@ void vPortYieldFromISR( void )
     uxSchedulerRunning = 1;
     xPortSwitchFlag = 1;
 }
+
+#else
+void vPortYield(void)
+{
+    BaseType_t coreID = xPortGetCoreID();
+    if (uxInterruptNesting[coreID]) {
+        vPortYieldFromISR();
+    } else {
+        esp_crosscore_int_send_yield(coreID);
+        /* There are 3-4 instructions of latency between triggering the software
+           interrupt and the CPU interrupt happening. Make sure it happened before
+           we return, otherwise vTaskDelay() may return and execute 1-2
+           instructions before the delay actually happens.
+
+           (We could use the WFI instruction here, but there is a chance that
+           the interrupt will happen while evaluating the other two conditions
+           for an instant yield, and if that happens then the WFI would be
+           waiting for the next interrupt to occur...)
+        */
+        while (uxSchedulerRunning[coreID] && uxCriticalNesting[coreID] == 0 && REG_READ(HP_SYSTEM_CPU_INT_FROM_CPU_0_REG + 4*coreID) != 0) {}
+    }
+}
+
+void vPortYieldFromISR( void )
+{
+    traceISR_EXIT_TO_SCHEDULER();
+    BaseType_t coreID = xPortGetCoreID();
+    uxSchedulerRunning[coreID] = 1;
+    xPortSwitchFlag[coreID] = 1;
+}
+#endif
 
 void vPortYieldOtherCore(BaseType_t coreid)
 {
