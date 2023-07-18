@@ -33,6 +33,8 @@ Once wakeup sources are configured, application can enter sleep mode using :cpp:
 
     In deep sleep and light sleep modes, wireless peripherals are powered down. Before entering light sleep modes, applications must disable WiFi and BT using appropriate calls (:cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). WiFi and BT connections will not be maintained in deep sleep or light sleep, even if these functions are not called.
 
+    If Wi-Fi/Bluetooth connections need to be maintained, enable Wi-Fi/Bluetooth Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This will allow the system to wake up from sleep automatically when required by the Wi-Fi/Bluetooth driver, thereby maintaining the connection.
+
 .. only:: not SOC_BT_SUPPORTED
 
     WiFi and sleep modes
@@ -40,7 +42,7 @@ Once wakeup sources are configured, application can enter sleep mode using :cpp:
 
     In deep sleep and light sleep modes, wireless peripherals are powered down. Before entering deep sleep or light sleep modes, applications must disable WiFi using appropriate calls (:cpp:func:`esp_wifi_stop`). WiFi connection will not be maintained in deep sleep or light sleep, even if these functions are not called.
 
-If WiFi connection needs to be maintained, enable WiFi modem sleep, and enable automatic light sleep feature (see :doc:`Power Management APIs <power_management>`). This will allow the system to wake up from sleep automatically when required by WiFi driver, thereby maintaining connection to the AP.
+    If Wi-Fi connections need to be maintained, enable Wi-Fi Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This will allow the system to wake up from sleep automatically when required by the Wi-Fi driver, thereby maintaining a connection to the AP.
 
 Wakeup sources
 --------------
