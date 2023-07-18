@@ -265,6 +265,14 @@ pytest_examples_esp32_ethernet:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet]
 
+pytest_examples_esp32_ethernet_httpbin:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-ethernet
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, httpbin]
+
 pytest_examples_esp32_8mb_flash:
   extends:
     - .pytest_examples_dir_template

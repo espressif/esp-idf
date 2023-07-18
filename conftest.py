@@ -123,6 +123,7 @@ ENV_MARKERS = {
     'esp32eco3': 'Runner with esp32 eco3 connected',
     'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
     'ccs811': 'Runner with CCS811 connected',
+    'httpbin': 'runner for tests that need to access the httpbin service',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
