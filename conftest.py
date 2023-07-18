@@ -128,6 +128,7 @@ ENV_MARKERS = {
     'eth_w5500': 'SPI Ethernet module with two W5500',
     'nvs_encr_hmac': 'Runner with test HMAC key programmed in efuse',
     'i2c_oled': 'Runner with ssd1306 I2C oled connected',
+    'httpbin': 'runner for tests that need to access the httpbin service',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
