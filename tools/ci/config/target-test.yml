@@ -186,6 +186,12 @@ example_test_001B:
     - ESP32
     - Example_EthKitV1
 
+example_test_httpbin:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - httpbin
+
 example_test_001B_V3:
   extends: .example_test_template
   tags:
