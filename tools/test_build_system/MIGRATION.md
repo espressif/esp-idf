@@ -14,13 +14,13 @@ Partial build doesn't compile anything by default | test_rebuild::test_rebuild_n
 Rebuild when app version was changed | test_rebuild.py::test_rebuild_version_change |
 Change app version | test_rebuild.py::test_rebuild_version_change |
 Re-building does not change app.bin | test_rebuild.py::test_rebuild_version_change |
-Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit. | |
-Get the version of app from Kconfig option | |
-Use IDF version variables in component CMakeLists.txt file | |
-Project is in ESP-IDF which has a custom tag | |
+Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit. | test_git.py::test_get_version_from_git_describe |
+Get the version of app from Kconfig option | test_kconfig.py::test_kconfig_get_version_from_describe |
+Use IDF version variables in component CMakeLists.txt file | test_components.py::test_version_in_component_cmakelist |
+Project is in ESP-IDF which has a custom tag | test_git.py::test_git_custom_tag |
 Moving BUILD_DIR_BASE out of tree | test_build.py::test_build_alternative_directories |
 BUILD_DIR_BASE inside default build directory | test_build.py::test_build_alternative_directories |
-Can still clean build if all text files are CRLFs | |
+Can still clean build if all text files are CRLFs | test_build.py::test_build_with_crlf_files |
 Updating rom ld file should re-link app and bootloader | test_rebuild::test_rebuild_linker |
 Updating app-only ld file should only re-link app | test_rebuild::test_rebuild_linker |
 Updating ld file should only re-link app | test_rebuild::test_rebuild_linker |
@@ -51,7 +51,7 @@ Setting EXTRA_COMPONENT_DIRS works | test_components.py::test_component_extra_di
 Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed | test_components.py::test_component_nonexistent_extra_dirs_not_allowed |
 Component names may contain spaces | test_components.py::test_component_names_contain_spaces |
 sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET | test_sdkconfig.py::test_sdkconfig_contains_all_files |
-Test if it can build the example to run on host | |
+Test if it can build the example to run on host | test_cmake.py::test_build_example_on_host |
 Test build ESP-IDF as a library to a custom CMake projects for all targets | test_cmake.py::test_build_custom_cmake_project |
 Building a project with CMake library imported and PSRAM workaround, all files compile with workaround | test_cmake.py::test_build_cmake_library_psram_workaround |
 Test for external libraries in custom CMake projects with ESP-IDF components linked | test_cmake.py::test_build_custom_cmake_project |
@@ -74,7 +74,7 @@ Can set options to subcommands: print_filter for monitor | test_common.py::test_
 Fail on build time works | test_build.py::test_build_fail_on_build_time |
 Component properties are set | test_components.py::test_component_properties_are_set |
 should be able to specify multiple sdkconfig default files | test_sdkconfig.py::test_sdkconfig_multiple_default_files |
-Supports git worktree | |
+Supports git worktree | test_git.py::test_support_git_worktree |
 idf.py fallback to build system target | test_common.py::test_fallback_to_build_system_target |
 Build fails if partitions don't fit in flash | test_partition.py::test_partitions_dont_fit_in_flash |
 Warning is given if smallest partition is nearly full | test_partition.py::test_partition_nearly_full_warning |
@@ -94,7 +94,7 @@ Check that command for creating new project will fail if the target folder is no
 Check that command for creating new project will fail if the target path is file. | test_common.py::test_create_project |
 Check docs command | test_common.py::test_docs_command |
 Deprecation warning check | test_common.py::test_deprecation_warning |
-Save-defconfig checks | |
+Save-defconfig checks | test_common.py::test_save_defconfig_check |
 test_build | |
 test_build_ulp_fsm | |
 test_build_ulp_riscv | |
