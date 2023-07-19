@@ -57,12 +57,22 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
 {
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7848
+    return RV_READ_CSR(mcycle);
+#else
     return RV_READ_CSR(CSR_PCCR_MACHINE);
+#endif
 }
 
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7848
+    RV_WRITE_CSR(mcycle, ccount);
+#else
     RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
+#endif
 }
 
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
