@@ -442,7 +442,7 @@ void pthread_exit(void *value_ptr)
         }
     }
 
-    ESP_LOGD(TAG, "Task stk_wm = %d", uxTaskGetStackHighWaterMark(NULL));
+    ESP_LOGD(TAG, "Task stk_wm = %d", (int)uxTaskGetStackHighWaterMark(NULL));
 
     xSemaphoreGive(s_threads_mux);
     // note: if this thread is joinable then after giving back s_threads_mux
