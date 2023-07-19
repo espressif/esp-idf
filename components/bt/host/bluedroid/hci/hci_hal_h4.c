@@ -600,6 +600,7 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
     }
     uint16_t len = hci_ev[1] + 3;
     uint8_t *data = (uint8_t *)malloc(len);
+    assert(data != NULL);
     data[0] = 0x04;
     memcpy(&data[1], hci_ev, len - 1);
     ble_hci_trans_buf_free(hci_ev);
@@ -614,6 +615,7 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
 {
     uint16_t len = om->om_len + 1;
     uint8_t *data = (uint8_t *)malloc(len);
+    assert(data != NULL);
     data[0] = 0x02;
     os_mbuf_copydata(om, 0, len - 1, &data[1]);
     host_recv_pkt_cb(data, len);
