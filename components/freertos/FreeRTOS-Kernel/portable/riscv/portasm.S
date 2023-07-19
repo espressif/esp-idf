@@ -40,7 +40,7 @@
     .type rtos_int_enter, @function
 rtos_int_enter:
 #if CONFIG_IDF_TARGET_ESP32P4
-    /* needs jira for p4 */
+    //TODO: IDF-7861
     /* preserve the return address */
     mv t1, ra
     mv t2, a0
@@ -106,7 +106,7 @@ rtos_int_enter:
 
 rtos_enter_end:
 #if CONFIG_IDF_TARGET_ESP32P4
-    /* needs jira for p4 */
+    //TODO: IDF-7861
     mv  ra, t1
 #endif
     ret

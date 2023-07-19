@@ -300,6 +300,12 @@ _interrupt_handler:
     /* Save SP */
     sw    t0, RV_STK_SP(sp)
 
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7861
+    /* Before doing anythig preserve the stack pointer */
+    /* It will be saved in current TCB, if needed */
+    mv      a0, sp
+#endif  //#if CONFIG_IDF_TARGET_ESP32P4
     call    rtos_int_enter
     /* If this is a non-nested interrupt, SP now points to the interrupt stack */
 
@@ -374,6 +380,12 @@ _interrupt_handler:
     mv      a0, sp
 #endif
     call    rtos_int_exit
+
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7861
+    /* The next (or current) stack pointer is returned in a0 */
+    mv      sp, a0
+#endif  //#if CONFIG_IDF_TARGET_ESP32P4
 
     /* restore the rest of the registers */
     csrw    mcause, s1
