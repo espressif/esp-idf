@@ -55,12 +55,14 @@ static IRAM_ATTR void event_end_process(void)
     ieee802154_timer0_stop();
 }
 
+#if !CONFIG_IEEE802154_TEST
 static IRAM_ATTR void receive_ack_timeout_timer_start(uint32_t duration)
 {
     ieee802154_ll_enable_events(IEEE802154_EVENT_TIMER0_OVERFLOW);
     ieee802154_timer0_set_threshold(duration);
     ieee802154_timer0_start();
 }
+#endif
 
 static void ieee802154_rx_frame_info_update(void)
 {
@@ -266,11 +268,12 @@ static IRAM_ATTR void next_operation(void)
 
 static void isr_handle_timer0_done(void)
 {
+#if !CONFIG_IEEE802154_TEST
     if (s_ieee802154_state == IEEE802154_STATE_RX_ACK) {
         esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
         next_operation();
     }
-#if CONFIG_IEEE802154_TEST
+#else
     esp_ieee802154_timer0_done();
 #endif
 }
@@ -296,7 +299,9 @@ static IRAM_ATTR void isr_handle_tx_done(void)
         } else if (s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA) {
             if (ieee802154_frame_is_ack_required(s_tx_frame) && ieee802154_ll_get_rx_auto_ack()) {
                 ieee802154_set_state(IEEE802154_STATE_RX_ACK);
+#if !CONFIG_IEEE802154_TEST
                 receive_ack_timeout_timer_start(200000); // 200ms for receive ack timeout
+#endif
             } else {
                 esp_ieee802154_transmit_done(s_tx_frame, NULL, NULL);
                 next_operation();
@@ -618,7 +623,7 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
 
     ieee802154_ll_set_ed_sample_mode(IEEE802154_ED_SAMPLE_AVG);
-#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && !CONFIG_IEEE802154_TEST
     esp_coex_ieee802154_ack_pti_set(IEEE802154_MIDDLE);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_IDLE);
 #else
