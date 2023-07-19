@@ -554,6 +554,8 @@ Secure Boot Best Practices
 
     * A similar approach can also be used to physically re-flash with a new key. For physical re-flashing, the bootloader content can also be changed at the same time.
 
+    .. _secure-boot-v2-aggressive-key-revocation:
+
     Aggressive approach:
     ~~~~~~~~~~~~~~~~~~~~
 
