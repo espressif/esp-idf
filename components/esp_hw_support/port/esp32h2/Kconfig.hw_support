@@ -1,5 +1,5 @@
 choice ESP32H2_REV_MIN
-    prompt "Minimum Supported ESP32-C6 Revision"
+    prompt "Minimum Supported ESP32-H2 Revision"
     default ESP32H2_REV_MIN_0
     help
         Required minimum chip revision. ESP-IDF will check for it and
