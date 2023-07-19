@@ -342,6 +342,15 @@ static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if
 {
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", param->connect.conn_id);
+
+#ifdef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+    /* Ignore BLE events received after protocomm layer is stopped */
+    if (protoble_internal == NULL) {
+        ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+#endif
+
     if (protoble_internal->pc_ble->sec &&
             protoble_internal->pc_ble->sec->new_transport_session) {
         ret = protoble_internal->pc_ble->sec->new_transport_session(protoble_internal->pc_ble->sec_inst,
@@ -588,6 +597,7 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
         if (ret) {
             ESP_LOGE(TAG, "BLE stop failed");
         }
+        simple_ble_deinit();
 #else
 #ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
         /* Keep BT stack on, but terminate the connection after provisioning */

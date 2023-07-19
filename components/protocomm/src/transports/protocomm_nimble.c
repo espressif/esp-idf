@@ -564,6 +564,15 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
 {
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", event->connect.conn_handle);
+
+#ifdef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+    /* Ignore BLE events received after protocomm layer is stopped */
+    if (protoble_internal == NULL) {
+        ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+#endif
+
     if (protoble_internal->pc_ble->sec &&
             protoble_internal->pc_ble->sec->new_transport_session) {
         ret =
@@ -971,6 +980,7 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
                 ESP_LOGE(TAG, "esp_nimble_hci_and_controller_deinit() failed with error: %d", ret);
             }
         }
+        free_gatt_ble_misc_memory(ble_cfg_p);
 #else
 #ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
 	/* Keep BT stack on, but terminate the connection after provisioning */
