@@ -14,7 +14,7 @@ ESP-IDF Docker image (``espressif/idf``) is intended for building applications a
 The image contains:
 
 - Common utilities such as ``git``, ``wget``, ``curl``, and ``zip``.
-- Python 3.7 or newer.
+- Python 3.8 or newer.
 - A copy of a specific version of ESP-IDF. See below for information about versions. ``IDF_PATH`` environment variable is set and points to the ESP-IDF location in the container.
 - All the build tools required for the specific version of ESP-IDF: CMake, Ninja, cross-compiler toolchains, etc.
 - All Python packages required by ESP-IDF are installed in a virtual environment.

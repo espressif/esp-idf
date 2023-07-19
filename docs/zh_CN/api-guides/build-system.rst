@@ -119,7 +119,7 @@ idf.py
 设置 Python 解释器
 ------------------
 
-ESP-IDF 适用于 Python 3.7 以上版本。
+ESP-IDF 适用于 Python 3.8 以上版本。
 
 ``idf.py`` 和其他的 Python 脚本会使用默认的 Python 解释器运行，如 ``python``。你可以通过 ``python3 $IDF_PATH/tools/idf.py ...`` 命令切换到别的 Python 解释器，或者通过设置 shell 别名或其他脚本来简化该命令。
 
