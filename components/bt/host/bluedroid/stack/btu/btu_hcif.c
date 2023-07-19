@@ -949,6 +949,7 @@ static void btu_hcif_esco_connection_chg_evt (UINT8 *p)
 static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_len,
         void *p_cplt_cback)
 {
+    uint8_t status;
     switch (opcode) {
     case HCI_INQUIRY_CANCEL:
         /* Tell inquiry processing that we are done */
@@ -1011,7 +1012,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_clear_white_list_complete(p, evt_len);
         break;
     case HCI_BLE_WRITE_ADV_PARAMS: {
-        uint8_t status;
         STREAM_TO_UINT8  (status, p);
         if(status != HCI_SUCCESS) {
             HCI_TRACE_ERROR("hci write adv params error 0x%x", status);
@@ -1019,7 +1019,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
     }
     case HCI_BLE_RC_PARAM_REQ_REPLY: {
-        uint8_t status;
         STREAM_TO_UINT8  (status, p);
         if(status != HCI_SUCCESS) {
             HCI_TRACE_ERROR("hci connection params reply command error 0x%x", status);
@@ -1027,7 +1026,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
     }
     case HCI_BLE_RC_PARAM_REQ_NEG_REPLY: {
-        uint8_t status;
         STREAM_TO_UINT8  (status, p);
         if(status != HCI_SUCCESS) {
             HCI_TRACE_ERROR("hci connection params neg reply command error %x", status);
@@ -1100,13 +1098,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_BLE_SET_EXT_ADV_DATA:
     case HCI_BLE_SET_EXT_SCAN_RSP_DATA:
     case HCI_BLE_SET_EXT_ADV_ENABLE: {
-        uint8_t status;
         STREAM_TO_UINT8  (status, p);
         HCI_TRACE_EVENT("%s opcode 0x%x status 0x%x", __func__, opcode, status);
 	    break;
     }
     case HCI_BLE_READ_PHY: {
-        uint8_t status;
         uint16_t conn_handle;
         uint8_t tx_phy;
         uint8_t rx_phy;
@@ -1129,7 +1125,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_BLE_PERIOD_ADV_SYNC_TRANS:
     case HCI_BLE_PERIOD_ADV_SET_INFO_TRANS:
     case HCI_BLE_SET_PAST_PARAMS: {
-        UINT8 status;
         UINT16 conn_handle;
         STREAM_TO_UINT8(status, p);
         STREAM_TO_UINT16(conn_handle, p);
@@ -1143,7 +1138,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC) {
             btm_vsc_complete (p, opcode, evt_len, (tBTM_CMPL_CB *)p_cplt_cback);
         }
-        uint8_t status;
         STREAM_TO_UINT8  (status, p);
         if(status != HCI_SUCCESS) {
             HCI_TRACE_ERROR("CC evt: op=0x%x, status=0x%x", opcode, status);
