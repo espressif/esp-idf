@@ -59,6 +59,7 @@ def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> 
     softap = dut[0]
     station = dut[1]
 
+    assert station.app.sdkconfig['ESP_WIFI_SOFTAP_SUPPORT'] is False
     ssid = softap.app.sdkconfig.get('ESP_WIFI_SSID')
     password = softap.app.sdkconfig.get('ESP_WIFI_PASSWORD')
     assert station.app.sdkconfig.get('ESP_WIFI_SSID') == ssid
