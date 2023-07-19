@@ -66,6 +66,7 @@ static char *ieee802154_get_event_string(ieee802154_ll_event_t events)
 static char *ieee802154_state_string[] = {
     "DISABLE",
     "IDLE",
+    "SLEEP",
     "RX",
     "TX_ACK",
     "TX_ENH_ACK",

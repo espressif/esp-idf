@@ -21,7 +21,7 @@ uint8_t ieee802154_channel_to_freq(uint8_t channel)
     return (channel - 11) * 5 + 3;
 }
 
-#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && !CONFIG_IEEE802154_TEST
 
 void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene)
 {
@@ -45,7 +45,7 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene)
 
 }
 
-#endif // CONFIG_ESP_COEX_SW_COEXIST_ENABLE
+#endif // CONFIG_ESP_COEX_SW_COEXIST_ENABLE && !CONFIG_IEEE802154_TEST
 
 // TZ-97: implement these two functions using ETM common interface
 void ieee802154_etm_channel_clear(uint32_t channel)
