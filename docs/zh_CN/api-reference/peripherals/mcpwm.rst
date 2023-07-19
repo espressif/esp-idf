@@ -114,6 +114,8 @@ MCPWM 生成器
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` 设置生成器使用的 GPIO 编号。
 - :cpp:member:`mcpwm_generator_config_t::invert_pwm` 设置是否反相 PWM 信号。
 - :cpp:member:`mcpwm_generator_config_t::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
+- :cpp:member:`mcpwm_generator_config_t::io_od_mode` 设置是否启用漏极开路输出。
+- :cpp:member:`mcpwm_generator_config_t::pull_up` 和 :cpp:member:`mcpwm_generator_config_t::pull_down` 用来设置是否启用内部上下拉电阻。
 
 分配成功后，:cpp:func:`mcpwm_new_generator` 将返回一个指向已分配生成器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 操作器中没有空闲生成器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
