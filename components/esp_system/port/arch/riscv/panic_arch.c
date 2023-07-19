@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,15 @@
 
 #include "spi_flash_mmap.h"
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#include "soc/cache_reg.h"
+#else
 #include "soc/extmem_reg.h"
+#endif
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
+#include "riscv/rv_utils.h"
 #include "esp_private/cache_err_int.h"
 #include "soc/timer_periph.h"
 
@@ -80,7 +85,7 @@ static inline bool test_and_print_register_bits(const uint32_t status,
  */
 static inline void print_cache_err_details(const void *frame)
 {
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 // ESP32C6-TODO, ESP32H2-TODO: IDF-5657
+#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 // ESP32P4-TODO, ESP32C6-TODO, ESP32H2-TODO: IDF-5657
     /* Define the array that contains the status (bits) to test on the register
      * EXTMEM_CORE0_ACS_CACHE_INT_ST_REG. each bit is accompanied by a small
      * message.
@@ -344,7 +349,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 void panic_arch_fill_info(void *frame, panic_info_t *info)
 {
     RvExcFrame *regs = (RvExcFrame *) frame;
-    info->core = 0;
+    info->core = rv_utils_get_core_id();
     info->exception = PANIC_EXCEPTION_FAULT;
 
     static const char *reason[] = {
