@@ -157,7 +157,7 @@ static bool other_cpu_startup_idle_hook_cb(void)
 
 static void main_task(void* args)
 {
-    ESP_LOGI(MAIN_TAG, "Started on CPU%d", xPortGetCoreID());
+    ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on other core, before replacing its startup stack
     esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
