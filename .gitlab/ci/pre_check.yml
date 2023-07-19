@@ -201,6 +201,7 @@ mr_variables:
       if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> mr.env
       fi
+    - cat mr.env
   artifacts:
     reports:
       dotenv: mr.env

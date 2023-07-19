@@ -4,7 +4,7 @@
   image: $ESP_ENV_IMAGE
   tags:
     - host_test
-  dependencies: []
+  dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
     - job: upload-pip-cache
@@ -13,6 +13,8 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
+    - job: mr_variables
+      optional: true  # only MR pipelines would have this
 
 test_nvs_on_host:
   extends: .host_test_template
@@ -97,7 +99,6 @@ test_gdbstub_on_host:
   script:
     - cd components/esp_gdbstub/test_gdbstub_host
     - make test
-
 
 test_idf_py:
   extends: .host_test_template
@@ -301,9 +302,6 @@ test_pytest_qemu:
     - .host_test_template
     - .before_script_build_jobs
   image: $QEMU_IMAGE
-  needs:
-   - job: mr_variables
-     optional: true  # only MR pipelines would have this
   artifacts:
     when: always
     paths:
@@ -325,7 +323,7 @@ test_pytest_qemu:
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
-    - pytest
+    - run_cmd pytest
       --target $IDF_TARGET
       -m qemu
       --embedded-services idf,qemu
@@ -337,9 +335,6 @@ test_pytest_linux:
   extends:
     - .host_test_template
     - .before_script_build_jobs
-  needs:
-    - job: mr_variables
-      optional: true  # only MR pipelines would have this
   artifacts:
     when: always
     paths:

@@ -214,7 +214,7 @@ def get_pytest_files(paths: List[str]) -> List[str]:
     pytest_scripts: Set[str] = set()
     for p in paths:
         path = Path(p)
-        pytest_scripts.update(str(_p) for _p in path.glob('**/pytest_*.py'))
+        pytest_scripts.update(str(_p) for _p in path.glob('**/pytest_*.py') if 'managed_components' not in _p.parts)
 
     return list(pytest_scripts)
 
