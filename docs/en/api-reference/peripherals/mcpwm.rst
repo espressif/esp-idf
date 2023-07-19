@@ -114,6 +114,8 @@ You can allocate a MCPWM generator object by calling the :cpp:func:`mcpwm_new_ge
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` sets the GPIO number used by the generator.
 - :cpp:member:`mcpwm_generator_config_t::invert_pwm` sets whether to invert the PWM signal.
 - :cpp:member:`mcpwm_generator_config_t::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
+- :cpp:member:`mcpwm_generator_config_t::io_od_mode` configures the PWM GPIO as open-drain output.
+- :cpp:member:`mcpwm_generator_config_t::pull_up` and :cpp:member:`mcpwm_generator_config_t::pull_down` controls whether to enable the internal pull-up and pull-down resistors accordingly.
 
 The :cpp:func:`mcpwm_new_generator` will return a pointer to the allocated generator object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free generators in the MCPWM operator, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
