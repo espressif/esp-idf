@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
-from __future__ import print_function
-
 import socket
 from http.client import HTTPConnection, HTTPSConnection
 
