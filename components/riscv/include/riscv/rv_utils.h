@@ -107,14 +107,52 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
+//TODO: IDF-7795, clic related
+#if (SOC_CPU_CORES_NUM > 1)
+FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
+{
+    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
+}
+
+FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(uint32_t intlevel)
+{
+    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    uint32_t old_thresh;
+
+    old_thresh = REG_READ(CLIC_INT_THRESH_REG);
+    old_thresh = old_thresh >> (24 + (8 - NLBITS));
+
+    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((intlevel << (8 - NLBITS))) | 0x1f);
+    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+
+    return old_thresh;
+}
+#endif  //#if (SOC_CPU_CORES_NUM > 1)
+
 FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
 {
+//TODO: IDF-7795
+#if SOC_INT_CLIC_SUPPORTED
+    unsigned intr_ena_mask = 0;
+    unsigned intr_num;
+    for (intr_num = 0; intr_num < 32; intr_num++) {
+        if (REG_GET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET), CLIC_INT_IE))
+            intr_ena_mask |= BIT(intr_num);
+    }
+    return intr_ena_mask;
+#else
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
 {
+//TODO: IDF-7795
+#if SOC_INT_CLIC_SUPPORTED
+    REG_SET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET) , CLIC_INT_IP);
+#else
     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)

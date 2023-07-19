@@ -167,6 +167,10 @@ static bool is_intr_num_resv(int intr_num)
     reserved |= BIT(0) | BIT(3) | BIT(4) | BIT(7);
 #endif
 
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7795
+    return false;
+#endif
     if (reserved & BIT(intr_num)) {
         return true;
     }
