@@ -35,3 +35,11 @@ def test_esp_event_qemu_esp32c3(dut: Dut) -> None:
     for case in dut.test_menu:
         if 'qemu-ignore' not in case.groups and not case.is_ignored and case.type == 'normal':
             dut._run_normal_case(case)
+
+
+@pytest.mark.linux
+@pytest.mark.host_test
+def test_esp_event_posix_simulator(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests.')
+    dut.write('*')
+    dut.expect(r'\d{2} Tests 0 Failures 0 Ignored', timeout=120)
