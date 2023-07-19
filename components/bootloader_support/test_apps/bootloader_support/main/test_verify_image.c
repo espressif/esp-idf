@@ -46,6 +46,8 @@ TEST_CASE("Verify unit test app image", "[bootloader_support][qemu-ignore-c3]")
         .offset = running->address,
         .size = running->size,
     };
+    TEST_ASSERT_GREATER_THAN(0, running->address);
+    TEST_ASSERT_GREATER_THAN(0, running->size);
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_verify(ESP_IMAGE_VERIFY, &running_pos, &data));
     TEST_ASSERT_NOT_EQUAL(0, data.image_len);
