@@ -24,6 +24,7 @@ extern "C" {
 */
 typedef struct {
     const uint8_t mck_out_sig;
+    const uint8_t mck_in_sig;
 
     const uint8_t m_tx_bck_sig;
     const uint8_t m_rx_bck_sig;

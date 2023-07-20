@@ -13,6 +13,7 @@
 const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
     {
         .mck_out_sig  = I2S_MCLK_OUT_IDX,
+        .mck_in_sig   = I2S_MCLK_IN_IDX,
 
         .m_tx_bck_sig = I2SO_BCK_OUT_IDX,
         .m_rx_bck_sig = I2SI_BCK_OUT_IDX,

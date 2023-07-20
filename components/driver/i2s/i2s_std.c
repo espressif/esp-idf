@@ -45,11 +45,16 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
         clk_info->bclk = rate * handle->total_slot * slot_bits;
         clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     }
+#if SOC_I2S_HW_VERSION_2
+    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ?
+                     clk_cfg->ext_clk_freq_hz : i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+#else
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+#endif
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
     /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large for the current clock source");
 
     return ESP_OK;
 }
@@ -151,6 +156,9 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
         i2s_gpio_check_and_set(gpio_cfg->din, i2s_periph_signal[id].data_in_sig, true, false);
     }
 
+    /* Set mclk pin */
+    ESP_RETURN_ON_ERROR(i2s_check_set_mclk(id, gpio_cfg->mclk, std_cfg->clk_cfg.clk_src, gpio_cfg->invert_flags.mclk_inv), TAG, "mclk config failed");
+
     if (handle->role == I2S_ROLE_SLAVE) {
         /* For "tx + slave" mode, select TX signal index for ws and bck */
         if (handle->dir == I2S_DIR_TX && !handle->controller->full_duplex) {
@@ -165,13 +173,6 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
             i2s_gpio_check_and_set(gpio_cfg->bclk, i2s_periph_signal[id].s_rx_bck_sig, true, gpio_cfg->invert_flags.bclk_inv);
         }
     } else {
-        /* mclk only available in master mode */
-#if SOC_I2S_SUPPORTS_APLL
-        bool is_apll = std_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL;
-#else
-        bool is_apll = false;
-#endif
-        ESP_RETURN_ON_ERROR(i2s_check_set_mclk(id, gpio_cfg->mclk, is_apll, gpio_cfg->invert_flags.mclk_inv), TAG, "mclk config failed");
         /* For "rx + master" mode, select RX signal index for ws and bck */
         if (handle->dir == I2S_DIR_RX && !handle->controller->full_duplex) {
 #if SOC_I2S_HW_VERSION_2
@@ -208,7 +209,6 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     handle->mode_info = calloc(1, sizeof(i2s_std_config_t));
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
-    ESP_GOTO_ON_ERROR(i2s_std_set_gpio(handle, &std_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
     /* i2s_set_std_slot should be called before i2s_set_std_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_std_set_slot(handle, &std_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
 #if SOC_I2S_SUPPORTS_APLL
@@ -219,6 +219,8 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     }
 #endif
     ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, &std_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
+    /* i2s_std_set_gpio should be called after i2s_std_set_clock as mclk relies on the clock source */
+    ESP_GOTO_ON_ERROR(i2s_std_set_gpio(handle, &std_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 #if SOC_I2S_HW_VERSION_2
     /* Enable clock to start outputting mclk signal. Some codecs will reset once mclk stop */

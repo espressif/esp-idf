@@ -13,6 +13,7 @@
 const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
     {
         .mck_out_sig  = CLK_I2S_MUX_IDX,
+        .mck_in_sig  = -1, // Unavailable
 
         .m_tx_bck_sig = I2S0O_BCK_OUT_IDX,
         .m_rx_bck_sig = I2S0I_BCK_OUT_IDX,

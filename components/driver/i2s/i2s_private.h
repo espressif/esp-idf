@@ -191,13 +191,13 @@ void i2s_gpio_check_and_set(gpio_num_t gpio, uint32_t signal_idx, bool is_input,
  *
  * @param id            I2S port id
  * @param gpio_num      GPIO number
- * @param is_apll       Is using APLL as clock source
+ * @param clk_src       The clock source of this I2S port
  * @param is_invert     Is invert the GPIO
  * @return
  *      - ESP_OK                Set mclk output gpio success
  *      - ESP_ERR_INVALID_ARG   Invalid GPIO number
  */
-esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, bool is_apll, bool is_invert);
+esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, i2s_clock_src_t clk_src, bool is_invert);
 
 /**
  * @brief Attach data out signal and data in signal to a same gpio
