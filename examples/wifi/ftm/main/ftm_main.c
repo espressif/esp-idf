@@ -25,8 +25,17 @@
 typedef struct {
     struct arg_str *ssid;
     struct arg_str *password;
+    struct arg_lit *disconnect;
     struct arg_end *end;
-} wifi_args_t;
+} wifi_sta_args_t;
+
+typedef struct {
+    struct arg_str *ssid;
+    struct arg_str *password;
+    struct arg_int *channel;
+    struct arg_int *bandwidth;
+    struct arg_end *end;
+} wifi_ap_args_t;
 
 typedef struct {
     struct arg_str *ssid;
@@ -47,8 +56,8 @@ typedef struct {
     struct arg_end *end;
 } wifi_ftm_args_t;
 
-static wifi_args_t sta_args;
-static wifi_args_t ap_args;
+static wifi_sta_args_t sta_args;
+static wifi_ap_args_t ap_args;
 static wifi_scan_arg_t scan_args;
 static wifi_ftm_args_t ftm_args;
 
@@ -60,6 +69,8 @@ wifi_config_t g_ap_config = {
 
 #define ETH_ALEN 6
 #define MAX_CONNECT_RETRY_ATTEMPTS  5
+#define DEFAULT_AP_CHANNEL      1
+#define DEFAULT_AP_BANDWIDTH    20
 
 static bool s_reconnect = true;
 static int s_retry_num = 0;
@@ -123,11 +134,11 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     } else if (event_id == WIFI_EVENT_FTM_REPORT) {
         wifi_event_ftm_report_t *event = (wifi_event_ftm_report_t *) event_data;
 
+        s_rtt_est = event->rtt_est;
+        s_dist_est = event->dist_est;
+        s_ftm_report = event->ftm_report_data;
+        s_ftm_report_num_entries = event->ftm_report_num_entries;
         if (event->status == FTM_STATUS_SUCCESS) {
-            s_rtt_est = event->rtt_est;
-            s_dist_est = event->dist_est;
-            s_ftm_report = event->ftm_report_data;
-            s_ftm_report_num_entries = event->ftm_report_num_entries;
             xEventGroupSetBits(s_ftm_event_group, FTM_REPORT_BIT);
         } else {
             ESP_LOGI(TAG_STA, "FTM procedure with Peer("MACSTR") failed! (Status - %d)",
@@ -145,6 +156,9 @@ static void ftm_process_report(void)
 {
     int i;
     char *log = NULL;
+
+    if (s_ftm_report_num_entries == 0)
+        return;
 
     if (!g_report_lvl)
         return;
@@ -169,7 +183,10 @@ static void ftm_process_report(void)
             log_ptr += sprintf(log_ptr, "%6d|", s_ftm_report[i].dlog_token);
         }
         if (g_report_lvl & BIT1) {
-            log_ptr += sprintf(log_ptr, "%7u  |", s_ftm_report[i].rtt);
+            if (s_ftm_report[i].rtt != UINT32_MAX)
+                log_ptr += sprintf(log_ptr, "%7" PRIi32 "  |", s_ftm_report[i].rtt);
+            else
+                log_ptr += sprintf(log_ptr, " INVALID |");
         }
         if (g_report_lvl & BIT2) {
             log_ptr += sprintf(log_ptr, "%14llu  |%14llu  |%14llu  |%14llu  |", s_ftm_report[i].t1,
@@ -249,6 +266,13 @@ static int wifi_cmd_sta(int argc, char **argv)
         arg_print_errors(stderr, sta_args.end, argv[0]);
         return 1;
     }
+    if (sta_args.disconnect->count) {
+        s_reconnect = false;
+        xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
+        esp_wifi_disconnect();
+        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_PERIOD_MS);
+        return 0;
+    }
 
     ESP_LOGI(TAG_STA, "sta connecting to '%s'", sta_args.ssid->sval[0]);
     wifi_cmd_sta_join(sta_args.ssid->sval[0], sta_args.password->sval[0]);
@@ -311,7 +335,7 @@ static int wifi_cmd_scan(int argc, char **argv)
     return 0;
 }
 
-static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
+static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel, uint8_t bw)
 {
     s_reconnect = false;
     strlcpy((char*) g_ap_config.ap.ssid, ssid, MAX_SSID_LEN);
@@ -323,13 +347,29 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
         }
         strlcpy((char*) g_ap_config.ap.password, pass, MAX_PASSPHRASE_LEN);
     }
+    if (!(channel >=1 && channel <= 14)) {
+        ESP_LOGE(TAG_AP, "Channel cannot be %d!", channel);
+        return false;
+    }
+    if (bw != 20 && bw != 40) {
+        ESP_LOGE(TAG_AP, "Cannot set %d MHz bandwidth!", bw);
+        return false;
+    }
 
     if (strlen(pass) == 0) {
         g_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
-
+    g_ap_config.ap.channel = channel;
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &g_ap_config));
+    if (bw == 40) {
+        esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT40);
+    } else {
+        esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20);
+    }
+    ESP_LOGI(TAG_AP, "Starting SoftAP with FTM Responder support, SSID - %s, Password - %s, Primary Channel - %d, Bandwidth - %dMHz",
+                        ap_args.ssid->sval[0], ap_args.password->sval[0], channel, bw);
+
     return true;
 }
 
@@ -342,10 +382,12 @@ static int wifi_cmd_ap(int argc, char** argv)
         return 1;
     }
 
-    if (true == wifi_cmd_ap_set(ap_args.ssid->sval[0], ap_args.password->sval[0]))
-        ESP_LOGI(TAG_AP, "Starting SoftAP with FTM Responder support, SSID - %s, Password - %s", ap_args.ssid->sval[0], ap_args.password->sval[0]);
-    else
+    if (!wifi_cmd_ap_set(ap_args.ssid->sval[0], ap_args.password->sval[0],
+                                ap_args.channel->count != 0 ? ap_args.channel->ival[0] : DEFAULT_AP_CHANNEL,
+                                ap_args.bandwidth->count != 0 ? ap_args.bandwidth->ival[0] : DEFAULT_AP_BANDWIDTH)) {
         ESP_LOGE(TAG_AP, "Failed to start SoftAP!");
+        return 1;
+    }
 
     return 0;
 }
@@ -482,11 +524,11 @@ static int wifi_cmd_ftm(int argc, char **argv)
     bits = xEventGroupWaitBits(s_ftm_event_group, FTM_REPORT_BIT | FTM_FAILURE_BIT,
                                            pdTRUE, pdFALSE, portMAX_DELAY);
     /* Processing data from FTM session */
+    ftm_process_report();
+    free(s_ftm_report);
+    s_ftm_report = NULL;
+    s_ftm_report_num_entries = 0;
     if (bits & FTM_REPORT_BIT) {
-        ftm_process_report();
-        free(s_ftm_report);
-        s_ftm_report = NULL;
-        s_ftm_report_num_entries = 0;
         ESP_LOGI(TAG_STA, "Estimated RTT - %d nSec, Estimated Distance - %d.%02d meters",
                           s_rtt_est, s_dist_est / 100, s_dist_est % 100);
     } else {
@@ -529,8 +571,9 @@ ftm_responder:
 
 void register_wifi(void)
 {
-    sta_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
+    sta_args.ssid = arg_str0(NULL, NULL, "<ssid>", "SSID of AP");
     sta_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");
+    sta_args.disconnect = arg_lit0("d", "disconnect", "Disconnect from the connected AP");
     sta_args.end = arg_end(2);
 
     const esp_console_cmd_t sta_cmd = {
@@ -543,8 +586,10 @@ void register_wifi(void)
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&sta_cmd) );
 
-    ap_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
+    ap_args.ssid = arg_str0(NULL, NULL, "<ssid>", "SSID of AP");
     ap_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");
+    ap_args.channel = arg_int0("c", "channel", "<1-11>", "Primary channel of AP");
+    ap_args.bandwidth = arg_int0("b", "bandwidth", "<20/40>", "Channel bandwidth");
     ap_args.end = arg_end(2);
 
     const esp_console_cmd_t ap_cmd = {
@@ -622,16 +667,20 @@ void app_main(void)
     register_system();
     register_wifi();
 
-    printf("\n ==========================================================\n");
-    printf(" |                      Steps to test FTM                 |\n");
-    printf(" |                                                        |\n");
-    printf(" |  1. Use 'help' for detailed information on parameters  |\n");
-    printf(" |  2. Start SoftAP with command 'ap <SSID> <password>'   |\n");
-    printf(" |                          OR                            |\n");
-    printf(" |  2. Use 'scan' command to search for external AP's     |\n");
-    printf(" |  3. On second device initiate FTM with an AP using     |\n");
-    printf(" |     command 'ftm -I -s <SSID>'                         |\n");
-    printf(" ==========================================================\n\n");
+    printf("\n ===============================================================\n");
+    printf(" |                  Steps to test FTM Initiator                 |\n");
+    printf(" |                                                              |\n");
+    printf(" |  1. Use 'scan' command to scan AP's. In results, check AP's  |\n");
+    printf(" |     with tag '[FTM Responder]' for supported AP's            |\n");
+    printf(" |  2. Optionally connect to the AP with 'sta <SSID> <password>'|\n");
+    printf(" |  3. Initiate FTM with 'ftm -I -s <SSID>'                     |\n");
+    printf(" |______________________________________________________________|\n");
+    printf(" |                  Steps to test FTM Responder                 |\n");
+    printf(" |                                                              |\n");
+    printf(" |  1. Start SoftAP with command 'ap <SSID> <password>'         |\n");
+    printf(" |  2. Optionally add '-c <ch>' to set channel, '-b 40' for 40M |\n");
+    printf(" |  3. Use 'help' for detailed information for all parameters   |\n");
+    printf(" ================================================================\n\n");
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
