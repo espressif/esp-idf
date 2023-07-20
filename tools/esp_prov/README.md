@@ -105,7 +105,6 @@ For Android, a provisioning tool along with source code is available [here](http
 
 This requires the following python libraries to run:
 * `bleak`
-* `future`
 * `protobuf`
 * `cryptography`
 

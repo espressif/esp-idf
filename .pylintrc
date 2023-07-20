@@ -146,10 +146,6 @@ disable=print-statement,
         invalid-name,
         too-few-public-methods,
         too-many-locals,
-        bad-super-call,  # since we still haven't drop python2 support
-        too-many-nested-blocks,
-        too-many-branches,
-        too-many-statements,
         ungrouped-imports,  # since we have isort in pre-commit
         no-name-in-module,  # since we have flake8 to check this
         too-many-instance-attributes,

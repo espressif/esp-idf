@@ -8,8 +8,8 @@ import re
 from typing import Any
 
 import jsonschema
+from idf_ci_utils import IDF_PATH
 
-IDF_PATH = os.environ['IDF_PATH']
 JSON_PATH = os.path.join(IDF_PATH, 'tools', 'requirements.json')
 SCHEMA_PATH = os.path.join(IDF_PATH, 'tools', 'requirements_schema.json')
 REQ_DIR = os.path.join(IDF_PATH, 'tools', 'requirements')
