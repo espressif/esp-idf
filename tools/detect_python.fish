@@ -5,9 +5,10 @@
 set OLDEST_PYTHON_SUPPORTED_MAJOR 3
 set OLDEST_PYTHON_SUPPORTED_MINOR 7
 
-set -x ESP_PYTHON python
+set -q ESP_PYTHON; or set PYLIST python3 python python3.7 python3.8 python3.9 python3.10 python3.11 python3.12
+set -q ESP_PYTHON; or set -x ESP_PYTHON python
 
-for p_cmd in python3 python python3.7 python3.8 python3.9 python3.10 python3.11 python3.12;
+for p_cmd in $PYLIST;
     $p_cmd --version >/dev/null 2>&1; or continue
     echo "Checking \"$p_cmd\" ..."
 
