@@ -180,7 +180,7 @@ static bool s_light_sleep_wakeup = false;
 static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
-static bool s_adc_tsen_enabled = false;
+static RTC_FAST_ATTR bool s_adc_tsen_enabled = false;
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 static bool s_ultra_low_enabled = false;
 
@@ -1536,7 +1536,7 @@ void esp_deep_sleep_disable_rom_logging(void)
     esp_rom_disable_logging();
 }
 
-void rtc_sleep_enable_adc_tesn_monitor(bool enable)
+void esp_sleep_enable_adc_tsens_monitor(bool enable)
 {
     s_adc_tsen_enabled = enable;
 }

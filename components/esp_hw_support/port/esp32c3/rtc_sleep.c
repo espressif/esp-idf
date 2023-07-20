@@ -87,7 +87,6 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         assert(sleep_flags & RTC_SLEEP_PD_XTAL);
         bool eco2_workaround = false;
     #if CONFIG_ESP32C3_REV_MIN_FULL < 3
-
         if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 3)) {
             eco2_workaround = true; /* workaround for deep sleep issue in high temp on ECO2 and below */
         }
