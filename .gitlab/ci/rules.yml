@@ -45,6 +45,9 @@
   - "tools/idf_tools.py"
   - "tools/tools.json"
 
+.patterns-build_template-app: &patterns-build_template-app
+  - "tools/ci/build_template_app.sh"
+
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
@@ -118,15 +121,28 @@
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/integration_test/**/*"
 
+.patterns-build_macos: &patterns-build_macos
+  - "tools/ci/test_configure_ci_environment.sh"
+  - "tools/ci/test_build_system_cmake.sh"
+
+.patterns-build_check: &patterns-build_check
+  - "tools/test_build_system/**/*"
+  - "tools/ci/test_build_system_cmake.sh"
+  - "tools/ci/test_build_system_spaces.py"
+  - "tools/ci/test_configure_ci_environment.sh"
+  - "tools/gen_esp_err_to_name.py"
+  - "tools/ci/check_soc_headers_leak.py"
+  - "tools/ci/check_esp_memory_utils_headers.sh"
+  - "tools/ci/check_blobs.sh"
+  - "tools/ci/check_public_headers.py"
+
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
 
   - "components/**/*"
 
   - "tools/ci/test_autocomplete.py"
-  - "tools/ci/test_build_system_cmake.sh"
   - "tools/ci/test_check_kconfigs.py"
-  - "tools/ci/test_configure_ci_environment.sh"
 
   - "tools/mass_mfg/**/*"
 
@@ -606,6 +622,21 @@
       when: never
     - <<: *if-protected
     - <<: *if-label-build
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+
+.rules:build:check:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-dev-push
+      changes: *patterns-build_check
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -1471,6 +1502,8 @@
     - <<: *if-label-macos
     - <<: *if-label-macos_test
     - <<: *if-dev-push
+      changes: *patterns-build_macos
+    - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -1525,6 +1558,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_template-app
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push

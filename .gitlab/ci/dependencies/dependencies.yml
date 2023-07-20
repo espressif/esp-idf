@@ -25,6 +25,7 @@
     - downloadable-tools
   included_in:
     - build:target_test
+    - build:check
 
 # -------------------
 # Specific Build Jobs
@@ -46,8 +47,23 @@
     - macos_test  # for backward compatibility
   patterns:
     - build_system
-    - macos
+    - build_macos
     - downloadable-tools
+
+# ---------------------------
+# Add patterns to build rules
+# ---------------------------
+"patterns:template-app":
+  patterns:
+    - build_template-app
+  included_in:
+    - build:target_test
+
+"patterns:build-check":
+  patterns:
+    - build_check
+  included_in:
+    - build:check
 
 # ---------------
 # Build Test Jobs

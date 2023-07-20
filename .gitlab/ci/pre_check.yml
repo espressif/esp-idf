@@ -84,7 +84,9 @@ test_check_kconfigs:
     - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
 
 check_blobs:
-  extends: .pre_check_template
+  extends:
+    - .pre_check_template
+    - .rules:build:check
   variables:
     SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib;components/esp_coex/lib"
   script:
@@ -109,7 +111,7 @@ check_blobs:
 check_public_headers:
   extends:
     - .pre_check_template
-    - .rules:build
+    - .rules:build:check
   script:
     - IDF_TARGET=esp32 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
     - IDF_TARGET=esp32s2 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s2-elf-
@@ -122,7 +124,7 @@ check_public_headers:
 check_chip_support_components:
   extends:
     - .pre_check_template
-    - .rules:build
+    - .rules:build:check
   artifacts:
     when: on_failure
     paths:
@@ -137,7 +139,7 @@ check_chip_support_components:
 check_esp_err_to_name:
   extends:
     - .pre_check_template
-    - .rules:build
+    - .rules:build:check
   artifacts:
     when: on_failure
     paths:
@@ -183,6 +185,7 @@ check_configure_ci_environment_parsing:
   extends:
     - .pre_check_template
     - .before_script_build_jobs
+    - .rules:build
   script:
     - cd tools/ci
     - python -m unittest ci_build_apps.py

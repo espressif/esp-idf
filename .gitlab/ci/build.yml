@@ -727,10 +727,11 @@ build_clang_test_apps_esp32c6:
   stage: host_test
   extends:
     - .build_template
-    - .rules:build
+    - .rules:build:check
   needs:
     - job: fast_template_app
       artifacts: false
+      optional: true
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
