@@ -25,7 +25,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/lwip/COPYING>`.
 
-* `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
+* `wpa_supplicant`_ Copyright (c) 2003-2022 Jouni Malinen <j@w1.fi> and contributors and licensed under the BSD license.
 
 * `FreeBSD net80211`_ Copyright (c) 2004-2008 Sam Leffler, Errno Consulting and licensed under the BSD license.
 
@@ -83,7 +83,7 @@ ESP32, ESP32-S and ESP32-C Series SoCs mask ROM hardware includes binaries compi
 
 * miniz_, by Rich Geldreich - placed into the public domain.
 
-* `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
+* `wpa_supplicant`_ Copyright (c) 2003-2022 Jouni Malinen <j@w1.fi> and contributors and licensed under the BSD license.
 
 * TJpgDec_ Copyright (C) 2011, ChaN, all right reserved. See below for license.
 
