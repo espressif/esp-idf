@@ -49,6 +49,7 @@ static inline void esp_set_rm_enabled_ie(void) {}
 #endif
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
+void esp_supplicant_unset_all_appie(void);
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool add_mdie);
 void supplicant_sta_conn_handler(uint8_t* bssid);
 void supplicant_sta_disconn_handler(void);

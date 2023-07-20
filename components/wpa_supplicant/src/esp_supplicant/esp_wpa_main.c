@@ -279,6 +279,7 @@ int esp_supplicant_init(void)
 int esp_supplicant_deinit(void)
 {
     esp_supplicant_common_deinit();
+    esp_supplicant_unset_all_appie();
     wpa_cb=NULL;
     return esp_wifi_unregister_wpa_cb_internal();
 }
