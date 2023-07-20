@@ -2160,7 +2160,7 @@ Some limitations need to be considered:
 
 Following is the recommended scenarios to use the multiple antennas:
 
- - The applications can choose to always select a specified antenna, or implement their own antenna selecting algorithm, e.g., selecting the antenna mode based on the information collected by the application. Refer ESP-IDF example :idf_file:`examples/wifi/antenna/README.md` to design antenna selecting algorithm.
+ - The applications can always choose to select a specified antenna or implement their own antenna selecting algorithm, e.g., selecting the antenna mode based on the information collected by the application. Refer to ESP-IDF example :idf_file:`examples/wifi/antenna/README.md` for the antenna selecting algorithm design.
  - Both RX/TX antenna modes are configured to WIFI_ANT_MODE_ANT0 or WIFI_ANT_MODE_ANT1.
 
 
