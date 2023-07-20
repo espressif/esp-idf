@@ -896,12 +896,12 @@ extern "C" {
 #define AXI_DMA_RX_CRC_DATA_EN_ADDR_CH0_S  0
 
 /** AXI_DMA_IN_INT_RAW_CH1_REG register
- *  Raw status interrupt of channel 0
+ *  Raw status interrupt of channel 1
  */
 #define AXI_DMA_IN_INT_RAW_CH1_REG (DR_REG_AXI_DMA_BASE + 0x68)
 /** AXI_DMA_IN_DONE_CH1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
- *  descriptor has been received for Rx channel 0.
+ *  descriptor has been received for Rx channel 1.
  */
 #define AXI_DMA_IN_DONE_CH1_INT_RAW    (BIT(0))
 #define AXI_DMA_IN_DONE_CH1_INT_RAW_M  (AXI_DMA_IN_DONE_CH1_INT_RAW_V << AXI_DMA_IN_DONE_CH1_INT_RAW_S)
@@ -909,9 +909,9 @@ extern "C" {
 #define AXI_DMA_IN_DONE_CH1_INT_RAW_S  0
 /** AXI_DMA_IN_SUC_EOF_CH1_INT_RAW : R/WTC/SS; bitpos: [1]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
- *  descriptor has been received for Rx channel 0. For UHCI0 the raw interrupt bit
+ *  descriptor has been received for Rx channel 1. For UHCI0 the raw interrupt bit
  *  turns to high level when the last data pointed by one inlink descriptor has been
- *  received and no data error is detected for Rx channel 0.
+ *  received and no data error is detected for Rx channel 1.
  */
 #define AXI_DMA_IN_SUC_EOF_CH1_INT_RAW    (BIT(1))
 #define AXI_DMA_IN_SUC_EOF_CH1_INT_RAW_M  (AXI_DMA_IN_SUC_EOF_CH1_INT_RAW_V << AXI_DMA_IN_SUC_EOF_CH1_INT_RAW_S)
@@ -919,7 +919,7 @@ extern "C" {
 #define AXI_DMA_IN_SUC_EOF_CH1_INT_RAW_S  1
 /** AXI_DMA_IN_ERR_EOF_CH1_INT_RAW : R/WTC/SS; bitpos: [2]; default: 0;
  *  The raw interrupt bit turns to high level when data error is detected only in the
- *  case that the peripheral is UHCI0 for Rx channel 0. For other peripherals this raw
+ *  case that the peripheral is UHCI0 for Rx channel 1. For other peripherals this raw
  *  interrupt is reserved.
  */
 #define AXI_DMA_IN_ERR_EOF_CH1_INT_RAW    (BIT(2))
@@ -929,7 +929,7 @@ extern "C" {
 /** AXI_DMA_IN_DSCR_ERR_CH1_INT_RAW : R/WTC/SS; bitpos: [3]; default: 0;
  *  The raw interrupt bit turns to high level when detecting inlink descriptor error
  *  including owner error and the second and third word error of inlink descriptor for
- *  Rx channel 0.
+ *  Rx channel 1.
  */
 #define AXI_DMA_IN_DSCR_ERR_CH1_INT_RAW    (BIT(3))
 #define AXI_DMA_IN_DSCR_ERR_CH1_INT_RAW_M  (AXI_DMA_IN_DSCR_ERR_CH1_INT_RAW_V << AXI_DMA_IN_DSCR_ERR_CH1_INT_RAW_S)
@@ -937,14 +937,14 @@ extern "C" {
 #define AXI_DMA_IN_DSCR_ERR_CH1_INT_RAW_S  3
 /** AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
  *  The raw interrupt bit turns to high level when Rx buffer pointed by inlink is full
- *  and receiving data is not completed but there is no more inlink for Rx channel 0.
+ *  and receiving data is not completed but there is no more inlink for Rx channel 1.
  */
 #define AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW    (BIT(4))
 #define AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW_M  (AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW_V << AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW_S)
 #define AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_IN_DSCR_EMPTY_CH1_INT_RAW_S  4
 /** AXI_DMA_INFIFO_L1_OVF_CH1_INT_RAW : R/WTC/SS; bitpos: [5]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 1 is
  *  overflow.
  */
 #define AXI_DMA_INFIFO_L1_OVF_CH1_INT_RAW    (BIT(5))
@@ -952,7 +952,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L1_OVF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_OVF_CH1_INT_RAW_S  5
 /** AXI_DMA_INFIFO_L1_UDF_CH1_INT_RAW : R/WTC/SS; bitpos: [6]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 1 is
  *  underflow.
  */
 #define AXI_DMA_INFIFO_L1_UDF_CH1_INT_RAW    (BIT(6))
@@ -960,7 +960,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L1_UDF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_UDF_CH1_INT_RAW_S  6
 /** AXI_DMA_INFIFO_L2_OVF_CH1_INT_RAW : R/WTC/SS; bitpos: [7]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 1 is
  *  overflow.
  */
 #define AXI_DMA_INFIFO_L2_OVF_CH1_INT_RAW    (BIT(7))
@@ -968,7 +968,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L2_OVF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_OVF_CH1_INT_RAW_S  7
 /** AXI_DMA_INFIFO_L2_UDF_CH1_INT_RAW : R/WTC/SS; bitpos: [8]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 1 is
  *  underflow.
  */
 #define AXI_DMA_INFIFO_L2_UDF_CH1_INT_RAW    (BIT(8))
@@ -976,7 +976,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L2_UDF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_UDF_CH1_INT_RAW_S  8
 /** AXI_DMA_INFIFO_L3_OVF_CH1_INT_RAW : R/WTC/SS; bitpos: [9]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 1 is
  *  overflow.
  */
 #define AXI_DMA_INFIFO_L3_OVF_CH1_INT_RAW    (BIT(9))
@@ -984,7 +984,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_OVF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_OVF_CH1_INT_RAW_S  9
 /** AXI_DMA_INFIFO_L3_UDF_CH1_INT_RAW : R/WTC/SS; bitpos: [10]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 1 is
  *  underflow.
  */
 #define AXI_DMA_INFIFO_L3_UDF_CH1_INT_RAW    (BIT(10))
@@ -993,7 +993,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH1_INT_RAW_S  10
 
 /** AXI_DMA_IN_INT_ST_CH1_REG register
- *  Masked interrupt of channel 0
+ *  Masked interrupt of channel 1
  */
 #define AXI_DMA_IN_INT_ST_CH1_REG (DR_REG_AXI_DMA_BASE + 0x6c)
 /** AXI_DMA_IN_DONE_CH1_INT_ST : RO; bitpos: [0]; default: 0;
@@ -1075,7 +1075,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH1_INT_ST_S  10
 
 /** AXI_DMA_IN_INT_ENA_CH1_REG register
- *  Interrupt enable bits of channel 0
+ *  Interrupt enable bits of channel 1
  */
 #define AXI_DMA_IN_INT_ENA_CH1_REG (DR_REG_AXI_DMA_BASE + 0x70)
 /** AXI_DMA_IN_DONE_CH1_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -1157,7 +1157,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH1_INT_ENA_S  10
 
 /** AXI_DMA_IN_INT_CLR_CH1_REG register
- *  Interrupt clear bits of channel 0
+ *  Interrupt clear bits of channel 1
  */
 #define AXI_DMA_IN_INT_CLR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x74)
 /** AXI_DMA_IN_DONE_CH1_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -1239,11 +1239,11 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH1_INT_CLR_S  10
 
 /** AXI_DMA_IN_CONF0_CH1_REG register
- *  Configure 0 register of Rx channel 0
+ *  Configure 0 register of Rx channel 1
  */
 #define AXI_DMA_IN_CONF0_CH1_REG (DR_REG_AXI_DMA_BASE + 0x78)
 /** AXI_DMA_IN_RST_CH1 : R/W; bitpos: [0]; default: 0;
- *  This bit is used to reset AXI_DMA channel 0 Rx FSM and Rx FIFO pointer.
+ *  This bit is used to reset AXI_DMA channel 1 Rx FSM and Rx FIFO pointer.
  */
 #define AXI_DMA_IN_RST_CH1    (BIT(0))
 #define AXI_DMA_IN_RST_CH1_M  (AXI_DMA_IN_RST_CH1_V << AXI_DMA_IN_RST_CH1_S)
@@ -1265,7 +1265,7 @@ extern "C" {
 #define AXI_DMA_MEM_TRANS_EN_CH1_V  0x00000001U
 #define AXI_DMA_MEM_TRANS_EN_CH1_S  2
 /** AXI_DMA_IN_ETM_EN_CH1 : R/W; bitpos: [3]; default: 0;
- *  Set this bit to 1 to enable etm control mode, dma Rx channel 0 is triggered by etm
+ *  Set this bit to 1 to enable etm control mode, dma Rx channel 1 is triggered by etm
  *  task.
  */
 #define AXI_DMA_IN_ETM_EN_CH1    (BIT(3))
@@ -1280,7 +1280,7 @@ extern "C" {
 #define AXI_DMA_IN_BURST_SIZE_SEL_CH1_V  0x00000007U
 #define AXI_DMA_IN_BURST_SIZE_SEL_CH1_S  4
 /** AXI_DMA_IN_CMD_DISABLE_CH1 : R/W; bitpos: [7]; default: 0;
- *  1:mean disable cmd of this ch0
+ *  1:mean disable cmd of this ch1
  */
 #define AXI_DMA_IN_CMD_DISABLE_CH1    (BIT(7))
 #define AXI_DMA_IN_CMD_DISABLE_CH1_M  (AXI_DMA_IN_CMD_DISABLE_CH1_V << AXI_DMA_IN_CMD_DISABLE_CH1_S)
@@ -1294,7 +1294,7 @@ extern "C" {
 #define AXI_DMA_IN_ECC_AEC_EN_CH1_V  0x00000001U
 #define AXI_DMA_IN_ECC_AEC_EN_CH1_S  8
 /** AXI_DMA_INDSCR_BURST_EN_CH1 : R/W; bitpos: [9]; default: 0;
- *  Set this bit to 1 to enable INCR burst transfer for Rx channel 0 reading link
+ *  Set this bit to 1 to enable INCR burst transfer for Rx channel 1 reading link
  *  descriptor when accessing internal SRAM.
  */
 #define AXI_DMA_INDSCR_BURST_EN_CH1    (BIT(9))
@@ -1303,7 +1303,7 @@ extern "C" {
 #define AXI_DMA_INDSCR_BURST_EN_CH1_S  9
 
 /** AXI_DMA_IN_CONF1_CH1_REG register
- *  Configure 1 register of Rx channel 0
+ *  Configure 1 register of Rx channel 1
  */
 #define AXI_DMA_IN_CONF1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x7c)
 /** AXI_DMA_IN_CHECK_OWNER_CH1 : R/W; bitpos: [12]; default: 0;
@@ -1315,95 +1315,95 @@ extern "C" {
 #define AXI_DMA_IN_CHECK_OWNER_CH1_S  12
 
 /** AXI_DMA_INFIFO_STATUS_CH1_REG register
- *  Receive FIFO status of Rx channel 0
+ *  Receive FIFO status of Rx channel 1
  */
 #define AXI_DMA_INFIFO_STATUS_CH1_REG (DR_REG_AXI_DMA_BASE + 0x80)
 /** AXI_DMA_INFIFO_L3_FULL_CH1 : RO; bitpos: [0]; default: 1;
- *  L3 Rx FIFO full signal for Rx channel 0.
+ *  L3 Rx FIFO full signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L3_FULL_CH1    (BIT(0))
 #define AXI_DMA_INFIFO_L3_FULL_CH1_M  (AXI_DMA_INFIFO_L3_FULL_CH1_V << AXI_DMA_INFIFO_L3_FULL_CH1_S)
 #define AXI_DMA_INFIFO_L3_FULL_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_FULL_CH1_S  0
 /** AXI_DMA_INFIFO_L3_EMPTY_CH1 : RO; bitpos: [1]; default: 1;
- *  L3 Rx FIFO empty signal for Rx channel 0.
+ *  L3 Rx FIFO empty signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L3_EMPTY_CH1    (BIT(1))
 #define AXI_DMA_INFIFO_L3_EMPTY_CH1_M  (AXI_DMA_INFIFO_L3_EMPTY_CH1_V << AXI_DMA_INFIFO_L3_EMPTY_CH1_S)
 #define AXI_DMA_INFIFO_L3_EMPTY_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_EMPTY_CH1_S  1
 /** AXI_DMA_INFIFO_L3_CNT_CH1 : RO; bitpos: [7:2]; default: 0;
- *  The register stores the byte number of the data in L3 Rx FIFO for Rx channel 0.
+ *  The register stores the byte number of the data in L3 Rx FIFO for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L3_CNT_CH1    0x0000003FU
 #define AXI_DMA_INFIFO_L3_CNT_CH1_M  (AXI_DMA_INFIFO_L3_CNT_CH1_V << AXI_DMA_INFIFO_L3_CNT_CH1_S)
 #define AXI_DMA_INFIFO_L3_CNT_CH1_V  0x0000003FU
 #define AXI_DMA_INFIFO_L3_CNT_CH1_S  2
 /** AXI_DMA_INFIFO_L3_UDF_CH1 : RO; bitpos: [8]; default: 0;
- *  L3 Rx FIFO under flow signal for Rx channel 0.
+ *  L3 Rx FIFO under flow signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L3_UDF_CH1    (BIT(8))
 #define AXI_DMA_INFIFO_L3_UDF_CH1_M  (AXI_DMA_INFIFO_L3_UDF_CH1_V << AXI_DMA_INFIFO_L3_UDF_CH1_S)
 #define AXI_DMA_INFIFO_L3_UDF_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_UDF_CH1_S  8
 /** AXI_DMA_INFIFO_L3_OVF_CH1 : RO; bitpos: [9]; default: 0;
- *  L3 Rx FIFO over flow signal for Rx channel 0.
+ *  L3 Rx FIFO over flow signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L3_OVF_CH1    (BIT(9))
 #define AXI_DMA_INFIFO_L3_OVF_CH1_M  (AXI_DMA_INFIFO_L3_OVF_CH1_V << AXI_DMA_INFIFO_L3_OVF_CH1_S)
 #define AXI_DMA_INFIFO_L3_OVF_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_OVF_CH1_S  9
 /** AXI_DMA_INFIFO_L1_FULL_CH1 : RO; bitpos: [10]; default: 0;
- *  L1 Rx FIFO full signal for Rx channel 0.
+ *  L1 Rx FIFO full signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L1_FULL_CH1    (BIT(10))
 #define AXI_DMA_INFIFO_L1_FULL_CH1_M  (AXI_DMA_INFIFO_L1_FULL_CH1_V << AXI_DMA_INFIFO_L1_FULL_CH1_S)
 #define AXI_DMA_INFIFO_L1_FULL_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_FULL_CH1_S  10
 /** AXI_DMA_INFIFO_L1_EMPTY_CH1 : RO; bitpos: [11]; default: 1;
- *  L1 Rx FIFO empty signal for Rx channel 0.
+ *  L1 Rx FIFO empty signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L1_EMPTY_CH1    (BIT(11))
 #define AXI_DMA_INFIFO_L1_EMPTY_CH1_M  (AXI_DMA_INFIFO_L1_EMPTY_CH1_V << AXI_DMA_INFIFO_L1_EMPTY_CH1_S)
 #define AXI_DMA_INFIFO_L1_EMPTY_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_EMPTY_CH1_S  11
 /** AXI_DMA_INFIFO_L1_UDF_CH1 : RO; bitpos: [12]; default: 0;
- *  L1 Rx FIFO under flow signal for Rx channel 0.
+ *  L1 Rx FIFO under flow signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L1_UDF_CH1    (BIT(12))
 #define AXI_DMA_INFIFO_L1_UDF_CH1_M  (AXI_DMA_INFIFO_L1_UDF_CH1_V << AXI_DMA_INFIFO_L1_UDF_CH1_S)
 #define AXI_DMA_INFIFO_L1_UDF_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_UDF_CH1_S  12
 /** AXI_DMA_INFIFO_L1_OVF_CH1 : RO; bitpos: [13]; default: 0;
- *  L1 Rx FIFO over flow signal for Rx channel 0.
+ *  L1 Rx FIFO over flow signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L1_OVF_CH1    (BIT(13))
 #define AXI_DMA_INFIFO_L1_OVF_CH1_M  (AXI_DMA_INFIFO_L1_OVF_CH1_V << AXI_DMA_INFIFO_L1_OVF_CH1_S)
 #define AXI_DMA_INFIFO_L1_OVF_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_OVF_CH1_S  13
 /** AXI_DMA_INFIFO_L2_FULL_CH1 : RO; bitpos: [14]; default: 0;
- *  L2 Rx RAM full signal for Rx channel 0.
+ *  L2 Rx RAM full signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L2_FULL_CH1    (BIT(14))
 #define AXI_DMA_INFIFO_L2_FULL_CH1_M  (AXI_DMA_INFIFO_L2_FULL_CH1_V << AXI_DMA_INFIFO_L2_FULL_CH1_S)
 #define AXI_DMA_INFIFO_L2_FULL_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_FULL_CH1_S  14
 /** AXI_DMA_INFIFO_L2_EMPTY_CH1 : RO; bitpos: [15]; default: 1;
- *  L2 Rx RAM empty signal for Rx channel 0.
+ *  L2 Rx RAM empty signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L2_EMPTY_CH1    (BIT(15))
 #define AXI_DMA_INFIFO_L2_EMPTY_CH1_M  (AXI_DMA_INFIFO_L2_EMPTY_CH1_V << AXI_DMA_INFIFO_L2_EMPTY_CH1_S)
 #define AXI_DMA_INFIFO_L2_EMPTY_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_EMPTY_CH1_S  15
 /** AXI_DMA_INFIFO_L2_UDF_CH1 : RO; bitpos: [16]; default: 0;
- *  L2 Rx FIFO under flow signal for Rx channel 0.
+ *  L2 Rx FIFO under flow signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L2_UDF_CH1    (BIT(16))
 #define AXI_DMA_INFIFO_L2_UDF_CH1_M  (AXI_DMA_INFIFO_L2_UDF_CH1_V << AXI_DMA_INFIFO_L2_UDF_CH1_S)
 #define AXI_DMA_INFIFO_L2_UDF_CH1_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_UDF_CH1_S  16
 /** AXI_DMA_INFIFO_L2_OVF_CH1 : RO; bitpos: [17]; default: 0;
- *  L2 Rx FIFO over flow signal for Rx channel 0.
+ *  L2 Rx FIFO over flow signal for Rx channel 1.
  */
 #define AXI_DMA_INFIFO_L2_OVF_CH1    (BIT(17))
 #define AXI_DMA_INFIFO_L2_OVF_CH1_M  (AXI_DMA_INFIFO_L2_OVF_CH1_V << AXI_DMA_INFIFO_L2_OVF_CH1_S)
@@ -1474,7 +1474,7 @@ extern "C" {
 #define AXI_DMA_IN_BUF_HUNGRY_CH1_S  31
 
 /** AXI_DMA_IN_POP_CH1_REG register
- *  Pop control register of Rx channel 0
+ *  Pop control register of Rx channel 1
  */
 #define AXI_DMA_IN_POP_CH1_REG (DR_REG_AXI_DMA_BASE + 0x84)
 /** AXI_DMA_INFIFO_RDATA_CH1 : RO; bitpos: [11:0]; default: 2048;
@@ -1493,7 +1493,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_POP_CH1_S  12
 
 /** AXI_DMA_IN_LINK1_CH1_REG register
- *  Link descriptor configure and control register of Rx channel 0
+ *  Link descriptor configure and control register of Rx channel 1
  */
 #define AXI_DMA_IN_LINK1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x88)
 /** AXI_DMA_INLINK_AUTO_RET_CH1 : R/W; bitpos: [0]; default: 1;
@@ -1535,7 +1535,7 @@ extern "C" {
 #define AXI_DMA_INLINK_PARK_CH1_S  4
 
 /** AXI_DMA_IN_LINK2_CH1_REG register
- *  Link descriptor configure and control register of Rx channel 0
+ *  Link descriptor configure and control register of Rx channel 1
  */
 #define AXI_DMA_IN_LINK2_CH1_REG (DR_REG_AXI_DMA_BASE + 0x8c)
 /** AXI_DMA_INLINK_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
@@ -1548,7 +1548,7 @@ extern "C" {
 #define AXI_DMA_INLINK_ADDR_CH1_S  0
 
 /** AXI_DMA_IN_STATE_CH1_REG register
- *  Receive status of Rx channel 0
+ *  Receive status of Rx channel 1
  */
 #define AXI_DMA_IN_STATE_CH1_REG (DR_REG_AXI_DMA_BASE + 0x90)
 /** AXI_DMA_INLINK_DSCR_ADDR_CH1 : RO; bitpos: [17:0]; default: 0;
@@ -1574,7 +1574,7 @@ extern "C" {
 #define AXI_DMA_IN_STATE_CH1_S  20
 
 /** AXI_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG register
- *  Inlink descriptor address when EOF occurs of Rx channel 0
+ *  Inlink descriptor address when EOF occurs of Rx channel 1
  */
 #define AXI_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x94)
 /** AXI_DMA_IN_SUC_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1587,7 +1587,7 @@ extern "C" {
 #define AXI_DMA_IN_SUC_EOF_DES_ADDR_CH1_S  0
 
 /** AXI_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG register
- *  Inlink descriptor address when errors occur of Rx channel 0
+ *  Inlink descriptor address when errors occur of Rx channel 1
  */
 #define AXI_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x98)
 /** AXI_DMA_IN_ERR_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1600,7 +1600,7 @@ extern "C" {
 #define AXI_DMA_IN_ERR_EOF_DES_ADDR_CH1_S  0
 
 /** AXI_DMA_IN_DSCR_CH1_REG register
- *  Current inlink descriptor address of Rx channel 0
+ *  Current inlink descriptor address of Rx channel 1
  */
 #define AXI_DMA_IN_DSCR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x9c)
 /** AXI_DMA_INLINK_DSCR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1612,7 +1612,7 @@ extern "C" {
 #define AXI_DMA_INLINK_DSCR_CH1_S  0
 
 /** AXI_DMA_IN_DSCR_BF0_CH1_REG register
- *  The last inlink descriptor address of Rx channel 0
+ *  The last inlink descriptor address of Rx channel 1
  */
 #define AXI_DMA_IN_DSCR_BF0_CH1_REG (DR_REG_AXI_DMA_BASE + 0xa0)
 /** AXI_DMA_INLINK_DSCR_BF0_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1624,7 +1624,7 @@ extern "C" {
 #define AXI_DMA_INLINK_DSCR_BF0_CH1_S  0
 
 /** AXI_DMA_IN_DSCR_BF1_CH1_REG register
- *  The second-to-last inlink descriptor address of Rx channel 0
+ *  The second-to-last inlink descriptor address of Rx channel 1
  */
 #define AXI_DMA_IN_DSCR_BF1_CH1_REG (DR_REG_AXI_DMA_BASE + 0xa4)
 /** AXI_DMA_INLINK_DSCR_BF1_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1636,18 +1636,18 @@ extern "C" {
 #define AXI_DMA_INLINK_DSCR_BF1_CH1_S  0
 
 /** AXI_DMA_IN_PRI_CH1_REG register
- *  Priority register of Rx channel 0
+ *  Priority register of Rx channel 1
  */
 #define AXI_DMA_IN_PRI_CH1_REG (DR_REG_AXI_DMA_BASE + 0xa8)
 /** AXI_DMA_RX_PRI_CH1 : R/W; bitpos: [3:0]; default: 0;
- *  The priority of Rx channel 0. The larger of the value the higher of the priority.
+ *  The priority of Rx channel 1. The larger of the value the higher of the priority.
  */
 #define AXI_DMA_RX_PRI_CH1    0x0000000FU
 #define AXI_DMA_RX_PRI_CH1_M  (AXI_DMA_RX_PRI_CH1_V << AXI_DMA_RX_PRI_CH1_S)
 #define AXI_DMA_RX_PRI_CH1_V  0x0000000FU
 #define AXI_DMA_RX_PRI_CH1_S  0
 /** AXI_DMA_RX_CH_ARB_WEIGH_CH1 : R/W; bitpos: [7:4]; default: 0;
- *  The weight of Rx channel 0
+ *  The weight of Rx channel 1
  */
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH1    0x0000000FU
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH1_M  (AXI_DMA_RX_CH_ARB_WEIGH_CH1_V << AXI_DMA_RX_CH_ARB_WEIGH_CH1_S)
@@ -1662,11 +1662,11 @@ extern "C" {
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_S  8
 
 /** AXI_DMA_IN_PERI_SEL_CH1_REG register
- *  Peripheral selection of Rx channel 0
+ *  Peripheral selection of Rx channel 1
  */
 #define AXI_DMA_IN_PERI_SEL_CH1_REG (DR_REG_AXI_DMA_BASE + 0xac)
 /** AXI_DMA_PERI_IN_SEL_CH1 : R/W; bitpos: [5:0]; default: 63;
- *  This register is used to select peripheral for Rx channel 0. 0:lcdcam. 1: gpspi_2.
+ *  This register is used to select peripheral for Rx channel 1. 0:lcdcam. 1: gpspi_2.
  *  2: gpspi_3. 3: parl_io. 4: aes. 5: sha. 6~15: Dummy
  */
 #define AXI_DMA_PERI_IN_SEL_CH1    0x0000003FU
@@ -1675,11 +1675,11 @@ extern "C" {
 #define AXI_DMA_PERI_IN_SEL_CH1_S  0
 
 /** AXI_DMA_IN_CRC_INIT_DATA_CH1_REG register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config ch1 crc initial data(max 32 bit)
  */
 #define AXI_DMA_IN_CRC_INIT_DATA_CH1_REG (DR_REG_AXI_DMA_BASE + 0xb0)
 /** AXI_DMA_IN_CRC_INIT_DATA_CH1 : R/W; bitpos: [31:0]; default: 4294967295;
- *  This register is used to config ch0 of rx crc initial value
+ *  This register is used to config ch1 of rx crc initial value
  */
 #define AXI_DMA_IN_CRC_INIT_DATA_CH1    0xFFFFFFFFU
 #define AXI_DMA_IN_CRC_INIT_DATA_CH1_M  (AXI_DMA_IN_CRC_INIT_DATA_CH1_V << AXI_DMA_IN_CRC_INIT_DATA_CH1_S)
@@ -1687,7 +1687,7 @@ extern "C" {
 #define AXI_DMA_IN_CRC_INIT_DATA_CH1_S  0
 
 /** AXI_DMA_RX_CRC_WIDTH_CH1_REG register
- *  This register is used to confiig rx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to confiig rx ch1 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -1708,11 +1708,11 @@ extern "C" {
 #define AXI_DMA_RX_CRC_LAUTCH_FLGA_CH1_S  2
 
 /** AXI_DMA_IN_CRC_CLEAR_CH1_REG register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear ch1 crc result
  */
 #define AXI_DMA_IN_CRC_CLEAR_CH1_REG (DR_REG_AXI_DMA_BASE + 0xb8)
 /** AXI_DMA_IN_CRC_CLEAR_CH1 : R/W; bitpos: [0]; default: 0;
- *  This register is used to clear ch0 of rx crc result
+ *  This register is used to clear ch1 of rx crc result
  */
 #define AXI_DMA_IN_CRC_CLEAR_CH1    (BIT(0))
 #define AXI_DMA_IN_CRC_CLEAR_CH1_M  (AXI_DMA_IN_CRC_CLEAR_CH1_V << AXI_DMA_IN_CRC_CLEAR_CH1_S)
@@ -1720,11 +1720,11 @@ extern "C" {
 #define AXI_DMA_IN_CRC_CLEAR_CH1_S  0
 
 /** AXI_DMA_IN_CRC_FINAL_RESULT_CH1_REG register
- *  This register is used to store ch0 crc result
+ *  This register is used to store ch1 crc result
  */
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH1_REG (DR_REG_AXI_DMA_BASE + 0xbc)
 /** AXI_DMA_IN_CRC_FINAL_RESULT_CH1 : RO; bitpos: [31:0]; default: 0;
- *  This register is used to store result ch0 of rx
+ *  This register is used to store result ch1 of rx
  */
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH1    0xFFFFFFFFU
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH1_M  (AXI_DMA_IN_CRC_FINAL_RESULT_CH1_V << AXI_DMA_IN_CRC_FINAL_RESULT_CH1_S)
@@ -1732,11 +1732,11 @@ extern "C" {
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH1_S  0
 
 /** AXI_DMA_RX_CRC_EN_WR_DATA_CH1_REG register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config ch1 crc en for every bit
  */
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH1_REG (DR_REG_AXI_DMA_BASE + 0xc0)
 /** AXI_DMA_RX_CRC_EN_WR_DATA_CH1 : R/W; bitpos: [31:0]; default: 0;
- *  This register is used to enable rx ch0 crc 32bit on/off
+ *  This register is used to enable rx ch1 crc 32bit on/off
  */
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH1    0xFFFFFFFFU
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH1_M  (AXI_DMA_RX_CRC_EN_WR_DATA_CH1_V << AXI_DMA_RX_CRC_EN_WR_DATA_CH1_S)
@@ -1744,7 +1744,7 @@ extern "C" {
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH1_S  0
 
 /** AXI_DMA_RX_CRC_EN_ADDR_CH1_REG register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config ch1 crc en addr
  */
 #define AXI_DMA_RX_CRC_EN_ADDR_CH1_REG (DR_REG_AXI_DMA_BASE + 0xc4)
 /** AXI_DMA_RX_CRC_EN_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
@@ -1780,12 +1780,12 @@ extern "C" {
 #define AXI_DMA_RX_CRC_DATA_EN_ADDR_CH1_S  0
 
 /** AXI_DMA_IN_INT_RAW_CH2_REG register
- *  Raw status interrupt of channel 0
+ *  Raw status interrupt of channel 2
  */
 #define AXI_DMA_IN_INT_RAW_CH2_REG (DR_REG_AXI_DMA_BASE + 0xd0)
 /** AXI_DMA_IN_DONE_CH2_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
- *  descriptor has been received for Rx channel 0.
+ *  descriptor has been received for Rx channel 2.
  */
 #define AXI_DMA_IN_DONE_CH2_INT_RAW    (BIT(0))
 #define AXI_DMA_IN_DONE_CH2_INT_RAW_M  (AXI_DMA_IN_DONE_CH2_INT_RAW_V << AXI_DMA_IN_DONE_CH2_INT_RAW_S)
@@ -1793,9 +1793,9 @@ extern "C" {
 #define AXI_DMA_IN_DONE_CH2_INT_RAW_S  0
 /** AXI_DMA_IN_SUC_EOF_CH2_INT_RAW : R/WTC/SS; bitpos: [1]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
- *  descriptor has been received for Rx channel 0. For UHCI0 the raw interrupt bit
+ *  descriptor has been received for Rx channel 2. For UHCI0 the raw interrupt bit
  *  turns to high level when the last data pointed by one inlink descriptor has been
- *  received and no data error is detected for Rx channel 0.
+ *  received and no data error is detected for Rx channel 2.
  */
 #define AXI_DMA_IN_SUC_EOF_CH2_INT_RAW    (BIT(1))
 #define AXI_DMA_IN_SUC_EOF_CH2_INT_RAW_M  (AXI_DMA_IN_SUC_EOF_CH2_INT_RAW_V << AXI_DMA_IN_SUC_EOF_CH2_INT_RAW_S)
@@ -1803,7 +1803,7 @@ extern "C" {
 #define AXI_DMA_IN_SUC_EOF_CH2_INT_RAW_S  1
 /** AXI_DMA_IN_ERR_EOF_CH2_INT_RAW : R/WTC/SS; bitpos: [2]; default: 0;
  *  The raw interrupt bit turns to high level when data error is detected only in the
- *  case that the peripheral is UHCI0 for Rx channel 0. For other peripherals this raw
+ *  case that the peripheral is UHCI0 for Rx channel 2. For other peripherals this raw
  *  interrupt is reserved.
  */
 #define AXI_DMA_IN_ERR_EOF_CH2_INT_RAW    (BIT(2))
@@ -1813,7 +1813,7 @@ extern "C" {
 /** AXI_DMA_IN_DSCR_ERR_CH2_INT_RAW : R/WTC/SS; bitpos: [3]; default: 0;
  *  The raw interrupt bit turns to high level when detecting inlink descriptor error
  *  including owner error and the second and third word error of inlink descriptor for
- *  Rx channel 0.
+ *  Rx channel 2.
  */
 #define AXI_DMA_IN_DSCR_ERR_CH2_INT_RAW    (BIT(3))
 #define AXI_DMA_IN_DSCR_ERR_CH2_INT_RAW_M  (AXI_DMA_IN_DSCR_ERR_CH2_INT_RAW_V << AXI_DMA_IN_DSCR_ERR_CH2_INT_RAW_S)
@@ -1821,14 +1821,14 @@ extern "C" {
 #define AXI_DMA_IN_DSCR_ERR_CH2_INT_RAW_S  3
 /** AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
  *  The raw interrupt bit turns to high level when Rx buffer pointed by inlink is full
- *  and receiving data is not completed but there is no more inlink for Rx channel 0.
+ *  and receiving data is not completed but there is no more inlink for Rx channel 2.
  */
 #define AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW    (BIT(4))
 #define AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW_M  (AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW_V << AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW_S)
 #define AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_IN_DSCR_EMPTY_CH2_INT_RAW_S  4
 /** AXI_DMA_INFIFO_L1_OVF_CH2_INT_RAW : R/WTC/SS; bitpos: [5]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 2 is
  *  overflow.
  */
 #define AXI_DMA_INFIFO_L1_OVF_CH2_INT_RAW    (BIT(5))
@@ -1836,7 +1836,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L1_OVF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_OVF_CH2_INT_RAW_S  5
 /** AXI_DMA_INFIFO_L1_UDF_CH2_INT_RAW : R/WTC/SS; bitpos: [6]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 2 is
  *  underflow.
  */
 #define AXI_DMA_INFIFO_L1_UDF_CH2_INT_RAW    (BIT(6))
@@ -1844,7 +1844,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L1_UDF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_UDF_CH2_INT_RAW_S  6
 /** AXI_DMA_INFIFO_L2_OVF_CH2_INT_RAW : R/WTC/SS; bitpos: [7]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 2 is
  *  overflow.
  */
 #define AXI_DMA_INFIFO_L2_OVF_CH2_INT_RAW    (BIT(7))
@@ -1852,7 +1852,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L2_OVF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_OVF_CH2_INT_RAW_S  7
 /** AXI_DMA_INFIFO_L2_UDF_CH2_INT_RAW : R/WTC/SS; bitpos: [8]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 2 is
  *  underflow.
  */
 #define AXI_DMA_INFIFO_L2_UDF_CH2_INT_RAW    (BIT(8))
@@ -1860,7 +1860,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L2_UDF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_UDF_CH2_INT_RAW_S  8
 /** AXI_DMA_INFIFO_L3_OVF_CH2_INT_RAW : R/WTC/SS; bitpos: [9]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 2 is
  *  overflow.
  */
 #define AXI_DMA_INFIFO_L3_OVF_CH2_INT_RAW    (BIT(9))
@@ -1868,7 +1868,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_OVF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_OVF_CH2_INT_RAW_S  9
 /** AXI_DMA_INFIFO_L3_UDF_CH2_INT_RAW : R/WTC/SS; bitpos: [10]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Rx channel 2 is
  *  underflow.
  */
 #define AXI_DMA_INFIFO_L3_UDF_CH2_INT_RAW    (BIT(10))
@@ -1877,7 +1877,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH2_INT_RAW_S  10
 
 /** AXI_DMA_IN_INT_ST_CH2_REG register
- *  Masked interrupt of channel 0
+ *  Masked interrupt of channel 2
  */
 #define AXI_DMA_IN_INT_ST_CH2_REG (DR_REG_AXI_DMA_BASE + 0xd4)
 /** AXI_DMA_IN_DONE_CH2_INT_ST : RO; bitpos: [0]; default: 0;
@@ -1959,7 +1959,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH2_INT_ST_S  10
 
 /** AXI_DMA_IN_INT_ENA_CH2_REG register
- *  Interrupt enable bits of channel 0
+ *  Interrupt enable bits of channel 2
  */
 #define AXI_DMA_IN_INT_ENA_CH2_REG (DR_REG_AXI_DMA_BASE + 0xd8)
 /** AXI_DMA_IN_DONE_CH2_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -2041,7 +2041,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH2_INT_ENA_S  10
 
 /** AXI_DMA_IN_INT_CLR_CH2_REG register
- *  Interrupt clear bits of channel 0
+ *  Interrupt clear bits of channel 2
  */
 #define AXI_DMA_IN_INT_CLR_CH2_REG (DR_REG_AXI_DMA_BASE + 0xdc)
 /** AXI_DMA_IN_DONE_CH2_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -2123,11 +2123,11 @@ extern "C" {
 #define AXI_DMA_INFIFO_L3_UDF_CH2_INT_CLR_S  10
 
 /** AXI_DMA_IN_CONF0_CH2_REG register
- *  Configure 0 register of Rx channel 0
+ *  Configure 0 register of Rx channel 2
  */
 #define AXI_DMA_IN_CONF0_CH2_REG (DR_REG_AXI_DMA_BASE + 0xe0)
 /** AXI_DMA_IN_RST_CH2 : R/W; bitpos: [0]; default: 0;
- *  This bit is used to reset AXI_DMA channel 0 Rx FSM and Rx FIFO pointer.
+ *  This bit is used to reset AXI_DMA channel 2 Rx FSM and Rx FIFO pointer.
  */
 #define AXI_DMA_IN_RST_CH2    (BIT(0))
 #define AXI_DMA_IN_RST_CH2_M  (AXI_DMA_IN_RST_CH2_V << AXI_DMA_IN_RST_CH2_S)
@@ -2149,7 +2149,7 @@ extern "C" {
 #define AXI_DMA_MEM_TRANS_EN_CH2_V  0x00000001U
 #define AXI_DMA_MEM_TRANS_EN_CH2_S  2
 /** AXI_DMA_IN_ETM_EN_CH2 : R/W; bitpos: [3]; default: 0;
- *  Set this bit to 1 to enable etm control mode, dma Rx channel 0 is triggered by etm
+ *  Set this bit to 1 to enable etm control mode, dma Rx channel 2 is triggered by etm
  *  task.
  */
 #define AXI_DMA_IN_ETM_EN_CH2    (BIT(3))
@@ -2164,7 +2164,7 @@ extern "C" {
 #define AXI_DMA_IN_BURST_SIZE_SEL_CH2_V  0x00000007U
 #define AXI_DMA_IN_BURST_SIZE_SEL_CH2_S  4
 /** AXI_DMA_IN_CMD_DISABLE_CH2 : R/W; bitpos: [7]; default: 0;
- *  1:mean disable cmd of this ch0
+ *  1:mean disable cmd of this ch2
  */
 #define AXI_DMA_IN_CMD_DISABLE_CH2    (BIT(7))
 #define AXI_DMA_IN_CMD_DISABLE_CH2_M  (AXI_DMA_IN_CMD_DISABLE_CH2_V << AXI_DMA_IN_CMD_DISABLE_CH2_S)
@@ -2178,7 +2178,7 @@ extern "C" {
 #define AXI_DMA_IN_ECC_AEC_EN_CH2_V  0x00000001U
 #define AXI_DMA_IN_ECC_AEC_EN_CH2_S  8
 /** AXI_DMA_INDSCR_BURST_EN_CH2 : R/W; bitpos: [9]; default: 0;
- *  Set this bit to 1 to enable INCR burst transfer for Rx channel 0 reading link
+ *  Set this bit to 1 to enable INCR burst transfer for Rx channel 2 reading link
  *  descriptor when accessing internal SRAM.
  */
 #define AXI_DMA_INDSCR_BURST_EN_CH2    (BIT(9))
@@ -2187,7 +2187,7 @@ extern "C" {
 #define AXI_DMA_INDSCR_BURST_EN_CH2_S  9
 
 /** AXI_DMA_IN_CONF1_CH2_REG register
- *  Configure 1 register of Rx channel 0
+ *  Configure 1 register of Rx channel 2
  */
 #define AXI_DMA_IN_CONF1_CH2_REG (DR_REG_AXI_DMA_BASE + 0xe4)
 /** AXI_DMA_IN_CHECK_OWNER_CH2 : R/W; bitpos: [12]; default: 0;
@@ -2199,95 +2199,95 @@ extern "C" {
 #define AXI_DMA_IN_CHECK_OWNER_CH2_S  12
 
 /** AXI_DMA_INFIFO_STATUS_CH2_REG register
- *  Receive FIFO status of Rx channel 0
+ *  Receive FIFO status of Rx channel 2
  */
 #define AXI_DMA_INFIFO_STATUS_CH2_REG (DR_REG_AXI_DMA_BASE + 0xe8)
 /** AXI_DMA_INFIFO_L3_FULL_CH2 : RO; bitpos: [0]; default: 1;
- *  L3 Rx FIFO full signal for Rx channel 0.
+ *  L3 Rx FIFO full signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L3_FULL_CH2    (BIT(0))
 #define AXI_DMA_INFIFO_L3_FULL_CH2_M  (AXI_DMA_INFIFO_L3_FULL_CH2_V << AXI_DMA_INFIFO_L3_FULL_CH2_S)
 #define AXI_DMA_INFIFO_L3_FULL_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_FULL_CH2_S  0
 /** AXI_DMA_INFIFO_L3_EMPTY_CH2 : RO; bitpos: [1]; default: 1;
- *  L3 Rx FIFO empty signal for Rx channel 0.
+ *  L3 Rx FIFO empty signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L3_EMPTY_CH2    (BIT(1))
 #define AXI_DMA_INFIFO_L3_EMPTY_CH2_M  (AXI_DMA_INFIFO_L3_EMPTY_CH2_V << AXI_DMA_INFIFO_L3_EMPTY_CH2_S)
 #define AXI_DMA_INFIFO_L3_EMPTY_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_EMPTY_CH2_S  1
 /** AXI_DMA_INFIFO_L3_CNT_CH2 : RO; bitpos: [7:2]; default: 0;
- *  The register stores the byte number of the data in L3 Rx FIFO for Rx channel 0.
+ *  The register stores the byte number of the data in L3 Rx FIFO for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L3_CNT_CH2    0x0000003FU
 #define AXI_DMA_INFIFO_L3_CNT_CH2_M  (AXI_DMA_INFIFO_L3_CNT_CH2_V << AXI_DMA_INFIFO_L3_CNT_CH2_S)
 #define AXI_DMA_INFIFO_L3_CNT_CH2_V  0x0000003FU
 #define AXI_DMA_INFIFO_L3_CNT_CH2_S  2
 /** AXI_DMA_INFIFO_L3_UDF_CH2 : RO; bitpos: [8]; default: 0;
- *  L3 Rx FIFO under flow signal for Rx channel 0.
+ *  L3 Rx FIFO under flow signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L3_UDF_CH2    (BIT(8))
 #define AXI_DMA_INFIFO_L3_UDF_CH2_M  (AXI_DMA_INFIFO_L3_UDF_CH2_V << AXI_DMA_INFIFO_L3_UDF_CH2_S)
 #define AXI_DMA_INFIFO_L3_UDF_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_UDF_CH2_S  8
 /** AXI_DMA_INFIFO_L3_OVF_CH2 : RO; bitpos: [9]; default: 0;
- *  L3 Rx FIFO over flow signal for Rx channel 0.
+ *  L3 Rx FIFO over flow signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L3_OVF_CH2    (BIT(9))
 #define AXI_DMA_INFIFO_L3_OVF_CH2_M  (AXI_DMA_INFIFO_L3_OVF_CH2_V << AXI_DMA_INFIFO_L3_OVF_CH2_S)
 #define AXI_DMA_INFIFO_L3_OVF_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L3_OVF_CH2_S  9
 /** AXI_DMA_INFIFO_L1_FULL_CH2 : RO; bitpos: [10]; default: 0;
- *  L1 Rx FIFO full signal for Rx channel 0.
+ *  L1 Rx FIFO full signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L1_FULL_CH2    (BIT(10))
 #define AXI_DMA_INFIFO_L1_FULL_CH2_M  (AXI_DMA_INFIFO_L1_FULL_CH2_V << AXI_DMA_INFIFO_L1_FULL_CH2_S)
 #define AXI_DMA_INFIFO_L1_FULL_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_FULL_CH2_S  10
 /** AXI_DMA_INFIFO_L1_EMPTY_CH2 : RO; bitpos: [11]; default: 1;
- *  L1 Rx FIFO empty signal for Rx channel 0.
+ *  L1 Rx FIFO empty signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L1_EMPTY_CH2    (BIT(11))
 #define AXI_DMA_INFIFO_L1_EMPTY_CH2_M  (AXI_DMA_INFIFO_L1_EMPTY_CH2_V << AXI_DMA_INFIFO_L1_EMPTY_CH2_S)
 #define AXI_DMA_INFIFO_L1_EMPTY_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_EMPTY_CH2_S  11
 /** AXI_DMA_INFIFO_L1_UDF_CH2 : RO; bitpos: [12]; default: 0;
- *  L1 Rx FIFO under flow signal for Rx channel 0.
+ *  L1 Rx FIFO under flow signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L1_UDF_CH2    (BIT(12))
 #define AXI_DMA_INFIFO_L1_UDF_CH2_M  (AXI_DMA_INFIFO_L1_UDF_CH2_V << AXI_DMA_INFIFO_L1_UDF_CH2_S)
 #define AXI_DMA_INFIFO_L1_UDF_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_UDF_CH2_S  12
 /** AXI_DMA_INFIFO_L1_OVF_CH2 : RO; bitpos: [13]; default: 0;
- *  L1 Rx FIFO over flow signal for Rx channel 0.
+ *  L1 Rx FIFO over flow signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L1_OVF_CH2    (BIT(13))
 #define AXI_DMA_INFIFO_L1_OVF_CH2_M  (AXI_DMA_INFIFO_L1_OVF_CH2_V << AXI_DMA_INFIFO_L1_OVF_CH2_S)
 #define AXI_DMA_INFIFO_L1_OVF_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L1_OVF_CH2_S  13
 /** AXI_DMA_INFIFO_L2_FULL_CH2 : RO; bitpos: [14]; default: 0;
- *  L2 Rx RAM full signal for Rx channel 0.
+ *  L2 Rx RAM full signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L2_FULL_CH2    (BIT(14))
 #define AXI_DMA_INFIFO_L2_FULL_CH2_M  (AXI_DMA_INFIFO_L2_FULL_CH2_V << AXI_DMA_INFIFO_L2_FULL_CH2_S)
 #define AXI_DMA_INFIFO_L2_FULL_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_FULL_CH2_S  14
 /** AXI_DMA_INFIFO_L2_EMPTY_CH2 : RO; bitpos: [15]; default: 1;
- *  L2 Rx RAM empty signal for Rx channel 0.
+ *  L2 Rx RAM empty signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L2_EMPTY_CH2    (BIT(15))
 #define AXI_DMA_INFIFO_L2_EMPTY_CH2_M  (AXI_DMA_INFIFO_L2_EMPTY_CH2_V << AXI_DMA_INFIFO_L2_EMPTY_CH2_S)
 #define AXI_DMA_INFIFO_L2_EMPTY_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_EMPTY_CH2_S  15
 /** AXI_DMA_INFIFO_L2_UDF_CH2 : RO; bitpos: [16]; default: 0;
- *  L2 Rx FIFO under flow signal for Rx channel 0.
+ *  L2 Rx FIFO under flow signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L2_UDF_CH2    (BIT(16))
 #define AXI_DMA_INFIFO_L2_UDF_CH2_M  (AXI_DMA_INFIFO_L2_UDF_CH2_V << AXI_DMA_INFIFO_L2_UDF_CH2_S)
 #define AXI_DMA_INFIFO_L2_UDF_CH2_V  0x00000001U
 #define AXI_DMA_INFIFO_L2_UDF_CH2_S  16
 /** AXI_DMA_INFIFO_L2_OVF_CH2 : RO; bitpos: [17]; default: 0;
- *  L2 Rx FIFO over flow signal for Rx channel 0.
+ *  L2 Rx FIFO over flow signal for Rx channel 2.
  */
 #define AXI_DMA_INFIFO_L2_OVF_CH2    (BIT(17))
 #define AXI_DMA_INFIFO_L2_OVF_CH2_M  (AXI_DMA_INFIFO_L2_OVF_CH2_V << AXI_DMA_INFIFO_L2_OVF_CH2_S)
@@ -2358,7 +2358,7 @@ extern "C" {
 #define AXI_DMA_IN_BUF_HUNGRY_CH2_S  31
 
 /** AXI_DMA_IN_POP_CH2_REG register
- *  Pop control register of Rx channel 0
+ *  Pop control register of Rx channel 2
  */
 #define AXI_DMA_IN_POP_CH2_REG (DR_REG_AXI_DMA_BASE + 0xec)
 /** AXI_DMA_INFIFO_RDATA_CH2 : RO; bitpos: [11:0]; default: 2048;
@@ -2377,7 +2377,7 @@ extern "C" {
 #define AXI_DMA_INFIFO_POP_CH2_S  12
 
 /** AXI_DMA_IN_LINK1_CH2_REG register
- *  Link descriptor configure and control register of Rx channel 0
+ *  Link descriptor configure and control register of Rx channel 2
  */
 #define AXI_DMA_IN_LINK1_CH2_REG (DR_REG_AXI_DMA_BASE + 0xf0)
 /** AXI_DMA_INLINK_AUTO_RET_CH2 : R/W; bitpos: [0]; default: 1;
@@ -2419,7 +2419,7 @@ extern "C" {
 #define AXI_DMA_INLINK_PARK_CH2_S  4
 
 /** AXI_DMA_IN_LINK2_CH2_REG register
- *  Link descriptor configure and control register of Rx channel 0
+ *  Link descriptor configure and control register of Rx channel 2
  */
 #define AXI_DMA_IN_LINK2_CH2_REG (DR_REG_AXI_DMA_BASE + 0xf4)
 /** AXI_DMA_INLINK_ADDR_CH2 : R/W; bitpos: [31:0]; default: 0;
@@ -2432,7 +2432,7 @@ extern "C" {
 #define AXI_DMA_INLINK_ADDR_CH2_S  0
 
 /** AXI_DMA_IN_STATE_CH2_REG register
- *  Receive status of Rx channel 0
+ *  Receive status of Rx channel 2
  */
 #define AXI_DMA_IN_STATE_CH2_REG (DR_REG_AXI_DMA_BASE + 0xf8)
 /** AXI_DMA_INLINK_DSCR_ADDR_CH2 : RO; bitpos: [17:0]; default: 0;
@@ -2458,7 +2458,7 @@ extern "C" {
 #define AXI_DMA_IN_STATE_CH2_S  20
 
 /** AXI_DMA_IN_SUC_EOF_DES_ADDR_CH2_REG register
- *  Inlink descriptor address when EOF occurs of Rx channel 0
+ *  Inlink descriptor address when EOF occurs of Rx channel 2
  */
 #define AXI_DMA_IN_SUC_EOF_DES_ADDR_CH2_REG (DR_REG_AXI_DMA_BASE + 0xfc)
 /** AXI_DMA_IN_SUC_EOF_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -2471,7 +2471,7 @@ extern "C" {
 #define AXI_DMA_IN_SUC_EOF_DES_ADDR_CH2_S  0
 
 /** AXI_DMA_IN_ERR_EOF_DES_ADDR_CH2_REG register
- *  Inlink descriptor address when errors occur of Rx channel 0
+ *  Inlink descriptor address when errors occur of Rx channel 2
  */
 #define AXI_DMA_IN_ERR_EOF_DES_ADDR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x100)
 /** AXI_DMA_IN_ERR_EOF_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -2484,7 +2484,7 @@ extern "C" {
 #define AXI_DMA_IN_ERR_EOF_DES_ADDR_CH2_S  0
 
 /** AXI_DMA_IN_DSCR_CH2_REG register
- *  Current inlink descriptor address of Rx channel 0
+ *  Current inlink descriptor address of Rx channel 2
  */
 #define AXI_DMA_IN_DSCR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x104)
 /** AXI_DMA_INLINK_DSCR_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -2496,7 +2496,7 @@ extern "C" {
 #define AXI_DMA_INLINK_DSCR_CH2_S  0
 
 /** AXI_DMA_IN_DSCR_BF0_CH2_REG register
- *  The last inlink descriptor address of Rx channel 0
+ *  The last inlink descriptor address of Rx channel 2
  */
 #define AXI_DMA_IN_DSCR_BF0_CH2_REG (DR_REG_AXI_DMA_BASE + 0x108)
 /** AXI_DMA_INLINK_DSCR_BF0_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -2508,7 +2508,7 @@ extern "C" {
 #define AXI_DMA_INLINK_DSCR_BF0_CH2_S  0
 
 /** AXI_DMA_IN_DSCR_BF1_CH2_REG register
- *  The second-to-last inlink descriptor address of Rx channel 0
+ *  The second-to-last inlink descriptor address of Rx channel 2
  */
 #define AXI_DMA_IN_DSCR_BF1_CH2_REG (DR_REG_AXI_DMA_BASE + 0x10c)
 /** AXI_DMA_INLINK_DSCR_BF1_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -2520,18 +2520,18 @@ extern "C" {
 #define AXI_DMA_INLINK_DSCR_BF1_CH2_S  0
 
 /** AXI_DMA_IN_PRI_CH2_REG register
- *  Priority register of Rx channel 0
+ *  Priority register of Rx channel 2
  */
 #define AXI_DMA_IN_PRI_CH2_REG (DR_REG_AXI_DMA_BASE + 0x110)
 /** AXI_DMA_RX_PRI_CH2 : R/W; bitpos: [3:0]; default: 0;
- *  The priority of Rx channel 0. The larger of the value the higher of the priority.
+ *  The priority of Rx channel 2. The larger of the value the higher of the priority.
  */
 #define AXI_DMA_RX_PRI_CH2    0x0000000FU
 #define AXI_DMA_RX_PRI_CH2_M  (AXI_DMA_RX_PRI_CH2_V << AXI_DMA_RX_PRI_CH2_S)
 #define AXI_DMA_RX_PRI_CH2_V  0x0000000FU
 #define AXI_DMA_RX_PRI_CH2_S  0
 /** AXI_DMA_RX_CH_ARB_WEIGH_CH2 : R/W; bitpos: [7:4]; default: 0;
- *  The weight of Rx channel 0
+ *  The weight of Rx channel 2
  */
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH2    0x0000000FU
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH2_M  (AXI_DMA_RX_CH_ARB_WEIGH_CH2_V << AXI_DMA_RX_CH_ARB_WEIGH_CH2_S)
@@ -2546,11 +2546,11 @@ extern "C" {
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH2_S  8
 
 /** AXI_DMA_IN_PERI_SEL_CH2_REG register
- *  Peripheral selection of Rx channel 0
+ *  Peripheral selection of Rx channel 2
  */
 #define AXI_DMA_IN_PERI_SEL_CH2_REG (DR_REG_AXI_DMA_BASE + 0x114)
 /** AXI_DMA_PERI_IN_SEL_CH2 : R/W; bitpos: [5:0]; default: 63;
- *  This register is used to select peripheral for Rx channel 0. 0:lcdcam. 1: gpspi_2.
+ *  This register is used to select peripheral for Rx channel 2. 0:lcdcam. 1: gpspi_2.
  *  2: gpspi_3. 3: parl_io. 4: aes. 5: sha. 6~15: Dummy
  */
 #define AXI_DMA_PERI_IN_SEL_CH2    0x0000003FU
@@ -2559,11 +2559,11 @@ extern "C" {
 #define AXI_DMA_PERI_IN_SEL_CH2_S  0
 
 /** AXI_DMA_IN_CRC_INIT_DATA_CH2_REG register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config ch2 crc initial data(max 32 bit)
  */
 #define AXI_DMA_IN_CRC_INIT_DATA_CH2_REG (DR_REG_AXI_DMA_BASE + 0x118)
 /** AXI_DMA_IN_CRC_INIT_DATA_CH2 : R/W; bitpos: [31:0]; default: 4294967295;
- *  This register is used to config ch0 of rx crc initial value
+ *  This register is used to config ch2 of rx crc initial value
  */
 #define AXI_DMA_IN_CRC_INIT_DATA_CH2    0xFFFFFFFFU
 #define AXI_DMA_IN_CRC_INIT_DATA_CH2_M  (AXI_DMA_IN_CRC_INIT_DATA_CH2_V << AXI_DMA_IN_CRC_INIT_DATA_CH2_S)
@@ -2571,7 +2571,7 @@ extern "C" {
 #define AXI_DMA_IN_CRC_INIT_DATA_CH2_S  0
 
 /** AXI_DMA_RX_CRC_WIDTH_CH2_REG register
- *  This register is used to confiig rx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to confiig rx ch2 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -2592,11 +2592,11 @@ extern "C" {
 #define AXI_DMA_RX_CRC_LAUTCH_FLGA_CH2_S  2
 
 /** AXI_DMA_IN_CRC_CLEAR_CH2_REG register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear ch2 crc result
  */
 #define AXI_DMA_IN_CRC_CLEAR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x120)
 /** AXI_DMA_IN_CRC_CLEAR_CH2 : R/W; bitpos: [0]; default: 0;
- *  This register is used to clear ch0 of rx crc result
+ *  This register is used to clear ch2 of rx crc result
  */
 #define AXI_DMA_IN_CRC_CLEAR_CH2    (BIT(0))
 #define AXI_DMA_IN_CRC_CLEAR_CH2_M  (AXI_DMA_IN_CRC_CLEAR_CH2_V << AXI_DMA_IN_CRC_CLEAR_CH2_S)
@@ -2604,11 +2604,11 @@ extern "C" {
 #define AXI_DMA_IN_CRC_CLEAR_CH2_S  0
 
 /** AXI_DMA_IN_CRC_FINAL_RESULT_CH2_REG register
- *  This register is used to store ch0 crc result
+ *  This register is used to store ch2 crc result
  */
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH2_REG (DR_REG_AXI_DMA_BASE + 0x124)
 /** AXI_DMA_IN_CRC_FINAL_RESULT_CH2 : RO; bitpos: [31:0]; default: 0;
- *  This register is used to store result ch0 of rx
+ *  This register is used to store result ch2 of rx
  */
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH2    0xFFFFFFFFU
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH2_M  (AXI_DMA_IN_CRC_FINAL_RESULT_CH2_V << AXI_DMA_IN_CRC_FINAL_RESULT_CH2_S)
@@ -2616,11 +2616,11 @@ extern "C" {
 #define AXI_DMA_IN_CRC_FINAL_RESULT_CH2_S  0
 
 /** AXI_DMA_RX_CRC_EN_WR_DATA_CH2_REG register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config ch2 crc en for every bit
  */
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH2_REG (DR_REG_AXI_DMA_BASE + 0x128)
 /** AXI_DMA_RX_CRC_EN_WR_DATA_CH2 : R/W; bitpos: [31:0]; default: 0;
- *  This register is used to enable rx ch0 crc 32bit on/off
+ *  This register is used to enable rx ch2 crc 32bit on/off
  */
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH2    0xFFFFFFFFU
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH2_M  (AXI_DMA_RX_CRC_EN_WR_DATA_CH2_V << AXI_DMA_RX_CRC_EN_WR_DATA_CH2_S)
@@ -2628,7 +2628,7 @@ extern "C" {
 #define AXI_DMA_RX_CRC_EN_WR_DATA_CH2_S  0
 
 /** AXI_DMA_RX_CRC_EN_ADDR_CH2_REG register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config ch2 crc en addr
  */
 #define AXI_DMA_RX_CRC_EN_ADDR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x12c)
 /** AXI_DMA_RX_CRC_EN_ADDR_CH2 : R/W; bitpos: [31:0]; default: 0;
@@ -3510,12 +3510,12 @@ extern "C" {
 #define AXI_DMA_TX_CRC_DATA_EN_ADDR_CH0_S  0
 
 /** AXI_DMA_OUT_INT_RAW_CH1_REG register
- *  Raw status interrupt of channel0
+ *  Raw status interrupt of channel1
  */
 #define AXI_DMA_OUT_INT_RAW_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1a0)
 /** AXI_DMA_OUT_DONE_CH1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
- *  descriptor has been transmitted to peripherals for Tx channel0.
+ *  descriptor has been transmitted to peripherals for Tx channel1.
  */
 #define AXI_DMA_OUT_DONE_CH1_INT_RAW    (BIT(0))
 #define AXI_DMA_OUT_DONE_CH1_INT_RAW_M  (AXI_DMA_OUT_DONE_CH1_INT_RAW_V << AXI_DMA_OUT_DONE_CH1_INT_RAW_S)
@@ -3523,7 +3523,7 @@ extern "C" {
 #define AXI_DMA_OUT_DONE_CH1_INT_RAW_S  0
 /** AXI_DMA_OUT_EOF_CH1_INT_RAW : R/WTC/SS; bitpos: [1]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
- *  descriptor has been read from memory for Tx channel0.
+ *  descriptor has been read from memory for Tx channel1.
  */
 #define AXI_DMA_OUT_EOF_CH1_INT_RAW    (BIT(1))
 #define AXI_DMA_OUT_EOF_CH1_INT_RAW_M  (AXI_DMA_OUT_EOF_CH1_INT_RAW_V << AXI_DMA_OUT_EOF_CH1_INT_RAW_S)
@@ -3532,7 +3532,7 @@ extern "C" {
 /** AXI_DMA_OUT_DSCR_ERR_CH1_INT_RAW : R/WTC/SS; bitpos: [2]; default: 0;
  *  The raw interrupt bit turns to high level when detecting outlink descriptor error
  *  including owner error and the second and third word error of outlink descriptor for
- *  Tx channel0.
+ *  Tx channel1.
  */
 #define AXI_DMA_OUT_DSCR_ERR_CH1_INT_RAW    (BIT(2))
 #define AXI_DMA_OUT_DSCR_ERR_CH1_INT_RAW_M  (AXI_DMA_OUT_DSCR_ERR_CH1_INT_RAW_V << AXI_DMA_OUT_DSCR_ERR_CH1_INT_RAW_S)
@@ -3541,14 +3541,14 @@ extern "C" {
 /** AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW : R/WTC/SS; bitpos: [3]; default: 0;
  *  The raw interrupt bit turns to high level when data corresponding a outlink
  *  (includes one link descriptor or few link descriptors) is transmitted out for Tx
- *  channel0.
+ *  channel1.
  */
 #define AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW    (BIT(3))
 #define AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW_M  (AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW_V << AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW_S)
 #define AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUT_TOTAL_EOF_CH1_INT_RAW_S  3
 /** AXI_DMA_OUTFIFO_L1_OVF_CH1_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel1 is
  *  overflow.
  */
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1_INT_RAW    (BIT(4))
@@ -3556,7 +3556,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1_INT_RAW_S  4
 /** AXI_DMA_OUTFIFO_L1_UDF_CH1_INT_RAW : R/WTC/SS; bitpos: [5]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel1 is
  *  underflow.
  */
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1_INT_RAW    (BIT(5))
@@ -3564,7 +3564,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1_INT_RAW_S  5
 /** AXI_DMA_OUTFIFO_L2_OVF_CH1_INT_RAW : R/WTC/SS; bitpos: [6]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel1 is
  *  overflow.
  */
 #define AXI_DMA_OUTFIFO_L2_OVF_CH1_INT_RAW    (BIT(6))
@@ -3572,7 +3572,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L2_OVF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_OVF_CH1_INT_RAW_S  6
 /** AXI_DMA_OUTFIFO_L2_UDF_CH1_INT_RAW : R/WTC/SS; bitpos: [7]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel1 is
  *  underflow.
  */
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1_INT_RAW    (BIT(7))
@@ -3580,7 +3580,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1_INT_RAW_S  7
 /** AXI_DMA_OUTFIFO_L3_OVF_CH1_INT_RAW : R/WTC/SS; bitpos: [8]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel1 is
  *  overflow.
  */
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1_INT_RAW    (BIT(8))
@@ -3588,7 +3588,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1_INT_RAW_S  8
 /** AXI_DMA_OUTFIFO_L3_UDF_CH1_INT_RAW : R/WTC/SS; bitpos: [9]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel1 is
  *  underflow.
  */
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_INT_RAW    (BIT(9))
@@ -3597,7 +3597,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_INT_RAW_S  9
 
 /** AXI_DMA_OUT_INT_ST_CH1_REG register
- *  Masked interrupt of channel0
+ *  Masked interrupt of channel1
  */
 #define AXI_DMA_OUT_INT_ST_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1a4)
 /** AXI_DMA_OUT_DONE_CH1_INT_ST : RO; bitpos: [0]; default: 0;
@@ -3672,7 +3672,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_INT_ST_S  9
 
 /** AXI_DMA_OUT_INT_ENA_CH1_REG register
- *  Interrupt enable bits of channel0
+ *  Interrupt enable bits of channel1
  */
 #define AXI_DMA_OUT_INT_ENA_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1a8)
 /** AXI_DMA_OUT_DONE_CH1_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -3747,7 +3747,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_INT_ENA_S  9
 
 /** AXI_DMA_OUT_INT_CLR_CH1_REG register
- *  Interrupt clear bits of channel0
+ *  Interrupt clear bits of channel1
  */
 #define AXI_DMA_OUT_INT_CLR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1ac)
 /** AXI_DMA_OUT_DONE_CH1_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -3894,7 +3894,7 @@ extern "C" {
 #define AXI_DMA_OUTDSCR_BURST_EN_CH1_S  10
 
 /** AXI_DMA_OUT_CONF1_CH1_REG register
- *  Configure 1 register of Tx channel0
+ *  Configure 1 register of Tx channel1
  */
 #define AXI_DMA_OUT_CONF1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1b4)
 /** AXI_DMA_OUT_CHECK_OWNER_CH1 : R/W; bitpos: [12]; default: 0;
@@ -3906,95 +3906,95 @@ extern "C" {
 #define AXI_DMA_OUT_CHECK_OWNER_CH1_S  12
 
 /** AXI_DMA_OUTFIFO_STATUS_CH1_REG register
- *  Transmit FIFO status of Tx channel0
+ *  Transmit FIFO status of Tx channel1
  */
 #define AXI_DMA_OUTFIFO_STATUS_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1b8)
 /** AXI_DMA_OUTFIFO_L3_FULL_CH1 : RO; bitpos: [0]; default: 0;
- *  L3 Tx FIFO full signal for Tx channel0.
+ *  L3 Tx FIFO full signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L3_FULL_CH1    (BIT(0))
 #define AXI_DMA_OUTFIFO_L3_FULL_CH1_M  (AXI_DMA_OUTFIFO_L3_FULL_CH1_V << AXI_DMA_OUTFIFO_L3_FULL_CH1_S)
 #define AXI_DMA_OUTFIFO_L3_FULL_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_FULL_CH1_S  0
 /** AXI_DMA_OUTFIFO_L3_EMPTY_CH1 : RO; bitpos: [1]; default: 1;
- *  L3 Tx FIFO empty signal for Tx channel0.
+ *  L3 Tx FIFO empty signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH1    (BIT(1))
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH1_M  (AXI_DMA_OUTFIFO_L3_EMPTY_CH1_V << AXI_DMA_OUTFIFO_L3_EMPTY_CH1_S)
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH1_S  1
 /** AXI_DMA_OUTFIFO_L3_CNT_CH1 : RO; bitpos: [7:2]; default: 0;
- *  The register stores the byte number of the data in L3 Tx FIFO for Tx channel0.
+ *  The register stores the byte number of the data in L3 Tx FIFO for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L3_CNT_CH1    0x0000003FU
 #define AXI_DMA_OUTFIFO_L3_CNT_CH1_M  (AXI_DMA_OUTFIFO_L3_CNT_CH1_V << AXI_DMA_OUTFIFO_L3_CNT_CH1_S)
 #define AXI_DMA_OUTFIFO_L3_CNT_CH1_V  0x0000003FU
 #define AXI_DMA_OUTFIFO_L3_CNT_CH1_S  2
 /** AXI_DMA_OUTFIFO_L3_UDF_CH1 : RO; bitpos: [8]; default: 0;
- *  L3 Tx FIFO under flow signal for Tx channel0.
+ *  L3 Tx FIFO under flow signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1    (BIT(8))
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_M  (AXI_DMA_OUTFIFO_L3_UDF_CH1_V << AXI_DMA_OUTFIFO_L3_UDF_CH1_S)
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_UDF_CH1_S  8
 /** AXI_DMA_OUTFIFO_L3_OVF_CH1 : RO; bitpos: [9]; default: 0;
- *  L3 Tx FIFO over flow signal for Tx channel0.
+ *  L3 Tx FIFO over flow signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1    (BIT(9))
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1_M  (AXI_DMA_OUTFIFO_L3_OVF_CH1_V << AXI_DMA_OUTFIFO_L3_OVF_CH1_S)
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_OVF_CH1_S  9
 /** AXI_DMA_OUTFIFO_L1_FULL_CH1 : RO; bitpos: [10]; default: 0;
- *  L1 Tx FIFO full signal for Tx channel0.
+ *  L1 Tx FIFO full signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L1_FULL_CH1    (BIT(10))
 #define AXI_DMA_OUTFIFO_L1_FULL_CH1_M  (AXI_DMA_OUTFIFO_L1_FULL_CH1_V << AXI_DMA_OUTFIFO_L1_FULL_CH1_S)
 #define AXI_DMA_OUTFIFO_L1_FULL_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_FULL_CH1_S  10
 /** AXI_DMA_OUTFIFO_L1_EMPTY_CH1 : RO; bitpos: [11]; default: 1;
- *  L1 Tx FIFO empty signal for Tx channel0.
+ *  L1 Tx FIFO empty signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH1    (BIT(11))
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH1_M  (AXI_DMA_OUTFIFO_L1_EMPTY_CH1_V << AXI_DMA_OUTFIFO_L1_EMPTY_CH1_S)
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH1_S  11
 /** AXI_DMA_OUTFIFO_L1_UDF_CH1 : RO; bitpos: [12]; default: 0;
- *  L1 Tx FIFO under flow signal for Tx channel0.
+ *  L1 Tx FIFO under flow signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1    (BIT(12))
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1_M  (AXI_DMA_OUTFIFO_L1_UDF_CH1_V << AXI_DMA_OUTFIFO_L1_UDF_CH1_S)
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_UDF_CH1_S  12
 /** AXI_DMA_OUTFIFO_L1_OVF_CH1 : RO; bitpos: [13]; default: 0;
- *  L1 Tx FIFO over flow signal for Tx channel0.
+ *  L1 Tx FIFO over flow signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1    (BIT(13))
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1_M  (AXI_DMA_OUTFIFO_L1_OVF_CH1_V << AXI_DMA_OUTFIFO_L1_OVF_CH1_S)
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_OVF_CH1_S  13
 /** AXI_DMA_OUTFIFO_L2_FULL_CH1 : RO; bitpos: [14]; default: 0;
- *  L2 Tx RAM full signal for Tx channel0.
+ *  L2 Tx RAM full signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L2_FULL_CH1    (BIT(14))
 #define AXI_DMA_OUTFIFO_L2_FULL_CH1_M  (AXI_DMA_OUTFIFO_L2_FULL_CH1_V << AXI_DMA_OUTFIFO_L2_FULL_CH1_S)
 #define AXI_DMA_OUTFIFO_L2_FULL_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_FULL_CH1_S  14
 /** AXI_DMA_OUTFIFO_L2_EMPTY_CH1 : RO; bitpos: [15]; default: 1;
- *  L2 Tx RAM empty signal for Tx channel0.
+ *  L2 Tx RAM empty signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH1    (BIT(15))
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH1_M  (AXI_DMA_OUTFIFO_L2_EMPTY_CH1_V << AXI_DMA_OUTFIFO_L2_EMPTY_CH1_S)
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH1_S  15
 /** AXI_DMA_OUTFIFO_L2_UDF_CH1 : RO; bitpos: [16]; default: 0;
- *  L2 Tx FIFO under flow signal for Tx channel0.
+ *  L2 Tx FIFO under flow signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1    (BIT(16))
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1_M  (AXI_DMA_OUTFIFO_L2_UDF_CH1_V << AXI_DMA_OUTFIFO_L2_UDF_CH1_S)
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_UDF_CH1_S  16
 /** AXI_DMA_OUTFIFO_L2_OVF_CH1 : RO; bitpos: [17]; default: 0;
- *  L2 Tx FIFO over flow signal for Tx channel0.
+ *  L2 Tx FIFO over flow signal for Tx channel1.
  */
 #define AXI_DMA_OUTFIFO_L2_OVF_CH1    (BIT(17))
 #define AXI_DMA_OUTFIFO_L2_OVF_CH1_M  (AXI_DMA_OUTFIFO_L2_OVF_CH1_V << AXI_DMA_OUTFIFO_L2_OVF_CH1_S)
@@ -4058,7 +4058,7 @@ extern "C" {
 #define AXI_DMA_OUT_REMAIN_UNDER_8B_CH1_S  30
 
 /** AXI_DMA_OUT_PUSH_CH1_REG register
- *  Push control register of Tx channel0
+ *  Push control register of Tx channel1
  */
 #define AXI_DMA_OUT_PUSH_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1bc)
 /** AXI_DMA_OUTFIFO_WDATA_CH1 : R/W; bitpos: [8:0]; default: 0;
@@ -4077,7 +4077,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_PUSH_CH1_S  9
 
 /** AXI_DMA_OUT_LINK1_CH1_REG register
- *  Link descriptor configure and control register of Tx channel0
+ *  Link descriptor configure and control register of Tx channel1
  */
 #define AXI_DMA_OUT_LINK1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1c0)
 /** AXI_DMA_OUTLINK_STOP_CH1 : WT; bitpos: [0]; default: 0;
@@ -4111,7 +4111,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_PARK_CH1_S  3
 
 /** AXI_DMA_OUT_LINK2_CH1_REG register
- *  Link descriptor configure and control register of Tx channel0
+ *  Link descriptor configure and control register of Tx channel1
  */
 #define AXI_DMA_OUT_LINK2_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1c4)
 /** AXI_DMA_OUTLINK_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
@@ -4124,7 +4124,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_ADDR_CH1_S  0
 
 /** AXI_DMA_OUT_STATE_CH1_REG register
- *  Transmit status of Tx channel0
+ *  Transmit status of Tx channel1
  */
 #define AXI_DMA_OUT_STATE_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1c8)
 /** AXI_DMA_OUTLINK_DSCR_ADDR_CH1 : RO; bitpos: [17:0]; default: 0;
@@ -4150,7 +4150,7 @@ extern "C" {
 #define AXI_DMA_OUT_STATE_CH1_S  20
 
 /** AXI_DMA_OUT_EOF_DES_ADDR_CH1_REG register
- *  Outlink descriptor address when EOF occurs of Tx channel0
+ *  Outlink descriptor address when EOF occurs of Tx channel1
  */
 #define AXI_DMA_OUT_EOF_DES_ADDR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1cc)
 /** AXI_DMA_OUT_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -4163,7 +4163,7 @@ extern "C" {
 #define AXI_DMA_OUT_EOF_DES_ADDR_CH1_S  0
 
 /** AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH1_REG register
- *  The last outlink descriptor address when EOF occurs of Tx channel0
+ *  The last outlink descriptor address when EOF occurs of Tx channel1
  */
 #define AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1d0)
 /** AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -4176,7 +4176,7 @@ extern "C" {
 #define AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH1_S  0
 
 /** AXI_DMA_OUT_DSCR_CH1_REG register
- *  Current outlink descriptor address of Tx channel0
+ *  Current outlink descriptor address of Tx channel1
  */
 #define AXI_DMA_OUT_DSCR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1d4)
 /** AXI_DMA_OUTLINK_DSCR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -4188,7 +4188,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_DSCR_CH1_S  0
 
 /** AXI_DMA_OUT_DSCR_BF0_CH1_REG register
- *  The last outlink descriptor address of Tx channel0
+ *  The last outlink descriptor address of Tx channel1
  */
 #define AXI_DMA_OUT_DSCR_BF0_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1d8)
 /** AXI_DMA_OUTLINK_DSCR_BF0_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -4200,7 +4200,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_DSCR_BF0_CH1_S  0
 
 /** AXI_DMA_OUT_DSCR_BF1_CH1_REG register
- *  The second-to-last outlink descriptor address of Tx channel0
+ *  The second-to-last outlink descriptor address of Tx channel1
  */
 #define AXI_DMA_OUT_DSCR_BF1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1dc)
 /** AXI_DMA_OUTLINK_DSCR_BF1_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -4212,18 +4212,18 @@ extern "C" {
 #define AXI_DMA_OUTLINK_DSCR_BF1_CH1_S  0
 
 /** AXI_DMA_OUT_PRI_CH1_REG register
- *  Priority register of Tx channel0.
+ *  Priority register of Tx channel1.
  */
 #define AXI_DMA_OUT_PRI_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1e0)
 /** AXI_DMA_TX_PRI_CH1 : R/W; bitpos: [3:0]; default: 0;
- *  The priority of Tx channel0. The larger of the value the higher of the priority.
+ *  The priority of Tx channel1. The larger of the value the higher of the priority.
  */
 #define AXI_DMA_TX_PRI_CH1    0x0000000FU
 #define AXI_DMA_TX_PRI_CH1_M  (AXI_DMA_TX_PRI_CH1_V << AXI_DMA_TX_PRI_CH1_S)
 #define AXI_DMA_TX_PRI_CH1_V  0x0000000FU
 #define AXI_DMA_TX_PRI_CH1_S  0
 /** AXI_DMA_TX_CH_ARB_WEIGH_CH1 : R/W; bitpos: [7:4]; default: 0;
- *  The weight of Tx channel0
+ *  The weight of Tx channel1
  */
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH1    0x0000000FU
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH1_M  (AXI_DMA_TX_CH_ARB_WEIGH_CH1_V << AXI_DMA_TX_CH_ARB_WEIGH_CH1_S)
@@ -4238,11 +4238,11 @@ extern "C" {
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_S  8
 
 /** AXI_DMA_OUT_PERI_SEL_CH1_REG register
- *  Peripheral selection of Tx channel0
+ *  Peripheral selection of Tx channel1
  */
 #define AXI_DMA_OUT_PERI_SEL_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1e4)
 /** AXI_DMA_PERI_OUT_SEL_CH1 : R/W; bitpos: [5:0]; default: 63;
- *  This register is used to select peripheral for Tx channel0. 0:lcdcam. 1: gpspi_2.
+ *  This register is used to select peripheral for Tx channel1. 0:lcdcam. 1: gpspi_2.
  *  2: gpspi_3. 3: parl_io. 4: aes. 5: sha. 6~15: Dummy
  */
 #define AXI_DMA_PERI_OUT_SEL_CH1    0x0000003FU
@@ -4251,11 +4251,11 @@ extern "C" {
 #define AXI_DMA_PERI_OUT_SEL_CH1_S  0
 
 /** AXI_DMA_OUT_CRC_INIT_DATA_CH1_REG register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config ch1 crc initial data(max 32 bit)
  */
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1e8)
 /** AXI_DMA_OUT_CRC_INIT_DATA_CH1 : R/W; bitpos: [31:0]; default: 4294967295;
- *  This register is used to config ch0 of tx crc initial value
+ *  This register is used to config ch1 of tx crc initial value
  */
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH1    0xFFFFFFFFU
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH1_M  (AXI_DMA_OUT_CRC_INIT_DATA_CH1_V << AXI_DMA_OUT_CRC_INIT_DATA_CH1_S)
@@ -4263,7 +4263,7 @@ extern "C" {
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH1_S  0
 
 /** AXI_DMA_TX_CRC_WIDTH_CH1_REG register
- *  This register is used to confiig tx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to confiig tx ch1 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -4284,11 +4284,11 @@ extern "C" {
 #define AXI_DMA_TX_CRC_LAUTCH_FLGA_CH1_S  2
 
 /** AXI_DMA_OUT_CRC_CLEAR_CH1_REG register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear ch1 crc result
  */
 #define AXI_DMA_OUT_CRC_CLEAR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1f0)
 /** AXI_DMA_OUT_CRC_CLEAR_CH1 : R/W; bitpos: [0]; default: 0;
- *  This register is used to clear ch0 of tx crc result
+ *  This register is used to clear ch1 of tx crc result
  */
 #define AXI_DMA_OUT_CRC_CLEAR_CH1    (BIT(0))
 #define AXI_DMA_OUT_CRC_CLEAR_CH1_M  (AXI_DMA_OUT_CRC_CLEAR_CH1_V << AXI_DMA_OUT_CRC_CLEAR_CH1_S)
@@ -4296,11 +4296,11 @@ extern "C" {
 #define AXI_DMA_OUT_CRC_CLEAR_CH1_S  0
 
 /** AXI_DMA_OUT_CRC_FINAL_RESULT_CH1_REG register
- *  This register is used to store ch0 crc result
+ *  This register is used to store ch1 crc result
  */
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1f4)
 /** AXI_DMA_OUT_CRC_FINAL_RESULT_CH1 : RO; bitpos: [31:0]; default: 0;
- *  This register is used to store result ch0 of tx
+ *  This register is used to store result ch1 of tx
  */
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH1    0xFFFFFFFFU
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH1_M  (AXI_DMA_OUT_CRC_FINAL_RESULT_CH1_V << AXI_DMA_OUT_CRC_FINAL_RESULT_CH1_S)
@@ -4308,11 +4308,11 @@ extern "C" {
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH1_S  0
 
 /** AXI_DMA_TX_CRC_EN_WR_DATA_CH1_REG register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config ch1 crc en for every bit
  */
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1f8)
 /** AXI_DMA_TX_CRC_EN_WR_DATA_CH1 : R/W; bitpos: [31:0]; default: 0;
- *  This register is used to enable tx ch0 crc 32bit on/off
+ *  This register is used to enable tx ch1 crc 32bit on/off
  */
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH1    0xFFFFFFFFU
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH1_M  (AXI_DMA_TX_CRC_EN_WR_DATA_CH1_V << AXI_DMA_TX_CRC_EN_WR_DATA_CH1_S)
@@ -4320,7 +4320,7 @@ extern "C" {
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH1_S  0
 
 /** AXI_DMA_TX_CRC_EN_ADDR_CH1_REG register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config ch1 crc en addr
  */
 #define AXI_DMA_TX_CRC_EN_ADDR_CH1_REG (DR_REG_AXI_DMA_BASE + 0x1fc)
 /** AXI_DMA_TX_CRC_EN_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
@@ -4356,12 +4356,12 @@ extern "C" {
 #define AXI_DMA_TX_CRC_DATA_EN_ADDR_CH1_S  0
 
 /** AXI_DMA_OUT_INT_RAW_CH2_REG register
- *  Raw status interrupt of channel0
+ *  Raw status interrupt of channel2
  */
 #define AXI_DMA_OUT_INT_RAW_CH2_REG (DR_REG_AXI_DMA_BASE + 0x208)
 /** AXI_DMA_OUT_DONE_CH2_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
- *  descriptor has been transmitted to peripherals for Tx channel0.
+ *  descriptor has been transmitted to peripherals for Tx channel2.
  */
 #define AXI_DMA_OUT_DONE_CH2_INT_RAW    (BIT(0))
 #define AXI_DMA_OUT_DONE_CH2_INT_RAW_M  (AXI_DMA_OUT_DONE_CH2_INT_RAW_V << AXI_DMA_OUT_DONE_CH2_INT_RAW_S)
@@ -4369,7 +4369,7 @@ extern "C" {
 #define AXI_DMA_OUT_DONE_CH2_INT_RAW_S  0
 /** AXI_DMA_OUT_EOF_CH2_INT_RAW : R/WTC/SS; bitpos: [1]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
- *  descriptor has been read from memory for Tx channel0.
+ *  descriptor has been read from memory for Tx channel2.
  */
 #define AXI_DMA_OUT_EOF_CH2_INT_RAW    (BIT(1))
 #define AXI_DMA_OUT_EOF_CH2_INT_RAW_M  (AXI_DMA_OUT_EOF_CH2_INT_RAW_V << AXI_DMA_OUT_EOF_CH2_INT_RAW_S)
@@ -4378,7 +4378,7 @@ extern "C" {
 /** AXI_DMA_OUT_DSCR_ERR_CH2_INT_RAW : R/WTC/SS; bitpos: [2]; default: 0;
  *  The raw interrupt bit turns to high level when detecting outlink descriptor error
  *  including owner error and the second and third word error of outlink descriptor for
- *  Tx channel0.
+ *  Tx channel2.
  */
 #define AXI_DMA_OUT_DSCR_ERR_CH2_INT_RAW    (BIT(2))
 #define AXI_DMA_OUT_DSCR_ERR_CH2_INT_RAW_M  (AXI_DMA_OUT_DSCR_ERR_CH2_INT_RAW_V << AXI_DMA_OUT_DSCR_ERR_CH2_INT_RAW_S)
@@ -4387,14 +4387,14 @@ extern "C" {
 /** AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW : R/WTC/SS; bitpos: [3]; default: 0;
  *  The raw interrupt bit turns to high level when data corresponding a outlink
  *  (includes one link descriptor or few link descriptors) is transmitted out for Tx
- *  channel0.
+ *  channel2.
  */
 #define AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW    (BIT(3))
 #define AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW_M  (AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW_V << AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW_S)
 #define AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUT_TOTAL_EOF_CH2_INT_RAW_S  3
 /** AXI_DMA_OUTFIFO_L1_OVF_CH2_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel2 is
  *  overflow.
  */
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2_INT_RAW    (BIT(4))
@@ -4402,7 +4402,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2_INT_RAW_S  4
 /** AXI_DMA_OUTFIFO_L1_UDF_CH2_INT_RAW : R/WTC/SS; bitpos: [5]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel2 is
  *  underflow.
  */
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2_INT_RAW    (BIT(5))
@@ -4410,7 +4410,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2_INT_RAW_S  5
 /** AXI_DMA_OUTFIFO_L2_OVF_CH2_INT_RAW : R/WTC/SS; bitpos: [6]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel2 is
  *  overflow.
  */
 #define AXI_DMA_OUTFIFO_L2_OVF_CH2_INT_RAW    (BIT(6))
@@ -4418,7 +4418,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L2_OVF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_OVF_CH2_INT_RAW_S  6
 /** AXI_DMA_OUTFIFO_L2_UDF_CH2_INT_RAW : R/WTC/SS; bitpos: [7]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel2 is
  *  underflow.
  */
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2_INT_RAW    (BIT(7))
@@ -4426,7 +4426,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2_INT_RAW_S  7
 /** AXI_DMA_OUTFIFO_L3_OVF_CH2_INT_RAW : R/WTC/SS; bitpos: [8]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel2 is
  *  overflow.
  */
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2_INT_RAW    (BIT(8))
@@ -4434,7 +4434,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2_INT_RAW_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2_INT_RAW_S  8
 /** AXI_DMA_OUTFIFO_L3_UDF_CH2_INT_RAW : R/WTC/SS; bitpos: [9]; default: 0;
- *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel0 is
+ *  This raw interrupt bit turns to high level when level 1 fifo of Tx channel2 is
  *  underflow.
  */
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_INT_RAW    (BIT(9))
@@ -4443,7 +4443,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_INT_RAW_S  9
 
 /** AXI_DMA_OUT_INT_ST_CH2_REG register
- *  Masked interrupt of channel0
+ *  Masked interrupt of channel2
  */
 #define AXI_DMA_OUT_INT_ST_CH2_REG (DR_REG_AXI_DMA_BASE + 0x20c)
 /** AXI_DMA_OUT_DONE_CH2_INT_ST : RO; bitpos: [0]; default: 0;
@@ -4518,7 +4518,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_INT_ST_S  9
 
 /** AXI_DMA_OUT_INT_ENA_CH2_REG register
- *  Interrupt enable bits of channel0
+ *  Interrupt enable bits of channel2
  */
 #define AXI_DMA_OUT_INT_ENA_CH2_REG (DR_REG_AXI_DMA_BASE + 0x210)
 /** AXI_DMA_OUT_DONE_CH2_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -4593,7 +4593,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_INT_ENA_S  9
 
 /** AXI_DMA_OUT_INT_CLR_CH2_REG register
- *  Interrupt clear bits of channel0
+ *  Interrupt clear bits of channel2
  */
 #define AXI_DMA_OUT_INT_CLR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x214)
 /** AXI_DMA_OUT_DONE_CH2_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -4740,7 +4740,7 @@ extern "C" {
 #define AXI_DMA_OUTDSCR_BURST_EN_CH2_S  10
 
 /** AXI_DMA_OUT_CONF1_CH2_REG register
- *  Configure 1 register of Tx channel0
+ *  Configure 1 register of Tx channel2
  */
 #define AXI_DMA_OUT_CONF1_CH2_REG (DR_REG_AXI_DMA_BASE + 0x21c)
 /** AXI_DMA_OUT_CHECK_OWNER_CH2 : R/W; bitpos: [12]; default: 0;
@@ -4752,95 +4752,95 @@ extern "C" {
 #define AXI_DMA_OUT_CHECK_OWNER_CH2_S  12
 
 /** AXI_DMA_OUTFIFO_STATUS_CH2_REG register
- *  Transmit FIFO status of Tx channel0
+ *  Transmit FIFO status of Tx channel2
  */
 #define AXI_DMA_OUTFIFO_STATUS_CH2_REG (DR_REG_AXI_DMA_BASE + 0x220)
 /** AXI_DMA_OUTFIFO_L3_FULL_CH2 : RO; bitpos: [0]; default: 0;
- *  L3 Tx FIFO full signal for Tx channel0.
+ *  L3 Tx FIFO full signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L3_FULL_CH2    (BIT(0))
 #define AXI_DMA_OUTFIFO_L3_FULL_CH2_M  (AXI_DMA_OUTFIFO_L3_FULL_CH2_V << AXI_DMA_OUTFIFO_L3_FULL_CH2_S)
 #define AXI_DMA_OUTFIFO_L3_FULL_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_FULL_CH2_S  0
 /** AXI_DMA_OUTFIFO_L3_EMPTY_CH2 : RO; bitpos: [1]; default: 1;
- *  L3 Tx FIFO empty signal for Tx channel0.
+ *  L3 Tx FIFO empty signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH2    (BIT(1))
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH2_M  (AXI_DMA_OUTFIFO_L3_EMPTY_CH2_V << AXI_DMA_OUTFIFO_L3_EMPTY_CH2_S)
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_EMPTY_CH2_S  1
 /** AXI_DMA_OUTFIFO_L3_CNT_CH2 : RO; bitpos: [7:2]; default: 0;
- *  The register stores the byte number of the data in L3 Tx FIFO for Tx channel0.
+ *  The register stores the byte number of the data in L3 Tx FIFO for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L3_CNT_CH2    0x0000003FU
 #define AXI_DMA_OUTFIFO_L3_CNT_CH2_M  (AXI_DMA_OUTFIFO_L3_CNT_CH2_V << AXI_DMA_OUTFIFO_L3_CNT_CH2_S)
 #define AXI_DMA_OUTFIFO_L3_CNT_CH2_V  0x0000003FU
 #define AXI_DMA_OUTFIFO_L3_CNT_CH2_S  2
 /** AXI_DMA_OUTFIFO_L3_UDF_CH2 : RO; bitpos: [8]; default: 0;
- *  L3 Tx FIFO under flow signal for Tx channel0.
+ *  L3 Tx FIFO under flow signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2    (BIT(8))
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_M  (AXI_DMA_OUTFIFO_L3_UDF_CH2_V << AXI_DMA_OUTFIFO_L3_UDF_CH2_S)
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_UDF_CH2_S  8
 /** AXI_DMA_OUTFIFO_L3_OVF_CH2 : RO; bitpos: [9]; default: 0;
- *  L3 Tx FIFO over flow signal for Tx channel0.
+ *  L3 Tx FIFO over flow signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2    (BIT(9))
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2_M  (AXI_DMA_OUTFIFO_L3_OVF_CH2_V << AXI_DMA_OUTFIFO_L3_OVF_CH2_S)
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L3_OVF_CH2_S  9
 /** AXI_DMA_OUTFIFO_L1_FULL_CH2 : RO; bitpos: [10]; default: 0;
- *  L1 Tx FIFO full signal for Tx channel0.
+ *  L1 Tx FIFO full signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L1_FULL_CH2    (BIT(10))
 #define AXI_DMA_OUTFIFO_L1_FULL_CH2_M  (AXI_DMA_OUTFIFO_L1_FULL_CH2_V << AXI_DMA_OUTFIFO_L1_FULL_CH2_S)
 #define AXI_DMA_OUTFIFO_L1_FULL_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_FULL_CH2_S  10
 /** AXI_DMA_OUTFIFO_L1_EMPTY_CH2 : RO; bitpos: [11]; default: 1;
- *  L1 Tx FIFO empty signal for Tx channel0.
+ *  L1 Tx FIFO empty signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH2    (BIT(11))
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH2_M  (AXI_DMA_OUTFIFO_L1_EMPTY_CH2_V << AXI_DMA_OUTFIFO_L1_EMPTY_CH2_S)
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_EMPTY_CH2_S  11
 /** AXI_DMA_OUTFIFO_L1_UDF_CH2 : RO; bitpos: [12]; default: 0;
- *  L1 Tx FIFO under flow signal for Tx channel0.
+ *  L1 Tx FIFO under flow signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2    (BIT(12))
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2_M  (AXI_DMA_OUTFIFO_L1_UDF_CH2_V << AXI_DMA_OUTFIFO_L1_UDF_CH2_S)
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_UDF_CH2_S  12
 /** AXI_DMA_OUTFIFO_L1_OVF_CH2 : RO; bitpos: [13]; default: 0;
- *  L1 Tx FIFO over flow signal for Tx channel0.
+ *  L1 Tx FIFO over flow signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2    (BIT(13))
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2_M  (AXI_DMA_OUTFIFO_L1_OVF_CH2_V << AXI_DMA_OUTFIFO_L1_OVF_CH2_S)
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L1_OVF_CH2_S  13
 /** AXI_DMA_OUTFIFO_L2_FULL_CH2 : RO; bitpos: [14]; default: 0;
- *  L2 Tx RAM full signal for Tx channel0.
+ *  L2 Tx RAM full signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L2_FULL_CH2    (BIT(14))
 #define AXI_DMA_OUTFIFO_L2_FULL_CH2_M  (AXI_DMA_OUTFIFO_L2_FULL_CH2_V << AXI_DMA_OUTFIFO_L2_FULL_CH2_S)
 #define AXI_DMA_OUTFIFO_L2_FULL_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_FULL_CH2_S  14
 /** AXI_DMA_OUTFIFO_L2_EMPTY_CH2 : RO; bitpos: [15]; default: 1;
- *  L2 Tx RAM empty signal for Tx channel0.
+ *  L2 Tx RAM empty signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH2    (BIT(15))
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH2_M  (AXI_DMA_OUTFIFO_L2_EMPTY_CH2_V << AXI_DMA_OUTFIFO_L2_EMPTY_CH2_S)
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_EMPTY_CH2_S  15
 /** AXI_DMA_OUTFIFO_L2_UDF_CH2 : RO; bitpos: [16]; default: 0;
- *  L2 Tx FIFO under flow signal for Tx channel0.
+ *  L2 Tx FIFO under flow signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2    (BIT(16))
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2_M  (AXI_DMA_OUTFIFO_L2_UDF_CH2_V << AXI_DMA_OUTFIFO_L2_UDF_CH2_S)
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2_V  0x00000001U
 #define AXI_DMA_OUTFIFO_L2_UDF_CH2_S  16
 /** AXI_DMA_OUTFIFO_L2_OVF_CH2 : RO; bitpos: [17]; default: 0;
- *  L2 Tx FIFO over flow signal for Tx channel0.
+ *  L2 Tx FIFO over flow signal for Tx channel2.
  */
 #define AXI_DMA_OUTFIFO_L2_OVF_CH2    (BIT(17))
 #define AXI_DMA_OUTFIFO_L2_OVF_CH2_M  (AXI_DMA_OUTFIFO_L2_OVF_CH2_V << AXI_DMA_OUTFIFO_L2_OVF_CH2_S)
@@ -4904,7 +4904,7 @@ extern "C" {
 #define AXI_DMA_OUT_REMAIN_UNDER_8B_CH2_S  30
 
 /** AXI_DMA_OUT_PUSH_CH2_REG register
- *  Push control register of Tx channel0
+ *  Push control register of Tx channel2
  */
 #define AXI_DMA_OUT_PUSH_CH2_REG (DR_REG_AXI_DMA_BASE + 0x224)
 /** AXI_DMA_OUTFIFO_WDATA_CH2 : R/W; bitpos: [8:0]; default: 0;
@@ -4923,7 +4923,7 @@ extern "C" {
 #define AXI_DMA_OUTFIFO_PUSH_CH2_S  9
 
 /** AXI_DMA_OUT_LINK1_CH2_REG register
- *  Link descriptor configure and control register of Tx channel0
+ *  Link descriptor configure and control register of Tx channel2
  */
 #define AXI_DMA_OUT_LINK1_CH2_REG (DR_REG_AXI_DMA_BASE + 0x228)
 /** AXI_DMA_OUTLINK_STOP_CH2 : WT; bitpos: [0]; default: 0;
@@ -4957,7 +4957,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_PARK_CH2_S  3
 
 /** AXI_DMA_OUT_LINK2_CH2_REG register
- *  Link descriptor configure and control register of Tx channel0
+ *  Link descriptor configure and control register of Tx channel2
  */
 #define AXI_DMA_OUT_LINK2_CH2_REG (DR_REG_AXI_DMA_BASE + 0x22c)
 /** AXI_DMA_OUTLINK_ADDR_CH2 : R/W; bitpos: [31:0]; default: 0;
@@ -4970,7 +4970,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_ADDR_CH2_S  0
 
 /** AXI_DMA_OUT_STATE_CH2_REG register
- *  Transmit status of Tx channel0
+ *  Transmit status of Tx channel2
  */
 #define AXI_DMA_OUT_STATE_CH2_REG (DR_REG_AXI_DMA_BASE + 0x230)
 /** AXI_DMA_OUTLINK_DSCR_ADDR_CH2 : RO; bitpos: [17:0]; default: 0;
@@ -4996,7 +4996,7 @@ extern "C" {
 #define AXI_DMA_OUT_STATE_CH2_S  20
 
 /** AXI_DMA_OUT_EOF_DES_ADDR_CH2_REG register
- *  Outlink descriptor address when EOF occurs of Tx channel0
+ *  Outlink descriptor address when EOF occurs of Tx channel2
  */
 #define AXI_DMA_OUT_EOF_DES_ADDR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x234)
 /** AXI_DMA_OUT_EOF_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -5009,7 +5009,7 @@ extern "C" {
 #define AXI_DMA_OUT_EOF_DES_ADDR_CH2_S  0
 
 /** AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH2_REG register
- *  The last outlink descriptor address when EOF occurs of Tx channel0
+ *  The last outlink descriptor address when EOF occurs of Tx channel2
  */
 #define AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x238)
 /** AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -5022,7 +5022,7 @@ extern "C" {
 #define AXI_DMA_OUT_EOF_BFR_DES_ADDR_CH2_S  0
 
 /** AXI_DMA_OUT_DSCR_CH2_REG register
- *  Current outlink descriptor address of Tx channel0
+ *  Current outlink descriptor address of Tx channel2
  */
 #define AXI_DMA_OUT_DSCR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x23c)
 /** AXI_DMA_OUTLINK_DSCR_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -5034,7 +5034,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_DSCR_CH2_S  0
 
 /** AXI_DMA_OUT_DSCR_BF0_CH2_REG register
- *  The last outlink descriptor address of Tx channel0
+ *  The last outlink descriptor address of Tx channel2
  */
 #define AXI_DMA_OUT_DSCR_BF0_CH2_REG (DR_REG_AXI_DMA_BASE + 0x240)
 /** AXI_DMA_OUTLINK_DSCR_BF0_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -5046,7 +5046,7 @@ extern "C" {
 #define AXI_DMA_OUTLINK_DSCR_BF0_CH2_S  0
 
 /** AXI_DMA_OUT_DSCR_BF1_CH2_REG register
- *  The second-to-last outlink descriptor address of Tx channel0
+ *  The second-to-last outlink descriptor address of Tx channel2
  */
 #define AXI_DMA_OUT_DSCR_BF1_CH2_REG (DR_REG_AXI_DMA_BASE + 0x244)
 /** AXI_DMA_OUTLINK_DSCR_BF1_CH2 : RO; bitpos: [31:0]; default: 0;
@@ -5058,18 +5058,18 @@ extern "C" {
 #define AXI_DMA_OUTLINK_DSCR_BF1_CH2_S  0
 
 /** AXI_DMA_OUT_PRI_CH2_REG register
- *  Priority register of Tx channel0.
+ *  Priority register of Tx channel2.
  */
 #define AXI_DMA_OUT_PRI_CH2_REG (DR_REG_AXI_DMA_BASE + 0x248)
 /** AXI_DMA_TX_PRI_CH2 : R/W; bitpos: [3:0]; default: 0;
- *  The priority of Tx channel0. The larger of the value the higher of the priority.
+ *  The priority of Tx channel2. The larger of the value the higher of the priority.
  */
 #define AXI_DMA_TX_PRI_CH2    0x0000000FU
 #define AXI_DMA_TX_PRI_CH2_M  (AXI_DMA_TX_PRI_CH2_V << AXI_DMA_TX_PRI_CH2_S)
 #define AXI_DMA_TX_PRI_CH2_V  0x0000000FU
 #define AXI_DMA_TX_PRI_CH2_S  0
 /** AXI_DMA_TX_CH_ARB_WEIGH_CH2 : R/W; bitpos: [7:4]; default: 0;
- *  The weight of Tx channel0
+ *  The weight of Tx channel2
  */
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH2    0x0000000FU
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH2_M  (AXI_DMA_TX_CH_ARB_WEIGH_CH2_V << AXI_DMA_TX_CH_ARB_WEIGH_CH2_S)
@@ -5084,11 +5084,11 @@ extern "C" {
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH2_S  8
 
 /** AXI_DMA_OUT_PERI_SEL_CH2_REG register
- *  Peripheral selection of Tx channel0
+ *  Peripheral selection of Tx channel2
  */
 #define AXI_DMA_OUT_PERI_SEL_CH2_REG (DR_REG_AXI_DMA_BASE + 0x24c)
 /** AXI_DMA_PERI_OUT_SEL_CH2 : R/W; bitpos: [5:0]; default: 63;
- *  This register is used to select peripheral for Tx channel0. 0:lcdcam. 1: gpspi_2.
+ *  This register is used to select peripheral for Tx channel2. 0:lcdcam. 1: gpspi_2.
  *  2: gpspi_3. 3: parl_io. 4: aes. 5: sha. 6~15: Dummy
  */
 #define AXI_DMA_PERI_OUT_SEL_CH2    0x0000003FU
@@ -5097,11 +5097,11 @@ extern "C" {
 #define AXI_DMA_PERI_OUT_SEL_CH2_S  0
 
 /** AXI_DMA_OUT_CRC_INIT_DATA_CH2_REG register
- *  This register is used to config ch0 crc initial data(max 32 bit)
+ *  This register is used to config ch2 crc initial data(max 32 bit)
  */
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH2_REG (DR_REG_AXI_DMA_BASE + 0x250)
 /** AXI_DMA_OUT_CRC_INIT_DATA_CH2 : R/W; bitpos: [31:0]; default: 4294967295;
- *  This register is used to config ch0 of tx crc initial value
+ *  This register is used to config ch2 of tx crc initial value
  */
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH2    0xFFFFFFFFU
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH2_M  (AXI_DMA_OUT_CRC_INIT_DATA_CH2_V << AXI_DMA_OUT_CRC_INIT_DATA_CH2_S)
@@ -5109,7 +5109,7 @@ extern "C" {
 #define AXI_DMA_OUT_CRC_INIT_DATA_CH2_S  0
 
 /** AXI_DMA_TX_CRC_WIDTH_CH2_REG register
- *  This register is used to confiig tx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to confiig tx ch2 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -5130,11 +5130,11 @@ extern "C" {
 #define AXI_DMA_TX_CRC_LAUTCH_FLGA_CH2_S  2
 
 /** AXI_DMA_OUT_CRC_CLEAR_CH2_REG register
- *  This register is used to clear ch0 crc result
+ *  This register is used to clear ch2 crc result
  */
 #define AXI_DMA_OUT_CRC_CLEAR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x258)
 /** AXI_DMA_OUT_CRC_CLEAR_CH2 : R/W; bitpos: [0]; default: 0;
- *  This register is used to clear ch0 of tx crc result
+ *  This register is used to clear ch2 of tx crc result
  */
 #define AXI_DMA_OUT_CRC_CLEAR_CH2    (BIT(0))
 #define AXI_DMA_OUT_CRC_CLEAR_CH2_M  (AXI_DMA_OUT_CRC_CLEAR_CH2_V << AXI_DMA_OUT_CRC_CLEAR_CH2_S)
@@ -5142,11 +5142,11 @@ extern "C" {
 #define AXI_DMA_OUT_CRC_CLEAR_CH2_S  0
 
 /** AXI_DMA_OUT_CRC_FINAL_RESULT_CH2_REG register
- *  This register is used to store ch0 crc result
+ *  This register is used to store ch2 crc result
  */
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH2_REG (DR_REG_AXI_DMA_BASE + 0x25c)
 /** AXI_DMA_OUT_CRC_FINAL_RESULT_CH2 : RO; bitpos: [31:0]; default: 0;
- *  This register is used to store result ch0 of tx
+ *  This register is used to store result ch2 of tx
  */
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH2    0xFFFFFFFFU
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH2_M  (AXI_DMA_OUT_CRC_FINAL_RESULT_CH2_V << AXI_DMA_OUT_CRC_FINAL_RESULT_CH2_S)
@@ -5154,11 +5154,11 @@ extern "C" {
 #define AXI_DMA_OUT_CRC_FINAL_RESULT_CH2_S  0
 
 /** AXI_DMA_TX_CRC_EN_WR_DATA_CH2_REG register
- *  This resister is used to config ch0 crc en for every bit
+ *  This resister is used to config ch2 crc en for every bit
  */
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH2_REG (DR_REG_AXI_DMA_BASE + 0x260)
 /** AXI_DMA_TX_CRC_EN_WR_DATA_CH2 : R/W; bitpos: [31:0]; default: 0;
- *  This register is used to enable tx ch0 crc 32bit on/off
+ *  This register is used to enable tx ch2 crc 32bit on/off
  */
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH2    0xFFFFFFFFU
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH2_M  (AXI_DMA_TX_CRC_EN_WR_DATA_CH2_V << AXI_DMA_TX_CRC_EN_WR_DATA_CH2_S)
@@ -5166,7 +5166,7 @@ extern "C" {
 #define AXI_DMA_TX_CRC_EN_WR_DATA_CH2_S  0
 
 /** AXI_DMA_TX_CRC_EN_ADDR_CH2_REG register
- *  This register is used to config ch0 crc en addr
+ *  This register is used to config ch2 crc en addr
  */
 #define AXI_DMA_TX_CRC_EN_ADDR_CH2_REG (DR_REG_AXI_DMA_BASE + 0x264)
 /** AXI_DMA_TX_CRC_EN_ADDR_CH2 : R/W; bitpos: [31:0]; default: 0;
@@ -5353,11 +5353,11 @@ extern "C" {
 #define AXI_DMA_IN_RESET_AVAIL_CH0_S  0
 
 /** AXI_DMA_IN_RESET_AVAIL_CH1_REG register
- *  The rx channel 0 reset valid_flag register.
+ *  The rx channel 1 reset valid_flag register.
  */
 #define AXI_DMA_IN_RESET_AVAIL_CH1_REG (DR_REG_AXI_DMA_BASE + 0x290)
 /** AXI_DMA_IN_RESET_AVAIL_CH1 : RO; bitpos: [0]; default: 1;
- *  rx chan0 reset valid reg.
+ *  rx chan1 reset valid reg.
  */
 #define AXI_DMA_IN_RESET_AVAIL_CH1    (BIT(0))
 #define AXI_DMA_IN_RESET_AVAIL_CH1_M  (AXI_DMA_IN_RESET_AVAIL_CH1_V << AXI_DMA_IN_RESET_AVAIL_CH1_S)
@@ -5365,11 +5365,11 @@ extern "C" {
 #define AXI_DMA_IN_RESET_AVAIL_CH1_S  0
 
 /** AXI_DMA_IN_RESET_AVAIL_CH2_REG register
- *  The rx channel 0 reset valid_flag register.
+ *  The rx channel 2 reset valid_flag register.
  */
 #define AXI_DMA_IN_RESET_AVAIL_CH2_REG (DR_REG_AXI_DMA_BASE + 0x294)
 /** AXI_DMA_IN_RESET_AVAIL_CH2 : RO; bitpos: [0]; default: 1;
- *  rx chan0 reset valid reg.
+ *  rx chan2 reset valid reg.
  */
 #define AXI_DMA_IN_RESET_AVAIL_CH2    (BIT(0))
 #define AXI_DMA_IN_RESET_AVAIL_CH2_M  (AXI_DMA_IN_RESET_AVAIL_CH2_V << AXI_DMA_IN_RESET_AVAIL_CH2_S)
@@ -5389,11 +5389,11 @@ extern "C" {
 #define AXI_DMA_OUT_RESET_AVAIL_CH0_S  0
 
 /** AXI_DMA_OUT_RESET_AVAIL_CH1_REG register
- *  The tx channel 0 reset valid_flag register.
+ *  The tx channel 1 reset valid_flag register.
  */
 #define AXI_DMA_OUT_RESET_AVAIL_CH1_REG (DR_REG_AXI_DMA_BASE + 0x29c)
 /** AXI_DMA_OUT_RESET_AVAIL_CH1 : RO; bitpos: [0]; default: 1;
- *  tx chan0 reset valid reg.
+ *  tx chan1 reset valid reg.
  */
 #define AXI_DMA_OUT_RESET_AVAIL_CH1    (BIT(0))
 #define AXI_DMA_OUT_RESET_AVAIL_CH1_M  (AXI_DMA_OUT_RESET_AVAIL_CH1_V << AXI_DMA_OUT_RESET_AVAIL_CH1_S)
@@ -5401,11 +5401,11 @@ extern "C" {
 #define AXI_DMA_OUT_RESET_AVAIL_CH1_S  0
 
 /** AXI_DMA_OUT_RESET_AVAIL_CH2_REG register
- *  The tx channel 0 reset valid_flag register.
+ *  The tx channel 2 reset valid_flag register.
  */
 #define AXI_DMA_OUT_RESET_AVAIL_CH2_REG (DR_REG_AXI_DMA_BASE + 0x2a0)
 /** AXI_DMA_OUT_RESET_AVAIL_CH2 : RO; bitpos: [0]; default: 1;
- *  tx chan0 reset valid reg.
+ *  tx chan2 reset valid reg.
  */
 #define AXI_DMA_OUT_RESET_AVAIL_CH2    (BIT(0))
 #define AXI_DMA_OUT_RESET_AVAIL_CH2_M  (AXI_DMA_OUT_RESET_AVAIL_CH2_V << AXI_DMA_OUT_RESET_AVAIL_CH2_S)
@@ -5533,18 +5533,18 @@ extern "C" {
 #define AXI_DMA_L2INFIFO_CNT_CH0_S  6
 
 /** AXI_DMA_INFIFO_STATUS1_CH1_REG register
- *  Receive FIFO status of Rx channel 0
+ *  Receive FIFO status of Rx channel 1
  */
 #define AXI_DMA_INFIFO_STATUS1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x2c4)
 /** AXI_DMA_L1INFIFO_CNT_CH1 : RO; bitpos: [5:0]; default: 0;
- *  The register stores the byte number of the data in L1 Rx FIFO for Rx channel 0.
+ *  The register stores the byte number of the data in L1 Rx FIFO for Rx channel 1.
  */
 #define AXI_DMA_L1INFIFO_CNT_CH1    0x0000003FU
 #define AXI_DMA_L1INFIFO_CNT_CH1_M  (AXI_DMA_L1INFIFO_CNT_CH1_V << AXI_DMA_L1INFIFO_CNT_CH1_S)
 #define AXI_DMA_L1INFIFO_CNT_CH1_V  0x0000003FU
 #define AXI_DMA_L1INFIFO_CNT_CH1_S  0
 /** AXI_DMA_L2INFIFO_CNT_CH1 : RO; bitpos: [9:6]; default: 0;
- *  The register stores the byte number of the data in L2 Rx FIFO for Rx channel 0.
+ *  The register stores the byte number of the data in L2 Rx FIFO for Rx channel 1.
  */
 #define AXI_DMA_L2INFIFO_CNT_CH1    0x0000000FU
 #define AXI_DMA_L2INFIFO_CNT_CH1_M  (AXI_DMA_L2INFIFO_CNT_CH1_V << AXI_DMA_L2INFIFO_CNT_CH1_S)
@@ -5552,18 +5552,18 @@ extern "C" {
 #define AXI_DMA_L2INFIFO_CNT_CH1_S  6
 
 /** AXI_DMA_INFIFO_STATUS1_CH2_REG register
- *  Receive FIFO status of Rx channel 0
+ *  Receive FIFO status of Rx channel 1
  */
 #define AXI_DMA_INFIFO_STATUS1_CH2_REG (DR_REG_AXI_DMA_BASE + 0x2c8)
 /** AXI_DMA_L1INFIFO_CNT_CH2 : RO; bitpos: [5:0]; default: 0;
- *  The register stores the byte number of the data in L1 Rx FIFO for Rx channel 0.
+ *  The register stores the byte number of the data in L1 Rx FIFO for Rx channel 2.
  */
 #define AXI_DMA_L1INFIFO_CNT_CH2    0x0000003FU
 #define AXI_DMA_L1INFIFO_CNT_CH2_M  (AXI_DMA_L1INFIFO_CNT_CH2_V << AXI_DMA_L1INFIFO_CNT_CH2_S)
 #define AXI_DMA_L1INFIFO_CNT_CH2_V  0x0000003FU
 #define AXI_DMA_L1INFIFO_CNT_CH2_S  0
 /** AXI_DMA_L2INFIFO_CNT_CH2 : RO; bitpos: [9:6]; default: 0;
- *  The register stores the byte number of the data in L2 Rx FIFO for Rx channel 0.
+ *  The register stores the byte number of the data in L2 Rx FIFO for Rx channel 2.
  */
 #define AXI_DMA_L2INFIFO_CNT_CH2    0x0000000FU
 #define AXI_DMA_L2INFIFO_CNT_CH2_M  (AXI_DMA_L2INFIFO_CNT_CH2_V << AXI_DMA_L2INFIFO_CNT_CH2_S)
@@ -5590,18 +5590,18 @@ extern "C" {
 #define AXI_DMA_L2OUTFIFO_CNT_CH0_S  6
 
 /** AXI_DMA_OUTFIFO_STATUS1_CH1_REG register
- *  Receive FIFO status of Tx channel 0
+ *  Receive FIFO status of Tx channel 1
  */
 #define AXI_DMA_OUTFIFO_STATUS1_CH1_REG (DR_REG_AXI_DMA_BASE + 0x2d0)
 /** AXI_DMA_L1OUTFIFO_CNT_CH1 : RO; bitpos: [5:0]; default: 0;
- *  The register stores the byte number of the data in L1 Tx FIFO for Tx channel 0.
+ *  The register stores the byte number of the data in L1 Tx FIFO for Tx channel 1.
  */
 #define AXI_DMA_L1OUTFIFO_CNT_CH1    0x0000003FU
 #define AXI_DMA_L1OUTFIFO_CNT_CH1_M  (AXI_DMA_L1OUTFIFO_CNT_CH1_V << AXI_DMA_L1OUTFIFO_CNT_CH1_S)
 #define AXI_DMA_L1OUTFIFO_CNT_CH1_V  0x0000003FU
 #define AXI_DMA_L1OUTFIFO_CNT_CH1_S  0
 /** AXI_DMA_L2OUTFIFO_CNT_CH1 : RO; bitpos: [9:6]; default: 0;
- *  The register stores the byte number of the data in L2 Tx FIFO for Tx channel 0.
+ *  The register stores the byte number of the data in L2 Tx FIFO for Tx channel 1.
  */
 #define AXI_DMA_L2OUTFIFO_CNT_CH1    0x0000000FU
 #define AXI_DMA_L2OUTFIFO_CNT_CH1_M  (AXI_DMA_L2OUTFIFO_CNT_CH1_V << AXI_DMA_L2OUTFIFO_CNT_CH1_S)
@@ -5609,18 +5609,18 @@ extern "C" {
 #define AXI_DMA_L2OUTFIFO_CNT_CH1_S  6
 
 /** AXI_DMA_OUTFIFO_STATUS1_CH2_REG register
- *  Receive FIFO status of Tx channel 0
+ *  Receive FIFO status of Tx channel 1
  */
 #define AXI_DMA_OUTFIFO_STATUS1_CH2_REG (DR_REG_AXI_DMA_BASE + 0x2d4)
 /** AXI_DMA_L1OUTFIFO_CNT_CH2 : RO; bitpos: [5:0]; default: 0;
- *  The register stores the byte number of the data in L1 Tx FIFO for Tx channel 0.
+ *  The register stores the byte number of the data in L1 Tx FIFO for Tx channel 2.
  */
 #define AXI_DMA_L1OUTFIFO_CNT_CH2    0x0000003FU
 #define AXI_DMA_L1OUTFIFO_CNT_CH2_M  (AXI_DMA_L1OUTFIFO_CNT_CH2_V << AXI_DMA_L1OUTFIFO_CNT_CH2_S)
 #define AXI_DMA_L1OUTFIFO_CNT_CH2_V  0x0000003FU
 #define AXI_DMA_L1OUTFIFO_CNT_CH2_S  0
 /** AXI_DMA_L2OUTFIFO_CNT_CH2 : RO; bitpos: [9:6]; default: 0;
- *  The register stores the byte number of the data in L2 Tx FIFO for Tx channel 0.
+ *  The register stores the byte number of the data in L2 Tx FIFO for Tx channel 2.
  */
 #define AXI_DMA_L2OUTFIFO_CNT_CH2    0x0000000FU
 #define AXI_DMA_L2OUTFIFO_CNT_CH2_M  (AXI_DMA_L2OUTFIFO_CNT_CH2_V << AXI_DMA_L2OUTFIFO_CNT_CH2_S)

@@ -60,6 +60,10 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_TWAI1_CLK_EN;
     case PERIPH_TWAI2_MODULE:
         return HP_SYS_CLKRST_REG_TWAI2_CLK_EN;
+    case PERIPH_AHB_PDMA_MODULE:
+        return HP_SYS_CLKRST_REG_AHB_PDMA_SYS_CLK_EN;
+    case PERIPH_AXI_PDMA_MODULE:
+        return HP_SYS_CLKRST_REG_AXI_PDMA_SYS_CLK_EN;
     case PERIPH_GPSPI_MODULE:
         return HP_SYS_CLKRST_REG_GPSPI2_HS_CLK_EN;
     case PERIPH_GPSPI2_MODULE:
@@ -109,7 +113,7 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_ISP_CLK_EN;
     default:
-	return 0;
+        return 0;
     }
 }
 
@@ -217,13 +221,16 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_RST_EN_EMAC;
     default:
-	return 0;
+        return 0;
     }
 }
 
 static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_AHB_PDMA_MODULE:
+    case PERIPH_AXI_PDMA_MODULE:
+        return HP_SYS_CLKRST_SOC_CLK_CTRL1_REG;
     case PERIPH_MSPI_FLASH_MODULE:
     case PERIPH_MSPI_PSRAM_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL00_REG;
@@ -282,7 +289,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return LP_CLKRST_HP_CLK_CTRL_REG;
     default:
         abort();
-	return 0;
+        return 0;
     }
 }
 
@@ -296,10 +303,10 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_ISP_MODULE:
     case PERIPH_JPEG_MODULE:
     case PERIPH_DMA2D_MODULE:
+        return HP_SYS_CLKRST_HP_RST_EN0_REG;
     case PERIPH_PPA_MODULE:
     case PERIPH_AHB_PDMA_MODULE:
     case PERIPH_AXI_PDMA_MODULE:
-        return HP_SYS_CLKRST_HP_RST_EN0_REG;
     case PERIPH_SYSTIMER_MODULE:
     case PERIPH_TIMG0_MODULE:
     case PERIPH_TIMG1_MODULE:
@@ -343,7 +350,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
         return LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG;
     default:
         abort();
-	return 0;
+        return 0;
     }
 }
 

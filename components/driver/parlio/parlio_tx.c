@@ -215,7 +215,11 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-    ESP_RETURN_ON_ERROR(gdma_new_channel(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
+#if SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
+#elif SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI
+    ESP_RETURN_ON_ERROR(gdma_new_axi_channel(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
+#endif
     gdma_connect(tx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));
     gdma_strategy_config_t gdma_strategy_conf = {
         .auto_update_desc = true,

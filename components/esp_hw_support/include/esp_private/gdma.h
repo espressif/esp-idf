@@ -120,6 +120,18 @@ typedef struct {
 } gdma_strategy_config_t;
 
 /** @cond */
+/**
+ * @brief Create GDMA channel (only create AHB GDMA channel)
+ * @note This API is going to be deprecated, please use `gdma_new_ahb_channel` or `gdma_new_axi_channel` instead.
+ *
+ * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
+ * @param[out] ret_chan Returned channel handle
+ * @return
+ *      - ESP_OK: Create DMA channel successfully
+ *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
+ *      - ESP_FAIL: Create DMA channel failed because of other error
+ */
 esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
 /** @endcond */
 

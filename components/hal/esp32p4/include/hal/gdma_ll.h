@@ -19,8 +19,7 @@ extern "C" {
 #define GDMA_LL_RX_EVENT_MASK       (0x1F)
 #define GDMA_LL_TX_EVENT_MASK       (0x0F)
 
-//To check this //TODO: IDF-6504
-#define GDMA_LL_INVALID_PERIPH_ID       (0x3F)
+#define GDMA_LL_INVALID_PERIPH_ID   (0x3F)
 
 #define GDMA_LL_EVENT_TX_TOTAL_EOF  (1<<3)
 #define GDMA_LL_EVENT_TX_DESC_ERROR (1<<2)

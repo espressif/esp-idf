@@ -4,12 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+/**
+ *                        AHB-Bus  --------+     +-------- AXI-Bus
+ *                                         |     |
+ *                                         |     |
+ *  +-----------------------------------+--+     +--+-----------------------------------+
+ *  |            GDMA-Group-X           |  |     |  |            GDMA-Group-Y           |
+ *  | +-------------+    +------------+ |  |     |  | +-------------+    +------------+ |
+ *  | | GDMA-Pair-0 |... |GDMA-Pair-N | |  |     |  | | GDMA-Pair-0 |... |GDMA-Pair-N | |
+ *  | |             |    |            | |  |     |  | |             |    |            | |
+ *  | |  TX-Chan    |... | TX-Chan    | |  |     |  | |  TX-Chan    |... | TX-Chan    | |
+ *  | |  RX-Chan    |    | RX-Chan    | |  |     |  | |  RX-Chan    |    | RX-Chan    | |
+ *  | +-------------+    +------------+ |  |     |  | +-------------+    +------------+ |
+ *  |                                   |  |     |  |                                   |
+ *  +-----------------------------------+--+     +--+-----------------------------------+
+ *                                         |     |
+ *                                         |     |
+ *
+ * - Channel is allocated when user calls `gdma_new_ahb/axi_channel`, its lifecycle is maintained by the user.
+ * - Pair and Group are all lazy allocated, their life cycles are maintained by this driver.
+ * - We're not using a global spin lock, instead, we created different spin locks at different level (group, pair).
+ */
 
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
 #include "sdkconfig.h"
+#if CONFIG_GDMA_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
@@ -27,20 +52,8 @@ static const char *TAG = "gdma";
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
 #define SEARCH_REQUEST_TX_CHANNEL (1 << 1)
 
-/**
- * GDMA driver consists of there object class, namely: Group, Pair and Channel.
- * Channel is allocated when user calls `gdma_new_channel`, its lifecycle is maintained by user.
- * Pair and Group are all lazy allocated, their life cycles are maintained by this driver.
- * We use reference count to track their life cycles, i.e. the driver will free their memory only when their reference count reached to 0.
- *
- * We don't use an all-in-one spin lock in this driver, instead, we created different spin locks at different level.
- * For platform, it has a spinlock, which is used to protect the group handle slots and reference count of each group.
- * For group, it has a spinlock, which is used to protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair.
- * For pair, it has a spinlock, which is used to protect pair level stuffs, e.g. channel handle slots, occupy code.
- */
-
 typedef struct gdma_platform_t {
-    portMUX_TYPE spinlock;                         // platform level spinlock
+    portMUX_TYPE spinlock;                         // platform level spinlock, protect the group handle slots and reference count of each group.
     gdma_group_t *groups[SOC_GDMA_NUM_GROUPS_MAX]; // array of GDMA group instances
     int group_ref_counts[SOC_GDMA_NUM_GROUPS_MAX]; // reference count used to protect group install/uninstall
 } gdma_platform_t;
@@ -69,6 +82,9 @@ typedef struct {
 
 static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *search_info, const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 {
+#if CONFIG_GDMA_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     gdma_tx_channel_t *alloc_tx_channel = NULL;
     gdma_rx_channel_t *alloc_rx_channel = NULL;
@@ -118,14 +134,19 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
                 search_code = 0; // exit search loop
             }
             portEXIT_CRITICAL(&pair->spinlock);
-            if (search_code) {
-                gdma_release_pair_handle(pair);
-                pair = NULL;
+            // found a pair that satisfies the search condition
+            if (search_code == 0) {
+                portENTER_CRITICAL(&group->spinlock);
+                group->pair_ref_counts[pair->pair_id]++; // channel obtains a reference to pair
+                portEXIT_CRITICAL(&group->spinlock);
             }
+            gdma_release_pair_handle(pair);
         } // loop used to search pair
+        gdma_release_group_handle(group);
+        // restore to initial state if no suitable channel slot is found
         if (search_code) {
-            gdma_release_group_handle(group);
             group = NULL;
+            pair = NULL;
         }
     } // loop used to search group
     ESP_GOTO_ON_FALSE(search_code == 0, ESP_ERR_NOT_FOUND, err, TAG, "no free gdma channel, search code=%d", search_code);
@@ -665,7 +686,7 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
     if (dma_channel->intr) {
         esp_intr_free(dma_channel->intr);
         portENTER_CRITICAL(&pair->spinlock);
-        gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX, false); // disable all interupt events
+        gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX, false); // disable all interrupt events
         gdma_hal_clear_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX); // clear all pending events
         portEXIT_CRITICAL(&pair->spinlock);
         ESP_LOGD(TAG, "uninstall interrupt service for tx channel (%d,%d)", group_id, pair_id);
@@ -694,7 +715,7 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
     if (dma_channel->intr) {
         esp_intr_free(dma_channel->intr);
         portENTER_CRITICAL(&pair->spinlock);
-        gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX, false); // disable all interupt events
+        gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX, false); // disable all interrupt events
         gdma_hal_clear_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX); // clear all pending events
         portEXIT_CRITICAL(&pair->spinlock);
         ESP_LOGD(TAG, "uninstall interrupt service for rx channel (%d,%d)", group_id, pair_id);
@@ -792,7 +813,7 @@ static esp_err_t gdma_install_rx_interrupt(gdma_rx_channel_t *rx_chan)
     rx_chan->base.intr = intr;
 
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX, false); // disable all interupt events
+    gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX, false); // disable all interrupt events
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX); // clear all pending events
     portEXIT_CRITICAL(&pair->spinlock);
     ESP_LOGD(TAG, "install interrupt service for rx channel (%d,%d)", group->group_id, pair_id);
@@ -821,7 +842,7 @@ static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan)
     tx_chan->base.intr = intr;
 
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX, false); // disable all interupt events
+    gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX, false); // disable all interrupt events
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX); // clear all pending events
     portEXIT_CRITICAL(&pair->spinlock);
     ESP_LOGD(TAG, "install interrupt service for tx channel (%d,%d)", group->group_id, pair_id);

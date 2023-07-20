@@ -522,7 +522,11 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-    ret = gdma_new_channel(&dma_chan_config, &bus->dma_chan);
+#if SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AHB
+    ret = gdma_new_ahb_channel(&dma_chan_config, &bus->dma_chan);
+#elif SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AXI
+    ret = gdma_new_axi_channel(&dma_chan_config, &bus->dma_chan);
+#endif
     ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc DMA channel failed");
     gdma_connect(bus->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
     gdma_strategy_config_t strategy_config = {
