@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -8,21 +8,18 @@ from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.wifi_ap
-def test_protocols_icmp_echo(dut: Dut) -> None:
-    # get env config
-    sdkconfig_ssid = dut.app.sdkconfig.get('CONFIG_EXAMPLE_WIFI_SSID')
-    sdkconfig_pwd = dut.app.sdkconfig.get('CONFIG_EXAMPLE_WIFI_SSID')
-    env_name = 'wifi_ap'
-    ap_ssid = get_env_config_variable(env_name, 'ap_ssid', default=sdkconfig_ssid)
-    ap_password = get_env_config_variable(env_name, 'ap_password', default=sdkconfig_pwd)
-    ap_channel = get_env_config_variable(env_name, 'ap_channel', default=0)
+def _run_test(dut: Dut) -> None:
+    if dut.app.sdkconfig.get('EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD') is True:
+        dut.expect('esp>')
+        env_name = 'wifi_ap'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        ap_channel = get_env_config_variable(env_name, 'ap_channel', default=0)
+        dut.write(f'wifi_connect {ap_ssid} {ap_password} -n {ap_channel}')
+    else:
+        # for local test may config ssid/password from menuconfig
+        pass
 
-    dut.expect('esp>')
-    dut.write(f'wifi_connect {ap_ssid} {ap_password} -n {ap_channel}')
     dut.expect('Got IPv4 event:', timeout=30)
 
     ping_dest = os.getenv('EXAMPLE_ICMP_SERVER', 'ci.espressif.cn')
@@ -35,3 +32,26 @@ def test_protocols_icmp_echo(dut: Dut) -> None:
     dut.expect(r'5 packets transmitted, [2-5] received, \d{1,3}% packet loss')
     dut.write('')
     dut.expect('esp>')
+
+
+@pytest.mark.esp32
+@pytest.mark.esp32c2
+@pytest.mark.esp32s2
+@pytest.mark.esp32c3
+@pytest.mark.esp32s3
+@pytest.mark.esp32c6
+@pytest.mark.wifi_ap
+def test_protocols_icmp_echo(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.esp32c2
+@pytest.mark.wifi_ap
+@pytest.mark.xtal_26mhz
+@pytest.mark.parametrize(
+    'config, baud', [
+        ('c2_xtal26m', '74880'),
+    ], indirect=True
+)
+def test_protocols_icmp_echo_esp32c2_26mhz(dut: Dut) -> None:
+    _run_test(dut)

@@ -298,6 +298,38 @@ pytest_examples_esp32s3_wifi_ap:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_ap ]
 
+pytest_examples_esp32s2_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2-wifi
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, wifi_ap ]
+
+pytest_examples_esp32c2_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, wifi_ap, xtal_40mhz ]
+
+pytest_examples_esp32c2_26m_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, wifi_ap, xtal_26mhz ]
+
+pytest_examples_esp32c6_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6-wifi
+  needs:
+    - build_pytest_examples_esp32c6
+  tags: [ esp32c6, wifi_ap ]
+
 pytest_examples_esp32_wifi_router:
   extends:
     - .pytest_examples_dir_template
@@ -321,6 +353,40 @@ pytest_examples_esp32s3_wifi_router:
   needs:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_router ]
+
+pytest_examples_esp32s2_wifi_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2-wifi
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, wifi_router ]
+
+pytest_examples_esp32c2_wifi_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, wifi_router, xtal_40mhz ]
+
+pytest_examples_esp32c2_26m_wifi_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, wifi_router, xtal_26mhz ]
+
+pytest_examples_esp32c6_wifi_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6-wifi
+  needs:
+    - build_pytest_examples_esp32c6
+  tags: [ esp32c6, wifi_router ]
+
+
 pytest_examples_esp32_wifi_iperf:
   extends:
     - .pytest_examples_dir_template
