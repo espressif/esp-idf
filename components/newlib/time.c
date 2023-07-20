@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 #include <reent.h>
 #include <unistd.h>
 #include <sys/types.h>
