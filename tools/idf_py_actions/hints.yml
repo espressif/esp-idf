@@ -384,3 +384,7 @@
         -
             re_variables: ['ESP_HF_CME_MEMEORY_FAILURE']
             hint_variables: ['ESP_HF_CME_MEMEORY_FAILURE', 'ESP_HF_CME_MEMORY_FAILURE ']
+
+-
+    re: "intr_alloc: No free interrupt inputs for [_\\w]+ interrupt"
+    hint: "For troubleshooting instructions related to interrupt allocation, run 'idf.py docs -sp api-reference/system/intr_alloc.html'"

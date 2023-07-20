@@ -22,6 +22,9 @@
 #include "esp_attr.h"
 #include "esp_cpu.h"
 #include "esp_private/rtc_ctrl.h"
+#include "soc/interrupts.h"
+#include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
@@ -539,6 +542,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         //None found. Bail out.
         portEXIT_CRITICAL(&spinlock);
         free(ret);
+        ESP_LOGE(TAG, "No free interrupt inputs for %s interrupt (flags 0x%X)", esp_isr_names[source], flags);
         return ESP_ERR_NOT_FOUND;
     }
     //Get an int vector desc for int.
@@ -901,4 +905,85 @@ void IRAM_ATTR esp_intr_enable_source(int inum)
 void IRAM_ATTR esp_intr_disable_source(int inum)
 {
     esp_cpu_intr_disable(1 << inum);
+}
+
+esp_err_t esp_intr_dump(FILE *stream)
+{
+    if (stream == NULL) {
+        stream = stdout;
+    }
+#ifdef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    const int cpu_num = 1;
+#else
+    const int cpu_num = SOC_CPU_CORES_NUM;
+#endif
+
+    int general_use_ints_free = 0;
+    int shared_ints = 0;
+
+    for (int cpu = 0; cpu < cpu_num; ++cpu) {
+        fprintf(stream, "CPU %d interrupt status:\n", cpu);
+        fprintf(stream, " Int  Level  Type   Status\n");
+        for (int i_num = 0; i_num < 32; ++i_num) {
+            fprintf(stream, " %2d  ", i_num);
+            esp_cpu_intr_desc_t intr_desc;
+            esp_cpu_intr_get_desc(cpu, i_num, &intr_desc);
+            bool is_general_use = true;
+            vector_desc_t *vd = find_desc_for_int(i_num, cpu);
+
+#ifndef SOC_CPU_HAS_FLEXIBLE_INTC
+            fprintf(stream, "   %d    %s  ",
+                    intr_desc.priority,
+                    intr_desc.type == ESP_CPU_INTR_TYPE_EDGE ? "Edge " : "Level");
+
+            is_general_use = (intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL) && (intr_desc.priority <= XCHAL_EXCM_LEVEL);
+#else // SOC_CPU_HAS_FLEXIBLE_INTC
+            if (vd == NULL) {
+                fprintf(stream, "   *      *    ");
+            } else {
+                // esp_cpu_intr_get_* functions need to be extended with cpu parameter.
+                // Showing info for the current cpu only, in the meantime.
+                if (esp_cpu_get_core_id() == cpu) {
+                    fprintf(stream, "   %d    %s  ",
+                            esp_cpu_intr_get_priority(i_num),
+                            esp_cpu_intr_get_type(i_num) == ESP_CPU_INTR_TYPE_EDGE ? "Edge " : "Level");
+                } else {
+                    fprintf(stream, "   ?      ?    ");
+                }
+            }
+#endif // SOC_CPU_HAS_FLEXIBLE_INTC
+
+            if (intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD) {
+                fprintf(stream, "Reserved");
+            } else if (intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_SPECIAL) {
+                fprintf(stream, "CPU-internal");
+            } else {
+                if (vd == NULL || (vd->flags & (VECDESC_FL_RESERVED | VECDESC_FL_NONSHARED | VECDESC_FL_SHARED)) == 0) {
+                    fprintf(stream, "Free");
+                    if (is_general_use) {
+                        ++general_use_ints_free;
+                    } else {
+                        fprintf(stream, " (not general-use)");
+                    }
+                } else if (vd->flags & VECDESC_FL_RESERVED)  {
+                    fprintf(stream, "Reserved (run-time)");
+                } else if (vd->flags & VECDESC_FL_NONSHARED) {
+                    fprintf(stream, "Used: %s", esp_isr_names[vd->source]);
+                } else if (vd->flags & VECDESC_FL_SHARED) {
+                    fprintf(stream, "Shared: ");
+                    for (shared_vector_desc_t *svd = vd->shared_vec_info; svd != NULL; svd = svd->next) {
+                        fprintf(stream, "%s ", esp_isr_names[svd->source]);
+                    }
+                    ++shared_ints;
+                } else {
+                    fprintf(stream, "Unknown, flags = 0x%x", vd->flags);
+                }
+            }
+
+            fprintf(stream, "\n");
+        }
+    }
+    fprintf(stream, "Interrupts available for general use: %d\n", general_use_ints_free);
+    fprintf(stream, "Shared interrupts: %d\n", shared_ints);
+    return ESP_OK;
 }

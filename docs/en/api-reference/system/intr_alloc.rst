@@ -85,6 +85,8 @@ It can also be useful to keep an interrupt handler in IRAM if it is called very 
 
 Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
+.. _intr-alloc-shared-interrupts:
+
 Multiple Handlers Sharing A Source
 ----------------------------------
 
@@ -92,9 +94,54 @@ Several handlers can be assigned to a same source, given that all handlers are a
 
 Sources attached to non-shared interrupt do not support this feature.
 
-Though the framework support this feature, you have to use it *very carefully*. There usually exist two ways to stop an interrupt from being triggered: *disable the source* or *mask peripheral interrupt status*. IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
+.. only:: not SOC_CPU_HAS_FLEXIBLE_INTC
+  
+  By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only Level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at Level 2 and Level 3.
+
+Though the framework supports this feature, you have to use it *very carefully*. There usually exist two ways to stop an interrupt from being triggered: *disable the source* or *mask peripheral interrupt status*. IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
 **Status bits shall either be masked before the handler responsible for it is disabled, either be masked and then properly handled in another enabled interrupt**.
 Please note that leaving some status bits unhandled without masking them, while disabling the handlers for them, will cause the interrupt(s) to be triggered indefinitely, resulting therefore in a system crash.
+
+Troubleshooting Interrupt Allocation
+------------------------------------
+
+On most Espressif SoCs CPU interrupts are a limited resource. Therefore it is possible to run a program which runs out of CPU interrupts, for example by initializing several peripheral drivers. Typically this will result in the driver initialization function returning ``ESP_ERR_NOT_FOUND`` error code.
+
+If this happens, you can use :cpp:func:`esp_intr_dump` function to print the list of interrupts along with their status. The output of this function typically looks like this::
+
+    CPU 0 interrupt status:
+     Int  Level  Type   Status
+      0     1    Level  Reserved
+      1     1    Level  Reserved
+      2     1    Level  Used: RTC_CORE
+      3     1    Level  Used: TG0_LACT_LEVEL
+    ...
+
+The columns of the output have the following meaning:
+
+.. list::
+
+    - ``Int``: CPU interrupt input number. This is typically not used in software directly, and is provided for reference only.
+    :not SOC_CPU_HAS_FLEXIBLE_INTC: - ``Level``: Interrupt level (1-7) of the CPU interrupt. This level is fixed in hardware, and cannot be changed.
+    :SOC_CPU_HAS_FLEXIBLE_INTC: - ``Level``: For interrupts which have been allocated, the level (priority) of the interrupt. For free interrupts ``*`` is printed.
+    :not SOC_CPU_HAS_FLEXIBLE_INTC: - ``Type``: Interrupt type (Level or Edge) of the CPU interrupt. This type is fixed in hardware, and cannot be changed.
+    :SOC_CPU_HAS_FLEXIBLE_INTC: - ``Type``: For interrupts which have been allocated, the type (Level or Edge) of the interrupt. For free interrupts ``*`` is printed.
+    - ``Status``: One of the possible statuses of the interrupt:
+        - ``Reserved``: The interrupt is reserved either at hardware level, or by one of the parts of ESP-IDF. It can not be allocated using :cpp:func:`esp_intr_alloc`.
+        - ``Used: <source>``: The interrupt is allocated and connected to a single peripheral.
+        - ``Shared: <source1> <source2> ...``: The interrupt is allocated and connected to multiple peripherals. See :ref:`intr-alloc-shared-interrupts` above.
+        - ``Free``: The interrupt is not allocated and can be used by :cpp:func:`esp_intr_alloc`.
+        :not SOC_CPU_HAS_FLEXIBLE_INTC: - ``Free (not general-use)``: The interrupt is not allocated, but is either a high-level interrupt (level 4-7) or and edge-triggered interrupt. High-level interrupts can be allocated using :cpp:func:`esp_intr_alloc` but require the handlers to be written in Assembly, see :doc:`../../api-guides/hlinterrupts`. Edge-triggered low- and medium- level interrupts can also be allocated using :cpp:func:`esp_intr_alloc`, but are not used often since most peripheral interrupts are level-triggered.
+
+If you have confirmed that the application is indeed running out of interrupts, a combination of the following suggestions can help resolve the issue:
+
+.. list::
+
+    :not CONFIG_FREERTOS_UNICORE: - On multi-core SoCs, try initializing some of the peripheral drivers from a task pinned to the second core. Interrupts are typically allocated on the same core where the peripheral driver initialization function runs. Therefore by running the initialization function on the second core, more interrupt inputs can be used.
+    - Determine the interrupts which can tolerate higher latency, and allocate them using ``ESP_INTR_FLAG_SHARED`` flag (optionally ORed with ``ESP_INTR_FLAG_LOWMED``). Using this flag for two or more peripherals will let them use a single interrupt input, and therefore save interrupt inputs for other peripherals. See :ref:`intr-alloc-shared-interrupts` above.
+    :not SOC_CPU_HAS_FLEXIBLE_INTC: - Some peripheral driver may default to allocating interrupts with ``ESP_INTR_FLAG_LEVEL1`` flag, so level 2 and 3 interrupts won't get used by default. If :cpp:func:`esp_intr_dump` shows that some level 2 or 3 interrupts are available, try changing the interrupt allocation flags when initializing the driver to ``ESP_INTR_FLAG_LEVEL2`` or ``ESP_INTR_FLAG_LEVEL3``.
+    - Check if some of the peripheral drivers do not need to be used all the time, and initialize/deinitialize them on demand. This can reduce the number of simultaneously allocated interrupts.
+
 
 API Reference
 -------------
