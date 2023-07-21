@@ -631,11 +631,14 @@ static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X,
     mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), hw_words);
 
     Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
+
     /*
      * Relevant: https://github.com/espressif/esp-idf/issues/11850
-     * If the first condition fails then most likely hardware peripheral
-     * has produced an incorrect result for MPI operation. This can
-     * happen if data fed to the peripheral register was incorrect.
+     *
+     * If z_words < mpi_words(Z) (the actual words taken by the MPI result),
+     * the assert fails due to unsigned arithmetic - most likely hardware
+     * peripheral has produced an incorrect result for MPI operation.
+     * This can happen if data fed to the peripheral register was incorrect.
      *
      * z_words is calculated as the worst-case possible size of the result
      * MPI Z. The difference between z_words and the actual words taken by
@@ -646,9 +649,10 @@ static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X,
      * 0b1111 * 0b1111 = 0b11100001 -> 8 bits
      * 0b1000 * 0b1000 = 0b01000000 -> 7 bits.
      * The code rounds up to the nearest word size, so the maximum difference
-     * could be of only 1 word. The second condition handles this.
+     * could be of only 1 word. The assert handles this.
+     *
      */
-    assert((z_words >= mpi_words(Z)) && (z_words - mpi_words(Z) <= (size_t)1));
+    assert(z_words - mpi_words(Z) <= (size_t)1);
 cleanup:
     esp_mpi_disable_hardware_hw_op();
     return ret;
