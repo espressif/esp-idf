@@ -1,8 +1,10 @@
 COMPONENT_ADD_INCLUDEDIRS := include esp32 include/esp32
 COMPONENT_SRCDIRS := patches .
 
+COMPONENT_OBJEXCLUDE := patches/esp_rom_cache_writeback_esp32s3.o
+
 ifdef IS_BOOTLOADER_BUILD
-COMPONENT_OBJEXCLUDE := patches/esp_rom_longjmp.o
+COMPONENT_OBJEXCLUDE += patches/esp_rom_longjmp.o
 endif
 
 #Linker scripts used to link the final application.
