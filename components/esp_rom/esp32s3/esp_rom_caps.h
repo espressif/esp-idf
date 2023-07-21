@@ -26,3 +26,4 @@
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
 #define ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG   (1) // ROM api Cache_Count_Flash_Pages will return unexpected value
 #define ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG (1) // ROM api Cache_Suspend_I/DCache and Cache_Freeze_I/DCache_Enable does not waiti
+#define ESP_ROM_HAS_CACHE_WRITEBACK_BUG     (1) // ROM api Cache_WriteBack_Addr address or size misalignment may cause cache hit with wrong value.
