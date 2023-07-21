@@ -239,9 +239,8 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
     int ret;
 
     if (g_sae_data.state != SAE_COMMITTED) {
-        wpa_printf(MSG_ERROR, "wpa3: failed to parse SAE commit in state(%d)!",
-                   g_sae_data.state);
-        return ESP_FAIL;
+        wpa_printf(MSG_DEBUG, "wpa3: Discarding commit frame received in state %d", g_sae_data.state);
+        return ESP_ERR_WIFI_DISCARD;
     }
 
     if (status == WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ) {
@@ -264,7 +263,10 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
 
     ret = sae_parse_commit(&g_sae_data, buf, len, NULL, 0, g_allowed_groups,
                            (status == WLAN_STATUS_SAE_HASH_TO_ELEMENT || status == WLAN_STATUS_SAE_PK));
-    if (ret) {
+    if (ret == SAE_SILENTLY_DISCARD) {
+        wpa_printf(MSG_DEBUG, "wpa3: Discarding commit frame due to reflection attack");
+        return ESP_ERR_WIFI_DISCARD;
+    } else if (ret) {
         wpa_printf(MSG_ERROR, "wpa3: could not parse commit(%d)", ret);
         return ret;
     }
@@ -410,6 +412,11 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
             goto free;
         }
     }
+
+    if (!sta->lock) {
+        sta->lock = os_semphr_create(1, 1);
+    }
+
     if (sta->lock && os_semphr_take(sta->lock, 0)) {
         sta->sae_commit_processing = true;
         ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
@@ -423,9 +430,10 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
         uint16_t aid = 0;
         if (ret != WLAN_STATUS_SUCCESS &&
             ret != WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ) {
-            if (esp_wifi_ap_get_sta_aid(frm->bssid, &aid) == ESP_OK && aid == 0) {
+            esp_wifi_ap_get_sta_aid(frm->bssid, &aid);
+            if (aid == 0) {
                 esp_wifi_ap_deauth_internal(frm->bssid, ret);
-             }
+            }
         }
     }
 
@@ -463,8 +471,9 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
         }
         os_semphr_give(sta->lock);
         if (ret != WLAN_STATUS_SUCCESS) {
-            uint16_t aid = -1;
-            if (esp_wifi_ap_get_sta_aid(frm->bssid, &aid) == ESP_OK && aid == 0) {
+            uint16_t aid = 0;
+            esp_wifi_ap_get_sta_aid(frm->bssid, &aid);
+            if (aid == 0) {
                 esp_wifi_ap_deauth_internal(frm->bssid, ret);
             }
         }

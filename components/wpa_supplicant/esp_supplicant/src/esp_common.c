@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -244,6 +244,14 @@ static int handle_assoc_frame(u8 *frame, size_t len,
 }
 #endif /* CONFIG_IEEE80211R */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+
+void esp_supplicant_unset_all_appie(void)
+{
+   uint8_t appie;
+   for (appie = WIFI_APPIE_PROBEREQ; appie < WIFI_APPIE_RAM_MAX; appie++) {
+        esp_wifi_unset_appie_internal(appie);
+   }
+}
 
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 				   u32 rssi, u8 channel, u64 current_tsf)

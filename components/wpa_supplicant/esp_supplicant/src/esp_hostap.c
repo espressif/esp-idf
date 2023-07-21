@@ -233,6 +233,7 @@ bool hostap_deinit(void *data)
         return true;
     }
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
+    esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_RESP);
 
 #ifdef CONFIG_SAE
     wpa3_hostap_auth_deinit();
