@@ -61,6 +61,11 @@
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rtc.h"
+#include "soc/hp_sys_clkrst_reg.h"
+#include "soc/interrupt_core0_reg.h"
+#include "soc/interrupt_core1_reg.h"
 #endif
 
 #include "esp_private/esp_mmu_map_private.h"
@@ -163,6 +168,28 @@ void startup_resume_other_cores(void)
 
 void IRAM_ATTR call_start_cpu1(void)
 {
+#ifdef __riscv
+    // Configure the global pointer register
+    // (This should be the first thing IDF app does, as any other piece of code could be
+    // relaxed by the linker to access something relative to __global_pointer$)
+    __asm__ __volatile__ (
+        ".option push\n"
+        ".option norelax\n"
+        "la gp, __global_pointer$\n"
+        ".option pop"
+    );
+#endif  //#ifdef __riscv
+
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7770
+    //set mstatus.fs=2'b01, floating-point unit in the initialization state
+    asm volatile(
+        "li t0, 0x2000\n"
+        "csrrs t0, mstatus, t0\n"
+        :::"t0"
+    );
+#endif  //#if CONFIG_IDF_TARGET_ESP32P4
+
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
 #endif  //#if SOC_BRANCH_PREDICTOR_SUPPORTED
@@ -188,6 +215,8 @@ void IRAM_ATTR call_start_cpu1(void)
 #if CONFIG_IDF_TARGET_ESP32
     DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
     DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
+#elif CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7688
 #else
     REG_WRITE(ASSIST_DEBUG_CORE_1_RCD_PDEBUGENABLE_REG, 1);
     REG_WRITE(ASSIST_DEBUG_CORE_1_RCD_RECORDING_REG, 1);
@@ -259,6 +288,13 @@ static void start_other_core(void)
         REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
         REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
     }
+#elif CONFIG_IDF_TARGET_ESP32P4
+    if (!REG_GET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN)) {
+        REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
+    }
+    if(REG_GET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL)){
+        REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
+    }
 #endif
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
@@ -269,10 +305,13 @@ static void start_other_core(void)
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
             cpus_up &= s_cpu_up[i];
         }
+        //TODO: IDF-7891, check mixing logs
         esp_rom_delay_us(100);
     }
 }
 
+#if !CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-7692
 // This function is needed to make the multicore app runnable on a unicore bootloader (built with FREERTOS UNICORE).
 // It does some cache settings for other CPUs.
 void IRAM_ATTR do_multicore_settings(void)
@@ -303,6 +342,7 @@ void IRAM_ATTR do_multicore_settings(void)
     cache_hal_enable(CACHE_TYPE_ALL);
 #endif
 }
+#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 /*
@@ -335,6 +375,16 @@ void IRAM_ATTR call_start_cpu0(void)
         ".option pop"
     );
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7770
+    //set mstatus.fs=2'b01, floating-point unit in the initialization state
+    asm volatile(
+        "li t0, 0x2000\n"
+        "csrrs t0, mstatus, t0\n"
+        :::"t0"
+    );
+#endif  //#if CONFIG_IDF_TARGET_ESP32P4
 
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
@@ -371,8 +421,11 @@ void IRAM_ATTR call_start_cpu0(void)
     ESP_EARLY_LOGI(TAG, "Unicore app");
 #else
     ESP_EARLY_LOGI(TAG, "Multicore app");
+#if !CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7692
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
+#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
 #endif
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
@@ -617,10 +670,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32P4 //TODO: IDF-7529
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
     if (rst_reas[0] == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_deep_sleep_wakeup_io_reset();
     }
+#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_err_int_init();
