@@ -483,6 +483,11 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Resume_DCache(0);
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7516, add cache init API
+    extern void esp_config_llc_mode(void);
+    esp_config_llc_mode();
+#endif
     if (esp_efuse_check_errors() != ESP_OK) {
         esp_restart();
     }
