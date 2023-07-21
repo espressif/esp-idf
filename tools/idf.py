@@ -696,7 +696,7 @@ def init_cli(verbose_output: List=None) -> Any:
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
-def main(argv=None) -> None:
+def main(argv: List[Any] = None) -> None:
     # Check the environment only when idf.py is invoked regularly from command line.
     checks_output = None if SHELL_COMPLETE_RUN else check_environment()
 
@@ -719,7 +719,7 @@ def main(argv=None) -> None:
         cli(argv, prog_name=PROG, complete_var=SHELL_COMPLETE_VAR)
 
 
-def expand_file_arguments(argv):
+def expand_file_arguments(argv: List[Any]) -> List[Any]:
     """
     Any argument starting with "@" gets replaced with all values read from a text file.
     Text file arguments can be split by newline or by space.
@@ -729,10 +729,10 @@ def expand_file_arguments(argv):
     visited = set()
     expanded = False
 
-    def expand_args(args, parent_path, file_stack):
+    def expand_args(args: List[Any], parent_path: str, file_stack: List[str]) -> List[str]:
         expanded_args = []
         for arg in args:
-            if not arg.startswith("@"):
+            if not arg.startswith('@'):
                 expanded_args.append(arg)
             else:
                 nonlocal expanded, visited
@@ -747,13 +747,13 @@ def expand_file_arguments(argv):
                 visited.add(rel_path)
 
                 try:
-                    with open(rel_path, "r") as f:
+                    with open(rel_path, 'r') as f:
                         for line in f:
                             expanded_args.extend(expand_args(shlex.split(line), os.path.dirname(rel_path), file_stack + [file_name]))
                 except IOError:
                     file_stack_str = ' -> '.join(['@' + f for f in file_stack + [file_name]])
                     raise FatalError(f"File '{rel_path}' (expansion of {file_stack_str}) could not be opened. "
-                                     "Please ensure the file exists and you have the necessary permissions to read it.")
+                                     'Please ensure the file exists and you have the necessary permissions to read it.')
         return expanded_args
 
     argv = expand_args(argv, os.getcwd(), [])

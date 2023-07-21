@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -296,10 +296,10 @@ class TestFileArgumentExpansion(TestCase):
         """Test @filename expansion functionality"""
         try:
             output = subprocess.check_output(
-                [sys.executable, idf_py_path, '--version', '@args_a'],
+                [sys.executable, idf_py_path, '--version', '@file_args_expansion_inputs/args_a'],
                 env=os.environ,
                 stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
-            self.assertIn('Running: idf.py --version -DAAA -DBBB', output)
+            self.assertIn('Running: idf.py --version DAAA DBBB', output)
         except subprocess.CalledProcessError as e:
             self.fail(f'Process should have exited normally, but it exited with a return code of {e.returncode}')
 
@@ -307,10 +307,10 @@ class TestFileArgumentExpansion(TestCase):
         """Test multiple @filename arguments"""
         try:
             output = subprocess.check_output(
-                [sys.executable, idf_py_path, '--version', '@args_a', '@args_b'],
+                [sys.executable, idf_py_path, '--version', '@file_args_expansion_inputs/args_a', '@file_args_expansion_inputs/args_b'],
                 env=os.environ,
                 stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
-            self.assertIn('Running: idf.py --version -DAAA -DBBB -DCCC -DDDD', output)
+            self.assertIn('Running: idf.py --version DAAA DBBB DCCC DDDD', output)
         except subprocess.CalledProcessError as e:
             self.fail(f'Process should have exited normally, but it exited with a return code of {e.returncode}')
 
@@ -318,10 +318,10 @@ class TestFileArgumentExpansion(TestCase):
         """Test recursive expansion of @filename arguments"""
         try:
             output = subprocess.check_output(
-                [sys.executable, idf_py_path, '--version', '@args_recursive'],
+                [sys.executable, idf_py_path, '--version', '@file_args_expansion_inputs/args_recursive'],
                 env=os.environ,
                 stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
-            self.assertIn('Running: idf.py --version -DAAA -DBBB -DEEE -DFFF', output)
+            self.assertIn('Running: idf.py --version DAAA DBBB DEEE DFFF', output)
         except subprocess.CalledProcessError as e:
             self.fail(f'Process should have exited normally, but it exited with a return code of {e.returncode}')
 
@@ -329,7 +329,7 @@ class TestFileArgumentExpansion(TestCase):
         """Test circular dependency detection in file argument expansion"""
         with self.assertRaises(subprocess.CalledProcessError) as cm:
             subprocess.check_output(
-                [sys.executable, idf_py_path, '--version', '@args_circular_a'],
+                [sys.executable, idf_py_path, '--version', '@file_args_expansion_inputs/args_circular_a'],
                 env=os.environ,
                 stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
         self.assertIn('Circular dependency in file argument expansion', cm.exception.output.decode('utf-8', 'ignore'))
