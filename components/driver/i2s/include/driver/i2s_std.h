@@ -238,11 +238,11 @@ typedef struct {
     /* General fields */
     uint32_t                sample_rate_hz;     /*!< I2S sample rate */
     i2s_clock_src_t         clk_src;            /*!< Choose clock source, see 'soc_periph_i2s_clk_src_t' for the supported clock sources.
-                                                 *   selected 'I2S_CLK_SRC_EXTERNAL'(if supports) to enable the external source clock inputted via MCLK pin,
+                                                 *   selected 'I2S_CLK_SRC_EXTERNAL'(if supports) to enable the external source clock input via MCLK pin,
                                                  */
 #if SOC_I2S_HW_VERSION_2
     uint32_t                ext_clk_freq_hz;    /*!< External clock source frequency in Hz, only take effect when 'clk_src = I2S_CLK_SRC_EXTERNAL', otherwise this field will be ignored,
-                                                 *   Please make sure the frequency inputted is equal or greater than bclk, i.e. 'sample_rate_hz * slot_bits * 2'
+                                                 *   Please make sure the frequency input is equal or greater than bclk, i.e. 'sample_rate_hz * slot_bits * 2'
                                                  */
 #endif
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate
