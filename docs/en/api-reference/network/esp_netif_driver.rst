@@ -2,12 +2,11 @@ ESP-NETIF Custom I/O Driver
 ===========================
 
 This section outlines implementing a new I/O driver with esp-netif connection capabilities.
-By convention the I/O driver has to register itself as an esp-netif driver and thus holds a dependency on esp-netif component
-and is responsible for providing data path functions, post-attach callback and in most cases also default event handlers to define network interface
-actions based on driver's lifecycle transitions.
+
+By convention, the I/O driver has to register itself as an esp-netif driver, and thus holds a dependency on esp-netif component and is responsible for providing data path functions, post-attach callback and in most cases, also default event handlers to define network interface actions based on driver's lifecycle transitions.
 
 
-Packet input/output
+Packet Input/Output
 ^^^^^^^^^^^^^^^^^^^
 
 As shown in the diagram, the following three API functions for the packet data path must be defined for connecting with esp-netif:
@@ -16,25 +15,21 @@ As shown in the diagram, the following three API functions for the packet data p
 * :cpp:func:`esp_netif_free_rx_buffer()`
 * :cpp:func:`esp_netif_receive()`
 
-The first two functions for transmitting and freeing the rx buffer are provided as callbacks, i.e. they get called from
-esp-netif (and its underlying TCP/IP stack) and I/O driver provides their implementation.
+The first two functions for transmitting and freeing the rx buffer are provided as callbacks, i.e.， they get called from esp-netif (and its underlying TCP/IP stack) and I/O driver provides their implementation.
 
-The receiving function on the other hand gets called from the I/O driver, so that the driver's code simply calls :cpp:func:`esp_netif_receive()`
-on a new data received event.
+The receiving function on the other hand gets called from the I/O driver, so that the driver's code simply calls :cpp:func:`esp_netif_receive()` on a new data received event.
 
 
-Post attach callback
+Post Attach Callback
 ^^^^^^^^^^^^^^^^^^^^
 
-A final part of the network interface initialization consists of attaching the esp-netif instance to the I/O driver, by means
-of calling the following API:
+A final part of the network interface initialization consists of attaching the esp-netif instance to the I/O driver, by means of calling the following API:
 
 .. code:: c
 
     esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle driver_handle);
 
-It is assumed that the ``esp_netif_iodriver_handle`` is a pointer to driver's object, a struct derived from ``struct esp_netif_driver_base_s``,
-so that the first member of I/O driver structure must be this base structure with pointers to
+It is assumed that the ``esp_netif_iodriver_handle`` is a pointer to driver's object, a struct derived from ``struct esp_netif_driver_base_s``, so that the first member of I/O driver structure must be this base structure with pointers to
 
 * post-attach function callback
 * related esp-netif instance
@@ -49,9 +44,8 @@ As a consequence the I/O driver has to create an instance of the struct per belo
         } my_netif_driver_t;
 
 with actual values of ``my_netif_driver_t::base.post_attach`` and the actual drivers handle ``my_netif_driver_t::h``.
-So when the :cpp:func:`esp_netif_attach()` gets called from the initialization code, the post-attach callback from I/O driver's code
-gets executed to mutually register callbacks between esp-netif and I/O driver instances. Typically the driver is started
-as well in the post-attach callback. An example of a simple post-attach callback is outlined below:
+
+So when the :cpp:func:`esp_netif_attach()` gets called from the initialization code, the post-attach callback from I/O driver's code gets executed to mutually register callbacks between esp-netif and I/O driver instances. Typically the driver is started as well in the post-attach callback. An example of a simple post-attach callback is outlined below:
 
 .. code:: c
 
@@ -70,11 +64,10 @@ as well in the post-attach callback. An example of a simple post-attach callback
     }
 
 
-Default handlers
+Default Handlers
 ^^^^^^^^^^^^^^^^
 
-I/O drivers also typically provide default definitions of lifecycle behaviour of related network interfaces based
-on state transitions of I/O drivers. For example *driver start* ``->`` *network start*, etc.
+I/O drivers also typically provide default definitions of lifecycle behaviour of related network interfaces based on state transitions of I/O drivers. For example *driver start* ``->`` *network start*, etc.
 An example of such a default handler is provided below:
 
 .. code:: c
@@ -87,15 +80,13 @@ An example of such a default handler is provided below:
     }
 
 
-Network stack connection
+Network Stack Connection
 ------------------------
 
-The packet data path functions for transmitting and freeing the rx buffer (defined in the I/O driver) are called from
-the esp-netif, specifically from its TCP/IP stack connecting layer.
+The packet data path functions for transmitting and freeing the rx buffer (defined in the I/O driver) are called from the esp-netif, specifically from its TCP/IP stack connecting layer.
 
-Note, that IDF provides several network stack configurations for the most common network interfaces, such as for the WiFi station or Ethernet.
-These configurations are defined in :component_file:`esp_netif/include/esp_netif_defaults.h` and should be sufficient for most network drivers.
-(In rare cases, expert users might want to define custom lwIP based interface layers; it is possible, but an explicit dependency to lwIP needs to be set)
+Note, that ESP-IDF provides several network stack configurations for the most common network interfaces, such as for the WiFi station or Ethernet.
+These configurations are defined in :component_file:`esp_netif/include/esp_netif_defaults.h` and should be sufficient for most network drivers. (In rare cases, expert users might want to define custom lwIP based interface layers; it is possible, but an explicit dependency to lwIP needs to be set)
 
 The following API reference outlines these network stack interaction with the esp-netif:
 

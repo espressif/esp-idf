@@ -1,7 +1,7 @@
 以太网
 =========
 
-:link_to_translation:`en:[英文]`
+:link_to_translation:`en:[English]`
 
 .. -------------------------------- Overview -----------------------------------
 
@@ -113,13 +113,13 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
 
     MII 和 RMII 的一个明显区别在于其所需的信号数。MII 通常需要多达 18 个信号，RMII 接口则仅需要 9 个信号。
 
-    在 RMII 模式下，接收器和发射器信号的参考时钟为 ``REF_CLK``。 **在访问 PHY 和 MAC 时，REF_CLK 必须保持稳定**。一般来说，根据您设计中 PHY 设备的特征，可通过以下三种方式生成 ``REF_CLK``：
+    在 RMII 模式下，接收器和发射器信号的参考时钟为 ``REF_CLK``。 **在访问 PHY 和 MAC 时，REF_CLK 必须保持稳定**。一般来说，根据设计中 PHY 设备的特征，可通过以下三种方式生成 ``REF_CLK``：
 
-    * 一些 PHY 芯片可以从其外部连接的 25 MHz 晶体振荡器中获取 ``REF_CLK`` （如图中的选项 *a* 所示）。对于此类芯片，请在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_INPUT``。
+    * 一些 PHY 芯片可以从其外部连接的 25 MHz 晶体振荡器中获取 ``REF_CLK`` （如图中的选项 **a** 所示）。对于此类芯片，请在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_INPUT``。
 
-    * 一些 PHY 芯片使用可以作为 MAC 端 ``REF_CLK`` 的外接 50 MHz 晶体振荡器或其他时钟源（如图中的选项 *b* 所示）。对于此类芯片，请同样在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_INPUT``。
+    * 一些 PHY 芯片使用可以作为 MAC 端 ``REF_CLK`` 的外接 50 MHz 晶体振荡器或其他时钟源（如图中的选项 **b** 所示）。对于此类芯片，请同样在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_INPUT``。
 
-    * 一些 EMAC 控制器可以使用其内部的高精度 PLL 生成 ``REF_CLK`` （如图中的选项 *c* 所示）。此种情况下，请在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_OUTPUT``。
+    * 一些 EMAC 控制器可以使用其内部的高精度 PLL 生成 ``REF_CLK`` （如图中的选项 **c** 所示）。此种情况下，请在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_OUTPUT``。
 
     .. note::
         如上所述，``REF_CLK`` 默认通过项目配置进行配置。然而，通过设置 :cpp:member:`eth_esp32_emac_config_t::interface` 和 :cpp:member:`eth_esp32_emac_config_t::clock_config`，也可以实现在用户应用代码中覆盖该时钟。更多细节，请参见 :cpp:enum:`emac_rmii_clock_mode_t` 和 :cpp:enum:`emac_rmii_clock_gpio_t`。
@@ -127,15 +127,15 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
     .. warning::
         如果配置 RMII 时钟模式为 ``CONFIG_ETH_RMII_CLK_OUTPUT``，那么就可以使用  ``GPIO0`` 输出 ``REF_CLK`` 信号。更多细节，请参见 :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0`。
 
-        值得一提的是，如果您在设计中并未使用 PSRAM，则 GPIO16 和 GPIO17 也可以用来输出参考时钟。更多细节，请参见 :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO`。
+        值得一提的是，如果设计中并未使用 PSRAM，则 GPIO16 和 GPIO17 也可以用来输出参考时钟。更多细节，请参见 :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO`。
 
         如果配置 RMII 时钟模式为 ``CONFIG_ETH_RMII_CLK_INPUT``，那么有且只有 ``GPIO0`` 可以用来输入 ``REF_CLK`` 信号。请注意， ``GPIO0`` 同时也是 ESP32 上一个重要的 strapping GPIO 管脚。如果 GPIO0 在上电时采样为低电平，ESP32 将进入下载模式，需进行手动复位重启系统。解决这个问题的方法是，在硬件中默认禁用 ``REF_CLK``，从而避免 strapping 管脚在启动阶段受到其他信号的干扰。随后，再在以太网驱动安装阶段重新启用 ``REF_CLK``。
 
         可以通过以下方法禁用 ``REF_CLK`` 信号：
 
-        * 禁用或关闭晶体振荡器的电源（对应图中的选项 *b*）。
+        * 禁用或关闭晶体振荡器的电源（对应图中的选项 **b**）。
 
-        * 强制复位 PHY 设备（对应图中的选项 *a*）。 **此种方法并不适用于所有 PHY 设备**，即便处于复位状态，某些 PHY 设备仍会向 GPIO0 输出信号。
+        * 强制复位 PHY 设备（对应图中的选项 **a**）。 **此种方法并不适用于所有 PHY 设备**，即便处于复位状态，某些 PHY 设备仍会向 GPIO0 输出信号。
 
     **无论选择哪种 RMII 时钟模式，都请确保硬件设计中 REF_CLK 的信号完整性！** 信号线越短越好，并请保持信号线与 RF 设备和电感器元件的距离。
 
@@ -144,7 +144,7 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
 
         在数据平面使用的信号通过 MUX 连接至特定的 GPIO，这些信号无法配置至其他 GPIO。在控制平面使用的信号则可以通过 Matrix 矩阵路由到任何空闲 GPIO。相关的硬件设计示例，请参考 :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>`。
 
-根据您的以太网板设计，需要分别为 MAC 和 PHY 配置必要的参数，通过两者完成驱动程序的安装。
+根据以太网板设计，需要分别为 MAC 和 PHY 配置必要的参数，通过两者完成驱动程序的安装。
 
 MAC 的相关配置可以在 :cpp:class:`eth_mac_config_t` 中找到，具体包括：
 
@@ -166,13 +166,13 @@ PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包
 
 .. list::
 
-    * :cpp:member:`eth_phy_config_t::phy_addr`：同一条 SMI 总线上可以存在多个 PHY 设备，所以有必要为各个 PHY 设备分配唯一地址。通常，这个地址是在硬件设计期间，通过拉高/拉低一些 PHY strapping 管脚来配置的。根据不同的以太网开发板，可配置值为 0 到 15。需注意，如果 SMI 总线上仅有一个 PHY 设备，将该值配置为 -1，即可使驱动程序自动检测 PHY 地址。
+    * :cpp:member:`eth_phy_config_t::phy_addr`：同一条 SMI 总线上可以存在多个 PHY 设备，所以有必要为各个 PHY 设备分配唯一地址。通常，这个地址是在硬件设计期间，通过拉高/拉低一些 PHY strapping 管脚来配置的。根据不同的以太网开发板，可配置值为 ``0`` 到 ``15``。需注意，如果 SMI 总线上仅有一个 PHY 设备，将该值配置为 ``-1``，即可使驱动程序自动检测 PHY 地址。
 
     * :cpp:member:`eth_phy_config_t::reset_timeout_ms`：复位超时值，单位为毫秒。通常，PHY 复位应在 100 ms 内完成。
 
-    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`：自动协商超时值，单位为毫秒。以太网驱动程序会自动与对等的以太网节点进行协商，以确定双工和速度模式。此值通常取决于您电路板上 PHY 设备的性能。
+    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`：自动协商超时值，单位为毫秒。以太网驱动程序会自动与对等的以太网节点进行协商，以确定双工和速度模式。此值通常取决于电路板上 PHY 设备的性能。
 
-    * :cpp:member:`eth_phy_config_t::reset_gpio_num`：如果您的开发板同时将 PHY 复位管脚连接至了任意 GPIO 管脚，请使用该字段进行配置。否则，配置为 -1。
+    * :cpp:member:`eth_phy_config_t::reset_gpio_num`：如果开发板同时将 PHY 复位管脚连接至了任意 GPIO 管脚，请使用该字段进行配置。否则，配置为 ``-1``。
 
 ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_CONFIG` 中为 MAC 和 PHY 提供了默认配置。
 
@@ -279,9 +279,9 @@ SPI-Ethernet 模块
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`：以太网驱动程序会启用操作系统定时器来定期检查链接状态。该字段用于设置间隔时间，单位为毫秒。
 
-* :cpp:member:`esp_eth_config_t::stack_input`：在大多数的以太网物联网应用中，驱动器接收的以太网帧会被传递到上层（如 TCP/IP 栈）。经配置，该字段为负责处理传入帧的函数。您可以在安装驱动程序后，通过函数 :cpp:func:`esp_eth_update_input_path` 更新该字段。该字段支持在运行过程中进行更新。
+* :cpp:member:`esp_eth_config_t::stack_input`：在大多数的以太网物联网应用中，驱动器接收的以太网帧会被传递到上层（如 TCP/IP 栈）。经配置，该字段为负责处理传入帧的函数。可以在安装驱动程序后，通过函数 :cpp:func:`esp_eth_update_input_path` 更新该字段。该字段支持在运行过程中进行更新。
 
-* :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` 和 :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`： 这两个字段用于指定钩子函数，当去初始化或初始化低级别硬件时，会调用钩子函数。
+* :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` 和 :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`：这两个字段用于指定钩子函数，当去初始化或初始化低级别硬件时，会调用钩子函数。
 
 ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了一个默认配置。
 
@@ -293,7 +293,7 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
     esp_eth_handle_t eth_handle = NULL; // 驱动程序安装完毕后，将得到驱动程序的句柄
     esp_eth_driver_install(&config, &eth_handle); // 安装驱动程序
 
-以太网驱动程序包含事件驱动模型，该模型会向用户空间发送有用及重要的事件。安装以太网驱动程序之前，需要首先初始化事件循环。有关事件驱动编程的更多信息，请参考 :doc:`ESP Event <../system/esp_event>`.
+以太网驱动程序包含事件驱动模型，该模型会向用户空间发送有用及重要的事件。安装以太网驱动程序之前，需要首先初始化事件循环。有关事件驱动编程的更多信息，请参考 :doc:`事件循环库 <../system/esp_event>`。
 
 .. highlight:: c
 
@@ -421,7 +421,7 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 
 受 RAM 大小限制，在网络拥堵时，MCU 上的以太网通常仅能处理有限数量的帧。发送站的数据传输速度可能快于对等端的接收能力。以太网数据流量控制机制允许接收节点向发送方发出信号，要求暂停传输，直到接收方跟上。这项功能是通过暂停帧实现的，该帧定义在 IEEE 802.3x 中。
 
-暂停帧是一种特殊的以太网帧，用于携带暂停命令，其 EtherType 字段为 0x8808，控制操作码为 0x0001。只有配置为全双工操作的节点组可以发送暂停帧。当节点组希望暂停链路的另一端时，它会发送一个暂停帧到 48 位的保留组播地址 01-80-C2-00-00-01。暂停帧中也包括请求暂停的时间段，以两字节的整数形式发送，值的范围从 0 到 65535。
+暂停帧是一种特殊的以太网帧，用于携带暂停命令，其 EtherType 字段为 ``0x8808``，控制操作码为 ``0x0001``。只有配置为全双工操作的节点组可以发送暂停帧。当节点组希望暂停链路的另一端时，它会发送一个暂停帧到 48 位的保留组播地址 ``01-80-C2-00-00-01``。暂停帧中也包括请求暂停的时间段，以两字节的整数形式发送，值的范围从 ``0`` 到 ``65535``。
 
 安装以太网驱动程序后，数据流量控制功能默认禁用，可以通过以下方式启用此功能：
 
@@ -460,7 +460,7 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 好在 IEEE 802.3 在其 22.2.4 管理功能部分对 EMAC 和 PHY 之间的管理接口进行了标准化。该部分定义了所谓的 ”MII 管理接口”规范，用于控制 PHY 和收集 PHY 的状态，还定义了一组管理寄存器来控制芯片行为、链接属性、自动协商配置等。在 ESP-IDF 中，这项基本的管理功能是由 :component_file:`esp_eth/src/esp_eth_phy_802_3.c` 实现的，这也大大降低了创建新的自定义 PHY 芯片驱动的难度。
 
 .. note::
-    由于一些 PHY 芯片可能不符合 IEEE 802.3 第 22.2.4 节的规定，所以请首先查看 PHY 数据手册。不过，就算芯片不符合规定，您依旧可以创建自定义 PHY 驱动程序，只是由于需要自行定义所有的 PHY 管理功能，这个过程将变得较为复杂。
+    由于一些 PHY 芯片可能不符合 IEEE 802.3 第 22.2.4 节的规定，所以请首先查看 PHY 数据手册。不过，就算芯片不符合规定，依旧可以创建自定义 PHY 驱动程序，只是由于需要自行定义所有的 PHY 管理功能，这个过程将变得较为复杂。
 
 ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 :component_file:`esp_eth/src/esp_eth_phy_802_3.c` 中。不过对于以下几项，可能仍需针对不同芯片开发具体的管理功能：
 
@@ -479,7 +479,7 @@ ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 
 3. 定义针对芯片的特定管理回调功能。
 4. 初始化 IEEE 802.3 父对象并重新分配针对芯片的特定管理回调功能。
 
-实现新的自定义 PHY 驱动程序后，你可以通过 `IDF组件管理中心 <https://components.espressif.com/>`_ 将驱动分享给其他用户。
+实现新的自定义 PHY 驱动程序后，你可以通过 `ESP-IDF 组件管理中心 <https://components.espressif.com/>`_ 将驱动分享给其他用户。
 
 .. ---------------------------- API Reference ----------------------------------
 

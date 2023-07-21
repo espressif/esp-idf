@@ -5,7 +5,7 @@ ESP-NETIF
 
 The purpose of the ESP-NETIF library is twofold:
 
-- It provides an abstraction layer for the application on top of the TCP/IP stack. This will allow applications to choose between IP stacks in the future.
+- It provides an abstraction layer for the application on top of the TCP/IP stack. This allows applications to choose between IP stacks in the future.
 - The APIs it provides are thread-safe, even if the underlying TCP/IP stack APIs are not.
 
 ESP-IDF currently implements ESP-NETIF for the lwIP TCP/IP stack only. However, the adapter itself is TCP/IP implementation-agnostic and allows different implementations.
@@ -76,7 +76,7 @@ Data and Event Flow in the Diagram
 ESP-NETIF Interaction
 ---------------------
 
-A) User code, boilerplate
+A) User Code, Boilerplate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Overall application interaction with a specific IO driver for communication media and configured TCP/IP network stack is abstracted using ESP-NETIF APIs and is outlined as below:
@@ -151,7 +151,7 @@ The ESP-NETIF L2 TAP interface is a mechanism in ESP-IDF used to access Data Lin
 
 From a user perspective, the ESP-NETIF L2 TAP interface is accessed using file descriptors of VFS, which provides file-like interfacing (using functions like ``open()``, ``read()``, ``write()``, etc). To learn more, refer to :doc:`/api-reference/storage/vfs`.
 
-There is only one ESP-NETIF L2 TAP interface device (path name) available. However multiple file descriptors with different configurations can be opened at a time since the ESP-NETIF L2 TAP interface can be understood as a generic entry point to the Layer 2 infrastructure. What is important is then the specific configuration of the particular file descriptor. It can be configured to give access to a specific Network Interface identified by ``if_key`` (e.g. `ETH_DEF`) and to filter only specific frames based on their type (e.g. Ethernet type in the case of IEEE 802.3). Filtering only specific frames is crucial since the ESP-NETIF L2 TAP needs to exist along with the IP stack and so the IP-related traffic (IP, ARP, etc.) should not be passed directly to the user application. Even though this option is still configurable, it is not recommended in standard use cases. Filtering is also advantageous from the perspective of the user’s application, as it only gets access to the frame types it is interested in, and the remaining traffic is either passed to other L2 TAP file descriptors or to the IP stack.
+There is only one ESP-NETIF L2 TAP interface device (path name) available. However multiple file descriptors with different configurations can be opened at a time since the ESP-NETIF L2 TAP interface can be understood as a generic entry point to the Layer 2 infrastructure. What is important is then the specific configuration of the particular file descriptor. It can be configured to give access to a specific Network Interface identified by ``if_key`` (e.g., `ETH_DEF`) and to filter only specific frames based on their type (e.g., Ethernet type in the case of IEEE 802.3). Filtering only specific frames is crucial since the ESP-NETIF L2 TAP needs to exist along with the IP stack and so the IP-related traffic (IP, ARP, etc.) should not be passed directly to the user application. Even though this option is still configurable, it is not recommended in standard use cases. Filtering is also advantageous from the perspective of the user's application, as it only gets access to the frame types it is interested in, and the remaining traffic is either passed to other L2 TAP file descriptors or to the IP stack.
 
 ESP-NETIF L2 TAP Interface Usage Manual
 ---------------------------------------
@@ -160,21 +160,21 @@ Initialization
 ^^^^^^^^^^^^^^
 To be able to use the ESP-NETIF L2 TAP interface, it needs to be enabled in Kconfig by :ref:`CONFIG_ESP_NETIF_L2_TAP` first and then registered by :cpp:func:`esp_vfs_l2tap_intf_register()` prior usage of any VFS function.
 
-open()
-^^^^^^
+``open()``
+^^^^^^^^^^
 Once the ESP-NETIF L2 TAP is registered, it can be opened at path name “/dev/net/tap”. The same path name can be opened multiple times up to :ref:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with a different configuration may access the Data Link Layer frames.
 
 The ESP-NETIF L2 TAP can be opened with the ``O_NONBLOCK`` file status flag to make sure the ``read()`` does not block. Note that the ``write()`` may block in the current implementation when accessing a Network interface since it is a shared resource among multiple ESP-NETIF L2 TAP file descriptors and IP stack, and there is currently no queuing mechanism deployed. The file status flag can be retrieved and modified using ``fcntl()``.
 
 On success, ``open()`` returns the new file descriptor (a nonnegative integer). On error, -1 is returned, and ``errno`` is set to indicate the error.
 
-ioctl()
-^^^^^^^
+``ioctl()``
+^^^^^^^^^^^
 The newly opened ESP-NETIF L2 TAP file descriptor needs to be configured prior to its usage since it is not bounded to any specific Network Interface and no frame type filter is configured. The following configuration options are available to do so:
 
   * ``L2TAP_S_INTF_DEVICE`` - bounds the file descriptor to a specific Network Interface that is identified by its ``if_key``. ESP-NETIF Network Interface ``if_key`` is passed to ``ioctl()`` as the third parameter. Note that default Network Interfaces ``if_key``'s used in ESP-IDF can be found in :component_file:`esp_netif/include/esp_netif_defaults.h`.
-  * ``L2TAP_S_DEVICE_DRV_HNDL`` - is another way to bound the file descriptor to a specific Network Interface. In this case, the Network interface is identified directly by IO Driver handle (e.g. :cpp:type:`esp_eth_handle_t` in case of Ethernet). The IO Driver handle is passed to ``ioctl()`` as the third parameter.
-  * ``L2TAP_S_RCV_FILTER`` - sets the filter to frames with the type to be passed to the file descriptor. In the case of Ethernet frames, the frames are to be filtered based on the Length and Ethernet type field. In case the filter value is set less than or equal to 0x05DC, the Ethernet type field is considered to represent IEEE802.3 Length Field, and all frames with values in interval <0, 0x05DC> at that field will be passed to the file descriptor. The IEEE802.2 logical link control (LLC) resolution is then expected to be performed by the user’s application. In case the filter value is set greater than 0x05DC, the Ethernet type field is considered to represent protocol identification and only frames that are equal to the set value are to be passed to the file descriptor.
+  * ``L2TAP_S_DEVICE_DRV_HNDL`` - is another way to bound the file descriptor to a specific Network Interface. In this case, the Network interface is identified directly by IO Driver handle (e.g., :cpp:type:`esp_eth_handle_t` in case of Ethernet). The IO Driver handle is passed to ``ioctl()`` as the third parameter.
+  * ``L2TAP_S_RCV_FILTER`` - sets the filter to frames with the type to be passed to the file descriptor. In the case of Ethernet frames, the frames are to be filtered based on the Length and Ethernet type field. In case the filter value is set less than or equal to 0x05DC, the Ethernet type field is considered to represent IEEE802.3 Length Field, and all frames with values in interval <0, 0x05DC> at that field are passed to the file descriptor. The IEEE802.2 logical link control (LLC) resolution is then expected to be performed by the user's application. In case the filter value is set greater than 0x05DC, the Ethernet type field is considered to represent protocol identification and only frames that are equal to the set value are to be passed to the file descriptor.
 
 All above-set configuration options have a getter counterpart option to read the current settings.
 
@@ -182,20 +182,20 @@ All above-set configuration options have a getter counterpart option to read the
     The file descriptor needs to be firstly bounded to a specific Network Interface by ``L2TAP_S_INTF_DEVICE`` or ``L2TAP_S_DEVICE_DRV_HNDL`` to make ``L2TAP_S_RCV_FILTER`` option available.
 
 .. note::
-    VLAN-tagged frames are currently not recognized. If the user needs to process VLAN-tagged frames, they need a set filter to be equal to the VLAN tag (i.e. 0x8100 or 0x88A8) and process the VLAN-tagged frames in the user application.
+    VLAN-tagged frames are currently not recognized. If the user needs to process VLAN-tagged frames, they need a set filter to be equal to the VLAN tag (i.e., 0x8100 or 0x88A8) and process the VLAN-tagged frames in the user application.
 
 .. note::
     ``L2TAP_S_DEVICE_DRV_HNDL`` is particularly useful when the user's application does not require the usage of an IP stack and so ESP-NETIF is not required to be initialized too. As a result, Network Interface cannot be identified by its ``if_key`` and hence it needs to be identified directly by its IO Driver handle.
 
 | On success, ``ioctl()`` returns 0. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | * EBADF - not a valid file descriptor.
-| * EACCES - options change is denied in this state (e.g. file descriptor has not been bounded to Network interface yet).
+| * EACCES - options change is denied in this state (e.g., file descriptor has not been bounded to Network interface yet).
 | * EINVAL - invalid configuration argument. Ethernet type filter is already used by other file descriptors on that same Network interface.
 | * ENODEV - no such Network Interface which is tried to be assigned to the file descriptor exists.
 | * ENOSYS - unsupported operation, passed configuration option does not exist.
 
-fcntl()
-^^^^^^^
+``fcntl()``
+^^^^^^^^^^^
 ``fcntl()`` is used to manipulate with properties of opened ESP-NETIF L2 TAP file descriptor.
 
 The following commands manipulate the status flags associated with the file descriptor:
@@ -207,17 +207,17 @@ The following commands manipulate the status flags associated with the file desc
 | * EBADF - not a valid file descriptor.
 | * ENOSYS - unsupported command.
 
-read()
-^^^^^^
+``read()``
+^^^^^^^^^^
 Opened and configured ESP-NETIF L2 TAP file descriptor can be accessed by ``read()`` to get inbound frames. The read operation can be either blocking or non-blocking based on the actual state of the ``O_NONBLOCK`` file status flag. When the file status flag is set to blocking, the read operation waits until a frame is received and the context is switched to other tasks. When the file status flag is set to non-blocking, the read operation returns immediately. In such case, either a frame is returned if it was already queued or the function indicates the queue is empty. The number of queued frames associated with one file descriptor is limited by :ref:`CONFIG_ESP_NETIF_L2_TAP_RX_QUEUE_SIZE` Kconfig option. Once the number of queued frames reached a configured threshold, the newly arrived frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue management).
 
 | On success, ``read()`` returns the number of bytes read. Zero is returned when the size of the destination buffer is 0. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | * EBADF - not a valid file descriptor.
 | * EAGAIN - the file descriptor has been marked non-blocking (``O_NONBLOCK``), and the read would block.
 
-write()
-^^^^^^^
-A raw Data Link Layer frame can be sent to Network Interface via opened and configured ESP-NETIF L2 TAP file descriptor. The user’s application is responsible to construct the whole frame except for fields which are added automatically by the physical interface device. The following fields need to be constructed by the user's application in case of an Ethernet link: source/destination MAC addresses, Ethernet type, actual protocol header, and user data. The length of these fields is as follows:
+``write()``
+^^^^^^^^^^^
+A raw Data Link Layer frame can be sent to Network Interface via opened and configured ESP-NETIF L2 TAP file descriptor. The user's application is responsible to construct the whole frame except for fields which are added automatically by the physical interface device. The following fields need to be constructed by the user's application in case of an Ethernet link: source/destination MAC addresses, Ethernet type, actual protocol header, and user data. The length of these fields is as follows:
 
 .. list-table::
     :header-rows: 1
@@ -240,15 +240,15 @@ In other words, there is no additional frame processing performed by the ESP-NET
 | * EBADMSG - The Ethernet type of the frame is different from the file descriptor configured filter.
 | * EIO - Network interface not available or busy.
 
-close()
-^^^^^^^
+``close()``
+^^^^^^^^^^^
 Opened ESP-NETIF L2 TAP file descriptor can be closed by the ``close()`` to free its allocated resources. The ESP-NETIF L2 TAP implementation of ``close()`` may block. On the other hand, it is thread-safe and can be called from a different task than the file descriptor is actually used. If such a situation occurs and one task is blocked in the I/O operation and another task tries to close the file descriptor, the first task is unblocked. The first's task read operation then ends with an error.
 
 | On success, ``close()`` returns zero. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | * EBADF - not a valid file descriptor.
 
-select()
-^^^^^^^^
+``select()``
+^^^^^^^^^^^^
 Select is used in a standard way, just :ref:`CONFIG_VFS_SUPPORT_SELECT` needs to be enabled to make the ``select()`` function available.
 
 
@@ -262,7 +262,7 @@ You can find a brief introduction to SNTP in general, its initialization code, a
 This section provides more details about specific use cases of the SNTP service, with statically configured servers, or use the DHCP-provided servers, or both. The workflow is usually very simple:
 
 1) Initialize and configure the service using :cpp:func:`esp_netif_sntp_init()`.
-2) Start the service via :cpp:func:`esp_netif_sntp_start()`. This step is not needed if we auto-started the service in the previous step (default). It's useful to start the service explicitly after connecting if we want to use the DHCP-obtained NTP servers. Please note, this option needs to be enabled before connecting, but the SNTP service should be started after.
+2) Start the service via :cpp:func:`esp_netif_sntp_start()`. This step is not needed if we auto-started the service in the previous step (default). It is useful to start the service explicitly after connecting if we want to use the DHCP-obtained NTP servers. Please note, this option needs to be enabled before connecting, but the SNTP service should be started after.
 3) Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (only if needed).
 4) Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.
 
@@ -270,7 +270,7 @@ This section provides more details about specific use cases of the SNTP service,
 Basic Mode with Statically Defined Server(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Initialize the module with the default configuration after connecting to the network. Note that it's possible to provide multiple NTP servers in the configuration struct:
+Initialize the module with the default configuration after connecting to the network. Note that it is possible to provide multiple NTP servers in the configuration struct:
 
 .. code-block:: c
 
@@ -295,7 +295,7 @@ First of all, we have to enable the lwIP configuration option :ref:`CONFIG_LWIP_
     config.server_from_dhcp = true;             // accept the NTP offer from the DHCP server
     esp_netif_sntp_init(&config);
 
-Then, once we're connected, we could start the service using:
+Then, once we are connected, we could start the service using:
 
 .. code-block:: c
 
@@ -303,7 +303,7 @@ Then, once we're connected, we could start the service using:
 
 .. note::
 
-    It's also possible to start the service during initialization (default ``config.start=true``). This would likely to cause the initial SNTP request to fail (since we are not connected yet) and lead to some back-off time for subsequent requests.
+    It is also possible to start the service during initialization (default ``config.start=true``). This would likely to cause the initial SNTP request to fail (since we are not connected yet) and lead to some back-off time for subsequent requests.
 
 
 Use Both Static and Dynamic Servers
@@ -359,7 +359,7 @@ For more specific cases, please consult this guide: :doc:`/api-reference/network
 
         * :cpp:func:`esp_netif_create_default_wifi_ap()`
 
-    Please note that these functions return the ``esp_netif`` handle, i.e. a pointer to a network interface object allocated and configured with default settings, as a consequence, which means that:
+    Please note that these functions return the ``esp_netif`` handle, i.e., a pointer to a network interface object allocated and configured with default settings, as a consequence, which means that:
 
     * The created object has to be destroyed if a network de-initialization is provided by an application using :cpp:func:`esp_netif_destroy_default_wifi()`.
 
