@@ -115,6 +115,9 @@ extern int _rodata_reserved_start;
 extern int _rodata_reserved_end;
 
 extern int _vector_table;
+#if SOC_INT_CLIC_SUPPORTED
+extern int _mtvt_table;
+#endif
 
 static const char *TAG = "cpu_start";
 
@@ -140,7 +143,15 @@ static void core_intr_matrix_clear(void)
     uint32_t core_id = esp_cpu_get_core_id();
 
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
+#if CONFIG_IDF_TARGET_ESP32P4
+        if (core_id == 0) {
+            REG_WRITE(INTERRUPT_CORE0_LP_RTC_INT_MAP_REG + 4 * i, 0);
+        } else {
+            REG_WRITE(INTERRUPT_CORE1_LP_RTC_INT_MAP_REG + 4 * i, 0);
+        }
+#else
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
+#endif
     }
 }
 
@@ -157,6 +168,10 @@ void IRAM_ATTR call_start_cpu1(void)
 #endif  //#if SOC_BRANCH_PREDICTOR_SUPPORTED
 
     esp_cpu_intr_set_ivt_addr(&_vector_table);
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7863
+    esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
+#endif
 
     ets_set_appcpu_boot_addr(0);
 
@@ -326,6 +341,10 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     // Move exception vectors to IRAM
     esp_cpu_intr_set_ivt_addr(&_vector_table);
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7863
+    esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
+#endif
 
     rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE

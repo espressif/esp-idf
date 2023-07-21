@@ -233,6 +233,20 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_ivt_addr(const void *ivt_addr)
 #endif
 }
 
+#if CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-7863
+//"MTVT is only implemented in RISC-V arch"
+/**
+ * @brief Set the base address of the current CPU's Interrupt Vector Table (MTVT)
+ *
+ * @param ivt_addr Interrupt Vector Table's base address
+ */
+FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
+{
+    rv_utils_set_mtvt((uint32_t)mtvt_addr);
+}
+#endif  //#if CONFIG_IDF_TARGET_ESP32P4
+
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 /**
  * @brief Set the interrupt type of a particular interrupt

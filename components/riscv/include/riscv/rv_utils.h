@@ -85,10 +85,23 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
 // ---------------- Interrupt Descriptors ------------------
 
 // --------------- Interrupt Configuration -----------------
+#if SOC_INT_CLIC_SUPPORTED
+//TODO: IDF-7863
+FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
+{
+#define MTVT 0x307
+    RV_WRITE_CSR(MTVT, mtvt_val);
+}
+#endif
 
 FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 {
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7863
+    mtvec_val |= 3;
+#else
     mtvec_val |= 1; // Set MODE field to treat MTVEC as a vector base address
+#endif
     RV_WRITE_CSR(mtvec, mtvec_val);
 }
 
