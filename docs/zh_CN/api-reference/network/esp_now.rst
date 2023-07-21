@@ -1,12 +1,13 @@
 ESP-NOW
 ========
 
-:link_to_translation:`en:[英文]`
+:link_to_translation:`en:[English]`
 
 概述
 --------
 
 ESP-NOW 是一种由乐鑫公司定义的无连接 Wi-Fi 通信协议。在 ESP-NOW 中，应用程序数据被封装在各个供应商的动作帧中，然后在无连接的情况下，从一个 Wi-Fi 设备传输到另一个 Wi-Fi 设备。
+
 CTR 与 CBC-MAC 协议 (CCMP) 可用来保护动作帧的安全。ESP-NOW 广泛应用于智能照明、远程控制、传感器等领域。
 
 帧格式
@@ -24,7 +25,7 @@ ESP-NOW 使用各个供应商的动作帧传输数据，默认比特率为 1 Mbp
        24 字节        1 字节        3 字节      4 字节      7~257 字节       4 字节
 
 - 分类代码：分类代码字段可用于指示各个供应商的类别（比如 127）。
-- 组织标识符：组织标识符包含一个唯一标识符 (比如 0x18fe34)，为乐鑫指定的 MAC 地址的前三个字节。
+- 组织标识符：组织标识符包含一个唯一标识符（比如 0x18fe34），为乐鑫指定的 MAC 地址的前三个字节。
 - 随机值：防止重放攻击。
 - 供应商特定内容：供应商特定内容包含供应商特定字段，如下所示：
 
@@ -39,7 +40,7 @@ ESP-NOW 使用各个供应商的动作帧传输数据，默认比特率为 1 Mbp
 
 - 元素 ID：元素 ID 字段可用于指示特定于供应商的元素。
 - 长度：长度是组织标识符、类型、版本和正文的总长度。
-- 组织标识符：组织标识符包含一个唯一标识符 (比如 0x18fe34)，为乐鑫指定的 MAC 地址的前三个字节。
+- 组织标识符：组织标识符包含一个唯一标识符（比如 0x18fe34），为乐鑫指定的 MAC 地址的前三个字节。
 - 类型：类型字段设置为 4，代表 ESP-NOW。
 - 版本：版本字段设置为 ESP-NOW 的版本。
 - 正文：正文包含 ESP-NOW 数据。
@@ -50,6 +51,7 @@ ESP-NOW 使用各个供应商的动作帧传输数据，默认比特率为 1 Mbp
 --------
 
 ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参考 IEEE Std. 802.11-2012。Wi-Fi 设备维护一个初始主密钥 (PMK) 和若干本地主密钥 (LMK)，长度均为 16 个字节。
+
     * PMK 可使用 AES-128 算法加密 LMK。请调用 :cpp:func:`esp_now_set_pmk()` 设置 PMK。如果未设置 PMK，将使用默认 PMK。
     * LMK 可通过 CCMP 方法对供应商特定的动作帧进行加密，最多拥有 6 个不同的 LMK。如果未设置配对设备的 LMK，则动作帧不进行加密。
     
@@ -59,12 +61,13 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 ------------------------------------
 
 调用 :cpp:func:`esp_now_init()` 初始化 ESP-NOW，调用  :cpp:func:`esp_now_deinit()` 反初始化 ESP-NOW。ESP-NOW 数据必须在 Wi-Fi 启动后传输，因此建议在初始化 ESP-NOW 之前启动 Wi-Fi，并在反初始化 ESP-NOW 之后停止 Wi-Fi。
+
 当调用 :cpp:func:`esp_now_deinit()` 时，配对设备的所有信息都将被删除。
 
 添加配对设备
 -----------------
 
-在将数据发送到其他设备之前，请先调用  :cpp:func:`esp_now_add_peer()` 将其添加到配对设备列表中。如果启用了加密，则必须设置 LMK。ESP-NOW 数据可以从 Station 或 Softap 接口发送。确保在发送 ESP-NOW 数据之前已启用该接口。
+在将数据发送到其他设备之前，请先调用  :cpp:func:`esp_now_add_peer()` 将其添加到配对设备列表中。如果启用了加密，则必须设置 LMK。ESP-NOW 数据可以从 Station 或 SoftAP 接口发送。确保在发送 ESP-NOW 数据之前已启用该接口。
 
 .. only:: esp32c2
 
@@ -74,7 +77,7 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 
     配对设备的最大数量是 20，其中加密设备的数量不超过 17，默认值是 7。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
-在发送广播数据之前必须添加具有广播 MAC 地址的设备。配对设备的信道范围是从 0 ～14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
+在发送广播数据之前必须添加具有广播 MAC 地址的设备。配对设备的信道范围是从 0 ~ 14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
 
 发送 ESP-NOW 数据
 -----------------
@@ -94,15 +97,15 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 
 .. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
 
-    调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESPNOW 速率。确保在配置速率之前使能接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
+    调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESP-NOW 速率。确保在配置速率之前启用接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
 
 .. only:: esp32c6
     
-    调用 :cpp:func:`esp_now_set_peer_rate_config()` 配置指定peer的 ESPNOW 速率。确保在配置速率之前添加peer。这个 API 应该在 :cpp:func:`esp_wifi_start()` 和 :cpp:func:`esp_now_add_peer()` 之后调用。
+    调用 :cpp:func:`esp_now_set_peer_rate_config()` 配置指定 peer 的 ESP-NOW 速率。确保在配置速率之前添加 peer。这个 API 应该在 :cpp:func:`esp_wifi_start()` 和 :cpp:func:`esp_now_add_peer()` 之后调用。
 
     .. note::
 
-        :cpp:func:`esp_wifi_config_espnow_rate()` 已经被废弃了，请用 :cpp:func:`esp_now_set_peer_rate_config()`
+        :cpp:func:`esp_wifi_config_espnow_rate()` 已弃用，请使用 :cpp:func:`esp_now_set_peer_rate_config()`
 
 配置 ESP-NOW 功耗参数
 ----------------------

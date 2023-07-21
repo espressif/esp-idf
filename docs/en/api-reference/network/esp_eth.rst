@@ -28,7 +28,7 @@ Ethernet is an asynchronous Carrier Sense Multiple Access with Collision Detect 
 
 Normal IEEE 802.3 compliant Ethernet frames are between 64 and 1518 bytes in length. They are made up of five or six different fields: a destination MAC address (DA), a source MAC address (SA), a type/length field, a data payload, an optional padding field and a Cyclic Redundancy Check (CRC). Additionally, when transmitted on the Ethernet medium, a 7-byte preamble field and Start-of-Frame (SOF) delimiter byte are appended to the beginning of the Ethernet packet.
 
-Thus the traffic on the twist-pair cabling will appear as shown below:
+Thus the traffic on the twist-pair cabling appears as shown below:
 
 .. rackdiag:: ../../../_static/diagrams/ethernet/data_frame_format.diag
     :caption: Ethernet Data Frame Format
@@ -41,14 +41,14 @@ The preamble contains seven bytes of ``55H``. It allows the receiver to lock ont
 
 The Start-of-Frame Delimiter (SFD) is a binary sequence ``10101011`` (as seen on the physical medium). It is sometimes considered to be part of the preamble.
 
-When transmitting and receiving data, the preamble and SFD bytes will automatically be generated or stripped from the packets.
+When transmitting and receiving data, the preamble and SFD bytes will be automatically generated or stripped from the packets.
 
 Destination Address
 ^^^^^^^^^^^^^^^^^^^
 
 The destination address field contains a 6-byte length MAC address of the device that the packet is directed to. If the Least Significant bit in the first byte of the MAC address is set, the address is a multicast destination. For example, 01-00-00-00-F0-00 and 33-45-67-89-AB-CD are multi-cast addresses, while 00-00-00-00-F0-00 and 32-45-67-89-AB-CD are not.
 
-Packets with multi-cast destination addresses are designed to arrive and be important to a selected group of Ethernet nodes. If the destination address field is the reserved multicast address, i.e. FF-FF-FF-FF-FF-FF, the packet is a broadcast packet and it will be directed to everyone sharing the network. If the Least Significant bit in the first byte of the MAC address is clear, the address is a unicast address and will be designed for usage by only the addressed node.
+Packets with multi-cast destination addresses are designed to arrive and be important to a selected group of Ethernet nodes. If the destination address field is the reserved multicast address, i.e., FF-FF-FF-FF-FF-FF, the packet is a broadcast packet and it will be directed to everyone sharing the network. If the Least Significant bit in the first byte of the MAC address is clear, the address is a unicast address and will be designed for usage by only the addressed node.
 
 Normally the EMAC controller incorporates receive filters which can be used to discard or accept packets with multi-cast, broadcast and/or unicast destination addresses. When transmitting packets, the host controller is responsible for writing the desired destination address into the transmit buffer.
 
@@ -68,12 +68,12 @@ The type/length field is a 2-byte field. If the value in this field is <= 1500 (
   * IPv6 = 86DDH
   * ARP = 0806H
 
-Users implementing proprietary networks may choose to treat this field as a length field, while applications implementing protocols such as the Internet Protocol (IP) or Address Resolution Protocol (ARP), should program this field with the appropriate type defined by the protocol’s specification when transmitting packets.
+Users implementing proprietary networks may choose to treat this field as a length field, while applications implementing protocols such as the Internet Protocol (IP) or Address Resolution Protocol (ARP), should program this field with the appropriate type defined by the protocol's specification when transmitting packets.
 
 Payload
 ^^^^^^^
 
-The payload field is a variable length field, anywhere from 0 to 1500 bytes. Larger data packets will violate Ethernet standards and will be dropped by most Ethernet nodes.
+The payload field is a variable length field, anywhere from 0 to 1500 bytes. Larger data packets violates Ethernet standards and will be dropped by most Ethernet nodes.
 
 This field contains the client data, such as an IP datagram.
 
@@ -84,12 +84,12 @@ The padding field is a variable length field added to meet the IEEE 802.3 specif
 
 The DA, SA, type, payload, and padding of an Ethernet packet must be no smaller than 60 bytes in total. If the required 4-byte FCS field is added, packets must be no smaller than 64 bytes. If the payload field is less than 46-byte long, a padding field is required.
 
-The FCS field is a 4-byte field that contains an industry-standard 32-bit CRC calculated with the data from the DA, SA, type, payload, and padding fields. Given the complexity of calculating a CRC, the hardware normally will automatically generate a valid CRC and transmit it. Otherwise, the host controller must generate the CRC and place it in the transmit buffer.
+The FCS field is a 4-byte field that contains an industry-standard 32-bit CRC calculated with the data from the DA, SA, type, payload, and padding fields. Given the complexity of calculating a CRC, the hardware normally automatically generates a valid CRC and transmit it. Otherwise, the host controller must generate the CRC and place it in the transmit buffer.
 
 Normally, the host controller does not need to concern itself with padding and the CRC which the hardware EMAC will also be able to automatically generate when transmitting and verify when receiving. However, the padding and CRC fields will be written into the receive buffer when packets arrive, so they may be evaluated by the host controller if needed.
 
 .. note::
-    Besides the basic data frame described above, there're two other common frame types in 10/100 Mbps Ethernet: control frames and VLAN-tagged frames. They're not supported in ESP-IDF.
+    Besides the basic data frame described above, there are two other common frame types in 10/100 Mbps Ethernet: control frames and VLAN-tagged frames. They are not supported in ESP-IDF.
 
 .. ------------------------------ Driver Operation --------------------------------
 
@@ -115,11 +115,11 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     In RMII mode, both the receiver and transmitter signals are referenced to the ``REF_CLK``. **REF_CLK must be stable during any access to PHY and MAC**. Generally, there are three ways to generate the ``REF_CLK`` depending on the PHY device in your design:
 
-    * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option *a* in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+    * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option **a** in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
 
-    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option *b* in the picture). In this case, you still need to select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
 
-    * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option *c* in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_OUTPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+    * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option **c** in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_OUTPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
 
     .. note::
         ``REF_CLK`` is configured via Project Configuration as described above by default. However, it can be overwritten from user application code by appropriately setting :cpp:member:`eth_esp32_emac_config_t::interface` and :cpp:member:`eth_esp32_emac_config_t::clock_config` members. See :cpp:enum:`emac_rmii_clock_mode_t` and :cpp:enum:`emac_rmii_clock_gpio_t` for more details.
@@ -127,22 +127,22 @@ The Ethernet driver is composed of two parts: MAC and PHY.
     .. warning::
         If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_OUTPUT``, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
 
-        What's more, if you're not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock. See :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
+        What is more, if you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock. See :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
 
-        If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_INPUT``, then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin won't be interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
+        If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_INPUT``, then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
 
         The ways to disable the ``REF_CLK`` signal can be:
 
-        * Disable or power down the crystal oscillator (as the case *b* in the picture).
+        * Disable or power down the crystal oscillator (as the case **b** in the picture).
 
-        * Force the PHY device to reset status (as the case *a* in the picture). **This could fail for some PHY device** (i.e. it still outputs signals to GPIO0 even in reset state).
+        * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
 
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep it away from RF devices and inductor elements.
 
     .. note::
-        ESP-IDF only supports the RMII interface (i.e. always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in the Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`).
+        ESP-IDF only supports the RMII interface (i.e., always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in the Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`).
 
-        Signals used in the data plane are fixed to specific GPIOs via MUX, they can't be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
+        Signals used in the data plane are fixed to specific GPIOs via MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
 
 You need to set up the necessary parameters for MAC and PHY respectively based on your Ethernet board design, and then combine the two together to complete the driver installation.
 
@@ -166,13 +166,13 @@ Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
 .. list::
 
-    * :cpp:member:`eth_phy_config_t::phy_addr`: multiple PHY devices can share the same SMI bus, so each PHY needs a unique address. Usually, this address is configured during hardware design by pulling up/down some PHY strapping pins. You can set the value from 0 to 15 based on your Ethernet board. Especially, if the SMI bus is shared by only one PHY device, setting this value to -1 can enable the driver to detect the PHY address automatically.
+    * :cpp:member:`eth_phy_config_t::phy_addr`: multiple PHY devices can share the same SMI bus, so each PHY needs a unique address. Usually, this address is configured during hardware design by pulling up/down some PHY strapping pins. You can set the value from ``0`` to ``15`` based on your Ethernet board. Especially, if the SMI bus is shared by only one PHY device, setting this value to ``-1`` can enable the driver to detect the PHY address automatically.
 
     * :cpp:member:`eth_phy_config_t::reset_timeout_ms`: reset timeout value, in milliseconds. Typically, PHY reset should be finished within 100 ms.
 
-    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. The Ethernet driver will start negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
+    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. The Ethernet driver starts negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
 
-    * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to -1.
+    * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to ``-1``.
 
 ESP-IDF provides a default configuration for MAC and PHY in macro :c:macro:`ETH_MAC_DEFAULT_CONFIG` and :c:macro:`ETH_PHY_DEFAULT_CONFIG`.
 
@@ -263,23 +263,23 @@ SPI-Ethernet Module
 
 
 .. note::
-    * When creating MAC and PHY instances for SPI-Ethernet modules (e.g. DM9051), the constructor function must have the same suffix (e.g. `esp_eth_mac_new_dm9051` and `esp_eth_phy_new_dm9051`). This is because we don't have other choices but the integrated PHY.
+    * When creating MAC and PHY instances for SPI-Ethernet modules (e.g., DM9051), the constructor function must have the same suffix (e.g., `esp_eth_mac_new_dm9051` and `esp_eth_phy_new_dm9051`). This is because we don not have other choices but the integrated PHY.
 
-    * The SPI device configuration (i.e. `spi_device_interface_config_t`) may slightly differ for other Ethernet modules or to meet SPI timing on specific PCB. Please check out your module's specs and the examples in ESP-IDF.
+    * The SPI device configuration (i.e., `spi_device_interface_config_t`) may slightly differ for other Ethernet modules or to meet SPI timing on specific PCB. Please check out your module's specs and the examples in ESP-IDF.
 
 
 Install Driver
 --------------
 
-To install the Ethernet driver, we need to combine the instance of MAC and PHY and set some additional high-level configurations (i.e. not specific to either MAC or PHY) in :cpp:class:`esp_eth_config_t`:
+To install the Ethernet driver, we need to combine the instance of MAC and PHY and set some additional high-level configurations (i.e., not specific to either MAC or PHY) in :cpp:class:`esp_eth_config_t`:
 
-* :cpp:member:`esp_eth_config_t::mac`: instance that created from MAC generator (e.g. :cpp:func:`esp_eth_mac_new_esp32`).
+* :cpp:member:`esp_eth_config_t::mac`: instance that created from MAC generator (e.g., :cpp:func:`esp_eth_mac_new_esp32`).
 
-* :cpp:member:`esp_eth_config_t::phy`: instance that created from PHY generator (e.g. :cpp:func:`esp_eth_phy_new_ip101`).
+* :cpp:member:`esp_eth_config_t::phy`: instance that created from PHY generator (e.g., :cpp:func:`esp_eth_phy_new_ip101`).
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
 
-* :cpp:member:`esp_eth_config_t::stack_input`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g. TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
+* :cpp:member:`esp_eth_config_t::stack_input`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
 
 * :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` and :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low-level hardware has been initialized or de-initialized.
 
@@ -293,7 +293,7 @@ ESP-IDF provides a default configuration for driver installation in macro :c:mac
     esp_eth_handle_t eth_handle = NULL; // after the driver is installed, we will get the handle of the driver
     esp_eth_driver_install(&config, &eth_handle); // install driver
 
-The Ethernet driver also includes an event-driven model, which will send useful and important events to user space. We need to initialize the event loop before installing the Ethernet driver. For more information about event-driven programming, please refer to :doc:`ESP Event <../system/esp_event>`.
+The Ethernet driver also includes an event-driven model, which sends useful and important events to user space. We need to initialize the event loop before installing the Ethernet driver. For more information about event-driven programming, please refer to :doc:`ESP Event <../system/esp_event>`.
 
 .. highlight:: c
 
@@ -347,7 +347,7 @@ After driver installation, we can start Ethernet immediately.
 Connect Driver to TCP/IP Stack
 ------------------------------
 
-Up until now, we have installed the Ethernet driver. From the view of OSI (Open System Interconnection), we're still on level 2 (i.e. Data Link Layer). While we can detect link up and down events and gain MAC address in user space, it's infeasible to obtain the IP address, let alone send an HTTP request. The TCP/IP stack used in ESP-IDF is called LwIP. For more information about it, please refer to :doc:`LwIP <../../api-guides/lwip>`.
+Up until now, we have installed the Ethernet driver. From the view of OSI (Open System Interconnection), we are still on level 2 (i.e., Data Link Layer). While we can detect link up and down events and gain MAC address in user space, it is infeasible to obtain the IP address, let alone send an HTTP request. The TCP/IP stack used in ESP-IDF is called LwIP. For more information about it, please refer to :doc:`LwIP <../../api-guides/lwip>`.
 
 To connect the Ethernet driver to TCP/IP stack, follow these three steps:
 
@@ -385,7 +385,7 @@ For more information about the network interface, please refer to :doc:`Network 
     esp_eth_start(eth_handle); // start Ethernet driver state machine
 
 .. warning::
-    It is recommended to fully initialize the Ethernet driver and network interface before registering the user's Ethernet/IP event handlers, i.e. register the event handlers as the last thing prior to starting the Ethernet driver. Such an approach ensures that Ethernet/IP events get executed first by the Ethernet driver or network interface so the system is in the expected state when executing the user's handlers.
+    It is recommended to fully initialize the Ethernet driver and network interface before registering the user's Ethernet/IP event handlers, i.e., register the event handlers as the last thing prior to starting the Ethernet driver. Such an approach ensures that Ethernet/IP events get executed first by the Ethernet driver or network interface so the system is in the expected state when executing the user's handlers.
 
 .. _misc-operation-of-driver:
 
@@ -421,7 +421,7 @@ Flow Control
 
 Ethernet on MCU usually has a limitation in the number of frames it can handle during network congestion, because of the limitation in RAM size. A sending station might be transmitting data faster than the peer end can accept it. The ethernet flow control mechanism allows the receiving node to signal the sender requesting the suspension of transmissions until the receiver catches up. The magic behind that is the pause frame, which was defined in IEEE 802.3x.
 
-Pause frame is a special Ethernet frame used to carry the pause command, whose EtherType field is 0x8808, with the Control opcode set to 0x0001. Only stations configured for full-duplex operation may send pause frames. When a station wishes to pause the other end of a link, it sends a pause frame to the 48-bit reserved multicast address of 01-80-C2-00-00-01. The pause frame also includes the period of pause time being requested, in the form of a two-byte integer, ranging from 0 to 65535.
+Pause frame is a special Ethernet frame used to carry the pause command, whose EtherType field is ``0x8808``, with the Control opcode set to ``0x0001``. Only stations configured for full-duplex operation may send pause frames. When a station wishes to pause the other end of a link, it sends a pause frame to the 48-bit reserved multicast address of ``01-80-C2-00-00-01``. The pause frame also includes the period of pause time being requested, in the form of a two-byte integer, ranging from ``0`` to ``65535``.
 
 After the Ethernet driver installation, the flow control feature is disabled by default. You can enable it by:
 
@@ -432,7 +432,7 @@ After the Ethernet driver installation, the flow control feature is disabled by 
     bool flow_ctrl_enable = true;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_FLOW_CTRL, &flow_ctrl_enable);
 
-One thing that should be kept in mind is that the pause frame ability will be advertised to the peer end by PHY during auto-negotiation. The Ethernet driver sends a pause frame only when both sides of the link support it.
+One thing that should be kept in mind is that the pause frame ability is advertised to the peer end by PHY during auto-negotiation. The Ethernet driver sends a pause frame only when both sides of the link support it.
 
 .. -------------------------------- Examples -----------------------------------
 
@@ -460,7 +460,7 @@ There are multiple PHY manufacturers with wide portfolios of chips available. Th
 Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called “MII Management Interface” to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
 
 .. note::
-    Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, it will just require more effort. You will have to define all PHY management functions.
+    Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, but it just requires more effort. You will have to define all PHY management functions.
 
 The majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/esp_eth_phy_802_3.c`. However, the following may require developing chip-specific management functions:
 

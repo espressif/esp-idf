@@ -3,7 +3,7 @@ ESP-WIFI-MESH 编程指南
 
 :link_to_translation:`en:[English]`
 
-这是 ESP-WIFI-MESH 的编程指南，包括 API 参考和编码示例。本指南分为以下部分：
+本文是 ESP-WIFI-MESH 的编程指南，包括 API 参考和编码示例。本指南分为以下部分：
 
 1. :ref:`mesh-programming-model`
 
@@ -58,6 +58,7 @@ ESP-WIFI-MESH 软件栈基于 Wi-Fi 驱动程序和 FreeRTOS 构建，某些情�
 Mesh 事件的典型应用场景包括：使用 :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` 和 :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` 事件来指示节点何时可以分别开始传输上行和下行的数据。同样，也可以使用 :cpp:enumerator:`IP_EVENT_STA_GOT_IP` 和 :cpp:enumerator:`IP_EVENT_STA_LOST_IP` 事件来指示根节点何时可以向外部 IP 网络传输数据。
 
 .. warning::
+
     在自组网模式下使用 ESP-WIFI-MESH 时，用户必须确保不得调用 Wi-Fi API。原因在于：自组网模式将在内部调用 Wi-Fi API 实现连接/断开/扫描等操作。 **此时，如果外部应用程序调用 Wi-Fi API（包括来自回调函数和 Wi-Fi 事件处理程序的调用）都可能会干扰 ESP-WIFI-MESH 的自组网行为**。因此，用户不应该在 :cpp:func:`esp_mesh_start` 和 :cpp:func:`esp_mesh_stop` 之间调用 Wi-Fi API。
 
 LwIP & ESP-WIFI-MESH
@@ -68,7 +69,7 @@ LwIP & ESP-WIFI-MESH
 **可成为根节点的每个节点都需要通过调用** :cpp:func:`esp_netif_init` **来初始化 LwIP 软件栈**。为了防止非根节点访问 LwIP，应用程序不应使用 esp_netif API 创建或注册任何网络接口。
 
 
-    ESP-WIFI-MESH 的根节点必须与路由器连接。因此，当一个节点成为根节点时，**该节点对应的处理程序必须启动 DHCP 客户端服务并立即获取 IP 地址。** 这样做将允许其他节点开始向/从外部 IP 网络发送/接收数据包。但是，如果使用静态 IP 设置，则不需要执行此步骤。
+    ESP-WIFI-MESH 的根节点必须与路由器连接。因此，当一个节点成为根节点时，**该节点对应的处理程序必须启动 DHCP 客户端服务并立即获取 IP 地址**。这样做将允许其他节点开始向/从外部 IP 网络发送/接收数据包。如果使用静态 IP 设置，则不需要执行此步骤。
 
 
 .. ---------------------- Writing a Mesh Application --------------------------
@@ -84,13 +85,13 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 
     ESP_ERROR_CHECK(esp_netif_init());
 
-    /*事件初始化*/
+    /* 事件初始化 */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    /*Wi-Fi 初始化 */
+    /* Wi-Fi 初始化 */
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&config));
-    /*注册 IP 事件处理程序 */
+    /* 注册 IP 事件处理程序 */
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -110,9 +111,9 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 
 .. code-block:: c
 
-    /*Mesh 初始化 */
+    /* Mesh 初始化 */
     ESP_ERROR_CHECK(esp_mesh_init());
-    /*注册 mesh 事件处理程序 */
+    /* 注册 mesh 事件处理程序 */
     ESP_ERROR_CHECK(esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, &mesh_event_handler, NULL));
 
 .. _mesh-configuring-mesh:
@@ -197,7 +198,7 @@ ESP-WIFI-MESH 可通过 :cpp:func:`esp_mesh_set_config` 进行配置，并使用
 - 选择首选的父节点（见 :ref:`mesh-building-a-network` 中的 **父节点选择**）
 - 网络断开时自动重新连接（见 :ref:`mesh-managing-a-network` 中的 **中间父节点失败**）
 
-启用自组网功能后，ESP-WIFI-MESH 软件栈将内部调用 Wi-Fi API。因此，**在启用自组网功能时，应用层不得调用 Wi-Fi API，否则会干扰 ESP-WIFI-MESH 的工作。**
+启用自组网功能后，ESP-WIFI-MESH 软件栈将内部调用 Wi-Fi API。因此，**在启用自组网功能时，应用层不得调用 Wi-Fi API，否则会干扰 ESP-WIFI-MESH 的工作**。
 
 开关自组网
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -262,7 +263,7 @@ ESP-WIFI-MESH 将尝试在启用自组网时保持节点的当前 Wi-Fi 状态�
 调用 Wi-Fi API
 ^^^^^^^^^^^^^^^^
 
-在有些情况下，应用程序可能希望在使用 ESP-WIFI-MESH 期间调用 Wi-Fi API。例如，应用程序可能需要手动扫描邻近的接入点 (AP)。**但在应用程序调用任何 Wi-Fi API 之前，必须先禁用自组网。** 否则，ESP-WIFI-MESH 软件栈可能会同时调用 Wi-Fi API，进而影响应用程序的正常调用。
+在有些情况下，应用程序可能希望在使用 ESP-WIFI-MESH 期间调用 Wi-Fi API。例如，应用程序可能需要手动扫描邻近的接入点 (AP)。**但在应用程序调用任何 Wi-Fi API 之前，必须先禁用自组网**。 否则，ESP-WIFI-MESH 软件栈可能会同时调用 Wi-Fi API，进而影响应用程序的正常调用。
 
 应用程序不应在 :cpp:func:`esp_mesh_set_self_organized` 之间调用 Wi-Fi API。下方代码片段展示了应用程序如何在 ESP-WIFI-MESH 运行期间安全地调用  :cpp:func:`esp_wifi_scan_start`。
 

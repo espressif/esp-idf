@@ -1,5 +1,5 @@
 ESP-WIFI-MESH Programming Guide
-===================================
+===============================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -15,7 +15,7 @@ This is a programming guide for ESP-WIFI-MESH, including the API reference and c
 
 5. :ref:`mesh-api-reference`
 
-For documentation regarding the ESP-WIFI-MESH protocol, please see the :doc:`ESP-WIFI-MESH API Guide<../../api-guides/esp-wifi-mesh>`. For more information about ESP-WIFI-MESH Development Framework, please see `ESP-WIFI-MESH Development Framework <https://github.com/espressif/esp-mdf>`_.
+For documentation regarding the ESP-WIFI-MESH protocol, please see the :doc:`ESP-WIFI-MESH API Guide <../../api-guides/esp-wifi-mesh>`. For more information about ESP-WIFI-MESH Development Framework, please see `ESP-WIFI-MESH Development Framework <https://github.com/espressif/esp-mdf>`_.
 
 
 .. ---------------------- ESP-WIFI-MESH Programming Model --------------------------
@@ -28,7 +28,7 @@ ESP-WIFI-MESH Programming Model
 Software Stack
 ^^^^^^^^^^^^^^
 
-The ESP-WIFI-MESH software stack is built atop the Wi-Fi Driver/FreeRTOS and may use the LwIP Stack in some instances (i.e. the root node). The following diagram illustrates the ESP-WIFI-MESH software stack.
+The ESP-WIFI-MESH software stack is built atop the Wi-Fi Driver/FreeRTOS and may use the LwIP Stack in some instances (i.e., the root node). The following diagram illustrates the ESP-WIFI-MESH software stack.
 
 .. _mesh-going-to-software-stack:
 
@@ -58,6 +58,7 @@ The :cpp:type:`mesh_event_id_t` defines all possible ESP-WIFI-MESH events and ca
 Typical use cases of mesh events include using events such as :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, :cpp:enumerator:`IP_EVENT_STA_GOT_IP` and :cpp:enumerator:`IP_EVENT_STA_LOST_IP` can be used to indicate when the root node can and cannot transmit data to the external IP network.
 
 .. warning::
+
     When using ESP-WIFI-MESH under self-organized mode, users must ensure that no calls to Wi-Fi API are made. This is due to the fact that the self-organizing mode will internally make Wi-Fi API calls to connect/disconnect/scan etc. **Any Wi-Fi calls from the application (including calls from callbacks and handlers of Wi-Fi events) may interfere with ESP-WIFI-MESH's self-organizing behavior**. Therefore, users should not call Wi-Fi APIs after :cpp:func:`esp_mesh_start` is called, and before :cpp:func:`esp_mesh_stop` is called.
 
 LwIP & ESP-WIFI-MESH
@@ -188,45 +189,45 @@ After starting ESP-WIFI-MESH, the application should check for ESP-WIFI-MESH eve
 
 .. _mesh-self-organized-behavior:
 
-Self Organized Networking
+Self-Organized Networking
 -------------------------
 
-Self organized networking is a feature of ESP-WIFI-MESH where nodes can autonomously scan/select/connect/reconnect to other nodes and routers. This feature allows an ESP-WIFI-MESH network to operate with high degree of autonomy by making the network robust to dynamic network topologies and conditions. With self organized networking enabled, nodes in an ESP-WIFI-MESH network are able to carry out the following actions without autonomously:
+Self-organized networking is a feature of ESP-WIFI-MESH where nodes can autonomously scan/select/connect/reconnect to other nodes and routers. This feature allows an ESP-WIFI-MESH network to operate with high degree of autonomy by making the network robust to dynamic network topologies and conditions. With self-organized networking enabled, nodes in an ESP-WIFI-MESH network are able to carry out the following actions without autonomously:
 
 - Selection or election of the root node (see **Automatic Root Node Selection** in :ref:`mesh-building-a-network`)
 - Selection of a preferred parent node (see **Parent Node Selection** in :ref:`mesh-building-a-network`)
 - Automatic reconnection upon detecting a disconnection (see **Intermediate Parent Node Failure** in :ref:`mesh-managing-a-network`)
 
-When self organized networking is enabled, the ESP-WIFI-MESH stack will internally make calls to Wi-Fi APIs. Therefore, **the application layer should not make any calls to Wi-Fi APIs whilst self organized networking is enabled as doing so would risk interfering with ESP-WIFI-MESH**.
+When self-organized networking is enabled, the ESP-WIFI-MESH stack will internally make calls to Wi-Fi APIs. Therefore, **the application layer should not make any calls to Wi-Fi APIs whilst self-organized networking is enabled as doing so would risk interfering with ESP-WIFI-MESH**.
 
-Toggling Self Organized Networking
+Toggling Self-Organized Networking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Self organized networking can be enabled or disabled by the application at runtime by calling the :cpp:func:`esp_mesh_set_self_organized` function. The function has the two following parameters: 
+Self-organized networking can be enabled or disabled by the application at runtime by calling the :cpp:func:`esp_mesh_set_self_organized` function. The function has the two following parameters:
 
-- ``bool enable`` specifies whether to enable or disable self organized networking.
+- ``bool enable`` specifies whether to enable or disable self-organized networking.
 
-- ``bool select_parent`` specifies whether a new parent node should be selected when enabling self organized networking. Selecting a new parent has different effects depending the node type and the node's current state. This parameter is unused when disabling self organized networking.
+- ``bool select_parent`` specifies whether a new parent node should be selected when enabling self-organized networking. Selecting a new parent has different effects depending the node type and the node's current state. This parameter is unused when disabling self-organized networking.
 
-Disabling Self Organized Networking
+Disabling Self-Organized Networking
 """""""""""""""""""""""""""""""""""
-The following code snippet demonstrates how to disable self organized networking.
+The following code snippet demonstrates how to disable self-organized networking.
 
 .. code-block:: c
 
-    //Disable self organized networking
+    //Disable self-organized networking
     esp_mesh_set_self_organized(false, false);
 
-ESP-WIFI-MESH will attempt to maintain the node's current Wi-Fi state when disabling self organized networking.
+ESP-WIFI-MESH will attempt to maintain the node's current Wi-Fi state when disabling self-organized networking.
 
 - If the node was previously connected to other nodes, it will remain connected.
 - If the node was previously disconnected and was scanning for a parent node or router, it will stop scanning.
 - If the node was previously attempting to reconnect to a parent node or router, it will stop reconnecting.
 
-Enabling Self Organized Networking
+Enabling Self-Organized Networking
 """"""""""""""""""""""""""""""""""
 
-ESP-WIFI-MESH will attempt to maintain the node's current Wi-Fi state when enabling self organized networking. However, depending on the node type and whether a new parent is selected, the Wi-Fi state of the node can change. The following table shows effects of enabling self organized networking.
+ESP-WIFI-MESH will attempt to maintain the node's current Wi-Fi state when enabling self-organized networking. However, depending on the node type and whether a new parent is selected, the Wi-Fi state of the node can change. The following table shows effects of enabling self-organized networking.
 
 +---------------+--------------+------------------------------------------------------------------------------------------------------------------+
 | Select Parent | Is Root Node | Effects                                                                                                          |
@@ -244,16 +245,16 @@ ESP-WIFI-MESH will attempt to maintain the node's current Wi-Fi state when enabl
 |               |              |   disconnect from the router and all child nodes, select a preferred parent node, and connect.                   |
 +---------------+--------------+------------------------------------------------------------------------------------------------------------------+
 
-The following code snipping demonstrates how to enable self organized networking.
+The following code snipping demonstrates how to enable self-organized networking.
 
 .. code-block:: c
 
-    //Enable self organized networking and select a new parent
+    //Enable self-organized networking and select a new parent
     esp_mesh_set_self_organized(true, true);
 
     ...
 
-    //Enable self organized networking and manually reconnect
+    //Enable self-organized networking and manually reconnect
     esp_mesh_set_self_organized(true, false);
     esp_mesh_connect();
 
@@ -261,13 +262,13 @@ The following code snipping demonstrates how to enable self organized networking
 Calling Wi-Fi API
 ^^^^^^^^^^^^^^^^^
 
-There can be instances in which an application may want to directly call Wi-Fi API whilst using ESP-WIFI-MESH. For example, an application may want to manually scan for neighboring APs. However, **self organized networking must be disabled before the application calls any Wi-Fi APIs**. This will prevent the ESP-WIFI-MESH stack from attempting to call any Wi-Fi APIs and potentially interfering with the application's calls.
+There can be instances in which an application may want to directly call Wi-Fi API whilst using ESP-WIFI-MESH. For example, an application may want to manually scan for neighboring APs. However, **self-organized networking must be disabled before the application calls any Wi-Fi APIs**. This will prevent the ESP-WIFI-MESH stack from attempting to call any Wi-Fi APIs and potentially interfering with the application's calls.
 
-Therefore, application calls to Wi-Fi APIs should be placed in between calls of :cpp:func:`esp_mesh_set_self_organized` which disable and enable self organized networking. The following code snippet demonstrates how an application can safely call :cpp:func:`esp_wifi_scan_start` whilst using ESP-WIFI-MESH.
+Therefore, application calls to Wi-Fi APIs should be placed in between calls of :cpp:func:`esp_mesh_set_self_organized` which disable and enable self-organized networking. The following code snippet demonstrates how an application can safely call :cpp:func:`esp_wifi_scan_start` whilst using ESP-WIFI-MESH.
 
 .. code-block:: c
 
-    //Disable self organized networking
+    //Disable self-organized networking
     esp_mesh_set_self_organized(0, 0);
 
     //Stop any scans already in progress
@@ -279,18 +280,18 @@ Therefore, application calls to Wi-Fi APIs should be placed in between calls of 
 
     ...
 
-    //Re-enable self organized networking if still connected
+    //Re-enable self-organized networking if still connected
     esp_mesh_set_self_organized(1, 0);
 
     ...
 
-    //Re-enable self organized networking if non-root and disconnected
+    //Re-enable self-organized networking if non-root and disconnected
     esp_mesh_set_self_organized(1, 1);
 
     ...
 
-    //Re-enable self organized networking if root and disconnected
-    esp_mesh_set_self_organized(1, 0);  //Don't select new parent
+    //Re-enable self-organized networking if root and disconnected
+    esp_mesh_set_self_organized(1, 0);  //Do not select new parent
     esp_mesh_connect();                 //Manually reconnect to router
 
 
