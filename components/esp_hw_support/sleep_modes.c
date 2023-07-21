@@ -579,6 +579,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     bool deep_sleep = (mode == ESP_SLEEP_MODE_DEEP_SLEEP);
     bool should_skip_sleep = false;
 
+#if CONFIG_ESP_SLEEP_DEBUG
+    // The following three logs are used to confirm whether the digital domain and modem are powered off.
+    // Some CI tests depend on these three logs and it is best not to modify them.
+    ESP_EARLY_LOGD(TAG, "pd_lags %lu", pd_flags);
+    ESP_EARLY_LOGD(TAG, "PMU_SLEEP_PD_TOP: %s", (pd_flags & PMU_SLEEP_PD_TOP) ? "True":"False");
+    ESP_EARLY_LOGD(TAG, "PMU_SLEEP_PD_MODEM: %s", (pd_flags & PMU_SLEEP_PD_MODEM) ? "True":"False");
+#endif
+
     int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
 
 #if SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256

@@ -576,6 +576,8 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         ocf.clean_buffer(sleepy_device)
         sleepy_device.serial.hard_reset()
         sleepy_device.expect('detached -> child', timeout=20)
+        sleepy_device.expect('PMU_SLEEP_PD_TOP: True', timeout=10)
+        sleepy_device.expect('PMU_SLEEP_PD_MODEM: True', timeout=20)
         ocf.clean_buffer(sleepy_device)
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
         assert 'rst:' not in str(output) and 'boot:' not in str(output)

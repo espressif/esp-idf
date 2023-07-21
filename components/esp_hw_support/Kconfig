@@ -164,6 +164,12 @@ menu "Hardware Settings"
                 only for code quality inspection. Enabling it will increase the time overhead of entering
                 and exiting sleep. It is not recommended to enable it in the release version.
 
+        config ESP_SLEEP_DEBUG
+            bool "esp sleep debug"
+            default n
+            help
+                Enable esp sleep debug.
+
     endmenu
 
     menu "ESP_SLEEP_WORKAROUND"
