@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,6 +152,10 @@ void startup_resume_other_cores(void)
 
 void IRAM_ATTR call_start_cpu1(void)
 {
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif  //#if SOC_BRANCH_PREDICTOR_SUPPORTED
+
     esp_cpu_intr_set_ivt_addr(&_vector_table);
 
     ets_set_appcpu_boot_addr(0);
@@ -317,6 +321,9 @@ void IRAM_ATTR call_start_cpu0(void)
     );
 #endif
 
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
     // Move exception vectors to IRAM
     esp_cpu_intr_set_ivt_addr(&_vector_table);
 

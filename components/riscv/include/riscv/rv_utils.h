@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -228,6 +228,17 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 
     return (old_value == compare_value);
 }
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
+{
+#define MHCR 0x7c1
+#define MHCR_RS (1<<4)   /* R/W, address return stack set bit */
+#define MHCR_BFE (1<<5)  /* R/W, allow predictive jump set bit */
+#define MHCR_BTB (1<<12) /* R/W, branch target prediction enable bit */
+    RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+}
+#endif
 
 #ifdef __cplusplus
 }
