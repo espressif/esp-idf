@@ -2,10 +2,11 @@
 #
 # Create a NVS image of the specified CSV on the host during build and
 # optionally have the created image flashed using `idf.py flash`
-function(nvs_create_partition_image partition csv_file)
+function(nvs_create_partition_image partition csv)
     set(options FLASH_IN_PROJECT)
     set(one VERSION)
-    cmake_parse_arguments(arg "${options}" "${one}" "" "${ARGN}")
+    set(multi DEPENDS)
+    cmake_parse_arguments(arg "${options}" "${one}" "${multi}" "${ARGN}")
 
     # Default to version 2
     if(NOT DEFINED arg_VERSION)
@@ -18,7 +19,7 @@ function(nvs_create_partition_image partition csv_file)
         ${idf_path}/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
        )
 
-    get_filename_component(csv_file_full_path ${csv_file} ABSOLUTE)
+    get_filename_component(csv_full_path ${csv} ABSOLUTE)
 
     partition_table_get_partition_info(size "--partition-name ${partition}" "size")
     partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")
@@ -27,17 +28,16 @@ function(nvs_create_partition_image partition csv_file)
         set(image_file ${CMAKE_BINARY_DIR}/${partition}.bin)
 
         add_custom_target(
-          nvs_${partition}_bin ALL
-          COMMAND ${nvs_partition_gen_py} generate --version ${arg_VERSION}
-                  ${csv_file_full_path} ${image_file} ${size}
-          DEPENDS ${csv_file_full_path}
-          )
+            nvs_${partition}_bin ALL
+            COMMAND ${nvs_partition_gen_py} generate --version ${arg_VERSION} ${csv_full_path} ${image_file} ${size}
+            DEPENDS ${csv_full_path} ${arg_DEPENDS}
+           )
 
         set_property(
-          DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-          APPEND
-          PROPERTY ADDITIONAL_CLEAN_FILES ${image_file}
-          )
+            DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            APPEND
+            PROPERTY ADDITIONAL_CLEAN_FILES ${image_file}
+           )
 
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
         idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
