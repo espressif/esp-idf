@@ -389,7 +389,6 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
         aes_hal_gcm_calc_hash(ctx->H);
 
         esp_aes_release_hardware();
-
         gcm_gen_table(ctx);
     }
 
@@ -454,7 +453,10 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
     }
 
     /* Output = GCTR(J0, Input): Encrypt/Decrypt the input */
-    esp_aes_crypt_ctr(&ctx->aes_ctx, length, &nc_off, nonce_counter, stream, input, output);
+    int ret = esp_aes_crypt_ctr(&ctx->aes_ctx, length, &nc_off, nonce_counter, stream, input, output);
+    if (ret != 0) {
+        return ret;
+    }
 
     /* ICB gets auto incremented after GCTR operation here so update the context */
     memcpy(ctx->J0, nonce_counter, AES_BLOCK_BYTES);
@@ -489,9 +491,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     esp_gcm_ghash(ctx, len_block, AES_BLOCK_BYTES, ctx->ghash);
 
     /* Tag T = GCTR(J0, ) where T is truncated to tag_len */
-    esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, stream, ctx->ghash, tag);
-
-    return 0;
+    return esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, stream, ctx->ghash, tag);
 }
 
 /* Due to restrictions in the hardware (e.g. need to do the whole conversion in one go),
@@ -657,6 +657,10 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
     aes_hal_gcm_set_j0(ctx->J0);
 
     ret = esp_aes_process_dma_gcm(&ctx->aes_ctx, input, output, length, aad_head_desc, aad_len);
+    if (ret != 0) {
+        esp_aes_release_hardware();
+        return ret;
+    }
 
     aes_hal_gcm_read_tag(tag, tag_len);
 
