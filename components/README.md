@@ -1,4 +1,3 @@
-
 # Core Components
 
 ## Overview
@@ -9,16 +8,9 @@ This document contains details about what the core components are, what they con
 
 The core components are organized into two groups.
 
-The first group (referred to as `G0` from now on) contains `hal`, `xtensa` and `riscv` (referred to as `arch` components from now on), `esp_rom`, `esp_common`, and `soc`. This
-group contain information about and low-level access to underlying hardware; or in the case of `esp_common`, hardware-agnostic code and utilities.
-These components can depend on each other, but as much as possible have no dependencies outside the group. The reason for this is that, due to the
-nature of what these components contain, the likelihood is high that a lot of other components will require these. Ideally, then, the dependency
-relationship only goes one way. This makes it easier for these components, as a group, to be usable in another project. One can conceivably implement
-a competing SDK to ESP-IDF on top of these components.
+The first group (referred to as `G0`) includes `hal`, `arch` (where `arch` is either `riscv` or `xtensa` depending on the chip), `esp_rom`, `esp_common`, and `soc`. This group contains information about and provides low-level access to the underlying hardware. In the case of `esp_common`, it contains hardware-agnostic code and utilities. These components may have dependencies on each other within the group, but outside dependencies should be minimized. The reason for this approach is that these components are fundamental, and many other components may require them. Ideally, the dependency relationship only goes one way, making it easier for this group to be usable in other projects.
 
-The second group (referred to as `G1` from now on) sits at a higher level than the first group. This group contains the components `esp_hw_support`, `esp_system`, `newlib`, `spi_flash`,
-`freertos`, `log`, and `heap`. Like the first group, circular dependencies within the group are allowed; and being at a higher level, dependency on the first group
-is allowed. These components represent software mechanisms essential to building other components.
+The second group (referred to as `G1`) operates at a higher level than the first group. `G1` includes the components `esp_hw_support`, `esp_system`, `newlib`, `spi_flash`, `freertos`, `log`, and `heap`. Like the first group, circular dependencies within this group are allowed, and these components can have dependencies on the first group. G1 components represent essential software mechanisms for building other components.
 
 ## Descriptions
 
@@ -33,7 +25,7 @@ into routines that achieve a meaningful action or state of the peripheral.
 
 Example:
 
-- `spi_flash_ll_set_address` is a low-level function part of the hardware abstraction `spi_flash_hal_read_block`
+-   `spi_flash_ll_set_address` is a low-level function part of the hardware abstraction `spi_flash_hal_read_block`
 
 #### `arch`
 
@@ -42,9 +34,9 @@ This can also contain files provided by the architecture vendor.
 
 Example:
 
-- `xt_set_exception_handler`
-- `rv_utils_intr_enable`
-- `ERI_PERFMON_MAX`
+-   `xt_set_exception_handler`
+-   `rv_utils_intr_enable`
+-   `ERI_PERFMON_MAX`
 
 #### `esp_common`
 
@@ -52,9 +44,9 @@ Contains hardware-agnostic definitions, constants, macros, utilities, 'pure' and
 
 Example:
 
-- `BIT(nr)` and other bit manipulation utilities in the future
-- `IDF_DEPRECATED(REASON)`
-- `ESP_IDF_VERSION_MAJOR`
+-   `BIT(nr)` and other bit manipulation utilities in the future
+-   `IDF_DEPRECATED(REASON)`
+-   `ESP_IDF_VERSION_MAJOR`
 
 #### `soc`
 
@@ -62,9 +54,9 @@ Contains description of the underlying hardware: register structure, addresses, 
 
 Example:
 
-- `DR_REG_DPORT_BASE`
-- `SOC_MCPWM_SUPPORTED`
-- `uart_dev_s`
+-   `DR_REG_DPORT_BASE`
+-   `SOC_MCPWM_SUPPORTED`
+-   `uart_dev_s`
 
 #### `esp_rom`
 
@@ -72,8 +64,8 @@ Contains headers, linker scripts, abstraction layer, patches, and other related 
 
 Example:
 
-- `esp32.rom.eco3.ld`
-- `rom/aes.h`
+-   `esp32.rom.eco3.ld`
+-   `rom/aes.h`
 
 ### `G1` Components
 
@@ -99,16 +91,16 @@ Some functions n the standard library are implemented here, especially those nee
 
 Example:
 
-- `malloc` is implemented in terms of the component `heap`'s functions
-- `gettimeofday` is implemented in terms of system time in `esp_system`
+-   `malloc` is implemented in terms of the component `heap`'s functions
+-   `gettimeofday` is implemented in terms of system time in `esp_system`
 
 #### `esp_mm`
 
 Memory management. Currently, this encompasses:
 
-- Memory mapping for MMU supported memories
-- Memory synchronisation via Cache
-- Utils such as APIs to convert between virtual address and physical address
+-   Memory mapping for MMU supported memories
+-   Memory synchronisation via Cache
+-   Utils such as APIs to convert between virtual address and physical address
 
 #### `esp_psram`
 
@@ -120,10 +112,10 @@ Contains implementation of system services and controls system behavior. The imp
 here may take hardware resources and/or decide on a hardware state needed for support of a system service/feature/mechanism.
 Currently, this encompasses the following, but not limited to:
 
-- Startup and initialization
-- Panic and debug
-- Reset and reset reason
-- Task and interrupt watchdogs
+-   Startup and initialization
+-   Panic and debug
+-   Reset and reset reason
+-   Task and interrupt watchdogs
 
 #### `esp_hw_support`
 
@@ -131,19 +123,19 @@ Contains implementations that provide hardware operations, arbitration, or resou
 is used in the system. Unlike `esp_system`, implementations here do not decide on a hardware state or takes hardware resource, acting
 merely as facilitator to hardware access. Currently, this encompasses the following, but not limited to:
 
-- Interrupt allocation
-- Sleep functions
-- Memory functions (external SPIRAM, async memory, etc.)
-- Clock and clock control
-- Random generation
-- CPU utilities
-- MAC settings
+-   Interrupt allocation
+-   Sleep functions
+-   Memory functions (external SPIRAM, async memory, etc.)
+-   Clock and clock control
+-   Random generation
+-   CPU utilities
+-   MAC settings
 
 ### `esp_hw_support` vs `esp_system`
 
 This section details list some implementations and the reason for placing it in either `esp_hw_support` or `esp_system`.
 
-#### `task_wdt.c` (`esp_system`) vs  `intr_alloc.c` (`esp_hw_support`)
+#### `task_wdt.c` (`esp_system`) vs `intr_alloc.c` (`esp_hw_support`)
 
 The task watchdog fits the definition of taking and configuring hardware resources (wdt, interrupt) for implementation of a system service/mechanism.
 
