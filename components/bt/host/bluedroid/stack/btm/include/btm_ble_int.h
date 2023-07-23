@@ -482,6 +482,7 @@ BOOLEAN btm_random_pseudo_to_identity_addr(BD_ADDR random_pseudo, UINT8 *p_stati
 void btm_ble_refresh_peer_resolvable_private_addr(BD_ADDR pseudo_bda, BD_ADDR rra, UINT8 rra_type);
 void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr, BD_ADDR local_rpa);
 void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len) ;
+void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len) ;
 void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len);
