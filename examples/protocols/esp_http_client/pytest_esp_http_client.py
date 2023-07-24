@@ -11,7 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.ethernet
+@pytest.mark.httpbin
 def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     """
     steps: |
@@ -57,7 +57,11 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.parametrize('config', [pytest.param('ssldyn', marks=[pytest.mark.supported_targets, pytest.mark.ethernet]),], indirect=True)
+@pytest.mark.supported_targets
+@pytest.mark.httpbin
+@pytest.mark.parametrize('config', [
+    'ssldyn',
+], indirect=True)
 def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
     # check and log bin size
