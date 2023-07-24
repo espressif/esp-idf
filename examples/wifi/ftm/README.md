@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- |
 
 # FTM Example
 
@@ -43,6 +43,7 @@ ftm>
 ```
 
 Use `help` to get a list of available commands and options. Use `scan` command to scan for AP's that support FTM Responder mode. Before initiating FTM with an external AP, make sure that `FTM Responder` tag is visible in the respective scan result entry. Alternatively, start SoftAP on another device using `ap` command, it supports FTM Responder by default. If external FTM Initiators get a large error in distance readings with the SoftAP, note down the reading at zero distance in centimeters, say `cm0`. This distance can be offset using command `ftm -R -o <cm0>` to give accurate readings with the Initiator.
+It is recommended to keep SoftAP bandwidth at 20MHz as it gives more accurate results.
 
 ```bash
 ftm> scan
