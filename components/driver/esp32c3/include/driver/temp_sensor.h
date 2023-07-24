@@ -31,6 +31,21 @@ typedef enum {
     TSENS_DAC_DEFAULT = TSENS_DAC_L2,
 } temp_sensor_dac_offset_t;
 
+typedef struct {
+    int index;
+    int offset;
+    int set_val;
+    int range_min;
+    int range_max;
+    int error_max;
+} tsens_dac_offset_t;
+
+extern const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX];
+
+#define TSENS_ADC_FACTOR  (0.4386)
+#define TSENS_DAC_FACTOR  (27.88)
+#define TSENS_SYS_OFFSET  (20.52)
+
 /**
  * @brief Configuration for temperature sensor reading
  */

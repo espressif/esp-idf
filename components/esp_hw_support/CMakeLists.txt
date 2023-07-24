@@ -9,6 +9,8 @@ set(srcs "compare_set.c" "cpu_util.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "clk_ctrl_os.c"
                      "regi2c_ctrl.c")
+
+    list(APPEND requires driver freertos)
 endif()
 
 idf_component_register(SRCS ${srcs}

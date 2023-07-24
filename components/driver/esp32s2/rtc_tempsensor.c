@@ -38,20 +38,8 @@ static const char *TAG = "tsens";
     }                                                                   \
 })
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
-#define TSENS_ADC_FACTOR  (0.4386)
-#define TSENS_DAC_FACTOR  (27.88)
-#define TSENS_SYS_OFFSET  (20.52)
 
-typedef struct {
-    int index;
-    int offset;
-    int set_val;
-    int range_min;
-    int range_max;
-    int error_max;
-} tsens_dac_offset_t;
-
-static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
+const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     /*     DAC     Offset reg_val  min  max  error */
     {TSENS_DAC_L0,   -2,     5,    50,  125,   3},
     {TSENS_DAC_L1,   -1,     7,    20,  100,   2},
