@@ -123,13 +123,30 @@ set sleep_init default param
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  6
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
-#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP 0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
+
+#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
+#define RTC_CNTL_BIASSLP_MONITOR_ON  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
+#define RTC_CNTL_PD_CUR_MONITOR_ON  0
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_DEEPSLEEP_0V7 RTC_CNTL_DBIAS_1V25
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V9   5
+#define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V9   4
+#define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V75   0
+#define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V75   1
 
 #define APLL_SDM_STOP_VAL_1         0x09
 #define APLL_SDM_STOP_VAL_2_REV0    0x69
@@ -674,50 +691,19 @@ typedef struct {
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
-    uint32_t dig_dbias_wak : 3;         //!< set bias for digital domain, in active mode
     uint32_t dig_dbias_slp : 3;         //!< set bias for digital domain, in sleep mode
-    uint32_t rtc_dbias_wak : 3;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
+    uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
+    uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
+    uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
+    uint32_t pd_cur_monitor : 1;        //!< circuit control parameter, in monitor mode
+    uint32_t pd_cur_slp : 1;            //!< circuit control parameter, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
+    uint32_t rtc_regulator_fpu  : 1;    //!< keep rtc regulator powered up in sleep
     uint32_t deep_slp_reject : 1;
     uint32_t light_slp_reject : 1;
 } rtc_sleep_config_t;
-
-/**
- * Default initializer for rtc_sleep_config_t
- *
- * This initializer sets all fields to "reasonable" values (e.g. suggested for
- * production use) based on a combination of RTC_SLEEP_PD_x flags.
- *
- * @param RTC_SLEEP_PD_x flags combined using bitwise OR
- */
-#define is_dslp(pd_flags)   ((pd_flags) & RTC_SLEEP_PD_DIG)
-#define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
-    .lslp_mem_inf_fpu = 0, \
-    .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0, \
-    .rtc_fastmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_FAST_MEM) ? 1 : 0, \
-    .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0, \
-    .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0, \
-    .wifi_pd_en = ((sleep_flags) & RTC_SLEEP_PD_WIFI) ? 1 : 0, \
-    .int_8m_pd_en = ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
-    .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
-    .wdt_flashboot_mod_en = 0, \
-    .dig_dbias_wak = RTC_CNTL_DIG_DBIAS_1V10, \
-    .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DIG_DBIAS_0V90 \
-                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DIG_DBIAS_1V10 \
-                   : !((sleep_flags) & RTC_SLEEP_PD_XTAL)   ? RTC_CNTL_DIG_DBIAS_1V10 \
-                   : RTC_CNTL_DIG_DBIAS_0V90, \
-    .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_1V00 \
-                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
-                   : !((sleep_flags) & RTC_SLEEP_PD_XTAL)   ? RTC_CNTL_DBIAS_1V10 \
-                   : RTC_CNTL_DBIAS_1V00, \
-    .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
-    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
-    .deep_slp_reject = 1, \
-    .light_slp_reject = 1 \
-};
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
 #define RTC_SLEEP_PD_RTC_PERIPH         BIT(1)  //!< Power down RTC peripherals
@@ -728,6 +714,21 @@ typedef struct {
 #define RTC_SLEEP_PD_WIFI               BIT(6)
 #define RTC_SLEEP_PD_INT_8M             BIT(7)  //!< Power down Internal 8M oscillator
 #define RTC_SLEEP_PD_XTAL               BIT(8)  //!< Power down main XTAL
+
+//These flags are not power domains, but will affect some sleep parameters
+#define RTC_SLEEP_DIG_USE_8M            BIT(16)
+#define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
+#define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
+
+/**
+ * Default initializer for rtc_sleep_config_t
+ *
+ * This initializer sets all fields to "reasonable" values (e.g. suggested for
+ * production use) based on a combination of RTC_SLEEP_PD_x flags.
+ *
+ * @param RTC_SLEEP_PD_x flags combined using bitwise OR
+ */
+void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_config);
 
 /**
  * @brief Prepare the chip to enter sleep mode

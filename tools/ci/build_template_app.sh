@@ -72,7 +72,6 @@ build_stage2() {
     CONFIG_STR=$(get_config_str sdkconfig.ci.*=)
     search_cmake esp32 ${CONFIG_STR}
     search_cmake esp32s2 ${CONFIG_STR}
-    search_cmake esp32s3 ${CONFIG_STR}
     search_cmake esp32c3 ${CONFIG_STR}
 
     CONFIG_STR=$(get_config_str sdkconfig.ci.*= sdkconfig.ci2.*=)
@@ -84,7 +83,6 @@ build_stage2() {
     search_make esp32 ${CONFIG_STR}
     search_cmake esp32 ${CONFIG_STR}
     search_cmake esp32s2 ${CONFIG_STR}
-    search_cmake esp32s3 ${CONFIG_STR}
     search_cmake esp32c3 ${CONFIG_STR}
 
     # Override EXTRA_CFLAGS and EXTRA_CXXFLAGS in the environment
@@ -97,7 +95,6 @@ build_stage1() {
     CONFIG_STR=$(get_config_str sdkconfig.ci2.*=)
     search_cmake esp32 ${CONFIG_STR}
     search_cmake esp32s2 ${CONFIG_STR}
-    search_cmake esp32s3 ${CONFIG_STR}
     search_cmake esp32c3 ${CONFIG_STR}
 
     build
