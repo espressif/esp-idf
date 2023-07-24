@@ -32,10 +32,8 @@
 #if SOC_LP_AON_SUPPORTED
 #include "hal/lp_aon_hal.h"
 #else
-#if !CONFIG_IDF_TARGET_ESP32H2
 #include "hal/rtc_cntl_ll.h"
 #include "hal/rtc_hal.h"
-#endif
 #endif
 
 #include "driver/uart.h"
@@ -90,6 +88,7 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#include "hal/gpio_ll.h"
 #endif
 
 #if SOC_LP_TIMER_SUPPORTED
@@ -260,7 +259,6 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2
 #if SOC_RTC_FAST_MEM_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
@@ -366,7 +364,6 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
 #endif // SOC_RTC_FAST_MEM_SUPPORTED
-#endif // !CONFIG_IDF_TARGET_ESP32H2
 
 void esp_deep_sleep(uint64_t time_in_us)
 {
@@ -641,7 +638,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
     }
 #endif
-
     misc_modules_sleep_prepare(deep_sleep);
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -681,7 +677,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     if (periph_using_8m) {
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
-
     // Enter sleep
     esp_err_t result;
 #if SOC_PMU_SUPPORTED
@@ -721,7 +716,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_isolate_digital_gpio();
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
             esp_set_deep_sleep_wake_stub_default_entry();
             // Enter Deep Sleep
@@ -742,9 +736,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-#else  // !CONFIG_IDF_TARGET_ESP32H2
-            result = ESP_OK;
-#endif // !CONFIG_IDF_TARGET_ESP32H2
         } else {
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
@@ -1425,20 +1416,23 @@ static void ext1_wakeup_prepare(void)
         rtcio_hal_function_select(rtc_pin, RTCIO_FUNC_RTC);
         // set input enable in sleep mode
         rtcio_hal_input_enable(rtc_pin);
-#endif
-
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
         // Pad configuration depends on RTC_PERIPH state in sleep mode
         if (s_config.domain[ESP_PD_DOMAIN_RTC_PERIPH].pd_option != ESP_PD_OPTION_ON) {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-            // RTC_PERIPH will be powered down, so RTC_IO_ registers will
-            // loose their state. Lock pad configuration.
-            // Pullups/pulldowns also need to be disabled.
-            rtcio_hal_pullup_disable(rtc_pin);
-            rtcio_hal_pulldown_disable(rtc_pin);
-#endif
             rtcio_hal_hold_enable(rtc_pin);
         }
+#endif
+#else
+        /* ESP32H2 use hp iomux to config rtcio, and there is no complete
+        * rtcio functionality. In the case of EXT1 wakeup, rtcio only provides
+        * a pathway to EXT1. */
+
+        // Route pad to DIGITAL
+        rtcio_hal_function_select(rtc_pin, RTCIO_FUNC_DIGITAL);
+        // set input enable
+        gpio_ll_input_enable(&GPIO, gpio);
+        // hold rtc_pin to use it during sleep state
+        rtcio_hal_hold_enable(rtc_pin);
 #endif
         // Keep track of pins which are processed to bail out early
         rtc_gpio_mask &= ~BIT(rtc_pin);
@@ -1446,7 +1440,7 @@ static void ext1_wakeup_prepare(void)
 
     // Clear state from previous wakeup
     rtc_hal_ext1_clear_wakeup_status();
-    // Set RTC IO pins and mode (any high, all low) to be used for wakeup
+    // Set RTC IO pins and mode to be used for wakeup
     rtc_hal_ext1_set_wakeup_pins(s_config.ext1_rtc_gpio_mask, s_config.ext1_trigger_mode);
 }
 
@@ -1476,20 +1470,14 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
 {
-#if CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
-    return 0;
-#else
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO) {
         return 0;
     }
-
     return rtc_hal_gpio_get_wakeup_status();
-#endif // !CONFIG_IDF_TARGET_ESP32H2
 }
 
 static void gpio_deep_sleep_wakeup_prepare(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-6268
     for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++) {
         if (((1ULL << gpio_idx) & s_config.gpio_wakeup_mask) == 0) {
             continue;
@@ -1505,7 +1493,6 @@ static void gpio_deep_sleep_wakeup_prepare(void)
     }
     // Clear state from previous wakeup
     rtc_hal_gpio_clear_wakeup_status();
-#endif // !CONFIG_IDF_TARGET_ESP32H2
 }
 
 esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode)
