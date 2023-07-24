@@ -941,3 +941,24 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
     spi_flash_restore_cache(0, 0); // TODO cache_value should be non-zero
 #endif
 }
+
+#if CONFIG_IDF_TARGET_ESP32S3
+/*protect cache opreation*/
+static spinlock_t cache_op_lock = SPINLOCK_INITIALIZER;
+
+IRAM_ATTR void esp_cache_op_lock(void)
+{
+    portENTER_CRITICAL_SAFE(&cache_op_lock);
+}
+
+IRAM_ATTR void esp_cache_op_unlock(void)
+{
+    portEXIT_CRITICAL_SAFE(&cache_op_lock);
+}
+
+IRAM_ATTR void esp_cache_op_lock_init(void)
+{
+    rom_cache_op_cb.start = esp_cache_op_lock;
+    rom_cache_op_cb.end = esp_cache_op_unlock;
+}
+#endif// CONFIG_IDF_TARGET_ESP32S3

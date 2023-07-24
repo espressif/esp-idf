@@ -338,6 +338,10 @@ void IRAM_ATTR call_start_cpu0(void)
     extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways, uint8_t cfg_cache_line_size);
     rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE, CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS, CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
     Cache_Resume_DCache(0);
+
+    /*add lock to protect cache operation*/
+    extern void esp_cache_op_lock_init(void);
+    esp_cache_op_lock_init();
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
     if (esp_efuse_check_errors() != ESP_OK) {
