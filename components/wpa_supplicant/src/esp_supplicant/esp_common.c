@@ -184,6 +184,15 @@ static void register_action_frame(struct wpa_supplicant *wpa_s)
 }
 
 #endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
+
+void esp_supplicant_unset_all_appie(void)
+{
+   uint8_t appie;
+   for (appie = WIFI_APPIE_PROBEREQ; appie < WIFI_APPIE_RAM_MAX; appie++) {
+        esp_wifi_unset_appie_internal(appie);
+   }
+}
+
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 				   u32 rssi, u8 channel, u64 current_tsf)
 {
