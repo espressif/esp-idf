@@ -71,7 +71,9 @@ static void ot_task_worker(void *aContext)
 
 #if CONFIG_OPENTHREAD_BR_AUTO_START
     ESP_ERROR_CHECK(esp_openthread_border_router_init());
-    ESP_ERROR_CHECK(esp_openthread_auto_start(NULL));
+    otOperationalDatasetTlvs dataset;
+    otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
+    ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
 #endif // CONFIG_OPENTHREAD_BR_AUTO_START
 
     esp_cli_custom_command_init();
