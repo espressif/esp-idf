@@ -14,63 +14,32 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Initialise SAR related peripheral register settings
- * Should only be used when running into app stage
+ * @brief Acquire the temperature sensor power
  */
-void sar_periph_ctrl_init(void);
-
-
-/*------------------------------------------------------------------------------
-* ADC Power
-*----------------------------------------------------------------------------*/
-/**
- * @brief Acquire the ADC oneshot mode power
- */
-void sar_periph_ctrl_adc_oneshot_power_acquire(void);
+void temperature_sensor_power_acquire(void);
 
 /**
- * @brief Release the ADC oneshot mode power
+ * @brief Release the temperature sensor power
  */
-void sar_periph_ctrl_adc_oneshot_power_release(void);
+void temperature_sensor_power_release(void);
 
 /**
- * @brief Acquire the ADC continuous mode power
+ * @brief Get the temperature value and choose the temperature sensor range. Will be both used in phy and peripheral.
+ *
+ * @param range_changed Pointer to whether range has been changed here. If you don't need this param, you can
+ *        set NULL directly.
+ *
+ * @return temperature sensor value.
  */
-void sar_periph_ctrl_adc_continuous_power_acquire(void);
-
-/**
- * @brief Release the ADC ADC continuous mode power
- */
-void sar_periph_ctrl_adc_continuous_power_release(void);
-
-
-/*------------------------------------------------------------------------------
-* PWDET Power
-*----------------------------------------------------------------------------*/
-/**
- * @brief Acquire the PWDET Power
- */
-void sar_periph_ctrl_pwdet_power_acquire(void);
-
-/**
- * @brief Release the PWDET Power
- */
-void sar_periph_ctrl_pwdet_power_release(void);
-
-/**
- * @brief Enable SAR power when system wakes up
- */
-void sar_periph_ctrl_power_enable(void);
-
-/**
- * @brief Disable SAR power when system goes to sleep
- */
-void sar_periph_ctrl_power_disable(void);
+int16_t temp_sensor_get_raw_value(bool *range_changed);
 
 #ifdef __cplusplus
 }
