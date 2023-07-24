@@ -7,7 +7,9 @@ menu "Example Configuration"
         select BT_NIMBLE_EXT_ADV
         prompt "Enable Extended Adv"
         help
-            Use this option to enable extended advertising in the example
+            Use this option to enable extended advertising in the example.
+            If you disable this option, ensure config BT_NIMBLE_EXT_ADV is
+            also disabled from Nimble stack menuconfig.
 
     config EXAMPLE_RANDOM_ADDR
         bool
