@@ -143,7 +143,7 @@ typedef void (tBTA_SYS_SSR_CFG_CBACK)(UINT8 id, UINT8 app_id, UINT16 latency, UI
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 /* eir callback for adding/removeing UUID */
-typedef void (tBTA_SYS_EIR_CBACK)(UINT16 uuid16, BOOLEAN adding);
+typedef void (tBTA_SYS_EIR_CBACK)(tBT_UUID uuid, BOOLEAN adding);
 #endif
 
 /* registration structure */
@@ -263,12 +263,20 @@ extern void bta_sys_notify_collision (BD_ADDR_PTR p_bda);
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 extern void bta_sys_eir_register(tBTA_SYS_EIR_CBACK *p_cback);
-extern void bta_sys_add_uuid(UINT16 uuid16);
+extern void bta_sys_add_uuid(UINT16 uuid);
+extern void bta_sys_add_uuid_32(UINT32 uuid32);
+extern void bta_sys_add_uuid_128(UINT8 *uuid128);
 extern void bta_sys_remove_uuid(UINT16 uuid16);
+extern void bta_sys_remove_uuid_32(UINT32 uuid32);
+extern void bta_sys_remove_uuid_128(UINT8 *uuid128);
 #else
 #define bta_sys_eir_register(ut)
 #define bta_sys_add_uuid(ut)
+#define bta_sys_add_uuid_32(ut)
+#define bta_sys_add_uuid_128(ut)
 #define bta_sys_remove_uuid(ut)
+#define bta_sys_remove_uuid_32(ut)
+#define bta_sys_remove_uuid_128(ut)
 #endif
 
 extern void bta_sys_set_policy (UINT8 id, UINT8 policy, BD_ADDR peer_addr);
