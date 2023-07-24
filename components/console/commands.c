@@ -209,13 +209,29 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
     return ESP_OK;
 }
 
+static struct {
+    struct arg_str *help_cmd;
+    struct arg_end *end;
+} help_args;
+
 static int help_command(int argc, char **argv)
 {
+    int nerrors = arg_parse(argc, argv, (void **) &help_args);
+
+    if (nerrors != 0) {
+        arg_print_errors(stderr, help_args.end, argv[0]);
+        return 1;
+    }
+
     cmd_item_t *it;
 
     /* Print summary of each command */
     SLIST_FOREACH(it, &s_cmd_list, next) {
         if (it->help == NULL) {
+            continue;
+        }
+        if (strlen(help_args.help_cmd->sval[0]) > 0 &&
+                 strcmp(help_args.help_cmd->sval[0], it->command) != 0) {
             continue;
         }
         /* First line: command name and hint
@@ -240,10 +256,14 @@ static int help_command(int argc, char **argv)
 
 esp_err_t esp_console_register_help_command(void)
 {
+    help_args.help_cmd = arg_str0(NULL, NULL, "<string>", "Name of command");
+    help_args.end = arg_end(1);
+
     esp_console_cmd_t command = {
         .command = "help",
         .help = "Print the list of registered commands",
-        .func = &help_command
+        .func = &help_command,
+        .argtable = &help_args
     };
     return esp_console_cmd_register(&command);
 }
