@@ -381,14 +381,14 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         for (int i = 0; i < len; i++) {
             ets_printf("%02x,", addr[i]);
         }
-        
+
     } else {
         for (int i = 0; i < len; i++) {
             ets_printf("%02x,", addr[i]);
         }
         ets_printf("\n");
     }
-} 
+}
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART

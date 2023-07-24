@@ -389,7 +389,7 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         for (int i = 0; i < len; i++) {
             ets_printf("%02x,", addr[i]);
         }
-        
+
     } else {
         for (int i = 0; i < len; i++) {
             ets_printf("%02x,", addr[i]);
