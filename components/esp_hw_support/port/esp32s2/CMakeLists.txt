@@ -11,7 +11,7 @@ set(srcs
     "rtc_wdt.c"
     "regi2c_ctrl.c")
 
-if (NOT BOOTLOADER_BUILD)
+if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "sar_periph_ctrl.c")
 endif()
 

@@ -7,7 +7,7 @@ set(srcs "cpu_util_esp32c3.c"
          "rtc_time.c"
          )
 
-if (NOT BOOTLOADER_BUILD)
+if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "sar_periph_ctrl.c")
 endif()
 

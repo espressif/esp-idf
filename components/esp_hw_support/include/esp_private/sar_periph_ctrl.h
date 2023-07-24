@@ -41,6 +41,14 @@ void temperature_sensor_power_release(void);
  */
 int16_t temp_sensor_get_raw_value(bool *range_changed);
 
+/**
+ * @brief Synchronize the tsens_idx between sar_periph and driver
+ *
+ * @param tsens_idx index value of temperature sensor attribute
+ */
+void temp_sensor_sync_tsens_idx(int tsens_idx);
+
+
 #ifdef __cplusplus
 }
 #endif

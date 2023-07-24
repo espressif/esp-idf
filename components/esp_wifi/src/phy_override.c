@@ -16,6 +16,7 @@
  */
 
 static bool s_wifi_adc_xpd_flag;
+static bool s_wifi_tsens_xpd_flag;
 
 void include_esp_phy_override(void)
 {
@@ -56,6 +57,13 @@ IRAM_ATTR void phy_i2c_exit_critical(void)
 
 void phy_set_tsens_power(bool en)
 {
+    if (s_wifi_tsens_xpd_flag == en) {
+        /* ignore repeated calls to phy_set_tsens_power when the state is already correct */
+        return;
+    }
+
+    s_wifi_tsens_xpd_flag = en;
+
     if (en) {
         temperature_sensor_power_acquire();
     } else {
