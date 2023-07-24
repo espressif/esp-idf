@@ -1,12 +1,11 @@
-set(srcs "tusb_msc_main.c")
-set(requires fatfs console)
+set(priv_requires fatfs console)
 
 if(CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH)
-    list(APPEND requires wear_levelling)
+    list(APPEND priv_requires wear_levelling esp_partition)
 endif()
 
 idf_component_register(
-    SRCS "${srcs}"
+    SRCS "tusb_msc_main.c"
     INCLUDE_DIRS .
-    REQUIRES "${requires}"
+    PRIV_REQUIRES "${priv_requires}"
 )

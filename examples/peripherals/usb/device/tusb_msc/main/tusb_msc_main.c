@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include "esp_console.h"
 #include "esp_check.h"
+#include "esp_partition.h"
 #include "driver/gpio.h"
 #include "tinyusb.h"
 #include "tusb_msc_storage.h"

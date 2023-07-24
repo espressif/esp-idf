@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/stat.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -16,11 +17,9 @@
 #include "msc_host.h"
 #include "msc_host_vfs.h"
 #include "ffconf.h"
-#include "esp_vfs.h"
 #include "errno.h"
-#include "hal/usb_hal.h"
 #include "driver/gpio.h"
-#include <esp_vfs_fat.h>
+#include "esp_vfs_fat.h"
 
 #define USB_DISCONNECT_PIN  GPIO_NUM_10
 
