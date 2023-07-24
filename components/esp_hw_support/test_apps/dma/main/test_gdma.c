@@ -14,6 +14,7 @@
 #include "hal/dma_types.h"
 #include "soc/soc_caps.h"
 #include "hal/gdma_ll.h"
+#include "hal/cache_ll.h"
 #include "rom/cache.h"
 
 TEST_CASE("GDMA channel allocation", "[GDMA]")
@@ -179,51 +180,73 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     memset(src_buf, 0, 256);
     memset(dst_buf, 0, 256);
 
-    dma_descriptor_t *tx_desc = (dma_descriptor_t *) src_buf;
-    dma_descriptor_t *rx_desc = (dma_descriptor_t *) dst_buf;
+    dma_descriptor_align8_t *tx_descs = (dma_descriptor_align8_t *) src_buf;
+    dma_descriptor_align8_t *rx_descs = (dma_descriptor_align8_t *) dst_buf;
     uint8_t *src_data = src_buf + 64;
     uint8_t *dst_data = dst_buf + 64;
 
+    // prepare the source data
     for (int i = 0; i < 100; i++) {
         src_data[i] = i;
     }
 
-    tx_desc->buffer = src_data;
-    tx_desc->dw0.size = 100;
-    tx_desc->dw0.length = 100;
-    tx_desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-    tx_desc->dw0.suc_eof = 1;
-    tx_desc->next = NULL;
+#if CONFIG_IDF_TARGET_ESP32P4
+    // CPU and DMA both can write to the DMA descriptor, so if there is a cache, multiple descriptors may reside in the same cache line
+    // causing data inconsistency. To avoid this, we want to access the descriptor memory without the cache.
+    dma_descriptor_align8_t *tx_descs_noncache = (dma_descriptor_align8_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(tx_descs));
+    dma_descriptor_align8_t *rx_descs_noncache = (dma_descriptor_align8_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(rx_descs));
 
-    rx_desc->buffer = dst_data;
-    rx_desc->dw0.size = 100;
-    rx_desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-    rx_desc->next = NULL;
+    tx_descs_noncache[0].buffer = src_data;
+    tx_descs_noncache[0].dw0.size = 50;
+    tx_descs_noncache[0].dw0.length = 50;
+    tx_descs_noncache[0].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    tx_descs_noncache[0].dw0.suc_eof = 0;
+    tx_descs_noncache[0].next = &tx_descs[1]; // Note, the DMA doesn't recognize a non-cacheable address, here must be the cached address
+
+    tx_descs_noncache[1].buffer = src_data + 50;
+    tx_descs_noncache[1].dw0.size = 50;
+    tx_descs_noncache[1].dw0.length = 50;
+    tx_descs_noncache[1].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    tx_descs_noncache[1].dw0.suc_eof = 1;
+    tx_descs_noncache[1].next = NULL;
+
+    rx_descs_noncache->buffer = dst_data;
+    rx_descs_noncache->dw0.size = 100;
+    rx_descs_noncache->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    rx_descs_noncache->dw0.suc_eof = 1;
+    rx_descs_noncache->next = NULL;
+#else
+    tx_descs->buffer = src_data;
+    tx_descs->dw0.size = 100;
+    tx_descs->dw0.length = 100;
+    tx_descs->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    tx_descs->dw0.suc_eof = 1;
+    tx_descs->next = NULL;
+
+    rx_descs->buffer = dst_data;
+    rx_descs->dw0.size = 100;
+    rx_descs->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    rx_descs->next = NULL;
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32P4
-    // descriptors are in the cache, DMA engine may not see the changes, so do a write-back
-    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)tx_desc, sizeof(tx_desc));
-    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)rx_desc, sizeof(rx_desc));
-    // do write-back for the source data
+    // do write-back for the source data because it's in the cache
     Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)src_data, 100);
 #endif
 
-    TEST_ESP_OK(gdma_start(rx_chan, (intptr_t)rx_desc));
-    TEST_ESP_OK(gdma_start(tx_chan, (intptr_t)tx_desc));
+    TEST_ESP_OK(gdma_start(rx_chan, (intptr_t)rx_descs));
+    TEST_ESP_OK(gdma_start(tx_chan, (intptr_t)tx_descs));
 
     xSemaphoreTake(done_sem, portMAX_DELAY);
 
 #if CONFIG_IDF_TARGET_ESP32P4
     // the destination data are not reflected to the cache, so do an invalidate to ask the cache load new data
     Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)dst_data, 100);
-    // the DMA descriptors are updated by the DMA as well, so do an invalidate
-    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)tx_desc, sizeof(tx_desc));
-    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)rx_desc, sizeof(rx_desc));
 #endif
 
     // check the DMA descriptor write-back feature
-    TEST_ASSERT_EQUAL(DMA_DESCRIPTOR_BUFFER_OWNER_CPU, tx_desc->dw0.owner);
-    TEST_ASSERT_EQUAL(DMA_DESCRIPTOR_BUFFER_OWNER_CPU, rx_desc->dw0.owner);
+    TEST_ASSERT_EQUAL(DMA_DESCRIPTOR_BUFFER_OWNER_CPU, tx_descs[0].dw0.owner);
+    TEST_ASSERT_EQUAL(DMA_DESCRIPTOR_BUFFER_OWNER_CPU, rx_descs[0].dw0.owner);
 
     for (int i = 0; i < 100; i++) {
         TEST_ASSERT_EQUAL(i, dst_data[i]);
