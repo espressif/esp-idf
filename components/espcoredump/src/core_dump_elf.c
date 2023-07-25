@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -497,12 +497,11 @@ static int elf_write_core_dump_info(core_dump_elf_t *self)
     void *extra_info = NULL;
 
     ESP_COREDUMP_LOG_PROCESS("================ Processing coredump info ================");
-    int data_len = (int)sizeof(self->elf_version_info.app_elf_sha256);
-    // This dump function can be called when the cache is diable which requires putting
+    // This dump function can be called when the cache is disable which requires putting
     // esp_app_get_elf_sha256() into IRAM. But we want to reduce IRAM usage,
     // so we use a function that returns an already formatted string.
-    strncpy((char*)self->elf_version_info.app_elf_sha256, esp_app_get_elf_sha256_str(), (size_t)data_len);
-    data_len = strlen((char*)self->elf_version_info.app_elf_sha256) + 1; // + 1 for the null terminator
+    size_t data_len = strlcpy((char*)self->elf_version_info.app_elf_sha256, esp_app_get_elf_sha256_str(),
+		sizeof(self->elf_version_info.app_elf_sha256));
     ESP_COREDUMP_LOG_PROCESS("Application SHA256='%s', length=%d.",
                                 self->elf_version_info.app_elf_sha256, data_len);
     self->elf_version_info.version = esp_core_dump_elf_version();
