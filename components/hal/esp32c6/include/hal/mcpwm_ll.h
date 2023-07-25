@@ -715,20 +715,20 @@ static inline void mcpwm_ll_operator_stop_update_action(mcpwm_dev_t *mcpwm, int 
  * @param trig_id Trigger ID, index from 0 to 1
  * @param fault_gpio_id Fault GPIO ID, index from 0 to 3
  */
-static inline void mcpwm_ll_operator_set_trigger_from_gpio(mcpwm_dev_t *mcpwm, int operator_id, int trig_id, int fault_gpio_id)
+static inline void mcpwm_ll_operator_set_trigger_from_gpio_fault(mcpwm_dev_t *mcpwm, int operator_id, int trig_id, int fault_gpio_id)
 {
     mcpwm->operators[operator_id].gen_cfg0.val &= ~(0x07 << (4 + 3 * trig_id));
     mcpwm->operators[operator_id].gen_cfg0.val |= (fault_gpio_id << (4 + 3 * trig_id));
 }
 
 /**
- * @brief Set trigger from timer sync event (when the timer taken the sync signal)
+ * @brief Set trigger from sync event (when the timer/gpio/soft taken the sync signal)
  *
  * @param mcpwm Peripheral instance address
  * @param operator_id Operator ID, index from 0 to 2
  * @param trig_id Trigger ID, index from 0 to 1
  */
-static inline void mcpwm_ll_operator_set_trigger_from_timer_sync(mcpwm_dev_t *mcpwm, int operator_id, int trig_id)
+static inline void mcpwm_ll_operator_set_trigger_from_sync(mcpwm_dev_t *mcpwm, int operator_id, int trig_id)
 {
     // the timer here is not selectable, must be the one connected with the operator
     mcpwm->operators[operator_id].gen_cfg0.val &= ~(0x07 << (4 + 3 * trig_id));

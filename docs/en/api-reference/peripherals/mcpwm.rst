@@ -301,6 +301,40 @@ Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_comp
 
 You can also set the compare action one by one by calling :cpp:func:`mcpwm_generator_set_action_on_compare_event` without varargs.
 
+Set Generator Action on Fault Event
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One generator can set action on fault based trigger events, by calling :cpp:func:`mcpwm_generator_set_action_on_fault_event` with an action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_fault_event_action_t`:
+
+- :cpp:member:`mcpwm_gen_fault_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
+- :cpp:member:`mcpwm_gen_fault_event_action_t::fault` specifies the fault used for the trigger. See `MCPWM Faults <#mcpwm-faults>`__ for how to allocate a fault.
+- :cpp:member:`mcpwm_gen_fault_event_action_t::action` specifies the generator action to be taken. The supported actions are listed in :cpp:type:`mcpwm_generator_action_t`.
+
+When no free trigger slot is left in the operator to which the generator belongs, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
+
+The trigger only support GPOI fault. when the input is not a GPIO fault, this function will return the :c:macro:`ESP_ERR_NOT_SUPPORTED` error. 
+
+There's a helper macro :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` to simplify the construction of a trigger event action entry.
+
+Please note, fault event does not have variadic function like :cpp:func:`mcpwm_generator_set_actions_on_fault_event`.
+
+Set Generator Action on Sync Event
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One generator can set action on sync based trigger events, by calling :cpp:func:`mcpwm_generator_set_action_on_sync_event` with an action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_sync_event_action_t`:
+
+- :cpp:member:`mcpwm_gen_sync_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
+- :cpp:member:`mcpwm_gen_sync_event_action_t::sync` specifies the sync source used for the trigger. See `MCPWM Sync Sources  <#mcpwm-sync-sources>`__ for how to allocate a sync source.
+- :cpp:member:`mcpwm_gen_sync_event_action_t::action` specifies the generator action to be taken. The supported actions are listed in :cpp:type:`mcpwm_generator_action_t`.
+
+When no free trigger slot is left in the operator to which the generator belongs, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
+
+The trigger only support one sync action, regardless of the kinds. When set sync actions more than once, this function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
+
+There's a helper macro :c:macro:`MCPWM_GEN_SYNC_EVENT_ACTION` to simplify the construction of a trigger event action entry.
+
+Please note, sync event does not have variadic function like :cpp:func:`mcpwm_generator_set_actions_on_sync_event`.
+
 
 .. _mcpwm-classical-pwm-waveforms-and-generator-configurations:
 
@@ -959,7 +993,7 @@ API Reference
 
 
 .. [1]
-   Different ESP chip series might have a different number of MCPWM resources (e.g. groups, timers, comparators, operators, generators and so on). Please refer to the [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__] for details. The driver won't forbid you from applying for more MCPWM resources, but it will return an error when there are no hardware resources available. Please always check the return value when doing :ref:`mcpwm-resource-allocation-and-initialization`.
+   Different ESP chip series might have a different number of MCPWM resources (e.g. groups, timers, comparators, operators, generators, triggers and so on). Please refer to the [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__] for details. The driver won't forbid you from applying for more MCPWM resources, but it will return an error when there are no hardware resources available. Please always check the return value when doing :ref:`mcpwm-resource-allocation-and-initialization`.
 
 .. [2]
    The callback function and the sub-functions invoked by itself should also be placed in IRAM. You need to take care of this by yourself.
