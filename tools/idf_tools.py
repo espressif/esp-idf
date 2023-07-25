@@ -689,6 +689,13 @@ class IDFTool(object):
         cmd = self._current_options.version_cmd  # type: ignore
         if executable_path:
             cmd[0] = executable_path
+
+        if not cmd[0]:
+            # There is no command available, so return early. It seems that
+            # within some very strange context empty [''] may actually execute
+            # something https://github.com/espressif/esp-idf/issues/11880
+            raise ToolNotFound('Tool {} not found'.format(self.name))
+
         try:
             version_cmd_result = run_cmd_check_output(cmd, None, extra_paths)
         except OSError:
