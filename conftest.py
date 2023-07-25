@@ -145,8 +145,15 @@ SUB_JUNIT_FILENAME = 'dut.xml'
 ##################
 # Help Functions #
 ##################
-def format_case_id(target: Optional[str], config: Optional[str], case: str) -> str:
-    return f'{target}.{config}.{case}'
+def format_case_id(target: Optional[str], config: Optional[str], case: str, is_qemu: bool = False) -> str:
+    parts = []
+    if target:
+        parts.append((str(target) + '_qemu') if is_qemu else str(target))
+    if config:
+        parts.append(str(config))
+    parts.append(case)
+
+    return '.'.join(parts)
 
 
 def item_marker_names(item: Item) -> List[str]:
@@ -217,16 +224,12 @@ def get_target_marker_from_expr(markexpr: str) -> str:
         raise ValueError('Please specify one target marker via "--target [TARGET]" or via "-m [TARGET]"')
 
 
-def merge_junit_files(junit_files: List[str], target_path: str) -> Optional[ET.Element]:
+def merge_junit_files(junit_files: List[str], target_path: str) -> None:
+    if len(junit_files) <= 1:
+        return
+
     merged_testsuite: ET.Element = ET.Element('testsuite')
     testcases: Dict[str, ET.Element] = {}
-
-    if len(junit_files) == 0:
-        return None
-
-    if len(junit_files) == 1:
-        return ET.parse(junit_files[0]).getroot()
-
     for junit in junit_files:
         logging.info(f'Merging {junit} to {target_path}')
         tree: ET.ElementTree = ET.parse(junit)
@@ -257,7 +260,8 @@ def merge_junit_files(junit_files: List[str], target_path: str) -> Optional[ET.E
     merged_testsuite.set('errors', str(len(merged_testsuite.findall('.//testcase/error'))))
     merged_testsuite.set('skipped', str(len(merged_testsuite.findall('.//testcase/skipped'))))
 
-    return merged_testsuite
+    with open(target_path, 'wb') as fw:
+        fw.write(ET.tostring(merged_testsuite))
 
 
 ############
@@ -297,7 +301,8 @@ def test_func_name(request: FixtureRequest) -> str:
 
 @pytest.fixture
 def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
-    return format_case_id(target, config, request.node.originalname)
+    is_qemu = request._pyfuncitem.get_closest_marker('qemu') is not None
+    return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu)
 
 
 @pytest.fixture
@@ -730,26 +735,30 @@ class IdfPytestEmbedded:
         if not junits:
             return
 
+        if len(junits) > 1:
+            merge_junit_files(junits, os.path.join(tempdir, SUB_JUNIT_FILENAME))
+            junits = [os.path.join(tempdir, SUB_JUNIT_FILENAME)]
+
+        is_qemu = item.get_closest_marker('qemu') is not None
         failed_sub_cases = []
         target = item.funcargs['target']
         config = item.funcargs['config']
-        merged_dut_junit_filepath = os.path.join(tempdir, SUB_JUNIT_FILENAME)
-        merged_testsuite = merge_junit_files(junit_files=junits, target_path=merged_dut_junit_filepath)
+        for junit in junits:
+            xml = ET.parse(junit)
+            testcases = xml.findall('.//testcase')
+            for case in testcases:
+                # modify the junit files
+                new_case_name = format_case_id(target, config, case.attrib['name'], is_qemu=is_qemu)
+                case.attrib['name'] = new_case_name
+                if 'file' in case.attrib:
+                    case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
 
-        if merged_testsuite is None:
-            return
+                # collect real failure cases
+                if case.find('failure') is not None:
+                    failed_sub_cases.append(new_case_name)
 
-        for testcase in merged_testsuite.findall('testcase'):
-            new_case_name: str = format_case_id(target, config, testcase.attrib['name'])
-            testcase.attrib['name'] = new_case_name
-            if 'file' in testcase.attrib:
-                testcase.attrib['file'] = testcase.attrib['file'].replace('/IDF/', '')  # Our unity test framework
-            # Collect real failure cases
-            if testcase.find('failure') is not None:
-                failed_sub_cases.append(new_case_name)
+            xml.write(junit)
 
-        merged_tree: ET.ElementTree = ET.ElementTree(merged_testsuite)
-        merged_tree.write(merged_dut_junit_filepath)
         item.stash[_item_failed_cases_key] = failed_sub_cases
 
     def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
