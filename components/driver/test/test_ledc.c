@@ -478,7 +478,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 20);
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 50);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8992, 50);
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8993, 50);
 }
 
 TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60][ignore]")

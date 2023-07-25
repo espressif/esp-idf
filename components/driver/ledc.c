@@ -840,7 +840,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
         ESP_LOGW(LEDC_TAG, "LEDC timer not configured, call ledc_timer_config to set timer frequency");
         return 0;
     }
-    return ((uint64_t) src_clk_freq << 8) / precision / clock_divider;
+    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + (uint64_t) precision * clock_divider / 2) / precision / clock_divider;
 }
 
 static inline void ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
