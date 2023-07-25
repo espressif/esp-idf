@@ -78,6 +78,19 @@
         }                                                                                                 \
     } while (0)
 
+#define DHCP_CHECK_IP_MATCH_SUBNET_MASK(mask, ip)                           \
+    u32_t start_ip = 0;                                                     \
+    u32_t end_ip = 0;                                                       \
+    do {                                                                    \
+        start_ip = ip & mask;                                               \
+        end_ip = start_ip | ~mask;                                          \
+        if (ip == end_ip || ip == start_ip)                                 \
+        {                                                                   \
+            DHCPS_LOG("dhcps: ip address and subnet mask do not match.\n"); \
+            return ERR_ARG;                                                 \
+        }                                                                   \
+    } while (0)
+
 #define MAX_STATION_NUM CONFIG_LWIP_DHCPS_MAX_STATION_NUM
 
 #define DHCPS_STATE_OFFER 1
@@ -1091,50 +1104,48 @@ static void handle_dhcp(void *arg,
 *******************************************************************************/
 static void dhcps_poll_set(u32_t ip)
 {
-    u32_t softap_ip = 0, local_ip = 0;
+    u32_t server_ip = 0;
     u32_t start_ip = 0;
     u32_t end_ip = 0;
-    u32_t temp_local_ip = 0;
-    u32_t host_num = 0;
+    u32_t range_start_ip = 0;
+    u32_t range_end_ip = 0;
 
     if (dhcps_poll.enable == true) {
-        softap_ip = htonl(ip);
+        server_ip = htonl(ip);
         start_ip = htonl(dhcps_poll.start_ip.addr);
         end_ip = htonl(dhcps_poll.end_ip.addr);
 
         /*config ip information can't contain local ip*/
-        if ((start_ip <= softap_ip) && (softap_ip <= end_ip)) {
+        if ((start_ip <= server_ip) && (server_ip <= end_ip)) {
             dhcps_poll.enable = false;
         } else {
             /*config ip information must be in the same segment as the local ip*/
-            softap_ip >>= 8;
-
-            if (((start_ip >> 8 != softap_ip) || (end_ip >> 8 != softap_ip))
-                    || (end_ip - start_ip > DHCPS_MAX_LEASE)) {
+            if (!ip4_addr_netcmp(&dhcps_poll.start_ip, &server_address, &s_dhcps_mask)
+                || !ip4_addr_netcmp(&dhcps_poll.end_ip, &server_address, &s_dhcps_mask)
+                || (end_ip - start_ip + 1 > DHCPS_MAX_LEASE)) {
                 dhcps_poll.enable = false;
             }
         }
     }
 
     if (dhcps_poll.enable == false) {
-        local_ip = softap_ip = htonl(ip);
-        softap_ip &= 0xFFFFFF00;
-        temp_local_ip = local_ip &= 0xFF;
+        server_ip = htonl(ip);
+        range_start_ip = server_ip & htonl(s_dhcps_mask.addr);
+        range_end_ip = range_start_ip | ~htonl(s_dhcps_mask.addr);
 
-        if (local_ip >= 0x80) {
-            local_ip -= DHCPS_MAX_LEASE;
-            temp_local_ip -= DHCPS_MAX_LEASE;
+        if (server_ip - range_start_ip > range_end_ip - server_ip) {
+            range_start_ip = range_start_ip + 1;
+            range_end_ip = server_ip - 1;
         } else {
-            local_ip ++;
+            range_start_ip = server_ip + 1;
+            range_end_ip = range_end_ip - 1;
         }
-
+        if (range_end_ip - range_start_ip + 1 > DHCPS_MAX_LEASE) {
+            range_end_ip = range_start_ip + DHCPS_MAX_LEASE - 1;
+        }
         bzero(&dhcps_poll, sizeof(dhcps_poll));
-        host_num = IP_CLASS_HOST_NUM(htonl(s_dhcps_mask.addr));
-        if (host_num > DHCPS_MAX_LEASE) {
-            host_num = DHCPS_MAX_LEASE;
-        }
-        dhcps_poll.start_ip.addr = softap_ip | local_ip;
-        dhcps_poll.end_ip.addr = softap_ip | (temp_local_ip + host_num - 1);
+        dhcps_poll.start_ip.addr = range_start_ip;
+        dhcps_poll.end_ip.addr = range_end_ip;
         dhcps_poll.start_ip.addr = htonl(dhcps_poll.start_ip.addr);
         dhcps_poll.end_ip.addr = htonl(dhcps_poll.end_ip.addr);
     }
@@ -1176,7 +1187,7 @@ err_t dhcps_start(struct netif *netif, ip4_addr_t ip)
     struct udp_pcb *pcb_dhcps = dhcps_netif->dhcps_pcb;
 
     if (pcb_dhcps == NULL || ip4_addr_isany_val(ip)) {
-        printf("dhcps_start(): could not obtain pcb\n");
+        DHCPS_LOG("dhcps_start(): could not obtain pcb\n");
         return ERR_ARG;
     }
 
@@ -1186,6 +1197,7 @@ err_t dhcps_start(struct netif *netif, ip4_addr_t ip)
 
     server_address.addr = ip.addr;
     DHCP_CHECK_SUBNET_MASK_IP(htonl(s_dhcps_mask.addr));
+    DHCP_CHECK_IP_MATCH_SUBNET_MASK(htonl(s_dhcps_mask.addr), htonl(ip.addr));
     dhcps_poll_set(server_address.addr);
 
     client_address_plus.addr = dhcps_poll.start_ip.addr;
