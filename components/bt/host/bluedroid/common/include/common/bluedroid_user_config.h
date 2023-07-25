@@ -96,10 +96,10 @@
 #endif
 
 //BQB(BT)
-#ifdef CONFIG_BT_BQB_ENABLED
-#define UC_BT_BQB_ENABLED                   CONFIG_BT_BQB_ENABLED
+#ifdef CONFIG_BT_CLASSIC_BQB_ENABLED
+#define UC_BT_CLASSIC_BQB_ENABLED           CONFIG_BT_CLASSIC_BQB_ENABLED
 #else
-#define UC_BT_BQB_ENABLED                   FALSE
+#define UC_BT_CLASSIC_BQB_ENABLED           FALSE
 #endif
 
 //BLE

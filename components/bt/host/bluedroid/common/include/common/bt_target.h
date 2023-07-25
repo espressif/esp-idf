@@ -497,10 +497,10 @@
 #define BTM_BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY    UC_BT_BLE_ACT_SCAN_REP_ADV_SCAN
 #endif
 
-#if (UC_BT_BQB_ENABLED == TRUE)
-#define BT_BQB_INCLUDED TRUE
+#if (UC_BT_CLASSIC_BQB_ENABLED == TRUE)
+#define BT_CLASSIC_BQB_INCLUDED TRUE
 #else
-#define BT_BQB_INCLUDED FALSE
+#define BT_CLASSIC_BQB_INCLUDED FALSE
 #endif
 
 /* This feature is used to eanble interleaved scan*/
@@ -1512,6 +1512,12 @@
 ******************************************************************************/
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             FALSE
+#endif
+
+#if (RFCOMM_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_RFCOMM_BQB_INCLUDED      TRUE
+#else
+#define BT_RFCOMM_BQB_INCLUDED      FALSE
 #endif
 
 #ifndef BTA_JV_RFCOMM_INCLUDED
