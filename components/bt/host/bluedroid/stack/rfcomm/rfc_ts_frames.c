@@ -500,15 +500,15 @@ void rfc_send_rpn (tRFC_MCB *p_mcb, UINT8 dlci, BOOLEAN is_command,
     rfc_send_buf_uih (p_mcb, RFCOMM_MX_DLCI, p_buf);
 }
 
-#if BT_BQB_INCLUDED
+#if BT_RFCOMM_BQB_INCLUDED
 /*******************************************************************************
 **
-** Function         bqb_rfc_send_msc_cmd
+** Function         rfc_bqb_send_msc_cmd
 **
 ** Description      This function sends msc command for BQB test.
 **
 *******************************************************************************/
-void bqb_rfc_send_msc_cmd(BD_ADDR cert_pts_addr)
+void rfc_bqb_send_msc_cmd(BD_ADDR cert_pts_addr)
 {
     UINT8       i;
     UINT8       dlci;
@@ -543,7 +543,7 @@ void bqb_rfc_send_msc_cmd(BD_ADDR cert_pts_addr)
     }
     osi_free(p_pars);
 }
-#endif /* BT_BQB_INCLUDED */
+#endif /* BT_RFCOMM_BQB_INCLUDED */
 
 /*******************************************************************************
 **
