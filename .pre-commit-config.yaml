@@ -141,6 +141,7 @@ repos:
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
         language: python
+        require_serial: true
         files: 'tools/test_apps/.+|examples/.+|components/.+'
         additional_dependencies:
           - idf_build_apps
