@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,9 @@
 #include "soc/pcr_reg.h"
 #define SYSTEM_CPU_PER_CONF_REG PCR_CPU_WAITI_CONF_REG
 #define SYSTEM_CPU_WAIT_MODE_FORCE_ON PCR_CPU_WAIT_MODE_FORCE_ON
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "soc/lp_clkrst_reg.h"
+#include "soc/pmu_reg.h"
 #else
 #include "soc/rtc_cntl_reg.h"
 #endif
@@ -45,6 +48,10 @@ void esp_cpu_stall(int core_id)
 {
     assert(core_id >= 0 && core_id < SOC_CPU_CORES_NUM);
 #if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7848
+    REG_SET_FIELD(PMU_CPU_SW_STALL_REG, core_id ? PMU_HPCORE1_SW_STALL_CODE : PMU_HPCORE0_SW_STALL_CODE, 0x86);
+#else
     /*
     We need to write the value "0x86" to stall a particular core. The write location is split into two separate
     bit fields named "c0" and "c1", and the two fields are located in different registers. Each core has its own pair of
@@ -62,13 +69,18 @@ void esp_cpu_stall(int core_id)
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2 << rtc_cntl_c0_s);
     CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, rtc_cntl_c1_m);
     SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21 << rtc_cntl_c1_s);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32P4
+#endif // SOC_CPU_CORES_NUM > 1
 }
 
 void esp_cpu_unstall(int core_id)
 {
     assert(core_id >= 0 && core_id < SOC_CPU_CORES_NUM);
 #if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7848
+    REG_SET_FIELD(PMU_CPU_SW_STALL_REG, core_id ? PMU_HPCORE1_SW_STALL_CODE : PMU_HPCORE0_SW_STALL_CODE, 0);
+#else
     /*
     We need to write clear the value "0x86" to unstall a particular core. The location of this value is split into
     two separate bit fields named "c0" and "c1", and the two fields are located in different registers. Each core has
@@ -82,11 +94,19 @@ void esp_cpu_unstall(int core_id)
     int rtc_cntl_c1_m = (core_id == 0) ? RTC_CNTL_SW_STALL_PROCPU_C1_M : RTC_CNTL_SW_STALL_APPCPU_C1_M;
     CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, rtc_cntl_c0_m);
     CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, rtc_cntl_c1_m);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32P4
+#endif // SOC_CPU_CORES_NUM > 1
 }
 
 void esp_cpu_reset(int core_id)
 {
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7848
+    if (core_id == 0)
+        REG_SET_BIT(LP_CLKRST_HPCPU_RESET_CTRL0_REG, LP_CLKRST_HPCORE0_SW_RESET);
+    else
+        REG_SET_BIT(LP_CLKRST_HPCPU_RESET_CTRL0_REG, LP_CLKRST_HPCORE1_SW_RESET);
+#else
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// TODO: IDF-5645
     SET_PERI_REG_MASK(LP_AON_CPUCORE0_CFG_REG, LP_AON_CPU_CORE0_SW_RESET);
 #else
@@ -103,6 +123,7 @@ void esp_cpu_reset(int core_id)
 #endif // SOC_CPU_CORES_NUM > 1
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, rtc_cntl_rst_m);
 #endif
+#endif // CONFIG_IDF_TARGET_ESP32P4
 }
 
 void esp_cpu_wait_for_intr(void)
@@ -110,12 +131,15 @@ void esp_cpu_wait_for_intr(void)
 #if __XTENSA__
     xt_utils_wait_for_intr();
 #else
+//TODO: IDF-7848
+#if !CONFIG_IDF_TARGET_ESP32P4
     // TODO: IDF-5645 (better to implement with ll) C6 register names converted in the #include section at the top
     if (esp_cpu_dbgr_is_attached() && DPORT_REG_GET_BIT(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPU_WAIT_MODE_FORCE_ON) == 0) {
         /* when SYSTEM_CPU_WAIT_MODE_FORCE_ON is disabled in WFI mode SBA access to memory does not work for debugger,
            so do not enter that mode when debugger is connected */
         return;
     }
+#endif
     rv_utils_wait_for_intr();
 #endif // __XTENSA__
 }
@@ -143,6 +167,10 @@ static bool is_intr_num_resv(int intr_num)
     reserved |= BIT(0) | BIT(3) | BIT(4) | BIT(7);
 #endif
 
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7795
+    return false;
+#endif
     if (reserved & BIT(intr_num)) {
         return true;
     }
@@ -438,8 +466,31 @@ exit:
         ret = xt_utils_compare_and_set(addr, compare_value, new_value);
     }
     return ret;
-#else // __XTENSA__
+
+//TODO: IDF-7771
+#else // __riscv
+#if SOC_CPU_CORES_NUM > 1
+    /* We use lr.w and sc.w pair for riscv TAS. lr.w will read the memory and register a cpu lock signal
+     * The state of the lock signal is internal to core, and it is not possible for another core to
+     * interface. sc.w will assert the address is registered. Then write memory and release the lock
+     * signal. During the lr.w and sc.w time, if other core acquires the same address, will wait
+     */
+    volatile uint32_t old_value = 0xB33FFFFF;
+    volatile int error = 1;
+
+    __asm__ __volatile__(
+        "0: lr.w %0, 0(%2)     \n"
+        "   bne  %0, %3, 1f    \n"
+        "   sc.w %1, %4, 0(%2) \n"
+        "   bnez %1, 0b        \n"
+        "1:                    \n"
+        : "+r" (old_value), "+r" (error)
+        : "r" (addr), "r" (compare_value), "r" (new_value)
+    );
+    return (old_value == compare_value);
+#else
     // Single core targets don't have atomic CAS instruction. So access method is the same for internal and external RAM
     return rv_utils_compare_and_set(addr, compare_value, new_value);
+#endif
 #endif
 }

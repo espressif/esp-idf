@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,8 @@
 #include "esp32h2/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/cache.h"
 #endif
 #include "esp_rom_spiflash.h"
 #include "hal/cache_hal.h"
@@ -914,3 +916,28 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     return ESP_OK;
 }
 #endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+
+#if CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-5670
+TCM_IRAM_ATTR void esp_config_llc_mode(void)
+{
+    cache_size_t cache_size;
+    cache_line_size_t cache_line_size;
+#if CONFIG_ESP32P4_L2_CACHE_128KB
+    cache_size = CACHE_SIZE_128K;
+#elif CONFIG_ESP32P4_L2_CACHE_256KB
+    cache_size = CACHE_SIZE_256K;
+#else
+    cache_size = CACHE_SIZE_512K;
+#endif
+
+#if CONFIG_ESP32P4_L2_CACHE_LINE_64B
+    cache_line_size = CACHE_LINE_SIZE_64B;
+#else
+    cache_line_size = CACHE_LINE_SIZE_128B;
+#endif
+
+    Cache_Set_L2_Cache_Mode(cache_size, 8, cache_line_size);
+    Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+}
+#endif

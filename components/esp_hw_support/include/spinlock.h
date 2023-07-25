@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,12 @@
 #if __XTENSA__
 #include "xtensa/xtruntime.h"
 #include "xt_utils.h"
+#else
+#include "riscv/rv_utils.h"
 #endif
+
+
+//TODO: IDF-7771, P4, see jira to know what changed and what need to be checked
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,11 +77,18 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     esp_cpu_cycle_count_t start_count;
 
     assert(lock);
+#if __XTENSA__
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 
     // Note: The core IDs are the full 32 bit (CORE_ID_REGVAL_PRO/CORE_ID_REGVAL_APP) values
     core_id = xt_utils_get_raw_core_id();
     other_core_id = CORE_ID_REGVAL_XOR_SWAP ^ core_id;
+#else  //__riscv
+    irq_status = rv_utils_set_intlevel(RVHAL_EXCM_LEVEL);
+
+    core_id = rv_utils_get_core_id();
+    other_core_id = 1 - core_id;
+#endif
 
     /* lock->owner should be one of SPINLOCK_FREE, CORE_ID_REGVAL_PRO,
      * CORE_ID_REGVAL_APP:
@@ -89,7 +101,11 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     if (lock->owner == core_id) {
         assert(lock->count > 0 && lock->count < 0xFF);    // Bad count value implies memory corruption
         lock->count++;
+#if __XTENSA__
         XTOS_RESTORE_INTLEVEL(irq_status);
+#else
+        rv_utils_restore_intlevel(irq_status);
+#endif
         return true;
     }
 
@@ -126,7 +142,11 @@ exit:
         assert(lock->count < 0xFF); // Bad count value implies memory corruption
     }
 
+#if __XTENSA__
     XTOS_RESTORE_INTLEVEL(irq_status);
+#else
+    rv_utils_restore_intlevel(irq_status);
+#endif
     return lock_set;
 
 #else  // !CONFIG_FREERTOS_UNICORE
@@ -154,9 +174,15 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
     uint32_t core_id;
 
     assert(lock);
+#if __XTENSA__
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 
     core_id = xt_utils_get_raw_core_id();
+#else
+    irq_status = rv_utils_set_intlevel(RVHAL_EXCM_LEVEL);
+
+    core_id = rv_utils_get_core_id();
+#endif
     assert(core_id == lock->owner); // This is a lock that we didn't acquire, or the lock is corrupt
     lock->count--;
 
@@ -166,8 +192,12 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
         assert(lock->count < 0x100); // Indicates memory corruption
     }
 
+#if __XTENSA__
     XTOS_RESTORE_INTLEVEL(irq_status);
-#endif
+#else
+    rv_utils_restore_intlevel(irq_status);
+#endif  //#if __XTENSA__
+#endif  //#if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
 }
 
 #ifdef __cplusplus

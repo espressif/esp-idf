@@ -101,6 +101,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32S3
         default y if IDF_TARGET_ESP32C6
         default n if IDF_TARGET_ESP32H2 # IDF-5667
+        default y if IDF_TARGET_ESP32P4
         depends on SOC_RTC_FAST_MEM_SUPPORTED
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -316,6 +317,7 @@ menu "ESP System Settings"
         default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
         default 16 if IDF_TARGET_ESP32C6
+        default 37 if IDF_TARGET_ESP32P4
         default 24 if IDF_TARGET_ESP32H2
         default 43
         help
@@ -333,6 +335,7 @@ menu "ESP System Settings"
         default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
         default 17 if IDF_TARGET_ESP32C6
+        default 38 if IDF_TARGET_ESP32P4
         default 23 if IDF_TARGET_ESP32H2
         default 44
         help
@@ -596,6 +599,7 @@ menu "IPC (Inter-Processor Call)"
 
     config ESP_IPC_ISR_ENABLE
         bool
+        default n if IDF_TARGET_ESP32P4  # TODO: IDF-7769
         default y if !FREERTOS_UNICORE
         help
             The IPC ISR feature is similar to the IPC feature except that the callback function is executed in the
