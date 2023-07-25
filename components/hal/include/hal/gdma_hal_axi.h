@@ -40,7 +40,7 @@ uint32_t gdma_axi_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdm
 
 uint32_t gdma_axi_hal_get_intr_status_reg(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
 
-uint32_t gdma_axi_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
+uint32_t gdma_axi_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool is_success);
 
 void gdma_axi_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config);
 

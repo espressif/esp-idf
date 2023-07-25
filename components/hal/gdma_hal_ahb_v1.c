@@ -148,11 +148,15 @@ uint32_t gdma_ahb_hal_get_intr_status_reg(gdma_hal_context_t *hal, int chan_id, 
     }
 }
 
-uint32_t gdma_ahb_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+uint32_t gdma_ahb_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool is_success)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
-        return gdma_ll_rx_get_success_eof_desc_addr(hal->dev, chan_id);
+        if (is_success) {
+            return gdma_ll_rx_get_success_eof_desc_addr(hal->dev, chan_id);
+        }
+        return gdma_ll_rx_get_error_eof_desc_addr(hal->dev, chan_id);
     } else {
+        // The TX direction only has success EOF, parameter 'is_success' is ignored
         return gdma_ll_tx_get_eof_desc_addr(hal->dev, chan_id);
     }
 }
