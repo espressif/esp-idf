@@ -239,7 +239,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_ivt_addr(const void *ivt_addr)
 /**
  * @brief Set the base address of the current CPU's Interrupt Vector Table (MTVT)
  *
- * @param ivt_addr Interrupt Vector Table's base address
+ * @param mtvt_addr Interrupt Vector Table's base address
  */
 FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
 {

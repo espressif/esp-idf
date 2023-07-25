@@ -408,18 +408,21 @@ Interrupt wdt timeout on CPU0 / CPU1
 其他严重错误
 ------------
 
-掉电
-^^^^
+.. only:: SOC_BOD_SUPPORTED
 
-{IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP_BROWNOUT_DET` 和 :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+    掉电
+    ^^^^
 
-当掉电检测器被触发时，会打印如下信息::
+    {IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP_BROWNOUT_DET` 和 :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
 
-    Brownout detector was triggered
+    当掉电检测器被触发时，会打印如下信息::
 
-芯片会在该打印信息结束后复位。
+        Brownout detector was triggered
 
-请注意，如果电源电压快速下降，则只能在控制台上看到部分打印信息。
+    芯片会在该打印信息结束后复位。
+
+    请注意，如果电源电压快速下降，则只能在控制台上看到部分打印信息。
+
 
 堆不完整
 ^^^^^^^^^^^
