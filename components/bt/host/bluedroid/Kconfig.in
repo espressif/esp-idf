@@ -47,13 +47,12 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
-config BT_BQB_ENABLED
-    bool "BT HOST BQB"
+config BT_CLASSIC_BQB_ENABLED
+    bool "Host Qualitifcation support for Classic Bluetooth"
     depends on BT_CLASSIC_ENABLED
     default n
     help
-        This enables the BQB support.
-        Only for bt BQB test.
+        This enables functionalities of Host qualification for Classic Bluetooth.
 
 config BT_A2DP_ENABLE
     bool "A2DP"
