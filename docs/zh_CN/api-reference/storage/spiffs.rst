@@ -22,7 +22,7 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 工具
 -----
 
-spiffsgen.py
+``spiffsgen.py``
 ^^^^^^^^^^^^^^^^
 
 :component_file:`spiffsgen.py<spiffs/spiffsgen.py>`（只写）是 SPIFFS 的一种 Python 实现，可用于从主机文件夹内容生成文件系统镜像。打开终端并运行以下命令即可使用 ``spiffsgen.py``::
@@ -47,9 +47,9 @@ spiffsgen.py
 
     spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT] [DEPENDS dep dep dep...])
 
-在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置会自动传递给 ``spiffsgen.py`` 工具，确保生成的镜像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 *image_size* 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 *partition* 参数，镜像大小将直接从工程分区表中获取。
+在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置会自动传递给 ``spiffsgen.py`` 工具，确保生成的镜像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 **image_size** 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 **partition** 参数，镜像大小将直接从工程分区表中获取。
 
-使用 ``spiffs_create_partition_image``，必须从组件 CMakeLists.txt 文件调用。
+使用 ``spiffs_create_partition_image``，必须从组件 ``CMakeLists.txt`` 文件调用。
 
 用户也可以指定 ``FLASH_IN_PROJECT``，然后使用 ``idf.py flash`` 将镜像与应用程序二进制文件、分区表等一起自动烧录至设备，例如::
 
@@ -65,8 +65,8 @@ spiffsgen.py
 
 请参考 :example:`storage/spiffsgen`，查看示例。
 
-mkspiffs
-^^^^^^^^^^^
+``mkspiffs``
+^^^^^^^^^^^^
 
 用户也可以使用 `mkspiffs <https://github.com/igrr/mkspiffs>`_ 工具创建 SPIFFS 分区镜像。与 ``spiffsgen.py`` 相似，`mkspiffs <https://github.com/igrr/mkspiffs>`_ 也可以用于从指定文件夹中生成镜像，然后使用 ``esptool.py`` 烧录镜像。
 

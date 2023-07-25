@@ -6,11 +6,11 @@ Overview
 
 This guide provides an overview of the NVS Encryption feature. NVS encryption helps to achieve secure storage on the device flash memory.
 
-Data stored in NVS partitions can be encrypted using XTS-AES in the manner similar to the one mentioned in disk encryption standard IEEE P1619. For the purpose of encryption, each entry is treated as one `sector` and relative address of the entry (w.r.t. partition-start) is fed to the encryption algorithm as `sector-number`.
+Data stored in NVS partitions can be encrypted using XTS-AES in the manner similar to the one mentioned in disk encryption standard IEEE P1619. For the purpose of encryption, each entry is treated as one `sector` and relative address of the entry (w.r.t., partition-start) is fed to the encryption algorithm as `sector-number`.
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    NVS Encryption can be facilitated by enabling :ref:`CONFIG_NVS_ENCRYPTION` and :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` or ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` depending on the scheme to be used.
+    NVS Encryption can be facilitated by enabling :ref:`CONFIG_NVS_ENCRYPTION` and :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` or ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` depending on the scheme to be used.
 
 
 NVS Encryption: Flash Encryption-based Scheme
@@ -49,9 +49,11 @@ The XTS encryption keys in the :ref:`nvs_encr_key_partition` can be generated in
 
     * Then the API function automatically generates and stores the NVS keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by :component_file:`nvs_flash/include/nvs_flash.h`. New keys are generated and stored only when the respective key partition is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
 
-    * The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function will then write those keys onto the key-partition in encrypted form.
+    * The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function then writes those keys onto the key-partition in encrypted form.
 
-    .. note:: Please note that ``nvs_keys`` partition must be completely erased before you start the application in this approach. Otherwise the application may generate :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` error code assuming that ``nvs_keys`` partition is not empty and contains malformatted data. You can use the following command for this:
+    .. note::
+
+        Please note that ``nvs_keys`` partition must be completely erased before you start the application in this approach. Otherwise the application may generate :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` error code assuming that ``nvs_keys`` partition is not empty and contains malformatted data. You can use the following command for this:
         ::
 
             parttool.py --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys
@@ -81,7 +83,7 @@ It is possible for an application to use different keys for different NVS partit
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    NVS Encryption: HMAC peripheral-based Scheme
+    NVS Encryption: HMAC Peripheral-Based Scheme
     --------------------------------------------
 
     In this scheme, the XTS keys required for NVS encryption are derived from an HMAC key programmed in eFuse with the purpose :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP`. Since the encryption keys are derived at runtime, they are not stored anywhere in the flash. Thus, this feature does not require a separate :ref:`nvs_encr_key_partition`.
@@ -92,13 +94,13 @@ It is possible for an application to use different keys for different NVS partit
 
     .. important::
 
-        Please take note that this scheme will use one eFuse block for storing the HMAC key required for deriving the encryption keys.
+        Please take note that this scheme uses one eFuse block for storing the HMAC key required for deriving the encryption keys.
 
     - When NVS encryption is enabled, the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function first checks whether an HMAC key is present at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
 
         .. note::
 
-            The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``6`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY_MAX`), which will have to configured before building the user application.
+            The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``6`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY_MAX`), which have to be configured before building the user application.
 
         - If no key is found, a key is generated internally and stored at the eFuse block specified at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
         - If a key is found with the purpose :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP`, the same is used for the derivation of the XTS encryption keys.
@@ -190,7 +192,7 @@ The component :component:`nvs_sec_provider` stores all the implementation-specif
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    This component offers factory functions with which a particular security scheme can be registered without having to worry about the APIs to generate and read the encryption keys (e.g. :cpp:func:`nvs_sec_provider_register_hmac`). Refer to the :example:`security/nvs_encryption_hmac` example for API usage.
+    This component offers factory functions with which a particular security scheme can be registered without having to worry about the APIs to generate and read the encryption keys (e.g., :cpp:func:`nvs_sec_provider_register_hmac`). Refer to the :example:`security/nvs_encryption_hmac` example for API usage.
 
 
 API Reference

@@ -1,4 +1,4 @@
-Non-volatile Storage Library
+Non-Volatile Storage Library
 ============================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -60,7 +60,8 @@ There are the following functions available:
 - :cpp:func:`nvs_entry_info` returns information about each key-value pair
 
 In general, all iterators obtained via :cpp:func:`nvs_entry_find` have to be released using :cpp:func:`nvs_release_iterator`, which also tolerates ``NULL`` iterators.
-:cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` will set the given iterator to ``NULL`` or a valid iterator in all cases except a parameter error occured (i.e., return ``ESP_ERR_NVS_NOT_FOUND``). In case of a parameter error, the given iterator will not be modified. Hence, it is best practice to initialize the iterator to ``NULL`` before calling :cpp:func:`nvs_entry_find` to avoid complicated error checking before releasing the iterator.
+
+:cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` set the given iterator to ``NULL`` or a valid iterator in all cases except a parameter error occured (i.e., return ``ESP_ERR_NVS_NOT_FOUND``). In case of a parameter error, the given iterator will not be modified. Hence, it is best practice to initialize the iterator to ``NULL`` before calling :cpp:func:`nvs_entry_find` to avoid complicated error checking before releasing the iterator.
 
 
 Security, Tampering, and Robustness
@@ -102,7 +103,7 @@ You can find code examples in the :example:`storage` directory of ESP-IDF exampl
 
   The value checked in this example holds the number of the {IDF_TARGET_NAME} module restarts. The value's function as a counter is only possible due to its storing in NVS.
 
-  The example also shows how to check if a read / write operation was successful, or if a certain value has not been initialized in NVS. The diagnostic procedure is provided in plain text to help you track the program flow and capture any issues on the way.
+  The example also shows how to check if a read/write operation was successful, or if a certain value has not been initialized in NVS. The diagnostic procedure is provided in plain text to help you track the program flow and capture any issues on the way.
 
 :example:`storage/nvs_rw_blob`
 
@@ -111,7 +112,7 @@ You can find code examples in the :example:`storage` directory of ESP-IDF exampl
     * value - tracks the number of the {IDF_TARGET_NAME} module soft and hard restarts.
     * blob - contains a table with module run times. The table is read from NVS to dynamically allocated RAM. A new run time is added to the table on each manually triggered soft restart, and then the added run time is written to NVS. Triggering is done by pulling down GPIO0.
 
-  The example also shows how to implement the diagnostic procedure to check if the read / write operation was successful.
+  The example also shows how to implement the diagnostic procedure to check if the read/write operation was successful.
 
 :example:`storage/nvs_rw_value_cxx`
 
@@ -144,7 +145,7 @@ Erasing
     Non-erased key-value pairs are being moved into another page so that the current page can be erased. This is a transient state, i.e., page should never stay in this state at the time when any API call returns. In case of a sudden power off, the move-and-erase process will be completed upon the next power-on.
 
 Corrupted
-    Page header contains invalid data, and further parsing of page data was canceled. Any items previously written into this page will not be accessible. The corresponding flash sector will not be erased immediately and will be kept along with sectors in *uninitialized* state for later use. This may be useful for debugging.
+    Page header contains invalid data, and further parsing of page data was canceled. Any items previously written into this page will not be accessible. The corresponding flash sector will not be erased immediately and will be kept along with sectors in **uninitialized** state for later use. This may be useful for debugging.
 
 Mapping from flash sectors to logical pages does not have any particular order. The library will inspect sequence numbers of pages found in each flash sector and organize pages in a list based on these numbers.
 
@@ -281,7 +282,7 @@ Data
     - CRC32
         (Only for strings and blobs.) Checksum calculated over all bytes of data.
 
-Variable length values (strings and blobs) are written into subsequent entries, 32 bytes per entry. The `Span` field of the first entry indicates how many entries are used.
+Variable length values (strings and blobs) are written into subsequent entries, 32 bytes per entry. The ``Span`` field of the first entry indicates how many entries are used.
 
 
 Namespaces
@@ -305,7 +306,7 @@ As mentioned above, each key-value pair belongs to one of the namespaces. Namesp
 Item Hash List
 ^^^^^^^^^^^^^^
 
-To reduce the number of reads from flash memory, each member of the Page class maintains a list of pairs: item index; item hash. This list makes searches much quicker. Instead of iterating over all entries, reading them from flash one at a time, `Page::findItem` first performs a search for the item hash in the hash list. This gives the item index within the page if such an item exists. Due to a hash collision, it is possible that a different item will be found. This is handled by falling back to iteration over items in flash.
+To reduce the number of reads from flash memory, each member of the Page class maintains a list of pairs: item index; item hash. This list makes searches much quicker. Instead of iterating over all entries, reading them from flash one at a time, `Page::findItem` first performs a search for the item hash in the hash list. This gives the item index within the page if such an item exists. Due to a hash collision, it is possible that a different item is found. This is handled by falling back to iteration over items in flash.
 
 Each node in the hash list contains a 24-bit hash and 8-bit item index. Hash is calculated based on item namespace, key name, and ChunkIndex. CRC32 is used for calculation; the result is truncated to 24 bits. To reduce the overhead for storing 32-bit entries in a linked list, the list is implemented as a double-linked list of arrays. Each array holds 29 entries, for the total size of 128 bytes, together with linked list pointers and a 32-bit count field. The minimum amount of extra RAM usage per page is therefore 128 bytes; maximum is 640 bytes.
 

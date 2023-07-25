@@ -5,9 +5,9 @@
 Generating and Parsing FATFS on Host
 ====================================
 
-This chapter is intended mainly for developers of Python tools :component_file:`fatfsgen.py<fatfs/fatfsgen.py>` and :component_file:`fatfsparse.py<fatfs/fatfsparse.py>`, and people with special interest in these tools and implementation of the FAT file system in ESP-IDF. If you are interested in using these tools, please refer to the user guide at :ref:`fatfs-partition-generator`.
+This chapter is intended mainly for developers of Python tools :component_file:`fatfsgen.py <fatfs/fatfsgen.py>` and :component_file:`fatfsparse.py <fatfs/fatfsparse.py>`, and people with special interest in these tools and implementation of the FAT file system in ESP-IDF. If you are interested in using these tools, please refer to the user guide at :ref:`fatfs-partition-generator`.
 
-The FAT file system is composed of various logical units. The units are used to store general information about the filesystem, allocations, content of files and directories, and file's metadata. The tools `fatfsgen.py` and `fatfsparse.py` implement the FAT filesystem considering all these logical units and they can also support wear levelling.
+The FAT file system is composed of various logical units. The units are used to store general information about the filesystem, allocations, content of files and directories, and file's metadata. The tools ``fatfsgen.py`` and ``fatfsparse.py`` implement the FAT filesystem considering all these logical units and they can also support wear levelling.
 
 
 FAT Filesystem Generator/Parser Design
@@ -27,12 +27,12 @@ This is the most general entity responsible for modeling the FAT file system. It
 Class WLFATFS
 ^^^^^^^^^^^^^
 
-The class extends the functionality of the class **FATFS**. It implements an encapsulation of the filesystem into the wear levelling, by adding the "dummy" sector for balancing the load (a redundant sector, see the section :ref:`fafsgen-wear-levelling`), configuration sector and state sector. This class generates a binary FATFS partition with initialized wear levelling layer. For further analysis, it also provides an option to remove the wear levelling completely. The class is instantiated and invoked by the `wl_fatfsgen.py` script.
+The class extends the functionality of the class **FATFS**. It implements an encapsulation of the filesystem into the wear levelling, by adding the "dummy" sector for balancing the load (a redundant sector, see the section :ref:`fafsgen-wear-levelling`), configuration sector and state sector. This class generates a binary FATFS partition with initialized wear levelling layer. For further analysis, it also provides an option to remove the wear levelling completely. The class is instantiated and invoked by the ``wl_fatfsgen.py`` script.
 
 Class BootSectorState
 ^^^^^^^^^^^^^^^^^^^^^
 
-The instance of this class contains the metadata required for building a boot sector and BPB (BIOS Parameter Block). Boot sector is basically implemented for the cross-platform compatibility, i.e. when ESP chipsets are connected with other platforms, it will always follow all the FAT filesystem standards. However, during partition generation, chip does not consume the data in this boot sector and all the other data needed, as the data is constant. In other words, changing the fields with the prefix "BS" is usually unnecessary and often does not work. If you want to add new features, please focus on fields with the prefix "BPB". Another critical role of this class is to share access to the metadata and binary image over the whole class system. Because of this, every class in the system can access this singleton.
+The instance of this class contains the metadata required for building a boot sector and BPB (BIOS Parameter Block). Boot sector is basically implemented for the cross-platform compatibility, i.e., when ESP chipsets are connected with other platforms, it will always follow all the FAT filesystem standards. However, during partition generation, chip does not consume the data in this boot sector and all the other data needed, as the data is constant. In other words, changing the fields with the prefix "BS" is usually unnecessary and often does not work. If you want to add new features, please focus on fields with the prefix "BPB". Another critical role of this class is to share access to the metadata and binary image over the whole class system. Because of this, every class in the system can access this singleton.
 
 Class FATFSState
 ^^^^^^^^^^^^^^^^
@@ -42,11 +42,11 @@ The class **FATFSState** might be obsolete in the future, so developers could tr
 Class FAT
 ^^^^^^^^^
 
-FAT represents the File Allocation Table. FAT is a sequence of bytes spread over one or more sectors. The number of sectors is determined by the number of clusters and is calculated by the function `get_fat_sectors_count` in `utils.py`. The aim is to have as few sectors for one FAT as possible when you refer to every physical cluster in the file system. The FAT works as follows: For every physical cluster at ``i * some_constant`` address, FAT contains an entry at the ``i``-th location which represents next address of the clusters in the file chain. Each version of the FAT file system uses a different size for FAT entries. FAT12 uses 12 bits per entry, thus two entries span 3 bytes. FAT16 uses 16 bits per entry, thus one entry spans 2 bytes. FAT32 uses 32 bits per FAT entry, thus one entry spans 4 bytes. All entries are in little-endian byte order.
+FAT represents the File Allocation Table. FAT is a sequence of bytes spread over one or more sectors. The number of sectors is determined by the number of clusters and is calculated by the function ``get_fat_sectors_count`` in ``utils.py``. The aim is to have as few sectors for one FAT as possible when you refer to every physical cluster in the file system. The FAT works as follows: For every physical cluster at ``i * some_constant`` address, FAT contains an entry at the ``i``-th location which represents next address of the clusters in the file chain. Each version of the FAT file system uses a different size for FAT entries. FAT12 uses 12 bits per entry, thus two entries span 3 bytes. FAT16 uses 16 bits per entry, thus one entry spans 2 bytes. FAT32 uses 32 bits per FAT entry, thus one entry spans 4 bytes. All entries are in little-endian byte order.
 
 All zeros at the ``i``-th entry indicates that corresponding cluster is free, while all ones at the ``i``-th entry indicates that corresponding cluster is occupied and is the last cluster in the file chain. The other number at ``ith``-th entry determines the next cluster's address in the file chain. These clusters are not necessarily stored adjacent to one another in the memory but instead are often fragmented throughout the data region.
 
-For partition generation, the file is divided into several parts to fit the cluster, and the allocated chain is usually conquest. Notice that the structure allocation of the files is a linked list. Every cluster in the file allocation chain has entry in the FAT which refers to the next cluster or the information about the last cluster in the file chain. As mentioned, FAT12 uses 12 bits per FAT entry, thus it can sets a maximum number of 4096 clusters, as with 12 bits (one and a half bytes), it can enumerate 4096 clusters at most. However, because of other overhead, FAT12 can have 4085 clusters at most. Similarly, FAT16 can have 65525 clusters at most and for FAT32 can have 268435445 clusters at most (as practically only 28 bits out of 32 bits are used to denote each FAT entry). The current implementation doesn't allow forcibly redefining the FAT filesystem with less than 4085 clusters to FAT16, even though the documentation claims it is possible. Notice that it would be meaningless to define it vice versa, i.e. to FAT12 with more than 4085 clusters (which implies clusters on higher addresses being inaccessible).
+For partition generation, the file is divided into several parts to fit the cluster, and the allocated chain is usually conquest. Notice that the structure allocation of the files is a linked list. Every cluster in the file allocation chain has entry in the FAT which refers to the next cluster or the information about the last cluster in the file chain. As mentioned, FAT12 uses 12 bits per FAT entry, thus it can sets a maximum number of 4096 clusters, as with 12 bits (one and a half bytes), it can enumerate 4096 clusters at most. However, because of other overhead, FAT12 can have 4085 clusters at most. Similarly, FAT16 can have 65525 clusters at most and for FAT32 can have 268435445 clusters at most (as practically only 28 bits out of 32 bits are used to denote each FAT entry). The current implementation doesn't allow forcibly redefining the FAT filesystem with less than 4085 clusters to FAT16, even though the documentation claims it is possible. Notice that it would be meaningless to define it vice versa, i.e., to FAT12 with more than 4085 clusters (which implies clusters on higher addresses being inaccessible).
 
 Class Cluster
 ^^^^^^^^^^^^^
@@ -76,16 +76,16 @@ Class Entry
    :align: center
    :alt: Tree diagram 
 
-`fatfsgen.py`
--------------
+``fatfsgen.py``
+---------------
 
-:component_file:`fatfsgen.py<fatfs/fatfsgen.py>` generates FAT file systems on the host.
+:component_file:`fatfsgen.py <fatfs/fatfsgen.py>` generates FAT file systems on the host.
 
-`fatfsgen.py` recursively traverses the given folder's directory structure and adds files and/or directories inside the binary partition. Users can set if the script generates the partition with wear levelling support, long file names support, and support for preserving the modification date and time from the original folder on the host.
+``fatfsgen.py`` recursively traverses the given folder's directory structure and adds files and/or directories inside the binary partition. Users can set if the script generates the partition with wear levelling support, long file names support, and support for preserving the modification date and time from the original folder on the host.
 
-The ``./fatfsgen.py Espressif`` command generates a simple binary partition with the default settings. Here ``Espressif`` is the local folder (containing files and/or sub-directories) from which binary image will be generated.
+The ``./fatfsgen.py Espressif`` command generates a simple binary partition with the default settings. Here ``Espressif`` is the local folder (containing files and/or sub-directories) from which binary image is generated.
 
-There exist two scripts for that purpose, :component_file:`fatfsgen.py<fatfs/fatfsgen.py>` and :component_file:`wl_fatfsgen.py<fatfs/wl_fatfsgen.py>`. The difference is that `wl_fatfsgen.py` firstly uses `fatfsgen.py` for generating the partition and then initializes wear leveling.
+There exist two scripts for that purpose, :component_file:`fatfsgen.py <fatfs/fatfsgen.py>` and :component_file:`wl_fatfsgen.py <fatfs/wl_fatfsgen.py>`. The difference is that ``wl_fatfsgen.py`` firstly uses ``fatfsgen.py`` for generating the partition and then initializes wear leveling.
 
 The script command line arguments are as follows::
 
@@ -98,12 +98,12 @@ The script command line arguments are as follows::
     --use_default_datetime - this flag forces using default dates and times (date == 0x2100, time == 0x0000), not using argument preserves the original filesystem metadata
     input_directory - required argument - name of the directory being encoded to the binary fat-compatibile partition
 
-`fatfsparse.py`
----------------
+``fatfsparse.py``
+-----------------
 
-:component_file:`fatfsparse.py<fatfs/fatfsparse.py>` translates the binary image into the internal representation and generates the folder with equivalent content on the host. If user requires a parsing partition with initialized wear levelling, the fatfsparse.py will remove the wear levelling sectors using the function `remove_wl` provided by `wl_fatfsgen.py`. After the sectors are removed, parsing of the partition is the same as with no initial wear levelling.
+:component_file:`fatfsparse.py <fatfs/fatfsparse.py>` translates the binary image into the internal representation and generates the folder with equivalent content on the host. If user requires a parsing partition with initialized wear levelling, the ``fatfsparse.py`` will remove the wear levelling sectors using the function ``remove_wl`` provided by ``wl_fatfsgen.py``. After the sectors are removed, parsing of the partition is the same as with no initial wear levelling.
 
-``./fatfsparse.py fatfs_image.img`` command yields the directory with the equivalent content as the binary data image `fatfs_image.img`.
+``./fatfsparse.py fatfs_image.img`` command yields the directory with the equivalent content as the binary data image ``fatfs_image.img``.
 
 The script command line arguments are as follows::
 
@@ -120,7 +120,7 @@ Features
 FAT12/16
 ^^^^^^^^
 
-The supported FAT types are FAT12 and FAT16. For smaller partitions, FAT12 is sufficient. The type is detected according to the count of clusters, and cannot be changed by the user. If there are less than 4085 clusters, the selected type is FAT12 (FAT's entries have 12 bits). For partitions with 4085 to 65526 clusters (with 4085 and 65526 excluded), the type is FAT16. Currently `fatfsgen.py` or `fatfsparse.py` cannot process filesystems with more than 65525 clusters.
+The supported FAT types are FAT12 and FAT16. For smaller partitions, FAT12 is sufficient. The type is detected according to the count of clusters, and cannot be changed by the user. If there are less than 4085 clusters, the selected type is FAT12 (FAT's entries have 12 bits). For partitions with 4085 to 65526 clusters (with 4085 and 65526 excluded), the type is FAT16. Currently ``fatfsgen.py`` or ``fatfsparse.py`` cannot process filesystems with more than 65525 clusters.
 
 .. _fafsgen-wear-levelling:
 
@@ -145,8 +145,8 @@ When a new image with WL support is generated, the script initialises few extra 
         - reserved — 7x 32-bit words, set to 0
         - crc32 — crc32 of all the previous fields, including reserved
 
-      Also, the state sector will be appended by 16-byte `pos update record` for every value of `pos`. Thus, this record will help us to determine the position of the dummy sector.
-      Since `erase + write` operation of the state sector is not atomic, we may lose the data if the power is cut off between "erase" and "write". However, two copies of the state are maintained to recover the state after the power outage. On each update, both copies are updated. Thus, after power outage, we can revert the original valid state.
+      Also, the state sector will be appended by 16-byte ``pos update record`` for every value of ``pos``. Thus, this record will help us to determine the position of the dummy sector.
+      Since ``erase + write`` operation of the state sector is not atomic, we may lose the data if the power is cut off between "erase" and "write". However, two copies of the state are maintained to recover the state after the power outage. On each update, both copies are updated. Thus, after power outage, we can revert the original valid state.
 
     - The config sector: This sector contains the information about the partition used by the WL layer.
         - start_addr — start address of partition (always zero)
@@ -162,10 +162,10 @@ When a new image with WL support is generated, the script initialises few extra 
 2. Removing Wear Levelling:
 While removing WL records, we have to find the position of the dummy sector, and the original and valid orders of the partition (because traversing the dummy sector shuffles the partition). The script can remove other WL sectors from the partition. Steps to remove WL records are given below.
 
-    - Find the `pos`, position of the dummy sector, which will be determined by the number of `pos update records` in the state sector.
+    - Find the ``pos``, position of the dummy sector, which will be determined by the number of ``pos update records`` in the state sector.
     - Create the new image by removing dummy sector and merging remaining sectors before and after dummy sector.
     - Then remove the WL state sectors and config sector which are placed at the end of the partition.
-    - Reorder the new image to get its original order. `move_count` helps us to find the beginning of the partition. The partition will start at the position `end_of_partition - move_count`. Thus the beginning of the partition after removing WL sectors will be `partition[end_of_partition - (move_count*page_size)]`.
+    - Reorder the new image to get its original order. ``move_count`` helps us to find the beginning of the partition. The partition will start at the position ``end_of_partition - move_count``. Thus the beginning of the partition after removing WL sectors will be ``partition[end_of_partition - (move_count*page_size)]``.
 
 File Names Encoding
 ^^^^^^^^^^^^^^^^^^^
@@ -180,12 +180,12 @@ The SFN is mandatory for the implementation of file names. SFN refer to the 8.3 
     0x000000: 46 49 4C 45 4E 41 4D 45 45 58 54 20 18 00 00 00    FILENAMEEXT.....
     0x000010: 21 00 21 00 00 00 00 00 21 00 02 00 1E 00 00 00    !.!.....!.......
 
-The entry denotes the file with 8.3 file name ("FILENAME.EXT") __(0x00/00-0A)__ of size 0x1E = 30 bytes __(0x10/0x0C)__, with default times of modification and creation (0x0021) __(0x10/00,02 and 08)__. The relevant cluster for the file is located at __0x02 (0x10/0A)__. Please notice that a character is encoded using one byte (e.g. __0x46 == 'F'__)
+The entry denotes the file with 8.3 file name ("FILENAME.EXT") __(0x00/00-0A)__ of size 0x1E = 30 bytes __(0x10/0x0C)__, with default times of modification and creation (0x0021) __(0x10/00,02 and 08)__. The relevant cluster for the file is located at __0x02 (0x10/0A)__. Please notice that a character is encoded using one byte (e.g., __0x46 == 'F'__)
 
 Long File Names (LFN)
 ^^^^^^^^^^^^^^^^^^^^^
 
-The LFN supports 255 characters excluding the trailing `NULL`. The LFN supports any character as short file names with an additional period (`.`) and the following special characters: `+ , ; = [ ]`. LFN uses UNICODE, so the character is encoded using 2 bytes.
+The LFN supports 255 characters excluding the trailing ``NULL``. The LFN supports any character as short file names with an additional period (``.``) and the following special characters: ``+ , ; = [ ]``. LFN uses UNICODE, so the character is encoded using 2 bytes.
 
 The structure of one name encoded using LFN is as follows::
 
@@ -198,17 +198,17 @@ The structure of one name encoded using LFN is as follows::
 
 The above example encodes a file name ``thisislongfile.txt``. The record is composed of multiple entries. The first entry contains metadata and is equivalent to the SFN entry. This entry might be final if the file name conforms to the 8.3 file name convention. In such scenarios, the SFN pattern is used. Otherwise, the generator adds various entries with the LFN structure above the SFN entry. These entries hold information about the file name and its checksum for consistency. Every LFN record can hold 13 characters (26 bytes). The file name is firstly cut into some amount of 13-character substrings and these are added above the SFN entry.
 
-We add LFN entries in reversed order, so the first entry in the directory is the last part of the file name and the last is SFN entry. In the above example, we can see that the first entry contains text ``e.txt``, while another one contains the beginning of the name ``thisislongfil``. The first byte in LFN entries denotes an order or the sequence number (numbered from 1). To determine the first entry of the LFN, the first byte is masked with 0x40 (`first_byte =| 0x40`). The specification says that the last entry value will be ORed with 0x40 and it is the mark for the last entry. For example, when the record is the second and also the last in the LFN entry, its first byte is `0x42`.
+We add LFN entries in reversed order, so the first entry in the directory is the last part of the file name and the last is SFN entry. In the above example, we can see that the first entry contains text ``e.txt``, while another one contains the beginning of the name ``thisislongfil``. The first byte in LFN entries denotes an order or the sequence number (numbered from 1). To determine the first entry of the LFN, the first byte is masked with 0x40 (``first_byte =| 0x40``). The specification says that the last entry value will be ORed with 0x40 and it is the mark for the last entry. For example, when the record is the second and also the last in the LFN entry, its first byte is ``0x42``.
 
-The LFN entry is signed at field **DIR_Attr** with value `ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID` (see the file long_filename_utils.py). The SFN entry (possibly also within LFN) contains either `ATTR_DIRECTORY` or `ATTR_ARCHIVE` in this field for directory or file respectively.
+The LFN entry is signed at field **DIR_Attr** with value ``ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID`` (see the file long_filename_utils.py). The SFN entry (possibly also within LFN) contains either ``ATTR_DIRECTORY`` or ``ATTR_ARCHIVE`` in this field for directory or file respectively.
 
-The LFN entry is tagged at the field **DIR_NTRes** with the value `0x00`. This is a sign of the SFN entry in the LFN record, if the entry is a whole SFN record, the value is `0x18`. As you can see in the first example, the value at this field is `0x18`, because the name **"FILENAME.EXT"** fits the SFN. However, the recent example showing **"thisislongfile.txt"** has value `0x00` at field **DIR_NTRes** in the last entry, since it is a LFN. The SFN needs to be unique. For that purpose, the `fatfsgen.py` uses the first 6 characters from the file name, concatenating with `~` and with ID denoting the order of the name with the same prefix. The ID is between 0 to 127, which is the maximal amount of files with the same prefix.
+The LFN entry is tagged at the field **DIR_NTRes** with the value ``0x00``. This is a sign of the SFN entry in the LFN record, if the entry is a whole SFN record, the value is ``0x18``. As you can see in the first example, the value at this field is ``0x18``, because the name **"FILENAME.EXT"** fits the SFN. However, the recent example showing **"thisislongfile.txt"** has value ``0x00`` at field **DIR_NTRes** in the last entry, since it is a LFN. The SFN needs to be unique. For that purpose, the ``fatfsgen.py`` uses the first 6 characters from the file name, concatenating with ``~`` and with ID denoting the order of the name with the same prefix. The ID is between 0 to 127, which is the maximal amount of files with the same prefix.
 
-Calculation of the checksum is described and implemented in the `utils.py` by function `lfn_checksum`. The `fatfsparse.py` assumes that the LFN entries might not be right next to each other, but it assumes the relative order is preserved. The approach is first to find the SFN belonging to some LFN record (using **DIR_NTRes** field). From then, the script starts to search by moving upwards to the beginning of the respective sector, until it finds the last entry in the LFN record (the one with the first half byte equal to 4). The entries are distinguished by their checksums. When finished, the file name can be composed.
+Calculation of the checksum is described and implemented in the ``utils.py`` by function ``lfn_checksum``. The ``fatfsparse.py`` assumes that the LFN entries might not be right next to each other, but it assumes the relative order is preserved. The approach is first to find the SFN belonging to some LFN record (using **DIR_NTRes** field). From then, the script starts to search by moving upwards to the beginning of the respective sector, until it finds the last entry in the LFN record (the one with the first half byte equal to 4). The entries are distinguished by their checksums. When finished, the file name can be composed.
 
 Date and Time in FAT Filesystem
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The FAT filesystem protocol used by ESP-IDF does not preserve the date/time on the chips' media, so all the images extracted from the device have the same default timestamp for all the FAT-specified date-time fields (creation and the last modification timestamp as well as creation, last modification and last access dates).
 
-There are a couple of fields in the SFN entry describing time, such as **DIR_CrtTime** and **DIR_WrtTime**. Some fields are ignored by the FAT implementation used by ESP-IDF (see the file `entry.py`). However, changes in the fields **DIR_WrtTime** and **DIR_WrtDate** are preserved in the chip. Both time and data entry are 16-bit, where the granularity of the time is 2 seconds.
+There are a couple of fields in the SFN entry describing time, such as **DIR_CrtTime** and **DIR_WrtTime**. Some fields are ignored by the FAT implementation used by ESP-IDF (see the file ``entry.py``). However, changes in the fields **DIR_WrtTime** and **DIR_WrtDate** are preserved in the chip. Both time and data entry are 16-bit, where the granularity of the time is 2 seconds.

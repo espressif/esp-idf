@@ -10,7 +10,7 @@
 
 VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 驱动程序协同工作。在高层级，每个 FS 驱动程序均与某些路径前缀相关联。当一个 C 库函数需要打开文件时，VFS 组件将搜索与该文件所在文件路径相关联的 FS 驱动程序，并将调用传递给该驱动程序。针对该文件的读取、写入等其他操作的调用也将传递给这个驱动程序。
 
-例如，您可以使用 ``/fat`` 前缀注册 FAT 文件系统驱动，之后即可调用 ``fopen("/fat/file.txt", "w")``。之后，VFS 将调用 FAT 驱动的 ``open`` 函数，并将参数 ``/file.txt`` 和合适的打开模式传递给 ``open`` 函数；后续对返回的 ``FILE*`` 数据流调用 C 库函数也同样会传递给 FAT 驱动。
+例如，使用 ``/fat`` 前缀注册 FAT 文件系统驱动，之后即可调用 ``fopen("/fat/file.txt", "w")``。之后，VFS 将调用 FAT 驱动的 ``open`` 函数，并将参数 ``/file.txt`` 和合适的打开模式传递给 ``open`` 函数；后续对返回的 ``FILE*`` 数据流调用 C 库函数也同样会传递给 FAT 驱动。
 
 
 注册 FS 驱动程序
@@ -140,7 +140,8 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 请参考 :component_file:`lwip/port/esp32xx/vfs_lwip.c` 以了解使用 LWIP 的套接字驱动参考实现。
 
 .. note::
-    如果 :cpp:func:`select` 用于套接字文件描述符，您可以禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
+
+    如果 :cpp:func:`select` 用于套接字文件描述符，可以禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
     不要在 :cpp:func:`select` 调用过程中更改套接字驱动，否则会出现一些未定义行为。
 
 路径
@@ -182,13 +183,13 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 标准 IO 流 (stdin, stdout, stderr)
 -------------------------------------------
 
-如果 menuconfig 中 ``UART for console output`` 选项没有设置为 ``None``，则 ``stdin``、 ``stdout`` 和 ``stderr`` 将默认从 UART 读取或写入。UART0 或 UART1 可用作标准 IO。默认情况下，UART0 使用 115200 波特率，TX 管脚为 GPIO1，RX 管脚为 GPIO3。您可以在 menuconfig 中更改上述参数。
+如果 menuconfig 中 ``UART for console output`` 选项没有设置为 ``None``，则 ``stdin``、 ``stdout`` 和 ``stderr`` 将默认从 UART 读取或写入。UART0 或 UART1 可用作标准 IO。默认情况下，UART0 使用 115200 波特率，TX 管脚为 GPIO1，RX 管脚为 GPIO3。上述参数可以在 menuconfig 中更改。
 
 对 ``stdout`` 或 ``stderr`` 执行写入操作将会向 UART 发送 FIFO 发送字符，对 ``stdin`` 执行读取操作则会从 UART 接收 FIFO 中取出字符。
 
 默认情况下，VFS 使用简单的函数对 UART 进行读写操作。在所有数据放进 UART FIFO 之前，写操作将处于 busy-wait 状态，读操处于非阻塞状态，仅返回 FIFO 中已有数据。由于读操作为非阻塞，高层级 C 库函数调用（如 ``fscanf("%d\n", &var);``）可能获取不到所需结果。
 
-如果应用程序使用 UART 驱动，则可以调用 ``esp_vfs_dev_uart_use_driver`` 函数来指导 VFS 使用驱动中断、读写阻塞功能等。您也可以调用 ``esp_vfs_dev_uart_use_nonblocking`` 来恢复非阻塞函数。
+如果应用程序使用 UART 驱动，则可以调用 ``esp_vfs_dev_uart_use_driver`` 函数来指导 VFS 使用驱动中断、读写阻塞功能等，也可以调用 ``esp_vfs_dev_uart_use_nonblocking`` 来恢复非阻塞函数。
 
 VFS 还为输入和输出提供换行符转换功能（可选）。多数应用程序在程序内部发送或接收以 LF (''\n'') 结尾的行，但不同的终端程序可能需要不同的换行符，比如 CR 或 CRLF。应用程序可以通过 menuconfig 或者调用 ``esp_vfs_dev_uart_port_set_rx_line_endings`` 和 ``esp_vfs_dev_uart_port_set_tx_line_endings`` 为输入输出配置换行符。
 

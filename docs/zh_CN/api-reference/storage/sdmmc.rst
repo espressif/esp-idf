@@ -72,7 +72,7 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     注意，驱动程序不会在 (1) I/O 使能寄存器和 Int 使能寄存器，及 (2) I/O 块大小中，设置任何位。应用程序可通过调用 :cpp:func:`sdmmc_io_write_byte` 来设置相关位。
 
-    如需卡配置或传输数据，请根据您的具体情况选择下表中的函数：
+    如需卡配置或传输数据，请根据具体情况，选择下表函数：
 
     .. list-table::
        :widths: 55 25 20
@@ -93,11 +93,11 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     使用 :cpp:func:`sdmmc_io_enable_int` 函数，应用程序可启用 SDIO 中断。在单线模式下使用 SDIO 时，还需要连接 D1 线来启用 SDIO 中断。
 
-    如果您需要应用程序保持等待直至发生 SDIO 中断，请使用 :cpp:func:`sdmmc_io_wait_int` 函数。
+    如果需要应用程序保持等待直至发生 SDIO 中断，请使用 :cpp:func:`sdmmc_io_wait_int` 函数。
 
     .. only:: esp32
 
-    如果您需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` 和 :example:`peripherals/sdio/host`。
+    如果需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` 和 :example:`peripherals/sdio/host`。
 
 复合卡（存储 + IO）
 ^^^^^^^^^^^^^^^^^^^^^^^^^
