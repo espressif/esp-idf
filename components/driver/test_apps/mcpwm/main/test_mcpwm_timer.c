@@ -169,7 +169,7 @@ TEST_CASE("mcpwm_timer_event_callbacks", "[mcpwm]")
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
 
     printf("wait for full and empty events\r\n");
-    bits = xEventGroupWaitBits(event_group, TEST_MCPWM_TIMER_EVENT_BIT_FULL | TEST_MCPWM_TIMER_EVENT_BIT_EMPTY, pdTRUE, pdTRUE, pdMS_TO_TICKS(1050));
+    bits = xEventGroupWaitBits(event_group, TEST_MCPWM_TIMER_EVENT_BIT_FULL | TEST_MCPWM_TIMER_EVENT_BIT_EMPTY, pdTRUE, pdTRUE, pdMS_TO_TICKS(1300));
     TEST_ASSERT_EQUAL(TEST_MCPWM_TIMER_EVENT_BIT_FULL | TEST_MCPWM_TIMER_EVENT_BIT_EMPTY, bits);
 
     printf("stop timer and wait for event\r\n");

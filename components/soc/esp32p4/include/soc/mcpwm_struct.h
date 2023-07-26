@@ -33,21 +33,21 @@ typedef union {
  */
 typedef union {
     struct {
-        /** timer0_prescale : R/W; bitpos: [7:0]; default: 0;
+        /** timer_prescale : R/W; bitpos: [7:0]; default: 0;
          *  Configures the prescaler value of timern, so that the period of PT0_clk = Period of
          *  PWM_clk * (PWM_TIMERn_PRESCALE + 1)
          */
-        uint32_t timer0_prescale:8;
-        /** timer0_period : R/W; bitpos: [23:8]; default: 255;
+        uint32_t timer_prescale:8;
+        /** timer_period : R/W; bitpos: [23:8]; default: 255;
          *  Configures the period shadow of PWM timern
          */
-        uint32_t timer0_period:16;
-        /** timer0_period_upmethod : R/W; bitpos: [25:24]; default: 0;
+        uint32_t timer_period:16;
+        /** timer_period_upmethod : R/W; bitpos: [25:24]; default: 0;
          *  Configures the update method for active register of PWM timern period.\\0:
          *  Immediate\\1: TEZ\\2: Sync\\3: TEZ or sync\\TEZ here and below means timer equal
          *  zero event
          */
-        uint32_t timer0_period_upmethod:2;
+        uint32_t timer_period_upmethod:2;
         uint32_t reserved_26:6;
     };
     uint32_t val;
@@ -58,19 +58,19 @@ typedef union {
  */
 typedef union {
     struct {
-        /** timer0_start : R/W/SC; bitpos: [2:0]; default: 0;
+        /** timer_start : R/W/SC; bitpos: [2:0]; default: 0;
          *  Configures whether or not to start/stop PWM timer$n.\\0: If PWM timer$n starts,
          *  then stops at TEZ\\1: If timer$n starts, then stops at TEP\\2: PWM timer$n starts
          *  and runs on\\3: Timer$n starts and stops at the next TEZ\\4: Timer0 starts and
          *  stops at the next TEP.\\TEP here and below means the event that happens when the
          *  timer equals to period
          */
-        uint32_t timer0_start:3;
-        /** timer0_mod : R/W; bitpos: [4:3]; default: 0;
+        uint32_t timer_start:3;
+        /** timer_mod : R/W; bitpos: [4:3]; default: 0;
          *  Configures the working mode of PWM timer$n.\\0: Freeze\\1: Increase mode\\2:
          *  Decrease mode\\3: Up-down mode
          */
-        uint32_t timer0_mod:2;
+        uint32_t timer_mod:2;
         uint32_t reserved_5:27;
     };
     uint32_t val;
@@ -81,202 +81,52 @@ typedef union {
  */
 typedef union {
     struct {
-        /** timer0_synci_en : R/W; bitpos: [0]; default: 0;
+        /** timer_synci_en : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable timer$n reloading with phase on sync input
          *  event is enabled.\\0: Disable\\1: Enable
          */
-        uint32_t timer0_synci_en:1;
-        /** timer0_sync_sw : R/W; bitpos: [1]; default: 0;
+        uint32_t timer_synci_en:1;
+        /** timer_sync_sw : R/W; bitpos: [1]; default: 0;
          *  Configures the generation of software sync. Toggling this bit will trigger a
          *  software sync.
          */
-        uint32_t timer0_sync_sw:1;
-        /** timer0_synco_sel : R/W; bitpos: [3:2]; default: 0;
+        uint32_t timer_sync_sw:1;
+        /** timer_synco_sel : R/W; bitpos: [3:2]; default: 0;
          *  Configures the selection of PWM timer$n sync_out.\\0: Sync_in\\1: TEZ\\2: TEP\\3:
          *  Invalid, sync_out selects noting
          */
-        uint32_t timer0_synco_sel:2;
-        /** timer0_phase : R/W; bitpos: [19:4]; default: 0;
+        uint32_t timer_synco_sel:2;
+        /** timer_phase : R/W; bitpos: [19:4]; default: 0;
          *  Configures the phase for timer$n reload on sync event.
          */
-        uint32_t timer0_phase:16;
-        /** timer0_phase_direction : R/W; bitpos: [20]; default: 0;
+        uint32_t timer_phase:16;
+        /** timer_phase_direction : R/W; bitpos: [20]; default: 0;
          *  Configures the PWM timer$n's direction when timer$n mode is up-down mode.\\0:
          *  Increase\\1: Decrease
          */
-        uint32_t timer0_phase_direction:1;
+        uint32_t timer_phase_direction:1;
         uint32_t reserved_21:11;
     };
     uint32_t val;
 } mcpwm_timer_sync_reg_t;
 
-/** Type of timer0_status register
+/** Type of timer_status register
  *  PWM timer$n status register.
  */
 typedef union {
     struct {
-        /** timer0_value : RO; bitpos: [15:0]; default: 0;
+        /** timer_value : RO; bitpos: [15:0]; default: 0;
          *  Represents current PWM timer$n counter value.
          */
-        uint32_t timer0_value:16;
-        /** timer0_direction : RO; bitpos: [16]; default: 0;
+        uint32_t timer_value:16;
+        /** timer_direction : RO; bitpos: [16]; default: 0;
          *  Represents current PWM timer$n counter direction.\\0: Increment\\1: Decrement
          */
-        uint32_t timer0_direction:1;
+        uint32_t timer_direction:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
 } mcpwm_timer_status_reg_t;
-
-/** Type of timer1_cfg1 register
- *  PWM timer$n working mode and start/stop control register.
- */
-typedef union {
-    struct {
-        /** timer1_start : R/W/SC; bitpos: [2:0]; default: 0;
-         *  Configures whether or not to start/stop PWM timer$n.\\0: If PWM timer$n starts,
-         *  then stops at TEZ\\1: If timer$n starts, then stops at TEP\\2: PWM timer$n starts
-         *  and runs on\\3: Timer$n starts and stops at the next TEZ\\4: Timer0 starts and
-         *  stops at the next TEP.\\TEP here and below means the event that happens when the
-         *  timer equals to period
-         */
-        uint32_t timer1_start:3;
-        /** timer1_mod : R/W; bitpos: [4:3]; default: 0;
-         *  Configures the working mode of PWM timer$n.\\0: Freeze\\1: Increase mode\\2:
-         *  Decrease mode\\3: Up-down mode
-         */
-        uint32_t timer1_mod:2;
-        uint32_t reserved_5:27;
-    };
-    uint32_t val;
-} mcpwm_timer1_cfg1_reg_t;
-
-/** Type of timer1_sync register
- *  PWM timer$n sync function configuration register.
- */
-typedef union {
-    struct {
-        /** timer1_synci_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable timer$n reloading with phase on sync input
-         *  event is enabled.\\0: Disable\\1: Enable
-         */
-        uint32_t timer1_synci_en:1;
-        /** timer1_sync_sw : R/W; bitpos: [1]; default: 0;
-         *  Configures the generation of software sync. Toggling this bit will trigger a
-         *  software sync.
-         */
-        uint32_t timer1_sync_sw:1;
-        /** timer1_synco_sel : R/W; bitpos: [3:2]; default: 0;
-         *  Configures the selection of PWM timer$n sync_out.\\0: Sync_in\\1: TEZ\\2: TEP\\3:
-         *  Invalid, sync_out selects noting
-         */
-        uint32_t timer1_synco_sel:2;
-        /** timer1_phase : R/W; bitpos: [19:4]; default: 0;
-         *  Configures the phase for timer$n reload on sync event.
-         */
-        uint32_t timer1_phase:16;
-        /** timer1_phase_direction : R/W; bitpos: [20]; default: 0;
-         *  Configures the PWM timer$n's direction when timer$n mode is up-down mode.\\0:
-         *  Increase\\1: Decrease
-         */
-        uint32_t timer1_phase_direction:1;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} mcpwm_timer1_sync_reg_t;
-
-/** Type of timer1_status register
- *  PWM timer$n status register.
- */
-typedef union {
-    struct {
-        /** timer1_value : RO; bitpos: [15:0]; default: 0;
-         *  Represents current PWM timer$n counter value.
-         */
-        uint32_t timer1_value:16;
-        /** timer1_direction : RO; bitpos: [16]; default: 0;
-         *  Represents current PWM timer$n counter direction.\\0: Increment\\1: Decrement
-         */
-        uint32_t timer1_direction:1;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} mcpwm_timer1_status_reg_t;
-
-/** Type of timer2_cfg1 register
- *  PWM timer$n working mode and start/stop control register.
- */
-typedef union {
-    struct {
-        /** timer2_start : R/W/SC; bitpos: [2:0]; default: 0;
-         *  Configures whether or not to start/stop PWM timer$n.\\0: If PWM timer$n starts,
-         *  then stops at TEZ\\1: If timer$n starts, then stops at TEP\\2: PWM timer$n starts
-         *  and runs on\\3: Timer$n starts and stops at the next TEZ\\4: Timer0 starts and
-         *  stops at the next TEP.\\TEP here and below means the event that happens when the
-         *  timer equals to period
-         */
-        uint32_t timer2_start:3;
-        /** timer2_mod : R/W; bitpos: [4:3]; default: 0;
-         *  Configures the working mode of PWM timer$n.\\0: Freeze\\1: Increase mode\\2:
-         *  Decrease mode\\3: Up-down mode
-         */
-        uint32_t timer2_mod:2;
-        uint32_t reserved_5:27;
-    };
-    uint32_t val;
-} mcpwm_timer2_cfg1_reg_t;
-
-/** Type of timer2_sync register
- *  PWM timer$n sync function configuration register.
- */
-typedef union {
-    struct {
-        /** timer2_synci_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable timer$n reloading with phase on sync input
-         *  event is enabled.\\0: Disable\\1: Enable
-         */
-        uint32_t timer2_synci_en:1;
-        /** timer2_sync_sw : R/W; bitpos: [1]; default: 0;
-         *  Configures the generation of software sync. Toggling this bit will trigger a
-         *  software sync.
-         */
-        uint32_t timer2_sync_sw:1;
-        /** timer2_synco_sel : R/W; bitpos: [3:2]; default: 0;
-         *  Configures the selection of PWM timer$n sync_out.\\0: Sync_in\\1: TEZ\\2: TEP\\3:
-         *  Invalid, sync_out selects noting
-         */
-        uint32_t timer2_synco_sel:2;
-        /** timer2_phase : R/W; bitpos: [19:4]; default: 0;
-         *  Configures the phase for timer$n reload on sync event.
-         */
-        uint32_t timer2_phase:16;
-        /** timer2_phase_direction : R/W; bitpos: [20]; default: 0;
-         *  Configures the PWM timer$n's direction when timer$n mode is up-down mode.\\0:
-         *  Increase\\1: Decrease
-         */
-        uint32_t timer2_phase_direction:1;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} mcpwm_timer2_sync_reg_t;
-
-/** Type of timer2_status register
- *  PWM timer$n status register.
- */
-typedef union {
-    struct {
-        /** timer2_value : RO; bitpos: [15:0]; default: 0;
-         *  Represents current PWM timer$n counter value.
-         */
-        uint32_t timer2_value:16;
-        /** timer2_direction : RO; bitpos: [16]; default: 0;
-         *  Represents current PWM timer$n counter direction.\\0: Increment\\1: Decrement
-         */
-        uint32_t timer2_direction:1;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} mcpwm_timer2_status_reg_t;
 
 
 /** Group: timer_synci_cfg */
@@ -357,337 +207,254 @@ typedef union {
  */
 typedef union {
     struct {
-        /** cmpr0_a_upmethod : R/W; bitpos: [3:0]; default: 0;
+        /** cmpr_a_upmethod : R/W; bitpos: [3:0]; default: 0;
          *  Configures the update method for PWM generator n time stamp A's active
          *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
          *  set to 1: Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t cmpr0_a_upmethod:4;
-        /** cmpr0_b_upmethod : R/W; bitpos: [7:4]; default: 0;
+        uint32_t cmpr_a_upmethod:4;
+        /** cmpr_b_upmethod : R/W; bitpos: [7:4]; default: 0;
          *  Configures the update method for PWM generator n time stamp B's active
          *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
          *  set to 1: Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t cmpr0_b_upmethod:4;
-        /** cmpr0_a_shdw_full : R/W/WTC/SC; bitpos: [8]; default: 0;
+        uint32_t cmpr_b_upmethod:4;
+        /** cmpr_a_shdw_full : R/W/WTC/SC; bitpos: [8]; default: 0;
          *  Represents whether or not generatorn time stamp A's shadow reg is transferred.\\0:
          *  A's active reg has been updated with shadow register latest value.\\1: A's shadow
          *  reg is filled and waiting to be transferred to A's active reg
          */
-        uint32_t cmpr0_a_shdw_full:1;
-        /** cmpr0_b_shdw_full : R/W/WTC/SC; bitpos: [9]; default: 0;
+        uint32_t cmpr_a_shdw_full:1;
+        /** cmpr_b_shdw_full : R/W/WTC/SC; bitpos: [9]; default: 0;
          *  Represents whether or not generatorn time stamp B's shadow reg is transferred.\\0:
          *  B's active reg has been updated with shadow register latest value.\\1: B's shadow
          *  reg is filled and waiting to be transferred to B's active reg
          */
-        uint32_t cmpr0_b_shdw_full:1;
+        uint32_t cmpr_b_shdw_full:1;
         uint32_t reserved_10:22;
     };
     uint32_t val;
 } mcpwm_gen_stmp_cfg_reg_t;
 
-/** Type of gen0_tstmp_a register
+/** Type of gen_tstmp_a register
  *  Generator$n time stamp A's shadow register
  */
 typedef union {
     struct {
-        /** cmpr0_a : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the value of PWM generator $n time stamp A's shadow register.
+        /** cmpr : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the value of PWM generator $n time stamp 's shadow register.
          */
-        uint32_t cmpr0_a:16;
+        uint32_t cmpr:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} mcpwm_gen_tstmp_a_reg_t;
+} mcpwm_gen_tstmp_reg_t;
 
-/** Type of gen0_tstmp_b register
- *  Generator$n time stamp B's shadow register
- */
-typedef union {
-    struct {
-        /** cmpr0_b : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the value of PWM generator $n time stamp B's shadow register.
-         */
-        uint32_t cmpr0_b:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_gen_tstmp_b_reg_t;
 
-/** Type of gen0_cfg0 register
+/** Type of gen_cfg0 register
  *  Generator$n fault event T0 and T1 configuration register
  */
 typedef union {
     struct {
-        /** gen0_cfg_upmethod : R/W; bitpos: [3:0]; default: 0;
+        /** gen_cfg_upmethod : R/W; bitpos: [3:0]; default: 0;
          *  Configures update method for PWM generator $n's active register.\\0:
          *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
          *  Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t gen0_cfg_upmethod:4;
-        /** gen0_t0_sel : R/W; bitpos: [6:4]; default: 0;
+        uint32_t gen_cfg_upmethod:4;
+        /** gen_t0_sel : R/W; bitpos: [6:4]; default: 0;
          *  Configures source selection for PWM generator $n event_t0, take effect
          *  immediately.\\0: fault_event0\\1: fault_event1\\2: fault_event2\\3: sync_taken\\4:
          *  Invalid, Select nothing
          */
-        uint32_t gen0_t0_sel:3;
-        /** gen0_t1_sel : R/W; bitpos: [9:7]; default: 0;
+        uint32_t gen_t0_sel:3;
+        /** gen_t1_sel : R/W; bitpos: [9:7]; default: 0;
          *  Configures source selection for PWM generator $n event_t1, take effect
          *  immediately.\\0: fault_event0\\1: fault_event1\\2: fault_event2\\3: sync_taken\\4:
          *  Invalid, Select nothing
          */
-        uint32_t gen0_t1_sel:3;
+        uint32_t gen_t1_sel:3;
         uint32_t reserved_10:22;
     };
     uint32_t val;
 } mcpwm_gen_cfg0_reg_t;
 
-/** Type of gen0_force register
+/** Type of gen_force register
  *  Generator$n output signal force mode register.
  */
 typedef union {
     struct {
-        /** gen0_cntuforce_upmethod : R/W; bitpos: [5:0]; default: 32;
+        /** gen_cntuforce_upmethod : R/W; bitpos: [5:0]; default: 32;
          *  Configures update method for continuous software force of PWM generator$n.\\0:
          *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
          *  TEA\\Bit3 is set to 1: TEB\\Bit4 is set to 1: Sync\\Bit5 is set to 1: Disable
          *  update. TEA/B here and below means an event generated when the timer's value equals
          *  to that of register A/B.
          */
-        uint32_t gen0_cntuforce_upmethod:6;
-        /** gen0_a_cntuforce_mode : R/W; bitpos: [7:6]; default: 0;
+        uint32_t gen_cntuforce_upmethod:6;
+        /** gen_a_cntuforce_mode : R/W; bitpos: [7:6]; default: 0;
          *  Configures continuous software force mode for PWM$n A.\\0: Disabled\\1: Low\\2:
          *  High\\3: Disabled
          */
-        uint32_t gen0_a_cntuforce_mode:2;
-        /** gen0_b_cntuforce_mode : R/W; bitpos: [9:8]; default: 0;
+        uint32_t gen_a_cntuforce_mode:2;
+        /** gen_b_cntuforce_mode : R/W; bitpos: [9:8]; default: 0;
          *  Configures continuous software force mode for PWM$n B.\\0: Disabled\\1: Low\\2:
          *  High\\3: Disabled
          */
-        uint32_t gen0_b_cntuforce_mode:2;
-        /** gen0_a_nciforce : R/W; bitpos: [10]; default: 0;
+        uint32_t gen_b_cntuforce_mode:2;
+        /** gen_a_nciforce : R/W; bitpos: [10]; default: 0;
          *  Configures the generation of non-continuous immediate software-force event for
          *  PWM$n A, a toggle will trigger a force event.
          */
-        uint32_t gen0_a_nciforce:1;
-        /** gen0_a_nciforce_mode : R/W; bitpos: [12:11]; default: 0;
+        uint32_t gen_a_nciforce:1;
+        /** gen_a_nciforce_mode : R/W; bitpos: [12:11]; default: 0;
          *  Configures non-continuous immediate software force mode for PWM$n A.\\0:
          *  Disabled\\1: Low\\2: High\\3: Disabled
          */
-        uint32_t gen0_a_nciforce_mode:2;
-        /** gen0_b_nciforce : R/W; bitpos: [13]; default: 0;
+        uint32_t gen_a_nciforce_mode:2;
+        /** gen_b_nciforce : R/W; bitpos: [13]; default: 0;
          *  Configures the generation of non-continuous immediate software-force event for
          *  PWM$n B, a toggle will trigger a force event.
          */
-        uint32_t gen0_b_nciforce:1;
-        /** gen0_b_nciforce_mode : R/W; bitpos: [15:14]; default: 0;
+        uint32_t gen_b_nciforce:1;
+        /** gen_b_nciforce_mode : R/W; bitpos: [15:14]; default: 0;
          *  Configures non-continuous immediate software force mode for PWM$n B.\\0:
          *  Disabled\\1: Low\\2: High\\3: Disabled
          */
-        uint32_t gen0_b_nciforce_mode:2;
+        uint32_t gen_b_nciforce_mode:2;
         uint32_t reserved_16:16;
     };
     uint32_t val;
 } mcpwm_gen_force_reg_t;
 
-/** Type of gen0_a register
+/** Type of gen register
  *  PWM$n output signal A actions configuration register
  */
 typedef union {
     struct {
-        /** gen0_a_utez : R/W; bitpos: [1:0]; default: 0;
+        /** gen_a_utez : R/W; bitpos: [1:0]; default: 0;
          *  Configures action on PWM$n A triggered by event TEZ when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_utez:2;
-        /** gen0_a_utep : R/W; bitpos: [3:2]; default: 0;
+        uint32_t gen_utez:2;
+        /** gen_a_utep : R/W; bitpos: [3:2]; default: 0;
          *  Configures action on PWM$n A triggered by event TEP when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_utep:2;
-        /** gen0_a_utea : R/W; bitpos: [5:4]; default: 0;
+        uint32_t gen_utep:2;
+        /** gen_a_utea : R/W; bitpos: [5:4]; default: 0;
          *  Configures action on PWM$n A triggered by event TEA when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_utea:2;
-        /** gen0_a_uteb : R/W; bitpos: [7:6]; default: 0;
+        uint32_t gen_utea:2;
+        /** gen_a_uteb : R/W; bitpos: [7:6]; default: 0;
          *  Configures action on PWM$n A triggered by event TEB when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_uteb:2;
-        /** gen0_a_ut0 : R/W; bitpos: [9:8]; default: 0;
+        uint32_t gen_uteb:2;
+        /** gen_a_ut0 : R/W; bitpos: [9:8]; default: 0;
          *  Configures action on PWM$n A triggered by event_t0 when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_ut0:2;
-        /** gen0_a_ut1 : R/W; bitpos: [11:10]; default: 0;
+        uint32_t gen_ut0:2;
+        /** gen_a_ut1 : R/W; bitpos: [11:10]; default: 0;
          *  Configures action on PWM$n A triggered by event_t1 when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_ut1:2;
-        /** gen0_a_dtez : R/W; bitpos: [13:12]; default: 0;
+        uint32_t gen_ut1:2;
+        /** gen_a_dtez : R/W; bitpos: [13:12]; default: 0;
          *  Configures action on PWM$n A triggered by event TEZ when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_dtez:2;
-        /** gen0_a_dtep : R/W; bitpos: [15:14]; default: 0;
+        uint32_t gen_dtez:2;
+        /** gen_a_dtep : R/W; bitpos: [15:14]; default: 0;
          *  Configures action on PWM$n A triggered by event TEP when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_dtep:2;
-        /** gen0_a_dtea : R/W; bitpos: [17:16]; default: 0;
+        uint32_t gen_dtep:2;
+        /** gen_a_dtea : R/W; bitpos: [17:16]; default: 0;
          *  Configures action on PWM$n A triggered by event TEA when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_dtea:2;
-        /** gen0_a_dteb : R/W; bitpos: [19:18]; default: 0;
+        uint32_t gen_dtea:2;
+        /** gen_a_dteb : R/W; bitpos: [19:18]; default: 0;
          *  Configures action on PWM$n A triggered by event TEB when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_dteb:2;
-        /** gen0_a_dt0 : R/W; bitpos: [21:20]; default: 0;
+        uint32_t gen_dteb:2;
+        /** gen_a_dt0 : R/W; bitpos: [21:20]; default: 0;
          *  Configures action on PWM$n A triggered by event_t0 when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_dt0:2;
-        /** gen0_a_dt1 : R/W; bitpos: [23:22]; default: 0;
+        uint32_t gen_dt0:2;
+        /** gen_a_dt1 : R/W; bitpos: [23:22]; default: 0;
          *  Configures action on PWM$n A triggered by event_t1 when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t gen0_a_dt1:2;
+        uint32_t gen_dt1:2;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} mcpwm_gen_a_reg_t;
-
-/** Type of gen0_b register
- *  PWM$n output signal B actions configuration register
- */
-typedef union {
-    struct {
-        /** gen0_b_utez : R/W; bitpos: [1:0]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEZ when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_utez:2;
-        /** gen0_b_utep : R/W; bitpos: [3:2]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEP when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_utep:2;
-        /** gen0_b_utea : R/W; bitpos: [5:4]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEA when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_utea:2;
-        /** gen0_b_uteb : R/W; bitpos: [7:6]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEB when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_uteb:2;
-        /** gen0_b_ut0 : R/W; bitpos: [9:8]; default: 0;
-         *  Configures action on PWM$n B triggered by event_t0 when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_ut0:2;
-        /** gen0_b_ut1 : R/W; bitpos: [11:10]; default: 0;
-         *  Configures action on PWM$n B triggered by event_t1 when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_ut1:2;
-        /** gen0_b_dtez : R/W; bitpos: [13:12]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEZ when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_dtez:2;
-        /** gen0_b_dtep : R/W; bitpos: [15:14]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEP when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_dtep:2;
-        /** gen0_b_dtea : R/W; bitpos: [17:16]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEA when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_dtea:2;
-        /** gen0_b_dteb : R/W; bitpos: [19:18]; default: 0;
-         *  Configures action on PWM$n B triggered by event TEB when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_dteb:2;
-        /** gen0_b_dt0 : R/W; bitpos: [21:20]; default: 0;
-         *  Configures action on PWM$n B triggered by event_t0 when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_dt0:2;
-        /** gen0_b_dt1 : R/W; bitpos: [23:22]; default: 0;
-         *  Configures action on PWM$n B triggered by event_t1 when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t gen0_b_dt1:2;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} mcpwm_gen_b_reg_t;
+} mcpwm_gen_reg_t;
 
 /** Type of dt0_cfg register
  *  Dead time configuration register
  */
 typedef union {
     struct {
-        /** db0_fed_upmethod : R/W; bitpos: [3:0]; default: 0;
+        /** db_fed_upmethod : R/W; bitpos: [3:0]; default: 0;
          *  Configures update method for FED (Falling edge delay) active register.\\0:
          *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
          *  Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t db0_fed_upmethod:4;
-        /** db0_red_upmethod : R/W; bitpos: [7:4]; default: 0;
+        uint32_t db_fed_upmethod:4;
+        /** db_red_upmethod : R/W; bitpos: [7:4]; default: 0;
          *  Configures update method for RED (rising edge delay) active register.\\0:
          *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
          *  Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t db0_red_upmethod:4;
-        /** db0_deb_mode : R/W; bitpos: [8]; default: 0;
+        uint32_t db_red_upmethod:4;
+        /** db_deb_mode : R/W; bitpos: [8]; default: 0;
          *  Configures S8 in table, dual-edge B mode.\\0: fed/red take effect on different path
          *  separately\\1: fed/red take effect on B path, A out is in bypass or dulpB mode
          */
-        uint32_t db0_deb_mode:1;
-        /** db0_a_outswap : R/W; bitpos: [9]; default: 0;
+        uint32_t db_deb_mode:1;
+        /** db_a_outswap : R/W; bitpos: [9]; default: 0;
          *  Configures S6 in table.
          */
-        uint32_t db0_a_outswap:1;
-        /** db0_b_outswap : R/W; bitpos: [10]; default: 0;
+        uint32_t db_a_outswap:1;
+        /** db_b_outswap : R/W; bitpos: [10]; default: 0;
          *  Configures S7 in table.
          */
-        uint32_t db0_b_outswap:1;
-        /** db0_red_insel : R/W; bitpos: [11]; default: 0;
+        uint32_t db_b_outswap:1;
+        /** db_red_insel : R/W; bitpos: [11]; default: 0;
          *  Configures S4 in table.
          */
-        uint32_t db0_red_insel:1;
-        /** db0_fed_insel : R/W; bitpos: [12]; default: 0;
+        uint32_t db_red_insel:1;
+        /** db_fed_insel : R/W; bitpos: [12]; default: 0;
          *  Configures S5 in table.
          */
-        uint32_t db0_fed_insel:1;
-        /** db0_red_outinvert : R/W; bitpos: [13]; default: 0;
+        uint32_t db_fed_insel:1;
+        /** db_red_outinvert : R/W; bitpos: [13]; default: 0;
          *  Configures S2 in table.
          */
-        uint32_t db0_red_outinvert:1;
-        /** db0_fed_outinvert : R/W; bitpos: [14]; default: 0;
+        uint32_t db_red_outinvert:1;
+        /** db_fed_outinvert : R/W; bitpos: [14]; default: 0;
          *  Configures S3 in table.
          */
-        uint32_t db0_fed_outinvert:1;
-        /** db0_a_outbypass : R/W; bitpos: [15]; default: 1;
+        uint32_t db_fed_outinvert:1;
+        /** db_a_outbypass : R/W; bitpos: [15]; default: 1;
          *  Configures S1 in table.
          */
-        uint32_t db0_a_outbypass:1;
-        /** db0_b_outbypass : R/W; bitpos: [16]; default: 1;
+        uint32_t db_a_outbypass:1;
+        /** db_b_outbypass : R/W; bitpos: [16]; default: 1;
          *  Configures S0 in table.
          */
-        uint32_t db0_b_outbypass:1;
-        /** db0_clk_sel : R/W; bitpos: [17]; default: 0;
+        uint32_t db_b_outbypass:1;
+        /** db_clk_sel : R/W; bitpos: [17]; default: 0;
          *  Configures dead time generator $n clock selection.\\0: PWM_clk\\1: PT_clk
          */
-        uint32_t db0_clk_sel:1;
+        uint32_t db_clk_sel:1;
         uint32_t reserved_18:14;
     };
     uint32_t val;
@@ -698,10 +465,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** db0_fed : R/W; bitpos: [15:0]; default: 0;
+        /** db_fed : R/W; bitpos: [15:0]; default: 0;
          *  Configures shadow register for FED.
          */
-        uint32_t db0_fed:16;
+        uint32_t db_fed:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -712,10 +479,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** db0_red : R/W; bitpos: [15:0]; default: 0;
+        /** db_red : R/W; bitpos: [15:0]; default: 0;
          *  Configures shadow register for RED.
          */
-        uint32_t db0_red:16;
+        uint32_t db_red:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -726,33 +493,33 @@ typedef union {
  */
 typedef union {
     struct {
-        /** chopper0_en : R/W; bitpos: [0]; default: 0;
+        /** chopper_en : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable carrier$n.\\0: Bypassed\\1: Enabled
          */
-        uint32_t chopper0_en:1;
-        /** chopper0_prescale : R/W; bitpos: [4:1]; default: 0;
+        uint32_t chopper_en:1;
+        /** chopper_prescale : R/W; bitpos: [4:1]; default: 0;
          *  Configures the prescale value of PWM carrier$n clock (PC_clk), so that period of
          *  PC_clk = period of PWM_clk * (PWM_CARRIER$n_PRESCALE + 1)
          */
-        uint32_t chopper0_prescale:4;
-        /** chopper0_duty : R/W; bitpos: [7:5]; default: 0;
+        uint32_t chopper_prescale:4;
+        /** chopper_duty : R/W; bitpos: [7:5]; default: 0;
          *  Configures carrier duty. Duty = PWM_CARRIER$n_DUTY / 8
          */
-        uint32_t chopper0_duty:3;
-        /** chopper0_oshtwth : R/W; bitpos: [11:8]; default: 0;
+        uint32_t chopper_duty:3;
+        /** chopper_oshtwth : R/W; bitpos: [11:8]; default: 0;
          *  Configures width of the first pulse. Measurement unit: Periods of the carrier.
          */
-        uint32_t chopper0_oshtwth:4;
-        /** chopper0_out_invert : R/W; bitpos: [12]; default: 0;
+        uint32_t chopper_oshtwth:4;
+        /** chopper_out_invert : R/W; bitpos: [12]; default: 0;
          *  Configures whether or not to invert the output of PWM$n A and PWM$n B for this
          *  submodule.\\0: Normal\\1: Invert
          */
-        uint32_t chopper0_out_invert:1;
-        /** chopper0_in_invert : R/W; bitpos: [13]; default: 0;
+        uint32_t chopper_out_invert:1;
+        /** chopper_in_invert : R/W; bitpos: [13]; default: 0;
          *  Configures whether or not to invert the input of PWM$n A and PWM$n B for this
          *  submodule.\\0: Normal\\1: Invert
          */
-        uint32_t chopper0_in_invert:1;
+        uint32_t chopper_in_invert:1;
         uint32_t reserved_14:18;
     };
     uint32_t val;
@@ -763,86 +530,86 @@ typedef union {
  */
 typedef union {
     struct {
-        /** tz0_sw_cbc : R/W; bitpos: [0]; default: 0;
+        /** tz_sw_cbc : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_sw_cbc:1;
-        /** tz0_f2_cbc : R/W; bitpos: [1]; default: 0;
+        uint32_t tz_sw_cbc:1;
+        /** tz_f2_cbc : R/W; bitpos: [1]; default: 0;
          *  Configures whether or not event_f2 will trigger cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_f2_cbc:1;
-        /** tz0_f1_cbc : R/W; bitpos: [2]; default: 0;
+        uint32_t tz_f2_cbc:1;
+        /** tz_f1_cbc : R/W; bitpos: [2]; default: 0;
          *  Configures whether or not event_f1 will trigger cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_f1_cbc:1;
-        /** tz0_f0_cbc : R/W; bitpos: [3]; default: 0;
+        uint32_t tz_f1_cbc:1;
+        /** tz_f0_cbc : R/W; bitpos: [3]; default: 0;
          *  Configures whether or not event_f0 will trigger cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_f0_cbc:1;
-        /** tz0_sw_ost : R/W; bitpos: [4]; default: 0;
+        uint32_t tz_f0_cbc:1;
+        /** tz_sw_ost : R/W; bitpos: [4]; default: 0;
          *  Configures whether or not to enable software force one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_sw_ost:1;
-        /** tz0_f2_ost : R/W; bitpos: [5]; default: 0;
+        uint32_t tz_sw_ost:1;
+        /** tz_f2_ost : R/W; bitpos: [5]; default: 0;
          *  Configures whether or not event_f2 will trigger one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_f2_ost:1;
-        /** tz0_f1_ost : R/W; bitpos: [6]; default: 0;
+        uint32_t tz_f2_ost:1;
+        /** tz_f1_ost : R/W; bitpos: [6]; default: 0;
          *  Configures whether or not event_f1 will trigger one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_f1_ost:1;
-        /** tz0_f0_ost : R/W; bitpos: [7]; default: 0;
+        uint32_t tz_f1_ost:1;
+        /** tz_f0_ost : R/W; bitpos: [7]; default: 0;
          *  Configures whether or not event_f0 will trigger one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t tz0_f0_ost:1;
-        /** tz0_a_cbc_d : R/W; bitpos: [9:8]; default: 0;
+        uint32_t tz_f0_ost:1;
+        /** tz_a_cbc_d : R/W; bitpos: [9:8]; default: 0;
          *  Configures cycle-by-cycle mode action on PWM$n A when fault event occurs and timer
          *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_a_cbc_d:2;
-        /** tz0_a_cbc_u : R/W; bitpos: [11:10]; default: 0;
+        uint32_t tz_a_cbc_d:2;
+        /** tz_a_cbc_u : R/W; bitpos: [11:10]; default: 0;
          *  Configures cycle-by-cycle mode action on PWM$n A when fault event occurs and timer
          *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_a_cbc_u:2;
-        /** tz0_a_ost_d : R/W; bitpos: [13:12]; default: 0;
+        uint32_t tz_a_cbc_u:2;
+        /** tz_a_ost_d : R/W; bitpos: [13:12]; default: 0;
          *  Configures one-shot mode action on PWM$n A when fault event occurs and timer is
          *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_a_ost_d:2;
-        /** tz0_a_ost_u : R/W; bitpos: [15:14]; default: 0;
+        uint32_t tz_a_ost_d:2;
+        /** tz_a_ost_u : R/W; bitpos: [15:14]; default: 0;
          *  Configures one-shot mode action on PWM$n A when fault event occurs and timer is
          *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_a_ost_u:2;
-        /** tz0_b_cbc_d : R/W; bitpos: [17:16]; default: 0;
+        uint32_t tz_a_ost_u:2;
+        /** tz_b_cbc_d : R/W; bitpos: [17:16]; default: 0;
          *  Configures cycle-by-cycle mode action on PWM$n B when fault event occurs and timer
          *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_b_cbc_d:2;
-        /** tz0_b_cbc_u : R/W; bitpos: [19:18]; default: 0;
+        uint32_t tz_b_cbc_d:2;
+        /** tz_b_cbc_u : R/W; bitpos: [19:18]; default: 0;
          *  Configures cycle-by-cycle mode action on PWM$n B when fault event occurs and timer
          *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_b_cbc_u:2;
-        /** tz0_b_ost_d : R/W; bitpos: [21:20]; default: 0;
+        uint32_t tz_b_cbc_u:2;
+        /** tz_b_ost_d : R/W; bitpos: [21:20]; default: 0;
          *  Configures one-shot mode action on PWM$n B when fault event occurs and timer is
          *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_b_ost_d:2;
-        /** tz0_b_ost_u : R/W; bitpos: [23:22]; default: 0;
+        uint32_t tz_b_ost_d:2;
+        /** tz_b_ost_u : R/W; bitpos: [23:22]; default: 0;
          *  Configures one-shot mode action on PWM$n B when fault event occurs and timer is
          *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t tz0_b_ost_u:2;
+        uint32_t tz_b_ost_u:2;
         uint32_t reserved_24:8;
     };
     uint32_t val;
@@ -853,26 +620,26 @@ typedef union {
  */
 typedef union {
     struct {
-        /** tz0_clr_ost : R/W; bitpos: [0]; default: 0;
+        /** tz_clr_ost : R/W; bitpos: [0]; default: 0;
          *  Configures the generation of software one-shot mode action clear. A toggle
          *  (software negate its value) triggers a clear for on going one-shot mode action.
          */
-        uint32_t tz0_clr_ost:1;
-        /** tz0_cbcpulse : R/W; bitpos: [2:1]; default: 0;
+        uint32_t tz_clr_ost:1;
+        /** tz_cbcpulse : R/W; bitpos: [2:1]; default: 0;
          *  Configures the refresh moment selection of cycle-by-cycle mode action.\\0: Select
          *  nothing, will not refresh\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP
          */
-        uint32_t tz0_cbcpulse:2;
-        /** tz0_force_cbc : R/W; bitpos: [3]; default: 0;
+        uint32_t tz_cbcpulse:2;
+        /** tz_force_cbc : R/W; bitpos: [3]; default: 0;
          *  Configures the generation of software cycle-by-cycle mode action. A toggle
          *  (software negate its value) triggers a cycle-by-cycle mode action.
          */
-        uint32_t tz0_force_cbc:1;
-        /** tz0_force_ost : R/W; bitpos: [4]; default: 0;
+        uint32_t tz_force_cbc:1;
+        /** tz_force_ost : R/W; bitpos: [4]; default: 0;
          *  Configures the generation of software one-shot mode action. A toggle (software
          *  negate its value) triggers a one-shot mode action.
          */
-        uint32_t tz0_force_ost:1;
+        uint32_t tz_force_ost:1;
         uint32_t reserved_5:27;
     };
     uint32_t val;
@@ -883,16 +650,16 @@ typedef union {
  */
 typedef union {
     struct {
-        /** tz0_cbc_on : RO; bitpos: [0]; default: 0;
+        /** tz_cbc_on : RO; bitpos: [0]; default: 0;
          *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
          *  action\\1: On going
          */
-        uint32_t tz0_cbc_on:1;
-        /** tz0_ost_on : RO; bitpos: [1]; default: 0;
+        uint32_t tz_cbc_on:1;
+        /** tz_ost_on : RO; bitpos: [1]; default: 0;
          *  Represents whether or not an one-shot mode action is on going.\\0:No action\\1: On
          *  going
          */
-        uint32_t tz0_ost_on:1;
+        uint32_t tz_ost_on:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
@@ -1002,31 +769,31 @@ typedef union {
  */
 typedef union {
     struct {
-        /** cap0_en : R/W; bitpos: [0]; default: 0;
+        /** capn_en : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable capture on channel n.\\0: Disable\\1: Enable
          */
-        uint32_t cap0_en:1;
-        /** cap0_mode : R/W; bitpos: [2:1]; default: 0;
+        uint32_t capn_en:1;
+        /** capn_mode : R/W; bitpos: [2:1]; default: 0;
          *  Configures which edge of capture on channel n after prescaling is used.\\0:
          *  None\\Bit0 is set to 1: Rnable capture on the negative edge\\Bit1 is set to 1:
          *  Enable capture on the positive edge
          */
-        uint32_t cap0_mode:2;
-        /** cap0_prescale : R/W; bitpos: [10:3]; default: 0;
+        uint32_t capn_mode:2;
+        /** capn_prescale : R/W; bitpos: [10:3]; default: 0;
          *  Configures prescale value on possitive edge of CAPn. Prescale value =
          *  PWM_CAPn_PRESCALE + 1
          */
-        uint32_t cap0_prescale:8;
-        /** cap0_in_invert : R/W; bitpos: [11]; default: 0;
+        uint32_t capn_prescale:8;
+        /** capn_in_invert : R/W; bitpos: [11]; default: 0;
          *  Configures whether or not to invert CAPn from GPIO matrix before prescale.\\0:
          *  Normal\\1: Invert
          */
-        uint32_t cap0_in_invert:1;
-        /** cap0_sw : WT; bitpos: [12]; default: 0;
+        uint32_t capn_in_invert:1;
+        /** capn_sw : WT; bitpos: [12]; default: 0;
          *  Configures the generation of software capture.\\0: Invalid, No effect\\1: Trigger a
          *  software forced capture on channel n
          */
-        uint32_t cap0_sw:1;
+        uint32_t capn_sw:1;
         uint32_t reserved_13:19;
     };
     uint32_t val;
@@ -1039,10 +806,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** cap0_value : RO; bitpos: [31:0]; default: 0;
+        /** capn_value : RO; bitpos: [31:0]; default: 0;
          *  Represents value of last capture on CAPn
          */
-        uint32_t cap0_value:32;
+        uint32_t capn_value:32;
     };
     uint32_t val;
 } mcpwm_cap_chn_reg_t;
@@ -2048,28 +1815,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** op0_tstmp_e1 : R/W; bitpos: [15:0]; default: 0;
+        /** op_tstmp_e1 : R/W; bitpos: [15:0]; default: 0;
          *  Configures generatorn timer stamp E1 value register
          */
-        uint32_t op0_tstmp_e1:16;
+        uint32_t op_tstmp_e:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} mcpwm_op_tstmp_e1_reg_t;
-
-/** Type of op0_tstmp_e2 register
- *  Generator$n timer stamp E2 value register
- */
-typedef union {
-    struct {
-        /** op0_tstmp_e2 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures generator$n timer stamp E2 value register
-         */
-        uint32_t op0_tstmp_e2:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_op_tstmp_e2_reg_t;
+} mcpwm_op_tstmp_reg_t;
 
 /** Type of clk register
  *  Global configuration register
@@ -2103,20 +1856,18 @@ typedef union {
 } mcpwm_version_reg_t;
 
 typedef struct {
-    volatile mcpwm_timer_cfg0_reg_t cfg0;
-    volatile mcpwm_timer_cfg1_reg_t cfg1;
-    volatile mcpwm_timer_sync_reg_t sync;
-    volatile mcpwm_timer_status_reg_t status;
+    volatile mcpwm_timer_cfg0_reg_t timer_cfg0;
+    volatile mcpwm_timer_cfg1_reg_t timer_cfg1;
+    volatile mcpwm_timer_sync_reg_t timer_sync;
+    volatile mcpwm_timer_status_reg_t timer_status;
 } mcpwm_timer_regs_t;
 
 typedef struct {
     volatile mcpwm_gen_stmp_cfg_reg_t gen_stmp_cfg;
-    volatile mcpwm_gen_tstmp_a_reg_t gen_tstmp_a;
-    volatile mcpwm_gen_tstmp_b_reg_t gen_tstmp_b;
+    volatile mcpwm_gen_tstmp_reg_t timestamp[2];
     volatile mcpwm_gen_cfg0_reg_t gen_cfg0;
     volatile mcpwm_gen_force_reg_t gen_force;
-    volatile mcpwm_gen_a_reg_t gen_a;
-    volatile mcpwm_gen_b_reg_t gen_b;
+    volatile mcpwm_gen_reg_t generator[2];
     volatile mcpwm_dt_cfg_reg_t dt_cfg;
     volatile mcpwm_dt_fed_cfg_reg_t dt_fed_cfg;
     volatile mcpwm_dt_red_cfg_reg_t dt_red_cfg;
@@ -2127,8 +1878,7 @@ typedef struct {
 } mcpwm_operator_reg_t;
 
 typedef struct {
-    volatile mcpwm_op_tstmp_e1_reg_t tstmp_e1;
-    volatile mcpwm_op_tstmp_e2_reg_t tstmp_e2;
+    volatile mcpwm_op_tstmp_reg_t timestamp[2];
 } mcpwm_operator_tstmp_reg_t;
 
 typedef struct {
@@ -2151,11 +1901,13 @@ typedef struct {
     volatile mcpwm_evt_en_reg_t evt_en;
     volatile mcpwm_task_en_reg_t task_en;
     volatile mcpwm_evt_en2_reg_t evt_en2;
-    volatile mcpwm_operator_tstmp_reg_t op_tstmp[3];
+    volatile mcpwm_operator_tstmp_reg_t operators_timestamp[3];
     volatile mcpwm_clk_reg_t clk;
     volatile mcpwm_version_reg_t version;
 } mcpwm_dev_t;
 
+extern mcpwm_dev_t MCPWM0;
+extern mcpwm_dev_t MCPWM1;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(mcpwm_dev_t) == 0x14c, "Invalid size of mcpwm_dev_t structure");

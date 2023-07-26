@@ -34,7 +34,7 @@
 #define SOC_AXI_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1  //TODO: IDF-7475
-// #define SOC_MCPWM_SUPPORTED             1  //TODO: IDF-7493
+#define SOC_MCPWM_SUPPORTED                1
 // #define SOC_TWAI_SUPPORTED              1  //TODO: IDF-7470
 // #define SOC_ETM_SUPPORTED               1  //TODO: IDF-7478
 // #define SOC_PARLIO_SUPPORTED            1  //TODO: IDF-7471, TODO: IDF-7472
@@ -273,7 +273,7 @@
 #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST as the RMT clock source */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
-#define SOC_MCPWM_GROUPS                     (1U)   ///< 1 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
+#define SOC_MCPWM_GROUPS                     (2U)   ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
 #define SOC_MCPWM_TIMERS_PER_GROUP           (3)    ///< The number of timers that each group has
 #define SOC_MCPWM_OPERATORS_PER_GROUP        (3)    ///< The number of operators that each group has
 #define SOC_MCPWM_COMPARATORS_PER_OPERATOR   (2)    ///< The number of comparators that each operator has
