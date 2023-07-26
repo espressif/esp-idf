@@ -11,6 +11,12 @@ menu "Example Configuration"
             range 0 15
             help
                 This option is used to set the wakeup and sleep pin.
+        
+        config EXAMPLE_USE_PULSE_WAKEUP
+            bool "Enable GPIO pulse wakeup"
+            default n
+            help
+                This option set the gpio wakeup mode. If this option is enabled, it is a pulse wakeup mode, otherwise it is a level wakeup mode.
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
             bool "Enable GPIO high-level wakeup"

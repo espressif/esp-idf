@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,7 +17,7 @@
 
 static const char *TAG = "gpio_wake_up_main";
 
-#if IDF_TARGET_ESP32H2
+#if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C6
     extern esp_err_t sleep_clock_system_retention_init(void);
     extern esp_err_t sleep_sys_periph_retention_init(void);
     extern esp_err_t esp_sleep_cpu_retention_init(void);
@@ -39,7 +39,7 @@ esp_err_t all_config_init(gpio_ws_t *arg)
 
 void app_main(void)
 { 
-#if IDF_TARGET_ESP32H2
+#if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C6
     sleep_clock_system_retention_init();
     sleep_sys_periph_retention_init();
     esp_sleep_cpu_retention_init();
