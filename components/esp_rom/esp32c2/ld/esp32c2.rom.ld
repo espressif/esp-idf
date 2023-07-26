@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1494,9 +1494,9 @@ g_os_mempool_list = 0x3fcdfdf0;
 esp_pp_rom_version_get = 0x40001ad4;
 RC_GetBlockAckTime = 0x40001ad8;
 ebuf_list_remove = 0x40001adc;
-esf_buf_alloc = 0x40001ae0;
-esf_buf_alloc_dynamic = 0x40001ae4;
-esf_buf_recycle = 0x40001ae8;
+/*esf_buf_alloc = 0x40001ae0;*/
+/*esf_buf_alloc_dynamic = 0x40001ae4;*/
+/*esf_buf_recycle = 0x40001ae8;*/
 GetAccess = 0x40001aec;
 hal_mac_is_low_rate_enabled = 0x40001af0;
 hal_mac_tx_get_blockack = 0x40001af4;
@@ -1625,7 +1625,7 @@ wDev_AppendRxBlocks = 0x40001cdc;
 wDev_DiscardFrame = 0x40001ce0;
 wDev_GetNoiseFloor = 0x40001ce4;
 wDev_IndicateAmpdu = 0x40001ce8;
-wDev_IndicateFrame = 0x40001cec;
+/*wDev_IndicateFrame = 0x40001cec;*/
 wdev_mac_reg_load = 0x40001cf0;
 wdev_mac_reg_store = 0x40001cf4;
 wdev_mac_special_reg_load = 0x40001cf8;
@@ -1633,7 +1633,7 @@ wdev_mac_special_reg_store = 0x40001cfc;
 wdev_mac_wakeup = 0x40001d00;
 wdev_mac_sleep = 0x40001d04;
 /* wDev_ProcessFiq = 0x40001d08; */
-wDev_ProcessRxSucData = 0x40001d0c;
+/*wDev_ProcessRxSucData = 0x40001d0c;*/
 wdevProcessRxSucDataAll = 0x40001d10;
 wdev_csi_len_align = 0x40001d14;
 ppDequeueTxDone_Locked = 0x40001d18;
