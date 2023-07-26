@@ -84,7 +84,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     可调用 :cpp:func:`esp_sleep_enable_touchpad_wakeup` 函数来启用该唤醒源。
 
-.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP
 
     外部唤醒 (ext0)
     ^^^^^^^^^^^^^^^^^^^^^^
@@ -101,17 +101,36 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     .. warning:: 从睡眠模式中唤醒后，用于唤醒的 IO pad 将被配置为 RTC IO。因此，在将该 pad 用作数字 GPIO 之前，请调用 :cpp:func:`rtc_gpio_deinit` 函数对其进行重新配置。
 
+.. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
+
     外部唤醒 (ext1)
     ^^^^^^^^^^^^^^^^^^^^^^
 
     RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。您可以从以下两个逻辑函数中选择其一，用于触发唤醒：
 
+    .. only:: esp32
+
         - 当任意一个所选管脚为高电平时唤醒(ESP_EXT1_WAKEUP_ANY_HIGH)
         - 当所有所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ALL_LOW)
 
-    此唤醒源由 RTC 控制器实现。这种模式下的 RTC 外设和 RTC 内存可以被断电。但如果 RTC 外设被断电，内部上拉和下拉电阻将被禁用。想要使用内部上拉和下拉电阻，需要 RTC 外设电源域在睡眠期间保持开启，并在进入睡眠前使用函数 ``rtc_gpio_`` 配置上拉或下拉电阻。
+    .. only:: esp32s2 or esp32s3 or esp32c6 or esp32h2
+
+        - 当任意一个所选管脚为高电平时唤醒(ESP_EXT1_WAKEUP_ANY_HIGH)
+        - 当任意一个所选管脚为低电平时唤醒(ESP_EXT1_WAKEUP_ANY_LOW)
+
+    此唤醒源由 RTC 控制器实现。这种模式下的 RTC 外设和 RTC 内存可以被断电。然而，如果RTC外设被断电，如果我们不使用 HOLD 功能，内部上拉和下拉电阻将被禁用。想要使用内部上拉和下拉电阻，需要 RTC 外设电源域在睡眠期间保持开启，并在进入睡眠前使用函数 ``rtc_gpio_`` 配置上拉或下拉电阻。
 
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+        gpio_pullup_dis(gpio_num);
+        gpio_pulldown_en(gpio_num);
+
+    如果我们关闭 ``RTC_PERIPH`` 域，我们将使用 HOLD 功能在睡眠期间维持引脚上的上拉和下拉电阻。所选管脚的 HOLD 功能会在系统真正进入睡眠前被开启，这有助于进一步减小睡眠时的功耗。
+
+        rtc_gpio_pullup_dis(gpio_num);
+        rtc_gpio_pulldown_en(gpio_num);
+
+    如果某些芯片缺少 ``RTC_PERIPH`` 域，我们只能使用 HOLD 功能来在睡眠期间维持引脚上的上拉和下拉电阻。
+
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
