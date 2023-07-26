@@ -78,9 +78,7 @@ examples/protocols/https_x509_bundle:
 
 examples/protocols/icmp_echo:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/l2tap:
   disable_test:
@@ -136,7 +134,6 @@ examples/protocols/sntp:
       temporary: true
       reason: the other targets are not tested yet
 
-
 examples/protocols/sockets/non_blocking:
   disable_test:
     - if: IDF_TARGET != "esp32"
@@ -145,31 +142,21 @@ examples/protocols/sockets/non_blocking:
 
 examples/protocols/sockets/tcp_client:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: SOC_WIFI_SUPPORTED != 1
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
 
-
 examples/protocols/sockets/tcp_server:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
+    - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/sockets/udp_client:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/sockets/udp_server:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+    - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/static_ip:
   disable:
