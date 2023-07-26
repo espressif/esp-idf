@@ -66,9 +66,9 @@ extern "C" {
 
 /* legacy bin coredumps (before IDF v4.1) has version set to 1 */
 #define COREDUMP_VERSION_BIN_LEGACY         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 1) // -> 0x0001
-#define COREDUMP_VERSION_BIN_CURRENT        COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 2) // -> 0x0002
-#define COREDUMP_VERSION_ELF_CRC32          COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 0) // -> 0x0100
-#define COREDUMP_VERSION_ELF_SHA256         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 1) // -> 0x0101
+#define COREDUMP_VERSION_BIN_CURRENT        COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 3) // -> 0x0003
+#define COREDUMP_VERSION_ELF_CRC32          COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 2) // -> 0x0102
+#define COREDUMP_VERSION_ELF_SHA256         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 3) // -> 0x0103
 #define COREDUMP_CURR_TASK_MARKER           0xDEADBEEF
 #define COREDUMP_CURR_TASK_NOT_FOUND        -1
 
@@ -143,6 +143,7 @@ typedef struct _core_dump_header_t
     uint32_t tasks_num; /*!< Number of tasks */
     uint32_t tcb_sz;    /*!< Size of a TCB, in bytes */
     uint32_t mem_segs_num; /*!< Number of memory segments */
+    uint32_t chip_rev; /*!< Chip revision */
 } core_dump_header_t;
 
 /**
