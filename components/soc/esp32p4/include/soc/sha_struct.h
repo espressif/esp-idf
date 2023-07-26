@@ -25,6 +25,33 @@ typedef union {
     uint32_t val;
 } sha_mode_reg_t;
 
+/** Type of t_string register
+ *  SHA 512/t configuration register 0.
+ */
+typedef union {
+    struct {
+        /** t_string : R/W; bitpos: [31:0]; default: 0;
+         *  Sha t_string (used if and only if mode == SHA_512/t).
+         */
+        uint32_t t_string:32;
+    };
+    uint32_t val;
+} sha_t_string_reg_t;
+
+/** Type of t_length register
+ *  SHA 512/t configuration register 1.
+ */
+typedef union {
+    struct {
+        /** t_length : R/W; bitpos: [5:0]; default: 0;
+         *  Sha t_length (used if and only if mode == SHA_512/t).
+         */
+        uint32_t t_length:6;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} sha_t_length_reg_t;
+
 /** Type of dma_block_num register
  *  DMA configuration register 0.
  */
@@ -62,7 +89,7 @@ typedef union {
         /** continue : RO; bitpos: [31:1]; default: 0;
          *  Reserved.
          */
-        uint32_t conti:31;
+        uint32_t continue:31;
     };
     uint32_t val;
 } sha_continue_reg_t;
@@ -162,10 +189,11 @@ typedef union {
 
 typedef struct {
     volatile sha_mode_reg_t mode;
-    uint32_t reserved_004[2];
+    volatile sha_t_string_reg_t t_string;
+    volatile sha_t_length_reg_t t_length;
     volatile sha_dma_block_num_reg_t dma_block_num;
     volatile sha_start_reg_t start;
-    volatile sha_continue_reg_t conti;
+    volatile sha_continue_reg_t continue;
     volatile sha_busy_reg_t busy;
     volatile sha_dma_start_reg_t dma_start;
     volatile sha_dma_continue_reg_t dma_continue;

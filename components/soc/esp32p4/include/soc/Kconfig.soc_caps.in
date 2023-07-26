@@ -143,6 +143,10 @@ config SOC_MPI_SUPPORTED
     bool
     default y
 
+config SOC_SHA_SUPPORTED
+    bool
+    default y
+
 config SOC_HMAC_SUPPORTED
     bool
     default y
@@ -1012,6 +1016,26 @@ config SOC_SHA_SUPPORT_SHA224
     default y
 
 config SOC_SHA_SUPPORT_SHA256
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA384
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512_224
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512_256
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512_T
     bool
     default y
 
