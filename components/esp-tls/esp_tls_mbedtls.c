@@ -973,7 +973,7 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki)
     }
     mbedtls_x509_crt_init(&tls->clientcert);
 
-    if(((esp_tls_pki_t *)pki)->publiccert_pem_buf != NULL) {
+    if (((esp_tls_pki_t *)pki)->publiccert_pem_buf != NULL) {
         ret = mbedtls_x509_crt_parse(&tls->clientcert, (const unsigned char*)(((esp_tls_pki_t *) pki)->publiccert_pem_buf), ((esp_tls_pki_t *)pki)->publiccert_pem_bytes);
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_x509_crt_parse of client cert returned -0x%04X", -ret);
