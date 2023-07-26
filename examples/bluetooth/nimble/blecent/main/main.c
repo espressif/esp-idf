@@ -632,6 +632,11 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
     struct ble_hs_adv_fields fields;
+#if MYNEWT_VAL(BLE_HCI_VS)
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+    struct ble_gap_set_auto_pcl_params params;
+#endif
+#endif
     int rc;
 
     switch (event->type) {
@@ -673,19 +678,16 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
 #if MYNEWT_VAL(BLE_HCI_VS)
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-           int8_t vs_cmd[10]= {0, 0,-70,-60,-68,-58,-75,-65,-80,-70};
-
-           vs_cmd[0] = ((uint8_t)(event->connect.conn_handle & 0xFF));
-           vs_cmd[1] = ((uint8_t)(event->connect.conn_handle >> 8) & 0xFF);
-
-           rc = ble_hs_hci_send_vs_cmd(BLE_HCI_OCF_VS_PCL_SET_RSSI ,
-                                       &vs_cmd, sizeof(vs_cmd), NULL, 0);
-           if (rc != 0) {
-               MODLOG_DFLT(INFO, "Failed to send VSC  %x \n", rc);
-               return 0;
-           }
-           else
+	    memset(&params, 0x0, sizeof(struct ble_gap_set_auto_pcl_params));
+	    params.conn_handle = event->connect.conn_handle;
+            rc = ble_gap_set_auto_pcl_param(&params);
+            if (rc != 0) {
+                MODLOG_DFLT(INFO, "Failed to send VSC  %x \n", rc);
+                return 0;
+            }
+            else {
                MODLOG_DFLT(INFO, "Successfully issued VSC , rc = %d \n", rc);
+	    }
 #endif
 #endif
 
