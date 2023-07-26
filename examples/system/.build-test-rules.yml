@@ -20,15 +20,9 @@ examples/system/console/basic:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Sufficient to run this app on one chip with each architecture
 
-examples/system/deep_sleep:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: target(s) not supported yet # IDF-6268
-
 examples/system/deep_sleep_wake_stub:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2"]
       temporary: true
       reason: target(s) is not supported yet
 

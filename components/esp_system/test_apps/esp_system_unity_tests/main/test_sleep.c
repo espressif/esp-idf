@@ -41,7 +41,6 @@
 
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 
 static void check_sleep_reset(void)
 {
@@ -666,4 +665,3 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
     esp_deep_sleep_start();
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2) TODO: IDF-6268

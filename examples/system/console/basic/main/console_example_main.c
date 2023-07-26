@@ -91,9 +91,7 @@ void app_main(void)
     /* Register commands */
     esp_console_register_help_command();
     register_system_common();
-#ifndef CONFIG_IDF_TARGET_ESP32H2  // needs deep sleep support, IDF-6268
     register_system_sleep();
-#endif
 #if SOC_WIFI_SUPPORTED
     register_wifi();
 #endif
