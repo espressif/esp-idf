@@ -76,9 +76,6 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
-    ESP_PWR_LVL_N24 = 0,              /*!< Corresponding to -24dbm */
-    ESP_PWR_LVL_N21 = 1,              /*!< Corresponding to -21dbm */
-    ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18dbm */
     ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15dbm */
     ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12dbm */
     ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9dbm */
@@ -91,7 +88,7 @@ typedef enum {
     ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
     ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
     ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
-    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +21dbm */
+    ESP_PWR_LVL_P20 = 15,              /*!< Corresponding to  +20dbm */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
@@ -366,6 +363,14 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
 
 /* Returns random static address or -1 if not present */
 extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+/** @brief esp_ble_controller_log_dump_all
+ * dump all controller log information cached in buffer
+ * @param output : true for log dump, false will be no effect
+ */
+void esp_ble_controller_log_dump_all(bool output);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 #ifdef __cplusplus
 }
