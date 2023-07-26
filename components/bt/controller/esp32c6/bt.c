@@ -110,12 +110,20 @@ struct ext_funcs_t {
     uint32_t magic;
 };
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* External functions or variables
  ************************************************************************
  */
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int ble_controller_init(esp_bt_controller_config_t *cfg);
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create);
+extern int ble_log_deinit_async(void);
+extern void ble_log_async_output_dump_all(bool output);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
 extern int ble_controller_disable(void);
@@ -179,6 +187,9 @@ static void esp_reset_rpa_moudle(void);
 static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
 static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
                               const uint8_t *our_priv_key, uint8_t *out_dhkey);
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /* Local variable definition
  ***************************************************************************
  */
@@ -370,6 +381,23 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
     return rc;
 }
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
+{
+    if (!end) {
+        for (int i = 0; i < len; i++) {
+            esp_rom_printf("%02x,", addr[i]);
+        }
+
+    } else {
+        for (int i = 0; i < len; i++) {
+            esp_rom_printf("%02x,", addr[i]);
+        }
+        esp_rom_printf("\n");
+    }
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 static void hci_uart_start_tx_wrapper(int uart_no)
@@ -807,6 +835,20 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto free_controller;
     }
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    interface_func_t bt_controller_log_interface;
+    bt_controller_log_interface = esp_bt_controller_log_interface;
+#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    ret = ble_log_init_async(bt_controller_log_interface, false);
+#else
+    ret = ble_log_init_async(bt_controller_log_interface, true);
+#endif // CONFIG_BT_CONTROLLER_LOG_DUMP
+    if (ret != ESP_OK) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
+        goto free_controller;
+    }
+#endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
+
     ble_controller_scan_duplicate_config();
 
     ret = controller_sleep_init();
@@ -826,6 +868,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 free_controller:
     controller_sleep_deinit();
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    ble_log_deinit_async();
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
     esp_btbb_disable();
     esp_phy_disable();
@@ -864,6 +909,9 @@ esp_err_t esp_bt_controller_deinit(void)
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    ble_log_deinit_async();
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -1142,6 +1190,13 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 
     return (esp_power_level_t)tx_level;
 }
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+void esp_ble_controller_log_dump_all(bool output)
+{
+    ble_log_async_output_dump_all(output);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 
 #if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED == true)
