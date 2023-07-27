@@ -30,6 +30,37 @@ SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
 SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
 
 
+# The ctx dict "abuses" how python evaluates default parameter values.
+# https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+# Default parameter values are evaluated from left to right
+# when the function definition is executed
+def get_build_context(ctx: Dict={}) -> Dict:
+    """
+    The build context is set in the ensure_build_directory function. It can be used
+    in modules or other code, which don't have direct access to such information.
+    It returns dictionary with the following keys:
+
+    'proj_desc' - loaded project_description.json file
+
+    Please make sure that ensure_build_directory was called otherwise the build
+    context dictionary will be empty. Also note that it might not be thread-safe to
+    modify the returned dictionary. It should be considered read-only.
+    """
+    return ctx
+
+
+def _set_build_context(args: 'PropertyDict') -> None:
+    # private helper to set global build context from ensure_build_directory
+    ctx = get_build_context()
+
+    proj_desc_fn = f'{args.build_dir}/project_description.json'
+    try:
+        with open(proj_desc_fn, 'r') as f:
+            ctx['proj_desc'] = json.load(f)
+    except (OSError, ValueError) as e:
+        raise FatalError(f'Cannot load {proj_desc_fn}: {e}')
+
+
 def executable_exists(args: List) -> bool:
     try:
         subprocess.check_output(args)
@@ -566,6 +597,9 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
                 "Run '{} fullclean' to start again.".format(sys.executable, python, prog_name))
     except KeyError:
         pass
+
+    # set global build context
+    _set_build_context(args)
 
 
 def merge_action_lists(*action_lists: Dict) -> Dict:
