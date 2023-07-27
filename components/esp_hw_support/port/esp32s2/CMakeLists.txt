@@ -11,6 +11,10 @@ set(srcs
     "rtc_wdt.c"
     "regi2c_ctrl.c")
 
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "sar_periph_ctrl.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
 

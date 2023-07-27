@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "driver/adc.h"
+#include "esp_private/sar_periph_ctrl.h"
+
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.
@@ -14,6 +16,7 @@
  */
 
 static bool s_wifi_adc_xpd_flag;
+static bool s_wifi_tsens_xpd_flag;
 
 void include_esp_phy_override(void)
 {
@@ -50,4 +53,25 @@ IRAM_ATTR void phy_i2c_enter_critical(void)
 IRAM_ATTR void phy_i2c_exit_critical(void)
 {
     regi2c_exit_critical();
+}
+
+void phy_set_tsens_power(bool en)
+{
+    if (s_wifi_tsens_xpd_flag == en) {
+        /* ignore repeated calls to phy_set_tsens_power when the state is already correct */
+        return;
+    }
+
+    s_wifi_tsens_xpd_flag = en;
+
+    if (en) {
+        temperature_sensor_power_acquire();
+    } else {
+        temperature_sensor_power_release();
+    }
+}
+
+int16_t phy_get_tsens_value(void)
+{
+    return temp_sensor_get_raw_value(NULL);
 }
