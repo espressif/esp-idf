@@ -1,6 +1,8 @@
 Contributions Guide
 ===================
 
+:link_to_translation:`zh_CN:[中文]`
+
 We welcome contributions to the esp-idf project!
 
 How to Contribute
@@ -40,7 +42,7 @@ After you open the Pull Request, there will probably be some discussion in the c
 
 Once the Pull Request is ready to merge, it will first be merged into our internal git system for in-house automated testing.
 
-If this process passes, it will be merged onto the public github repository.
+If this process passes, it will be merged into the public GitHub repository.
 
 Legal Part
 ----------
