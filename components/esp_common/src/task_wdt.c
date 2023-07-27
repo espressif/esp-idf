@@ -134,7 +134,8 @@ static void reset_hw_timer(void)
  */
 void __attribute__((weak)) esp_task_wdt_isr_user_handler(void)
 {
-
+    // TL CHANGE - May want to use - probably not!
+    //esp_restart();
 }
 
 /*
@@ -173,6 +174,8 @@ static void task_wdt_isr(void *arg)
         ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
+    // TL CHANGE - ADDED
+    ESP_EARLY_LOGE(TAG, "Calling esp_task_wdt_isr_user_handler()");
     esp_task_wdt_isr_user_handler();
 
     if (twdt_config->panic){     //Trigger Panic if configured to do so

@@ -566,7 +566,10 @@ static void main_task(void* args)
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
     ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
 #elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+    // TL TODO - Set the CONFIG_ESP_TASK_WDT_PANIC in the sdkconfig
+    // TL CHANGE - Changed call to esp_task_wdt_init() to true 
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
 #endif
 
     //Add IDLE 0 to task wdt
