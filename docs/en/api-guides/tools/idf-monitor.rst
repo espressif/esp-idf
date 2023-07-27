@@ -240,7 +240,7 @@ Launching GDB with GDBStub
 
 GDBStub is a useful runtime debugging feature that runs on the target and connects to the host over the serial port to receive debugging commands. GDBStub supports commands such as reading memory and variables, examining call stack frames etc. Although GDBStub is less versatile than JTAG debugging, it does not require any special hardware (such as a JTAG to USB bridge) as communication is done entirely over the serial port.
 
-A target can be configured to run GDBStub in the background by setting the :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on runtime``. GDBStub will run in the background until a ``Ctrl+C`` message is sent over the serial port and causes the GDBStub to break (i.e., stop the execution of) the program, thus allowing GDBStub to handle debugging commands.
+A target can be configured to run GDBStub in the background by setting the :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`. GDBStub will run in the background until a ``Ctrl+C`` message is sent over the serial port and causes the GDBStub to break (i.e., stop the execution of) the program, thus allowing GDBStub to handle debugging commands.
 
 Furthermore, the panic handler can be configured to run GDBStub on a crash by setting the :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on panic``. When a crash occurs, GDBStub will output a special string pattern over the serial port to indicate that it is running.
 

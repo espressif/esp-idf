@@ -18,18 +18,21 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_PANIC_PRINT_HALT
             bool "Print registers and halt"
+            depends on !ESP_SYSTEM_GDBSTUB_RUNTIME
             help
                 Outputs the relevant registers over the serial port and halt the
                 processor. Needs a manual reset to restart.
 
         config ESP_SYSTEM_PANIC_PRINT_REBOOT
             bool "Print registers and reboot"
+            depends on !ESP_SYSTEM_GDBSTUB_RUNTIME
             help
                 Outputs the relevant registers over the serial port and immediately
                 reset the processor.
 
         config ESP_SYSTEM_PANIC_SILENT_REBOOT
             bool "Silent reboot"
+            depends on !ESP_SYSTEM_GDBSTUB_RUNTIME
             help
                 Just resets the processor without outputting anything
 
@@ -40,16 +43,6 @@ menu "ESP System Settings"
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.
 
-        config ESP_SYSTEM_GDBSTUB_RUNTIME
-            bool "GDBStub at runtime"
-            select ESP_GDBSTUB_ENABLED
-            help
-                Enable GDBStub inclusion into firmware.
-                This allows to debug the target device using serial port:
-                - Run 'idf.py monitor'.
-                - Wait for the device to initialize.
-                - Press Ctrl+C to interrupt the execution and enter GDB attached to your device for debugging.
-                NOTE: all UART input will be handled by GDBStub.
     endchoice
 
     config ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
