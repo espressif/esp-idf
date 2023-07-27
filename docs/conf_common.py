@@ -19,7 +19,8 @@ from esp_docs.conf_docs import *  # noqa: F403,F401
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
 
-BT_DOCS = ['api-reference/bluetooth/bt_le.rst',
+BT_DOCS = ['api-guides/bluetooth.rst',
+           'api-reference/bluetooth/bt_le.rst',
            'api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
            'api-reference/bluetooth/esp_bt_main.rst',
