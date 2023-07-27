@@ -409,6 +409,14 @@ def unpack(filename, destination):  # type: (str, str) -> None
         # https://bugs.python.org/issue17153
         destination = str(destination)
     archive_obj.extractall(destination)
+    # ZipFile on Unix systems does not preserve file permissions while extracting it
+    # We need to reset the permissions afterward
+    if sys.platform != 'win32' and filename.endswith('zip') and isinstance(archive_obj, ZipFile):
+        for file_info in archive_obj.infolist():
+            extracted_file = os.path.join(destination, file_info.filename)
+            extracted_permissions = file_info.external_attr >> 16 & 0o777  # Extract Unix permissions
+            if os.path.exists(extracted_file):
+                os.chmod(extracted_file, extracted_permissions)
 
 
 def splittype(url):  # type: (str) -> Tuple[Optional[str], str]
