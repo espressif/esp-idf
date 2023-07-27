@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,9 @@ extern "C" {
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
 
+//TODO: IDF-7771
+#define RVHAL_EXCM_LEVEL    4
+
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -31,6 +34,15 @@ extern "C" {
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_wait_for_intr(void)
 {
     asm volatile ("wfi\n");
+}
+
+/* ------------------------------------------------- Memory Barrier ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+//TODO: IDF-7898
+FORCE_INLINE_ATTR void rv_utils_memory_barrier(void)
+{
+    asm volatile("fence iorw, iorw" : : : "memory");
 }
 
 /* -------------------------------------------------- CPU Registers ----------------------------------------------------
@@ -57,12 +69,22 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
 {
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7848
+    return RV_READ_CSR(mcycle);
+#else
     return RV_READ_CSR(CSR_PCCR_MACHINE);
+#endif
 }
 
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7848
+    RV_WRITE_CSR(mcycle, ccount);
+#else
     RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
+#endif
 }
 
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
@@ -72,10 +94,23 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
 // ---------------- Interrupt Descriptors ------------------
 
 // --------------- Interrupt Configuration -----------------
+#if SOC_INT_CLIC_SUPPORTED
+//TODO: IDF-7863
+FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
+{
+#define MTVT 0x307
+    RV_WRITE_CSR(MTVT, mtvt_val);
+}
+#endif
 
 FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 {
+#if SOC_INT_CLIC_SUPPORTED
+    //TODO: IDF-7863
+    mtvec_val |= 3;
+#else
     mtvec_val |= 1; // Set MODE field to treat MTVEC as a vector base address
+#endif
     RV_WRITE_CSR(mtvec, mtvec_val);
 }
 
@@ -97,14 +132,62 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
+//TODO: IDF-7795, clic related
+#if (SOC_CPU_CORES_NUM > 1)
+FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
+{
+    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
+}
+
+FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(uint32_t intlevel)
+{
+    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    uint32_t old_thresh;
+
+    old_thresh = REG_READ(CLIC_INT_THRESH_REG);
+    old_thresh = old_thresh >> (24 + (8 - NLBITS));
+
+    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((intlevel << (8 - NLBITS))) | 0x1f);
+    /**
+     * TODO: IDF-7898
+     * Here is an issue that,
+     * 1. Set the CLIC_INT_THRESH_REG to mask off interrupts whose level is lower than `intlevel`.
+     * 2. Set MSTATUS_MIE (global interrupt), then program may jump to interrupt vector.
+     * 3. The register value change in Step 1 may happen during Step 2.
+     *
+     * To prevent this, here a fence is used
+     */
+    rv_utils_memory_barrier();
+    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+
+    return old_thresh;
+}
+#endif  //#if (SOC_CPU_CORES_NUM > 1)
+
 FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
 {
+//TODO: IDF-7795
+#if SOC_INT_CLIC_SUPPORTED
+    unsigned intr_ena_mask = 0;
+    unsigned intr_num;
+    for (intr_num = 0; intr_num < 32; intr_num++) {
+        if (REG_GET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET), CLIC_INT_IE))
+            intr_ena_mask |= BIT(intr_num);
+    }
+    return intr_ena_mask;
+#else
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
 {
+//TODO: IDF-7795
+#if SOC_INT_CLIC_SUPPORTED
+    REG_SET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET) , CLIC_INT_IP);
+#else
     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
@@ -228,6 +311,17 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 
     return (old_value == compare_value);
 }
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
+{
+#define MHCR 0x7c1
+#define MHCR_RS (1<<4)   /* R/W, address return stack set bit */
+#define MHCR_BFE (1<<5)  /* R/W, allow predictive jump set bit */
+#define MHCR_BTB (1<<12) /* R/W, branch target prediction enable bit */
+    RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+}
+#endif
 
 #ifdef __cplusplus
 }

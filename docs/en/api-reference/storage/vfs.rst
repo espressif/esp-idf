@@ -1,4 +1,4 @@
-Virtual filesystem component
+Virtual Filesystem Component
 ============================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -10,10 +10,10 @@ Virtual filesystem (VFS) component provides a unified interface for drivers whic
 
 This component allows C library functions, such as fopen and fprintf, to work with FS drivers. At a high level, each FS driver is associated with some path prefix. When one of C library functions needs to open a file, the VFS component searches for the FS driver associated with the file path and forwards the call to that driver. VFS also forwards read, write, and other calls for the given file to the same FS driver.
 
-For example, one can register a FAT filesystem driver with the ``/fat`` prefix and call ``fopen("/fat/file.txt", "w")``. The VFS component will then call the function ``open`` of the FAT driver and pass the argument ``/file.txt`` to it together with appropriate mode flags. All subsequent calls to C library functions for the returned ``FILE*`` stream will also be forwarded to the FAT driver.
+For example, one can register a FAT filesystem driver with the ``/fat`` prefix and call ``fopen("/fat/file.txt", "w")``. Then the VFS component calls the function ``open`` of the FAT driver and pass the argument ``/file.txt`` to it together with appropriate mode flags. All subsequent calls to C library functions for the returned ``FILE*`` stream will also be forwarded to the FAT driver.
 
 
-FS registration
+FS Registration
 ---------------
 
 To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_t` structure and populate it with function pointers to FS APIs:
@@ -65,7 +65,7 @@ Case 2: API functions are declared with an extra context pointer (the FS driver 
     myfs_t* myfs_inst2 = myfs_mount(partition2->offset, partition2->size);
     ESP_ERROR_CHECK(esp_vfs_register("/data2", &myfs, myfs_inst2));
 
-Synchronous input/output multiplexing
+Synchronous Input/Output Multiplexing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Synchronous input/output multiplexing by :cpp:func:`select` is supported in the VFS component. The implementation works in the following way.
@@ -82,7 +82,7 @@ Synchronous input/output multiplexing by :cpp:func:`select` is supported in the 
 
 6. The :cpp:func:`select` call ends and returns the appropriate results.
 
-Non-socket VFS drivers
+Non-Socket VFS Drivers
 """"""""""""""""""""""
 
 If you want to use :cpp:func:`select` with a file descriptor belonging to a non-socket VFS driver, then you need to register the driver with functions :cpp:func:`start_select` and :cpp:func:`end_select` similarly to the following example:
@@ -101,6 +101,7 @@ If you want to use :cpp:func:`select` with a file descriptor belonging to a non-
 :cpp:func:`end_select` is called to stop/deinitialize/free the environment which was setup by :cpp:func:`start_select`.
 
 .. note::
+    
     :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare circumstances. :cpp:func:`end_select` should fail gracefully if this is the case (i.e., should not crash but return an error instead).
 
 Please refer to the reference implementation for the UART peripheral in :component_file:`vfs/vfs_uart.c` and most particularly to the functions :cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and :cpp:func:`uart_end_select` for more information.
@@ -111,7 +112,7 @@ Please check the following examples that demonstrate the use of :cpp:func:`selec
 - :example:`system/select`
 
 
-Socket VFS drivers
+Socket VFS Drivers
 """"""""""""""""""
 
 A socket VFS driver is using its own internal implementation of :cpp:func:`select` and non-socket VFS drivers notify it upon read/write/error conditions.
@@ -131,7 +132,7 @@ A socket VFS driver needs to be registered with the following functions defined:
 
 :cpp:func:`socket_select` is the internal implementation of :cpp:func:`select` for the socket driver. It works only with file descriptors belonging to the socket VFS.
 
-:cpp:func:`get_socket_select_semaphore` returns the signalization object (semaphore) which will be used in non-socket drivers to stop the waiting in :cpp:func:`socket_select`.
+:cpp:func:`get_socket_select_semaphore` returns the signalization object (semaphore) which is used in non-socket drivers to stop the waiting in :cpp:func:`socket_select`.
 
 :cpp:func:`stop_socket_select` call is used to stop the waiting in :cpp:func:`socket_select` by passing the object returned by :cpp:func:`get_socket_select_semaphore`.
 
@@ -157,7 +158,7 @@ Then:
 
 - FS 1 will be used when opening a file called ``/data/log.txt``
 - FS 2 will be used when opening a file called ``/data/static/index.html``
-- Even if ``/index.html"`` does not exist in FS 2, FS 1 will *not* be searched for ``/static/index.html``.
+- Even if ``/index.html"`` does not exist in FS 2, FS 1 will **not** be searched for ``/static/index.html``.
 
 As a general rule, mount point names must start with the path separator (``/``) and must contain at least one character after path separator. However, an empty mount point name is also supported and might be used in cases when an application needs to provide a "fallback" filesystem or to override VFS functionality altogether. Such filesystem will be used if no prefix matches the path given.
 
@@ -173,18 +174,18 @@ When opening files, the FS driver receives only relative paths to files. For exa
 VFS does not impose any limit on total file path length, but it does limit the FS path prefix to ``ESP_VFS_PATH_MAX`` characters. Individual FS drivers may have their own filename length limitations.
 
 
-File descriptors
+File Descriptors
 ----------------
 
 File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in newlib's ``sys/types.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
 
-Standard IO streams (stdin, stdout, stderr)
+Standard IO Streams (stdin, stdout, stderr)
 -------------------------------------------
 
 If the menuconfig option ``UART for console output`` is not set to ``None``, then ``stdin``, ``stdout``, and ``stderr`` are configured to read from, and write to, a UART. It is possible to use UART0 or UART1 for standard IO. By default, UART0 is used with 115200 baud rate; TX pin is GPIO1; RX pin is GPIO3. These parameters can be changed in menuconfig.
 
-Writing to ``stdout`` or ``stderr`` will send characters to the UART transmit FIFO. Reading from ``stdin`` will retrieve characters from the UART receive FIFO.
+Writing to ``stdout`` or ``stderr`` sends characters to the UART transmit FIFO. Reading from ``stdin`` retrieves characters from the UART receive FIFO.
 
 By default, VFS uses simple functions for reading from and writing to UART. Writes busy-wait until all data is put into UART FIFO, and reads are non-blocking, returning only the data present in the FIFO. Due to this non-blocking read behavior, higher level C library calls, such as ``fscanf("%d\n", &var);``, might not have desired results.
 
@@ -193,7 +194,7 @@ Applications which use the UART driver can instruct VFS to use the driver's inte
 VFS also provides an optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by the LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to the functions ``esp_vfs_dev_uart_port_set_rx_line_endings`` and ``esp_vfs_dev_uart_port_set_tx_line_endings``.
 
 
-Standard streams and FreeRTOS tasks
+Standard Streams and FreeRTOS Tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are stored in per-task ``struct _reent``.
@@ -212,7 +213,7 @@ The ``__getreent()`` function returns a per-task pointer to ``struct _reent`` in
 Such a design has the following consequences:
 
 - It is possible to set ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g., by doing ``stdin = fopen("/dev/uart/1", "r")``.
-- Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` will close the ``FILE`` stream object, which will affect all other tasks.
+- Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` closes the ``FILE`` stream object, which will affect all other tasks.
 - To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
 
 Event fds

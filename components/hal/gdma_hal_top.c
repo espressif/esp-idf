@@ -85,7 +85,7 @@ uint32_t gdma_hal_get_intr_status_reg(gdma_hal_context_t *hal, int chan_id, gdma
     return hal->get_intr_status_reg(hal, chan_id, dir);
 }
 
-uint32_t gdma_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+uint32_t gdma_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool is_success)
 {
-    return hal->get_eof_desc_addr(hal, chan_id, dir);
+    return hal->get_eof_desc_addr(hal, chan_id, dir, is_success);
 }

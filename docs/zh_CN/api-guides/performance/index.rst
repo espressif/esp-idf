@@ -21,6 +21,6 @@ ESP-IDF 预设了默认设置，旨在在性能、资源使用和可用功能之
 .. toctree::
    :maxdepth: 2
 
-    执行速度 <speed>
-    二进制文件大小 <size>
-    内存使用 <ram-usage>
+   speed
+   size
+   ram-usage

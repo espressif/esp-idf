@@ -41,3 +41,15 @@ entries:
 [sections:extram_bss]
 entries:
     .ext_ram.bss+
+
+[sections:tcm_text]
+entries:
+    .tcm.text+
+
+[sections:tcm_data]
+entries:
+    .tcm.data+
+
+[sections:tcm_bss]
+entries:
+    .tcm.bss+

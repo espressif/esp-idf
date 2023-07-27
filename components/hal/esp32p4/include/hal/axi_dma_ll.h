@@ -108,7 +108,6 @@ static inline void axi_dma_ll_rx_enable_owner_check(axi_dma_dev_t *dev, uint32_t
  */
 static inline void axi_dma_ll_rx_enable_data_burst(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
-    // TODO: IDF-6504
 }
 
 /**
@@ -305,7 +304,6 @@ static inline void axi_dma_ll_tx_enable_owner_check(axi_dma_dev_t *dev, uint32_t
  */
 static inline void axi_dma_ll_tx_enable_data_burst(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
-    // TODO: IDF-6504
 }
 
 /**

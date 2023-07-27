@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,6 +232,20 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_ivt_addr(const void *ivt_addr)
     rv_utils_set_mtvec((uint32_t)ivt_addr);
 #endif
 }
+
+#if CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-7863
+//"MTVT is only implemented in RISC-V arch"
+/**
+ * @brief Set the base address of the current CPU's Interrupt Vector Table (MTVT)
+ *
+ * @param ivt_addr Interrupt Vector Table's base address
+ */
+FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
+{
+    rv_utils_set_mtvt((uint32_t)mtvt_addr);
+}
+#endif  //#if CONFIG_IDF_TARGET_ESP32P4
 
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 /**
@@ -549,6 +563,16 @@ FORCE_INLINE_ATTR intptr_t esp_cpu_get_call_addr(intptr_t return_address)
  * @return Whether the atomic variable was set or not
  */
 bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, uint32_t new_value);
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+/**
+ * @brief Enable branch prediction
+ */
+FORCE_INLINE_ATTR void esp_cpu_branch_prediction_enable(void)
+{
+    rv_utils_en_branch_predictor();
+}
+#endif  //#if SOC_BRANCH_PREDICTOR_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -56,6 +56,10 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config
     hal->rx_dma_chan = config->rx_dma_chan;
     hal->dmadesc_n = config->dmadesc_n;
 
+#if SPI_LL_MOSI_FREE_LEVEL
+    // Change default data line level to low which same as esp32
+    spi_ll_set_mosi_free_level(hw, 0);
+#endif
     spi_ll_master_init(hw);
     s_spi_hal_dma_init_config(hal);
 
@@ -66,6 +70,7 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config
     spi_ll_enable_int(hw);
     spi_ll_set_int_stat(hw);
     spi_ll_set_mosi_delay(hw, 0, 0);
+    spi_ll_apply_config(hw);
 }
 
 void spi_hal_deinit(spi_hal_context_t *hal)

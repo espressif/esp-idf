@@ -43,6 +43,7 @@ Thread
    esp_openthread
 
 Thread is an IPv6-based mesh networking technology for IoT.
+
 Code examples for the Thread API are provided in the :example:`openthread` directory of ESP-IDF examples.
 
 ESP-NETIF
@@ -63,7 +64,7 @@ IP Network Layer
 
 Code examples for TCP/IP socket APIs are provided in the :example:`protocols/sockets` directory of ESP-IDF examples.
 
-Application Layer 
+Application Layer
 =================
 
 Documentation for Application layer network protocols (above the IP Network layer) are provided in :doc:`../protocols/index`.

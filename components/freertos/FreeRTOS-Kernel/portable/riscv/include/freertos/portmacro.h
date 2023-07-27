@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeRTOS Kernel V10.4.3
@@ -160,6 +160,8 @@ BaseType_t xPortInterruptedFromISRContext(void);
  * @note [refactor-todo] Refactor critical section API so that this is no longer required
  * ------------------------------------------------------ */
 
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 /**
  * @brief Spinlock object
  * Owner:
@@ -178,6 +180,11 @@ typedef struct {
     uint32_t owner;
     uint32_t count;
 } portMUX_TYPE;
+
+#else
+typedef spinlock_t                          portMUX_TYPE;               /**< Spinlock type used by FreeRTOS critical sections */
+#endif
+
 /**< Spinlock initializer */
 #define portMUX_INITIALIZER_UNLOCKED {                      \
             .owner = portMUX_FREE_VAL,                      \
@@ -199,7 +206,12 @@ typedef struct {
  * - Simply disable interrupts
  * - Can be nested
  */
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 void vPortEnterCritical(void);
+#else
+void vPortEnterCritical(portMUX_TYPE *mux);
+#endif
 
 /**
  * @brief Exit a critical section
@@ -207,7 +219,12 @@ void vPortEnterCritical(void);
  * - Reenables interrupts
  * - Can be nested
  */
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 void vPortExitCritical(void);
+#else
+void vPortExitCritical(portMUX_TYPE *mux);
+#endif
 
 // ---------------------- Yielding -------------------------
 
@@ -320,6 +337,8 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 
 // ------------------ Critical Sections --------------------
 
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
 #define portENTER_CRITICAL(mux)                 {(void)mux;  vPortEnterCritical();}
 #define portEXIT_CRITICAL(mux)                  {(void)mux;  vPortExitCritical();}
 #define portTRY_ENTER_CRITICAL(mux, timeout)    ({  \
@@ -328,6 +347,17 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
     BaseType_t ret = pdPASS;                        \
     ret;                                            \
 })
+#else
+#define portENTER_CRITICAL(mux)                 {vPortEnterCritical(mux);}
+#define portEXIT_CRITICAL(mux)                  {vPortExitCritical(mux);}
+#define portTRY_ENTER_CRITICAL(mux, timeout)    ({  \
+    (void)timeout;                                  \
+    vPortEnterCritical(mux);                        \
+    BaseType_t ret = pdPASS;                        \
+    ret;                                            \
+})
+#endif
+
 //In single-core RISC-V, we can use the same critical section API
 #define portENTER_CRITICAL_ISR(mux)                 portENTER_CRITICAL(mux)
 #define portEXIT_CRITICAL_ISR(mux)                  portEXIT_CRITICAL(mux)
@@ -350,6 +380,10 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 })
 #define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   portENTER_CRITICAL_SAFE(mux, timeout)
 
+//TODO: IDF-7566
+#if CONFIG_IDF_TARGET_ESP32P4
+#define portCHECK_IF_IN_ISR()   xPortInIsrContext()
+#endif
 // ---------------------- Yielding -------------------------
 
 #define portYIELD() vPortYield()
@@ -428,7 +462,13 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
+//TODO: IDF-7566
+#if SOC_INT_CLIC_SUPPORTED
+    uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG + 0x10000 * xPortGetCoreID());
+    threshold = threshold >> (24 + (8 - NLBITS));
+#else
     uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
+#endif
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1
      * means not in critical code

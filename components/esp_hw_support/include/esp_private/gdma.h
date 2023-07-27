@@ -58,6 +58,14 @@ typedef struct {
         intptr_t rx_eof_desc_addr; /*!< EOF descriptor address of RX channel */
         intptr_t tx_eof_desc_addr; /*!< EOF descriptor address of TX channel */
     };
+    struct {
+        uint32_t abnormal_eof: 1;     /*!< 0: normal/success EOF;
+                                       *   1: abnormal/error EOF,
+                                       *      it doesn't mean GDMA goes into an error condition,
+                                       *      but the other peripheral goes into an abnormal state.
+                                       *      For GDMA, it's still a valid EOF
+                                       */
+    } flags;
 } gdma_event_data_t;
 
 /**

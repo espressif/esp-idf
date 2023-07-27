@@ -63,7 +63,7 @@ API Reference
 
     2. Update is done on each documentation build by invoking Sphinx extension :`esp_extensions/run_doxygen.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/doxygen/Doxyfile`.
 
-    3. Each line of the ``INPUT`` statement  (other than a comment that begins with ``##``) contains a path to header file ``*.h`` that will be used to generate corresponding ``*.inc`` files::
+    3. Each line of the ``INPUT`` statement  (other than a comment that begins with ``##``) contains a path to header file ``*.h`` that is used to generate corresponding ``*.inc`` files::
 
         ##
         ## Wi-Fi - API Reference
@@ -73,7 +73,7 @@ API Reference
 
     4. When the headers are expanded, any macros defined by default in ``sdkconfig.h`` as well as any macros defined in SOC-specific ``include/soc/*_caps.h`` headers will be expanded. This allows the headers to include/exclude material based on the ``IDF_TARGET`` value.
 
-    5. The ``*.inc`` files contain formatted reference of API members generated automatically on each documentation build. All ``*.inc`` files are placed in Sphinx ``_build`` directory. To see directives generated for e.g. ``esp_wifi.h``, run ``python gen-dxd.py esp32/include/esp_wifi.h``.
+    5. The ``*.inc`` files contain formatted reference of API members generated automatically on each documentation build. All ``*.inc`` files are placed in Sphinx ``_build`` directory. To see directives generated for e.g., ``esp_wifi.h``, run ``python gen-dxd.py esp32/include/esp_wifi.h``.
 
     6. To show contents of ``*.inc`` file in documentation, include it as follows::
 

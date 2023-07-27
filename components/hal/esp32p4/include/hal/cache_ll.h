@@ -17,6 +17,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Given a L2MEM cached address, get the corresponding non-cacheable address
+ * @example 0x4FF0_0000 => 0x8FF0_0000
+ */
+#define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((intptr_t)(addr) + 0x40000000)
+
 #define CACHE_LL_ENABLE_DISABLE_STATE_SW            1   //There's no register indicating cache enable/disable state, we need to use software way for this state.
 
 #define CACHE_LL_DEFAULT_IBUS_MASK                  CACHE_BUS_IBUS0
@@ -35,7 +41,6 @@ extern "C" {
 // #define CACHE_LL_L1_ILG_EVENT_MMU_ENTRY_FAULT       (1<<5)
 // #define CACHE_LL_L1_ILG_EVENT_PRELOAD_OP_FAULT      (1<<1)
 // #define CACHE_LL_L1_ILG_EVENT_SYNC_OP_FAULT         (1<<0)
-
 
 /**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range

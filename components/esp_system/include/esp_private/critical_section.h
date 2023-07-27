@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32P4
 /**
  * This macro also helps users switching between spinlock declarations/definitions for multi-/single core environments
  * if the macros below aren't sufficient.

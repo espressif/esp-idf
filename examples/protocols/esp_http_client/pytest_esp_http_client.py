@@ -8,7 +8,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.ethernet
+@pytest.mark.httpbin
 def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     """
     steps: |
@@ -55,7 +55,7 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.ethernet
+@pytest.mark.httpbin
 @pytest.mark.parametrize('config', [
     'ssldyn',
 ], indirect=True)

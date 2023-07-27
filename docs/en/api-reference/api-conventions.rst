@@ -13,7 +13,7 @@ ESP-IDF provides several kinds of programming interfaces:
 * :doc:`Kconfig <kconfig>` options can be used in code and in the build system (``CMakeLists.txt``) files.
 * :doc:`Host tools <../api-guides/tools/index>` and their command line parameters are also part of the ESP-IDF interfaces.
 
-ESP-IDF is made up of multiple components where these components either contain code specifically written for ESP chips, or contain a third-party library (i.e., a third-party component). In some cases, third-party components will contain an "ESP-IDF specific" wrapper in order to provide an interface that is either simpler or better integrated with the rest of ESP-IDF's features. In other cases, third-party components will present the original API of the underlying library directly.
+ESP-IDF is made up of multiple components where these components either contain code specifically written for ESP chips, or contain a third-party library (i.e., a third-party component). In some cases, third-party components contain an "ESP-IDF specific" wrapper in order to provide an interface that is either simpler or better integrated with the rest of ESP-IDF's features. In other cases, third-party components present the original API of the underlying library directly.
 
 The following sections explain some of the aspects of ESP-IDF APIs and their usage.
 
@@ -137,7 +137,7 @@ ESP-IDF does not guarantee binary compatibility between releases. This means tha
 Other Exceptions from Compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-While we try to make upgrading to a new ESP-IDF version easy, there are parts of ESP-IDF that may change between minor versions in an incompatible way. We appreciate issuing reports about any unintended breaking changes that don't fall into the categories below.
+While we try to make upgrading to a new ESP-IDF version easy, there are parts of ESP-IDF that may change between minor versions in an incompatible way. We appreciate issuing reports about any unintended breaking changes that do not fall into the categories below.
 
 * :ref:`api_reference_private_apis`.
 * :ref:`api_reference_example_components`.

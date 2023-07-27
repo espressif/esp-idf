@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 /*
@@ -185,6 +185,8 @@
 
 /*-----------------------------------------------------------*/
 
+//TODO: IDF-7566
+#if !CONFIG_IDF_TARGET_ESP32P4
     #define taskSELECT_HIGHEST_PRIORITY_TASK()                                                     \
     {                                                                                              \
         UBaseType_t uxTopPriority;                                                                 \
@@ -194,6 +196,17 @@
         configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 );    \
         listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[ 0 ], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK() */
+#else
+    #define taskSELECT_HIGHEST_PRIORITY_TASK()                                                     \
+    {                                                                                              \
+        UBaseType_t uxTopPriority;                                                                 \
+                                                                                                   \
+        /* Find the highest priority list that contains ready tasks. */                            \
+        portGET_HIGHEST_PRIORITY( uxTopPriority, uxTopReadyPriority );                             \
+        configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 );    \
+        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[ xPortGetCoreID() ], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
+    } /* taskSELECT_HIGHEST_PRIORITY_TASK() */
+#endif
 
 /*-----------------------------------------------------------*/
 

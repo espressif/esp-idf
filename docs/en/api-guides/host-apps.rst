@@ -1,33 +1,37 @@
-Running Applications on Host
-============================
+Running ESP-IDF Applications on Host
+====================================
+
+:link_to_translation:`zh_CN:[中文]`
 
 .. note::
-    Running IDF applications on host is currently still an experimental feature, thus there is no guarantee for API stability. However, user feedback via the `ESP-IDF GitHub repository <https://github.com/espressif/esp-idf>`_ or the `ESP32 forum <https://esp32.com/>`_ is highly welcome, and may help influence the future of design of the IDF host-based applications.
 
-This document provides an overview of the methods to run IDF applications on Linux, and what type of IDF applications can typically be run on Linux.
+    Running ESP-IDF applications on host is currently still an experimental feature, thus there is no guarantee for API stability. However, user feedback via the `ESP-IDF GitHub repository <https://github.com/espressif/esp-idf>`_ or the `ESP32 forum <https://esp32.com/>`_ is highly welcome, and may help influence the future of design of the ESP-IDF host-based applications.
+
+This document provides an overview of the methods to run ESP-IDF applications on Linux, and what type of ESP-IDF applications can typically be run on Linux.
 
 Introduction
----------------------------
+------------
 
-Typically, an IDF application is built (cross-compiled) on a host machine, uploaded (i.e., flashed) to an ESP chip for execution, and monitored by the host machine via a UART/USB port. However, execution of an IDF application on an ESP chip (hence forth referred to as "running on target") can be limiting in various development/usage/testing scenarios.
+Typically, an ESP-IDF application is built (cross-compiled) on a host machine, uploaded (i.e., flashed) to an ESP chip for execution, and monitored by the host machine via a UART/USB port. However, execution of an ESP-IDF application on an ESP chip can be limiting in various development/usage/testing scenarios.
 
-Therefore, it is possible for an IDF application to be built and executed entirely within the same Linux host machine (hence forth referred to as "running on host"). Running ESP-IDF applications on host has several advantages:
+Therefore, it is possible for an ESP-IDF application to be built and executed entirely within the same Linux host machine (henceforth referred to as "running on host"). Running ESP-IDF applications on host has several advantages:
 
 - No need to upload to a target.
 - Faster execution on a host machine, compared to running on an ESP chip.
 - No requirements for any specific hardware, except the host machine itself.
 - Easier automation and setup for software testing.
-- Large number of tools for code and runtime analysis (e.g. Valgrind).
+- Large number of tools for code and runtime analysis, e.g., Valgrind.
 
-A large number of IDF components depend on chip-specific hardware. These hardware dependencies must be mocked or simulated when running on host. ESP-IDF currently supports the following mocking and simulation approaches:
+A large number of ESP-IDF components depend on chip-specific hardware. These hardware dependencies must be mocked or simulated when running on host. ESP-IDF currently supports the following mocking and simulation approaches:
 
 1. Using the `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ that simulates FreeRTOS scheduling. On top of this simulation, other APIs are also simulated or implemented when running on host.
 2. Using `CMock <https://www.throwtheswitch.org/cmock>`_ to mock all dependencies and run the code in complete isolation.
 
-In principle, it is possible to mix both approaches (POSIX/Linux simulator and mocking using CMock), but this has not been done yet in ESP-IDF. Note that despite the name, the FreeRTOS POSIX/Linux simulator currently also works on MacOS. Running IDF applications on host machines is often used for testing. However, simulating the environment and mocking dependencies does not fully represent the target device. Thus, testing on the target device is still necessary, though with a different focus that usually puts more weight on integration and system testing.
+In principle, it is possible to mix both approaches (POSIX/Linux simulator and mocking using CMock), but this has not been done yet in ESP-IDF. Note that despite the name, the FreeRTOS POSIX/Linux simulator currently also works on macOS. Running ESP-IDF applications on host machines is often used for testing. However, simulating the environment and mocking dependencies does not fully represent the target device. Thus, testing on the target device is still necessary, though with a different focus that usually puts more weight on integration and system testing.
 
 .. note::
-    Another possibility to run applications on the host is to use the QEMU simulator. However, QEMU development for IDF applications is currently work in progress and has not been documented yet.
+
+    Another possibility to run applications on the host is to use the QEMU simulator. However, QEMU development for ESP-IDF applications is still a work in progress and has not been documented yet.
 
 CMock-Based Approach
 ^^^^^^^^^^^^^^^^^^^^
@@ -38,13 +42,14 @@ This approach uses the `CMock <https://www.throwtheswitch.org/cmock>`_ framework
 POSIX/Linux Simulator Approach
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ is available on ESP-IDF as a preview target already. Using this simulator, IDF components can be implemented on the host to make them available to IDF applications when running on host. Currently, only a limited number of components are ready to be built on Linux. Furthermore the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information if the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
+The `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ is available on ESP-IDF as a preview target already. This simulator allows ESP-IDF components to be implemented on the host, making them accessible to ESP-IDF applications when running on host. Currently, only a limited number of components are ready to be built on Linux. Furthermore, the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information about whether the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
 
 .. note::
-    The FreeRTOS POSIX/Linux simulator allows configuring the :ref:`amazon_smp_freertos` version. However, the simulation still runs in single-core mode. The main reason allowing Amazon SMP FreeRTOS is to provide API compatibility with IDF applications written for Amazon SMP FreeRTOS.
 
-Requirements
-------------
+    The FreeRTOS POSIX/Linux simulator allows configuring the :ref:`amazon_smp_freertos` version. However, the simulation still runs in single-core mode. The main reason allowing Amazon SMP FreeRTOS is to provide API compatibility with ESP-IDF applications written for Amazon SMP FreeRTOS.
+
+Requirements for Using Mocks
+----------------------------
 
 .. include:: inc/linux-host-requirements.rst
 
