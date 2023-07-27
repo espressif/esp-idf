@@ -104,9 +104,6 @@ typedef uint32_t TickType_t;
 #define portTASK_FUNCTION_PROTO(vFunction, pvParameters) void vFunction(void *pvParameters)
 #define portTASK_FUNCTION(vFunction, pvParameters) void vFunction(void *pvParameters)
 
-// interrupt module will mask interrupt with priority less than threshold
-#define RVHAL_EXCM_LEVEL            4
-
 
 /* ----------------------------------------------- Port Configurations -------------------------------------------------
  * - Configurations values supplied by each port

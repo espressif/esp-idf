@@ -18,8 +18,6 @@
 #endif
 
 
-//TODO: IDF-7771, P4, see jira to know what changed and what need to be checked
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,7 +32,12 @@ extern "C" {
 #define SPINLOCK_WAIT_FOREVER  (-1)
 #define SPINLOCK_NO_WAIT        0
 #define SPINLOCK_INITIALIZER   {.owner = SPINLOCK_FREE,.count = 0}
+
+#define SPINLOCK_OWNER_ID_0 0xCDCD /* Use these values to avoid 0 being a valid lock owner, same as CORE_ID_REGVAL_PRO on Xtensa */
+#define SPINLOCK_OWNER_ID_1 0xABAB /* Same as CORE_ID_REGVAL_APP on Xtensa*/
+
 #define CORE_ID_REGVAL_XOR_SWAP (0xCDCD ^ 0xABAB)
+#define SPINLOCK_OWNER_ID_XOR_SWAP CORE_ID_REGVAL_XOR_SWAP
 
 typedef struct {
     NEED_VOLATILE_MUX uint32_t owner;
@@ -72,7 +75,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
 {
 #if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
     uint32_t irq_status;
-    uint32_t core_id, other_core_id;
+    uint32_t core_owner_id, other_core_owner_id;
     bool lock_set;
     esp_cpu_cycle_count_t start_count;
 
@@ -81,24 +84,23 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 
     // Note: The core IDs are the full 32 bit (CORE_ID_REGVAL_PRO/CORE_ID_REGVAL_APP) values
-    core_id = xt_utils_get_raw_core_id();
-    other_core_id = CORE_ID_REGVAL_XOR_SWAP ^ core_id;
+    core_owner_id = xt_utils_get_raw_core_id();
 #else  //__riscv
-    irq_status = rv_utils_set_intlevel(RVHAL_EXCM_LEVEL);
 
-    core_id = rv_utils_get_core_id();
-    other_core_id = 1 - core_id;
+    irq_status = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
+    core_owner_id = rv_utils_get_core_id() == 0 ? SPINLOCK_OWNER_ID_0 : SPINLOCK_OWNER_ID_1;
 #endif
+    other_core_owner_id = CORE_ID_REGVAL_XOR_SWAP ^ core_owner_id;
 
     /* lock->owner should be one of SPINLOCK_FREE, CORE_ID_REGVAL_PRO,
      * CORE_ID_REGVAL_APP:
-     *  - If SPINLOCK_FREE, we want to atomically set to 'core_id'.
-     *  - If "our" core_id, we can drop through immediately.
-     *  - If "other_core_id", we spin here.
+     *  - If SPINLOCK_FREE, we want to atomically set to 'core_owner_id'.
+     *  - If "our" core_owner_id, we can drop through immediately.
+     *  - If "other_core_owner_id", we spin here.
      */
 
     // The caller is already the owner of the lock. Simply increment the nesting count
-    if (lock->owner == core_id) {
+    if (lock->owner == core_owner_id) {
         assert(lock->count > 0 && lock->count < 0xFF);    // Bad count value implies memory corruption
         lock->count++;
 #if __XTENSA__
@@ -116,7 +118,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
      * is the case for the majority of spinlock_acquire() calls (as spinlocks are free most of the time since they
      * aren't meant to be held for long).
      */
-    lock_set = esp_cpu_compare_and_set(&lock->owner, SPINLOCK_FREE, core_id);
+    lock_set = esp_cpu_compare_and_set(&lock->owner, SPINLOCK_FREE, core_owner_id);
     if (lock_set || timeout == SPINLOCK_NO_WAIT) {
         // We've successfully taken the lock, or we are not retrying
         goto exit;
@@ -125,7 +127,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     // First attempt to take the lock has failed. Retry until the lock is taken, or until we timeout.
     start_count = esp_cpu_get_cycle_count();
     do {
-        lock_set = esp_cpu_compare_and_set(&lock->owner, SPINLOCK_FREE, core_id);
+        lock_set = esp_cpu_compare_and_set(&lock->owner, SPINLOCK_FREE, core_owner_id);
         if (lock_set) {
             break;
         }
@@ -134,11 +136,11 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
 
 exit:
     if (lock_set) {
-        assert(lock->owner == core_id);
+        assert(lock->owner == core_owner_id);
         assert(lock->count == 0);   // This is the first time the lock is set, so count should still be 0
         lock->count++;  // Finally, we increment the lock count
     } else {    // We timed out waiting for lock
-        assert(lock->owner == SPINLOCK_FREE || lock->owner == other_core_id);
+        assert(lock->owner == SPINLOCK_FREE || lock->owner == other_core_owner_id);
         assert(lock->count < 0xFF); // Bad count value implies memory corruption
     }
 
@@ -171,19 +173,18 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 {
 #if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
     uint32_t irq_status;
-    uint32_t core_id;
+    uint32_t core_owner_id;
 
     assert(lock);
 #if __XTENSA__
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 
-    core_id = xt_utils_get_raw_core_id();
+    core_owner_id = xt_utils_get_raw_core_id();
 #else
-    irq_status = rv_utils_set_intlevel(RVHAL_EXCM_LEVEL);
-
-    core_id = rv_utils_get_core_id();
+    irq_status = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
+    core_owner_id = rv_utils_get_core_id() == 0 ? SPINLOCK_OWNER_ID_0 : SPINLOCK_OWNER_ID_1;
 #endif
-    assert(core_id == lock->owner); // This is a lock that we didn't acquire, or the lock is corrupt
+    assert(core_owner_id == lock->owner); // This is a lock that we didn't acquire, or the lock is corrupt
     lock->count--;
 
     if (!lock->count) { // If this is the last recursive release of the lock, mark the lock as free

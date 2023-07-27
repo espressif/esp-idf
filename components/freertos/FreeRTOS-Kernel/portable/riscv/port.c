@@ -365,7 +365,7 @@ UBaseType_t xPortSetInterruptMaskFromISR(void)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 #else
     /* When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-    prev_int_level = rv_utils_set_intlevel(RVHAL_EXCM_LEVEL - 1);
+    prev_int_level = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
 #endif /* !SOC_INIT_CLIC_SUPPORTED */
     /**
      * In theory, this function should not return immediately as there is a
