@@ -160,8 +160,8 @@
 
 #define SOC_SINGLE_BANK_LOW  0x40000000
 #define SOC_SINGLE_BANK_HIGH 0x44000000
-#define SOC_DUAL_BANK_LOW    0x48000000
-#define SOC_DUAL_BANK_HIGH   0x4c000000
+#define SOC_EXTRAM_LOW    0x48000000
+#define SOC_EXTRAM_HIGH   0x4c000000
 #define SOC_EXT_DBRAM_DATA_LOW 0x4a000000
 #define SOC_EXT_DBRAM_DATA_HIGH 0x4c000000
 
@@ -210,7 +210,7 @@
 #define SOC_MEM_INTERNAL_LOW1       0x4ff00000
 #define SOC_MEM_INTERNAL_HIGH1      0x4ffc0000
 
-#define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_DUAL_BANK_HIGH - SOC_DUAL_BANK_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
 #define CPU_PERIPH_LOW     0x3ff00000
 #define CPU_PERIPH_HIGH    0x3ff20000

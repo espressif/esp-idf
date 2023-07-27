@@ -1425,7 +1425,7 @@ uint32_t Cache_Get_L2_Cache_Line_Size(void);
   *
   * @return uint32_t: 16, 32, 64 Byte
   */
-uint32_t Cache_Get_DCache_Line_Size();
+uint32_t Cache_Get_DCache_Line_Size(void);
 
 /**
   * @brief Freeze L1 core0 icache

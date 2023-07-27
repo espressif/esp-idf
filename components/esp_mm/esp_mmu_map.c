@@ -391,7 +391,10 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
     mmu_hal_map_region(0, target, vaddr_start, paddr_start, size, &actual_mapped_len);
 #if (SOC_MMU_PERIPH_NUM == 2)
 #if !CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_IDF_TARGET_ESP32P4 // for spi flash mmap, we always use flash mmu
+    //TODO: IDF-7509
     mmu_hal_map_region(1, target, vaddr_start, paddr_start, size, &actual_mapped_len);
+#endif
 #endif //  #if !CONFIG_FREERTOS_UNICORE
 #endif //  #if (SOC_MMU_PERIPH_NUM == 2)
 
@@ -529,6 +532,11 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     new_block->laddr_end = new_block->laddr_start + aligned_size;
     new_block->size = aligned_size;
     new_block->caps = caps;
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7509
+    new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_FLASH);
+    new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_FLASH);
+#else
     if (caps & MMU_MEM_CAP_EXEC) {
         new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_INSTRUCTION);
         new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_INSTRUCTION);
@@ -536,6 +544,7 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
         new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_DATA);
         new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_DATA);
     }
+#endif
     new_block->paddr_start = paddr_start;
     new_block->paddr_end = paddr_start + aligned_size;
     new_block->target = target;
@@ -570,7 +579,10 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_unmapping(uint32_t vaddr_start, uint32_
     mmu_hal_unmap_region(0, vaddr_start, size);
 #if (SOC_MMU_PERIPH_NUM == 2)
 #if !CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_IDF_TARGET_ESP32P4 // for flash mmap, we always use flash mmu
+    //TODO: IDF-7509
     mmu_hal_unmap_region(1, vaddr_start, size);
+#endif
 #endif //  #if !CONFIG_FREERTOS_UNICORE
 #endif //  #if (SOC_MMU_PERIPH_NUM == 2)
 

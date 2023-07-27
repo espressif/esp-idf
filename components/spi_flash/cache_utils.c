@@ -487,7 +487,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     int i;
     bool flash_spiram_wrap_together, flash_support_wrap = true, spiram_support_wrap = true;
     uint32_t drom0_in_icache = 1;//always 1 in esp32s2
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32P4
     drom0_in_icache = 0;
 #endif
 
@@ -919,7 +919,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
 
 #if CONFIG_IDF_TARGET_ESP32P4
 //TODO: IDF-5670
-TCM_IRAM_ATTR void esp_config_llc_mode(void)
+void esp_config_l2_cache_mode(void)
 {
     cache_size_t cache_size;
     cache_line_size_t cache_line_size;

@@ -9,7 +9,7 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5645
+#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4// TODO: IDF-5645
 #include "soc/rtc_cntl_reg.h"
 #else
 #include "soc/lp_wdt_reg.h"
@@ -113,6 +113,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_SLEEP_REJECT_INT_CLR);                                    /* SLP_WAKEUP */
+#elif CONFIG_IDF_TARGET_ESP32P4
+// TODO: IDF-5645
 #else
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);

@@ -359,7 +359,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_hs_divider(
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_ls_divider(void)
 {
-    return 0;
+    return 1;
 }
 
 /**
@@ -379,7 +379,7 @@ static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(void)
 {
-    return 0;
+    return 1;
 }
 
 /**

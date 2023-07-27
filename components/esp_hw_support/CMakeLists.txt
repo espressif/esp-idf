@@ -124,6 +124,16 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
         list(APPEND srcs "sleep_wake_stub.c")
     endif()
+
+    if(CONFIG_IDF_TARGET_ESP32P4)
+        list(REMOVE_ITEM srcs
+                "sleep_cpu.c"         # TODO: IDF-7528, IDF-7529
+                "sleep_modes.c"       # TODO: IDF-7528, IDF-7529
+                "sleep_wake_stub.c"   # TODO: IDF-7529
+                "sleep_gpio.c"        # TODO: IDF-7528, IDF-7529
+                "port/esp_clk_tree_common.c"    # TODO: IDF-7526
+            )
+    endif()
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

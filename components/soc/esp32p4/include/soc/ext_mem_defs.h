@@ -25,7 +25,9 @@ extern "C" {
 
 #define DRAM0_CACHE_ADDRESS_LOW                  IRAM0_CACHE_ADDRESS_LOW                //I/D share the same vaddr range
 #define DRAM0_CACHE_ADDRESS_HIGH                 IRAM0_CACHE_ADDRESS_HIGH               //I/D share the same vaddr range
-#define DRAM0_CACHE_OPERATION_HIGH               0x44000000
+
+#define DRAM_FLASH_ADDRESS_LOW                   DRAM0_CACHE_ADDRESS_LOW
+#define DRAM_FLASH_ADDRESS_HIGH                  0x44000000
 
 #define SINGLE_BANK_CACHE_ADDRESS_LOW                0x40000000
 #define SINGLE_BANK_CACHE_ADDRESS_HIGH               0x44000000

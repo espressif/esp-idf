@@ -41,6 +41,8 @@
 #include "esp32c6/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rtc.h"
 #endif
 
 #if portNUM_PROCESSORS == 2

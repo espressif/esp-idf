@@ -45,6 +45,7 @@
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/uart.h"
 #include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
 
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"

@@ -1,0 +1,187 @@
+# field_name,       |    efuse_block, | bit_start, | bit_count, |comment #
+#                   |    (EFUSE_BLK0  | (0..255)   | (1..-)     |        #
+#                   |     EFUSE_BLK1  |            |MAX_BLK_LEN*|        #
+#                   |        ...      |            |            |        #
+#                   |     EFUSE_BLK10)|            |            |        #
+##########################################################################
+# *) The value MAX_BLK_LEN depends on CONFIG_EFUSE_MAX_BLK_LEN, will be replaced with "None" - 256. "3/4" - 192. "REPEAT" - 128.
+# !!!!!!!!!!! #
+# After editing this file, run the command manually "make efuse_common_table" or "idf.py efuse-common-table"
+# this will generate new source files, next rebuild all the sources.
+# !!!!!!!!!!! #
+
+# EFUSE_RD_REPEAT_DATA BLOCK #
+##############################
+    # EFUSE_RD_WR_DIS_REG #
+        WR_DIS,                           EFUSE_BLK0,   0,    32,     Write protection
+            WR_DIS.RD_DIS,                EFUSE_BLK0,   0,    1,      Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
+            WR_DIS.GROUP_1,               EFUSE_BLK0,   1,    1,      Write protection for KM_RND_SWITCH_CYCLE KM_DEPLOY_ONLY_ONCE FORCE_USE_KEY_MANAGER_KEY FORCE_DISABLE_SW_INIT_KEY
+            WR_DIS.GROUP_2,               EFUSE_BLK0,   2,    1,      Write protection for DIS_USB_JTAG POWERGLITCH_EN DIS_USB_DERIAL_JTAG DIS_FORCE_DOWNLOAD DIS_TWAI JTAG_SEL_ENABLE DIS_PAD_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT WDT_DELAY_SEL HYS_EN_PAD _0PXA_TIEH_SEL_0 _0PXA_TIEH_SEL_1 _0PXA_TIEH_SEL_2 _0PXA_TIEH_SEL_3 DIS_WDT DIS_SWD
+            WR_DIS.HP_PWR_SRC_SEL,        EFUSE_BLK0,   3,    1,      Write protection for HP_PWR_SRC_SEL
+            WR_DIS.SPI_BOOT_CRYPT_CNT,    EFUSE_BLK0,   4,    1,      Write protection for SPI_BOOT_CRYPT_CNT
+            WR_DIS.SECURE_BOOT_KEY_REVOKE0,EFUSE_BLK0,  5,    1,      Write protection for SECURE_BOOT_KEY_REVOKE0
+            WR_DIS.SECURE_BOOT_KEY_REVOKE1,EFUSE_BLK0,  6,    1,      Write protection for SECURE_BOOT_KEY_REVOKE1
+            WR_DIS.SECURE_BOOT_KEY_REVOKE2,EFUSE_BLK0,  7,    1,      Write protection for SECURE_BOOT_KEY_REVOKE2
+            WR_DIS.KEY0_PURPOSE,          EFUSE_BLK0,   8,    1,      Write protection for key_purpose. KEY0
+            WR_DIS.KEY1_PURPOSE,          EFUSE_BLK0,   9,    1,      Write protection for key_purpose. KEY1
+            WR_DIS.KEY2_PURPOSE,          EFUSE_BLK0,  10,    1,      Write protection for key_purpose. KEY2
+            WR_DIS.KEY3_PURPOSE,          EFUSE_BLK0,  11,    1,      Write protection for key_purpose. KEY3
+            WR_DIS.KEY4_PURPOSE,          EFUSE_BLK0,  12,    1,      Write protection for key_purpose. KEY4
+            WR_DIS.KEY5_PURPOSE,          EFUSE_BLK0,  13,    1,      Write protection for key_purpose. KEY5
+            WR_DIS.GROUP_3,               EFUSE_BLK0,  14,    1,      Write protection for SEC_DPA_LEVEL CRYPT_DPA_ENABLE
+            WR_DIS.SECURE_BOOT_EN,        EFUSE_BLK0,  15,    1,      Write protection for SECURE_BOOT_EN
+            WR_DIS.SECURE_BOOT_AGGRESSIVE_REVOKE,EFUSE_BLK0, 16, 1,   Write protection for SECURE_BOOT_AGGRESSIVE_REVOKE
+            WR_DIS.ECDSA_FORCE_USE_HARDWARE_K,EFUSE_BLK0, 17, 1,      Write protection for ECDSA_FORCE_USE_HARDWARE_K
+            WR_DIS.GROUP_4,               EFUSE_BLK0,  18,    1,      Write protection for FLASH_TYPE FLASH_PAGE_SIZE FLASH_ECC_EN DIS_USB_OTG_DOWNLOAD_MODE FLASH_TPUW DIS_DOWNLOAD_MODE DIS_DIRECT_BOOT DIS_USB_SERIAL_JTAG_ROM_PRINT DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL FORCE_SEND_RESUME SECURE_VERSION SECURE_BOOT_DISABLE_FAST_WAKE
+            WR_DIS.HUK_GEN_STATE,         EFUSE_BLK0,  19,    1,      Write protection for HUK_GEN_STATE
+
+            WR_DIS.BLK1,                  EFUSE_BLK0,  20,    1,      Write protection for EFUSE_BLK1.  MAC_SPI_8M_SYS
+            WR_DIS.SYS_DATA_PART1,        EFUSE_BLK0,  21,    1,      Write protection for EFUSE_BLK2.  SYS_DATA_PART1
+            WR_DIS.USER_DATA,             EFUSE_BLK0,  22,    1,      Write protection for EFUSE_BLK3.  USER_DATA
+            WR_DIS.KEY0,                  EFUSE_BLK0,  23,    1,      Write protection for EFUSE_BLK4.  KEY0
+            WR_DIS.KEY1,                  EFUSE_BLK0,  24,    1,      Write protection for EFUSE_BLK5.  KEY1
+            WR_DIS.KEY2,                  EFUSE_BLK0,  25,    1,      Write protection for EFUSE_BLK6.  KEY2
+            WR_DIS.KEY3,                  EFUSE_BLK0,  26,    1,      Write protection for EFUSE_BLK7.  KEY3
+            WR_DIS.KEY4,                  EFUSE_BLK0,  27,    1,      Write protection for EFUSE_BLK8.  KEY4
+            WR_DIS.KEY5,                  EFUSE_BLK0,  28,    1,      Write protection for EFUSE_BLK9.  KEY5
+            WR_DIS.SYS_DATA_PART2,        EFUSE_BLK0,  29,    1,      Write protection for EFUSE_BLK10. SYS_DATA_PART2
+            WR_DIS.GROUP_5,               EFUSE_BLK0,  30,    1,      Write protection for USB_DEVICE_EXCHG_PINS USB_OTG11_EXCHG_PINS USB_DEVICE_DREFH USB_OTG11_DREFH USB_PHY_SEL USB_DEVICE_DREFL USB_OTG11_DREFL
+            WR_DIS.SOFT_DIS_JTAG,         EFUSE_BLK0,  31,    1,      Write protection for SOFT_DIS_JTAG
+
+    # EFUSE_RD_REPEAT_DATA0_REG #
+        RD_DIS,                           EFUSE_BLK0,   32,    7,     Read protection
+            RD_DIS.KEY0,                  EFUSE_BLK0,   32,    1,     Read protection for EFUSE_BLK4.  KEY0
+            RD_DIS.KEY1,                  EFUSE_BLK0,   33,    1,     Read protection for EFUSE_BLK5.  KEY1
+            RD_DIS.KEY2,                  EFUSE_BLK0,   34,    1,     Read protection for EFUSE_BLK6.  KEY2
+            RD_DIS.KEY3,                  EFUSE_BLK0,   35,    1,     Read protection for EFUSE_BLK7.  KEY3
+            RD_DIS.KEY4,                  EFUSE_BLK0,   36,    1,     Read protection for EFUSE_BLK8.  KEY4
+            RD_DIS.KEY5,                  EFUSE_BLK0,   37,    1,     Read protection for EFUSE_BLK9.  KEY5
+            RD_DIS.SYS_DATA_PART2,        EFUSE_BLK0,   38,    1,     Read protection for EFUSE_BLK10. SYS_DATA_PART2
+        USB_DEVICE_EXCHG_PINS,            EFUSE_BLK0,   39,    1,     USB-device exchange pins
+        USB_OTG11_EXCHG_PINS,             EFUSE_BLK0,   40,    1,     USB-otg11 change pins
+        DIS_USB_JTAG,                     EFUSE_BLK0,   41,    1,     Disable USB JTAG
+        POWERGLITCH_EN,                   EFUSE_BLK0,   42,    1,     Power glitch enable
+        DIS_USB_SERIAL_JTAG,              EFUSE_BLK0,   43,    1,     Disable USB_SERIAL_JTAG
+        DIS_FORCE_DOWNLOAD,               EFUSE_BLK0,   44,    1,     Disable force chip go to download mode function
+        DIS_SPI_DOWNLOAD_MSPI,            EFUSE_BLK0,   45,    1,     Represents whether the SPI0 controller is disabled in boot_mode_download
+        DIS_TWAI,                         EFUSE_BLK0,   46,    1,     Disable TWAI function
+        JTAG_SEL_ENABLE,                  EFUSE_BLK0,   47,    1,     Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.
+        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to soft disable JTAG (odd number 1 means disable). JTAG can be enabled in HMAC module.
+        DIS_PAD_JTAG,                     EFUSE_BLK0,   51,    1,     Hard disable JTAG. JTAG is disabled permanently.
+        DIS_DOWNLOAD_MANUAL_ENCRYPT,      EFUSE_BLK0,   52,    1,     Disable flash encryption when in download boot modes.
+        USB_DEVICE_DREFH,                 EFUSE_BLK0,   53,    2,     USB-device drefh
+        USB_OTG11_DREFH,                  EFUSE_BLK0,   55,    2,     USB-otg11 drefh
+
+    # EFUSE_RD_REPEAT_DATA1_REG #
+        USB_PHY_SEL,                      EFUSE_BLK0,   57,    1,     Select usb phy
+        HUK_GEN_STATE,                    EFUSE_BLK0,   58,    9,     HUK generator state
+        KM_RND_SWITCH_CYCLE,              EFUSE_BLK0,   67,    2,     km random switch cycle
+        KM_DEPLOY_ONLY_ONCE,              EFUSE_BLK0,   69,    4,     km deploy only once
+        FORCE_USE_KEY_MANAGER_KEY,        EFUSE_BLK0,   73,    4,     force use key manager key
+        FORCE_DISABLE_SW_INIT_KEY,        EFUSE_BLK0,   77,    1,     force disable software init key
+        WDT_DELAY_SEL,                    EFUSE_BLK0,   80,    2,     watchdog delay selection
+        SPI_BOOT_CRYPT_CNT,               EFUSE_BLK0,   82,    3,     spi boot encryption counter
+        SECURE_BOOT_KEY_REVOKE0,          EFUSE_BLK0,   85,    1,     Enable revoke first secure boot key
+        SECURE_BOOT_KEY_REVOKE1,          EFUSE_BLK0,   86,    1,     Enable revoke second secure boot key
+        SECURE_BOOT_KEY_REVOKE2,          EFUSE_BLK0,   87,    1,     Enable revoke third secure boot key
+        KEY_PURPOSE_0,                    EFUSE_BLK0,   88,    4,     Key0 purpose
+        KEY_PURPOSE_1,                    EFUSE_BLK0,   92,    4,     Key1 purpose
+
+    # EFUSE_RD_REPEAT_DATA2_REG #
+        KEY_PURPOSE_2,                    EFUSE_BLK0,   96,    4,     Key2 purpose
+        KEY_PURPOSE_3,                    EFUSE_BLK0,  100,    4,     Key3 purpose
+        KEY_PURPOSE_4,                    EFUSE_BLK0,  104,    4,     Key4 purpose
+        KEY_PURPOSE_5,                    EFUSE_BLK0,  108,    4,     Key5 purpose
+        SEC_DPA_LEVEL,                    EFUSE_BLK0,  112,    2,     Configures the clock random divide mode to determine the DPA security level
+        ECDSA_FORCE_USE_HARDWARE_K,       EFUSE_BLK0,  114,    1,     ecdsa force use hardware key
+        CRYPT_DPA_ENABLE,                 EFUSE_BLK0,  115,    1,     Represents whether defense against DPA attack is enabled
+        SECURE_BOOT_EN,                   EFUSE_BLK0,  116,    1,     Secure boot enable
+        SECURE_BOOT_AGGRESSIVE_REVOKE,    EFUSE_BLK0,  117,    1,     Enable aggressive secure boot revoke
+        FLASH_TYPE,                       EFUSE_BLK0,  119,    1,     flash type
+
+    # EFUSE_RD_REPEAT_DATA3_REG #
+        FLASH_PAGE_SIZE,                  EFUSE_BLK0,  120,    2,     flash page size
+        FLASH_ECC_EN,                     EFUSE_BLK0,  122,    1,     flash ecc enable
+        DIS_USB_OTG_DOWNLOAD_MODE,        EFUSE_BLK0,  123,    1,     disable use otg download mode
+        FLASH_TPUW,                       EFUSE_BLK0,  124,    4,     flash tpuw
+        DIS_DOWNLOAD_MODE,                EFUSE_BLK0,  128,    1,     Disble download mode
+        DIS_DIRECT_BOOT,                  EFUSE_BLK0,  129,    1,     Disable direct boot mode
+        DIS_USB_SERIAL_JTAG_ROM_PRINT,    EFUSE_BLK0,  130,    1,     Represents whether print from USB-Serial-JTAG during ROM boot is disabled
+        DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE, EFUSE_BLK0, 132,    1,     Represents whether the USB-Serial-JTAG download func- tion is disabled
+        ENABLE_SECURITY_DOWNLOAD,         EFUSE_BLK0,  133,    1,     Enable secure download mode
+        UART_PRINT_CONTROL,               EFUSE_BLK0,  134,    2,     b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
+        FORCE_SEND_RESUME,                EFUSE_BLK0,  136,    1,     Force ROM code to send a resume command during SPI boot
+        SECURE_VERSION,                   EFUSE_BLK0,  137,   16,     Secure version for anti-rollback
+
+    # EFUSE_RD_REPEAT_DATA4_REG #
+        SECURE_BOOT_DISABLE_FAST_WAKE,    EFUSE_BLK0,  153,    1,     Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled
+        HYS_EN_PAD,                       EFUSE_BLK0,  154,    1,     Hys en pad
+        DCDC_VSET,                        EFUSE_BLK0,  155,    5,     dcdc vset
+        _0PXA_TIEH_SEL_0,                  EFUSE_BLK0,  160,    2,     0pxa tieh sel0
+        _0PXA_TIEH_SEL_1,                  EFUSE_BLK0,  162,    2,     0pxa tieh sel1
+        _0PXA_TIEH_SEL_2,                  EFUSE_BLK0,  164,    2,     0pxa tieh sel2
+        _0PXA_TIEH_SEL_3,                  EFUSE_BLK0,  166,    2,     0pxa tieh sel3
+        USB_DEVICE_DREFL,                 EFUSE_BLK0,  172,    2,     usb device drefl
+        USB_OTG11_DREFL,                  EFUSE_BLK0,  174,    2,     usb otg1.1 drefl
+        HP_PWR_SRC_SEL,                   EFUSE_BLK0,  178,    1,     hp power source selection
+        DCDC_VSET_EN,                     EFUSE_BLK0,  179,    1,     dcdc vset enable
+        DIS_WDT,                          EFUSE_BLK0,  180,    1,     disable watchdog
+        DIS_SWD,                          EFUSE_BLK0,  181,    1,     disable super watchdog
+
+# MAC_SYS_VERSION BLOCK #
+#######################
+        MAC_FACTORY,                          EFUSE_BLK1,   40,    8,     Factory MAC addr [0]
+        ,                                     EFUSE_BLK1,   32,    8,     Factory MAC addr [1]
+        ,                                     EFUSE_BLK1,   24,    8,     Factory MAC addr [2]
+        ,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
+        ,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
+        ,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
+        MAC_EXT,                              EFUSE_BLK1,   48,    8,     Extend  MAC addr [0]
+        ,                                     EFUSE_BLK1,   56,    8,     Extend  MAC addr [1]
+        WAFER_VERSION_MINOR,                  EFUSE_BLK1,  114,    3,     WAFER_VERSION_MINOR least significant bits
+        ,                                     EFUSE_BLK1,  183,    1,     WAFER_VERSION_MINOR most significant bit
+        # WAFER_VERSION_MINOR most significant bit is from RD_MAC_SPI_SYS_5
+        PKG_VERSION,                          EFUSE_BLK1,  117,    3,     Package version 0:ESP32C3
+        BLK_VERSION_MINOR,                    EFUSE_BLK1,  120,    3,     BLK_VERSION_MINOR
+
+# SYS_DATA_PART1 BLOCK# - System configuration (TODO: IDF-6483) #
+#######################
+    # RD_SYS_PART1_DATA0 - rd_sys_part1_data3
+        OPTIONAL_UNIQUE_ID,                   EFUSE_BLK2,    0,  128,     Optional unique 128-bit ID
+
+    # RD_SYS_PART1_DATA4
+        BLK_VERSION_MAJOR,                    EFUSE_BLK2,  128,    2,     BLK_VERSION_MAJOR of BLOCK2
+        TEMP_CALIB,                           EFUSE_BLK2,  131,    9,     Temperature calibration data
+        OCODE,                                EFUSE_BLK2,  140,    8,     ADC OCode
+        ADC1_INIT_CODE_ATTEN0,                EFUSE_BLK2,  148,   10,     ADC1 init code at atten0
+        ADC1_INIT_CODE_ATTEN1,                EFUSE_BLK2,  158,   10,     ADC1 init code at atten1
+
+    # RD_SYS_PART1_DATA5
+        ADC1_INIT_CODE_ATTEN2,                EFUSE_BLK2,  168,   10,     ADC1 init code at atten2
+        ADC1_INIT_CODE_ATTEN3,                EFUSE_BLK2,  178,   10,     ADC1 init code at atten3
+        ADC1_CAL_VOL_ATTEN0,                  EFUSE_BLK2,  188,   10,     ADC1 calibration voltage at atten0
+        ADC1_CAL_VOL_ATTEN1,                  EFUSE_BLK2,  198,   10,     ADC1 calibration voltage at atten1
+        ADC1_CAL_VOL_ATTEN2,                  EFUSE_BLK2,  208,   10,     ADC1 calibration voltage at atten2
+        ADC1_CAL_VOL_ATTEN3,                  EFUSE_BLK2,  218,   10,     ADC1 calibration voltage at atten3
+
+################
+USER_DATA,                                EFUSE_BLK3,    0,  256,     User data
+USER_DATA.MAC_CUSTOM,                     EFUSE_BLK3,  200,   48,     Custom MAC
+
+################
+KEY0,                                     EFUSE_BLK4,    0,  256,     Key0 or user data
+KEY1,                                     EFUSE_BLK5,    0,  256,     Key1 or user data
+KEY2,                                     EFUSE_BLK6,    0,  256,     Key2 or user data
+KEY3,                                     EFUSE_BLK7,    0,  256,     Key3 or user data
+KEY4,                                     EFUSE_BLK8,    0,  256,     Key4 or user data
+KEY5,                                     EFUSE_BLK9,    0,  256,     Key5 or user data
+SYS_DATA_PART2,                           EFUSE_BLK10,   0,  256,     System configuration
+
+# AUTO CONFIG DIG&RTC DBIAS (TODO: IDF-6483)#
+################
+K_RTC_LDO,                              EFUSE_BLK1,    135,    7,      BLOCK1 K_RTC_LDO
+K_DIG_LDO,                              EFUSE_BLK1,    142,    7,      BLOCK1 K_DIG_LDO
+V_RTC_DBIAS20,                          EFUSE_BLK1,    149,    8,      BLOCK1 voltage of rtc dbias20
+V_DIG_DBIAS20,                          EFUSE_BLK1,    157,    8,      BLOCK1 voltage of digital dbias20
+DIG_DBIAS_HVT,                          EFUSE_BLK1,    165,    5,      BLOCK1 digital dbias when hvt
+THRES_HVT,                              EFUSE_BLK1,    170,    10,     BLOCK1 pvt threshold when hvt

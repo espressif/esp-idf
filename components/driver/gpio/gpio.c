@@ -582,7 +582,11 @@ esp_err_t gpio_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
     gpio_isr_alloc_t p;
+#if !CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7995
     p.source = ETS_GPIO_INTR_SOURCE;
+#else
+    p.source = ETS_GPIO_INTR0_SOURCE;
+#endif
     p.intr_alloc_flags = intr_alloc_flags;
 #if SOC_ANA_CMPR_SUPPORTED
     p.intr_alloc_flags |= ESP_INTR_FLAG_SHARED;

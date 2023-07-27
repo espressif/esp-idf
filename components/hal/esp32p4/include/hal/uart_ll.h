@@ -11,6 +11,7 @@
 #pragma once
 
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "hal/uart_types.h"
 #include "soc/uart_periph.h"
 #include "soc/uart_reg.h"
@@ -82,7 +83,7 @@ static inline void uart_ll_update(uart_dev_t *hw)
 static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
 {
     // hw->clk_conf.rst_core = core_rst_en;
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -97,7 +98,7 @@ static inline void uart_ll_sclk_enable(uart_dev_t *hw)
     // hw->clk_conf.sclk_en = 1;
     // hw->clk_conf.rx_sclk_en = 1;
     // hw->clk_conf.tx_sclk_en = 1;
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -112,7 +113,7 @@ static inline void uart_ll_sclk_disable(uart_dev_t *hw)
     // hw->clk_conf.sclk_en = 0;
     // hw->clk_conf.rx_sclk_en = 0;
     // hw->clk_conf.tx_sclk_en = 0;
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -184,7 +185,7 @@ static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
     // typeof(hw->clkdiv_sync) div_reg = hw->clkdiv_sync;
     // return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -576,7 +577,7 @@ static inline void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_ch
     // HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_precnt_sync, pre_idle_num, cmd_char->pre_idle);
     // HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_gaptout_sync, rx_gap_tout, cmd_char->gap_tout);
     // uart_ll_update(hw);
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -774,7 +775,7 @@ static inline void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, ui
 {
     // *cmd_char = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, data);
     // *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, char_num);
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -937,7 +938,7 @@ static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
 static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 {
     // return UART_RX_TOUT_THRHD_V;
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -1014,7 +1015,7 @@ static inline void uart_ll_force_xoff(uart_port_t uart_num)
     // REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
     // REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
     // uart_ll_update(UART_LL_GET_HW(uart_num));
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -1030,7 +1031,7 @@ static inline void uart_ll_force_xon(uart_port_t uart_num)
     // REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
     // REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XON);
     // uart_ll_update(UART_LL_GET_HW(uart_num));
-    abort();
+    HAL_ASSERT(false);
 }
 
 /**
@@ -1043,7 +1044,7 @@ static inline void uart_ll_force_xon(uart_port_t uart_num)
 static inline uint32_t uart_ll_get_fsm_status(uart_port_t uart_num)
 {
     // return REG_GET_FIELD(UART_FSM_STATUS_REG(uart_num), UART_ST_UTX_OUT);
-    abort();
+    HAL_ASSERT(false);
 }
 
 #ifdef __cplusplus
