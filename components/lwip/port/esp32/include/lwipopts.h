@@ -263,11 +263,9 @@ extern "C"
 
 #define DHCP_DEFINE_CUSTOM_TIMEOUTS     1
 /* Since for embedded devices it's not that hard to miss a discover packet, so lower
- * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
+ * the discover and request retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,4,4,4)s.
  */
- #define DHCP_REQUEST_TIMEOUT_SEQUENCE(state, tries)   (state == DHCP_STATE_REQUESTING ? \
-                                                       (uint16_t)(1 * 1000) : \
-                                                       (uint16_t)(((tries) < 6 ? 1 << (tries) : 60) * 250))
+#define DHCP_REQUEST_TIMEOUT_SEQUENCE(tries) ((uint16_t)(((tries) < 5 ? 1 << (tries) : 16) * 250))
 
 #define DHCP_COARSE_TIMER_SECS CONFIG_LWIP_DHCP_COARSE_TIMER_SECS
 
