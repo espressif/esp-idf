@@ -66,9 +66,6 @@ static DRAM_ATTR struct {
 #endif // !SOC_PMU_SUPPORTED
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 
-/* Reference count of enabling PHY */
-static uint8_t s_phy_access_ref = 0;
-
 #if CONFIG_IDF_TARGET_ESP32
 /* time stamp updated when the PHY/RF is turned on */
 static int64_t s_phy_rf_en_ts = 0;
@@ -233,11 +230,10 @@ static inline void phy_digital_regs_load(void)
 }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
-void esp_phy_enable(void)
+void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
-
-    if (s_phy_access_ref == 0) {
+    if (phy_get_modem_flag() == 0) {
 #if CONFIG_IDF_TARGET_ESP32
         // Update time stamp
         s_phy_rf_en_ts = esp_timer_get_time();
@@ -275,18 +271,27 @@ void esp_phy_enable(void)
 #if CONFIG_IDF_TARGET_ESP32
         coex_bt_high_prio();
 #endif
+
+// ESP32 will track pll in the wifi/BT modem interrupt handler.
+#if !CONFIG_IDF_TARGET_ESP32
+        phy_track_pll_init();
+#endif
     }
-    s_phy_access_ref++;
+    phy_set_modem_flag(modem);
 
     _lock_release(&s_phy_access_lock);
 }
 
-void esp_phy_disable(void)
+void esp_phy_disable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
 
-    s_phy_access_ref--;
-    if (s_phy_access_ref == 0) {
+    phy_clr_modem_flag(modem);
+    if (phy_get_modem_flag() == 0) {
+// ESP32 will track pll in the wifi/BT modem interrupt handler.
+#if !CONFIG_IDF_TARGET_ESP32
+        phy_track_pll_deinit();
+#endif
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         phy_digital_regs_store();
 #endif
@@ -310,7 +315,6 @@ void esp_phy_disable(void)
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
         esp_phy_common_clock_disable();
     }
-
     _lock_release(&s_phy_access_lock);
 }
 

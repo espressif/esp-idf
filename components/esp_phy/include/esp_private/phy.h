@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,6 +140,34 @@ void phy_eco_version_sel(uint8_t chip_ver);
 void phy_improve_rx_special(bool enable);
 #endif
 
+/**
+ * @brief Enable phy track pll
+ *
+ */
+void phy_track_pll_init(void);
+
+/**
+ * @brief Disable phy track pll
+ *
+ */
+void phy_track_pll_deinit(void);
+
+/**
+ * @brief Set the flag recorded which modem has already enabled phy
+ *
+ */
+void phy_set_modem_flag(esp_phy_modem_t modem);
+
+/**
+ * @brief Clear the flag to record which modem calls phy disenable
+ */
+void phy_clr_modem_flag(esp_phy_modem_t modem);
+
+/**
+ * @brief Get the flag recorded which modem has already enabled phy
+ *
+ */
+esp_phy_modem_t phy_get_modem_flag(void);
 #ifdef __cplusplus
 }
 #endif

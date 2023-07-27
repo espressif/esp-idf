@@ -796,7 +796,7 @@ IRAM_ATTR static void ieee802154_rf_disable(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     if (s_rf_closed == false) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_IEEE802154);
         s_rf_closed = true;
     }
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -806,7 +806,7 @@ IRAM_ATTR static void ieee802154_rf_enable(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     if (s_rf_closed) {
-        esp_phy_enable();
+        esp_phy_enable(PHY_MODEM_IEEE802154);
         s_rf_closed = false;
     }
 #endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
