@@ -20,6 +20,10 @@
 #include "esp_log.h"
 #include "esp_check.h"
 
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+#include "ecdsa/ecdsa_alt.h"
+#endif
+
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
 #endif
@@ -405,6 +409,19 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
             }
         } else
 #endif
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+        if (tls->use_ecdsa_peripheral) {
+            esp_ecdsa_pk_conf_t conf = {
+                .grp_id = MBEDTLS_ECP_DP_SECP256R1,
+                .efuse_block = tls->ecdsa_efuse_blk,
+            };
+            ret = esp_ecdsa_set_pk_context(pki->pk_key, &conf);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to initialize pk context for ecdsa peripheral with the key stored in efuse block %d", tls->ecdsa_efuse_blk);
+                return ret;
+            }
+        } else
+#endif
         if (pki->privkey_pem_buf != NULL) {
             ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
                                        pki->privkey_password, pki->privkey_password_len,
@@ -580,6 +597,29 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
         ESP_LOGE(TAG, "Please enable secure element support for ESP-TLS in menuconfig");
         return ESP_FAIL;
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
+    }  else if (cfg->use_ecdsa_peripheral) {
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+        tls->use_ecdsa_peripheral = cfg->use_ecdsa_peripheral;
+        tls->ecdsa_efuse_blk = cfg->ecdsa_key_efuse_blk;
+        esp_tls_pki_t pki = {
+            .public_cert = &tls->servercert,
+            .pk_key = &tls->serverkey,
+            .publiccert_pem_buf = cfg->servercert_buf,
+            .publiccert_pem_bytes = cfg->servercert_bytes,
+            .privkey_pem_buf = NULL,
+            .privkey_pem_bytes = 0,
+            .privkey_password = NULL,
+            .privkey_password_len = 0,
+        };
+        esp_err_t esp_ret = set_pki_context(tls, &pki);
+        if (esp_ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set client pki context");
+            return esp_ret;
+        }
+#else
+        ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
+        return ESP_FAIL;
+#endif
     } else if (cfg->servercert_buf != NULL && cfg->serverkey_buf != NULL) {
         esp_tls_pki_t pki = {
             .public_cert = &tls->servercert,
@@ -785,6 +825,39 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         }
 #else
         ESP_LOGE(TAG, "Please enable the DS peripheral support for the ESP-TLS in menuconfig. (only supported for the ESP32-S2 chip)");
+        return ESP_FAIL;
+#endif
+    } else if (cfg->use_ecdsa_peripheral) {
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+        tls->use_ecdsa_peripheral = cfg->use_ecdsa_peripheral;
+        tls->ecdsa_efuse_blk = cfg->ecdsa_key_efuse_blk;
+        esp_tls_pki_t pki = {
+            .public_cert = &tls->clientcert,
+            .pk_key = &tls->clientkey,
+            .publiccert_pem_buf = cfg->clientcert_buf,
+            .publiccert_pem_bytes = cfg->clientcert_bytes,
+            .privkey_pem_buf = NULL,
+            .privkey_pem_bytes = 0,
+            .privkey_password = NULL,
+            .privkey_password_len = 0,
+        };
+        esp_err_t esp_ret = set_pki_context(tls, &pki);
+        if (esp_ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set client pki context");
+            return esp_ret;
+        }
+        static const int ecdsa_peripheral_supported_ciphersuites[] = {
+            MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+            MBEDTLS_TLS1_3_AES_128_GCM_SHA256,
+#endif
+            0
+        };
+
+        ESP_LOGD(TAG, "Set the ciphersuites list");
+        mbedtls_ssl_conf_ciphersuites(&tls->conf, ecdsa_peripheral_supported_ciphersuites);
+#else
+        ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
         return ESP_FAIL;
 #endif
     } else if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_pem_buf != NULL) {

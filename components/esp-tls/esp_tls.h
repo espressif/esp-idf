@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,6 +151,10 @@ typedef struct esp_tls_cfg {
     unsigned int clientkey_password_len;    /*!< String length of the password pointed to by
                                                  clientkey_password */
 
+    bool use_ecdsa_peripheral;              /*!< Use the ECDSA peripheral for the private key operations */
+
+    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where the ECDSA key is stored */
+
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the
                                                  underneath socket will be configured in non
                                                  blocking mode after tls session is established */
@@ -275,6 +279,10 @@ typedef struct esp_tls_cfg_server {
 
     unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
                                                      serverkey_password */
+
+    bool use_ecdsa_peripheral;                  /*!< Use ECDSA peripheral to use private key */
+
+    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored */
 
     bool use_secure_element;                    /*!< Enable this option to use secure element or
                                                  atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */

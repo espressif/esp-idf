@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -262,7 +262,15 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     /* Pass on secure element boolean */
     cfg->use_secure_element = config->use_secure_element;
     if (!cfg->use_secure_element) {
-        if (config->prvtkey_pem != NULL && config->prvtkey_len > 0) {
+        if (config->use_ecdsa_peripheral) {
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+            ssl_ctx->tls_cfg->use_ecdsa_peripheral = config->use_ecdsa_peripheral;
+            ssl_ctx->tls_cfg->ecdsa_key_efuse_blk = config->ecdsa_key_efuse_blk;
+#else
+            ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
+            goto exit;
+#endif
+        } else if (config->prvtkey_pem != NULL && config->prvtkey_len > 0) {
             cfg->serverkey_buf = malloc(config->prvtkey_len);
 
             if (cfg->serverkey_buf) {
