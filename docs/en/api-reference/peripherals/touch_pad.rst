@@ -1,5 +1,6 @@
 Touch Sensor
 ============
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_TOUCH_SENSOR_VERSION:default="v2", esp32="v1"}
@@ -7,11 +8,11 @@ Touch Sensor
 Introduction
 ------------
 
-A touch sensor system is built on a substrate which carries electrodes and relevant connections under a protective flat surface. When a user touches the surface, the capacitance variation is used to evaluate if the touch was valid.
+A touch sensor system is built on a substrate which carries electrodes and relevant connections under a protective flat surface. When the surface is touched, the capacitance variation is used to evaluate if the touch was valid.
 
 The sensing pads can be arranged in different combinations (e.g., matrix, slider), so that a larger area or more points can be detected. The touch pad sensing process is under the control of a hardware-implemented finite-state machine (FSM) which is initiated by software or a dedicated hardware timer.
 
-For design, operation, and control registers of a touch sensor, see *{IDF_TARGET_NAME} Technical Reference Manual* > *On-Chip Sensors and Analog Signal Processing* [`PDF <{IDF_TARGET_TRM_EN_URL}#sensor>`__].
+For design, operation, and control registers of a touch sensor, see **{IDF_TARGET_NAME} Technical Reference Manual** > **On-Chip Sensors and Analog Signal Processing** [`PDF <{IDF_TARGET_TRM_EN_URL}#sensor>`__].
 
 In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
 
@@ -38,7 +39,7 @@ For detailed description of a particular function, please go to Section :ref:`to
 Initialization
 ^^^^^^^^^^^^^^
 
-Before using a touch pad, you need to initialize the touch pad driver by calling the function :cpp:func:`touch_pad_init`. This function sets several ``.._DEFAULT`` driver parameters listed in :ref:`touch_pad-api-reference` under *Macros*. It also removes the information about which pads have been touched before, if any, and disables interrupts.
+Before using a touch pad, you need to initialize the touch pad driver by calling the function :cpp:func:`touch_pad_init`. This function sets several ``.._DEFAULT`` driver parameters listed in :ref:`touch_pad-api-reference` under **Macros**. It also removes the information about which pads have been touched before, if any, and disables interrupts.
 
 If the driver is not required anymore, deinitialize it by calling :cpp:func:`touch_pad_deinit`.
 
@@ -152,7 +153,7 @@ Method of Measurements
 
 .. only:: SOC_TOUCH_VERSION_1
 
-    The touch sensor will count the number of charge/discharge cycles over a fixed period of time (specified by :cpp:func:`touch_pad_set_measurement_clock_cycles`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor will sleep until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
+    The touch sensor counts the number of charge/discharge cycles over a fixed period of time (specified by :cpp:func:`touch_pad_set_measurement_clock_cycles`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor sleeps until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
 
     .. note::
 
@@ -160,7 +161,7 @@ Method of Measurements
 
 .. only:: SOC_TOUCH_VERSION_2
 
-    The touch sensor will record the period of time (i.e. the number of clock cycles) over a fixed charge/discharge cycles (specified by :cpp:func:`touch_pad_set_charge_discharge_times`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor will sleep until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
+    The touch sensor records the period of time (i.e., the number of clock cycles) over a fixed charge/discharge cycles (specified by :cpp:func:`touch_pad_set_charge_discharge_times`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor sleeps until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
 
     .. note::
 
@@ -169,7 +170,7 @@ Method of Measurements
 Optimization of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A touch sensor has several configurable parameters to match the characteristics of a particular touch pad design. For instance, to sense smaller capacity changes, it is possible to narrow down the reference voltage range within which the touch pads are charged / discharged. The high and low reference voltages are set using the function :cpp:func:`touch_pad_set_voltage`.
+A touch sensor has several configurable parameters to match the characteristics of a particular touch pad design. For instance, to sense smaller capacity changes, it is possible to narrow down the reference voltage range within which the touch pads are charged/discharged. The high and low reference voltages are set using the function :cpp:func:`touch_pad_set_voltage`.
 
 .. only:: SOC_TOUCH_VERSION_1
 
@@ -205,7 +206,7 @@ Relationship between the voltage range (high/low reference voltages), speed (slo
 
         Touch pad - relationship between measurement parameters
 
-    The last chart *Output* represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
+    The last chart **Output** represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
 
 .. only:: SOC_TOUCH_VERSION_2
 
@@ -216,9 +217,9 @@ Relationship between the voltage range (high/low reference voltages), speed (slo
 
         Touch pad - relationship between measurement parameters
 
-    The last chart *Output* represents the touch sensor reading, i.e., the time taken to accumulate the fixed number of cycles.
+    The last chart **Output** represents the touch sensor reading, i.e., the time taken to accumulate the fixed number of cycles.
 
-All functions are provided in pairs to *set* a specific parameter and to *get* the current parameter's value, e.g., :cpp:func:`touch_pad_set_voltage` and :cpp:func:`touch_pad_get_voltage`.
+All functions are provided in pairs to **set** a specific parameter and to **get** the current parameter's value, e.g., :cpp:func:`touch_pad_set_voltage` and :cpp:func:`touch_pad_get_voltage`.
 
 .. _touch_pad-api-filtering-of-measurements:
 
@@ -237,6 +238,7 @@ Filtering of Measurements
     If measurements are noisy, you can filter them with provided API functions. The {IDF_TARGET_NAME}'s touch functionality provide two sets of APIs for doing this.
 
     There is an internal touch channel that is not connected to any external GPIO. The measurements from this denoise pad can be used to filters out interference introduced on all channels, such as noise introduced by the power supply and external EMI.
+
     The denoise paramaters are set with the function :cpp:func:`touch_pad_denoise_set_config` and started by with :cpp:func:`touch_pad_denoise_enable`
 
     There is also a configurable hardware implemented IIR-filter (infinite impulse response). This IIR-filter is configured with the function :cpp:func:`touch_pad_filter_set_config` and enabled by calling :cpp:func:`touch_pad_filter_enable`
@@ -248,7 +250,7 @@ Touch detection is implemented in ESP32's hardware based on the user-configured 
 
 Hardware touch detection can also be wired to interrupts. This is described in the next section.
 
-If measurements are noisy and capacity changes are small, hardware touch detection might be unreliable. To resolve this issue, instead of using hardware detection / provided interrupts, implement measurement filtering and perform touch detection in your own application. For sample implementation of both methods of touch detection, see :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`.
+If measurements are noisy and capacity changes are small, hardware touch detection might be unreliable. To resolve this issue, instead of using hardware detection/provided interrupts, implement measurement filtering and perform touch detection in your own application. For sample implementation of both methods of touch detection, see :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`.
 
 Touch Triggered Interrupts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -272,7 +274,7 @@ When interrupts are operational, you can obtain the information from which parti
 
     .. note::
 
-        Interrupts on touch detection operate on raw / unfiltered measurements checked against user established threshold and are implemented in hardware. Enabling the software filtering API (see :ref:`touch_pad-api-filtering-of-measurements`) does not affect this process.
+        Interrupts on touch detection operate on raw/unfiltered measurements checked against user established threshold and are implemented in hardware. Enabling the software filtering API (see :ref:`touch_pad-api-filtering-of-measurements`) does not affect this process.
 
 .. only:: SOC_TOUCH_VERSION_1
 
@@ -304,7 +306,8 @@ API Reference
 
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
-Some useful macros can be used to specified the GPIO number of a touch pad channel, or vice versa. e.g.
+
+Some useful macros can be used to specified the GPIO number of a touch pad channel, or vice versa. e.g.,
 
 1. ``TOUCH_PAD_NUM5_GPIO_NUM`` is the GPIO number of channel 5 (12);
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` is the channel number of GPIO 4 (channel 0).

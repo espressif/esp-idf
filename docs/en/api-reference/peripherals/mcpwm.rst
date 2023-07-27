@@ -6,7 +6,7 @@ Motor Control Pulse Width Modulator (MCPWM)
 
 The MCPWM peripheral is a versatile PWM generator, which contains various submodules to make it a key element in power electronic applications like motor control, digital power, and so on. Typically, the MCPWM peripheral can be used in the following scenarios:
 
-- Digital motor control, e.g. brushed/brushless DC motor, RC servo motor
+- Digital motor control, e.g., brushed/brushless DC motor, RC servo motor
 - Switch mode-based digital power conversion
 - Power DAC, where the duty cycle is equivalent to a DAC analog value
 - Calculate external pulse width, and convert it into other analog values like speed, distance
@@ -27,7 +27,7 @@ The main submodules are listed in the following diagram:
 - **Dead Time**: This submodule is used to insert extra delay to the existing PWM edges generated in the previous steps.
 - **Carrier Modulation**: The carrier submodule can modulate a high-frequency carrier signal into PWM waveforms by the generator and dead time submodules. This capability is mandatory for controlling the power-switching elements.
 - **Brake**: MCPWM operator can set how to brake the generators when a particular fault is detected. We can shut down the PWM output immediately or regulate the PWM output cycle by cycle, depending on how critical the fault is.
-- **MCPWM Capture**: This is a standalone submodule that can work even without the above MCPWM operators. The capture consists one dedicated timer and several independent channels, with each channel connected to the GPIO. A pulse on the GPIO will trigger the capture timer to store the time-base count value and then notify you by an interrupt. Using this feature, we can measure a pulse width precisely. What's more, the capture timer can also be synchronized by the MCPWM Sync submodule.
+- **MCPWM Capture**: This is a standalone submodule that can work even without the above MCPWM operators. The capture consists one dedicated timer and several independent channels, with each channel connected to the GPIO. A pulse on the GPIO triggers the capture timer to store the time-base count value and then notify you by an interrupt. Using this feature, we can measure a pulse width precisely. What is more, the capture timer can also be synchronized by the MCPWM Sync submodule.
 
 Functional Overview
 -------------------
@@ -46,7 +46,7 @@ Description of the MCPWM functionality is divided into the following sections:
 - :ref:`mcpwm-generator-force-actions` - describes how to control the generator output level asynchronously in a forceful way.
 - :ref:`mcpwm-synchronization` - describes how to synchronize the MCPWM timers and get a fixed phase difference between the generated PWM signals.
 - :ref:`mcpwm-capture` - describes how to use the MCPWM capture module to measure the pulse width of a signal.
-- :ref:`mcpwm-power-management` - describes how different source clocks will affect power consumption.
+- :ref:`mcpwm-power-management` - describes how different source clocks affects power consumption.
 - :ref:`mcpwm-iram-safe` - describes tips on how to make the RMT interrupt work better along with a disabled cache.
 - :ref:`mcpwm-thread-safety` - lists which APIs are guaranteed to be thread-safe by the driver.
 - :ref:`mcpwm-kconfig-options` - lists the supported Kconfig options that can bring different effects to the driver.
@@ -67,7 +67,7 @@ You can allocate a MCPWM timer object by calling :cpp:func:`mcpwm_new_timer` fun
 - :cpp:member:`mcpwm_timer_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, timers located in different groups are totally independent.
 - :cpp:member:`mcpwm_timer_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_timer_config_t::clk_src` sets the clock source of the timer.
-- :cpp:member:`mcpwm_timer_config_t::resolution_hz` sets the expected resolution of the timer. The driver internally will set a proper divider based on the clock source and the resolution.
+- :cpp:member:`mcpwm_timer_config_t::resolution_hz` sets the expected resolution of the timer. The driver internally sets a proper divider based on the clock source and the resolution.
 - :cpp:member:`mcpwm_timer_config_t::count_mode` sets the count mode of the timer.
 - :cpp:member:`mcpwm_timer_config_t::period_ticks` sets the period of the timer, in ticks (the tick resolution is set in the :cpp:member:`mcpwm_timer_config_t::resolution_hz`).
 - :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` sets whether to update the period value when the timer counts to zero.
@@ -142,7 +142,7 @@ The :cpp:func:`mcpwm_new_gpio_fault` will return a pointer to the allocated faul
 
 Software fault object can be used to trigger a fault by calling the function :cpp:func:`mcpwm_soft_fault_activate` instead of waiting for a real fault signal on the GPIO. A software fault object can be allocated by calling the  :cpp:func:`mcpwm_new_soft_fault` function, with configuration structure :cpp:type:`mcpwm_soft_fault_config_t` as the parameter. Currently, this configuration structure is left for future purposes.
 
-The :cpp:func:`mcpwm_new_soft_fault` function will return a pointer to the allocated fault object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no memory left for the fault object, this function will return the  :c:macro:`ESP_ERR_NO_MEM` error. Although the software fault and GPIO fault are of different types, the returned fault handle is of the same type.
+The :cpp:func:`mcpwm_new_soft_fault` function will return a pointer to the allocated fault object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no memory left for the fault object, this function will return the :c:macro:`ESP_ERR_NO_MEM` error. Although the software fault and GPIO fault are of different types, the returned fault handle is of the same type.
 
 On the contrary, calling the :cpp:func:`mcpwm_del_fault` function will free the allocated fault object, this function works for both software and GPIO fault.
 
@@ -153,7 +153,7 @@ The sync source is what can be used to synchronize the MCPWM timer and MCPWM cap
 
 To allocate a GPIO sync source, you can call the :cpp:func:`mcpwm_new_gpio_sync_src` function, with configuration structure :cpp:type:`mcpwm_gpio_sync_src_config_t` as the parameter. The configuration structure is defined as:
 
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, the GPIO sync sources located in different groups are totally independent, i.e. GPIO sync source in group 0 can not be detected by the timers in group 1.
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, the GPIO sync sources located in different groups are totally independent, i.e., GPIO sync source in group 0 can not be detected by the timers in group 1.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` sets the GPIO number used by the sync source.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` sets whether the sync signal is active on negative edges.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` and :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
@@ -164,7 +164,7 @@ The :cpp:func:`mcpwm_new_gpio_sync_src` will return a pointer to the allocated s
 To allocate a timer event sync source, you can call the  :cpp:func:`mcpwm_new_timer_sync_src` function, with configuration structure :cpp:type:`mcpwm_timer_sync_src_config_t` as the parameter. The configuration structure is defined as:
 
 - :cpp:member:`mcpwm_timer_sync_src_config_t::timer_event` specifies on what timer event to generate the sync signal.
-- :cpp:member:`mcpwm_timer_sync_src_config_t::propagate_input_sync` sets whether to propagate the input sync signal (i.e. the input sync signal will be routed to its sync output).
+- :cpp:member:`mcpwm_timer_sync_src_config_t::propagate_input_sync` sets whether to propagate the input sync signal (i.e., the input sync signal will be routed to its sync output).
 
 The :cpp:func:`mcpwm_new_timer_sync_src` will return a pointer to the allocated sync source object if the allocation succeeds. Otherwise, it will return an error code. Specifically, if a sync source has been allocated from the same timer before, this function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
@@ -226,25 +226,25 @@ The MCPWM timer can generate different events at runtime. If you have some funct
 
 The callback functions above are called within the ISR context, so they should **not** attempt to block. For example, you may make sure that only FreeRTOS APIs with the ``ISR`` suffix are called within the function.
 
-The parameter ``user_data`` of the :cpp:func:`mcpwm_timer_register_event_callbacks` function is used to save your own context. It will be passed to each callback function directly.
+The parameter ``user_data`` of the :cpp:func:`mcpwm_timer_register_event_callbacks` function is used to save your own context. It is passed to each callback function directly.
 
 This function will lazy the install interrupt service for the MCPWM timer without enabling it. It is only allowed to be called before :cpp:func:`mcpwm_timer_enable`, otherwise the :c:macro:`ESP_ERR_INVALID_STATE` error will be returned. See also `Enable and Disable timer <#enable-and-disable-timer>`__ for more information.
 
 Enable and Disable Timer
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before doing IO control to the timer, you need to enable the timer first, by calling :cpp:func:`mcpwm_timer_enable`.  This function will:
+Before doing IO control to the timer, you need to enable the timer first, by calling :cpp:func:`mcpwm_timer_enable`.  This function:
 
-* switch the timer state from **init** to **enable**.
-* enable the interrupt service if it has been lazy installed by :cpp:func:`mcpwm_timer_register_event_callbacks`.
-* acquire a proper power management lock if a specific clock source (e.g. PLL_160M clock) is selected. See also `Power management <#power-management>`__ for more information.
+* switches the timer state from **init** to **enable**.
+* enables the interrupt service if it has been lazy installed by :cpp:func:`mcpwm_timer_register_event_callbacks`.
+* acquire a proper power management lock if a specific clock source (e.g., PLL_160M clock) is selected. See also `Power management <#power-management>`__ for more information.
 
 On the contrary, calling :cpp:func:`mcpwm_timer_disable` will put the timer driver back to the **init** state, disable the interrupt service and release the power management lock.
 
 Start and Stop Timer
 ~~~~~~~~~~~~~~~~~~~~
 
-The basic IO operation of a timer is to start and stop. Calling :cpp:func:`mcpwm_timer_start_stop` with different :cpp:type:`mcpwm_timer_start_stop_cmd_t` commands can start the timer immediately or stop the timer at a specific event. What's more, you can even start the timer for only one round, which means, the timer will count to peak value or zero, and then stop itself.
+The basic IO operation of a timer is to start and stop. Calling :cpp:func:`mcpwm_timer_start_stop` with different :cpp:type:`mcpwm_timer_start_stop_cmd_t` commands can start the timer immediately or stop the timer at a specific event. What is more, you can even start the timer for only one round, which means, the timer will count to peak value or zero, and then stop itself.
 
 Connect Timer with Operator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -264,9 +264,9 @@ The MCPWM comparator can inform you when the timer counter equals the compare va
 
 - :cpp:member:`mcpwm_comparator_event_callbacks_t::on_reach` sets the callback function for the comparator when the timer counter equals the compare value.
 
-The callback function will provide event-specific data of type :cpp:type:`mcpwm_compare_event_data_t` to you. The callback function is called within the ISR context, so it should **not** attempt to block. For example, you may make sure that only FreeRTOS APIs with the ``ISR`` suffix are called within the function.
+The callback function provides event-specific data of type :cpp:type:`mcpwm_compare_event_data_t` to you. The callback function is called within the ISR context, so it should **not** attempt to block. For example, you may make sure that only FreeRTOS APIs with the ``ISR`` suffix are called within the function.
 
-The parameter ``user_data`` of :cpp:func:`mcpwm_comparator_register_event_callbacks` function is used to save your own context. It will be passed to the callback function directly.
+The parameter ``user_data`` of :cpp:func:`mcpwm_comparator_register_event_callbacks` function is used to save your own context. It is passed to the callback function directly.
 
 This function will lazy the installation of interrupt service for the MCPWM comparator, whereas the service can only be removed in :cpp:type:`mcpwm_del_comparator`.
 
@@ -277,7 +277,7 @@ You can set the compare value for the MCPWM comparator at runtime by calling :cp
 
 - A new compare value might not take effect immediately. The update time for the compare value is set by :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` or :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` or :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync`.
 - Make sure the operator has connected to one MCPWM timer already by :cpp:func:`mcpwm_operator_connect_timer`. Otherwise, it will return the error code :c:macro:`ESP_ERR_INVALID_STATE`.
-- The compare value shouldn't exceed the timer's count peak, otherwise, the compare event will never get triggered.
+- The compare value should not exceed the timer's count peak, otherwise, the compare event will never get triggered.
 
 
 .. _mcpwm-generator-actions-on-events:
@@ -294,7 +294,7 @@ One generator can set multiple actions on different timer events, by calling :cp
 - :cpp:member:`mcpwm_gen_timer_event_action_t::event` specifies the timer event. The supported timer events are listed in :cpp:type:`mcpwm_timer_event_t`.
 - :cpp:member:`mcpwm_gen_timer_event_action_t::action` specifies the generator action to be taken. The supported actions are listed in :cpp:type:`mcpwm_generator_action_t`.
 
-There's a helper macro :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION` to simplify the construction of a timer event action entry.
+There is a helper macro :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION` to simplify the construction of a timer event action entry.
 
 Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_timer_event` **must** be terminated by :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION_END`.
 
@@ -309,7 +309,7 @@ One generator can set multiple actions on different compare events, by calling :
 - :cpp:member:`mcpwm_gen_compare_event_action_t::comparator` specifies the comparator handle. See `MCPWM Comparators <#mcpwm-comparators>`__ for how to allocate a comparator.
 - :cpp:member:`mcpwm_gen_compare_event_action_t::action` specifies the generator action to be taken. The supported actions are listed in :cpp:type:`mcpwm_generator_action_t`.
 
-There's a helper macro :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION` to simplify the construction of a compare event action entry.
+There is a helper macro :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION` to simplify the construction of a compare event action entry.
 
 Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_compare_event` **must** be terminated by :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION_END`.
 
@@ -328,7 +328,7 @@ When no free trigger slot is left in the operator to which the generator belongs
 
 The trigger only support GPOI fault. when the input is not a GPIO fault, this function will return the :c:macro:`ESP_ERR_NOT_SUPPORTED` error. 
 
-There's a helper macro :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` to simplify the construction of a trigger event action entry.
+There is a helper macro :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` to simplify the construction of a trigger event action entry.
 
 Please note, fault event does not have variadic function like :cpp:func:`mcpwm_generator_set_actions_on_fault_event`.
 
@@ -345,7 +345,7 @@ When no free trigger slot is left in the operator to which the generator belongs
 
 The trigger only support one sync action, regardless of the kinds. When set sync actions more than once, this function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
-There's a helper macro :c:macro:`MCPWM_GEN_SYNC_EVENT_ACTION` to simplify the construction of a trigger event action entry.
+There is a helper macro :c:macro:`MCPWM_GEN_SYNC_EVENT_ACTION` to simplify the construction of a trigger event action entry.
 
 Please note, sync event does not have variadic function like :cpp:func:`mcpwm_generator_set_actions_on_sync_event`.
 
@@ -481,9 +481,9 @@ Dual Edge Symmetric Waveform - Complementary
 Dead Time
 ^^^^^^^^^
 
-In power electronics, the rectifier and inverter are commonly used. This requires the use of a rectifier bridge and an inverter bridge. Each bridge arm has two power electronic devices, such as MOSFET, IGBT, etc. The two MOSFETs on the same arm can't conduct at the same time, otherwise there will be a short circuit. The fact is that, although the PWM wave shows it is turning off the switch, the MOSFET still needs a small time window to make that happen. This requires an extra delay to be added to the existing PWM wave generated by setting `Generator Actions on Events <#generator-actions-on-events>`__.
+In power electronics, the rectifier and inverter are commonly used. This requires the use of a rectifier bridge and an inverter bridge. Each bridge arm has two power electronic devices, such as MOSFET, IGBT, etc. The two MOSFETs on the same arm can not conduct at the same time, otherwise there will be a short circuit. The fact is that, although the PWM wave shows it is turning off the switch, the MOSFET still needs a small time window to make that happen. This requires an extra delay to be added to the existing PWM wave generated by setting `Generator Actions on Events <#generator-actions-on-events>`__.
 
-The dead time driver works like a *decorator*. This is also reflected in the function parameters of :cpp:func:`mcpwm_generator_set_dead_time`, where it takes the primary generator handle (``in_generator``), and returns a new generator (``out_generator``) after applying the dead time. Please note, if the ``out_generator`` and ``in_generator`` are the same, it means we are adding the time delay to the PWM waveform in an "in-place" fashion. In turn, if the ``out_generator`` and ``in_generator`` are different, it means we're deriving a new PWM waveform from the existing ``in_generator``.
+The dead time driver works like a **decorator**. This is also reflected in the function parameters of :cpp:func:`mcpwm_generator_set_dead_time`, where it takes the primary generator handle (``in_generator``), and returns a new generator (``out_generator``) after applying the dead time. Please note, if the ``out_generator`` and ``in_generator`` are the same, it means we are adding the time delay to the PWM waveform in an "in-place" fashion. In turn, if the ``out_generator`` and ``in_generator`` are different, it means we are deriving a new PWM waveform from the existing ``in_generator``.
 
 Dead time specific configuration is listed in the :cpp:type:`mcpwm_dead_time_config_t` structure:
 
@@ -492,7 +492,7 @@ Dead time specific configuration is listed in the :cpp:type:`mcpwm_dead_time_con
 
 .. warning::
 
-    Due to the hardware limitation, one delay module (either `posedge delay` or `negedge delay`) can't be applied to multiple MCPWM generators at the same time. e.g. the following configuration is **invalid**:
+    Due to the hardware limitation, one delay module (either ``posedge delay`` or ``negedge delay``) can not be applied to multiple MCPWM generators at the same time. e.g., the following configuration is **invalid**:
 
     .. code:: c
 
@@ -501,10 +501,10 @@ Dead time specific configuration is listed in the :cpp:type:`mcpwm_dead_time_con
         };
         // Set posedge delay to generator A
         mcpwm_generator_set_dead_time(mcpwm_gen_a, mcpwm_gen_a, &dt_config);
-        // NOTE: This is invalid, you can't apply the posedge delay to another generator
+        // NOTE: This is invalid, you can not apply the posedge delay to another generator
         mcpwm_generator_set_dead_time(mcpwm_gen_b, mcpwm_gen_b, &dt_config);
 
-    However, you can apply `posedge delay` to generator A and `negedge delay` to generator B. You can also set both `posedge delay` and `negedge delay` for generator A, while letting generator B bypass the dead time module.
+    However, you can apply ``posedge delay`` to generator A and ``negedge delay`` to generator B. You can also set both ``posedge delay`` and ``negedge delay`` for generator A, while letting generator B bypass the dead time module.
 
 .. note::
 
@@ -516,7 +516,7 @@ Dead time specific configuration is listed in the :cpp:type:`mcpwm_dead_time_con
 Dead Time Configurations for Classical PWM Waveforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This section will demonstrate the classical PWM waveforms that can be generated by the dead time submodule. The code snippet that is used to generate the waveforms is also provided below the diagram.
+This section demonstrates the classical PWM waveforms that can be generated by the dead time submodule. The code snippet that is used to generate the waveforms is also provided below the diagram.
 
 Active High Complementary
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -734,14 +734,14 @@ Rising and Falling Delay on PWMB and Bypass Dead Time for PWMA
 Carrier Modulation
 ^^^^^^^^^^^^^^^^^^
 
-The MCPWM operator has a carrier submodule that can be used if galvanic isolation from the motor driver is required (e.g. isolated digital power application) by passing the PWM output signals through transformers. Any of the PWM output signals may be at 100% duty and not changing whenever a motor is required to run steadily at the full load. Coupling with non-alternating signals with a transformer is problematic, so the signals are modulated by the carrier submodule to create an AC waveform, to make the coupling possible.
+The MCPWM operator has a carrier submodule that can be used if galvanic isolation from the motor driver is required (e.g., isolated digital power application) by passing the PWM output signals through transformers. Any of the PWM output signals may be at 100% duty and not changing whenever a motor is required to run steadily at the full load. Coupling with non-alternating signals with a transformer is problematic, so the signals are modulated by the carrier submodule to create an AC waveform, to make the coupling possible.
 
 To configure the carrier submodule, you can call :cpp:func:`mcpwm_operator_apply_carrier`, and provide configuration structure :cpp:type:`mcpwm_carrier_config_t`:
 
 - :cpp:member:`mcpwm_carrier_config_t::clk_src` sets the clock source of the carrier.
 - :cpp:member:`mcpwm_carrier_config_t::frequency_hz` indicates carrier frequency in Hz.
-- :cpp:member:`mcpwm_carrier_config_t::duty_cycle` indicates the duty cycle of the carrier. Note that, the supported choices of the duty cycle are discrete, the driver will search for the nearest one based on your configuration.
-- :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` indicates the duration of the first pulse in microseconds. The resolution of the first pulse duration is determined by the carrier frequency you set in the :cpp:member:`mcpwm_carrier_config_t::frequency_hz`. The first pulse duration can't be zero, and it has to be at least one period of the carrier. A longer pulse width can help conduct the inductance quicker.
+- :cpp:member:`mcpwm_carrier_config_t::duty_cycle` indicates the duty cycle of the carrier. Note that, the supported choices of the duty cycle are discrete, the driver searches for the nearest one based on your configuration.
+- :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` indicates the duration of the first pulse in microseconds. The resolution of the first pulse duration is determined by the carrier frequency you set in the :cpp:member:`mcpwm_carrier_config_t::frequency_hz`. The first pulse duration can not be zero, and it has to be at least one period of the carrier. A longer pulse width can help conduct the inductance quicker.
 - :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` and :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate` set whether to invert the carrier output before and after modulation.
 
 Specifically, the carrier submodule can be disabled by calling :cpp:func:`mcpwm_operator_apply_carrier` with a ``NULL`` configuration.
@@ -762,7 +762,7 @@ Set Operator Brake Mode on Fault
 The way that MCPWM operator reacts to the fault is called **Brake**. The MCPWM operator can be configured to perform different brake modes for each fault object by calling :cpp:func:`mcpwm_operator_set_brake_on_fault`. Specific brake configuration is passed as a structure :cpp:type:`mcpwm_brake_config_t`:
 
 - :cpp:member:`mcpwm_brake_config_t::fault` sets which fault the operator should react to.
-- :cpp:member:`mcpwm_brake_config_t::brake_mode` sets the brake mode that should be used for the fault. The supported brake modes are listed in the :cpp:type:`mcpwm_operator_brake_mode_t`. For :cpp:enumerator:`MCPWM_OPER_BRAKE_MODE_CBC` mode, the operator will recover itself automatically as long as the fault disappears. You can specify the recovery time in :cpp:member:`mcpwm_brake_config_t::cbc_recover_on_tez` and :cpp:member:`mcpwm_brake_config_t::cbc_recover_on_tep`. For :cpp:enumerator:`MCPWM_OPER_BRAKE_MODE_OST` mode, the operator can't recover even though the fault disappears. You have to call :cpp:func:`mcpwm_operator_recover_from_fault` to manually recover it.
+- :cpp:member:`mcpwm_brake_config_t::brake_mode` sets the brake mode that should be used for the fault. The supported brake modes are listed in the :cpp:type:`mcpwm_operator_brake_mode_t`. For :cpp:enumerator:`MCPWM_OPER_BRAKE_MODE_CBC` mode, the operator recovers itself automatically as long as the fault disappears. You can specify the recovery time in :cpp:member:`mcpwm_brake_config_t::cbc_recover_on_tez` and :cpp:member:`mcpwm_brake_config_t::cbc_recover_on_tep`. For :cpp:enumerator:`MCPWM_OPER_BRAKE_MODE_OST` mode, the operator can not recover even though the fault disappears. You have to call :cpp:func:`mcpwm_operator_recover_from_fault` to manually recover it.
 
 Set Generator Action on Brake Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -773,7 +773,7 @@ One generator can set multiple actions on different brake events, by calling :cp
 - :cpp:member:`mcpwm_gen_brake_event_action_t::brake_mode` specifies the brake mode. The supported brake modes are listed in the :cpp:type:`mcpwm_operator_brake_mode_t`.
 - :cpp:member:`mcpwm_gen_brake_event_action_t::action` specifies the generator action to be taken. The supported actions are listed in :cpp:type:`mcpwm_generator_action_t`.
 
-There's a helper macro :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION` to simplify the construction of a brake event action entry.
+There is a helper macro :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION` to simplify the construction of a brake event action entry.
 
 Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_brake_event` **must** be terminated by :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION_END`.
 
@@ -789,7 +789,7 @@ The MCPWM fault detector can inform you when it detects a valid fault or a fault
 
 The callback function is called within the ISR context, so it should **not** attempt to block. For example, you may make sure that only FreeRTOS APIs with the ``ISR`` suffix are called within the function.
 
-The parameter ``user_data`` of :cpp:func:`mcpwm_fault_register_event_callbacks` function is used to save your own context. It will be passed to the callback function directly.
+The parameter ``user_data`` of :cpp:func:`mcpwm_fault_register_event_callbacks` function is used to save your own context. It is passed to the callback function directly.
 
 This function will lazy the install interrupt service for the MCPWM fault, whereas the service can only be removed in :cpp:type:`mcpwm_del_fault`.
 
@@ -798,8 +798,8 @@ Register Brake Event Callbacks
 
 The MCPWM operator can inform you when it is going to take a brake action. If you have some function that should be called when this event happens, you should hook your function to the interrupt service routine by calling :cpp:func:`mcpwm_operator_register_event_callbacks`. The callback function prototype is declared in :cpp:type:`mcpwm_brake_event_cb_t`. All supported event callbacks are listed in the :cpp:type:`mcpwm_operator_event_callbacks_t`:
 
-- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_cbc` sets the callback function that will be called when the operator is going to take a *CBC* action.
-- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_ost` sets the callback function that will be called when the operator is going to take an *OST* action.
+- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_cbc` sets the callback function that will be called when the operator is going to take a **CBC** action.
+- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_ost` sets the callback function that will be called when the operator is going to take an **OST** action.
 
 The callback function is called within the ISR context, so it should **not** attempt to block. For example, you may make sure that only FreeRTOS APIs with the ``ISR`` suffix are called within the function.
 
@@ -813,7 +813,7 @@ This function will lazy the install interrupt service for the MCPWM operator, wh
 Generator Force Actions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Software can override generator output level at runtime, by calling :cpp:func:`mcpwm_generator_set_force_level`. The software force level always has a higher priority than other event actions set in e.g. :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
+Software can override generator output level at runtime, by calling :cpp:func:`mcpwm_generator_set_force_level`. The software force level always has a higher priority than other event actions set in e.g., :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
 
 - Set the ``level`` to -1 means to disable the force action, and the generator's output level will be controlled by the event actions again.
 - Set the ``hold_on`` to true, and the force output level will keep alive until it is removed by assigning ``level`` to -1.
@@ -890,15 +890,15 @@ The capture timer is usually connected to several capture channels. Please refer
 Register Capture Event Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The MCPWM capture channel can inform you when there's a valid edge detected on the signal. You have to register a callback function to get the timer count value of the captured moment, by calling :cpp:func:`mcpwm_capture_channel_register_event_callbacks`. The callback function prototype is declared in :cpp:type:`mcpwm_capture_event_cb_t`. All supported capture callbacks are listed in the :cpp:type:`mcpwm_capture_event_callbacks_t`:
+The MCPWM capture channel can inform you when there is a valid edge detected on the signal. You have to register a callback function to get the timer count value of the captured moment, by calling :cpp:func:`mcpwm_capture_channel_register_event_callbacks`. The callback function prototype is declared in :cpp:type:`mcpwm_capture_event_cb_t`. All supported capture callbacks are listed in the :cpp:type:`mcpwm_capture_event_callbacks_t`:
 
 - :cpp:member:`mcpwm_capture_event_callbacks_t::on_cap` sets the callback function for the capture channel when a valid edge is detected.
 
-The callback function will provide event-specific data of type :cpp:type:`mcpwm_capture_event_data_t`, so that you can get the edge of the capture signal in :cpp:member:`mcpwm_capture_event_data_t::cap_edge` and the count value of that moment in :cpp:member:`mcpwm_capture_event_data_t::cap_value`. To convert the capture count into a timestamp, you need to know the resolution of the capture timer by calling :cpp:func:`mcpwm_capture_timer_get_resolution`.
+The callback function provides event-specific data of type :cpp:type:`mcpwm_capture_event_data_t`, so that you can get the edge of the capture signal in :cpp:member:`mcpwm_capture_event_data_t::cap_edge` and the count value of that moment in :cpp:member:`mcpwm_capture_event_data_t::cap_value`. To convert the capture count into a timestamp, you need to know the resolution of the capture timer by calling :cpp:func:`mcpwm_capture_timer_get_resolution`.
 
 The callback function is called within the ISR context, so it should **not** attempt to block. For example, you may make sure that only FreeRTOS APIs with the ``ISR`` suffix are called within the function.
 
-The parameter ``user_data`` of :cpp:func:`mcpwm_capture_channel_register_event_callbacks` function is used to save your context. It will be passed to the callback function directly.
+The parameter ``user_data`` of :cpp:func:`mcpwm_capture_channel_register_event_callbacks` function is used to save your context. It is passed to the callback function directly.
 
 This function will lazy install interrupt service for the MCPWM capture channel, whereas the service can only be removed in :cpp:type:`mcpwm_del_capture_channel`.
 
@@ -910,10 +910,10 @@ The capture channel is not enabled after allocation by :cpp:func:`mcpwm_new_capt
 Enable and Disable Capture Timer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before doing IO control to the capture timer, you need to enable the timer first, by calling :cpp:func:`mcpwm_capture_timer_enable`. Internally, this function will:
+Before doing IO control to the capture timer, you need to enable the timer first, by calling :cpp:func:`mcpwm_capture_timer_enable`. Internally, this function:
 
-* switch the capture timer state from **init** to **enable**.
-* acquire a proper power management lock if a specific clock source (e.g. APB clock) is selected. See also `Power management <#power-management>`__ for more information.
+* switches the capture timer state from **init** to **enable**.
+* acquires a proper power management lock if a specific clock source (e.g., APB clock) is selected. See also `Power management <#power-management>`__ for more information.
 
 On the contrary, calling :cpp:func:`mcpwm_capture_timer_disable` will put the timer driver back to **init** state, and release the power management lock.
 
@@ -925,7 +925,7 @@ The basic IO operation of a capture timer is to start and stop. Calling :cpp:fun
 Trigger a Software Capture Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sometimes, the software also wants to trigger a "fake" capture event. The :cpp:func:`mcpwm_capture_channel_trigger_soft_catch` is provided for that purpose. Please note that, even though it's a "fake" capture event, it can still cause an interrupt, thus your capture event callback function will get invoked as well.
+Sometimes, the software also wants to trigger a "fake" capture event. The :cpp:func:`mcpwm_capture_channel_trigger_soft_catch` is provided for that purpose. Please note that, even though it is a "fake" capture event, it can still cause an interrupt, thus your capture event callback function gets invoked as well.
 
 
 .. _mcpwm-power-management:
@@ -935,9 +935,9 @@ Power Management
 
 When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the PLL and APB frequency before going into Light-sleep, thus potentially changing the period of an MCPWM timers' counting step and leading to inaccurate time-keeping.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates an MCPWM timer instance that has selected :cpp:enumerator:`MCPWM_TIMER_CLK_SRC_PLL160M` as its clock source, the driver will guarantee that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
+However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates an MCPWM timer instance that has selected :cpp:enumerator:`MCPWM_TIMER_CLK_SRC_PLL160M` as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
 
-Likewise, whenever the driver creates an MCPWM capture timer instance that has selected :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB` as its clock source, the driver will guarantee that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And will release the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
+Likewise, whenever the driver creates an MCPWM capture timer instance that has selected :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB` as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And releases the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
 
 
 .. _mcpwm-iram-safe:
@@ -947,13 +947,13 @@ IRAM Safe
 
 By default, the MCPWM interrupt will be deferred when the Cache is disabled for reasons like writing/erasing Flash. Thus the event callback functions will not get executed in time, which is not expected in a real-time application.
 
-There's a Kconfig option :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` that will:
+There is a Kconfig option :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` that:
 
-* enable the interrupt to be serviced even when the cache is disabled
-* place all functions used by the ISR into IRAM [2]_
-* place the driver object into DRAM (in case it's mapped to PSRAM by accident)
+* enables the interrupt to be serviced even when the cache is disabled
+* places all functions used by the ISR into IRAM [2]_
+* places the driver object into DRAM (in case it is mapped to PSRAM by accident)
 
-This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
+This allows the interrupt to run while the cache is disabled but comes at the cost of increased IRAM consumption.
 
 There is another Kconfig option :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So, these functions can also be executable when the cache is disabled. The IO control function is as follows:
 
@@ -1008,7 +1008,7 @@ API Reference
 
 
 .. [1]
-   Different ESP chip series might have a different number of MCPWM resources (e.g. groups, timers, comparators, operators, generators, triggers and so on). Please refer to the [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__] for details. The driver won't forbid you from applying for more MCPWM resources, but it will return an error when there are no hardware resources available. Please always check the return value when doing :ref:`mcpwm-resource-allocation-and-initialization`.
+   Different ESP chip series might have a different number of MCPWM resources (e.g., groups, timers, comparators, operators, generators, triggers and so on). Please refer to the [`TRM <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__] for details. The driver does not forbid you from applying for more MCPWM resources, but it returns an error when there are no hardware resources available. Please always check the return value when doing :ref:`mcpwm-resource-allocation-and-initialization`.
 
 .. [2]
    The callback function and the sub-functions invoked by itself should also be placed in IRAM. You need to take care of this by yourself.

@@ -1,7 +1,7 @@
 SD Pull-up Requirements
 =======================
 
-Espressif hardware products are designed for multiple use cases which may require different pull states on pins. For this reason, the pull state of particular pins on certain products will need to be adjusted to provide the pull-ups required in the SD bus.
+Espressif hardware products are designed for multiple use cases which may require different pull states on pins. For this reason, the pull state of particular pins on certain products needs to be adjusted to provide the pull-ups required in the SD bus.
 
 SD pull-up requirements apply to cases where {IDF_TARGET_NAME} uses the SPI or SDMMC controller to communicate with SD cards. When an SD card is operating in SPI mode or 1-bit SD mode, the CMD and DATA (DAT0 - DAT3) lines of the SD bus must be pulled up by 10 kOhm resistors. SD cards and SDIO devices should also have pull-ups on all above-mentioned lines (regardless of whether these lines are connected to the host) in order to prevent them from entering a wrong state.
 
@@ -193,7 +193,7 @@ If you use a development board without pull-ups, you can do the following:
 
     To resolve the conflict, you have the following options:
 
-    1. (Recommended) Burn the flash voltage selection eFuses. This will permanently configure the internal regulator's output voltage to 3.3 V, and GPIO12 will not be used as a bootstrapping pin. After that, connect a pull-up resistor to GPIO12.
+    1. (Recommended) Burn the flash voltage selection eFuses. This permanently configures the internal regulator's output voltage to 3.3 V, and GPIO12 will not be used as a bootstrapping pin. After that, connect a pull-up resistor to GPIO12.
 
     .. warning::
 
@@ -205,7 +205,7 @@ If you use a development board without pull-ups, you can do the following:
 
         components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
 
-    This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG` eFuses. After all the three eFuses are burned to value 1, the internal VDD_SDIO flash voltage regulator will be permanently set to 3.3 V. You will see the following log if the burning succeeds:
+    This command burns the ``XPD_SDIO_TIEH``, ``XPD_SDIO_FORCE``, and ``XPD_SDIO_REG`` eFuses. After all the three eFuses are burned to value 1, the internal VDD_SDIO flash voltage regulator is permanently set to 3.3 V. You will see the following log if the burning succeeds:
 
     .. code-block:: bash
 
@@ -225,12 +225,12 @@ If you use a development board without pull-ups, you can do the following:
 
     If running from an automated flashing script, ``espefuse.py`` has an option ``--do-not-confirm``.
 
-    For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
+    For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
     2. **If using 1-bit SD mode or SPI mode**, disconnect the DAT2 pin and make sure it is pulled high. For this, do one the following:
 
         - Leave the host's DAT2 floating and directly connect the slave's DAT2 to VDD.
-        - For a slave device, build a firmware with the option ``SDIO_SLAVE_FLAG_DAT2_DISABLED`` and re-flash your device. This option will help avoid slave detecting on the DAT2 line. Note that 4-bit SD mode will no longer be supported by the standard Card Common Control Register (CCCR); however, the host will not be aware of that. The use of 4-bit SD mode will have to be disabled on the host's side.
+        - For a slave device, build a firmware with the option ``SDIO_SLAVE_FLAG_DAT2_DISABLED`` and re-flash your device. This option helps avoid slave detecting on the DAT2 line. Note that 4-bit SD mode is no longer supported by the standard Card Common Control Register (CCCR); however, the host is not aware of that. The use of 4-bit SD mode has to be disabled on the host's side.
 
 
     .. _no_pull-up_on_gpio12:
@@ -250,7 +250,7 @@ If you use a development board without pull-ups, you can do the following:
 
     There are the following solutions:
 
-    - For boards that require shorting the GPIO0 and GPIO2 pins with a jumper, put the jumper in place, and the auto-reset circuit will pull GPIO2 low along with GPIO0 before entering Download mode.
+    - For boards that require shorting the GPIO0 and GPIO2 pins with a jumper, put the jumper in place, and the auto-reset circuit pulls GPIO2 low along with GPIO0 before entering Download mode.
     - For boards with components attached to their GPIO2 pin (such as pull-down resistors and/or LEDs), check the schematic of your development board for anything connected to GPIO2.
 
         - **LEDs** would not affect operation in most cases.
@@ -271,7 +271,7 @@ Related Information
     MTDI Strapping Pin
     ^^^^^^^^^^^^^^^^^^
 
-    MTDI (GPIO12) is used as a bootstrapping pin to select the output voltage of an internal regulator (VDD_SDIO) which powers the flash chip. This pin has an internal pull-down, so, if left unconnected, it will read low level at startup, which will lead to selecting the default 3.3 V operation.
+    MTDI (GPIO12) is used as a bootstrapping pin to select the output voltage of an internal regulator (VDD_SDIO) which powers the flash chip. This pin has an internal pull-down, so, if left unconnected, it will read low level at startup, which leads to selecting the default 3.3 V operation.
 
     All ESP32-WROVER modules, excluding ESP32-WROVER-B, use 1.8 V flash and have internal pull-ups on GPIO12. Other modules that use 3.3 V flash have no pull-ups on the GPIO12 pin, and this pin is slightly pulled down internally.
 
@@ -287,7 +287,7 @@ Related Information
 
     Using external resistors is always preferable. However, Espressif's products have internal weak pull-up and pull-down resistors which can be enabled and used instead of external ones. Please keep in mind that this solution cannot guarantee reliable SDIO communication.
 
-    With that said, the information about these internal pull-ups and strapping requirements can still be useful. Espressif hardware products have different weak internal pull-ups / pull-downs connected to CMD and DATA pins. The table below shows the default pull-up and pull-down states of the CMD and DATA pins.
+    With that said, the information about these internal pull-ups and strapping requirements can still be useful. Espressif hardware products have different weak internal pull-ups/pull-downs connected to CMD and DATA pins. The table below shows the default pull-up and pull-down states of the CMD and DATA pins.
 
     The following abbreviations are used in the table:
 

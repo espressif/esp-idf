@@ -11,9 +11,10 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 关于更多高层次的用于访问分区（分区表定义于 :doc:`分区表 </api-guides/partition-tables>`）的 API 函数，参见 :doc:`/api-reference/storage/partition` 。
 
 .. note::
-    访问主 flash 芯片时，建议使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。不过，您仍可以使用 ``esp_flash_*`` 函数直接访问外部（额外）的 SPI flash 芯片。
 
-与 ESP-IDF v4.0 之前的 API 不同，这一版 ``esp_flash_*`` API 功能并不局限于主 SPI flash 芯片（即运行程序的 SPI flash 芯片）。使用不同的芯片指针，您可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
+    访问主 flash 芯片时，建议使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。不过，仍支持使用 ``esp_flash_*`` 函数直接访问外部（额外）的 SPI flash 芯片。
+
+与 ESP-IDF v4.0 之前的 API 不同，这一版 ``esp_flash_*`` API 功能并不局限于主 SPI flash 芯片（即运行程序的 SPI flash 芯片）。通过使用不同的芯片指针，可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
 
 .. note::
 
@@ -23,7 +24,7 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
 .. note::
 
-    ESP-IDF v4.0 之后的 flash API 不再是 *原子* 的。因此，如果读操作执行过程中发生写操作，且读操作和写操作的 flash 地址出现重叠，读操作返回的数据可能会包含旧数据和新数据（新数据为写操作更新产生的数据）。
+    ESP-IDF v4.0 之后的 flash API 不再是 **原子** 的。因此，如果读操作执行过程中发生写操作，且读操作和写操作的 flash 地址出现重叠，读操作返回的数据可能会包含旧数据和新数据（新数据为写操作更新产生的数据）。
 
 .. note::
 
@@ -77,9 +78,9 @@ Flash 可选的功能
 
     -  暂停与恢复 - 表示 flash 可以在读/写的过程中接受暂停/恢复的命令。{IDF_TARGET_NAME} 可以在 flash 正在写/擦除的过程中保持 cache 开启，并能随机读取 flash 中的内容。
 
-如果您想使用这些功能，则需保证 {IDF_TARGET_NAME} 支持这些功能，且产品里所使用的 flash 芯片也要支持这些功能。请参阅 :doc:`spi_flash_optional_feature`，查看更多信息。
+如果想使用这些功能，则需保证 {IDF_TARGET_NAME} 支持这些功能，且产品里所使用的 flash 芯片也要支持这些功能。请参阅 :doc:`spi_flash_optional_feature`，查看更多信息。
 
-您也可以自定义 flash 芯片驱动。请参阅 :doc:`spi_flash_override_driver`，查看详细信息。
+也可以自定义 flash 芯片驱动。请参阅 :doc:`spi_flash_override_driver`，查看详细信息。
 
 .. toctree::
    :hidden:
@@ -89,7 +90,7 @@ Flash 可选的功能
 初始化 Flash 设备
 ---------------------------
 
-在使用 ``esp_flash_*`` API 之前，您需要在 SPI 总线上初始化芯片，步骤如下：
+在使用 ``esp_flash_*`` API 之前，需要在 SPI 总线上初始化芯片，步骤如下：
 
 1. 调用 :cpp:func:`spi_bus_initialize` 初始化 SPI 总线。此函数将初始化总线上设备间共享的资源，如 I/O、DMA、中断等。
 
@@ -117,7 +118,7 @@ SPI Flash 容量
 
 SPI flash 容量由引导加载程序镜像头部（烧录偏移量为 0x1000）的一个字段进行配置。
 
-默认情况下，引导程序被写入 flash 时，esptool.py 会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。您也可以在工程配置中设置 :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
+默认情况下，引导程序被写入 flash 时，``esptool.py`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。也可以在工程配置中设置 :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 
@@ -137,7 +138,7 @@ SPI1 Flash 并发约束
 SPI Flash 加密
 --------------------
 
-您可以对 SPI flash 内容进行加密，并在硬件层对其进行透明解密。
+SPI flash 内容支持加密，并在硬件层进行透明解密。
 
 请参阅 :doc:`flash 加密 </security/flash-encryption>`，查看详细信息。
 
@@ -168,6 +169,7 @@ Flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 
 内存映射以页为单位，即使传递给 ``esp_partition_mmap`` 的是一个分区，分区外的数据也是也是可以被读取到的，不会受到分区边界的影响。
 
 .. note::
+    
     由于 mmap 是由 cache 支持的，因此，mmap 也仅能用在主 flash 上。
 
 SPI Flash 实现
@@ -186,7 +188,7 @@ SPI Flash 实现
 
 在 SPI HAL 文件中，有些函数是基于现有的 {IDF_TARGET_NAME} memory-spi 来实现的。但是，由于 {IDF_TARGET_NAME} 的速度限制，HAL 层无法提供某些读命令的高速实现（所以这些命令根本没有在 HAL 的文件中被实现）。``memspi_host_driver.h`` 和 ``.c`` 文件使用 HAL 提供的 ``common_command`` 函数实现上述读命令的高速版本，并将所有它实现的以及 HAL 函数封装为 ``spi_flash_host_driver_t`` 供更上层调用。
 
-您甚至可以仅通过 GPIO 来实现自己的主机驱动。只要实现了 ``spi_flash_host_driver_t`` 中所有函数，不管底层硬件是什么，esp_flash API 都可以访问 flash。
+仅通过 GPIO，也可实现自己的主机驱动。只要实现了 ``spi_flash_host_driver_t`` 中所有函数，不管底层硬件是什么，esp_flash API 都可以访问 flash。
 
 芯片驱动
 ^^^^^^^^^^^
@@ -220,16 +222,16 @@ OS 函数层目前支持访问锁和延迟的方法。
 
 使用 OS 函数还可以在一定程度上避免在擦除大块 flash 区域时出现看门狗超时的情况。在这段时间内，CPU 将被 flash 擦除任务占用，从而阻止其他任务的执行，包括为看门狗定时器 (WDT) 供电的空闲任务。若已选中配置选项 :ref:`CONFIG_ESP_TASK_WDT_PANIC`，并且 flash 操作时间长于看门狗的超时时间，系统将重新启动。
 
-不过，由于不同的 flash 芯片擦除时间不同，flash 驱动几乎无法兼容，很难完全规避超时的风险。因此，您需要格外注意这一点。请遵照以下指南：
+不过，由于不同的 flash 芯片擦除时间不同，flash 驱动几乎无法兼容，很难完全规避超时的风险，这一点需要格外注意。请遵照以下指南：
 
 1. 建议启用 :ref:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` 选项，允许调度器在擦除 flash 时进行重新调度。此外，还可以使用下列参数。
 
 - 在 menuconfig 中增加 :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` 或减少 :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` 的时间。
-- 您也可以在 menuconfig 中增加 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 的时间以设置更长的看门狗超时周期。然而，看门狗超时周期拉长后，可能无法再检测到以前可检测到的超时。
+- 在 menuconfig 中增加 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 的时间，以设置更长的看门狗超时周期。然而，看门狗超时周期拉长后，可能无法再检测到以前可检测到的超时。
 
-2. 请注意，在进行长时间的 SPI flash 操作时，启用 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 选项将会在超时时触发恐慌处理程序。不过，启用该选项也可以帮助处理应用程序中的意外异常，您可以根据实际情况决定是否需要启用这个选项。
+1. 请注意，在进行长时间的 SPI flash 操作时，启用 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 选项将会在超时时触发紧急处理程序。不过，启用该选项也可以帮助处理应用程序中的意外异常，请根据实际情况决定是否需要启用这个选项。
 
-3. 在开发过程中，请根据项目对擦除 flash 的具体要求和时间限制，谨慎进行 flash 操作。在配置 flash 擦除超时周期时，请在实际产品要求的基础上留出合理的冗余时间，从而提高产品的可靠性。
+2. 在开发过程中，请根据项目对擦除 flash 的具体要求和时间限制，谨慎进行 flash 操作。在配置 flash 擦除超时周期时，请在实际产品要求的基础上留出合理的冗余时间，从而提高产品的可靠性。
 
 .. _spi-flash-implementation-details:
 
@@ -249,7 +251,7 @@ Flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 
 另外，所有 API 函数均受互斥量 ``s_flash_op_mutex`` 保护。
 
-在单核环境中（启用 :ref:`CONFIG_FREERTOS_UNICORE`），您需要禁用上述两个 cache 以防发生 CPU 间通信。
+在单核环境中（启用 :ref:`CONFIG_FREERTOS_UNICORE`），需要禁用上述两个 cache，以防发生 CPU 间通信。
 
 相关文档
 -----------------

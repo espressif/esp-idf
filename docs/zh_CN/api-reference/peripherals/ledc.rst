@@ -8,8 +8,7 @@ LED PWM 控制器
 概述
 ------------
 
-LED 控制器 (LEDC) 主要用于控制 LED，也可产生 PWM 信号用于其他设备的控制。
-该控制器有 {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} 路通道，可以产生独立的波形来驱动 RGB LED 等设备。
+LED 控制器 (LEDC) 主要用于控制 LED，也可产生 PWM 信号用于其他设备的控制。该控制器有 {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} 路通道，可以产生独立的波形，驱动 RGB LED 等设备。
 
 .. only:: esp32
 
@@ -85,11 +84,11 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
        * - REF_TICK
          - 1 MHz
          - 高速 / 低速
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
        * - RC_FAST_CLK
-         - ~8 MHz
+         - ~ 8 MHz
          - 低速
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
+         - 支持动态调频 (DFS) 功能，支持Light-sleep模式
 
 .. only:: esp32s2
 
@@ -105,13 +104,13 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - REF_TICK
          - 1 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
        * - RC_FAST_CLK
-         - ~8 MHz
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
+         - ~ 8 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
 
 .. only:: esp32s3 or esp32c3
 
@@ -126,8 +125,8 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 80 MHz
          - /
        * - RC_FAST_CLK
-         - ~20 MHz
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
+         - ~ 20 MHz
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频（DFS）功能
@@ -145,11 +144,11 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 60 MHz
          - /
        * - RC_FAST_CLK
-         - ~20 MHz
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
+         - ~ 20 MHz
+         - 支持动态调频 (DFS) 功能，支持Light-sleep模式
        * - XTAL_CLK
          - 40 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
 
 .. only:: esp32c6
 
@@ -164,11 +163,11 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 80 MHz
          - /
        * - RC_FAST_CLK
-         - ~20 MHz
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
+         - ~ 20 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
 
 .. only:: esp32h2
 
@@ -183,21 +182,21 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 96 MHz
          - /
        * - RC_FAST_CLK
-         - ~8 MHz
-         - 支持动态调频（DFS）功能，支持Light-sleep模式
+         - ~ 8 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 32 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
 
 .. note::
 
     .. only:: SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-        1. 如果 {IDF_TARGET_NAME} 的定时器选用了RC_FAST_CLK作为其时钟源，驱动会通过内部校准来得知这个时钟源的实际频率。这样确保了输出PWM信号频率的精准性。
+        1. 如果 {IDF_TARGET_NAME} 的定时器选用了 ``RC_FAST_CLK`` 作为其时钟源，驱动会通过内部校准来得知这个时钟源的实际频率。这样确保了输出 PWM 信号频率的精准性。
 
     .. only:: not SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-        1. 如果 {IDF_TARGET_NAME} 的定时器选用了RC_FAST_CLK作为其时钟源，LEDC的输出PWM信号频率可能会与设定值有一定偏差。由于{IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
+        1. 如果 {IDF_TARGET_NAME} 的定时器选用了 ``RC_FAST_CLK`` 作为其时钟源，LEDC的输出 PWM 信号频率可能会与设定值有一定偏差。由于 {IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
@@ -247,7 +246,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
 另外一种设置占空比和其他通道参数的方式是调用 :ref:`ledc-api-configure-channel` 一节提到的函数 :cpp:func:`ledc_channel_config`。
 
-传递给函数的占空比数值范围取决于选定的 ``duty_resolution``，应为 ``0`` 至 ``(2 ** duty_resolution) - 1``。例如，如选定的占空比分辨率为 10，则占空比的数值范围为 0 至 1023。此时分辨率为 ~0.1%。
+传递给函数的占空比数值范围取决于选定的 ``duty_resolution``，应为 ``0`` 至 ``(2 ** duty_resolution) - 1``。例如，如选定的占空比分辨率为 10，则占空比的数值范围为 0 至 1023。此时分辨率为 ~ 0.1%。
 
 
 使用硬件改变 PWM 占空比
@@ -320,7 +319,7 @@ LED PWM 控制器 API 有多种方式即时改变 PWM 频率：
 
     高速模式的优点是可平稳地改变定时器设置。也就是说，高速模式下如定时器设置改变，此变更会自动应用于定时器的下一次溢出中断。而更新低速定时器时，设置变更应由软件显式触发。LED PWM 驱动的设置将在硬件层面被修改，比如在调用函数 :cpp:func:`ledc_timer_config` 或 :cpp:func:`ledc_timer_set` 时。
 
-    更多关于速度模式的详细信息请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *LED PWM 控制器 (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]。
+    更多关于速度模式的详细信息请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **LED PWM 控制器 (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]。
 
     .. _ledc-api-supported-range-frequency-duty-resolution:
 
@@ -331,7 +330,7 @@ LED PWM 控制器 API 有多种方式即时改变 PWM 频率：
 频率和占空比分辨率支持范围
 -------------------------------------------------
 
-LED PWM 控制器主要用于驱动 LED。该控制器 PWM 占空比设置的分辨率范围较广。比如，PWM 频率为 5 kHz 时，占空比分辨率最大可为 13 位。这意味着占空比可为 0 至 100% 之间的任意值，分辨率为 ~0.012%（2 ** 13 = 8192 LED 亮度的离散电平）。然而，这些参数取决于为 LED PWM 控制器定时器计时的时钟信号，LED PWM 控制器为通道提供时钟（具体可参考 :ref:`定时器配置 <ledc-api-configure-timer>` 和 *{IDF_TARGET_NAME} 技术参考手册* > *LED PWM 计时器 (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]）。
+LED PWM 控制器主要用于驱动 LED。该控制器 PWM 占空比设置的分辨率范围较广。比如，PWM 频率为 5 kHz 时，占空比分辨率最大可为 13 位。这意味着占空比可为 0 至 100% 之间的任意值，分辨率为 ~0.012%（2 ** 13 = 8192 LED 亮度的离散电平）。然而，这些参数取决于为 LED PWM 控制器定时器计时的时钟信号，LED PWM 控制器为通道提供时钟（具体可参考 :ref:`定时器配置 <ledc-api-configure-timer>` 和 **{IDF_TARGET_NAME} 技术参考手册** > **LED PWM 计时器 (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]）。
 
 LED PWM 控制器可用于生成频率较高的信号，足以为数码相机模组等其他设备提供时钟。此时，最大频率可为 40 MHz，占空比分辨率为 1 位。也就是说，占空比固定为 50%，无法调整。
 

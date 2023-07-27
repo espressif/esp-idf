@@ -67,7 +67,7 @@ Further Configurations
 
 - :cpp:func:`ana_cmpr_set_intl_reference` - Specify the internal reference voltage when :cpp:enumerator:`ana_cmpr_ref_source_t::ANA_CMPR_REF_SRC_INTERNAL` is selected as reference source.
 
-It requires :cpp:member:`ana_cmpr_internal_ref_config_t::ref_volt` to specify the voltage. The voltage related to the VDD power supply, which can only support a certain fixed percentage of VDD. Currently on {IDF_TARGET_NAME}, the internal reference voltage can be range to 0~70% VDD with a step 10%.
+It requires :cpp:member:`ana_cmpr_internal_ref_config_t::ref_volt` to specify the voltage. The voltage related to the VDD power supply, which can only support a certain fixed percentage of VDD. Currently on {IDF_TARGET_NAME}, the internal reference voltage can be range to 0 ~ 70% VDD with a step 10%.
 
 .. code:: c
 
@@ -80,7 +80,7 @@ It requires :cpp:member:`ana_cmpr_internal_ref_config_t::ref_volt` to specify th
 
 - :cpp:func:`ana_cmpr_set_debounce` - Set the debounce configuration.
 
-It requires :cpp:member:`ana_cmpr_debounce_config_t::wait_us` to set the interrupt waiting time. The interrupt will be disabled temporary for :cpp:member:`ana_cmpr_debounce_config_t::wait_us` micro seconds, so that the frequent triggering can be avoid while the source signal crossing the reference signal. That is, the waiting time is supposed to be inverse ratio to the relative frequency between the source and reference. If the waiting time is set too short, it can't bypass the jitter totally, but if too long, the next crossing interrupt might be missed.
+It requires :cpp:member:`ana_cmpr_debounce_config_t::wait_us` to set the interrupt waiting time. The interrupt is disabled temporarily for :cpp:member:`ana_cmpr_debounce_config_t::wait_us` micro seconds, so that the frequent triggering can be avoid while the source signal crossing the reference signal. That is, the waiting time is supposed to be inverse ratio to the relative frequency between the source and reference. If the waiting time is set too short, it can not bypass the jitter totally, but if too long, the next crossing interrupt might be missed.
 
 .. code:: c
 
@@ -133,29 +133,29 @@ Enable and Disable Unit
 
 After the Analog Comparator unit is enabled and the crossing event interrupt is enabled, a power management lock will be acquired if the power management is enabled (see `Power Management <#power-management>`__). Under the **enable** state, only :cpp:func:`ana_cmpr_set_intl_reference` and :cpp:func:`ana_cmpr_set_debounce` can be called, other functions can only be called after the unit is disabled.
 
-Calling :cpp:func:`ana_cmpr_disable` will do the opposite.
+Calling :cpp:func:`ana_cmpr_disable` does the opposite.
 
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the resolution of the Analog Comparator.
+When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the resolution of the Analog Comparator.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP`. Whenever the driver creates a Analog Comparator unit instance that has selected the clock source like :cpp:enumerator:`ANA_CMPR_CLK_SRC_DEFAULT` or :cpp:enumerator:`ANA_CMPR_CLK_SRC_XTAL` as its clock source, the driver will guarantee that the power management lock is acquired when enable the channel by :cpp:func:`ana_cmpr_enable`. Likewise, the driver releases the lock when :cpp:func:`ana_cmpr_disable` is called for that channel.
+However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP`. Whenever the driver creates a Analog Comparator unit instance that has selected the clock source like :cpp:enumerator:`ANA_CMPR_CLK_SRC_DEFAULT` or :cpp:enumerator:`ANA_CMPR_CLK_SRC_XTAL` as its clock source, the driver guarantees that the power management lock is acquired when enable the channel by :cpp:func:`ana_cmpr_enable`. Likewise, the driver releases the lock when :cpp:func:`ana_cmpr_disable` is called for that channel.
 
 IRAM Safe
 ^^^^^^^^^
 
 By default, the Analog Comparator interrupt will be deferred when the Cache is disabled for reasons like programming/erasing Flash. Thus the alarm interrupt will not get executed in time, which is not expected in a real-time application.
 
-There's a Kconfig option :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` that will:
+There is a Kconfig option :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` that:
 
-1. Enable the interrupt being serviced even when cache is disabled
-2. Place all functions that used by the ISR into IRAM [1]_
-3. Place driver object into DRAM (in case it's allocated on PSRAM)
+1. Enables the interrupt being serviced even when cache is disabled
+2. Places all functions that used by the ISR into IRAM [1]_
+3. Places driver object into DRAM (in case it is allocated on PSRAM)
 
-This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
+This allows the interrupt to run while the cache is disabled but comes at the cost of increased IRAM consumption.
 
-There's a Kconfig option :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are listed as follows:
+There is a Kconfig option :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are listed as follows:
 
 - :cpp:func:`ana_cmpr_set_internal_reference`
 - :cpp:func:`ana_cmpr_set_debounce`
@@ -178,7 +178,7 @@ Kconfig Options
 
 - :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` controls where to place the Analog Comparator control functions (IRAM or Flash), see `IRAM Safe <#iram-safe>`__ for more information.
-- :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enabling this option will increase the firmware binary size.
+- :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enabling this option increases the firmware binary size.
 
 Application Example
 -------------------

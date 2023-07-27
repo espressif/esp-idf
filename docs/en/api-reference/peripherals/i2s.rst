@@ -1,5 +1,6 @@
 Inter-IC Sound (I2S)
 ====================
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_I2S_NUM:default="one", esp32="two", esp32s3="two"}
@@ -186,7 +187,7 @@ In standard mode, there are always two sound channels, i.e., the left and right 
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_short.json
 
-    - **PCM Long Format**: Data has one-bit shift and the WS signal lasts one-slot bit width for every frame. For example, the duty of WS will be 25% if there are four slots enabled, and 20% if there are five slots. 
+    - **PCM Long Format**: Data has one-bit shift and the WS signal lasts one-slot bit width for every frame. For example, the duty of WS will be 25% if there are four slots enabled, and 20% if there are five slots.
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
 
@@ -195,7 +196,7 @@ In standard mode, there are always two sound channels, i.e., the left and right 
     LCD/Camera Mode
     ^^^^^^^^^^^^^^^
 
-    LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd` for details about the LCD implementation. For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *I2S Controller (I2S)* > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
+    LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd` for details about the LCD implementation. For more information, see **{IDF_TARGET_NAME} Technical Reference Manual** > **I2S Controller (I2S)** > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
 
 .. only:: SOC_I2S_SUPPORTS_ADC_DAC
 
@@ -225,7 +226,7 @@ Power Management
 
 When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2S before entering Light-sleep, thus potentially changing the I2S signals and leading to transmitting or receiving invalid data.
 
-The I2S driver can prevent the system from changing or stopping the source clock by acquiring a power management lock. When the source clock is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX` and when the source clock is APLL (if supported), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Whenever the user is reading or writing via I2S (i.e., calling :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`), the driver will guarantee that the power management lock is acquired. Likewise, the driver releases the lock after the reading or writing finishes.
+The I2S driver can prevent the system from changing or stopping the source clock by acquiring a power management lock. When the source clock is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX` and when the source clock is APLL (if supported), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Whenever the user is reading or writing via I2S (i.e., calling :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`), the driver guarantees that the power management lock is acquired. Likewise, the driver releases the lock after the reading or writing finishes.
 
 Finite State Machine
 ^^^^^^^^^^^^^^^^^^^^
@@ -245,7 +246,7 @@ Data Transport
 
 The data transport of the I2S peripheral, including sending and receiving, is realized by DMA. Before transporting data, please call :cpp:func:`i2s_channel_enable` to enable the specific channel. When the sent or received data reaches the size of one DMA buffer, the ``I2S_OUT_EOF`` or ``I2S_IN_SUC_EOF`` interrupt will be triggered. Note that the DMA buffer size is not equal to :cpp:member:`i2s_chan_config_t::dma_frame_num`. One frame here refers to all the sampled data in one WS circle. Therefore, ``dma_buffer_size = dma_frame_num * slot_num * slot_bit_width / 8``. For the data transmitting, users can input the data by calling :cpp:func:`i2s_channel_write`. This function helps users to copy the data from the source buffer to the DMA TX buffer and wait for the transmission to finish. Then it will repeat until the sent bytes reach the given size. For the data receiving, the function :cpp:func:`i2s_channel_read` waits to receive the message queue which contains the DMA buffer address. It helps users copy the data from the DMA RX buffer to the destination buffer.
 
-Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking functions. They keeps waiting until the whole source buffer is sent or the whole destination buffer is loaded, unless they exceed the max blocking time, where the error code `ESP_ERR_TIMEOUT` returns. To send or receive data asynchronously, callbacks can be registered by  :cpp:func:`i2s_channel_register_event_callback`. Users are able to access the DMA buffer directly in the callback function instead of transmitting or receiving by the two blocking functions. However, please be aware that it is an interrupt callback, so do not add complex logic, run floating operation, or call non-reentrant functions in the callback.
+Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking functions. They keeps waiting until the whole source buffer is sent or the whole destination buffer is loaded, unless they exceed the max blocking time, where the error code ``ESP_ERR_TIMEOUT`` returns. To send or receive data asynchronously, callbacks can be registered by  :cpp:func:`i2s_channel_register_event_callback`. Users are able to access the DMA buffer directly in the callback function instead of transmitting or receiving by the two blocking functions. However, please be aware that it is an interrupt callback, so do not add complex logic, run floating operation, or call non-reentrant functions in the callback.
 
 Configuration
 ^^^^^^^^^^^^^
@@ -257,13 +258,13 @@ IRAM Safe
 
 By default, the I2S interrupt will be deferred when the cache is disabled for reasons like writing/erasing flash. Thus the EOF interrupt will not get executed in time.
 
-To avoid such case in real-time applications, you can enable the Kconfig option :ref:`CONFIG_I2S_ISR_IRAM_SAFE` that will:
+To avoid such case in real-time applications, you can enable the Kconfig option :ref:`CONFIG_I2S_ISR_IRAM_SAFE` that:
 
-1. Keep the interrupt being serviced even when the cache is disabled.
+1. Keeps the interrupt being serviced even when the cache is disabled.
 
-2. Place driver object into DRAM (in case it is linked to PSRAM by accident).
+2. Places driver object into DRAM (in case it is linked to PSRAM by accident).
 
-This will allow the interrupt to run while the cache is disabled, but will come at the cost of increased IRAM consumption.
+This allows the interrupt to run while the cache is disabled, but comes at the cost of increased IRAM consumption.
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -275,7 +276,7 @@ Kconfig Options
 
 - :ref:`CONFIG_I2S_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled. See `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` controls whether to suppress the compiling warning message while using the legacy I2S driver.
-- :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option will increase the firmware binary size.
+- :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
 
 Application Example
 -------------------
@@ -634,7 +635,7 @@ Here is the table of the data received in the buffer with different :cpp:member:
 
 .. only:: SOC_I2S_SUPPORTS_PDM_RX
 
-    PDM RX usage
+    PDM RX Usage
     ^^^^^^^^^^^^
 
     For PDM mode in RX channel, the slot configuration helper macro is:
@@ -735,9 +736,9 @@ Here is the table of the data received in the buffer with different :cpp:member:
 
     .. note::
 
-        Due to hardware limitation, when setting the clock configuration for a slave role, please be aware that :cpp:member:`i2s_tdm_clk_config_t::bclk_div` should not be smaller than 8. Increasing this field can reduce the lagging of the data sent from the slave. In the high sample rate case, the data might lag behind for more than one BCLK which will lead to data malposition. Users may gradually increase :cpp:member:`i2s_tdm_clk_config_t::bclk_div` to correct it.
+        Due to hardware limitation, when setting the clock configuration for a slave role, please be aware that :cpp:member:`i2s_tdm_clk_config_t::bclk_div` should not be smaller than 8. Increasing this field can reduce the lagging of the data sent from the slave. In the high sample rate case, the data might lag behind for more than one BCLK which leads to data malposition. Users may gradually increase :cpp:member:`i2s_tdm_clk_config_t::bclk_div` to correct it.
 
-        As :cpp:member:`i2s_tdm_clk_config_t::bclk_div` is the division of MCLK to BCLK, increasing it will also increase the MCLK frequency. Therefore, the clock calculation may fail if MCLK is too high to divide from the source clock. This means that a larger value for :cpp:member:`i2s_tdm_clk_config_t::bclk_div` is not necessarily better.
+        As :cpp:member:`i2s_tdm_clk_config_t::bclk_div` is the division of MCLK to BCLK, increasing it also increases the MCLK frequency. Therefore, the clock calculation may fail if MCLK is too high to divide from the source clock. This means that a larger value for :cpp:member:`i2s_tdm_clk_config_t::bclk_div` is not necessarily better.
 
     TDM TX Mode
     ~~~~~~~~~~~

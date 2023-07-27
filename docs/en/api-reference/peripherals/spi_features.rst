@@ -15,7 +15,7 @@ To realize the multiplexing of different devices from different drivers, includi
 
 Each bus lock is initialized with a BG (background) service registered. All devices that request transactions on the bus should wait until the BG is successfully disabled.
 
-- For the SPI1 bus, the BG is the cache. The bus lock will disable the cache before device operations start, and enable it again after the device releases the lock. No devices on SPI1 are allowed to use ISR, since it is meaningless for the task to yield to other tasks when the cache is disabled.
+- For the SPI1 bus, the BG is the cache. The bus lock disables the cache before device operations start, and enables it again after the device releases the lock. No devices on SPI1 are allowed to use ISR, since it is meaningless for the task to yield to other tasks when the cache is disabled.
 
   .. only:: esp32
 
@@ -23,6 +23,6 @@ Each bus lock is initialized with a BG (background) service registered. All devi
 
   .. only:: not esp32
 
-      The SPI Master driver hasn't supported SPI1 bus. Only the SPI Flash driver can attach to the bus.
+      The SPI Master driver has not supported SPI1 bus. Only the SPI Flash driver can attach to the bus.
 
 - For other buses, the driver can register the ISR as a BG. If a device task requests exclusive bus access, the bus lock will block the task, disable the ISR, and then unblock the task. After the task releases the lock, the lock will try to re-enable the ISR if there are still pending transactions in the ISR.

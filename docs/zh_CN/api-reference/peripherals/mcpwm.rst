@@ -237,7 +237,7 @@ MCPWM 定时器运行时会生成不同的事件。若有函数需在特定事�
 
 * 将定时器的状态从 **init** 切换到 **enable**。
 * 若中断服务此前已通过 :cpp:func:`mcpwm_timer_register_event_callbacks` 函数延迟安装，则启用中断服务。
-* 若选择了特定时钟源（例如 PLL_160M 时钟），则获取相应的电源管理锁。更多信息请参见 `电源管理`_。
+* 若选择了特定时钟源（例如 PLL_160M 时钟），则获取相应的电源管理锁。更多信息请参见 :ref:`mcpwm-power-management`。
 
 反之，调用 :cpp:func:`mcpwm_timer_disable` 会将定时器切换回 **init** 状态、禁用中断服务并释放电源管理锁。
 
@@ -483,7 +483,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 在电力电子学中，常常会用到整流器和逆变器，这就涉及到了整流桥和逆变桥的应用。每个桥臂配有两个功率电子器件，例如 MOSFET、IGBT 等。同一桥臂上的两个 MOSFET 不能同时导通，否则会造成短路。实际应用中，在 PWM 波形显示 MOSFET 开关已关闭后，仍需要一段时间窗口才能完全关闭 MOSFET。因此，需要设置 :ref:`mcpwm-generator-actions-on-events`，在已生成的 PWM 波形上添加额外延迟。
 
-死区驱动器的工作方式与 *装饰器* 类似。在 :cpp:func:`mcpwm_generator_set_dead_time` 函数的参数中，驱动接收主要生成器句柄 (``in_generator``)，并在应用死区后返回一个新的生成器 (``out_generator``)。需注意，如果 ``out_generator`` 和 ``in_generator`` 相同，这表示 PWM 波形中的时间延迟是以“就地”的方式添加的。反之，如果 ``out_generator`` 和 ``in_generator`` 不同，则代表在原 ``in_generator`` 的基础上派生出了一个新的 PWM 波形。
+死区驱动器的工作方式与 **装饰器** 类似。在 :cpp:func:`mcpwm_generator_set_dead_time` 函数的参数中，驱动接收主要生成器句柄 (``in_generator``)，并在应用死区后返回一个新的生成器 (``out_generator``)。需注意，如果 ``out_generator`` 和 ``in_generator`` 相同，这表示 PWM 波形中的时间延迟是以“就地”的方式添加的。反之，如果 ``out_generator`` 和 ``in_generator`` 不同，则代表在原 ``in_generator`` 的基础上派生出了一个新的 PWM 波形。
 
 结构体 :cpp:type:`mcpwm_dead_time_config_t` 中列出了死区相关的具体配置：
 
@@ -492,7 +492,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 .. warning::
 
-    由于硬件限制，同一种 delay 模块（`posedge delay` 或者 `negedge delay`）不能同时被应用在不同的 MCPWM 生成器中。例如，以下配置是无效的：
+    由于硬件限制，同一种 delay 模块（``posedge delay`` 或者 ``negedge delay``）不能同时被应用在不同的 MCPWM 生成器中。例如，以下配置是无效的：
 
     .. code:: c
 
@@ -504,7 +504,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
         // NOTE: 下面的操作是无效的，不能将同一种 delay 应用于不同的 generator 上
         mcpwm_generator_set_dead_time(mcpwm_gen_b, mcpwm_gen_b, &dt_config);
 
-    然而，您可以为生成器 A 设置 `posedge delay`，为生成器 B 设置 `negedge delay`。另外，您也可以为生成器 A 同时设置 `posedge delay` 和 `negedge delay`，而让生成器 B 绕过死区模块。
+    然而，你可以为生成器 A 设置 ``posedge delay``，为生成器 B 设置 ``negedge delay``。另外，也可以为生成器 A 同时设置 ``posedge delay`` 和 ``negedge delay``，而让生成器 B 绕过死区模块。
 
 .. note::
 
@@ -798,8 +798,8 @@ MCPWM 故障检测器支持在检测到实际故障或故障信号消失时发�
 
 MCPWM 操作器支持在进行制动操作前发送通知。若有函数需在特定事件发生时调用，则应预先调用 :cpp:func:`mcpwm_operator_register_event_callbacks`，将所需函数挂载至中断服务程序 (ISR) 中。驱动中制动事件回调函数原型声明为 :cpp:type:`mcpwm_brake_event_cb_t`，其所支持的事件回调类型则列在 :cpp:type:`mcpwm_operator_event_callbacks_t` 中：
 
-- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_cbc` 设置操作器进行 *逐周期 (CBC)* 操作前调用的回调函数。
-- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_ost` 设置操作器进行 *一次性 (OST)* 操作前调用的回调函数。
+- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_cbc` 设置操作器进行 **逐周期 (CBC)** 操作前调用的回调函数。
+- :cpp:member:`mcpwm_operator_event_callbacks_t::on_brake_ost` 设置操作器进行 **一次性 (OST)** 操作前调用的回调函数。
 
 由于上述回调函数在 ISR 中调用，因此，这些函数 **不应** 涉及 block 操作。可以检查调用 API 的后缀，确保在函数中只调用了后缀为 ``ISR`` 的 FreeRTOS API。
 

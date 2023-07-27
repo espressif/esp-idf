@@ -118,7 +118,7 @@ When :cpp:member:`i2c_config_t::clk_flags` is 0, the clock allocator will select
 
 .. note::
 
-    A clock is not a valid option, if it doesn't meet the requested capabilities, i.e. any bit of requested capabilities (clk_flags) is 0 in the clock's capabilities.
+    A clock is not a valid option, if it does not meet the requested capabilities, i.e., any bit of requested capabilities (clk_flags) is 0 in the clock's capabilities.
 
 .. only:: esp32
 
@@ -208,9 +208,9 @@ Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
 
 .. note::
 
-    The clock frequency of SCL will be influenced by the pull-up resistors and wire capacitance (or might slave capacitance) together. Therefore, users need to choose correct pull-up resistors by themselves to make the frequency accurate. It is recommended by I2C protocol that the pull-up resistors commonly range from 1KOhms to 10KOhms, but different frequencies need different resistors.
+    The clock frequency of SCL is influenced by the pull-up resistors and wire capacitance (or might slave capacitance) together. Therefore, users need to choose correct pull-up resistors by themselves to make the frequency accurate. It is recommended by I2C protocol that the pull-up resistors commonly range from 1KOhms to 10KOhms, but different frequencies need different resistors.
 
-    Generally speaking, the higher frequency is selected, the smaller resistor should be used (but not less than 1KOhms). This is because high resistor will decline the current, which will lengthen the rising time and reduce the frequency. Usually, range 2KOhms to 5KOhms is what we recommend, but users also might need to make some adjustment depends on their reality.
+    Generally speaking, the higher frequency is selected, the smaller resistor should be used (but not less than 1KOhms). This is because high resistor declines the current, which will lengthen the rising time and reduce the frequency. Usually, range 2KOhms to 5KOhms is what we recommend, but users also might need to make some adjustment depends on their reality.
 
 .. _i2c-api-install-driver:
 
@@ -224,7 +224,7 @@ After the I2C driver is configured, install it by calling the function :cpp:func
 
 .. only:: SOC_I2C_SUPPORT_SLAVE
 
-    - (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave will usually have a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
+    - (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave usually has a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
 
 - Flags for allocating the interrupt (see ESP_INTR_FLAG_* values in :component_file:`esp_hw_support/include/esp_intr_alloc.h`)
 
@@ -287,7 +287,7 @@ Indicating Write or Read
 
 After sending a slave address (see Step 3 on both diagrams above), the master either writes or reads from the slave.
 
-The information on what the master will actually do is hidden in the least significant bit of the slave's address.
+The information on what the master actually does is hidden in the least significant bit of the slave's address.
 
 For this reason, the command link sent by the master to write data to the slave contains the address ``(ESP_SLAVE_ADDR << 1) | I2C_MASTER_WRITE`` and looks as follows:
 
@@ -315,11 +315,11 @@ Likewise, the command link to read from the slave looks as follows:
 
     - :cpp:func:`i2c_slave_read_buffer`
 
-        Whenever the master writes data to the slave, the slave will automatically store it in the receive buffer. This allows the slave application to call the function :cpp:func:`i2c_slave_read_buffer` at its own discretion. This function also has a parameter to specify block time if no data is in the receive buffer. This will allow the slave application to wait with a specified timeout for data to arrive to the buffer.
+        Whenever the master writes data to the slave, the slave automatically stores it in the receive buffer. This allows the slave application to call the function :cpp:func:`i2c_slave_read_buffer` at its own discretion. This function also has a parameter to specify block time if no data is in the receive buffer. This allows the slave application to wait with a specified timeout for data to arrive to the buffer.
 
     - :cpp:func:`i2c_slave_write_buffer`
 
-        The send buffer is used to store all the data that the slave wants to send to the master in FIFO order. The data stays there until the master requests for it. The function :cpp:func:`i2c_slave_write_buffer` has a parameter to specify block time if the send buffer is full. This will allow the slave application to wait with a specified timeout for the adequate amount of space to become available in the send buffer.
+        The send buffer is used to store all the data that the slave wants to send to the master in FIFO order. The data stays there until the master requests for it. The function :cpp:func:`i2c_slave_write_buffer` has a parameter to specify block time if the send buffer is full. This allows the slave application to wait with a specified timeout for the adequate amount of space to become available in the send buffer.
 
     A code example showing how to use these functions can be found in :example:`peripherals/i2c`.
 

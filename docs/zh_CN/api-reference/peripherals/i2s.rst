@@ -1,5 +1,6 @@
 I2S
 ===
+
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_I2S_NUM:default="1", esp32="2", esp32s3="2"}
@@ -195,7 +196,7 @@ ESP32-H2    I2S 0     I2S 0     无        I2S 0     无         无
     LCD/摄像头模式
     ^^^^^^^^^^^^^^^
 
-    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd`。更多信息请参考 *{IDF_TARGET_NAME} 技术参考手册* > *I2S 控制器 (I2S)* > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
+    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
 
 .. only:: SOC_I2S_SUPPORTS_ADC_DAC
 
@@ -245,7 +246,7 @@ I2S 通道有三种状态，分别为 ``registered（已注册）``、 ``ready�
 
 I2S 的数据传输（包括数据发送和接收）由 DMA 实现。在传输数据之前，请调用 :cpp:func:`i2s_channel_enable` 来启用特定的通道。发送或接收的数据达到 DMA 缓冲区的大小时，将触发 ``I2S_OUT_EOF`` 或 ``I2S_IN_SUC_EOF`` 中断。注意，DMA 缓冲区的大小不等于 :cpp:member:`i2s_chan_config_t::dma_frame_num`，这里的一帧是指一个 WS 周期内的所有采样数据。因此， ``dma_buffer_size = dma_frame_num * slot_num * slot_bit_width / 8``。传输数据时，可以调用 :cpp:func:`i2s_channel_write` 来输入数据，并把数据从源缓冲区复制到 DMA TX 缓冲区等待传输完成。此过程将重复进行，直到发送的字节数达到配置的大小。接收数据时，用户可以调用函数 :cpp:func:`i2s_channel_read` 来等待接收包含 DMA 缓冲区地址的消息队列，从而将数据从 DMA RX 缓冲区复制到目标缓冲区。
 
-:cpp:func:`i2s_channel_write` 和 :cpp:func:`i2s_channel_read` 都是阻塞函数，在源缓冲区的数据发送完毕前，或是整个目标缓冲区都被加载数据占用时，它们会一直保持等待状态。在等待时间达到最大阻塞时间时，返回 `ESP_ERR_TIMEOUT` 错误。要实现异步发送或接收数据，可以通过 :cpp:func:`i2s_channel_register_event_callback` 注册回调，随即便可在回调函数中直接访问 DMA 缓冲区，无需通过这两个阻塞函数来发送或接收数据。但请注意，该回调是一个中断回调，不要在该回调中添加复杂的逻辑、进行浮点运算或调用不可重入函数。
+:cpp:func:`i2s_channel_write` 和 :cpp:func:`i2s_channel_read` 都是阻塞函数，在源缓冲区的数据发送完毕前，或是整个目标缓冲区都被加载数据占用时，它们会一直保持等待状态。在等待时间达到最大阻塞时间时，返回 ``ESP_ERR_TIMEOUT`` 错误。要实现异步发送或接收数据，可以通过 :cpp:func:`i2s_channel_register_event_callback` 注册回调，随即便可在回调函数中直接访问 DMA 缓冲区，无需通过这两个阻塞函数来发送或接收数据。但请注意，该回调是一个中断回调，不要在该回调中添加复杂的逻辑、进行浮点运算或调用不可重入函数。
 
 配置
 ^^^^

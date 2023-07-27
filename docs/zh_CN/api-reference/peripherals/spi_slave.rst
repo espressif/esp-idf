@@ -5,7 +5,7 @@ SPI 从机驱动程序
 
 SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 GP-SPI 外设。
 
-有关 GP-SPI 硬件相关信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *SPI 控制器* [`PDF <{IDF_TARGET_TRM_CN_URL}#spi>`__]。
+有关 GP-SPI 硬件相关信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **SPI 控制器** [`PDF <{IDF_TARGET_TRM_CN_URL}#spi>`__]。
 
 术语
 -----------
@@ -37,13 +37,13 @@ SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 GP-SPI 外�
    * - QUADHD
      - 保持信号。只用于 4 位 (qio/qout) 传输。
    * - 断言 (Assertion)
-     - 指激活一条线的操作。反之，将线路恢复到非活动状态（回到空闲状态）的操作则称为 *去断言*。
+     - 指激活一条线的操作。反之，将线路恢复到非活动状态（回到空闲状态）的操作则称为 **去断言**。
    * - 传输事务 (Transaction)
      - 即主机断言从机设备的 CS 线，向从机设备传输数据，接着去断言 CS 线的过程。传输事务为原子操作，不可打断。
    * - 发射沿 (Launch Edge)
-     - 源寄存器将信号 *发射* 到线路上的时钟边沿。
+     - 源寄存器将信号 **发射** 到线路上的时钟边沿。
    * - 锁存沿 (Latch Edge)
-     - 目的寄存器 *锁存* 信号的时钟边沿。
+     - 目的寄存器 **锁存** 信号的时钟边沿。
 
 
 驱动程序的功能
@@ -53,7 +53,7 @@ SPI 从机驱动程序控制在 {IDF_TARGET_NAME} 中作为从机的 GP-SPI 外�
 
 SPI 从机驱动程序允许将 SPI 外设作为全双工设备使用。驱动程序可以发送/接收长度不超过 {IDF_TARGET_MAX_DATA_BUF} 字节的传输事务，或者利用 DMA 来发送/接收更长的传输事务。然而，存在一些与 DMA 有关的 :ref:`已知问题 <spi_dma_known_issues>`。
 
-SPI 从机驱动程序支持将 SPI ISR 注册至指定 CPU 内核。如果多个任务同时尝试访问一个 SPI 设备，建议您重构应用程序，以使每个 SPI 外设一次只由一个任务访问。此外，请使用 :cpp:member:`spi_bus_config_t::isr_cpu_id` 将 SPI ISR 注册至与 SPI 外设相关任务相同的内核，确保线程安全。
+SPI 从机驱动程序支持将 SPI ISR 注册至指定 CPU 内核。如果多个任务同时尝试访问一个 SPI 设备，建议重构应用程序，以使每个 SPI 外设一次只由一个任务访问。此外，请使用 :cpp:member:`spi_bus_config_t::isr_cpu_id` 将 SPI ISR 注册至与 SPI 外设相关任务相同的内核，确保线程安全。
 
 SPI 传输事务
 ----------------
@@ -62,7 +62,7 @@ SPI 传输事务
 
 传输事务的属性由作为从机设备的 SPI 外设的配置结构体 :cpp:type:`spi_slave_interface_config_t` 和传输事务配置结构体 :cpp:type:`spi_slave_transaction_t` 决定。
 
-由于并非每次传输事务都需要写入和读取数据，您可以选择配置 :cpp:type:`spi_transaction_t` 为仅 TX、仅 RX 或同时 TX 和 RX 传输事务。如果将 :cpp:member:`spi_slave_transaction_t::rx_buffer` 设置为 NULL，读取阶段将被跳过。与之类似，如果将 :cpp:member:`spi_slave_transaction_t::tx_buffer` 设置为 NULL，则写入阶段将被跳过。
+由于并非每次传输事务都需要写入和读取数据，可以选择配置 :cpp:type:`spi_transaction_t` 为仅 TX、仅 RX 或同时 TX 和 RX 传输事务。如果将 :cpp:member:`spi_slave_transaction_t::rx_buffer` 设置为 ``NULL``，读取阶段将被跳过。与之类似，如果将 :cpp:member:`spi_slave_transaction_t::tx_buffer` 设置为 ``NULL``，则写入阶段将被跳过。
 
 .. note::
 
@@ -186,7 +186,7 @@ GPIO 交换矩阵和 IO_MUX
 
 解决方案为，首先使用函数 :cpp:func:`spi_slave_queue_trans`，然后使用 :cpp:func:`spi_slave_get_trans_result`，来代替 :cpp:func:`spi_slave_transmit`。由此一来，可使从机设备的响应速度提高一倍。
 
-您也可以配置一个 GPIO 管脚，当从机设备开始新一次传输事务前，它将通过该管脚向主机发出信号。示例代码存放在 :example:`peripherals/spi_slave` 目录下。
+也可以配置一个 GPIO 管脚，当从机设备开始新一次传输事务前，它将通过该管脚向主机发出信号。示例代码存放在 :example:`peripherals/spi_slave` 目录下。
 
 
 时钟频率要求
@@ -215,10 +215,10 @@ SPI 从机的工作频率最高可达 {IDF_TARGET_MAX_FREQ} MHz。如果时钟�
              - 频率限制 (MHz)
            * - IO_MUX
              - 43.75
-             - <11.4
+             - < 11.4
            * - GPIO 交换矩阵
              - 68.75
-             - <7.2
+             - < 7.2
 
         注：
         1. 如果频率达到上限，会导致随机误差。
@@ -243,7 +243,7 @@ SPI 从机的工作频率最高可达 {IDF_TARGET_MAX_FREQ} MHz。如果时钟�
 
     .. wavedrom:: /../_static/diagrams/spi/spi_slave_miso_dma.json
 
-    如果启用 DMA，从机设备的发射沿会比正常时间提前半个 SPI 时钟周期，变为主机的实际锁存沿。在这种情况下，如果 GPIO 交换矩阵被绕过，数据采样的保持时间将是 68.75 ns，而非半个 SPI 时钟周期。如果使用了 GPIO 交换矩阵，保持时间将增加到 93.75 ns。主机应在锁存沿立即采样数据，或在 SPI 模式 1 或模式 3 中进行通信。如果您的主机无法满足上述时间要求，请在没有 DMA 的情况下初始化从机设备。
+    如果启用 DMA，从机设备的发射沿会比正常时间提前半个 SPI 时钟周期，变为主机的实际锁存沿。在这种情况下，如果 GPIO 交换矩阵被绕过，数据采样的保持时间将是 68.75 ns，而非半个 SPI 时钟周期。如果使用了 GPIO 交换矩阵，保持时间将增加到 93.75 ns。主机应在锁存沿立即采样数据，或在 SPI 模式 1 或模式 3 中进行通信。如果主机无法满足上述时间要求，请在没有 DMA 的情况下初始化从机设备。
 
 
 应用示例

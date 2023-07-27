@@ -1,5 +1,6 @@
 SPI Master Driver
 =================
+
 :link_to_translation:`zh_CN:[中文]`
 
 SPI Master driver is a program that controls {IDF_TARGET_NAME}'s General Purpose SPI (GP-SPI) peripheral(s) when it functions as a master.
@@ -10,7 +11,7 @@ SPI Master driver is a program that controls {IDF_TARGET_NAME}'s General Purpose
     
         SPI1 is not a GP-SPI. SPI Master driver also supports SPI1 but with quite a few limitations, see :ref:`spi_master_on_spi1_bus`.
 
-For more hardware information about the GP-SPI peripheral(s), see *{IDF_TARGET_NAME} Technical Reference Manual* > *SPI Controller* [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
+For more hardware information about the GP-SPI peripheral(s), see **{IDF_TARGET_NAME} Technical Reference Manual** > **SPI Controller** [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
 
 Terminology
 -----------
@@ -56,9 +57,9 @@ The terms used in relation to the SPI Master driver are given in the table below
    * - Transaction
      - One instance of a Host asserting a CS line, transferring data to and from a Device, and de-asserting the CS line. Transactions are atomic, which means they can never be interrupted by another transaction.
    * - Launch Edge
-     - Edge of the clock at which the source register *launches* the signal onto the line.
+     - Edge of the clock at which the source register **launches** the signal onto the line.
    * - Latch Edge
-     - Edge of the clock at which the destination register *latches in* the signal.
+     - Edge of the clock at which the destination register **latches in** the signal.
 
 
 Driver Features
@@ -125,7 +126,7 @@ In half-duplex transactions, the Read and Write phases are not simultaneous (one
 
 The Command and Address phases are optional, as not every SPI Device requires a command and/or address. This is reflected in the Device's configuration: if :cpp:member:`spi_device_interface_config_t::command_bits` and/or :cpp:member:`spi_device_interface_config_t::address_bits` are set to zero, no Command or Address phase will occur.
 
-The Read and Write phases can also be optional, as not every transaction requires both writing and reading data. If :cpp:member:`spi_transaction_t::rx_buffer` is NULL and :c:macro:`SPI_TRANS_USE_RXDATA` is not set, the Read phase is skipped. If :cpp:member:`spi_transaction_t::tx_buffer` is NULL and :c:macro:`SPI_TRANS_USE_TXDATA` is not set, the Write phase is skipped.
+The Read and Write phases can also be optional, as not every transaction requires both writing and reading data. If :cpp:member:`spi_transaction_t::rx_buffer` is ``NULL`` and :c:macro:`SPI_TRANS_USE_RXDATA` is not set, the Read phase is skipped. If :cpp:member:`spi_transaction_t::tx_buffer` is ``NULL`` and :c:macro:`SPI_TRANS_USE_TXDATA` is not set, the Write phase is skipped.
 
 The driver supports two types of transactions: interrupt transactions and polling transactions. The programmer can choose to use a different transaction type per Device. If your Device requires both transaction types, see :ref:`mixed_transactions`.
 
@@ -135,9 +136,9 @@ The driver supports two types of transactions: interrupt transactions and pollin
 Interrupt Transactions
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Interrupt transactions will block the transaction routine until the transaction completes, thus allowing the CPU to run other tasks.
+Interrupt transactions blocks the transaction routine until the transaction completes, thus allowing the CPU to run other tasks.
 
-An application task can queue multiple transactions, and the driver will automatically handle them one by one in the interrupt service routine (ISR). It allows the task to switch to other procedures until all the transactions are complete.
+An application task can queue multiple transactions, and the driver automatically handles them one by one in the interrupt service routine (ISR). It allows the task to switch to other procedures until all the transactions are complete.
 
 
 .. _polling_transactions:
@@ -147,7 +148,7 @@ Polling Transactions
 
 Polling transactions do not use interrupts. The routine keeps polling the SPI Host's status bit until the transaction is finished.
 
-All the tasks that use interrupt transactions can be blocked by the queue. At this point, they will need to wait for the ISR to run twice before the transaction is finished. Polling transactions save time otherwise spent on queue handling and context switching, which results in smaller transaction duration. The disadvantage is that the CPU is busy while these transactions are in progress.
+All the tasks that use interrupt transactions can be blocked by the queue. At this point, they need to wait for the ISR to run twice before the transaction is finished. Polling transactions save time otherwise spent on queue handling and context switching, which results in smaller transaction duration. The disadvantage is that the CPU is busy while these transactions are in progress.
 
 The :cpp:func:`spi_device_polling_end` routine needs an overhead of at least 1 µs to unblock other tasks when the transaction is finished. It is strongly recommended to wrap a series of polling transactions using the functions :cpp:func:`spi_device_acquire_bus` and :cpp:func:`spi_device_release_bus` to avoid the overhead. For more information, see :ref:`bus_acquiring`.
 
@@ -276,9 +277,9 @@ If the Command and Address phase need to have the same number of lines as the da
 Write and Read Phases
 ^^^^^^^^^^^^^^^^^^^^^
 
-Normally, the data that needs to be transferred to or from a Device will be read from or written to a chunk of memory indicated by the members :cpp:member:`spi_transaction_t::rx_buffer` and :cpp:member:`spi_transaction_t::tx_buffer`. If DMA is enabled for transfers, the buffers are required to be:
+Normally, the data that needs to be transferred to or from a Device is read from or written to a chunk of memory indicated by the members :cpp:member:`spi_transaction_t::rx_buffer` and :cpp:member:`spi_transaction_t::tx_buffer`. If DMA is enabled for transfers, the buffers are required to be:
 
-  1. Allocated in DMA-capable internal memory (MALLOC_CAP_DMA), see :ref:`DMA-Capable Memory<dma-capable-memory>`.
+  1. Allocated in DMA-capable internal memory (MALLOC_CAP_DMA), see :ref:`DMA-Capable Memory <dma-capable-memory>`.
   2. 32-bit aligned (starting from a 32-bit boundary and having a length of multiples of 4 bytes).
 
 If these requirements are not satisfied, the transaction efficiency will be affected due to the allocation and copying of temporary buffers.
@@ -390,7 +391,7 @@ To have better control of the calling sequence of functions, send mixed transact
 
     .. note::
 
-        Though the :ref:`spi_bus_lock` feature makes it possible to use SPI Master driver on the SPI1 bus, it's still tricky and needs a lot of special treatment. It's a feature for advanced developers.
+        Though the :ref:`spi_bus_lock` feature makes it possible to use SPI Master driver on the SPI1 bus, it is still tricky and needs a lot of special treatment. It is a feature for advanced developers.
 
     To use SPI Master driver on SPI1 bus, you have to take care of two problems:
 
@@ -481,7 +482,7 @@ GPIO Matrix and IO_MUX
 
     Most of the chip's peripheral signals have a direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
-    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via the GPIO matrix will behave the same compared to routing them via IOMUX.
+    When an SPI Host is set to 80 MHz or lower frequencies, routing SPI pins via the GPIO matrix will behave the same compared to routing them via IOMUX.
 
     The IO_MUX pins for SPI buses are given below.
 
@@ -549,9 +550,10 @@ SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
 
 The clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_handle_t::cfg::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
-By default driver will set :cpp:member:`spi_device_handle_t::cfg::clock_source` to ``SPI_CLK_SRC_DEFAULT``. This usually stands for the highest frequency among GPSPI clock sources. Its value will be different among chips.
 
-The actual clock frequency of a Device may not be exactly equal to the number you set, it will be re-calculated by the driver to the nearest hardware-compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
+By default driver sets :cpp:member:`spi_device_handle_t::cfg::clock_source` to ``SPI_CLK_SRC_DEFAULT``. This usually stands for the highest frequency among GPSPI clock sources. Its value is different among chips.
+
+The actual clock frequency of a Device may not be exactly equal to the number you set, it is re-calculated by the driver to the nearest hardware-compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
 
 The theoretical maximum transfer speed of the Write or Read phase can be calculated according to the table below:
 
@@ -587,7 +589,7 @@ The theoretical maximum transfer speed of the Write or Read phase can be calcula
        * - 8-Line
          - *SPI Frequency*
 
-The transfer speed calculation of other phases(Command, Address, Dummy) is similar.
+The transfer speed calculation of other phases (Command, Address, Dummy) is similar.
 
 .. only:: esp32
 
@@ -596,13 +598,13 @@ The transfer speed calculation of other phases(Command, Address, Dummy) is simil
 Cache Missing
 ^^^^^^^^^^^^^
 
-The default config puts only the ISR into the IRAM. Other SPI-related functions, including the driver itself and the callback, might suffer from cache misses and will need to wait until the code is read from flash. Select :ref:`CONFIG_SPI_MASTER_IN_IRAM` to put the whole SPI driver into IRAM and put the entire callback(s) and its callee functions into IRAM to prevent cache missing.
+The default config puts only the ISR into the IRAM. Other SPI-related functions, including the driver itself and the callback, might suffer from cache misses and need to wait until the code is read from flash. Select :ref:`CONFIG_SPI_MASTER_IN_IRAM` to put the whole SPI driver into IRAM and put the entire callback(s) and its callee functions into IRAM to prevent cache missing.
 
 .. note::
 
     SPI driver implementation is based on FreeRTOS APIs, to use :ref:`CONFIG_SPI_MASTER_IN_IRAM`, you should not enable :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`.
 
-For an interrupt transaction, the overall cost is *20+8n/Fspi[MHz]* [µs] for n bytes transferred in one transaction. Hence, the transferring speed is: *n/(20+8n/Fspi)*. An example of transferring speed at 8 MHz clock speed is given in the following table.
+For an interrupt transaction, the overall cost is **20+8n/Fspi[MHz]** [µs] for n bytes transferred in one transaction. Hence, the transferring speed is: **n/(20+8n/Fspi)**. An example of transferring speed at 8 MHz clock speed is given in the following table.
 
 .. list-table::
    :widths: 30 45 40 30 30
@@ -641,7 +643,7 @@ For an interrupt transaction, the overall cost is *20+8n/Fspi[MHz]* [µs] for n 
 
 When a transaction length is short, the cost of the transaction interval is high. If possible, try to squash several short transactions into one transaction to achieve a higher transfer speed.
 
-Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :c:macro:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations will be handled by the ISR in parallel. Also note that the callback of each Device and their callee functions should be in IRAM, or your callback will crash due to cache missing. For more details, see :ref:`iram-safe-interrupt-handlers`.
+Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :c:macro:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations are handled by the ISR in parallel. Also note that the callback of each Device and their ``callee`` functions should be in IRAM, or your callback will crash due to cache missing. For more details, see :ref:`iram-safe-interrupt-handlers`.
 
 
 .. only:: esp32
@@ -664,7 +666,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
     - :cpp:member:`spi_device_interface_config_t::input_delay_ns` - maximum data valid time on the MISO bus after a clock cycle on SCLK starts
     - If the IO_MUX pin or the GPIO Matrix is used
 
-    When the GPIO matrix is used, the maximum allowed frequency is reduced to about 33~77% in comparison to the existing *input delay*. To retain a higher frequency, you have to use the IO_MUX pins or the *dummy bit workaround*. You can obtain the maximum reading frequency of the master by using the function :cpp:func:`spi_get_freq_limit`.
+    When the GPIO matrix is used, the maximum allowed frequency is reduced to about 33 ~ 77% in comparison to the existing **input delay**. To retain a higher frequency, you have to use the IO_MUX pins or the **dummy bit workaround**. You can obtain the maximum reading frequency of the master by using the function :cpp:func:`spi_get_freq_limit`.
 
     .. _dummy_bit_workaround:
 
@@ -693,7 +695,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
          - Yes
          - Half-duplex, no DMA allowed
 
-    If the Host only writes data, the *dummy bit workaround* and the frequency check can be disabled by setting the bit ``SPI_DEVICE_NO_DUMMY`` in the member :cpp:member:`spi_device_interface_config_t::flags`. When disabled, the output frequency can be 80 MHz, even if the GPIO matrix is used.
+    If the Host only writes data, the **dummy bit workaround** and the frequency check can be disabled by setting the bit ``SPI_DEVICE_NO_DUMMY`` in the member :cpp:member:`spi_device_interface_config_t::flags`. When disabled, the output frequency can be 80 MHz, even if the GPIO matrix is used.
 
     :cpp:member:`spi_device_interface_config_t::flags`
 
@@ -719,9 +721,9 @@ Please note that the ISR is disabled during flash operation by default. To keep 
        * - ESP32 slave using IO_MUX
          - 50
        * - ESP32 slave using GPIO_MATRIX
-         - 75 
+         - 75
 
-    The MISO path delay (valid time) consists of a slave's *input delay* plus the master's *GPIO matrix delay*. The delay determines the above frequency limit for full-duplex transfers. Once exceeding, full-duplex transfers will not work as well as the half-duplex transactions that use dummy bits. The frequency limit is:
+    The MISO path delay (valid time) consists of a slave's **input delay** plus the master's **GPIO matrix delay**. The delay determines the above frequency limit for full-duplex transfers. Once exceeding, full-duplex transfers will not work as well as the half-duplex transactions that use dummy bits. The frequency limit is:
 
         *Freq limit [MHz] = 80 / (floor(MISO delay[ns]/12.5) + 1)*
 
@@ -729,7 +731,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
 
     .. image:: /../_static/spi_master_freq_tv.png
 
-    Corresponding frequency limits for different Devices with different *input delay* times are shown in the table below.
+    Corresponding frequency limits for different Devices with different **input delay** times are shown in the table below.
 
     When the master is IO_MUX (0 ns):
 
@@ -788,7 +790,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
         This can prohibit you from transmitting and receiving data longer than 64 bytes.
         3. Try using the command and address fields to replace the Write phase.
 
-    2. Full-duplex transactions are not compatible with the *dummy bit workaround*, hence the frequency is limited. See :ref:`dummy bit speed-up workaround <dummy_bit_workaround>`.
+    2. Full-duplex transactions are not compatible with the **dummy bit workaround**, hence the frequency is limited. See :ref:`dummy bit speed-up workaround <dummy_bit_workaround>`.
 
     3. ``dummy_bits`` in :cpp:type:`spi_device_interface_config_t` and :cpp:type:`spi_transaction_ext_t` are not available when SPI Read and Write phases are both enabled (regardless of full duplex or half duplex mode).
 

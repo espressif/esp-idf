@@ -58,7 +58,7 @@ The destination FIFO depends on the direction and transfer type of the channel:
 
 .. note::
 
-    The separation of non-periodic and periodic OUT channels to the NPTX and PTX FIFOs is due to the periodic nature of Interrupt and Isochronous endpoints (specified by the ``bInterval`` value of the endpoint). The DWC_OTG will automatically schedule these periodic transfers, thus a separate PTX FIFO allows these periodic transfers to be staged separately.
+    The separation of non-periodic and periodic OUT channels to the NPTX and PTX FIFOs is due to the periodic nature of Interrupt and Isochronous endpoints (specified by the ``bInterval`` value of the endpoint). The DWC_OTG automatically schedules these periodic transfers, thus a separate PTX FIFO allows these periodic transfers to be staged separately.
 
 DMA Engine
 ^^^^^^^^^^
@@ -75,7 +75,7 @@ The DMA engine is responsible for copying data between the FIFOs and main memory
   - A 32-bit Buffer Status Quadlet specifying details of the transfer, and also reports the status of the transfer on completion. The Buffer Status Quadlet has bits to specify whether the QTD should generate an interrupt and/or halt the channel on completion.
   - A 32-bit pointer to the data buffer containing the data payload for OUT transfers, or an empty buffer used to store the data payload for IN transfers.
 
-- The data payload of each QTD can be larger than the MPS (Maximum Packet Size) of its target endpoint. The DWC_OTG hardware will automatically handle splitting of the transfer into multiple transactions.
+- The data payload of each QTD can be larger than the MPS (Maximum Packet Size) of its target endpoint. The DWC_OTG hardware automatically handles splitting of the transfer into multiple transactions.
 - Multiple QTDs can be placed into a single QTD List. A channel will then execute each QTD in the list automatically, and optionally loop back around if configured to do so.
 - Before a channel starts data transfer, it is configured with a QTD list (and QTD list length). Once the channel is enabled, USB transfers are executed automatically by the hardware.
 - A channel can generate interrupts (configurable) on completion of a particular QTD, or an entire QTD list.
@@ -128,17 +128,17 @@ However, there are some minor differences in channel operation and QTD list usag
 Bulk
 ^^^^
 
-Bulk transfers are a simplest. Each QTD represents a bulk transfer of a particular direction, where the DWC_OTG will automatically split a particular QTD into multiple MPS sized transactions. Thus it is possible to fill a QTD list with multiple bulk transfers, and have the entire list executed automatically (i.e., only interrupt on completion of the last QTD).
+Bulk transfers are a simplest. Each QTD represents a bulk transfer of a particular direction, where the DWC_OTG automatically splits a particular QTD into multiple MPS sized transactions. Thus it is possible to fill a QTD list with multiple bulk transfers, and have the entire list executed automatically (i.e., only interrupt on completion of the last QTD).
 
 Control
 ^^^^^^^
 
-Control transfers are more complicated as they are bi-directional (i.e., each control transfer stage can have a different direction). Thus, a separate QTD is required for each stage, and each QTD must halt the channel on completion. Halting the channel after each QTD allows changing the channel's direction to be changed by reconfiguring the channel's CSRs. Thus a typical control transfer will consist of 3 QTDs (one for each stage).
+Control transfers are more complicated as they are bi-directional (i.e., each control transfer stage can have a different direction). Thus, a separate QTD is required for each stage, and each QTD must halt the channel on completion. Halting the channel after each QTD allows changing the channel's direction to be changed by reconfiguring the channel's CSRs. Thus a typical control transfer consists of 3 QTDs (one for each stage).
 
 Interrupt
 ^^^^^^^^^
 
-In accordance with the USB2.0 specification, interrupt transfers will execute transactions at the endpoints specified service period (i.e., ``bInterval``). A particular interrupt endpoint may not execute more than one interrupt transaction within a service period. The service period is specified in number of (micro)frames, thus a particular interrupt endpoint will generally execute one transaction every Nth (micro)frame until the transfer is complete. For interrupt channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
+In accordance with the USB2.0 specification, interrupt transfers executes transactions at the endpoints specified service period (i.e., ``bInterval``). A particular interrupt endpoint may not execute more than one interrupt transaction within a service period. The service period is specified in number of (micro)frames, thus a particular interrupt endpoint will generally execute one transaction every Nth (micro)frame until the transfer is complete. For interrupt channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
 
 .. note::
 
@@ -149,8 +149,8 @@ Thus, interrupt transfers in Host Mode Scatter/Gather DMA have the following pec
 - If a QTD payload is larger than the endpoint's MPS, the channel will automatically split the transfer into multiple MPS sized transactions (similar to bulk transfers). However, each transaction **is executed at endpoint's specified service period** (i.e., one transaction per ``bInterval``) until the transfer completes.
 - For Interrupt IN transfers, if a short packet is received (i.e., transaction's data payload is < MPS), this indicates that the endpoint has no more data to send. In this case:
 
-  - the channel will generate an extra channel interrupt even if the transfer's QTD did not set the IOC (interrupt on complete) bit.
-  - however, the channel will not be halted even if this extra channel interrupt is generated.
+  - the channel generates an extra channel interrupt even if the transfer's QTD did not set the IOC (interrupt on complete) bit.
+  - however, the channel is not halted even if this extra channel interrupt is generated.
   - software must then use this extra interrupt to manually halt the interrupt channel (thus canceling any remaining QTDs in the QTD list).
 
 
@@ -161,9 +161,9 @@ Thus, interrupt transfers in Host Mode Scatter/Gather DMA have the following pec
 Isochronous
 ^^^^^^^^^^^
 
-In accordance with the USB2.0 specification, isochronous transfers will execute transactions at the endpoints specified service period (i.e., ``bInterval``) in order to achieve a constant rate of data transfer. A particular isochronous endpoint may not execute more than one isochronous transaction within a service period. The service period is specified in number of (micro)frames, thus a particular isochronous endpoint will generally execute one transaction every Nth (micro)frame until the transfer is complete. For isochronous channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
+In accordance with the USB2.0 specification, isochronous transfers executes transactions at the endpoints specified service period (i.e., ``bInterval``) in order to achieve a constant rate of data transfer. A particular isochronous endpoint may not execute more than one isochronous transaction within a service period. The service period is specified in number of (micro)frames, thus a particular isochronous endpoint will generally execute one transaction every Nth (micro)frame until the transfer is complete. For isochronous channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
 
-However, unlike interrupt transactions, isochronous transactions will not be retried on failure (or NAK), due to the need to maintain the constant data rate.
+However, unlike interrupt transactions, isochronous transactions are not retried on failure (or NAK), due to the need to maintain the constant data rate.
 
 .. note::
 
@@ -171,7 +171,7 @@ However, unlike interrupt transactions, isochronous transactions will not be ret
 
 Thus, isochronous transfers in Host Mode Scatter/Gather DMA have the following peculiarities:
 
-- A QTD must be allocated for each (micro)frame. However, non-service service period QTDs should be left blank (i.e., only ever Nth QTD should be filled if the channel's service period is every Nth (micro)frame).
+- A QTD must be allocated for each (micro) frame. However, non-service service period QTDs should be left blank (i.e., only ever Nth QTD should be filled if the channel's service period is every Nth (micro)frame).
 - **Each filled QTD must represent a single transaction instead of a transfer**.
 - Because isochronous transactions are not retried on failure, the status each completed QTD must be checked.
 
@@ -185,8 +185,8 @@ Port Errors Do Not Trigger a Channel Interrupt
 
 If a port error occurs (such as a sudden disconnection or port over-current) while there are one or more active channels...
 
-- The active channels will remain active (i.e., ``HCCHAR.ChEna`` will remain set) and no channel interrupts are generated.
-- Channels could in theory be disabled by setting ``HCCHAR.ChDis``, but this will not work for Isochronous channels as the channel disabled interrupt is never generated
+- The active channels remains active (i.e., ``HCCHAR.ChEna`` remains set) and no channel interrupts are generated.
+- Channels could in theory be disabled by setting ``HCCHAR.ChDis``, but this does not work for Isochronous channels as the channel disabled interrupt is never generated.
 
 Therefore, on port errors, a controller soft reset should be used to ensure all channels are disabled.
 
