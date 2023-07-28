@@ -1,5 +1,7 @@
 # Compatibility Between ESP-IDF Releases and Revisions of Espressif SoCs
 
+* [中文版](./COMPATIBILITY_CN.md)
+
 Espressif keeps improving the performance of its SoCs by providing new chip revisions. However, some of the improvements require special software support. Some of the software supports are even mandatory for the chip revisions to run normally.
 
 This document describes the compatibility between ESP-IDF releases and Espressif SoC revisions.
@@ -10,17 +12,17 @@ See [Compatibility Advisory for Chip Revision Numbering Scheme](https://www.espr
 
 You can run `esptool chip_id` to detect the series and revision of an SoC. See [SoC Errata](https://www.espressif.com.cn/en/support/documents/technical-documents?keys=errata) for more on how to distinguish between chip revisions, and the improvements provided by chip revisions. And run `idf.py --version` to know the version of current ESP-IDF.
 
-## Chip Revisions
+## ESP-IDF Support for Different Chip Revisions
 
-The tables in sections below show the requirements to ESP-IDF version of chip revisions. There are two columns `Recommended` and `Required`:
+The sections below show the requirements to ESP-IDF version of chip revisions. Each chip revision corresponds to specific `Recommended` and `Required` versions of ESP-IDF:
 
 - `Recommended`: shows from which version of ESP-IDF you can make use of all the improvements of the chip revision. Running binary compiled with ESP-IDF below the `Recommended` version of a chip revision, software may not benefit from the bugfix/features provided by the chip revision. The chip will have almost the same behavior as its previous revision.
 
-- `Required`: shows the minimum version required to run the chip revision normally. Running binary compiled below the `Required` version, the binary may have unpredictable behaviour.
+- `Required`: shows the minimum version required to run the chip revision normally. Running binary compiled below the `Required` version, the binary may have unpredictable behavior.
 
-Though the software can make use of all the features of a chip revision, if its version is higher than the `Recommended` version of the chip, it's still recommended to use the latest bugfix version of the release branch.
+Though the software can make use of all the features of a chip revision, if its version is higher than the `Recommended` version of the chip, it is still recommended to use the latest bugfix version of the release branch. The latest bugfix version fixes a number of issues and helps improve product stability.
 
-For example, if we have a chip, whose `Required`/`Recommended` version of `release/v5.1` branch is `v5.1.2`/`v5.1.4`, and the latest release on that branch is `v5.1.6`. Then the chip will not boot up with ESP-IDF `v5.1`-`v5.1.1` (or will have unpredictable behavior), and application may not make use of all benefits of the chip, when running with ESP-IDF `v5.1.2`-`v5.1.3`. Though `5.1.4` well supports the chip revision, it's still recommended to upgrade ESP-IDF to `v5.1.6`.
+For example, if we have a chip, whose `Required`/`Recommended` version of `release/v5.1` branch is `v5.1.2`/`v5.1.4`, and the latest release on that branch is `v5.1.6`. Then the chip will not boot up with ESP-IDF `v5.1`-`v5.1.1` or will have unpredictable behavior, and application may not make use of all benefits of the chip, when running with ESP-IDF `v5.1.2` or `v5.1.3`. Though `v5.1.4` well supports the chip revision, it is still recommended to upgrade ESP-IDF to `v5.1.6`.
 
 ### ESP32
 
@@ -90,8 +92,8 @@ To be added.
 To be added.
 
 
-## What if ESP-IDF version is lower than the `Required` version?
+## What If the ESP-IDF Version Is Lower than the `Required` Version?
 
 Latest ESP-IDF versions can prevent from downloading to, or even execute binaries on unsupported chips. ESP-IDF of versions v4.4.5+, v5.0.1+, v5.1 and above have both esptool download check and bootloader loading check against the chip revision. While ESP-IDF v4.3.5 has only esptool downloading check.
 
-For earlier ESP-IDF versions without such checking, that is incompatible with the given chip revision, the behavior running such versions on such hardware is undetermined.
+For earlier ESP-IDF versions without such checking, which is incompatible with the given chip revision, the chips running such versions will have unpredictable behavior.
