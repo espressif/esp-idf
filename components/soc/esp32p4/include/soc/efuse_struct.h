@@ -197,7 +197,10 @@ typedef union {
          *  Represents whether power glitch function is enabled. 1: enabled. 0: disabled.
          */
         uint32_t powerglitch_en:1;
-        uint32_t reserved_11:1;
+        /** dis_usb_serial_jtag : RO; bitpos: [11]; default: 0;
+         *  Represents whether USB-Serial-JTAG is disabled or enabled. 1: disabled. 0: enabled.
+         */
+        uint32_t dis_usb_serial_jtag:1;
         /** dis_force_download : RO; bitpos: [12]; default: 0;
          *  Represents whether the function that forces chip into download mode is disabled or
          *  enabled. 1: disabled. 0: enabled.
@@ -233,7 +236,14 @@ typedef union {
          *  mode). 1: disabled. 0: enabled.
          */
         uint32_t dis_download_manual_encrypt:1;
-        uint32_t reserved_21:4;
+        /** usb_device_drefh : RO; bitpos: [22:21]; default: 0;
+         *  USB intphy of usb device signle-end input high threshold, 1.76V to 2V. Step by 80mV
+         */
+        uint32_t usb_device_drefh:2;
+        /** usb_otg11_drefh : RO; bitpos: [24:23]; default: 0;
+         *  USB intphy of usb otg11 signle-end input high threshold, 1.76V to 2V. Step by 80mV
+         */
+        uint32_t usb_otg11_drefh:2;
         /** usb_phy_sel : RO; bitpos: [25]; default: 0;
          *  TBD
          */
@@ -280,7 +290,10 @@ typedef union {
          *  Set this bit to configure flash encryption use xts-128 key, else use xts-256 key.
          */
         uint32_t xts_key_length_256:1;
-        uint32_t reserved_15:1;
+        /** rd_reserve_0_79 : RW; bitpos: [15]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_79:1;
         /** wdt_delay_sel : RO; bitpos: [17:16]; default: 0;
          *  Represents whether RTC watchdog timeout threshold is selected at startup. 1:
          *  selected. 0: not selected.
@@ -361,7 +374,10 @@ typedef union {
          *  enabled. 0: disabled.
          */
         uint32_t secure_boot_aggressive_revoke:1;
-        uint32_t reserved_22:1;
+        /** rd_reserve_0_118 : RW; bitpos: [22]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_118:1;
         /** flash_type : RO; bitpos: [23]; default: 0;
          *  The type of interfaced flash. 0: four data lines, 1: eight data lines.
          */
@@ -458,27 +474,40 @@ typedef union {
  */
 typedef union {
     struct {
-        /** 0pxa_tieh_sel_0 : RO; bitpos: [1:0]; default: 0;
+        /** pxa0_tieh_sel_0 : RO; bitpos: [1:0]; default: 0;
          *  TBD
          */
-        uint32_t rd_0pxa_tieh_sel_0:2;
-        /** 0pxa_tieh_sel_1 : RO; bitpos: [3:2]; default: 0;
+        uint32_t pxa0_tieh_sel_0:2;
+        /** pxa0_tieh_sel_1 : RO; bitpos: [3:2]; default: 0;
          *  TBD.
          */
-        uint32_t rd_0pxa_tieh_sel_1:2;
-        /** 0pxa_tieh_sel_2 : RO; bitpos: [5:4]; default: 0;
+        uint32_t pxa0_tieh_sel_1:2;
+        /** pxa0_tieh_sel_2 : RO; bitpos: [5:4]; default: 0;
          *  TBD.
          */
-        uint32_t rd_0pxa_tieh_sel_2:2;
-        /** 0pxa_tieh_sel_3 : RO; bitpos: [7:6]; default: 0;
+        uint32_t pxa0_tieh_sel_2:2;
+        /** pxa0_tieh_sel_3 : RO; bitpos: [7:6]; default: 0;
          *  TBD.
          */
-        uint32_t rd_0pxa_tieh_sel_3:2;
+        uint32_t pxa0_tieh_sel_3:2;
         /** km_disable_deploy_mode : RO; bitpos: [11:8]; default: 0;
          *  TBD.
          */
         uint32_t km_disable_deploy_mode:4;
-        uint32_t reserved_12:6;
+        /** usb_device_drefl : RO; bitpos: [13:12]; default: 0;
+         *  Represents the usb device single-end input low threhold, 0.8 V to 1.04 V with step
+         *  of 80 mV.
+         */
+        uint32_t usb_device_drefl:2;
+        /** usb_otg11_drefl : RO; bitpos: [15:14]; default: 0;
+         *  Represents the usb otg11 single-end input low threhold, 0.8 V to 1.04 V with step
+         *  of 80 mV.
+         */
+        uint32_t usb_otg11_drefl:2;
+        /** rd_reserve_0_176 : RW; bitpos: [17:16]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_176:2;
         /** hp_pwr_src_sel : RO; bitpos: [18]; default: 0;
          *  HP system power source select. 0:LDO. 1: DCDC.
          */
@@ -495,7 +524,10 @@ typedef union {
          *  Set this bit to disable super-watchdog.
          */
         uint32_t dis_swd:1;
-        uint32_t reserved_22:10;
+        /** rd_reserve_0_182 : RW; bitpos: [31:22]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_182:10;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;
@@ -1551,7 +1583,10 @@ typedef union {
          *  Indicates a programming error of POWERGLITCH_EN.
          */
         uint32_t powerglitch_en_err:1;
-        uint32_t reserved_11:1;
+        /** dis_usb_serial_jtag_err : RO; bitpos: [11]; default: 0;
+         *  Indicates a programming error of DIS_USB_SERIAL_JTAG.
+         */
+        uint32_t dis_usb_serial_jtag_err:1;
         /** dis_force_download_err : RO; bitpos: [12]; default: 0;
          *  Indicates a programming error of DIS_FORCE_DOWNLOAD.
          */
@@ -1580,7 +1615,14 @@ typedef union {
          *  Indicates a programming error of DIS_DOWNLOAD_MANUAL_ENCRYPT.
          */
         uint32_t dis_download_manual_encrypt_err:1;
-        uint32_t reserved_21:4;
+        /** usb_device_drefh_err : RO; bitpos: [22:21]; default: 0;
+         *  Indicates a programming error of USB_DEVICE_DREFH.
+         */
+        uint32_t usb_device_drefh_err:2;
+        /** usb_otg11_drefh_err : RO; bitpos: [24:23]; default: 0;
+         *  Indicates a programming error of USB_OTG11_DREFH.
+         */
+        uint32_t usb_otg11_drefh_err:2;
         /** usb_phy_sel_err : RO; bitpos: [25]; default: 0;
          *  Indicates a programming error of USB_PHY_SEL.
          */
@@ -1783,22 +1825,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** 0pxa_tieh_sel_0_err : RO; bitpos: [1:0]; default: 0;
+        /** pxa0_tieh_sel_0_err : RO; bitpos: [1:0]; default: 0;
          *  Indicates a programming error of 0PXA_TIEH_SEL_0.
          */
-        uint32_t rd_0pxa_tieh_sel_0_err:2;
-        /** 0pxa_tieh_sel_1_err : RO; bitpos: [3:2]; default: 0;
+        uint32_t pxa0_tieh_sel_0_err:2;
+        /** pxa0_tieh_sel_1_err : RO; bitpos: [3:2]; default: 0;
          *  Indicates a programming error of 0PXA_TIEH_SEL_1.
          */
-        uint32_t rd_0pxa_tieh_sel_1_err:2;
-        /** 0pxa_tieh_sel_2_err : RO; bitpos: [5:4]; default: 0;
+        uint32_t pxa0_tieh_sel_1_err:2;
+        /** pxa0_tieh_sel_2_err : RO; bitpos: [5:4]; default: 0;
          *  Indicates a programming error of 0PXA_TIEH_SEL_2.
          */
-        uint32_t rd_0pxa_tieh_sel_2_err:2;
-        /** 0pxa_tieh_sel_3_err : RO; bitpos: [7:6]; default: 0;
+        uint32_t pxa0_tieh_sel_2_err:2;
+        /** pxa0_tieh_sel_3_err : RO; bitpos: [7:6]; default: 0;
          *  Indicates a programming error of 0PXA_TIEH_SEL_3.
          */
-        uint32_t rd_0pxa_tieh_sel_3_err:2;
+        uint32_t pxa0_tieh_sel_3_err:2;
         /** km_disable_deploy_mode_err : RO; bitpos: [11:8]; default: 0;
          *  TBD.
          */
@@ -1996,7 +2038,30 @@ typedef union {
          *  Indicates the state of the eFuse state machine.
          */
         uint32_t state:4;
-        uint32_t reserved_4:6;
+        /** otp_load_sw : RO; bitpos: [4]; default: 0;
+         *  The value of OTP_LOAD_SW.
+         */
+        uint32_t otp_load_sw:1;
+        /** otp_vddq_c_sync2 : RO; bitpos: [5]; default: 0;
+         *  The value of OTP_VDDQ_C_SYNC2.
+         */
+        uint32_t otp_vddq_c_sync2:1;
+        /** otp_strobe_sw : RO; bitpos: [6]; default: 0;
+         *  The value of OTP_STROBE_SW.
+         */
+        uint32_t otp_strobe_sw:1;
+        /** otp_csb_sw : RO; bitpos: [7]; default: 0;
+         *  The value of OTP_CSB_SW.
+         */
+        uint32_t otp_csb_sw:1;
+        /** otp_pgenb_sw : RO; bitpos: [8]; default: 0;
+         *  The value of OTP_PGENB_SW.
+         */
+        uint32_t otp_pgenb_sw:1;
+        /** otp_vddq_is_sw : RO; bitpos: [9]; default: 0;
+         *  The value of OTP_VDDQ_IS_SW.
+         */
+        uint32_t otp_vddq_is_sw:1;
         /** blk0_valid_bit_cnt : RO; bitpos: [19:10]; default: 0;
          *  Indicates the number of block valid bit.
          */

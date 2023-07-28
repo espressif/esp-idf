@@ -139,7 +139,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT)
 #if CONFIG_IDF_TARGET_ESP32P4
                 //TODO: IDF-7545
-                && esp_efuse_read_field_bit(ESP_EFUSE_DIS_SPI_DOWNLOAD_MSPI)
+                && esp_efuse_read_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS)
 #else
 #if SOC_EFUSE_DIS_DOWNLOAD_ICACHE
                 && esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE)
@@ -194,7 +194,7 @@ void esp_flash_encryption_set_release_mode(void)
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
 #if CONFIG_IDF_TARGET_ESP32P4
     //TODO: IDF-7545
-    esp_efuse_write_field_bit(ESP_EFUSE_DIS_SPI_DOWNLOAD_MSPI);
+    esp_efuse_write_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS);
 #else
 #if SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
@@ -347,7 +347,7 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
 
 #if CONFIG_IDF_TARGET_ESP32P4
     //TODO: IDF-7545
-    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_SPI_DOWNLOAD_MSPI);
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS);
     result &= secure;
     if (!secure) {
         ESP_LOGW(TAG, "Not disabled UART bootloader download mspi (set DIS_DOWNLOAD_MSPI->1)");
