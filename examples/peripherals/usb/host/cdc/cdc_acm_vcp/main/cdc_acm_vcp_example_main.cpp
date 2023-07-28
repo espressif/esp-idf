@@ -1,19 +1,23 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <stdio.h>
 #include <string.h>
-#include "sdkconfig.h"
-#include "cp210x_usb.hpp"
-#include "ftdi_usb.hpp"
-#include "usb/usb_host.h"
+
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+
+#include "usb/cdc_acm_host.h"
+#include "usb/vcp_ch34x.hpp"
+#include "usb/vcp_cp210x.hpp"
+#include "usb/vcp_ftdi.hpp"
+#include "usb/vcp.hpp"
+#include "usb/usb_host.h"
 
 using namespace esp_usb;
 
@@ -23,15 +27,36 @@ using namespace esp_usb;
 #define EXAMPLE_PARITY       (0)      // 0: None, 1: Odd, 2: Even, 3: Mark, 4: Space
 #define EXAMPLE_DATA_BITS    (8)
 
+namespace {
 static const char *TAG = "VCP example";
-
 static SemaphoreHandle_t device_disconnected_sem;
 
-static void handle_rx(uint8_t *data, size_t data_len, void *arg)
+/**
+ * @brief Data received callback
+ *
+ * Just pass received data to stdout
+ *
+ * @param[in] data     Pointer to received data
+ * @param[in] data_len Length of received data in bytes
+ * @param[in] arg      Argument we passed to the device open function
+ * @return
+ *   true:  We have processed the received data
+ *   false: We expect more data
+ */
+static bool handle_rx(const uint8_t *data, size_t data_len, void *arg)
 {
     printf("%.*s", data_len, data);
+    return true;
 }
 
+/**
+ * @brief Device event callback
+ *
+ * Apart from handling device disconnection it doesn't do anything useful
+ *
+ * @param[in] event    Device event type and data
+ * @param[in] user_ctx Argument we passed to the device open function
+ */
 static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
 {
     switch (event->type) {
@@ -43,14 +68,19 @@ static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_
             xSemaphoreGive(device_disconnected_sem);
             break;
         case CDC_ACM_HOST_SERIAL_STATE:
-            ESP_LOGI(TAG, "serial state notif 0x%04X", event->data.serial_state.val);
+            ESP_LOGI(TAG, "Serial state notif 0x%04X", event->data.serial_state.val);
             break;
         case CDC_ACM_HOST_NETWORK_CONNECTION:
         default: break;
     }
 }
 
-void usb_lib_task(void *arg)
+/**
+ * @brief USB Host library handling task
+ *
+ * @param arg Unused
+ */
+static void usb_lib_task(void *arg)
 {
     while (1) {
         // Start handling system events
@@ -65,13 +95,19 @@ void usb_lib_task(void *arg)
         }
     }
 }
+}
 
+/**
+ * @brief Main application
+ *
+ * This function shows how you can use Virtual COM Port drivers
+ */
 extern "C" void app_main(void)
 {
     device_disconnected_sem = xSemaphoreCreateBinary();
     assert(device_disconnected_sem);
 
-    //Install USB Host driver. Should only be called once in entire application
+    // Install USB Host driver. Should only be called once in entire application
     ESP_LOGI(TAG, "Installing USB Host");
     const usb_host_config_t host_config = {
         .skip_phy_setup = false,
@@ -80,37 +116,37 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 
     // Create a task that will handle USB library events
-    xTaskCreate(usb_lib_task, "usb_lib", 4096, NULL, 10, NULL);
+    BaseType_t task_created = xTaskCreate(usb_lib_task, "usb_lib", 4096, NULL, 10, NULL);
+    assert(task_created == pdTRUE);
 
     ESP_LOGI(TAG, "Installing CDC-ACM driver");
     ESP_ERROR_CHECK(cdc_acm_host_install(NULL));
 
+    // Register VCP drivers to VCP service
+    VCP::register_driver<FT23x>();
+    VCP::register_driver<CP210x>();
+    VCP::register_driver<CH34x>();
+
+    // Do everything else in a loop, so we can demonstrate USB device reconnections
     while (true) {
         const cdc_acm_host_device_config_t dev_config = {
-            .connection_timeout_ms = 10000,
-            .out_buffer_size = 64,
+            .connection_timeout_ms = 5000, // 5 seconds, enough time to plug the device in or experiment with timeout
+            .out_buffer_size = 512,
+            .in_buffer_size = 512,
             .event_cb = handle_event,
             .data_cb = handle_rx,
             .user_arg = NULL,
         };
 
-#if defined(CONFIG_EXAMPLE_USE_FTDI)
-        FT23x *vcp;
-        try {
-            ESP_LOGI(TAG, "Opening FT232 UART device");
-            vcp = FT23x::open_ftdi(FTDI_FT232_PID, &dev_config);
+        // You don't need to know the device's VID and PID. Just plug in any device and the VCP service will load correct (already registered) driver for the device
+        ESP_LOGI(TAG, "Opening any VCP device...");
+        auto vcp = std::unique_ptr<CdcAcmDevice>(VCP::open(&dev_config));
+
+        if (vcp == nullptr) {
+            ESP_LOGI(TAG, "Failed to open VCP device");
+            continue;
         }
-#else
-        CP210x *vcp;
-        try {
-            ESP_LOGI(TAG, "Opening CP210X device");
-            vcp = CP210x::open_cp210x(CP210X_PID, &dev_config);
-        }
-#endif
-        catch (esp_err_t err) {
-            ESP_LOGE(TAG, "The required device was not opened.\nExiting...");
-            return;
-        }
+        vTaskDelay(10);
 
         ESP_LOGI(TAG, "Setting up line coding");
         cdc_acm_line_coding_t line_coding = {
@@ -129,8 +165,14 @@ extern "C" void app_main(void)
         ESP_ERROR_CHECK(vcp->tx_blocking((uint8_t *)"Test string", 12));
         */
 
+        // Send some dummy data
+        ESP_LOGI(TAG, "Sending data through CdcAcmDevice");
+        uint8_t data[] = "test_string";
+        ESP_ERROR_CHECK(vcp->tx_blocking(data, sizeof(data)));
+        ESP_ERROR_CHECK(vcp->set_control_line_state(true, true));
+
         // We are done. Wait for device disconnection and start over
+        ESP_LOGI(TAG, "Done. You can reconnect the VCP device to run again.");
         xSemaphoreTake(device_disconnected_sem, portMAX_DELAY);
-        delete vcp;
     }
 }

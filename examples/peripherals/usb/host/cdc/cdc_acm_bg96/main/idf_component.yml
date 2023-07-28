@@ -1,5 +1,0 @@
-## IDF Component Manager Manifest File
-dependencies:
-  idf: ">=4.4"
-  igrr/libnmea: "^0.1.1"
-  usb_host_cdc_acm: "1.*"
