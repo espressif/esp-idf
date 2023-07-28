@@ -12,11 +12,14 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "hal/aes_types.h"
+#if SOC_AES_SUPPORTED
 #include "hal/aes_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,12 +14,17 @@
 
 #pragma once
 
-#include "hal/i2c_ll.h"
+#include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
+#if SOC_I2C_SUPPORTED
+#include "hal/i2c_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_I2C_SUPPORTED
 
 /**
  * @brief I2C hal Context definition
@@ -130,6 +135,8 @@ void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
  * @param timing_config Timing config structure.
  */
 void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config);
+
+#endif  // #if SOC_I2C_SUPPORTED
 
 #ifdef __cplusplus
 }

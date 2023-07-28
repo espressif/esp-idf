@@ -89,6 +89,9 @@ typedef soc_periph_adc_digi_clk_src_t    adc_continuous_clk_src_t;  ///< Clock s
 #elif SOC_ADC_RTC_CTRL_SUPPORTED
 typedef soc_periph_adc_rtc_clk_src_t     adc_oneshot_clk_src_t;     ///< Clock source type of oneshot mode which uses RTC controller
 typedef soc_periph_adc_digi_clk_src_t    adc_continuous_clk_src_t;  ///< Clock source type of continuous mode which uses digital controller
+#else
+typedef int                              adc_oneshot_clk_src_t;     ///< Default type
+typedef int                              adc_continuous_clk_src_t;  ///< Default type
 #endif
 
 /**

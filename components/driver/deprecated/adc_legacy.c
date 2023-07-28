@@ -23,7 +23,7 @@
 #include "esp_private/sar_periph_ctrl.h"
 #include "adc1_private.h"
 #include "hal/adc_types.h"
-#include "hal/adc_hal.h"
+#include "hal/adc_ll.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
@@ -164,7 +164,7 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 #endif
     }
     if (adc_unit == ADC_UNIT_2) {
-        adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+        adc_ll_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
         adc_oneshot_ll_output_invert(ADC_UNIT_2, ADC_LL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
         adc_ll_set_sar_clk_div(ADC_UNIT_2, ADC_LL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_2));
     }

@@ -13,7 +13,6 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
-#include "hal/adc_hal.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
 #ifdef CONFIG_PM_ENABLE
@@ -237,7 +236,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     adc_ll_digi_set_fsm_time(ADC_LL_FSM_RSTB_WAIT_DEFAULT, ADC_LL_FSM_START_WAIT_DEFAULT,
                              ADC_LL_FSM_STANDBY_WAIT_DEFAULT);
     adc_ll_set_sample_cycle(ADC_LL_SAMPLE_CYCLE_DEFAULT);
-    adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+    adc_ll_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
     adc_ll_digi_output_invert(ADC_UNIT_1, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
     adc_ll_digi_output_invert(ADC_UNIT_2, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
     adc_ll_digi_set_clk_div(ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT);

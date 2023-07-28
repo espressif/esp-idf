@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,15 +26,19 @@
 // field comments.
 
 #pragma once
-#include "hal/spi_ll.h"
-#include <esp_err.h>
-#include "soc/lldesc.h"
+#include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/spi_types.h"
+#if SOC_GPSPI_SUPPORTED
+#include "hal/spi_ll.h"
+#include "soc/lldesc.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_GPSPI_SUPPORTED
 
 /**
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration
@@ -268,6 +272,8 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
  *                       allowed. Left 0 if not known.
  */
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns);
+
+#endif  //#if SOC_GPSPI_SUPPORTED
 
 #ifdef __cplusplus
 }

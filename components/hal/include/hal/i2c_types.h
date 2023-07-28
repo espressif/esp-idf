@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +97,11 @@ typedef struct {
  * @brief I2C group clock source
  */
 typedef soc_periph_i2c_clk_src_t i2c_clock_source_t;
+#else
+/**
+ * @brief Default type
+ */
+typedef int                      i2c_clock_source_t;
 #endif
 
 
