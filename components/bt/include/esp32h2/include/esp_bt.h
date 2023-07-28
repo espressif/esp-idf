@@ -14,7 +14,7 @@
 #include "esp_task.h"
 
 #include "nimble/nimble_npl.h"
-#include "esp_bt_cfg.h"
+#include "../../../../controller/esp32h2/esp_bt_cfg.h"
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
@@ -25,9 +25,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Bluetooth mode for controller enable/disable
+ * @brief Bluetooth mode for controller enable/disable.
  */
-
 typedef enum {
     ESP_BT_MODE_IDLE       = 0x00,   /*!< Bluetooth is not running */
     ESP_BT_MODE_BLE        = 0x01,   /*!< Run BLE mode */
@@ -36,9 +35,8 @@ typedef enum {
 } esp_bt_mode_t;
 
 /**
- * @brief Bluetooth controller enable/disable/initialised/de-initialised status
+ * @brief Bluetooth controller enable/disable/initialised/de-initialised status.
  */
-
 typedef enum {
     ESP_BT_CONTROLLER_STATUS_IDLE = 0,   /*!< Controller is in idle state */
     ESP_BT_CONTROLLER_STATUS_INITED,     /*!< Controller is in initialising state */
@@ -98,6 +96,9 @@ typedef enum {
     ESP_PWR_LVL_INVALID = 0xFF,       /*!< Indicates an invalid value */
 } esp_power_level_t;
 
+/**
+ * @brief The enhanced type of which tx power, could set Advertising/Connection/Default and etc.
+ */
 typedef enum {
     ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0,
     ESP_BLE_ENHANCED_PWR_TYPE_ADV,
@@ -107,9 +108,12 @@ typedef enum {
     ESP_BLE_ENHANCED_PWR_TYPE_MAX,
 } esp_ble_enhanced_power_type_t;
 
+/**
+ * @brief Address type and address value.
+ */
 typedef struct {
-    uint8_t type;
-    uint8_t val[6];
+    uint8_t type;     /*!< Type of the Bluetooth address (public, random, etc.) */
+    uint8_t val[6];   /*!< Array containing the 6-byte Bluetooth address value */
 } esp_ble_addr_t;
 
 /**
@@ -156,60 +160,59 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
  *        Config mask indicate which functions enabled, this means
  *        some options or parameters of some functions enabled by config mask.
  */
-
 typedef struct {
-    uint32_t config_version;
-    uint16_t ble_ll_resolv_list_size;
-    uint16_t ble_hci_evt_hi_buf_count;
-    uint16_t ble_hci_evt_lo_buf_count;
-    uint8_t ble_ll_sync_list_cnt;
-    uint8_t ble_ll_sync_cnt;
-    uint16_t ble_ll_rsp_dup_list_count;
-    uint16_t ble_ll_adv_dup_list_count;
-    uint8_t ble_ll_tx_pwr_dbm;
-    uint64_t rtc_freq;
-    uint16_t ble_ll_sca;
-    uint8_t ble_ll_scan_phy_number;
-    uint16_t ble_ll_conn_def_auth_pyld_tmo;
-    uint8_t ble_ll_jitter_usecs;
-    uint16_t ble_ll_sched_max_adv_pdu_usecs;
-    uint16_t ble_ll_sched_direct_adv_max_usecs;
-    uint16_t ble_ll_sched_adv_max_usecs;
-    uint16_t ble_scan_rsp_data_max_len;
-    uint8_t ble_ll_cfg_num_hci_cmd_pkts;
-    uint32_t ble_ll_ctrl_proc_timeout_ms;
-    uint16_t nimble_max_connections;
-    uint8_t ble_whitelist_size;
-    uint16_t ble_acl_buf_size;
-    uint16_t ble_acl_buf_count;
-    uint16_t ble_hci_evt_buf_size;
-    uint16_t ble_multi_adv_instances;
-    uint16_t ble_ext_adv_max_size;
-    uint16_t controller_task_stack_size;
-    uint8_t controller_task_prio;
-    uint8_t controller_run_cpu;
-    uint8_t enable_qa_test;
-    uint8_t enable_bqb_test;
-    uint8_t enable_uart_hci;
-    uint8_t ble_hci_uart_port;
-    uint32_t ble_hci_uart_baud;
-    uint8_t ble_hci_uart_data_bits;
-    uint8_t ble_hci_uart_stop_bits;
-    uint8_t ble_hci_uart_flow_ctrl;
-    uint8_t ble_hci_uart_uart_parity;
-    uint8_t enable_tx_cca;
-    uint8_t cca_rssi_thresh;
-    uint8_t sleep_en;
-    uint8_t coex_phy_coded_tx_rx_time_limit;
-    uint8_t dis_scan_backoff;
-    uint8_t ble_scan_classify_filter_enable;
-    uint8_t cca_drop_mode;
-    int8_t cca_low_tx_pwr;
-    uint8_t main_xtal_freq;
-    uint8_t cpu_freq_mhz;
-    uint8_t ignore_wl_for_direct_adv;
-    uint8_t enable_pcl;
-    uint32_t config_magic;
+    uint32_t config_version;                     /*!< Version number of the defined structure */
+    uint16_t ble_ll_resolv_list_size;            /*!< Size of the resolvable private address list */
+    uint16_t ble_hci_evt_hi_buf_count;           /*!< Count of high buffers for HCI events */
+    uint16_t ble_hci_evt_lo_buf_count;           /*!< Count of low buffers for HCI events */
+    uint8_t ble_ll_sync_list_cnt;                /*!< Number of synchronization lists */
+    uint8_t ble_ll_sync_cnt;                     /*!< Number of synchronizations */
+    uint16_t ble_ll_rsp_dup_list_count;          /*!< Count of duplicated lists for scan response packets */
+    uint16_t ble_ll_adv_dup_list_count;          /*!< Count of duplicated lists for advertising packets */
+    uint8_t ble_ll_tx_pwr_dbm;                   /*!< Tx power (transmit power) in dBm */
+    uint64_t rtc_freq;                           /*!< Frequency of RTC (Real-Time Clock) */
+    uint16_t ble_ll_sca;                         /*!< Sleep Clock Accuracy (SCA) parameter */
+    uint8_t ble_ll_scan_phy_number;              /*!< Number of PHYs supported for scanning */
+    uint16_t ble_ll_conn_def_auth_pyld_tmo;      /*!< Connection default authentication payload timeout */
+    uint8_t ble_ll_jitter_usecs;                 /*!< Jitter time in microseconds */
+    uint16_t ble_ll_sched_max_adv_pdu_usecs;     /*!< Maximum time in microseconds for advertising PDU scheduling */
+    uint16_t ble_ll_sched_direct_adv_max_usecs;  /*!< Maximum time in microseconds for directed advertising scheduling */
+    uint16_t ble_ll_sched_adv_max_usecs;         /*!< Maximum time in microseconds for advertising scheduling */
+    uint16_t ble_scan_rsp_data_max_len;          /*!< Maximum length of scan response data */
+    uint8_t ble_ll_cfg_num_hci_cmd_pkts;         /*!< Number of HCI command packets that can be queued */
+    uint32_t ble_ll_ctrl_proc_timeout_ms;        /*!< Control processing timeout in milliseconds */
+    uint16_t nimble_max_connections;             /*!< Maximum number of connections supported */
+    uint8_t ble_whitelist_size;                  /*!< Size of the white list */
+    uint16_t ble_acl_buf_size;                   /*!< Buffer size of ACL (Asynchronous Connection-Less) data */
+    uint16_t ble_acl_buf_count;                  /*!< Buffer count of ACL data */
+    uint16_t ble_hci_evt_buf_size;               /*!< Buffer size for HCI event data */
+    uint16_t ble_multi_adv_instances;            /*!< Number of advertising instances */
+    uint16_t ble_ext_adv_max_size;               /*!< Maximum size of extended advertising data */
+    uint16_t controller_task_stack_size;         /*!< Size of Bluetooth controller task stack */
+    uint8_t controller_task_prio;                /*!< Priority of the Bluetooth task */
+    uint8_t controller_run_cpu;                  /*!< CPU number on which the Bluetooth controller task runs */
+    uint8_t enable_qa_test;                      /*!< Enable for QA test */
+    uint8_t enable_bqb_test;                     /*!< Enable for BQB test */
+    uint8_t enable_uart_hci;                     /*!< Enable UART for HCI (Host Controller Interface) */
+    uint8_t ble_hci_uart_port;                   /*!< Port of UART for HCI */
+    uint32_t ble_hci_uart_baud;                  /*!< Baudrate of UART for HCI */
+    uint8_t ble_hci_uart_data_bits;              /*!< Data bits of UART for HCI */
+    uint8_t ble_hci_uart_stop_bits;              /*!< Stop bits of UART for HCI */
+    uint8_t ble_hci_uart_flow_ctrl;              /*!< Flow control of UART for HCI */
+    uint8_t ble_hci_uart_uart_parity;            /*!< UART parity */
+    uint8_t enable_tx_cca;                       /*!< Enable Clear Channel Assessment (CCA) when transmitting */
+    uint8_t cca_rssi_thresh;                     /*!< RSSI threshold for CCA */
+    uint8_t sleep_en;                            /*!< Enable sleep functionality */
+    uint8_t coex_phy_coded_tx_rx_time_limit;     /*!< Coexistence PHY coded TX and RX time limit */
+    uint8_t dis_scan_backoff;                    /*!< Disable scan backoff */
+    uint8_t ble_scan_classify_filter_enable;     /*!< Enable classification filter for BLE scan */
+    uint8_t cca_drop_mode;                       /*!< CCA drop mode */
+    int8_t cca_low_tx_pwr;                       /*!< Low TX power setting for CCA */
+    uint8_t main_xtal_freq;                      /*!< Main crystal frequency */
+    uint8_t cpu_freq_mhz;                        /*!< CPU frequency in megahertz */
+    uint8_t ignore_wl_for_direct_adv;            /*!< Ignore the white list for directed advertising */
+    uint8_t enable_pcl;                          /*!< Enable power control */
+    uint32_t config_magic;                       /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
 
@@ -266,6 +269,12 @@ typedef struct {
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
+/**
+ * @brief       Initialize BT controller to allocate task and other resource.
+ *              This function should be called only once, before any other BT functions are called.
+ * @param  cfg: Initial configuration of BT controller.
+ * @return      ESP_OK - success, other - failed
+ */
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 
 /**
@@ -273,11 +282,45 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
  * @return status value
  */
 esp_bt_controller_status_t esp_bt_controller_get_status(void);
+
+/**
+ * @brief  Get BLE TX power
+ *         Connection Tx power should only be get after connection created.
+ * @param  power_type : The type of which tx power, could set Advertising/Connection/Default and etc
+ * @return             >= 0 - Power level, < 0 - Invalid
+ */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
+
+/**
+ * @brief  De-initialize BT controller to free resource and delete task.
+ *         You should stop advertising and scanning, as well as
+ *         disconnect all existing connections before de-initializing BT controller.
+ *
+ * This function should be called only once, after any other BT functions are called.
+ * This function is not whole completed, esp_bt_controller_init cannot called after this function.
+ * @return  ESP_OK - success, other - failed
+ */
 esp_err_t esp_bt_controller_deinit(void);
+
+/**
+ * @brief Enable BT controller.
+ *               Due to a known issue, you cannot call esp_bt_controller_enable() a second time
+ *               to change the controller mode dynamically. To change controller mode, call
+ *               esp_bt_controller_disable() and then call esp_bt_controller_enable() with the new mode.
+ * @param mode : the mode(BLE/BT/BTDM) to enable. For compatible of API, retain this argument.
+ * @return       ESP_OK - success, other - failed
+ */
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
+
+/**
+ * @brief  Disable BT controller
+ * @return       ESP_OK - success, other - failed
+ */
 esp_err_t esp_bt_controller_disable(void);
 
+/** @brief esp_vhci_host_callback
+ *  used for vhci call host function to notify what host need to do
+ */
 typedef struct esp_vhci_host_callback {
     void (*notify_host_send_available)(void);               /*!< callback used to notify that the host can send packet to controller */
     int (*notify_host_recv)(uint8_t *data, uint16_t len);   /*!< callback used to notify that the controller has a packet to send to the host*/
@@ -365,13 +408,16 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  */
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
 
-/* Returns random static address or -1 if not present */
+/**
+ * @brief Returns random static address or -1 if not present.
+ * @return ESP_OK - success, other - failed
+ */
 extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-/** @brief esp_ble_controller_log_dump_all
- * dump all controller log information cached in buffer
- * @param output : true for log dump, false will be no effect
+/**
+ * @brief dump all controller log information cached in buffer
+ * @param output : true for log dump, false will take no effect
  */
 void esp_ble_controller_log_dump_all(bool output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
