@@ -30,6 +30,7 @@
 #include "crypto/ccmp.h"
 #include "esp_rom_sys.h"
 #include "esp_common_i.h"
+#include "esp_wpa2_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -517,7 +518,7 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
         if (buf) {
             wpa_sm_ether_send(sm, sm->bssid, ETH_P_EAPOL,
                       buf, buflen);
-            os_free(buf);
+            wpa_sm_free_eapol(buf);
             return -2;
         }
 
@@ -623,6 +624,15 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     int res;
     u8 *kde, *kde_buf = NULL;
     size_t kde_len;
+
+    if (is_wpa2_enterprise_connection()) {
+        wpa2_ent_eap_state_t state = wpa2_get_eap_state();
+        if (state == WPA2_ENT_EAP_STATE_IN_PROGRESS) {
+            wpa_printf(MSG_INFO, "EAP Success has not been processed yet."
+               " Drop EAPOL message.");
+            return;
+        }
+    }
 
     wpa_sm_set_state(WPA_FIRST_HALF_4WAY_HANDSHAKE);
 
