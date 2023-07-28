@@ -112,7 +112,7 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
     lp_periph_set_clk_src(LP_PERIPH_I2C0_MODULE, (soc_module_clk_t)source_clk);
 
     /* Configure LP I2C timing paramters. source_clk is ignored for LP_I2C in this call */
-    i2c_hal_set_bus_timing(&i2c_hal, (i2c_clock_source_t)source_clk, cfg->i2c_timing_cfg.clk_speed_hz, source_freq);
+    i2c_hal_set_bus_timing(&i2c_hal, cfg->i2c_timing_cfg.clk_speed_hz, (i2c_clock_source_t)source_clk, source_freq);
 
     return ret;
 }
