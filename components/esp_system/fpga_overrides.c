@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "esp_private/periph_ctrl.h"
 #ifndef CONFIG_IDF_TARGET_ESP32
 #include "soc/system_reg.h"
 #endif // not CONFIG_IDF_TARGET_ESP32
@@ -76,7 +77,14 @@ void esp_clk_init(void)
 
 void esp_perip_clk_init(void)
 {
-
+    /* Enable TimerGroup 0 clock to ensure its reference counter will never
+     * be decremented to 0 during normal operation and preventing it from
+     * being disabled.
+     * If the TimerGroup 0 clock is disabled and then reenabled, the watchdog
+     * registers (Flashboot protection included) will be reenabled, and some
+     * seconds later, will trigger an unintended reset.
+     */
+    periph_module_enable(PERIPH_TIMG0_MODULE);
 }
 
 /**

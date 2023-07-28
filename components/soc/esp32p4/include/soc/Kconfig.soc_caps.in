@@ -19,6 +19,10 @@ config SOC_AXI_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
@@ -745,7 +749,7 @@ config SOC_TIMER_GROUPS
 
 config SOC_TIMER_GROUP_TIMERS_PER_GROUP
     int
-    default 1
+    default 2
 
 config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
     int
@@ -761,11 +765,7 @@ config SOC_TIMER_GROUP_SUPPORT_RC_FAST
 
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
-    default 2
-
-config SOC_TIMER_SUPPORT_ETM
-    bool
-    default n
+    default 4
 
 config SOC_TWAI_CONTROLLER_NUM
     int
@@ -937,7 +937,7 @@ config SOC_PM_PAU_LINK_NUM
 
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
-    default y
+    default n
 
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
