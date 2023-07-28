@@ -5,10 +5,13 @@ menu "Example Configuration"
         config EXAMPLE_GPIO_WAKEUP_SLEEP_NUM
             int "Enable wakeup from GPIO"
             default 6  if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
-            default 5  if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32H2
+            default 5  if IDF_TARGET_ESP32S2
             default 4  if IDF_TARGET_ESP32
+            default 10  if IDF_TARGET_ESP32H2
             default 0
-            range 0 15
+            range 0 7  if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && IDF_TARGET_ESP32C6
+            range 7 14 if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && IDF_TARGET_ESP32H2
+            range 0 40
             help
                 This option is used to set the wakeup and sleep pin.
         
@@ -36,7 +39,7 @@ menu "Example Configuration"
     menu "event configuration"
 
         config EXAMPLE_EVENT_QUEUE_LEN
-            int "event queue length"
+            int "Event queue length"
             default 5
             range 1 15
             help
@@ -45,7 +48,7 @@ menu "Example Configuration"
                 Because if it is too small, it is easy to cause the system to crash; too big is also useless.
 
         config EXAMPLE_EVENT_TASK_STACK_SIZE
-            int "event task`s stack size"
+            int "Event task`s stack size"
             default 4096
             range 1 8192
             help
@@ -53,7 +56,7 @@ menu "Example Configuration"
                 When there is extra heap space requested in the task, it should be set larger.
 
         config EXAMPLE_EVENT_TASK_PRIORITY
-            int "event task`s priority"
+            int "Event task`s priority"
             default 10
             range 1 15
             help
@@ -64,11 +67,11 @@ menu "Example Configuration"
     menu "power manager configuration"
 
         choice EXAMPLE_PM_LOCK_TYPE
-            prompt "set pm lock"
+            prompt "Set pm lock"
             default EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
             help
                 set lock in pm config.
-        
+
             config EXAMPLE_PM_LOCK_TYPE_CPU_FREQ_MAX
                 bool "CPU_FREQ_MAX lock"
             config EXAMPLE_PM_LOCK_TYPE_APB_FREQ_MAX
@@ -76,22 +79,22 @@ menu "Example Configuration"
             config EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
                 bool "NO_LIGHT_SLEEP lock"
         endchoice
-        
+
         config EXAMPLE_PM_LOCK_TYPE
             int
             default 0 if EXAMPLE_PM_LOCK_TYPE_CPU_FREQ_MAX
             default 1 if EXAMPLE_PM_LOCK_TYPE_APB_FREQ_MAX
             default 2 if EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
-        
+
         choice EXAMPLE_PM_MAX_FREQ_MHZ
-            prompt "set max freq in pm config"
+            prompt "Set max freq in pm config"
             default EXAMPLE_PM_MAX_FREQ_MHZ_96 if IDF_TARGET_ESP32H2
             default EXAMPLE_PM_MAX_FREQ_MHZ_120 if IDF_TARGET_ESP32C2
             default EXAMPLE_PM_MAX_FREQ_MHZ_160 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
             default EXAMPLE_PM_MAX_FREQ_MHZ_240
             help
                 set max freq in pm config.
-        
+
             config EXAMPLE_PM_MAX_FREQ_MHZ_80
                 bool "80 MHz" if !IDF_TARGET_ESP32H2
             config EXAMPLE_PM_MAX_FREQ_MHZ_120
@@ -108,7 +111,7 @@ menu "Example Configuration"
             config EXAMPLE_PM_MAX_FREQ_MHZ_48
                 bool "48 MHz" if IDF_TARGET_ESP32H2
         endchoice
-        
+
         config EXAMPLE_PM_MAX_FREQ_MHZ
             int
             default 80 if EXAMPLE_PM_MAX_FREQ_MHZ_80
@@ -120,12 +123,12 @@ menu "Example Configuration"
             default 48 if EXAMPLE_PM_MAX_FREQ_MHZ_48
 
         choice EXAMPLE_PM_MIN_FREQ_MHZ
-            prompt "set min freq in pm config"
+            prompt "Set min freq in pm config"
             default EXAMPLE_PM_MIN_FREQ_MHZ_32 if IDF_TARGET_ESP32H2
             default EXAMPLE_PM_MIN_FREQ_MHZ_40
             help
                 set min freq in pm config.
-            
+
             config EXAMPLE_PM_MIN_FREQ_MHZ_40
                 bool "40 MHz" if !IDF_TARGET_ESP32H2
             config EXAMPLE_PM_MIN_FREQ_MHZ_80
@@ -137,7 +140,7 @@ menu "Example Configuration"
             config EXAMPLE_PM_MIN_FREQ_MHZ_64
                 bool "64 MHz" if IDF_TARGET_ESP32H2
         endchoice
-            
+
         config EXAMPLE_PM_MIN_FREQ_MHZ
             int
             default 40 if EXAMPLE_PM_MIN_FREQ_MHZ_40
@@ -145,7 +148,7 @@ menu "Example Configuration"
             default 32 if EXAMPLE_PM_MIN_FREQ_MHZ_32
             default 48 if EXAMPLE_PM_MIN_FREQ_MHZ_48
             default 64 if EXAMPLE_PM_MIN_FREQ_MHZ_64
-    
+
         endmenu
 
 endmenu
