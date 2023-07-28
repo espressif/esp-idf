@@ -395,6 +395,14 @@ config SOC_ANA_CMPR_SUPPORT_MULTI_INTR
     bool
     default y
 
+config SOC_ANA_CMPR_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_ANA_CMPR_ETM_EVENTS_PER_UNIT
+    int
+    default 2
+
 config SOC_I2C_NUM
     int
     default 2

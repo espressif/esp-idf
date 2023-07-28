@@ -221,8 +221,10 @@
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
-#define SOC_ANA_CMPR_NUM                (2U)
-#define SOC_ANA_CMPR_SUPPORT_MULTI_INTR (1)
+#define SOC_ANA_CMPR_NUM                    (2U)
+#define SOC_ANA_CMPR_SUPPORT_MULTI_INTR     (1)
+#define SOC_ANA_CMPR_SUPPORT_ETM            (1)
+#define SOC_ANA_CMPR_ETM_EVENTS_PER_UNIT    (2)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-P4 has 2 I2Cs

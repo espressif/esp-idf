@@ -553,7 +553,7 @@ typedef union {
     uint32_t val;
 } gpio_clock_gate_reg_t;
 
-/** Type of zero_det0_filter_cnt register
+/** Type of zero_det_filter_cnt register
  *  GPIO analog comparator zero detect filter count
  */
 typedef union {

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
@@ -18,7 +19,10 @@ extern "C" {
  *
  */
 typedef enum {
-    ANA_CMPR_UNIT_0,                /*!< Analog Comparator unit */
+    ANA_CMPR_UNIT_0,                /*!< Analog Comparator unit 0 */
+#if SOC_ANA_CMPR_NUM == 2
+    ANA_CMPR_UNIT_1,                /*!< Analog Comparator unit 1 */
+#endif
 } ana_cmpr_unit_t;
 
 /**

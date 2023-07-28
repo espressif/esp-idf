@@ -10,6 +10,7 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/ana_cmpr_struct.h"
+#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +22,8 @@ extern "C" {
 
 #define ANALOG_CMPR_LL_NEG_CROSS_MASK(unit)   (1UL << ((int)unit * 3))
 #define ANALOG_CMPR_LL_POS_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 1))
+
+#define ANALOG_CMPR_LL_ETM_SOURCE(unit, type)   (GPIO_EVT_ZERO_DET_POS0 + (unit) * 2 + (type))
 
 /**
  * @brief Enable analog comparator
