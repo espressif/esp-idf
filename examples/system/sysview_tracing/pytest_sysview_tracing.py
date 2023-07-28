@@ -22,7 +22,7 @@ def test_examples_sysview_tracing(dut: IdfDut) -> None:
         dut.expect(re.compile(rb'example: Task\[0x3[0-9A-Fa-f]+\]: received event \d+'), timeout=30)
 
     dut.gdb.write('mon reset halt')
-    dut.gdb.write('flushregs')
+    dut.gdb.write('maintenance flush register-cache')
     dut.gdb.write('b app_main')
 
     dut.gdb.write('commands', non_blocking=True)

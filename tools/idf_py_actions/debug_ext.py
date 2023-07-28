@@ -54,7 +54,7 @@ GDBINIT_CONNECT = '''
 # Connect to the default openocd-esp port and break on app_main()
 target remote :3333
 monitor reset halt
-flushregs
+maintenance flush register-cache
 thbreak app_main
 continue
 '''

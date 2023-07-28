@@ -77,7 +77,7 @@ After installation is complete, follow these steps to configure the debugging se
     ::
 
         mon reset halt
-        flushregs
+        maintenance flush register-cache
         set remote hardware-watchpoint-limit 2
 
     .. note::
@@ -143,7 +143,7 @@ Command Line
         target remote :3333
         set remote hardware-watchpoint-limit 2
         mon reset halt
-        flushregs
+        maintenance flush register-cache
         thb app_main
         c
 
