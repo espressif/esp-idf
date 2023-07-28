@@ -8,6 +8,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "unity.h"
+#include "esp_log.h"
 #include "sdmmc_test_board.h"
 #include "driver/sdspi_host.h"
 #include "driver/sdmmc_defs.h"
@@ -65,9 +66,29 @@ void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card)
     TEST_ESP_OK(sdmmc_card_init(&config, out_card));
 }
 
-void sdmmc_test_spi_end(sdmmc_card_t *card)
+void sdmmc_test_spi_end(int slot, sdmmc_card_t *card)
 {
     TEST_ESP_OK(sdspi_host_deinit());
     TEST_ESP_OK(spi_bus_free(SDSPI_DEFAULT_HOST));
+
+    const sdmmc_test_board_slot_info_t* slot_info = sdmmc_test_board_get_slot_info(slot);
+    const int pins[] = {
+        slot_info->clk,
+        slot_info->cmd_mosi,
+        slot_info->d0_miso,
+        slot_info->d3_cs,
+    };
+    const int num_pins = sizeof(pins) / sizeof(pins[0]);
+    // Silence logging in gpio_reset_pin, which logs at INFO level
+    esp_log_level_t old_level = esp_log_level_get("gpio");
+    esp_log_level_set("gpio", ESP_LOG_WARN);
+    for (int i = 0; i < num_pins; i++) {
+        if (pins[i] >= 0) {
+            gpio_reset_pin(pins[i]);
+            gpio_pullup_dis(pins[i]);
+        }
+    }
+    esp_log_level_set("gpio", old_level);
+
     sdmmc_test_board_card_power_set(false);
 }

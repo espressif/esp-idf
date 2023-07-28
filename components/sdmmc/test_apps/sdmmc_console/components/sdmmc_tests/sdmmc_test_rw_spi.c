@@ -18,7 +18,7 @@ static void do_one_sdspi_perf_test(int slot, int freq_khz)
     sdmmc_test_spi_begin(slot, freq_khz, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_rw_performance(&card, NULL);
-    sdmmc_test_spi_end(&card);
+    sdmmc_test_spi_end(slot, &card);
 }
 
 TEST_CASE("sdspi read/write performance, slot 0", "[sdspi]")
@@ -40,7 +40,7 @@ static void do_one_sdspi_rw_test_with_offset(int slot, int freq_khz)
     sdmmc_test_spi_begin(slot, freq_khz, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_rw_with_offset(&card);
-    sdmmc_test_spi_end(&card);
+    sdmmc_test_spi_end(slot, &card);
 }
 
 TEST_CASE("sdspi read/write performance with offset, slot 0", "[sdspi]")
@@ -62,7 +62,7 @@ static void do_one_sdspi_rw_test_unaligned_buffer(int slot, int freq_khz)
     sdmmc_test_spi_begin(slot, freq_khz, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_rw_unaligned_buffer(&card);
-    sdmmc_test_spi_end(&card);
+    sdmmc_test_spi_end(slot, &card);
 }
 
 TEST_CASE("sdspi read/write using unaligned buffer, slot 0", "[sdspi]")

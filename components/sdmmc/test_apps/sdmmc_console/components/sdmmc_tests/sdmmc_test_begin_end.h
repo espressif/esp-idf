@@ -65,7 +65,7 @@ void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card);
  * @brief Helper function to deinitialize the SDMMC host and slot after the test, for SPI mode
  * @see sdmmc_test_sd_end
  */
-void sdmmc_test_spi_end(sdmmc_card_t *card);
+void sdmmc_test_spi_end(int slot, sdmmc_card_t *card);
 
 
 #ifdef __cplusplus

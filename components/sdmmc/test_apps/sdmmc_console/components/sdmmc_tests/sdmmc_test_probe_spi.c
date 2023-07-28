@@ -16,7 +16,7 @@ static void do_one_sdspi_probe(int slot, int freq_khz)
     sdmmc_card_print_info(stdout, &card);
     uint8_t* buffer = heap_caps_calloc(512, 1, MALLOC_CAP_DMA);
     TEST_ESP_OK(sdmmc_read_sectors(&card, buffer, 0, 1));
-    sdmmc_test_spi_end(&card);
+    sdmmc_test_spi_end(slot, &card);
 }
 
 TEST_CASE("sdspi probe, slot 0", "[sdspi]")

@@ -82,7 +82,6 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
 void sdmmc_test_sd_end(sdmmc_card_t *card)
 {
     TEST_ESP_OK(sdmmc_host_deinit());
-    sdmmc_test_board_card_power_set(false);
 
     // Reset all GPIOs to their default states
     int slot = card->host.slot;
@@ -108,7 +107,11 @@ void sdmmc_test_sd_end(sdmmc_card_t *card)
     for (int i = 0; i < num_pins; i++) {
         if (pins[i] >= 0) {
             gpio_reset_pin(pins[i]);
+            gpio_pullup_dis(pins[i]);
         }
     }
     esp_log_level_set("gpio", old_level);
+
+    //Need to reset GPIO first, otherrwise cannot discharge VDD of card completely.
+    sdmmc_test_board_card_power_set(false);
 }
