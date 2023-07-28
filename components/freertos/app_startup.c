@@ -75,7 +75,7 @@ void esp_startup_start_app(void)
     // Initialize the cross-core interrupt on CPU0
     esp_crosscore_int_init();
 
-#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && !CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     void esp_gdbstub_init(void);
     esp_gdbstub_init();
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
