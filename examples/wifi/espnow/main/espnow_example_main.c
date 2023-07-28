@@ -299,8 +299,9 @@ static esp_err_t example_espnow_init(void)
     ESP_ERROR_CHECK( esp_now_init() );
     ESP_ERROR_CHECK( esp_now_register_send_cb(example_espnow_send_cb) );
     ESP_ERROR_CHECK( esp_now_register_recv_cb(example_espnow_recv_cb) );
-#if CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
-    ESP_ERROR_CHECK( esp_now_set_wake_window(65535) );
+#if CONFIG_ESPNOW_ENABLE_POWER_SAVE
+    ESP_ERROR_CHECK( esp_now_set_wake_window(CONFIG_ESPNOW_WAKE_WINDOW) );
+    ESP_ERROR_CHECK( esp_wifi_connectionless_module_set_wake_interval(CONFIG_ESPNOW_WAKE_INTERVAL) );
 #endif
     /* Set primary master key. */
     ESP_ERROR_CHECK( esp_now_set_pmk((uint8_t *)CONFIG_ESPNOW_PMK) );
