@@ -15,8 +15,6 @@
 #include "esp_task.h"
 #include "bt_common.h"
 
-#define portBASE_TYPE int
-
 #define OSI_THREAD_MAX_TIMEOUT OSI_SEM_MAX_TIMEOUT
 
 struct osi_thread;
