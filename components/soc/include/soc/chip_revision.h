@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "sdkconfig.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,8 +30,6 @@ extern "C" {
 
 #define ESP_CHIP_REV_ABOVE(rev, min_rev) ((min_rev) <= (rev))
 #define ESP_CHIP_REV_MAJOR_AND_ABOVE(rev, min_rev) (((rev) / 100 == (min_rev) / 100) && ((rev) >= (min_rev)))
-
-_Static_assert(CONFIG_ESP_REV_MIN_FULL <= CONFIG_ESP_REV_MAX_FULL, "Min version must be less than Max version");
 
 #ifdef __cplusplus
 }
