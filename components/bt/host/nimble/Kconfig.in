@@ -65,6 +65,8 @@ config BT_NIMBLE_LOG_LEVEL
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     range 1 2 if IDF_TARGET_ESP32C2
+    range 1 70 if IDF_TARGET_ESP32C6
+    range 1 35 if IDF_TARGET_ESP32H2
     range 1 9
     default 2 if IDF_TARGET_ESP32C2
     default 3
@@ -667,3 +669,13 @@ config BT_NIMBLE_VS_SUPPORT
     help
         This option is used to enable support for sending Vendor Specific HCI commands and handling
         Vendor Specific HCI Events.
+
+config BT_NIMBLE_OPTIMIZE_MULTI_CONN
+    bool "Enable the optimization of multi-connection"
+    depends on SOC_BLE_MULTI_CONN_OPTIMIZATION
+    select BT_NIMBLE_VS_SUPPORT
+    default n
+    help
+        This option enables the use of vendor-specific APIs for multi-connections, which can
+        greatly enhance the stability of coexistence between numerous central and peripheral
+        devices. It will prohibit the usage of standard APIs.

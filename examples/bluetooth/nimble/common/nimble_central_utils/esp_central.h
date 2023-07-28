@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,6 +48,16 @@ SLIST_HEAD(peer_svc_list, peer_svc);
 struct peer;
 typedef void peer_disc_fn(const struct peer *peer, int status, void *arg);
 
+/**
+ * @brief The callback function for the devices traversal.
+ *
+ * @param peer
+ * @param arg
+ * @return int  0, continue; Others, stop the traversal.
+ *
+ */
+typedef int peer_traverse_fn(const struct peer *peer, void *arg);
+
 struct peer {
     SLIST_ENTRY(peer) next;
 
@@ -64,6 +74,11 @@ struct peer {
     peer_disc_fn *disc_cb;
     void *disc_cb_arg;
 };
+
+void peer_traverse_all(peer_traverse_fn *trav_cb, void *arg);
+
+int peer_disc_svc_by_uuid(uint16_t conn_handle, const ble_uuid_t *uuid, peer_disc_fn *disc_cb,
+                          void *disc_cb_arg);
 
 int peer_disc_all(uint16_t conn_handle, peer_disc_fn *disc_cb,
                   void *disc_cb_arg);
