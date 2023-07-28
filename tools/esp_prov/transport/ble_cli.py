@@ -21,7 +21,7 @@ except ImportError:
 # --------------------------------------------------------------------
 
 def device_sort(device):
-    return device.address
+    return device[0].address
 
 
 class BLE_Bleak_Client:
@@ -46,7 +46,8 @@ class BLE_Bleak_Client:
 
         print('Discovering...')
         try:
-            devices = await bleak.BleakScanner.discover()
+            discovery = await bleak.BleakScanner.discover(return_adv=True)
+            devices = list(discovery.values())
         except bleak.exc.BleakDBusError as e:
             if str(e) == '[org.bluez.Error.NotReady] Resource Not Ready':
                 raise RuntimeError('Bluetooth is not ready. Maybe try `bluetoothctl power on`?')
@@ -65,7 +66,7 @@ class BLE_Bleak_Client:
                 print('{0: >4} {1: <33} {2: <12}'.format(
                     'S.N.', 'Name', 'Address'))
                 for i, _ in enumerate(devices):
-                    print('[{0: >2}] {1: <33} {2: <12}'.format(i + 1, devices[i].name or 'Unknown', devices[i].address))
+                    print('[{0: >2}] {1: <33} {2: <12}'.format(i + 1, devices[i][0].name or 'Unknown', devices[i][0].address))
 
                 while True:
                     try:
@@ -79,10 +80,11 @@ class BLE_Bleak_Client:
                 if select != 0:
                     break
 
-                devices = await bleak.BleakScanner.discover()
+                discovery = await bleak.BleakScanner.discover(return_adv=True)
+                devices = list(discovery.values())
 
-            self.devname = devices[select - 1].name
-            found_device = devices[select - 1]
+            self.devname = devices[select - 1][0].name
+            found_device = devices[select - 1][0]
         else:
             for d in devices:
                 if d.name == self.devname:
@@ -91,7 +93,7 @@ class BLE_Bleak_Client:
         if not found_device:
             raise RuntimeError('Device not found')
 
-        uuids = found_device.metadata['uuids']
+        uuids = devices[select - 1][1].service_uuids
         # There should be 1 service UUID in advertising data
         # If bluez had cached an old version of the advertisement data
         # the list of uuids may be incorrect, in which case connection
@@ -109,7 +111,7 @@ class BLE_Bleak_Client:
             await self.device.pair()
 
         print('Getting Services...')
-        services = await self.device.get_services()
+        services = self.device.services
 
         service = services[self.srv_uuid_adv] or services[self.srv_uuid_fallback]
         if not service:
