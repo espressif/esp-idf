@@ -1139,7 +1139,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         } else {
             is_data_remain = client->response->data_process < client->response->content_length;
         }
-        ESP_LOGD(TAG, "is_data_remain=%"PRId8", is_chunked=%d"PRId8", content_length=%"PRId64, is_data_remain, client->response->is_chunked, client->response->content_length);
+        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d, content_length=%"PRId64, is_data_remain, client->response->is_chunked, client->response->content_length);
         if (!is_data_remain) {
             break;
         }
