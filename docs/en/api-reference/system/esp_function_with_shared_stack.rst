@@ -32,7 +32,7 @@ The usage may look like the code below:
     void app_main()
     {
         //Allocate a stack buffer, from heap or as a static form:
-        portSTACK_TYPE *shared_stack = malloc(8192 * sizeof(portSTACK_TYPE));
+        StackType_t *shared_stack = malloc(8192 * sizeof(StackType_t));
         assert(shared_stack != NULL);
 
         //Allocate a mutex to protect its usage:
