@@ -1049,17 +1049,28 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *
 #else
 uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb)
 {
+    tBTM_LE_RANDOM_CB *p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+
     if((*own_bda_type == BLE_ADDR_RANDOM) || (*own_bda_type == BLE_ADDR_RANDOM_ID)) {
-        if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) != BTM_BLE_GAP_ADDR_BIT_RANDOM) {
+        if((p_cb->exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) != BTM_BLE_GAP_ADDR_BIT_RANDOM) {
             BTM_TRACE_ERROR("No random address yet, please set random address and try\n");
             if(cb) {
                 (* cb)(HCI_ERR_ESP_VENDOR_FAIL);
             }
             return BTM_ILLEGAL_VALUE;
         }
+
+        // If a device is using RPA, it shall also have an Identity Address
+        if ((*own_bda_type == BLE_ADDR_RANDOM_ID) && BTM_BLE_IS_NON_RESLVE_BDA(p_cb->static_rand_addr)) {
+            BTM_TRACE_ERROR("No identity address yet, please set static random address and try\n");
+            if (cb) {
+                (* cb)(HCI_ERR_ESP_VENDOR_FAIL);
+            }
+            return BTM_ILLEGAL_VALUE;
+        }
     }
 
-    btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = *own_bda_type;
+    p_cb->own_addr_type = *own_bda_type;
 
     return BTM_SUCCESS;
 }
