@@ -659,6 +659,29 @@ config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
         This option is used when data to be sent is more than 512 bytes. For peripheral role,
         BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
 
+menu "BLE Services"
+    menuconfig BT_NIMBLE_HID_SERVICE
+        bool "HID service"
+        depends on BT_NIMBLE_ENABLED
+        default n
+        help
+            Enable HID service support
+
+    config BT_NIMBLE_SVC_HID_MAX_INSTANCES
+        depends on BT_NIMBLE_HID_SERVICE
+        int "Maximum HID service instances"
+        default 2
+        help
+            Defines maximum number of HID service instances
+
+    config BT_NIMBLE_SVC_HID_MAX_RPTS
+        depends on BT_NIMBLE_HID_SERVICE
+        int "Maximum HID Report characteristics per service instance"
+        default 3
+        help
+            Defines maximum number of report characteristics per service instance
+endmenu
+
 config BT_NIMBLE_VS_SUPPORT
     bool "Enable support for VSC and VSE"
     help

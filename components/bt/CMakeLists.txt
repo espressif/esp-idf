@@ -537,6 +537,8 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/services/prox/include
                     host/nimble/nimble/nimble/host/services/cts/include
                     host/nimble/nimble/nimble/host/services/tps/include
+                    host/nimble/nimble/nimble/host/services/hid/include
+                    host/nimble/nimble/nimble/host/services/sps/include
                     host/nimble/nimble/nimble/host/util/include
                     host/nimble/nimble/nimble/host/store/ram/include
                     host/nimble/nimble/nimble/host/store/config/include
@@ -557,6 +559,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/services/lls/src/ble_svc_lls.c"
                     "host/nimble/nimble/nimble/host/services/prox/src/ble_svc_prox.c"
                     "host/nimble/nimble/nimble/host/services/cts/src/ble_svc_cts.c"
+                    "host/nimble/nimble/nimble/host/services/hid/src/ble_svc_hid.c"
+                    "host/nimble/nimble/nimble/host/services/sps/src/ble_svc_sps.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_conn.c"
                     "host/nimble/nimble/nimble/host/src/ble_store_util.c"
                     "host/nimble/nimble/nimble/host/src/ble_sm.c"

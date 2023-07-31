@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,7 +88,7 @@ esp_err_t esp_hidh_init(const esp_hidh_config_t *config)
     }
 #endif /* CONFIG_BT_HID_HOST_ENABLED */
 
-#if CONFIG_GATTC_ENABLE
+#if CONFIG_GATTC_ENABLE || CONFIG_BT_NIMBLE_ENABLED
     if (err == ESP_OK) {
         err = esp_ble_hidh_init(config);
     }
@@ -123,7 +123,7 @@ esp_err_t esp_hidh_deinit(void)
     }
 #endif /* CONFIG_BT_HID_HOST_ENABLED */
 
-#if CONFIG_GATTC_ENABLE
+#if CONFIG_GATTC_ENABLE || CONFIG_BT_NIMBLE_ENABLED
     if (err == ESP_OK) {
         err = esp_ble_hidh_deinit();
     }
@@ -150,6 +150,11 @@ esp_hidh_dev_t *esp_hidh_dev_open(esp_bd_addr_t bda, esp_hid_transport_t transpo
         dev = esp_ble_hidh_dev_open(bda, (esp_ble_addr_type_t)remote_addr_type);
     }
 #endif /* CONFIG_GATTC_ENABLE */
+#if CONFIG_BT_NIMBLE_ENABLED
+    if (transport == ESP_HID_TRANSPORT_BLE) {
+        dev = esp_ble_hidh_dev_open(bda, remote_addr_type);
+    }
+#endif /* CONFIG_BT_NIMBLE_ENABLED */
 #if CONFIG_BT_HID_HOST_ENABLED
     if (transport == ESP_HID_TRANSPORT_BT) {
         dev = esp_bt_hidh_dev_open(bda);
@@ -158,6 +163,19 @@ esp_hidh_dev_t *esp_hidh_dev_open(esp_bd_addr_t bda, esp_hid_transport_t transpo
     return dev;
 }
 #endif /* CONFIG_BLUEDROID_ENABLED */
+
+#if CONFIG_BT_NIMBLE_ENABLED
+esp_hidh_dev_t *esp_hidh_dev_open(uint8_t *bda, esp_hid_transport_t transport, uint8_t remote_addr_type)
+{
+    if (esp_hidh_dev_get_by_bda(bda) != NULL) {
+        ESP_LOGE(TAG, "Already Connected");
+        return NULL;
+    }
+    esp_hidh_dev_t *dev = NULL;
+    dev = esp_ble_hidh_dev_open(bda, remote_addr_type);
+    return dev;
+}
+#endif /* CONFIG_BT_NIMBLE_ENABLED */
 
 esp_err_t esp_hidh_dev_close(esp_hidh_dev_t *dev)
 {
@@ -329,6 +347,14 @@ const uint8_t *esp_hidh_dev_bda_get(esp_hidh_dev_t *dev)
         esp_hidh_dev_unlock(dev);
     }
 #endif /* CONFIG_BLUEDROID_ENABLED */
+
+#if CONFIG_BT_NIMBLE_ENABLED
+    if (esp_hidh_dev_exists(dev)) {
+        esp_hidh_dev_lock(dev);
+        ret = dev->bda;
+        esp_hidh_dev_unlock(dev);
+    }
+#endif /* CONFIG_BT_NIMBLE_ENABLED */
     return ret;
 }
 
@@ -823,3 +849,82 @@ void esp_hidh_post_process_event_handler(void *event_handler_arg, esp_event_base
     }
 }
 #endif /* CONFIG_BLUEDROID_ENABLED */
+
+#if CONFIG_BT_NIMBLE_ENABLED
+esp_hidh_dev_t *esp_hidh_dev_get_by_bda(uint8_t *bda)
+{
+    esp_hidh_dev_t * d = NULL;
+    lock_devices();
+    TAILQ_FOREACH(d, &s_esp_hidh_devices, devices) {
+        if (memcmp(bda, d->bda, sizeof(uint8_t) * 6) == 0) {
+            unlock_devices();
+            return d;
+        }
+    }
+    unlock_devices();
+    return NULL;
+}
+
+esp_hidh_dev_t *esp_hidh_dev_get_by_conn_id(uint16_t conn_id)
+{
+    esp_hidh_dev_t * d = NULL;
+    lock_devices();
+    TAILQ_FOREACH(d, &s_esp_hidh_devices, devices) {
+        if (d->ble.conn_id == conn_id) {
+            unlock_devices();
+            return d;
+        }
+    }
+    unlock_devices();
+    return NULL;
+}
+
+/**
+ * The deep copy data append the end of the esp_hidh_event_data_t, move the data pointer to the correct address. This is
+ * a workaround way, it's better to use flexible array in the interface.
+ */
+void esp_hidh_preprocess_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                       void *event_data)
+{
+    esp_hidh_event_t event = (esp_hidh_event_t)event_id;
+    esp_hidh_event_data_t *param = (esp_hidh_event_data_t *)event_data;
+
+    switch (event) {
+    case ESP_HIDH_INPUT_EVENT:
+        if (param->input.length && param->input.data) {
+            param->input.data = (uint8_t *)param + sizeof(esp_hidh_event_data_t);
+        }
+        break;
+    case ESP_HIDH_FEATURE_EVENT:
+        if (param->feature.length && param->feature.data) {
+            param->feature.data = (uint8_t *)param + sizeof(esp_hidh_event_data_t);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void esp_hidh_post_process_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                         void *event_data)
+{
+    esp_hidh_event_t event = (esp_hidh_event_t)event_id;
+    esp_hidh_event_data_t *param = (esp_hidh_event_data_t *)event_data;
+
+    switch (event) {
+    case ESP_HIDH_OPEN_EVENT:
+        if (param->open.status != ESP_OK) {
+            esp_hidh_dev_t *dev = param->open.dev;
+            if (dev) {
+                esp_hidh_dev_free_inner(dev);
+            }
+        }
+        break;
+    case ESP_HIDH_CLOSE_EVENT:
+        esp_hidh_dev_free_inner(param->close.dev);
+        break;
+    default:
+        break;
+    }
+}
+#endif /* CONFIG_BT_NIMBLE_ENABLED */

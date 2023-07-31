@@ -416,13 +416,9 @@ components/esp_hid/include/esp_hidd_transport.h
 components/esp_hid/include/esp_hidh.h
 components/esp_hid/include/esp_hidh_bluedroid.h
 components/esp_hid/include/esp_hidh_gattc.h
-components/esp_hid/include/esp_hidh_transport.h
-components/esp_hid/private/ble_hidd.h
-components/esp_hid/private/ble_hidh.h
 components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
 components/esp_hid/private/esp_hidd_private.h
-components/esp_hid/src/esp_hid_common.c
 components/esp_hid/test/hid_descriptor.h
 components/esp_hid/test/test_esp_hid.c
 components/esp_hw_support/include/esp_clk.h

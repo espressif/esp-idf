@@ -1,0 +1,9 @@
+menu "HID Example Configuration"
+    config EXAMPLE_HID_HOST_ENABLED
+        bool "Enable Example HID Host"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        select BT_NIMBLE_HID_SERVICE
+        help
+            This enables Nimble HID Host
+endmenu
