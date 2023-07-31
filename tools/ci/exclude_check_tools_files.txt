@@ -39,3 +39,4 @@ tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
 tools/ci/cleanup_ignore_lists.py
+tools/ci/idf_pytest/**/*

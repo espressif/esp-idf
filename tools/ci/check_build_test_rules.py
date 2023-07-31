@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yaml
-from idf_ci_utils import IDF_PATH, get_pytest_cases, get_ttfw_cases
+from idf_ci_utils import IDF_PATH, get_ttfw_cases
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -215,6 +215,7 @@ def check_test_scripts(
 ) -> None:
     from idf_build_apps import App, find_apps
     from idf_build_apps.constants import SUPPORTED_TARGETS
+    from idf_pytest.script import get_pytest_cases
 
     # takes long time, run only in CI
     # dict:

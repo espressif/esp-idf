@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 from idf_build_apps import LOGGER, App, build_apps, find_apps, setup_logging
 from idf_build_apps.constants import SUPPORTED_TARGETS
-from idf_ci_utils import IDF_PATH, PytestApp, get_pytest_cases, get_ttfw_app_paths
+from idf_ci_utils import IDF_PATH, get_ttfw_app_paths
 
 CI_ENV_VARS = {
     'EXTRA_CFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
@@ -39,6 +39,8 @@ def get_pytest_apps(
     modified_files: t.Optional[t.List[str]] = None,
     ignore_app_dependencies_filepatterns: t.Optional[t.List[str]] = None,
 ) -> t.List[App]:
+    from idf_pytest.script import get_pytest_cases
+
     pytest_cases = get_pytest_cases(paths, target, marker_expr, filter_expr)
 
     _paths: t.Set[str] = set()
@@ -103,6 +105,9 @@ def get_cmake_apps(
     modified_files: t.Optional[t.List[str]] = None,
     ignore_app_dependencies_filepatterns: t.Optional[t.List[str]] = None,
 ) -> t.List[App]:
+    from idf_pytest.constants import PytestApp
+    from idf_pytest.script import get_pytest_cases
+
     ttfw_app_dirs = get_ttfw_app_paths(paths, target)
 
     apps = find_apps(
