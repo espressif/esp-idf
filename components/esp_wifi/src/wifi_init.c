@@ -325,6 +325,9 @@ void wifi_apb80m_request(void)
 {
     assert(s_wifi_modem_sleep_lock);
     esp_pm_lock_acquire(s_wifi_modem_sleep_lock);
+    if (esp_clk_apb_freq() != APB_CLK_FREQ) {
+        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", esp_clk_apb_freq());
+    }
 }
 
 void wifi_apb80m_release(void)
