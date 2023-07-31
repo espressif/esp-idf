@@ -25,9 +25,7 @@ ESP-TLS 组件提供简化 API 接口，用于访问常用 TLS 功能，支持�
 ESP-TLS 组件的树形结构
 -------------------------------------
 
-    .. highlight:: none
-
-    ::
+    .. code-block:: none
 
         ├── esp_tls.c
         ├── esp_tls.h
@@ -85,7 +83,9 @@ ESP-TLS 服务器证书选择回调
 
 ESP-TLS 组件支持以 MbedTLS 或 WolfSSL 作为其底层 SSL/TLS 库，默认仅使用 MbedTLS，WolfSSL 的 SSL/TLS 库可在 https://github.com/espressif/esp-wolfssl 上公开获取，该仓库提供二进制格式的 WolfSSL 组件，并提供了一些示例帮助用户了解相关 API。有关许可证和其他选项，请参阅仓库的 ``README.md`` 文件。下文介绍了在工程中使用 WolfSSL 的具体流程。
 
-.. note::   `库选项位于 ESP-TLS 内部，因此切换库不会更改工程的 ESP-TLS 特定代码。`
+.. note::
+
+    库选项位于 ESP-TLS 内部，因此切换库不会更改工程的 ESP-TLS 特定代码。
 
 在 ESP-IDF 使用 WolfSSL
 ----------------------------------------
@@ -125,16 +125,18 @@ MbedTLS 与 WolfSSL 对比
       - WolfSSL
       - MbedTLS
     * - 总消耗堆空间
-      - ~19 KB
-      - ~37 KB
+      - ~ 19 KB
+      - ~ 37 KB
     * - 任务栈使用
-      - ~2.2 KB
-      - ~3.6 KB
+      - ~ 2.2 KB
+      - ~ 3.6 KB
     * - 二进制文件大小
-      - ~858 KB
-      - ~736 KB
+      - ~ 858 KB
+      - ~ 736 KB
 
-.. note::    `若配置选项不同或相应库的版本不同，得到的值可能与上表不同`。
+.. note::
+
+    若配置选项不同或相应库的版本不同，得到的值可能与上表不同。
 
 .. only:: esp32
 
@@ -143,7 +145,9 @@ MbedTLS 与 WolfSSL 对比
 
     ESP-TLS 支持在 ESP32-WROOM-32SE 上使用 ATECC608A 加密芯片，但必须将 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈。未经手动更改，ESP-TLS 默认以 MbedTLS 为其底层 TLS/SSL 协议栈。
 
-    .. note:: 在 ESP32-WROOM-32SE 上的 ATECC608A 芯片必须预先配置，详情请参阅 `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_。
+    .. note::
+
+        在 ESP32-WROOM-32SE 上的 ATECC608A 芯片必须预先配置，详情请参阅 `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_。
 
     要启用安全元件支持，并将其应用于工程 TLS 连接，请遵循以下步骤：
 
@@ -175,7 +179,7 @@ MbedTLS 与 WolfSSL 对比
     ESP-TLS 的数字签名
     ----------------------------------
 
-    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用数字签名 (DS)，但只有当 ESP-TLS 以 MbedTLS（默认协议栈）为底层 SSL/TLS 协议栈时，才支持使用 TLS 的数字签名。有关数字签名的详细信息，请参阅 :doc:`数字签名 (DS) </api-reference/peripherals/ds>`。有关数字签名的技术细节（例如私钥参数计算），请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *数字签名 (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]。在使用数字签名前，应预先配置数字签名外设，请参阅 :ref:`configure-the-ds-peripheral`。
+    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用数字签名 (DS)，但只有当 ESP-TLS 以 MbedTLS（默认协议栈）为底层 SSL/TLS 协议栈时，才支持使用 TLS 的数字签名。有关数字签名的详细信息，请参阅 :doc:`数字签名 (DS) </api-reference/peripherals/ds>`。有关数字签名的技术细节（例如私钥参数计算），请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **数字签名 (DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]。在使用数字签名前，应预先配置数字签名外设，请参阅 :ref:`configure-the-ds-peripheral`。
 
     数字签名外设必须用所需的加密私钥参数初始化，相应参数在配置数字签名外设时获取。具备所需的数字签名上下文，即数字签名参数时，ESP-TLS 会在内部初始化数字签名外设。要将数字签名上下文传递给 ESP-TLS 上下文，请参阅以下代码段。注意，在删除 TLS 连接之前，不应释放传递给 ESP-TLS 上下文的数字签名上下文。
 
@@ -191,12 +195,15 @@ MbedTLS 与 WolfSSL 对比
                 .ds_data = (void *)ds_ctx,
             };
 
-    .. note:: 当使用数字签名进行 TLS 连接时，除其他必要参数外，仅需提供客户端证书 (``clientcert_buf``) 和数字签名参数 (``ds_data``) ，此时可将客户端密钥 (``clientkey_buf``) 设置为 NULL。
+    .. note::
+
+        当使用数字签名进行 TLS 连接时，除其他必要参数外，仅需提供客户端证书 (``clientcert_buf``) 和数字签名参数 (``ds_data``) ，此时可将客户端密钥 (``clientkey_buf``) 设置为 NULL。
 
     * 使用数字签名外设进行双向认证的示例请参阅 :example:`SSL 双向认证 <protocols/mqtt/ssl_mutual_auth>`，该示例使用 ESP-TLS 实现 TLS 连接。
 
 TLS 加密套件
 ------------------------------------
+
 ESP-TLS 支持在客户端模式下设置加密套件列表，TLS 密码套件列表用于向服务器传递所支持的密码套件信息，用户可以根据自己需求增减加密套件，且适用于任何 TLS 协议栈配置。如果服务器支持列表中的任一密码套件，则 TLS 连接成功，反之连接失败。
 
 连接客户端时，在 :cpp:type:`esp_tls_cfg_t` 结构体中设置 ``ciphersuites_list`` 的步骤如下：
@@ -212,6 +219,7 @@ ESP-TLS 支持在客户端模式下设置加密套件列表，TLS 密码套件�
 ESP-TLS 不会检查 ``ciphersuites_list`` 的有效性，因此需调用 :cpp:func:`esp_tls_get_ciphersuites_list` 获取 TLS 协议栈中支持的加密套件列表，并检查设置的加密套件是否在支持的加密套件列表中。
 
 .. note::
+    
    此功能仅在 MbedTLS 协议栈中有效。
 
 API 参考

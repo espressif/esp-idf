@@ -110,7 +110,7 @@ Using an “In Service” version is recommended when starting a new project.
 
 Users are encouraged to upgrade all projects to a newer ESP-IDF release before the support period finishes and the release becomes End of Life (EOL). It is our policy to not continue fixing bugs in End of Life releases.
 
-Pre-release versions (betas, previews, `-rc` and `-dev` versions, etc) are not covered by any support period. Sometimes a particular feature is marked as "Preview" in a release, which means it is also not covered by the support period.
+Pre-release versions (betas, previews, ``-rc`` and ``-dev`` versions, etc) are not covered by any support period. Sometimes a particular feature is marked as "Preview" in a release, which means it is also not covered by the support period.
 
 The ESP-IDF Programming Guide has information about the `different versions of ESP-IDF <https://docs.espressif.com/projects/esp-idf/en/latest/versions.html>`_ (major, minor, bugfix, etc).
 
@@ -174,7 +174,9 @@ Updating ESP-IDF depends on which version(s) you wish to follow:
 - :ref:`updating-master` is recommended for the latest features, development use, and testing.
 - :ref:`updating-release-branch` is a compromise between the first two.
 
-.. note:: These guides assume that you already have a local copy of ESP-IDF cloned. To get one, check Step 2 in the :doc:`Getting Started </get-started/index>` guide for any ESP-IDF version.
+.. note::
+
+  These guides assume that you already have a local copy of ESP-IDF cloned. To get one, check Step 2 in the :doc:`Getting Started </get-started/index>` guide for any ESP-IDF version.
 
 
 .. _`updating-stable-releases`:
@@ -198,7 +200,9 @@ To update to a new ESP-IDF release (recommended for production use), this is the
 - In the Windows system, please replace ``cd $IDF_PATH`` with ``cd %IDF_PATH%``.
 - When major or minor updates are released, check the Release Notes on the releases page and decide if you want to update or to stay with your current release. Updating is via the same Git commands shown above.
 
-.. note:: If you installed the stable release via zip file instead of using git, it might not be possible to update versions using the commands. In this case, update by downloading a new zip file and replacing the entire ``IDF_PATH`` directory with its contents.
+.. note::
+
+  If you installed the stable release via zip file instead of using git, it might not be possible to update versions using the commands. In this case, update by downloading a new zip file and replacing the entire ``IDF_PATH`` directory with its contents.
 
 
 .. _`updating-pre-release`:
@@ -215,7 +219,9 @@ Pre-release tags are not always found on the `Releases page`_. Consult the `list
 Updating to Master Branch
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note:: Using Master branch means living "on the bleeding edge" with the latest ESP-IDF code.
+.. note::
+
+  Using Master branch means living "on the bleeding edge" with the latest ESP-IDF code.
 
 To use the latest version on the ESP-IDF master branch, this is the process to follow:
 

@@ -9,12 +9,12 @@ ESP-IDF v5.0 no longer supports GNU make-based projects. Please follow the :ref:
 Update Fragment File Grammar
 ----------------------------
 
-Please follow the :ref:`migrate linker script fragment files grammar<ldgen-migrate-lf-grammar>` chapter for migrating v3.x grammar to the new one.
+Please follow the :ref:`migrate linker script fragment files grammar <ldgen-migrate-lf-grammar>` chapter for migrating v3.x grammar to the new one.
 
 Specify Component Requirements Explicitly
 -----------------------------------------
 
-In previous versions of ESP-IDF, some components were always added as public requirements (dependencies) to every component in the build, in addition to the :ref:`common component requirements<component-common-requirements>`:
+In previous versions of ESP-IDF, some components were always added as public requirements (dependencies) to every component in the build, in addition to the :ref:`common component requirements <component-common-requirements>`:
 
 * ``driver``
 * ``efuse``
@@ -54,8 +54,8 @@ instead of::
 
 Defining these variables as CMake lists is compatible with previous ESP-IDF versions.
 
-Update Usage of target_link_libraries with project_elf
-------------------------------------------------------
+Update Usage of ``target_link_libraries`` with ``project_elf``
+--------------------------------------------------------------
 
 ESP-IDF v5.0 fixes CMake variable propagation issues for components. This issue caused compiler flags and definitions that were supposed to apply to one component to be applied to every component in the project.
 

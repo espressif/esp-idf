@@ -1,5 +1,6 @@
 ESP-MQTT
 ========
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -10,6 +11,7 @@ ESP-MQTT is an implementation of `MQTT <https://mqtt.org/>`__ protocol client, w
 
 Features
 --------
+
    * Support MQTT over TCP, SSL with Mbed TLS, MQTT over WebSocket, and MQTT over WebSocket Secure
    * Easy to setup with URI
    * Multiple instances (multiple clients in one application)
@@ -33,7 +35,7 @@ MQTT Message Retransmission
 
 A new MQTT message is created by calling :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish()>` or its non blocking counterpart :cpp:func:`esp_mqtt_client_enqueue <esp_mqtt_client_enqueue()>`.
 
-Messages with QoS 0 will be sent only once. QoS 1 and 2 have different behaviors since the protocol requires extra steps to complete the process.
+Messages with QoS 0 is sent only once. QoS 1 and 2 have different behaviors since the protocol requires extra steps to complete the process.
 
 The ESP-MQTT library opts to always retransmit unacknowledged QoS 1 and 2 publish messages to avoid losses in faulty connections, even though the MQTT specification requires the re-transmission only on reconnect with Clean Session flag been set to 0 (set :cpp:member:`disable_clean_session <esp_mqtt_client_config_t::session_t::disable_clean_session>` to true for this behavior).
 
@@ -87,7 +89,7 @@ The :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` field
 
 -  Minimal configurations:
 
-.. code:: c
+.. code-block:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = "mqtt://mqtt.eclipseprojects.io",
@@ -96,7 +98,9 @@ The :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` field
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
 
-.. note:: By default MQTT client uses event loop library to post related MQTT events (connected, subscribed, published, etc.).
+.. note::
+
+   By default MQTT client uses event loop library to post related MQTT events (connected, subscribed, published, etc.).
 
 ============
 Verification
@@ -137,7 +141,7 @@ All client related credentials are under the :cpp:class:`credentials <esp_mqtt_c
 Authentication
 ==============
 
-It's possible to set authentication parameters through the :cpp:class:`authentication <esp_mqtt_client_config_t::credentials_t::authentication_t>` field. The client supports the following authentication methods:
+It is possible to set authentication parameters through the :cpp:class:`authentication <esp_mqtt_client_config_t::credentials_t::authentication_t>` field. The client supports the following authentication methods:
 
  * :cpp:member:`password <esp_mqtt_client_config_t::credentials_t::authentication_t::password>`: use a password by setting
  * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` and :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`: mutual authentication with TLS, and both can be provided in PEM or DER format
@@ -181,12 +185,12 @@ The following events may be posted by the MQTT client:
 
 * ``MQTT_EVENT_BEFORE_CONNECT``: The client is initialized and about to start connecting to the broker.
 * ``MQTT_EVENT_CONNECTED``: The client has successfully established a connection to the broker. The client is now ready to send and receive data.
-* ``MQTT_EVENT_DISCONNECTED``: The client has aborted the connection due to being unable to read or write data, e.g. because the server is unavailable.
-* ``MQTT_EVENT_SUBSCRIBED``: The broker has acknowledged the client's subscribe request. The event data will contain the message ID of the subscribe message.
-* ``MQTT_EVENT_UNSUBSCRIBED``: The broker has acknowledged the client's unsubscribe request. The event data will contain the message ID of the unsubscribe message.
-* ``MQTT_EVENT_PUBLISHED``: The broker has acknowledged the client's publish message. This will only be posted for QoS level 1 and 2, as level 0 does not use acknowledgements. The event data will contain the message ID of the publish message.
-* ``MQTT_EVENT_DATA``: The client has received a publish message. The event data contains: message ID, name of the topic it was published to, received data and its length. For data that exceeds the internal buffer, multiple ``MQTT_EVENT_DATA`` will be posted and :cpp:member:`current_data_offset <esp_mqtt_event_t::current_data_offset>` and :cpp:member:`total_data_len<esp_mqtt_event_t::total_data_len>` from event data updated to keep track of the fragmented message.
-* ``MQTT_EVENT_ERROR``: The client has encountered an error. The field :cpp:type:`error_handle <esp_mqtt_error_codes_t>` in the event data contains :cpp:type:`error_type <esp_mqtt_error_type_t>` that  can be used to identify the error. The type of error will determine which parts of the :cpp:type:`error_handle <esp_mqtt_error_codes_t>` struct is filled.
+* ``MQTT_EVENT_DISCONNECTED``: The client has aborted the connection due to being unable to read or write data, e.g., because the server is unavailable.
+* ``MQTT_EVENT_SUBSCRIBED``: The broker has acknowledged the client's subscribe request. The event data contains the message ID of the subscribe message.
+* ``MQTT_EVENT_UNSUBSCRIBED``: The broker has acknowledged the client's unsubscribe request. The event data contains the message ID of the unsubscribe message.
+* ``MQTT_EVENT_PUBLISHED``: The broker has acknowledged the client's publish message. This is only posted for QoS level 1 and 2, as level 0 does not use acknowledgements. The event data contains the message ID of the publish message.
+* ``MQTT_EVENT_DATA``: The client has received a publish message. The event data contains: message ID, name of the topic it was published to, received data and its length. For data that exceeds the internal buffer, multiple ``MQTT_EVENT_DATA`` events are posted and :cpp:member:`current_data_offset <esp_mqtt_event_t::current_data_offset>` and :cpp:member:`total_data_len<esp_mqtt_event_t::total_data_len>` from event data updated to keep track of the fragmented message.
+* ``MQTT_EVENT_ERROR``: The client has encountered an error. The field :cpp:type:`error_handle <esp_mqtt_error_codes_t>` in the event data contains :cpp:type:`error_type <esp_mqtt_error_type_t>` that can be used to identify the error. The type of error determines which parts of the :cpp:type:`error_handle <esp_mqtt_error_codes_t>` struct is filled.
 
 API Reference
 -------------

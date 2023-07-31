@@ -4,11 +4,12 @@ ESP SPI Slave HD (Half Duplex) Mode Protocol
 .. only:: esp32
 
     .. warning::
-        The driver for ESP32 hasn't been developed yet.
+
+        The driver for ESP32 has not been developed yet.
 
 .. _esp_spi_slave_caps:
 
-SPI Slave Capabilities of Espressif chips
+SPI Slave Capabilities of Espressif Chips
 -----------------------------------------
 
 +------------------+-------+----------+----------+----------+----------+----------+----------+
@@ -48,7 +49,7 @@ In the half duplex mode, the master has to use the protocol defined by the slave
 
     This may be a data OUT phase, in which the direction is slave to master, or a data IN phase, in which the direction is master to slave.
 
-The *direction* means which side (master or slave) controls the MOSI, MISO, WP, and HD pins.
+The **direction** means which side (master or slave) controls the MOSI, MISO, WP, and HD pins.
 
 Data IO Modes
 -------------
@@ -76,7 +77,7 @@ Normally, which mode is used is determined by the command sent by the master (Se
 QPI Mode
 ^^^^^^^^
 
-The QPI mode is a special state of the SPI Slave. The master can send the ENQPI command to put the slave into the QPI mode state. In the QPI mode, the command is also sent in 4-bit, thus it's not compatible with the normal modes. The master should only send QPI commands when the slave is in QPI mode. To exit from the QPI mode, master can send the EXQPI command.
+The QPI mode is a special state of the SPI Slave. The master can send the ENQPI command to put the slave into the QPI mode state. In the QPI mode, the command is also sent in 4-bit, thus it is not compatible with the normal modes. The master should only send QPI commands when the slave is in QPI mode. To exit from the QPI mode, master can send the EXQPI command.
 
 .. _spi_slave_hd_supported_cmds:
 
@@ -133,11 +134,11 @@ Moreover, WRBUF, RDBUF, WRDMA, RDDMA commands have their 2-bit and 4-bit version
 Segment Transaction Mode
 ------------------------
 
-Segment transaction mode is the only mode supported by the SPI Slave HD driver for now. In this mode, for a transaction the slave load onto the DMA, the master is allowed to read or write in segments. This way the master doesn't have to prepare a large buffer as the size of data provided by the slave. After the master finishes reading/writing a buffer, it has to send the corresponding termination command to the slave as a synchronization signal. The slave driver will update new data (if exist) onto the DMA upon seeing the termination command.
+Segment transaction mode is the only mode supported by the SPI Slave HD driver for now. In this mode, for a transaction the slave load onto the DMA, the master is allowed to read or write in segments. This way the master does not have to prepare a large buffer as the size of data provided by the slave. After the master finishes reading/writing a buffer, it has to send the corresponding termination command to the slave as a synchronization signal. The slave driver will update new data (if exist) onto the DMA upon seeing the termination command.
 
 The termination command is WR_DONE (0x07) for the WRDMA and CMD8 (0x08) for the RDDMA.
 
-Here's an example for the flow the master read data from the slave DMA:
+Here is an example for the flow the master read data from the slave DMA:
 
 1. The slave loads 4092 bytes of data onto the RDDMA
 2. The master do seven RDDMA transactions, each of them is 512 bytes long, and reads the first 3584 bytes from the slave

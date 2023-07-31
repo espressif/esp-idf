@@ -19,7 +19,7 @@ FreeRTOS
 
     Allowing FreeRTOS objects (such as queues and semaphores) to be placed in external RAM becomes an issue if those objects are accessed while the cache is disabled (such as during SPI flash write operations) and would lead to a cache access errors (see :doc:`Fatal Errors </api-guides/fatal-errors>` for more details).
 
-    Therefore, FreeRTOS has been updated to always use internal memory (i.e., DRAM) for dynamic memory allocation. Calling FreeRTOS creation functions (e.g., :cpp:func:`xTaskCreate`, :cpp:func:`xQueueCreate` ) will guarantee that the memory allocated for those tasks/objects is from internal memory (see :ref:`freertos-heap` for more details).
+    Therefore, FreeRTOS has been updated to always use internal memory (i.e., DRAM) for dynamic memory allocation. Calling FreeRTOS creation functions (e.g., :cpp:func:`xTaskCreate`, :cpp:func:`xQueueCreate`) guarantees that the memory allocated for those tasks/objects is from internal memory (see :ref:`freertos-heap` for more details).
 
     .. warning::
 

@@ -21,7 +21,7 @@ The upgrade to GCC 12.2.0 has resulted in the addition of new warnings, or enhan
 ``-Wuse-after-free``
 --------------------
 
-Typically, this warning should not produce false-positives for release-level code. But this may appear in test cases. There is an example of how it was fixed in IDF's test_realloc.c.
+Typically, this warning should not produce false-positives for release-level code. But this may appear in test cases. There is an example of how it was fixed in ESP-IDF's ``test_realloc.c``.
 
 .. code-block:: c
 
@@ -42,7 +42,7 @@ Pointers may be converted to int to avoid warning ``-Wuse-after-free``.
 
 GCC 12.2.0 introduces an enhanced version of the ``-Waddress`` warning option, which is now more eager in detecting the checking of pointers to an array in if-statements.
 
-The following code will trigger the warning:
+The following code triggers the warning:
 
 .. code-block:: c
 
@@ -61,10 +61,10 @@ Eliminating unnecessary checks resolves the warning.
     memset(array, 0xff, sizeof(array));
 
 
-RISC-V Builds Outside of IDF
-============================
+RISC-V Builds Outside of ESP-IDF
+================================
 
-The RISC-V extensions ``zicsr`` and ``zifencei`` have been separated from the ``I`` extension. GCC 12 reflects this change, and as a result, when building for RISC-V ESP32 chips outside of the IDF framework, you must include the ``_zicsr_zifencei`` postfix when specifying the -march option in your build system.
+The RISC-V extensions ``zicsr`` and ``zifencei`` have been separated from the ``I`` extension. GCC 12 reflects this change, and as a result, when building for RISC-V ESP32 chips outside of the ESP-IDF framework, you must include the ``_zicsr_zifencei`` postfix when specifying the -march option in your build system.
 
 Example:
 

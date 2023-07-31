@@ -1,5 +1,6 @@
 ESP-IDF Programming Guide
 =========================
+
 :link_to_translation:`zh_CN:[中文]`
 
 .. only:: fast_build
