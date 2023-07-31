@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1718,15 +1718,15 @@ config_get_wifi_task_stack_size = 0x40001e24;
 pp_create_task = 0x40001e28;
 hal_set_sta_tsf_wakeup = 0x40001e2c;
 hal_set_rx_beacon_pti = 0x40001e30;
-pm_start = 0x40001e34;
-pm_stop = 0x40001e38;
+/* pm_start = 0x40001e34; */
+/* pm_stop = 0x40001e38; */
 hal_disable_sta_tbtt = 0x40001e3c;
 ppCalTxopDur = 0x40001e40;
 wDev_IndicateCtrlFrame = 0x40001e44;
 hal_enable_sta_tbtt = 0x40001e48;
 hal_set_sta_tbtt = 0x40001e4c;
 /* pm_update_next_tbtt = 0x40001e50;*/
-pm_set_sleep_type = 0x40001e54;
+/* pm_set_sleep_type = 0x40001e54; */
 wDev_Rxbuf_Init = 0x40001e58;
 wDev_Rxbuf_Deinit = 0x40001e5c;
 ppCalTkipMic = 0x40001e60;
