@@ -82,7 +82,7 @@ module.exports = async function () {
                     break;
                 case "scope-case":
                     issuesSingleCommitMessage.push(
-                        `- *scope/component* should start with a lowercase letter`
+                        `- *scope/component* should be lowercase without whitespace, allowed special characters are \`_\` \`/\` \`.\` \`,\` \`*\` \`-\` \`.\``
                     );
                     break;
                 case "subject-empty":
