@@ -322,6 +322,20 @@ bool spi_flash_cache_enabled(void);
 void spi_flash_enable_cache(uint32_t cpuid);
 
 /**
+ * Suspend the I/DCACHE for core，suspends the CPU access to cache for a while, without invalidation.
+ * @param cpuid       the core number to suspend cache for (valid only on esp32)
+ * @param saved_state uint32_t variable pointer to record cache autoload status
+ */
+void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+
+/**
+ * Resume the I/DCache for core.
+ * @param cpuid       the core number to suspend cache for (valid only on esp32)
+ * @param saved_state uint32_t variable recorded the cache autoload status
+ */
+void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+
+/**
  * @brief SPI flash critical section enter function.
  *
  */
