@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 
-/**
- * @brief Driver Backgrounds
+/*
+ * Driver Backgrounds
  *
  * --------------------------------------------------------------------------------------------------------
  * |                              Conversion Frame                                                        |
@@ -34,8 +34,7 @@ extern "C" {
  *                          structure is `adc_digi_output_data_t`, including ADC Unit, ADC Channel and Raw Data.
  *
  * For example:
- * conv_frame_size = 100,
- * then one Conversion Frame contains (100 / `SOC_ADC_DIGI_RESULT_BYTES`) pieces of Conversion Results
+ * conv_frame_size = 100 indicates one Conversion Frame contains (100 / `SOC_ADC_DIGI_RESULT_BYTES`) pieces of Conversion Results.
  */
 
 /**
