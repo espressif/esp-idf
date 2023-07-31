@@ -124,9 +124,10 @@ static void prvFatalError( const char *pcCall, int iErrno )
 /*
  * See header file for description.
  */
-portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack,
-                                       portSTACK_TYPE *pxEndOfStack,
-                                       TaskFunction_t pxCode, void *pvParameters )
+StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack,
+                                    StackType_t *pxEndOfStack,
+                                    TaskFunction_t pxCode,
+                                    void *pvParameters )
 {
     Thread_t *thread;
     pthread_attr_t xThreadAttributes;
@@ -139,7 +140,7 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack,
      * Store the additional thread data at the start of the stack.
      */
     thread = (Thread_t *)(pxTopOfStack + 1) - 1;
-    pxTopOfStack = (portSTACK_TYPE *)thread - 1;
+    pxTopOfStack = (StackType_t *)thread - 1;
     ulStackSize = (pxTopOfStack + 1 - pxEndOfStack) * sizeof(*pxTopOfStack);
 
     thread->pxCode = pxCode;
