@@ -19,6 +19,7 @@
 
 #include "esp_attr.h"
 #include "esp_sleep.h"
+#include "esp_spi_flash.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/system_internal.h"
 #include "esp_log.h"
@@ -704,7 +705,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
         portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {
+        uint32_t cache_state;
+        uint32_t cpuid = cpu_ll_get_core_id();
+        spi_flash_disable_cache(cpuid, &cache_state);
         result = call_rtc_sleep_start(reject_triggers);
+        spi_flash_restore_cache(cpuid, cache_state);
     }
 
     // Restore CPU frequency
