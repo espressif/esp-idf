@@ -693,7 +693,9 @@ int ble_vhci_disc_duplicate_set_period_refresh_time(int refresh_period_time){
 void ble_controller_scan_duplicate_config(void)
 {
     uint32_t duplicate_mode = FILTER_DUPLICATE_DEFAULT;
-    uint32_t cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
+    uint32_t cache_size = 100;
+#if CONFIG_BT_LE_SCAN_DUPL == true
+    cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
     if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 0) {
         duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_PDUTYPE;
     } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 1) {
@@ -701,13 +703,14 @@ void ble_controller_scan_duplicate_config(void)
     } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 2) {
         duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_ADVDATA;
     }
-
     duplicate_mode |= FILTER_DUPLICATE_EXCEPTION_FOR_MESH;
+
+    ble_vhci_disc_duplicate_set_period_refresh_time(CONFIG_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD);
+#endif
 
     ble_vhci_disc_duplicate_mode_disable(0xFFFFFFFF);
     ble_vhci_disc_duplicate_mode_enable(duplicate_mode);
     ble_vhci_disc_duplicate_set_max_cache_size(cache_size);
-    ble_vhci_disc_duplicate_set_period_refresh_time(CONFIG_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD);
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
