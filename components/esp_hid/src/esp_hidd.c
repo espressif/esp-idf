@@ -8,7 +8,7 @@
 #include "esp_hidd_private.h"
 #include "esp_event_base.h"
 
-#if CONFIG_GATTS_ENABLE
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
 #include "ble_hidd.h"
 #endif /* CONFIG_GATTS_ENABLE */
 
@@ -27,7 +27,7 @@ esp_err_t esp_hidd_dev_init(const esp_hid_device_config_t *config, esp_hid_trans
     }
 
     switch (transport) {
-#if CONFIG_GATTS_ENABLE
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
     case ESP_HID_TRANSPORT_BLE:
         ret = esp_ble_hidd_dev_init(dev, config, callback);
         break;
