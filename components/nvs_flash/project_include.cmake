@@ -27,11 +27,15 @@ function(nvs_create_partition_image partition csv)
     if("${size}" AND "${offset}")
         set(image_file ${CMAKE_BINARY_DIR}/${partition}.bin)
 
-        add_custom_target(
-            nvs_${partition}_bin ALL
+        add_custom_command(
+            OUTPUT ${image_file}
             COMMAND ${nvs_partition_gen_py} generate --version ${arg_VERSION} ${csv_full_path} ${image_file} ${size}
-            DEPENDS ${csv_full_path} ${arg_DEPENDS}
+            MAIN_DEPENDENCY ${csv_full_path}
+            DEPENDS ${arg_DEPENDS}
+            COMMENT "Generating NVS partition image for ${partition} from ${csv}"
            )
+
+        add_custom_target(nvs_${partition}_bin ALL DEPENDS ${image_file})
 
         set_property(
             DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -54,7 +58,7 @@ function(nvs_create_partition_image partition csv)
         set(message
             "Failed to create NVS image for partition '${partition}'. "
             "Check project configuration if using the correct partition table file."
-          )
+           )
         fail_at_build_time(nvs_${partition}_bin "${message}")
     endif()
 endfunction()
