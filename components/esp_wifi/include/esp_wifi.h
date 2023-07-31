@@ -87,6 +87,7 @@ extern "C" {
 #define ESP_ERR_WIFI_TWT_SETUP_TIMEOUT (ESP_ERR_WIFI_BASE + 24)  /*!< Timeout of receiving twt setup response frame, timeout times can be set during twt setup */
 #define ESP_ERR_WIFI_TWT_SETUP_TXFAIL  (ESP_ERR_WIFI_BASE + 25)  /*!< TWT setup frame tx failed */
 #define ESP_ERR_WIFI_TWT_SETUP_REJECT  (ESP_ERR_WIFI_BASE + 26)  /*!< The twt setup request was rejected by the AP */
+#define ESP_ERR_WIFI_DISCARD           (ESP_ERR_WIFI_BASE + 27)  /*!< Discard frame */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.

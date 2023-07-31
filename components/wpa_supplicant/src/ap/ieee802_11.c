@@ -559,7 +559,7 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
        }
 
        if (sae_check_confirm(sta->sae, buf, len) < 0) {
-           resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+           resp = WLAN_STATUS_CHALLENGE_FAIL;
            goto reply;
        }
        sta->sae->rc = peer_send_confirm;
@@ -569,7 +569,6 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
     } else {
         wpa_printf(MSG_ERROR, "unexpected SAE authentication transaction %u (status=%u )", auth_transaction, status);
         if (status != WLAN_STATUS_SUCCESS) {
-            resp = -1;
             goto remove_sta;
         }
         resp = WLAN_STATUS_UNKNOWN_AUTH_TRANSACTION;
