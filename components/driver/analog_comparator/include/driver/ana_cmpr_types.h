@@ -18,12 +18,9 @@ extern "C" {
  * @brief Analog comparator unit
  *
  */
-typedef enum {
-    ANA_CMPR_UNIT_0,                /*!< Analog Comparator unit 0 */
-#if SOC_ANA_CMPR_NUM == 2
-    ANA_CMPR_UNIT_1,                /*!< Analog Comparator unit 1 */
-#endif
-} ana_cmpr_unit_t;
+typedef int ana_cmpr_unit_t;
+
+#define ANA_CMPR_UNIT_0     0       /*!< @deprecated Analog comparator unit 0 */
 
 /**
  * @brief Analog comparator reference source
@@ -94,10 +91,9 @@ typedef int ana_cmpr_clk_src_t;
  *
  */
 typedef struct {
-#if SOC_ANA_CMPR_SUPPORT_MULTI_INTR
     ana_cmpr_cross_type_t cross_type;   /*!< The cross type of the target signal to the reference signal.
-                                         *   Will either be ANA_CMPR_CROSS_POS or ANA_CMPR_CROSS_NEG */
-#endif
+                                         *   Will either be ANA_CMPR_CROSS_POS or ANA_CMPR_CROSS_NEG
+                                         *   Always be ANA_CMPR_CROSS_ANY if target does not support independent interrupt (like ESP32H2) */
 } ana_cmpr_cross_event_data_t;
 
 /**

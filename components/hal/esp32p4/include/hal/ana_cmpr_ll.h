@@ -19,11 +19,13 @@ extern "C" {
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_GET_UNIT(hw)     ((hw) == (&ANALOG_CMPR[0]) ? 0 : 1)
 #define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
+#define ANALOG_CMPR_LL_ETM_EVENTS_PER_UNIT    (2)
 
 #define ANALOG_CMPR_LL_NEG_CROSS_MASK(unit)   (1UL << ((int)unit * 3))
 #define ANALOG_CMPR_LL_POS_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 1))
 
 #define ANALOG_CMPR_LL_ETM_SOURCE(unit, type)   (GPIO_EVT_ZERO_DET_POS0 + (unit) * 2 + (type))
+
 
 /**
  * @brief Enable analog comparator
@@ -92,7 +94,7 @@ static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *h
         mask |= ANALOG_CMPR_LL_POS_CROSS_MASK(unit);
     }
     if (type & 0x02) {
-        mask |= ANALOG_CMPR_LL_POS_CROSS_MASK(unit);
+        mask |= ANALOG_CMPR_LL_NEG_CROSS_MASK(unit);
     }
     return mask;
 }
@@ -120,11 +122,13 @@ static inline void analog_cmpr_ll_set_debounce_cycle(analog_cmpr_dev_t *hw, uint
  */
 static inline void analog_cmpr_ll_enable_intr(analog_cmpr_dev_t *hw, uint32_t mask, bool enable)
 {
+    uint32_t val = hw->int_ena->val;
     if (enable) {
-        hw->int_ena->val |= mask;
+        val |= mask;
     } else {
-        hw->int_ena->val &= ~mask;
+        val &= ~mask;
     }
+    hw->int_ena->val = val;
 }
 
 /**

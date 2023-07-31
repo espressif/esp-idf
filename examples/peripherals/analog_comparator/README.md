@@ -1,11 +1,17 @@
-| Supported Targets | ESP32-H2 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-H2 | ESP32-P4 |
+| ----------------- | -------- | -------- |
 
 # Analog Comparator Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example is going to show how to use the Analog Comparator.
+This example is going to show how to use the Analog Comparator. The example toggles a GPIO to monitor the positive and negative crosses on the analog comparator unit.
+
+## Realization
+
+- If the target supports generating the analog comparator events (like ESP32-P4), the example can toggle the monitoring GPIO via Event Task Matrix (ETM). ETM can bind the analog comparator cross events (positive and negative events) with the GPIO tasks (to set or clear a GPIO), so that every event happens, hardware will execute the corresponding task without CPU involved.
+
+- If the target does not support to generate the analog comparator events (like ESP32-H2). The example will register an event callback on the analog comparator, and toggle the GPIO in the callback. It requires the CPU to process every event ISR, thus it is not effective as ETM and can't achieve a high resolution.
 
 ## How to Use Example
 

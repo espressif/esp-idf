@@ -413,7 +413,7 @@ typedef enum {
 #define SOC_ANA_CMPR_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL}
 
 /**
- * @brief Sigma Delta Modulator clock source
+ * @brief Analog Comparator clock source
  */
 typedef enum {
     ANA_CMPR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                   /*!< Select XTAL clock as the source clock */

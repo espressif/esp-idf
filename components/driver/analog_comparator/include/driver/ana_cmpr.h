@@ -28,6 +28,12 @@ typedef struct {
                                                  *   for external reference, the reference signal should be connect to `ANA_CMPRx_EXT_REF_GPIO`
                                                  */
     ana_cmpr_cross_type_t   cross_type;         /*!< The crossing types that can trigger interrupt */
+    int                     intr_priority;      /*!< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
+                                                 *   otherwise the larger the higher, 7 is NMI */
+    struct {
+        uint32_t            io_loop_back:1;     /*!< Enable this field when the other signals that output on the comparision pins are supposed to be fed back.
+                                                 *   Normally used for debug/test scenario */
+    } flags;                                    /*!< Analog comparator driver flags */
 } ana_cmpr_config_t;
 
 /**

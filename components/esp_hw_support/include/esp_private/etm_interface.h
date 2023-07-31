@@ -25,7 +25,7 @@ typedef enum {
     ETM_TRIG_PERIPH_GPTIMER,  /*!< ETM trigger source: GPTimer */
     ETM_TRIG_PERIPH_SYSTIMER, /*!< ETM trigger source: Systimer */
     ETM_TRIG_PERIPH_MCPWM,    /*!< ETM trigger source: MCPWM */
-    ETM_TRIG_PERIPH_ANA_CMPR,     /*!< ETM trigger source: Analog Comparator */
+    ETM_TRIG_PERIPH_ANA_CMPR, /*!< ETM trigger source: Analog Comparator */
 } etm_trigger_peripheral_t;
 
 /**

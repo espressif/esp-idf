@@ -73,6 +73,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
     $(PROJECT_PATH)/components/driver/analog_comparator/include/driver/ana_cmpr.h \
+    $(PROJECT_PATH)/components/driver/analog_comparator/include/driver/ana_cmpr_etm.h \
     $(PROJECT_PATH)/components/driver/analog_comparator/include/driver/ana_cmpr_types.h \
     $(PROJECT_PATH)/components/driver/dac/include/driver/dac_continuous.h \
     $(PROJECT_PATH)/components/driver/dac/include/driver/dac_cosine.h \

@@ -44,10 +44,11 @@ TEST_CASE("ana_cmpr_internal_reference_iram_safe", "[ana_cmpr]")
 
     ana_cmpr_handle_t cmpr = NULL;
     ana_cmpr_config_t config = {
-        .unit = ANA_CMPR_UNIT_0,
+        .unit = 0,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
         .cross_type = ANA_CMPR_CROSS_ANY,
+        .flags.io_loop_back = 1,
     };
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
     test_data.handle = cmpr;
