@@ -98,10 +98,10 @@ static pthread_once_t hSigSetupThread = PTHREAD_ONCE_INIT;
 static sigset_t xAllSignals;
 static sigset_t xSchedulerOriginalSignalMask;
 static pthread_t hMainThread = ( pthread_t )NULL;
-static volatile portBASE_TYPE uxCriticalNesting;
+static volatile BaseType_t uxCriticalNesting;
 /*-----------------------------------------------------------*/
 
-static portBASE_TYPE xSchedulerEnd = pdFALSE;
+static BaseType_t xSchedulerEnd = pdFALSE;
 /*-----------------------------------------------------------*/
 
 static void prvSetupSignalsAndSchedulerPolicy( void );
@@ -179,7 +179,7 @@ void vPortStartFirstTask( void )
 /*
  * See header file for description.
  */
-portBASE_TYPE xPortStartScheduler( void )
+BaseType_t xPortStartScheduler( void )
 {
     int iSignal;
     sigset_t xSignals;
@@ -307,7 +307,7 @@ void vPortEnableInterrupts( void )
 }
 /*-----------------------------------------------------------*/
 
-portBASE_TYPE xPortSetInterruptMask( void )
+BaseType_t xPortSetInterruptMask( void )
 {
     /* Interrupts are always disabled inside ISRs (signals
        handlers). */
@@ -315,7 +315,7 @@ portBASE_TYPE xPortSetInterruptMask( void )
 }
 /*-----------------------------------------------------------*/
 
-void vPortClearInterruptMask( portBASE_TYPE xMask )
+void vPortClearInterruptMask( BaseType_t xMask )
 {
 }
 /*-----------------------------------------------------------*/

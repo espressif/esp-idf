@@ -61,7 +61,7 @@ extern "C" {
 
 typedef portSTACK_TYPE StackType_t;
 typedef portBASE_TYPE BaseType_t;
-typedef unsigned long UBaseType_t;
+typedef unsigned portBASE_TYPE UBaseType_t;
 
 typedef unsigned long TickType_t;
 #define portMAX_DELAY ( TickType_t ) ULONG_MAX
@@ -174,11 +174,11 @@ extern void vTaskExitCritical( void );
 #define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-extern portBASE_TYPE xPortSetInterruptMask( void );
-extern void vPortClearInterruptMask( portBASE_TYPE xMask );
+extern BaseType_t xPortSetInterruptMask( void );
+extern void vPortClearInterruptMask( BaseType_t xMask );
 
 #define portSET_INTERRUPT_MASK_FROM_ISR() ({ \
-    portBASE_TYPE cur_level; \
+    BaseType_t cur_level; \
     cur_level = xPortSetInterruptMask(); \
     vTaskEnterCritical(); \
     cur_level; \

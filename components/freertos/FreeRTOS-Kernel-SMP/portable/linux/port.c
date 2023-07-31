@@ -105,12 +105,12 @@ static sigset_t xSchedulerOriginalSignalMask;
 static pthread_t hMainThread = ( pthread_t )NULL;
 
 // These are saved as part of a thread's state in prvSwitchThread()
-static volatile portBASE_TYPE uxCriticalNestingIDF = 0; /* Track nesting calls for IDF style critical sections. FreeRTOS critical section nesting is maintained in the TCB. */
+static volatile BaseType_t uxCriticalNestingIDF = 0;    /* Track nesting calls for IDF style critical sections. FreeRTOS critical section nesting is maintained in the TCB. */
 static volatile UBaseType_t uxInterruptNesting = 0;     /* Tracks if we are currently in an interrupt. */
-static volatile portBASE_TYPE uxInterruptLevel = 0;              /* Tracks the current level (i.e., interrupt mask) */
+static volatile BaseType_t uxInterruptLevel = 0;        /* Tracks the current level (i.e., interrupt mask) */
 /*-----------------------------------------------------------*/
 
-static portBASE_TYPE xSchedulerEnd = pdFALSE;
+static BaseType_t xSchedulerEnd = pdFALSE;
 /*-----------------------------------------------------------*/
 
 static void prvSetupSignalsAndSchedulerPolicy( void );
@@ -188,7 +188,7 @@ void vPortStartFirstTask( void )
 /*
  * See header file for description.
  */
-portBASE_TYPE xPortStartScheduler( void )
+BaseType_t xPortStartScheduler( void )
 {
     int iSignal;
     sigset_t xSignals;
@@ -320,18 +320,18 @@ void vPortYield( void )
    Hence, we need to call vPortDisableInterrupts() and vPortEnableInterrupts(), otherwise interrupts
    are never disabled/enabled. */
 
-portBASE_TYPE xPortSetInterruptMask( void )
+BaseType_t xPortSetInterruptMask( void )
 {
     if (uxInterruptLevel == 0 && uxCriticalNestingIDF == 0) {
         vPortDisableInterrupts();
     }
-    portBASE_TYPE prev_intr_level = uxInterruptLevel;
+    BaseType_t prev_intr_level = uxInterruptLevel;
     uxInterruptLevel++;
     return prev_intr_level;
 }
 /*-----------------------------------------------------------*/
 
-void vPortClearInterruptMask( portBASE_TYPE xMask )
+void vPortClearInterruptMask( BaseType_t xMask )
 {
     // Only reenable interrupts if xMask is 0
     uxInterruptLevel = xMask;
@@ -646,7 +646,7 @@ int main(int argc, const char **argv)
 
     usleep(1000);
 
-    portBASE_TYPE res;
+    BaseType_t res;
 
 #if ( configNUM_CORES > 1 )
     res = xTaskCreateAffinitySet(&main_task, "main",

@@ -58,8 +58,8 @@ extern "C" {
 #define portPOINTER_SIZE_TYPE intptr_t
 
 typedef portSTACK_TYPE StackType_t;
-typedef long BaseType_t;
-typedef unsigned long UBaseType_t;
+typedef portBASE_TYPE BaseType_t;
+typedef unsigned portBASE_TYPE UBaseType_t;
 
 typedef unsigned long TickType_t;
 #define portMAX_DELAY ( TickType_t ) ULONG_MAX
@@ -91,8 +91,8 @@ extern void vPortEnableInterrupts( void );
 #define portSET_INTERRUPT_MASK()        ( vPortDisableInterrupts() )
 #define portCLEAR_INTERRUPT_MASK()      ( vPortEnableInterrupts() )
 
-extern portBASE_TYPE xPortSetInterruptMask( void );
-extern void vPortClearInterruptMask( portBASE_TYPE xMask );
+extern BaseType_t xPortSetInterruptMask( void );
+extern void vPortClearInterruptMask( BaseType_t xMask );
 
 extern void vPortEnterCritical( void );
 extern void vPortExitCritical( void );

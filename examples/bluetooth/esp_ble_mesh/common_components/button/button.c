@@ -187,7 +187,7 @@ static void button_press_serial_cb(void* tmr)
 static void button_gpio_isr_handler(void* arg)
 {
     button_dev_t* btn = (button_dev_t*) arg;
-    portBASE_TYPE HPTaskAwoken = pdFALSE;
+    BaseType_t HPTaskAwoken = pdFALSE;
     int level = gpio_get_level(btn->io_num);
     if (level == btn->active_level) {
         if (btn->tap_psh_cb.tmr) {

@@ -862,7 +862,7 @@ static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_statu
 void IRAM_ATTR ledc_fade_isr(void *arg)
 {
     bool cb_yield = false;
-    portBASE_TYPE HPTaskAwoken = pdFALSE;
+    BaseType_t HPTaskAwoken = pdFALSE;
     uint32_t speed_mode = 0;
     uint32_t channel = 0;
     uint32_t intr_status = 0;

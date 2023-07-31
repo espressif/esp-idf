@@ -147,7 +147,7 @@ static bool test_clear_bits;
 
 static bool on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    portBASE_TYPE task_woken = pdFALSE;
+    BaseType_t task_woken = pdFALSE;
 
     gptimer_stop(timer);
 
