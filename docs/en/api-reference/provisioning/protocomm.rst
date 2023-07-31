@@ -1,62 +1,77 @@
 Protocol Communication
 ======================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
-Protocol Communication (protocomm) component manages secure sessions and provides framework for multiple transports. The application can also use protocomm layer directly to have application specific extensions for the provisioning (or non-provisioning) use cases.
 
-Following features are available for provisioning :
-    * Communication security at application level -
-        * protocomm_security0 (no security)
-        * protocomm_security1 (Curve25519 key exchange + AES-CTR encryption/decryption)
-        * protocomm_security2 (SRP6a-based key exchange + AES-GCM encryption/decryption)
+The Protocol Communication (protocomm) component manages secure sessions and provides the framework for multiple transports. The application can also use the protocomm layer directly to have application-specific extensions for the provisioning or non-provisioning use cases.
+
+Following features are available for provisioning:
+
+    * Communication security at the application level
+
+        * ``protocomm_security0`` (no security)
+        * ``protocomm_security1`` (Curve25519 key exchange + AES-CTR encryption/decryption)
+        * ``protocomm_security2`` (SRP6a-based key exchange + AES-GCM encryption/decryption)
     * Proof-of-possession (support with protocomm_security1 only)
     * Salt and Verifier (support with protocomm_security2 only)
 
-Protocomm internally uses protobuf (protocol buffers) for secure session establishment. Though users can implement their own security (even without using protobuf). One can even use protocomm without any security layer.
+Protocomm internally uses protobuf (protocol buffers) for secure session establishment. Users can choose to implement their own security (even without using protobuf). Protocomm can also be used without any security layer.
 
-Protocomm provides framework for various transports - WiFi (SoftAP+HTTPD), BLE, console - in which case the handler invocation is automatically taken care of on the device side (see Transport Examples below for code snippets).
+Protocomm provides the framework for various transports:
 
-Note that the client still needs to establish session (for protocomm_security1 and protocomm_security2) by performing the two way handshake. See :doc:`provisioning` for more details about the secure handshake logic.
+.. list::
+
+    :SOC_BLE_SUPPORTED: - Bluetooth LE
+    :SOC_WIFI_SUPPORTED: - Wi-Fi (SoftAP + HTTPD)
+    - Console, in which case the handler invocation is automatically taken care of on the device side. See Transport Examples below for code snippets.
+
+
+Note that for protocomm_security1 and protocomm_security2, the client still needs to establish sessions by performing the two-way handshake. See :doc:`provisioning` for more details about the secure handshake logic.
 
 .. _enabling-protocomm-security-version:
 
-Enabling protocomm security version
+Enabling Protocomm Security Version
 -----------------------------------
 
-Protocomm component provides project configuration menu to enable/disable support of respective security versions.
-The respective configuration options can be found as follows:
+The protocomm component provides a project configuration menu to enable/disable support of respective security versions. The respective configuration options are as follows:
 
-    * Support protocomm security version 0 (no security): :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0` (this option is enabled by default)
-    * Support protocomm security version 1 (Curve25519 key exchange + AES-CTR encryption/decryption): :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` (this option is enabled by default)
-    * Support protocomm security version 2 (SRP6a-based key exchange + AES-GCM encryption/decryption): :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`
+    * Support ``protocomm_security0``, with no security: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, this option is enabled by default.
+    * Support ``protocomm_security1`` with Curve25519 key exchange + AES-CTR encryption/decryption: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1`, this option is enabled by default.
+    * Support ``protocomm_security2`` with SRP6a-based key exchange + AES-GCM encryption/decryption: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`.
 
-.. note:: Enabling multiple security versions allow to control them dynamically but also increases firmware size.
+.. note::
+    
+    Enabling multiple security versions at once offers the ability to control them dynamically but also increases the firmware size.
 
-Transport Example (SoftAP + HTTP) with Security 2
--------------------------------------------------
-For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
+.. only:: SOC_WIFI_SUPPORTED
+
+    SoftAP + HTTP Transport Example with Security 2
+    -----------------------------------------------
+
+    For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`.
 
     .. highlight:: c
 
     ::
 
-        /* Endpoint handler to be registered with protocomm.
-         * This simply echoes back the received data. */
+        /* The endpoint handler to be registered with protocomm. This simply echoes back the received data. */
         esp_err_t echo_req_handler (uint32_t session_id,
                                     const uint8_t *inbuf, ssize_t inlen,
                                     uint8_t **outbuf, ssize_t *outlen,
                                     void *priv_data)
         {
-            /* Session ID may be used for persistence */
+            /* Session ID may be used for persistence. */
             printf("Session ID : %d", session_id);
 
-            /* Echo back the received data */
-            *outlen = inlen;            /* Output data length updated */
-            *outbuf = malloc(inlen);    /* This will be deallocated outside */
+            /* Echo back the received data. */
+            *outlen = inlen;            /* Output the data length updated. */
+            *outbuf = malloc(inlen);    /* This is to be deallocated outside. */
             memcpy(*outbuf, inbuf, inlen);
 
-            /* Private data that was passed at the time of endpoint creation */
+            /* Private data that was passed at the time of endpoint creation. */
             uint32_t *priv = (uint32_t *) priv_data;
             if (priv) {
                 printf("Private data : %d", *priv);
@@ -88,26 +103,23 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
             0x70, 0x27, 0xe7, 0x8d, 0x56, 0x45, 0x34, 0x1f, 0xb9, 0x30, 0xda, 0xec, 0x4a, 0x08, 0x27, 0x9f, 0xfa, 0x59, 0x2e,
             0x36, 0x77, 0x00, 0xe2, 0xb6, 0xeb, 0xd1, 0x56, 0x50, 0x8e};
 
-        /* Example function for launching a protocomm instance over HTTP */
+        /* The example function for launching a protocomm instance over HTTP. */
         protocomm_t *start_pc()
         {
             protocomm_t *pc = protocomm_new();
 
 
-            /* Config for protocomm_httpd_start() */
+            /* Config for protocomm_httpd_start(). */
             protocomm_httpd_config_t pc_config = {
                 .data = {
                 .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
                 }
             };
 
-            /* Start protocomm server on top of HTTP */
+            /* Start the protocomm server on top of HTTP. */
             protocomm_httpd_start(pc, &pc_config);
 
-            /* Create Security2 params object from salt and verifier. It must be valid
-             * throughout the scope of protocomm endpoint. This need not be static,
-             * ie. could be dynamically allocated and freed at the time of endpoint
-             * removal */
+            /* Create Security2 params object from salt and verifier. It must be valid throughout the scope of protocomm endpoint. This does not need to be static, i.e., could be dynamically allocated and freed at the time of endpoint removal. */
             const static protocomm_security2_params_t sec2_params = {
                 .salt = (const uint8_t *) salt,
                 .salt_len = sizeof(salt),
@@ -115,67 +127,58 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
                 .verifier_len = sizeof(verifier),
             };
 
-            /* Set security for communication at application level. Just like for
-             * request handlers, setting security creates an endpoint and registers
-             * the handler provided by protocomm_security1. One can similarly use
-             * protocomm_security0. Only one type of security can be set for a
-             * protocomm instance at a time. */
+            /* Set security for communication at the application level. Just like for request handlers, setting security creates an endpoint and registers the handler provided by protocomm_security1. One can similarly use protocomm_security0. Only one type of security can be set for a protocomm instance at a time. */
             protocomm_set_security(pc, "security_endpoint", &protocomm_security2, &sec2_params);
 
-            /* Private data passed to the endpoint must be valid throughout the scope
-             * of protocomm endpoint. This need not be static, ie. could be dynamically
-             * allocated and freed at the time of endpoint removal */
+            /* Private data passed to the endpoint must be valid throughout the scope of protocomm endpoint. This need not be static, i.e., could be dynamically allocated and freed at the time of endpoint removal. */
             static uint32_t priv_data = 1234;
 
-            /* Add a new endpoint for the protocomm instance, identified by a unique name
-             * and register a handler function along with private data to be passed at the
-             * time of handler execution. Multiple endpoints can be added as long as they
-             * are identified by unique names */
+            /* Add a new endpoint for the protocomm instance, identified by a unique name, and register a handler function along with the private data to be passed at the time of handler execution. Multiple endpoints can be added as long as they are identified by unique names. */
             protocomm_add_endpoint(pc, "echo_req_endpoint",
                                    echo_req_handler, (void *) &priv_data);
             return pc;
         }
 
-        /* Example function for stopping a protocomm instance */
+        /* The example function for stopping a protocomm instance. */
         void stop_pc(protocomm_t *pc)
         {
-            /* Remove endpoint identified by it's unique name */
+            /* Remove the endpoint identified by its unique name. */
             protocomm_remove_endpoint(pc, "echo_req_endpoint");
 
-            /* Remove security endpoint identified by it's name */
+            /* Remove the security endpoint identified by its name. */
             protocomm_unset_security(pc, "security_endpoint");
 
-            /* Stop HTTP server */
+            /* Stop the HTTP server. */
             protocomm_httpd_stop(pc);
 
-            /* Delete (deallocate) the protocomm instance */
+            /* Delete, namely deallocate the protocomm instance. */
             protocomm_delete(pc);
         }
 
-Transport Example (SoftAP + HTTP) with Security 1
--------------------------------------------------
-For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
+    SoftAP + HTTP Transport Example with Security 1
+    -----------------------------------------------
+
+    For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`.
 
     .. highlight:: c
 
     ::
 
-        /* Endpoint handler to be registered with protocomm.
-         * This simply echoes back the received data. */
+        /* The endpoint handler to be registered with protocomm. This simply echoes back the received data. */
         esp_err_t echo_req_handler (uint32_t session_id,
                                     const uint8_t *inbuf, ssize_t inlen,
                                     uint8_t **outbuf, ssize_t *outlen,
                                     void *priv_data)
         {
-            /* Session ID may be used for persistence */
+            /* Session ID may be used for persistence. */
             printf("Session ID : %d", session_id);
 
-            /* Echo back the received data */
-            *outlen = inlen;            /* Output data length updated */
-            *outbuf = malloc(inlen);    /* This will be deallocated outside */
+            /* Echo back the received data. */
+            *outlen = inlen;            /* Output the data length updated. */
+            *outbuf = malloc(inlen);    /* This is to be deallocated outside. */
             memcpy(*outbuf, inbuf, inlen);
 
-            /* Private data that was passed at the time of endpoint creation */
+            /* Private data that was passed at the time of endpoint creation. */
             uint32_t *priv = (uint32_t *) priv_data;
             if (priv) {
                 printf("Private data : %d", *priv);
@@ -184,77 +187,68 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
             return ESP_OK;
         }
 
-        /* Example function for launching a protocomm instance over HTTP */
+        /* The example function for launching a protocomm instance over HTTP. */
         protocomm_t *start_pc(const char *pop_string)
         {
             protocomm_t *pc = protocomm_new();
 
 
-            /* Config for protocomm_httpd_start() */
+            /* Config for protocomm_httpd_start(). */
             protocomm_httpd_config_t pc_config = {
                 .data = {
                 .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
                 }
             };
 
-            /* Start protocomm server on top of HTTP */
+            /* Start the protocomm server on top of HTTP. */
             protocomm_httpd_start(pc, &pc_config);
 
-            /* Create security1 params object from pop_string. It must be valid
-             * throughout the scope of protocomm endpoint. This need not be static,
-             * ie. could be dynamically allocated and freed at the time of endpoint
-             * removal */
+            /* Create security1 params object from pop_string. It must be valid throughout the scope of protocomm endpoint. This need not be static, i.e., could be dynamically allocated and freed at the time of endpoint removal. */
             const static protocomm_security1_params_t sec1_params = {
                 .data = (const uint8_t *) strdup(pop_string),
                 .len = strlen(pop_string)
             };
 
-            /* Set security for communication at application level. Just like for
-             * request handlers, setting security creates an endpoint and registers
-             * the handler provided by protocomm_security1. One can similarly use
-             * protocomm_security0. Only one type of security can be set for a
-             * protocomm instance at a time. */
+            /* Set security for communication at the application level. Just like for request handlers, setting security creates an endpoint and registers the handler provided by protocomm_security1. One can similarly use protocomm_security0. Only one type of security can be set for a protocomm instance at a time. */
             protocomm_set_security(pc, "security_endpoint", &protocomm_security1, &sec1_params);
 
-            /* Private data passed to the endpoint must be valid throughout the scope
-             * of protocomm endpoint. This need not be static, ie. could be dynamically
-             * allocated and freed at the time of endpoint removal */
+            /* Private data passed to the endpoint must be valid throughout the scope of protocomm endpoint. This need not be static, i.e., could be dynamically allocated and freed at the time of endpoint removal. */
             static uint32_t priv_data = 1234;
 
-            /* Add a new endpoint for the protocomm instance, identified by a unique name
-             * and register a handler function along with private data to be passed at the
-             * time of handler execution. Multiple endpoints can be added as long as they
-             * are identified by unique names */
+            /* Add a new endpoint for the protocomm instance identified by a unique name, and register a handler function along with the private data to be passed at the time of handler execution. Multiple endpoints can be added as long as they are identified by unique names. */
             protocomm_add_endpoint(pc, "echo_req_endpoint",
                                    echo_req_handler, (void *) &priv_data);
             return pc;
         }
 
-        /* Example function for stopping a protocomm instance */
+        /* The example function for stopping a protocomm instance. */
         void stop_pc(protocomm_t *pc)
         {
-            /* Remove endpoint identified by it's unique name */
+            /* Remove the endpoint identified by its unique name. */
             protocomm_remove_endpoint(pc, "echo_req_endpoint");
 
-            /* Remove security endpoint identified by it's name */
+            /* Remove the security endpoint identified by its name. */
             protocomm_unset_security(pc, "security_endpoint");
 
-            /* Stop HTTP server */
+            /* Stop the HTTP server. */
             protocomm_httpd_stop(pc);
 
-            /* Delete (deallocate) the protocomm instance */
+            /* Delete, namely deallocate the protocomm instance. */
             protocomm_delete(pc);
         }
 
-Transport Example (BLE) with Security 0
----------------------------------------
-For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`
+.. only:: SOC_BLE_SUPPORTED
+
+    Bluetooth LE Transport Example with Security 0
+    ----------------------------------------------
+
+    For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`.
 
     .. highlight:: c
 
     ::
 
-        /* Example function for launching a secure protocomm instance over BLE */
+        /* The example function for launching a secure protocomm instance over Bluetooth LE. */
         protocomm_t *start_pc()
         {
             protocomm_t *pc = protocomm_new();
@@ -265,7 +259,7 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`
                 {"echo_req_endpoint", 0xFF52}
             };
 
-            /* Config for protocomm_ble_start() */
+            /* Config for protocomm_ble_start(). */
             protocomm_ble_config_t config = {
                 .service_uuid = {
                     /* LSB <---------------------------------------
@@ -277,22 +271,22 @@ For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`
                 .nu_lookup = nu_lookup_table
             };
 
-            /* Start protocomm layer on top of BLE */
+            /* Start protocomm layer on top of Bluetooth LE. */
             protocomm_ble_start(pc, &config);
 
-            /* For protocomm_security0, Proof of Possession is not used, and can be kept NULL */
+            /* For protocomm_security0, Proof of Possession is not used, and can be kept NULL. */
             protocomm_set_security(pc, "security_endpoint", &protocomm_security0, NULL);
             protocomm_add_endpoint(pc, "echo_req_endpoint", echo_req_handler, NULL);
             return pc;
         }
 
-        /* Example function for stopping a protocomm instance */
+        /* The example function for stopping a protocomm instance. */
         void stop_pc(protocomm_t *pc)
         {
             protocomm_remove_endpoint(pc, "echo_req_endpoint");
             protocomm_unset_security(pc, "security_endpoint");
 
-            /* Stop BLE protocomm service */
+            /* Stop the Bluetooth LE protocomm service. */
             protocomm_ble_stop(pc);
 
             protocomm_delete(pc);
