@@ -31,6 +31,7 @@
 #include "soc/soc_caps.h"
 #include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
 
+#include "hal/cache_hal.h"
 #include "hal/wdt_hal.h"
 #include "hal/rtc_hal.h"
 #include "hal/uart_hal.h"
@@ -569,7 +570,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     } else {
+        /* Wait cache idle in cache suspend to avoid cache load wrong data after spi io isolation */
+        cache_hal_suspend(CACHE_TYPE_ALL);
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
+        /* Resume cache for continue running */
+        cache_hal_resume(CACHE_TYPE_ALL);
     }
 
 #if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
