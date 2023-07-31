@@ -143,7 +143,7 @@ DROM（数据存储在 flash 中）
 
 唯一没有默认放入 DROM 的常量数据是被编译器嵌入到应用程序代码中的字面常量。这些被放置在周围函数的可执行指令中。
 
-``DRAM_ATTR`` 属性可以用来强制将常量从 DRAM 放入 :ref:`dram` 部分（见上文）。
+``DRAM_ATTR`` 属性可以用来强制将常量从 DROM 放入 :ref:`dram` 部分（见上文）。
 
 .. only:: SOC_RTC_SLOW_MEM_SUPPORTED
 

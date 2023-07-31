@@ -263,6 +263,7 @@ INPUT = \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash_counters.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
     $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
     $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
