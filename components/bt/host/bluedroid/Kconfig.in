@@ -1098,3 +1098,10 @@ config BT_BLE_42_FEATURES_SUPPORTED
     default n
     help
         This enables BLE 4.2 features.
+
+config BT_BLE_HIGH_DUTY_ADV_INTERVAL
+    bool "Enable BLE high duty advertising interval feature"
+    depends on BT_BLUEDROID_ENABLED
+    default n
+    help
+        This enable BLE high duty advertising interval feature
