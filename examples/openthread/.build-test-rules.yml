@@ -3,23 +3,22 @@
 # TODO: Modify the configuration after the files matching rules are changed
 # Or delete TODO without modifying the configuration if it is sure that current rules are correct.
 .openthread_dependencies: &openthread_dependencies
+  depends_components:
+    - esp_coex
+    - esp_netif
+    - esp_phy
+    - ieee802154
+    - lwip
+    - openthread
   depends_filepatterns:
-    - components/esp_coex/*
-    - components/esp_coex/**/*
-    - components/esp_netif/*
-    - components/esp_netif/**/*
-    - components/esp_phy/*
-    - components/esp_phy/**/*
-    - components/ieee802154/*
-    - components/ieee802154/**/*
-    - components/lwip/*
-    - components/lwip/**/*
-    - components/openthread/*
-    - components/openthread/**/*
     - examples/common_components/iperf/*
     - examples/common_components/iperf/**/*
     - examples/openthread/*
     - examples/openthread/**/*
+
+.openthread_sleep_dependencies: &openthread_sleep_dependencies
+  depends_components:
+    - esp_hw_support
 
 examples/openthread/ot_br:
   disable:
@@ -35,10 +34,6 @@ examples/openthread/ot_br:
 examples/openthread/ot_cli:
   enable:
     - if: IDF_TARGET in ["esp32h2", "esp32c6"]
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: only test on esp32h2
   <<: *openthread_dependencies
 
 examples/openthread/ot_rcp:
@@ -53,8 +48,4 @@ examples/openthread/ot_rcp:
 examples/openthread/ot_sleepy_device:
   enable:
     - if: IDF_TARGET in ["esp32h2", "esp32c6"]
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
-      temporary: true
-      reason: No support # TO-DO: TZ-134
-  <<: *openthread_dependencies
+  <<: [*openthread_dependencies, *openthread_sleep_dependencies]
