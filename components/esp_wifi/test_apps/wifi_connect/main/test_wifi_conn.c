@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -31,8 +31,8 @@
 
 #define TEST_DEFAULT_SSID "SSID_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
 #define TEST_DEFAULT_PWD "PASS_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
-#define TEST_DEFAULT_CHANNEL (1)
-#define CONNECT_TIMEOUT_MS   (7000)
+#define TEST_DEFAULT_CHANNEL (6)
+#define CONNECT_TIMEOUT_MS   (8000)
 
 
 #define GOT_IP_EVENT             (1)
@@ -67,7 +67,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         case WIFI_EVENT_STA_CONNECTED:
             ESP_LOGI(TAG, "WIFI_EVENT_STA_CONNECTED");
             if (wifi_events) {
-                xEventGroupSetBits(wifi_events, WIFI_AP_STA_CONNECTED);
+                xEventGroupSetBits(wifi_events, WIFI_STA_CONNECTED);
             }
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
@@ -266,3 +266,86 @@ static void test_wifi_connection_softap(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][timeout=90]", test_wifi_connection_sta, test_wifi_connection_softap);
+
+// single core have issue as WIFIBUG-92
+#if !CONFIG_FREERTOS_UNICORE
+static void esp_wifi_connect_first_time(void)
+{
+    start_wifi_as_sta();
+    // make sure softap has started
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+
+    wifi_config_t w_config;
+    memset(&w_config, 0, sizeof(w_config));
+    memcpy(w_config.sta.ssid, TEST_DEFAULT_SSID, strlen(TEST_DEFAULT_SSID));
+    memcpy(w_config.sta.password, TEST_DEFAULT_PWD, strlen(TEST_DEFAULT_PWD));
+
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
+    ESP_LOGI(TAG, "start esp_wifi_connect first time: %s", TEST_DEFAULT_SSID);
+    TEST_ESP_OK(esp_wifi_connect());
+}
+
+static void test_wifi_connect_at_scan_phase(void)
+{
+
+    esp_wifi_connect_first_time();
+
+    // connect when first connect in scan
+    vTaskDelay(300/portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "connect when first connect in scan");
+    TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    stop_wifi();
+}
+
+static void test_wifi_connect_before_connected_phase(void)
+{
+
+    esp_wifi_connect_first_time();
+
+    // connect before connected
+    vTaskDelay(800/portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "connect when first connect after scan before connected");
+    TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    stop_wifi();
+}
+
+static void test_wifi_connect_after_connected_phase(void)
+{
+    EventBits_t bits;
+
+    start_wifi_as_sta();
+    wifi_event_handler_flag = 0;
+    wifi_connect();
+    xEventGroupClearBits(wifi_events, WIFI_STA_CONNECTED | WIFI_DISCONNECT_EVENT);
+    ESP_LOGI(TAG, "connect after connected");
+    TEST_ESP_OK(esp_wifi_connect());
+    bits = xEventGroupWaitBits(wifi_events, WIFI_STA_CONNECTED | WIFI_DISCONNECT_EVENT, pdTRUE, pdFALSE, CONNECT_TIMEOUT_MS/portTICK_PERIOD_MS);
+    // shouldn't reconnect
+    TEST_ASSERT((bits & WIFI_AP_STA_CONNECTED) == 0);
+    // shouldn't disconnect
+    TEST_ASSERT((bits & WIFI_DISCONNECT_EVENT) == 0);
+
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    stop_wifi();
+}
+
+static void set_wifi_softap(void)
+{
+    start_wifi_as_softap();
+
+    // wait for sta connect
+    vTaskDelay(20000/portTICK_PERIOD_MS);
+    stop_wifi();
+}
+
+TEST_CASE_MULTIPLE_DEVICES("test wifi connect at scan", "[wifi]", test_wifi_connect_at_scan_phase, set_wifi_softap);
+TEST_CASE_MULTIPLE_DEVICES("test wifi connect before connected", "[wifi]", test_wifi_connect_before_connected_phase, set_wifi_softap);
+TEST_CASE_MULTIPLE_DEVICES("test wifi connect after connected", "[wifi]", test_wifi_connect_after_connected_phase, set_wifi_softap);
+#endif
