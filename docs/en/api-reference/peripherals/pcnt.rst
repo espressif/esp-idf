@@ -47,6 +47,12 @@ To install a PCNT unit, there's a configuration structure that needs to be given
 -  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
 -  :cpp:member:`pcnt_unit_config_t::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
 
+.. only:: SOC_PCNT_SUPPORT_ZERO_INPUT
+    
+    -  :cpp:member:`pcnt_unit_config_t::zero_input_gpio_num` specify the GPIO numbers used by **zero** type signal. The default active level is high, and the input mode is pull-down enabled. Please note, it can be assigned to `-1` if it's not actually used, and GPIO will not be initialized.
+    -  :cpp:member:`pcnt_unit_config_t::invert_zero_input` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is invert.
+    -  :cpp:member:`pcnt_unit_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the zreo pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
+
 Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e. unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
 
 If a previously created PCNT unit is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`pcnt_del_unit`. Which in return allows the underlying unit hardware to be used for other purposes. Before deleting a PCNT unit, one should ensure the following prerequisites:

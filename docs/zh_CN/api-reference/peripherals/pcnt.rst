@@ -47,6 +47,12 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 -  :cpp:member:`pcnt_unit_config_t::low_limit` 与 :cpp:member:`pcnt_unit_config_t::high_limit` 用于指定内部计数器的最小值和最大值。当计数器超过任一限值时，计数器将归零。
 -  :cpp:member:`pcnt_unit_config_t::accum_count` 用于设置是否需要软件在硬件计数值溢出的时候进行累加保存，这有助于“拓宽”计数器的实际位宽。默认情况下，计数器的位宽最高只有 16 比特。请参考 :ref:`pcnt-compensate-overflow-loss` 了解如何利用此功能来补偿硬件计数器的溢出损失。
 
+.. only:: SOC_PCNT_SUPPORT_ZERO_INPUT
+    
+    -  :cpp:member:`pcnt_unit_config_t::zero_input_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。请注意，这个参数未被使用时，可以设置为 `-1`，初始化时将不会分配 GPIO。
+    -  :cpp:member:`pcnt_unit_config_t::invert_zero_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。翻转时使能上拉输入。
+    -  :cpp:member:`pcnt_unit_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲清零信号。
+
 调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 单元总数记录在 :c:macro:`SOC_PCNT_UNITS_PER_GROUP` 中，以供参考。
 
 如果不再需要之前创建的某个 PCNT 单元，建议通过调用 :cpp:func:`pcnt_del_unit` 来回收该单元，从而该单元可用于其他用途。删除某个 PCNT 单元之前，需要满足以下条件：

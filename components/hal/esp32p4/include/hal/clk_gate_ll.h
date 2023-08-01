@@ -112,6 +112,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_CRYPTO_ECDSA_CLK_EN;
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_ISP_CLK_EN;
+    case PERIPH_PCNT_MODULE:
+        return HP_SYS_CLKRST_REG_PCNT_APB_CLK_EN;
     default:
         return 0;
     }
@@ -264,6 +266,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return HP_SYS_CLKRST_PERI_CLK_CTRL119_REG;
     case PERIPH_MCPWM0_MODULE:
     case PERIPH_MCPWM1_MODULE:
+    case PERIPH_PCNT_MODULE:
         return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
     case PERIPH_TIMG0_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL20_REG;

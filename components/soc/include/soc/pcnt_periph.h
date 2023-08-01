@@ -23,6 +23,7 @@ typedef struct {
                 const uint32_t pulse_sig;
                 const uint32_t control_sig;
             } channels[SOC_PCNT_CHANNELS_PER_UNIT];
+            const uint32_t clear_sig;
         } units[SOC_PCNT_UNITS_PER_GROUP];
         const uint32_t irq;
         const periph_module_t module;
