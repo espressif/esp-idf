@@ -419,6 +419,14 @@ pytest_examples_esp32_ethernet_router:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet_router ]
 
+pytest_examples_esp32_ethernet_vlan:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-ethernet
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ethernet_vlan ]
+
 pytest_examples_esp32_ethernet_ip101:
   extends:
     - .pytest_examples_dir_template
