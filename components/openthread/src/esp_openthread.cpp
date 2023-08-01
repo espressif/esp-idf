@@ -92,7 +92,8 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
         otOperationalDataset dataset;
         size_t len = 0;
 
-        memset(&dataset, 0, sizeof(otOperationalDataset));
+        ESP_RETURN_ON_FALSE(otDatasetCreateNewNetwork(instance, &dataset) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "Failed to initialize new OpenThread operational dataset");
 
         // Active timestamp
         dataset.mActiveTimestamp.mSeconds = 1;
