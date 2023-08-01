@@ -12,7 +12,18 @@ touch_wake_up_support = ['esp32', 'esp32s2']
 
 CONFIGS = [
     pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
-    pytest.param('basic', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.esp32s3, pytest.mark.esp32c3, pytest.mark.esp32c6, pytest.mark.esp32c2]),
+    pytest.param(
+        'basic',
+        marks=[
+            pytest.mark.esp32,
+            pytest.mark.esp32s2,
+            pytest.mark.esp32s3,
+            pytest.mark.esp32c3,
+            pytest.mark.esp32c6,
+            pytest.mark.esp32h2,
+            pytest.mark.esp32c2,
+        ],
+    ),
 ]
 
 
@@ -23,7 +34,7 @@ def test_deep_sleep(dut: Dut) -> None:
     def expect_enable_deep_sleep_touch() -> None:
         # different targets configure different wake pin(s)
         wake_pads = {
-            'esp32': [8,9],
+            'esp32': [8, 9],
             'esp32s2': [9],
         }[dut.target]
 
