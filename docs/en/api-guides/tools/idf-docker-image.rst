@@ -53,13 +53,16 @@ In the project directory, run:
 
 .. code-block:: bash
 
-    docker run --rm -v $PWD:/project -w /project espressif/idf idf.py build
+    docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf idf.py build
 
 The above command explained:
 
 - ``docker run``: runs a Docker image. It is a shorter form of the command ``docker container run``.
 - ``--rm``: removes the container when the build is finished.
 - ``-v $PWD:/project``: mounts the current directory on the host (``$PWD``) as ``/project`` directory in the container.
+- ``-w /project``: makes ``/project`` the working directory for the command.
+- ``-u $UID``: makes the command run with your user ID so that files are created as you (instead of root).
+- ``-e HOME=/tmp``: gives the user a home directory for storing temporary files created ``by idf.py`` in ``~/.cache``.
 - ``espressif/idf``: uses Docker image ``espressif/idf`` with tag ``latest``. The ``latest`` tag is implicitly added by Docker when no tag is specified.
 - ``idf.py build``: runs this command inside the container.
 
@@ -67,7 +70,7 @@ To build with a specific Docker image tag, specify it as ``espressif/idf:TAG``, 
 
 .. code-block:: bash
 
-    docker run --rm -v $PWD:/project -w /project espressif/idf:release-v4.4 idf.py build
+    docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf:release-v4.4 idf.py build
 
 You can check the up-to-date list of available tags at https://hub.docker.com/r/espressif/idf/tags.
 
@@ -78,7 +81,7 @@ It is also possible to do builds interactively, to debug build issues or test th
 
 .. code-block:: bash
 
-    docker run --rm -v $PWD:/project -w /project -it espressif/idf
+    docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp -it espressif/idf
 
 Then inside the container, use ``idf.py`` as usual:
 
