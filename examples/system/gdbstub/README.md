@@ -26,11 +26,9 @@ idf.py menuconfig
 ```
 Current example is pre-configured. The user can scroll through the system parameters and see the settings.
 Most important one is:
--> Component Config -> ESP System Settings -> Panic handler behaviour -> GDBStub on runtime
+-> Component Config -> GDB Stub -> GDBStub on runtime
 This selection switches gdbstub to runtime mode.
-Depending on the project, following settings could be used:
--> Component Config -> GDB Stub -> ...
-The user can enable or disable task list handling and define a maximum amount of tasks.
+Using another options in this menu, the user can also enable or disable task list handling and define a maximum amount of tasks.
 
 ### Build and Flash
 
