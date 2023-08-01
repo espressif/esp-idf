@@ -51,11 +51,11 @@ foreach ($pair  in $envars_array) {
 }
 
 # Allow calling some IDF python tools without specifying the full path
-# ${IDF_PATH}/tools is already added by 'idf_tools.py export'
-$IDF_ADD_PATHS_EXTRAS = ${S} + [IO.Path]::Combine(${IDF_PATH}, "components", "app_update")
-$IDF_ADD_PATHS_EXTRAS += ${S} + [IO.Path]::Combine(${IDF_PATH}, "components", "espcoredump")
-$IDF_ADD_PATHS_EXTRAS += ${S} + [IO.Path]::Combine(${IDF_PATH}, "components", "partition_table")
-$env:PATH = $IDF_ADD_PATHS_EXTRAS + $S + $env:PATH
+function idf.py { &python "$IDF_PATH\tools\idf.py" $args }
+function espefuse.py { &python "$IDF_PATH\components\esptool_py\esptool\espefuse.py" $args }
+function espsecure.py { &python "$IDF_PATH\components\esptool_py\esptool\espsecure.py" $args }
+function otatool.py { &python "$IDF_PATH\components\app_update\otatool.py" $args }
+function parttool.py { &python "$IDF_PATH\components\partition_table\parttool.py" $args }
 
 #Compare Path's OLD vs. NEW
 $NEW_PATH = $env:PATH.split($S) | Select-Object -Unique # array without duplicates
