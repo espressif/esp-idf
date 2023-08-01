@@ -17,6 +17,7 @@
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
 #include "lwip/dns.h"
+#include "openthread/dataset_ftd.h"
 #include "openthread/instance.h"
 #include "openthread/netdata.h"
 #include "openthread/tasklet.h"
