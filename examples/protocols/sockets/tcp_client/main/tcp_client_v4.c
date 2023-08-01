@@ -30,7 +30,7 @@ static const char *payload = "Message from ESP32 ";
 
 void tcp_client(void)
 {
-    char rx_buffer[128];
+    uint8_t rx_buffer[128];
     char host_ip[] = HOST_IP_ADDR;
     int addr_family = 0;
     int ip_protocol = 0;
@@ -79,7 +79,7 @@ void tcp_client(void)
             else {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
                 ESP_LOGI(TAG, "Received %d bytes from %s:", len, host_ip);
-                ESP_LOGI(TAG, "%s", rx_buffer);
+                ESP_LOGI(TAG, "%s", (char*) rx_buffer);
             }
         }
 
