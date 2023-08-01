@@ -105,8 +105,12 @@ typedef UINT8   tBTM_BLE_SFP;
 #endif
 
 /* adv parameter boundary values */
-#define BTM_BLE_ADV_INT_MIN            0x0020
-#define BTM_BLE_ADV_INT_MAX            0x4000
+#if BLE_HIGH_DUTY_ADV_INTERVAL
+#define BTM_BLE_ADV_INT_MIN            0x0008  /* 5ms */
+#else
+#define BTM_BLE_ADV_INT_MIN            0x0020  /* 20ms */
+#endif
+#define BTM_BLE_ADV_INT_MAX            0x4000  /* 10240ms */
 
 /* Full scan boundary values */
 #define BTM_BLE_ADV_SCAN_FULL_MIN      0x00
