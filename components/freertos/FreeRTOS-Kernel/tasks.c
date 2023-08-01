@@ -3932,23 +3932,31 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
         }
     #endif /* configNUM_CORES > 1 */
     {
-        /* Before taking the kernel lock, another task/ISR could have already
-         * emptied the pxEventList. So we insert a check here to see if
-         * pxEventList is empty before attempting to remove an item from it. */
-        if( listLIST_IS_EMPTY( pxEventList ) == pdFALSE )
+        /* The event list is sorted in priority order, so the first in the list can
+         * be removed as it is known to be the highest priority.  Remove the TCB from
+         * the delayed list, and add it to the ready list. */
+        #if ( configNUM_CORES > 1 )
+            /* Before taking the kernel lock, another task/ISR could have already
+             * emptied the pxEventList. So we insert a check here to see if
+             * pxEventList is empty before attempting to remove an item from it. */
+            if( listLIST_IS_EMPTY( pxEventList ) == pdTRUE )
+            {
+                /* The pxEventList was emptied before we entered the critical section,
+                * Nothing to do except return pdFALSE. */
+                xReturn = pdFALSE;
+            }
+            else
+        #else /* configNUM_CORES > 1 */
+            /* If an event is for a queue that is locked then this function will never
+            * get called - the lock count on the queue will get modified instead.  This
+            * means exclusive access to the event list is guaranteed here.
+            *
+            * This function assumes that a check has already been made to ensure that
+            * pxEventList is not empty. */
+        #endif /* configNUM_CORES > 1 */
         {
             BaseType_t xCurCoreID = xPortGetCoreID();
 
-            /* The event list is sorted in priority order, so the first in the list can
-             * be removed as it is known to be the highest priority.  Remove the TCB from
-             * the delayed list, and add it to the ready list.
-             *
-             * If an event is for a queue that is locked then this function will never
-             * get called - the lock count on the queue will get modified instead.  This
-             * means exclusive access to the event list is guaranteed here.
-             *
-             * This function assumes that a check has already been made to ensure that
-             * pxEventList is not empty. */
             pxUnblockedTCB = listGET_OWNER_OF_HEAD_ENTRY( pxEventList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
             configASSERT( pxUnblockedTCB );
             ( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
@@ -4012,12 +4020,6 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
             {
                 xReturn = pdFALSE;
             }
-        }
-        else
-        {
-            /* The pxEventList was emptied before we entered the critical section,
-             * Nothing to do except return pdFALSE. */
-            xReturn = pdFALSE;
         }
     }
     #if ( configNUM_CORES > 1 )
@@ -4133,7 +4135,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
             * a context switch is required.  This function is called with the
             * scheduler suspended so xYieldPending is set so the context switch
             * occurs immediately that the scheduler is resumed (unsuspended). */
-            xYieldPending = pdTRUE;
+            xYieldPending[ xCurCoreID ] = pdTRUE;
         }
     }
 }
