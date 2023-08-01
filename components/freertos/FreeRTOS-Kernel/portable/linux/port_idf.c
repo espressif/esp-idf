@@ -55,7 +55,7 @@ int main(int argc, const char **argv)
     setvbuf(stdout, NULL, _IOLBF, 0);
 
     usleep(1000);
-    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+    BaseType_t res = xTaskCreatePinnedToCore(&main_task, "main",
                                                 ESP_TASK_MAIN_STACK, NULL,
                                                 ESP_TASK_MAIN_PRIO, NULL, ESP_TASK_MAIN_CORE);
     assert(res == pdTRUE);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -455,7 +455,7 @@ static void sdio_intr_host(void *arg)
 {
     sdio_slave_ll_slvint_t int_val;
     sdio_slave_hal_slvint_fetch_clear(context.hal, &int_val);
-    portBASE_TYPE yield = pdFALSE;
+    BaseType_t yield = pdFALSE;
     for (int i = 0; i < 8; i++) {
         if (BIT(i) & int_val) {
             if (context.config.event_cb != NULL) {
@@ -545,14 +545,14 @@ esp_err_t sdio_slave_send_host_int(uint8_t pos)
 static void sdio_intr_send(void *arg)
 {
     ESP_EARLY_LOGV(TAG, "intr_send");
-    portBASE_TYPE yield = pdFALSE;
+    BaseType_t yield = pdFALSE;
 
     // this interrupt is abused to get ISR invoked by app
     sdio_slave_hal_send_handle_isr_invoke(context.hal);
 
     uint32_t returned_cnt;
     if (sdio_slave_hal_send_eof_happened(context.hal)) {
-        portBASE_TYPE ret __attribute__((unused));
+        BaseType_t ret __attribute__((unused));
 
         esp_err_t err;
         while (1) {
@@ -587,7 +587,7 @@ esp_err_t sdio_slave_send_queue(uint8_t *addr, size_t len, void *arg, TickType_t
     SDIO_SLAVE_CHECK(esp_ptr_dma_capable(addr) && (uint32_t)addr % 4 == 0, "buffer to send should be DMA capable and 32-bit aligned",
                      ESP_ERR_INVALID_ARG);
 
-    portBASE_TYPE cnt_ret = xSemaphoreTake(context.remain_cnt, wait);
+    BaseType_t cnt_ret = xSemaphoreTake(context.remain_cnt, wait);
     if (cnt_ret != pdTRUE) {
         return ESP_ERR_TIMEOUT;
     }
@@ -605,7 +605,7 @@ esp_err_t sdio_slave_send_queue(uint8_t *addr, size_t len, void *arg, TickType_t
 esp_err_t sdio_slave_send_get_finished(void **out_arg, TickType_t wait)
 {
     void *arg = NULL;
-    portBASE_TYPE err = xQueueReceive(context.ret_queue, &arg, wait);
+    BaseType_t err = xQueueReceive(context.ret_queue, &arg, wait);
     if (out_arg) {
         *out_arg = arg;
     }
@@ -637,7 +637,7 @@ esp_err_t sdio_slave_transmit(uint8_t *addr, size_t len)
 static esp_err_t send_flush_data(void)
 {
     esp_err_t err;
-    portBASE_TYPE ret __attribute__((unused));
+    BaseType_t ret __attribute__((unused));
 
     while (1) {
         void *finished_arg;
@@ -684,7 +684,7 @@ static inline void critical_exit_recv(void)
 static esp_err_t recv_flush_data(void)
 {
     while (1) {
-        portBASE_TYPE ret = xSemaphoreTake(context.recv_event, 0);
+        BaseType_t ret = xSemaphoreTake(context.recv_event, 0);
         if (ret == pdFALSE) {
             break;
         }
@@ -697,7 +697,7 @@ static esp_err_t recv_flush_data(void)
 
 static void sdio_intr_recv(void *arg)
 {
-    portBASE_TYPE yield = 0;
+    BaseType_t yield = 0;
     bool triggered = sdio_slave_hal_recv_done(context.hal);
     while (triggered) {
         portENTER_CRITICAL_ISR(&context.recv_spinlock);
@@ -771,7 +771,7 @@ esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t *handle_ret, uint8_t **out_add
 esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t *handle_ret, TickType_t wait)
 {
     SDIO_SLAVE_CHECK(handle_ret != NULL, "handle address cannot be 0", ESP_ERR_INVALID_ARG);
-    portBASE_TYPE err = xSemaphoreTake(context.recv_event, wait);
+    BaseType_t err = xSemaphoreTake(context.recv_event, wait);
     if (err == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }

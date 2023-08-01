@@ -98,10 +98,10 @@ static pthread_once_t hSigSetupThread = PTHREAD_ONCE_INIT;
 static sigset_t xAllSignals;
 static sigset_t xSchedulerOriginalSignalMask;
 static pthread_t hMainThread = ( pthread_t )NULL;
-static volatile portBASE_TYPE uxCriticalNesting;
+static volatile BaseType_t uxCriticalNesting;
 /*-----------------------------------------------------------*/
 
-static portBASE_TYPE xSchedulerEnd = pdFALSE;
+static BaseType_t xSchedulerEnd = pdFALSE;
 /*-----------------------------------------------------------*/
 
 static void prvSetupSignalsAndSchedulerPolicy( void );
@@ -124,9 +124,10 @@ static void prvFatalError( const char *pcCall, int iErrno )
 /*
  * See header file for description.
  */
-portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack,
-                                       portSTACK_TYPE *pxEndOfStack,
-                                       TaskFunction_t pxCode, void *pvParameters )
+StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack,
+                                    StackType_t *pxEndOfStack,
+                                    TaskFunction_t pxCode,
+                                    void *pvParameters )
 {
     Thread_t *thread;
     pthread_attr_t xThreadAttributes;
@@ -139,7 +140,7 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack,
      * Store the additional thread data at the start of the stack.
      */
     thread = (Thread_t *)(pxTopOfStack + 1) - 1;
-    pxTopOfStack = (portSTACK_TYPE *)thread - 1;
+    pxTopOfStack = (StackType_t *)thread - 1;
     ulStackSize = (pxTopOfStack + 1 - pxEndOfStack) * sizeof(*pxTopOfStack);
 
     thread->pxCode = pxCode;
@@ -178,7 +179,7 @@ void vPortStartFirstTask( void )
 /*
  * See header file for description.
  */
-portBASE_TYPE xPortStartScheduler( void )
+BaseType_t xPortStartScheduler( void )
 {
     int iSignal;
     sigset_t xSignals;
@@ -306,7 +307,7 @@ void vPortEnableInterrupts( void )
 }
 /*-----------------------------------------------------------*/
 
-portBASE_TYPE xPortSetInterruptMask( void )
+BaseType_t xPortSetInterruptMask( void )
 {
     /* Interrupts are always disabled inside ISRs (signals
        handlers). */
@@ -314,7 +315,7 @@ portBASE_TYPE xPortSetInterruptMask( void )
 }
 /*-----------------------------------------------------------*/
 
-void vPortClearInterruptMask( portBASE_TYPE xMask )
+void vPortClearInterruptMask( BaseType_t xMask )
 {
 }
 /*-----------------------------------------------------------*/

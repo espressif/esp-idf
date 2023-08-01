@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -504,9 +504,9 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
 static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_chan_handle_t handle = (i2s_chan_handle_t)user_data;
-    portBASE_TYPE need_yield1 = 0;
-    portBASE_TYPE need_yield2 = 0;
-    portBASE_TYPE user_need_yield = 0;
+    BaseType_t need_yield1 = 0;
+    BaseType_t need_yield2 = 0;
+    BaseType_t user_need_yield = 0;
     lldesc_t *finish_desc;
     uint32_t dummy;
 
@@ -533,9 +533,9 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
 static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_chan_handle_t handle = (i2s_chan_handle_t)user_data;
-    portBASE_TYPE need_yield1 = 0;
-    portBASE_TYPE need_yield2 = 0;
-    portBASE_TYPE user_need_yield = 0;
+    BaseType_t need_yield1 = 0;
+    BaseType_t need_yield2 = 0;
+    BaseType_t user_need_yield = 0;
     lldesc_t *finish_desc;
     uint32_t dummy;
 
@@ -567,9 +567,9 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
 
 static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
 {
-    portBASE_TYPE need_yield1 = 0;
-    portBASE_TYPE need_yield2 = 0;
-    portBASE_TYPE user_need_yield = 0;
+    BaseType_t need_yield1 = 0;
+    BaseType_t need_yield2 = 0;
+    BaseType_t user_need_yield = 0;
     lldesc_t *finish_desc = NULL;
     i2s_event_data_t evt;
     i2s_chan_handle_t handle = (i2s_chan_handle_t)arg;
@@ -605,9 +605,9 @@ static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
 
 static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
 {
-    portBASE_TYPE need_yield1 = 0;
-    portBASE_TYPE need_yield2 = 0;
-    portBASE_TYPE user_need_yield = 0;
+    BaseType_t need_yield1 = 0;
+    BaseType_t need_yield2 = 0;
+    BaseType_t user_need_yield = 0;
     lldesc_t *finish_desc = NULL;
     i2s_event_data_t evt;
     i2s_chan_handle_t handle = (i2s_chan_handle_t)arg;

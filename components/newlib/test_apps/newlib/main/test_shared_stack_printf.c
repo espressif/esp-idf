@@ -42,7 +42,7 @@ void another_external_stack_function(void)
 
 TEST_CASE("test printf using shared buffer stack", "[newlib]")
 {
-    portSTACK_TYPE *shared_stack = malloc(SHARED_STACK_SIZE);
+    StackType_t *shared_stack = malloc(SHARED_STACK_SIZE);
 
     TEST_ASSERT_NOT_NULL(shared_stack);
 

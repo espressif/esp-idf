@@ -719,7 +719,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
     rmt_item32_t *addr = NULL;
     uint8_t channel = 0;
     rmt_hal_context_t *hal = (rmt_hal_context_t *)arg;
-    portBASE_TYPE HPTaskAwoken = pdFALSE;
+    BaseType_t HPTaskAwoken = pdFALSE;
 
     // Tx end interrupt
     status = rmt_ll_get_tx_end_interrupt_status(hal->regs);

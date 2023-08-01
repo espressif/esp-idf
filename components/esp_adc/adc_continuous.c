@@ -288,7 +288,7 @@ static IRAM_ATTR void adc_dma_intr_handler(void *arg)
 
 static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
 {
-    portBASE_TYPE taskAwoken = 0;
+    BaseType_t taskAwoken = 0;
     bool need_yield = false;
     BaseType_t ret;
     adc_hal_dma_desc_status_t status = false;

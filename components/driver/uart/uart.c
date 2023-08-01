@@ -838,7 +838,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
     int rx_fifo_len = 0;
     uint32_t uart_intr_status = 0;
     uart_event_t uart_event;
-    portBASE_TYPE HPTaskAwoken = 0;
+    BaseType_t HPTaskAwoken = 0;
     bool need_yield = false;
     static uint8_t pat_flg = 0;
     BaseType_t sent = pdFALSE;

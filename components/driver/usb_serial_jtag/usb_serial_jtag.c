@@ -45,7 +45,7 @@ static void usb_serial_jtag_write_and_flush(const uint8_t *buf, uint32_t wr_len)
 }
 
 static void usb_serial_jtag_isr_handler_default(void *arg) {
-    portBASE_TYPE xTaskWoken = 0;
+    BaseType_t xTaskWoken = 0;
     uint32_t usbjtag_intr_status = 0;
     usbjtag_intr_status = usb_serial_jtag_ll_get_intsts_mask();
 

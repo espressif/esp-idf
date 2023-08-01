@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,8 +159,8 @@ __attribute__((weak)) esp_err_t i2s_platform_release_occupation(int id);
 static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_obj_t *p_i2s = (i2s_obj_t *) user_data;
-    portBASE_TYPE need_awoke = 0;
-    portBASE_TYPE tmp = 0;
+    BaseType_t need_awoke = 0;
+    BaseType_t tmp = 0;
     int dummy;
     i2s_event_t i2s_event;
     uint32_t finish_desc;
@@ -191,8 +191,8 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
 static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_obj_t *p_i2s = (i2s_obj_t *) user_data;
-    portBASE_TYPE need_awoke = 0;
-    portBASE_TYPE tmp = 0;
+    BaseType_t need_awoke = 0;
+    BaseType_t tmp = 0;
     int dummy;
     i2s_event_t i2s_event;
     uint32_t finish_desc;
@@ -235,8 +235,8 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
 
     i2s_event_t i2s_event;
     int dummy;
-    portBASE_TYPE need_awoke = 0;
-    portBASE_TYPE tmp = 0;
+    BaseType_t need_awoke = 0;
+    BaseType_t tmp = 0;
     uint32_t  finish_desc = 0;
     if ((status & I2S_LL_EVENT_TX_DSCR_ERR) || (status & I2S_LL_EVENT_RX_DSCR_ERR)) {
         ESP_EARLY_LOGE(TAG, "dma error, interrupt status: 0x%08x", status);
