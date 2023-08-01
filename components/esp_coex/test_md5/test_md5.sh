@@ -58,7 +58,7 @@ function check_md5()
 }
 
 echo "Checking libraries for target ${IDF_TARGET}..."
-check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coexist_adapter.h g_coex_adapter_funcs_md5
+check_md5 ${IDF_PATH}/components/esp_coex/include/private/esp_coexist_adapter.h g_coex_adapter_funcs_md5
 
 case $IDF_TARGET in
     esp32c6|esp32h2)
