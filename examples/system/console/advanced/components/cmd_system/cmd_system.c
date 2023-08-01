@@ -14,7 +14,5 @@
 void register_system(void)
 {
     register_system_common();
-#ifndef CONFIG_IDF_TARGET_ESP32H2  // IDF-6268
     register_system_sleep();
-#endif
 }
