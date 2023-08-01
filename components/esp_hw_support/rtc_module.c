@@ -30,11 +30,13 @@
 static const char *TAG = "rtc_module";
 #endif
 
+// rtc_spinlock is used by other peripheral drivers
+portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
 #if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-8008
 
 #define NOT_REGISTERED      (-1)
 
-portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 // Disable the interrupt which cannot work without cache.
 static DRAM_ATTR uint32_t rtc_intr_cache;
 static DRAM_ATTR uint32_t rtc_intr_enabled;

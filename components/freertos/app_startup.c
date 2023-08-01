@@ -111,19 +111,10 @@ void esp_startup_start_app_other_cores(void)
     }
 
     // Wait for CPU0 to start FreeRTOS before progressing
-    //TODO: IDF-7566
-#if !CONFIG_IDF_TARGET_ESP32P4
     extern volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS];
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
-#else
-    extern volatile unsigned uxSchedulerRunning[portNUM_PROCESSORS];
-    while (uxSchedulerRunning[0] == 0) {
-        ;
-    }
-#endif
-
 
 #if CONFIG_APPTRACE_ENABLE
     // [refactor-todo] move to esp_system initialization

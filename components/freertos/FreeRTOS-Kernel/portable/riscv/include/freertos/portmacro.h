@@ -36,6 +36,7 @@
 #define PORTMACRO_H
 
 #include "sdkconfig.h"
+#include "freertos/FreeRTOSConfig.h"
 
 /* Macros used instead ofsetoff() for better performance of interrupt handler */
 #define PORT_OFFSET_PX_STACK 0x30
@@ -129,6 +130,22 @@ typedef uint32_t TickType_t;
 // --------------------- Interrupts ------------------------
 
 /**
+ * @brief Disable interrupts in a nested manner (meant to be called from ISRs)
+ *
+ * @warning Only applies to current CPU.
+ * @return UBaseType_t Previous interrupt level
+ */
+UBaseType_t xPortSetInterruptMaskFromISR(void);
+
+/**
+ * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ *
+ * @warning Only applies to current CPU.
+ * @param prev_int_level Previous interrupt level
+ */
+void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level);
+
+/**
  * @brief Checks if the current core is in an ISR context
  *
  * - ISR context consist of Low/Mid priority ISR, or time tick ISR
@@ -155,50 +172,36 @@ BaseType_t xPortInIsrContext(void);
 BaseType_t xPortInterruptedFromISRContext(void);
 
 /* ---------------------- Spinlocks ------------------------
- - Spinlocks added to match API with SMP FreeRTOS. Single core RISC-V does not need spin locks
- - Because single core does not have a primitive spinlock data type, we have to implement one here
- * @note [refactor-todo] Refactor critical section API so that this is no longer required
+ * - Modifications made to critical sections to support SMP
+ * - See "Critical Sections & Disabling Interrupts" in docs/api-guides/freertos-smp.rst for more details
+ * - Remark: For the ESP32, portENTER_CRITICAL and portENTER_CRITICAL_ISR both alias vPortEnterCritical, meaning that
+ *           either function can be called both from ISR as well as task context. This is not standard FreeRTOS
+ *           behavior; please keep this in mind if you need any compatibility with other FreeRTOS implementations.
+ * @note [refactor-todo] Check if these comments are still true
  * ------------------------------------------------------ */
 
-//TODO: IDF-7566
-#if !CONFIG_IDF_TARGET_ESP32P4
-/**
- * @brief Spinlock object
- * Owner:
- *  - Set to 0 if uninitialized
- *  - Set to portMUX_FREE_VAL when free
- *  - Set to CORE_ID_REGVAL_PRO or CORE_ID_REGVAL_AP when locked
- *  - Any other value indicates corruption
- * Count:
- *  - 0 if unlocked
- *  - Recursive count if locked
- *
- * @note Not a true spinlock as single core RISC-V does not have atomic compare and set instruction
- * @note Keep portMUX_INITIALIZER_UNLOCKED in sync with this struct
- */
-typedef struct {
-    uint32_t owner;
-    uint32_t count;
-} portMUX_TYPE;
-
-#else
 typedef spinlock_t                          portMUX_TYPE;               /**< Spinlock type used by FreeRTOS critical sections */
-#endif
 
-/**< Spinlock initializer */
-#define portMUX_INITIALIZER_UNLOCKED {                      \
-            .owner = portMUX_FREE_VAL,                      \
-            .count = 0,                                     \
-        }
-#define portMUX_FREE_VAL                    SPINLOCK_FREE           /**< Spinlock is free. [refactor-todo] check if this is still required */
-#define portMUX_NO_TIMEOUT                  SPINLOCK_WAIT_FOREVER   /**< When passed for 'timeout_cycles', spin forever if necessary. [refactor-todo] check if this is still required */
-#define portMUX_TRY_LOCK                    SPINLOCK_NO_WAIT        /**< Try to acquire the spinlock a single time only. [refactor-todo] check if this is still required */
-#define portMUX_INITIALIZE(mux)    ({ \
-    (mux)->owner = portMUX_FREE_VAL; \
-    (mux)->count = 0; \
-})
+#define portMUX_INITIALIZER_UNLOCKED        SPINLOCK_INITIALIZER        /**< Spinlock initializer */
+#define portMUX_FREE_VAL                    SPINLOCK_FREE               /**< Spinlock is free. [refactor-todo] check if this is still required */
+#define portMUX_NO_TIMEOUT                  SPINLOCK_WAIT_FOREVER       /**< When passed for 'timeout_cycles', spin forever if necessary. [refactor-todo] check if this is still required */
+#define portMUX_TRY_LOCK                    SPINLOCK_NO_WAIT            /**< Try to acquire the spinlock a single time only. [refactor-todo] check if this is still required */
+#define portMUX_INITIALIZE(mux)             spinlock_initialize(mux)    /*< Initialize a spinlock to its unlocked state */
 
 // ------------------ Critical Sections --------------------
+
+/*
+This RISC-V port provides two kinds of critical section APIs, viz., one those take a spinlock argument and one those do
+not -
+
+These sets of APIs are -
+1. vPortEnterCritical(void) and vPortExitCritical(void)
+2. vPortEnterCriticalMultiCore(portMUX_TYPE *mux) and vPortExitCriticalMultiCore(portMUX_TYPE *MUX)
+
+This is primarily done to be compatible with some IDF examples such as esp_zigbee_gateway which have a reference
+to vPortEnterCritical(void) and vPortExitCritical(void) from precompiled libraries (.a).
+TODO: IDF-8089
+*/
 
 /**
  * @brief Enter a critical section
@@ -206,12 +209,7 @@ typedef spinlock_t                          portMUX_TYPE;               /**< Spi
  * - Simply disable interrupts
  * - Can be nested
  */
-//TODO: IDF-7566
-#if !CONFIG_IDF_TARGET_ESP32P4
 void vPortEnterCritical(void);
-#else
-void vPortEnterCritical(portMUX_TYPE *mux);
-#endif
 
 /**
  * @brief Exit a critical section
@@ -219,12 +217,121 @@ void vPortEnterCritical(portMUX_TYPE *mux);
  * - Reenables interrupts
  * - Can be nested
  */
-//TODO: IDF-7566
-#if !CONFIG_IDF_TARGET_ESP32P4
 void vPortExitCritical(void);
-#else
-void vPortExitCritical(portMUX_TYPE *mux);
-#endif
+
+#if (configNUM_CORES > 1)
+/**
+ * @brief Enter an SMP critical section with a timeout
+ *
+ * This function enters an SMP critical section by disabling interrupts then
+ * taking a spinlock with a specified timeout.
+ *
+ * This function can be called in a nested manner.
+ *
+ * @note This function is made non-inline on purpose to reduce code size
+ * @param mux Spinlock
+ * @param timeout Timeout to wait for spinlock in number of CPU cycles.
+ *                Use portMUX_NO_TIMEOUT to wait indefinitely
+ *                Use portMUX_TRY_LOCK to only getting the spinlock a single time
+ * @retval pdPASS Critical section entered (spinlock taken)
+ * @retval pdFAIL If timed out waiting for spinlock (will not occur if using portMUX_NO_TIMEOUT)
+ */
+BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout);
+
+/**
+ * @brief Enter an SMP critical section
+ *
+ * This function enters an SMP critical section by disabling interrupts then
+ * taking a spinlock with an unlimited timeout.
+ *
+ * This function can be called in a nested manner
+ *
+ * @param[in] mux Spinlock
+ */
+static inline void __attribute__((always_inline)) vPortEnterCriticalMultiCore(portMUX_TYPE *mux);
+
+/**
+ * @brief Exit an SMP critical section
+ *
+ * This function can be called in a nested manner. On the outer most level of nesting, this function will:
+ *
+ * - Release the spinlock
+ * - Restore the previous interrupt level before the critical section was entered
+ *
+ * If still nesting, this function simply decrements a critical nesting count
+ *
+ * @note This function is made non-inline on purpose to reduce code size
+ * @param[in] mux Spinlock
+ */
+void vPortExitCriticalMultiCore(portMUX_TYPE *mux);
+
+/**
+ * @brief FreeRTOS Compliant version of xPortEnterCriticalTimeout()
+ *
+ * Compliant version of xPortEnterCriticalTimeout() will ensure that this is
+ * called from a task context only. An abort is called otherwise.
+ *
+ * @note This function is made non-inline on purpose to reduce code size
+ *
+ * @param mux Spinlock
+ * @param timeout Timeout
+ * @return BaseType_t
+ */
+BaseType_t xPortEnterCriticalTimeoutCompliance(portMUX_TYPE *mux, BaseType_t timeout);
+
+/**
+ * @brief FreeRTOS compliant version of vPortEnterCritical()
+ *
+ * Compliant version of vPortEnterCritical() will ensure that this is
+ * called from a task context only. An abort is called otherwise.
+ *
+ * @param[in] mux Spinlock
+ */
+static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(portMUX_TYPE *mux);
+
+/**
+ * @brief FreeRTOS compliant version of vPortExitCritical()
+ *
+ * Compliant version of vPortExitCritical() will ensure that this is
+ * called from a task context only. An abort is called otherwise.
+ *
+ * @note This function is made non-inline on purpose to reduce code size
+ * @param[in] mux Spinlock
+ */
+void vPortExitCriticalCompliance(portMUX_TYPE *mux);
+
+/**
+ * @brief Safe version of enter critical timeout
+ *
+ * Safe version of enter critical will automatically select between
+ * portTRY_ENTER_CRITICAL() and portTRY_ENTER_CRITICAL_ISR()
+ *
+ * @param mux Spinlock
+ * @param timeout Timeout
+ * @return BaseType_t
+ */
+static inline BaseType_t __attribute__((always_inline)) xPortEnterCriticalTimeoutSafe(portMUX_TYPE *mux, BaseType_t timeout);
+
+/**
+ * @brief Safe version of enter critical
+ *
+ * Safe version of enter critical will automatically select between
+ * portENTER_CRITICAL() and portENTER_CRITICAL_ISR()
+ *
+ * @param[in] mux Spinlock
+ */
+static inline void __attribute__((always_inline)) vPortEnterCriticalSafe(portMUX_TYPE *mux);
+
+/**
+ * @brief Safe version of exit critical
+ *
+ * Safe version of enter critical will automatically select between
+ * portEXIT_CRITICAL() and portEXIT_CRITICAL_ISR()
+ *
+ * @param[in] mux Spinlock
+ */
+static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_TYPE *mux);
+#endif /* (configNUM_CORES > 1) */
 
 // ---------------------- Yielding -------------------------
 
@@ -332,13 +439,50 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 
 #define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK_FROM_ISR()
 #define portENABLE_INTERRUPTS()             portCLEAR_INTERRUPT_MASK_FROM_ISR(1)
-#define portSET_INTERRUPT_MASK_FROM_ISR()                       vPortSetInterruptMask()
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedStatusValue)   vPortClearInterruptMask(uxSavedStatusValue)
+
+/**
+ * ISR versions to enable/disable interrupts
+ */
+#define portSET_INTERRUPT_MASK_FROM_ISR()                   xPortSetInterruptMaskFromISR()
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
+
+/**
+ * @brief Used by FreeRTOS functions to call the correct version of critical section API
+ */
+#if ( configNUM_CORES > 1 )
+#define portCHECK_IF_IN_ISR()   xPortInIsrContext()
+#endif
 
 // ------------------ Critical Sections --------------------
 
-//TODO: IDF-7566
-#if !CONFIG_IDF_TARGET_ESP32P4
+#if (configNUM_CORES > 1)
+/**
+ * @brief FreeRTOS critical section macros
+ *
+ * - Added a spinlock argument for SMP
+ * - Can be nested
+ * - Compliance versions will assert if regular critical section API is used in ISR context
+ * - Safe versions can be called from either contexts
+ */
+#ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#define portTRY_ENTER_CRITICAL(mux, timeout)        xPortEnterCriticalTimeoutCompliance(mux, timeout)
+#define portENTER_CRITICAL(mux)                     vPortEnterCriticalCompliance(mux)
+#define portEXIT_CRITICAL(mux)                      vPortExitCriticalCompliance(mux)
+#else
+#define portTRY_ENTER_CRITICAL(mux, timeout)        xPortEnterCriticalTimeout(mux, timeout)
+#define portENTER_CRITICAL(mux)                     vPortEnterCriticalMultiCore(mux)
+#define portEXIT_CRITICAL(mux)                      vPortExitCriticalMultiCore(mux)
+#endif /* CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE */
+
+#define portTRY_ENTER_CRITICAL_ISR(mux, timeout)    xPortEnterCriticalTimeout(mux, timeout)
+#define portENTER_CRITICAL_ISR(mux)                 vPortEnterCriticalMultiCore(mux)
+#define portEXIT_CRITICAL_ISR(mux)                  vPortExitCriticalMultiCore(mux)
+
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux)
+#define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe(mux)
+#define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe(mux)
+#else
+/* Single-core variants of the critical section macros */
 #define portENTER_CRITICAL(mux)                 {(void)mux;  vPortEnterCritical();}
 #define portEXIT_CRITICAL(mux)                  {(void)mux;  vPortExitCritical();}
 #define portTRY_ENTER_CRITICAL(mux, timeout)    ({  \
@@ -347,16 +491,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
     BaseType_t ret = pdPASS;                        \
     ret;                                            \
 })
-#else
-#define portENTER_CRITICAL(mux)                 {vPortEnterCritical(mux);}
-#define portEXIT_CRITICAL(mux)                  {vPortExitCritical(mux);}
-#define portTRY_ENTER_CRITICAL(mux, timeout)    ({  \
-    (void)timeout;                                  \
-    vPortEnterCritical(mux);                        \
-    BaseType_t ret = pdPASS;                        \
-    ret;                                            \
-})
-#endif
 
 //In single-core RISC-V, we can use the same critical section API
 #define portENTER_CRITICAL_ISR(mux)                 portENTER_CRITICAL(mux)
@@ -380,10 +514,8 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 })
 #define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   portENTER_CRITICAL_SAFE(mux, timeout)
 
-//TODO: IDF-7566
-#if CONFIG_IDF_TARGET_ESP32P4
-#define portCHECK_IF_IN_ISR()   xPortInIsrContext()
-#endif
+#endif /* (configNUM_CORES > 1) */
+
 // ---------------------- Yielding -------------------------
 
 #define portYIELD() vPortYield()
@@ -458,17 +590,53 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 
 // --------------------- Interrupts ------------------------
 
+// ------------------ Critical Sections --------------------
+
+#if (configNUM_CORES > 1)
+static inline void __attribute__((always_inline)) vPortEnterCriticalMultiCore(portMUX_TYPE *mux)
+{
+    xPortEnterCriticalTimeout(mux, portMUX_NO_TIMEOUT);
+}
+
+static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(portMUX_TYPE *mux)
+{
+    xPortEnterCriticalTimeoutCompliance(mux, portMUX_NO_TIMEOUT);
+}
+
+static inline BaseType_t __attribute__((always_inline)) xPortEnterCriticalTimeoutSafe(portMUX_TYPE *mux, BaseType_t timeout)
+{
+    BaseType_t ret;
+    if (xPortInIsrContext()) {
+        ret = portTRY_ENTER_CRITICAL_ISR(mux, timeout);
+    } else {
+        ret = portTRY_ENTER_CRITICAL(mux, timeout);
+    }
+    return ret;
+}
+
+static inline void __attribute__((always_inline)) vPortEnterCriticalSafe(portMUX_TYPE *mux)
+{
+    xPortEnterCriticalTimeoutSafe(mux, portMUX_NO_TIMEOUT);
+}
+
+static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_TYPE *mux)
+{
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(mux);
+    } else {
+        portEXIT_CRITICAL(mux);
+    }
+}
+#endif /* (configNUM_CORES > 1) */
+
 // ---------------------- Yielding -------------------------
 
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
-//TODO: IDF-7566
-#if SOC_INT_CLIC_SUPPORTED
-    uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG + 0x10000 * xPortGetCoreID());
-    threshold = threshold >> (24 + (8 - NLBITS));
-#else
     uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
-#endif
+#if SOC_INT_CLIC_SUPPORTED
+    threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
+#endif /* SOC_INT_CLIC_SUPPORTED */
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1
      * means not in critical code
@@ -513,8 +681,8 @@ bool xPortcheckValidStackMem(const void *ptr);
 // --------------------- App-Trace -------------------------
 
 #if CONFIG_APPTRACE_SV_ENABLE
-extern int xPortSwitchFlag;
-#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
+extern volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS];
+#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag[_cpu_])
 #else
 #define os_task_switch_is_pended(_cpu_) (false)
 #endif

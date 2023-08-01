@@ -209,7 +209,7 @@ static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level);
  * - See "Critical Sections & Disabling Interrupts" in docs/api-guides/freertos-smp.rst for more details
  * - Remark: For the ESP32, portENTER_CRITICAL and portENTER_CRITICAL_ISR both alias vPortEnterCritical, meaning that
  *           either function can be called both from ISR as well as task context. This is not standard FreeRTOS
- *           behaviorr; please keep this in mind if you need any compatibility with other FreeRTOS implementations.
+ *           behavior; please keep this in mind if you need any compatibility with other FreeRTOS implementations.
  * @note [refactor-todo] Check if these comments are still true
  * ------------------------------------------------------ */
 
