@@ -21,10 +21,12 @@
 #include "soc/rmt_periph.h"
 #include "soc/rtc.h"
 #include "hal/rmt_ll.h"
+#include "hal/cache_hal.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/rmt_rx.h"
 #include "rmt_private.h"
+#include "rom/cache.h"
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -39,26 +41,26 @@ static void rmt_rx_default_isr(void *args);
 #if SOC_RMT_SUPPORT_DMA
 static bool rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
-static void rmt_rx_mount_dma_buffer(dma_descriptor_t *desc_array, size_t array_size, const void *buffer, size_t buffer_size)
+static void rmt_rx_mount_dma_buffer(rmt_dma_descriptor_t *desc_array, rmt_dma_descriptor_t *desc_array_nc, size_t array_size, const void *buffer, size_t buffer_size)
 {
     size_t prepared_length = 0;
     uint8_t *data = (uint8_t *)buffer;
     int dma_node_i = 0;
-    dma_descriptor_t *desc = NULL;
+    rmt_dma_descriptor_t *desc = NULL;
     while (buffer_size > RMT_DMA_DESC_BUF_MAX_SIZE) {
-        desc = &desc_array[dma_node_i];
+        desc = &desc_array_nc[dma_node_i];
         desc->dw0.suc_eof = 0;
         desc->dw0.size = RMT_DMA_DESC_BUF_MAX_SIZE;
         desc->dw0.length = 0;
         desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
         desc->buffer = &data[prepared_length];
-        desc->next = &desc_array[dma_node_i + 1];
+        desc->next = &desc_array[dma_node_i + 1]; // note, we must use the cache address for the "next" pointer
         prepared_length += RMT_DMA_DESC_BUF_MAX_SIZE;
         buffer_size -= RMT_DMA_DESC_BUF_MAX_SIZE;
         dma_node_i++;
     }
     if (buffer_size) {
-        desc = &desc_array[dma_node_i];
+        desc = &desc_array_nc[dma_node_i];
         desc->dw0.suc_eof = 0;
         desc->dw0.size = buffer_size;
         desc->dw0.length = 0;
@@ -77,11 +79,6 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
 #if SOC_GDMA_TRIG_PERIPH_RMT0_BUS == SOC_GDMA_BUS_AHB
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
 #endif
-    gdma_strategy_config_t gdma_strategy_conf = {
-        .auto_update_desc = true,
-        .owner_check = true,
-    };
-    gdma_apply_strategy(rx_channel->base.dma_chan, &gdma_strategy_conf);
     gdma_rx_event_callbacks_t cbs = {
         .on_recv_eof = rmt_dma_rx_eof_cb,
     };
@@ -173,6 +170,9 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
         // de-register channel from RMT group
         rmt_rx_unregister_from_group(&rx_channel->base, rx_channel->base.group);
     }
+    if (rx_channel->dma_nodes) {
+        free(rx_channel->dma_nodes);
+    }
     free(rx_channel);
     return ESP_OK;
 }
@@ -197,18 +197,21 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
-    size_t num_dma_nodes = 0;
-    if (config->flags.with_dma) {
-        num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
-    }
     // malloc channel memory
     uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
-    if (config->flags.with_dma) {
-        // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
-    }
-    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t) + num_dma_nodes * sizeof(dma_descriptor_t), mem_caps);
+    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
+    // create DMA descriptor
+    size_t num_dma_nodes = 0;
+    if (config->flags.with_dma) {
+        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
+        // DMA descriptors must be placed in internal SRAM
+        rx_channel->dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
+        ESP_GOTO_ON_FALSE(rx_channel->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel DMA nodes");
+        // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
+        rx_channel->dma_nodes_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(rx_channel->dma_nodes);
+    }
     rx_channel->num_dma_nodes = num_dma_nodes;
     // register the channel to group
     ESP_GOTO_ON_ERROR(rmt_rx_register_to_group(rx_channel, config), err, TAG, "register channel failed");
@@ -348,6 +351,12 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     if (channel->dma_chan) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "buffer must locate in internal RAM for DMA use");
+
+#if CONFIG_IDF_TARGET_ESP32P4
+        uint32_t data_cache_line_mask = cache_hal_get_cache_line_size(CACHE_TYPE_DATA) - 1;
+        ESP_RETURN_ON_FALSE(((uintptr_t)buffer & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer must be aligned to cache line size");
+        ESP_RETURN_ON_FALSE((buffer_size & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer size must be aligned to cache line size");
+#endif
     }
     if (channel->dma_chan) {
         ESP_RETURN_ON_FALSE(buffer_size <= rx_chan->num_dma_nodes * RMT_DMA_DESC_BUF_MAX_SIZE,
@@ -371,9 +380,9 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     if (channel->dma_chan) {
 #if SOC_RMT_SUPPORT_DMA
-        rmt_rx_mount_dma_buffer(rx_chan->dma_nodes, rx_chan->num_dma_nodes, buffer, buffer_size);
+        rmt_rx_mount_dma_buffer(rx_chan->dma_nodes, rx_chan->dma_nodes_nc, rx_chan->num_dma_nodes, buffer, buffer_size);
         gdma_reset(channel->dma_chan);
-        gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes);
+        gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
 #endif
     }
 
@@ -624,12 +633,12 @@ static void IRAM_ATTR rmt_rx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-static size_t IRAM_ATTR rmt_rx_get_received_symbol_num_from_dma(dma_descriptor_t *desc)
+static size_t IRAM_ATTR rmt_rx_get_received_symbol_num_from_dma(rmt_dma_descriptor_t *desc_nc)
 {
     size_t received_bytes = 0;
-    while (desc) {
-        received_bytes += desc->dw0.length;
-        desc = desc->next;
+    while (desc_nc) {
+        received_bytes += desc_nc->dw0.length;
+        desc_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(desc_nc->next);
     }
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
@@ -650,10 +659,18 @@ static bool IRAM_ATTR rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
+#if CONFIG_IDF_TARGET_ESP32P4
+    int invalidate_map = CACHE_MAP_L1_DCACHE;
+    if (esp_ptr_external_ram((const void *)trans_desc->buffer)) {
+        invalidate_map |= CACHE_MAP_L2_CACHE;
+    }
+    Cache_Invalidate_Addr(invalidate_map, (uint32_t)trans_desc->buffer, trans_desc->buffer_size);
+#endif
+
     if (rx_chan->on_recv_done) {
         rmt_rx_done_event_data_t edata = {
             .received_symbols = trans_desc->buffer,
-            .num_symbols = rmt_rx_get_received_symbol_num_from_dma(rx_chan->dma_nodes),
+            .num_symbols = rmt_rx_get_received_symbol_num_from_dma(rx_chan->dma_nodes_nc),
         };
         if (rx_chan->on_recv_done(channel, &edata, rx_chan->user_data)) {
             need_yield = true;

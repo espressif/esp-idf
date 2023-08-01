@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 #include "soc/soc_caps.h"
 #include "test_util_rmt_encoders.h"
+#include "test_board.h"
 
 #if CONFIG_RMT_ISR_IRAM_SAFE
 #define TEST_RMT_CALLBACK_ATTR IRAM_ATTR
@@ -27,7 +28,7 @@ TEST_CASE("rmt bytes encoder", "[rmt]")
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .trans_queue_depth = 4,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .intr_priority = 3
     };
     printf("install tx channel\r\n");
@@ -89,7 +90,7 @@ static void test_rmt_channel_single_trans(size_t mem_block_symbols, bool with_dm
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
         .trans_queue_depth = 4,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
         .intr_priority = 2
     };
@@ -144,7 +145,7 @@ static void test_rmt_ping_pong_trans(size_t mem_block_symbols, bool with_dma)
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
         .trans_queue_depth = 4,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
         .intr_priority = 1
     };
@@ -215,7 +216,6 @@ TEST_CASE("rmt ping-pong transaction", "[rmt]")
 #endif
 }
 
-
 TEST_RMT_CALLBACK_ATTR
 static bool test_rmt_tx_done_cb_check_event_data(rmt_channel_handle_t channel, const rmt_tx_done_event_data_t *edata, void *user_data)
 {
@@ -231,7 +231,7 @@ static void test_rmt_trans_done_event(size_t mem_block_symbols, bool with_dma)
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
         .trans_queue_depth = 1,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
         .intr_priority = 3
     };
@@ -305,7 +305,7 @@ static void test_rmt_loop_trans(size_t mem_block_symbols, bool with_dma)
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
         .trans_queue_depth = 4,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
         .intr_priority = 2
     };
@@ -365,7 +365,7 @@ TEST_CASE("rmt infinite loop transaction", "[rmt]")
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
-        .gpio_num = 2,
+        .gpio_num = TEST_RMT_GPIO_NUM_B,
         .trans_queue_depth = 3,
         .intr_priority = 1
     };
@@ -444,7 +444,7 @@ static void test_rmt_tx_nec_carrier(size_t mem_block_symbols, bool with_dma)
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = mem_block_symbols,
-        .gpio_num = 2,
+        .gpio_num = TEST_RMT_GPIO_NUM_B,
         .trans_queue_depth = 4,
         .flags.with_dma = with_dma,
         .intr_priority = 3
@@ -503,7 +503,6 @@ TEST_CASE("rmt tx nec with carrier", "[rmt]")
 #endif
 }
 
-
 TEST_RMT_CALLBACK_ATTR
 static bool test_rmt_tx_done_cb_record_time(rmt_channel_handle_t channel, const rmt_tx_done_event_data_t *edata, void *user_data)
 {
@@ -526,7 +525,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
     };
     printf("install tx channels\r\n");
     rmt_channel_handle_t tx_channels[TEST_RMT_CHANS] = {NULL};
-    int gpio_nums[TEST_RMT_CHANS] = {0, 2};
+    int gpio_nums[TEST_RMT_CHANS] = {TEST_RMT_GPIO_NUM_A, TEST_RMT_GPIO_NUM_B};
     size_t mem_blk_syms[TEST_RMT_CHANS] = {channel0_mem_block_symbols, channel1_mem_block_symbols};
     bool dma_flags[TEST_RMT_CHANS] = {channel0_with_dma, channel1_with_dma};
     for (int i = 0; i < TEST_RMT_CHANS; i++) {
@@ -654,39 +653,4 @@ TEST_CASE("rmt multiple channels transaction", "[rmt]")
 #if SOC_RMT_SUPPORT_DMA
     test_rmt_multi_channels_trans(1024, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false);
 #endif
-}
-
-TEST_CASE("RMT TX test specifying interrupt priority", "[rmt]")
-{
-    rmt_tx_channel_config_t tx_channel_cfg = {
-        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
-        .clk_src = RMT_CLK_SRC_DEFAULT,
-        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
-        .trans_queue_depth = 4,
-        .gpio_num = 0,
-        .intr_priority = 3
-    };
-    // --- Check if specifying interrupt priority works
-    printf("install tx channel\r\n");
-    rmt_channel_handle_t tx_channel = NULL;
-    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
-
-    rmt_channel_handle_t another_tx_channel = NULL;
-    rmt_tx_channel_config_t another_tx_channel_cfg = tx_channel_cfg;
-    // --- Check if rmt interrupt priority valid check works
-    another_tx_channel_cfg.intr_priority = 4;
-    TEST_ESP_ERR(rmt_new_tx_channel(&another_tx_channel_cfg, &another_tx_channel), ESP_ERR_INVALID_ARG);
-    // --- Check if rmt interrupt priority conflict check works
-    another_tx_channel_cfg.intr_priority = 1;   ///< Specifying a conflict intr_priority
-    TEST_ESP_ERR(rmt_new_tx_channel(&another_tx_channel_cfg, &another_tx_channel), ESP_ERR_INVALID_ARG);
-    another_tx_channel_cfg.intr_priority = 0;   ///< Do not specify an intr_priority, should not conflict
-    TEST_ESP_OK(rmt_new_tx_channel(&another_tx_channel_cfg, &another_tx_channel));
-    // --- Check if channel works
-    TEST_ESP_OK(rmt_enable(tx_channel));
-    TEST_ESP_OK(rmt_enable(another_tx_channel));
-    // --- Post-test
-    TEST_ESP_OK(rmt_disable(tx_channel));
-    TEST_ESP_OK(rmt_disable(another_tx_channel));
-    TEST_ESP_OK(rmt_del_channel(tx_channel));
-    TEST_ESP_OK(rmt_del_channel(another_tx_channel));
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,9 +15,9 @@
 #include <stddef.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/rmt_struct.h"
-#include "soc/system_struct.h"
 #include "hal/rmt_types.h"
+#include "soc/rmt_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,7 @@ typedef enum {
 static inline void rmt_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    SYSTEM.perip_clk_en0.rmt_clk_en = enable;
+    HP_SYS_CLKRST.soc_clk_ctrl2.reg_rmt_sys_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -66,13 +66,69 @@ static inline void rmt_ll_enable_bus_clock(int group_id, bool enable)
 static inline void rmt_ll_reset_register(int group_id)
 {
     (void)group_id;
-    SYSTEM.perip_rst_en0.rmt_rst = 1;
-    SYSTEM.perip_rst_en0.rmt_rst = 0;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_rmt = 1;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_rmt = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define rmt_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief Set clock source and divider for RMT channel group
+ *
+ * @param dev Peripheral instance address
+ * @param channel not used as clock source is set for all channels
+ * @param src Clock source
+ * @param divider_integral Integral part of the divider
+ * @param divider_denominator Denominator part of the divider
+ * @param divider_numerator Numerator part of the divider
+ */
+static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, rmt_clock_source_t src,
+        uint32_t divider_integral, uint32_t divider_denominator, uint32_t divider_numerator)
+{
+    (void)dev;
+    // Formula: rmt_sclk = module_clock_src / (1 + div_num + div_a / div_b)
+    (void)channel; // the source clock is set for all channels
+    HAL_ASSERT(divider_integral >= 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl22, reg_rmt_clk_div_num, divider_integral - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl22, reg_rmt_clk_div_numerator, divider_numerator);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl22, reg_rmt_clk_div_denominator, divider_denominator);
+    switch (src) {
+    case RMT_CLK_SRC_PLL_F80M:
+        HP_SYS_CLKRST.peri_clk_ctrl22.reg_rmt_clk_src_sel = 2;
+        break;
+    case RMT_CLK_SRC_RC_FAST:
+        HP_SYS_CLKRST.peri_clk_ctrl22.reg_rmt_clk_src_sel = 1;
+        break;
+    case RMT_CLK_SRC_XTAL:
+        HP_SYS_CLKRST.peri_clk_ctrl22.reg_rmt_clk_src_sel = 0;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported RMT clock source");
+        break;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define rmt_ll_set_group_clock_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_set_group_clock_src(__VA_ARGS__)
+
+/**
+ * @brief Enable RMT peripheral source clock
+ *
+ * @param dev Peripheral instance address
+ * @param en True to enable, False to disable
+ */
+static inline void rmt_ll_enable_group_clock(rmt_dev_t *dev, bool en)
+{
+    (void)dev;
+    HP_SYS_CLKRST.peri_clk_ctrl22.reg_rmt_clk_en = en;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define rmt_ll_enable_group_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_enable_group_clock(__VA_ARGS__)
 
 /**
  * @brief Enable clock gate for register and memory
@@ -107,52 +163,6 @@ static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, bool enable)
 static inline void rmt_ll_enable_mem_access_nonfifo(rmt_dev_t *dev, bool enable)
 {
     dev->sys_conf.apb_fifo_mask = enable;
-}
-
-/**
- * @brief Set clock source and divider for RMT channel group
- *
- * @param dev Peripheral instance address
- * @param channel not used as clock source is set for all channels
- * @param src Clock source
- * @param divider_integral Integral part of the divider
- * @param divider_denominator Denominator part of the divider
- * @param divider_numerator Numerator part of the divider
- */
-static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, rmt_clock_source_t src,
-        uint32_t divider_integral, uint32_t divider_denominator, uint32_t divider_numerator)
-{
-    // Formula: rmt_sclk = module_clock_src / (1 + div_num + div_a / div_b)
-    (void)channel; // the source clock is set for all channels
-    HAL_ASSERT(divider_integral >= 1);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sys_conf, sclk_div_num, divider_integral - 1);
-    dev->sys_conf.sclk_div_a = divider_numerator;
-    dev->sys_conf.sclk_div_b = divider_denominator;
-    switch (src) {
-    case RMT_CLK_SRC_APB:
-        dev->sys_conf.sclk_sel = 1;
-        break;
-    case RMT_CLK_SRC_RC_FAST:
-        dev->sys_conf.sclk_sel = 2;
-        break;
-    case RMT_CLK_SRC_XTAL:
-        dev->sys_conf.sclk_sel = 3;
-        break;
-    default:
-        HAL_ASSERT(false && "unsupported RMT clock source");
-        break;
-    }
-}
-
-/**
- * @brief Enable RMT peripheral source clock
- *
- * @param dev Peripheral instance address
- * @param en True to enable, False to disable
- */
-static inline void rmt_ll_enable_group_clock(rmt_dev_t *dev, bool en)
-{
-    dev->sys_conf.sclk_active = en;
 }
 
 ////////////////////////////////////////TX Channel Specific/////////////////////////////////////////////////////////////
@@ -819,16 +829,16 @@ static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
-    rmt_clock_source_t clk_src = RMT_CLK_SRC_APB;
-    switch (dev->sys_conf.sclk_sel) {
-    case 1:
-        clk_src = RMT_CLK_SRC_APB;
+    rmt_clock_source_t clk_src = RMT_CLK_SRC_PLL_F80M;
+    switch (HP_SYS_CLKRST.peri_clk_ctrl22.reg_rmt_clk_src_sel) {
+    case 0:
+        clk_src = RMT_CLK_SRC_XTAL;
         break;
-    case 2:
+    case 1:
         clk_src = RMT_CLK_SRC_RC_FAST;
         break;
-    case 3:
-        clk_src = RMT_CLK_SRC_XTAL;
+    case 2:
+        clk_src = RMT_CLK_SRC_PLL_F80M;
         break;
     }
     return clk_src;

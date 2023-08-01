@@ -447,11 +447,11 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
     if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_IDLE_WAIT)) {
         // if the data is in the cache, invalidate, then CPU can see the latest data
 #if MCP_NEEDS_INVALIDATE_DST_CACHE
-        int write_back_map = CACHE_MAP_L1_DCACHE;
+        int invalidate_map = CACHE_MAP_L1_DCACHE;
         if (esp_ptr_external_ram((const void *)trans->memcpy_dst_addr)) {
-            write_back_map |= CACHE_MAP_L2_CACHE;
+            invalidate_map |= CACHE_MAP_L2_CACHE;
         }
-        Cache_Invalidate_Addr(write_back_map, (uint32_t)trans->memcpy_dst_addr, trans->memcpy_size);
+        Cache_Invalidate_Addr(invalidate_map, (uint32_t)trans->memcpy_dst_addr, trans->memcpy_size);
 #endif
 
         // invoked callback registered by user

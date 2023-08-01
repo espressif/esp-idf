@@ -16,6 +16,7 @@
 #include "esp_timer.h"
 #include "soc/soc_caps.h"
 #include "test_util_rmt_encoders.h"
+#include "test_board.h"
 
 static void IRAM_ATTR test_delay_post_cache_disable(void *args)
 {
@@ -29,7 +30,7 @@ static void test_rmt_tx_iram_safe(size_t mem_block_symbols, bool with_dma)
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
         .trans_queue_depth = 4,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
     };
     printf("install tx channel\r\n");
@@ -86,8 +87,6 @@ TEST_CASE("rmt tx iram safe", "[rmt]")
 #endif
 }
 
-
-
 static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
 {
     int gpio_num = (int)args;
@@ -121,7 +120,7 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
         .clk_src = clk_src,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = mem_block_symbols,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
         .flags.io_loop_back = true, // the GPIO will act like a loopback
     };

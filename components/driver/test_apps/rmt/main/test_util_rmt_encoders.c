@@ -11,12 +11,6 @@
 #include "driver/rmt_encoder.h"
 #include "esp_attr.h"
 
-#if CONFIG_RMT_ISR_IRAM_SAFE
-#define TEST_RMT_ENCODER_ATTR IRAM_ATTR
-#else
-#define TEST_RMT_ENCODER_ATTR
-#endif
-
 typedef struct {
     rmt_encoder_t base;
     rmt_encoder_t *bytes_encoder;
@@ -25,8 +19,7 @@ typedef struct {
     rmt_symbol_word_t reset_code;
 } rmt_led_strip_encoder_t;
 
-TEST_RMT_ENCODER_ATTR
-static size_t rmt_encode_led_strip(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+IRAM_ATTR static size_t rmt_encode_led_strip(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
     rmt_encode_state_t session_state = RMT_ENCODING_RESET;
@@ -119,7 +112,7 @@ typedef struct {
     int state;
 } rmt_nec_protocol_encoder_t;
 
-static size_t rmt_encode_nec_protocol(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+IRAM_ATTR static size_t rmt_encode_nec_protocol(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_nec_protocol_encoder_t *nec_encoder = __containerof(encoder, rmt_nec_protocol_encoder_t, base);
     rmt_encode_state_t session_state = RMT_ENCODING_RESET;

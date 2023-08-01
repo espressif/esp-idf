@@ -55,6 +55,10 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
+config SOC_RMT_SUPPORTED
+    bool
+    default y
+
 config SOC_I2C_SUPPORTED
     bool
     default y
@@ -489,15 +493,15 @@ config SOC_RMT_GROUPS
 
 config SOC_RMT_TX_CANDIDATES_PER_GROUP
     int
-    default 2
+    default 4
 
 config SOC_RMT_RX_CANDIDATES_PER_GROUP
     int
-    default 2
+    default 4
 
 config SOC_RMT_CHANNELS_PER_GROUP
     int
-    default 4
+    default 8
 
 config SOC_RMT_MEM_WORDS_PER_CHANNEL
     int
@@ -515,6 +519,14 @@ config SOC_RMT_SUPPORT_TX_ASYNC_STOP
     bool
     default y
 
+config SOC_RMT_SUPPORT_TX_LOOP_COUNT
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
+    bool
+    default y
+
 config SOC_RMT_SUPPORT_TX_SYNCHRO
     bool
     default y
@@ -527,7 +539,7 @@ config SOC_RMT_SUPPORT_XTAL
     bool
     default y
 
-config SOC_RMT_SUPPORT_RC_FAST
+config SOC_RMT_SUPPORT_DMA
     bool
     default y
 

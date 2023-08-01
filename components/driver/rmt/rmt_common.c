@@ -24,6 +24,18 @@
 
 static const char *TAG = "rmt";
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define RMT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RMT_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define RMT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RMT_RCC_ATOMIC()
+#endif
+
 typedef struct rmt_platform_t {
     _lock_t mutex;                        // platform level mutex lock
     rmt_group_t *groups[SOC_RMT_GROUPS];  // array of RMT group instances
@@ -50,11 +62,13 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
             group->occupy_mask = UINT32_MAX & ~((1 << SOC_RMT_CHANNELS_PER_GROUP) - 1);
             // group clock won't be configured at this stage, it will be set when allocate the first channel
             group->clk_src = 0;
-            // enable APB access RMT registers
-            periph_module_enable(rmt_periph_signals.groups[group_id].module);
-            periph_module_reset(rmt_periph_signals.groups[group_id].module);
-            // "uninitialize" group intr_priority, read comments in `rmt_new_tx_channel()` for detail
-            group->intr_priority = RMT_GROUP_INTR_PRIORITY_UNINITALIZED;
+            // group interrupt priority is shared between all channels, it will be set when allocate the first channel
+            group->intr_priority = RMT_GROUP_INTR_PRIORITY_UNINITIALIZED;
+            // enable the bus clock for the RMT peripheral
+            RMT_RCC_ATOMIC() {
+                rmt_ll_enable_bus_clock(group_id, true);
+                rmt_ll_reset_register(group_id);
+            }
             // hal layer initialize
             rmt_hal_init(&group->hal);
         }
@@ -78,15 +92,23 @@ void rmt_release_group_handle(rmt_group_t *group)
     int group_id = group->group_id;
     rmt_clock_source_t clk_src = group->clk_src;
     bool do_deinitialize = false;
+    rmt_hal_context_t *hal = &group->hal;
 
     _lock_acquire(&s_platform.mutex);
     s_platform.group_ref_counts[group_id]--;
     if (s_platform.group_ref_counts[group_id] == 0) {
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL;
+        // disable core clock
+        RMT_CLOCK_SRC_ATOMIC() {
+            rmt_ll_enable_group_clock(hal->regs, false);
+        }
         // hal layer deinitialize
-        rmt_hal_deinit(&group->hal);
-        periph_module_disable(rmt_periph_signals.groups[group_id].module);
+        rmt_hal_deinit(hal);
+        // disable bus clock
+        RMT_RCC_ATOMIC() {
+            rmt_ll_enable_bus_clock(group_id, false);
+        }
         free(group);
     }
     _lock_release(&s_platform.mutex);
@@ -165,7 +187,10 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
 #endif // CONFIG_PM_ENABLE
 
     // no division for group clock source, to achieve highest resolution
-    rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);
+    RMT_CLOCK_SRC_ATOMIC() {
+        rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);
+        rmt_ll_enable_group_clock(group->hal.regs, true);
+    }
     group->resolution_hz = periph_src_clk_hz;
     ESP_LOGD(TAG, "group clock resolution:%"PRIu32, group->resolution_hz);
     return ret;
@@ -211,7 +236,7 @@ bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority)
 {
     bool priority_conflict = false;
     portENTER_CRITICAL(&group->spinlock);
-    if (group->intr_priority == RMT_GROUP_INTR_PRIORITY_UNINITALIZED) {
+    if (group->intr_priority == RMT_GROUP_INTR_PRIORITY_UNINITIALIZED) {
         // intr_priority never allocated, accept user's value unconditionally
         // intr_priority could only be set once here
         group->intr_priority = intr_priority;
@@ -240,7 +265,8 @@ bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority)
     return priority_conflict;
 }
 
-int rmt_get_isr_flags(rmt_group_t *group) {
+int rmt_get_isr_flags(rmt_group_t *group)
+{
     int isr_flags = RMT_INTR_ALLOC_FLAG;
     if (group->intr_priority) {
         // Use user-specified priority bit

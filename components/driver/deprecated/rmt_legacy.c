@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,18 @@ static const char *TAG = "rmt(legacy)";
 #define RMT_IS_TX_CHANNEL(channel) ((channel) <= RMT_TX_CHANNEL_ENCODING_END)
 #define RMT_DECODE_RX_CHANNEL(encode_chan) ((encode_chan - RMT_RX_CHANNEL_ENCODING_START))
 #define RMT_ENCODE_RX_CHANNEL(decode_chan) ((decode_chan + RMT_RX_CHANNEL_ENCODING_START))
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define RMT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RMT_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define RMT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RMT_RCC_ATOMIC()
+#endif
 
 typedef struct {
     rmt_hal_context_t hal;
@@ -125,8 +137,10 @@ static void rmt_module_enable(void)
 {
     RMT_ENTER_CRITICAL();
     if (rmt_contex.rmt_module_enabled == false) {
-        periph_module_reset(rmt_periph_signals.groups[0].module);
-        periph_module_enable(rmt_periph_signals.groups[0].module);
+        RMT_RCC_ATOMIC() {
+            rmt_ll_enable_bus_clock(0, true);
+            rmt_ll_reset_register(0);
+        }
         rmt_contex.rmt_module_enabled = true;
     }
     RMT_EXIT_CRITICAL();
@@ -137,7 +151,9 @@ static void rmt_module_disable(void)
 {
     RMT_ENTER_CRITICAL();
     if (rmt_contex.rmt_module_enabled == true) {
-        periph_module_disable(rmt_periph_signals.groups[0].module);
+        RMT_RCC_ATOMIC() {
+            rmt_ll_enable_bus_clock(0, false);
+        }
         rmt_contex.rmt_module_enabled = false;
     }
     RMT_EXIT_CRITICAL();
@@ -415,7 +431,9 @@ esp_err_t rmt_set_source_clk(rmt_channel_t channel, rmt_source_clk_t base_clk)
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
     // `rmt_clock_source_t` and `rmt_source_clk_t` are binary compatible, as the underlying enum entries come from the same `soc_module_clk_t`
-    rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, (rmt_clock_source_t)base_clk, 1, 0, 0);
+    RMT_CLOCK_SRC_ATOMIC() {
+        rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, (rmt_clock_source_t)base_clk, 1, 0, 0);
+    }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -552,6 +570,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     uint32_t carrier_freq_hz = rmt_param->tx_config.carrier_freq_hz;
     bool carrier_en = rmt_param->tx_config.carrier_en;
     uint32_t rmt_source_clk_hz;
+    rmt_clock_source_t clk_src = RMT_BASECLK_DEFAULT;
 
     ESP_RETURN_ON_FALSE(rmt_is_channel_number_valid(channel, mode), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     ESP_RETURN_ON_FALSE(mem_cnt + channel <= SOC_RMT_CHANNELS_PER_GROUP && mem_cnt > 0, ESP_ERR_INVALID_ARG, TAG, RMT_MEM_CNT_ERROR_STR);
@@ -567,19 +586,18 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     if (rmt_param->flags & RMT_CHANNEL_FLAGS_AWARE_DFS) {
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
-        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
-        rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_XTAL, 1, 0, 0);
+        clk_src = RMT_BASECLK_XTAL;
 #elif SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK
-        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_REF, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
-        rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_REF, 1, 0, 0);
+        clk_src = RMT_BASECLK_REF;
 #else
 #error "No clock source is aware of DFS"
 #endif
-    } else {
-        // fallback to use default clock source
-        esp_clk_tree_src_get_freq_hz((soc_module_clk_t)RMT_BASECLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
-        rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_DEFAULT, 1, 0, 0);
+    }
+    esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
+    RMT_CLOCK_SRC_ATOMIC() {
+        rmt_ll_set_group_clock_src(dev, channel, clk_src, 1, 0, 0);
+        rmt_ll_enable_group_clock(dev, true);
     }
     RMT_EXIT_CRITICAL();
 
