@@ -884,15 +884,15 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 
     // Enter sleep
     if (esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP) == ESP_ERR_SLEEP_REJECT) {
-        ESP_EARLY_LOGW(TAG, "Deep sleep request is rejected");
+        ESP_EARLY_LOGE(TAG, "Deep sleep request is rejected");
+    } else {
+        // Because RTC is in a slower clock domain than the CPU, it
+        // can take several CPU cycles for the sleep mode to start.
+        while (1) {
+            ;
+        }
     }
-
-    // Because RTC is in a slower clock domain than the CPU, it
-    // can take several CPU cycles for the sleep mode to start.
-    while (1) {
-        ;
-    }
-    // Never returns here
+    // Never returns here, except that the sleep is rejected.
     esp_ipc_isr_release_other_cpu();
     portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
 }
