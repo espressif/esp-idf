@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,7 @@
 #include "esp_crt_bundle.h"
 #endif
 #include "esp_wpas_glue.h"
+#include "esp_wpa2_i.h"
 
 #define WPA2_VERSION    "v2.0"
 
@@ -63,6 +64,7 @@ static int wpa2_start_eapol_internal(void);
 int wpa2_post(uint32_t sig, uint32_t par);
 
 #ifdef USE_WPA2_TASK
+#define WPA2_TASK_PRIORITY 7
 static void *s_wpa2_task_hdl = NULL;
 static void *s_wpa2_queue = NULL;
 static wpa2_state_t s_wpa2_state = WPA2_STATE_DISABLED;
@@ -113,6 +115,15 @@ static void wpa2_set_eap_state(wpa2_ent_eap_state_t state)
 
     gEapSm->finish_state = state;
     esp_wifi_set_wpa2_ent_state_internal(state);
+}
+
+wpa2_ent_eap_state_t wpa2_get_eap_state(void)
+{
+    if (!gEapSm) {
+        return WPA2_ENT_EAP_STATE_NOT_START;
+    }
+
+    return gEapSm->finish_state;
 }
 
 static inline void wpa2_task_delete(void *arg)
@@ -714,7 +725,7 @@ static int eap_peer_sm_init(void)
     gEapSm = sm;
 #ifdef USE_WPA2_TASK
     s_wpa2_queue = os_queue_create(SIG_WPA2_MAX, sizeof(s_wpa2_queue));
-    ret = os_task_create(wpa2_task, "wpa2T", WPA2_TASK_STACK_SIZE, NULL, 2, &s_wpa2_task_hdl);
+    ret = os_task_create(wpa2_task, "wpa2T", WPA2_TASK_STACK_SIZE, NULL, WPA2_TASK_PRIORITY, &s_wpa2_task_hdl);
     if (ret != TRUE) {
         wpa_printf(MSG_ERROR, "wps enable: failed to create task");
         ret = ESP_FAIL;
@@ -727,7 +738,7 @@ static int eap_peer_sm_init(void)
         goto _err;
     }
 
-    wpa_printf(MSG_INFO, "wpa2_task prio:%d, stack:%d", 2, WPA2_TASK_STACK_SIZE);
+    wpa_printf(MSG_INFO, "wpa2_task prio:%d, stack:%d", WPA2_TASK_PRIORITY, WPA2_TASK_STACK_SIZE);
 #endif
     return ESP_OK;
 
