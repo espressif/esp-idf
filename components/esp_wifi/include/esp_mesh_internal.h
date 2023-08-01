@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,9 @@ extern "C" {
 /*******************************************************
  *                Structures
  *******************************************************/
+/**
+ * @brief Mesh attempts
+ */
 typedef struct {
     int scan;          /**< minimum scan times before being a root, default:10 */
     int vote;          /**< max vote times in self-healing, default:1000 */
@@ -33,20 +36,26 @@ typedef struct {
     int monitor_ie;    /**< acceptable times of parent networking IE change before update its own networking IE. default:3 */
 } mesh_attempts_t;
 
+/**
+ * @brief Mesh switch parent
+ */
 typedef struct {
-    int duration_ms;   /* parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
+    int duration_ms;   /**< parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
                           device will search for a new parent. */
-    int cnx_rssi;      /* RSSI threshold for keeping a good connection with parent.
+    int cnx_rssi;      /**< RSSI threshold for keeping a good connection with parent.
                           If set a value greater than -120 dBm, a timer will be armed to monitor parent RSSI at a period time of duration_ms. */
-    int select_rssi;   /* RSSI threshold for parent selection. It should be a value greater than switch_rssi. */
-    int switch_rssi;   /* Disassociate with current parent and switch to a new parent when the RSSI is greater than this set threshold. */
-    int backoff_rssi;  /* RSSI threshold for connecting to the root */
+    int select_rssi;   /**< RSSI threshold for parent selection. It should be a value greater than switch_rssi. */
+    int switch_rssi;   /**< Disassociate with current parent and switch to a new parent when the RSSI is greater than this set threshold. */
+    int backoff_rssi;  /**< RSSI threshold for connecting to the root */
 } mesh_switch_parent_t;
 
+/**
+ * @brief Mesh rssi threshold
+ */
 typedef struct {
-    int high;
-    int medium;
-    int low;
+    int high;               /**< high rssi threshold */
+    int medium;             /**< medium rssi threshold */
+    int low;                /**< low rssi threshold */
 } mesh_rssi_threshold_t;
 
 /**
@@ -58,7 +67,7 @@ typedef struct {
     uint8_t len;             /**< element length */
     uint8_t oui[3];          /**< organization identifier */
     /**< mesh networking IE content */
-    uint8_t type;            /** ESP defined IE type */
+    uint8_t type;            /**< ESP defined IE type */
     uint8_t encrypted : 1;   /**< whether mesh networking IE is encrypted */
     uint8_t version : 7;     /**< mesh networking IE version */
     /**< content */
@@ -89,14 +98,20 @@ typedef struct {
     uint8_t toDS;            /**< toDS state */
 } __attribute__((packed)) mesh_assoc_t;
 
+/**
+ * @brief Mesh chain layer
+ */
 typedef struct {
-    uint16_t layer_cap;
-    uint16_t layer;
+    uint16_t layer_cap;     /**< max layer */
+    uint16_t layer;         /**< current layer */
 } mesh_chain_layer_t;
 
+/**
+ * @brief Mesh chain assoc
+ */
 typedef struct {
-    mesh_assoc_t tree;
-    mesh_chain_layer_t chain;
+    mesh_assoc_t tree;          /**< tree top, mesh_assoc IE */
+    mesh_chain_layer_t chain;   /**< chain top, mesh_assoc IE*/
 } __attribute__((packed)) mesh_chain_assoc_t;
 
 /* mesh max connections */
@@ -106,13 +121,13 @@ typedef struct {
  * @brief Mesh PS duties
  */
 typedef struct {
-    uint8_t device;
-    uint8_t parent;
+    uint8_t device;     /**< device power save duty*/
+    uint8_t parent;     /**< parent power save duty*/
     struct {
-        bool used;
-        uint8_t duty;
-        uint8_t mac[6];
-    } child[MESH_MAX_CONNECTIONS];
+        bool used;      /**< used */
+        uint8_t duty;   /**< duty */
+        uint8_t mac[6]; /**< mac */
+    } child[MESH_MAX_CONNECTIONS]; /**< child */
 } esp_mesh_ps_duties_t;
 
 /*******************************************************
@@ -121,7 +136,7 @@ typedef struct {
 /**
  * @brief      Set mesh softAP beacon interval
  *
- * @param[in]  interval  beacon interval (msecs) (100 msecs ~ 60000 msecs)
+ * @param[in]  interval_ms  beacon interval (msecs) (100 msecs ~ 60000 msecs)
  *
  * @return
  *    - ESP_OK
@@ -133,7 +148,7 @@ esp_err_t esp_mesh_set_beacon_interval(int interval_ms);
 /**
  * @brief      Get mesh softAP beacon interval
  *
- * @param[out] interval  beacon interval (msecs)
+ * @param[out] interval_ms  beacon interval (msecs)
  *
  * @return
  *    - ESP_OK
@@ -242,7 +257,7 @@ esp_err_t esp_mesh_print_rxQ_waiting(void);
 /**
  * @brief      Set passive scan time
  *
- * @param[in]  interval_ms  passive scan time (msecs)
+ * @param[in]  time_ms  passive scan time (msecs)
  *
  * @return
  *    - ESP_OK
@@ -283,7 +298,9 @@ esp_err_t esp_mesh_set_announce_interval(int short_ms, int long_ms);
 esp_err_t esp_mesh_get_announce_interval(int *short_ms, int *long_ms);
 
 /**
-  * @brief      Get the running duties of device, parent and children
+ * @brief      Get the running duties of device, parent and children
+ *
+ * @param[out] ps_duties ps duties
  *
  * @return
  *    - ESP_OK
