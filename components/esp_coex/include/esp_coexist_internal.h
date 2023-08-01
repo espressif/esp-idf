@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 #include "esp_coexist.h"
-#include "esp_coexist_adapter.h"
+#include "private/esp_coexist_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {

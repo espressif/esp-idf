@@ -89,7 +89,7 @@ components/esp_hw_support/include/esp_private/esp_memprot_internal.h
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
 components/esp_wifi/include/esp_private/wifi_os_adapter.h
-components/esp_coex/include/esp_coexist_adapter.h
+components/esp_coex/include/private/esp_coexist_adapter.h
 components/esp_coex/include/esp_coex_i154.h
 ### To be fixed: headers that rely on implicit inclusion
 #

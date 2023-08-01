@@ -38,10 +38,6 @@ typedef struct {
  */
 esp_err_t esp_wifi_ap_get_sta_list_with_ip(const wifi_sta_list_t *wifi_sta_list, wifi_sta_mac_ip_list_t *wifi_sta_ip_mac_list);
 
-/**
- * @}
- */
-
 #ifdef __cplusplus
 }
 #endif

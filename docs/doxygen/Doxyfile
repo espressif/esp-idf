@@ -27,7 +27,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bootloader_support/include/bootloader_random.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
-    $(PROJECT_PATH)/components/esp_coex/include/esp_coexist_adapter.h \
     $(PROJECT_PATH)/components/esp_coex/include/esp_coexist_internal.h \
     $(PROJECT_PATH)/components/esp_coex/include/esp_coexist.h \
     $(PROJECT_PATH)/components/esp_coex/include/esp_modem_wrapper.h \
