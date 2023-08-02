@@ -397,8 +397,6 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
     portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
 }
 
-#if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND && !CONFIG_IDF_TARGET_ESP32H2) \
-    || CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
 static int s_cache_suspend_cnt = 0;
 
 // Must be called from critical sections.
@@ -417,7 +415,6 @@ static void IRAM_ATTR resume_cache(void) {
         cache_hal_resume(CACHE_TYPE_ALL);
     }
 }
-#endif
 
 // [refactor-todo] provide target logic for body of uart functions below
 static void IRAM_ATTR flush_uarts(void)
@@ -745,13 +742,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
         } else {
+            /* Cache Suspend 1: will wait cache idle in cache suspend */
+            suspend_cache();
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
-                /* Cache Suspend 1: will wait cache idle in cache suspend, also means SPI bus IDLE, then we can hold SPI CS pin safely*/
-                suspend_cache();
+                /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
                 gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
             }
 #endif
@@ -774,20 +772,11 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
                 gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
-                /* Cache Resume 1: Resume cache for continue running*/
-                resume_cache();
             }
 #endif
 #endif
+            /* Will resume cache after flash ready. */
         }
-
-#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
-    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
-        /* Cache Suspend 2: If previous sleep powerdowned the flash, suspend cache here so that the
-           access to flash before flash ready can be explicitly exposed. */
-        suspend_cache();
-    }
-#endif
 
 #if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
             if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
@@ -933,12 +922,8 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         esp_rom_delay_us(flash_enable_time_us);
     }
 
-#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
-    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
-        /* Cache Resume 2: flash is ready now, we can resume the cache and access flash safely after */
-        resume_cache();
-    }
-#endif
+    /* Cache Resume 1: flash is ready now, we can resume the cache and access flash safely after */
+    resume_cache();
 
     return reject;
 }
