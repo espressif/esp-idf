@@ -4077,57 +4077,64 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
     configASSERT( pxUnblockedTCB );
     ( void ) uxListRemove( pxEventListItem );
 
-    /* Add the task to the ready list if a core with compatible affinity
-     * has NOT suspended its scheduler. This occurs when:
-     * - The task is pinned, and the pinned core's scheduler is running
-     * - The task is unpinned, and at least one of the core's scheduler is running */
-    if( taskCAN_BE_SCHEDULED( pxUnblockedTCB ) )
+    #if ( configUSE_TICKLESS_IDLE != 0 )
+        {
+            /* If a task is blocked on a kernel object then xNextTaskUnblockTime
+             * might be set to the blocked task's time out time.  If the task is
+             * unblocked for a reason other than a timeout xNextTaskUnblockTime is
+             * normally left unchanged, because it is automatically reset to a new
+             * value when the tick count equals xNextTaskUnblockTime.  However if
+             * tickless idling is used it might be more important to enter sleep mode
+             * at the earliest possible time - so reset xNextTaskUnblockTime here to
+             * ensure it is updated at the earliest possible time. */
+            prvResetNextTaskUnblockTime();
+        }
+    #endif
+
+    #if ( configNUM_CORES > 1 )
+
+        /* Add the task to the ready list if a core with compatible affinity
+         * has NOT suspended its scheduler. This occurs when:
+         * - The task is pinned, and the pinned core's scheduler is running
+         * - The task is unpinned, and at least one of the core's scheduler is
+         *   running */
+        if( !taskCAN_BE_SCHEDULED( pxUnblockedTCB ) )
+        {
+            /* We arrive here due to one of the following possibilities:
+             * - The task is pinned to core X and core X has suspended its scheduler
+             * - The task is unpinned and both cores have suspend their schedulers
+             * Therefore, we add the task to one of the pending lists:
+             * - If the task is pinned to core X, add it to core X's pending list
+             * - If the task is unpinned, add it to the current core's pending list */
+            BaseType_t xPendingListCore = ( ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) ? xCurCoreID : pxUnblockedTCB->xCoreID );
+            configASSERT( uxSchedulerSuspended[ xPendingListCore ] != ( UBaseType_t ) 0U );
+
+            /* The delayed and ready lists cannot be accessed, so hold this task
+            * pending until the scheduler is resumed. */
+            vListInsertEnd( &( xPendingReadyList[ xPendingListCore ] ), &( pxUnblockedTCB->xEventListItem ) );
+        }
+        else
+    #else /* configNUM_CORES > 1 */
+
+        /* In single core, the caller of this function has already suspended the
+         * scheduler, which means we have exclusive access to the ready list.
+         * We add the unblocked task to the ready list directly. */
+    #endif /* configNUM_CORES > 1 */
     {
+        /* Remove the task from the delayed list and add it to the ready list.  The
+        * scheduler is suspended so interrupts will not be accessing the ready
+        * lists. */
         ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
         prvAddTaskToReadyList( pxUnblockedTCB );
 
-        #if ( configUSE_TICKLESS_IDLE != 0 )
-            {
-                /* If a task is blocked on a kernel object then xNextTaskUnblockTime
-                 * might be set to the blocked task's time out time.  If the task is
-                 * unblocked for a reason other than a timeout xNextTaskUnblockTime is
-                 * normally left unchanged, because it is automatically reset to a new
-                 * value when the tick count equals xNextTaskUnblockTime.  However if
-                 * tickless idling is used it might be more important to enter sleep mode
-                 * at the earliest possible time - so reset xNextTaskUnblockTime here to
-                 * ensure it is updated at the earliest possible time. */
-                prvResetNextTaskUnblockTime();
-            }
-        #endif
-    }
-    else
-    {
-        /* We arrive here due to one of the following possibilities:
-         * - The task is pinned to core X and core X has suspended its scheduler
-         * - The task is unpinned and both cores have suspend their schedulers
-         * Therefore, we add the task to one of the pending lists:
-         * - If the task is pinned to core X, add it to core X's pending list
-         * - If the task is unpinned, add it to the current core's pending list */
-        BaseType_t xPendingListCore;
-        #if ( configNUM_CORES > 1 )
-            xPendingListCore = ( ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) ? xCurCoreID : pxUnblockedTCB->xCoreID );
-        #else
-            xPendingListCore = 0;
-        #endif /* configNUM_CORES > 1 */
-        configASSERT( uxSchedulerSuspended[ xPendingListCore ] != ( UBaseType_t ) 0U );
-
-        /* The delayed and ready lists cannot be accessed, so hold this task
-         * pending until the scheduler is resumed. */
-        vListInsertEnd( &( xPendingReadyList[ xPendingListCore ] ), &( pxUnblockedTCB->xEventListItem ) );
-    }
-
-    if( prvCheckForYield( pxUnblockedTCB, xCurCoreID, pdFALSE ) )
-    {
-        /* The unblocked task has a priority above that of the calling task, so
-         * a context switch is required.  This function is called with the
-         * scheduler suspended so xYieldPending is set so the context switch
-         * occurs immediately that the scheduler is resumed (unsuspended). */
-        xYieldPending[ xCurCoreID ] = pdTRUE;
+        if( prvCheckForYield( pxUnblockedTCB, xCurCoreID, pdFALSE ) )
+        {
+            /* The unblocked task has a priority above that of the calling task, so
+            * a context switch is required.  This function is called with the
+            * scheduler suspended so xYieldPending is set so the context switch
+            * occurs immediately that the scheduler is resumed (unsuspended). */
+            xYieldPending = pdTRUE;
+        }
     }
 }
 /*-----------------------------------------------------------*/
