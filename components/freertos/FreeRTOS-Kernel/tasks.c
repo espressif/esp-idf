@@ -294,8 +294,8 @@
  */
 #if ( configNUM_CORES > 1 )
     #define taskCAN_BE_SCHEDULED( pxTCB )                                                                           \
-    ( ( pxTCB->xCoreID != tskNO_AFFINITY ) ) ? ( uxSchedulerSuspended[ pxTCB->xCoreID ] == ( UBaseType_t ) 0U ) :   \
-    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) 0U ) || ( uxSchedulerSuspended[ 1 ] == ( UBaseType_t ) 0U ) )
+    ( ( ( pxTCB->xCoreID != tskNO_AFFINITY ) ) ? ( uxSchedulerSuspended[ pxTCB->xCoreID ] == ( UBaseType_t ) 0U ) : \
+    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) 0U ) || ( uxSchedulerSuspended[ 1 ] == ( UBaseType_t ) 0U ) ) )
 #else
     #define taskCAN_BE_SCHEDULED( pxTCB )    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) 0U ) )
 #endif /* configNUM_CORES > 1 */
