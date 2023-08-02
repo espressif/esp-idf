@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,8 @@
 #include "esp_http_client.h"
 #include "esp_rom_md5.h"
 #include "esp_eth_test_common.h"
+
+#define LOOPBACK_TEST_PACKET_SIZE 256
 
 static const char *TAG = "esp32_eth_test";
 
@@ -92,13 +94,13 @@ TEST_CASE("ethernet io test", "[ethernet]")
     extra_cleanup();
 }
 
+// This test expects autonegotiation to be enabled on the other node.
 TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
 {
     EventBits_t bits = 0;
     EventGroupHandle_t eth_event_group = xEventGroupCreate();
     TEST_ASSERT(eth_event_group != NULL);
     TEST_ESP_OK(esp_event_loop_create_default());
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
     esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
@@ -109,13 +111,7 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     extra_eth_config(eth_handle);
-
-    // Set PHY to loopback mode so we do not have to take care about link configuration of the other node.
-    // The reason behind is improbable, however, if the other node was configured to e.g. 100 Mbps and we
-    // tried to change the speed at ESP node to 10 Mbps, we could get into trouble to establish a link.
-    // TODO: this test in this configuration may not work for all the chips (JIRA IDF-6186)
-    bool loopback_en = true;
-    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
 
     // this test only test layer2, so don't need to register input callback (i.e. esp_eth_update_input_path)
     TEST_ESP_OK(esp_eth_start(eth_handle));
@@ -265,6 +261,146 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    extra_cleanup();
+    vEventGroupDelete(eth_event_group);
+}
+
+static SemaphoreHandle_t loopback_test_case_data_received;
+static esp_err_t loopback_test_case_incoming_handler(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
+{
+    TEST_ASSERT(memcmp(priv, buffer, LOOPBACK_TEST_PACKET_SIZE) == 0)
+    xSemaphoreGive(loopback_test_case_data_received);
+    free(buffer);
+    return ESP_OK;
+}
+
+TEST_CASE("ethernet io loopback", "[ethernet]")
+{
+    loopback_test_case_data_received = xSemaphoreCreateBinary();
+    // init everything else
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    TEST_ESP_OK(esp_event_loop_create_default());
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
+    esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
+    TEST_ASSERT_NOT_NULL(mac);
+    esp_eth_phy_t *phy = phy_init(NULL);
+    TEST_ASSERT_NOT_NULL(phy);
+    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+    esp_eth_handle_t eth_handle = NULL;
+    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    extra_eth_config(eth_handle);
+    // Disable autonegotiation to manually set speed and duplex mode
+    bool auto_nego_en = false;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    bool loopback_en = true;
+// *** W5500 deviation ***
+// Rationale: does not support loopback
+#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+    TEST_ASSERT(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en) == ESP_ERR_NOT_SUPPORTED);
+    goto cleanup;
+#else
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
+#endif
+
+    eth_duplex_t duplex_modes[] = {ETH_DUPLEX_HALF, ETH_DUPLEX_FULL};
+    eth_speed_t speeds[] = {ETH_SPEED_10M, ETH_SPEED_100M};
+    emac_frame_t* test_packet = malloc(LOOPBACK_TEST_PACKET_SIZE);
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, test_packet->src);
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, test_packet->dest);
+    for(size_t i = 0; i < LOOPBACK_TEST_PACKET_SIZE-ETH_HEADER_LEN; i++){
+        test_packet->data[i] = rand() & 0xff;
+    }
+    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, loopback_test_case_incoming_handler, test_packet));
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+
+    for (int i = 0; i < sizeof(speeds) / sizeof(eth_speed_t); i++) {
+        eth_speed_t expected_speed = speeds[i];
+        for (int j = 0; j < sizeof(duplex_modes) / sizeof(eth_duplex_t); j++) {
+            eth_duplex_t expected_duplex = duplex_modes[j];
+            ESP_LOGI(TAG, "Test with %s Mbps %s duplex.", expected_speed == ETH_SPEED_10M ? "10" : "100", expected_duplex == ETH_DUPLEX_HALF ? "half" : "full");
+// *** KSZ80XX, KSZ8851SNL and DM9051 deviation ***
+// Rationale: do not support loopback at 10 Mbps
+#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_KSZ80XX) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DM9051)
+            if ((expected_speed == ETH_SPEED_10M)) {
+                TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &expected_speed));
+                continue;
+            } else if (expected_speed == ETH_SPEED_100M) {
+                TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &expected_speed));
+            }
+#else
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &expected_speed));
+#endif
+            if ((expected_duplex == ETH_DUPLEX_HALF)) {
+                TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &expected_duplex));
+                continue;
+            } else if (expected_duplex == ETH_DUPLEX_FULL) {
+                TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &expected_duplex));
+            }
+
+            TEST_ESP_OK(esp_eth_start(eth_handle));
+            bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+
+            eth_speed_t actual_speed = -1;
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &actual_speed));
+            TEST_ASSERT_EQUAL(expected_speed, actual_speed);
+
+            eth_duplex_t actual_duplex = -1;
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &actual_duplex));
+            TEST_ASSERT_EQUAL(expected_duplex, actual_duplex);
+
+            TEST_ESP_OK(esp_eth_transmit(eth_handle, test_packet, LOOPBACK_TEST_PACKET_SIZE));
+            TEST_ASSERT(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(10000)) == pdTRUE);
+            TEST_ESP_OK(esp_eth_stop(eth_handle));
+        }
+    }
+
+    // Test enabling autonegotiation when loopback is disabled
+    ESP_LOGI(TAG, "Test enabling autonegotiation without loopback.");
+    loopback_en = false;
+    auto_nego_en = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    auto_nego_en = false;
+    loopback_en = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
+    // Test with enabled autonegotiaton
+    ESP_LOGI(TAG, "Test with enabled autonegotiation.");
+    auto_nego_en = true;
+// *** RTL8201, DP83848 and LAN87xx deviation ***
+// Rationale: do not support autonegotiation with loopback enabled.
+#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DP83848) || \
+    defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX)
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    goto cleanup;
+#endif
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_packet, LOOPBACK_TEST_PACKET_SIZE));
+    TEST_ASSERT(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS)) == pdTRUE);
+
+    free(test_packet);
+    loopback_en = false;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+// *** W5500, LAN87xx, RTL8201 and DP83848 deviation ***
+// Rationale: in those cases 'goto cleanup' is used to skip part of the test code. Incasing in #if block is done to prevent unused label error
+#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_W5500) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX) || \
+    defined(CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DP83848)
+cleanup:
+#endif
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
