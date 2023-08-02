@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2023 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdlib.h>
 #include "esp_check.h"
@@ -317,7 +317,12 @@ static esp_err_t phy_ksz8851_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
 
     /* Set duplex mode */
     uint32_t control;
+    uint32_t mbcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1MBCR, &mbcr), err, TAG, "P1MBCR read failed");
+    if (mbcr & P1MBCR_LOCAL_LOOPBACK) {
+        ESP_GOTO_ON_FALSE(duplex == ETH_DUPLEX_FULL, ESP_ERR_INVALID_STATE, err, TAG, "Duplex mode must be FULL for loopback operation");
+    }
     if (duplex == ETH_DUPLEX_FULL) {
         control |= P1CR_FORCE_DUPLEX;
     } else {

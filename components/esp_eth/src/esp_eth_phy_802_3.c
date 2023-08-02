@@ -16,12 +16,98 @@
 #include "esp_rom_sys.h"
 #include "esp_eth_phy_802_3.h"
 
+// Default reset assertion time is selected to be 100us as it is most commonly used value among PHY chips.
+#define PHY_RESET_ASSERTION_TIME_US 100
+
 static const char *TAG = "eth_phy_802_3";
 
-static esp_err_t eth_phy_802_3_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
+static esp_err_t set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_set_mediator(phy_802_3, eth);
+}
+
+static esp_err_t reset(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_reset(phy_802_3);
+}
+
+static esp_err_t reset_hw_default(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_reset_hw(phy_802_3, PHY_RESET_ASSERTION_TIME_US);
+}
+
+static esp_err_t autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_autonego_ctrl(phy_802_3, cmd, autonego_en_stat);
+}
+
+static esp_err_t pwrctl(esp_eth_phy_t *phy, bool enable)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_pwrctl(phy_802_3, enable);
+}
+
+static esp_err_t set_addr(esp_eth_phy_t *phy, uint32_t addr)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_set_addr(phy_802_3, addr);
+}
+
+static esp_err_t get_addr(esp_eth_phy_t *phy, uint32_t *addr)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_get_addr(phy_802_3, addr);
+}
+
+static esp_err_t advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_advertise_pause_ability(phy_802_3, ability);
+}
+
+static esp_err_t loopback(esp_eth_phy_t *phy, bool enable)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_loopback(phy_802_3, enable);
+}
+
+static esp_err_t set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_set_speed(phy_802_3, speed);
+}
+
+static esp_err_t set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_set_duplex(phy_802_3, duplex);
+}
+
+static esp_err_t init(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_init(phy_802_3);
+}
+
+static esp_err_t deinit(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_deinit(phy_802_3);
+}
+
+static esp_err_t del(esp_eth_phy_t *phy)
+{
+    free(phy);
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_phy_802_3_set_mediator(phy_802_3_t *phy_802_3, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "mediator can't be null");
     phy_802_3->eth = eth;
     return ESP_OK;
@@ -29,10 +115,9 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_reset(esp_eth_phy_t *phy)
+esp_err_t esp_eth_phy_802_3_reset(phy_802_3_t *phy_802_3)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     phy_802_3->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = phy_802_3->eth;
     bmcr_reg_t bmcr = {.reset = 1};
@@ -62,16 +147,14 @@ err:
  * @return
  *         - ESP_OK on success
  */
-static esp_err_t eth_phy_802_3_reset_hw_default(esp_eth_phy_t *phy)
+esp_err_t esp_eth_phy_802_3_reset_hw_default(phy_802_3_t *phy_802_3)
 {
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
-    return esp_eth_phy_802_3_reset_hw(phy_802_3, 100);
+    return esp_eth_phy_802_3_reset_hw(phy_802_3, PHY_RESET_ASSERTION_TIME_US);
 }
 
-static esp_err_t eth_phy_802_3_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
+esp_err_t esp_eth_phy_802_3_autonego_ctrl(phy_802_3_t *phy_802_3, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
 
     bmcr_reg_t bmcr;
@@ -131,10 +214,9 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_pwrctl(esp_eth_phy_t *phy, bool enable)
+esp_err_t esp_eth_phy_802_3_pwrctl(phy_802_3_t *phy_802_3, bool enable)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
@@ -166,17 +248,15 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_set_addr(esp_eth_phy_t *phy, uint32_t addr)
+esp_err_t esp_eth_phy_802_3_set_addr(phy_802_3_t *phy_802_3, uint32_t addr)
 {
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     phy_802_3->addr = addr;
     return ESP_OK;
 }
 
-static esp_err_t eth_phy_802_3_get_addr(esp_eth_phy_t *phy, uint32_t *addr)
+esp_err_t esp_eth_phy_802_3_get_addr(phy_802_3_t *phy_802_3, uint32_t *addr)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "addr can't be null");
     *addr = phy_802_3->addr;
     return ESP_OK;
@@ -184,10 +264,9 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ability)
+esp_err_t esp_eth_phy_802_3_advertise_pause_ability(phy_802_3_t *phy_802_3, uint32_t ability)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
     /* Set PAUSE function ability */
     anar_reg_t anar;
@@ -205,10 +284,9 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_loopback(esp_eth_phy_t *phy, bool enable)
+esp_err_t esp_eth_phy_802_3_loopback(phy_802_3_t *phy_802_3, bool enable)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
     /* Set Loopback function */
     bmcr_reg_t bmcr;
@@ -222,12 +300,12 @@ static esp_err_t eth_phy_802_3_loopback(esp_eth_phy_t *phy, bool enable)
     return ESP_OK;
 err:
     return ret;
+
 }
 
-static esp_err_t eth_phy_802_3_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+esp_err_t esp_eth_phy_802_3_set_speed(phy_802_3_t *phy_802_3, eth_speed_t speed)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
 
     /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
@@ -244,10 +322,9 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+esp_err_t esp_eth_phy_802_3_set_duplex(phy_802_3_t *phy_802_3, eth_duplex_t duplex)
 {
     esp_err_t ret = ESP_OK;
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     esp_eth_mediator_t *eth = phy_802_3->eth;
 
     /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
@@ -256,6 +333,9 @@ static esp_err_t eth_phy_802_3_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duple
     /* Set duplex mode */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (bmcr.en_loopback) {
+        ESP_GOTO_ON_FALSE(duplex == ETH_DUPLEX_FULL, ESP_ERR_INVALID_STATE, err, TAG, "Duplex mode must be FULL for loopback operation");
+    }
     bmcr.duplex_mode = duplex;
     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
 
@@ -264,21 +344,19 @@ err:
     return ret;
 }
 
-static esp_err_t eth_phy_802_3_init(esp_eth_phy_t *phy)
+esp_err_t esp_eth_phy_802_3_init(phy_802_3_t *phy_802_3)
 {
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     return esp_eth_phy_802_3_basic_phy_init(phy_802_3);
 }
 
-static esp_err_t eth_phy_802_3_deinit(esp_eth_phy_t *phy)
+esp_err_t esp_eth_phy_802_3_deinit(phy_802_3_t *phy_802_3)
 {
-    phy_802_3_t *phy_802_3 = __containerof(phy, phy_802_3_t, parent);
     return esp_eth_phy_802_3_basic_phy_deinit(phy_802_3);
 }
 
-static esp_err_t eth_phy_802_3_del(esp_eth_phy_t *phy)
+esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3)
 {
-    free(phy);
+    free(phy_802_3);
     return ESP_OK;
 }
 
@@ -326,9 +404,9 @@ esp_err_t esp_eth_phy_802_3_basic_phy_init(phy_802_3_t *phy_802_3)
         ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_detect_phy_addr(phy_802_3->eth, &phy_802_3->addr), err, TAG, "Detect PHY address failed");
     }
     /* Power on Ethernet PHY */
-    ESP_GOTO_ON_ERROR(eth_phy_802_3_pwrctl(&phy_802_3->parent, true), err, TAG, "power control failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_pwrctl(phy_802_3, true), err, TAG, "power control failed");
     /* Reset Ethernet PHY */
-    ESP_GOTO_ON_ERROR(eth_phy_802_3_reset(&phy_802_3->parent), err, TAG, "reset failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_reset(phy_802_3), err, TAG, "reset failed");
 
     return ESP_OK;
 err:
@@ -339,7 +417,7 @@ esp_err_t esp_eth_phy_802_3_basic_phy_deinit(phy_802_3_t *phy_802_3)
 {
     esp_err_t ret = ESP_OK;
     /* Power off Ethernet PHY */
-    ESP_GOTO_ON_ERROR(eth_phy_802_3_pwrctl(&phy_802_3->parent, false), err, TAG, "power control failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_pwrctl(phy_802_3, false), err, TAG, "power control failed");
     return ESP_OK;
 err:
     return ret;
@@ -385,11 +463,6 @@ err:
     return ret;
 }
 
-phy_802_3_t *esp_eth_phy_into_phy_802_3(esp_eth_phy_t *phy)
-{
-    return __containerof(phy, phy_802_3_t, parent);
-}
-
 esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_phy_config_t *config)
 {
     esp_err_t ret = ESP_OK;
@@ -402,20 +475,20 @@ esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_ph
     phy_802_3->reset_gpio_num = config->reset_gpio_num;
     phy_802_3->autonego_timeout_ms = config->autonego_timeout_ms;
 
-    phy_802_3->parent.reset = eth_phy_802_3_reset;
-    phy_802_3->parent.reset_hw = eth_phy_802_3_reset_hw_default;
-    phy_802_3->parent.init = eth_phy_802_3_init;
-    phy_802_3->parent.deinit = eth_phy_802_3_deinit;
-    phy_802_3->parent.set_mediator = eth_phy_802_3_set_mediator;
-    phy_802_3->parent.autonego_ctrl = eth_phy_802_3_autonego_ctrl;
-    phy_802_3->parent.pwrctl = eth_phy_802_3_pwrctl;
-    phy_802_3->parent.get_addr = eth_phy_802_3_get_addr;
-    phy_802_3->parent.set_addr = eth_phy_802_3_set_addr;
-    phy_802_3->parent.advertise_pause_ability = eth_phy_802_3_advertise_pause_ability;
-    phy_802_3->parent.loopback = eth_phy_802_3_loopback;
-    phy_802_3->parent.set_speed = eth_phy_802_3_set_speed;
-    phy_802_3->parent.set_duplex = eth_phy_802_3_set_duplex;
-    phy_802_3->parent.del = eth_phy_802_3_del;
+    phy_802_3->parent.reset = reset;
+    phy_802_3->parent.reset_hw = reset_hw_default;
+    phy_802_3->parent.init = init;
+    phy_802_3->parent.deinit = deinit;
+    phy_802_3->parent.set_mediator = set_mediator;
+    phy_802_3->parent.autonego_ctrl = autonego_ctrl;
+    phy_802_3->parent.pwrctl = pwrctl;
+    phy_802_3->parent.get_addr = get_addr;
+    phy_802_3->parent.set_addr = set_addr;
+    phy_802_3->parent.advertise_pause_ability = advertise_pause_ability;
+    phy_802_3->parent.loopback = loopback;
+    phy_802_3->parent.set_speed = set_speed;
+    phy_802_3->parent.set_duplex = set_duplex;
+    phy_802_3->parent.del = del;
     phy_802_3->parent.get_link = NULL;
     phy_802_3->parent.custom_ioctl = NULL;
 
