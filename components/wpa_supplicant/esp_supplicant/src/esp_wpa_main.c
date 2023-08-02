@@ -127,7 +127,7 @@ bool  wpa_attach(void)
     bool ret = true;
     ret = wpa_sm_init();
     if(ret) {
-        ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
+        ret = (esp_wifi_register_eapol_txdonecb_internal(eapol_txcb) == ESP_OK);
     }
     esp_set_scan_ie();
     return ret;
@@ -189,6 +189,7 @@ bool  wpa_deattach(void)
     if (sm->wpa_sm_wps_disable) {
         sm->wpa_sm_wps_disable();
     }
+    esp_wifi_register_eapol_txdonecb_internal(NULL);
 
     wpa_sm_deinit();
     return true;
