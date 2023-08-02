@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "esp_pm.h"
 #include "esp_check.h"
-#include "gpio_wakeup_example.h"
+#include "auto_light_sleep_example.h"
 
 /* pm config freq */
 #define DEFAULT_PM_MAX_FREQ_MHZ	(CONFIG_EXAMPLE_PM_MAX_FREQ_MHZ)
@@ -14,7 +14,7 @@
 static const char *TAG = "power_config";
 
 /* pm config function */
-esp_err_t power_config(gpio_ws_t* args)
+esp_err_t example_register_power_config(gpio_ws_t* args)
 {
     gpio_ws_t* object = args;
     /* Initialize pm lock */
