@@ -41,11 +41,18 @@ if(EXISTS ${PROJECT_EXTRA_COMPONENTS})
     list(APPEND EXTRA_COMPONENT_DIRS "${PROJECT_EXTRA_COMPONENTS}")
 endif()
 
-# Consider each directory in project's bootloader_components as a component to be compiled
+if(IGNORE_EXTRA_COMPONENT)
+    # Prefix all entries of the list with ${PROJECT_EXTRA_COMPONENTS} absolute path
+    list(TRANSFORM IGNORE_EXTRA_COMPONENT
+         PREPEND "${PROJECT_EXTRA_COMPONENTS}/"
+         OUTPUT_VARIABLE EXTRA_COMPONENT_EXCLUDE_DIRS)
+endif()
+
+# Consider each directory in the project's bootloader_components as a component to be compiled
 file(GLOB proj_components RELATIVE ${PROJECT_EXTRA_COMPONENTS} ${PROJECT_EXTRA_COMPONENTS}/*)
 foreach(component ${proj_components})
-  # Only directories are considered as components
-  if(IS_DIRECTORY ${curdir}/${child})
+  # Only directories are considered components
+  if(IS_DIRECTORY "${PROJECT_EXTRA_COMPONENTS}/${component}" AND NOT ${component} IN_LIST IGNORE_EXTRA_COMPONENT)
     list(APPEND COMPONENTS ${component})
   endif()
 endforeach()
@@ -53,6 +60,7 @@ endforeach()
 set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
 set(common_req log esp_rom esp_common esp_hw_support newlib)
+idf_build_set_property(EXTRA_COMPONENT_EXCLUDE_DIRS "${EXTRA_COMPONENT_EXCLUDE_DIRS}")
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 project(bootloader)

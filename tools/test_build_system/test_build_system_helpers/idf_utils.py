@@ -149,3 +149,14 @@ def file_contains(filename: Union[str, Path], what: Union[str, Pattern]) -> bool
             return what in data
         else:
             return re.search(what, data) is not None
+
+
+def bin_file_contains(filename: Union[str, Path], what: bytearray) -> bool:
+    """
+    Returns true if the binary file contains the given string
+    :param filename: path to file where lookup is executed
+    :param what: searched bytes
+    """
+    with open(filename, 'rb') as f:
+        data = f.read()
+        return data.find(what) != -1
