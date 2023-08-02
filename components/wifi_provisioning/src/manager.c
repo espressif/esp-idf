@@ -1206,7 +1206,9 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned)
 
 static void wifi_connect_timer_cb(void *arg)
 {
-    if (esp_wifi_connect() != ESP_OK) {
+    if (esp_wifi_disconnect() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to disconnect");
+    } else if (esp_wifi_connect() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to connect Wi-Fi");
     }
 }
@@ -1531,33 +1533,34 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
      * credentials in RAM(i.e. without erasing the copy on NVS). Also
      * call disconnect to make sure device doesn't remain connected
      * to the AP whose credentials were present earlier */
-    wifi_config_t wifi_cfg_empty, wifi_cfg_old;
-    memset(&wifi_cfg_empty, 0, sizeof(wifi_config_t));
+    //wifi_config_t wifi_cfg_empty, wifi_cfg_old;
+    wifi_config_t wifi_cfg_old;
+    // memset(&wifi_cfg_empty, 0, sizeof(wifi_config_t));
     esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg_old);
-    ret = esp_wifi_set_storage(WIFI_STORAGE_RAM);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set Wi-Fi storage to RAM");
-        goto err;
-    }
+    // ret = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    // if (ret != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to set Wi-Fi storage to RAM");
+    //     goto err;
+    // }
 
     /* WiFi storage needs to be restored before exiting this API */
-    restore_wifi_flag |= WIFI_PROV_STORAGE_BIT;
+    // restore_wifi_flag |= WIFI_PROV_STORAGE_BIT;
     /* Erase Wi-Fi credentials in RAM, when call disconnect and user code
      * receive WIFI_EVENT_STA_DISCONNECTED and maybe call esp_wifi_connect, at
      * this time Wi-Fi will have no configuration to connect */
-    ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_empty);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set empty Wi-Fi credentials");
-        goto err;
-    }
+    // ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_empty);
+    // if (ret != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to set empty Wi-Fi credentials");
+    //     goto err;
+    // }
     /* WiFi settings needs to be restored if provisioning error before exiting this API */
-    restore_wifi_flag |= WIFI_PROV_SETTING_BIT;
+    // restore_wifi_flag |= WIFI_PROV_SETTING_BIT;
 
-    ret = esp_wifi_disconnect();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to disconnect");
-        goto err;
-    }
+    // ret = esp_wifi_disconnect();
+    // if (ret != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to disconnect");
+    //     goto err;
+    // }
 
 #ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
     /* Initialize app data */
@@ -1747,7 +1750,7 @@ esp_err_t wifi_prov_mgr_reset_sm_state_for_reprovision(void)
     ACQUIRE_LOCK(prov_ctx_lock);
 
     esp_err_t ret = ESP_OK;
-    wifi_config_t wifi_cfg_empty = {0};
+    // wifi_config_t wifi_cfg_empty = {0};
     uint8_t restore_wifi_flag = 0;
 
     if (!prov_ctx->mgr_info.capabilities.no_auto_stop) {
@@ -1756,24 +1759,24 @@ esp_err_t wifi_prov_mgr_reset_sm_state_for_reprovision(void)
         goto exit;
     }
 
-    ret = esp_wifi_set_storage(WIFI_STORAGE_RAM);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set Wi-Fi storage to RAM");
-        goto exit;
-    }
-    restore_wifi_flag |= WIFI_PROV_STORAGE_BIT;
+    // ret = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    // if (ret != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to set Wi-Fi storage to RAM");
+    //     goto exit;
+    // }
+    // restore_wifi_flag |= WIFI_PROV_STORAGE_BIT;
 
-    ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_empty);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set empty Wi-Fi credentials, 0x%x", ret);
-        goto exit;
-    }
+    // ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_empty);
+    // if (ret != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to set empty Wi-Fi credentials, 0x%x", ret);
+    //     goto exit;
+    // }
 
-    ret = esp_wifi_disconnect();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to disconnect wifi, 0x%x", ret);
-        goto exit;
-    }
+    // ret = esp_wifi_disconnect();
+    // if (ret != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to disconnect wifi, 0x%x", ret);
+    //     goto exit;
+    // }
 
     prov_ctx->prov_state = WIFI_PROV_STATE_STARTED;
     execute_event_cb(WIFI_PROV_START, NULL, 0);
