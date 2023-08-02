@@ -216,7 +216,7 @@ else()
                         INCLUDE_DIRS ${includes}
                         PRIV_REQUIRES efuse esp_timer
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
-                        LDFRAGMENTS linker.lf gptimer/linker.lf gpio/linker.lf)
+                        LDFRAGMENTS linker.lf gptimer/linker.lf gpio/linker.lf twai/linker.lf)
 endif()
 
 # If system needs to monitor USJ connection status, then usb_serial_jtag_connection_monitor object file has to be linked
