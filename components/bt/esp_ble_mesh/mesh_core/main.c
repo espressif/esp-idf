@@ -197,6 +197,8 @@ static bool prov_bearers_valid(bt_mesh_prov_bearer_t bearers)
 
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 {
+    int err = 0;
+
     if (bt_mesh_is_provisioned()) {
         BT_WARN("%s, Already", __func__);
         return -EALREADY;
@@ -232,7 +234,11 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             (bearers & BLE_MESH_PROV_ADV)) {
         /* Make sure we're scanning for provisioning invitations */
-        bt_mesh_scan_enable();
+        err = bt_mesh_scan_enable();
+        if (err) {
+            return err;
+        }
+
         /* Enable unprovisioned beacon sending */
         bt_mesh_beacon_enable();
     }
@@ -637,7 +643,10 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
         bt_mesh_beacon_enable();
     }
 
-    bt_mesh_scan_enable();
+    err = bt_mesh_scan_enable();
+    if (err) {
+        return err;
+    }
 
     return 0;
 }
