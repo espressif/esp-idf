@@ -731,12 +731,13 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             result = ESP_OK;
 #endif // !CONFIG_IDF_TARGET_ESP32H2
         } else {
+            /* Wait cache idle in cache suspend to avoid cache load wrong data after spi io isolation */
+            cache_hal_suspend(CACHE_TYPE_ALL);
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
-                cache_hal_freeze(CACHE_TYPE_ALL);
                 gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
             }
 #endif
@@ -759,10 +760,11 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
             if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
                 gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
-                cache_hal_unfreeze(CACHE_TYPE_ALL);
             }
 #endif
 #endif
+            /* Resume cache for continue running */
+            cache_hal_resume(CACHE_TYPE_ALL);
         }
 
 #if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
