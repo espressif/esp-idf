@@ -860,7 +860,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(simple_hash);
     }
 
-#if CONFIG_SECURE_BOOT_V2_ENABLED
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     // End of the image needs to be padded all the way to a 4KB boundary, after the simple hash
     // (for apps they are usually already padded due to --secure-pad-v2, only a problem if this option was not used.)
     uint32_t padded_end = ALIGN_UP(end, FLASH_SECTOR_SIZE);
@@ -870,7 +870,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(padding);
         end = padded_end;
     }
-#endif
+#endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
 
     bootloader_sha256_finish(sha_handle, image_digest);
 
