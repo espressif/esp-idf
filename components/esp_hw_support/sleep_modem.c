@@ -167,7 +167,7 @@ typedef struct sleep_modem_config {
 
 static sleep_modem_config_t s_sleep_modem = { .wifi.phy_link = NULL, .wifi.flags = 0 };
 
-static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
+__attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
 {
     esp_err_t err = ESP_OK;
     phy_i2c_master_command_attribute_t cmd;
@@ -244,7 +244,7 @@ static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
     return err;
 }
 
-static __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
+__attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
 {
     if (s_sleep_modem.wifi.phy_link) {
         regdma_link_destroy(s_sleep_modem.wifi.phy_link, 0);
@@ -319,14 +319,13 @@ esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_s
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     extern int esp_wifi_internal_mac_sleep_configure(bool, bool);
     if (light_sleep_enable) {
-        if (sleep_modem_wifi_modem_state_init() == ESP_OK) {
+        if (sleep_modem_wifi_modem_state_enabled() == ESP_OK) {
             esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
             esp_wifi_internal_mac_sleep_configure(light_sleep_enable, true); /* require WiFi to enable automatically receives the beacon */
         }
     } else {
         esp_wifi_internal_mac_sleep_configure(light_sleep_enable, false); /* require WiFi to disable automatically receives the beacon */
         esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
-        sleep_modem_wifi_modem_state_deinit();
     }
 #endif
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
