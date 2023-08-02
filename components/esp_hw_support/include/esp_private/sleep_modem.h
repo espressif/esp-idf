@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,6 +160,25 @@ void esp_pm_register_light_sleep_default_params_config_callback(update_light_sle
  * of default parameters of light sleep
  */
 void esp_pm_unregister_light_sleep_default_params_config_callback(void);
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/**
+ * @brief Init Wi-Fi modem state.
+ *
+ * This function init wifi modem state.
+  * @return
+  *   - ESP_OK on success
+  *   - ESP_ERR_NO_MEM if no memory for link
+ */
+esp_err_t sleep_modem_wifi_modem_state_init(void);
+
+/**
+ * @brief  Deinit Wi-Fi modem state.
+ *
+ * This function deinit wifi modem state.
+ */
+void sleep_modem_wifi_modem_state_deinit(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,8 +85,10 @@ static bool s_is_phy_calibrated = false;
 static bool s_is_phy_reg_stored = false;
 /* Memory to store PHY digital registers */
 static uint32_t* s_phy_digital_regs_mem = NULL;
-static uint8_t s_phy_modem_init_ref = 0;
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+static uint8_t s_phy_modem_init_ref = 0;
+#endif
 
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
@@ -349,23 +351,29 @@ void esp_wifi_bt_power_domain_off(void)
 
 void esp_phy_modem_init(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_acquire(&s_phy_access_lock);
     s_phy_modem_init_ref++;
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     if (s_phy_digital_regs_mem == NULL) {
         s_phy_digital_regs_mem = (uint32_t *)heap_caps_malloc(SOC_PHY_DIG_REGS_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
-    _lock_release(&s_phy_access_lock);
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    sleep_modem_wifi_modem_state_init();
+#endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    _lock_release(&s_phy_access_lock);
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 }
 
 void esp_phy_modem_deinit(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_acquire(&s_phy_access_lock);
 
     s_phy_modem_init_ref--;
     if (s_phy_modem_init_ref == 0) {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         s_is_phy_reg_stored = false;
         free(s_phy_digital_regs_mem);
         s_phy_digital_regs_mem = NULL;
@@ -374,11 +382,14 @@ void esp_phy_modem_deinit(void)
         */
 #if CONFIG_IDF_TARGET_ESP32C3
         phy_init_flag();
-#endif
-    }
-
-    _lock_release(&s_phy_access_lock);
+#endif // CONFIG_IDF_TARGET_ESP32C3
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+        sleep_modem_wifi_modem_state_deinit();
+#endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    }
+    _lock_release(&s_phy_access_lock);
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 }
 
 #if CONFIG_MAC_BB_PD
