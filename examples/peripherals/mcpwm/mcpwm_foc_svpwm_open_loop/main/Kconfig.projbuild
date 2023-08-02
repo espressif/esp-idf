@@ -1,0 +1,12 @@
+menu "ESP FOC Settings"
+
+    config ESP_FOC_USE_SVPWM
+        bool "Use SVPWM modulation, if not, use SPWM"
+        default y
+        help
+            SVPWM will output saddle wave, which have higher power usage ratio,
+            But not follow 'sin signal' on phase voltage, and neutral line not zero.
+
+            SPWM output a standard 3-phase sin signal modulated pwm, but not fully use the
+            input power. Please turn off this config if the `neutral line` is required.
+endmenu
