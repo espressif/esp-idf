@@ -41,13 +41,12 @@ typedef struct cmd_item_ {
 static SLIST_HEAD(cmd_list_, cmd_item_) s_cmd_list;
 
 /** run-time configuration options */
-static esp_console_config_t s_config;
+static esp_console_config_t s_config = {
+    .heap_alloc_caps = MALLOC_CAP_DEFAULT
+};
 
 /** temporary buffer used for command line parsing */
 static char *s_tmp_line_buf;
-
-/** for internal allocations */
-static uint32_t s_heap_alloc_caps = MALLOC_CAP_DEFAULT;
 
 static const cmd_item_t *find_command_by_name(const char *name);
 
@@ -64,9 +63,9 @@ esp_err_t esp_console_init(const esp_console_config_t *config)
         s_config.hint_color = ANSI_COLOR_DEFAULT;
     }
     if (config->heap_alloc_caps != 0) {
-        s_heap_alloc_caps = config->heap_alloc_caps;
+        s_config.heap_alloc_caps = config->heap_alloc_caps;
     }
-    s_tmp_line_buf = heap_caps_calloc(config->max_cmdline_length, 1, s_heap_alloc_caps);
+    s_tmp_line_buf = heap_caps_calloc(1, config->max_cmdline_length, s_config.heap_alloc_caps);
     if (s_tmp_line_buf == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -101,7 +100,7 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
     item = (cmd_item_t *)find_command_by_name(cmd->command);
     if (!item) {
         // not registered before
-        item = heap_caps_calloc(1, sizeof(*item), s_heap_alloc_caps);
+        item = heap_caps_calloc(1, sizeof(*item), s_config.heap_alloc_caps);
         if (item == NULL) {
             return ESP_ERR_NO_MEM;
         }
@@ -194,7 +193,7 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
     if (s_tmp_line_buf == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    char **argv = (char **) heap_caps_calloc(s_config.max_cmdline_args, sizeof(char *), s_heap_alloc_caps);
+    char **argv = (char **) heap_caps_calloc(s_config.max_cmdline_args, sizeof(char *), s_config.heap_alloc_caps);
     if (argv == NULL) {
         return ESP_ERR_NO_MEM;
     }

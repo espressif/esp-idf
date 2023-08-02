@@ -23,7 +23,7 @@ typedef struct linenoiseCompletions linenoiseCompletions;
 typedef struct {
     size_t max_cmdline_length;  //!< length of command line buffer, in bytes
     size_t max_cmdline_args;    //!< maximum number of command line arguments to parse
-    uint32_t heap_alloc_caps;   //!< where to place internal allocations (e.g. MALLOC_CAP_SPIRAM)
+    uint32_t heap_alloc_caps;   //!< where to (e.g. MALLOC_CAP_SPIRAM) allocate heap objects such as cmds used by esp_console
     int hint_color;             //!< ASCII color code of hint text
     int hint_bold;              //!< Set to 1 to print hint text in bold
 } esp_console_config_t;
