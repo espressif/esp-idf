@@ -9,6 +9,10 @@
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
 
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
+#endif
+
 #define PHY_ENABLE_VERSION_PRINT 1
 
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -46,6 +50,9 @@ void esp_phy_enable(void)
 {
     _lock_acquire(&s_phy_access_lock);
     if (s_phy_access_ref == 0) {
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+        modem_clock_module_enable(PERIPH_PHY_MODULE);
+#endif
         if (!s_phy_is_enabled) {
             register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
             phy_version_print();
@@ -73,6 +80,9 @@ void esp_phy_disable(void)
         phy_track_pll_deinit();
         phy_close_rf();
         phy_xpd_tsens();
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+        modem_clock_module_disable(PERIPH_PHY_MODULE);
+#endif
     }
 
     _lock_release(&s_phy_access_lock);

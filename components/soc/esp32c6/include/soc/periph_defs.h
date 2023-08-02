@@ -44,14 +44,16 @@ typedef enum {
     PERIPH_SARADC_MODULE,
     PERIPH_TEMPSENSOR_MODULE,
     PERIPH_REGDMA_MODULE,
+    PERIPH_ASSIST_DEBUG_MODULE,
 /* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
     PERIPH_WIFI_MODULE,
     PERIPH_BT_MODULE,
     PERIPH_IEEE802154_MODULE,
     PERIPH_COEX_MODULE,
     PERIPH_PHY_MODULE,
-    PERIPH_ASSIST_DEBUG_MODULE,
+    PERIPH_ANA_I2C_MASTER_MODULE,
     PERIPH_MODULE_MAX
+/*  !!! Don't append soc modules here !!! */
 } periph_module_t;
 
 typedef enum {
@@ -61,7 +63,7 @@ typedef enum {
 } lp_periph_module_t;
 
 #define PERIPH_MODEM_MODULE_MIN PERIPH_WIFI_MODULE
-#define PERIPH_MODEM_MODULE_MAX PERIPH_PHY_MODULE
+#define PERIPH_MODEM_MODULE_MAX PERIPH_ANA_I2C_MASTER_MODULE
 #define PERIPH_MODEM_MODULE_NUM (PERIPH_MODEM_MODULE_MAX - PERIPH_MODEM_MODULE_MIN + 1)
 #define IS_MODEM_MODULE(periph)  ((periph>=PERIPH_MODEM_MODULE_MIN) && (periph<=PERIPH_MODEM_MODULE_MAX))
 
