@@ -151,6 +151,9 @@ typedef struct {
     volatile uint32_t k[8];
     volatile uint32_t px[8];
     volatile uint32_t py[8];
+    volatile uint32_t qx[8];
+    volatile uint32_t qy[8];
+    volatile uint32_t qz[8];
 } ecc_mult_dev_t;
 
 
