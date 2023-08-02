@@ -283,7 +283,6 @@ TEST_CASE("gptimer_auto_reload_on_alarm", "[gptimer]")
     }
 }
 
-
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_normal_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
@@ -316,6 +315,7 @@ TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        timer_config.intr_priority = i % 3 + 1; // test different priorities
         TEST_ESP_OK(gptimer_new_timer(&timer_config, &timers[i]));
     }
 

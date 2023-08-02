@@ -35,6 +35,8 @@ extern "C" {
 #define GPTIMER_INTR_ALLOC_FLAGS    ESP_INTR_FLAG_INTRDISABLED
 #endif
 
+#define GPTIMER_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
+
 #define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
 
 typedef struct gptimer_t gptimer_t;
@@ -62,6 +64,7 @@ struct gptimer_t {
     gptimer_count_direction_t direction;
     timer_hal_context_t hal;
     _Atomic gptimer_fsm_t fsm;
+    int intr_priority;
     intr_handle_t intr;
     portMUX_TYPE spinlock; // to protect per-timer resources concurrent accessed by task and ISR handler
     gptimer_alarm_cb_t on_alarm;
