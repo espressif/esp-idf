@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "gpio_wakeup_example.h"
+#include "auto_light_sleep_example.h"
 
 /* IO pin for wake-up and sleep */
 #define DEFAULT_GPIO_WAKEUP_SLEEP_NUM   	  (CONFIG_EXAMPLE_GPIO_WAKEUP_SLEEP_NUM)

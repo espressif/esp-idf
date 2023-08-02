@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -50,7 +50,7 @@ typedef struct {
 extern "C" {
 #endif
 
-esp_err_t power_config( gpio_ws_t* );
+esp_err_t example_register_power_config( gpio_ws_t* );
 esp_err_t example_register_gpio_wakeup_sleep( gpio_ws_t* );
 
 #ifdef __cplusplus
