@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/param.h>
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_console.h"
 #include "esp_system.h"
@@ -45,6 +46,9 @@ static esp_console_config_t s_config;
 /** temporary buffer used for command line parsing */
 static char *s_tmp_line_buf;
 
+/** for internal allocations */
+static uint32_t s_heap_alloc_caps = MALLOC_CAP_DEFAULT;
+
 static const cmd_item_t *find_command_by_name(const char *name);
 
 esp_err_t esp_console_init(const esp_console_config_t *config)
@@ -59,7 +63,10 @@ esp_err_t esp_console_init(const esp_console_config_t *config)
     if (s_config.hint_color == 0) {
         s_config.hint_color = ANSI_COLOR_DEFAULT;
     }
-    s_tmp_line_buf = calloc(config->max_cmdline_length, 1);
+    if (config->heap_alloc_caps != 0) {
+        s_heap_alloc_caps = config->heap_alloc_caps;
+    }
+    s_tmp_line_buf = heap_caps_calloc(config->max_cmdline_length, 1, s_heap_alloc_caps);
     if (s_tmp_line_buf == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -94,7 +101,7 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
     item = (cmd_item_t *)find_command_by_name(cmd->command);
     if (!item) {
         // not registered before
-        item = calloc(1, sizeof(*item));
+        item = heap_caps_calloc(1, sizeof(*item), s_heap_alloc_caps);
         if (item == NULL) {
             return ESP_ERR_NO_MEM;
         }
@@ -187,7 +194,7 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
     if (s_tmp_line_buf == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    char **argv = (char **) calloc(s_config.max_cmdline_args, sizeof(char *));
+    char **argv = (char **) heap_caps_calloc(s_config.max_cmdline_args, sizeof(char *), s_heap_alloc_caps);
     if (argv == NULL) {
         return ESP_ERR_NO_MEM;
     }
