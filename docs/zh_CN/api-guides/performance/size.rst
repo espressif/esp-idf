@@ -484,7 +484,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. _minimizing_binary_mbedtls:
 
-mbedTLS 功能
+MbedTLS 功能
 @@@@@@@@@@@@@@@@@@@@@
 
 在 **Component Config** > **mbedTLS** 下有多个默认启用的 mbedTLS 功能，如果不需要，可以禁用相应功能以减小代码大小。
@@ -502,6 +502,8 @@ mbedTLS 功能
 - :ref:`CONFIG_MBEDTLS_CCM_C`
 - :ref:`CONFIG_MBEDTLS_GCM_C`
 - :ref:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
+- :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+- :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
 - 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :ref:`CONFIG_MBEDTLS_TLS_MODE`
 - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
 

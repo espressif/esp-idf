@@ -502,6 +502,8 @@ These include:
 - :ref:`CONFIG_MBEDTLS_CCM_C`
 - :ref:`CONFIG_MBEDTLS_GCM_C`
 - :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
+- :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+- :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
 - Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
 - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e. :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
 
