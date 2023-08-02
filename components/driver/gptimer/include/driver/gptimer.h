@@ -24,6 +24,8 @@ typedef struct {
     gptimer_count_direction_t direction; /*!< Count direction */
     uint32_t resolution_hz;              /*!< Counter resolution (working frequency) in Hz,
                                               hence, the step size of each count tick equals to (1 / resolution_hz) seconds */
+    int intr_priority;                   /*!< GPTimer interrupt priority,
+                                              if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
     } flags;                             /*!< GPTimer config flags*/
