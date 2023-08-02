@@ -13,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-#define ETS_DS_MAX_BITS 3072
+#define ETS_DS_MAX_BITS 4096
 
 #define ETS_DS_IV_LEN 16
 

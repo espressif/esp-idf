@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,11 @@
 #include "esp32h2/rom/digital_signature.h"
 #include "esp32h2/rom/aes.h"
 #include "esp32h2/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/efuse.h"
+#include "esp32p4/rom/digital_signature.h"
+#include "esp32p4/rom/aes.h"
+#include "esp32p4/rom/sha.h"
 #endif
 
 #include "esp_ds.h"
@@ -375,7 +380,7 @@ TEST_CASE("Digital Signature Blocking Operation (FPGA only)", "[hw_crypto] [ds]"
 
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
-#elif CONFIG_IDF_TARGET_ESP32C3
+#else
         esp_err_t ds_r = esp_ds_sign(test_messages[0],
                                      &ds_data,
                                      t->hmac_key_idx + 1,

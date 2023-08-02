@@ -71,6 +71,10 @@ config SOC_HMAC_SUPPORTED
     bool
     default y
 
+config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
@@ -237,7 +241,7 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
 
 config SOC_DS_SIGNATURE_MAX_BIT_LEN
     int
-    default 3072
+    default 4096
 
 config SOC_DS_KEY_PARAM_MD_IV_LENGTH
     int
