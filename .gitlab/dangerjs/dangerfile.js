@@ -8,7 +8,7 @@ async function runChecks() {
 
     // Checks for merge request description
     require("./mrDescriptionLongEnough.js")();
-    require("./mrDescriptionHasReleaseNotes.js")();
+    require("./mrDescriptionReleaseNotes.js")();
     await require("./mrDescriptionJiraLinks.js")();
 
     // Checks for documentation
