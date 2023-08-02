@@ -982,6 +982,16 @@ menu "mbedTLS"
 
             Disabling this option saves some code size.
 
+    config MBEDTLS_ECP_FIXED_POINT_OPTIM
+        bool "Enable fixed-point multiplication optimisations"
+        depends on MBEDTLS_ECP_C
+        default y
+        help
+            This configuration option enables optimizations to speedup (about 3 ~ 4 times) the ECP
+            fixed point multiplication using pre-computed tables in the flash memory.
+            Disabling this configuration option saves flash footprint (about 29KB if all Elliptic Curve selected)
+            in the application binary.
+
             # end of Elliptic Curve options
 
     config MBEDTLS_POLY1305_C

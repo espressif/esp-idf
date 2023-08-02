@@ -489,6 +489,19 @@
 #endif
 
 /**
+ * \def MBEDTLS_ECP_FIXED_POINT_OPTIM
+ *
+ * Enable speed up fixed-point multiplication.
+ *
+ * Comment this macro to disable FIXED POINT curves optimisation.
+ */
+#ifdef CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM
+#define MBEDTLS_ECP_FIXED_POINT_OPTIM 1
+#else
+#define MBEDTLS_ECP_FIXED_POINT_OPTIM 0
+#endif
+
+/**
  * \def MBEDTLS_ECDSA_DETERMINISTIC
  *
  * Enable deterministic ECDSA (RFC 6979).
