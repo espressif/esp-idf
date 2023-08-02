@@ -63,12 +63,12 @@ static bool s_adc_unit_free(adc_unit_t unit);
 static esp_err_t s_adc_io_init(adc_unit_t unit, adc_channel_t channel);
 
 
-esp_err_t adc_oneshot_io_to_channel(int io_num, adc_unit_t *unit_id, adc_channel_t *channel)
+esp_err_t adc_oneshot_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_t * const channel)
 {
     return adc_io_to_channel(io_num, unit_id, channel);
 }
 
-esp_err_t adc_oneshot_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *io_num)
+esp_err_t adc_oneshot_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num)
 {
     return adc_channel_to_io(unit_id, channel, io_num);
 }

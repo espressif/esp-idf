@@ -59,7 +59,7 @@ void adc_apb_periph_free(void)
 /*---------------------------------------------------------------
             ADC IOs
 ---------------------------------------------------------------*/
-esp_err_t adc_io_to_channel(int io_num, adc_unit_t *unit_id, adc_channel_t *channel)
+esp_err_t adc_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_t * const channel)
 {
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(io_num), ESP_ERR_INVALID_ARG, TAG, "invalid gpio number");
     ESP_RETURN_ON_FALSE(unit_id && channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
@@ -77,7 +77,7 @@ esp_err_t adc_io_to_channel(int io_num, adc_unit_t *unit_id, adc_channel_t *chan
     return (found) ? ESP_OK : ESP_ERR_NOT_FOUND;
 }
 
-esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *io_num)
+esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num)
 {
     ESP_RETURN_ON_FALSE(unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid unit");
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(unit_id), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
