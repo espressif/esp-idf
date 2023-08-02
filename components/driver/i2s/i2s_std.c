@@ -77,10 +77,13 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    if (handle->dir == I2S_DIR_TX) {
-        i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
-    } else {
-        i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+    I2S_RCC_ATOMIC() {
+        I2S_RCC_ENV_DECLARE;
+        if (handle->dir == I2S_DIR_TX) {
+            i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+        } else {
+            i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+        }
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
@@ -226,10 +229,8 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     /* Enable clock to start outputting mclk signal. Some codecs will reset once mclk stop */
     if (handle->dir == I2S_DIR_TX) {
         i2s_ll_tx_enable_std(handle->controller->hal.dev);
-        i2s_ll_tx_enable_clock(handle->controller->hal.dev);
     } else {
         i2s_ll_rx_enable_std(handle->controller->hal.dev);
-        i2s_ll_rx_enable_clock(handle->controller->hal.dev);
     }
 #endif
 

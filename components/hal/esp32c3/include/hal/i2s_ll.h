@@ -17,6 +17,7 @@
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
+#include "soc/system_struct.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
@@ -43,8 +44,14 @@ extern "C" {
  */
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
+    SYSTEM.perip_clk_en0.reg_i2s1_clk_en = 1;
+    SYSTEM.perip_rst_en0.reg_i2s1_rst = 0;
     hw->tx_clkm_conf.clk_en = 1;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S module disable I2S clock.
@@ -54,7 +61,13 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
 {
     hw->tx_clkm_conf.clk_en = 0;
+    SYSTEM.perip_clk_en0.reg_i2s1_clk_en = 0;
+    SYSTEM.perip_rst_en0.reg_i2s1_rst = 1;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_disable_clock(__VA_ARGS__)
 
 /**
  * @brief Enable I2S tx module clock
@@ -86,6 +99,11 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
     hw->tx_clkm_conf.tx_clk_active = 0;
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+// i2s_ll_tx_disable_clock don't need RCC ENV actually, but still defined here for compatiblity
+#define i2s_ll_tx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_tx_disable_clock(__VA_ARGS__)
+
 /**
  * @brief Disable I2S rx module clock
  *
@@ -95,6 +113,11 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 {
     hw->rx_clkm_conf.rx_clk_active = 0;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+// i2s_ll_rx_disable_clock don't need RCC ENV actually, but still defined here for compatiblity
+#define i2s_ll_rx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_rx_disable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S mclk use tx module clock

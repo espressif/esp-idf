@@ -23,6 +23,23 @@ extern "C" {
 
 #if SOC_I2S_SUPPORTS_PDM_RX
 
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+/**
+ * @brief PDM format in 2 slots(RX)
+ * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
+                 I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
+    .hpf_en = true, \
+    .hpf_cut_off_freq_hz = 35.5, \
+    .amplify_num = 1, \
+}
+#else
 /**
  * @brief PDM format in 2 slots(RX)
  * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
@@ -35,6 +52,7 @@ extern "C" {
     .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
                  I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
 }
+#endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 
 /**
  * @brief i2s default pdm rx clock configuration
@@ -48,23 +66,7 @@ extern "C" {
     .bclk_div = 8, \
 }
 
-#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
-/**
- * @brief PDM format in 2 slots(RX)
- * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
- * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
- */
-#define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
-    .data_bit_width = bits_per_sample, \
-    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
-    .slot_mode = mono_or_stereo, \
-    .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
-                 I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
-    .hp_en = true, \
-    .hp_cut_off_freq_hz = 35.5, \
-    .amplify_num = 1, \  /* TODO: maybe need an enum */
-}
-#endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+
 
 /**
  * @brief I2S slot configuration for pdm rx mode
@@ -329,8 +331,8 @@ typedef struct {
     i2s_pdm_sig_scale_t     sinc_scale;         /*!< Sinc filter scaling value */
 #if SOC_I2S_HW_VERSION_2
     i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, one-line codec, one-line dac, two-line dac mode can be selected */
-    bool                    hp_en;              /*!< High pass filter enable */
-    float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
+    bool                    hpf_en;              /*!< High pass filter enable */
+    float                   hpf_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
     uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
     uint32_t                sd_dither2;         /*!< Sigma-delta filter dither2 */
 #endif // SOC_I2S_HW_VERSION_2

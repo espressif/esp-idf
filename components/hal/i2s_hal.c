@@ -243,7 +243,7 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_rx_set_active_chan_mask(hal->dev, slot_mask);
 #endif  // SOC_I2S_HW_VERSION_1
 
-#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER // TODO: add this macro to soc_caps
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     uint32_t param0;
     uint32_t param5;
     s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hz, &param0, &param5);

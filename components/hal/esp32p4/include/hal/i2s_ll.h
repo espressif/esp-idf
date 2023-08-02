@@ -17,7 +17,7 @@
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
-#include "soc/pcr_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/i2s_types.h"
 
 
@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 #define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : ((num) == 1) ? (&I2S1) : (&I2S2))
+#define I2S_LL_GET_ID(hw)              (((hw) == &I2S0)? 0 : ((hw) == &I2S1) ? 1 : 2)
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
@@ -53,9 +54,29 @@ typedef struct {
  */
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
-    // The clock gate enabling is moved to `periph_module_enable`
-    (void)hw;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 0;
+            break;
+        case 1:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 0;
+            break;
+        case 2:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 0;
+            break;
+        default:
+            // Never reach
+            HAL_ASSERT(false);
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S module disable I2S clock.
@@ -64,9 +85,29 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
 {
-    // The clock gate disabling is moved to `periph_module_disable`
-    (void)hw;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = 0;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 1;
+            break;
+        case 1:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = 0;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 1;
+            break;
+        case 2:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = 0;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 1;
+            break;
+        default:
+            // Never reach
+            HAL_ASSERT(false);
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_disable_clock(__VA_ARGS__)
 
 /**
  * @brief Enable I2S tx module clock
@@ -75,8 +116,18 @@ static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 1;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_en = 1;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_en = 1;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_en = 1;
+            return;
+    }
 }
 
 /**
@@ -86,8 +137,18 @@ static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 1;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_en = 1;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_en = 1;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_en = 1;
+            return;
+    }
 }
 
 /**
@@ -97,9 +158,23 @@ static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 0;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_en = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_en = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_en = 0;
+            return;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_tx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_tx_disable_clock(__VA_ARGS__)
 
 /**
  * @brief Disable I2S rx module clock
@@ -108,9 +183,23 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 0;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_en = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_en = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_en = 0;
+            return;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_rx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_rx_disable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S mclk use tx module clock
@@ -119,8 +208,18 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 0;
+            return;
+    }
 }
 
 /**
@@ -130,8 +229,18 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 1;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 1;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 1;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 1;
+            return;
+    }
 }
 
 /**
@@ -200,6 +309,22 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
     hw->rx_conf.rx_fifo_reset = 0;
 }
 
+static inline uint32_t i2s_ll_get_clk_src(i2s_clock_src_t src)
+{
+    switch (src)
+    {
+        case I2S_CLK_SRC_XTAL:
+            return 0;
+        case I2S_CLK_SRC_APLL:
+            return 1;
+        case I2S_CLK_SRC_EXTERNAL:
+            return 2;
+        default:
+            HAL_ASSERT(false && "unsupported clock source");
+            break;
+    }
+}
+
 /**
  * @brief Set TX source clock
  *
@@ -208,18 +333,18 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    (void)hw;
-    switch (src)
-    {
-    case I2S_CLK_SRC_XTAL:
-        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 0;
-        break;
-    case I2S_CLK_SRC_APLL:
-        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 1;
-        break;
-    default:
-        HAL_ASSERT(false && "unsupported clock source");
-        break;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    uint32_t clk_src = i2s_ll_get_clk_src(src);
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_src_sel = clk_src;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_src_sel = clk_src;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_src_sel = clk_src;
+            return;
     }
 }
 
@@ -231,18 +356,18 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    (void)hw;
-    switch (src)
-    {
-    case I2S_CLK_SRC_XTAL:
-        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 0;
-        break;
-    case I2S_CLK_SRC_APLL:
-        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 1;
-        break;
-    default:
-        HAL_ASSERT(false && "unsupported clock source");
-        break;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    uint32_t clk_src = i2s_ll_get_clk_src(src);
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_src_sel = clk_src;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_src_sel = clk_src;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_src_sel = clk_src;
+            return;
     }
 }
 
@@ -269,14 +394,30 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    (void)hw;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_tx_clkm_conf, i2s_tx_clkm_div_num, div_int);
-    typeof(PCR.i2s_tx_clkm_div_conf) div = {};
-    div.i2s_tx_clkm_div_x = x;
-    div.i2s_tx_clkm_div_y = y;
-    div.i2s_tx_clkm_div_z = z;
-    div.i2s_tx_clkm_div_yn1 = yn1;
-    PCR.i2s_tx_clkm_div_conf.val = div.val;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_yn1 = yn1;
+            return;
+        case 1:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_yn1 = yn1;
+            return;
+        case 2:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_yn1 = yn1;
+            return;
+    }
 }
 
 /**
@@ -291,14 +432,30 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  */
 static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    (void)hw;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_rx_clkm_conf, i2s_rx_clkm_div_num, div_int);
-    typeof(PCR.i2s_rx_clkm_div_conf) div = {};
-    div.i2s_rx_clkm_div_x = x;
-    div.i2s_rx_clkm_div_y = y;
-    div.i2s_rx_clkm_div_z = z;
-    div.i2s_rx_clkm_div_yn1 = yn1;
-    PCR.i2s_rx_clkm_div_conf.val = div.val;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_yn1 = yn1;
+            return;
+        case 1:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_yn1 = yn1;
+            return;
+        case 2:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_yn1 = yn1;
+            return;
+    }
 }
 
 /**
@@ -890,13 +1047,12 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
  * @brief Enable RX PDM mode.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm_enable Set true to RX enable PDM mode
  */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
 {
-    hw->rx_conf.rx_pdm_en = pdm_enable;
-    hw->rx_conf.rx_tdm_en = !pdm_enable;
-    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = pdm_enable;
+    hw->rx_conf.rx_pdm_en = 1;
+    hw->rx_conf.rx_tdm_en = 0;
+    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = 1;
 }
 
 /**
@@ -1198,6 +1354,7 @@ static inline void i2s_ll_tx_pdm_line_mode(i2s_dev_t *hw, i2s_pdm_tx_line_mode_t
  *
  * @param hw    Peripheral I2S hardware instance address.
  */
+__attribute__((always_inline))
 static inline void i2s_ll_tx_reset_fifo_sync_counter(i2s_dev_t *hw)
 {
     hw->fifo_cnt.tx_fifo_cnt_rst = 1;
@@ -1209,8 +1366,9 @@ static inline void i2s_ll_tx_reset_fifo_sync_counter(i2s_dev_t *hw)
  *
  * @param hw    Peripheral I2S hardware instance address.
  * @return
- *      count value
+ *      bclk count value
  */
+__attribute__((always_inline))
 static inline uint32_t i2s_ll_tx_get_fifo_sync_count(i2s_dev_t *hw)
 {
     return hw->fifo_cnt.tx_fifo_cnt;
@@ -1221,6 +1379,7 @@ static inline uint32_t i2s_ll_tx_get_fifo_sync_count(i2s_dev_t *hw)
  *
  * @param hw    Peripheral I2S hardware instance address.
  */
+__attribute__((always_inline))
 static inline void i2s_ll_tx_reset_bclk_sync_counter(i2s_dev_t *hw)
 {
     hw->bck_cnt.tx_bck_cnt_rst = 1;
@@ -1232,9 +1391,10 @@ static inline void i2s_ll_tx_reset_bclk_sync_counter(i2s_dev_t *hw)
  *
  * @param hw    Peripheral I2S hardware instance address.
  * @return
- *      count value
+ *      fifo count value
  */
-static inline void i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
+__attribute__((always_inline))
+static inline uint32_t i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
 {
     return hw->bck_cnt.tx_bck_cnt;
 }

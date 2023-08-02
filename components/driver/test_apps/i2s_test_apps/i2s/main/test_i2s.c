@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "esp_err.h"
@@ -775,7 +776,7 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
         // pcnt will count the pulse number on WS signal in 100ms
         TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
         TEST_ESP_OK(pcnt_unit_start(pcnt_unit));
-        vTaskDelay(pdMS_TO_TICKS(TEST_I2S_PERIOD_MS));
+        esp_rom_delay_us(100 * 1000);
         TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
         TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &real_pulse));
         printf("[%"PRIu32" Hz] %d pulses, expected %d, err %d\n", test_freq[i], real_pulse, expt_pulse, real_pulse - expt_pulse);
@@ -803,9 +804,10 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
-#if SOC_I2S_SUPPORTS_PLL_F160M || SOC_I2S_SUPPORTS_PLL_F96M
+// ESP32-P4 has no PLL except XTAL
+#if !CONFIG_IDF_TARGET_ESP32P4
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
-#endif  // SOC_I2S_SUPPORTS_PLL_F160M || SOC_I2S_SUPPORTS_PLL_F96M
+#endif  // CONFIG_IDF_TARGET_ESP32P4
 #if SOC_I2S_SUPPORTS_XTAL
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_XTAL;
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
@@ -881,7 +883,6 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
     int i;
     for (i = 0; i < test_num; i++) {
         printf("Testing %"PRIu32" Hz sample rate\n", test_freq[i]);
-        std_cfg.clk_cfg.sample_rate_hz = test_freq[i];
         std_cfg.clk_cfg.sample_rate_hz = test_freq[i];
         TEST_ESP_OK(i2s_channel_reconfig_std_clock(rx_handle, &std_cfg.clk_cfg));
         TEST_ESP_OK(i2s_channel_enable(rx_handle));

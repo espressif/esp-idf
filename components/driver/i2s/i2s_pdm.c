@@ -70,7 +70,10 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+    I2S_RCC_ATOMIC() {
+        I2S_RCC_ENV_DECLARE;
+        i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+    }
 #if SOC_I2S_HW_VERSION_2
     /* Work around for PDM TX clock, overwrite the raw division directly to reduce the noise
      * This set of coefficients is a special division to reduce the background noise in PDM TX mode */
@@ -187,10 +190,7 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
     i2s_ll_tx_enable_pdm(handle->controller->hal.dev);
-#if SOC_I2S_HW_VERSION_2
-    /* Enable clock to start outputting mclk signal. Some codecs will reset once mclk stop */
-    i2s_ll_tx_enable_clock(handle->controller->hal.dev);
-#endif
+
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
 #if SOC_I2S_SUPPORTS_APLL
@@ -357,7 +357,10 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+    I2S_RCC_ATOMIC() {
+        I2S_RCC_ENV_DECLARE;
+        i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+    }
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: clock configuration */
@@ -467,10 +470,7 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
     i2s_ll_rx_enable_pdm(handle->controller->hal.dev);
-#if SOC_I2S_HW_VERSION_2
-    /* Enable clock to start outputting mclk signal. Some codecs will reset once mclk stop */
-    i2s_ll_rx_enable_clock(handle->controller->hal.dev);
-#endif
+
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
 #if SOC_I2S_SUPPORTS_APLL

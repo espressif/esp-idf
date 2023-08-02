@@ -13,6 +13,9 @@
 #include "driver/i2s_std.h"
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
+#if CONFIG_IDF_TARGET_ESP32P4
+#include "rom/cache.h"
+#endif
 #include "esp_private/i2s_platform.h"
 #include "esp_private/spi_flash_os.h"
 #include "../../test_inc/test_i2s.h"
@@ -39,9 +42,13 @@ static void IRAM_ATTR test_i2s_iram_write(i2s_chan_handle_t tx_handle)
     // disable cache and non-iram ISR handlers
     spi_flash_guard_get()->start();
     // write data into dma buffer directly, the data in dma buffer will be sent automatically
-    for (int i=0; i < 100; i++) {
-        dma_bufs[0][i] = i + 1;
+    for (int i = 0; i < 400; i++) {
+        dma_bufs[0][i] = i % 100 + 1;
     }
+#if CONFIG_IDF_TARGET_ESP32P4
+    // TODO: need to consider PSRAM if I2S driver supports EDMA
+    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)dma_bufs[0], 400);
+#endif
     // enable cache and non-iram ISR handlers
     spi_flash_guard_get()->end();
 }
@@ -52,8 +59,8 @@ TEST_CASE("i2s_iram_interrupt_safe", "[i2s]")
     i2s_chan_handle_t rx_chan = NULL;
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-    chan_cfg.dma_desc_num = 6;
-    chan_cfg.dma_frame_num = 200;
+    chan_cfg.dma_desc_num = 2;
+    chan_cfg.dma_frame_num = 100;
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_chan, &rx_chan));
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
@@ -73,14 +80,14 @@ TEST_CASE("i2s_iram_interrupt_safe", "[i2s]")
     };
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_chan, &std_cfg));
-    int is_triggerred = 0;
+    int is_triggered = 0;
     i2s_event_callbacks_t cbs = {
         .on_recv = NULL,
         .on_recv_q_ovf = NULL,
         .on_sent = test_i2s_tx_done_callback,
         .on_send_q_ovf = NULL,
     };
-    TEST_ESP_OK(i2s_channel_register_event_callback(tx_chan, &cbs, &is_triggerred));
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx_chan, &cbs, &is_triggered));
     TEST_ESP_OK(i2s_channel_enable(tx_chan));
     TEST_ESP_OK(i2s_channel_enable(rx_chan));
 
@@ -92,7 +99,7 @@ TEST_CASE("i2s_iram_interrupt_safe", "[i2s]")
     for (int retry = 0; retry < 3; retry++) {
         i2s_channel_read(rx_chan, recv_buf, 2000, &r_bytes, pdMS_TO_TICKS(1000));
         for (i = 0; i < 2000 - 100; i++) {
-            if (recv_buf[i] != 0) {
+            if (recv_buf[i] == 1 && recv_buf[i + 1] == 2) {
                 goto finish;
             }
         }
@@ -107,7 +114,7 @@ finish:
     for (int j = 1; j <= 100; j++) {
         TEST_ASSERT_EQUAL_UINT8(recv_buf[i++], j);
     }
-    TEST_ASSERT(is_triggerred);
+    TEST_ASSERT(is_triggered);
     free(recv_buf);
 }
 

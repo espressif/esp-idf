@@ -18,6 +18,8 @@
 #include "hal/misc.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
+#include "soc/system_reg.h"
+#include "soc/dport_access.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
@@ -87,12 +89,23 @@ static inline void i2s_ll_dma_enable_eof_on_fifo_empty(i2s_dev_t *hw, bool en)
  */
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
+    if (hw == &I2S0) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+    } else {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S1_CLK_EN);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S1_RST);
+    }
     if (hw->clkm_conf.clk_en == 0) {
         hw->clkm_conf.clk_sel = 2;
         hw->clkm_conf.clk_en = 1;
         hw->conf2.val = 0;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S module disable clock.
@@ -104,7 +117,18 @@ static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
     if (hw->clkm_conf.clk_en == 1) {
         hw->clkm_conf.clk_en = 0;
     }
+    if (hw == &I2S0) {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S1_CLK_EN);
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S1_RST);
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_disable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S tx msb right enable

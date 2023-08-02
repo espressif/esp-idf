@@ -44,8 +44,8 @@ extern "C" {
  */
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
-    // The clock gate enabling is moved to `periph_module_enable`
-    (void)hw;
+    PCR.i2s_conf.i2s_clk_en = 1;
+    PCR.i2s_conf.i2s_rst_en = 0;
 }
 
 /**
@@ -55,8 +55,8 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
 {
-    // The clock gate disabling is moved to `periph_module_disable`
-    (void)hw;
+    PCR.i2s_conf.i2s_clk_en = 0;
+    PCR.i2s_conf.i2s_rst_en = 1;
 }
 
 /**

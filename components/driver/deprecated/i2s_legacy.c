@@ -58,6 +58,14 @@ static const char *TAG = "i2s(legacy)";
 #define I2S_ENTER_CRITICAL(i2s_num)              portENTER_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL(i2s_num)               portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define I2S_RCC_ATOMIC()        PERIPH_RCC_ATOMIC()
+#define I2S_RCC_ENV_DECLARE     (void)__DECLARE_RCC_ATOMIC_ENV
+#else
+#define I2S_RCC_ATOMIC()
+#define I2S_RCC_ENV_DECLARE
+#endif
+
 #define I2S_DMA_BUFFER_MAX_SIZE     4092
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
@@ -1021,11 +1029,14 @@ static void i2s_set_clock_legacy(i2s_port_t i2s_num)
     i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
     i2s_hal_clock_info_t clk_info;
     i2s_calculate_clock(i2s_num, &clk_info);
-    if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-        i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
-    }
-    if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-        i2s_hal_set_rx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+    I2S_RCC_ATOMIC() {
+        I2S_RCC_ENV_DECLARE;
+        if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
+            i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+        }
+        if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
+            i2s_hal_set_rx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+        }
     }
 }
 
@@ -1479,17 +1490,6 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
         ESP_RETURN_ON_ERROR(i2s_realloc_dma_buffer(i2s_num, p_i2s[i2s_num]->rx), TAG, "Allocate I2S dma rx buffer failed");
     }
 
-    /* Initialize I2S DMA object */
-#if SOC_I2S_HW_VERSION_2
-    /* Enable tx/rx submodule clock */
-    if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-        i2s_ll_tx_enable_clock(p_i2s[i2s_num]->hal.dev);
-    }
-    if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-        i2s_ll_rx_enable_clock(p_i2s[i2s_num]->hal.dev);
-    }
-#endif
-
     return ESP_OK;
 }
 
@@ -1538,12 +1538,15 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
 
 #if SOC_I2S_SUPPORTS_APLL
     if (obj->use_apll) {
-        // switch back to PLL clock source
-        if (obj->dir & I2S_DIR_TX) {
-            i2s_ll_tx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
-        }
-        if (obj->dir & I2S_DIR_RX) {
-            i2s_ll_rx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
+        I2S_RCC_ATOMIC() {
+            I2S_RCC_ENV_DECLARE;
+            // switch back to PLL clock source
+            if (obj->dir & I2S_DIR_TX) {
+                i2s_ll_tx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
+            }
+            if (obj->dir & I2S_DIR_RX) {
+                i2s_ll_rx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
+            }
         }
         periph_rtc_apll_release();
     }
@@ -1556,11 +1559,13 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 #endif
 #if SOC_I2S_HW_VERSION_2
-    if (obj->dir & I2S_DIR_TX) {
-        i2s_ll_tx_disable_clock(obj->hal.dev);
-    }
-    if (obj->dir & I2S_DIR_RX) {
-        i2s_ll_rx_disable_clock(obj->hal.dev);
+    I2S_RCC_ATOMIC() {
+        if (obj->dir & I2S_DIR_TX) {
+            i2s_ll_tx_disable_clock(obj->hal.dev);
+        }
+        if (obj->dir & I2S_DIR_RX) {
+            i2s_ll_rx_disable_clock(obj->hal.dev);
+        }
     }
 #endif
     /* Disable module clock */
@@ -1904,8 +1909,9 @@ esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
     if (!comp_using_i2s[id]) {
         ret = ESP_OK;
         comp_using_i2s[id] = comp_name;
-        periph_module_enable(i2s_periph_signal[id].module);
-        i2s_ll_enable_clock(I2S_LL_GET_HW(id));
+        I2S_RCC_ATOMIC() {
+            i2s_ll_enable_clock(I2S_LL_GET_HW(id));
+        }
     }
     portEXIT_CRITICAL(&i2s_spinlock[id]);
     return ret;
@@ -1920,8 +1926,9 @@ esp_err_t i2s_platform_release_occupation(int id)
         ret = ESP_OK;
         comp_using_i2s[id] = NULL;
         /* Disable module clock */
-        periph_module_disable(i2s_periph_signal[id].module);
-        i2s_ll_disable_clock(I2S_LL_GET_HW(id));
+        I2S_RCC_ATOMIC() {
+            i2s_ll_disable_clock(I2S_LL_GET_HW(id));
+        }
     }
     portEXIT_CRITICAL(&i2s_spinlock[id]);
     return ret;

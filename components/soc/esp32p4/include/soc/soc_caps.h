@@ -251,6 +251,7 @@
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER (1)
+#define SOC_I2S_SUPPORTS_TX_SYNC_CNT      (1)
 #define SOC_I2S_SUPPORTS_TDM        (1)
 #define SOC_I2S_PDM_MAX_TX_LINES    (2)     // On I2S0
 #define SOC_I2S_PDM_MAX_RX_LINES    (4)     // On I2S0
@@ -515,6 +516,7 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (0)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 
+#define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */

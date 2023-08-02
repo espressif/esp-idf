@@ -16,8 +16,10 @@
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
 #endif
+#include "esp_private/periph_ctrl.h"
 #include "esp_pm.h"
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,13 +28,21 @@ extern "C" {
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
 #if CONFIG_I2S_ISR_IRAM_SAFE
-#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
+#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
 #define I2S_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
+#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
 #define I2S_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define I2S_RCC_ATOMIC()        PERIPH_RCC_ATOMIC()
+#define I2S_RCC_ENV_DECLARE     (void)__DECLARE_RCC_ATOMIC_ENV
+#else
+#define I2S_RCC_ATOMIC()
+#define I2S_RCC_ENV_DECLARE
+#endif
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 
@@ -61,6 +71,7 @@ typedef struct {
     bool                    auto_clear;     /*!< Set to auto clear DMA TX descriptor, i2s will always send zero automatically if no data to send */
     uint32_t                rw_pos;         /*!< reading/writing pointer position */
     void                    *curr_ptr;      /*!< Pointer to current dma buffer */
+    void                    *curr_desc;     /*!< Pointer to current dma descriptor used for pre-load */
     lldesc_t                **desc;         /*!< dma descriptor array */
     uint8_t                 **bufs;         /*!< dma buffer array */
 } i2s_dma_t;
@@ -88,6 +99,7 @@ struct i2s_channel_obj_t {
     i2s_dma_t               dma;            /*!< i2s dma object */
     i2s_state_t             state;          /*!< i2s driver state. Ensuring the driver working in a correct sequence */
     /* Stored configurations */
+    int                     intr_flags;
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of wether APLL enabled */
