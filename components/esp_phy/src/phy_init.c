@@ -388,6 +388,8 @@ static uint32_t* s_mac_bb_pd_mem = NULL;
 static uint8_t s_macbb_backup_mem_ref = 0;
 /* Reference of powering down MAC and BB */
 static bool s_mac_bb_pu = true;
+#elif SOC_PM_MODEM_RETENTION_BY_REGDMA
+static void *s_mac_bb_tx_base = NULL;
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
 void esp_mac_bb_pd_mem_init(void)
@@ -407,7 +409,13 @@ void esp_mac_bb_pd_mem_init(void)
         [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
         [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE COEX */
     };
-    esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
+    esp_err_t err = ESP_OK;
+    _lock_acquire(&s_phy_access_lock);
+    s_mac_bb_tx_base = sleep_retention_find_link_by_id(0x0b01);
+    if (s_mac_bb_tx_base == NULL) {
+        err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
+    }
+    _lock_release(&s_phy_access_lock);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to allocate memory for WiFi baseband retention");
     }
@@ -425,7 +433,10 @@ void esp_mac_bb_pd_mem_deinit(void)
     }
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
+    _lock_acquire(&s_phy_access_lock);
     sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_WIFI_BB);
+    s_mac_bb_tx_base = NULL;
+    _lock_release(&s_phy_access_lock);
 #endif
 }
 
