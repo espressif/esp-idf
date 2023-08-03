@@ -31,27 +31,12 @@ typedef enum{
 	HOLD_LOCK_STATE = 1
 } hold_pm_lock_state_t;
 
-/* important properties of auto light sleep example */
-typedef struct {
-	// wakeup io pin
-	gpio_num_t gpio;
-	// system hold lock state
-	hold_pm_lock_state_t hold_lock_state;
-	// pm lock handle
-	esp_pm_lock_handle_t pm_lock;
-	// task handle
-	TaskHandle_t event_task;
-	// event queue
-	QueueHandle_t evt_queue
-} gpio_ws_t;
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-esp_err_t example_register_power_config( gpio_ws_t* );
-esp_err_t example_register_gpio_wakeup_sleep( gpio_ws_t* );
+esp_err_t example_register_power_config( void* );
 
 #ifdef __cplusplus
 }

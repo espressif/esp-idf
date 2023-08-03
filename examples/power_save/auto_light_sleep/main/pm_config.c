@@ -5,6 +5,8 @@
  */
 #include "esp_pm.h"
 #include "esp_check.h"
+#include "gpio_wakeup_sleep/gpio_wakeup_sleep.h"
+#include "uart_wakeup_sleep/uart_wakeup_sleep.h"
 #include "auto_light_sleep_example.h"
 
 /* pm config freq */
@@ -14,9 +16,9 @@
 static const char *TAG = "power_config";
 
 /* pm config function */
-esp_err_t example_register_power_config(gpio_ws_t* args)
+esp_err_t example_register_power_config(void* args)
 {
-    gpio_ws_t* object = args;
+    gpio_wakeup_object_t* object = (gpio_wakeup_object_t*)args;
     /* Initialize pm lock */
     ESP_RETURN_ON_ERROR( esp_pm_lock_create(DEFAULT_PM_LOCK_TYPE, 0, "contorl_auto_light_sleep", &(object->pm_lock)), TAG, "create lock failed" );
     ESP_LOGI(TAG, "create %s lock success!", PM_LOCK_TYPE_TO_STRING);
