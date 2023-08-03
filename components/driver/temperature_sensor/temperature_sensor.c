@@ -215,7 +215,7 @@ static esp_err_t read_delta_t_from_efuse(void)
     return ESP_OK;
 }
 
-static float parse_temp_sensor_raw_value(uint32_t tsens_raw)
+static float parse_temp_sensor_raw_value(int16_t tsens_raw)
 {
     if (isnan(s_deltaT)) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
@@ -230,7 +230,7 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
     ESP_RETURN_ON_FALSE(out_celsius != NULL, ESP_ERR_INVALID_ARG, TAG, "Celsius points to nothing");
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "tsens not enabled yet");
     bool range_changed;
-    uint16_t tsens_out = temp_sensor_get_raw_value(&range_changed);
+    int16_t tsens_out = temp_sensor_get_raw_value(&range_changed);
     *out_celsius = parse_temp_sensor_raw_value(tsens_out);
 
     if (*out_celsius < TEMPERATURE_SENSOR_LL_MEASURE_MIN || *out_celsius > TEMPERATURE_SENSOR_LL_MEASURE_MAX) {
