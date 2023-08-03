@@ -208,6 +208,11 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (ctrl == ESP_A2D_MEDIA_CTRL_STOP) {
+        LOG_WARN("ESP_A2D_MEDIA_CTRL_STOP is deprecated, using ESP_A2D_MEDIA_CTRL_SUSPEND instead.\n");
+        ctrl = ESP_A2D_MEDIA_CTRL_SUSPEND;
+    }
+
     bt_status_t stat;
     btc_av_args_t arg;
     btc_msg_t msg;

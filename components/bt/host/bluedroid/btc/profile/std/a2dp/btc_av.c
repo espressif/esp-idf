@@ -219,7 +219,6 @@ UNUSED_ATTR static const char *dump_av_sm_event_name(btc_av_sm_event_t event)
         CASE_RETURN_STR(BTC_AV_CONNECT_REQ_EVT)
         CASE_RETURN_STR(BTC_AV_DISCONNECT_REQ_EVT)
         CASE_RETURN_STR(BTC_AV_START_STREAM_REQ_EVT)
-        CASE_RETURN_STR(BTC_AV_STOP_STREAM_REQ_EVT)
         CASE_RETURN_STR(BTC_AV_SUSPEND_STREAM_REQ_EVT)
         CASE_RETURN_STR(BTC_AV_SINK_CONFIG_REQ_EVT)
     default: return "UNKNOWN_EVENT";
@@ -600,7 +599,6 @@ static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data)
         break;
 
     case BTA_AV_STOP_EVT:
-    case BTC_AV_STOP_STREAM_REQ_EVT:
 #if BTC_AV_SRC_INCLUDED
         if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
             /* immediately flush any pending tx frames while suspend is pending */
@@ -882,8 +880,6 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
 #endif /* BTC_AV_SRC_INCLUDED */
         break;
 
-    /* fixme -- use suspend = true always to work around issue with BTA AV */
-    case BTC_AV_STOP_STREAM_REQ_EVT:
     case BTC_AV_SUSPEND_STREAM_REQ_EVT:
 
         /* set pending flag to ensure btc task is not trying to restart
@@ -953,10 +949,8 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
                 btc_av_cb.flags |= BTC_AV_FLAG_REMOTE_SUSPEND;
             }
 
-            btc_report_audio_state(ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND, &(btc_av_cb.peer_bda));
-        } else {
-            btc_report_audio_state(ESP_A2D_AUDIO_STATE_STOPPED, &(btc_av_cb.peer_bda));
         }
+        btc_report_audio_state(ESP_A2D_AUDIO_STATE_SUSPEND, &(btc_av_cb.peer_bda));
 
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_OPENED);
 
@@ -969,7 +963,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
         btc_av_cb.flags |= BTC_AV_FLAG_PENDING_STOP;
         btc_a2dp_on_stopped(&p_av->suspend);
 
-        btc_report_audio_state(ESP_A2D_AUDIO_STATE_STOPPED, &(btc_av_cb.peer_bda));
+        btc_report_audio_state(ESP_A2D_AUDIO_STATE_SUSPEND, &(btc_av_cb.peer_bda));
 
         /* if stop was successful, change state to open */
         if (p_av->suspend.status == BTA_AV_SUCCESS) {
@@ -1623,7 +1617,6 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
         break;
     // case BTC_AV_DISCONNECT_REQ_EVT:
     case BTC_AV_START_STREAM_REQ_EVT:
-    case BTC_AV_STOP_STREAM_REQ_EVT:
     case BTC_AV_SUSPEND_STREAM_REQ_EVT: {
         btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, NULL);
         break;
