@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -256,6 +256,12 @@ static void IRAM_ATTR bootloader_init_flash_configure(void)
     bootloader_flash_cs_timing_config();
 }
 
+static void bootloader_spi_flash_resume(void)
+{
+    bootloader_execute_flash_command(CMD_RESUME, 0, 0, 0);
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+}
+
 esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
@@ -272,6 +278,7 @@ esp_err_t bootloader_init_spi_flash(void)
     bootloader_spi_flash_reset();
 #endif
 
+    bootloader_spi_flash_resume();
     bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
