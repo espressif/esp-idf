@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -173,6 +173,23 @@ err:
     return ret;
 }
 
+static esp_err_t ksz80xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    /* Check if loopback is enabled, and if so, can it work with proposed speed or not */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    ESP_GOTO_ON_FALSE(bmcr.en_loopback & (speed == ETH_SPEED_100M), ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+
+    return esp_eth_phy_802_3_set_speed(phy_802_3, speed);
+err:
+    return ret;
+}
+
+
 esp_eth_phy_t *esp_eth_phy_new_ksz80xx(const eth_phy_config_t *config)
 {
     esp_eth_phy_t *ret = NULL;
@@ -184,6 +201,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz80xx(const eth_phy_config_t *config)
     // redefine functions which need to be customized for sake of ksz80xx
     ksz80xx->phy_802_3.parent.init = ksz80xx_init;
     ksz80xx->phy_802_3.parent.get_link = ksz80xx_get_link;
+    ksz80xx->phy_802_3.parent.set_speed = ksz80xx_set_speed;
 
     return &ksz80xx->phy_802_3.parent;
 err:

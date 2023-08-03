@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -35,6 +35,10 @@ esp_eth_mac_t *mac_init(void *vendor_emac_config, eth_mac_config_t *mac_config)
     }
 #if CONFIG_TARGET_USE_INTERNAL_ETHERNET
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+#if !CONFIG_TARGET_USE_DEFAULT_EMAC_CONFIG
+    esp32_emac_config.smi_mdc_gpio_num = CONFIG_TARGET_IO_MDC;
+    esp32_emac_config.smi_mdio_gpio_num = CONFIG_TARGET_IO_MDIO;
+#endif // CONFIG_TARGET_USE_DEFAULT_EMAC_CONFIG
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &esp32_emac_config;
     }
