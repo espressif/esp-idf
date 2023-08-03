@@ -11,7 +11,11 @@ if(NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND srcs "wdt_hal_iram.c")
 endif()
 
-if(NOT ${target} STREQUAL "esp32")
+# We wrap Cache ROM APIs as Cache HAL APIs for: 1. internal ram ; 2. unified APIs
+# ESP32 cache structure / ROM APIs are different and we have a patch `cache_hal_esp32.c` for it.
+if(${target} STREQUAL "esp32")
+    list(APPEND srcs "esp32/cache_hal_esp32.c")
+else()
     list(APPEND srcs "cache_hal.c")
 endif()
 

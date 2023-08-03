@@ -133,7 +133,8 @@
 
 
 /*-------------------------- CACHE/MMU CAPS ----------------------------------*/
-#define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+#define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data within one core
+#define SOC_IDCACHE_PER_CORE                    1   //Independent Cache unit pre core
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       5
 
 

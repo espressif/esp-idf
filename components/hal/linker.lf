@@ -2,7 +2,9 @@
 archive: libhal.a
 entries:
     mmu_hal (noflash)
-    if IDF_TARGET_ESP32 = n:
+    if IDF_TARGET_ESP32 = y:
+        cache_hal_esp32 (noflash)
+    else:
         cache_hal (noflash)
     spi_hal_iram (noflash)
     spi_slave_hal_iram (noflash)
