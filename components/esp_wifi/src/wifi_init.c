@@ -165,6 +165,7 @@ esp_err_t esp_wifi_deinit(void)
 #endif
     esp_wifi_power_domain_off();
 #if CONFIG_MAC_BB_PD
+    esp_wifi_internal_set_mac_sleep(false);
     esp_mac_bb_pd_mem_deinit();
 #endif
     esp_phy_modem_deinit();
