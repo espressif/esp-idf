@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "auto_light_sleep_example.h"
+#include "gpio_wakeup_sleep.h"
 
 /* IO pin for wake-up and sleep */
 #define DEFAULT_GPIO_WAKEUP_SLEEP_NUM   	  (CONFIG_EXAMPLE_GPIO_WAKEUP_SLEEP_NUM)
@@ -105,26 +105,25 @@ void example_wait_gpio_inactive(gpio_num_t gpio, bool level)
 3. notify task to work */
 static void IRAM_ATTR gpio_isr_handler(void* args)
 {
-    gpio_ws_t* object = (gpio_ws_t*)args; 
+    gpio_wakeup_object_t* object = (gpio_wakeup_object_t*)args; 
     msg_t send_task_msg;
 
     // The first step is to disable intr
     // Documentation describes why: why diable intr, why modify intr type
     ESP_ERROR_CHECK( gpio_intr_disable(object->gpio) );
-#if !DEFAULT_USE_PULSE_WAKEUP
-    // If it's level wakeup mode, there's also changing the interrupt trigger method
-    ESP_ERROR_CHECK( gpio_set_intr_type(object->gpio, 
-                object->hold_lock_state == HOLD_LOCK_STATE ? TO_ACTIVE_INTR_TYPE : TO_SLEEP_INTR_TYPE) );
-#endif
 
-    // Send event to task
-#if !DEFAULT_USE_PULSE_WAKEUP
-    // Direct acquire lock or release lock in level wakeup mode
-    send_task_msg.event = (object->hold_lock_state == HOLD_LOCK_STATE) ? RELEASE_PM_LOCK_EVENT : ACQUIRE_PM_LOCK_EVENT;
-#else
-    // In pulse mode, the pulse is detected first
-    send_task_msg.event = CHECK_LEVEL_EVENT;
-#endif
+    if(object->wakeup_mode == GPIO_LEVEL_WAKEUP) {
+        // If it's level wakeup mode, there's also changing the interrupt trigger method
+        ESP_ERROR_CHECK( gpio_set_intr_type(object->gpio, 
+                object->hold_lock_state == HOLD_LOCK_STATE ? TO_ACTIVE_INTR_TYPE : TO_SLEEP_INTR_TYPE) );
+        
+        // Direct acquire lock or release lock in level wakeup mode
+        send_task_msg.event = (object->hold_lock_state == HOLD_LOCK_STATE) ? RELEASE_PM_LOCK_EVENT : ACQUIRE_PM_LOCK_EVENT;
+    } else {
+        // In pulse mode, the pulse is detected first
+        send_task_msg.event = CHECK_LEVEL_EVENT;
+    }
+
     xQueueSendFromISR(object->evt_queue, (void *)&send_task_msg, NULL);
 
     // An output pin can be added for easy viewing on the ammeter
@@ -135,7 +134,7 @@ static void IRAM_ATTR gpio_isr_handler(void* args)
 /* Tasks for handling events */
 static void example_event_task(void* args)
 {
-    gpio_ws_t* object = (gpio_ws_t*)args; 
+    gpio_wakeup_object_t* object = (gpio_wakeup_object_t*)args; 
     msg_t recv_isr_msg, send_msg;
 
     // create a queue to handle event from isr
@@ -148,18 +147,11 @@ static void example_event_task(void* args)
     /* When the task first starts running, it sends a gpio init event to itself to complete initialization */
     // If the digital peripheral is power down and the soc supports the rtcio wakeup function, then initialize the rtcio
 #if DEFAULT_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-#if DEFAULT_USE_PULSE_WAKEUP
-    send_msg.event = PULSE_WAKEUP_RTC_GPIO_INIT_EVENT;
-#else
-    send_msg.event = LEVEL_WAKEUP_RTC_GPIO_INIT_EVENT;
-#endif
+    send_msg.event = (object->wakeup_mode == GPIO_PULSE_WAKEUP) ? PULSE_WAKEUP_RTC_GPIO_INIT_EVENT : LEVEL_WAKEUP_RTC_GPIO_INIT_EVENT;
+
     // If the digital peripheral not power down or the soc not support rtcio wakeup, then initialize the gpio
 #else
-#if DEFAULT_USE_PULSE_WAKEUP
-    send_msg.event = PULSE_WAKEUP_GPIO_INIT_EVENT;
-#else
-    send_msg.event = LEVEL_WAKEUP_GPIO_INIT_EVENT;
-#endif
+    send_msg.event = (object->wakeup_mode == GPIO_PULSE_WAKEUP) ? PULSE_WAKEUP_GPIO_INIT_EVENT : LEVEL_WAKEUP_GPIO_INIT_EVENT;
 #endif
     if (pdFALSE == xQueueSend(object->evt_queue, (void *)&send_msg, 0)) {
         ESP_LOGE(TAG, "%s:%d %s::%s send gpio init event failed!",__FILE__, __LINE__, pcTaskGetName(NULL), __func__);
@@ -175,23 +167,23 @@ static void example_event_task(void* args)
             gpio_config_t gpio_config_level = {
                 .pin_bit_mask = BIT64(object->gpio),
                 .mode = GPIO_MODE_INPUT,
-                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? (DEFAULT_GPIO_WAKEUP_LEVEL ? true : false) : false,
-                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? (DEFAULT_GPIO_WAKEUP_LEVEL ? false : true) : false
+                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? (object->wakeup_level ? true : false) : false,
+                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? (object->wakeup_level ? false : true) : false
             };
             ESP_ERROR_CHECK( gpio_config(&gpio_config_level) );
 
             // Make sure the GPIO is inactive and it won't trigger wakeup immediately
-            example_wait_gpio_inactive(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL);
+            example_wait_gpio_inactive(object->gpio, object->wakeup_level);
 
             /* Set level wakeup first, then set gpio intr type */
             // (due to a hardware defect that makes it necessary to DEFAULT_GPIO_WAKEUP_SLEEP_NUM gpio intr type later)
             // Digital peripheral powers down and does not support rtcio wakeup, then enable ext1
 #if DEFAULT_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && (!SOC_RTCIO_INPUT_OUTPUT_SUPPORTED)
-            ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(BIT64(object->gpio), DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(BIT64(object->gpio), object->wakeup_level == 0 ? 
                                     ESP_EXT1_WAKEUP_ANY_LOW : ESP_EXT1_WAKEUP_ANY_HIGH) );
 #else
             // If the digital peripheral is not powered down, then enable gpio wakeup
-            ESP_ERROR_CHECK( gpio_wakeup_enable(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( gpio_wakeup_enable(object->gpio, object->wakeup_level == 0 ? 
                                     GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) );
 #endif
             // Set gpio interrupt type
@@ -212,26 +204,26 @@ static void example_event_task(void* args)
             gpio_config_t gpio_config_pulse = {
                 .pin_bit_mask = BIT64(object->gpio),
                 .mode = GPIO_MODE_INPUT,
-                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!DEFAULT_GPIO_WAKEUP_LEVEL) ? true : false ) : false,
-                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!DEFAULT_GPIO_WAKEUP_LEVEL) ? false : true ) : false
+                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!object->wakeup_level) ? true : false ) : false,
+                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!object->wakeup_level) ? false : true ) : false
             };
             ESP_ERROR_CHECK( gpio_config(&gpio_config_pulse) );
 
             // Make sure the GPIO is inactive and it won't trigger wakeup immediately
-            example_wait_gpio_inactive( object->gpio, (!DEFAULT_GPIO_WAKEUP_LEVEL) );
+            example_wait_gpio_inactive( object->gpio, (!object->wakeup_level) );
 
             /* Set level wakeup first, then set gpio intr type */
             // Digital peripheral powers down and does not support rtcio wakeup, then enable ext1
 #if DEFAULT_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_IDF_TARGET_ESP32H2
-            ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(BIT64(object->gpio), DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(BIT64(object->gpio), object->wakeup_level == 0 ? 
                                     ESP_EXT1_WAKEUP_ANY_LOW : ESP_EXT1_WAKEUP_ANY_HIGH) );
 #else
             // If the digital peripheral is not powered down, then enable gpio wakeup
-            ESP_ERROR_CHECK( gpio_wakeup_enable(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( gpio_wakeup_enable(object->gpio, object->wakeup_level == 0 ? 
                                     GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) );
 #endif
             // Set gpio interrupt type
-            ESP_ERROR_CHECK( gpio_set_intr_type(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( gpio_set_intr_type(object->gpio, object->wakeup_level == 0 ? 
                                     GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) );
             ESP_LOGI(TAG, "%d: PULSE_WAKEUP_GPIO_INIT_EVENT finished", __LINE__);
 
@@ -250,13 +242,13 @@ static void example_event_task(void* args)
             gpio_config_t rtc_gpio_config_level = {
                 .pin_bit_mask = BIT64(object->gpio),
                 .mode = GPIO_MODE_INPUT,
-                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? (DEFAULT_GPIO_WAKEUP_LEVEL ? true : false) : false,
-                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? (DEFAULT_GPIO_WAKEUP_LEVEL ? false : true) : false
+                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? (object->wakeup_level ? true : false) : false,
+                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? (object->wakeup_level ? false : true) : false
             };
             ESP_ERROR_CHECK( gpio_config(&rtc_gpio_config_level) );
 
             // Make sure the GPIO is inactive and it won't trigger wakeup immediately
-            example_wait_gpio_inactive(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL);
+            example_wait_gpio_inactive(object->gpio, object->wakeup_level);
 
             /* Initialize LPIO */
             ESP_ERROR_CHECK( rtc_gpio_init(object->gpio) );
@@ -272,7 +264,7 @@ static void example_event_task(void* args)
             ESP_ERROR_CHECK( rtc_gpio_pulldown_en(object->gpio) );
 #endif
             /* Enable wakeup from LPIO wakeup */
-            ESP_ERROR_CHECK( rtc_gpio_wakeup_enable(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( rtc_gpio_wakeup_enable(object->gpio, object->wakeup_level == 0 ? 
                                     GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) );
 
             // Set gpio interrupt type
@@ -292,13 +284,13 @@ static void example_event_task(void* args)
             gpio_config_t rtc_gpio_config_pulse = {
                 .pin_bit_mask = BIT64(object->gpio),
                 .mode = GPIO_MODE_INPUT,
-                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!DEFAULT_GPIO_WAKEUP_LEVEL) ? true : false ) : false,
-                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!DEFAULT_GPIO_WAKEUP_LEVEL) ? false : true ) : false
+                .pull_up_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!object->wakeup_level) ? true : false ) : false,
+                .pull_down_en = DEFAULT_USE_INTERNAL_PU_PD ? ( (!object->wakeup_level) ? false : true ) : false
             };
             ESP_ERROR_CHECK( gpio_config(&rtc_gpio_config_pulse) );
 
             // Make sure the GPIO is inactive and it won't trigger wakeup immediately
-            example_wait_gpio_inactive( object->gpio, (!DEFAULT_GPIO_WAKEUP_LEVEL) );
+            example_wait_gpio_inactive( object->gpio, (!object->wakeup_level) );
 
             /* Initialize LPIO */
             ESP_ERROR_CHECK( rtc_gpio_init(object->gpio) );
@@ -314,11 +306,11 @@ static void example_event_task(void* args)
             ESP_ERROR_CHECK( rtc_gpio_pulldown_en(object->gpio) );
 #endif
             /* Enable wake up from LPIO wakeup */
-            ESP_ERROR_CHECK( rtc_gpio_wakeup_enable(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( rtc_gpio_wakeup_enable(object->gpio, object->wakeup_level == 0 ? 
                                     GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) );
 
             // Set gpio interrupt type
-            ESP_ERROR_CHECK( gpio_set_intr_type(object->gpio, DEFAULT_GPIO_WAKEUP_LEVEL == 0 ? 
+            ESP_ERROR_CHECK( gpio_set_intr_type(object->gpio, object->wakeup_level == 0 ? 
                                     GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) );
             ESP_LOGI(TAG, "%d: PULSE_WAKEUP_RTC_GPIO_INIT_EVENT finished", __LINE__);
 
@@ -346,7 +338,7 @@ static void example_event_task(void* args)
 
         // check pulse
         case CHECK_LEVEL_EVENT:
-            if (gpio_get_level(object->gpio) == (!DEFAULT_GPIO_WAKEUP_LEVEL)) {
+            if (gpio_get_level(object->gpio) == !object->wakeup_level) {
                 send_msg.event =  (object->hold_lock_state == HOLD_LOCK_STATE) ? RELEASE_PM_LOCK_EVENT : ACQUIRE_PM_LOCK_EVENT;
             } else {
                 send_msg.event = CHECK_LEVEL_EVENT;
@@ -391,10 +383,16 @@ static void example_event_task(void* args)
 }
 
 /* Set the basic parameters and create a task to handle the event */
-esp_err_t example_register_gpio_wakeup_sleep(gpio_ws_t* args)
+esp_err_t example_register_gpio_wakeup_sleep(gpio_wakeup_object_t* args)
 {
-    gpio_ws_t* object = args;
+    gpio_wakeup_object_t* object = args;
     object->gpio = DEFAULT_GPIO_WAKEUP_SLEEP_NUM;
+#if DEFAULT_USE_PULSE_WAKEUP
+    object->wakeup_mode = GPIO_PULSE_WAKEUP;
+#else
+    object->wakeup_mode = GPIO_LEVEL_WAKEUP;
+#endif
+    object->wakeup_level = DEFAULT_GPIO_WAKEUP_LEVEL;
 
     // Create a task for handling events
     if(pdPASS != xTaskCreate(example_event_task, "example_event_task", DEFAULT_EVENT_TASK_STACK_SIZE, 

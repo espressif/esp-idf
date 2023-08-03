@@ -12,6 +12,8 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "gpio_wakeup_sleep/gpio_wakeup_sleep.h"
+#include "uart_wakeup_sleep/uart_wakeup_sleep.h"
 #include "auto_light_sleep_example.h"
 
 
@@ -31,7 +33,7 @@ void app_main(void)
     esp_sleep_cpu_retention_init();
 #endif
     // In order to ensure that the variables still exist after the main function is launched, the static keyword must be used
-    static gpio_ws_t gpio_wakeup_sleep;
+    static gpio_wakeup_object_t gpio_wakeup_sleep;
 
     /* should first pm config, create lock, and then gpio wakeup configuration or uart wakeup
     (to avoid the problems caused by first configuring wakeup when the lock has not been created) */
