@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 typedef enum {
-    ANT_TOTAL_TWO,      /**< Two antennas participate in the switch */
-    ANT_TOTAL_THREE,    /**< Three antennas participate in the switch */
+    ANT_TOTAL_TWO = 2,      /**< Two antennas participate in the switch */
+    ANT_TOTAL_THREE,        /**< Three antennas participate in the switch */
     ANT_TOTAL_MAX
 } ant_mun_t;
 /**

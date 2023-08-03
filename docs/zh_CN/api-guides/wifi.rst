@@ -2138,12 +2138,12 @@ Wi-Fi 多根天线
 有一些限制情况需要考虑：
 
  - 因为发送数据天线基于 WIFI_ANT_MODE_AUTO 类型的接收数据天线选择算法，只有接收数据的天线模式为 WIFI_ANT_MODE_AUTO 时，发送数据天线才能设置为 WIFI_ANT_MODE_AUTO。
+ - 接收或者发送天线模式配置为 WIFI_ANT_MODE_AUTO 时，只要存在 RF 信号的恶化，很容易触发天线切换。如果射频信号不稳定，天线会频繁切换，使得总的射频性能无法达到预期效果。
  - 目前，Bluetooth® 不支持多根天线功能，请不要使用与多根天线有关的 API。
 
 推荐在以下场景中使用多根天线：
 
- - Wi-Fi 模式 WIFI_MODE_STA 下，接收/发送数据的天线模式均配置为 WIFI_ANT_MODE_AUTO。Wi-Fi 驱动程序自动选择更好的接收/发送数据天线。
- - 接收数据天线模式配置为 WIFI_ANT_MODE_AUTO。发送数据的天线模式配置为 WIFI_ANT_MODE_ANT0 或 WIFI_ANT_MODE_ANT1。应用程序可以始终选择指定的天线用于发送数据，也可以执行自身发送数据天线选择算法，如根据信道切换信息选择发送数据的天线模式等。
+ - 应用程序可以始终选择指定的天线，也可以执行自身天线选择算法，如根据应用程序收集的信息来选择天线模式等。请参考 IDF 示例 :idf_file:`examples/wifi/antenna/README.md` 来设计天线选择算法。
  - 接收/发送数据的天线模式均配置为 WIFI_ANT_MODE_ANT0 或 WIFI_ANT_MODE_ANT1。
 
 
