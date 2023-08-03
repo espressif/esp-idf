@@ -190,6 +190,8 @@
 #define SOC_I2C_SUPPORT_XTAL       (1)
 #define SOC_I2C_SUPPORT_RTC        (1)
 
+#define SOC_I2C_SUPPORT_10BIT_ADDR  (1)
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2U)
 #define SOC_I2S_HW_VERSION_2        (1)

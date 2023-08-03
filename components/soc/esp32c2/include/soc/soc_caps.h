@@ -147,6 +147,7 @@
 
 #define SOC_I2C_SUPPORT_XTAL        (1)
 #define SOC_I2C_SUPPORT_RTC         (1)
+#define SOC_I2C_SUPPORT_10BIT_ADDR  (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK  (1)

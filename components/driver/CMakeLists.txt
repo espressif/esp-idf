@@ -91,7 +91,10 @@ endif()
 
 # I2C related source files
 if(CONFIG_SOC_I2C_SUPPORTED)
-    list(APPEND srcs "i2c/i2c.c")
+    list(APPEND srcs "i2c/i2c.c"
+                     "i2c/i2c_master.c"
+                     "i2c/i2c_common.c"
+        )
 endif()
 
 # I2S related source files
@@ -216,7 +219,7 @@ else()
                         INCLUDE_DIRS ${includes}
                         PRIV_REQUIRES efuse esp_timer
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
-                        LDFRAGMENTS linker.lf gptimer/linker.lf gpio/linker.lf twai/linker.lf)
+                        LDFRAGMENTS linker.lf gptimer/linker.lf gpio/linker.lf twai/linker.lf i2c/linker.lf)
 endif()
 
 # If system needs to monitor USJ connection status, then usb_serial_jtag_connection_monitor object file has to be linked
