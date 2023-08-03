@@ -12,6 +12,7 @@ set(srcs
     "poll.c"
     "pthread.c"
     "random.c"
+    "getentropy.c"
     "reent_init.c"
     "newlib_init.c"
     "syscalls.c"
