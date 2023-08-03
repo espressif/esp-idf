@@ -158,6 +158,12 @@ repos:
         language: python
         always_run: true
         pass_filenames: false
+      - id: cleanup-ignore-lists
+        name: Remove non-existing patterns from ignore lists
+        entry: tools/ci/cleanup_ignore_lists.py
+        language: python
+        always_run: true
+        require_serial: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
