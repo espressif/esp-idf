@@ -28,7 +28,7 @@
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
 #include "esp_wpa3_i.h"
-#include "esp_wpa2.h"
+#include "esp_eap_client.h"
 #include "esp_common_i.h"
 #include "esp_owe_i.h"
 
@@ -180,13 +180,13 @@ void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
     *spp_req = sm->spp_sup.require;
 }
 
-bool  wpa_deattach(void)
+bool wpa_deattach(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     esp_wpa3_free_sae_data();
 #ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
-    if (sm->wpa_sm_wpa2_ent_disable) {
-        sm->wpa_sm_wpa2_ent_disable();
+    if (sm->wpa_sm_eap_disable) {
+        sm->wpa_sm_eap_disable();
     }
 #endif
     if (sm->wpa_sm_wps_disable) {
