@@ -16,6 +16,7 @@
 #include "esp_netif_net_stack.h"
 #include "esp_event.h"
 #include "esp_netif_ppp.h"
+#include "lwip/esp_netif_net_stack.h"
 #include "esp_netif_lwip_internal.h"
 #include <string.h>
 #include "lwip/ip6_addr.h"
