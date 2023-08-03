@@ -10,7 +10,7 @@ This test app is relatively complex because it has to check many possible combin
 - Chip target: esp32, esp32c3, ...
 - Configuration: default, GDB Stub, Core Dump to UART, ...
 
-Failure scenarios are implemented in [test_panic_main.c](main/test_panic_main.c). The test application receives the name of the scenario from console (e.g. `test_illegal_instruction` ). The failure scenario is executed and the app panics. Once the panic output is printed, the pytest-based test case parses the output and verifies that the behavior of the panic handler was correct.
+Failure scenarios are implemented in [test_panic.c](main/test_panic.c). The test application receives the name of the scenario from console (e.g. `test_illegal_instruction` ). The failure scenario is executed and the app panics. Once the panic output is printed, the pytest-based test case parses the output and verifies that the behavior of the panic handler was correct.
 
 In [pytest_panic.py](pytest_panic.py), there typically is one test function for each failure scenario. Each test function is then parametrized by `config` parameter. This creates "copies" of the test case for each of the configurations (default, GDB Stub, etc.) Tests are also parametrized with target-specific markers. Most tests can run on every target, but there are a few exceptions, such as failure scenarios specific to the dual-core chips.
 
