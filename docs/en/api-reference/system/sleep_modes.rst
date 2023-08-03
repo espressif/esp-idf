@@ -95,8 +95,15 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 
     RTC controller contains logic to trigger wakeup using multiple RTC GPIOs. One of the two logic functions can be used to trigger wakeup:
 
+    .. only:: esp32
+
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if all the selected pins are low (``ESP_EXT1_WAKEUP_ALL_LOW``)
+    
+    .. only:: esp32s2 or esp32s3
+
+        - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
+        - wake up if any of the selected pins is low (``ESP_EXT1_WAKEUP_ANY_LOW``)
 
     This wakeup source is implemented by the RTC controller. As such, RTC peripherals and RTC memories can be powered down in this mode. However, if RTC peripherals are powered down, internal pullup and pulldown resistors will be disabled. To use internal pullup or pulldown resistors, request RTC peripherals power domain to be kept on during sleep, and configure pullup/pulldown resistors using ``rtc_gpio_`` functions, before entering sleep::
 
