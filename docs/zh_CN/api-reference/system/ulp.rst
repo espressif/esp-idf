@@ -3,18 +3,18 @@ ULP 协处理器编程
 
 :link_to_translation:`en:[English]`
 
-ULP（Ultra Low Power，超低功耗）协处理器是一种简单的有限状态机 (FSM)，可以在主处理器处于深度睡眠模式时，使用 ADC、温度传感器和外部 I2C 传感器执行测量操作。ULP 协处理器可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 外设中的寄存器。ULP 协处理器使用 32 位固定宽度的指令，32 位内存寻址，配备 4 个 16 位通用寄存器。在 ESP-IDF 项目中，此协处理器被称作 `ULP FSM`。
+ULP（Ultra Low Power，超低功耗）协处理器是一种简单的有限状态机 (FSM)，可以在主处理器处于深度睡眠模式时，使用 ADC、温度传感器和外部 I2C 传感器执行测量操作。ULP 协处理器可以访问 ``RTC_SLOW_MEM`` 内存区域及 ``RTC_CNTL``、``RTC_IO``、``SARADC`` 外设中的寄存器。ULP 协处理器使用 32 位固定宽度的指令，32 位内存寻址，配备 4 个 16 位通用寄存器。在 ESP-IDF 项目中，此协处理器被称作 ``ULP FSM``。
 
 .. only:: esp32s2 or esp32s3
 
-    {IDF_TARGET_NAME} 基于 RISC-V 指令集架构提供另一种 ULP 协处理器。关于 `ULP RISC-V` 的详细信息，请参考 :doc:`ULP-RISC-V Coprocessor <../../../api-reference/system/ulp-risc-v>`。
+    {IDF_TARGET_NAME} 基于 RISC-V 指令集架构提供另一种 ULP 协处理器。关于 ``ULP RISC-V`` 的详细信息，请参考 :doc:`ULP-RISC-V Coprocessor <../../../api-reference/system/ulp-risc-v>`。
 
 安装工具链
 ----------
 
 ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工具链`_ 进行编译。
 
-如果您已经按照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了您的开发环境中。
+如果按照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经默认安装到了你的开发环境中。
 
 编写 ULP FSM
 -------------------
@@ -32,9 +32,11 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 
 若需要将 ULP FSM 代码编译为某组件的一部分，则必须执行以下步骤：
 
-1. 用汇编语言编写的 ULP FSM 代码必须导入到一个或多个 `.S` 扩展文件中，且这些文件必须放在组件目录中一个独立的目录中，例如 `ulp/`。
+1. 用汇编语言编写的 ULP FSM 代码必须导入到一个或多个 ``.S`` 扩展文件中，且这些文件必须放在组件目录中一个独立的目录中，例如 ``ulp/``。
 
-.. note:: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` 汇编器。但这并不适用于 ULP FSM 程序集文件，因此体现这种区别最简单的方式就是将 ULP FSM 程序集文件放到单独的目录中。同样，ULP FSM 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP FSM 程序集源文件。
+.. note::
+
+    在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` 汇编器。但这并不适用于 ULP FSM 程序集文件，因此体现这种区别最简单的方式就是将 ULP FSM 程序集文件放到单独的目录中。同样，ULP FSM 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP FSM 程序集源文件。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
@@ -49,7 +51,7 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 
 ``ulp_embed_binary`` 的第一个参数为 ULP 二进制文件命名。指定的此名称也用于生成的其他文件，如：ELF 文件、.map 文件、头文件和链接器导出文件。第二个参数指定 ULP FSM 程序集源文件。最后，第三个参数指定组件源文件列表，其中包括被生成的头文件。此列表用以建立正确的依赖项，并确保在编译这些文件之前先创建生成的头文件。有关 ULP FSM 应用程序生成的头文件等相关概念，请参考下文。
 
-3. 使用常规方法（例如 `idf.py app`）编译应用程序。
+3. 使用常规方法（例如 ``idf.py app``）编译应用程序。
 
     在内部，构建系统将按照以下步骤编译 ULP FSM 程序：
 
@@ -65,7 +67,7 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 
     6. 使用 ``esp32ulp-elf-nm`` 在 ELF 文件中 **生成全局符号列表** (``ulp_app_name.sym``)。
 
-    7. **创建 LD 导出脚本和头文件** (``ulp_app_name.ld`` 和 ``ulp_app_name.h``)，包含来自 ``ulp_app_name.sym`` 的符号。此步骤可借助 ``esp32ulp_mapgen.py`` 工具来完成。
+    7. **创建 LD 导出脚本和头文件** （``ulp_app_name.ld`` 和 ``ulp_app_name.h``），包含来自 ``ulp_app_name.sym`` 的符号。此步骤可借助 ``esp32ulp_mapgen.py`` 工具来完成。
 
     8. **将生成的二进制文件添加到要嵌入应用程序的二进制文件列表中。**
 

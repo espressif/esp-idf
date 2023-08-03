@@ -6,7 +6,7 @@ Event Loop Library
 Overview
 --------
 
-The event loop library allows components to declare events so that other components can register handlers -- codes that will execute when those events occur. This allows loosely-coupled components to attach desired behavior to state changes of other components without application involvement. This also simplifies event processing by serializing and deferring code execution to another context.
+The event loop library allows components to declare events so that other components can register handlers -- codes that executes when those events occur. This allows loosely-coupled components to attach desired behavior to state changes of other components without application involvement. This also simplifies event processing by serializing and deferring code execution to another context.
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -182,7 +182,7 @@ If the hypothetical event ``MY_OTHER_EVENT_BASE``, ``MY_OTHER_EVENT_ID`` is post
 Handler Un-Registering Itself
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In general, an event handler run by an event loop is *not allowed to do any (un)registering activity on that event loop*. There is one exception, though: un-registering itself is allowed for the handler. E.g., it is possible to do the following:
+In general, an event handler run by an event loop is **not allowed to do any (un)registering activity on that event loop**. There is one exception, though: un-registering itself is allowed for the handler. E.g., it is possible to do the following:
 
 .. code-block:: c
 
@@ -204,7 +204,7 @@ In general, an event handler run by an event loop is *not allowed to do any (un)
 Handler Registration and Handler Dispatch Order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The general rule is that, for handlers that match a certain posted event during dispatch, those which are registered first also get executed first. The user can then control which handlers get executed first by registering them before other handlers, provided that all registrations are performed using a single task. If the user plans to take advantage of this behavior, caution must be exercised if there are multiple tasks registering handlers. While the 'first registered, first executed' behavior still holds true, the task which gets executed first will also get its handlers registered first. Handlers registered one after the other by a single task will still be dispatched in the order relative to each other, but if that task gets pre-empted in between registration by another task that also registers handlers; then during dispatch those handlers will also get executed in between.
+The general rule is that, for handlers that match a certain posted event during dispatch, those which are registered first also get executed first. The user can then control which handlers get executed first by registering them before other handlers, provided that all registrations are performed using a single task. If the user plans to take advantage of this behavior, caution must be exercised if there are multiple tasks registering handlers. While the 'first registered, first executed' behavior still holds true, the task which gets executed first also gets its handlers registered first. Handlers registered one after the other by a single task are still dispatched in the order relative to each other, but if that task gets pre-empted in between registration by another task that also registers handlers; then during dispatch those handlers also get executed in between.
 
 
 Event Loop Profiling
@@ -219,7 +219,7 @@ Examples of using the ``esp_event`` library can be found in :example:`system/esp
 
 Other examples which also adopt ``esp_event`` library:
 
-    * :example:`NMEA Parser <peripherals/uart/nmea0183_parser>`, which will decode the statements received from GPS.
+    * :example:`NMEA Parser <peripherals/uart/nmea0183_parser>`, which decodes the statements received from GPS.
 
 API Reference
 -------------

@@ -349,7 +349,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 1.  构建程序并将其下载到目标设备，详情请参阅 :ref:`第五步：开始使用 ESP-IDF 吧 <get-started-build>`。
 
-2.  运行 OpenOCD （请参阅 :doc:`JTAG 调试 </api-guides/jtag-debugging/index>`）。
+2.  运行 OpenOCD（请参阅 :doc:`JTAG 调试 </api-guides/jtag-debugging/index>`）。
 
 .. note::
 

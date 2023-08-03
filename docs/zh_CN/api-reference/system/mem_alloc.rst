@@ -51,9 +51,13 @@ DRAM
 
 .. only:: esp32
 
-    .. note:: 有关 DRAM 使用限制的详细信息，请参阅 :ref:`dram` 。
+    .. note::
 
-.. note:: 运行时可用的 DRAM 堆空间可能少于编译时计算的大小，因为启动时会在运行 FreeRTOS 调度程序之前从堆中分配部分内存，包括初始 FreeRTOS 任务的栈内存。
+        有关 DRAM 使用限制的详细信息，请参阅 :ref:`dram` 。
+
+.. note::
+
+    运行时可用的 DRAM 堆空间可能少于编译时计算的大小，因为启动时会在运行 FreeRTOS 调度程序之前从堆中分配部分内存，包括初始 FreeRTOS 任务的栈内存。
 
 IRAM
 ^^^^
@@ -105,7 +109,7 @@ DMA 存储器
 32 位可访问内存
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-如果某个内存结构体仅以 32 位为单位寻址，例如一个整数或指针数组，则可以使用 ``MALLOC_CAP_32BIT`` 标志分配。通过这一方式，分配器能够在无法调用 malloc() 的情况下提供 IRAM 内存，从而充分利用 {IDF_TARGET_NAME} 中的所有可用内存。
+如果某个内存结构体仅以 32 位为单位寻址，例如一个整数或指针数组，则可以使用 ``MALLOC_CAP_32BIT`` 标志分配。通过这一方式，分配器能够在无法调用 ``malloc()`` 的情况下提供 IRAM 内存，从而充分利用 {IDF_TARGET_NAME} 中的所有可用内存。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA and SOC_CPU_HAS_FPU
 
@@ -150,7 +154,9 @@ DMA 存储器
 * :cpp:func:`heap_caps_aligned_alloc`
 * :cpp:func:`heap_caps_aligned_free`
 
-请注意，不建议使用此种方法。
+.. note::
+
+    不建议使用此种方法。
 
 堆跟踪及调试
 ------------------------

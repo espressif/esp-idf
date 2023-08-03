@@ -1,26 +1,31 @@
 ULP RISC-V 协处理器编程
 ==================================
+
 :link_to_translation:`en:[English]`
 
-ULP RISC-V 协处理器是 ULP 的一种变体，用于 {IDF_TARGET_NAME}。与 ULP FSM 类似，ULP RISC-V 协处理器可以在主 CPU 处于低功耗模式时执行传感器读数等任务。其与 ULP FSM 的主要区别在于，ULP RISC-V 可以通过标准 GNU 工具使用 C 语言进行编程。ULP RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
+ULP RISC-V 协处理器是 ULP 的一种变体，用于 {IDF_TARGET_NAME}。与 ULP FSM 类似，ULP RISC-V 协处理器可以在主 CPU 处于低功耗模式时执行传感器读数等任务。其与 ULP FSM 的主要区别在于，ULP RISC-V 可以通过标准 GNU 工具使用 C 语言进行编程。ULP RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 ``RTC_CNTL``、``RTC_IO``、``SARADC`` 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
 
 安装 ULP RISC-V 工具链
 -----------------------------------
 
 ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基于 GCC 的 RISC-V 工具链进行编译。
 
-如果您已依照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP RISC-V 工具链已经被默认安装到了您的开发环境中。
+如果依照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP RISC-V 工具链已经被默认安装到了你的开发环境中。
 
-.. note:: 在早期版本的 ESP-IDF 中，RISC-V 工具链具有不同的名称：`riscv-none-embed-gcc`。
+.. note::
+
+    在早期版本的 ESP-IDF 中，RISC-V 工具链具有不同的名称：``riscv-none-embed-gcc``。
 
 编译 ULP RISC-V 代码
 -----------------------------
 
 要将 ULP RISC-V 代码编译为某组件的一部分，必须执行以下步骤：
 
-1. ULP RISC-V 代码以 C 语言或汇编语言编写（必须使用 `.S` 扩展名），必须放在组件目录中一个独立的目录中，例如 `ulp/`。
+1. ULP RISC-V 代码以 C 语言或汇编语言编写（必须使用 ``.S`` 扩展名），必须放在组件目录中一个独立的目录中，例如 ``ulp/``。
 
-.. note:: 当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前该步骤需用于 ULP FSM。如何正确添加 ULP 源文件，请见以下步骤。
+.. note::
+
+    当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前该步骤需用于 ULP FSM。如何正确添加 ULP 源文件，请见以下步骤。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
@@ -35,11 +40,11 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
  ``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。生成的其他文件，如 ELF 文件、.map 文件、头文件和链接器导出文件等也可使用此名称。第二个参数指定 ULP 源文件。最后，第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在构建过程中先生成后编译包含头文件的源文件。请参考下文，查看为 ULP 应用程序生成的头文件等相关概念。
 
-3. 使用常规方法（例如 `idf.py app`）编译应用程序。
+3. 使用常规方法（例如 ``idf.py app``）编译应用程序。
 
    在内部，构建系统将按照以下步骤编译 ULP 程序：
 
-   1. **通过 C 编译器和汇编器运行每个源文件。** 此步骤在组件编译目录中生成目标文件（.obj.c 或 .obj.S，取决于处理的源文件）。
+   1. **通过 C 编译器和汇编器运行每个源文件。** 此步骤在组件编译目录中生成目标文件（ ``.obj.c`` 或 ``.obj.S``，取决于处理的源文件）。
 
    2. **通过 C 预处理器运行链接器脚本模版。** 模版位于 ``components/ulp/ld`` 目录中。
 
@@ -115,7 +120,7 @@ ULP 中的所有硬件指令都不支持互斥，所以 Lock API 需通过一种
 
 要运行 ULP RISC-V 程序，主程序需要调用 :cpp:func:`ulp_riscv_load_binary` 函数，将 ULP 程序加载到 RTC 内存中，然后调用 :cpp:func:`ulp_riscv_run` 函数，启动 ULP RISC-V 程序。
 
-注意，必须在 menuconfig 中启用 `CONFIG_ULP_COPROC_ENABLED` 和 `CONFIG_ULP_COPROC_TYPE_RISCV` 选项，以便正常运行 ULP RISC-V 程序。``RTC slow memory reserved for coprocessor`` 选项设置的值必须足够存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，RTC 内存必须足以容纳最大的程序。
+注意，必须在 menuconfig 中启用 ``CONFIG_ULP_COPROC_ENABLED`` 和 ``CONFIG_ULP_COPROC_TYPE_RISCV`` 选项，以便正常运行 ULP RISC-V 程序。``RTC slow memory reserved for coprocessor`` 选项设置的值必须足够存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，RTC 内存必须足以容纳最大的程序。
 
 每个 ULP RISC-V 程序均以二进制 BLOB 的形式嵌入到 ESP-IDF 应用程序中。应用程序可以引用此 BLOB，并以下面的方式加载此 BLOB（假设 ULP_APP_NAME 已被定义为 ``ulp_app_name``）：
 
@@ -162,9 +167,13 @@ RTC I2C 控制器提供了在 RTC 电源域中作为 I2C 主机的功能。ULP R
 
 初始化 RTC I2C 控制器之后，请务必先用 :cpp:func:`ulp_riscv_i2c_master_set_slave_addr` API 将 I2C 从机设备地址编入程序，再执行读写操作。
 
-.. note:: RTC I2C 外设首先将检查 :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API 是否将从机子寄存器地址编入程序。如未编入，I2C 外设将以 ``SENS_SAR_I2C_CTRL_REG[18:11]`` 作为后续读写操作的子寄存器地址。这可能会导致 RTC I2C 外设与某些无需对子寄存器进行配置的 I2C 设备或传感器不兼容。
+.. note::
 
-.. note:: 在主 CPU 访问 RTC I2C 外设和 ULP RISC-V 内核访问 RTC I2C 外设之间，未提供硬件原子操作的正确性保护，因此请勿让两个内核同时访问外设。
+    RTC I2C 外设首先将检查 :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API 是否将从机子寄存器地址编入程序。如未编入，I2C 外设将以 ``SENS_SAR_I2C_CTRL_REG[18:11]`` 作为后续读写操作的子寄存器地址。这可能会导致 RTC I2C 外设与某些无需对子寄存器进行配置的 I2C 设备或传感器不兼容。
+
+.. note::
+
+    在主 CPU 访问 RTC I2C 外设和 ULP RISC-V 内核访问 RTC I2C 外设之间，未提供硬件原子操作的正确性保护，因此请勿让两个内核同时访问外设。
 
 如果基于 RTC I2C 的 ULP RISC-V 程序未按预期运行，可以进行以下完整性检查排查问题：
 
@@ -174,22 +183,22 @@ RTC I2C 控制器提供了在 RTC 电源域中作为 I2C 主机的功能。ULP R
 
  * 如果 I2C 从机设备或传感器不需要子寄存器地址进行配置，它可能与 RTC I2C 外设不兼容。请参考前文注意事项。
 
- * 如果 RTC 驱动程序在主 CPU 上运行时出现 `Write Failed!` 或 `Read Failed!` 的错误日志，检查是否出现以下情况：
+ * 如果 RTC 驱动程序在主 CPU 上运行时出现 ``Write Failed!`` 或 ``Read Failed!`` 的错误日志，检查是否出现以下情况：
 
         * I2C 从机设备或传感器与乐鑫 SoC 上的标准 I2C 主机设备一起正常工作，说明 I2C 从机设备本身没有问题。
-        * 如果 RTC I2C 中断状态日志报告 `TIMEOUT` 错误或 `ACK` 错误，则通常表示 I2C 设备未响应 RTC I2C 控制器发出的 `START` 条件。如果 I2C 从机设备未正确连接到控制器管脚或处于异常状态，则可能会发生这种情况。在进行后续操作之前，请确保 I2C 从机设备状态良好且连接正确。
+        * 如果 RTC I2C 中断状态日志报告 ``TIMEOUT`` 错误或 ``ACK`` 错误，则通常表示 I2C 设备未响应 RTC I2C 控制器发出的 ``START`` 条件。如果 I2C 从机设备未正确连接到控制器管脚或处于异常状态，则可能会发生这种情况。在进行后续操作之前，请确保 I2C 从机设备状态良好且连接正确。
         * 如果 RTC I2C 中断日志没有报告任何错误状态，则可能表示驱动程序接收 I2C 从机设备数据时速度较慢。这可能是由于 RTC I2C 控制器没有 TX/RX FIFO 来存储多字节数据，而是依赖于使用中断状态轮询机制来进行单字节传输。通过在外设的初始化配置参数中设置 SCL 低周期和 SCL 高周期，可以尽量提高外设 SCL 时钟的运行速度，在一定程度上缓解这一问题。
 
-* **您还可以检查在没有任何 ULP RISC-V 代码干扰和任何睡眠模式未被激活的情况下，RTC I2C 控制器是否仅在主 CPU 上正常工作。** RTC I2C 外设在此基本配置下应该正常工作，这样可以排除 ULP 或睡眠模式导致的潜在问题。
+* **你还可以检查在没有任何 ULP RISC-V 代码干扰和任何睡眠模式未被激活的情况下，RTC I2C 控制器是否仅在主 CPU 上正常工作。** RTC I2C 外设在此基本配置下应该正常工作，这样可以排除 ULP 或睡眠模式导致的潜在问题。
 
 调试 ULP RISC-V 程序
 ----------------------------------
 
 在对 ULP RISC-V 进行配置时，若程序未按预期运行，有时很难找出的原因。因为其内核的简单性，许多标准的调试方法如 JTAG 或 ``printf`` 无法使用。
 
-以下方法可以帮助您调试 ULP RISC-V 程序：
+以下方法可以调试 ULP RISC-V 程序：
 
- * 通过共享变量查看程序状态：如 :ref:`ulp-riscv-access-variables` 中所述，主 CPU 以及 ULP 内核都可以轻松访问 RTC 内存中的全局变量。通过 ULP 向该变量中写入状态信息，然后通过主 CPU 读取状态信息，可帮助您了解 ULP 内核的状态。该方法的缺点在于它要求主 CPU 一直处于唤醒状态，但现实情况可能并非如此。有时，保持主 CPU 处于唤醒状态还可能会掩盖一些问题，因为某些问题可能仅在特定电源域断电时才会出现。
+ * 通过共享变量查看程序状态：如 :ref:`ulp-riscv-access-variables` 中所述，主 CPU 以及 ULP 内核都可以轻松访问 RTC 内存中的全局变量。通过 ULP 向该变量中写入状态信息，然后通过主 CPU 读取状态信息，有助于了解 ULP 内核的状态。该方法的缺点在于它要求主 CPU 一直处于唤醒状态，但现实情况可能并非如此。有时，保持主 CPU 处于唤醒状态还可能会掩盖一些问题，因为某些问题可能仅在特定电源域断电时才会出现。
 
  * 使用 bit-banged UART 驱动程序打印：ULP RISC-V 组件中有一个低速 bit-banged UART TX 驱动程序，可用于打印独立于主 CPU 状态的信息。有关如何使用此驱动程序的示例，请参阅 :example:`system/ulp/ulp_riscv/uart_print`。
 

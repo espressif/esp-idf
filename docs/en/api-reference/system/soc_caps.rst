@@ -1,7 +1,7 @@
 SoC Capabilities
 ================
 
-This section lists definitions of the {IDF_TARGET_NAME}'s SoC hardware capabilities. These definitions are commonly used in IDF to control which hardware dependent features are supported and thus compiled into the binary.
+This section lists definitions of the {IDF_TARGET_NAME}'s SoC hardware capabilities. These definitions are commonly used in ESP-IDF to control which hardware dependent features are supported and thus compiled into the binary.
 
 .. note::
 

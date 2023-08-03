@@ -1,4 +1,4 @@
-Programming ULP FSM coprocessor using C macros (legacy)
+Programming ULP FSM Coprocessor Using C Macros (Legacy)
 =======================================================
 
 In addition to the existing binutils port for the {IDF_TARGET_NAME} ULP coprocessor, it is possible to generate programs for the ULP FSM coprocessor by embedding assembly-like macros into an {IDF_TARGET_NAME} application. Here is an example how this can be done::
@@ -16,13 +16,14 @@ In addition to the existing binutils port for the {IDF_TARGET_NAME} ULP coproces
     ulp_process_macros_and_load(load_addr, program, &size);
     ulp_run(load_addr);
 
-The ``program`` array is an array of ``ulp_insn_t``, i.e. ULP coprocessor instructions. Each ``I_XXX`` preprocessor define translates into a single 32-bit instruction. Arguments of these preprocessor defines can be register numbers (``R0 — R3``) and literal constants. See the API reference section at the end of this guide for descriptions of instructions and arguments they take.
+The ``program`` array is an array of ``ulp_insn_t``, i.e., ULP coprocessor instructions. Each ``I_XXX`` preprocessor define translates into a single 32-bit instruction. Arguments of these preprocessor defines can be register numbers (``R0 — R3``) and literal constants. See the API reference section at the end of this guide for descriptions of instructions and arguments they take.
 
 .. note::
 
     Because some of the instruction macros expand to inline function calls, defining such array in global scope will cause the compiler to produce an "initializer element is not constant" error. To fix this error, move the definition of instructions array into local scope.
 
 .. note::
+    
     Load, store and move instructions use **addresses expressed in 32-bit words**. Address 0 corresponds to the first word of ``RTC_SLOW_MEM``.
     This is different to how address arguments are handled in assembly code of the same instructions. See the section :ref:`ulp-fsm-addressing` for more details for reference.
 

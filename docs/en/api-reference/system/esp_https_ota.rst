@@ -4,12 +4,12 @@ ESP HTTPS OTA
 Overview
 --------
 
-``esp_https_ota`` provides simplified APIs to perform firmware upgrades over HTTPS. It's an abstraction layer over existing OTA APIs.
+``esp_https_ota`` provides simplified APIs to perform firmware upgrades over HTTPS. It is an abstraction layer over existing OTA APIs.
 
 Application Example
 -------------------
 
-    .. highlight:: c
+    .. code-block:: c
 
     ::
 
@@ -37,7 +37,9 @@ Server Verification
 
 Please refer to :ref:`ESP-TLS: TLS Server Verification <esp_tls_server_verification>` for more information on server verification. The root certificate (in PEM format) needs to be provided to the :cpp:member:`esp_http_client_config_t::cert_pem` member.
 
-.. note:: The server-endpoint **root** certificate should be used for verification instead of any intermediate ones from the certificate chain. The reason being that the root certificate has the maximum validity and usually remains the same for a long period of time. Users can also use the ``ESP x509 Certificate Bundle`` feature for verification, which covers most of the trusted root certificates (using the :cpp:member:`esp_http_client_config_t::crt_bundle_attach` member).
+.. note::
+
+    The server-endpoint **root** certificate should be used for verification instead of any intermediate ones from the certificate chain. The reason is that the root certificate has the maximum validity and usually remains the same for a long period of time. Users can also use the ``ESP x509 Certificate Bundle`` feature for verification, which covers most of the trusted root certificates (using the :cpp:member:`esp_http_client_config_t::crt_bundle_attach` member).
 
 Partial Image Download over HTTPS
 ---------------------------------
@@ -79,7 +81,7 @@ ESP HTTPS OTA has various events for which a handler can be triggered by :doc:`t
 Event Handler Example
 ^^^^^^^^^^^^^^^^^^^^^
 
-    .. highlight:: c
+    .. code-block:: c
 
     ::
 

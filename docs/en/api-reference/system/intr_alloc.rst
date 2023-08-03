@@ -1,4 +1,4 @@
-Interrupt allocation
+Interrupt Allocation
 ====================
 
 Overview
@@ -22,7 +22,7 @@ Overview
 
 .. only:: esp32c6 or esp32h2
 
-  The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt has a programmable priority level. In addition, there are also 4 core local interrupt sources (CLINT). See *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
+  The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt has a programmable priority level. In addition, there are also 4 core local interrupt sources (CLINT). See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
@@ -32,12 +32,12 @@ This code presents two different types of interrupts, handled differently: share
 
 Non-shared interrupts can be either level- or edge-triggered. Shared interrupts can only be level interrupts due to the chance of missed interrupts when edge interrupts are used.
 
-For example, let's say DevA and DevB share an interrupt. DevB signals an interrupt, so INT line goes high. The ISR handler calls code for DevA but does nothing. Then, ISR handler calls code for DevB, but while doing that, DevA signals an interrupt. DevB's ISR is done, it clears interrupt status for DevB and exits interrupt code. Now, an interrupt for DevA is still pending, but because the INT line never went low, as DevA kept it high even when the interrupt for DevB was cleared, the interrupt is never serviced.
+For example, let us say DevA and DevB share an interrupt. DevB signals an interrupt, so INT line goes high. The ISR handler calls code for DevA but does nothing. Then, ISR handler calls code for DevB, but while doing that, DevA signals an interrupt. DevB's ISR is done, it clears interrupt status for DevB and exits interrupt code. Now, an interrupt for DevA is still pending, but because the INT line never went low, as DevA kept it high even when the interrupt for DevB was cleared, the interrupt is never serviced.
 
 
 .. only:: esp32 or esp32s3
 
-  Multicore issues
+  Multicore Issues
   ----------------
 
   Peripherals that can generate interrupts can be divided in two types:
@@ -47,7 +47,7 @@ For example, let's say DevA and DevB share an interrupt. DevB signals an interru
 
   Interrupt handling differs slightly between these two types of peripherals.
 
-  Internal peripheral interrupts
+  Internal Peripheral Interrupts
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Each Xtensa CPU core has its own set of six internal peripherals:
@@ -56,14 +56,14 @@ For example, let's say DevA and DevB share an interrupt. DevB signals an interru
     - A performance monitor
     - Two software interrupts.
 
-  Internal interrupt sources are defined in esp_intr_alloc.h as ``ETS_INTERNAL_*_INTR_SOURCE``.
+  Internal interrupt sources are defined in ``esp_intr_alloc.h`` as ``ETS_INTERNAL_*_INTR_SOURCE``.
 
-  These peripherals can only be configured from the core they are associated with. When generating an interrupt, the interrupt they generate is hard-wired to their associated core; it's not possible to have, for example, an internal timer comparator of one core generate an interrupt on another core. That is why these sources can only be managed using a task running on that specific core. Internal interrupt sources are still allocatable using :cpp:func:`esp_intr_alloc` as normal, but they cannot be shared and will always have a fixed interrupt level (namely, the one associated in hardware with the peripheral).
+  These peripherals can only be configured from the core they are associated with. When generating an interrupt, the interrupt they generate is hard-wired to their associated core; it is not possible to have, for example, an internal timer comparator of one core generate an interrupt on another core. That is why these sources can only be managed using a task running on that specific core. Internal interrupt sources are still allocatable using :cpp:func:`esp_intr_alloc` as normal, but they cannot be shared and will always have a fixed interrupt level (namely, the one associated in hardware with the peripheral).
 
   External Peripheral Interrupts
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  The remaining interrupt sources are from external peripherals. These are defined in soc/soc.h as ``ETS_*_INTR_SOURCE``.
+  The remaining interrupt sources are from external peripherals. These are defined in ``soc/soc.h`` as ``ETS_*_INTR_SOURCE``.
 
   Non-internal interrupt slots in both CPU cores are wired to an interrupt multiplexer, which can be used to route any external interrupt source to any of these interrupt slots.
 
@@ -72,7 +72,7 @@ For example, let's say DevA and DevB share an interrupt. DevB signals an interru
   - Disabling and enabling external interrupts from another core is allowed.
   - Multiple external interrupt sources can share an interrupt slot by passing ``ESP_INTR_FLAG_SHARED`` as a flag to :cpp:func:`esp_intr_alloc`.
 
-  Care should be taken when calling :cpp:func:`esp_intr_alloc` from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use :cpp:func:`xTaskCreatePinnedToCore` with a specific CoreID argument to create tasks that will allocate interrupts. In the case of internal interrupt sources, this is required.
+  Care should be taken when calling :cpp:func:`esp_intr_alloc` from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use :cpp:func:`xTaskCreatePinnedToCore` with a specific CoreID argument to create tasks that allocate interrupts. In the case of internal interrupt sources, this is required.
 
 IRAM-Safe Interrupt Handlers
 ----------------------------
@@ -98,14 +98,18 @@ Sources attached to non-shared interrupt do not support this feature.
   
   By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only Level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at Level 2 and Level 3.
 
-Though the framework supports this feature, you have to use it *very carefully*. There usually exist two ways to stop an interrupt from being triggered: *disable the source* or *mask peripheral interrupt status*. IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
+Though the framework supports this feature, you have to use it **very carefully**. There usually exist two ways to stop an interrupt from being triggered: **disable the source** or **mask peripheral interrupt status**. ESP-IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
+
 **Status bits shall either be masked before the handler responsible for it is disabled, either be masked and then properly handled in another enabled interrupt**.
-Please note that leaving some status bits unhandled without masking them, while disabling the handlers for them, will cause the interrupt(s) to be triggered indefinitely, resulting therefore in a system crash.
+
+.. note::
+  
+  Leaving some status bits unhandled without masking them, while disabling the handlers for them, will cause the interrupt(s) to be triggered indefinitely, resulting therefore in a system crash.
 
 Troubleshooting Interrupt Allocation
 ------------------------------------
 
-On most Espressif SoCs CPU interrupts are a limited resource. Therefore it is possible to run a program which runs out of CPU interrupts, for example by initializing several peripheral drivers. Typically this will result in the driver initialization function returning ``ESP_ERR_NOT_FOUND`` error code.
+On most Espressif SoCs, CPU interrupts are a limited resource. Therefore it is possible to run a program which runs out of CPU interrupts, for example by initializing several peripheral drivers. Typically, this will result in the driver initialization function returning ``ESP_ERR_NOT_FOUND`` error code.
 
 If this happens, you can use :cpp:func:`esp_intr_dump` function to print the list of interrupts along with their status. The output of this function typically looks like this::
 
@@ -139,7 +143,7 @@ If you have confirmed that the application is indeed running out of interrupts, 
 
     :not CONFIG_FREERTOS_UNICORE: - On multi-core SoCs, try initializing some of the peripheral drivers from a task pinned to the second core. Interrupts are typically allocated on the same core where the peripheral driver initialization function runs. Therefore by running the initialization function on the second core, more interrupt inputs can be used.
     - Determine the interrupts which can tolerate higher latency, and allocate them using ``ESP_INTR_FLAG_SHARED`` flag (optionally ORed with ``ESP_INTR_FLAG_LOWMED``). Using this flag for two or more peripherals will let them use a single interrupt input, and therefore save interrupt inputs for other peripherals. See :ref:`intr-alloc-shared-interrupts` above.
-    :not SOC_CPU_HAS_FLEXIBLE_INTC: - Some peripheral driver may default to allocating interrupts with ``ESP_INTR_FLAG_LEVEL1`` flag, so level 2 and 3 interrupts won't get used by default. If :cpp:func:`esp_intr_dump` shows that some level 2 or 3 interrupts are available, try changing the interrupt allocation flags when initializing the driver to ``ESP_INTR_FLAG_LEVEL2`` or ``ESP_INTR_FLAG_LEVEL3``.
+    :not SOC_CPU_HAS_FLEXIBLE_INTC: - Some peripheral driver may default to allocating interrupts with ``ESP_INTR_FLAG_LEVEL1`` flag, so level 2 and 3 interrupts do not get used by default. If :cpp:func:`esp_intr_dump` shows that some level 2 or 3 interrupts are available, try changing the interrupt allocation flags when initializing the driver to ``ESP_INTR_FLAG_LEVEL2`` or ``ESP_INTR_FLAG_LEVEL3``.
     - Check if some of the peripheral drivers do not need to be used all the time, and initialize/deinitialize them on demand. This can reduce the number of simultaneously allocated interrupts.
 
 

@@ -70,7 +70,7 @@
     ETM 事件
     ---------
 
-    ``esp_timer`` 的构建基于 *systimer* 硬件定时器，能够产生报警事件并与 :doc:`ETM </api-reference/peripherals/etm>` 模块交互。调用函数 :cpp:func:`esp_timer_new_etm_alarm_event` 以获取相应的 ETM 事件句柄。
+    ``esp_timer`` 的构建基于 **systimer** 硬件定时器，能够产生报警事件并与 :doc:`ETM </api-reference/peripherals/etm>` 模块交互。调用函数 :cpp:func:`esp_timer_new_etm_alarm_event` 以获取相应的 ETM 事件句柄。
 
     如需了解如何将 ETM 事件连接到相应 ETM 通道，请参阅 :doc:`ETM </api-reference/peripherals/etm>`。
 
