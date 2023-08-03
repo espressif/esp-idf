@@ -7,9 +7,10 @@ Application Example
 -------------------
 
 An example which combines performance monitor is provided in ``examples/system/perfmon`` directory.
+
 This example initializes the performance monitor structure and execute them with printing the statistics.
 
-High level API Reference
+High-Level API Reference
 ------------------------
 
 Header Files

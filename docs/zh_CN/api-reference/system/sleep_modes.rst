@@ -1,5 +1,6 @@
 睡眠模式
 ===========
+
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_SPI_POWER_DOMAIN:default="VDD_SPI", esp32="VDD_SDIO"}
@@ -65,7 +66,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
 .. only:: SOC_ULP_SUPPORTED
 
-    关于 RTC 时钟选项的更多细节，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *ULP 协处理器* [`PDF <{IDF_TARGET_TRM_EN_URL}#ulp>`__]。
+    关于 RTC 时钟选项的更多细节，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **ULP 协处理器** [`PDF <{IDF_TARGET_TRM_EN_URL}#ulp>`__]。
 
 在这种唤醒模式下，无需为睡眠模式中的 RTC 外设或内存供电。
 
@@ -86,7 +87,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
 .. only:: SOC_PM_SUPPORT_EXT0_WAKEUP
 
-    外部唤醒 (ext0)
+    外部唤醒 (``ext0``)
     ^^^^^^^^^^^^^^^^^^^^^^
 
     RTC IO 模块中包含这样一个逻辑——当某个 RTC GPIO 被设置为预定义的逻辑值时，触发唤醒。RTC IO 是 RTC 外设电源域的一部分，因此如果该唤醒源被请求，RTC 外设将在 Deep-sleep 模式期间保持供电。
@@ -99,14 +100,16 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     可调用 :cpp:func:`esp_sleep_enable_ext0_wakeup` 函数来启用此唤醒源。
 
-    .. warning:: 从睡眠模式中唤醒后，用于唤醒的 IO pad 将被配置为 RTC IO。因此，在将该 pad 用作数字 GPIO 之前，请调用 :cpp:func:`rtc_gpio_deinit` 函数对其进行重新配置。
+    .. warning::
+
+        从睡眠模式中唤醒后，用于唤醒的 IO pad 将被配置为 RTC IO。因此，在将该 pad 用作数字 GPIO 之前，请调用 :cpp:func:`rtc_gpio_deinit` 函数对其进行重新配置。
 
 .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
 
-    外部唤醒 (ext1)
+    外部唤醒 (``ext1``)
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。您可以从以下两个逻辑函数中选择其一，用于触发唤醒：
+    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发唤醒：
 
     .. only:: esp32
 
@@ -135,9 +138,10 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         gpio_pulldown_en(gpio_num);
 
     .. warning::
+
         - 使用 EXT1 唤醒源时，用于唤醒的 IO pad 将被配置为 RTC IO。因此，在将该 pad 用作数字 GPIO 之前，请调用 :cpp:func:`rtc_gpio_deinit` 函数对其进行重新配置。
 
-        - RTC 外设在默认情况下配置为断电，此时，唤醒 IO 在进入睡眠状态前将被设置为保持状态。因此，从 Light-sleep 状态唤醒芯片后，请调用 `rtc_gpio_hold_dis` 来禁用保持功能，以便对管脚进行重新配置。对于 Deep-sleep 唤醒，此问题已经在应用启动阶段解决。
+        - RTC 外设在默认情况下配置为断电，此时，唤醒 IO 在进入睡眠状态前将被设置为保持状态。因此，从 Light-sleep 状态唤醒芯片后，请调用 ``rtc_gpio_hold_dis`` 来禁用保持功能，以便对管脚进行重新配置。对于 Deep-sleep 唤醒，此问题已经在应用启动阶段解决。
 
     可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup` 函数来启用此唤醒源。
 
@@ -170,9 +174,10 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     可调用 :cpp:func:`esp_sleep_enable_gpio_wakeup` 函数来启用此唤醒源。
 
     .. warning::
-        在进入 Light-sleep 模式前，请查看您将要驱动的 GPIO 管脚的电源域。如果有管脚属于 {IDF_TARGET_SPI_POWER_DOMAIN} 电源域，必须将此电源域配置为在睡眠期间保持供电。
 
-        例如，在 ESP32-WROOM-32 开发板上，GPIO16 和 GPIO17 连接到 {IDF_TARGET_SPI_POWER_DOMAIN} 电源域。如果这两个管脚被配置为在睡眠期间保持高电平，则您需将对应电源域配置为保持供电。您可以使用函数 :cpp:func:`esp_sleep_pd_config()`::
+        在进入 Light-sleep 模式前，请查看将要驱动的 GPIO 管脚的电源域。如果有管脚属于 {IDF_TARGET_SPI_POWER_DOMAIN} 电源域，必须将此电源域配置为在睡眠期间保持供电。
+
+        例如，在 ESP32-WROOM-32 开发板上，GPIO16 和 GPIO17 连接到 {IDF_TARGET_SPI_POWER_DOMAIN} 电源域。如果这两个管脚被配置为在睡眠期间保持高电平，则需将对应电源域配置为保持供电。为此，可以使用函数 :cpp:func:`esp_sleep_pd_config()`::
 
             esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
 
@@ -221,9 +226,9 @@ RTC 外设和内存断电
 
 .. only:: not SOC_RTC_SLOW_MEM_SUPPORTED and SOC_RTC_FAST_MEM_SUPPORTED
 
-    {IDF_TARGET_NAME} 中只有 RTC 高速内存，因此，如果程序中的某些值被标记为 ``RTC_DATA_ATTR``、``RTC_SLOW_ATTR`` 或 ``RTC_FAST_ATTR`` 属性，那么所有这些值都将被存入 RTC 高速内存，默认情况下保持供电。如果有需要，您也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
+    {IDF_TARGET_NAME} 中只有 RTC 高速内存，因此，如果程序中的某些值被标记为 ``RTC_DATA_ATTR``、``RTC_SLOW_ATTR`` 或 ``RTC_FAST_ATTR`` 属性，那么所有这些值都将被存入 RTC 高速内存，默认情况下保持供电。如有需要，也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
 
-Flash 断电
+flash 断电
 ^^^^^^^^^^
 
 默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后， flash **不会** 断电，因为在 sleep 过程中断电 flash 存在风险。具体而言，flash 断电需要时间，但是在此期间，系统有可能被唤醒，导致 flash 重新被上电。此时，断电尚未完成又重新上电的硬件行为有可能导致 flash 无法正常工作。
@@ -231,9 +236,10 @@ Flash 断电
 理论上讲，在 flash 完全断电后可以仅唤醒系统，然而现实情况是 flash 断电所需的时间很难预测。如果用户为 flash 供电电路添加了滤波电容，断电所需时间可能会更长。此外，即使可以预知 flash 彻底断电所需的时间，有时也不能通过设置足够长的睡眠时间来确保 flash 断电的安全（比如，突发的异步唤醒源会使得实际的睡眠时间不可控）。
 
 .. warning::
+    
     如果在 flash 的供电电路上添加了滤波电容，那么应当尽一切可能避免 flash 断电。
 
-因为这些不可控的因素，ESP-IDF 很难保证 flash断电的绝对安全。因此 ESP-IDF 不推荐用户断电 flash。对于一些功耗敏感型应用，可以通过设置 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` 来减少 light sleep 期间 flash 的功耗。这种方式在几乎所有场景下都要比断电 flash 更好，兼顾了安全性和功耗。
+因为这些不可控的因素，ESP-IDF 很难保证 flash 断电的绝对安全。因此 ESP-IDF 不推荐用户断电 flash。对于一些功耗敏感型应用，可以通过设置 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` 来减少 light sleep 期间 flash 的功耗。这种方式在几乎所有场景下都要比断电 flash 更好，兼顾了安全性和功耗。
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
@@ -283,9 +289,7 @@ Flash 断电
 
 应用程序通过 API :cpp:func:`esp_light_sleep_start` 或 :cpp:func:`esp_deep_sleep_start` 进入 Light-sleep 或 Deep-sleep 模式。此时，系统将按照被请求的唤醒源和断电选项配置有关的 RTC 控制器参数。
 
-
 允许在未配置唤醒源的情况下进入睡眠模式。在此情况下，芯片将一直处于睡眠模式，直到从外部被复位。
-
 
 UART 输出处理
 ^^^^^^^^^^^^^^^^^^^^
@@ -308,7 +312,6 @@ UART 输出处理
 .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
 
     对于 ext1 唤醒源，可以调用函数 :cpp:func:`esp_sleep_get_ext1_wakeup_status` 来确认触发唤醒的触摸管脚。
-
 
 应用程序示例
 -------------------

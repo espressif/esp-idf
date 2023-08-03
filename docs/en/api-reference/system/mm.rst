@@ -12,7 +12,7 @@ Introduction
 
 ESP-IDF provides a memory mapping driver that manages the relation between these physical memory addresses and virtual memory addresses, so as to achieve some features such as reading from SPI Flash via a pointer.
 
-Memory mapping driver is actually a capabilities-based virtual memory address allocator that allows apps to make virtual memory address allocations for different purposes. In the following chapters, we call this driver `esp_mmap` driver.
+Memory mapping driver is actually a capabilities-based virtual memory address allocator that allows apps to make virtual memory address allocations for different purposes. In the following chapters, we call this driver ``esp_mmap`` driver.
 
 ESP-IDF also provides a memory synchronisation driver which can be used for potential memory desychronisation scenarios.
 
@@ -75,10 +75,10 @@ The virtual memory pool is made up with one or multiple virtual memory regions, 
 - A virtual memory block is a piece of virtual address range that is dynamically mapped.
 - A slot is the virtual address range between two virtual memory blocks.
 - A physical memory block is a piece of physical address range that is to-be-mapped or already mapped to a virtual memory block.
-- Dynamical mapping is done by calling `esp_mmap` driver API :cpp:func:`esp_mmu_map`, this API will map the given physical memory block to a virtual memory block which is allocated by the `esp_mmap` driver.
+- Dynamical mapping is done by calling ``esp_mmap`` driver API :cpp:func:`esp_mmu_map`, this API will map the given physical memory block to a virtual memory block which is allocated by the ``esp_mmap`` driver.
 
 
-Relation between Memory Blocks
+Relation Between Memory Blocks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When mapping a physical memory block A, block A can have one of the following relations with another previously mapped physical memory block B:
@@ -91,7 +91,7 @@ When mapping a physical memory block A, block A can have one of the following re
 
   .. image:: /../_static/diagrams/mmu/identical.png
 
-  Note `esp_mmap` driver will consider the identical scenario **the same as the enclosed scenario**.
+  Note ``esp_mmap`` driver considers the identical scenario **the same as the enclosed scenario**.
 
 - Overlapped: block A is overlapped with block B, see figure below:
 
@@ -101,7 +101,7 @@ When mapping a physical memory block A, block A can have one of the following re
 
   .. image:: /../_static/diagrams/mmu/inversed_enclosed.png
 
-  `esp_mmap` driver will consider this scenario **the same as the overlapped scenario**.
+  ``esp_mmap`` driver considers this scenario **the same as the overlapped scenario**.
 
 
 Driver Behaviour
@@ -110,29 +110,29 @@ Driver Behaviour
 Memory Map
 ^^^^^^^^^^
 
-You can call :cpp:func:`esp_mmu_map` to do a dynamical mapping. This API will allocate a certain size of virtual memory block according to the virtual memory capabilities you selected, then map this virtual memory block to the physical memory block as you requested. The `esp_mmap` driver supports mapping to one or more types of physical memory, so you should specify the physical memory target when mapping.
+You can call :cpp:func:`esp_mmu_map` to do a dynamical mapping. This API can allocate a certain size of virtual memory block according to the virtual memory capabilities you selected, then map this virtual memory block to the physical memory block as you requested. The ``esp_mmap`` driver supports mapping to one or more types of physical memory, so you should specify the physical memory target when mapping.
 
 By default, physical memory blocks and virtual memory blocks are one-to-one mapped. This means, when calling :cpp:func:`esp_mmu_map`:
 
-* If it's the enclosed scenario, this API will return an :c:macro:`ESP_ERR_INVALID_STATE`. The `out_ptr` will be assigned to the start virtual memory address of the previously mapped one which encloses the to-be-mapped one.
-* If it's the identical scenario, this API will behaves exactly the same as the enclosed scenario.
-* If it's the overlapped scenario, this API will by default return an :c:macro:`ESP_ERR_INVALID_ARG`. This means, `esp_mmap` driver by default doesn't allow mapping a physical memory address to multiple virtual memory addresses.
+* If it is the enclosed scenario, this API will return an :c:macro:`ESP_ERR_INVALID_STATE`. The ``out_ptr`` will be assigned to the start virtual memory address of the previously mapped one which encloses the to-be-mapped one.
+* If it is the identical scenario, this API will behaves exactly the same as the enclosed scenario.
+* If it is the overlapped scenario, this API will by default return an :c:macro:`ESP_ERR_INVALID_ARG`. This means, ``esp_mmap`` driver by default does not allow mapping a physical memory address to multiple virtual memory addresses.
 
 Specially, you can use :c:macro:`ESP_MMU_MMAP_FLAG_PADDR_SHARED`. This flags stands for one-to-multiple mapping between a physical address and multiple virtual addresses:
 
-* If it's the overlapped scenario, this API will allocate a new virtual memory block as requested, then map to the given physical memory block.
+* If it is the overlapped scenario, this API will allocate a new virtual memory block as requested, then map to the given physical memory block.
 
 
 Memory Unmap
 ^^^^^^^^^^^^
 
-You can call :cpp:func:`esp_mmu_unmap` to unmap a previously mapped memory block. This API will return an :c:macro:`ESP_ERR_NOT_FOUND` if you are trying to unmap a virtual memory block that isn't mapped to any physical memory block yet.
+You can call :cpp:func:`esp_mmu_unmap` to unmap a previously mapped memory block. This API returns an :c:macro:`ESP_ERR_NOT_FOUND` if you are trying to unmap a virtual memory block that is not mapped to any physical memory block yet.
 
 
 Memory Address Conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `esp_mmap` driver provides two helper APIs to do the conversion between virtual memory address and physical memory address.
+The ``esp_mmap`` driver provides two helper APIs to do the conversion between virtual memory address and physical memory address.
 
 * :cpp:func:`esp_mmu_vaddr_to_paddr`, convert virtual address to physical address.
 * :cpp:func:`esp_mmu_paddr_to_vaddr`, convert physical address to virtual address.
@@ -143,7 +143,7 @@ Memory Synchronisation
 
 MMU supported physical memories can be accessed by one or multiple methods.
 
-SPI Flash can be accessed by SPI1 (ESP-IDF `esp_flash` driver APIs), or by pointers. ESP-IDF `esp_flash` driver APIs have already considered the memory synchronisation, so users don't need to worry about this.
+SPI Flash can be accessed by SPI1 (ESP-IDF ``esp_flash`` driver APIs), or by pointers. ESP-IDF ``esp_flash`` driver APIs have already considered the memory synchronisation, so users do not need to worry about this.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
@@ -155,16 +155,16 @@ SPI Flash can be accessed by SPI1 (ESP-IDF `esp_flash` driver APIs), or by point
 
    :cpp:func:`esp_cache_msync` has two synchronization directions,
 
-   * c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M`: from cache to memory. By default (if you don't specify a direction), the synchronization is in this direction. Content in the address you specified will be written back to the memory.
-   * c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_M2C`: from memory to cache. By default, content in the address you specified will be invalidated from the cache.
+   * :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M`: from cache to memory. By default (if you do not specify a direction), the synchronization is in this direction. Content in the address you specified is written back to the memory.
+   * :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_M2C`: from memory to cache. By default, content in the address you specified is invalidated from the cache.
 
 
 Thread Safety
 =============
 
-APIs in `esp_mmu_map.h` are not guaranteed to be thread-safe.
+APIs in ``esp_mmu_map.h`` are not guaranteed to be thread-safe.
 
-APIs in `esp_cache.h` are guaranteed to be thread-safe.
+APIs in ``esp_cache.h`` are guaranteed to be thread-safe.
 
 
 API Reference

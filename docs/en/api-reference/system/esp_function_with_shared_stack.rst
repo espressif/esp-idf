@@ -1,10 +1,10 @@
-Call function with external stack
+Call Function with External Stack
 =================================
 
 Overview
 --------
 
-A given function can be executed with a user allocated stack space which is independent of current task stack, this mechanism can be used to save stack space wasted by tasks which call a common function with intensive stack usage such as `printf`. The given function can be called inside the shared stack space which is a callback function deferred by calling :cpp:func:`esp_execute_shared_stack_function`, passing that function as parameter.
+A given function can be executed with a user-allocated stack space which is independent of current task stack, this mechanism can be used to save stack space wasted by tasks which call a common function with intensive stack usage such as ``printf``. The given function can be called inside the shared stack space which is a callback function deferred by calling :cpp:func:`esp_execute_shared_stack_function`, passing that function as a parameter.
 
 Usage
 -----
@@ -16,7 +16,7 @@ Usage
 - the size of stack in bytes
 - a pointer to the shared stack function
 
-The user defined function will be deferred as a callback and can be called using the user allocated space without taking space from current task stack.
+The user-defined function is deferred as a callback and can be called using the user-allocated space without taking space from current task stack.
 
 The usage may look like the code below:
 
@@ -27,7 +27,7 @@ The usage may look like the code below:
         printf("Executing this printf from external stack! \n");
     }
 
-    //Let's suppose we want to call printf using a separated stack space
+    //Let us suppose we want to call printf using a separated stack space
     //allowing the app to reduce its stack size.
     void app_main()
     {

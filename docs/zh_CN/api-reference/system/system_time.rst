@@ -56,7 +56,7 @@ RTC 定时器有以下时钟源：
 获取当前时间
 --------------
 
-要获取当前时间，请使用 POSIX 函数 ``gettimeofday()``。此外，您也可以使用以下标准 C 库函数来获取时间并对其进行操作：
+要获取当前时间，请使用 POSIX 函数 ``gettimeofday()``。此外，也可以使用以下标准 C 库函数来获取时间并对其进行操作：
 
 .. code-block:: bash
 
@@ -138,7 +138,7 @@ lwIP SNTP 库可在下列任一同步模式下工作：
 
 如需查看示例代码，请前往 :example:`protocols/sntp` 目录。该目录下的示例展示了如何基于 lwIP SNTP 库实现时间同步。
 
-您也可以直接使用 lwIP API，但请务必注意线程安全。线程安全的 API 如下：
+也可以直接使用 lwIP API，但请务必注意线程安全。线程安全的 API 如下：
 
 - :cpp:func:`sntp_set_time_sync_notification_cb` 用于设置通知时间同步过程的回调函数。
 - :cpp:func:`sntp_get_sync_status` 和 :cpp:func:`sntp_set_sync_status` 用于获取/设置时间同步状态。

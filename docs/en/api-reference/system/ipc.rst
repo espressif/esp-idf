@@ -2,6 +2,7 @@ Inter-Processor Call
 ====================
 
 .. note::
+
     The IPC is an **Inter-Processor Call** and **NOT Inter-Process Communication** as found on other operating systems.
 
 Overview
@@ -23,9 +24,9 @@ The IPC feature implements callback execution in a task context by creating an I
 When using IPCs in a task context, users need to consider the following:
 
 - IPC callbacks should ideally be simple and short. **An IPC callback should avoid attempting to block or yield**. 
-- The IPC tasks are created at the highest possible priority (i.e., ``configMAX_PRIORITIES - 1``) thus the callback should also run at that priority as a result. However, :ref:`CONFIG_ESP_IPC_USES_CALLERS_PRIORITY` is enabled by default which will temporarily lower the priority of the target CPU's IPC task to the calling CPU before executing the callback.
+- The IPC tasks are created at the highest possible priority (i.e., ``configMAX_PRIORITIES - 1``) thus the callback should also run at that priority as a result. However, :ref:`CONFIG_ESP_IPC_USES_CALLERS_PRIORITY` is enabled by default which temporarily lowers the priority of the target CPU's IPC task to the calling CPU before executing the callback.
 - Depending on the complexity of the callback, users may need to configure the stack size of the IPC task via :ref:`CONFIG_ESP_IPC_TASK_STACK_SIZE`.
-- The IPC feature is internally protected by a mutex. Therefore, simultaneous IPC calls from two or more calling CPUs will be handled on a first come first serve basis.
+- The IPC feature is internally protected by a mutex. Therefore, simultaneous IPC calls from two or more calling CPUs are handled on a first come first serve basis.
 
 API Usage
 ^^^^^^^^^
@@ -38,8 +39,8 @@ Task Context IPC callbacks have the following restrictions:
 
 The IPC feature offers the API listed below to execute a callback in a task context on a target CPU. The API allows the calling CPU to block until the callback's execution has completed, or return immediately once the callback's execution has started.
 
-- :cpp:func:`esp_ipc_call` will trigger an IPC call on the target CPU. This function will block until the target CPU's IPC task **begins** execution of the callback.
-- :cpp:func:`esp_ipc_call_blocking` will trigger an IPC on the target CPU. This function will block until the target CPU's IPC task **completes** execution of the callback.
+- :cpp:func:`esp_ipc_call` triggers an IPC call on the target CPU. This function will block until the target CPU's IPC task **begins** execution of the callback.
+- :cpp:func:`esp_ipc_call_blocking` triggers an IPC on the target CPU. This function will block until the target CPU's IPC task **completes** execution of the callback.
 
 IPC in ISR Context
 ------------------
@@ -51,6 +52,7 @@ When using IPCs in High Priority Interrupt context, users need to consider the f
 - Since the callback is executed in a High Priority Interrupt context, the callback must be written entirely in assembly. See the API Usage below for more details regarding writing assembly callbacks.
 - The priority of the reserved High Priority Interrupt is dependent on the :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` option
 - When the callback executes:
+
     - The calling CPU will disable interrupts of level 3 and lower
     - Although the priority of the reserved interrupt depends on :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution IPC ISR callback, the target CPU will disable interrupts of level 5 and lower regardless of what :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` is set to.
 
@@ -65,13 +67,13 @@ High Priority Interrupt IPC callbacks have the following restrictions:
     - Must not call other C functions as register windowing is disabled
 - The callback should be placed in IRAM at a 4-byte aligned address
 - (On invocation of/after returning from) the callback, the registers ``a2, a3, a4`` are (saved/restored) automatically thus can be used in the callback. The callback should **ONLY** use those registers.
-    - ``a2`` will contain the ``void *arg`` of the callback
+    - ``a2`` contains the ``void *arg`` of the callback
     - ``a3/a4`` are free to use as scratch registers
 
 The IPC feature offers the API listed below to execute a callback in a High Priority Interrupt context. 
 
-- :cpp:func:`esp_ipc_isr_asm_call` will trigger an IPC call on the target CPU. This function will busy-wait until the target CPU begins execution of the callback.
-- :cpp:func:`esp_ipc_isr_asm_call_blocking` will trigger an IPC call on the target CPU. This function will busy-wait until the target CPU completes execution of the callback.
+- :cpp:func:`esp_ipc_isr_asm_call` triggers an IPC call on the target CPU. This function will busy-wait until the target CPU begins execution of the callback.
+- :cpp:func:`esp_ipc_isr_asm_call_blocking` triggers an IPC call on the target CPU. This function will busy-wait until the target CPU completes execution of the callback.
 
 The following code-blocks demonstrates a High Priority Interrupt IPC callback written in assembly that simply reads the target CPU's cycle count.
 
@@ -97,9 +99,11 @@ The following code-blocks demonstrates a High Priority Interrupt IPC callback wr
     esp_ipc_isr_asm_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, (void *)cycle_count);
 
 .. note::
+
     The number of scratch registers available for use is sufficient for most simple use cases. But if your callback requires more scratch registers, ``void *arg`` can point to a buffer that is used as a register save area. The callback can then save and restore more registers. See the :example:`system/ipc/ipc_isr`.
 
 .. note::
+
     For more examples of High Priority Interrupt IPC callbacks, see :idf_file:`components/esp_system/port/arch/xtensa/esp_ipc_isr_routines.S` and :`components/esp_system/test/test_ipc_isr.S`
 
 The High Priority Interrupt IPC API also provides the following convenience functions that can stall/resume the target CPU. These API utilize the High Priority Interrupt IPC, but supply their own internal callbacks:

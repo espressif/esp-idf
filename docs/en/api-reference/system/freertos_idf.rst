@@ -11,10 +11,12 @@ The original FreeRTOS (hereinafter referred to as Vanilla FreeRTOS) is a small a
 ESP-IDF FreeRTOS is based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to both API and kernel behavior in order to support dual core SMP. This document describes the API and behavioral differences between Vanilla FreeRTOS and ESP-IDF FreeRTOS.
 
 .. note::
+
   This document assumes that the reader has a requisite understanding of Vanilla FreeRTOS (its features, behavior, and API usage). Refer to the `Vanilla FreeRTOS documentation <https://www.freertos.org/index.html>`_ for more details.
 
 .. note::
-  ESP-IDF FreeRTOS can be built for single core by enabling the :ref:`CONFIG_FREERTOS_UNICORE` configuration option. ESP targets that are single core will always have the :ref:`CONFIG_FREERTOS_UNICORE` option enabled. However, note that building with :ref:`CONFIG_FREERTOS_UNICORE` enabled does not equate to building with Vanilla FreeRTOS (i.e., some of the behavioral and API changes of ESP-IDF will still be present). For more details, see :ref:`freertos-smp-single-core` for more details.
+
+  ESP-IDF FreeRTOS can be built for a single core by enabling the :ref:`CONFIG_FREERTOS_UNICORE` configuration option. ESP targets that are single core always have the :ref:`CONFIG_FREERTOS_UNICORE` option enabled. However, note that building with :ref:`CONFIG_FREERTOS_UNICORE` enabled does not equate to building with Vanilla FreeRTOS (i.e., some of the behavioral and API changes of ESP-IDF are still present). For more details, see :ref:`freertos-smp-single-core`.
 
 This document is split into the following parts.
 
@@ -33,16 +35,16 @@ Basic Concepts
 SMP (Symmetric Multiprocessing) is a computing architecture where two or more identical CPUs (cores) are connected to a single shared main memory and controlled by a single operating system. In general, an SMP system...
 
 - has multiple cores running independently. Each core has its own register file, interrupts, and interrupt handling.
-- presents an identical view of memory to each core. Thus a piece of code that accesses a particular memory address will have the same effect regardless of which core it runs on.
+- presents an identical view of memory to each core. Thus a piece of code that accesses a particular memory address has the same effect regardless of which core it runs on.
 
 The main advantages of an SMP system compared to single core or Asymmetric Multiprocessing systems are that...
 
 - the presence of multiple CPUs allows for multiple hardware threads, thus increases overall processing throughput.
 - having symmetric memory means that threads can switch cores during execution. This in general can lead to better CPU utilization.
 
-Although an SMP system allows threads to switch cores, there are scenarios where a thread must/should only run on a particular core. Therefore, threads in an SMP systems will also have a core affinity that specifies which particular core the thread is allowed to run on.
+Although an SMP system allows threads to switch cores, there are scenarios where a thread must/should only run on a particular core. Therefore, threads in an SMP system also have a core affinity that specifies which particular core the thread is allowed to run on.
 
-- A thread that is pinned to a particular core will only be able to run on that core
+- A thread that is pinned to a particular core is only be able to run on that core
 - A thread that is unpinned will be allowed to switch between cores during execution instead of being pinned to a particular core.
 
 SMP on an ESP Target
@@ -59,7 +61,8 @@ ESP targets (such as the ESP32, ESP32-S3) are dual core SMP SoCs. These targets 
 - Cross-core interrupts that allow one CPU to trigger and interrupt on another CPU. This allows cores to signal each other.
 
 .. note::
-  The "PRO_CPU" and "APP_CPU" aliases for CPU0 and CPU1 exist in ESP-IDF as they reflect how typical IDF applications will utilize the two CPUs. Typically, the tasks responsible for handling wireless networking (e.g., WiFi or Bluetooth) will be pinned to CPU0 (thus the name PRO_CPU), whereas the tasks handling the remainder of the application will be pinned to CPU1 (thus the name APP_CPU).
+
+  The ``PRO_CPU`` and ``APP_CPU`` aliases for CPU0 and CPU1 exist in ESP-IDF as they reflect how typical ESP-IDF applications utilize the two CPUs. Typically, the tasks responsible for handling wireless networking (e.g., Wi-Fi or Bluetooth) are pinned to CPU0 (thus the name PRO_CPU), whereas the tasks handling the remainder of the application are pinned to CPU1 (thus the name APP_CPU).
 
 
 .. ------------------------------------------------------ Tasks --------------------------------------------------------
@@ -89,6 +92,7 @@ The ``PinnedToCore`` versions of the task creation functions API differ from the
 Note that ESP-IDF FreeRTOS still supports the vanilla versions of the task creation functions. However, they have been modified to simply call their ``PinnedToCore`` counterparts with ``tskNO_AFFINITY``.
 
 .. note::
+
   ESP-IDF FreeRTOS also changes the units of ``ulStackDepth`` in the task creation functions. Task stack sizes in Vanilla FreeRTOS are specified in number of words, whereas in ESP-IDF FreeRTOS, the task stack sizes are specified in bytes.
 
 Execution
@@ -134,14 +138,14 @@ The Vanilla FreeRTOS scheduler is best described as a **Fixed Priority Preemptiv
 
 - Each tasks is given a constant priority upon creation. The scheduler executes highest priority ready state task
 - The scheduler can switch execution to another task without the cooperation of the currently running task
-- The scheduler will periodically switch execution between ready state tasks of the same priority (in a round robin fashion). Time slicing is governed by a tick interrupt.
+- The scheduler periodically switches execution between ready state tasks of the same priority (in a round robin fashion). Time slicing is governed by a tick interrupt.
 
 The ESP-IDF FreeRTOS scheduler supports the same scheduling features (i.e., Fixed Priority, Preemption, and Time Slicing) albeit with some small behavioral differences.
 
 Fixed Priority
 ^^^^^^^^^^^^^^
 
-In Vanilla FreeRTOS, when scheduler selects a new task to run, it will always select the current highest priority ready state task. In ESP-IDF FreeRTOS, each core will independently schedule tasks to run. When a particular core selects a task, the core will select the highest priority ready state task that can be run by the core. A task can be run by the core if:
+In Vanilla FreeRTOS, when scheduler selects a new task to run, it always selects the current highest priority ready state task. In ESP-IDF FreeRTOS, each core independently schedules tasks to run. When a particular core selects a task, the core will select the highest priority ready state task that can be run by the core. A task can be run by the core if:
 
 - The task has a compatible affinity (i.e., is either pinned to that core or is unpinned)
 - The task is not currently being run by another core
@@ -159,7 +163,7 @@ Preemption
 
 In Vanilla FreeRTOS, the scheduler can preempt the currently running task if a higher priority task becomes ready to execute. Likewise in ESP-IDF FreeRTOS, each core can be individually preempted by the scheduler if the scheduler determines that a higher priority task can run on that core.
 
-However, there are some instances where a higher priority task that becomes ready can be run on multiple cores. In this case, the scheduler will only preempt one core. The scheduler always gives preference to the current core when multiple cores can be preempted. In other words, if the higher priority ready task is unpinned and has a higher priority than the current priority of both cores, the scheduler will always choose to preempt the current core. For example, given the following tasks:
+However, there are some instances where a higher priority task that becomes ready can be run on multiple cores. In this case, the scheduler only preempts one core. The scheduler always gives preference to the current core when multiple cores can be preempted. In other words, if the higher priority ready task is unpinned and has a higher priority than the current priority of both cores, the scheduler will always choose to preempt the current core. For example, given the following tasks:
 
 - Task A of priority 8 currently running on CPU0
 - Task B of priority 9 currently running on CPU1
@@ -179,7 +183,7 @@ However, in ESP-IDF FreeRTOS, it is not possible to implement perfect Round Robi
 
 Therefore, when a core searches the ready state task list for a task to run, the core may need to skip over a few tasks in the same priority list or drop to a lower priority in order to find a ready state task that the core can run.
 
-The ESP-IDF FreeRTOS scheduler implements a Best Effort Round Robin time slicing for ready state tasks of the same priority by ensuring that tasks that have been selected to run will be placed at the back of the list, thus giving unselected tasks a higher priority on the next scheduling iteration (i.e., the next tick interrupt or yield)
+The ESP-IDF FreeRTOS scheduler implements a Best Effort Round Robin time slicing for ready state tasks of the same priority by ensuring that tasks that have been selected to run are placed at the back of the list, thus giving unselected tasks a higher priority on the next scheduling iteration (i.e., the next tick interrupt or yield)
 
 The following example demonstrates the Best Effort Round Robin time slicing in action. Assume that:
 
@@ -199,7 +203,7 @@ The following example demonstrates the Best Effort Round Robin time slicing in a
 
     --------------------------------------------------------------------------------
 
-    2. Core 0 has tick interrupt and searches for a task to run.
+    1. Core 0 has tick interrupt and searches for a task to run.
       Task A is selected and is moved to the back of the list
 
     Core0--|
@@ -210,7 +214,7 @@ The following example demonstrates the Best Effort Round Robin time slicing in a
 
     --------------------------------------------------------------------------------
 
-    3. Core 1 has a tick interrupt and searches for a task to run.
+    1. Core 1 has a tick interrupt and searches for a task to run.
       Task B cannot be run due to incompatible affinity, so core 1 skips to Task C.
       Task C is selected and is moved to the back of the list
 
@@ -222,7 +226,7 @@ The following example demonstrates the Best Effort Round Robin time slicing in a
 
     --------------------------------------------------------------------------------
 
-    4. Core 0 has another tick interrupt and searches for a task to run.
+    1. Core 0 has another tick interrupt and searches for a task to run.
       Task B is selected and moved to the back of the list
 
 
@@ -234,7 +238,7 @@ The following example demonstrates the Best Effort Round Robin time slicing in a
 
     --------------------------------------------------------------------------------
 
-    5. Core 1 has another tick and searches for a task to run.
+    1. Core 1 has another tick and searches for a task to run.
       Task D cannot be run due to incompatible affinity, so core 1 skips to Task A
       Task A is selected and moved to the back of the list
 
@@ -262,13 +266,14 @@ Vanilla FreeRTOS requires that a periodic tick interrupt occurs. The tick interr
 - Checking if time slicing is required (i.e., triggering a context switch)
 - Executing the application tick hook
 
-In ESP-IDF FreeRTOS, each core will receive a periodic interrupt and independently run the tick interrupt. The tick interrupts on each core are of the same period but can be out of phase. However, the tick responsibilities listed above are not run by all cores:
+In ESP-IDF FreeRTOS, each core receives a periodic interrupt and independently run the tick interrupt. The tick interrupts on each core are of the same period but can be out of phase. However, the tick responsibilities listed above are not run by all cores:
 
-- CPU0 will execute all of the tick interrupt responsibilities listed above
-- CPU1 will only check for time slicing and execute the application tick hook
+- CPU0 executes all of the tick interrupt responsibilities listed above
+- CPU1 only checks for time slicing and execute the application tick hook
 
 .. note::
-  CPU0 is solely responsible for keeping time in ESP-IDF FreeRTOS. Therefore anything that prevents CPU0 from incrementing the tick count (such as suspending the scheduler on CPU0) will cause the entire schedulers time keeping to lag behind.
+
+  CPU0 is solely responsible for keeping time in ESP-IDF FreeRTOS. Therefore anything that prevents CPU0 from incrementing the tick count (such as suspending the scheduler on CPU0) causes the entire schedulers time keeping to lag behind.
 
 Idle Tasks
 ^^^^^^^^^^
@@ -287,9 +292,9 @@ Vanilla FreeRTOS allows the scheduler to be suspended/resumed by calling :cpp:fu
 
 - Task switching is disabled but interrupts are left enabled.
 - Calling any blocking/yielding function is forbidden, and time slicing is disabled.
-- The tick count is frozen (but the tick interrupt will still occur to execute the application tick hook)
+- The tick count is frozen (but the tick interrupt still occurs to execute the application tick hook)
 
-On scheduler resumption, :cpp:func:`xTaskResumeAll` will catch up all of the lost ticks and unblock any timed out tasks.
+On scheduler resumption, :cpp:func:`xTaskResumeAll` catches up all of the lost ticks and unblock any timed out tasks.
 
 In ESP-IDF FreeRTOS, suspending the scheduler across multiple cores is not possible. Therefore when :cpp:func:`vTaskSuspendAll` is called on a particular core (e.g., core A):
 
@@ -305,16 +310,18 @@ When :cpp:func:`xTaskResumeAll` is called on a particular core (e.g., core A):
 - If core A is CPU0, the pended tick count is unwound to catch up the lost ticks.
 
 .. warning::
-  Given that scheduler suspension on ESP-IDF FreeRTOS will only suspend scheduling on a particular core, scheduler suspension is **NOT** a valid method ensuring mutual exclusion between tasks when accessing shared data. Users should use proper locking primitives such as mutexes or spinlocks if they require mutual exclusion.
+
+  Given that scheduler suspension on ESP-IDF FreeRTOS only suspends scheduling on a particular core, scheduler suspension is **NOT** a valid method ensuring mutual exclusion between tasks when accessing shared data. Users should use proper locking primitives such as mutexes or spinlocks if they require mutual exclusion.
 
 Disabling Interrupts
 ^^^^^^^^^^^^^^^^^^^^
 
 Vanilla FreeRTOS allows interrupts to be disabled and enabled by calling :c:macro:`taskDISABLE_INTERRUPTS` and :c:macro:`taskENABLE_INTERRUPTS` respectively.
 
-ESP-IDF FreeRTOS provides the same API, however interrupts will only disabled or enabled on the current core.
+ESP-IDF FreeRTOS provides the same API, however interrupts are only disabled or enabled on the current core.
 
 .. warning::
+
   Disabling interrupts is a valid method of achieve mutual exclusion in Vanilla FreeRTOS (and single core systems in general). However, in an SMP system, disabling interrupts  is **NOT** a valid method ensuring mutual exclusion. Refer to Critical Sections for more details.
 
 
@@ -342,6 +349,7 @@ However, in an SMP system, merely disabling interrupts does not constitute a cri
 - ``taskEXIT_CRITICAL_ISR(&spinlock)`` exits a critical section from an interrupt context
 
 .. note::
+
   The critical section API can be called recursively (i.e., nested critical sections). Entering a critical section multiple times recursively is valid so long as the critical section is exited the same number of times it was entered. However, given that critical sections can target different spinlocks, users should take care to avoid dead locking when entering critical sections recursively.
 
 Spinlocks can be allocated statically or dynamically. As such, macros are provided for both static and dynamic initialization of spinlocks, as demonstrated by the following code snippets.
@@ -421,7 +429,7 @@ Usually, when a context switch occurs:
 
 However, ESP-IDF FreeRTOS implements Lazy Context Switching for the FPU (Floating Point Unit) registers of a CPU. In other words, when a context switch occurs on a particular core (e.g., CPU0), the state of the core's FPU registers are not immediately saved to the stack of the task getting switched out (e.g., Task A). The FPU's registers are left untouched until:
 
-- A different task (e.g., Task B) runs on the same core and uses the FPU. This will trigger an exception that will save the FPU registers to Task A's stack.
+- A different task (e.g., Task B) runs on the same core and uses the FPU. This will trigger an exception that saves the FPU registers to Task A's stack.
 - Task A get's scheduled to the same core and continues execution. Saving and restoring the FPU's registers is not necessary in this case.
 
 However, given that tasks can be unpinned thus can be scheduled on different cores (e.g., Task A switches to CPU1), it is unfeasible to copy and restore the FPU's registers across cores. Therefore, when a task utilizes the FPU (by using a ``float`` type in its call flow), ESP-IDF FreeRTOS will automatically pin the task to the current core it is running on. This ensures that all tasks that uses the FPU are always pinned to a particular core.
@@ -431,9 +439,11 @@ Furthermore, ESP-IDF FreeRTOS by default does not support the usage of the FPU w
 .. only: esp32
 
   .. note::
+
     Users that require the use of the ``float`` type in an ISR routine should refer to the :ref:`CONFIG_FREERTOS_FPU_IN_ISR` configuration option.
 
 .. note::
+
   ESP targets that contain an FPU do not support hardware acceleration for double precision floating point arithmetic (``double``). Instead ``double`` is implemented via software hence the behavioral restrictions regarding the ``float`` type do not apply to ``double``. Note that due to the lack of hardware acceleration, ``double`` operations may consume significantly more CPU time in comparison to ``float``.
 
 
@@ -444,12 +454,13 @@ Furthermore, ESP-IDF FreeRTOS by default does not support the usage of the FPU w
 ESP-IDF FreeRTOS Single Core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Although ESP-IDF FreeRTOS is an SMP scheduler, some ESP targets are single core (such as the ESP32-S2 and ESP32-C3). When building ESP-IDF applications for these targets, ESP-IDF FreeRTOS is still used but the number of cores will be set to `1` (i.e., the :ref:`CONFIG_FREERTOS_UNICORE` will always be enabled for single core targets).
+Although ESP-IDF FreeRTOS is an SMP scheduler, some ESP targets are single core (such as the ESP32-S2 and ESP32-C3). When building ESP-IDF applications for these targets, ESP-IDF FreeRTOS is still used but the number of cores will be set to ``1`` (i.e., the :ref:`CONFIG_FREERTOS_UNICORE` will always be enabled for single core targets).
 
-For multicore targets (such as the ESP32 and ESP32-S3), :ref:`CONFIG_FREERTOS_UNICORE` can also be set. This will result in ESP-IDF FreeRTOS only running on CPU0, and all other cores will be inactive.
+For multicore targets (such as the ESP32 and ESP32-S3), :ref:`CONFIG_FREERTOS_UNICORE` can also be set. This results in ESP-IDF FreeRTOS only running on CPU0, and all other cores will be inactive.
 
 .. note::
-  Users should bear in mind that enabling :ref:`CONFIG_FREERTOS_UNICORE` **is NOT equivalent to running Vanilla FreeRTOS**. The additional API of ESP-IDF FreeRTOS can still be called, and the behavior changes of ESP-IDF FreeRTOS will incur a small amount of overhead even when compiled for only a single core.
+
+  Users should bear in mind that enabling :ref:`CONFIG_FREERTOS_UNICORE` **is NOT equivalent to running Vanilla FreeRTOS**. The additional API of ESP-IDF FreeRTOS can still be called, and the behavior changes of ESP-IDF FreeRTOS incurs a small amount of overhead even when compiled for only a single core.
 
 .. ------------------------------------------------- API References ----------------------------------------------------
 

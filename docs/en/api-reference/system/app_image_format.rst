@@ -67,11 +67,11 @@ You can also see the information on segments in the ESP-IDF logs while your appl
 
 .. only:: esp32
 
-    For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
+    For more details on the type of memory segments and their address ranges, see **{IDF_TARGET_NAME} Technical Reference Manual** > **System and Memory** > **Embedded Memory** [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
 .. only:: not esp32
 
-    For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
+    For more details on the type of memory segments and their address ranges, see **{IDF_TARGET_NAME} Technical Reference Manual** > **System and Memory** > **Internal Memory** [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
 4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of the SHA256 hash is calculated on the range from the first byte and up to this field. The length of this field is 32 bytes.
@@ -110,9 +110,10 @@ Adding a Custom Structure to an Application
 -------------------------------------------
 
 Users also have the opportunity to have similar structure with a fixed offset relative to the beginning of the image.
+
 The following pattern can be used to add a custom structure to your image:
 
-.. code-block::
+.. code-block:: c
 
 	const __attribute__((section(".rodata_custom_desc"))) esp_custom_app_desc_t custom_app_desc = { ... }
 

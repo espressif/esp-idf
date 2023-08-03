@@ -25,7 +25,7 @@ Although hardware timers are not subject to the limitations mentioned, they may 
 
 ``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and {IDF_TARGET_HR_TIMER_Resolution}-bit range.
 
-Internally, ``esp_timer`` uses a {IDF_TARGET_HR_TIMER_Resolution}-bit hardware timer. The exact hardware timer implementation used will depend on the target, where {IDF_TARGET_HR_TIMER} is used for {IDF_TARGET_NAME}.
+Internally, ``esp_timer`` uses a {IDF_TARGET_HR_TIMER_Resolution}-bit hardware timer. The exact hardware timer implementation used depends on the target, where {IDF_TARGET_HR_TIMER} is used for {IDF_TARGET_NAME}.
 
 Timer callbacks can be dispatched by two methods:
 
@@ -70,18 +70,18 @@ Timer callbacks that are processed by the ``ESP_TIMER_ISR`` method should not ca
     ETM Event
     ---------
 
-    The ``esp_timer`` is constructed based on a hardware timer called *systimer*, which is able to generate the alarm event and interact with the :doc:`ETM </api-reference/peripherals/etm>` module. You can call :cpp:func:`esp_timer_new_etm_alarm_event` to get the corresponding ETM event handle.
+    The ``esp_timer`` is constructed based on a hardware timer called **systimer**, which is able to generate the alarm event and interact with the :doc:`ETM </api-reference/peripherals/etm>` module. You can call :cpp:func:`esp_timer_new_etm_alarm_event` to get the corresponding ETM event handle.
 
     To know more about how to connect the event to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
 
 ``esp_timer`` During Light-sleep
 --------------------------------
 
-During Light-sleep, the ``esp_timer`` counter stops and no callback functions are called. Instead, the time is counted by the RTC counter. Upon waking up, the system gets the difference between the counters and calls a function that advances the ``esp_timer`` counter. Since the counter has been advanced, the system starts calling callbacks that were not called during sleep. The number of callbacks depends on the duration of the sleep and the period of the timers. It can lead to the overflow of some queues. This only applies to periodic timers, since one-shot timers will be called once.
+During Light-sleep, the ``esp_timer`` counter stops and no callback functions are called. Instead, the time is counted by the RTC counter. Upon waking up, the system gets the difference between the counters and calls a function that advances the ``esp_timer`` counter. Since the counter has been advanced, the system starts calling callbacks that were not called during sleep. The number of callbacks depends on the duration of the sleep and the period of the timers. It can lead to the overflow of some queues. This only applies to periodic timers, since one-shot timers are only called once.
 
 This behavior can be changed by calling :cpp:func:`esp_timer_stop` before sleeping. In some cases, this can be inconvenient, and instead of the stop function, you can use the ``skip_unhandled_events`` option during :cpp:func:`esp_timer_create`. When the ``skip_unhandled_events`` is true, if a periodic timer expires one or more times during Light-sleep, then only one callback is called on wake.
 
-Using the ``skip_unhandled_events`` option with automatic Light-sleep (see :doc:`Power Management APIs <power_management>`) helps to reduce the power consumption of the system when it is in Light-sleep. The duration of Light-sleep is also in part determined by the next event occurs. Timers with ``skip_unhandled_events`` option will not wake up the system.
+Using the ``skip_unhandled_events`` option with automatic Light-sleep (see :doc:`Power Management APIs <power_management>`) helps to reduce the power consumption of the system when it is in Light-sleep. The duration of Light-sleep is also in part determined by the next event occurs. Timers with ``skip_unhandled_events`` option does not wake up the system.
 
 Handling Callbacks
 ------------------

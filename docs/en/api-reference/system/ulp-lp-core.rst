@@ -1,5 +1,6 @@
 ULP LP-Core Coprocessor Programming
 ===================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 The ULP LP-Core (Low-power core) coprocessor is a variant of the ULP present in {IDF_TARGET_NAME}. It features ultra-low power consumption while also being able to stay powered on while the main CPU stays in low-power modes. This enables the LP-Core coprocessor to handle tasks like GPIO or sensor readings while the main CPU is in sleep mode, resulting in significant overall power savings for the entire system.
@@ -16,11 +17,11 @@ The ULP LP-Core coprocessor has the following features:
 Compiling Code for the ULP LP-Core
 ----------------------------------
 
-The ULP LP-Core code is compiled together with your IDF project as a separate binary and automatically embedded into the main project binary. To acheive this do the following:
+The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. To acheive this do the following:
 
 1. Place the ULP LP-Core code, written in C or assembly (with the ``.S`` extension), in a dedicated directory within the component directory, such as ``ulp/``.
 
-2. After registering the component in the CMakeLists.txt file, call the ``ulp_embed_binary`` function. Here's an example:
+2. After registering the component in the CMakeLists.txt file, call the ``ulp_embed_binary`` function. Here is an example:
 
     idf_component_register()
 
@@ -31,16 +32,16 @@ The ULP LP-Core code is compiled together with your IDF project as a separate bi
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
 
- The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
+ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
-3. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE`` options in menuconfig. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option will reserve RTC memory for the ULP and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+3. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE`` options in menuconfig. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 
-4. Build the application as usual (e.g., `idf.py app`).
+4. Build the application as usual (e.g., ``idf.py app``).
 
    During the build process, the following steps are taken to build ULP program:
 
-   1. **Run each source file through the C compiler and assembler.** This step generates the object files (.obj.c or .obj.S depending of source file processed) in the component build directory.
+   1. **Run each source file through the C compiler and assembler.** This step generates the object files (``.obj.c`` or ``.obj.S`` depending of source file processed) in the component build directory.
 
    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
 
@@ -61,7 +62,7 @@ Accessing the ULP LP-Core Program Variables
 
 Global symbols defined in the ULP LP-Core program may be used inside the main program.
 
-For example, the ULP LP-Core program may define a variable ``measurement_count`` which will define the number of GPIO measurements the program needs to make before waking up the chip from deep sleep.
+For example, the ULP LP-Core program may define a variable ``measurement_count`` which defines the number of GPIO measurements the program needs to make before waking up the chip from deep sleep.
 
 .. code-block:: c
 
@@ -89,7 +90,7 @@ The generated linker script file defines the locations of symbols in LP_MEM::
 
     PROVIDE ( ulp_measurement_count = 0x50000060 );
 
-To access the ULP LP-Core program variables from the main program, the generated header file should be included using an ``include`` statement. This will allow the ULP LP-Core program variables to be accessed as regular variables.
+To access the ULP LP-Core program variables from the main program, the generated header file should be included using an ``include`` statement. This allows the ULP LP-Core program variables to be accessed as regular variables.
 
 .. code-block:: c
 
@@ -131,7 +132,7 @@ Once the program is loaded into LP memory, the application can be configured and
 ULP LP-Core Program Flow
 ------------------------
 
-How the ULP LP-Core coprocessor is started depends on the wakeup source selected in :cpp:type:`ulp_lp_core_cfg_t`. The most common use-case will be for the ULP to periodically wake-up, do some measurements before either waking up the main CPU or going back to sleep again.
+How the ULP LP-Core coprocessor is started depends on the wakeup source selected in :cpp:type:`ulp_lp_core_cfg_t`. The most common use-case is for the ULP to periodically wake-up, do some measurements before either waking up the main CPU or going back to sleep again.
 
 The ULP has the following wake-up sources:
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU` - LP Core can be woken up by the HP CPU.
@@ -140,9 +141,9 @@ The ULP has the following wake-up sources:
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - LP Core can be woken up when LP IO level changes. (Not yet supported)
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - LP Core can be woken up after receiving a certain number of UART RX pulses. (Not yet supported)
 
-When the ULP is woken up it will go through the following steps:
+When the ULP is woken up, it will go through the following steps:
 
-1. Initialize system feature, e.g. interrupts
+1. Initialize system feature, e.g., interrupts
 2. Call user code: ``main()``
 3. Return from ``main()``
 4. If ``lp_timer_sleep_duration_us`` is specified then configure the next wake-up alarm

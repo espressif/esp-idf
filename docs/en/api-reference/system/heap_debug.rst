@@ -22,7 +22,7 @@ To obtain information about the state of the heap, call the following functions:
 - :cpp:func:`heap_caps_get_minimum_free_size` can be used to track the heap "low watermark" since boot.
 - :cpp:func:`heap_caps_get_info` returns a :cpp:class:`multi_heap_info_t` structure, which contains the information from the above functions, plus some additional heap-specific data (number of allocations, etc.).
 - :cpp:func:`heap_caps_print_heap_info` prints a summary of the information returned by :cpp:func:`heap_caps_get_info` to stdout.
-- :cpp:func:`heap_caps_dump` and :cpp:func:`heap_caps_dump_all` will output detailed information about the structure of each block in the heap. Note that this can be a large amount of output.
+- :cpp:func:`heap_caps_dump` and :cpp:func:`heap_caps_dump_all` output detailed information about the structure of each block in the heap. Note that this can be a large amount of output.
 
 
 .. _heap-allocation-free:
@@ -82,7 +82,7 @@ It is also possible to manually check heap integrity by calling :cpp:func:`heap_
 Memory Allocation Failed Hook
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that will be invoked every time an allocation operation fails.
+Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that is invoked every time an allocation operation fails.
 
 Additionally, users can enable the :ref:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS`, which will automatically trigger a system abort if any allocation operation fails.
 
@@ -133,7 +133,7 @@ This is the default level. By default, no special heap corruption features are e
 
 If assertions are enabled, an assertion will also trigger if a double-free occurs (the same memory is freed twice).
 
-Calling :cpp:func:`heap_caps_check_integrity` in Basic mode will check the integrity of all heap structures, and print errors if any appear to be corrupted.
+Calling :cpp:func:`heap_caps_check_integrity` in Basic mode checks the integrity of all heap structures, and print errors if any appear to be corrupted.
 
 Light Impact
 ++++++++++++
@@ -212,7 +212,7 @@ If you suspect a memory leak, the first step is to figure out which part of the 
 Standalone Mode
 +++++++++++++++
 
-Once you've identified the code which you think is leaking:
+Once you have identified the code which you think is leaking:
 
 - Enable the :ref:`CONFIG_HEAP_TRACING_DEST` option.
 - Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer that can be used to record the memory trace.
@@ -249,7 +249,7 @@ The following code snippet demonstrates how application code would typically ini
       ...
   }
 
-The output from the heap trace will have a similar format to the following example:
+The output from the heap trace has a similar format to the following example:
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -308,7 +308,7 @@ A warning will be printed if the trace buffer was not large enough to hold all t
 Host-Based Mode
 +++++++++++++++
 
-Once you've identified the code which you think is leaking:
+Once you have identified the code which you think is leaking:
 
 - In the project configuration menu, navigate to ``Component settings`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
 - In the project configuration menu, navigate to ``Component settings`` > ``Application Level Tracing`` > :ref:`CONFIG_APPTRACE_DESTINATION1` and select ``Trace memory``.
@@ -377,7 +377,7 @@ To gather and analyze heap trace, do the following on the host:
 
     c
 
-Using this file GDB will connect to the target, reset it, and start tracing when the program hits breakpoint at :cpp:func:`heap_trace_start`. Tracing will be stopped when the program hits breakpoint at :cpp:func:`heap_trace_stop`. Traced data will be saved to ``/tmp/heap_log.svdat``.
+Using this file GDB can connect to the target, reset it, and start tracing when the program hits breakpoint at :cpp:func:`heap_trace_start`. Tracing will be stopped when the program hits breakpoint at :cpp:func:`heap_trace_stop`. Traced data will be saved to ``/tmp/heap_log.svdat``.
 
 4. Run GDB using ``{IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -x gdbinit </path/to/program/elf>``.
 
@@ -385,7 +385,7 @@ Using this file GDB will connect to the target, reset it, and start tracing when
 
 6. Run processing script ``$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b </path/to/program/elf> /tmp/heap_log.svdat``.
 
-The output from the heap trace will have a similar format to the following example:
+The output from the heap trace has a similar format to the following example:
 
 .. code-block::
 
@@ -501,12 +501,12 @@ False-Positive Memory Leaks
 
 Not everything printed by :cpp:func:`heap_trace_dump` is necessarily a memory leak. The following cases may also be printed:
 
-- Any memory that is allocated after :cpp:func:`heap_trace_start` but freed after :cpp:func:`heap_trace_stop` will appear in the leaked dump.
+- Any memory that is allocated after :cpp:func:`heap_trace_start` but freed after :cpp:func:`heap_trace_stop` appears in the leaked dump.
 - Allocations may be made by other tasks in the system. Depending on the timing of these tasks, it is quite possible that this memory is freed after :cpp:func:`heap_trace_stop` is called.
 - The first time a task uses stdio - e.g., when it calls :cpp:func:`heap_caps_printf` - a lock, i.e., RTOS mutex semaphore, is allocated by the libc. This allocation lasts until the task is deleted.
-- Certain uses of :cpp:func:`heap_caps_printf` , such as printing floating point numbers, will allocate some memory from the heap on demand. These allocations last until the task is deleted.
-- The Bluetooth, Wi-Fi, and TCP/IP libraries will allocate heap memory buffers to handle incoming or outgoing data. These memory buffers are usually short-lived, but some may be shown in the heap leak trace if the data has been received or transmitted by the lower levels of the network during the heap tracing.
-- TCP connections will retain some memory even after they are closed due to the ``TIME_WAIT`` state. Once the ``TIME_WAIT`` period is completed, this memory will be freed.
+- Certain uses of :cpp:func:`heap_caps_printf`, such as printing floating point numbers and allocating some memory from the heap on demand. These allocations last until the task is deleted.
+- The Bluetooth, Wi-Fi, and TCP/IP libraries allocate heap memory buffers to handle incoming or outgoing data. These memory buffers are usually short-lived, but some may be shown in the heap leak trace if the data has been received or transmitted by the lower levels of the network during the heap tracing.
+- TCP connections retain some memory even after they are closed due to the ``TIME_WAIT`` state. Once the ``TIME_WAIT`` period is completed, this memory will be freed.
 
 One way to differentiate between "real" and "false positive" memory leaks is to call the suspect code multiple times while tracing is running, and look for patterns (multiple matching allocations) in the heap trace output.
 

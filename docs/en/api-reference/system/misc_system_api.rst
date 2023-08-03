@@ -1,5 +1,6 @@
 Miscellaneous System APIs
 =========================
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_BASE_MAC_BLOCK: default="BLK1", esp32="BLK0"}
@@ -36,7 +37,7 @@ These APIs allow querying and customizing MAC addresses for different supported 
 
 To fetch the MAC address for a specific network interface (e.g., Wi-Fi, Bluetooth, Ethernet), call the function :cpp:func:`esp_read_mac`.
 
-In ESP-IDF, the MAC addresses for the various network interfaces are calculated from a single *base MAC address*. By default, the Espressif base MAC address is used. This base MAC address is pre-programmed into the {IDF_TARGET_NAME} eFuse in the factory during production.
+In ESP-IDF, the MAC addresses for the various network interfaces are calculated from a single **base MAC address**. By default, the Espressif base MAC address is used. This base MAC address is pre-programmed into the {IDF_TARGET_NAME} eFuse in the factory during production.
 
 .. only:: not esp32s2
 
@@ -89,7 +90,9 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
 .. only:: not SOC_EMAC_SUPPORTED
 
-    .. note:: Although {IDF_TARGET_NAME} has no integrated Ethernet MAC, it is still possible to calculate an Ethernet MAC address. However, this MAC address can only be used with an external ethernet interface such as an SPI-Ethernet device. See :doc:`/api-reference/network/esp_eth`.
+    .. note:: 
+      
+      Although {IDF_TARGET_NAME} has no integrated Ethernet MAC, it is still possible to calculate an Ethernet MAC address. However, this MAC address can only be used with an external ethernet interface such as an SPI-Ethernet device. See :doc:`/api-reference/network/esp_eth`.
 
 Custom Interface MAC
 ^^^^^^^^^^^^^^^^^^^^

@@ -27,7 +27,7 @@ For more details on these internal memory types, see :ref:`memory-layout`.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME}. The :doc:`external RAM </api-guides/external-ram>` is integrated into the {IDF_TARGET_NAME}'s memory map via the cache, and accessed similarly to DRAM.
+    It is also possible to connect external SPI RAM to the {IDF_TARGET_NAME}. The :doc:`external RAM </api-guides/external-ram>` is integrated into the {IDF_TARGET_NAME}'s memory map via the cache, and accessed similarly to DRAM.
 
 All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MALLOC_CAP_8BIT`` capability. Users can call ``heap_caps_get_free_size(MALLOC_CAP_8BIT)`` to get the free size of all DRAM heaps.
 
@@ -45,15 +45,19 @@ Available Heap
 DRAM
 ^^^^
 
-At startup, the DRAM heap contains all data memory that is not statically allocated by the app. Reducing statically allocated buffers will increase the amount of available free heap.
+At startup, the DRAM heap contains all data memory that is not statically allocated by the app. Reducing statically-allocated buffers increases the amount of available free heap.
 
 To find the amount of statically allocated memory, use the :ref:`idf.py size <idf.py-size>` command.
 
 .. only:: esp32
 
-    .. note:: See the :ref:`dram` section for more details about the DRAM usage limitations.
+    .. note:: 
+        
+        See the :ref:`dram` section for more details about the DRAM usage limitations.
 
-.. note:: At runtime, the available heap DRAM may be less than calculated at compile time, because, at startup, some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
+.. note:: 
+    
+    At runtime, the available heap DRAM may be less than calculated at compile time, because, at startup, some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
 
 IRAM
 ^^^^
@@ -105,13 +109,13 @@ Use the ``MALLOC_CAP_DMA`` flag to allocate memory which is suitable for use wit
 32-Bit Accessible Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If a certain memory structure is only addressed in 32-bit units, for example, an array of ints or pointers, it can be useful to allocate it with the ``MALLOC_CAP_32BIT`` flag. This also allows the allocator to give out IRAM memory, which is sometimes unavailable for a normal malloc() call. This can help to use all the available memory in the {IDF_TARGET_NAME}.
+If a certain memory structure is only addressed in 32-bit units, for example, an array of ints or pointers, it can be useful to allocate it with the ``MALLOC_CAP_32BIT`` flag. This also allows the allocator to give out IRAM memory, which is sometimes unavailable for a normal ``malloc()`` call. This can help to use all the available memory in the {IDF_TARGET_NAME}.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA and SOC_CPU_HAS_FPU
 
     Please note that on {IDF_TARGET_NAME} series chips, ``MALLOC_CAP_32BIT`` cannot be used for storing floating-point variables. This is because ``MALLOC_CAP_32BIT`` may return instruction RAM and the floating-point assembly instructions on {IDF_TARGET_NAME} cannot access instruction RAM.
 
-Memory allocated with ``MALLOC_CAP_32BIT`` can *only* be accessed via 32-bit reads and writes, any other type of access will generate a fatal LoadStoreError exception.
+Memory allocated with ``MALLOC_CAP_32BIT`` can **only** be accessed via 32-bit reads and writes, any other type of access will generate a fatal LoadStoreError exception.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
@@ -150,7 +154,9 @@ The following functions from the heap component can be called from the interrupt
 * :cpp:func:`heap_caps_aligned_alloc`
 * :cpp:func:`heap_caps_aligned_free`
 
-Note: however, this practice is strongly discouraged.
+.. note::
+
+    However, this practice is strongly discouraged.
 
 Heap Tracing & Debugging
 ------------------------
@@ -165,7 +171,7 @@ The following features are documented on the :doc:`Heap Memory Debugging </api-r
 Implementation Notes
 --------------------
 
-Knowledge about the regions of memory in the chip comes from the "SoC" component, which contains memory layout information for the chip, and the different capabilities of each region. Each region's capabilities are prioritized, so that (for example) dedicated DRAM and IRAM regions will be used for allocations ahead of the more versatile D/IRAM regions.
+Knowledge about the regions of memory in the chip comes from the "SoC" component, which contains memory layout information for the chip, and the different capabilities of each region. Each region's capabilities are prioritized, so that (for example) dedicated DRAM and IRAM regions are used for allocations ahead of the more versatile D/IRAM regions.
 
 Each contiguous region of memory contains its own memory heap. The heaps are created using the :ref:`multi_heap <multi-heap>` functionality. ``multi_heap`` allows any contiguous region of memory to be used as a heap.
 
@@ -190,6 +196,6 @@ API Reference - Initialisation
 API Reference - Multi-Heap API
 ------------------------------
 
-(Note: The multi-heap API is used internally by the heap capabilities allocator. Most IDF programs will never need to call this API directly.)
+(Note: The multi-heap API is used internally by the heap capabilities allocator. Most ESP-IDF programs never need to call this API directly.)
 
 .. include-build-file:: inc/multi_heap.inc

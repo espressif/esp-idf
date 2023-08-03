@@ -1,5 +1,6 @@
 空中升级 (OTA)
 ==============
+
 :link_to_translation:`en:[English]`
 
 OTA 流程概览
@@ -7,7 +8,7 @@ OTA 流程概览
 
 OTA 升级机制可以让设备在固件正常运行时根据接收数据（如通过 Wi-Fi 或蓝牙）进行自我更新。
 
-要运行 OTA 机制，需配置设备的 :doc:`分区表 <../../api-guides/partition-tables>`，该分区表至少包括两个 OTA 应用程序分区（即 `ota_0` 和 `ota_1`）和一个 OTA 数据分区。
+要运行 OTA 机制，需配置设备的 :doc:`分区表 <../../api-guides/partition-tables>`，该分区表至少包括两个 OTA 应用程序分区（即 ``ota_0`` 和 ``ota_1``）和一个 OTA 数据分区。
 
 OTA 功能启动后，向当前未用于启动的 OTA 应用分区写入新的应用固件镜像。镜像验证后，OTA 数据分区更新，指定在下一次启动时使用该镜像。
 
@@ -35,7 +36,9 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
 * 应用程序出现严重错误，无法继续工作，必须回滚到此前的版本，:cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 将正在运行的版本标记为 ``ESP_OTA_IMG_INVALID`` 然后复位。引导加载程序不会选取此版本，而是启动此前正常运行的版本。
 * 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，则无需调用函数便可复位，回滚至之前的应用版本。
 
-注解：应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (ota_0, ota_1, ...)。
+.. note::
+
+  应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (ota_0, ota_1, ...)。
 
 应用程序 OTA 状态
 ^^^^^^^^^^^^^^^^^
@@ -73,7 +76,7 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 * 引导加载程序选取一个新版应用程序来引导，这样应用程序状态就不会设置为 ``ESP_OTA_IMG_INVALID`` 或 ``ESP_OTA_IMG_ABORTED``。
 * 引导加载程序检查所选取的新版应用程序，若状态设置为 ``ESP_OTA_IMG_NEW``，则写入 ``ESP_OTA_IMG_PENDING_VERIFY``。该状态表示，需确认应用程序的可操作性，如不确认，发生重启，则状态会重写为 ``ESP_OTA_IMG_ABORTED`` （见上文），该应用程序不可再启动，将回滚至上一版本。
 * 新版应用程序启动，应进行自测。
-* 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性  (``ESP_OTA_IMG_PENDING_VERIFY`` 状态)。
+* 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性（ ``ESP_OTA_IMG_PENDING_VERIFY`` 状态）。
 * 若未通过自测，则调用函数 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`，回滚至之前能正常工作的应用程序版本，同时将无效的新版本应用程序设置为 ``ESP_OTA_IMG_INVALID``。
 * 如果新版应用程序可操作性没有确认，则状态一直为 ``ESP_OTA_IMG_PENDING_VERIFY``。下一次启动时，状态变更为 ``ESP_OTA_IMG_ABORTED``，阻止其再次启动，之后回滚到之前的版本。
 
@@ -195,10 +198,10 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
   具体可参考 :ref:`signed-app-verify`。
 
 
-OTA 工具 (otatool.py)
----------------------
+OTA 工具 ``otatool.py``
+----------------------------
 
-`app_update` 组件中有 :component_file:`otatool.py<app_update/otatool.py>` 工具，用于在目标设备上完成下列 OTA 分区相关操作：
+``app_update`` 组件中有 :component_file:`otatool.py<app_update/otatool.py>` 工具，用于在目标设备上完成下列 OTA 分区相关操作：
 
   - 读取 otadata 分区 (read_otadata)
   - 擦除 otadata 分区，将设备复位至工厂应用程序 (erase_otadata)
@@ -212,7 +215,7 @@ OTA 工具 (otatool.py)
 Python API
 ^^^^^^^^^^
 
-首先，确保已导入 `otatool` 模块。
+首先，确保已导入 ``otatool`` 模块。
 
 .. code-block:: python
 
@@ -255,7 +258,7 @@ Python API
 命令行界面
 ^^^^^^^^^^
 
-`otatool.py` 的命令行界面具有如下结构：
+``otatool.py`` 的命令行界面具有如下结构：
 
 .. code-block:: bash
 
@@ -280,7 +283,7 @@ Python API
   otatool.py --port "/dev/ttyUSB1" read_ota_partition --name=ota_3 --output=ota_3.bin
 
 
-更多信息可用 `--help` 指令查看：
+更多信息可用 ``--help`` 指令查看：
 
 .. code-block:: bash
 

@@ -17,6 +17,7 @@ ESP-IDF FreeRTOS
 ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to support SMP. ESP-IDF FreeRTOS only supports two cores at most (i.e., dual core SMP), but is more optimized for this scenario by design. For more details regarding ESP-IDF FreeRTOS and its modifications, please refer to the :doc:`freertos_idf` document.
 
 .. note::
+
     ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
 
 .. _amazon_smp_freertos:
@@ -27,6 +28,7 @@ Amazon SMP FreeRTOS
 Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
 
 .. warning::
+  
     The Amazon SMP FreeRTOS implementation (and its port in ESP-IDF) are currently in experimental/beta state. Therefore, significant behavioral changes and breaking API changes can occur.
 
 Configuration
@@ -37,11 +39,11 @@ Kernel Configuration
 
 Vanilla FreeRTOS requires that ports and applications configure the kernel by adding various ``#define config...`` macros to ``FreeRTOSConfig.h``. Vanilla FreeRTOS supports a list of kernel configuration options which allow various kernel behaviors and features to be enabled or disabled.
 
-**However, for all FreeRTOS ports in ESP-IDF, the ``FreeRTOSConfig.h`` file is considered private and must not be modified by users**. A large number of kernel configuration options in ``FreeRTOSConfig.h`` are hard coded as they are either required or not supported in ESP-IDF. All kernel configuration options that are configurable by the user will be exposed via menuconfig under ``Component Config/FreeRTOS/Kernel``.
+**However, for all FreeRTOS ports in ESP-IDF, the ``FreeRTOSConfig.h`` file is considered private and must not be modified by users**. A large number of kernel configuration options in ``FreeRTOSConfig.h`` are hard coded as they are either required or not supported in ESP-IDF. All kernel configuration options that are configurable by the user are exposed via menuconfig under ``Component Config/FreeRTOS/Kernel``.
 
 For the full list of user configurable kernel options, see :doc:`/api-reference/kconfig`. The list below highlights some commonly used kernel configuration options:
 
-- :ref:`CONFIG_FREERTOS_UNICORE` will run FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core` (if using ESP-IDF FreeRTOS) or the official Amazon SMP FreeRTOS documentation. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+- :ref:`CONFIG_FREERTOS_UNICORE` runs FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core` (if using ESP-IDF FreeRTOS) or the official Amazon SMP FreeRTOS documentation. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
 .. only:: CONFIG_FREERTOS_UNICORE
 
@@ -64,7 +66,7 @@ Using FreeRTOS
 Application Entry Point
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:func:`vTaskStartScheduler` and :cpp:func:`vTaskEndScheduler`. Instead, ESP-IDF will start FreeRTOS automatically. Users must define a ``void app_main(void)`` function which acts as the entry point for user's application and is automatically called on ESP-IDF startup.
+Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:func:`vTaskStartScheduler` and :cpp:func:`vTaskEndScheduler`. Instead, ESP-IDF starts FreeRTOS automatically. Users must define a ``void app_main(void)`` function which acts as the entry point for user's application and is automatically called on ESP-IDF startup.
 
 - Typically, users would spawn the rest of their application's task from ``app_main``.
 - The ``app_main`` function is allowed to return at any point (i.e., before the application terminates).
@@ -75,7 +77,7 @@ Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:f
 Background Tasks
 ^^^^^^^^^^^^^^^^
 
-During startup, ESP-IDF and FreeRTOS will automatically create multiple tasks that run in the background (listed in the the table below).
+During startup, ESP-IDF and FreeRTOS automatically creates multiple tasks that run in the background (listed in the the table below).
 
 .. list-table:: List of Tasks Created During Startup
     :widths: 10 75 5 5 5
@@ -107,7 +109,7 @@ During startup, ESP-IDF and FreeRTOS will automatically create multiple tasks th
       - CPUx
       - ``24``
     * - ESP Timer Task (``esp_timer``)
-      - ESP-IDF will create the ESP Timer Task used to process ESP Timer callbacks.
+      - ESP-IDF creates the ESP Timer Task used to process ESP Timer callbacks.
       - :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`
       - CPU0
       - ``22``
