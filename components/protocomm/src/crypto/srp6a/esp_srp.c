@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 static const char *TAG = "srp6a";
 
 typedef struct esp_srp_handle {
-    int allocated;
     esp_ng_type_t type;
     esp_mpi_ctx_t *ctx;
 
@@ -259,7 +258,7 @@ static esp_mpi_t *calculate_u(esp_srp_handle_t *hd, char *A, int len_A)
     return calculate_padded_hash(hd, A, len_A, hd->bytes_B, hd->len_B);
 }
 
-esp_err_t __esp_srp_srv_pubkey(esp_srp_handle_t *hd, char **bytes_B, int *len_B)
+static esp_err_t __esp_srp_srv_pubkey(esp_srp_handle_t *hd, char **bytes_B, int *len_B)
 {
     esp_mpi_t *k = calculate_k(hd);
     esp_mpi_t *kv = NULL;
@@ -315,46 +314,45 @@ error:
     return ESP_FAIL;
 }
 
-esp_err_t esp_srp_srv_pubkey(esp_srp_handle_t *hd, const char *username, int username_len, const char *pass, int pass_len, int salt_len,
-                             char **bytes_B, int *len_B, char **bytes_salt)
+static esp_err_t _esp_srp_gen_salt_verifier(esp_srp_handle_t *hd, const char *username, int username_len,
+                                            const char *pass, int pass_len, int salt_len)
 {
     /* Get Salt */
     int str_salt_len;
     esp_mpi_t *x = NULL;
     hd->s = esp_mpi_new();
-    if (! hd->s) {
+    if (!hd->s) {
+        ESP_LOGE(TAG, "Failed to allocate bignum s");
         goto error;
     }
 
     esp_mpi_get_rand(hd->s, 8 * salt_len, -1, 0);
-    *bytes_salt = esp_mpi_to_bin(hd->s, &str_salt_len);
-    if (! *bytes_salt) {
+    hd->bytes_s = esp_mpi_to_bin(hd->s, &str_salt_len);
+    if (!hd->bytes_s) {
+        ESP_LOGE(TAG, "Failed to generate salt of len %d", salt_len);
         goto error;
     }
 
-    hd->bytes_s = *bytes_salt;
     hd->len_s = salt_len;
     ESP_LOGD(TAG, "Salt ->");
-    ESP_LOG_BUFFER_HEX_LEVEL(TAG, *bytes_salt, str_salt_len, ESP_LOG_DEBUG);
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, hd->bytes_s, str_salt_len, ESP_LOG_DEBUG);
 
     /* Calculate X which is simply a hash for all these things */
-    x = calculate_x(*bytes_salt, str_salt_len, username, username_len, pass, pass_len);
-    if (! x) {
+    x = calculate_x(hd->bytes_s, str_salt_len, username, username_len, pass, pass_len);
+    if (!x) {
+        ESP_LOGE(TAG, "Failed to calculate x");
         goto error;
     }
     hexdump_mpi("x", x);
 
     /* v = g^x % N */
     hd->v = esp_mpi_new();
-    if (! hd->v) {
+    if (!hd->v) {
+        ESP_LOGE(TAG, "Failed to allocate bignum v");
         goto error;
     }
     esp_mpi_a_exp_b_mod_c(hd->v, hd->g, x, hd->n, hd->ctx);
     hexdump_mpi("Verifier", hd->v);
-
-    if (__esp_srp_srv_pubkey(hd, bytes_B, len_B) < 0 ) {
-        goto error;
-    }
 
     esp_mpi_free(x);
     return ESP_OK;
@@ -364,9 +362,8 @@ error:
         esp_mpi_free(hd->s);
         hd->s = NULL;
     }
-    if (*bytes_salt) {
-        free(*bytes_salt);
-        *bytes_salt = NULL;
+    if (hd->bytes_s) {
+        free(hd->bytes_s);
         hd->bytes_s = NULL;
         hd->len_s = 0;
     }
@@ -381,9 +378,84 @@ error:
     return ESP_FAIL;
 }
 
+esp_err_t esp_srp_srv_pubkey(esp_srp_handle_t *hd, const char *username, int username_len,
+                             const char *pass, int pass_len, int salt_len,
+                             char **bytes_B, int *len_B, char **bytes_salt)
+{
+    if (!hd || !username || !pass) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (ESP_OK != _esp_srp_gen_salt_verifier(hd, username, username_len, pass, pass_len, salt_len)) {
+        goto error;
+    }
+    *bytes_salt = hd->bytes_s;
+
+    if (__esp_srp_srv_pubkey(hd, bytes_B, len_B) < 0 ) {
+        goto error;
+    }
+    return ESP_OK;
+
+error:
+    if (hd->s) {
+        esp_mpi_free(hd->s);
+        hd->s = NULL;
+    }
+    if (*bytes_salt) {
+        free(*bytes_salt);
+        *bytes_salt = NULL;
+        hd->bytes_s = NULL;
+        hd->len_s = 0;
+    }
+    if (hd->v) {
+        esp_mpi_free(hd->v);
+        hd->v = NULL;
+    }
+    return ESP_FAIL;
+}
+
 esp_err_t esp_srp_srv_pubkey_from_salt_verifier(esp_srp_handle_t *hd, char **bytes_B, int *len_B)
 {
+    if (!hd || !bytes_B || !len_B) {
+        return ESP_ERR_INVALID_ARG;
+    }
     return __esp_srp_srv_pubkey(hd, bytes_B, len_B);
+}
+
+/* Generate salt-verifier pair for given username and password */
+esp_err_t esp_srp_gen_salt_verifier(const char *username, int username_len,
+                                    const char *pass, int pass_len,
+                                    char **bytes_salt, int salt_len,
+                                    char **verifier, int *verifier_len)
+{
+    esp_err_t ret = ESP_FAIL;
+
+    /* allocate and init temporary SRP handle */
+    esp_srp_handle_t *srp_hd = esp_srp_init(ESP_NG_3072);
+    if (!srp_hd) {
+        ESP_LOGE(TAG, "Failed to initialise security context!");
+        return ESP_ERR_NO_MEM;
+    }
+
+    // get salt and verifier
+    if (ESP_OK != _esp_srp_gen_salt_verifier(srp_hd, username, username_len, pass, pass_len, salt_len)) {
+        goto cleanup;
+    }
+
+    // convert to verifier bytes
+    *verifier = esp_mpi_to_bin(srp_hd->v, verifier_len);
+    if (!*verifier) {
+        ESP_LOGE(TAG, "Failed to allocate verifier bytes!");
+        ret = ESP_ERR_NO_MEM;
+        goto cleanup;
+    }
+
+    *bytes_salt = srp_hd->bytes_s;
+    srp_hd->bytes_s = NULL; // so that it won't be freed in `esp_srp_free` step
+    ret = ESP_OK;
+
+cleanup:
+    esp_srp_free(srp_hd);
+    return ret;
 }
 
 esp_err_t esp_srp_set_salt_verifier(esp_srp_handle_t *hd, const char *salt, int salt_len,
