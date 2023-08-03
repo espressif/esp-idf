@@ -98,29 +98,35 @@ Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of t
 
 **Positional Arguments**:
 
-+---------------+---------------------------------------------------------------+
-| Parameter     | Description                                                   |
-+===============+===============================================================+
-| ``partition`` | Name of the NVS parition                                      |
-+---------------+---------------------------------------------------------------+
-| ``csv``       | Path to CSV file to parse                                     |
-+---------------+---------------------------------------------------------------+
+.. list-table::
+    :header-rows: 1
+
+    * - Parameter
+      - Description
+    * - ``partition``
+      - Name of the NVS parition
+    * - ``csv``
+      - Path to CSV file to parse
+
 
 **Optional Arguments**:
 
-+----------------------+----------------------------------------------------------------------+
-| Parameter            | Description                                                          |
-+======================+======================================================================+
-| ``FLASH_IN_PROJECT`` | Flash the image when using ``idf.py flash``                          |
-+----------------------+----------------------------------------------------------------------+
-| ``VERSION``          | Set multipage blob version (Default: Version 2)                      |
-|                      |                                                                      |
-|                      | Version 1 - Multipage blob support disabled                          |
-|                      |                                                                      |
-|                      | Version 2 - Multipage blob support enabled                           |
-+----------------------+----------------------------------------------------------------------+
-| ``DEPENDS``          | Specify files on which the command depends                           |
-+----------------------+----------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Parameter
+     - Description
+   * - ``FLASH_IN_PROJECT``
+     - Name of the NVS parition
+   * - ``VERSION {1,2}``
+     - Set multipage blob version (Default: Version 2)
+
+       Version 1 = support disabled
+
+       Version 2 = support enabled
+   * - ``DEPENDS``
+     - Specify files on which the command depends
+
 
 If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``idf.py <partition>-flash`` (e.g. if your parition name is ``nvs`` ``idf.py nvs-flash``).
 
