@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -139,8 +139,32 @@ esp_err_t esp_srp_srv_pubkey(esp_srp_handle_t *hd, const char *username, int use
                              char **bytes_B, int *len_B, char **bytes_salt);
 
 /**
- * @brief       Set the Salt and Verifier pre-generated for a given password.
+ * @brief   Generate salt-verifier pair, given username, password and salt length
  *
+ * @param[in] username      username
+ * @param[in] username_len  length of the username
+ * @param[in] pass          password
+ * @param[in] pass_len      length of the password
+ * @param[out] bytes_salt   generated salt on successful generation, or NULL
+ * @param[in] salt_len      salt length
+ * @param[out] verifier     generated verifier on successful generation, or NULL
+ * @param[out] verifier_len length of the generated verifier
+ * @return esp_err_t        ESP_OK on success, appropriate error otherwise
+ *
+ * @note if API has returned ESP_OK, salt and verifier generated need to be freed by caller
+ * @note Usually, username and password are not saved on the device. Rather salt and verifier are
+ *      generated outside the device and are embedded.
+ *      this covenience API can be used to generate salt and verifier on the fly for development use case.
+ *      OR for devices which intentionally want to generate different password each time and can send it
+ *      to the client securely. e.g., a device has a display and it shows the pin
+ */
+esp_err_t esp_srp_gen_salt_verifier(const char *username, int username_len,
+                                    const char *pass, int pass_len,
+                                    char **bytes_salt, int salt_len,
+                                    char **verifier, int *verifier_len);
+
+/**
+ * @brief       Set the Salt and Verifier pre-generated for a given password.
  * This should be used only if the actual password is not available.
  * The public key can then be generated using esp_srp_srv_pubkey_from_salt_verifier()
  * and not esp_srp_srv_pubkey()
