@@ -1204,6 +1204,38 @@ pytest_test_apps_esp32s3_mspi_f4r4:
     - build_pytest_test_apps_esp32s3
   tags: [ esp32s3, MSPI_F4R4 ]
 
+pytest_test_apps_esp32s2_wifi_two_dut:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s2-wifi
+  needs:
+    - build_pytest_test_apps_esp32s2
+  tags: [ esp32s2, wifi_two_dut ]
+
+pytest_test_apps_esp32s3_wifi_two_dut:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3-wifi
+  needs:
+    - build_pytest_test_apps_esp32s3
+  tags: [ esp32s3, wifi_two_dut ]
+
+pytest_test_apps_esp32c2_wifi_two_dut:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2-wifi
+  needs:
+    - build_pytest_test_apps_esp32c2
+  tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
+
+pytest_test_apps_esp32c3_wifi_two_dut:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c3-wifi
+  needs:
+    - build_pytest_test_apps_esp32c3
+  tags: [ esp32c3, wifi_two_dut]
+
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |

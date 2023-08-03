@@ -253,6 +253,10 @@
   - "components/app_update/**/*"
   - "components/esp_https_ota/**/*"
 
+# for jobs: custom_test*wifi*
+.patterns-custom_test-wifi: &patterns-custom_test-wifi
+  - "tools/test_apps/phy/**/*"
+
 # for jobs: example_test_pytest_sdio related
 .patterns-example_test-sdio: &patterns-example_test-sdio
   - "components/hal/sdio*.c"
@@ -969,6 +973,8 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
@@ -994,6 +1000,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
@@ -1021,6 +1029,8 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
@@ -1046,6 +1056,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
@@ -1073,6 +1085,8 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
@@ -1098,6 +1112,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
@@ -1125,6 +1141,8 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
@@ -1150,6 +1168,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
@@ -1573,6 +1593,8 @@
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
@@ -2288,6 +2310,21 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
 
+.rules:test:custom_test-esp32c2-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32c2
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:test:custom_test-esp32c3:
   rules:
     - <<: *if-revert-branch
@@ -2300,6 +2337,21 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-custom_test
+
+.rules:test:custom_test-esp32c3-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32c6:
   rules:
@@ -2340,6 +2392,21 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
 
+.rules:test:custom_test-esp32s2-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:test:custom_test-esp32s3:
   rules:
     - <<: *if-revert-branch
@@ -2352,6 +2419,21 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-custom_test
+
+.rules:test:custom_test-esp32s3-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32:
   rules:
