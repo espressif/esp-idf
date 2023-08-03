@@ -62,7 +62,7 @@ typedef enum {
  */
 typedef enum {
     ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
-    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,                     /**< Reserved */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                    /**< ECDSA private key (Expected in little endian order)*/
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,            /**< XTS_AES_256_KEY_1 (flash/PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,            /**< XTS_AES_256_KEY_2 (flash/PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,              /**< XTS_AES_128_KEY (flash/PSRAM encryption) */

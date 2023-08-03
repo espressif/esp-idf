@@ -85,6 +85,11 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
     return 0;
 }
 
+__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)
+{
+    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)
@@ -121,6 +126,11 @@ __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_cod
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
     EFUSE.wr_tim_conf2.pwr_off_num = value;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void)
+{
+    EFUSE.wr_tim_conf0_rs_bypass.update = 1;
 }
 
 /******************* eFuse control functions *************************/

@@ -195,14 +195,18 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     case PERIPH_DS_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_DS;
     case PERIPH_ECC_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECC;
+        ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECC;
+        if (enable == true) {
+            ret |= HP_SYS_CLKRST_REG_RST_EN_ECDSA;
+        }
+        return ret;
     case PERIPH_HMAC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_HMAC;
     case PERIPH_RSA_MODULE:
         ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_RSA;
         if (enable == true) {
-            // Clear reset on digital signature, otherwise RSA is held in reset
-            ret |= HP_SYS_CLKRST_REG_RST_EN_DS;
+            // Clear reset on digital signature, and ECDSA, otherwise RSA is held in reset
+            ret |= HP_SYS_CLKRST_REG_RST_EN_DS | HP_SYS_CLKRST_REG_RST_EN_ECDSA;
         }
         return ret;
     case PERIPH_SEC_MODULE:

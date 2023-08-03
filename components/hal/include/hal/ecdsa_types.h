@@ -15,6 +15,7 @@ extern "C" {
 typedef enum {
     ECDSA_MODE_SIGN_VERIFY,
     ECDSA_MODE_SIGN_GEN,
+    ECDSA_MODE_EXPORT_PUBKEY,
 } ecdsa_mode_t;
 
 /**
