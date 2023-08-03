@@ -43,6 +43,10 @@ config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
@@ -551,9 +555,17 @@ config SOC_PARLIO_TX_RX_SHARE_INTERRUPT
     bool
     default y
 
+config SOC_MPI_MEM_BLOCKS_NUM
+    int
+    default 4
+
+config SOC_MPI_OPERATIONS_NUM
+    int
+    default 3
+
 config SOC_RSA_MAX_BIT_LEN
     int
-    default 3072
+    default 4096
 
 config SOC_SHA_DMA_MAX_BUFFER_SIZE
     int
