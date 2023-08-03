@@ -141,7 +141,7 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
     ESP_RETURN_ON_ERROR(lp_i2c_config_clk(cfg), LPI2C_TAG, "Failed to configure LP I2C source clock");
 
     /* Enable SDA and SCL filtering. This configuration matches the HP I2C filter config */
-    i2c_ll_set_filter(i2c_hal.dev, LP_I2C_FILTER_CYC_NUM_DEF);
+    i2c_ll_master_set_filter(i2c_hal.dev, LP_I2C_FILTER_CYC_NUM_DEF);
 
     /* Configure the I2C master to send a NACK when the Rx FIFO count is full */
     i2c_ll_master_rx_full_ack_level(i2c_hal.dev, 1);
