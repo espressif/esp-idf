@@ -78,15 +78,29 @@ config BT_CTRL_ADV_DUP_FILT_MAX
     help
         The maxinum number of suplicate scan filter
 
-config BT_CTRL_HW_CCA
-    bool "HW CCA check enable"
-    default n
+choice BT_BLE_CCA_MODE
+    prompt "BLE CCA mode"
+    default BT_BLE_CCA_MODE_NONE
     help
-        It enables HW CCA feature in controller
+        Define BT BLE CCA mode
+
+    config BT_BLE_CCA_MODE_NONE
+        bool "NONE"
+    config BT_BLE_CCA_MODE_HW
+        bool "Hardware"
+    config BT_BLE_CCA_MODE_SW
+        bool "Software"
+endchoice
+
+config BT_BLE_CCA_MODE
+    int
+    default 0 if BT_BLE_CCA_MODE_NONE
+    default 1 if BT_BLE_CCA_MODE_HW
+    default 2 if BT_BLE_CCA_MODE_SW
 
 config BT_CTRL_HW_CCA_VAL
     int "CCA threshold value"
-    range 20 60
+    range 20 100
     default 20
     help
         It is the threshold value of HW CCA, if the value is 30, it means CCA threshold is -30 dBm.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,7 +112,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010006
+#define OSI_VERSION              0x00010007
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* Types definition
@@ -193,6 +193,8 @@ struct osi_funcs_t {
     void (* _esp_hw_power_down)(void);
     void (* _esp_hw_power_up)(void);
     void (* _ets_backup_dma_copy)(uint32_t reg, uint32_t mem_addr, uint32_t num, bool to_rem);
+    void (* _ets_delay_us)(uint32_t us);
+    void (* _btdm_rom_table_ready)(void);
 };
 
 
@@ -250,6 +252,8 @@ extern void esp_mac_bb_power_down(void);
 extern void esp_mac_bb_power_up(void);
 extern void ets_backup_dma_copy(uint32_t reg, uint32_t mem_addr, uint32_t num, bool to_mem);
 #endif
+
+extern void btdm_cca_feature_enable(void);
 
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
@@ -310,6 +314,7 @@ static void interrupt_off_wrapper(int intr_num);
 static void btdm_hw_mac_power_up_wrapper(void);
 static void btdm_hw_mac_power_down_wrapper(void);
 static void btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uint32_t num,  bool to_mem);
+static void btdm_funcs_table_ready_wrapper(void);
 
 static void btdm_slp_tmr_callback(void *arg);
 
@@ -374,6 +379,8 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._esp_hw_power_down = btdm_hw_mac_power_down_wrapper,
     ._esp_hw_power_up = btdm_hw_mac_power_up_wrapper,
     ._ets_backup_dma_copy = btdm_backup_dma_copy_wrapper,
+    ._ets_delay_us = esp_rom_delay_us,
+    ._btdm_rom_table_ready = btdm_funcs_table_ready_wrapper,
 };
 
 static DRAM_ATTR struct osi_funcs_t *osi_funcs_p;
@@ -871,6 +878,13 @@ static void async_wakeup_request_end(int event)
     return;
 }
 
+static void btdm_funcs_table_ready_wrapper(void)
+{
+#if BT_BLE_CCA_MODE == 2
+    btdm_cca_feature_enable();
+#endif
+}
+
 static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)
 {
 #if CONFIG_SW_COEXIST_ENABLE
@@ -1299,14 +1313,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     periph_module_enable(PERIPH_BT_MODULE);
     periph_module_reset(PERIPH_BT_MODULE);
 
-    esp_phy_enable();
-    s_lp_stat.phy_enabled = 1;
-
     if (btdm_controller_init(cfg) != 0) {
         err = ESP_ERR_NO_MEM;
         goto error;
     }
-    coex_pti_v2();
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
@@ -1335,11 +1345,6 @@ esp_err_t esp_bt_controller_deinit(void)
 static void bt_controller_deinit_internal(void)
 {
     periph_module_disable(PERIPH_BT_MODULE);
-
-    if (s_lp_stat.phy_enabled) {
-        esp_phy_disable();
-        s_lp_stat.phy_enabled = 0;
-    }
 
     // deinit low power control resources
     do {
@@ -1434,6 +1439,12 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Enable PHY when enabling controller to reduce power dissipation after controller init
+     * Notice the init order: esp_phy_enable() -> bt_bb_v2_init_cmplx() -> coex_pti_v2()
+     */
+    esp_phy_enable();
+    s_lp_stat.phy_enabled = 1;
+
 #if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif
@@ -1458,6 +1469,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         goto error;
     }
 
+    coex_pti_v2();
+
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
 
     return ret;
@@ -1480,6 +1493,10 @@ error:
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
+    if (s_lp_stat.phy_enabled) {
+        esp_phy_disable();
+        s_lp_stat.phy_enabled = 0;
+    }
     return ret;
 }
 
@@ -1498,6 +1515,10 @@ esp_err_t esp_bt_controller_disable(void)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
+    if (s_lp_stat.phy_enabled) {
+        esp_phy_disable();
+        s_lp_stat.phy_enabled = 0;
+    }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
