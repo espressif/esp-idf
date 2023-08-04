@@ -825,7 +825,6 @@
 **  Defentions for HCI Error Codes that are past in the events
 */
 #define HCI_SUCCESS                                     0x00
-#define HCI_PENDING                                     0x00
 #define HCI_ERR_ILLEGAL_COMMAND                         0x01
 #define HCI_ERR_NO_CONNECTION                           0x02
 #define HCI_ERR_HW_FAILURE                              0x03
