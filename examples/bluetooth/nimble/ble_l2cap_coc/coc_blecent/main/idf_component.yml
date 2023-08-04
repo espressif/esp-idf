@@ -1,0 +1,3 @@
+dependencies:
+  nimble_central_utils:
+    path: ${IDF_PATH}/examples/bluetooth/nimble/common/nimble_central_utils

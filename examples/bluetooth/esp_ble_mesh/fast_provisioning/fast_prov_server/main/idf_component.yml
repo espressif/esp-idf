@@ -1,0 +1,5 @@
+dependencies:
+  example_init:
+    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/example_init
+  fast_prov:
+    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/fast_prov

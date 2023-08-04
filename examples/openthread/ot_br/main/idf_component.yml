@@ -6,3 +6,7 @@ dependencies:
   ## Required IDF version
   idf:
     version: ">=5.0"
+  protocol_examples_common:
+    path: ${IDF_PATH}/examples/common_components/protocol_examples_common
+  iperf:
+    path: ${IDF_PATH}/examples/common_components/iperf
