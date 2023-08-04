@@ -60,16 +60,18 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "dma/gdma.c" "dma/async_memcpy_impl_gdma.c")
-    endif()
-
-    if(CONFIG_SOC_CP_DMA_SUPPORTED)
-        list(APPEND srcs "dma/async_memcpy_impl_cp_dma.c")
+        list(APPEND srcs "dma/gdma.c")
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
         list(APPEND srcs "dma/esp_async_memcpy.c")
-    endif()
+        if(CONFIG_SOC_GDMA_SUPPORTED)
+            list(APPEND srcs "dma/async_memcpy_gdma.c")
+        endif() # CONFIG_SOC_GDMA_SUPPORTED
+        if(CONFIG_SOC_CP_DMA_SUPPORTED)
+            list(APPEND srcs "dma/async_memcpy_cp_dma.c")
+        endif() # CONFIG_SOC_CP_DMA_SUPPORTED
+    endif() # CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED
 
     if(CONFIG_SOC_GDMA_SUPPORT_ETM)
         list(APPEND srcs "dma/gdma_etm.c")

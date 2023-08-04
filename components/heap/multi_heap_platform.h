@@ -19,14 +19,14 @@ typedef portMUX_TYPE multi_heap_lock_t;
    we need to use portmux spinlocks here not RTOS mutexes */
 #define MULTI_HEAP_LOCK(PLOCK) do {                         \
         if((PLOCK) != NULL) {                               \
-            portENTER_CRITICAL((PLOCK));                    \
+            portENTER_CRITICAL_SAFE((PLOCK));               \
         }                                                   \
     } while(0)
 
 
 #define MULTI_HEAP_UNLOCK(PLOCK) do {                       \
         if ((PLOCK) != NULL) {                              \
-            portEXIT_CRITICAL((PLOCK));                     \
+            portEXIT_CRITICAL_SAFE((PLOCK));                \
         }                                                   \
     } while(0)
 

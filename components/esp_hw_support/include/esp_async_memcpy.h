@@ -1,29 +1,33 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "soc/soc_caps.h"
+#include "esp_err.h"
+#include "esp_etm.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "esp_err.h"
-#include "esp_etm.h"
-
 /**
- * @brief Type of async memcpy handle
- *
+ * @brief Async memory copy driver handle
  */
-typedef struct async_memcpy_context_t *async_memcpy_t;
+typedef struct async_memcpy_context_t *async_memcpy_handle_t;
+
+/** @cond */
+/// @brief legacy driver handle type
+typedef async_memcpy_handle_t async_memcpy_t;
+/** @endcond */
 
 /**
- * @brief Type of async memcpy event object
- *
+ * @brief Async memory copy event data
  */
 typedef struct {
     void *data; /*!< Event data */
@@ -40,14 +44,13 @@ typedef struct {
  * @note User can call OS primitives (semaphore, mutex, etc) in the callback function.
  *       Keep in mind, if any OS primitive wakes high priority task up, the callback should return true.
  */
-typedef bool (*async_memcpy_isr_cb_t)(async_memcpy_t mcp_hdl, async_memcpy_event_t *event, void *cb_args);
+typedef bool (*async_memcpy_isr_cb_t)(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args);
 
 /**
  * @brief Type of async memcpy configuration
- *
  */
 typedef struct {
-    uint32_t backlog;          /*!< Maximum number of streams that can be handled simultaneously */
+    uint32_t backlog;          /*!< Maximum number of transactions that can be prepared in the background */
     size_t sram_trans_align;   /*!< DMA transfer alignment (both in size and address) for SRAM memory */
     size_t psram_trans_align;  /*!< DMA transfer alignment (both in size and address) for PSRAM memory */
     uint32_t flags;            /*!< Extra flags to control async memcpy feature */
@@ -55,7 +58,6 @@ typedef struct {
 
 /**
  * @brief Default configuration for async memcpy
- *
  */
 #define ASYNC_MEMCPY_DEFAULT_CONFIG() \
     {                                 \
@@ -65,36 +67,86 @@ typedef struct {
         .flags = 0,                   \
     }
 
+#if SOC_AHB_GDMA_SUPPORTED
 /**
- * @brief Install async memcpy driver
+ * @brief Install async memcpy driver, with AHB-GDMA as the backend
  *
  * @param[in] config Configuration of async memcpy
- * @param[out] asmcp Handle of async memcpy that returned from this API. If driver installation is failed, asmcp would be assigned to NULL.
+ * @param[out] mcp Returned driver handle
  * @return
  *      - ESP_OK: Install async memcpy driver successfully
  *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
  *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
-esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_t *asmcp);
+esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+#endif // SOC_AHB_GDMA_SUPPORTED
+
+#if SOC_AXI_GDMA_SUPPORTED
+/**
+ * @brief Install async memcpy driver, with AXI-GDMA as the backend
+ *
+ * @param[in] config Configuration of async memcpy
+ * @param[out] mcp Returned driver handle
+ * @return
+ *      - ESP_OK: Install async memcpy driver successfully
+ *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
+ *      - ESP_FAIL: Install async memcpy driver failed because of other error
+ */
+esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+#endif // SOC_AXI_GDMA_SUPPORTED
+
+#if SOC_CP_DMA_SUPPORTED
+/**
+ * @brief Install async memcpy driver, with CPDMA as the backend
+ *
+ * @note CPDMA is a CPU peripheral, aiming for memory copy.
+ *
+ * @param[in] config Configuration of async memcpy
+ * @param[out] mcp Returned driver handle
+ * @return
+ *      - ESP_OK: Install async memcpy driver successfully
+ *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
+ *      - ESP_FAIL: Install async memcpy driver failed because of other error
+ */
+esp_err_t esp_async_memcpy_install_cpdma(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+#endif // SOC_CP_DMA_SUPPORTED
+
+/**
+ * @brief Install async memcpy driver with the default DMA backend
+ *
+ * @note On chip with CPDMA support, CPDMA is the default choice.
+ *       On chip with AHB-GDMA support, AHB-GDMA is the default choice.
+ *
+ * @param[in] config Configuration of async memcpy
+ * @param[out] mcp Returned driver handle
+ * @return
+ *      - ESP_OK: Install async memcpy driver successfully
+ *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
+ *      - ESP_FAIL: Install async memcpy driver failed because of other error
+ */
+esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
 
 /**
  * @brief Uninstall async memcpy driver
  *
- * @param[in] asmcp Handle of async memcpy driver that returned from esp_async_memcpy_install
+ * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
  * @return
  *      - ESP_OK: Uninstall async memcpy driver successfully
  *      - ESP_ERR_INVALID_ARG: Uninstall async memcpy driver failed because of invalid argument
  *      - ESP_FAIL: Uninstall async memcpy driver failed because of other error
  */
-esp_err_t esp_async_memcpy_uninstall(async_memcpy_t asmcp);
+esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t mcp);
 
 /**
  * @brief Send an asynchronous memory copy request
  *
  * @note The callback function is invoked in interrupt context, never do blocking jobs in the callback.
  *
- * @param[in] asmcp Handle of async memcpy driver that returned from esp_async_memcpy_install
+ * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
  * @param[in] dst Destination address (copy to)
  * @param[in] src Source address (copy from)
  * @param[in] n Number of bytes to copy
@@ -105,8 +157,9 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_t asmcp);
  *      - ESP_ERR_INVALID_ARG: Send memory copy request failed because of invalid argument
  *      - ESP_FAIL: Send memory copy request failed because of other error
  */
-esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
+esp_err_t esp_async_memcpy(async_memcpy_handle_t mcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
 
+#if SOC_GDMA_SUPPORT_ETM
 /**
  * @brief Async memory copy specific events that supported by the ETM module
  */
@@ -119,17 +172,17 @@ typedef enum {
  *
  * @note The created ETM event object can be deleted later by calling `esp_etm_del_event`
  *
- * @param[in] asmcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
  * @param[in] event_type ETM event type
  * @param[out] out_event Returned ETM event handle
- * @return
  * @return
  *      - ESP_OK: Get ETM event successfully
  *      - ESP_ERR_INVALID_ARG: Get ETM event failed because of invalid argument
  *      - ESP_ERR_NOT_SUPPORTED: Get ETM event failed because the DMA hardware doesn't support ETM submodule
  *      - ESP_FAIL: Get ETM event failed because of other error
  */
-esp_err_t esp_async_memcpy_new_etm_event(async_memcpy_t asmcp, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
+esp_err_t esp_async_memcpy_new_etm_event(async_memcpy_handle_t mcp, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
+#endif // SOC_GDMA_SUPPORT_ETM
 
 #ifdef __cplusplus
 }
