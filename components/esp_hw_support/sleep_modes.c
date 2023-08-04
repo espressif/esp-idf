@@ -917,11 +917,14 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
                                        uint32_t flash_enable_time_us)
 {
+#if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
+    rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
+#endif
+
     // Enter sleep
     esp_err_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP);
 
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
-    rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
     // restore the configuration.
     if (vddsdio_config.force) {
