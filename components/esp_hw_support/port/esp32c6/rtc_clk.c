@@ -17,9 +17,14 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
-#include "hal/modem_lpcon_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/lp_aon_reg.h"
+
+#ifdef BOOTLOADER_BUILD
+#include "hal/modem_lpcon_ll.h"
+#else
+#include "esp_private/esp_modem_clock.h"
+#endif
 
 static const char *TAG = "rtc_clk";
 
@@ -138,12 +143,25 @@ static void rtc_clk_bbpll_enable(void)
     clk_ll_bbpll_enable();
 }
 
+static void rtc_clk_enable_i2c_ana_master_clock(bool enable)
+{
+#ifdef BOOTLOADER_BUILD
+    modem_lpcon_ll_enable_i2c_master_clock(&MODEM_LPCON, enable);
+#else
+    if (enable) {
+        modem_clock_module_enable(PERIPH_ANA_I2C_MASTER_MODULE);
+    } else {
+        modem_clock_module_disable(PERIPH_ANA_I2C_MASTER_MODULE);
+    }
+#endif
+}
+
 static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
 {
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
     /* Analog part */
-    modem_lpcon_ll_enable_i2c_master_clock(&MODEM_LPCON, true);
+    rtc_clk_enable_i2c_ana_master_clock(true);
     /* BBPLL CALIBRATION START */
     regi2c_ctrl_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
@@ -151,8 +169,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
     /* BBPLL CALIBRATION STOP */
     regi2c_ctrl_ll_bbpll_calibration_stop();
-    modem_lpcon_ll_enable_i2c_master_clock(&MODEM_LPCON, false);
-
+    rtc_clk_enable_i2c_ana_master_clock(false);
     s_cur_pll_freq = pll_freq;
 }
 
