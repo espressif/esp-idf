@@ -122,12 +122,6 @@ examples/protocols/mqtt5:
       temporary: true
       reason: lack of runners
 
-examples/protocols/slip/slip_udp:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-
 examples/protocols/sntp:
   enable:
     - if: IDF_TARGET == "esp32"
