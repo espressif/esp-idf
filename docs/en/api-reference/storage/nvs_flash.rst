@@ -94,7 +94,7 @@ This utility helps generate NVS partition binary files which can be flashed sepa
 
 Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of the partition binary files can also be done directly from CMake using the function ``nvs_create_partition_image``::
 
-    nvs_create_partition_image(<partition> <csv> [FLASH_IN_PROJECT] [VERSION 1 | 2] [DEPENDS  dep dep dep ...])
+    nvs_create_partition_image(<partition> <csv> [FLASH_IN_PROJECT] [DEPENDS  dep dep dep ...])
 
 **Positional Arguments**:
 
@@ -118,12 +118,6 @@ Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of t
      - Description
    * - ``FLASH_IN_PROJECT``
      - Name of the NVS parition
-   * - ``VERSION {1,2}``
-     - Set multipage blob version (Default: Version 2)
-
-       Version 1 = support disabled
-
-       Version 2 = support enabled
    * - ``DEPENDS``
      - Specify files on which the command depends
 
