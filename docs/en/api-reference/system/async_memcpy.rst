@@ -6,9 +6,9 @@ Overview
 
 {IDF_TARGET_NAME} has a DMA engine which can help to offload internal memory copy operations from the CPU in an asynchronous way.
 
-The async memcpy API wraps all DMA configurations and operations, the signature of :cpp:func:`esp_async_memcpy` is almost the same to the standard libc ``memcpy`` function.
+The async memcpy API wraps all DMA configurations and operations, the signature of :cpp:func:`esp_async_memcpy` is almost the same as the standard libc ``memcpy`` function.
 
-The DMA allows multiple memory copy requests to be queued up before the first one is completed, which allows overlap of computation and memory copy. By the way, it is still possible to know the exact time when a memory copy request is completed by registering an event callback.
+The DMA allows multiple memory copy requests to be queued up before the first one is completed, which allows overlap of computation and memory copy. Moreover, it is still possible to know the exact time when a memory copy request is completed by registering an event callback.
 
 .. only:: SOC_AHB_GDMA_SUPPORT_PSRAM
 
