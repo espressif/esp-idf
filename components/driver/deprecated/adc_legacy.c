@@ -669,7 +669,7 @@ static adc_atten_t s_atten2_single[ADC2_CHANNEL_MAX];    //Array saving attenuat
 
 static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 {
-    assert(adc_unit <= SOC_ADC_PERIPH_NUM);
+    assert(adc_unit < SOC_ADC_PERIPH_NUM);
     uint8_t adc_n = (adc_unit == ADC_UNIT_1) ? 0 : 1;
     return adc_channel_io_map[adc_n][adc_channel];
 }
