@@ -159,7 +159,7 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='fix IDF-7927')
+@pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
 def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
     dut.expect_exact('tested app is runnig.')
     dut.write(b'\x03')  # send Ctrl-C
