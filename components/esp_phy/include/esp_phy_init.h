@@ -269,6 +269,35 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
  */
 char * get_phy_version_str(void);
 
+/**
+ * @brief Enable phy track pll
+ *
+ */
+void phy_track_pll_init(void);
+
+/**
+ * @brief Disable phy track pll
+ *
+ */
+void phy_track_pll_deinit(void);
+
+/**
+ * @brief Set PHY init parameters
+ * @param param is 1 means combo module
+ */
+void phy_init_param_set(uint8_t param);
+
+/**
+ * @brief Wi-Fi RX enable
+ */
+void phy_wifi_enable_set(uint8_t enable);
+
+/**
+  * @brief PHY temperature track
+  */
+void phy_param_track_tot(bool en_wifi, bool en_bt_154);
+
+
 #ifdef __cplusplus
 }
 #endif

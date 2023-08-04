@@ -330,3 +330,4 @@
 
 /*------------------------------------- PHY CAPS -------------------------------------*/
 #define SOC_PHY_IMPROVE_RX_11B              (1)
+#define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi and BLE*/

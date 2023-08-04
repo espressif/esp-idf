@@ -1346,3 +1346,7 @@ config SOC_BLE_MULTI_CONN_OPTIMIZATION
 config SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
     bool
     default y
+
+config SOC_PHY_COMBO_MODULE
+    bool
+    default y
