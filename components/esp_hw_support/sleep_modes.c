@@ -775,8 +775,17 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             }
 #endif
 #endif
-            /* Will resume cache after flash ready. */
+            /* Cache Resume 1: Resume cache for continue running*/
+            resume_cache();
         }
+
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+        /* Cache Suspend 2: If previous sleep powerdowned the flash, suspend cache here so that the
+           access to flash before flash ready can be explicitly exposed. */
+        suspend_cache();
+    }
+#endif
 
 #if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
             if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
@@ -881,6 +890,10 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 
     // Enter sleep
     if (esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP) == ESP_ERR_SLEEP_REJECT) {
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+        /* Cache Resume 2: if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION is enabled, cache has been suspended in esp_sleep_start */
+        resume_cache();
+#endif
         ESP_EARLY_LOGE(TAG, "Deep sleep request is rejected");
     } else {
         // Because RTC is in a slower clock domain than the CPU, it
@@ -922,8 +935,12 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         esp_rom_delay_us(flash_enable_time_us);
     }
 
-    /* Cache Resume 1: flash is ready now, we can resume the cache and access flash safely after */
-    resume_cache();
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+        /* Cache Resume 2: flash is ready now, we can resume the cache and access flash safely after */
+        resume_cache();
+    }
+#endif
 
     return reject;
 }
