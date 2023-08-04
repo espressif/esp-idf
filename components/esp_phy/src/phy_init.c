@@ -773,6 +773,13 @@ void esp_phy_load_cal_and_init(void)
 #if CONFIG_IDF_TARGET_ESP32S2
     phy_eco_version_sel(efuse_hal_chip_revision() / 100);
 #endif
+
+    // Set PHY whether in combo module
+    // For comode mode, phy enable will be not in WiFi RX state
+#if SOC_PHY_COMBO_MODULE
+    phy_init_param_set(1);
+#endif
+
     esp_phy_calibration_data_t* cal_data =
             (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
     if (cal_data == NULL) {
