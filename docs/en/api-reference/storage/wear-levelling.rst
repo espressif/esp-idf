@@ -3,15 +3,15 @@
 See Also
 --------
 
-- :doc:`FAT Filesystem <./fatfs>`
-- :doc:`Partition Table documentation <../../api-guides/partition-tables>`
+- :doc:`./fatfs`
+- :doc:`../../api-guides/partition-tables`
 
 Application Example
 -------------------
 
-An example which combines the wear levelling driver with the FATFS library is provided in the :example:`storage/wear_levelling` directory. This example initializes the wear levelling driver, mounts FATFS partition, as well as writes and reads data from it using POSIX and C library APIs. See the :example_file:`storage/wear_levelling/README.md` file for more information.
+An example that combines the wear levelling driver with the FATFS library is provided in the :example:`storage/wear_levelling` directory. This example initializes the wear levelling driver, mounts FatFs partition, as well as writes and reads data from it using POSIX and C library APIs. See :example_file:`storage/wear_levelling/README.md` for more information.
 
-High-Level API Reference
+High-level API Reference
 ------------------------
 
 Header Files
@@ -19,16 +19,9 @@ Header Files
 
 * :component_file:`fatfs/vfs/esp_vfs_fat.h`
 
-Functions
-^^^^^^^^^
+High-level wear levelling functions :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl`, :cpp:func:`esp_vfs_fat_spiflash_unmount_rw_wl` and struct :cpp:class:`esp_vfs_fat_mount_config_t` are described in :doc:`./fatfs`.
 
-.. doxygenfunction:: esp_vfs_fat_spiflash_mount_rw_wl
-.. doxygenstruct:: esp_vfs_fat_mount_config_t
-    :members:
-.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_rw_wl
-
-Mid-Level API Reference
+Mid-level API Reference
 -----------------------
 
 .. include-build-file:: inc/wear_levelling.inc
-

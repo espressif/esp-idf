@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -316,7 +316,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
  * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_spiflash_mount_ro
  *
  * @param base_path  path where partition should be registered (e.g. "/spiflash")
- * @param partition_label label of partition to be unmounted
+ * @param partition_label  label of partition to be unmounted
  *
  * @return
  *      - ESP_OK on success
@@ -324,32 +324,49 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
  */
 esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label);
 
-esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
-    const char* partition_label,
-    const esp_vfs_fat_mount_config_t* mount_config,
-    wl_handle_t* wl_handle)
-    __attribute__((deprecated("esp_vfs_fat_spiflash_mount is deprecated, please use esp_vfs_fat_spiflash_mount_rw_wl instead")));
-esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle)
-    __attribute__((deprecated("esp_vfs_fat_spiflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_rw_wl instead")));
-esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
-    const char* partition_label,
-    const esp_vfs_fat_mount_config_t* mount_config)
-    __attribute__((deprecated("esp_vfs_fat_rawflash_mount is deprecated, please use esp_vfs_fat_spiflash_mount_ro instead")));
-esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
-    __attribute__((deprecated("esp_vfs_fat_rawflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_ro instead")));
-
 /**
- * @brief  Get information for FATFS partition
+ * @brief Get information for FATFS partition
  *
- * @param base_path  Path where partition should be registered (e.g. "/spiflash")
+ * @param base_path  Base path of the partition examined (e.g. "/spiflash")
  * @param[out] out_total_bytes  Size of the file system
- * @param[out] out_free_bytes   Current used bytes in the file system
+ * @param[out] out_free_bytes   Free bytes available in the file system
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if partition not found
  *      - ESP_FAIL if another FRESULT error (saved in errno)
  */
 esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uint64_t* out_free_bytes);
+
+/** @cond */
+/**
+ * @deprecated Please use `esp_vfs_fat_spiflash_mount_rw_wl` instead
+ */
+esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config,
+    wl_handle_t* wl_handle)
+    __attribute__((deprecated("esp_vfs_fat_spiflash_mount is deprecated, please use esp_vfs_fat_spiflash_mount_rw_wl instead")));
+
+/**
+ * @deprecated Please use `esp_vfs_fat_spiflash_unmount_rw_wl` instead
+ */
+esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle)
+    __attribute__((deprecated("esp_vfs_fat_spiflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_rw_wl instead")));
+
+/**
+ * @deprecated Please use `esp_vfs_fat_spiflash_mount_ro` instead
+ */
+esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config)
+    __attribute__((deprecated("esp_vfs_fat_rawflash_mount is deprecated, please use esp_vfs_fat_spiflash_mount_ro instead")));
+
+/**
+ * @deprecated Please use `esp_vfs_fat_spiflash_unmount_ro` instead
+ */
+esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
+    __attribute__((deprecated("esp_vfs_fat_rawflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_ro instead")));
+/** @endcond */
 
 #ifdef __cplusplus
 }
