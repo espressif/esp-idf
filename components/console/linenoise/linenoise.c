@@ -1092,6 +1092,7 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
 static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     /* dumb terminal, fall back to fgets */
     fputs(prompt, stdout);
+    flushWrite();
     size_t count = 0;
     while (count < buflen) {
         int c = fgetc(stdin);
@@ -1105,11 +1106,13 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
                 count --;
             }
             fputs("\x08 ", stdout); /* Windows CMD: erase symbol under cursor */
+            flushWrite();
         } else {
             buf[count] = c;
             ++count;
         }
         fputc(c, stdout); /* echo */
+        flushWrite();
     }
     fputc('\n', stdout);
     flushWrite();
