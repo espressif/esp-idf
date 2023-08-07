@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,6 +41,19 @@ extern "C" {
 #define GDMA_LL_AXI_GROUP_START_ID    1 // AXI GDMA group ID starts from 1
 #define GDMA_LL_AXI_NUM_GROUPS        1 // Number of AXI GDMA groups
 #define GDMA_LL_AXI_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AXI group
+
+#define GDMA_LL_PARALLEL_CRC_DATA_WIDTH 8  // Parallel CRC data width is fixed to 8bits
+#define GDMA_LL_AHB_MAX_CRC_BIT_WIDTH   32 // Max CRC bit width supported by AHB GDMA
+#define GDMA_LL_AXI_MAX_CRC_BIT_WIDTH   16 // Max CRC bit width supported by AXI GDMA
+
+__attribute__((always_inline))
+static inline uint8_t _bitwise_reverse(uint8_t n)
+{
+    n = ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);
+    n = ((n & 0xcc) >> 2) | ((n & 0x33) << 2);
+    n = ((n & 0xaa) >> 1) | ((n & 0x55) << 1);
+    return n;
+}
 
 #ifdef __cplusplus
 }

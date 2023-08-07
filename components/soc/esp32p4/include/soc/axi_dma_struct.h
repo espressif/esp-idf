@@ -604,7 +604,7 @@ typedef union {
 } axi_dma_in_crc_init_data_chn_reg_t;
 
 /** Type of rx_crc_width_chn register
- *  This register is used to confiig rx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config rx ch0 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -614,10 +614,10 @@ typedef union {
          *  reserved
          */
         uint32_t rx_crc_width_chn: 2;
-        /** rx_crc_lautch_flga_chn : R/W; bitpos: [2]; default: 0;
+        /** rx_crc_latch_flag_chn : R/W; bitpos: [2]; default: 0;
          *  reserved
          */
-        uint32_t rx_crc_lautch_flga_chn: 1;
+        uint32_t rx_crc_latch_flag_chn: 1;
         uint32_t reserved_3: 29;
     };
     uint32_t val;
@@ -1275,7 +1275,7 @@ typedef union {
 } axi_dma_out_crc_init_data_chn_reg_t;
 
 /** Type of tx_crc_width_chn register
- *  This register is used to confiig tx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config tx ch0 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -1285,10 +1285,10 @@ typedef union {
          *  reserved
          */
         uint32_t tx_crc_width_chn: 2;
-        /** tx_crc_lautch_flga_chn : R/W; bitpos: [2]; default: 0;
+        /** tx_crc_latch_flag_chn : R/W; bitpos: [2]; default: 0;
          *  reserved
          */
-        uint32_t tx_crc_lautch_flga_chn: 1;
+        uint32_t tx_crc_latch_flag_chn: 1;
         uint32_t reserved_3: 29;
     };
     uint32_t val;

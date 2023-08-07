@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/assert.h"
+#include "hal/misc.h"
 #include "hal/gdma_types.h"
 #include "hal/gdma_ll.h"
 #include "soc/axi_dma_struct.h"
@@ -444,6 +446,128 @@ static inline void axi_dma_ll_tx_disconnect_from_periph(axi_dma_dev_t *dev, uint
 static inline void axi_dma_ll_tx_enable_etm_task(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->out[channel].conf.out_conf0.out_etm_en_chn = enable;
+}
+
+///////////////////////////////////// CRC-TX /////////////////////////////////////////
+
+/**
+ * @brief Clear the CRC result for the TX channel
+ */
+static inline void axi_dma_ll_tx_crc_clear(axi_dma_dev_t *dev, uint32_t channel)
+{
+    dev->out[channel].crc.out_crc_clear.out_crc_clear_chn_reg = 1;
+    dev->out[channel].crc.out_crc_clear.out_crc_clear_chn_reg = 0;
+}
+
+/**
+ * @brief Set CRC width for TX channel
+ */
+static inline void axi_dma_ll_tx_crc_set_width(axi_dma_dev_t *dev, uint32_t channel, uint32_t width)
+{
+    HAL_ASSERT(width <= 16);
+    dev->out[channel].crc.tx_crc_width.tx_crc_width_chn = (width - 1) / 8;
+}
+
+/**
+ * @brief Set CRC initial value for TX channel
+ */
+static inline void axi_dma_ll_tx_crc_set_init_value(axi_dma_dev_t *dev, uint32_t channel, uint32_t value)
+{
+    dev->out[channel].crc.out_crc_init_data.out_crc_init_data_chn = value;
+}
+
+/**
+ * @brief Get CRC result for TX channel
+ */
+static inline uint32_t axi_dma_ll_tx_crc_get_result(axi_dma_dev_t *dev, uint32_t channel)
+{
+    return dev->out[channel].crc.out_crc_final_result.out_crc_final_result_chn;
+}
+
+/**
+ * @brief Latch the CRC configuration to the hardware, TX channel
+ */
+static inline void axi_dma_ll_tx_crc_latch_config(axi_dma_dev_t *dev, uint32_t channel)
+{
+    dev->out[channel].crc.tx_crc_width.tx_crc_latch_flag_chn = 1;
+    dev->out[channel].crc.tx_crc_width.tx_crc_latch_flag_chn = 0;
+}
+
+/**
+ * @brief Set the lfsr and data mask that used by the Parallel CRC calculation formula for a given CRC bit, TX channel
+ */
+static inline void axi_dma_ll_tx_crc_set_lfsr_data_mask(axi_dma_dev_t *dev, uint32_t channel, uint32_t crc_bit,
+        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
+{
+    dev->out[channel].crc.tx_crc_en_addr.tx_crc_en_addr_chn = crc_bit;
+    dev->out[channel].crc.tx_crc_en_wr_data.tx_crc_en_wr_data_chn = lfsr_mask;
+    dev->out[channel].crc.tx_crc_data_en_addr.tx_crc_data_en_addr_chn = crc_bit;
+    if (reverse_data_mask) {
+        // "& 0xff" because the hardware only support 8-bit data
+        data_mask = _bitwise_reverse(data_mask & 0xFF);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->out[channel].crc.tx_crc_data_en_wr_data, tx_crc_data_en_wr_data_chn, data_mask);
+}
+
+///////////////////////////////////// CRC-RX /////////////////////////////////////////
+
+/**
+ * @brief Clear the CRC result for the RX channel
+ */
+static inline void axi_dma_ll_rx_crc_clear(axi_dma_dev_t *dev, uint32_t channel)
+{
+    dev->in[channel].crc.in_crc_clear.in_crc_clear_chn_reg = 1;
+    dev->in[channel].crc.in_crc_clear.in_crc_clear_chn_reg = 0;
+}
+
+/**
+ * @brief Set CRC width for RX channel
+ */
+static inline void axi_dma_ll_rx_crc_set_width(axi_dma_dev_t *dev, uint32_t channel, uint32_t width)
+{
+    HAL_ASSERT(width <= 16);
+    dev->in[channel].crc.rx_crc_width.rx_crc_width_chn = (width - 1) / 8;
+}
+
+/**
+ * @brief Set CRC initial value for RX channel
+ */
+static inline void axi_dma_ll_rx_crc_set_init_value(axi_dma_dev_t *dev, uint32_t channel, uint32_t value)
+{
+    dev->in[channel].crc.in_crc_init_data.in_crc_init_data_chn = value;
+}
+
+/**
+ * @brief Get CRC result for RX channel
+ */
+static inline uint32_t axi_dma_ll_rx_crc_get_result(axi_dma_dev_t *dev, uint32_t channel)
+{
+    return dev->in[channel].crc.in_crc_final_result.in_crc_final_result_chn;
+}
+
+/**
+ * @brief Latch the CRC configuration to the hardware, RX channel
+ */
+static inline void axi_dma_ll_rx_crc_latch_config(axi_dma_dev_t *dev, uint32_t channel)
+{
+    dev->in[channel].crc.rx_crc_width.rx_crc_latch_flag_chn = 1;
+    dev->in[channel].crc.rx_crc_width.rx_crc_latch_flag_chn = 0;
+}
+
+/**
+ * @brief Set the lfsr and data mask that used by the Parallel CRC calculation formula for a given CRC bit, RX channel
+ */
+static inline void axi_dma_ll_rx_crc_set_lfsr_data_mask(axi_dma_dev_t *dev, uint32_t channel, uint32_t crc_bit,
+        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
+{
+    dev->in[channel].crc.rx_crc_en_addr.rx_crc_en_addr_chn = crc_bit;
+    dev->in[channel].crc.rx_crc_en_wr_data.rx_crc_en_wr_data_chn = lfsr_mask;
+    dev->in[channel].crc.rx_crc_data_en_addr.rx_crc_data_en_addr_chn = crc_bit;
+    if (reverse_data_mask) {
+        // "& 0xff" because the hardware only support 8-bit data
+        data_mask = _bitwise_reverse(data_mask & 0xFF);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->in[channel].crc.rx_crc_data_en_wr_data, rx_crc_data_en_wr_data_chn, data_mask);
 }
 
 #ifdef __cplusplus

@@ -3124,7 +3124,7 @@ extern "C" {
 #define AHB_DMA_OUT_CRC_INIT_DATA_CH0_S  0
 
 /** AHB_DMA_TX_CRC_WIDTH_CH0_REG register
- *  This register is used to confiig tx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config tx ch0 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -3136,13 +3136,13 @@ extern "C" {
 #define AHB_DMA_TX_CRC_WIDTH_CH0_M  (AHB_DMA_TX_CRC_WIDTH_CH0_V << AHB_DMA_TX_CRC_WIDTH_CH0_S)
 #define AHB_DMA_TX_CRC_WIDTH_CH0_V  0x00000003U
 #define AHB_DMA_TX_CRC_WIDTH_CH0_S  0
-/** AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0 : R/W; bitpos: [2]; default: 0;
+/** AHB_DMA_TX_CRC_LATCH_FLAG_CH0 : R/W; bitpos: [2]; default: 0;
  *  reserved
  */
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0    (BIT(2))
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0_M  (AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0_V << AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0_S)
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0_V  0x00000001U
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH0_S  2
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH0    (BIT(2))
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH0_M  (AHB_DMA_TX_CRC_LATCH_FLAG_CH0_V << AHB_DMA_TX_CRC_LATCH_FLAG_CH0_S)
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH0_V  0x00000001U
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH0_S  2
 
 /** AHB_DMA_OUT_CRC_CLEAR_CH0_REG register
  *  This register is used to clear ch0 crc result
@@ -3253,7 +3253,7 @@ extern "C" {
 #define AHB_DMA_OUT_CRC_INIT_DATA_CH1_S  0
 
 /** AHB_DMA_TX_CRC_WIDTH_CH1_REG register
- *  This register is used to confiig tx ch1 crc result width,2'b00 mean crc_width
+ *  This register is used to config tx ch1 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -3265,13 +3265,13 @@ extern "C" {
 #define AHB_DMA_TX_CRC_WIDTH_CH1_M  (AHB_DMA_TX_CRC_WIDTH_CH1_V << AHB_DMA_TX_CRC_WIDTH_CH1_S)
 #define AHB_DMA_TX_CRC_WIDTH_CH1_V  0x00000003U
 #define AHB_DMA_TX_CRC_WIDTH_CH1_S  0
-/** AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1 : R/W; bitpos: [2]; default: 0;
+/** AHB_DMA_TX_CRC_LATCH_FLAG_CH1 : R/W; bitpos: [2]; default: 0;
  *  reserved
  */
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1    (BIT(2))
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1_M  (AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1_V << AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1_S)
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1_V  0x00000001U
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH1_S  2
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH1    (BIT(2))
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH1_M  (AHB_DMA_TX_CRC_LATCH_FLAG_CH1_V << AHB_DMA_TX_CRC_LATCH_FLAG_CH1_S)
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH1_V  0x00000001U
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH1_S  2
 
 /** AHB_DMA_OUT_CRC_CLEAR_CH1_REG register
  *  This register is used to clear ch1 crc result
@@ -3382,7 +3382,7 @@ extern "C" {
 #define AHB_DMA_OUT_CRC_INIT_DATA_CH2_S  0
 
 /** AHB_DMA_TX_CRC_WIDTH_CH2_REG register
- *  This register is used to confiig tx ch2 crc result width,2'b00 mean crc_width
+ *  This register is used to config tx ch2 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -3394,13 +3394,13 @@ extern "C" {
 #define AHB_DMA_TX_CRC_WIDTH_CH2_M  (AHB_DMA_TX_CRC_WIDTH_CH2_V << AHB_DMA_TX_CRC_WIDTH_CH2_S)
 #define AHB_DMA_TX_CRC_WIDTH_CH2_V  0x00000003U
 #define AHB_DMA_TX_CRC_WIDTH_CH2_S  0
-/** AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2 : R/W; bitpos: [2]; default: 0;
+/** AHB_DMA_TX_CRC_LATCH_FLAG_CH2 : R/W; bitpos: [2]; default: 0;
  *  reserved
  */
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2    (BIT(2))
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2_M  (AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2_V << AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2_S)
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2_V  0x00000001U
-#define AHB_DMA_TX_CRC_LAUTCH_FLGA_CH2_S  2
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH2    (BIT(2))
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH2_M  (AHB_DMA_TX_CRC_LATCH_FLAG_CH2_V << AHB_DMA_TX_CRC_LATCH_FLAG_CH2_S)
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH2_V  0x00000001U
+#define AHB_DMA_TX_CRC_LATCH_FLAG_CH2_S  2
 
 /** AHB_DMA_OUT_CRC_CLEAR_CH2_REG register
  *  This register is used to clear ch2 crc result
@@ -3511,7 +3511,7 @@ extern "C" {
 #define AHB_DMA_IN_CRC_INIT_DATA_CH0_S  0
 
 /** AHB_DMA_RX_CRC_WIDTH_CH0_REG register
- *  This register is used to confiig rx ch0 crc result width,2'b00 mean crc_width
+ *  This register is used to config rx ch0 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -3523,13 +3523,13 @@ extern "C" {
 #define AHB_DMA_RX_CRC_WIDTH_CH0_M  (AHB_DMA_RX_CRC_WIDTH_CH0_V << AHB_DMA_RX_CRC_WIDTH_CH0_S)
 #define AHB_DMA_RX_CRC_WIDTH_CH0_V  0x00000003U
 #define AHB_DMA_RX_CRC_WIDTH_CH0_S  0
-/** AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0 : R/W; bitpos: [2]; default: 0;
+/** AHB_DMA_RX_CRC_LATCH_FLAG_CH0 : R/W; bitpos: [2]; default: 0;
  *  reserved
  */
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0    (BIT(2))
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0_M  (AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0_V << AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0_S)
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0_V  0x00000001U
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH0_S  2
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH0    (BIT(2))
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH0_M  (AHB_DMA_RX_CRC_LATCH_FLAG_CH0_V << AHB_DMA_RX_CRC_LATCH_FLAG_CH0_S)
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH0_V  0x00000001U
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH0_S  2
 
 /** AHB_DMA_IN_CRC_CLEAR_CH0_REG register
  *  This register is used to clear ch0 crc result
@@ -3640,7 +3640,7 @@ extern "C" {
 #define AHB_DMA_IN_CRC_INIT_DATA_CH1_S  0
 
 /** AHB_DMA_RX_CRC_WIDTH_CH1_REG register
- *  This register is used to confiig rx ch1 crc result width,2'b00 mean crc_width
+ *  This register is used to config rx ch1 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -3652,13 +3652,13 @@ extern "C" {
 #define AHB_DMA_RX_CRC_WIDTH_CH1_M  (AHB_DMA_RX_CRC_WIDTH_CH1_V << AHB_DMA_RX_CRC_WIDTH_CH1_S)
 #define AHB_DMA_RX_CRC_WIDTH_CH1_V  0x00000003U
 #define AHB_DMA_RX_CRC_WIDTH_CH1_S  0
-/** AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1 : R/W; bitpos: [2]; default: 0;
+/** AHB_DMA_RX_CRC_LATCH_FLAG_CH1 : R/W; bitpos: [2]; default: 0;
  *  reserved
  */
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1    (BIT(2))
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1_M  (AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1_V << AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1_S)
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1_V  0x00000001U
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH1_S  2
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH1    (BIT(2))
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH1_M  (AHB_DMA_RX_CRC_LATCH_FLAG_CH1_V << AHB_DMA_RX_CRC_LATCH_FLAG_CH1_S)
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH1_V  0x00000001U
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH1_S  2
 
 /** AHB_DMA_IN_CRC_CLEAR_CH1_REG register
  *  This register is used to clear ch1 crc result
@@ -3769,7 +3769,7 @@ extern "C" {
 #define AHB_DMA_IN_CRC_INIT_DATA_CH2_S  0
 
 /** AHB_DMA_RX_CRC_WIDTH_CH2_REG register
- *  This register is used to confiig rx ch2 crc result width,2'b00 mean crc_width
+ *  This register is used to config rx ch2 crc result width,2'b00 mean crc_width
  *  <=8bit,2'b01 8<crc_width<=16 ,2'b10 mean 16<crc_width  <=24,2'b11 mean
  *  24<crc_width<=32
  */
@@ -3781,13 +3781,13 @@ extern "C" {
 #define AHB_DMA_RX_CRC_WIDTH_CH2_M  (AHB_DMA_RX_CRC_WIDTH_CH2_V << AHB_DMA_RX_CRC_WIDTH_CH2_S)
 #define AHB_DMA_RX_CRC_WIDTH_CH2_V  0x00000003U
 #define AHB_DMA_RX_CRC_WIDTH_CH2_S  0
-/** AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2 : R/W; bitpos: [2]; default: 0;
+/** AHB_DMA_RX_CRC_LATCH_FLAG_CH2 : R/W; bitpos: [2]; default: 0;
  *  reserved
  */
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2    (BIT(2))
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2_M  (AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2_V << AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2_S)
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2_V  0x00000001U
-#define AHB_DMA_RX_CRC_LAUTCH_FLGA_CH2_S  2
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH2    (BIT(2))
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH2_M  (AHB_DMA_RX_CRC_LATCH_FLAG_CH2_V << AHB_DMA_RX_CRC_LATCH_FLAG_CH2_S)
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH2_V  0x00000001U
+#define AHB_DMA_RX_CRC_LATCH_FLAG_CH2_S  2
 
 /** AHB_DMA_IN_CRC_CLEAR_CH2_REG register
  *  This register is used to clear ch2 crc result

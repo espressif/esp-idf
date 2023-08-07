@@ -160,6 +160,7 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION            2
+#define SOC_GDMA_SUPPORT_CRC            1
 #define SOC_GDMA_NUM_GROUPS_MAX         2
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
 #define SOC_AXI_GDMA_SUPPORT_PSRAM      1

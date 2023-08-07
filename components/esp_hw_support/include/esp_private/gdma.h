@@ -354,6 +354,7 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan);
  */
 esp_err_t gdma_reset(gdma_channel_handle_t dma_chan);
 
+#if SOC_GDMA_SUPPORT_ETM
 /**
  * @brief GDMA ETM event configuration
  */
@@ -400,6 +401,7 @@ typedef struct {
  *      - ESP_FAIL: Get ETM task failed because of other error
  */
 esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_config_t *config, esp_etm_task_handle_t *out_task);
+#endif // SOC_GDMA_SUPPORT_ETM
 
 /**
  * @brief Get the mask of free M2M trigger IDs
@@ -416,6 +418,47 @@ esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_
  *      - ESP_FAIL: Get free M2M trigger IDs failed because of other error
  */
 esp_err_t gdma_get_free_m2m_trig_id_mask(gdma_channel_handle_t dma_chan, uint32_t *mask);
+
+#if SOC_GDMA_SUPPORT_CRC
+/**
+ * @brief CRC Calculator configuration
+ */
+typedef struct {
+    uint32_t init_value;    /*!< CRC initial value */
+    uint32_t crc_bit_width; /*!< CRC bit width */
+    uint32_t poly_hex;      /*!< Polynomial Formula, in hex */
+    bool reverse_data_mask; /*!< Reverse data mask, used when you want to reverse the input data (a.k.a, refin) */
+} gdma_crc_calculator_config_t;
+
+/**
+ * @brief Configure CRC Calculator
+ *
+ * @note This function must be called before `gdma_start`.
+ * @note The CRC Calculator will reset itself automatically if the DMA stops and starts again.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] config CRC Calculator configuration
+ * @return
+ *      - ESP_OK: Configure CRC Calculator successfully
+ *      - ESP_ERR_INVALID_ARG: Configure CRC Calculator failed because of invalid argument
+ *      - ESP_FAIL: Configure CRC Calculator failed because of other error
+ */
+esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_crc_calculator_config_t *config);
+
+/**
+ * @brief Get CRC Calculator result
+ *
+ * @note You need to call this function before a new DMA transaction starts, otherwise the CRC results may be overridden.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[out] result Returned CRC result
+ * @return
+ *      - ESP_OK: Get CRC result successfully
+ *      - ESP_ERR_INVALID_ARG: Get CRC result failed because of invalid argument
+ *      - ESP_FAIL: Get CRC result failed because of other error
+ */
+esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
+#endif // SOC_GDMA_SUPPORT_CRC
 
 #ifdef __cplusplus
 }

@@ -247,6 +247,10 @@ config SOC_AHB_GDMA_VERSION
     int
     default 2
 
+config SOC_GDMA_SUPPORT_CRC
+    bool
+    default y
+
 config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 2
