@@ -12,16 +12,19 @@
 #include <stdint.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/hal_utils.h"
 #include "soc/pcr_struct.h"
 #include "soc/parl_io_struct.h"
 #include "hal/parlio_types.h"
 
 #define PARLIO_LL_RX_MAX_BYTES_PER_FRAME 0xFFFF
-#define PARLIO_LL_RX_MAX_CLOCK_DIV       0x10000
+#define PARLIO_LL_RX_MAX_CLK_INT_DIV     0x10000
+#define PARLIO_LL_RX_MAX_CLK_FRACT_DIV   0      // Not support fractional divider
 #define PARLIO_LL_RX_MAX_TIMEOUT         0xFFFF
 
 #define PARLIO_LL_TX_MAX_BITS_PER_FRAME  0x7FFFF
-#define PARLIO_LL_TX_MAX_CLOCK_DIV       0x10000
+#define PARLIO_LL_TX_MAX_CLK_INT_DIV     0x10000
+#define PARLIO_LL_TX_MAX_CLK_FRACT_DIV   0      // Not support fractional divider
 
 #define PARLIO_LL_EVENT_TX_FIFO_EMPTY    (1 << 0)
 #define PARLIO_LL_EVENT_RX_FIFO_FULL     (1 << 1)
@@ -31,6 +34,8 @@
 
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 7 // TXD[7] can be used a valid signal
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  7 // TXD[7] can be used as clock gate signal
+
+#define PARLIO_LL_CLK_DIVIDER_MAX        (0)    // Not support fractional divider
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +51,30 @@ typedef enum {
     PARLIO_LL_RX_EOF_COND_RX_FULL,     /*!< RX unit generates EOF event when it receives enough data */
     PARLIO_LL_RX_EOF_COND_EN_INACTIVE, /*!< RX unit generates EOF event when the external enable signal becomes inactive */
 } parlio_ll_rx_eof_cond_t;
+
+/**
+ * @brief Enable or disable the parlio peripheral APB clock
+ *
+ * @param group_id  The group id of the parlio module
+ * @param enable    Set true to enable, false to disable
+ */
+static inline void parlio_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.parl_io_conf.parl_clk_en = enable;
+}
+
+/**
+ * @brief Reset the parlio module
+ *
+ * @param group_id  The group id of the parlio module
+ */
+static inline void parlio_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.parl_io_conf.parl_rst_en = 1;
+    PCR.parl_io_conf.parl_rst_en = 0;
+}
 
 ///////////////////////////////////////RX Unit///////////////////////////////////////
 
@@ -81,13 +110,13 @@ static inline void parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_ll_c
  * @brief Set the clock divider for the RX unit
  *
  * @param dev Parallel IO register base address
- * @param div Clock divider
+ * @param clk_div   Clock division with integral part, no fractional part on H2
  */
-static inline void parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, uint32_t div)
+static inline void parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, const hal_utils_clk_div_t *clk_div)
 {
     (void)dev;
-    HAL_ASSERT(div > 0 && div <= PARLIO_LL_RX_MAX_CLOCK_DIV);
-    PCR.parl_clk_rx_conf.parl_clk_rx_div_num = div - 1;
+    HAL_ASSERT(clk_div->integer > 0 && clk_div->integer <= PARLIO_LL_RX_MAX_CLK_INT_DIV);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.parl_clk_rx_conf, parl_clk_rx_div_num, clk_div->integer - 1);
 }
 
 /**
@@ -367,13 +396,13 @@ static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_ll_c
  * @brief Set the clock divider for the TX unit
  *
  * @param dev Parallel IO register base address
- * @param div Clock divider
+ * @param clk_div   Clock division with integral part, no fractional part on H2
  */
-static inline void parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, uint32_t div)
+static inline void parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_utils_clk_div_t *clk_div)
 {
     (void)dev;
-    HAL_ASSERT(div > 0 && div <= PARLIO_LL_TX_MAX_CLOCK_DIV);
-    PCR.parl_clk_tx_conf.parl_clk_tx_div_num = div - 1;
+    HAL_ASSERT(clk_div->integer > 0 && clk_div->integer <= PARLIO_LL_RX_MAX_CLK_INT_DIV);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.parl_clk_tx_conf, parl_clk_tx_div_num, clk_div->integer - 1);
 }
 
 /**

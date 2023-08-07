@@ -31,6 +31,16 @@ extern "C" {
 #define TEST_DATA5_GPIO     5
 #define TEST_DATA6_GPIO     8
 #define TEST_DATA7_GPIO     9
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_CLK_GPIO       20
+#define TEST_DATA0_GPIO     21
+#define TEST_DATA1_GPIO     22
+#define TEST_DATA2_GPIO     34
+#define TEST_DATA3_GPIO     35
+#define TEST_DATA4_GPIO     48
+#define TEST_DATA5_GPIO     49
+#define TEST_DATA6_GPIO     10
+#define TEST_DATA7_GPIO     11
 #else
 #error "Unsupported target"
 #endif
