@@ -51,7 +51,7 @@ typedef struct adc_continuous_ctx_t *adc_continuous_handle_t;
  * @brief ADC continuous mode driver initial configurations
  */
 typedef struct {
-    uint32_t max_store_buf_size;    ///< Max length of the conversion Results that driver can store, in bytes.
+    uint32_t max_store_buf_size;    ///< Max length of the conversion results that driver can store, in bytes.
     uint32_t conv_frame_size;       ///< Conversion frame size, in bytes. This should be in multiples of `SOC_ADC_DIGI_DATA_BYTES_PER_CONV`.
     struct {
         uint32_t flush_pool: 1;     ///< Flush the internal pool when the pool is full.
@@ -82,7 +82,7 @@ typedef struct {
  * @brief Prototype of ADC continuous mode event callback
  *
  * @param[in] handle    ADC continuous mode driver handle
- * @param[in] edata     Pointer to ADC contunuous mode event data
+ * @param[in] edata     Pointer to ADC continuous mode event data
  * @param[in] user_data User registered context, registered when in `adc_continuous_register_event_callbacks()`
  *
  * @return Whether a high priority task is woken up by this function
@@ -97,7 +97,7 @@ typedef bool (*adc_continuous_callback_t)(adc_continuous_handle_t handle, const 
  *       Involved variables should be in internal RAM as well.
  */
 typedef struct {
-    adc_continuous_callback_t on_conv_done;    ///< Event callback, invoked when one conversion frame is done. See `@brief Driver Backgrounds` to konw `conversion frame` concept.
+    adc_continuous_callback_t on_conv_done;    ///< Event callback, invoked when one conversion frame is done. See the subsection `Driver Backgrounds` in this header file to learn about the `conversion frame` concept.
     adc_continuous_callback_t on_pool_ovf;     ///< Event callback, invoked when the internal pool is full.
 } adc_continuous_evt_cbs_t;
 
@@ -164,7 +164,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle);
  *
  * @param[in]  handle              ADC continuous mode driver handle
  * @param[out] buf                 Conversion result buffer to read from ADC. Suggest convert to `adc_digi_output_data_t` for `ADC Conversion Results`.
- *                                 See `@brief Driver Backgrounds` to know this concept.
+ *                                 See the subsection `Driver Backgrounds` in this header file to learn about this concept.
  * @param[in]  length_max          Expected length of the Conversion Results read from the ADC, in bytes.
  * @param[out] out_length          Real length of the Conversion Results read from the ADC via this API, in bytes.
  * @param[in]  timeout_ms          Time to wait for data via this API, in millisecond.
