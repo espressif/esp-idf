@@ -8,10 +8,12 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
+#include "esp32c6/rom/cache.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +26,128 @@ extern "C" {
 #define CACHE_LL_L1_ACCESS_EVENT_MASK               (1<<4)
 #define CACHE_LL_L1_ACCESS_EVENT_CACHE_FAIL         (1<<4)
 
+#define CACHE_LL_L1_ICACHE_AUTOLOAD                 (1<<0)
+
+/**
+ * @brief Check if Cache auto preload is enabled or not. On ESP32C6, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ *
+ * @return true: enabled; false: disabled
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_is_cache_autoload_enabled(cache_type_t type)
+{
+    bool enabled = false;
+    if (REG_GET_BIT(EXTMEM_L1_CACHE_AUTOLOAD_CTRL_REG, EXTMEM_L1_CACHE_AUTOLOAD_ENA)) {
+        enabled = true;
+    }
+    return enabled;
+}
+
+/**
+ * @brief Disable Cache. On ESP32C6, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ */
+__attribute__((always_inline))
+static inline void cache_ll_disable_cache(cache_type_t type)
+{
+    (void) type;
+    Cache_Disable_ICache();
+}
+
+/**
+ * @brief Enable Cache. On ESP32C6, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ *
+ * @param data_autoload_en Dcache auto preload enabled
+ *
+ * @param inst_autoload_en Icache auto preload enabled
+ */
+__attribute__((always_inline))
+static inline void cache_ll_enable_cache(cache_type_t type, bool inst_autoload_en, bool data_autoload_en)
+{
+    Cache_Enable_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+}
+
+/**
+ * @brief Suspend Cache. On ESP32C6, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ */
+__attribute__((always_inline))
+static inline void cache_ll_suspend_cache(cache_type_t type)
+{
+    Cache_Suspend_ICache();
+}
+
+/**
+ * @brief Resume Cache. On ESP326, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ *
+ * @param data_autoload_en Dcache auto preload enabled
+ *
+ * @param inst_autoload_en Icache auto preload enabled
+ */
+__attribute__((always_inline))
+static inline void cache_ll_resume_cache(cache_type_t type, bool inst_autoload_en, bool data_autoload_en)
+{
+    Cache_Resume_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+}
+
+/**
+ * @brief Invalidate cache supported addr
+ *
+ * Invalidate a Cache item
+ *
+ * @param vaddr  Start address of the region to be invalidated
+ * @param size   Size of the region to be invalidated
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_addr(uint32_t vaddr, uint32_t size)
+{
+    Cache_Invalidate_Addr(vaddr, size);
+}
+
+/**
+ * @brief Freeze Cache. On ESP32C6, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ */
+__attribute__((always_inline))
+static inline void cache_ll_freeze_cache(cache_type_t type)
+{
+    Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+}
+
+/**
+ * @brief Unfreeze Cache. On ESP32C6, instructions and data share Cache
+ *
+ * @param type  see `cache_type_t`
+ */
+__attribute__((always_inline))
+static inline void cache_ll_unfreeze_cache(cache_type_t type)
+{
+    Cache_Freeze_ICache_Disable();
+}
+
+/**
+ * @brief Get cache line size, in bytes
+ *
+ * @param type  see `cache_type_t`
+ *
+ * @return cache line size, in bytes
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_line_size(cache_type_t type)
+{
+    uint32_t size = 0;
+    size = Cache_Get_ICache_Line_Size();
+    return size;
+}
 
 /**
  * @brief Get the buses of a particular cache that are mapped to a virtual address range
