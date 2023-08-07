@@ -330,6 +330,11 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     LIST_REMOVE(i80_device, device_list_entry);
     portEXIT_CRITICAL(&bus->spinlock);
 
+    // reset CS to normal GPIO
+    if (i80_device->cs_gpio_num >= 0) {
+        gpio_reset_pin(i80_device->cs_gpio_num);
+    }
+
     ESP_LOGD(TAG, "del i80 lcd panel io @%p", i80_device);
     vQueueDelete(i80_device->trans_queue);
     vQueueDelete(i80_device->done_queue);
