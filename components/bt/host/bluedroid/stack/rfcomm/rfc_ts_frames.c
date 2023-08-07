@@ -500,6 +500,50 @@ void rfc_send_rpn (tRFC_MCB *p_mcb, UINT8 dlci, BOOLEAN is_command,
     rfc_send_buf_uih (p_mcb, RFCOMM_MX_DLCI, p_buf);
 }
 
+#if BT_RFCOMM_BQB_INCLUDED
+/*******************************************************************************
+**
+** Function         rfc_bqb_send_msc_cmd
+**
+** Description      This function sends msc command for BQB test.
+**
+*******************************************************************************/
+void rfc_bqb_send_msc_cmd(BD_ADDR cert_pts_addr)
+{
+    UINT8       i;
+    UINT8       dlci;
+    BOOLEAN     get_dlci = FALSE;
+    tPORT       *p_port;
+    tPORT_CTRL  *p_pars;
+    tRFC_MCB    *p_mcb;
+
+    if ((p_pars = (tPORT_CTRL *)osi_malloc(sizeof(tPORT_CTRL))) == NULL) {
+        return;
+    }
+
+    p_pars->modem_signal = 0;
+    p_pars->break_signal = 0;
+    p_pars->fc = TRUE;
+
+    p_mcb = port_find_mcb (cert_pts_addr);
+
+    for (i = 0; i < MAX_RFC_PORTS; i++) {
+        p_port = &rfc_cb.port.port[i];
+        if (p_port->in_use && !memcmp (p_port->bd_addr, cert_pts_addr, BD_ADDR_LEN)) {
+            dlci = p_port->dlci;
+            get_dlci = TRUE;
+            break;
+        }
+    }
+
+    if (get_dlci) {
+        rfc_send_msc(p_mcb, dlci, TRUE, p_pars);
+    } else {
+        RFCOMM_TRACE_ERROR ("Get dlci fail");
+    }
+    osi_free(p_pars);
+}
+#endif /* BT_RFCOMM_BQB_INCLUDED */
 
 /*******************************************************************************
 **

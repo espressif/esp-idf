@@ -95,6 +95,13 @@
 #define UC_BT_SSP_ENABLED                   FALSE
 #endif
 
+//BQB(BT)
+#ifdef CONFIG_BT_CLASSIC_BQB_ENABLED
+#define UC_BT_CLASSIC_BQB_ENABLED           CONFIG_BT_CLASSIC_BQB_ENABLED
+#else
+#define UC_BT_CLASSIC_BQB_ENABLED           FALSE
+#endif
+
 //BLE
 #ifdef CONFIG_BT_BLE_ENABLED
 #define UC_BT_BLE_ENABLED                   CONFIG_BT_BLE_ENABLED
