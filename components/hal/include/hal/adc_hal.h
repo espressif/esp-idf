@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,10 @@
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
 #include "hal/adc_types.h"
-#include "hal/adc_ll.h"
 #include "hal/adc_hal_common.h"
-#include "esp_err.h"
+#if SOC_ADC_DMA_SUPPORTED
+#include "hal/adc_ll.h"
+#endif
 
 #if SOC_GDMA_SUPPORTED
 #include "soc/gdma_struct.h"

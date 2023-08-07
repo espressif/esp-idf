@@ -9,10 +9,13 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
+#include "sdkconfig.h"
 
+#if !CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7532
 #if !SOC_LP_TIMER_SUPPORTED
 #include "hal/rtc_cntl_ll.h"
 #endif
+#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "hal/rtc_io_ll.h"
 #endif

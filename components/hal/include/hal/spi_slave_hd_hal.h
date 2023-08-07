@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,14 +43,19 @@
 
 #pragma once
 
-#include <esp_types.h>
+#include "esp_types.h"
 #include "esp_err.h"
-#include "hal/spi_ll.h"
+#include "soc/soc_caps.h"
 #include "hal/spi_types.h"
+#if SOC_GPSPI_SUPPORTED
+#include "hal/spi_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_GPSPI_SUPPORTED
 
 /**
  * @brief Type of dma descriptor with appended members
@@ -310,6 +315,8 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
  *        - ESP_ERR_INVALID_STATE: Function called in invalid state.
  */
 esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len, void *arg);
+
+#endif  //#if SOC_GPSPI_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -163,9 +163,9 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
 
     //needs force u32 write
     if ((hw) == &UART0) {
-        HP_SYSTEM.peri_clk_ctrl111.reg_uart0_sclk_div_num = sclk_div - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl111.reg_uart0_sclk_div_num = sclk_div - 1;
     } else {
-        HP_SYSTEM.peri_clk_ctrl112.reg_uart1_sclk_div_num = sclk_div - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl112.reg_uart1_sclk_div_num = sclk_div - 1;
     }
 
 #undef DIV_UP

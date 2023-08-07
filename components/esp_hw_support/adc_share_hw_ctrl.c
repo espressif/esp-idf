@@ -24,8 +24,8 @@
 #include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/adc_types.h"
-#include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
+#include "hal/adc_ll.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 //For calibration

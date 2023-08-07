@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,10 +96,17 @@ typedef enum {
     TIMER_AUTORELOAD_MAX,
 } timer_autoreload_t;
 
+#if SOC_GPTIMER_SUPPORTED
 /**
  * @brief Timer group clock source
  */
 typedef soc_periph_tg_clk_src_legacy_t timer_src_clk_t;
+#else
+/**
+ *  @brief Default type
+ */
+typedef int                            timer_src_clk_t;
+#endif
 
 /**
  * @brief Interrupt handler callback function

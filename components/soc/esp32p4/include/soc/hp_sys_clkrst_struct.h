@@ -2922,7 +2922,7 @@ typedef union {
 } hp_sys_clkrst_hpcore_wdt_reset_source0_reg_t;
 
 
-typedef struct {
+typedef struct hp_sys_clkrst_dev_t {
     volatile hp_sys_clkrst_clk_en0_reg_t clk_en0;
     volatile hp_sys_clkrst_root_clk_ctrl0_reg_t root_clk_ctrl0;
     volatile hp_sys_clkrst_root_clk_ctrl1_reg_t root_clk_ctrl1;
@@ -2985,7 +2985,7 @@ typedef struct {
     volatile hp_sys_clkrst_hpcore_wdt_reset_source0_reg_t hpcore_wdt_reset_source0;
 } hp_sys_clkrst_dev_t;
 
-extern hp_sys_clkrst_dev_t HP_SYSTEM;
+extern hp_sys_clkrst_dev_t HP_SYS_CLKRST;
 
 
 #ifndef __cplusplus

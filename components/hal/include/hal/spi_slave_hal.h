@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,15 +24,19 @@
 
 #pragma once
 
-#include <esp_types.h>
-#include "soc/lldesc.h"
-#include "soc/spi_struct.h"
+#include "sdkconfig.h"
+#include "esp_types.h"
 #include "soc/soc_caps.h"
+#if SOC_GPSPI_SUPPORTED
+#include "soc/lldesc.h"
 #include "hal/spi_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_GPSPI_SUPPORTED
 
 /**
  * Context that should be maintained by both the driver and the HAL.
@@ -159,6 +163,8 @@ uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal);
  */
 bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal);
 #endif //#if CONFIG_IDF_TARGET_ESP32
+
+#endif  //#if SOC_GPSPI_SUPPORTED
 
 #ifdef __cplusplus
 }

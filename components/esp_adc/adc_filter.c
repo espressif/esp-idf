@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
+#include "hal/adc_ll.h"
 #include "adc_continuous_internal.h"
 #include "esp_adc/adc_filter.h"
 

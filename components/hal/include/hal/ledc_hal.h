@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +15,18 @@
 
 #pragma once
 
-#include "hal/ledc_ll.h"
-#include "hal/ledc_types.h"
 #include "soc/soc_caps.h"
+#include "hal/ledc_types.h"
+#if SOC_LEDC_SUPPORTED
+#include "hal/ledc_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+#if SOC_LEDC_SUPPORTED
 /**
  * Context that should be maintained by both the driver and the HAL
  */
@@ -438,6 +442,8 @@ void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_channel_t
  * @return None
  */
 void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_clk_cfg_t *clk_cfg);
+
+#endif  //#if SOC_LEDC_SUPPORTED
 
 #ifdef __cplusplus
 }
