@@ -710,7 +710,7 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
          */
         if (!(btc_av_cb.flags & BTC_AV_FLAG_PENDING_START)) {
             if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
-                BTC_TRACE_DEBUG("%s: trigger suspend as remote initiated!!", __FUNCTION__);
+                BTC_TRACE_EVENT("%s: trigger suspend as remote initiated!!", __FUNCTION__);
                 btc_dispatch_sm_event(BTC_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
             }
         }
@@ -1263,7 +1263,7 @@ BOOLEAN btc_av_stream_ready(void)
               (int)btc_av_cb.sm_handle, state, btc_av_cb.flags);
 
     /* check if we are remotely suspended or stop is pending */
-    if (btc_av_cb.flags & (BTC_AV_FLAG_REMOTE_SUSPEND | BTC_AV_FLAG_PENDING_STOP)) {
+    if (btc_av_cb.flags & BTC_AV_FLAG_PENDING_STOP) {
         return FALSE;
     }
 
@@ -1288,7 +1288,7 @@ BOOLEAN btc_av_stream_started_ready(void)
               (int)btc_av_cb.sm_handle, state, btc_av_cb.flags);
 
     /* disallow media task to start if we have pending actions */
-    if (btc_av_cb.flags & (BTC_AV_FLAG_LOCAL_SUSPEND_PENDING | BTC_AV_FLAG_REMOTE_SUSPEND
+    if (btc_av_cb.flags & (BTC_AV_FLAG_LOCAL_SUSPEND_PENDING
                            | BTC_AV_FLAG_PENDING_STOP)) {
         return FALSE;
     }
