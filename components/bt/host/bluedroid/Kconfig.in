@@ -1150,3 +1150,10 @@ config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     default n
     help
         This enables BLE periodic advertising sync transfer feature
+
+config BT_BLE_HIGH_DUTY_ADV_INTERVAL
+    bool "Enable BLE high duty advertising interval feature"
+    depends on BT_BLUEDROID_ENABLED
+    default n
+    help
+        This enable BLE high duty advertising interval feature
