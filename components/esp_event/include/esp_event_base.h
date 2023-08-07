@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ESP_EVENT_BASE_H_
-#define ESP_EVENT_BASE_H_
+#pragma once
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,5 +32,3 @@ typedef void*        esp_event_handler_instance_t; /**< context identifying an i
 #ifdef __cplusplus
 }
 #endif
-
-#endif // #ifndef ESP_EVENT_BASE_H_

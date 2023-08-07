@@ -114,7 +114,7 @@ components/esp_wifi/include/esp_wifi_crypto_types.h
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/include/esp_wifi_default.h
-components/esp_event/include/esp_event_base.h
+components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
