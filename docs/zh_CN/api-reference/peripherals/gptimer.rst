@@ -329,8 +329,9 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` 控制放置通用定时器控制函数（IRAM 或 flash）的位置。了解更多信息，请参考章节 :ref:`gptimer-iram-safe`。
-- :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` 控制默认 ISR 程序在 cache 禁用时是否可以运行。了解更多信息，请参考章节 :ref:`gptimer-iram-safe`。
+- :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` 控制着定时器控制函数的存放位置（IRAM 或 flash）。
+- :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` 控制着定时器中断处理函数的存放位置（IRAM 或 flash）。
+- :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` 控制着中断处理函数是否需要在 cache 关闭的时候被屏蔽掉。更多信息，请参阅 :ref:`gptimer-iram-safe`。
 - :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用这一选项将增加固件二进制文件大小。
 
 应用示例
