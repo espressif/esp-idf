@@ -55,7 +55,7 @@
 // #define SOC_I2C_SUPPORTED               1  //TODO: IDF-6507, TODO: IDF-7491
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_AES_SUPPORTED               1  //TODO: IDF-6519
-// #define SOC_MPI_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
 // #define SOC_SHA_SUPPORTED               1  //TODO: IDF-7541
 // #define SOC_HMAC_SUPPORTED              1  //TODO: IDF-7543
 // #define SOC_DIG_SIGN_SUPPORTED          1  //TODO: IDF-6518
@@ -298,8 +298,12 @@
 #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    16  /*!< Number of data lines of the RX unit */
 #define SOC_PARLIO_TX_RX_SHARE_INTERRUPT     1   /*!< TX and RX unit share the same interrupt source number */
 
+/*--------------------------- MPI CAPS ---------------------------------------*/
+#define SOC_MPI_MEM_BLOCKS_NUM (4)
+#define SOC_MPI_OPERATIONS_NUM (3)
+
 /*--------------------------- RSA CAPS ---------------------------------------*/
-#define SOC_RSA_MAX_BIT_LEN    (3072)
+#define SOC_RSA_MAX_BIT_LEN    (4096)
 
 // TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
