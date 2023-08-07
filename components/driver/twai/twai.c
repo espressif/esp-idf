@@ -44,11 +44,9 @@
 #define TWAI_SET_FLAG(var, mask)    ((var) |= (mask))
 #define TWAI_RESET_FLAG(var, mask)  ((var) &= ~(mask))
 #ifdef CONFIG_TWAI_ISR_IN_IRAM
-#define TWAI_ISR_ATTR       IRAM_ATTR
 #define TWAI_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define TWAI_TAG "TWAI"
-#define TWAI_ISR_ATTR
 #define TWAI_MALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif  //CONFIG_TWAI_ISR_IN_IRAM
 
@@ -103,7 +101,7 @@ static twai_hal_context_t twai_context;
 
 /* -------------------- Interrupt and Alert Handlers ------------------------ */
 
-TWAI_ISR_ATTR static void twai_alert_handler(uint32_t alert_code, int *alert_req)
+static void twai_alert_handler(uint32_t alert_code, int *alert_req)
 {
     if (p_twai_obj->alerts_enabled & alert_code) {
         //Signify alert has occurred
@@ -123,7 +121,6 @@ TWAI_ISR_ATTR static void twai_alert_handler(uint32_t alert_code, int *alert_req
     }
 }
 
-TWAI_ISR_ATTR
 static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *alert_req)
 {
 #ifdef SOC_TWAI_SUPPORTS_RX_STATUS
@@ -173,7 +170,6 @@ static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *ale
 #endif  //SOC_TWAI_SUPPORTS_RX_STATUS
 }
 
-TWAI_ISR_ATTR
 static inline void twai_handle_tx_buffer_frame(BaseType_t *task_woken, int *alert_req)
 {
     //Handle previously transmitted frame
@@ -203,7 +199,7 @@ static inline void twai_handle_tx_buffer_frame(BaseType_t *task_woken, int *aler
     }
 }
 
-TWAI_ISR_ATTR static void twai_intr_handler_main(void *arg)
+static void twai_intr_handler_main(void *arg)
 {
     BaseType_t task_woken = pdFALSE;
     int alert_req = 0;

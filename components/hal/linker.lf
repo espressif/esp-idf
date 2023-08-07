@@ -26,8 +26,6 @@ entries:
         wdt_hal_iram (noflash)
     if SOC_SYSTIMER_SUPPORTED = y && HAL_SYSTIMER_USE_ROM_IMPL = n:
         systimer_hal (noflash)
-    if TWAI_ISR_IN_IRAM = y:
-        twai_hal_iram (noflash)
     if SOC_GPSPI_SUPPORTED = y && IDF_TARGET_ESP32 = n:
         spi_flash_hal_gpspi (noflash)
     if SOC_PMU_SUPPORTED = y:

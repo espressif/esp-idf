@@ -1,0 +1,14 @@
+[mapping:twai_hal]
+archive: libhal.a
+entries:
+    if TWAI_ISR_IN_IRAM = y:
+        twai_hal_iram (noflash)
+
+[mapping:twai_driver]
+archive: libdriver.a
+entries:
+    if TWAI_ISR_IN_IRAM = y:
+        twai: twai_alert_handler (noflash)
+        twai: twai_handle_rx_buffer_frames (noflash)
+        twai: twai_handle_tx_buffer_frame (noflash)
+        twai: twai_intr_handler_main (noflash)
