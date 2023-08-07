@@ -28,6 +28,7 @@ except ImportError:
 IDF_PATH = os.environ.get('IDF_PATH', '../..')
 TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
+PYTHON_DIR_BACKUP = tempfile.mkdtemp()
 REQ_SATISFIED = 'Python requirements are satisfied'
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
@@ -38,6 +39,17 @@ CONSTR = 'Constraint file: {}/espidf.constraints'.format(TOOLS_DIR)
 # set it in setUp() and change them back to defaults in tearDown().
 idf_tools.global_idf_path = IDF_PATH
 idf_tools.global_idf_tools_path = TOOLS_DIR
+
+
+def setUpModule():  # type: () -> None
+    shutil.rmtree(PYTHON_DIR_BACKUP)
+    shutil.move(PYTHON_DIR, PYTHON_DIR_BACKUP)
+
+
+def tearDownModule():  # type: () -> None
+    if os.path.isdir(PYTHON_DIR):
+        shutil.rmtree(PYTHON_DIR)
+    shutil.move(PYTHON_DIR_BACKUP, PYTHON_DIR)
 
 
 class BasePythonInstall(unittest.TestCase):
@@ -262,8 +274,6 @@ class TestCheckPythonDependencies(BasePythonInstall):
 
     def tearDown(self):  # type: () -> None
         shutil.copyfile(self.backup_constraint_file, self.constraint_file)
-        if os.path.isdir(PYTHON_DIR):
-            shutil.rmtree(PYTHON_DIR)
 
     def test_check_python_dependencies(self):  # type: () -> None
         # Prepare artificial constraints file containing packages from
