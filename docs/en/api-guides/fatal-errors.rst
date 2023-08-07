@@ -447,6 +447,8 @@ Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` docume
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
+    .. _Hardware-Stack-Guard:
+
     Hardware Stack Guard
     """"""""""""""""""""
 

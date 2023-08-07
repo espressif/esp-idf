@@ -447,6 +447,8 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
+    .. _Hardware-Stack-Guard:
+
     硬件堆栈保护
     """"""""""""""""""""
 
