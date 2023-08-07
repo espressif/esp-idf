@@ -143,6 +143,9 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
     /* Enable SDA and SCL filtering. This configuration matches the HP I2C filter config */
     i2c_ll_set_filter(i2c_hal.dev, LP_I2C_FILTER_CYC_NUM_DEF);
 
+    /* Configure the I2C master to send a NACK when the Rx FIFO count is full */
+    i2c_ll_master_rx_full_ack_level(i2c_hal.dev, 1);
+
     /* Synchronize the config register values to the LP I2C peripheral clock */
     i2c_ll_update(i2c_hal.dev);
 
