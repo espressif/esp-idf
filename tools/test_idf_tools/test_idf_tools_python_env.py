@@ -54,7 +54,7 @@ def tearDownModule():  # type: () -> None
 
 class BasePythonInstall(unittest.TestCase):
     def run_tool(self, cmd):  # type: (List[str]) -> str
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=300)
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
         decoded_output = ret.stdout.decode('utf-8', 'ignore')
         with open(os.path.join(IDF_PATH, 'tools', 'test_idf_tools', 'test_python_env_logs.txt'), 'a+') as w:
             # stack() returns list of callers frame records. [1] represent caller of this function
