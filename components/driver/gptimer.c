@@ -44,6 +44,8 @@
 #define GPTIMER_INTR_ALLOC_FLAGS    ESP_INTR_FLAG_INTRDISABLED
 #endif
 
+#define GPTIMER_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
+
 #define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
 
 static const char *TAG = "gptimer";
@@ -82,6 +84,7 @@ struct gptimer_t {
     timer_hal_context_t hal;
     _Atomic gptimer_fsm_t fsm;
     intr_handle_t intr;
+    int intr_priority;
     portMUX_TYPE spinlock; // to protect per-timer resources concurent accessed by task and ISR handler
     gptimer_alarm_cb_t on_alarm;
     void *user_ctx;
@@ -167,8 +170,12 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 #endif
     esp_err_t ret = ESP_OK;
     gptimer_t *timer = NULL;
-    ESP_GOTO_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->resolution_hz, ESP_ERR_INVALID_ARG, err, TAG, "invalid timer resolution:%"PRIu32, config->resolution_hz);
+    ESP_RETURN_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config->resolution_hz, ESP_ERR_INVALID_ARG, TAG, "invalid timer resolution:%"PRIu32, config->resolution_hz);
+    if (config->intr_priority) {
+        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & GPTIMER_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
+                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+    }
 
     timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for gptimer");
@@ -201,6 +208,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     // put the timer driver to the init state
     atomic_init(&timer->fsm, GPTIMER_FSM_INIT);
     timer->direction = config->direction;
+    timer->intr_priority = config->intr_priority;
     timer->flags.intr_shared = config->flags.intr_shared;
     ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%"PRIu32"Hz", group_id, timer_id, timer, timer->resolution_hz);
     *ret_timer = timer;
@@ -268,6 +276,9 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
         ESP_RETURN_ON_FALSE(atomic_load(&timer->fsm) == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
         // if user wants to control the interrupt allocation more precisely, we can expose more flags in `gptimer_config_t`
         int isr_flags = timer->flags.intr_shared ? ESP_INTR_FLAG_SHARED | GPTIMER_INTR_ALLOC_FLAGS : GPTIMER_INTR_ALLOC_FLAGS;
+        if (timer->intr_priority) {
+            isr_flags |= 1 << (timer->intr_priority);
+        }
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,
                             (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
                             gptimer_default_isr, timer, &timer->intr), TAG, "install interrupt service failed");

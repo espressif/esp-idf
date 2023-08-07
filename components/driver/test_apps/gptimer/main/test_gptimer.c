@@ -276,6 +276,7 @@ TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        timer_config.intr_priority = i % 3 + 1; // test different priorities
         TEST_ESP_OK(gptimer_new_timer(&timer_config, &timers[i]));
     }
 
