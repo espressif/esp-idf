@@ -382,11 +382,9 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
         i2c_ll_write_txfifo(dev, &data_wr[data_idx], fifo_size);
         lp_core_i2c_format_cmd(cmd_idx++, I2C_LL_CMD_WRITE, 0, LP_I2C_ACK, s_ack_check_en, fifo_size);
 
-        if (remaining_bytes) {
-            /* This means we have to send more than what can fit in the Tx FIFO. Insert an End command. */
-            lp_core_i2c_format_cmd(cmd_idx++, I2C_LL_CMD_END, 0, 0, 0, 0);
-            cmd_idx = 0;
-        }
+        /* Insert an End command to signal the end of the write transaction to the HW */
+        lp_core_i2c_format_cmd(cmd_idx++, I2C_LL_CMD_END, 0, 0, 0, 0);
+        cmd_idx = 0;
 
         /* Initiate I2C transfer */
         i2c_ll_update(dev);
