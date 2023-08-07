@@ -1,0 +1,38 @@
+menu "GPTimer Configuration"
+    config GPTIMER_ISR_HANDLER_IN_IRAM
+        bool "Place GPTimer ISR handler into IRAM"
+        default y
+        help
+            Place GPTimer ISR handler into IRAM for better performance and fewer cache misses.
+
+    config GPTIMER_CTRL_FUNC_IN_IRAM
+        bool "Place GPTimer control functions into IRAM"
+        default n
+        help
+            Place GPTimer control functions (like start/stop) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+            Enabling this option can improve driver performance as well.
+
+    config GPTIMER_ISR_IRAM_SAFE
+        bool "GPTimer ISR IRAM-Safe"
+        select GPTIMER_ISR_HANDLER_IN_IRAM
+        default n
+        help
+            Ensure the GPTimer interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+    config GPTIMER_SUPPRESS_DEPRECATE_WARN
+        bool "Suppress legacy driver deprecated warning"
+        default n
+        help
+            Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
+            If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+            you can enable this option.
+
+    config GPTIMER_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Wether to enable the debug log message for GPTimer driver.
+            Note that, this option only controls the GPTimer driver log, won't affect other drivers.
+endmenu # GPTimer Configuration
