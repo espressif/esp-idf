@@ -16,54 +16,59 @@ def get_gitwdir() -> str:
     return run_cmd(['git', 'rev-parse', '--show-toplevel'])
 
 
-def get_submodules_info() -> List[Dict[str,str]]:
-    """Return list of submodules, where each submodule is represented
-    as dictionary with name, path and hash keys."""
-    cmd = ['git', 'submodule', '--quiet', 'foreach','echo "$name,$sm_path,$sha1"']
-    out = run_cmd(cmd)
-    submodules = []
-    for line in out.splitlines():
-        name, sm_path, sha1 = line.split(',')
-        submodules += [{'name': name, 'path': sm_path, 'hash': sha1}]
-
-    return submodules
-
-
-def get_submodules_config() -> Dict[str,str]:
-    """Return dictionary, where key is variable name and value
-    is variable value in git's --list(dot) format. Only variables
-    starting with "submodule." are returned and this prefix is removed
-    to make it simple to match against the submodule info dictionary."""
+def get_submodules_config() -> Dict[str,Dict[str,str]]:
+    """Return dictionary, where key is submodule name and value
+    is a dictionary with variable:value pairs."""
     gitmodules_fn = os.path.join(get_gitwdir(), '.gitmodules')
     gitmodules_data = run_cmd(['git', 'config', '--list', '--file', gitmodules_fn])
     prefix = 'submodule.'
-    config = {}
+    config: Dict[str, Dict[str,str]] = {}
     for line in gitmodules_data.splitlines():
-        var, val = line.split('=', maxsplit=1)
-        if not var.startswith(prefix):
+        if not line.startswith(prefix):
             continue
+        splitted = line.split('=', maxsplit=1)
+        if len(splitted) != 2:
+            continue
+        section, val = splitted
         # remove "submodule." prefix
-        var = var[len(prefix):]
-        config[var] = val
+        section = section[len(prefix):]
+        # split section into module name and variable
+        splitted = section.rsplit('.', maxsplit=1)
+        if len(splitted) != 2:
+            continue
+        module_name, var = splitted
+        if module_name not in config:
+            config[module_name] = {}
+        config[module_name][var] = val
 
     return config
 
 
 def test_sha() -> None:
-    """ Check that submodule SHA1 in git-tree and .gitmodules match
+    """ Check that submodule SHA in git-tree and .gitmodules match
     if sbom-hash variable is available in the .gitmodules file.
     """
-    submodules = get_submodules_info()
-    config = get_submodules_config()
+    submodules = get_submodules_config()
 
-    for submodule in submodules:
-        sbom_hash = config.get(submodule['name'] + '.sbom-hash')
+    for name, variables in submodules.items():
+        sbom_hash = variables.get('sbom-hash')
         if not sbom_hash:
             continue
-        msg = (f'Submodule \"{submodule["name"]}\" SHA \"{submodule["hash"]}\" in git '
+        module_path = variables.get('path')
+        if not module_path:
+            continue
+        output = run_cmd(['git', 'ls-tree', 'HEAD', module_path])
+        if not output:
+            continue
+        module_hash = output.split()[2]
+        msg = (f'Submodule \"{name}\" SHA \"{module_hash}\" in git '
                f'tree does not match SHA \"{sbom_hash}\" recorded in .gitmodules. '
-               f'Please update \"sbom-hash\" in .gitmodules for \"{submodule["name"]}\" '
+               f'Please update \"sbom-hash\" in .gitmodules for \"{name}\" '
                f'and also please do not forget to update version and other submodule '
                f'information if necessary. It is important to keep this information '
                f'up-to-date for SBOM generation.')
-        assert submodule['hash'] == sbom_hash, msg
+        assert module_hash == sbom_hash, msg
+
+
+if __name__ == '__main__':
+    test_sha()
