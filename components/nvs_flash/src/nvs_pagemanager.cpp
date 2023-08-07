@@ -235,6 +235,7 @@ esp_err_t PageManager::fillStats(nvs_stats_t& nvsStats)
     nvsStats.free_entries  += mFreePageList.size() * Page::ENTRY_COUNT;
 
     // calculate available entries from free entries by applying reserved page size
+    // avoid overflow of size_t declared available_entries in case of free_entries being too low
     nvsStats.available_entries = (nvsStats.free_entries >= Page::ENTRY_COUNT) ? nvsStats.free_entries - Page::ENTRY_COUNT : 0;
 
     return err;
