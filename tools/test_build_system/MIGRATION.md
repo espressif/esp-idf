@@ -95,15 +95,16 @@ Check that command for creating new project will fail if the target path is file
 Check docs command | test_common.py::test_docs_command |
 Deprecation warning check | test_common.py::test_deprecation_warning |
 Save-defconfig checks | test_common.py::test_save_defconfig_check |
-test_build | |
-test_build_ulp_fsm | |
-test_build_ulp_riscv | |
-test_spiffsgen | |
-test_flash_encryption | |
-test_secure_boot_v1 | |
-test_secure_boot_v2 | |
-test_app_signing | |
-test_secure_boot_release_mode | |
-test_x509_cert_bundle | |
-test_dfu | |
-test_uf2 | |
+test_install_export | test_spaces.py::test_install_export | split into two tests for unix and windows
+test_build | test_spaces.py::test_spaces_bundle1 |
+test_build_ulp_fsm | test_spaces.py::test_spaces_bundle1 |
+test_build_ulp_riscv | test_spaces.py::test_spaces_bundle1 |
+test_spiffsgen | test_spaces.py::test_spaces_bundle1 |
+test_flash_encryption | test_spaces.py::test_spaces_bundle2 |
+test_secure_boot_v1 | test_spaces.py::test_spaces_bundle3 |
+test_secure_boot_v2 | test_spaces.py::test_spaces_bundle3 |
+test_app_signing | test_spaces.py::test_spaces_bundle3 |
+test_secure_boot_release_mode | test_spaces.py::test_spaces_bundle3 |
+test_x509_cert_bundle | test_spaces.py::test_spaces_bundle2 |
+test_dfu | test_spaces.py::test_spaces_bundle2 |
+test_uf2 | test_spaces.py::test_spaces_bundle2 |
