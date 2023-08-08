@@ -12,6 +12,15 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
+/* Set the length of the event queue */
+#define DEFAULT_EVENT_QUEUE_LEN               (CONFIG_EXAMPLE_EVENT_QUEUE_LEN)
+
+/* Set the task's stack size */
+#define DEFAULT_EVENT_TASK_STACK_SIZE         (CONFIG_EXAMPLE_EVENT_TASK_STACK_SIZE)
+
+/* Set the priority of a task */
+#define DEFAULT_EVENT_TASK_PRIORITY           (CONFIG_EXAMPLE_EVENT_TASK_PRIORITY)
+
 /* pm lock type */
 #if (CONFIG_EXAMPLE_PM_LOCK_TYPE == 0)
 #define DEFAULT_PM_LOCK_TYPE	(ESP_PM_CPU_FREQ_MAX)
@@ -36,7 +45,7 @@ typedef enum{
 extern "C" {
 #endif
 
-esp_err_t example_register_power_config( void* );
+esp_err_t example_register_power_config( esp_pm_lock_handle_t*, hold_pm_lock_state_t* );
 
 #ifdef __cplusplus
 }

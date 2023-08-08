@@ -16,11 +16,10 @@
 static const char *TAG = "power_config";
 
 /* pm config function */
-esp_err_t example_register_power_config(void* args)
+esp_err_t example_register_power_config(esp_pm_lock_handle_t* pm_lock, hold_pm_lock_state_t* hold_lock_state)
 {
-    gpio_wakeup_object_t* object = (gpio_wakeup_object_t*)args;
     /* Initialize pm lock */
-    ESP_RETURN_ON_ERROR( esp_pm_lock_create(DEFAULT_PM_LOCK_TYPE, 0, "contorl_auto_light_sleep", &(object->pm_lock)), TAG, "create lock failed" );
+    ESP_RETURN_ON_ERROR( esp_pm_lock_create(DEFAULT_PM_LOCK_TYPE, 0, "contorl_auto_light_sleep", pm_lock), TAG, "create lock failed" );
     ESP_LOGI(TAG, "create %s lock success!", PM_LOCK_TYPE_TO_STRING);
 
     /* Initialize pm configure, eg: auto light sleep */
@@ -32,14 +31,12 @@ esp_err_t example_register_power_config(void* args)
     ESP_RETURN_ON_ERROR( esp_pm_configure(&pm_conf), TAG, "auto light sleep config failed" );
 
     // after power on, it should remain active, so it should acquire lock
-    ESP_RETURN_ON_ERROR( esp_pm_lock_acquire(object->pm_lock), TAG, "acquire %s lock failed", PM_LOCK_TYPE_TO_STRING );
+    ESP_RETURN_ON_ERROR( esp_pm_lock_acquire(*pm_lock), TAG, "acquire %s lock failed", PM_LOCK_TYPE_TO_STRING );
     ESP_LOGI(TAG, "acquired %s lock, can to do something...", PM_LOCK_TYPE_TO_STRING);
 
     // set the initial software state: hold lock
-    object->hold_lock_state = HOLD_LOCK_STATE;
-    ESP_LOGI(TAG, "Set software state success: %s", object->hold_lock_state ? "hold lock" : "no lock");
+    *hold_lock_state = HOLD_LOCK_STATE;
+    ESP_LOGI(TAG, "Set software state success: %s", (*hold_lock_state) ? "hold lock" : "no lock");
 
     return ESP_OK;
 }
-
-
