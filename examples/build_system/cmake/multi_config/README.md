@@ -80,6 +80,40 @@ It is possible to specify multiple files in this variable, separating them with 
 
 This way the common options do not need to be repeated in each of `sdkconfig.prodN` files.
 
+### Create configuration profile files via @filename
+
+You can further enhance your build process by using configuration profile files. These profile files contain arguments that streamline the build process for specific scenarios. For example, let's have the following profile files:
+
+`profiles/prod`:
+
+```bash
+-B build-production -DSDKCONFIG=build-production/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.prod"
+```
+
+`profiles/debug`:
+
+```bash
+-B build-debug -DSDKCONFIG=build-debug/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.debug"
+```
+
+You can use these profile files to quickly set up the build environment with specific configurations.
+
+- To build with the production profile: `idf.py @profiles/prod build`
+- To build with the debug profile: `idf.py @profiles/debug build`
+
+This approach simplifies the process of specifying complex command-line arguments and allows for greater flexibility in managing different build scenarios.
+
+Moreover, you can combine arguments from a profile file with additional command line arguments. Anywhere on the idf.py command line, you can specify a file as @filename.txt to read one or more arguments from the text file. Arguments in the file can be separated by newlines or spaces and are expanded exactly as if they had appeared in that order on the idf.py command line.
+
+For example, you can create a file named custom_flash.txt:
+
+`custom_flash.txt`:
+
+```bash
+-p PORT flash
+```
+
+Then, you can expand the command: `idf.py -B build_production @filename.txt monitor`
 ### Generated `sdkconfig` file
 
 In this example, `sdkconfig` file is placed into the build directory, instead of the project root directory as it is done by default. This allows development and production builds to exist side by side. The location of `sdkconfig` file is set using `SDKCONFIG` variable in [project CMakeLists.txt](CMakeLists.txt) file.
