@@ -315,6 +315,10 @@ config SOC_ADC_TEMPERATURE_SHARE_INTR
     bool
     default y
 
+config SOC_ADC_SHARED_POWER
+    bool
+    default y
+
 config SOC_APB_BACKUP_DMA
     bool
     default n

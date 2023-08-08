@@ -37,11 +37,11 @@ entries:
         mspi_timing_config (noflash)
         if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY = y:
             mspi_timing_by_mspi_delay (noflash)
-
-    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
-        sar_periph_ctrl (noflash)
-    else:
-        sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
+    if SOC_ADC_SHARED_POWER = y:
+        if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+            sar_periph_ctrl (noflash)
+        else:
+            sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
 
 [mapping:soc_pm]
 archive: libsoc.a
