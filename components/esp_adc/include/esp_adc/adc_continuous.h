@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -197,6 +197,20 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle);
  *         - ESP_OK                On success
  */
 esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle);
+
+/**
+ * @brief Flush the driver internal pool
+ *
+ * @note This API is not supposed to be called in an ISR context
+ *
+ * @param[in]  handle              ADC continuous mode driver handle
+ *
+ * @return
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid, you should call this API when it's in init state
+ *         - ESP_ERR_INVALID_ARG:  Invalid arguments
+ *         - ESP_OK                On success
+ */
+esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t handle);
 
 /**
  * @brief Get ADC channel from the given GPIO number

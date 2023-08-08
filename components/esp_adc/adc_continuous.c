@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -609,6 +609,21 @@ esp_err_t adc_continuous_register_event_callbacks(adc_continuous_handle_t handle
     handle->cbs.on_conv_done = cbs->on_conv_done;
     handle->cbs.on_pool_ovf = cbs->on_pool_ovf;
     handle->user_data = user_data;
+
+    return ESP_OK;
+}
+
+esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t handle)
+{
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, ADC_TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(handle->fsm == ADC_FSM_INIT, ESP_ERR_INVALID_STATE, ADC_TAG, "ADC continuous mode isn't in the init state, it's started already");
+
+    size_t actual_size = 0;
+    uint8_t *old_data = NULL;
+
+    while ((old_data = xRingbufferReceiveUpTo(handle->ringbuf_hdl, &actual_size, 0, handle->ringbuf_size))) {
+        vRingbufferReturnItem(handle->ringbuf_hdl, old_data);
+    }
 
     return ESP_OK;
 }
