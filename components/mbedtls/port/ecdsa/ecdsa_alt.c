@@ -6,7 +6,6 @@
 #include <string.h>
 #include "hal/ecdsa_hal.h"
 #include "esp_efuse.h"
-#include "mbedtls/ecp.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/platform_util.h"
 #include "esp_private/periph_ctrl.h"
@@ -43,6 +42,64 @@ static void ecdsa_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t l
         le_point[i] = be_point[len - i - 1];
     }
 }
+
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
+{
+    int ret = -1;
+
+    if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
+        ESP_LOGE(TAG, "Invalid efuse block selected");
+        return ret;
+    }
+
+    ecdsa_curve_t curve;
+    esp_efuse_block_t blk;
+    uint16_t len;
+    uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
+    uint8_t qx_le[MAX_ECDSA_COMPONENT_LEN];
+    uint8_t qy_le[MAX_ECDSA_COMPONENT_LEN];
+
+    if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP192R1) {
+        curve = ECDSA_CURVE_SECP192R1;
+        len = 24;
+    } else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP256R1) {
+        curve = ECDSA_CURVE_SECP256R1;
+        len = 32;
+    } else {
+        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
+
+    if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
+        ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
+        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
+
+    ecdsa_hal_config_t conf = {
+        .mode = ECDSA_MODE_EXPORT_PUBKEY,
+        .curve = curve,
+        .use_km_key = 0, //TODO: IDF-7992
+        .efuse_key_blk = efuse_blk,
+    };
+
+    esp_ecdsa_acquire_hardware();
+
+    do {
+        ecdsa_hal_export_pubkey(&conf, qx_le, qy_le, len);
+    } while (!memcmp(qx_le, zeroes, len) || !memcmp(qy_le, zeroes, len));
+
+    esp_ecdsa_release_hardware();
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&(keypair->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), qx_le, len));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&(keypair->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), qy_le, len));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&(keypair->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z)), 1));
+
+    return 0;
+
+cleanup:
+    return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+}
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk)
@@ -96,6 +153,48 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
     return esp_ecdsa_privkey_load_mpi(&(keypair->MBEDTLS_PRIVATE(d)), efuse_blk);
 }
 
+int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *conf)
+{
+    int ret = -1;
+
+    if (!key_ctx) {
+        ESP_LOGE(TAG, "mbedtls_pk_context cannot be NULL");
+        return ret;
+    }
+
+    if (!conf) {
+        ESP_LOGE(TAG, "esp_ecdsa_pk_conf_t cannot be NULL");
+        return ret;
+    }
+
+    if (conf->grp_id != MBEDTLS_ECP_DP_SECP192R1 && conf->grp_id != MBEDTLS_ECP_DP_SECP256R1) {
+        ESP_LOGE(TAG, "Invalid EC curve group id mentioned in esp_ecdsa_pk_conf_t");
+        return ret;
+    }
+
+    if ((ret = esp_ecdsa_privkey_load_pk_context(key_ctx, conf->efuse_block)) != 0) {
+        ESP_LOGE(TAG, "Loading private key context failed, esp_ecdsa_privkey_load_pk_context() returned %d", ret);
+        return ret;
+    }
+
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*key_ctx);
+    if ((ret = mbedtls_ecp_group_load(&(keypair->MBEDTLS_PRIVATE(grp)), conf->grp_id)) != 0) {
+        ESP_LOGE(TAG, "Loading ecp group failed, mbedtls_pk_ec() returned %d", ret);
+        return ret;
+    }
+
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    if (conf->load_pubkey) {
+        if ((ret = esp_ecdsa_load_pubkey(keypair, conf->efuse_block)) != 0) {
+            ESP_LOGE(TAG, "Loading public key context failed, esp_ecdsa_load_pubkey() returned %d", ret);
+            return ret;
+        }
+    }
+#endif
+    return 0;
+}
+
+
 static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s,
                           const mbedtls_mpi *d, const unsigned char* msg, size_t msg_len)
 {
@@ -141,7 +240,7 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
             .k_mode = ECDSA_K_USE_TRNG,
             .sha_mode = ECDSA_Z_USER_PROVIDED,
             .efuse_key_blk = d->MBEDTLS_PRIVATE(n),
-            .use_efuse_key = 1, //TODO: IDF-7992
+            .use_km_key = 0, //TODO: IDF-7992
         };
 
         ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);

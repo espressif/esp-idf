@@ -1,6 +1,6 @@
 /* mbedTLS Elliptic Curve Digital Signature performance tests
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/error.h>
 
+#include "soc/soc_caps.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "unity.h"
@@ -233,5 +234,54 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_ke
 {
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y);
 }
+
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+
+void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, const uint8_t *pub_y)
+{
+    uint8_t export_pub_x[32] = {0};
+    uint8_t export_pub_y[32] = {0};
+    int len = 0;
+
+    esp_ecdsa_pk_conf_t pk_conf = {
+        .grp_id = id,
+        .load_pubkey = true,
+    };
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        pk_conf.efuse_block = SECP192R1_EFUSE_BLOCK;
+        len = 24;
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        pk_conf.efuse_block = SECP256R1_EFUSE_BLOCK;
+        len = 32;
+    }
+
+    mbedtls_pk_context key_ctx;
+
+    int ret = esp_ecdsa_set_pk_context(&key_ctx, &pk_conf);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(key_ctx);
+    mbedtls_mpi_write_binary(&(keypair->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), export_pub_x, len);
+    mbedtls_mpi_write_binary(&(keypair->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), export_pub_y, len);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(pub_x, export_pub_x, len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(pub_y, export_pub_y, len);
+
+    mbedtls_ecdsa_free(keypair);
+}
+
+TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][efuse_key]")
+{
+    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP192R1, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y);
+}
+
+TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][efuse_key]")
+{
+    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP256R1, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y);
+}
+
+
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
