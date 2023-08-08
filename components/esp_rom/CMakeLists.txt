@@ -115,7 +115,6 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
-        rom_linker_script("mbedtls")
     endif()
 
 else() # Regular app build
@@ -215,7 +214,10 @@ else() # Regular app build
     elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
         rom_linker_script("version")
-        rom_linker_script("mbedtls")
+
+        if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+            rom_linker_script("mbedtls")
+        endif()
 
         if(time_t_size EQUAL 8)
             # The ROM functions listed in this linker script depend on sizeof(time_t).

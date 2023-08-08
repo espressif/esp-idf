@@ -2330,3 +2330,10 @@ bt_bb_tx_cca_fifo_read = 0x40002654;
 coex_pti_v2 = 0x40002658;
 bt_bb_set_le_tx_on_delay = 0x4000265c;
 bt_bb_set_corr_thresh_le = 0x40002660;
+
+/***************************************
+ Group rom_mbedtls md5
+ ***************************************/
+mbedtls_md5_starts_ret = 0x40002be4;
+mbedtls_md5_update_ret = 0x40002be8;
+mbedtls_md5_finish_ret = 0x40002bec;
