@@ -77,7 +77,6 @@
 #define ACL_DATA_MBUF_LEADINGSPCAE    4
 #endif // CONFIG_BT_BLUEDROID_ENABLED
 
-
 /* Types definition
  ************************************************************************
  */
@@ -137,19 +136,18 @@ extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
-extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
 extern void ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg,
                                         void *w_arg, uint32_t us_to_enabled);
 extern void r_ble_rtc_wake_up_state_clr(void);
+extern int os_msys_init(void);
+extern void os_msys_deinit(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 extern const sleep_retention_entries_config_t *esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
 extern void esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 extern void esp_ble_change_rtc_freq(uint32_t freq);
-extern int os_msys_init(void);
-extern void os_msys_buf_free(void);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
                                 const uint8_t *peer_pub_key_y,
                                 const uint8_t *our_priv_key, uint8_t *out_dhkey);
@@ -548,7 +546,7 @@ static void sleep_modem_ble_mac_modem_state_deinit(void)
 
 void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
 {
-    esp_ble_set_wakeup_overhead(overhead - 500);
+    esp_ble_set_wakeup_overhead(overhead);
 }
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 
@@ -694,7 +692,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     uint8_t mac[6];
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
-    bool use_main_xtal = false;
+    uint32_t slow_clk_freq = 0;
 
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
 
@@ -736,15 +734,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto free_mem;
     }
 
-    /* Initialize the global memory pool */
-    ret = os_msys_buf_alloc();
-    if (ret != ESP_OK) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "os msys alloc failed");
-        goto free_mem;
-    }
-
-    os_msys_init();
-
 #if CONFIG_BT_NIMBLE_ENABLED
     /* ble_npl_eventq_init() needs to use npl functions in rom and
      * must be called after esp_bt_controller_init().
@@ -756,21 +745,26 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     /* Select slow clock source for BT momdule */
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
+   slow_clk_freq = 100000;
 #else
 #if CONFIG_RTC_CLK_SRC_INT_RC
     esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
+    slow_clk_freq = 30000;
 #elif CONFIG_RTC_CLK_SRC_EXT_CRYS
     if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_XTAL32K);
+        slow_clk_freq = 32768;
     } else {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
         esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
-        use_main_xtal = true;
+        slow_clk_freq = 100000;
     }
 #elif CONFIG_RTC_CLK_SRC_INT_RC32K
     esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_RC32K);
+    slow_clk_freq = 32000;
 #elif CONFIG_RTC_CLK_SRC_EXT_OSC
     esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_EXT32K);
+    slow_clk_freq = 32000;
 #else
     ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported clock source");
     assert(0);
@@ -794,10 +788,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto modem_deint;
     }
 
-    if (use_main_xtal) {
-        esp_ble_change_rtc_freq(100000);
-    }
-
+    esp_ble_change_rtc_freq(slow_clk_freq);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     interface_func_t bt_controller_log_interface;
     bt_controller_log_interface = esp_bt_controller_log_interface;
@@ -813,6 +804,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
 
     ble_controller_scan_duplicate_config();
+
+    ret = os_msys_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "msys_init failed %d", ret);
+        goto free_controller;
+    }
 
     ret = controller_sleep_init();
     if (ret != ESP_OK) {
@@ -835,6 +832,7 @@ free_controller:
 controller_init_err:
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    os_msys_deinit();
     ble_controller_deinit();
 modem_deint:
     esp_phy_modem_deinit();
@@ -844,7 +842,6 @@ modem_deint:
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
 #endif // CONFIG_BT_NIMBLE_ENABLED
 free_mem:
-    os_msys_buf_free();
     npl_freertos_mempool_deinit();
     esp_unregister_npl_funcs();
     npl_freertos_funcs_deinit();
@@ -862,6 +859,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
     controller_sleep_deinit();
 
+    os_msys_deinit();
+
     esp_phy_modem_deinit();
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
@@ -875,8 +874,6 @@ esp_err_t esp_bt_controller_deinit(void)
     /* De-initialize default event queue */
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
 #endif // CONFIG_BT_NIMBLE_ENABLED
-
-    os_msys_buf_free();
 
     esp_unregister_npl_funcs();
 

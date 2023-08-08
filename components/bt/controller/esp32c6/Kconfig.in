@@ -523,3 +523,7 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
         add new device information.
         2. When the refresh period is up, the controller will clear all device information and start filtering
         again.
+
+config BT_LE_MSYS_INIT_IN_CONTROLLER
+    bool
+    default y
