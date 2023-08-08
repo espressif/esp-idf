@@ -645,7 +645,7 @@ function(idf_build_executable elf)
 
     # Set the EXECUTABLE_NAME and EXECUTABLE properties since there are generator expression
     # from components that depend on it
-    get_filename_component(elf_name ${elf} NAME_WE)
+    get_filename_component(elf_name ${elf} NAME_WLE)
     get_target_property(elf_dir ${elf} BINARY_DIR)
 
     idf_build_set_property(EXECUTABLE_NAME ${elf_name})
