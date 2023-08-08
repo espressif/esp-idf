@@ -48,7 +48,7 @@ if __name__ == '__main__':
     def version_check(requirement: Requirement) -> None:
         # compare installed version with required
         version = Version(get_version(requirement.name))
-        if version.base_version not in requirement.specifier:
+        if not requirement.specifier.contains(version, prereleases=True):
             not_satisfied.append(f"Requirement '{requirement}' was not met. Installed version: {version}")
 
     with open(args.requirements) as f:
