@@ -40,15 +40,6 @@
 #define DEFAULT_USE_INTERNAL_PU_PD			  (0)
 #endif
 
-/* Set the length of the event queue */
-#define DEFAULT_EVENT_QUEUE_LEN               (CONFIG_EXAMPLE_EVENT_QUEUE_LEN)
-
-/* Set the task's stack size */
-#define DEFAULT_EVENT_TASK_STACK_SIZE         (CONFIG_EXAMPLE_EVENT_TASK_STACK_SIZE)
-
-/* Set the priority of a task */
-#define DEFAULT_EVENT_TASK_PRIORITY           (CONFIG_EXAMPLE_EVENT_TASK_PRIORITY)
-
 /* Types of interrupt for lock acquisition and lock release in level wake-up mode */
 #if DEFAULT_GPIO_WAKEUP_LEVEL
 #define TO_ACTIVE_INTR_TYPE			  		  (GPIO_INTR_HIGH_LEVEL)
@@ -132,7 +123,7 @@ static void IRAM_ATTR gpio_isr_handler(void* args)
 }
 
 /* Tasks for handling events */
-static void example_event_task(void* args)
+static void gpio_event_task(void* args)
 {
     gpio_wakeup_object_t* object = (gpio_wakeup_object_t*)args; 
     msg_t recv_isr_msg, send_msg;
@@ -359,7 +350,7 @@ static void example_event_task(void* args)
 
             // Enable gpio intr
             ESP_ERROR_CHECK( gpio_intr_enable(object->gpio) );
-            ESP_LOGI(TAG, "release %s lock finished, system may sleep", PM_LOCK_TYPE_TO_STRING);
+            ESP_LOGI(TAG, "Release %s lock finished, system may sleep", PM_LOCK_TYPE_TO_STRING);
             break;
 
         // to active
@@ -371,7 +362,7 @@ static void example_event_task(void* args)
 
             // Enable gpio intr
             ESP_ERROR_CHECK( gpio_intr_enable(object->gpio) );
-            ESP_LOGI(TAG, "acquire %s lock finished, can to do something...", PM_LOCK_TYPE_TO_STRING);
+            ESP_LOGI(TAG, "Acquire %s lock finished, can to do something...", PM_LOCK_TYPE_TO_STRING);
             break;
 
         // Other event handlers can be added
@@ -386,6 +377,12 @@ static void example_event_task(void* args)
 esp_err_t example_register_gpio_wakeup_sleep(gpio_wakeup_object_t* args)
 {
     gpio_wakeup_object_t* object = args;
+    /* should first pm config, create lock, and then gpio wakeup configuration
+    (to avoid the problems caused by first configuring wakeup when the lock has not been created) */
+    // auto light sleep and light sleep lock init
+    ESP_RETURN_ON_ERROR( example_register_power_config(&(object->pm_lock), &(object->hold_lock_state)), 
+                            TAG, "PM lock initialization failed!");
+    
     object->gpio = DEFAULT_GPIO_WAKEUP_SLEEP_NUM;
 #if DEFAULT_USE_PULSE_WAKEUP
     object->wakeup_mode = GPIO_PULSE_WAKEUP;
@@ -395,8 +392,8 @@ esp_err_t example_register_gpio_wakeup_sleep(gpio_wakeup_object_t* args)
     object->wakeup_level = DEFAULT_GPIO_WAKEUP_LEVEL;
 
     // Create a task for handling events
-    if(pdPASS != xTaskCreate(example_event_task, "example_event_task", DEFAULT_EVENT_TASK_STACK_SIZE, 
-                                    (void *)object, DEFAULT_EVENT_TASK_PRIORITY, object->event_task)) {
+    if(pdPASS != xTaskCreate(gpio_event_task, "gpio_event_task", DEFAULT_EVENT_TASK_STACK_SIZE, 
+                                    (void *)object, DEFAULT_EVENT_TASK_PRIORITY, &(object->event_task))) {
         ESP_LOGE(TAG, "%s:%d %s::%s create event task failed!", __FILE__, __LINE__, pcTaskGetName(NULL), __func__);
         return ESP_FAIL;
     }
