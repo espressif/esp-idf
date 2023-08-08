@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
+import importlib
 import json
 import os
 import re
@@ -8,6 +9,7 @@ import subprocess
 import sys
 from asyncio.subprocess import Process
 from io import open
+from pkgutil import iter_modules
 from types import FunctionType
 from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, Union
 
@@ -28,6 +30,37 @@ SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
 
 # was shell completion invoked?
 SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
+
+
+# The ctx dict "abuses" how python evaluates default parameter values.
+# https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+# Default parameter values are evaluated from left to right
+# when the function definition is executed
+def get_build_context(ctx: Dict={}) -> Dict:
+    """
+    The build context is set in the ensure_build_directory function. It can be used
+    in modules or other code, which don't have direct access to such information.
+    It returns dictionary with the following keys:
+
+    'proj_desc' - loaded project_description.json file
+
+    Please make sure that ensure_build_directory was called otherwise the build
+    context dictionary will be empty. Also note that it might not be thread-safe to
+    modify the returned dictionary. It should be considered read-only.
+    """
+    return ctx
+
+
+def _set_build_context(args: 'PropertyDict') -> None:
+    # private helper to set global build context from ensure_build_directory
+    ctx = get_build_context()
+
+    proj_desc_fn = f'{args.build_dir}/project_description.json'
+    try:
+        with open(proj_desc_fn, 'r') as f:
+            ctx['proj_desc'] = json.load(f)
+    except (OSError, ValueError) as e:
+        raise FatalError(f'Cannot load {proj_desc_fn}: {e}')
 
 
 def executable_exists(args: List) -> bool:
@@ -134,16 +167,50 @@ def debug_print_idf_version() -> None:
     print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
-def load_hints() -> Any:
+def load_hints() -> Dict:
     """Helper function to load hints yml file"""
-    with open(os.path.join(os.path.dirname(__file__), 'hints.yml'), 'r') as file:
-        hints = yaml.safe_load(file)
+    hints: Dict = {
+        'yml': [],
+        'modules': []
+    }
+
+    current_module_dir = os.path.dirname(__file__)
+    with open(os.path.join(current_module_dir, 'hints.yml'), 'r') as file:
+        hints['yml'] = yaml.safe_load(file)
+
+    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
+    if not os.path.exists(hint_modules_dir):
+        return hints
+
+    sys.path.append(hint_modules_dir)
+    for _, name, _ in iter_modules([hint_modules_dir]):
+        # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
+        # If the module doesn't have the function 'generate_hint', it will raise an exception
+        try:
+            hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
+        except ModuleNotFoundError:
+            red_print(f'Failed to import "{name}" from "{hint_modules_dir}" as a module')
+            raise SystemExit(1)
+        except AttributeError:
+            red_print('Module "{}" does not have function generate_hint.'.format(name))
+            raise SystemExit(1)
+
     return hints
 
 
-def generate_hints_buffer(output: str, hints: list) -> Generator:
+def generate_hints_buffer(output: str, hints: Dict) -> Generator:
     """Helper function to process hints within a string buffer"""
-    for hint in hints:
+    # Call modules for possible hints with unchanged output. Note that
+    # hints in hints.yml expect new line trimmed, but modules should
+    # get the output unchanged. Please see tools/idf_py_actions/hints.yml
+    for generate_hint in hints['modules']:
+        module_hint = generate_hint(output)
+        if module_hint:
+            yield module_hint
+
+    # hints expect new lines trimmed
+    output = ' '.join(line.strip() for line in output.splitlines() if line.strip())
+    for hint in hints['yml']:
         variables_list = hint.get('variables')
         hint_list, hint_vars, re_vars = [], [], []
         match: Optional[Match[str]] = None
@@ -183,8 +250,7 @@ def generate_hints(*filenames: str) -> Generator:
     hints = load_hints()
     for file_name in filenames:
         with open(file_name, 'r') as file:
-            output = ' '.join(line.strip() for line in file if line.strip())
-            yield from generate_hints_buffer(output, hints)
+            yield from generate_hints_buffer(file.read(), hints)
 
 
 def fit_text_in_terminal(out: str) -> str:
@@ -566,6 +632,9 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
                 "Run '{} fullclean' to start again.".format(sys.executable, python, prog_name))
     except KeyError:
         pass
+
+    # set global build context
+    _set_build_context(args)
 
 
 def merge_action_lists(*action_lists: Dict) -> Dict:
