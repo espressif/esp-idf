@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/idf_additions.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/rmt_types.h"
@@ -139,9 +140,7 @@ struct rmt_tx_channel_t {
     size_t ping_pong_symbols;  // ping-pong size (half of the RMT channel memory)
     size_t queue_size;         // size of transaction queue
     size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
-    void *queues_storage;      // storage of transaction queues
     QueueHandle_t trans_queues[RMT_TX_QUEUE_MAX]; // transaction queues
-    StaticQueue_t trans_queue_structs[RMT_TX_QUEUE_MAX]; // memory to store the static structure for trans_queues
     rmt_tx_trans_desc_t *cur_trans; // points to current transaction
     void *user_data;                // user context
     rmt_tx_done_callback_t on_trans_done; // callback, invoked on trans done

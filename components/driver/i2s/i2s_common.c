@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "freertos/idf_additions.h"
 
 #include "sdkconfig.h"
 
@@ -246,29 +247,12 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
 #if CONFIG_PM_ENABLE
     new_chan->pm_lock = NULL; // Init in i2s_set_clock according to clock source
 #endif
-#if CONFIG_I2S_ISR_IRAM_SAFE
-    new_chan->msg_que_storage = (uint8_t *)heap_caps_calloc(desc_num - 1, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->msg_que_storage, ESP_ERR_NO_MEM, err, TAG, "No memory for message queue storage");
-    new_chan->msg_que_struct = (StaticQueue_t *)heap_caps_calloc(1, sizeof(StaticQueue_t), I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->msg_que_struct, ESP_ERR_NO_MEM, err, TAG, "No memory for message queue struct");
-    new_chan->msg_queue =  xQueueCreateStatic(desc_num - 1, sizeof(uint8_t *), new_chan->msg_que_storage, new_chan->msg_que_struct);
+    new_chan->msg_queue = xQueueCreateWithCaps(desc_num - 1, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(new_chan->msg_queue, ESP_ERR_NO_MEM, err, TAG, "No memory for message queue");
-    new_chan->mutex_struct = (StaticSemaphore_t *)heap_caps_calloc(1, sizeof(StaticSemaphore_t), I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->mutex_struct, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex struct");
-    new_chan->mutex = xSemaphoreCreateMutexStatic(new_chan->mutex_struct);
-    ESP_GOTO_ON_FALSE(new_chan->mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex");
-    new_chan->binary_struct = (StaticSemaphore_t *)heap_caps_calloc(1, sizeof(StaticSemaphore_t), I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->binary_struct, ESP_ERR_NO_MEM, err, TAG, "No memory for binary struct");
-    new_chan->binary = xSemaphoreCreateBinaryStatic(new_chan->binary_struct);
-    ESP_GOTO_ON_FALSE(new_chan->binary, ESP_ERR_NO_MEM, err, TAG, "No memory for binary");
-#else
-    new_chan->msg_queue = xQueueCreate(desc_num - 1, sizeof(uint8_t *));
-    ESP_GOTO_ON_FALSE(new_chan->msg_queue, ESP_ERR_NO_MEM, err, TAG, "No memory for message queue");
-    new_chan->mutex = xSemaphoreCreateMutex();
+    new_chan->mutex = xSemaphoreCreateMutexWithCaps(I2S_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(new_chan->mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex semaphore");
-    new_chan->binary = xSemaphoreCreateBinary();
+    new_chan->binary = xSemaphoreCreateBinaryWithCaps(I2S_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(new_chan->binary, ESP_ERR_NO_MEM, err, TAG, "No memory for binary semaphore");
-#endif
 
     new_chan->callbacks.on_recv = NULL;
     new_chan->callbacks.on_recv_q_ovf = NULL;
@@ -293,28 +277,14 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
     }
     return ret;
 err:
-#if CONFIG_I2S_ISR_IRAM_SAFE
-    if (new_chan->msg_que_storage) {
-        free(new_chan->msg_que_storage);
-    }
-    if (new_chan->msg_que_struct) {
-        free(new_chan->msg_que_struct);
-    }
-    if (new_chan->mutex_struct) {
-        free(new_chan->mutex_struct);
-    }
-    if (new_chan->binary_struct) {
-        free(new_chan->binary_struct);
-    }
-#endif
     if (new_chan->msg_queue) {
-        vQueueDelete(new_chan->msg_queue);
+        vQueueDeleteWithCaps(new_chan->msg_queue);
     }
     if (new_chan->mutex) {
-        vSemaphoreDelete(new_chan->mutex);
+        vSemaphoreDeleteWithCaps(new_chan->mutex);
     }
     if (new_chan->binary) {
-        vSemaphoreDelete(new_chan->binary);
+        vSemaphoreDeleteWithCaps(new_chan->binary);
     }
     free(new_chan);
 
@@ -895,28 +865,14 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     if (handle->dma.desc) {
         i2s_free_dma_desc(handle);
     }
-#if CONFIG_I2S_ISR_IRAM_SAFE
-    if (handle->msg_que_storage) {
-        free(handle->msg_que_storage);
-    }
-    if (handle->msg_que_struct) {
-        free(handle->msg_que_struct);
-    }
-    if (handle->mutex) {
-        free(handle->mutex_struct);
-    }
-    if (handle->binary_struct) {
-        free(handle->binary_struct);
-    }
-#endif
     if (handle->msg_queue) {
-        vQueueDelete(handle->msg_queue);
+        vQueueDeleteWithCaps(handle->msg_queue);
     }
     if (handle->mutex) {
-        vSemaphoreDelete(handle->mutex);
+        vSemaphoreDeleteWithCaps(handle->mutex);
     }
     if (handle->binary) {
-        vSemaphoreDelete(handle->binary);
+        vSemaphoreDeleteWithCaps(handle->binary);
     }
 #if SOC_I2S_HW_VERSION_1
     i2s_obj->chan_occupancy = 0;
