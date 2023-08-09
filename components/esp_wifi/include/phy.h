@@ -64,6 +64,11 @@ void coex_bt_high_prio(void);
  */
 void phy_close_rf(void);
 
+/**
+ * @brief Set PHY internal params.
+ */
+void phy_param_set(uint8_t mode);
+
 #ifdef __cplusplus
 }
 #endif
