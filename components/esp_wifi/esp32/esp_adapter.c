@@ -39,11 +39,11 @@
 #include "nvs.h"
 #include "os.h"
 #include "esp_smartconfig.h"
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #include "dport_access.h"
 #include "esp_rom_sys.h"
 #include "esp32/rom/ets_sys.h"
-#include "esp_modem_wrapper.h"
+#include "private/esp_modem_wrapper.h"
 
 #define TAG "esp_adapter"
 
