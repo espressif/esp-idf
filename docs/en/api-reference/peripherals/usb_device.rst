@@ -13,7 +13,7 @@ Overview
 
 The driver allows you to use {IDF_TARGET_NAME} chips to develop USB devices on a top of TinyUSB stack. TinyUSB is integrated with ESP-IDF to provide USB features of the framework. Using this driver the chip works as simple or composite device supporting several USB devices simultaneously.
 
-TinyUSB stack is distributed via `IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`_.
+TinyUSB stack is distributed via `IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__.
 
 Our USB-OTG implementation is limited to {IDF_TARGET_USB_EP_NUM} USB endpoints ({IDF_TARGET_USB_EP_NUM_INOUT} IN/OUT endpoints and {IDF_TARGET_USB_EP_NUM_IN} IN endpoint) . Please note that enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or Device Firmware Update (DFU) on that port. For more details, please refer to `technical reference manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
@@ -59,6 +59,12 @@ On top of it the driver implements:
 
 Configuration
 -------------
+
+To use the component, you need to add it as a dependency via the following command. For more details, please refer to `IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__.
+
+.. code:: bash
+
+  idf.py add-dependency esp_tinyusb
 
 Via Menuconfig options you can specify:
 
