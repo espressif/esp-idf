@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,6 +218,7 @@ esp_err_t PageManager::fillStats(nvs_stats_t& nvsStats)
 {
     nvsStats.used_entries      = 0;
     nvsStats.free_entries      = 0;
+    nvsStats.available_entries = 0;
     nvsStats.total_entries     = 0;
     esp_err_t err = ESP_OK;
 
@@ -229,9 +230,13 @@ esp_err_t PageManager::fillStats(nvs_stats_t& nvsStats)
         }
     }
 
-    // free pages
+    // add free pages
     nvsStats.total_entries += mFreePageList.size() * Page::ENTRY_COUNT;
     nvsStats.free_entries  += mFreePageList.size() * Page::ENTRY_COUNT;
+
+    // calculate available entries from free entries by applying reserved page size
+    // avoid overflow of size_t declared available_entries in case of free_entries being too low
+    nvsStats.available_entries = (nvsStats.free_entries >= Page::ENTRY_COUNT) ? nvsStats.free_entries - Page::ENTRY_COUNT : 0;
 
     return err;
 }
