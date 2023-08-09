@@ -16,7 +16,7 @@
 #include "esp_private/esp_clk.h"
 #include "esp_wpa.h"
 #include "esp_netif.h"
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
 #ifdef CONFIG_ESP_WIFI_NAN_ENABLE

@@ -5,7 +5,7 @@
  */
 
 #include "esp_coexist.h"
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 #include "esp_log.h"
