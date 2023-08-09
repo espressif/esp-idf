@@ -748,6 +748,22 @@ peer_traverse_all(peer_traverse_fn *trav_cb, void *arg)
     }
 }
 
+#if MYNEWT_VAL(ENC_ADV_DATA)
+int
+peer_set_addr(uint16_t conn_handle, uint8_t *peer_addr)
+{
+    struct peer *peer;
+
+    peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        return BLE_HS_ENOTCONN;
+    }
+
+    memcpy(&peer->peer_addr, peer_addr, PEER_ADDR_VAL_SIZE);
+    return 0;
+}
+#endif
+
 static void
 peer_free_mem(void)
 {

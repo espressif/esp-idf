@@ -837,3 +837,17 @@ config BT_NIMBLE_OPTIMIZE_MULTI_CONN
         This option enables the use of vendor-specific APIs for multi-connections, which can
         greatly enhance the stability of coexistence between numerous central and peripheral
         devices. It will prohibit the usage of standard APIs.
+
+config BT_NIMBLE_ENC_ADV_DATA
+    bool "Encrypted Advertising Data"
+    depends on SOC_ESP_NIMBLE_CONTROLLER
+    select BT_NIMBLE_EXT_ADV
+    help
+        This option is used to enable encrypted advertising data.
+
+config BT_NIMBLE_MAX_EADS
+    int "Maximum number of EAD devices to save across reboots"
+    default 10
+    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_ENC_ADV_DATA
+    help
+        Defines maximum number of encrypted advertising data key material to save
