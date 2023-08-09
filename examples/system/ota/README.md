@@ -156,7 +156,7 @@ Running a local https server might be tricky in some cases (due to self signed c
     - example of the script output:
 ``` bash
 $ cd idf/examples/system/ota/simple_ota_example
-$ python example_test.py build 8070
+$ python pytest_simple_ota.py build 8070
 Starting HTTPS server at "https://:8070"
 192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
 ```

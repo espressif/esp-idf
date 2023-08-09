@@ -331,7 +331,7 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
 
 if __name__ == '__main__':
     if sys.argv[2:]:    # if two or more arguments provided:
-        # Usage: example_test.py <image_dir> <server_port> [cert_di>]
+        # Usage: pytest_simple_ota.py <image_dir> <server_port> [cert_di>]
         this_dir = os.path.dirname(os.path.realpath(__file__))
         bin_dir = os.path.join(this_dir, sys.argv[1])
         port = int(sys.argv[2])
