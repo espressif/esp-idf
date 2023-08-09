@@ -519,6 +519,11 @@ The help text for each option has some more information for reference.
 
    If depending on third party clients or servers, always pay attention to announcements about future changes to supported TLS features. If not, the {IDF_TARGET_NAME} device may become inaccessible if support changes.
 
+.. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+
+   Enabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from mbedTLS library inside the chip ROM.
+   Disabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from the ESP-IDF mbedtls component library. This will increase the binary size (flash footprint).
+
 .. note::
 
    Not every combination of mbedTLS compile-time config is tested in ESP-IDF. If you find a combination that fails to compile or function as expected, please report the details on `GitHub <https://github.com/espressif/esp-idf>`_.
