@@ -188,7 +188,7 @@ static const esp_vfs_t vfs = {
 
 esp_err_t esp_vfs_dev_console_register(void)
 {
-    return esp_vfs_register("/dev/console", &vfs, NULL);
+    return esp_vfs_register(ESP_VFS_DEV_CONSOLE, &vfs, NULL);
 }
 
 esp_err_t esp_vfs_console_register(void)
