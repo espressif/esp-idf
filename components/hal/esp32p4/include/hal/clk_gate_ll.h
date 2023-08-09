@@ -77,9 +77,9 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
     case PERIPH_CAM_MODULE:
         return HP_SYS_CLKRST_REG_CAM_CLK_EN;
     case PERIPH_MCPWM0_MODULE:
-        return HP_SYS_CLKRST_REG_MCPWM0_CLK_EN;
+        return HP_SYS_CLKRST_REG_MCPWM0_APB_CLK_EN;
     case PERIPH_MCPWM1_MODULE:
-        return HP_SYS_CLKRST_REG_MCPWM1_CLK_EN;
+        return HP_SYS_CLKRST_REG_MCPWM1_APB_CLK_EN;
     case PERIPH_TIMG0_MODULE:
         return HP_SYS_CLKRST_REG_TIMERGRP0_T0_CLK_EN | HP_SYS_CLKRST_REG_TIMERGRP0_T1_CLK_EN | HP_SYS_CLKRST_REG_TIMERGRP0_WDT_CLK_EN;
     case PERIPH_TIMG1_MODULE:
@@ -264,6 +264,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return HP_SYS_CLKRST_PERI_CLK_CTRL119_REG;
     case PERIPH_MCPWM0_MODULE:
     case PERIPH_MCPWM1_MODULE:
+        return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
     case PERIPH_TIMG0_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL20_REG;
     case PERIPH_TIMG1_MODULE:

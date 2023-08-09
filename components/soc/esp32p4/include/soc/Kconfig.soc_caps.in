@@ -23,6 +23,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -489,7 +493,7 @@ config SOC_RMT_SUPPORT_RC_FAST
 
 config SOC_MCPWM_GROUPS
     int
-    default 1
+    default 2
 
 config SOC_MCPWM_TIMERS_PER_GROUP
     int
