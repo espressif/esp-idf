@@ -280,7 +280,7 @@ static void i2c_test_task(void *arg)
         ret = i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
         if (ret == ESP_OK) {
             size = i2c_slave_read_buffer(I2C_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_PERIOD_MS);
-        }
+    }
         if (ret == ESP_ERR_TIMEOUT) {
             ESP_LOGE(TAG, "I2C Timeout");
         } else if (ret == ESP_OK) {

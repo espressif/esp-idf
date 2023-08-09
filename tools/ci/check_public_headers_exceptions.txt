@@ -194,6 +194,7 @@ components/hal/esp32p4/include/hal/cache_ll.h
 components/hal/esp32p4/include/hal/clk_tree_ll.h
 components/hal/esp32p4/include/hal/ecc_ll.h
 components/hal/esp32p4/include/hal/gpspi_flash_ll.h
+components/hal/esp32p4/include/hal/i2c_ll.h
 components/hal/esp32p4/include/hal/mcpwm_ll.h
 components/hal/esp32p4/include/hal/mpi_ll.h
 components/hal/esp32p4/include/hal/mpu_ll.h
