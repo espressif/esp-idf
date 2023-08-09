@@ -1,5 +1,0 @@
-# Each line specifies the location of project makefile, and the corresponding
-# directory which should be used as example root directory when copying the
-# example for building it out of tree.
-#
-examples/system/unit_test/test/Makefile	examples/system/unit_test

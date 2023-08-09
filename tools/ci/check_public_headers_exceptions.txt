@@ -8,7 +8,6 @@ components/xtensa/esp32s3/include/xtensa/config/
 
 
 
-components/freertos/esp_additions/include/freertos_tasks_c_additions.h
 components/freertos/FreeRTOS-Kernel/include/freertos/
 components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/
 components/freertos/FreeRTOS-Kernel-SMP/include/freertos/
@@ -19,7 +18,6 @@ components/log/include/esp_log_internal.h
 
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
-components/esp_common/include/esp_private/
 
 # LWIP: sockets.h uses #include_next<>, which doesn't work correctly with the checker
 # memp_std.h is supposed to be included multiple times with different settings
@@ -54,14 +52,11 @@ components/wpa_supplicant/esp_supplicant/include/
 components/mbedtls/mbedtls/
 components/mbedtls/port/include/
 components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
-components/mbedtls/test/
 
 components/esp-tls/private_include/
 
 components/protobuf-c/
 
-components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
-components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
@@ -87,7 +82,6 @@ components/openthread/openthread/
 #
 components/app_trace/include/esp_sysview_trace.h
 components/esp_gdbstub/include/esp_gdbstub.h
-components/openssl/include/platform/ssl_pm.h
 
 components/esp_hw_support/include/esp_memprot.h
 components/esp_hw_support/include/esp_private/esp_memprot_internal.h
@@ -121,16 +115,12 @@ components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/include/esp_wifi_default.h
 components/esp_event/include/esp_event_base.h
-components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
-components/openssl/include/openssl/ssl.h
-components/ulp/include/ulp_common.h
-components/ulp/include/esp32s2/ulp_riscv.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
 components/usb/include/esp_private/usb_phy.h

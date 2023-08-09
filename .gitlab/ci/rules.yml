@@ -35,7 +35,6 @@
   - "examples/**/*"
 
 .patterns-build-example_test: &patterns-build-example_test
-  - "tools/ci/build_example_dirs.txt"
   - "tools/ci/get_supported_examples.sh"
 
 .patterns-build_components: &patterns-build_components

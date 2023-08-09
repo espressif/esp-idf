@@ -65,6 +65,7 @@ tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
 tools/ci/checkout_project_ref.py
+tools/ci/cleanup_ignore_lists.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/fix_empty_prototypes.sh
