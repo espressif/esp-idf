@@ -75,6 +75,7 @@ INPUT = \
     $(PROJECT_PATH)/components/console/esp_console.h \
     $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
+    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_rx.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
