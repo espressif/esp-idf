@@ -32,8 +32,16 @@ class HeaderFailedSdkconfig(HeaderFailed):
 
 
 class HeaderFailedBuildError(HeaderFailed):
+    def __init__(self, compiler: str):
+        self.compiler = compiler
+
     def __str__(self) -> str:
-        return 'Header Build Error'
+        return 'Header Build Error with {}'.format(self.compiler)
+
+
+class HeaderFailedPreprocessError(HeaderFailed):
+    def __str__(self) -> str:
+        return 'Header Procecessing Error'
 
 
 class HeaderFailedCppGuardMissing(HeaderFailed):
@@ -164,7 +172,7 @@ class PublicHeaderChecker:
         elif res == self.COMPILE_ERR_ERROR_MACRO_HDR_OK:
             return self.compile_one_header(header)
         elif res == self.COMPILE_ERR_HDR_FAILED:
-            raise HeaderFailedBuildError()
+            raise HeaderFailedPreprocessError()
         elif res == self.PREPROC_OUT_ZERO_HDR_OK:
             return self.compile_one_header(header)
         elif res == self.PREPROC_OUT_SAME_HRD_FAILED:
@@ -186,7 +194,11 @@ class PublicHeaderChecker:
                     os.unlink(temp_header)
 
     def compile_one_header(self, header: str) -> None:
-        rc, out, err, cmd = exec_cmd([self.gcc, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
+        self.compile_one_header_with(self.gcc, header)
+        self.compile_one_header_with(self.gpp, header)
+
+    def compile_one_header_with(self, compiler: str, header: str) -> None:
+        rc, out, err, cmd = exec_cmd([compiler, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
@@ -194,7 +206,7 @@ class PublicHeaderChecker:
         self.log('{}: FAILED: compilation issue'.format(header), True)
         self.log(err, True)
         self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
-        raise HeaderFailedBuildError()
+        raise HeaderFailedBuildError(compiler)
 
     def preprocess_one_header(self, header: str, num: int, ignore_common_issues: bool=False) -> int:
         all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
@@ -292,7 +304,7 @@ class PublicHeaderChecker:
         all_include_files = []
         files_to_check = []
         for d in include_dirs:
-            if only_dir is not None and not os.path.relpath(d, idf_path).startswith(only_dir):
+            if only_dir is not None and not os.path.relpath(d, idf_path).startswith(os.path.relpath(only_dir, idf_path)):
                 self.log('{} - directory ignored (not in "{}")'.format(d, only_dir))
                 continue
             if os.path.relpath(d, idf_path).startswith(tuple(ignore_dirs)):
@@ -331,6 +343,7 @@ def check_all_headers() -> None:
         * Check that all referenced macros, types are available (defined or included)
         * Check that all included header files are available (included in paths)
         * Check for possible compilation issues
+        * If only the C++ compilation fails, check that the header is C++ compatible
         * Try to compile only the offending header file
     3) "Header Missing C++ Guard": Preprocessing the header by C and C++ should produce different output
         * Check if the "#ifdef __cplusplus" header sentinels are present
