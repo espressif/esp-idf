@@ -10,16 +10,18 @@ module.exports = function () {
     const wiki_link = `${process.env.DANGER_GITLAB_HOST}/espressif/esp-idf/-/wikis/rfc/How-to-write-release-notes-properly`;
 
     const regexSectionReleaseNotes = /## Release notes([\s\S]*?)(?=## |$)/;
-    const regexValidEntry = /\s*[-*+]\s+.+/;
+    const regexValidEntry = /^\s*[-*+]\s+.+/;
     const regexNoReleaseNotes = /no release note/i;
 
     const sectionReleaseNotes = mrDescription.match(regexSectionReleaseNotes);
     if (!sectionReleaseNotes) {
-        warn('The `Release Notes` section seems to be missing. Please check if the section header in MR description is present and in the correct markdown format ("## Release Notes").\n\nSee <a href="${wiki_link}">Release Notes Format Rules</a>).');
+        warn(`The \`Release Notes\` section seems to be missing. Please check if the section header in MR description is present and in the correct markdown format ("## Release Notes").\n\nSee [Release Notes Format Rules](${wiki_link}).`);
         return null;
     }
 
-    const lines = sectionReleaseNotes[1].split("\n").filter(s => s.trim().length > 0);
+    const releaseNotesLines = sectionReleaseNotes[1].replace(/<!--[\s\S]*?-->/g, '')
+
+    const lines = releaseNotesLines.split("\n").filter(s => s.trim().length > 0);
     let valid_entries_found = 0;
     let no_release_notes_found = false;
     let violations = [];
@@ -36,7 +38,7 @@ module.exports = function () {
         }
     });
 
-    let error_output = ['']; // Add blank line on purpose, to avoid first line to be indented by dangerjs.
+    let error_output = [];
     if (violations.length > 0) {
         error_output = [...error_output, 'Invalid release note entries:', violations.join('\n')];
     }
@@ -51,8 +53,8 @@ module.exports = function () {
     }
 
     if (error_output.length > 0) {
-        //paragraphs joined by double `\n`s.
-        error_output = [...error_output, `See <a href="${wiki_link}">Release Notes Format Guide</a>.`].join('\n\n');
+        // Paragraphs joined by double `\n`s.
+        error_output = [...error_output, `See [Release Notes Format Guide](${wiki_link}).`].join('\n\n');
         warn(error_output);
     }
     return null;
@@ -72,7 +74,7 @@ function check_entry(entry) {
         return [entry_str, `${indent}- Please specify the [area] to which the change belongs (see guide). If this line is just a comment, remove the bullet.`].join('\n');
     }
 
-    const area = match[2];
+    // area is in match[2]
     const description = match[3].trim();
     let violations = [];
 
