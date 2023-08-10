@@ -61,6 +61,8 @@ typedef struct {
 typedef struct {
     int low_limit;  /*!< Low limitation of the count unit, should be lower than 0 */
     int high_limit; /*!< High limitation of the count unit, should be higher than 0 */
+    int intr_priority;  /*!< PCNT interrupt priority,
+                            if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
     } flags;       /*!< Extra flags */
