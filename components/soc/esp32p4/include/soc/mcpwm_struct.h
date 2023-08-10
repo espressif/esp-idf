@@ -1881,7 +1881,7 @@ typedef struct {
     volatile mcpwm_op_tstmp_reg_t timestamp[2];
 } mcpwm_operator_tstmp_reg_t;
 
-typedef struct {
+typedef struct mcpwm_dev_t {
     volatile mcpwm_clk_cfg_reg_t clk_cfg;
     volatile mcpwm_timer_regs_t timer[3];
     volatile mcpwm_timer_synci_cfg_reg_t timer_synci_cfg;
