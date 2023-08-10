@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef LIBUNWIND_H
-#define LIBUNWIND_H
+#pragma once
 
 #include "sdkconfig.h"
 #include <stddef.h>
@@ -132,4 +131,6 @@ int unw_get_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t* valp);
  */
 int unw_set_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t val);
 
-#endif // LIBUNWIND_H
+#ifdef __cplusplus
+}
+#endif
