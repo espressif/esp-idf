@@ -186,6 +186,7 @@ menu "Example Configuration"
         choice EXAMPLE_EXT1_WAKEUP_MODE_SEL
             prompt "Select wakeup mode from EXT1"
             default ESP_EXT1_WAKEUP_ANY_HIGH
+            depends on !SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
             config ESP_EXT1_WAKEUP_ANY_LOW
                 bool "GPIO any low level"
                 depends on !IDF_TARGET_ESP32
@@ -198,9 +199,42 @@ menu "Example Configuration"
 
         config EXAMPLE_EXT1_WAKEUP_MODE
             int
+            depends on !SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
             default 0 if ESP_EXT1_WAKEUP_ANY_LOW
             default 0 if ESP_EXT1_WAKEUP_ALL_LOW
             default 1 if ESP_EXT1_WAKEUP_ANY_HIGH
+
+        choice EXAMPLE_EXT1_WAKEUP_PIN_1_MODE_SEL
+            prompt "Select pin_1 wakeup mode from EXT1"
+            default ESP_EXT1_WAKEUP_PIN_1_HIGH
+            depends on SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+            config ESP_EXT1_WAKEUP_PIN_1_LOW
+                bool "GPIO low level"
+            config ESP_EXT1_WAKEUP_PIN_1_HIGH
+                bool "GPIO high level"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_MODE_PIN_1
+            int
+            depends on SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+            default 0 if ESP_EXT1_WAKEUP_PIN_1_LOW
+            default 1 if ESP_EXT1_WAKEUP_PIN_1_HIGH
+
+        choice EXAMPLE_EXT1_WAKEUP_PIN_2_MODE_SEL
+            prompt "Select pin_2 wakeup mode from EXT1"
+            default ESP_EXT1_WAKEUP_PIN_2_HIGH
+            depends on SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+            config ESP_EXT1_WAKEUP_PIN_2_LOW
+                bool "GPIO low level"
+            config ESP_EXT1_WAKEUP_PIN_2_HIGH
+                bool "GPIO high level"
+        endchoice
+
+        config EXAMPLE_EXT1_WAKEUP_MODE_PIN_2
+            int
+            depends on SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+            default 0 if ESP_EXT1_WAKEUP_PIN_2_LOW
+            default 1 if ESP_EXT1_WAKEUP_PIN_2_HIGH
 
         config EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
             bool "Use internal pull-up/downs for EXT1 wakeup source"

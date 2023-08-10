@@ -189,8 +189,8 @@ typedef struct {
     uint64_t sleep_duration;
     uint32_t wakeup_triggers : 15;
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
-    uint32_t ext1_trigger_mode : 1;
-    uint32_t ext1_rtc_gpio_mask : 22; // 22 is the maximum RTCIO number in all chips
+    uint32_t ext1_trigger_mode : 22;  // 22 is the maximum RTCIO number in all chips
+    uint32_t ext1_rtc_gpio_mask : 22;
 #endif
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     uint32_t ext0_trigger_level : 1;
@@ -1395,15 +1395,15 @@ static void ext0_wakeup_prepare(void)
 #endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
-esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode)
+esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode)
 {
-    if (mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
+    if (level_mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
         return ESP_ERR_INVALID_ARG;
     }
     // Translate bit map of GPIO numbers into the bit map of RTC IO numbers
     uint32_t rtc_gpio_mask = 0;
-    for (int gpio = 0; mask; ++gpio, mask >>= 1) {
-        if ((mask & 1) == 0) {
+    for (int gpio = 0; io_mask; ++gpio, io_mask >>= 1) {
+        if ((io_mask & 1) == 0) {
             continue;
         }
         if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
@@ -1413,10 +1413,43 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
         rtc_gpio_mask |= BIT(rtc_io_number_get(gpio));
     }
     s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
-    s_config.ext1_trigger_mode = mode;
+    if (level_mode) {
+        s_config.ext1_trigger_mode = io_mask;
+    } else {
+        s_config.ext1_trigger_mode = 0;
+    }
     s_config.wakeup_triggers |= RTC_EXT1_TRIG_EN;
     return ESP_OK;
 }
+
+#if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+esp_err_t esp_sleep_enable_ext1_wakeup_with_level_mask(uint64_t io_mask, uint64_t level_mask)
+{
+    if ((level_mask & io_mask) != level_mask) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // Translate bit map of GPIO numbers into the bit map of RTC IO numbers
+    // Translate bit map of GPIO wakeup mode into the bit map of RTC IO wakeup mode
+    uint32_t rtc_gpio_mask = 0, rtc_gpio_wakeup_mode_mask = 0;
+    for (int gpio = 0; io_mask; ++gpio, io_mask >>= 1, level_mask >>= 1) {
+        if ((io_mask & 1) == 0) {
+            continue;
+        }
+        if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
+            ESP_LOGE(TAG, "Not an RTC IO Considering io_mask: GPIO%d", gpio);
+            return ESP_ERR_INVALID_ARG;
+        }
+        rtc_gpio_mask |= BIT(rtc_io_number_get(gpio));
+        if ((level_mask & 1) == 1) {
+            rtc_gpio_wakeup_mode_mask |= BIT(rtc_io_number_get(gpio));
+        }
+    }
+    s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
+    s_config.ext1_trigger_mode = rtc_gpio_wakeup_mode_mask;
+    s_config.wakeup_triggers |= RTC_EXT1_TRIG_EN;
+    return ESP_OK;
+}
+#endif
 
 static void ext1_wakeup_prepare(void)
 {
