@@ -6,6 +6,11 @@
 
 #include "hal/i2c_hal.h"
 
+void i2c_hal_master_trans_start(i2c_hal_context_t *hal)
+{
+    i2c_ll_update(hal->dev);
+    i2c_ll_master_trans_start(hal->dev);
+}
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////

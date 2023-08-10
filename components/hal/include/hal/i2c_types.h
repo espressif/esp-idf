@@ -30,6 +30,16 @@ typedef enum {
 } i2c_port_t;
 
 /**
+ * @brief Enumeration for I2C device address bit length
+ */
+typedef enum {
+    I2C_ADDR_BIT_LEN_7 = 0,       /*!< i2c address bit length 7 */
+#if SOC_I2C_SUPPORT_10BIT_ADDR
+    I2C_ADDR_BIT_LEN_10 = 1,      /*!< i2c address bit length 10 */
+#endif
+} i2c_addr_bit_len_t;
+
+/**
  * @brief Data structure for calculating I2C bus timing.
  */
 typedef struct {
@@ -63,6 +73,7 @@ typedef enum {
     I2C_DATA_MODE_MAX
 } i2c_trans_mode_t;
 
+__attribute__((deprecated("please use 'i2c_addr_bit_len_t' instead")))
 typedef enum {
     I2C_ADDR_BIT_7 = 0,    /*!< I2C 7bit address for slave mode */
     I2C_ADDR_BIT_10,       /*!< I2C 10bit address for slave mode */
@@ -75,22 +86,6 @@ typedef enum {
     I2C_MASTER_LAST_NACK = 0x2,   /*!< I2C nack for the last byte*/
     I2C_MASTER_ACK_MAX,
 } i2c_ack_type_t;
-
-/**
- * @brief Timing configuration structure. Used for I2C reset internally.
- */
-typedef struct {
-    int high_period; /*!< high_period time */
-    int low_period; /*!< low_period time */
-    int wait_high_period; /*!< wait_high_period time */
-    int rstart_setup; /*!< restart setup */
-    int start_hold; /*!< start hold time */
-    int stop_setup; /*!< stop setup */
-    int stop_hold; /*!< stop hold time */
-    int sda_sample; /*!< high_period time */
-    int sda_hold; /*!< sda hold time */
-    int timeout; /*!< timeout value */
-} i2c_hal_timing_config_t;
 
 #if SOC_I2C_SUPPORTED
 /**

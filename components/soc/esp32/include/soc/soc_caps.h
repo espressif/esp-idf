@@ -187,6 +187,9 @@
 
 #define SOC_I2C_SUPPORT_APB     (1)
 
+// On ESP32, the stop bit should be independent, we can't put trans data and stop command together
+#define SOC_I2C_STOP_INDEPENDENT (1)
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 has 2 I2S
 #define SOC_I2S_NUM                 (2U)

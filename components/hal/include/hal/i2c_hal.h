@@ -33,6 +33,22 @@ typedef struct {
     i2c_dev_t *dev;
 } i2c_hal_context_t;
 
+/**
+ * @brief Timing configuration structure. Used for I2C reset internally.
+ */
+typedef struct {
+    int high_period; /*!< high_period time */
+    int low_period; /*!< low_period time */
+    int wait_high_period; /*!< wait_high_period time */
+    int rstart_setup; /*!< restart setup */
+    int start_hold; /*!< start hold time */
+    int stop_setup; /*!< stop setup */
+    int stop_hold; /*!< stop hold time */
+    int sda_sample; /*!< high_period time */
+    int sda_hold; /*!< sda hold time */
+    int timeout; /*!< timeout value */
+} i2c_hal_timing_config_t;
+
 #if SOC_I2C_SUPPORT_SLAVE
 
 /**

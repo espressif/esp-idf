@@ -58,7 +58,7 @@ static void lp_core_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t ac
     };
 
     /* Write new command to cmd register */
-    i2c_ll_write_cmd_reg(dev, hw_cmd, cmd_idx);
+    i2c_ll_master_write_cmd_reg(dev, hw_cmd, cmd_idx);
 }
 
 static inline esp_err_t lp_core_i2c_wait_for_interrupt(uint32_t intr_mask, int32_t ticks_to_wait)
@@ -210,7 +210,7 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
 
         /* Initiate I2C transfer */
         i2c_ll_update(dev);
-        i2c_ll_trans_start(dev);
+        i2c_ll_master_trans_start(dev);
 
         /* Wait for the transfer to complete */
         ret = lp_core_i2c_wait_for_interrupt(intr_mask, ticks_to_wait);
@@ -301,7 +301,7 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
 
         /* Initiate I2C transfer */
         i2c_ll_update(dev);
-        i2c_ll_trans_start(dev);
+        i2c_ll_master_trans_start(dev);
 
         /* Wait for the transfer to complete */
         ret = lp_core_i2c_wait_for_interrupt(intr_mask, ticks_to_wait);
@@ -388,7 +388,7 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
 
         /* Initiate I2C transfer */
         i2c_ll_update(dev);
-        i2c_ll_trans_start(dev);
+        i2c_ll_master_trans_start(dev);
 
         /* Wait for the transfer to complete */
         ret = lp_core_i2c_wait_for_interrupt(intr_mask, ticks_to_wait);
@@ -457,7 +457,7 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
 
         /* Initiate I2C transfer */
         i2c_ll_update(dev);
-        i2c_ll_trans_start(dev);
+        i2c_ll_master_trans_start(dev);
 
         /* Wait for the transfer to complete */
         ret = lp_core_i2c_wait_for_interrupt(intr_mask, ticks_to_wait);
