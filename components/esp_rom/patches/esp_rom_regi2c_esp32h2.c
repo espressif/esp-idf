@@ -72,7 +72,6 @@
 static IRAM_ATTR void regi2c_enable_block(uint8_t block)
 {
     REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
-    REG_SET_BIT(I2C_MST_DATE_REG, I2C_MST_CLK_EN);
     REG_SET_FIELD(I2C_MST_ANA_CONF2_REG, I2C_MST_ANA_CONF2, 0);
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {
