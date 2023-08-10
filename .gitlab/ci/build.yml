@@ -244,6 +244,7 @@ build_pytest_examples_esp32h2:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32h2
+  parallel: 2
   variables:
     IDF_TARGET: esp32h2
     TEST_DIR: examples
@@ -664,7 +665,7 @@ build_examples_cmake_esp32h2:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32h2
-  parallel: 2
+  parallel: 4
   variables:
     IDF_TARGET: esp32h2
     TEST_DIR: examples
