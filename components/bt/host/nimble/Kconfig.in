@@ -863,3 +863,12 @@ config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
     depends on BT_NIMBLE_ENABLED
     help
         This enable BLE high duty advertising interval feature
+
+config BT_NIMBLE_HOST_QUEUE_CONG_CHECK
+    bool "BLE queue congestion check"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
+        or application layer handling adv packets is slow, it will cause the controller memory
+        to run out. if enabled, adv packets will be lost when host queue is congested.
