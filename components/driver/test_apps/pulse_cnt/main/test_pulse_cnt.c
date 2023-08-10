@@ -20,6 +20,7 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
+        .intr_priority = 0,
 #if SOC_PCNT_SUPPORT_ZERO_INPUT
         .zero_input_gpio_num = -1,
 #endif
@@ -28,11 +29,18 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
     int count_value = 0;
 
     printf("install pcnt units and check initial count\r\n");
-    for (int i = 0; i < SOC_PCNT_UNITS_PER_GROUP; i++) {
+    for (int i = 0; i < SOC_PCNT_UNITS_PER_GROUP - 1; i++) {
         TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[i]));
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         TEST_ASSERT_EQUAL(0, count_value);
     }
+
+    // unit with a different intrrupt priority
+    unit_config.intr_priority = 3;
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_new_unit(&unit_config, &units[SOC_PCNT_UNITS_PER_GROUP - 1]));
+    unit_config.intr_priority = 0;
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[SOC_PCNT_UNITS_PER_GROUP - 1]));
+
     // no more free pcnt units
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, pcnt_new_unit(&unit_config, &units[0]));
 
@@ -46,9 +54,12 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
     // invalid glitch configuration
     filter_config.max_glitch_ns = 500000;
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_set_glitch_filter(units[0], &filter_config));
-
+    pcnt_event_callbacks_t cbs = {
+        .on_reach = NULL,
+    };
     printf("enable pcnt units\r\n");
     for (int i = 0; i < SOC_PCNT_UNITS_PER_GROUP; i++) {
+        TEST_ESP_OK(pcnt_unit_register_event_callbacks(units[i], &cbs, NULL));
         TEST_ESP_OK(pcnt_unit_enable(units[i]));
     }
 

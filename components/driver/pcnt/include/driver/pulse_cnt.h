@@ -59,8 +59,10 @@ typedef struct {
  * @brief PCNT unit configuration
  */
 typedef struct {
-    int low_limit;  /*!< Low limitation of the count unit, should be lower than 0 */
-    int high_limit; /*!< High limitation of the count unit, should be higher than 0 */
+    int low_limit;      /*!< Low limitation of the count unit, should be lower than 0 */
+    int high_limit;     /*!< High limitation of the count unit, should be higher than 0 */
+    int intr_priority;  /*!< PCNT interrupt priority,
+                            if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 #if SOC_PCNT_SUPPORT_ZERO_INPUT
     int zero_input_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high, input mode with pull down enabled. Set to -1 if unused */
 #endif
