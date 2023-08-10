@@ -23,6 +23,7 @@
 #include "esp_private/sar_periph_ctrl.h"
 #include "adc1_private.h"
 #include "hal/adc_types.h"
+#include "hal/adc_hal.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/periph_ctrl.h"

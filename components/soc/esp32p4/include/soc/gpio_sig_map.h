@@ -485,3 +485,4 @@
 #define SIG_IN_FUNC254_IDX                                 254
 #define SIG_IN_FUNC255_IDX                                 255
 #define SIG_IN_FUNC255_IDX                                 255
+#define SIG_GPIO_OUT_IDX                                   256

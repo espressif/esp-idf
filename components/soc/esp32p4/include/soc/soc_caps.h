@@ -485,3 +485,6 @@
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
+
+/*-------------------------- Memory CAPS --------------------------*/
+#define SOC_MEM_TCM_SUPPORTED    (1)

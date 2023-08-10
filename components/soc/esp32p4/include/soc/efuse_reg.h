@@ -7,12 +7,10 @@
 
 #include <stdint.h>
 #include "soc/soc.h"
+#include "efuse_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define EFUSE_READ_OP_CODE 0x5aa5
-#define EFUSE_WRITE_OP_CODE 0x5a5a
 
 /** EFUSE_PGM_DATA0_REG register
  *  Register 0 that stores data to be programmed.
@@ -200,6 +198,13 @@ extern "C" {
 #define EFUSE_POWERGLITCH_EN_M  (EFUSE_POWERGLITCH_EN_V << EFUSE_POWERGLITCH_EN_S)
 #define EFUSE_POWERGLITCH_EN_V  0x00000001U
 #define EFUSE_POWERGLITCH_EN_S  10
+/** EFUSE_DIS_USB_SERIAL_JTAG : RO; bitpos: [11]; default: 0;
+ *  Represents whether USB-Serial-JTAG is disabled or enabled. 1: disabled. 0: enabled.
+ */
+#define EFUSE_DIS_USB_SERIAL_JTAG    (BIT(11))
+#define EFUSE_DIS_USB_SERIAL_JTAG_M  (EFUSE_DIS_USB_SERIAL_JTAG_V << EFUSE_DIS_USB_SERIAL_JTAG_S)
+#define EFUSE_DIS_USB_SERIAL_JTAG_V  0x00000001U
+#define EFUSE_DIS_USB_SERIAL_JTAG_S  11
 /** EFUSE_DIS_FORCE_DOWNLOAD : RO; bitpos: [12]; default: 0;
  *  Represents whether the function that forces chip into download mode is disabled or
  *  enabled. 1: disabled. 0: enabled.
@@ -256,6 +261,20 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_M  (EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_V << EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_S)
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_V  0x00000001U
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_S  20
+/** EFUSE_USB_DEVICE_DREFH : RO; bitpos: [22:21]; default: 0;
+ *  USB intphy of usb device signle-end input high threshold, 1.76V to 2V. Step by 80mV
+ */
+#define EFUSE_USB_DEVICE_DREFH    0x00000003U
+#define EFUSE_USB_DEVICE_DREFH_M  (EFUSE_USB_DEVICE_DREFH_V << EFUSE_USB_DEVICE_DREFH_S)
+#define EFUSE_USB_DEVICE_DREFH_V  0x00000003U
+#define EFUSE_USB_DEVICE_DREFH_S  21
+/** EFUSE_USB_OTG11_DREFH : RO; bitpos: [24:23]; default: 0;
+ *  USB intphy of usb otg11 signle-end input high threshold, 1.76V to 2V. Step by 80mV
+ */
+#define EFUSE_USB_OTG11_DREFH    0x00000003U
+#define EFUSE_USB_OTG11_DREFH_M  (EFUSE_USB_OTG11_DREFH_V << EFUSE_USB_OTG11_DREFH_S)
+#define EFUSE_USB_OTG11_DREFH_V  0x00000003U
+#define EFUSE_USB_OTG11_DREFH_S  23
 /** EFUSE_USB_PHY_SEL : RO; bitpos: [25]; default: 0;
  *  TBD
  */
@@ -322,6 +341,13 @@ extern "C" {
 #define EFUSE_XTS_KEY_LENGTH_256_M  (EFUSE_XTS_KEY_LENGTH_256_V << EFUSE_XTS_KEY_LENGTH_256_S)
 #define EFUSE_XTS_KEY_LENGTH_256_V  0x00000001U
 #define EFUSE_XTS_KEY_LENGTH_256_S  14
+/** EFUSE_RD_RESERVE_0_79 : RW; bitpos: [15]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_79    (BIT(15))
+#define EFUSE_RD_RESERVE_0_79_M  (EFUSE_RD_RESERVE_0_79_V << EFUSE_RD_RESERVE_0_79_S)
+#define EFUSE_RD_RESERVE_0_79_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_79_S  15
 /** EFUSE_WDT_DELAY_SEL : RO; bitpos: [17:16]; default: 0;
  *  Represents whether RTC watchdog timeout threshold is selected at startup. 1:
  *  selected. 0: not selected.
@@ -446,6 +472,13 @@ extern "C" {
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_M  (EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V << EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S)
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V  0x00000001U
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S  21
+/** EFUSE_RD_RESERVE_0_118 : RW; bitpos: [22]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_118    (BIT(22))
+#define EFUSE_RD_RESERVE_0_118_M  (EFUSE_RD_RESERVE_0_118_V << EFUSE_RD_RESERVE_0_118_S)
+#define EFUSE_RD_RESERVE_0_118_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_118_S  22
 /** EFUSE_FLASH_TYPE : RO; bitpos: [23]; default: 0;
  *  The type of interfaced flash. 0: four data lines, 1: eight data lines.
  */
@@ -585,34 +618,34 @@ extern "C" {
  *  BLOCK0 data register 5.
  */
 #define EFUSE_RD_REPEAT_DATA4_REG (DR_REG_EFUSE_BASE + 0x40)
-/** EFUSE_0PXA_TIEH_SEL_0 : RO; bitpos: [1:0]; default: 0;
+/** EFUSE_PXA0_TIEH_SEL_0 : RO; bitpos: [1:0]; default: 0;
  *  TBD
  */
-#define EFUSE_0PXA_TIEH_SEL_0    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_0_M  (EFUSE_0PXA_TIEH_SEL_0_V << EFUSE_0PXA_TIEH_SEL_0_S)
-#define EFUSE_0PXA_TIEH_SEL_0_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_0_S  0
-/** EFUSE_0PXA_TIEH_SEL_1 : RO; bitpos: [3:2]; default: 0;
+#define EFUSE_PXA0_TIEH_SEL_0    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_0_M  (EFUSE_PXA0_TIEH_SEL_0_V << EFUSE_PXA0_TIEH_SEL_0_S)
+#define EFUSE_PXA0_TIEH_SEL_0_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_0_S  0
+/** EFUSE_PXA0_TIEH_SEL_1 : RO; bitpos: [3:2]; default: 0;
  *  TBD.
  */
-#define EFUSE_0PXA_TIEH_SEL_1    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_1_M  (EFUSE_0PXA_TIEH_SEL_1_V << EFUSE_0PXA_TIEH_SEL_1_S)
-#define EFUSE_0PXA_TIEH_SEL_1_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_1_S  2
-/** EFUSE_0PXA_TIEH_SEL_2 : RO; bitpos: [5:4]; default: 0;
+#define EFUSE_PXA0_TIEH_SEL_1    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_1_M  (EFUSE_PXA0_TIEH_SEL_1_V << EFUSE_PXA0_TIEH_SEL_1_S)
+#define EFUSE_PXA0_TIEH_SEL_1_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_1_S  2
+/** EFUSE_PXA0_TIEH_SEL_2 : RO; bitpos: [5:4]; default: 0;
  *  TBD.
  */
-#define EFUSE_0PXA_TIEH_SEL_2    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_2_M  (EFUSE_0PXA_TIEH_SEL_2_V << EFUSE_0PXA_TIEH_SEL_2_S)
-#define EFUSE_0PXA_TIEH_SEL_2_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_2_S  4
-/** EFUSE_0PXA_TIEH_SEL_3 : RO; bitpos: [7:6]; default: 0;
+#define EFUSE_PXA0_TIEH_SEL_2    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_2_M  (EFUSE_PXA0_TIEH_SEL_2_V << EFUSE_PXA0_TIEH_SEL_2_S)
+#define EFUSE_PXA0_TIEH_SEL_2_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_2_S  4
+/** EFUSE_PXA0_TIEH_SEL_3 : RO; bitpos: [7:6]; default: 0;
  *  TBD.
  */
-#define EFUSE_0PXA_TIEH_SEL_3    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_3_M  (EFUSE_0PXA_TIEH_SEL_3_V << EFUSE_0PXA_TIEH_SEL_3_S)
-#define EFUSE_0PXA_TIEH_SEL_3_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_3_S  6
+#define EFUSE_PXA0_TIEH_SEL_3    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_3_M  (EFUSE_PXA0_TIEH_SEL_3_V << EFUSE_PXA0_TIEH_SEL_3_S)
+#define EFUSE_PXA0_TIEH_SEL_3_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_3_S  6
 /** EFUSE_KM_DISABLE_DEPLOY_MODE : RO; bitpos: [11:8]; default: 0;
  *  TBD.
  */
@@ -620,6 +653,29 @@ extern "C" {
 #define EFUSE_KM_DISABLE_DEPLOY_MODE_M  (EFUSE_KM_DISABLE_DEPLOY_MODE_V << EFUSE_KM_DISABLE_DEPLOY_MODE_S)
 #define EFUSE_KM_DISABLE_DEPLOY_MODE_V  0x0000000FU
 #define EFUSE_KM_DISABLE_DEPLOY_MODE_S  8
+/** EFUSE_USB_DEVICE_DREFL : RO; bitpos: [13:12]; default: 0;
+ *  Represents the usb device single-end input low threhold, 0.8 V to 1.04 V with step
+ *  of 80 mV.
+ */
+#define EFUSE_USB_DEVICE_DREFL    0x00000003U
+#define EFUSE_USB_DEVICE_DREFL_M  (EFUSE_USB_DEVICE_DREFL_V << EFUSE_USB_DEVICE_DREFL_S)
+#define EFUSE_USB_DEVICE_DREFL_V  0x00000003U
+#define EFUSE_USB_DEVICE_DREFL_S  12
+/** EFUSE_USB_OTG11_DREFL : RO; bitpos: [15:14]; default: 0;
+ *  Represents the usb otg11 single-end input low threhold, 0.8 V to 1.04 V with step
+ *  of 80 mV.
+ */
+#define EFUSE_USB_OTG11_DREFL    0x00000003U
+#define EFUSE_USB_OTG11_DREFL_M  (EFUSE_USB_OTG11_DREFL_V << EFUSE_USB_OTG11_DREFL_S)
+#define EFUSE_USB_OTG11_DREFL_V  0x00000003U
+#define EFUSE_USB_OTG11_DREFL_S  14
+/** EFUSE_RD_RESERVE_0_176 : RW; bitpos: [17:16]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_176    0x00000003U
+#define EFUSE_RD_RESERVE_0_176_M  (EFUSE_RD_RESERVE_0_176_V << EFUSE_RD_RESERVE_0_176_S)
+#define EFUSE_RD_RESERVE_0_176_V  0x00000003U
+#define EFUSE_RD_RESERVE_0_176_S  16
 /** EFUSE_HP_PWR_SRC_SEL : RO; bitpos: [18]; default: 0;
  *  HP system power source select. 0:LDO. 1: DCDC.
  */
@@ -648,6 +704,13 @@ extern "C" {
 #define EFUSE_DIS_SWD_M  (EFUSE_DIS_SWD_V << EFUSE_DIS_SWD_S)
 #define EFUSE_DIS_SWD_V  0x00000001U
 #define EFUSE_DIS_SWD_S  21
+/** EFUSE_RD_RESERVE_0_182 : RW; bitpos: [31:22]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_182    0x000003FFU
+#define EFUSE_RD_RESERVE_0_182_M  (EFUSE_RD_RESERVE_0_182_V << EFUSE_RD_RESERVE_0_182_S)
+#define EFUSE_RD_RESERVE_0_182_V  0x000003FFU
+#define EFUSE_RD_RESERVE_0_182_S  22
 
 /** EFUSE_RD_MAC_SYS_0_REG register
  *  BLOCK1 data register $n.
@@ -1645,6 +1708,13 @@ extern "C" {
 #define EFUSE_POWERGLITCH_EN_ERR_M  (EFUSE_POWERGLITCH_EN_ERR_V << EFUSE_POWERGLITCH_EN_ERR_S)
 #define EFUSE_POWERGLITCH_EN_ERR_V  0x00000001U
 #define EFUSE_POWERGLITCH_EN_ERR_S  10
+/** EFUSE_DIS_USB_SERIAL_JTAG_ERR : RO; bitpos: [11]; default: 0;
+ *  Indicates a programming error of DIS_USB_SERIAL_JTAG.
+ */
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR    (BIT(11))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR_M  (EFUSE_DIS_USB_SERIAL_JTAG_ERR_V << EFUSE_DIS_USB_SERIAL_JTAG_ERR_S)
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR_V  0x00000001U
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR_S  11
 /** EFUSE_DIS_FORCE_DOWNLOAD_ERR : RO; bitpos: [12]; default: 0;
  *  Indicates a programming error of DIS_FORCE_DOWNLOAD.
  */
@@ -1694,6 +1764,20 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_ERR_M  (EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_ERR_V << EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_ERR_S)
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_ERR_V  0x00000001U
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_ERR_S  20
+/** EFUSE_USB_DEVICE_DREFH_ERR : RO; bitpos: [22:21]; default: 0;
+ *  Indicates a programming error of USB_DEVICE_DREFH.
+ */
+#define EFUSE_USB_DEVICE_DREFH_ERR    0x00000003U
+#define EFUSE_USB_DEVICE_DREFH_ERR_M  (EFUSE_USB_DEVICE_DREFH_ERR_V << EFUSE_USB_DEVICE_DREFH_ERR_S)
+#define EFUSE_USB_DEVICE_DREFH_ERR_V  0x00000003U
+#define EFUSE_USB_DEVICE_DREFH_ERR_S  21
+/** EFUSE_USB_OTG11_DREFH_ERR : RO; bitpos: [24:23]; default: 0;
+ *  Indicates a programming error of USB_OTG11_DREFH.
+ */
+#define EFUSE_USB_OTG11_DREFH_ERR    0x00000003U
+#define EFUSE_USB_OTG11_DREFH_ERR_M  (EFUSE_USB_OTG11_DREFH_ERR_V << EFUSE_USB_OTG11_DREFH_ERR_S)
+#define EFUSE_USB_OTG11_DREFH_ERR_V  0x00000003U
+#define EFUSE_USB_OTG11_DREFH_ERR_S  23
 /** EFUSE_USB_PHY_SEL_ERR : RO; bitpos: [25]; default: 0;
  *  Indicates a programming error of USB_PHY_SEL.
  */
@@ -2001,34 +2085,34 @@ extern "C" {
  *  Programming error record register 4 of BLOCK0.
  */
 #define EFUSE_RD_REPEAT_ERR4_REG (DR_REG_EFUSE_BASE + 0x18c)
-/** EFUSE_0PXA_TIEH_SEL_0_ERR : RO; bitpos: [1:0]; default: 0;
+/** EFUSE_PXA0_TIEH_SEL_0_ERR : RO; bitpos: [1:0]; default: 0;
  *  Indicates a programming error of 0PXA_TIEH_SEL_0.
  */
-#define EFUSE_0PXA_TIEH_SEL_0_ERR    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_0_ERR_M  (EFUSE_0PXA_TIEH_SEL_0_ERR_V << EFUSE_0PXA_TIEH_SEL_0_ERR_S)
-#define EFUSE_0PXA_TIEH_SEL_0_ERR_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_0_ERR_S  0
-/** EFUSE_0PXA_TIEH_SEL_1_ERR : RO; bitpos: [3:2]; default: 0;
+#define EFUSE_PXA0_TIEH_SEL_0_ERR    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_0_ERR_M  (EFUSE_PXA0_TIEH_SEL_0_ERR_V << EFUSE_PXA0_TIEH_SEL_0_ERR_S)
+#define EFUSE_PXA0_TIEH_SEL_0_ERR_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_0_ERR_S  0
+/** EFUSE_PXA0_TIEH_SEL_1_ERR : RO; bitpos: [3:2]; default: 0;
  *  Indicates a programming error of 0PXA_TIEH_SEL_1.
  */
-#define EFUSE_0PXA_TIEH_SEL_1_ERR    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_1_ERR_M  (EFUSE_0PXA_TIEH_SEL_1_ERR_V << EFUSE_0PXA_TIEH_SEL_1_ERR_S)
-#define EFUSE_0PXA_TIEH_SEL_1_ERR_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_1_ERR_S  2
-/** EFUSE_0PXA_TIEH_SEL_2_ERR : RO; bitpos: [5:4]; default: 0;
+#define EFUSE_PXA0_TIEH_SEL_1_ERR    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_1_ERR_M  (EFUSE_PXA0_TIEH_SEL_1_ERR_V << EFUSE_PXA0_TIEH_SEL_1_ERR_S)
+#define EFUSE_PXA0_TIEH_SEL_1_ERR_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_1_ERR_S  2
+/** EFUSE_PXA0_TIEH_SEL_2_ERR : RO; bitpos: [5:4]; default: 0;
  *  Indicates a programming error of 0PXA_TIEH_SEL_2.
  */
-#define EFUSE_0PXA_TIEH_SEL_2_ERR    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_2_ERR_M  (EFUSE_0PXA_TIEH_SEL_2_ERR_V << EFUSE_0PXA_TIEH_SEL_2_ERR_S)
-#define EFUSE_0PXA_TIEH_SEL_2_ERR_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_2_ERR_S  4
-/** EFUSE_0PXA_TIEH_SEL_3_ERR : RO; bitpos: [7:6]; default: 0;
+#define EFUSE_PXA0_TIEH_SEL_2_ERR    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_2_ERR_M  (EFUSE_PXA0_TIEH_SEL_2_ERR_V << EFUSE_PXA0_TIEH_SEL_2_ERR_S)
+#define EFUSE_PXA0_TIEH_SEL_2_ERR_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_2_ERR_S  4
+/** EFUSE_PXA0_TIEH_SEL_3_ERR : RO; bitpos: [7:6]; default: 0;
  *  Indicates a programming error of 0PXA_TIEH_SEL_3.
  */
-#define EFUSE_0PXA_TIEH_SEL_3_ERR    0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_3_ERR_M  (EFUSE_0PXA_TIEH_SEL_3_ERR_V << EFUSE_0PXA_TIEH_SEL_3_ERR_S)
-#define EFUSE_0PXA_TIEH_SEL_3_ERR_V  0x00000003U
-#define EFUSE_0PXA_TIEH_SEL_3_ERR_S  6
+#define EFUSE_PXA0_TIEH_SEL_3_ERR    0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_3_ERR_M  (EFUSE_PXA0_TIEH_SEL_3_ERR_V << EFUSE_PXA0_TIEH_SEL_3_ERR_S)
+#define EFUSE_PXA0_TIEH_SEL_3_ERR_V  0x00000003U
+#define EFUSE_PXA0_TIEH_SEL_3_ERR_S  6
 /** EFUSE_KM_DISABLE_DEPLOY_MODE_ERR : RO; bitpos: [11:8]; default: 0;
  *  TBD.
  */
@@ -2302,6 +2386,48 @@ extern "C" {
 #define EFUSE_STATE_M  (EFUSE_STATE_V << EFUSE_STATE_S)
 #define EFUSE_STATE_V  0x0000000FU
 #define EFUSE_STATE_S  0
+/** EFUSE_OTP_LOAD_SW : RO; bitpos: [4]; default: 0;
+ *  The value of OTP_LOAD_SW.
+ */
+#define EFUSE_OTP_LOAD_SW    (BIT(4))
+#define EFUSE_OTP_LOAD_SW_M  (EFUSE_OTP_LOAD_SW_V << EFUSE_OTP_LOAD_SW_S)
+#define EFUSE_OTP_LOAD_SW_V  0x00000001U
+#define EFUSE_OTP_LOAD_SW_S  4
+/** EFUSE_OTP_VDDQ_C_SYNC2 : RO; bitpos: [5]; default: 0;
+ *  The value of OTP_VDDQ_C_SYNC2.
+ */
+#define EFUSE_OTP_VDDQ_C_SYNC2    (BIT(5))
+#define EFUSE_OTP_VDDQ_C_SYNC2_M  (EFUSE_OTP_VDDQ_C_SYNC2_V << EFUSE_OTP_VDDQ_C_SYNC2_S)
+#define EFUSE_OTP_VDDQ_C_SYNC2_V  0x00000001U
+#define EFUSE_OTP_VDDQ_C_SYNC2_S  5
+/** EFUSE_OTP_STROBE_SW : RO; bitpos: [6]; default: 0;
+ *  The value of OTP_STROBE_SW.
+ */
+#define EFUSE_OTP_STROBE_SW    (BIT(6))
+#define EFUSE_OTP_STROBE_SW_M  (EFUSE_OTP_STROBE_SW_V << EFUSE_OTP_STROBE_SW_S)
+#define EFUSE_OTP_STROBE_SW_V  0x00000001U
+#define EFUSE_OTP_STROBE_SW_S  6
+/** EFUSE_OTP_CSB_SW : RO; bitpos: [7]; default: 0;
+ *  The value of OTP_CSB_SW.
+ */
+#define EFUSE_OTP_CSB_SW    (BIT(7))
+#define EFUSE_OTP_CSB_SW_M  (EFUSE_OTP_CSB_SW_V << EFUSE_OTP_CSB_SW_S)
+#define EFUSE_OTP_CSB_SW_V  0x00000001U
+#define EFUSE_OTP_CSB_SW_S  7
+/** EFUSE_OTP_PGENB_SW : RO; bitpos: [8]; default: 0;
+ *  The value of OTP_PGENB_SW.
+ */
+#define EFUSE_OTP_PGENB_SW    (BIT(8))
+#define EFUSE_OTP_PGENB_SW_M  (EFUSE_OTP_PGENB_SW_V << EFUSE_OTP_PGENB_SW_S)
+#define EFUSE_OTP_PGENB_SW_V  0x00000001U
+#define EFUSE_OTP_PGENB_SW_S  8
+/** EFUSE_OTP_VDDQ_IS_SW : RO; bitpos: [9]; default: 0;
+ *  The value of OTP_VDDQ_IS_SW.
+ */
+#define EFUSE_OTP_VDDQ_IS_SW    (BIT(9))
+#define EFUSE_OTP_VDDQ_IS_SW_M  (EFUSE_OTP_VDDQ_IS_SW_V << EFUSE_OTP_VDDQ_IS_SW_S)
+#define EFUSE_OTP_VDDQ_IS_SW_V  0x00000001U
+#define EFUSE_OTP_VDDQ_IS_SW_S  9
 /** EFUSE_BLK0_VALID_BIT_CNT : RO; bitpos: [19:10]; default: 0;
  *  Indicates the number of block valid bit.
  */

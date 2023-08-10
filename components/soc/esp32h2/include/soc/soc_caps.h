@@ -121,6 +121,9 @@
 /*!< Interrupt */
 #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
 
+/*!< ADC power control is shared by PWDET */
+#define SOC_ADC_SHARED_POWER                    1
+
 // ESP32H2-TODO: Copy from esp32c6, need check
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (0)

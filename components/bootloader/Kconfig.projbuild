@@ -5,6 +5,8 @@ menu "Bootloader config"
     config BOOTLOADER_OFFSET_IN_FLASH
         hex
         default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
+        # the first 2 sectors are reserved for the key manager with AES-XTS (flash encryption) purpose
+        default 0x2000 if IDF_TARGET_ESP32P4
         default 0x0
         help
             Offset address that 2nd bootloader will be flashed to.
@@ -867,7 +869,9 @@ menu "Security features"
         default y if (SOC_EFUSE_DIS_ICACHE || IDF_TARGET_ESP32) && SECURE_FLASH_ENC_ENABLED
 
     menu "Potentially insecure options"
-        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT # NOERROR
+        visible if (SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || \
+            SECURE_BOOT_INSECURE || \
+            SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT) # NOERROR
 
         # NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
         # and/or SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT in "depends on", as the menu
@@ -971,7 +975,8 @@ menu "Security features"
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
             bool "Leave UART bootloader flash cache enabled"
-            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && (IDF_TARGET_ESP32 || SOC_EFUSE_DIS_DOWNLOAD_ICACHE || SOC_EFUSE_DIS_DOWNLOAD_DCACHE) # NOERROR
+            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && \
+                (IDF_TARGET_ESP32 || SOC_EFUSE_DIS_DOWNLOAD_ICACHE || SOC_EFUSE_DIS_DOWNLOAD_DCACHE) # NOERROR
             default N
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
             help

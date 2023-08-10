@@ -18,7 +18,7 @@ entries:
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
-    if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n: # TODO: IDF-5645
+    if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n && IDF_TARGET_ESP32P4 = n: # TODO: IDF-5645
         rtc_sleep (noflash_text)
     rtc_time (noflash_text)
     if SOC_PMU_SUPPORTED = y:
@@ -37,11 +37,11 @@ entries:
         mspi_timing_config (noflash)
         if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY = y:
             mspi_timing_by_mspi_delay (noflash)
-
-    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
-        sar_periph_ctrl (noflash)
-    else:
-        sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
+    if SOC_ADC_SHARED_POWER = y:
+        if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+            sar_periph_ctrl (noflash)
+        else:
+            sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
 
 [mapping:soc_pm]
 archive: libsoc.a

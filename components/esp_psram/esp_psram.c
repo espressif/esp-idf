@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -196,19 +196,34 @@ esp_err_t esp_psram_init(void)
     size_t total_mapped_size = 0;
     size_t size_to_map = 0;
     size_t byte_aligned_size = 0;
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7495
+    ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_PSRAM, MMU_TARGET_PSRAM0, &byte_aligned_size);
+#else
     ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &byte_aligned_size);
+#endif
     assert(ret == ESP_OK);
     size_to_map = MIN(byte_aligned_size, psram_available_size);
 
     const void *v_start_8bit_aligned = NULL;
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7495
+    ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_PSRAM, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
+#else
     ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
+#endif
     assert(ret == ESP_OK);
 
 #if CONFIG_IDF_TARGET_ESP32
     s_mapping((int)v_start_8bit_aligned, size_to_map);
 #else
     uint32_t actual_mapped_len = 0;
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7495
+    mmu_hal_map_region(1, MMU_TARGET_PSRAM0, (intptr_t)v_start_8bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
+#else
     mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_8bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
+#endif
     start_page += BYTES_TO_MMU_PAGE(actual_mapped_len);
     ESP_EARLY_LOGV(TAG, "8bit-aligned-region: actual_mapped_len is 0x%x bytes", actual_mapped_len);
 

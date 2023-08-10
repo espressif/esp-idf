@@ -12,6 +12,10 @@
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
+#if CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-7516
+#include "esp32p4/rom/cache.h"
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 #   include "soc/spi_struct.h"
@@ -145,7 +149,12 @@ static const char *TAG = "bootloader_flash";
    63th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
+#if CONFIG_IDF_TARGET_ESP32P4
+//TODO: IDF-7918
+#define MMAP_MMU_SIZE     (DRAM_FLASH_ADDRESS_HIGH - DRAM_FLASH_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
+#else
 #define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
+#endif
 #define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE - SPI_FLASH_MMU_PAGE_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR
 #endif
@@ -229,6 +238,14 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
 #else
+#if CONFIG_IDF_TARGET_ESP32P4
+    /**
+     * TODO: IDF-7516
+     * we need to invalidate l1 dcache to make each mmap clean
+     * to that vaddr
+     */
+    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, MMU_BLOCK0_VADDR, actual_mapped_len);
+#endif
     cache_hal_enable(CACHE_TYPE_ALL);
 #endif
 
@@ -324,6 +341,10 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Enable(0);
 #else
+#if CONFIG_IDF_TARGET_ESP32P4
+            //TODO: IDF-7516
+            Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, FLASH_READ_VADDR, actual_mapped_len);
+#endif
             cache_hal_enable(CACHE_TYPE_ALL);
 #endif
         }

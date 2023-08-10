@@ -498,7 +498,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
     parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3', 'esp32c3',
-                        'esp32c2', 'esp32c6', 'esp32h2'], default='esp32')
+                        'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4'], default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')

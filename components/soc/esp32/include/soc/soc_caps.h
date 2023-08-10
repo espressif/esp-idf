@@ -134,6 +134,9 @@
 #define SOC_ADC_RTC_MIN_BITWIDTH                (9)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
+/*!< ADC power control is shared by PWDET */
+#define SOC_ADC_SHARED_POWER                    1
+
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #if SOC_CAPS_ECO_VER >= 100
 #define SOC_BROWNOUT_RESET_SUPPORTED 1

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,7 @@ void periph_module_reset(periph_module_t periph)
 }
 
 #if !SOC_IEEE802154_BLE_ONLY
+#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED
 IRAM_ATTR void wifi_bt_common_module_enable(void)
 {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
@@ -75,7 +76,8 @@ IRAM_ATTR void wifi_bt_common_module_disable(void)
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 #endif
 }
-#endif
+#endif  //#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED
+#endif  //#if !SOC_IEEE802154_BLE_ONLY
 
 #if CONFIG_ESP_WIFI_ENABLED
 void wifi_module_enable(void)

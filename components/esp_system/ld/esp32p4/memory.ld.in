@@ -23,7 +23,7 @@
 #define SRAM_DRAM_START     0x4ff00000
 
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x4ff30bd0 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x4FF2DBD0 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START)

@@ -259,6 +259,10 @@ config SOC_ADC_SELF_HW_CALI_SUPPORTED
     bool
     default y
 
+config SOC_ADC_SHARED_POWER
+    bool
+    default y
+
 config SOC_APB_BACKUP_DMA
     bool
     default y

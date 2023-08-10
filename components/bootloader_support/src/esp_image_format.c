@@ -38,6 +38,10 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/rtc.h"
+#include "esp32p4/rom/secure_boot.h"
+#include "esp32p4/rom/cache.h"
 #endif
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
@@ -232,6 +236,10 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
                 }
             }
         }
+#if CONFIG_IDF_TARGET_ESP32P4
+        //TODO: IDF-7516
+        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+#endif
     }
 #endif // BOOTLOADER_BUILD
 
@@ -459,6 +467,12 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     }
 #endif
 
+#if SOC_MEM_TCM_SUPPORTED
+    else if (esp_ptr_in_tcm(load_addr_p) && esp_ptr_in_tcm(load_inclusive_end_p)) {
+        return true;
+    }
+#endif
+
     else { /* Not a DRAM or an IRAM or RTC Fast IRAM, RTC Fast DRAM or RTC Slow address */
         reason = "bad load address range";
         goto invalid;
@@ -661,6 +675,12 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
                                    MIN(SHA_CHUNK, data_len - i));
         }
     }
+#if CONFIG_IDF_TARGET_ESP32P4
+    //TODO: IDF-7516
+    if (do_load && esp_ptr_in_diram_iram((uint32_t *)load_addr)) {
+        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+    }
+#endif
 
     bootloader_munmap(data);
 
