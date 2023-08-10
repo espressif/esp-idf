@@ -73,7 +73,7 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
   The environment variables can be listed in either of ``shell`` or ``key-value`` formats, set by ``--format`` parameter:
 
   - ``export`` optional parameters:
-    
+
     - ``--unset`` Creates statement that unset some global variables, so the environment gets to the state it was before calling ``export.{sh/fish}``.
     - ``--add_paths_extras`` Adds extra ESP-IDF-related paths of ``$PATH`` to ``${IDF_TOOLS_PATH}/esp-idf.json``, which is used to remove global variables when the active ESP-IDF environment is deactivated. Example: While processing ``export.{sh/fish}`` script, new paths are added to global variable ``$PATH``. This option is used to save these new paths to the ``${IDF_TOOLS_PATH}/esp-idf.json``.
 
@@ -117,7 +117,7 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
   - ``--dry-run`` Print installed unused tools.
   - ``--remove-archives`` Additionally remove all older versions of previously downloaded installation packages.
-  
+
 .. _idf-tools-install:
 
 Install scripts
@@ -173,6 +173,24 @@ Custom installation
 -------------------
 
 Although the methods above are recommended for ESP-IDF users, they are not a must for building ESP-IDF applications. ESP-IDF build system expects that all the necessary tools are installed somewhere, and made available in the ``PATH``.
+
+.. _idf-tools-uninstall:
+
+Uninstall ESP-IDF
+-----------------
+
+Uninstalling ESP-IDF requires removing both the tools and the environment variables that have been configured during the installation.
+
+* Windows users using the :ref:`Windows ESP-IDF Tools Installer <get-started-windows-tools-installer>` can simply run the uninstall wizard to remove ESP-IDF.
+* To remove an installation performed by running the supported :ref:`install scripts <idf-tools-install>`, simply delete the :ref:`tools installation directory <idf-tools-path>` including the downloaded and installed tools. Any environment variables set by the :ref:`export scripts<idf-tools-export>` are not permanent and will not be present after opening a new environment.
+* When dealing with a custom installation, in addition to deleting the tools as mentioned above, you may also need to manually revert any changes to environment variables or system paths that were made to accommodate the ESP-IDF tools (e.g. ``IDF_PYTHON_ENV_PATH`` or ``IDF_TOOLS_PATH``). If you manually copied any tools, you would need to track and delete those files manually.
+* If you installed any plugins like the `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_, you should follow the specific uninstallation instructions described in the documentation of those components.
+
+.. note::
+
+  Uninstalling the ESP-IDF tools doesn't remove any project files or your code. Be mindful of what you are deleting to avoid losing any work. If you're unsure about a step, refer back to the installation instructions.
+
+  These instructions assume that the tools were installed following the procedures in this provided document. If you've used a custom installation method, you might need to adapt these instructions accordingly.
 
 .. _idf-tools-list:
 

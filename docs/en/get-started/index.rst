@@ -174,3 +174,8 @@ Build Your First Project
 If you already have the ESP-IDF installed and not using IDE, you can build your first project from the command line following the :ref:`Start a Project on Windows <get-started-windows-first-steps>` or :ref:`Start a Project on Linux and macOS <get-started-linux-macos-first-steps>`.
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+
+Uninstall ESP-IDF
+=================
+
+If you want to remove ESP-IDF, please follow the :ref:`Uninstall ESP-IDF guide <idf-tools-uninstall>`.
