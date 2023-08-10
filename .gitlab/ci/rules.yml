@@ -122,12 +122,9 @@
 
 .patterns-build_macos: &patterns-build_macos
   - "tools/ci/test_configure_ci_environment.sh"
-  - "tools/ci/test_build_system_cmake.sh"
 
 .patterns-build_check: &patterns-build_check
   - "tools/test_build_system/**/*"
-  - "tools/ci/test_build_system_cmake.sh"
-  - "tools/ci/test_build_system_spaces.py"
   - "tools/ci/test_configure_ci_environment.sh"
   - "tools/gen_esp_err_to_name.py"
   - "tools/ci/check_soc_headers_leak.py"
@@ -1569,21 +1566,6 @@
       changes: *patterns-integration_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
-
-.rules:build:macos:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build
-    - <<: *if-label-macos
-    - <<: *if-label-macos_test
-    - <<: *if-dev-push
-      changes: *patterns-build_macos
-    - <<: *if-dev-push
-      changes: *patterns-build_system
-    - <<: *if-dev-push
-      changes: *patterns-downloadable-tools
 
 .rules:build:target_test:
   rules:

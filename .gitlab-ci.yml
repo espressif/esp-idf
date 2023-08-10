@@ -210,16 +210,6 @@ before_script:
   before_script:
     - *common-before_scripts
 
-.before_script_macos:
-  before_script:
-    - *common-before_scripts
-    # On macOS, these tools need to be installed
-    - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
-    - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
-    # This adds tools (compilers) and the version-specific Python environment to PATH
-    - *setup_tools_and_idf_python_venv
-    - fetch_submodules
-
 .before_script_build_jobs:
   before_script:
     - *common-before_scripts

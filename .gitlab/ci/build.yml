@@ -756,26 +756,6 @@ build_clang_test_apps_esp32c6:
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
 
-test_build_system_cmake:
-  extends: .test_build_system_template
-  variables:
-    SHELL_TEST_SCRIPT: test_build_system_cmake.sh
-
-test_build_system_cmake_macos:
-  extends:
-    - .test_build_system_template
-    - .before_script_macos
-    - .rules:build:macos
-  tags:
-    - macos_shell
-  variables:
-    SHELL_TEST_SCRIPT: test_build_system_cmake.sh
-
-test_build_system_spaces:
-  extends: .test_build_system_template
-  variables:
-    SHELL_TEST_SCRIPT: test_build_system_spaces.py
-
 pytest_build_system:
   extends: .test_build_system_template
   parallel: 3
