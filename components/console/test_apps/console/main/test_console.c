@@ -67,3 +67,24 @@ TEST_CASE("esp console repl test", "[console][ignore]")
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(2000));
 }
+
+TEST_CASE("esp console init/deinit test, minimal config", "[console]")
+{
+    /* Test with minimal init config */
+    esp_console_config_t console_config = {
+        .max_cmdline_length = 100,
+    };
+
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "hello",
+        .help = "Print Hello World",
+        .hint = NULL,
+        .func = do_hello_cmd,
+    };
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    // re-register the same command, just for test
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}

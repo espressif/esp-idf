@@ -62,8 +62,8 @@ esp_err_t esp_console_init(const esp_console_config_t *config)
     if (s_config.hint_color == 0) {
         s_config.hint_color = ANSI_COLOR_DEFAULT;
     }
-    if (config->heap_alloc_caps != 0) {
-        s_config.heap_alloc_caps = config->heap_alloc_caps;
+    if (s_config.heap_alloc_caps == 0) {
+        s_config.heap_alloc_caps = MALLOC_CAP_DEFAULT;
     }
     s_tmp_line_buf = heap_caps_calloc(1, config->max_cmdline_length, s_config.heap_alloc_caps);
     if (s_tmp_line_buf == NULL) {
