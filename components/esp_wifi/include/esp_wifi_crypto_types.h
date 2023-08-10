@@ -412,7 +412,7 @@ typedef struct {
     esp_aes_decrypt_t aes_decrypt;                   /**< Decrypt one AES block callback function */
     esp_aes_decrypt_init_t aes_decrypt_init;         /**< Initialize AES callback function for decryption */
     esp_aes_decrypt_deinit_t aes_decrypt_deinit;     /**< Deinitialize AES decryption callback function */
-    esp_aes_128_encrypt_t aes_128_encrypt;           /**< The AES 128 encrypt callback function used by esp_wifi  */
+    esp_aes_128_encrypt_t aes_128_encrypt;           /**< The AES 128 encrypt callback function used by esp_wifi */
     esp_aes_128_decrypt_t aes_128_decrypt;           /**< The AES 128 decrypt callback function used by esp_wifi */
     esp_omac1_aes_128_t omac1_aes_128;               /**< One-Key CBC MAC (OMAC1) hash with AES-128 callback function for MIC computation */
     esp_ccmp_decrypt_t ccmp_decrypt;                 /**< Decrypt data callback function using CCMP */
