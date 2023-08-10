@@ -17,6 +17,7 @@ ESP32-Ethernet-Kit V1.2 入门指南
 
     ESP32-Ethernet-Kit V1.2 概图（点击放大）
 
+
 准备工作
 --------
 
@@ -24,7 +25,7 @@ ESP32-Ethernet-Kit V1.2 入门指南
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
-您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+你可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 
 概述
@@ -129,6 +130,7 @@ ESP32-Ethernet-Kit 开发板的主要组件和连接方式如下。
 
     开发板支持固件自动下载模式。若遵循 `应用程序开发`_ 章节中的步骤并使用了规定软件，则无需对 BOOT 或 EN 按键进行任何操作。
 
+
 PoE 子板（B 板）
 ^^^^^^^^^^^^^^^^^^^
 
@@ -160,8 +162,8 @@ PoE 子板（B 板）具有以下特性：
   * - 外部电源终端
     - PoE 子板（B 板）可选电源 (26.6 ~ 54 V)。
 
-.. _get-started-esp32-ethernet-kit-v1.2-setup-options:
 
+.. _get-started-esp32-ethernet-kit-v1.2-setup-options:
 
 设置选项
 --------
@@ -344,7 +346,7 @@ GPIO 管脚分配总结
 
 .. note::
 
-    1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，您可通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_。
+    1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，可以通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_。
 
     2. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-E 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
 
@@ -368,15 +370,15 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 正式开始开发
 ^^^^^^^^^^^^^
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至你的开发板。
 
-请务必在进入下一步前，确保您已完成上述所有步骤。
+在进入下一步前，请确保已完成上述所有步骤。
 
 
 配置与加载以太网示例
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.2` 开发板使用的 **IP101GRI** 。
+在完成开发环境设置和开发板测试后，即可配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.2` 开发板使用的 **IP101GRI** 。
 
 
 针对 ESP32-Ethernet-Kit V1.1 的主要修改

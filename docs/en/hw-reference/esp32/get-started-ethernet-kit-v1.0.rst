@@ -7,6 +7,7 @@ This guide shows how to get started with the ESP32-Ethernet-Kit development boar
 
 The :ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-b-v1.0>` is an Ethernet-to-Wi-Fi development board that enables Ethernet devices to be interconnected over Wi-Fi. At the same time, to provide more flexible power supply options, the ESP32-Ethernet-Kit also supports power over Ethernet (PoE).
 
+
 What You Need
 -------------
 
@@ -16,12 +17,13 @@ What You Need
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
 
+
 Overview
 --------
 
 ESP32-Ethernet-Kit is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.0-layout>` contains Bluetooth / Wi-Fi dual-mode ESP32-WROVER-B module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The :ref:`PoE board (B) <get-started-esp32-ethernet-kit-b-v1.0-layout>` provides power over Ethernet functionality. The A board can work independently, without the board B installed.
+It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.0-layout>` contains Bluetooth®/Wi-Fi dual-mode ESP32-WROVER-B module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The :ref:`PoE board (B) <get-started-esp32-ethernet-kit-b-v1.0-layout>` provides power over Ethernet functionality. The A board can work independently, without the board B installed.
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
@@ -93,13 +95,13 @@ Power Switch        Power On/Off Switch. Toggling toward the **Boot** button pow
 
 5V Input            The 5V power supply interface can be more convenient when the board is operating autonomously (not connected to a computer).
 
-5V Power On LED     This red LED turns on when power is supplied to the board, either from USB or 5V Input.
+5V Power On LED     This red LED turns on when power is supplied to the board, either from USB or 5 V Input.
 
-DC/DC Converter     Provided DC 5 V to 3.3 V conversion, output current up to 2A.
+DC/DC Converter     Provided DC 5 V to 3.3 V conversion, output current up to 2 A.
 
 Board B Connectors  A pair male header pins for mounting the :ref:`PoE board (B) <get-started-esp32-ethernet-kit-b-v1.0-layout>`.
 
-IP101GRI (PHY)      The physical layer (PHY) connection to the Ethernet cable is implemented using the `IP101GRI <http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf>`_ chip. The connection between PHY and ESP32 is done through the reduced media-independent interface (RMII), a variant of the media-independent interface `(MII) <https://en.wikipedia.org/wiki/Media-independent_interface>`_ standard. The PHY supports the IEEE 802.3 / 802.3u standard of 10/100Mbps.
+IP101GRI (PHY)      The physical layer (PHY) connection to the Ethernet cable is implemented using the `IP101GRI <http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf>`_ chip. The connection between PHY and ESP32 is done through the reduced media-independent interface (RMII), a variant of the media-independent interface `(MII) <https://en.wikipedia.org/wiki/Media-independent_interface>`_ standard. The PHY supports the IEEE 802.3/802.3u standard of 10/100 Mbps.
 
 RJ45 Port           Ethernet network data transmission port.
 
@@ -265,7 +267,7 @@ This header contains the GPIOs with specific MII functionality (except GPIO2), a
 
 .. note::
 
-    1. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without SPIRAM memory inside, e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
+    1. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without SPIRAM memory inside, e.g., the ESP32-WROOM-32D or ESP32-SOLO-1.
     2. Functionality depends on the settings of the `Function Switch`_.
 
 
@@ -325,13 +327,14 @@ GPIO Allocation Summary
     1. GPIO2 is used to enable external oscillator of the PHY.
     2. GPIO0 is a source of 50 MHz reference clock for the PHY. The clock signal is first inverted, to account for transmission line delay, and then supplied to the PHY.
     3. To prevent affecting the power-on state of GPIO0 by the clock output on the PHY side, the PHY external oscillator is enabled using GPIO2 after ESP32 is powered up.
-    4. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without SPIRAM memory inside, e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
+    4. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without SPIRAM memory inside, e.g., the ESP32-WROOM-32D or ESP32-SOLO-1.
 
 
 Start Application Development
 -----------------------------
 
 Before powering up your ESP32-Ethernet-Kit, please make sure that the board is in good condition with no obvious signs of damage.
+
 
 Initial Setup
 ^^^^^^^^^^^^^

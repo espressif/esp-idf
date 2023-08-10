@@ -1,5 +1,6 @@
 ESP-WROVER-KIT V4.1 Getting Started Guide
 =========================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP-WROVER-KIT V4.1 development board and also provides information about its functionality and configuration options.
@@ -9,7 +10,7 @@ What You Need
 -------------
 
 * :ref:`ESP-WROVER-KIT V4.1 board <get-started-esp-wrover-kit-v4.1-board-front>`
-* USB 2.0 cable（A to Micro-B）
+* USB 2.0 cable (A to Micro-B)
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -129,7 +130,6 @@ The table below provides description in the following manner:
       - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown in figure :ref:`get-started-esp-wrover-kit-v4.1-board-back`.
 
 
-
 .. _get-started-esp-wrover-kit-v4.1-setup-options:
 
 Setup Options
@@ -173,8 +173,8 @@ In other cases, peripherals can coexist under certain conditions. This is applic
 For more details on which pins are shared among which peripherals, please refer to the table in the next section.
 
 
-Main I/O Connector / JP1
-^^^^^^^^^^^^^^^^^^^^^^^^
+Main I/O Connector/JP1
+^^^^^^^^^^^^^^^^^^^^^^
 
 The JP1 connector consists of 14x2 male pins whose functions are shown in the middle two "I/O" columns of the table below. The two "Shared With" columns on both sides describe where else on the board a certain GPIO is used.
 
@@ -275,7 +275,7 @@ Legend:
 .. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
 
 SPI Flash/JP2
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 ====  =============
 .     ESP32 Pin
@@ -300,7 +300,7 @@ SPI Flash/JP2
 .. _get-started-esp-wrover-kit-v4.1-jtag-header:
 
 JTAG/JP2
-^^^^^^^^^^
+^^^^^^^^
 
 ====  ==============  =============
 .     ESP32 Pin       JTAG Signal
@@ -316,7 +316,7 @@ JTAG/JP2
 .. _get-started-esp-wrover-kit-v4.1-camera-header:
 
 Camera/JP4
-^^^^^^^^^^^^
+^^^^^^^^^^
 
 ====  ==========  =============================
 .     ESP32 Pin   Camera Signal
@@ -379,7 +379,7 @@ microSD Card
 .. _get-started-esp-wrover-kit-v4.1-lcd-connector:
 
 LCD/U5
-^^^^^^^^
+^^^^^^
 
 ====  ==============  ===============
 .     ESP32 Pin       LCD Signal
@@ -420,6 +420,7 @@ Power up from USB port    Enable UART communication
 Do not install any other jumpers.
 
 Turn the **Power Switch** to ON, and the **5 V Power On LED** should light up.
+
 
 Now to Development
 ^^^^^^^^^^^^^^^^^^

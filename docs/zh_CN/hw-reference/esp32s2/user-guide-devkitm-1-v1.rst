@@ -9,9 +9,9 @@ ESP32-S2-DevKitM-1
 ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管脚均已引出至两侧排针，开发人员可根据实际需求，轻松通过跳线连接多种外围设备，同时也可将开发板插在面包板上使用。
 
 +----------------------+-----------------------+
-| |ESP32-S2-DevKitM-1| | |ESP32-S2-DevKitM-1U| | 
+| |ESP32-S2-DevKitM-1| | |ESP32-S2-DevKitM-1U| |
 +----------------------+-----------------------+
-|  ESP32-S2-DevKitM-1  |  ESP32-S2-DevKitM-1U  | 
+|  ESP32-S2-DevKitM-1  |  ESP32-S2-DevKitM-1U  |
 +----------------------+-----------------------+
 
 .. |ESP32-S2-DevKitM-1| image:: ../../../_static/esp32-s2-devkitm-1-v1-isometric.png
@@ -25,13 +25,16 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
 - `硬件版本`_：介绍硬件历史版本和已知问题，并提供链接至历史版本开发板的入门指南（如有）。
 - `相关文档`_: 列出了相关文档的链接。
 
+
 入门指南
 ========
 
 本节介绍了如何快速上手 ESP32-S2-DevKitM-1。开头部分介绍了 ESP32-S2-DevKitM-1，`开始开发应用`_ 小节介绍了怎样在 ESP32-S2-DevKitM-1 上烧录固件及相关准备工作。
 
+
 内含组件和包装
 --------------
+
 
 .. _user-guide-devkitm-1-v1-ordering-info:
 
@@ -77,7 +80,7 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
      - ESP32-S2-MINI-1
      - 4 MB
      - 2 MB
-     - PCB 板载天线     
+     - PCB 板载天线
    * - ESP32-S2-DevKitM-1RU
      - ESP32-S2-MINI-1U
      - 4 MB
@@ -87,6 +90,7 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
 
 .. [#] ESP32-S2-MINI-2 和 ESP32-S2-MINI-2U 模组使用 v1.0 版本芯片，其余模组使用 v0.0 版本芯片。更多关于芯片版本的信息，请参考 `《ESP32-S2 系列芯片勘误表》`_。
 
+
 零售订单
 ^^^^^^^^
 
@@ -94,12 +98,14 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
 
 零售订单请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
+
 批量订单
 ^^^^^^^^
 
 如批量购买，ESP32-S2-DevKitM-1 开发板将以大纸板箱包装。
 
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
+
 
 组件介绍
 --------
@@ -120,7 +126,7 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
 
     ESP32-S2-DevKitM-1U - 正面
 
-以下按照顺时针的顺序依次介绍开发板上的主要组件。 
+以下按照顺时针的顺序依次介绍开发板上的主要组件。
 
 .. list-table::
    :widths: 30 70
@@ -139,7 +145,7 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
    * - Reset Button（Reset 键）
      - 复位按键。
    * - Micro-USB（Micro-USB 接口）
-     - USB 接口。可用作开发板的供电电源或 PC 和 ESP32-S2FH4 芯片的通信接口。     
+     - USB 接口。可用作开发板的供电电源或 PC 和 ESP32-S2FH4 芯片的通信接口。
    * - Boot Button（Boot 键）
      - 下载按键。按住 **Boot** 键的同时按一下 **Reset** 键进入“固件下载”模式，通过串口下载固件。
    * - RGB LED
@@ -149,21 +155,24 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
    * - External Antenna Connector（外部天线连接器）
      - 仅 **ESP32-S2-MINI-2U** 和 **ESP32-S2-MINI-1U** 模组带有外部天线连接器。连接器尺寸，请参考模组规格书的 外部天线连接器尺寸章节。
 
+
 开始开发应用
 ------------
 
 通电前，请确保 ESP32-S2-DevKitM-1 完好无损。
+
 
 必备硬件
 ^^^^^^^^
 
 - ESP32-S2-DevKitM-1
 - USB 2.0 数据线（标准 A 型转 Micro-B 型）
-- 电脑 （Windows、Linux 或 macOS）
+- 电脑（Windows、Linux 或 macOS）
 
 .. 注解::
 
   请确保使用适当的 USB 数据线。部分数据线仅可用于充电，无法用于数据传输和编程。
+
 
 软件设置
 ^^^^^^^^
@@ -171,8 +180,9 @@ ESP32-S2-DevKitM-1 是乐鑫一款入门级开发板。板上模组大部分管�
 请前往 :doc:`../../get-started/index`，在 :ref:`get-started-step-by-step` 一节查看如何快速设置开发环境，将应用程序烧录至 ESP32-S2-DevKitM-1。
 
 .. 注解::
-    
+
     ESP32-S2 系列芯片仅支持 ESP-IDF master 分支或 v4.2 以上版本。
+
 
 硬件参考
 ========
@@ -190,16 +200,18 @@ ESP32-S2-DevKitM-1 的主要组件和连接方式如下图所示。
 
     ESP32-S2-DevKitM-1 （点击放大）
 
+
 电源选项
 ^^^^^^^^
 
-您可从以下三种供电方式中任选其一给 ESP32-S2-DevKitM-1 供电：
+以下任一供电方式均可给 ESP32-S2-DevKitM-1 供电：
 
 - Micro-USB 接口供电（默认）
 - 5V 和 GND 排针供电
 - 3V3 和 GND 排针供电
 
-建议选择第一种供电方式：Micro-USB 接口供电。
+建议选择第一种供电方式：micro USB 接口供电。
+
 
 .. _user-guide-devkitm-1-v1-header-blocks:
 
@@ -208,8 +220,10 @@ ESP32-S2-DevKitM-1 的主要组件和连接方式如下图所示。
 
 下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-devkitm-1-v1-board-front` 所示，排针的序号与 `ESP32-S2-DevKitM-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF)一致。
 
+
 J1
 ^^^
+
 ==== ====  =========   =========================================================================
 序号 名称  类型 [#]_    功能
 ==== ====  =========   =========================================================================
@@ -236,8 +250,10 @@ J1
 21   G      G          接地
 ==== ====  =========   =========================================================================
 
+
 J3
 ^^^
+
 ====  ====  =====  ========================================================
 序号  名称   类型    功能
 ====  ====  =====  ========================================================
@@ -264,10 +280,12 @@ J3
 21    18    I/O/T  RTC_GPIO18, GPIO18, U1RXD, ADC2_CH7, DAC_2, CLK_OUT3, RGB LED
 ====  ====  =====  ========================================================
 
-.. [#] P：电源；I：输入；O：输出；T：可设置为高阻。 
+.. [#] P：电源；I：输入；O：输出；T：可设置为高阻。
+
 
 管脚布局
 ^^^^^^^^
+
 .. figure:: ../../../_static/esp32-s2-devkitm-1-v1-pin-layout.png
     :align: center
     :scale: 15%
@@ -276,13 +294,16 @@ J3
 
     ESP32-S2-DevKitM-1 管脚布局（点击放大）
 
+
 硬件版本
 ==========
 
 无历史版本。
 
+
 相关文档
 ========
+
 * `ESP32-S2 系列芯片 v1.0 版本技术规格书`_ (PDF)
 * `ESP32-S2 系列芯片 v0.0 版本技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-S2 系列芯片勘误表》`_ (PDF)
@@ -291,7 +312,7 @@ J3
 * `ESP32-S2-DevKitM-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF)
 * `ESP32-S2-DevKitM-1 PCB 布局 <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_PCB_Layout.pdf>`_ (PDF)
 * `ESP32-S2-DevKitM-1 尺寸图 <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Dimensions.pdf>`_ (PDF)
-* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__ 
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__
 
 有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。
 

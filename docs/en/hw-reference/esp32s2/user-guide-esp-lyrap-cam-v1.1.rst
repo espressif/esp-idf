@@ -90,7 +90,6 @@ See Section :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` of the ESP32-
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
 
@@ -110,14 +109,14 @@ Hardware Revision Details
 =========================
 
 ESP-LyraP-CAM v1.1
---------------------
+------------------
 
 * Silk screen updated
 * No actual hardware updates
 
 
 ESP-LyraP-CAM v1.0
---------------------
+------------------
 
 :doc:`Initial release <user-guide-esp-lyrap-cam-v1.0>`
 

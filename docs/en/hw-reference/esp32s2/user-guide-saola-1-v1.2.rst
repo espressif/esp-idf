@@ -20,10 +20,12 @@ The document consists of the following major sections:
 - `Hardware Revision Details`_: Revision history, known issues, and links to user guides for previous versions (if any) of ESP32-S2-Saola-1.
 - `Related Documents`_: Gives links to related documentation.
 
+
 Getting Started
 ===============
 
 This section describes how to get started with ESP32-S2-Saola-1. It begins with a few introductory sections about the ESP32-S2-Saola-1, then Section `Start Application Development`_ provides instructions on how to get the ESP32-S2-Saola-1 ready and flash firmware into it.
+
 
 Overview
 --------
@@ -39,15 +41,17 @@ To cover a wide range of users' needs, ESP32-S2-Saola-1 supports:
 
 In this guide, we take ESP32-S2-Saola-1 equipped with ESP32-S2-WROVER as an example.
 
+
 Contents and Packaging
 ----------------------
 
-Retail orders
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order a few samples, each ESP32-S2-Saola-1 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
 For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
+
 
 Wholesale Orders
 ^^^^^^^^^^^^^^^^
@@ -55,6 +59,7 @@ Wholesale Orders
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
+
 
 Description of Components
 -------------------------
@@ -93,10 +98,12 @@ The key components of the board are described in a clockwise direction.
    * - RGB LED
      - Addressable RGB LED (WS2812), driven by GPIO18.
 
+
 Start Application Development
 -----------------------------
 
 Before powering up your ESP32-S2-Saola-1, please make sure that it is in good condition with no obvious signs of damage.
+
 
 Required Hardware
 ^^^^^^^^^^^^^^^^^
@@ -109,6 +116,7 @@ Required Hardware
 
   Be sure to use an appropriate USB cable. Some cables are for charging only and do not provide the needed data lines nor work for programming the boards.
 
+
 Software Setup
 ^^^^^^^^^^^^^^
 
@@ -117,6 +125,7 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 .. note::
 
     ESP32-S2 series of chips only supports ESP-IDF master or version v4.2 and higher.
+
 
 Hardware Reference
 ==================
@@ -134,6 +143,7 @@ A block diagram below shows the components of ESP32-S2-Saola-1 and their interco
 
     ESP32-S2-Saola-1 (click to enlarge)
 
+
 Power Supply Options
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -145,13 +155,16 @@ There are three mutually exclusive ways to provide power to the board:
 
 It is recommended to use the first option: Micro-USB Port.
 
+
 Header Block
 ------------
 
 The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J2 and J3). The pin header names are shown in :ref:`user-guide-saola-1-v1.2-board-front`. The numbering is the same as in the `ESP32-S2-Saola-1 Schematics`_ (PDF).
 
+
 J2
 ^^^
+
 ===  ====  ==========  ======================================
 No.  Name  Type [#]_    Function
 ===  ====  ==========  ======================================
@@ -178,8 +191,10 @@ No.  Name  Type [#]_    Function
 21   GND    G           Ground
 ===  ====  ==========  ======================================
 
+
 J3
 ^^^
+
 ===  ====  =====  ====================================
 No.  Name  Type   Function
 ===  ====  =====  ====================================
@@ -208,8 +223,10 @@ No.  Name  Type   Function
 
 .. [#] P: Power supply; I: Input; O: Output; T: High impedance.
 
+
 Pin Layout
 ^^^^^^^^^^^
+
 .. figure:: ../../../_static/esp32-s2_saola1-pinout.jpg
     :align: center
     :scale: 45%
@@ -218,10 +235,12 @@ Pin Layout
 
     ESP32-S2 Saola-1 Pin Layout (click to enlarge)
 
+
 Hardware Revision Details
 =========================
 
 This is the first revision of this board released.
+
 
 Related Documents
 =================

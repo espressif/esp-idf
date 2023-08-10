@@ -1,5 +1,6 @@
 ESP32-PICO-KIT V3 Getting Started Guide
 =======================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP32-PICO-KIT V3 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../../hw-reference/index`.

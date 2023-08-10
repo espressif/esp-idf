@@ -7,6 +7,7 @@ ESP32-Ethernet-Kit V1.0 入门指南
 
 :ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-b-v1.0>` 是一款以太网转 Wi-Fi 开发板，可为以太网设备赋予 Wi-Fi 连接功能。为了提供更灵活的电源选项，ESP32-Ethernet-Kit 也同时支持以太网供电 (PoE)。
 
+
 准备工作
 -------------
 
@@ -14,14 +15,15 @@ ESP32-Ethernet-Kit V1.0 入门指南
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
-您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+你可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+
 
 概述
 --------
 
 ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板。
 
-该开发板由以太网母板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+该开发板由以太网母板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙/Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
@@ -99,7 +101,7 @@ DC/DC 转换器               直流 5 V 转 3.3 V，输出电流高达 2 A。
 
 B 板连接器                 1 对 2 针排针，用于连接 :ref:`PoE 子板（B 板）<get-started-esp32-ethernet-kit-b-v1.0-layout>`。
 
-IP101GRI (PHY)            物理层 (PHY) 单端口10/100 快速以太网收发器 `IP101GRI`_ ，允许开发人员实现与以太网线缆的物理层连接。PHY 与 ESP32 通过简化媒体独立接口 (RMII) 实现连接。RMII 是 `媒体独立接口 (MII)`_ 的简化版本。PHY 可在 10/100 Mbps 速率下支持 IEEE 802.3 / 802.3u 标准。
+IP101GRI (PHY)            物理层 (PHY) 单端口 10/100 快速以太网收发器 `IP101GRI`_ ，允许开发人员实现与以太网线缆的物理层连接。PHY 与 ESP32 通过简化媒体独立接口 (RMII) 实现连接。RMII 是 `媒体独立接口 (MII)`_ 的简化版本。PHY 可在 10/100 Mbps 速率下支持 IEEE 802.3/802.3u 标准。
 
 RJ45 端口                  以太网数据传输端口。
 
@@ -333,6 +335,7 @@ GPIO 管脚分配
 
 ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 
+
 初始设置
 ^^^^^^^^^^^^^
 
@@ -346,17 +349,17 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至开发板。
 
 如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
 
-请务必在进入下一步前，确保您已完成上述所有步骤。
+在进入下一步前，请确保已完成上述所有步骤。
 
 
 配置与加载以太网示例
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`ESP32-Ethernet-Kit V1.0 开发板 <get-started-esp32-ethernet-kit-b-v1.0>` 使用的 **IP101GRI**。
+在完成开发环境设置和开发板测试后，即可配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`ESP32-Ethernet-Kit V1.0 开发板 <get-started-esp32-ethernet-kit-b-v1.0>` 使用的 **IP101GRI**。
 
 
 相关文档

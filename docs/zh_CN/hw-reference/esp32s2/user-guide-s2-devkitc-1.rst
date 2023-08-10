@@ -4,7 +4,7 @@ ESP32-S2-DevKitC-1
 
 :link_to_translation:`en: [English]`
 
-本指南将帮助您快速上手 ESP32-S2-DevKitC-1，并提供该款开发板的详细信息。
+本指南将帮助你快速上手 ESP32-S2-DevKitC-1，并提供该款开发板的详细信息。
 
 ESP32-S2-DevKitC-1 是一款入门级开发板，具备完整的 Wi-Fi 功能。板上模组大部分管脚均已引出至两侧排针，开发人员可根据实际需求，轻松通过跳线连接多种外围设备，同时也可将开发板插在面包板上使用。
 
@@ -22,10 +22,12 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，具备完整的 Wi-Fi 功能。
 - `硬件版本`_：介绍硬件历史版本和已知问题，并提供链接至历史版本开发板的入门指南（如有）。
 - `相关文档`_：列出了相关文档的链接。
 
+
 入门指南
 ========
 
 本小节将简要介绍 ESP32-S2-DevKitC-1，说明如何在 ESP32-S2-DevKitC-1 上烧录固件及相关准备工作。
+
 
 组件介绍
 --------
@@ -74,26 +76,30 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，具备完整的 Wi-Fi 功能。
 
 通电前，请确保 ESP32-S2-DevKitC-1 完好无损。
 
+
 必备硬件
 ^^^^^^^^
 
 - ESP32-S2-DevKitC-1
 - USB 2.0 数据线（标准 A 型转 Micro-B 型）
-- 电脑 （Windows、Linux 或 macOS）
+- 电脑（Windows、Linux 或 macOS）
 
 .. 注解::
 
   请确保使用适当的 USB 数据线。部分数据线仅可用于充电，无法用于数据传输和编程。
+
 
 硬件设置
 ^^^^^^^^
 
 通过 **USB 转 UART 接口** 或 **ESP32-S2 USB 接口** 连接开发板与电脑。在后续步骤中，默认使用 **USB 转 UART 接口**。
 
+
 软件设置
 ^^^^^^^^
 
 请前往 `ESP-IDF 快速入门 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/get-started/index.html>`_，在 `详细安装步骤 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/get-started/index.html#get-started-step-by-step>`_ 小节查看如何快速设置开发环境，将应用程序烧录至 ESP32-S2-DevKitC-1。
+
 
 内含组件和包装
 --------------
@@ -151,6 +157,7 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，具备完整的 Wi-Fi 功能。
 
 .. [#] ESP32-S2-SOLO-2 和 ESP32-S2-SOLO-2U 模组使用 v1.0 版本芯片，其余模组使用 v0.0 版本芯片。更多关于芯片版本的信息，请参考 `《ESP32-S2 系列芯片勘误表》`_。
 
+
 零售订单
 ^^^^^^^^
 
@@ -158,12 +165,14 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，具备完整的 Wi-Fi 功能。
 
 零售订单请前往 https://www.espressif.com/zh-hans/company/contact/buy-a-sample。
 
+
 批量订单
 ^^^^^^^^
 
 如批量购买，ESP32-S2-DevKitC-1 将以大纸板箱包装。
 
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
+
 
 硬件参考
 ========
@@ -181,14 +190,16 @@ ESP32-S2-DevKitC-1 的主要组件和连接方式如下图所示。
 
     ESP32-S2-DevKitC-1（点击放大）
 
+
 电源选项
 ^^^^^^^^
 
-您可从以下三种供电方式中任选其一给 ESP32-S2-DevKitC-1 供电：
+以下任一供电方式均可给 ESP32-S2-DevKitC-1 供电：
 
 - USB 转 UART 接口供电或 ESP32-S2 USB 接口供电（选择其一或同时供电），默认供电方式（推荐）
 - 5V 和 G (GND) 排针供电
 - 3V3 和 G (GND) 排针供电
+
 
 .. _user-guide-s2-devkitc-1-v1-header-blocks:
 
@@ -197,8 +208,10 @@ ESP32-S2-DevKitC-1 的主要组件和连接方式如下图所示。
 
 下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-s2-devkitc-1-v1-board-front` 所示，排针的序号与 `ESP32-S2-DevKitC-1 原理图`_ (PDF) 一致。
 
+
 J1
 ^^^
+
 ==== =========  =========   =========================================================================
 序号 名称       类型 [#]_    功能
 ==== =========  =========   =========================================================================
@@ -225,6 +238,7 @@ J1
 21   5V          P          5 V 电源
 22   G           G          接地
 ==== =========  =========   =========================================================================
+
 
 J3
 ^^^
@@ -259,8 +273,10 @@ J3
 .. [#] P：电源；I：输入；O：输出；T：可设置为高阻。
 .. [#] 搭载 ESP32-S2-SOLO-2 或 ESP32-S2-SOLO-2U 的开发板未上拉 GPIO18。
 
+
 管脚布局
 ^^^^^^^^
+
 .. figure:: ../../../_static/esp32-s2-devkitc-1-v1-pinout.png
     :align: center
     :scale: 45%
@@ -269,10 +285,12 @@ J3
 
     ESP32-S2-DevKitC-1 管脚布局（点击放大）
 
+
 硬件版本
 ==========
 
 无历史版本。
+
 
 相关文档
 ========

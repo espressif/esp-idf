@@ -1,5 +1,6 @@
 ESP-WROVER-KIT V4.1 入门指南
 =========================================
+
 :link_to_translation:`en:[English]`
 
 本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。
@@ -12,7 +13,7 @@ ESP-WROVER-KIT V4.1 入门指南
 * USB 2.0 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
-您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+你可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 
 概述
@@ -123,11 +124,10 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
       - 红绿蓝发光二极管，可由 PMW 控制。
     * - I/O 连接器
       - 板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
-    * - Micro SD 卡槽
+    * - microSD 卡槽
       - 适用于需要扩充数据存储空间或进行备份的应用开发场景。
     * - LCD 显示器
       - 支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`ESP-WROVER-KIT 开发板布局 -- 仰视图 <get-started-esp-wrover-kit-v4.1-board-back>`。
-
 
 
 .. _get-started-esp-wrover-kit-v4.1-setup-options:
@@ -173,7 +173,7 @@ ESP32 模组的部分管脚或终端已被板上组件占用或用于外部硬�
 更多外设共享管脚的介绍，请见下一章节中的表格。
 
 
-主要 I/O 连接器 / JP1
+主要 I/O 连接器/JP1
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 列的介绍。两侧的“共用”列则介绍了这些管脚在板上的其他用途。
@@ -290,7 +290,7 @@ SPI Flash/JP2
 
 .. note::
 
-    SPI Flash 管脚用于访问内部闪存。因此，这些管脚不支持连接外部 SPI 设备，仅用于监测或高级选项。
+    SPI flash 管脚用于访问内部闪存。因此，这些管脚不支持连接外部 SPI 设备，仅用于监测或高级选项。
 
 .. important::
 
@@ -421,12 +421,13 @@ USB 供电                   使能 UART 通信
 
 打开 **电源开关**，**5V Power On LED** 应点亮。
 
+
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至你的开发板。
 
-您可以在 `IDF 组件注册器 <https://components.espressif.com>`_ 中下载板级支持包 (BSP)。
+你可以在 `ESP-IDF 组件注册器 <https://components.espressif.com>`_ 中下载板级支持包 (BSP)。
 
 以下链接提供了与 ESP-WROVER-KIT 开发板硬件相关的示例：
 

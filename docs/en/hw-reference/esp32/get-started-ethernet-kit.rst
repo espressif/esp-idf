@@ -17,6 +17,7 @@ The :ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-v1.2>` is an Ethern
 
     ESP32-Ethernet-Kit V1.2 Overview (click to enlarge)
 
+
 What You Need
 -------------
 
@@ -32,7 +33,7 @@ Overview
 
 ESP32-Ethernet-Kit is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.2-layout>` contains Bluetooth/Wi-Fi dual-mode ESP32-WROVER-E module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The `PoE board (B)`_ provides power over Ethernet functionality. The A board can work independently, without the board B installed.
+It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.2-layout>` contains Bluetooth®/Wi-Fi dual-mode ESP32-WROVER-E module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The `PoE board (B)`_ provides power over Ethernet functionality. The A board can work independently, without the board B installed.
 
 .. _get-started-esp32-ethernet-kit-v1.2:
 
@@ -127,7 +128,8 @@ The table below provides description starting from the picture's top right corne
 
 .. note::
 
-    Automatic firmware download is supported. If following steps and using software described in Section `Start Application Development`_, users don't need to do any operation with BOOT button or EN button.
+    Automatic firmware download is supported. If following steps and using software described in Section `Start Application Development`_, users do not need to do any operation with BOOT button or EN button.
+
 
 PoE Board (B)
 ^^^^^^^^^^^^^
@@ -160,8 +162,8 @@ To take advantage of the PoE functionality the **RJ45 Port** of the Ethernet boa
   * - External Power Terminals
     - Optional power supply (26.6 ~ 54 V) to the PoE board (B).
 
-.. _get-started-esp32-ethernet-kit-v1.2-setup-options:
 
+.. _get-started-esp32-ethernet-kit-v1.2-setup-options:
 
 Setup Options
 -------------
@@ -187,7 +189,7 @@ DIP SW   GPIO Pin
 RMII Clock Selection
 ^^^^^^^^^^^^^^^^^^^^
 
-The ethernet MAC and PHY under RMII working mode need a common 50 MHz reference clock (i.e. RMII clock) that can be provided either externally, or generated from internal ESP32 APLL (not recommended). 
+The ethernet MAC and PHY under RMII working mode need a common 50 MHz reference clock (i.e., RMII clock) that can be provided either externally, or generated from internal ESP32 APLL (not recommended).
 
 .. note::
 
@@ -223,7 +225,7 @@ Another option is to source the RMII Clock from internal ESP32 APLL, see figure 
 
     RMII Clock from ESP Internal APLL
 
-To implement this option, users need to remove or add some RC components on the board. For details please refer to `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_, sheet 2, location D2. Please note that if the APLL is already used for other purposes (e.g. I2S peripheral), then you have no choice but use an external RMII clock.
+To implement this option, users need to remove or add some RC components on the board. For details please refer to `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_, sheet 2, location D2. Please note that if the APLL is already used for other purposes (e.g., I2S peripheral), then you have no choice but use an external RMII clock.
 
 
 GPIO Allocation
@@ -262,7 +264,7 @@ No.   ESP32 Pin (MAC)   IP101GRI (PHY)
 
 .. note::
 
-    The allocation of all pins under the ESP32's *RMII Interface* is fixed and cannot be changed either through IO MUX or GPIO Matrix. REF_CLK can only be selected from GPIO0, GPIO16 or GPIO17 and it can not be changed through GPIO Matrix. 
+    The allocation of all pins under the ESP32's *RMII Interface* is fixed and cannot be changed either through IO MUX or GPIO Matrix. REF_CLK can only be selected from GPIO0, GPIO16 or GPIO17 and it can not be changed through GPIO Matrix.
 
 
 GPIO Header 1
@@ -304,7 +306,7 @@ No.   ESP32 Pin   Comments
 
 .. note::
 
-    1. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-E module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
+    1. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-E module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g., the ESP32-WROOM-32D or ESP32-SOLO-1.
 
     2. Functionality depends on the settings of the `Function Switch`_.
 
@@ -346,7 +348,7 @@ GPIO Allocation Summary
 
     1. To prevent the power-on state of the GPIO0 from being affected by the clock output on the PHY side, the RESET_N signal to PHY defaults to low, turning the clock output off. After power-on you can control RESET_N with GPIO5 to turn the clock output on. See also `RMII Clock Sourced Externally by PHY`_. For PHYs that cannot turn off the clock output through RESET_N, it is recommended to use a crystal module that can be disabled/enabled externally. Similarly like when using RESET_N, the oscillator module should be disabled by default and turned on by ESP32 after power-up. For a reference design please see `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_.
 
-    2. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-E module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
+    2. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-E module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g., the ESP32-WROOM-32D or ESP32-SOLO-1.
 
 
 Start Application Development
@@ -382,7 +384,7 @@ After setting up the development environment and testing the board, you can conf
 Summary of Changes from ESP32-Ethernet-Kit V1.1
 -----------------------------------------------
 
-* Correct the placement of GPIO pin number marking on the board’s silkscreen besides the DIP switch.
+* Correct the placement of GPIO pin number marking on the board's silkscreen besides the DIP switch.
 * Values of C1, C2, C42, and C43 are updated to 20 pF. For more information, please check `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_.
 * Replace ESP32-WROVER-B with ESP32-WROVER-E.
 

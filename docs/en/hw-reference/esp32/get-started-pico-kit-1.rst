@@ -1,14 +1,14 @@
 ESP32-PICO-KIT-1
-*****************
+****************
 
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
-===========
+========
 
 ESP32-PICO-KIT-1 is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-The core of this board is `ESP32-PICO-V3 <https://www.espressif.com/en/products/socs>`_ - a System-in-Package (SiP) module with complete Wi-Fi and Bluetooth functionalities. Compared to other ESP32 modules, ESP32-PICO-V3 integrates the following peripheral components in one single package, which otherwise would need to be installed separately:
+The core of this board is `ESP32-PICO-V3 <https://www.espressif.com/en/products/socs>`_ - a System-in-Package (SiP) module with complete Wi-Fi and Bluetooth® functionalities. Compared to other ESP32 modules, ESP32-PICO-V3 integrates the following peripheral components in one single package, which otherwise would need to be installed separately:
 
 - 40 MHz crystal oscillator
 - 4 MB flash
@@ -39,19 +39,21 @@ This guide covers:
 
 - `Getting Started`_: Provides an overview of the ESP32-PICO-KIT-1 and software setup instructions to get started.
 - `Contents and Packaging`_: Provides information about packaging and contents for retail and wholesale orders.
-- `Hardware Reference`_: Provides more detailed information about the ESP32-PICO-KIT-1’s hardware.
+- `Hardware Reference`_: Provides more detailed information about the ESP32-PICO-KIT-1's hardware.
 - `Hardware Revision Details`_: Covers revision history, known issues, and links to user guides for previous versions of the ESP32-PICO-KIT-1.
 - `Related Documents`_: Gives links to related documentation.
 
+
 Getting Started
-================
+===============
 
 This section describes how to get started with the ESP32-PICO-KIT-1. It begins with a few introductory sections about the ESP32-PICO-KIT-1, then Section `Start Application Development`_ provides instructions on how to flash firmware onto the ESP32-PICO-KIT-1.
+
 
 .. _get-started-pico-kit-1-board-front:
 
 Description of Components
---------------------------
+-------------------------
 
 The following figure and the table below describe the key components, interfaces, and controls of the ESP32-PICO-KIT-1 board.
 
@@ -89,31 +91,34 @@ Below is the description of the items identified in the figure starting from the
    * - EN Button
      - Reset button.
 
+
 Start Application Development
 -----------------------------
 
 Before powering up your ESP32-PICO-KIT-1, please make sure that the board is in good condition with no obvious signs of damage.
 
+
 Required Hardware
-"""""""""""""""""""
+"""""""""""""""""
 
 - 1 x ESP32-PICO-KIT-1
 - 1 x USB 2.0 A to Micro B cable
 - 1 x Computer running Windows, Linux, or macOS
 
+
 .. _user-guide-pico-kit-1-software-setup:
 
 Software Setup
-""""""""""""""""
+""""""""""""""
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment.
 
 
 Contents and Packaging
-=======================
+======================
 
 Retail Orders
----------------
+-------------
 
 If you order one or several samples of the board, each ESP32-PICO-KIT-1 development board comes in an individual package.
 
@@ -121,17 +126,18 @@ For retail orders, please go to https://www.espressif.com/en/contact-us/get-samp
 
 
 Wholesale Orders
-------------------
+----------------
 
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
+
 Hardware Reference
-===================
+==================
 
 Block Diagram
---------------
+-------------
 
 The block diagram below shows the main components of ESP32-PICO-KIT-1 and their interconnections.
 
@@ -142,6 +148,7 @@ The block diagram below shows the main components of ESP32-PICO-KIT-1 and their 
     :figclass: align-center
 
     ESP32-PICO-KIT-1 Block Diagram (click to enlarge)
+
 
 Power Supply Options
 --------------------
@@ -162,8 +169,9 @@ Pin Descriptions
 
 The two tables below provide the **Name** and **Function** of I/O header pins on both sides of the board, see :ref:`get-started-pico-kit-1-board-front`. The pin numbering and header names are the same as in the schematic given in `Related Documents`_.
 
+
 Header J2
-""""""""""""
+"""""""""
 
 .. list-table::
    :widths: 5 5 5 35
@@ -340,11 +348,11 @@ Header J3
     2. 32.768 kHz crystal oscillator:
        a) input
        b) output
-    3. The operating voltage of ESP32-PICO-KIT-1’s embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should be pulled down during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
+    3. The operating voltage of ESP32-PICO-KIT-1's embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should be pulled down during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
 
 
 Pin Layout
-""""""""""""
+""""""""""
 .. figure:: ../../../_static/esp32-pico-kit-1-pinout.png
     :align: center
     :scale: 50%
@@ -353,13 +361,15 @@ Pin Layout
 
     ESP32-PICO-KIT-1 Pin Layout(click to enlarge)
 
+
 Hardware Revision Details
 =========================
 
 No previous versions available.
 
+
 Related Documents
-===================
+=================
 
 * `ESP32-PICO-V3 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-pico-v3_datasheet_en.pdf>`_ (PDF)
 * `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_

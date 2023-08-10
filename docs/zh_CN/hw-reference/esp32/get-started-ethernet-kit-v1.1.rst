@@ -15,7 +15,7 @@ ESP32-Ethernet-Kit V1.1 入门指南
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
-您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+你可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 
 概述
@@ -23,7 +23,7 @@ ESP32-Ethernet-Kit V1.1 入门指南
 
 ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板。
 
-它由 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 和 `PoE 子板（B 板）`_ 两部分组成。其中 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 集成蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 Mbps 快速以太网收发器 (PHY) IP101GRI。`PoE 子板（B 板）`_ 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+它由 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 和 `PoE 子板（B 板）`_ 两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.1-layout>` 集成蓝牙/Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 Mbps 快速以太网收发器 (PHY) IP101GRI。`PoE 子板（B 板）`_ 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
 .. _get-started-esp32-ethernet-kit-v1.1:
 
@@ -188,7 +188,7 @@ RMII 工作模式下的以太网 MAC 和 PHY 需要一个公共的 50 MHz 同步
 PHY 侧提供 RMII 时钟
 """""""""""""""""""""""""""""
 
-ESP32-Ethernet-Kit 默认配置为 IP101GRI 的 50M_CLKO 信号线提供 RMII 时钟，该时钟信号由 PHY 外侧连接的 25MHz 无源晶振经过倍频产生。详情请参见下图。
+ESP32-Ethernet-Kit 默认配置为 IP101GRI 的 50M_CLKO 信号线提供 RMII 时钟，该时钟信号由 PHY 外侧连接的 25 MHz 无源晶振经过倍频产生。详情请参见下图。
 
 .. figure:: ../../../_static/esp32-ethernet-kit-rmii-clk-from-phy.png
     :align: center
@@ -335,7 +335,7 @@ GPIO 管脚分配总结
 
 .. note::
 
-    1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，您可通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_。
+    1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，可以通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_。
 
     2. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-B 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
 
@@ -359,15 +359,15 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 正式开始开发
 ^^^^^^^^^^^^^
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至你的开发板。
 
-请务必在进入下一步前，确保您已完成上述所有步骤。
+在进入下一步前，请确保已完成上述所有步骤。
 
 
 配置与加载以太网示例
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.1` 开发板使用的 **IP101GRI** 。
+在完成开发环境设置和开发板测试后，即可配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.1` 开发板使用的 **IP101GRI** 。
 
 
 针对 ESP32-Ethernet-Kit V1.0 的主要修改
@@ -375,9 +375,9 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 
 * 原 GPIO0 反相后时钟提供给 PHY 方案改为由 PHY 侧外接无源晶振，提供时钟给 GPIO0。原用于控制有源晶振的 OSC_EN 的 IO2 释放，可用作其他用途。
 * 为防止 ESP32 侧 GPIO0 的上电状态受到 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，关闭 PHY 侧时钟输出。而后可通过 GPIO5 控制 RESET_N 打开该时钟输出。
-* 移除 FT2232H 芯片的外部 SPI Flash U6。
+* 移除 FT2232H 芯片的外部 SPI flash U6。
 * 移除流控的测试排针 J4。
-* 移除 nTRST JTAG信号，相应的 GPIO4 可用作其他用途。
+* 移除 nTRST JTAG 信号，相应的 GPIO4 可用作其他用途。
 * GPIO15 线上的上拉电阻 R68 移至 JTAG 的 MTDO 侧。
 * 为了加强 A 板和 B 板连接间的防呆设计（减少反向插入 B 板的机会），将原先 A 板上的 2 排 4 针排针改为 1 排 4 针排母和 1 排 4 针排针。相应的 4 针排针排和排母排则安装在 B 板上。
 

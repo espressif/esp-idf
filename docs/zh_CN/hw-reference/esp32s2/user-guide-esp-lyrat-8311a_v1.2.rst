@@ -10,7 +10,7 @@ ESP-LyraT-8311A v1.2
 
 目前，ESP-LyraT-8311A v1.2 扩展板正在搭配 :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2` 销售。
 
-ESP-LyraT-8311A 扩展板可为您的主板增加音频处理功能。
+ESP-LyraT-8311A 扩展板可为你的主板增加音频处理功能。
 
 - 音频播放/录音
 - 音频信号处理
@@ -40,6 +40,7 @@ ESP-LyraT-8311A 扩展板有多种使用方式。该应用程序包括语音用�
 ====
 
 ESP-LyraT-8311A 主要用于音频应用，但也可根据实际需求用作它用。
+
 
 组件描述
 --------
@@ -85,7 +86,6 @@ ESP-LyraT-8311A 主要用于音频应用，但也可根据实际需求用作它�
      - ES8311 音频 ADC 和 DAC，可转换麦克风拾音的模拟信号；或转换数字信号，使其可通过扬声器或耳机进行播放
 
 
-
 应用程序开发
 ------------
 
@@ -113,7 +113,7 @@ ESP-LyraT-8311A 上电前，请首先确认开发板完好无损。
 软件设置
 ^^^^^^^^
 
-请根据您的具体应用，参考以下部分：
+请根据你的具体应用，参考以下部分：
 
 * ESP-ADF（乐鑫音频开发框架）的用户，请前往 `ESP-ADF 入门指南 <https://docs.espressif.com/projects/esp-adf/en/latest/get-started/index.html#about-esp-adf>`_。
 * ESP32-IDF（乐鑫 IoT 开发框架）的用户，请前往 ESP32-S2-Kaluga-1 开发套件用户指南 :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup` 章节。
@@ -121,7 +121,6 @@ ESP-LyraT-8311A 上电前，请首先确认开发板完好无损。
 
 硬件参考
 ========
-
 
 功能框图
 --------

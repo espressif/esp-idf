@@ -1,6 +1,6 @@
-===================
+==================
 ESP32-S3-DevKitC-1
-===================
+==================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -8,7 +8,7 @@ The latest version: :doc:`user-guide-devkitc-1`
 
 This user guide will help you get started with ESP32-S3-DevKitC-1 and will also provide more in-depth information.
 
-The ESP32-S3-DevKitC-1 is an entry-level development board equipped with ESP32-S3-WROOM-1, ESP32-S3-WROOM-1U, or ESP32-S3-WROOM-2, a general-purpose Wi-Fi + Bluetooth® LE MCU module that integrates complete Wi-Fi and Bluetooth LE functions.
+The ESP32-S3-DevKitC-1 is an entry-level development board equipped with ESP32-S3-WROOM-1, ESP32-S3-WROOM-1U, or ESP32-S3-WROOM-2, a general-purpose Wi-Fi + Bluetooth® Low Energy MCU module that integrates complete Wi-Fi and Bluetooth Low Energy functions.
 
 Most of the I/O pins on the module are broken out to the pin headers on both sides of this board for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-S3-DevKitC-1 on a breadboard.
 
@@ -53,7 +53,7 @@ The key components of the board are described in a counter-clockwise direction.
    * - Key Component
      - Description
    * - ESP32-S3-WROOM-1/1U/2
-     - ESP32-S3-WROOM-1, ESP32-S3-WROOM-1U, and ESP32-S3-WROOM-2 are powerful, generic Wi-Fi + Bluetooth LE MCU modules that have a rich set of peripherals. They provide acceleration for neural network computing and signal processing workloads. ESP32-S3-WROOM-1 and ESP32-S3-WROOM-2 comes with a PCB antenna. ESP32-S3-WROOM-1U comes with an external antenna connector.
+     - ESP32-S3-WROOM-1, ESP32-S3-WROOM-1U, and ESP32-S3-WROOM-2 are powerful, generic Wi-Fi + Bluetooth Low Energy MCU modules that have a rich set of peripherals. They provide acceleration for neural network computing and signal processing workloads. ESP32-S3-WROOM-1 and ESP32-S3-WROOM-2 comes with a PCB antenna. ESP32-S3-WROOM-1U comes with an external antenna connector.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
    * - Pin Headers
@@ -109,10 +109,10 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 
 
 Contents and Packaging
------------------------
+----------------------
 
 Ordering Information
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 The development board has a variety of variants to choose from, as shown in the table below.
 
@@ -170,6 +170,7 @@ The development board has a variety of variants to choose from, as shown in the 
 
   In the table above, QD stands for Quad SPI and OT stands for Octal SPI.
 
+
 Retail Orders
 ^^^^^^^^^^^^^
 
@@ -179,21 +180,18 @@ For retail orders, please go to https://www.espressif.com/en/company/contact/buy
 
 
 Wholesale Orders
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 
-
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
-
 
 The block diagram below shows the components of ESP32-S3-DevKitC-1 and their interconnections.
 
@@ -206,7 +204,7 @@ The block diagram below shows the components of ESP32-S3-DevKitC-1 and their int
 
 
 Power Supply Options
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 There are three mutually exclusive ways to provide power to the board:
 
@@ -214,10 +212,11 @@ There are three mutually exclusive ways to provide power to the board:
 - 5V and G (GND) pins
 - 3V3 and G (GND) pins
 
+
 .. _user-guide-s3-devkitc-1-v1-header-blocks:
 
 Header Block
--------------
+------------
 
 The two tables below provide the **Name** and **Function** of the pins on both sides of the board (J1 and J3). The pin names are shown in :ref:`user-guide-s3-devkitc-1-v1-board-front`. The numbering is the same as in the `Board Schematic <https://dl.espressif.com/dl/SCH_ESP32-S3-DEVKITC-1_V1_20210312C.pdf>`_ (PDF).
 
@@ -291,8 +290,7 @@ For description of function names, please refer to `Chip Datasheet <https://www.
 
 
 Pin Layout
-^^^^^^^^^^^
-
+^^^^^^^^^^
 
 .. figure:: ../../../_static/ESP32-S3_DevKitC-1_pinlayout.jpg
     :align: center

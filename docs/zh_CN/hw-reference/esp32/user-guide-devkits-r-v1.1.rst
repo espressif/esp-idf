@@ -34,7 +34,6 @@ ESP32-DevKitS(-R) 包括两款开发板，分别是 ESP32-DevKitS 和 ESP32-DevK
 概述
 ----
 
-
 ESP32-DevKitS(-R) 是乐鑫专为 ESP32 设计的烧录底板，无需将 ESP32 模组与电源和信号线焊接便可进行烧录。ESP32-DevKitS(-R) 搭载模组后，可作为类似 ESP32-DevKitC 的小型开发板使用。
 
 ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适配不同的 ESP32 模组。
@@ -108,7 +107,7 @@ ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适�
 
 - 任选一款 ESP32 模组
 - USB 2.0 数据线（标准 A 型转 Micro-B 型）
-- 电脑 （Windows、Linux 或 macOS）
+- 电脑（Windows、Linux 或 macOS）
 
 
 硬件设置
@@ -119,7 +118,6 @@ ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适�
 - 将模组轻放到 ESP32-DevKitS(-R) 烧录底板上。确保模组上方的邮票孔与底板上的引脚弹簧对齐。
 - 将模组向下压，听到“咔哒”一声即说明模组已经压入底板。
 - 检查所有引脚弹簧是否均已卡进邮票孔中。如发现错位，可使用镊子将引脚弹簧拨入邮票孔中。
-
 
 
 软件设置
@@ -133,7 +131,7 @@ ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适�
 备选方式
 ++++++++
 
-Windows 用户也可以使用 `Flash 下载工具 <https://www.espressif.com/zh-hans/support/download/other-tools?keys=FLASH+>`_ 烧录二进制文件。请下载该工具、解压并参照 *doc* 文件夹内的使用指南。
+Windows 用户也可以使用 `flash 下载工具 <https://www.espressif.com/zh-hans/support/download/other-tools?keys=FLASH+>`_ 烧录二进制文件。请下载该工具、解压并参照 *doc* 文件夹内的使用指南。
 
     .. 注解::
          1. 烧录二进制文件时需将 ESP32 芯片设置成固件下载模式。这一步骤可由烧录工具自动执行，也可按住 Boot 按键并点按 EN 按键手动执行。
@@ -180,7 +178,6 @@ Windows 用户也可以使用 `Flash 下载工具 <https://www.espressif.com/zh-
 硬件参考
 ========
 
-
 功能框图
 --------
 
@@ -195,11 +192,10 @@ ESP32-DevKitS(-R) 的主要组件和连接方式如下图所示。
     ESP32-DevKitS(-R)（点击放大）
 
 
-
 电源选项
 ^^^^^^^^
 
-您可从以下三种供电方式中任选其一给 ESP32-DevKitS(-R) 供电：
+以下任一供电方式均可给 ESP32-DevKitS(-R) 供电：
 
 - Micro USB 端口供电（默认）
 - 5V 和 GND 管脚供电

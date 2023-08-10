@@ -41,6 +41,7 @@ Overview
 
 The ESP-LyraT-8311A is mainly designed for audio applications. However, you can use your creativity to come up with any other use cases.
 
+
 Description of Components
 -------------------------
 
@@ -85,7 +86,6 @@ The description of components starts from the top right corner and then goes clo
      - ES8311 audio ADC and DAC; it can convert the analog signal picked up by the microphone or convert digital signal to play it back through a speaker or headphones
 
 
-
 Start Application Development
 -----------------------------
 
@@ -122,7 +122,6 @@ Depending on your application, see:
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
 
@@ -149,6 +148,7 @@ ESP-LyraT-8311A v1.2
 --------------------
 
 :doc:`Initial release <user-guide-esp-lyrat-8311a_v1.2>`
+
 
 Related Documents
 =================

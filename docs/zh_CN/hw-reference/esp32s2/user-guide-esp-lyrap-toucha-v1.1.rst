@@ -13,7 +13,7 @@ ESP-LyraP-TouchA v1.1
 * :doc:`user-guide-esp32-s2-kaluga-1-kit`
 * :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2`
 
-ESP-LyraP-TouchA 可为您的主板增加触摸按键功能。
+ESP-LyraP-TouchA 可为你的主板增加触摸按键功能。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-toucha-v1.1-3d.png
     :align: center
@@ -89,7 +89,6 @@ ESP-LyraP-TouchA 上电前，请首先确认开发板完好无损。
 
 硬件参考
 ========
-
 
 功能框图
 --------

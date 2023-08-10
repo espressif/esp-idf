@@ -10,7 +10,7 @@ ESP-LyraP-CAM v1.0
 
 目前，ESP-LyraP-CAM v1.0 扩展板正在搭配 :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2` 销售。
 
-ESP-LyraP-CAM 可为您的主板增加摄像头功能。
+ESP-LyraP-CAM 可为你的主板增加摄像头功能。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-cam-v1.0-3d.png
     :align: center
@@ -30,7 +30,7 @@ ESP-LyraP-CAM 可为您的主板增加摄像头功能。
 概述
 ====
 
-ESP-LyraP-CAM 扩展板可为您的主板增加一个摄像头。
+ESP-LyraP-CAM 扩展板可为你的主板增加一个摄像头。
 
 
 组件描述
@@ -87,7 +87,6 @@ ESP-LyraP-CAM 上电前，请首先确认开发板完好无损。
 
 硬件参考
 ========
-
 
 功能框图
 --------

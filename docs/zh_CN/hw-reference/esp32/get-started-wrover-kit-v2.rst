@@ -1,5 +1,6 @@
 ESP-WROVER-KIT V2 入门指南
 ===========================================
+
 :link_to_translation:`en:[English]`
 
 本指南介绍了如何开始使用 ESP-WROVER-KIT V2 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见 :doc:`../../hw-reference/index`。
@@ -12,7 +13,7 @@ ESP-WROVER-KIT V2 入门指南
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
-您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+你可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 
 概述
@@ -169,10 +170,11 @@ USB 供电                   使能 UART 通信
 
 打开 **电源开关**，**5V Power On LED** 应点亮。
 
+
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至你的开发板。
 
 
 相关文档
