@@ -660,6 +660,13 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
             break;
         }
 
+        ret = esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "esp_ble_gattc_register_callback failed!");
+            break;
+        }
+
         ret = esp_ble_gattc_app_register(0);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "esp_ble_gattc_app_register failed!");

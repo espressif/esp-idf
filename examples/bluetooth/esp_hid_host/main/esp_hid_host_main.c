@@ -138,9 +138,6 @@ void app_main(void)
     ESP_ERROR_CHECK( ret );
     ESP_LOGI(TAG, "setting hid gap, mode:%d", HID_HOST_MODE);
     ESP_ERROR_CHECK( esp_hid_gap_init(HID_HOST_MODE) );
-#if CONFIG_BT_BLE_ENABLED
-    ESP_ERROR_CHECK( esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler) );
-#endif /* CONFIG_BT_BLE_ENABLED */
     esp_hidh_config_t config = {
         .callback = hidh_callback,
         .event_stack_size = 4096,
