@@ -1567,6 +1567,21 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
+.rules:build:macos:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-macos
+    - <<: *if-label-macos_test
+    - <<: *if-dev-push
+      changes: *patterns-build_macos
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+
 .rules:build:target_test:
   rules:
     - <<: *if-revert-branch
