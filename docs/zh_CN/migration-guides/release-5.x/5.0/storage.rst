@@ -26,7 +26,7 @@
 
    请根据项目的实际情况，更新相应的 ``REQUIRES`` 或是 ``PRIV_REQUIRES`` 部分。上述代码片段仅为范例。
 
-如果问题仍未解决，请联系我们，我们将协助您进行代码迁移。
+如果问题仍未解决，请联系我们，我们将协助你进行代码迁移。
 
 
 SDMMC/SDSPI
@@ -58,7 +58,7 @@ VFS
 函数签名更改
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-以下函数现将返回 ``esp_err_t``，而非 ``void`` 或 ``nvs_iterator_t``。此前，当参数无效或内部出现问题时，这些函数将 ``assert()`` 或返回 ``nullptr``。通过返回 ``esp_err_t``，您将获得更加实用的错误报告。
+以下函数现将返回 ``esp_err_t``，而非 ``void`` 或 ``nvs_iterator_t``。此前，当参数无效或内部出现问题时，这些函数将 ``assert()`` 或返回 ``nullptr``。通过返回 ``esp_err_t``，你将获得更加实用的错误报告。
 
 - :cpp:func:`nvs_entry_find`
 - :cpp:func:`nvs_entry_next`
@@ -108,9 +108,9 @@ ROM SPI flash
 
 在 v5.0 之前的版本中，ROM SPI flash 函数一般通过 ``esp32**/rom/spi_flash.h`` 得以体现。因此，为支持不同 ESP 芯片而编写的代码可能会填充不同目标的 ROM 头文件。此外，并非所有 API 都可以在全部的 ESP 芯片上使用。
 
-现在，常用 API 被提取至 ``esp_rom_spiflash.h``。尽管这不能算作重大变更，我们强烈建议您仅使用此头文件中的函数（即以 ``esp_rom_spiflash`` 为前缀并包含在 ``esp_rom_spiflash.h`` 中），以获得不同 ESP 芯片之间更佳的交叉兼容性。
+现在，常用 API 已提取至 ``esp_rom_spiflash.h``。尽管这不能算作重大变更，我们强烈建议仅使用此头文件中的函数（即以 ``esp_rom_spiflash`` 为前缀并包含在 ``esp_rom_spiflash.h`` 中），以获得不同 ESP 芯片之间更佳的交叉兼容性。
 
-为了提高 ROM SPI flash API 的可读性，以下函数也被重命名：
+为了提高 ROM SPI flash API 的可读性，以下函数也进行了重命名：
 
 - ``esp_rom_spiflash_lock()`` 更名为 ``esp_rom_spiflash_set_bp()``
 - ``esp_rom_spiflash_unlock()`` 更名为 ``esp_rom_spiflash_clear_bp()``
@@ -118,7 +118,7 @@ ROM SPI flash
 SPI flash 驱动
 ^^^^^^^^^^^^^^^^^^^^^^
 
-``esp_flash_speed_t`` ``enum`` 类型现已弃用。现在，您可以直接将实际时钟频率值传递给 flash 配置结构。下为配置 80MHz flash 频率的示例：
+``esp_flash_speed_t`` ``enum`` 类型现已弃用。现在，可以直接将实际时钟频率值传递给 flash 配置结构。下为配置 80 MHz flash 频率的示例：
 
 .. code-block:: c
   
@@ -131,7 +131,7 @@ SPI flash 驱动
 旧版 SPI flash 驱动
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-为了使 SPI flash 驱动更为稳定，v5.0 已经删除旧版 SPI flash 驱动。旧版 SPI flash 驱动程序是指自 v3.0 以来的默认 SPI flash 驱动程序，以及自 v4.0 以来启用配置选项 ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` 的 SPI flash 驱动。从 v5.0 开始，我们将不再支持旧版 SPI flash 驱动程序。因此，旧版驱动 API 和 ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` 配置选项均被删除，请改用新 SPI flash 驱动的 API。
+为了使 SPI flash 驱动更为稳定，v5.0 已经删除旧版 SPI flash 驱动。旧版 SPI flash 驱动程序是指自 v3.0 以来的默认 SPI flash 驱动程序，以及自 v4.0 以来启用配置选项 ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` 的 SPI flash 驱动。从 v5.0 开始，我们将不再支持旧版 SPI flash 驱动程序。因此，旧版驱动 API 和 ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` 配置选项均已删除，请改用新 SPI flash 驱动的 API。
 
 .. list-table::
     :widths: 50 50
@@ -154,6 +154,6 @@ SPI flash 驱动
 
 .. note::
 
-    带有前缀 ``esp_flash`` 的新函数接受额外的 ``esp_flash_t*`` 参数。您可以直接将其设置为 NULL，从而使函数运行主 flash (``esp_flash_default_chip``)。
+    带有前缀 ``esp_flash`` 的新函数接受额外的 ``esp_flash_t*`` 参数。你可以直接将其设置为 NULL，从而使函数运行主 flash (``esp_flash_default_chip``)。
 
 由于系统函数不再是公共函数， ``esp_spi_flash.h`` 头文件已停止使用。若要使用 flash 映射 API，请使用 ``spi_flash_mmap.h``。

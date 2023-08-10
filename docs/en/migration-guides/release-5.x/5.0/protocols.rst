@@ -15,7 +15,7 @@ For more details about Mbed TLS's migration from version 2.x to version 3.0 or g
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most structure fields are now private
+Most Structure Fields Are Now Private
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Direct access to fields of structures (``struct`` types) declared in public headers is no longer supported.
@@ -37,6 +37,7 @@ Deprecated Functions Were Removed from Cryptography Modules
 
 Deprecated Config Options
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Following are some of the important config options deprecated by this update. The configs related to and/or dependent on these have also been deprecated.
 
 - ``MBEDTLS_SSL_PROTO_SSL3``  : Support for SSL 3.0
@@ -46,7 +47,9 @@ Following are some of the important config options deprecated by this update. Th
 - ``MBEDTLS_DES_C``           : Support for 3DES ciphersuites
 - ``MBEDTLS_RC4_MODE``        : Support for RC4-based ciphersuites
 
-.. note:: This list includes only major options configurable through ``idf.py menuconfig``. For more details on deprecated options, refer to the `official guide <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md#most-structure-fields-are-now-private>`__.
+.. note::
+
+  This list includes only major options configurable through ``idf.py menuconfig``. For more details on deprecated options, refer to the `official guide <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md#most-structure-fields-are-now-private>`__.
 
 
 Miscellaneous
@@ -61,7 +64,9 @@ The Diffie-Hellman Key Exchange modes have now been disabled by default due to s
 - ``MBEDTLS_KEY_EXCHANGE_DHE_PSK``  : Support for Diffie-Hellman PSK (pre-shared-key) TLS authentication modes
 - ``MBEDTLS_KEY_EXCHANGE_DHE_RSA``  : Support for cipher suites with the prefix ``TLS-DHE-RSA-WITH-``
 
-.. note:: During the initial step of the handshake (i.e. ``client_hello``), the server selects a cipher from the list that the client publishes. As the DHE_PSK/DHE_RSA ciphers have now been disabled by the above change, the server would fall back to an alternative cipher; if in a rare case, it does not support any other cipher, the handshake would fail. To retrieve the list of ciphers supported by the server, one must attempt to connect with the server with a specific cipher from the client-side. Few utilities can help do this, e.g. ``sslscan``.
+.. note::
+
+  During the initial step of the handshake (i.e., ``client_hello``), the server selects a cipher from the list that the client publishes. As the DHE_PSK/DHE_RSA ciphers have now been disabled by the above change, the server would fall back to an alternative cipher; if in a rare case, it does not support any other cipher, the handshake would fail. To retrieve the list of ciphers supported by the server, one must attempt to connect with the server with a specific cipher from the client-side. Few utilities can help do this, e.g., ``sslscan``.
 
 Remove ``certs`` Module from X509 Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,7 +114,7 @@ ESP-TLS
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``esp_tls_t`` Structure is Now Private
+``esp_tls_t`` Structure Is Now Private
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the ESP-TLS handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function, please raise an `issue <https://github.com/espressif/esp-idf/issues>`__ on ESP-IDF.
@@ -118,10 +123,12 @@ The :cpp:type:`esp_tls_t` has now been made completely private. You cannot acces
 The list of newly added getter/setter function is as as follows:
 
 .. list::
+
     * :cpp:func:`esp_tls_get_ssl_context` - Obtain the ssl context of the underlying ssl stack from the ESP-TLS handle.
 
 Function Deprecations And Recommended Alternatives
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Following table summarizes the deprecated functions removed and their alternatives to be used from ESP-IDF v5.0 onwards.
 
 .. list-table::

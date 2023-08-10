@@ -37,6 +37,7 @@ SSL
 
 废弃配置选项
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
 下列为在此次更新中废弃的重要配置选项。与以下配置有关或是依赖于下列配置的相关配置也已相应废弃。
 
 - ``MBEDTLS_SSL_PROTO_SSL3``：原用于支持 SSL 3.0
@@ -46,7 +47,9 @@ SSL
 - ``MBEDTLS_DES_C``：原用于支持 3DES 密码套件
 - ``MBEDTLS_RC4_MODE``：原用于支持基于 RC4 的密码套件
 
-.. note:: 上述仅列出了可通过 ``idf.py menuconfig`` 配置的主要选项。更多有关废弃选项的信息，请参考 `官方指南 <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md>`__。
+.. note::
+
+  上述仅列出了可通过 ``idf.py menuconfig`` 配置的主要选项。更多有关废弃选项的信息，请参考 `官方指南 <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md>`__。
 
 
 其他更新
@@ -61,7 +64,9 @@ SSL
 - ``MBEDTLS_KEY_EXCHANGE_DHE_PSK``：原用于支持 Diffie-Hellman 预共享密钥 (PSK) TLS 认证模式
 - ``MBEDTLS_KEY_EXCHANGE_DHE_RSA``：原用于支持带有前缀的密码套件 ``TLS-DHE-RSA-WITH-``
 
-.. note:: 在信号交换的初始步骤（即 ``client_hello``）中，服务器会在客户端提供的列表中选择一个密码。由于 DHE_PSK/DHE_RSA 密码已在本次更新中禁用，服务器将退回到一个替代密码。在极个别情况中，服务器不支持任何其他的代码，此时，初始步骤将失败。若要检索服务器所支持的密码列表，需要首先在客户端使用特定的密码连接服务器，可以使用 ``sslscan`` 等工具完成连接。
+.. note::
+
+  在信号交换的初始步骤（即 ``client_hello``）中，服务器会在客户端提供的列表中选择一个密码。由于 DHE_PSK/DHE_RSA 密码已在本次更新中禁用，服务器将退回到一个替代密码。在极个别情况中，服务器不支持任何其他的代码，此时，初始步骤将失败。若要检索服务器所支持的密码列表，需要首先在客户端使用特定的密码连接服务器，可以使用 ``sslscan`` 等工具完成连接。
 
 从 X509 库中移除 ``certs`` 模块
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,10 +123,12 @@ ESP-TLS
 下列为新增的 getter/setter 函数：
 
 .. list::
+
     * :cpp:func:`esp_tls_get_ssl_context`：从 ESP-TLS 句柄获取底层 ssl 栈的 ssl 上下文。
 
 废弃函数及推荐的替代函数
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 下表总结了在 ESP-IDF v5.0 中废弃的函数以及相应的替代函数。
 
 .. list-table::

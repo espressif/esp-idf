@@ -6,7 +6,7 @@ Peripherals
 Peripheral Clock Gating
 -----------------------
 
-As usual, peripheral clock gating is still handled by driver itself, users don't need to take care of the peripheral module clock gating.
+As usual, peripheral clock gating is still handled by driver itself, users do not need to take care of the peripheral module clock gating.
 
 However, for advanced users who implement their own drivers based on ``hal`` and ``soc`` components, the previous clock gating include path has been changed from ``driver/periph_ctrl.h`` to ``esp_private/periph_ctrl.h``.
 
@@ -18,7 +18,7 @@ RTC control APIs have been moved from ``driver/rtc_cntl.h`` to ``esp_private/rtc
 ADC
 ---
 
-ADC Oneshot & Continuous Mode drivers
+ADC Oneshot & Continuous Mode Drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ADC oneshot mode driver has been redesigned.
@@ -30,7 +30,7 @@ The ADC continuous mode driver has been moved from ``driver`` component to ``esp
 
 - The include path has been changed from ``driver/adc.h`` to ``esp_adc/adc_continuous.h``.
 
-Attempting to use the legacy include path ``driver/adc.h`` of either driver will trigger the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN` Kconfig option.
+Attempting to use the legacy include path ``driver/adc.h`` of either driver triggers the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN` Kconfig option.
 
 .. code-block:: text
 
@@ -45,7 +45,7 @@ The ADC calibration driver has been redesigned.
 
 Legacy driver is still available by including ``esp_adc_cal.h``. However, if users still would like to use the include path of the legacy driver, users should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt.
 
-Attempting to use the legacy include path ``esp_adc_cal.h`` will trigger the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN` Kconfig option.
+Attempting to use the legacy include path ``esp_adc_cal.h`` triggers the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN` Kconfig option.
 
 .. code-block:: text
 
@@ -93,10 +93,10 @@ GPIO
 
     The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../../api-reference/peripherals/sdm>`.
 
-    - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users don't have to fix a SDM channel to a GPIO manually.
+    - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users do not have to fix a SDM channel to a GPIO manually.
     - All SDM channels can be allocated dynamically.
 
-    Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` will trigger the build warning below. The warning can be suppressed by Kconfig option :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` triggers the build warning below. The warning can be suppressed by Kconfig option :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
 
@@ -109,22 +109,22 @@ GPIO
 
     - SDM channel representation has changed from ``sigmadelta_channel_t`` to :cpp:type:`sdm_channel_handle_t`, which is an opaque pointer.
     - SDM channel configurations are stored in :cpp:type:`sdm_config_t` now, instead the previous ``sigmadelta_config_t``.
-    - In the legacy driver, users don't have to set the clock source for SDM channel. But in the new driver, users need to set a proper one in the :cpp:member:`sdm_config_t::clk_src`. The available clock sources are listed in the :cpp:type:`soc_periph_sdm_clk_src_t`.
+    - In the legacy driver, users do not have to set the clock source for SDM channel. But in the new driver, users need to set a proper one in the :cpp:member:`sdm_config_t::clk_src`. The available clock sources are listed in the :cpp:type:`soc_periph_sdm_clk_src_t`.
     - In the legacy driver, users need to set a ``prescale`` for the channel, which reflects the frequency in which the modulator outputs a pulse. In the new driver, users should use :cpp:member:`sdm_config_t::sample_rate_hz` to set the over sample rate.
-    - In the legacy driver, users set ``duty`` to decide the output analog value, it's now renamed to a more appropriate name ``density``.
+    - In the legacy driver, users set ``duty`` to decide the output analog value, it is now renamed to a more appropriate name ``density``.
 
     Breaking Changes in Usage
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``density`` can be changed at runtime, by :cpp:func:`sdm_channel_set_pulse_density`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
-    - Before further channel operations, users should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function will help to manage some system level services, like **Power Management**.
+    - Before further channel operations, users should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function helps to manage some system level services, like **Power Management**.
 
 Timer Group Driver
 ------------------
 
 Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
 
-Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will trigger the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
 .. code-block:: text
 
@@ -146,7 +146,7 @@ Breaking Changes in Usage
 
 -  Timer initialization is done by creating a timer instance from :cpp:func:`gptimer_new_timer`. Basic configurations like clock source, resolution and direction should be set in :cpp:type:`gptimer_config_t`. Note that, specific configurations of alarm events are not needed during the installation stage of the driver.
 -  Alarm event is configured by :cpp:func:`gptimer_set_alarm_action`, with parameters set in the :cpp:type:`gptimer_alarm_config_t`.
--  Setting and getting count value are done by :cpp:func:`gptimer_get_raw_count` and :cpp:func:`gptimer_set_raw_count`. The driver doesn't help convert the raw value into UTC time-stamp. Instead, the conversion should be done from user's side as the timer resolution is also known to the user.
+-  Setting and getting count value are done by :cpp:func:`gptimer_get_raw_count` and :cpp:func:`gptimer_set_raw_count`. The driver does not help convert the raw value into UTC time-stamp. Instead, the conversion should be done from user's side as the timer resolution is also known to the user.
 -  The driver will install the interrupt service as well if :cpp:member:`gptimer_event_callbacks_t::on_alarm` is set to a valid callback function. In the callback, users do not have to deal with the low level registers (like "clear interrupt status", "re-enable alarm event" and so on). So functions like ``timer_group_get_intr_status_in_isr`` and ``timer_group_get_auto_reload_in_isr`` are not used anymore.
 -  To update the alarm configurations when alarm event happens, one can call :cpp:func:`gptimer_set_alarm_action` in the interrupt callback, then the alarm will be re-enabled again.
 -  Alarm will always be re-enabled by the driver if :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
@@ -192,7 +192,7 @@ I2C
       - I2C interrupt handling is implemented by driver itself.
     * - ``i2c_opmode_t``
       - None
-      - It's not used anywhere in esp-idf.
+      - It is not used anywhere in ESP-IDF.
 
 SPI
 ---
@@ -247,7 +247,7 @@ LEDC
 
     Pulse counter driver has been redesigned (see :doc:`PCNT <../../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral.
 
-    Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` will trigger the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
 
@@ -259,7 +259,7 @@ LEDC
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - ``pcnt_port_t``, ``pcnt_unit_t`` and ``pcnt_channel_t`` which used to identify the hardware unit and channel are removed from user's code. In the new driver, PCNT unit is represented by :cpp:type:`pcnt_unit_handle_t`, likewise, PCNT channel is represented by :cpp:type:`pcnt_channel_handle_t`. Both of them are opaque pointers.
-    - ``pcnt_evt_type_t`` is not used any more, they have been replaced by a universal **Watch Point Event**. In the event callback :cpp:type:`pcnt_watch_cb_t`, it's still possible to distinguish different watch points from :cpp:type:`pcnt_watch_event_data_t`.
+    - ``pcnt_evt_type_t`` is not used any more, they have been replaced by a universal **Watch Point Event**. In the event callback :cpp:type:`pcnt_watch_cb_t`, it is still possible to distinguish different watch points from :cpp:type:`pcnt_watch_event_data_t`.
     - ``pcnt_count_mode_t`` is replaced by :cpp:type:`pcnt_channel_edge_action_t`, and ``pcnt_ctrl_mode_t`` is replaced by :cpp:type:`pcnt_channel_level_action_t`.
 
     Breaking Changes in Usage
@@ -291,7 +291,7 @@ LEDC
 
     The temperature sensor driver has been redesigned and it is recommended to use the new driver. However, the old driver is still available but cannot be used with the new driver simultaneously.
 
-    The new driver can be included via ``driver/temperature_sensor.h``. The old driver is still available in the previous include path ``driver/temp_sensor.h``. However, including ``driver/temp_sensor.h`` will trigger the build warning below by default. The warning can be suppressed by enabling the menuconfig option :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`.
+    The new driver can be included via ``driver/temperature_sensor.h``. The old driver is still available in the previous include path ``driver/temp_sensor.h``. However, including ``driver/temp_sensor.h`` triggers the build warning below by default. The warning can be suppressed by enabling the menuconfig option :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
 
@@ -308,7 +308,7 @@ LEDC
 
     RMT driver has been redesigned (see :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral.
 
-    Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` will trigger the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
 
@@ -321,15 +321,15 @@ LEDC
 
     - ``rmt_channel_t`` which used to identify the hardware channel are removed from user space. In the new driver, RMT channel is represented by :cpp:type:`rmt_channel_handle_t`. The channel is dynamically allocated by the driver, instead of designated by user.
     - ``rmt_item32_t`` is replaced by :cpp:type:`rmt_symbol_word_t`, which avoids a nested union inside a struct.
-    - ``rmt_mem_t`` is removed, as we don't allow users to access RMT memory block (a.k.an RMTMEM) directly. Direct access to RMTMEM doesn't make sense but make mistakes, especially when the RMT channel also connected with a DMA channel.
+    - ``rmt_mem_t`` is removed, as we do not allow users to access RMT memory block (a.k.an RMTMEM) directly. Direct access to RMTMEM does not make sense but make mistakes, especially when the RMT channel also connected with a DMA channel.
     - ``rmt_mem_owner_t`` is removed, as the ownership is controlled by driver, not by user anymore.
-    - ``rmt_source_clk_t`` is replaced by :cpp:type:`rmt_clock_source_t`, and note they're not binary compatible.
+    - ``rmt_source_clk_t`` is replaced by :cpp:type:`rmt_clock_source_t`, and note they are not binary compatible.
     - ``rmt_data_mode_t`` is removed, the RMT memory access mode is configured to always use Non-FIFO and DMA mode.
     - ``rmt_mode_t`` is removed, as the driver has stand alone install functions for TX and RX channels.
     - ``rmt_idle_level_t`` is removed, setting IDLE level for TX channel is available in :cpp:member:`rmt_transmit_config_t::eot_level`.
     - ``rmt_carrier_level_t`` is removed, setting carrier polarity is available in :cpp:member:`rmt_carrier_config_t::polarity_active_low`.
-    - ``rmt_channel_status_t`` and ``rmt_channel_status_result_t`` are removed, they're not used anywhere.
-    - Transmitting by RMT channel doesn't expect user to prepare the RMT symbols, instead, user needs to provide an RMT Encoder to tell the driver how to convert user data into RMT symbols.
+    - ``rmt_channel_status_t`` and ``rmt_channel_status_result_t`` are removed, they are not used anywhere.
+    - Transmitting by RMT channel does not expect user to prepare the RMT symbols, instead, user needs to provide an RMT Encoder to tell the driver how to convert user data into RMT symbols.
 
     Breaking Changes in Usage
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -348,8 +348,8 @@ LEDC
     - ``rmt_set_source_clk`` and ``rmt_get_source_clk`` are removed. Configuring clock source is only possible during channel installation by :cpp:member:`rmt_tx_channel_config_t::clk_src` and :cpp:member:`rmt_rx_channel_config_t::clk_src`.
     - ``rmt_set_rx_filter`` is removed. In the new driver, the filter threshold is redesigned into a new concept :cpp:member:`rmt_receive_config_t::signal_range_min_ns`.
     - ``rmt_set_idle_level`` and ``rmt_get_idle_level`` are removed. Setting IDLE level for TX channel is available in :cpp:member:`rmt_transmit_config_t::eot_level`.
-    - ``rmt_set_rx_intr_en``, ``rmt_set_err_intr_en``, ``rmt_set_tx_intr_en``, ``rmt_set_tx_thr_intr_en`` and ``rmt_set_rx_thr_intr_en`` are removed. The new driver doesn't allow user to turn on/off interrupt from user space. Instead, it provides callback functions.
-    - ``rmt_set_gpio`` and ``rmt_set_pin`` are removed. The new driver doesn't support to switch GPIO dynamically at runtime.
+    - ``rmt_set_rx_intr_en``, ``rmt_set_err_intr_en``, ``rmt_set_tx_intr_en``, ``rmt_set_tx_thr_intr_en`` and ``rmt_set_rx_thr_intr_en`` are removed. The new driver does not allow user to turn on/off interrupt from user space. Instead, it provides callback functions.
+    - ``rmt_set_gpio`` and ``rmt_set_pin`` are removed. The new driver does not support to switch GPIO dynamically at runtime.
     - ``rmt_config`` is removed. In the new driver, basic configuration is done during the channel installation stage.
     - ``rmt_isr_register`` and ``rmt_isr_deregister`` are removed, the interrupt is allocated by the driver itself.
     - ``rmt_driver_install`` is replaced by :cpp:func:`rmt_new_tx_channel` and :cpp:func:`rmt_new_rx_channel`.
@@ -358,22 +358,22 @@ LEDC
     - ``rmt_get_counter_clock`` is removed, as the channel clock resolution is configured by user from :cpp:member:`rmt_tx_channel_config_t::resolution_hz`.
     - ``rmt_wait_tx_done`` is replaced by :cpp:func:`rmt_tx_wait_all_done`.
     - ``rmt_translator_init``, ``rmt_translator_set_context`` and ``rmt_translator_get_context`` are removed. In the new driver, the translator has been replaced by the RMT encoder.
-    - ``rmt_get_ringbuf_handle`` is removed. The new driver doesn't use Ringbuffer to save RMT symbols. Instead, the incoming data are saved to the user provided buffer directly. The user buffer can even be mounted to DMA link internally.
+    - ``rmt_get_ringbuf_handle`` is removed. The new driver does not use Ringbuffer to save RMT symbols. Instead, the incoming data are saved to the user provided buffer directly. The user buffer can even be mounted to DMA link internally.
     - ``rmt_register_tx_end_callback`` is replaced by :cpp:func:`rmt_tx_register_event_callbacks`, where user can register :cpp:member:`rmt_tx_event_callbacks_t::on_trans_done` event callback.
-    - ``rmt_set_intr_enable_mask`` and ``rmt_clr_intr_enable_mask`` are removed, as the interrupt is handled by the driver, user doesn't need to take care of it.
+    - ``rmt_set_intr_enable_mask`` and ``rmt_clr_intr_enable_mask`` are removed, as the interrupt is handled by the driver, user does not need to take care of it.
     - ``rmt_add_channel_to_group`` and ``rmt_remove_channel_from_group`` are replaced by RMT sync manager. Please refer to :cpp:func:`rmt_new_sync_manager`.
     - ``rmt_set_tx_loop_count`` is removed. The loop count in the new driver is configured in :cpp:member:`rmt_transmit_config_t::loop_count`.
-    - ``rmt_enable_tx_loop_autostop`` is removed. In the new driver, TX loop auto stop is always enabled if available, it's not configurable anymore.
+    - ``rmt_enable_tx_loop_autostop`` is removed. In the new driver, TX loop auto stop is always enabled if available, it is not configurable anymore.
 
 LCD
 ---
 
-- The LCD panel initialization flow is slightly changed. Now the :cpp:func:`esp_lcd_panel_init` won't turn on the display automatically. User needs to call :cpp:func:`esp_lcd_panel_disp_on_off` to manually turn on the display. Note, this is different from turning on backlight. With this breaking change, user can flash a predefined pattern to the screen before turning on the screen. This can help avoid random noise on the screen after a power on reset.
+- The LCD panel initialization flow is slightly changed. Now the :cpp:func:`esp_lcd_panel_init` will not turn on the display automatically. User needs to call :cpp:func:`esp_lcd_panel_disp_on_off` to manually turn on the display. Note, this is different from turning on backlight. With this breaking change, user can flash a predefined pattern to the screen before turning on the screen. This can help avoid random noise on the screen after a power on reset.
 - :cpp:func:`esp_lcd_panel_disp_off` is deprecated, please use :cpp:func:`esp_lcd_panel_disp_on_off` instead.
-- ``dc_as_cmd_phase`` is removed. The SPI LCD driver currently doesn't support a 9-bit SPI LCD. Please always use a dedicated GPIO to control the LCD D/C line.
+- ``dc_as_cmd_phase`` is removed. The SPI LCD driver currently does not support a 9-bit SPI LCD. Please always use a dedicated GPIO to control the LCD D/C line.
 - The way to register RGB panel event callbacks has been moved from the :cpp:type:`esp_lcd_rgb_panel_config_t` into a separate API :cpp:func:`esp_lcd_rgb_panel_register_event_callbacks`. However, the event callback signature is not changed.
 - Previous ``relax_on_idle`` flag in :cpp:type:`esp_lcd_rgb_panel_config_t` has been renamed into :cpp:member:`esp_lcd_rgb_panel_config_t::refresh_on_demand`, which expresses the same meaning but with a clear name.
-- If the RGB LCD is created with the ``refresh_on_demand`` flag enabled, the driver won't start a refresh in the :cpp:func:`esp_lcd_panel_draw_bitmap`. Now users have to call :cpp:func:`esp_lcd_rgb_panel_refresh` to refresh the screen by themselves.
+- If the RGB LCD is created with the ``refresh_on_demand`` flag enabled, the driver will not start a refresh in the :cpp:func:`esp_lcd_panel_draw_bitmap`. Now users have to call :cpp:func:`esp_lcd_rgb_panel_refresh` to refresh the screen by themselves.
 - :cpp:type:`esp_lcd_color_space_t` is deprecated, please use :cpp:type:`lcd_color_space_t` to describe the color space, and use :cpp:type:`lcd_color_rgb_endian_t` to describe the data order of RGB color.
 
 .. only:: SOC_MCPWM_SUPPORTED
@@ -385,7 +385,7 @@ LCD
 
     The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users.
 
-    Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver will rigger the build warning below by default. This warning can be suppressed by the Kconfig option :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver triggers the build warning below by default. This warning can be suppressed by the Kconfig option :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
 
@@ -398,13 +398,13 @@ LCD
 
     The new MCPWM driver is object-oriented, where most of the MCPWM submodule has a driver object associated with it. The driver object is created by factory function like :cpp:func:`mcpwm_new_timer`. IO control function always needs an object handle, in the first place.
 
-    The legacy driver has an inappropriate assumption, that is the MCPWM operator should be connected to different MCPWM timer. In fact, the hardware doesn't have such limitation. In the new driver, a MCPWM timer can be connected to multiple operators, so that the operators can achieve the best synchronization performance.
+    The legacy driver has an inappropriate assumption, that is the MCPWM operator should be connected to different MCPWM timer. In fact, the hardware does not have such limitation. In the new driver, a MCPWM timer can be connected to multiple operators, so that the operators can achieve the best synchronization performance.
 
-    The legacy driver presets the way to generate a PWM waveform into a so called ``mcpwm_duty_type_t``. However, the duty cycle modes listed there are far from sufficient. Likewise, legacy driver has several preset ``mcpwm_deadtime_type_t``, which also doesn't cover all the use cases. What's more, user usually gets confused by the name of the duty cycle mode and dead-time mode. In the new driver, there're no such limitation, but user has to construct the generator behavior from scratch.
+    The legacy driver presets the way to generate a PWM waveform into a so called ``mcpwm_duty_type_t``. However, the duty cycle modes listed there are far from sufficient. Likewise, legacy driver has several preset ``mcpwm_deadtime_type_t``, which also does not cover all the use cases. What is more, user usually gets confused by the name of the duty cycle mode and dead-time mode. In the new driver, there are no such limitation, but user has to construct the generator behavior from scratch.
 
     In the legacy driver, the ways to synchronize the MCPWM timer by GPIO, software and other timer module are not unified. It increased learning costs for users. In the new driver, the synchronization APIs are unified.
 
-    The legacy driver has mixed the concepts of "Fault detector" and "Fault handler". Which make the APIs very confusing to users. In the new driver, the fault object just represents a failure source, and we introduced a new concept -- **brake** to express the concept of "Fault handler". What's more, the new driver supports software fault.
+    The legacy driver has mixed the concepts of "Fault detector" and "Fault handler". Which make the APIs very confusing to users. In the new driver, the fault object just represents a failure source, and we introduced a new concept -- **brake** to express the concept of "Fault handler". What is more, the new driver supports software fault.
 
     The legacy drive only provides callback functions for the capture submodule. The new driver provides more useful callbacks for various MCPWM submodules, like timer stop, compare match, fault enter, brake, etc.
 
@@ -416,14 +416,14 @@ LCD
     Breaking Changes in Usage
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    - ``mcpwm_gpio_init`` and ``mcpwm_set_pin``: GPIO configurations are moved to submodule's own configuration. e.g. set the PWM GPIO in :cpp:member:`mcpwm_generator_config_t::gen_gpio_num`.
-    - ``mcpwm_init``: To get an expected PWM waveform, users need to allocated at least one MCPWM timer and MCPWM operator, then connect them by calling :cpp:func:`mcpwm_operator_connect_timer`. After that, users should set the generator's actions on various events by calling e.g. :cpp:func:`mcpwm_generator_set_actions_on_timer_event`, :cpp:func:`mcpwm_generator_set_actions_on_compare_event`.
-    - ``mcpwm_group_set_resolution``: in the new driver, the group resolution is fixed to the maximum, usually it's 80MHz.
+    - ``mcpwm_gpio_init`` and ``mcpwm_set_pin``: GPIO configurations are moved to submodule's own configuration. e.g., set the PWM GPIO in :cpp:member:`mcpwm_generator_config_t::gen_gpio_num`.
+    - ``mcpwm_init``: To get an expected PWM waveform, users need to allocated at least one MCPWM timer and MCPWM operator, then connect them by calling :cpp:func:`mcpwm_operator_connect_timer`. After that, users should set the generator's actions on various events by calling e.g., :cpp:func:`mcpwm_generator_set_actions_on_timer_event`, :cpp:func:`mcpwm_generator_set_actions_on_compare_event`.
+    - ``mcpwm_group_set_resolution``: in the new driver, the group resolution is fixed to the maximum, usually it is 80 MHz.
     - ``mcpwm_timer_set_resolution``: MCPWM Timer resolution is set in :cpp:member:`mcpwm_timer_config_t::resolution_hz`.
     - ``mcpwm_set_frequency``: PWM frequency is determined by :cpp:member:`mcpwm_timer_config_t::resolution_hz`, :cpp:member:`mcpwm_timer_config_t::count_mode` and :cpp:member:`mcpwm_timer_config_t::period_ticks`.
     - ``mcpwm_set_duty``: To set the PWM duty cycle, users should call :cpp:func:`mcpwm_comparator_set_compare_value` to change comparator's threshold.
-    - ``mcpwm_set_duty_type``: There won't be any preset duty cycle types, the duty cycle type is configured by setting different generator actions. e.g. :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
-    - ``mcpwm_set_signal_high`` and ``mcpwm_set_signal_low`` are replaced by :cpp:func:`mcpwm_generator_set_force_level`. In the new driver, it's implemented by setting force action for the generator, instead of changing the duty cycle to 0% or 100% at the background.
+    - ``mcpwm_set_duty_type``: There is no preset duty cycle types. The duty cycle type is configured by setting different generator actions. e.g., :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
+    - ``mcpwm_set_signal_high`` and ``mcpwm_set_signal_low`` are replaced by :cpp:func:`mcpwm_generator_set_force_level`. In the new driver, it is implemented by setting force action for the generator, instead of changing the duty cycle to 0% or 100% at the background.
     - ``mcpwm_start`` and ``mcpwm_stop`` are replaced by :cpp:func:`mcpwm_timer_start_stop`. You have more modes to start and stop the MCPWM timer, see :cpp:type:`mcpwm_timer_start_stop_cmd_t`.
     - ``mcpwm_carrier_init`` is replaced by :cpp:func:`mcpwm_operator_apply_carrier`.
     - ``mcpwm_carrier_enable`` and ``mcpwm_carrier_disable``: Enabling and disabling carrier submodule is done automatically by checking whether the carrier configuration structure :cpp:type:`mcpwm_carrier_config_t` is NULL.
@@ -435,11 +435,11 @@ LCD
     - ``mcpwm_deadtime_enable`` and ``mcpwm_deadtime_disable`` are replaced by :cpp:func:`mcpwm_generator_set_dead_time`.
     - ``mcpwm_fault_init`` is replaced by :cpp:func:`mcpwm_new_gpio_fault`.
     - ``mcpwm_fault_set_oneshot_mode``, ``mcpwm_fault_set_cyc_mode`` are replaced by :cpp:func:`mcpwm_operator_set_brake_on_fault` and :cpp:func:`mcpwm_generator_set_actions_on_brake_event`.
-    - ``mcpwm_capture_enable`` is removed. It's duplicated to :cpp:func:`mcpwm_capture_enable_channel`.
-    - ``mcpwm_capture_disable`` is removed. It's duplicated to :cpp:func:`mcpwm_capture_capture_disable_channel`.
+    - ``mcpwm_capture_enable`` is removed. It is duplicated to :cpp:func:`mcpwm_capture_enable_channel`.
+    - ``mcpwm_capture_disable`` is removed. It is duplicated to :cpp:func:`mcpwm_capture_capture_disable_channel`.
     - ``mcpwm_capture_enable_channel`` and ``mcpwm_capture_disable_channel`` are replaced by :cpp:func:`mcpwm_capture_channel_enable` and :cpp:func:`mcpwm_capture_channel_disable`.
     - ``mcpwm_capture_signal_get_value`` and ``mcpwm_capture_signal_get_edge``: Capture timer count value and capture edge are provided in the capture event callback, via :cpp:type:`mcpwm_capture_event_data_t`. Capture data are only valuable when capture event happens. Providing single API to fetch capture data is meaningless.
-    - ``mcpwm_sync_enable`` is removed. It's duplicated to :cpp:func:`mcpwm_sync_configure`.
+    - ``mcpwm_sync_enable`` is removed. It is duplicated to :cpp:func:`mcpwm_sync_configure`.
     - ``mcpwm_sync_configure`` is replaced by :cpp:func:`mcpwm_timer_set_phase_on_sync`.
     - ``mcpwm_sync_disable`` is equivalent to setting :cpp:member:`mcpwm_timer_sync_phase_config_t::sync_src` to ``NULL``.
     - ``mcpwm_set_timer_sync_output`` is replaced by :cpp:func:`mcpwm_new_timer_sync_src`.
@@ -456,7 +456,7 @@ LCD
 
 .. only:: SOC_I2S_SUPPORTED
 
-    I2S driver
+    I2S Driver
     ----------
 
     The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/i2s/include/driver/i2s_std.h`, :component_file:`driver/i2s/include/driver/i2s_pdm.h`, or :component_file:`driver/i2s/include/driver/i2s_tdm.h`.
@@ -478,11 +478,11 @@ LCD
     The minimum control unit in new I2S driver are now individual TX/RX channels instead of an entire I2S controller (that consistes of multiple channels).
 
     - The TX and RX channels of the same I2S controller can be controlled separately, meaning that they are configured such that they can be started or stopped separately.
-    - The c:type:`i2s_chan_handle_t` handle type is used to uniquely identify I2S channels. All the APIs will require the channel handle and users need to maintain the channel handles by themselves.
+    - The :cpp:type:`i2s_chan_handle_t` handle type is used to uniquely identify I2S channels. All the APIs require the channel handle and users need to maintain the channel handles by themselves.
     - On the ESP32-C3 and ESP32-S3, TX and RX channels in the same controller can be configured to different clocks or modes.
     - However, on the ESP32 and ESP32-S2, the TX and RX channels of the same controller still share some hardware resources. Thus, configurations may cause one channel to affect another channel in the same controller.
-    - The channels can be registered to an available I2S controller automatically by setting :cpp:enumerator:`i2s_port_t::I2S_NUM_AUTO` as I2S port ID which will cause the driver to search for the available TX/RX channels. However, the driver also supports registering channels to a specific port.
-    - In order to distinguish between TX/RX channels and sound channels, the term 'channel' in the context of the I2S driver will only refer to TX/RX channels. Meanwhile, sound channels will be referred to as "slots".
+    - The channels can be registered to an available I2S controller automatically by setting :cpp:enumerator:`i2s_port_t::I2S_NUM_AUTO` as I2S port ID which causes the driver to search for the available TX/RX channels. However, the driver also supports registering channels to a specific port.
+    - In order to distinguish between TX/RX channels and sound channels, the term "channel" in the context of the I2S driver only refers to TX/RX channels. Meanwhile, sound channels are referred to as "slots".
 
     I2S Mode Categorization
     """"""""""""""""""""""""
@@ -509,7 +509,7 @@ LCD
     """"
 
     - States and state-machine are adopted in the new I2S driver to avoid APIs called in wrong state.
-    - ADC and DAC modes are removed. They will only be supported in their own drivers and the legacy I2S driver.
+    - ADC and DAC modes are removed. They are only supported in their own drivers and the legacy I2S driver.
 
     Breaking Changes in Usage
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -519,7 +519,7 @@ LCD
     1. Call :cpp:func:`i2s_new_channel` to acquire channel handles. We should specify the work role and I2S port in this step. Besides, the TX or RX channel handle will be generated by the driver. Inputting both two TX and RX channel handles is not necessary but at least one handle is needed. In the case of inputting both two handles, the driver will work at the duplex mode. Both TX and RX channels will be avaliable on a same port, and they will share the MCLK, BCLK and WS signal. But if only one of the TX or RX channel handle is inputted, this channel will only work in the simplex mode.
     2. Call :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode` or :func:`i2s_channel_init_tdm_mode` to initialize the channel to the specified mode. Corresponding slot, clock and GPIO configurations are needed in this step.
     3. (Optional) Call :cpp:func:`i2s_channel_register_event_callback` to register the ISR event callback functions. I2S events now can be received by the callback function synchronously, instead of from the event queue asynchronously.
-    4. Call :cpp:func:`i2s_channel_enable` to start the hardware of I2S channel. In the new driver, I2S won't start automatically after installed, and users are supposed to know clearly whether the channel has started or not.
+    4. Call :cpp:func:`i2s_channel_enable` to start the hardware of I2S channel. In the new driver, I2S does not start automatically after installed, and users are supposed to know clearly whether the channel has started or not.
     5. Read or write data by :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`. Certainly, only the RX channel handle is suppoesd to be inputted in :cpp:func:`i2s_channel_read` and the TX channel handle in :cpp:func:`i2s_channel_write`.
     6. (Optional) The slot, clock and GPIO configurations can be changed by corresponding 'reconfig' functions, but :cpp:func:`i2s_channel_disable` must be called before updating the configurations.
     7. Call :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.

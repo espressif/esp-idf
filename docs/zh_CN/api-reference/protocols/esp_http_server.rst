@@ -8,16 +8,14 @@ HTTP 服务器
 
 HTTP Server 组件提供了在 ESP32 上运行轻量级 Web 服务器的功能，下面介绍使用 HTTP Server 组件 API 的详细步骤：
 
-    * :cpp:func:`httpd_start`： 创建 HTTP 服务器的实例，根据具体的配置为其分配内存和资源，并返回该服务器实例的句柄。服务器使用了两个套接字，一个用来监听 HTTP 流量（TCP 类型），另一个用来处理控制信号（UDP 类型），它们在服务器的任务循环中轮流使用。通过向 httpd_start() 传递 httpd_config_t 结构体，可以在创建服务器实例时配置任务的优先级和堆栈的大小。TCP 流量被解析为 HTTP 请求，根据请求的 URI 来调用用户注册的处理程序，在处理程序中需要发送回 HTTP 响应数据包。
+    * :cpp:func:`httpd_start`： 创建 HTTP 服务器的实例，根据具体的配置为其分配内存和资源，并返回该服务器实例的句柄。服务器使用了两个套接字，一个用来监听 HTTP 流量（TCP 类型），另一个用来处理控制信号（UDP 类型），它们在服务器的任务循环中轮流使用。通过向 ``httpd_start()`` 传递 ``httpd_config_t`` 结构体，可以在创建服务器实例时配置任务的优先级和堆栈的大小。TCP 流量被解析为 HTTP 请求，根据请求的 URI 来调用用户注册的处理程序，在处理程序中需要发送回 HTTP 响应数据包。
     * :cpp:func:`httpd_stop`： 根据传入的句柄停止服务器，并释放相关联的内存和资源。这是一个阻塞函数，首先给服务器任务发送停止信号，然后等待其终止。期间服务器任务会关闭所有已打开的连接，删除已注册的 URI 处理程序，并将所有会话的上下文数据重置为空。
     * :cpp:func:`httpd_register_uri_handler`： 通过传入 ``httpd_uri_t`` 结构体类型的对象来注册 URI 处理程序。该结构体包含如下成员：``uri`` 名字，``method`` 类型（比如 ``HTTPD_GET/HTTPD_POST/HTTPD_PUT`` 等等）， ``esp_err_t *handler (httpd_req_t *req)`` 类型的函数指针，指向用户上下文数据的 ``user_ctx`` 指针。
 
 应用示例
 --------
 
-    .. highlight:: c
-
-    ::
+    .. code-block:: c
 
         /* URI 处理函数，在客户端发起 GET /uri 请求时被调用 */
         esp_err_t get_handler(httpd_req_t *req)
@@ -119,9 +117,7 @@ HTTP 服务器具有长连接的功能，允许重复使用同一个连接（会
 长连接示例
 ^^^^^^^^^^
 
-.. highlight:: c
-
-::
+.. code-block:: c
 
     /* 自定义函数，用来释放上下文数据 */
     void free_ctx_func(void *ctx)

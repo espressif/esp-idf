@@ -25,9 +25,7 @@ Simple HTTPS example that uses ESP-TLS to establish a secure socket connection: 
 Tree Structure for ESP-TLS Component
 -------------------------------------
 
-    .. highlight:: none
-
-    ::
+    .. code-block:: none
 
         ├── esp_tls.c
         ├── esp_tls.h
@@ -46,12 +44,12 @@ TLS Server Verification
 
 ESP-TLS provides multiple options for TLS server verification on the client side. The ESP-TLS client can verify the server by validating the peer's server certificate or with the help of pre-shared keys. The user should select only one of the following options in the :cpp:type:`esp_tls_cfg_t` structure for TLS server verification. If no option is selected, the client will return a fatal error by default during the TLS connection setup.
 
-    *  **cacert_buf** and **cacert_bytes**: The CA certificate can be provided in a buffer to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the CA certificate present in the buffer to verify the server. The following variables in the :cpp:type:`esp_tls_cfg_t` structure must be set.
+    *  **cacert_buf** and **cacert_bytes**: The CA certificate can be provided in a buffer to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS uses the CA certificate present in the buffer to verify the server. The following variables in the :cpp:type:`esp_tls_cfg_t` structure must be set.
 
         * ``cacert_buf`` - pointer to the buffer which contains the CA certification.
         * ``cacert_bytes`` - the size of the CA certificate in bytes.
     * **use_global_ca_store**: The ``global_ca_store`` can be initialized and set at once. Then it can be used to verify the server for all the ESP-TLS connections which have set ``use_global_ca_store = true`` in their respective :cpp:type:`esp_tls_cfg_t` structure. See the API Reference section below for information regarding different APIs used for initializing and setting up the ``global_ca_store``.
-    * **crt_bundle_attach**: The ESP x509 Certificate Bundle API provides an easy way to include a bundle of custom x509 root certificates for TLS server verification. More details can be found at :doc:`ESP x509 Certificate Bundle</api-reference/protocols/esp_crt_bundle>`.
+    * **crt_bundle_attach**: The ESP x509 Certificate Bundle API provides an easy way to include a bundle of custom x509 root certificates for TLS server verification. More details can be found at :doc:`ESP x509 Certificate Bundle </api-reference/protocols/esp_crt_bundle>`.
     * **psk_hint_key**: To use pre-shared keys for server verification, :ref:`CONFIG_ESP_TLS_PSK_VERIFICATION` should be enabled in the ESP-TLS menuconfig. Then the pointer to the PSK hint and key should be provided to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the PSK for server verification only when no other option regarding server verification is selected.
     * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purposes. The option can be set by enabling :ref:`CONFIG_ESP_TLS_INSECURE` and :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
 
@@ -85,12 +83,14 @@ Underlying SSL/TLS Library Options
 
 The ESP-TLS component offers the option to use MbedTLS or WolfSSL as its underlying SSL/TLS library. By default, only MbedTLS is available and used, WolfSSL SSL/TLS library is also available publicly at https://github.com/espressif/esp-wolfssl. The repository provides the WolfSSL component in binary format, and it also provides a few examples that are useful for understanding the API. Please refer to the repository ``README.md`` for information on licensing and other options. Please see the below section for instructions on how to use WolfSSL in your project.
 
-.. note::   `As the library options are internal to ESP-TLS, switching the libraries will not change ESP-TLS specific code for a project.`
+.. note::
+
+    As the library options are internal to ESP-TLS, switching the libraries will not change ESP-TLS specific code for a project.
 
 How to Use WolfSSL with ESP-IDF
 -------------------------------
 
-There are two ways to use WolfSSL in your project：
+There are two ways to use WolfSSL in your project:
 
 1) Directly add WolfSSL as a component in your project with the following three commands::
 
@@ -125,16 +125,18 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
       - WolfSSL
       - MbedTLS
     * - Total Heap Consumed
-      - ~19 KB
-      - ~37 KB
+      - ~ 19 KB
+      - ~ 37 KB
     * - Task Stack Used
-      - ~2.2 KB
-      - ~3.6 KB
+      - ~ 2.2 KB
+      - ~ 3.6 KB
     * - Bin size
-      - ~858 KB
-      - ~736 KB
+      - ~ 858 KB
+      - ~ 736 KB
 
-.. note::    `These values can vary based on configuration options and version of respective libraries`.
+.. note::
+
+    These values can vary based on configuration options and version of respective libraries.
 
 .. only:: esp32
 
@@ -143,9 +145,11 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
     ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
-    .. note:: ATECC608A chip on ESP32-WROOM-32SE must be already configured, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+    .. note::
 
-    To enable the secure element support, and use it in your project for TLS connection, you will have to follow the below steps:
+        ATECC608A chip on ESP32-WROOM-32SE must be already configured, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+
+    To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 
     1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `how to use esp-cryptoauthlib with ESP-IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_.
 
@@ -175,7 +179,7 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     Digital Signature with ESP-TLS
     ------------------------------
 
-    ESP-TLS provides support for using the Digital Signature (DS) with {IDF_TARGET_NAME}. Use of the DS for TLS is supported only when ESP-TLS is used with MbedTLS (default stack) as its underlying SSL/TLS stack. For more details on Digital Signature, please refer to the :doc:`Digital Signature (DS) </api-reference/peripherals/ds>`. The technical details of Digital Signature such as how to calculate private key parameters can be found in *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]. The DS peripheral must be configured before it can be used to perform Digital Signature, see :ref:`configure-the-ds-peripheral`.
+    ESP-TLS provides support for using the Digital Signature (DS) with {IDF_TARGET_NAME}. Use of the DS for TLS is supported only when ESP-TLS is used with MbedTLS (default stack) as its underlying SSL/TLS stack. For more details on Digital Signature, please refer to the :doc:`Digital Signature (DS) </api-reference/peripherals/ds>`. The technical details of Digital Signature such as how to calculate private key parameters can be found in **{IDF_TARGET_NAME} Technical Reference Manual** > **Digital Signature (DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]. The DS peripheral must be configured before it can be used to perform Digital Signature, see :ref:`configure-the-ds-peripheral`.
 
     The DS peripheral must be initialized with the required encrypted private key parameters, which are obtained when the DS peripheral is configured. ESP-TLS internally initializes the DS peripheral when provided with the required DS context, i.e., DS parameters. Please see the below code snippet for passing the DS context to the ESP-TLS context. The DS context passed to the ESP-TLS context should not be freed till the TLS connection is deleted.
 
@@ -191,12 +195,15 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
                 .ds_data = (void *)ds_ctx,
             };
 
-    .. note:: When using Digital Signature for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
+    .. note::
+
+        When using Digital Signature for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
 
     * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
 
 TLS Ciphersuites
 ------------------------------------
+
 ESP-TLS provides the ability to set a ciphersuites list in client mode. The TLS ciphersuites list informs the server about the supported ciphersuites for the specific TLS connection regardless of the TLS stack configuration. If the server supports any ciphersuite from this list, then the TLS connection will succeed; otherwise, it will fail.
 
 You can set ``ciphersuites_list`` in the :cpp:type:`esp_tls_cfg_t` structure during client connection as follows:
@@ -212,6 +219,7 @@ You can set ``ciphersuites_list`` in the :cpp:type:`esp_tls_cfg_t` structure dur
 ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you should call :cpp:func:`esp_tls_get_ciphersuites_list` to get ciphersuites list supported in the TLS stack and cross-check it against the supplied list.
 
 .. note::
+
    This feature is supported only in the MbedTLS stack.
 
 API Reference

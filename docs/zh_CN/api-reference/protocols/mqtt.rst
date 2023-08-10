@@ -1,5 +1,6 @@
 ESP-MQTT
 ========
+
 :link_to_translation:`en:[English]`
 
 概述
@@ -10,6 +11,7 @@ ESP-MQTT 是 `MQTT <https://mqtt.org/>`__ 协议客户端的实现，MQTT 是一
 
 特性
 --------
+
    * 支持基于 TCP 的 MQTT、基于 Mbed TLS 的 SSL、基于 WebSocket 的 MQTT 以及基于 WebSocket Secure 的 MQTT
    * 通过 URI 简化配置流程
    * 多个实例（一个应用程序中有多个客户端）
@@ -60,7 +62,7 @@ ESP-MQTT 库将始终重新传输未确认的 QoS 1 和 2 发布消息，以避�
 地址
 ===========
 
-通过 :cpp:class:`address <esp_mqtt_client_config_t::broker_t::address_t>` 结构体的 :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` 字段或者 :cpp:member:`hostname <esp_mqtt_client_config_t::broker_t::address_t::hostname>`、:cpp:member:`transport <esp_mqtt_client_config_t::broker_t::address_t::transport>` 以及 :cpp:member:`port <esp_mqtt_client_config_t::broker_t::address_t::port>` 的组合，可以设置服务器地址。您也可以选择设置 :cpp:member:`path <esp_mqtt_client_config_t::broker_t::address_t::path>`，该字段对 WebSocket 连接而言非常有用。
+通过 :cpp:class:`address <esp_mqtt_client_config_t::broker_t::address_t>` 结构体的 :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` 字段或者 :cpp:member:`hostname <esp_mqtt_client_config_t::broker_t::address_t::hostname>`、:cpp:member:`transport <esp_mqtt_client_config_t::broker_t::address_t::transport>` 以及 :cpp:member:`port <esp_mqtt_client_config_t::broker_t::address_t::port>` 的组合，可以设置服务器地址。也可以选择设置 :cpp:member:`path <esp_mqtt_client_config_t::broker_t::address_t::path>`，该字段对 WebSocket 连接而言非常有用。
 
 使用 :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` 字段的格式为 ``scheme://hostname:port/path``。
 
@@ -87,7 +89,7 @@ ESP-MQTT 库将始终重新传输未确认的 QoS 1 和 2 发布消息，以避�
 
 - 最简配置：
 
-.. code:: c
+.. code-block:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = "mqtt://mqtt.eclipseprojects.io",
@@ -96,7 +98,9 @@ ESP-MQTT 库将始终重新传输未确认的 QoS 1 和 2 发布消息，以避�
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
 
-.. note:: 默认情况下，MQTT 客户端使用事件循环库来发布相关 MQTT 事件（已连接、已订阅、已发布等）。
+.. note::
+
+   默认情况下，MQTT 客户端使用事件循环库来发布相关 MQTT 事件（已连接、已订阅、已发布等）。
 
 =============
 验证

@@ -1,5 +1,6 @@
 ESP HTTP Client
 ===============
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -7,8 +8,8 @@ Overview
 
 ``esp_http_client`` component provides a set of APIs for making HTTP/S requests from ESP-IDF applications. The steps to use these APIs are as follows:
 
-    * :cpp:func:`esp_http_client_init`: Creates an :cpp:type:`esp_http_client_handle_t` instance, i.e., an HTTP client handle based on the given :cpp:type:`esp_http_client_config_t` configuration. This function must be the first to be called; default values will be assumed for the configuration values that are not explicitly defined by the user.
-    * :cpp:func:`esp_http_client_perform`: Performs all operations of the ``esp_http_client`` - opening the connection, exchanging data, and closing the connection (as required), while blocking the current task before its completion. All related events will be invoked through the event handler (as specified in :cpp:type:`esp_http_client_config_t`).
+    * :cpp:func:`esp_http_client_init`: Creates an :cpp:type:`esp_http_client_handle_t` instance, i.e., an HTTP client handle based on the given :cpp:type:`esp_http_client_config_t` configuration. This function must be the first to be called; default values are assumed for the configuration values that are not explicitly defined by the user.
+    * :cpp:func:`esp_http_client_perform`: Performs all operations of the ``esp_http_client`` - opening the connection, exchanging data, and closing the connection (as required), while blocking the current task before its completion. All related events are invoked through the event handler (as specified in :cpp:type:`esp_http_client_config_t`).
     * :cpp:func:`esp_http_client_cleanup`: Closes the connection (if any) and frees up all the memory allocated to the HTTP client instance. This must be the last function to be called after the completion of operations.
 
 
@@ -36,7 +37,7 @@ To allow ESP HTTP client to take full advantage of persistent connections, one s
     Use Secure Element (ATECC608) for TLS
     _____________________________________
 
-    A secure element (ATECC608) can be also used for the underlying TLS connection in the HTTP client connection. Please refer to the *ATECC608A (Secure Element) with ESP-TLS* section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The secure element support has to be first enabled in menuconfig through :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`. Then the HTTP client can be configured to use secure element as follows:
+    A secure element (ATECC608) can be also used for the underlying TLS connection in the HTTP client connection. Please refer to the **ATECC608A (Secure Element) with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The secure element support has to be first enabled in menuconfig through :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`. Then the HTTP client can be configured to use secure element as follows:
 
     .. code-block:: c
 
@@ -51,7 +52,9 @@ HTTPS Request
 
 ESP HTTP client supports SSL connections using **mbedTLS**, with the ``url`` configuration starting with ``https`` scheme or ``transport_type`` set to ``HTTP_TRANSPORT_OVER_SSL``. HTTPS support can be configured via :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` (enabled by default).
 
-.. note:: While making HTTPS requests, if server verification is needed, an additional root certificate (in PEM format) needs to be provided to the ``cert_pem`` member in the ``esp_http_client_config_t`` configuration. Users can also use the ``ESP x509 Certificate Bundle`` for server verification using the ``crt_bundle_attach`` member of the ``esp_http_client_config_t`` configuration.
+.. note::
+
+    While making HTTPS requests, if server verification is needed, an additional root certificate (in PEM format) needs to be provided to the ``cert_pem`` member in the ``esp_http_client_config_t`` configuration. Users can also use the ``ESP x509 Certificate Bundle`` for server verification using the ``crt_bundle_attach`` member of the ``esp_http_client_config_t`` configuration.
 
 Check out the example functions ``https_with_url`` and ``https_with_hostname_path`` in the application example for implementation details of the above note.
 

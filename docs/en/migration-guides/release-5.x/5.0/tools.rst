@@ -3,12 +3,12 @@ Tools
 
 :link_to_translation:`zh_CN:[中文]`
 
-IDF Monitor
------------
+ESP-IDF Monitor
+---------------
 
-IDF Monitor makes the following changes regarding baud-rate:
+ESP-IDF Monitor makes the following changes regarding baud-rate:
 
-- IDF monitor now uses the custom console baud-rate (:ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`) by default instead of 115200.
+- ESP-IDF monitor now uses the custom console baud-rate (:ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`) by default instead of 115200.
 - Setting a custom baud from menuconfig is no longer supported.
 - A custom baud-rate can be specified from command line with the ``idf.py monitor -b <baud>`` command or through setting environment variables.
 - Please note that the baud-rate argument has been renamed from ``-B`` to ``-b`` in order to be consistent with the global baud-rate ``idf.py -b <baud>``. Run ``idf.py monitor --help`` for more information.
@@ -46,7 +46,7 @@ Deprecated Commands
 Esptool
 -------
 
-The CONFIG_ESPTOOLPY_FLASHSIZE_DETECT option has been renamed to :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` and has been disabled by default. New and existing projects migrated to ESP-IDF v5.0 will have to set :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`. If this is not possible due to an unknown flash size at build time, then :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` can be enabled. However, once enabled, to keep the digest valid, a SHA256 digest will no longer be appended to the image when updating the binary header with the flash size during flashing.
+The ``CONFIG_ESPTOOLPY_FLASHSIZE_DETECT`` option has been renamed to :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` and has been disabled by default. New and existing projects migrated to ESP-IDF v5.0 have to set :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`. If this is not possible due to an unknown flash size at build time, then :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` can be enabled. However, once enabled, to keep the digest valid, an SHA256 digest is no longer appended to the image when updating the binary header with the flash size during flashing.
 
 Windows Environment
 --------------------

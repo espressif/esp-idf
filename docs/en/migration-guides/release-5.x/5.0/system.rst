@@ -24,8 +24,8 @@ Cache Error Interrupt
 
 The Cache Error Interrupt API (functions/types/macros prefixed with ``esp_cache_err``) has been made into a private API. Thus, the previous include path ``#include "{IDF_TARGET_NAME}/cache_err_int.h"`` has been removed. If users still require usage of the Cache Error Interrupt API (though this is not recommended), it can be included via  ``#include "esp_private/cache_err_int.h"``.
 
-bootloader_support
---------------------
+``bootloader_support``
+----------------------
 
 * The function ``bootloader_common_get_reset_reason()`` has been removed. Please use the function ``esp_rom_get_reset_reason()`` in the ROM component.
 * The functions ``esp_secure_boot_verify_sbv2_signature_block()`` and ``esp_secure_boot_verify_rsa_signature_block()`` have been removed without replacement. We do not expect users to use these directly. If they are indeed still neccessary, please open a feature request on `GitHub <https://github.com/espressif/esp-idf/issues/new/choose>`_ explaining why these functions are necessary to you.
@@ -45,8 +45,8 @@ ROM
 
 The previously deprecated ROM-related header files located in ``components/esp32/rom/`` (old include path: ``rom/*.h``) have been moved. Please use the new target-specific path from ``components/esp_rom/include/{IDF_TARGET_NAME}/`` (new include path: ``{IDF_TARGET_NAME}/rom/*.h``).
 
-esp_hw_support
---------------
+``esp_hw_support``
+------------------
 
 - The header files ``soc/cpu.h`` have been deleted and deprecated CPU util functions have been removed. ESP-IDF developers should include ``esp_cpu.h`` instead for equivalent functions.
 - The header files ``hal/cpu_ll.h``, ``hal/cpu_hal.h``, ``hal/soc_ll.h``, ``hal/soc_hal.h`` and ``interrupt_controller_hal.h`` CPU API functions have been deprecated. ESP-IDF developers should include ``esp_cpu.h`` instead for equivalent functions.
@@ -56,7 +56,7 @@ esp_hw_support
 - The Panic API (functions/types/macros prefixed with ``esp_panic``) has been made into a private API. Thus, the previous include path ``#include "esp_panic.h"`` has been removed. If users still require usage of the Trax API (though this is not recommended), it can be included via  ``#include "esp_private/panic_reason.h"``. Besides, developers should include ``esp_debug_helpers.h`` instead to use any debug-related helper functions, e.g., print backtrace.
 - The header file ``soc_log.h`` is now renamed to ``esp_hw_log.h`` and has been made private. Users are encouraged to use logging APIs provided under ``esp_log.h`` instead.
 - The header files ``spinlock.h``, ``clk_ctrl_os.h``, and ``rtc_wdt.h`` must now be included without the ``soc`` prefix. For example, ``#include "spinlock.h"``.
-- ``esp_chip_info()`` returns the chip version in the format  = 100 * ``major eFuse version`` + ``minor eFuse version``. Thus, the ``revision`` in the ``esp_chip_info_t`` structure is expanded to uint16_t to fit the new format.
+- ``esp_chip_info()`` returns the chip version in the format  = 100 * ``major eFuse version`` + ``minor eFuse version``. Thus, the ``revision`` in the ``esp_chip_info_t`` structure is expanded to ``uint16_t`` to fit the new format.
 
 PSRAM
 ^^^^^
@@ -70,20 +70,22 @@ eFuse
 - The parameter type of function ``esp_secure_boot_read_key_digests()`` changed from ``ets_secure_boot_key_digests_t*`` to ``esp_secure_boot_key_digests_t*``. The new type is the same as the old one, except that the ``allow_key_revoke`` flag has been removed. The latter was always set to ``true`` in current code, not providing additional information.
 - Added eFuse wafer revisions: major and minor. The ``esp_efuse_get_chip_ver()`` API is not compatible with these changes, so it was removed. Instead, please use the following APIs: ``efuse_hal_get_major_chip_version()``, ``efuse_hal_get_minor_chip_version()`` or ``efuse_hal_chip_revision()``.
 
-esp_common
-------------
-``EXT_RAM_ATTR`` is deprecated. Use the new macro ``EXT_RAM_BSS_ATTR`` to put .bss on PSRAM.
+``esp_common``
+--------------
 
-esp_system
-------------
+``EXT_RAM_ATTR`` is deprecated. Use the new macro ``EXT_RAM_BSS_ATTR`` to put ``.bss`` on PSRAM.
+
+``esp_system``
+--------------
+
 - The header files ``esp_random.h``, ``esp_mac.h``, and ``esp_chip_info.h``, which were all previously indirectly included via the header file ``esp_system.h``, must now be included directly. These indirect inclusions from ``esp_system.h`` have been removed.
 - The Backtrace Parser API (functions/types/macros prefixed with ``esp_eh_frame_``) has been made into a private API. Thus, the previous include path ``#include "eh_frame_parser.h"`` has been removed. If users still require usage of the Backtrace Parser API (though this is not recommended), it can be included via ``#include "esp_private/eh_frame_parser.h"``.
 - The Interrupt Watchdog API (functions/types/macros prefixed with ``esp_int_wdt_``) has been made into a private API. Thus, the previous include path ``#include "esp_int_wdt.h"`` has been removed. If users still require usage of the Interrupt Watchdog API (though this is not recommended), it can be included via  ``#include "esp_private/esp_int_wdt.h"``.
 
-SOC Dependency
+SoC Dependency
 --------------
 
-- Public API headers listed in the Doxyfiles will not expose unstable and unnecessary soc header files, such as ``soc/soc.h`` and ``soc/rtc.h``. That means the user has to explicitly include them in their code if these "missing" header files are still wanted.
+- Public API headers listed in the Doxyfiles will not expose unstable and unnecessary SoC header files, such as ``soc/soc.h`` and ``soc/rtc.h``. That means the user has to explicitly include them in their code if these "missing" header files are still wanted.
 - Kconfig option ``LEGACY_INCLUDE_COMMON_HEADERS`` is also removed.
 - The header file ``soc/soc_memory_types.h`` has been deprecated. Users should use the ``esp_memory_utils.h`` instead. Including ``soc/soc_memory_types.h`` will bring a build warning like ``soc_memory_types.h is deprecated, please migrate to esp_memory_utils.h``
 
@@ -92,10 +94,10 @@ APP Trace
 
 One of the timestamp sources has changed from the legacy timer group driver to the new :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`. Kconfig choices like ``APPTRACE_SV_TS_SOURCE_TIMER00`` has been changed to ``APPTRACE_SV_TS_SOURCE_GPTIMER``. User no longer need to choose the group and timer ID.
 
-esp_timer
------------
+``esp_timer``
+-------------
 
-The FRC2-based legacy implementation of esp_timer available on ESP32 has been removed. The simpler and more efficient implementation based on the LAC timer is now the only option.
+The FRC2-based legacy implementation of ``esp_timer`` available on ESP32 has been removed. The simpler and more efficient implementation based on the LAC timer is now the only option.
 
 ESP Image
 ---------
@@ -167,6 +169,6 @@ Bootloader Support
 Chip Revision
 ^^^^^^^^^^^^^
 
-The bootloader checks the chip revision at the beginning of the application loading. The application can only be loaded if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
+The bootloader checks the chip revision at the beginning of the application loading. The application can only be loaded if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
 
-During the OTA upgrade, the version requirements and chip revision in the application header are checked for compatibility. The application can only be updated if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
+During the OTA upgrade, the version requirements and chip revision in the application header are checked for compatibility. The application can only be updated if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
