@@ -33,7 +33,7 @@ extern const uint8_t client_pwd_key[]       asm("_binary_client_pwd_key_start");
 extern const uint8_t client_inv_crt[]       asm("_binary_client_inv_crt_start");
 extern const uint8_t client_no_pwd_key[]    asm("_binary_client_no_pwd_key_start");
 
-static const char *TAG = "CONNECT_TEST";
+static const char *TAG = "connect_test";
 static esp_mqtt_client_handle_t mqtt_client = NULL;
 static int running_test_case = 0;
 
