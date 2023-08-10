@@ -61,8 +61,15 @@ typedef struct {
 typedef struct {
     int low_limit;  /*!< Low limitation of the count unit, should be lower than 0 */
     int high_limit; /*!< High limitation of the count unit, should be higher than 0 */
+#if SOC_PCNT_SUPPORT_ZERO_INPUT
+    int zero_input_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high, input mode with pull down enabled. Set to -1 if unused */
+#endif
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
+#if SOC_PCNT_SUPPORT_ZERO_INPUT
+        uint32_t invert_zero_input: 1;   /*!< Invert the zero input signal and set input mode with pull up.*/
+        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+#endif
     } flags;       /*!< Extra flags */
 } pcnt_unit_config_t;
 
@@ -252,6 +259,7 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
 
 /**
  * @brief Add a watch point for PCNT unit, PCNT will generate an event when the counter value reaches the watch point value
+ *
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] watch_point Value to be watched

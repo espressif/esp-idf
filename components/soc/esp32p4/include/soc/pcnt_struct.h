@@ -16,98 +16,98 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** filter_thres_un : R/W; bitpos: [9:0]; default: 16;
+        /** filter_thres : R/W; bitpos: [9:0]; default: 16;
          *  This sets the maximum threshold, in APB_CLK cycles, for the filter.
          *
          *  Any pulses with width less than this will be ignored when the filter is enabled.
          */
-        uint32_t filter_thres_un:10;
-        /** filter_en_un : R/W; bitpos: [10]; default: 1;
+        uint32_t filter_thres:10;
+        /** filter_en : R/W; bitpos: [10]; default: 1;
          *  This is the enable bit for unit n's input filter.
          */
-        uint32_t filter_en_un:1;
-        /** thr_zero_en_un : R/W; bitpos: [11]; default: 1;
+        uint32_t filter_en:1;
+        /** thr_zero_en : R/W; bitpos: [11]; default: 1;
          *  This is the enable bit for unit n's zero comparator.
          */
-        uint32_t thr_zero_en_un:1;
-        /** thr_h_lim_en_un : R/W; bitpos: [12]; default: 1;
+        uint32_t thr_zero_en:1;
+        /** thr_h_lim_en : R/W; bitpos: [12]; default: 1;
          *  This is the enable bit for unit n's thr_h_lim comparator. Configures it to enable
          *  the high limit interrupt.
          */
-        uint32_t thr_h_lim_en_un:1;
-        /** thr_l_lim_en_un : R/W; bitpos: [13]; default: 1;
+        uint32_t thr_h_lim_en:1;
+        /** thr_l_lim_en : R/W; bitpos: [13]; default: 1;
          *  This is the enable bit for unit n's thr_l_lim comparator. Configures it to enable
          *  the low limit interrupt.
          */
-        uint32_t thr_l_lim_en_un:1;
-        /** thr_thres0_en_un : R/W; bitpos: [14]; default: 0;
+        uint32_t thr_l_lim_en:1;
+        /** thr_thres0_en : R/W; bitpos: [14]; default: 0;
          *  This is the enable bit for unit n's thres0 comparator.
          */
-        uint32_t thr_thres0_en_un:1;
-        /** thr_thres1_en_un : R/W; bitpos: [15]; default: 0;
+        uint32_t thr_thres0_en:1;
+        /** thr_thres1_en : R/W; bitpos: [15]; default: 0;
          *  This is the enable bit for unit n's thres1 comparator.
          */
-        uint32_t thr_thres1_en_un:1;
-        /** ch0_neg_mode_un : R/W; bitpos: [17:16]; default: 0;
+        uint32_t thr_thres1_en:1;
+        /** ch0_neg_mode : R/W; bitpos: [17:16]; default: 0;
          *  This register sets the behavior when the signal input of channel 0 detects a
          *  negative edge.
          *
          *  1: Increase the counter.2: Decrease the counter.0, 3: No effect on counter
          */
-        uint32_t ch0_neg_mode_un:2;
-        /** ch0_pos_mode_un : R/W; bitpos: [19:18]; default: 0;
+        uint32_t ch0_neg_mode:2;
+        /** ch0_pos_mode : R/W; bitpos: [19:18]; default: 0;
          *  This register sets the behavior when the signal input of channel 0 detects a
          *  positive edge.
          *
          *  1: Increase the counter.2: Decrease the counter.0, 3: No effect on counter
          */
-        uint32_t ch0_pos_mode_un:2;
-        /** ch0_hctrl_mode_un : R/W; bitpos: [21:20]; default: 0;
+        uint32_t ch0_pos_mode:2;
+        /** ch0_hctrl_mode : R/W; bitpos: [21:20]; default: 0;
          *  This register configures how the CHn_POS_MODE/CHn_NEG_MODE settings will be
          *  modified when the control signal is high.
          *
          *  0: No modification.1: Invert behavior (increase -> decrease, decrease ->
          *  increase).2, 3: Inhibit counter modification
          */
-        uint32_t ch0_hctrl_mode_un:2;
-        /** ch0_lctrl_mode_un : R/W; bitpos: [23:22]; default: 0;
+        uint32_t ch0_hctrl_mode:2;
+        /** ch0_lctrl_mode : R/W; bitpos: [23:22]; default: 0;
          *  This register configures how the CHn_POS_MODE/CHn_NEG_MODE settings will be
          *  modified when the control signal is low.
          *
          *  0: No modification.1: Invert behavior (increase -> decrease, decrease ->
          *  increase).2, 3: Inhibit counter modification
          */
-        uint32_t ch0_lctrl_mode_un:2;
-        /** ch1_neg_mode_un : R/W; bitpos: [25:24]; default: 0;
+        uint32_t ch0_lctrl_mode:2;
+        /** ch1_neg_mode : R/W; bitpos: [25:24]; default: 0;
          *  This register sets the behavior when the signal input of channel 1 detects a
          *  negative edge.
          *
          *  1: Increment the counter.2: Decrement the counter.0, 3: No effect on counter
          */
-        uint32_t ch1_neg_mode_un:2;
-        /** ch1_pos_mode_un : R/W; bitpos: [27:26]; default: 0;
+        uint32_t ch1_neg_mode:2;
+        /** ch1_pos_mode : R/W; bitpos: [27:26]; default: 0;
          *  This register sets the behavior when the signal input of channel 1 detects a
          *  positive edge.
          *
          *  1: Increment the counter.2: Decrement the counter.0, 3: No effect on counter
          */
-        uint32_t ch1_pos_mode_un:2;
-        /** ch1_hctrl_mode_un : R/W; bitpos: [29:28]; default: 0;
+        uint32_t ch1_pos_mode:2;
+        /** ch1_hctrl_mode : R/W; bitpos: [29:28]; default: 0;
          *  This register configures how the CHn_POS_MODE/CHn_NEG_MODE settings will be
          *  modified when the control signal is high.
          *
          *  0: No modification.1: Invert behavior (increase -> decrease, decrease ->
          *  increase).2, 3: Inhibit counter modification
          */
-        uint32_t ch1_hctrl_mode_un:2;
-        /** ch1_lctrl_mode_un : R/W; bitpos: [31:30]; default: 0;
+        uint32_t ch1_hctrl_mode:2;
+        /** ch1_lctrl_mode : R/W; bitpos: [31:30]; default: 0;
          *  This register configures how the CHn_POS_MODE/CHn_NEG_MODE settings will be
          *  modified when the control signal is low.
          *
          *  0: No modification.1: Invert behavior (increase -> decrease, decrease ->
          *  increase).2, 3: Inhibit counter modification
          */
-        uint32_t ch1_lctrl_mode_un:2;
+        uint32_t ch1_lctrl_mode:2;
     };
     uint32_t val;
 } pcnt_un_conf0_reg_t;
@@ -117,14 +117,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** cnt_thres0_un : R/W; bitpos: [15:0]; default: 0;
+        /** cnt_thres0 : R/W; bitpos: [15:0]; default: 0;
          *  This register is used to configure the thres0 value for unit n.
          */
-        uint32_t cnt_thres0_un:16;
-        /** cnt_thres1_un : R/W; bitpos: [31:16]; default: 0;
+        uint32_t cnt_thres0:16;
+        /** cnt_thres1 : R/W; bitpos: [31:16]; default: 0;
          *  This register is used to configure the thres1 value for unit n.
          */
-        uint32_t cnt_thres1_un:16;
+        uint32_t cnt_thres1:16;
     };
     uint32_t val;
 } pcnt_un_conf1_reg_t;
@@ -134,16 +134,16 @@ typedef union {
  */
 typedef union {
     struct {
-        /** cnt_h_lim_un : R/W; bitpos: [15:0]; default: 0;
+        /** cnt_h_lim : R/W; bitpos: [15:0]; default: 0;
          *  This register is used to configure the thr_h_lim value for unit n. When pcnt
          *  reaches this value, the counter will be cleared to 0.
          */
-        uint32_t cnt_h_lim_un:16;
-        /** cnt_l_lim_un : R/W; bitpos: [31:16]; default: 0;
+        uint32_t cnt_h_lim:16;
+        /** cnt_l_lim : R/W; bitpos: [31:16]; default: 0;
          *  This register is used to configure the thr_l_lim value for unit n. When pcnt
          *  reaches this value, the counter will be cleared to 0.
          */
-        uint32_t cnt_l_lim_un:16;
+        uint32_t cnt_l_lim:16;
     };
     uint32_t val;
 } pcnt_un_conf2_reg_t;
@@ -185,22 +185,22 @@ typedef union {
          *  Set this bit to freeze unit 3's counter.
          */
         uint32_t cnt_pause_u3:1;
-        /** dalta_change_en_u0 : R/W; bitpos: [8]; default: 0;
+        /** delta_change_en_u0 : R/W; bitpos: [8]; default: 0;
          *  Configures this bit to enable unit 0's step comparator.
          */
-        uint32_t dalta_change_en_u0:1;
-        /** dalta_change_en_u1 : R/W; bitpos: [9]; default: 0;
+        uint32_t delta_change_en_u0:1;
+        /** delta_change_en_u1 : R/W; bitpos: [9]; default: 0;
          *  Configures this bit to enable unit 1's step comparator.
          */
-        uint32_t dalta_change_en_u1:1;
-        /** dalta_change_en_u2 : R/W; bitpos: [10]; default: 0;
+        uint32_t delta_change_en_u1:1;
+        /** delta_change_en_u2 : R/W; bitpos: [10]; default: 0;
          *  Configures this bit to enable unit 2's step comparator.
          */
-        uint32_t dalta_change_en_u2:1;
-        /** dalta_change_en_u3 : R/W; bitpos: [11]; default: 0;
+        uint32_t delta_change_en_u2:1;
+        /** delta_change_en_u3 : R/W; bitpos: [11]; default: 0;
          *  Configures this bit to enable unit 3's step comparator.
          */
-        uint32_t dalta_change_en_u3:1;
+        uint32_t delta_change_en_u3:1;
         uint32_t reserved_12:4;
         /** clk_en : R/W; bitpos: [16]; default: 0;
          *  The registers clock gate enable signal of PCNT module. 1: the registers can be read
@@ -213,73 +213,22 @@ typedef union {
     uint32_t val;
 } pcnt_ctrl_reg_t;
 
-/** Type of u3_change_conf register
+/** Type of change_conf register
  *  Configuration register for unit $n's step value.
  */
 typedef union {
     struct {
-        /** cnt_step_u3 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 3.
+        /** cnt_step : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the step value for unit n.
          */
-        uint32_t cnt_step_u3:16;
-        /** cnt_step_lim_u3 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 3.
+        uint32_t cnt_step:16;
+        /** cnt_step_lim : R/W; bitpos: [31:16]; default: 0;
+         *  Configures the step limit value for unit n.
          */
-        uint32_t cnt_step_lim_u3:16;
+        uint32_t cnt_step_lim:16;
     };
     uint32_t val;
-} pcnt_u3_change_conf_reg_t;
-
-/** Type of u2_change_conf register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_step_u2 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 2.
-         */
-        uint32_t cnt_step_u2:16;
-        /** cnt_step_lim_u2 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 2.
-         */
-        uint32_t cnt_step_lim_u2:16;
-    };
-    uint32_t val;
-} pcnt_u2_change_conf_reg_t;
-
-/** Type of u1_change_conf register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_step_u1 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 1.
-         */
-        uint32_t cnt_step_u1:16;
-        /** cnt_step_lim_u1 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 1.
-         */
-        uint32_t cnt_step_lim_u1:16;
-    };
-    uint32_t val;
-} pcnt_u1_change_conf_reg_t;
-
-/** Type of u0_change_conf register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_step_u0 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 0.
-         */
-        uint32_t cnt_step_u0:16;
-        /** cnt_step_lim_u0 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 0.
-         */
-        uint32_t cnt_step_lim_u0:16;
-    };
-    uint32_t val;
-} pcnt_u0_change_conf_reg_t;
+} pcnt_un_change_conf_reg_t;
 
 
 /** Group: Status Register */
@@ -288,10 +237,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** pulse_cnt_un : RO; bitpos: [15:0]; default: 0;
+        /** pulse_cnt : RO; bitpos: [15:0]; default: 0;
          *  This register stores the current pulse count value for unit n.
          */
-        uint32_t pulse_cnt_un:16;
+        uint32_t pulse_cnt:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -302,42 +251,42 @@ typedef union {
  */
 typedef union {
     struct {
-        /** cnt_thr_zero_mode_un : RO; bitpos: [1:0]; default: 0;
-         *  The pulse counter status of PCNT_Un corresponding to 0. 0: pulse counter decreases
+        /** cnt_thr_zero_mode : RO; bitpos: [1:0]; default: 0;
+         *  The pulse counter status of PCNT corresponding to 0. 0: pulse counter decreases
          *  from positive to 0. 1: pulse counter increases from negative to 0. 2: pulse counter
          *  is negative. 3: pulse counter is positive.
          */
-        uint32_t cnt_thr_zero_mode_un:2;
-        /** cnt_thr_thres1_lat_un : RO; bitpos: [2]; default: 0;
-         *  The latched value of thres1 event of PCNT_Un when threshold event interrupt is
+        uint32_t cnt_thr_zero_mode:2;
+        /** cnt_thr_thres1_lat : RO; bitpos: [2]; default: 0;
+         *  The latched value of thres1 event of PCNT when threshold event interrupt is
          *  valid. 1: the current pulse counter equals to thres1 and thres1 event is valid. 0:
          *  others
          */
-        uint32_t cnt_thr_thres1_lat_un:1;
-        /** cnt_thr_thres0_lat_un : RO; bitpos: [3]; default: 0;
-         *  The latched value of thres0 event of PCNT_Un when threshold event interrupt is
+        uint32_t cnt_thr_thres1_lat:1;
+        /** cnt_thr_thres0_lat : RO; bitpos: [3]; default: 0;
+         *  The latched value of thres0 event of PCNT when threshold event interrupt is
          *  valid. 1: the current pulse counter equals to thres0 and thres0 event is valid. 0:
          *  others
          */
-        uint32_t cnt_thr_thres0_lat_un:1;
-        /** cnt_thr_l_lim_lat_un : RO; bitpos: [4]; default: 0;
-         *  The latched value of low limit event of PCNT_Un when threshold event interrupt is
+        uint32_t cnt_thr_thres0_lat:1;
+        /** cnt_thr_l_lim_lat : RO; bitpos: [4]; default: 0;
+         *  The latched value of low limit event of PCNT when threshold event interrupt is
          *  valid. 1: the current pulse counter equals to thr_l_lim and low limit event is
          *  valid. 0: others
          */
-        uint32_t cnt_thr_l_lim_lat_un:1;
-        /** cnt_thr_h_lim_lat_un : RO; bitpos: [5]; default: 0;
-         *  The latched value of high limit event of PCNT_Un when threshold event interrupt is
+        uint32_t cnt_thr_l_lim_lat:1;
+        /** cnt_thr_h_lim_lat : RO; bitpos: [5]; default: 0;
+         *  The latched value of high limit event of PCNT when threshold event interrupt is
          *  valid. 1: the current pulse counter equals to thr_h_lim and high limit event is
          *  valid. 0: others
          */
-        uint32_t cnt_thr_h_lim_lat_un:1;
-        /** cnt_thr_zero_lat_un : RO; bitpos: [6]; default: 0;
-         *  The latched value of zero threshold event of PCNT_Un when threshold event interrupt
+        uint32_t cnt_thr_h_lim_lat:1;
+        /** cnt_thr_zero_lat : RO; bitpos: [6]; default: 0;
+         *  The latched value of zero threshold event of PCNT when threshold event interrupt
          *  is valid. 1: the current pulse counter equals to 0 and zero threshold event is
          *  valid. 0: others
          */
-        uint32_t cnt_thr_zero_lat_un:1;
+        uint32_t cnt_thr_zero_lat:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -464,35 +413,25 @@ typedef union {
     uint32_t val;
 } pcnt_date_reg_t;
 
-
-typedef struct {
-    volatile pcnt_un_conf0_reg_t u0_conf0;
-    volatile pcnt_un_conf1_reg_t u0_conf1;
-    volatile pcnt_un_conf2_reg_t u0_conf2;
-    volatile pcnt_un_conf0_reg_t u1_conf0;
-    volatile pcnt_un_conf1_reg_t u1_conf1;
-    volatile pcnt_un_conf2_reg_t u1_conf2;
-    volatile pcnt_un_conf0_reg_t u2_conf0;
-    volatile pcnt_un_conf1_reg_t u2_conf1;
-    volatile pcnt_un_conf2_reg_t u2_conf2;
-    volatile pcnt_un_conf0_reg_t u3_conf0;
-    volatile pcnt_un_conf1_reg_t u3_conf1;
-    volatile pcnt_un_conf2_reg_t u3_conf2;
-    volatile pcnt_un_cnt_reg_t un_cnt[4];
+typedef struct pcnt_dev_t {
+    volatile struct {
+        pcnt_un_conf0_reg_t conf0;
+        pcnt_un_conf1_reg_t conf1;
+        pcnt_un_conf2_reg_t conf2;
+    } conf_unit[4];
+    volatile pcnt_un_cnt_reg_t cnt_unit[4];
     volatile pcnt_int_raw_reg_t int_raw;
     volatile pcnt_int_st_reg_t int_st;
     volatile pcnt_int_ena_reg_t int_ena;
     volatile pcnt_int_clr_reg_t int_clr;
-    volatile pcnt_un_status_reg_t un_status[4];
+    volatile pcnt_un_status_reg_t status_unit[4];
     volatile pcnt_ctrl_reg_t ctrl;
-    volatile pcnt_u3_change_conf_reg_t u3_change_conf;
-    volatile pcnt_u2_change_conf_reg_t u2_change_conf;
-    volatile pcnt_u1_change_conf_reg_t u1_change_conf;
-    volatile pcnt_u0_change_conf_reg_t u0_change_conf;
+    volatile pcnt_un_change_conf_reg_t change_conf_unit[4]; // Note the unit order is 3210
     uint32_t reserved_074[34];
     volatile pcnt_date_reg_t date;
 } pcnt_dev_t;
 
+extern pcnt_dev_t PCNT;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(pcnt_dev_t) == 0x100, "Invalid size of pcnt_dev_t structure");

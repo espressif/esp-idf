@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@ extern "C" {
 
 #define TEST_PCNT_GPIO_A 0
 #define TEST_PCNT_GPIO_B 2
+#define TEST_PCNT_GPIO_Z 4
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE
 #define TEST_PCNT_CALLBACK_ATTR IRAM_ATTR

@@ -1215,34 +1215,34 @@ extern "C" {
 #define PCNT_CNT_PAUSE_U3_M  (PCNT_CNT_PAUSE_U3_V << PCNT_CNT_PAUSE_U3_S)
 #define PCNT_CNT_PAUSE_U3_V  0x00000001U
 #define PCNT_CNT_PAUSE_U3_S  7
-/** PCNT_DALTA_CHANGE_EN_U0 : R/W; bitpos: [8]; default: 0;
+/** PCNT_DELTA_CHANGE_EN_U0 : R/W; bitpos: [8]; default: 0;
  *  Configures this bit to enable unit 0's step comparator.
  */
-#define PCNT_DALTA_CHANGE_EN_U0    (BIT(8))
-#define PCNT_DALTA_CHANGE_EN_U0_M  (PCNT_DALTA_CHANGE_EN_U0_V << PCNT_DALTA_CHANGE_EN_U0_S)
-#define PCNT_DALTA_CHANGE_EN_U0_V  0x00000001U
-#define PCNT_DALTA_CHANGE_EN_U0_S  8
-/** PCNT_DALTA_CHANGE_EN_U1 : R/W; bitpos: [9]; default: 0;
+#define PCNT_DELTA_CHANGE_EN_U0    (BIT(8))
+#define PCNT_DELTA_CHANGE_EN_U0_M  (PCNT_DELTA_CHANGE_EN_U0_V << PCNT_DELTA_CHANGE_EN_U0_S)
+#define PCNT_DELTA_CHANGE_EN_U0_V  0x00000001U
+#define PCNT_DELTA_CHANGE_EN_U0_S  8
+/** PCNT_DELTA_CHANGE_EN_U1 : R/W; bitpos: [9]; default: 0;
  *  Configures this bit to enable unit 1's step comparator.
  */
-#define PCNT_DALTA_CHANGE_EN_U1    (BIT(9))
-#define PCNT_DALTA_CHANGE_EN_U1_M  (PCNT_DALTA_CHANGE_EN_U1_V << PCNT_DALTA_CHANGE_EN_U1_S)
-#define PCNT_DALTA_CHANGE_EN_U1_V  0x00000001U
-#define PCNT_DALTA_CHANGE_EN_U1_S  9
-/** PCNT_DALTA_CHANGE_EN_U2 : R/W; bitpos: [10]; default: 0;
+#define PCNT_DELTA_CHANGE_EN_U1    (BIT(9))
+#define PCNT_DELTA_CHANGE_EN_U1_M  (PCNT_DELTA_CHANGE_EN_U1_V << PCNT_DELTA_CHANGE_EN_U1_S)
+#define PCNT_DELTA_CHANGE_EN_U1_V  0x00000001U
+#define PCNT_DELTA_CHANGE_EN_U1_S  9
+/** PCNT_DELTA_CHANGE_EN_U2 : R/W; bitpos: [10]; default: 0;
  *  Configures this bit to enable unit 2's step comparator.
  */
-#define PCNT_DALTA_CHANGE_EN_U2    (BIT(10))
-#define PCNT_DALTA_CHANGE_EN_U2_M  (PCNT_DALTA_CHANGE_EN_U2_V << PCNT_DALTA_CHANGE_EN_U2_S)
-#define PCNT_DALTA_CHANGE_EN_U2_V  0x00000001U
-#define PCNT_DALTA_CHANGE_EN_U2_S  10
-/** PCNT_DALTA_CHANGE_EN_U3 : R/W; bitpos: [11]; default: 0;
+#define PCNT_DELTA_CHANGE_EN_U2    (BIT(10))
+#define PCNT_DELTA_CHANGE_EN_U2_M  (PCNT_DELTA_CHANGE_EN_U2_V << PCNT_DELTA_CHANGE_EN_U2_S)
+#define PCNT_DELTA_CHANGE_EN_U2_V  0x00000001U
+#define PCNT_DELTA_CHANGE_EN_U2_S  10
+/** PCNT_DELTA_CHANGE_EN_U3 : R/W; bitpos: [11]; default: 0;
  *  Configures this bit to enable unit 3's step comparator.
  */
-#define PCNT_DALTA_CHANGE_EN_U3    (BIT(11))
-#define PCNT_DALTA_CHANGE_EN_U3_M  (PCNT_DALTA_CHANGE_EN_U3_V << PCNT_DALTA_CHANGE_EN_U3_S)
-#define PCNT_DALTA_CHANGE_EN_U3_V  0x00000001U
-#define PCNT_DALTA_CHANGE_EN_U3_S  11
+#define PCNT_DELTA_CHANGE_EN_U3    (BIT(11))
+#define PCNT_DELTA_CHANGE_EN_U3_M  (PCNT_DELTA_CHANGE_EN_U3_V << PCNT_DELTA_CHANGE_EN_U3_S)
+#define PCNT_DELTA_CHANGE_EN_U3_V  0x00000001U
+#define PCNT_DELTA_CHANGE_EN_U3_S  11
 /** PCNT_CLK_EN : R/W; bitpos: [16]; default: 0;
  *  The registers clock gate enable signal of PCNT module. 1: the registers can be read
  *  and written by application. 0: the registers can not be read or written by

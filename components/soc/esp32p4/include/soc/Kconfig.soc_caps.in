@@ -23,6 +23,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_PCNT_SUPPORTED
+    bool
+    default y
+
 config SOC_MCPWM_SUPPORTED
     bool
     default y
@@ -432,6 +436,10 @@ config SOC_PCNT_THRES_POINT_PER_UNIT
     default 2
 
 config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
+    bool
+    default y
+
+config SOC_PCNT_SUPPORT_ZERO_INPUT
     bool
     default y
 
