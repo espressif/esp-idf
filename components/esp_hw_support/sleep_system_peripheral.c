@@ -71,7 +71,7 @@ esp_err_t sleep_sys_periph_tee_apm_retention_init(void)
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(1), DR_REG_HP_APM_BASE, DR_REG_HP_APM_BASE, N_REGS_APM(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }    /* apm */
     };
 
-    esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_4, SLEEP_RETENTION_MODULE_TEE_APM);
+    esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_2, SLEEP_RETENTION_MODULE_TEE_APM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (TEE/APM) retention");
     ESP_LOGI(TAG, "TEE/APM sleep retention initialization");
     return ESP_OK;
