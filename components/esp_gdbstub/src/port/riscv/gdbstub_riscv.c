@@ -10,6 +10,7 @@
 #include "esp_cpu.h"
 #include "rv_decode.h"
 #include "sdkconfig.h"
+#include "esp_private/crosscore_int.h"
 
 extern volatile esp_gdbstub_frame_t *temp_regs_frame;
 
