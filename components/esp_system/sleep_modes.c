@@ -651,7 +651,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (!s_ultra_low_enabled) {
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
     }
-    if (rtc_dig_8m_enabled()) {
+    if (periph_using_8m) {
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
