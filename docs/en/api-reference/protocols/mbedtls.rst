@@ -16,10 +16,13 @@ Mbed TLS supports SSL 3.0 up to TLS 1.3 and DTLS 1.0 to 1.2 communication by pro
 - Hashing
 - Encryption/decryption
 
-.. note::
+Mbed TLS Documentation
+----------------------
 
-    Mbed TLS is in the process of migrating all the documentation to a single place. In the meantime, users can find the documentation at the `old Mbed TLS site <https://tls.mbed.org/api>`_ .
+For Mbed TLS documentation please refer to the following (upstream) pointers:
 
+- `API Reference`_
+- `Knowledge Base`_
 
 Mbed TLS Support in ESP-IDF
 ---------------------------
@@ -104,3 +107,7 @@ Reducing Binary Size
 ^^^^^^^^^^^^^^^^^^^^
 
 Under ``Component Config -> mbedTLS``, there are multiple Mbed TLS features which are enabled by default but can be disabled if not needed to save code size. More information can be about this can be found in :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` docs.
+
+
+.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.4.1/
+.. _`Knowledge Base`: https://mbed-tls.readthedocs.io/en/latest/kb/
