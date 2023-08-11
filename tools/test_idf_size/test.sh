@@ -75,6 +75,12 @@ json_test() {
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py app2.map --archive_details libdriver.a --diff app.map &>> output \
     && echo -e "\n***\nRunning idf_size.py diff --archive_details with another app..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libfreertos.a --diff app2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py on app with nonzero noload sections..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py app_nonzero_noload.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archives on app with nonzero noload sections..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --archives app_nonzero_noload.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --files on app with nonzero noload sections..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --files app_nonzero_noload.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s2..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s2 with overflow..." &>> output \
