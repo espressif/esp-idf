@@ -197,6 +197,7 @@ components/hal/esp32p4/include/hal/gpspi_flash_ll.h
 components/hal/esp32p4/include/hal/mcpwm_ll.h
 components/hal/esp32p4/include/hal/mpi_ll.h
 components/hal/esp32p4/include/hal/mpu_ll.h
+components/hal/esp32p4/include/hal/pcnt_ll.h
 components/hal/esp32p4/include/hal/spi_flash_ll.h
 components/hal/esp32p4/include/hal/spimem_flash_ll.h
 components/hal/esp32s2/include/hal/aes_ll.h
