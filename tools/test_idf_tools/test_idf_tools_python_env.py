@@ -28,6 +28,7 @@ except ImportError:
 IDF_PATH = os.environ.get('IDF_PATH', '../..')
 TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
+PYTHON_DIR_BACKUP = tempfile.mkdtemp()
 REQ_SATISFIED = 'Python requirements are satisfied'
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
@@ -40,9 +41,20 @@ idf_tools.global_idf_path = IDF_PATH
 idf_tools.global_idf_tools_path = TOOLS_DIR
 
 
+def setUpModule():  # type: () -> None
+    shutil.rmtree(PYTHON_DIR_BACKUP)
+    shutil.move(PYTHON_DIR, PYTHON_DIR_BACKUP)
+
+
+def tearDownModule():  # type: () -> None
+    if os.path.isdir(PYTHON_DIR):
+        shutil.rmtree(PYTHON_DIR)
+    shutil.move(PYTHON_DIR_BACKUP, PYTHON_DIR)
+
+
 class BasePythonInstall(unittest.TestCase):
     def run_tool(self, cmd):  # type: (List[str]) -> str
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=300)
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
         decoded_output = ret.stdout.decode('utf-8', 'ignore')
         with open(os.path.join(IDF_PATH, 'tools', 'test_idf_tools', 'test_python_env_logs.txt'), 'a+') as w:
             # stack() returns list of callers frame records. [1] represent caller of this function
@@ -231,13 +243,37 @@ class TestCustomPythonPathInstall(BasePythonInstall):
 
 
 class TestCheckPythonDependencies(BasePythonInstall):
+
+    """
+    The constraint file name is available as the constraint_file attribute. The content of the file is changed by these
+    tests. The backup_constraint_file is a temporary file with the content of the original constraint file. This is
+    kept in order to restore the original content of the constraint file. Keeping the original constraint file is
+    important for consequent tests which should not download a new one especially when the test was run with a custom
+    constraint file different from the one on dl.espressif.com.
+    """
+    constraint_file: str
+    backup_constraint_file: str
+
+    @classmethod
+    def setUpClass(cls):  # type: () -> None
+        cls.constraint_file = idf_tools.get_constraints(idf_tools.get_idf_version(), online=False)
+        with tempfile.NamedTemporaryFile() as f:
+            cls.backup_constraint_file = f.name
+        shutil.copyfile(cls.constraint_file, cls.backup_constraint_file)
+
+    @classmethod
+    def tearDownClass(cls):  # type: () -> None
+        try:
+            os.remove(cls.backup_constraint_file)
+        except OSError:
+            pass
+
     def setUp(self):  # type: () -> None
         if os.path.isdir(PYTHON_DIR):
             shutil.rmtree(PYTHON_DIR)
 
     def tearDown(self):  # type: () -> None
-        if os.path.isdir(PYTHON_DIR):
-            shutil.rmtree(PYTHON_DIR)
+        shutil.copyfile(self.backup_constraint_file, self.constraint_file)
 
     def test_check_python_dependencies(self):  # type: () -> None
         # Prepare artificial constraints file containing packages from
@@ -256,14 +292,10 @@ class TestCheckPythonDependencies(BasePythonInstall):
         # are also present in the freeze list.
         con_list = [r.replace('==', '>') for r in freeze_output.splitlines() if r.split('==')[0] in req_list]
 
-        con_fn = idf_tools.get_constraints(idf_tools.get_idf_version(), online=False)
-        # delete modified constraints file after this test is finished
-        self.addCleanup(os.remove, con_fn)
-
         # Write the created constraints list into existing constraints file.
         # It will not be overwritten by subsequent idf_tools.py run, because
         # there is timestamp check.
-        with open(con_fn, 'w') as fd:
+        with open(self.constraint_file, 'w') as fd:
             fd.write(os.linesep.join(con_list))
 
         # Test that check_python_dependencies reports that requirements are not satisfied for
@@ -283,12 +315,8 @@ class TestCheckPythonDependencies(BasePythonInstall):
         foo_pkg = self.dump_foopackage()
         self.run_in_venv(['-m', 'pip', 'install', foo_pkg])
 
-        con_fn = idf_tools.get_constraints(idf_tools.get_idf_version(), online=False)
-        # delete modified constraints file after this test is finished
-        self.addCleanup(os.remove, con_fn)
-
         # append foopackage constraint to the existing constraints file
-        with open(con_fn, 'a') as fd:
+        with open(self.constraint_file, 'a') as fd:
             fd.write('foopackage>0.99')
 
         # check-python-dependencies should not complain about dummy_package
@@ -305,12 +333,8 @@ class TestCheckPythonDependencies(BasePythonInstall):
         foo_pkg = self.dump_foopackage_dev()
         self.run_in_venv(['-m', 'pip', 'install', foo_pkg])
 
-        con_fn = idf_tools.get_constraints(idf_tools.get_idf_version(), online=False)
-        # delete modified constraints file after this test is finished
-        self.addCleanup(os.remove, con_fn)
-
         # append foopackage constraint to the existing constraints file
-        with open(con_fn, 'r+') as fd:
+        with open(self.constraint_file, 'r+') as fd:
             con_lines = fd.readlines()
             fd.write('foopackage~=0.98')
 
@@ -318,7 +342,7 @@ class TestCheckPythonDependencies(BasePythonInstall):
         self.assertIn(REQ_SATISFIED, output)
 
         # append foopackage dev version constraint to the existing constraints file
-        with open(con_fn, 'r+') as fd:
+        with open(self.constraint_file, 'r+') as fd:
             fd.writelines(con_lines + ['foopackage==0.99.dev0'])
 
         output = self.run_idf_tools(['check-python-dependencies'])
