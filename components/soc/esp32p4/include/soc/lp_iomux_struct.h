@@ -950,6 +950,7 @@ typedef struct lp_iomux_dev_t {
     volatile lp_iomux_lp_pad_hys_reg_t lp_pad_hys;
 } lp_iomux_dev_t;
 
+extern lp_iomux_dev_t LP_IOMUX;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_iomux_dev_t) == 0x54, "Invalid size of lp_iomux_dev_t structure");

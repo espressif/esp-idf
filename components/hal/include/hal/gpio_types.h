@@ -68,6 +68,14 @@ typedef enum {
 #define GPIO_PIN_REG_46          IO_MUX_GPIO46_REG
 #define GPIO_PIN_REG_47          IO_MUX_GPIO47_REG
 #define GPIO_PIN_REG_48          IO_MUX_GPIO48_REG
+#define GPIO_PIN_REG_49          IO_MUX_GPIO49_REG
+#define GPIO_PIN_REG_50          IO_MUX_GPIO50_REG
+#define GPIO_PIN_REG_51          IO_MUX_GPIO51_REG
+#define GPIO_PIN_REG_52          IO_MUX_GPIO52_REG
+#define GPIO_PIN_REG_53          IO_MUX_GPIO53_REG
+#define GPIO_PIN_REG_54          IO_MUX_GPIO54_REG
+#define GPIO_PIN_REG_55          IO_MUX_GPIO55_REG
+#define GPIO_PIN_REG_56          IO_MUX_GPIO56_REG
 
 typedef enum {
     GPIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
@@ -121,14 +129,18 @@ typedef enum {
     GPIO_DRIVE_CAP_MAX,
 } gpio_drive_cap_t;
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 /**
  * @brief Available option for configuring hysteresis feature of GPIOs
  */
 typedef enum {
+#if SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
     GPIO_HYS_CTRL_EFUSE     = 0,    /*!< Pad input hysteresis ctrl by efuse */
-    GPIO_HYS_SOFT_ENABLE    = 1,    /*!< Pad input hysteresis enable by software */
-    GPIO_HYS_SOFT_DISABLE   = 2,    /*!< Pad input hysteresis disable by software */
+#endif
+    GPIO_HYS_SOFT_DISABLE,          /*!< Pad input hysteresis disable by software */
+    GPIO_HYS_SOFT_ENABLE,           /*!< Pad input hysteresis enable by software */
 } gpio_hys_ctrl_mode_t;
+#endif
 
 #ifdef __cplusplus
 }

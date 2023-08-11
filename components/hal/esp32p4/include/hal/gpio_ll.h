@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,14 +19,17 @@
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
-#include "soc/pmu_reg.h"
-#include "soc/usb_serial_jtag_reg.h"
+#include "soc/io_mux_struct.h"
+#include "soc/hp_system_struct.h"
+#include "soc/lp_iomux_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/pmu_struct.h"
+#include "soc/usb_serial_jtag_struct.h"
+#include "soc/usb_wrap_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/gpio_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
-
-//TODO: IDF-6509
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,8 +38,11 @@ extern "C" {
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
-#define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
-#define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
+#define GPIO_LL_INTR0_ENA      (BIT(0))
+// #define GPIO_LL_INTR1_ENA  (BIT(1)) // TODO: IDF-7995
+// #define GPIO_LL_INTR2_ENA  (BIT(2))
+// #define GPIO_LL_INTR3_ENA  (BIT(3))
+
 /**
   * @brief Enable pull-up on GPIO.
   *
@@ -45,7 +51,7 @@ extern "C" {
   */
 static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    REG_SET_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
+    IOMUX.gpio[gpio_num].fun_wpu = 1;
 }
 
 /**
@@ -57,7 +63,7 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
+    IOMUX.gpio[gpio_num].fun_wpu = 0;
 }
 
 /**
@@ -68,7 +74,7 @@ static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    REG_SET_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
+    IOMUX.gpio[gpio_num].fun_wpd = 1;
 }
 
 /**
@@ -80,7 +86,22 @@ static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    abort();
+    // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
+    // USB DP pin is default to PU enabled
+    // Note that esp32p4 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
+    // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
+    // TODO: read the specific efuse with efuse_ll.h
+
+    // One more noticable point is P4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) seperately.
+    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
+    if (gpio_num == USB_USJ_INT_PHY_DP_GPIO_NUM) {
+        USB_SERIAL_JTAG.conf0.pad_pull_override = 1;
+        USB_SERIAL_JTAG.conf0.dp_pullup = 0;
+    } else if (gpio_num == USB_OTG_INT_PHY_DP_GPIO_NUM) {
+        USB_WRAP.otg_conf.pad_pull_override = 1;
+        USB_WRAP.otg_conf.dp_pullup = 0;
+    }
+    IOMUX.gpio[gpio_num].fun_wpd = 0;
 }
 
 /**
@@ -92,7 +113,7 @@ static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
 {
-    // hw->pin[gpio_num].int_type = intr_type;
+    hw->pin[gpio_num].int_type = intr_type;
 }
 
 /**
@@ -105,8 +126,8 @@ static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, uint32_t gpio_num, gpio
 __attribute__((always_inline))
 static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    // *status = hw->intr_0; // need to check
-    abort();
+    (void)core_id; // TODO: IDF-7995 There are 4 interrupt sources for GPIO on P4. New feature! Need to fix this function later.
+    *status = hw->intr_0.int_0;
 }
 
 /**
@@ -119,7 +140,8 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
 __attribute__((always_inline))
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    *status = 0;
+    (void)core_id; // TODO: IDF-7995 There are 4 interrupt sources for GPIO on P4. New feature! Need to fix this function later.
+    *status = hw->intr1_0.int1_0;
 }
 
 /**
@@ -131,7 +153,7 @@ static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id
 __attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
 {
-    // hw->status_w1tc = mask;
+    hw->status_w1tc.status_w1tc = mask;
 }
 
 /**
@@ -143,7 +165,7 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
 __attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
-    // P4 needs check
+    hw->status1_w1tc.status1_w1tc = mask;
 }
 
 /**
@@ -156,8 +178,8 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 __attribute__((always_inline))
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, uint32_t gpio_num)
 {
-    // HAL_ASSERT(core_id == 0 && "target SoC only has a single core");
-    // GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
+    (void)core_id;
+    hw->pin[gpio_num].int_ena = GPIO_LL_INTR0_ENA;     //enable for GPIO_INTR0 interrupt signal TODO: IDF-7995
 }
 
 /**
@@ -169,7 +191,7 @@ static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id,
 __attribute__((always_inline))
 static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->pin[gpio_num].int_ena = 0;                             //disable GPIO intr
+    hw->pin[gpio_num].int_ena = 0;                             //disable GPIO intr
 }
 
 /**
@@ -181,7 +203,7 @@ static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].fun_ie = 0;
 }
 
 /**
@@ -192,7 +214,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].fun_ie = 1;
 }
 
 /**
@@ -203,6 +225,7 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
+    IOMUX.gpio[gpio_num].filter_en = 1;
 }
 
 /**
@@ -213,6 +236,55 @@ static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
+    IOMUX.gpio[gpio_num].filter_en = 0;
+}
+
+/**
+  * @brief Enable GPIO hysteresis
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    // TODO: IDF-7480 Fix magic number 16 with proper macro
+    uint64_t bit_mask = 1ULL << gpio_num;
+    if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
+        // GPIO0-15
+        LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys |= bit_mask;
+    } else {
+        if (gpio_num < 32 + 16) {
+            // GPIO 16-47
+            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low |= (bit_mask >> 16);
+        } else {
+            // GPIO 48-56
+            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high |= (bit_mask >> (32 + 16));
+        }
+    }
+}
+
+/**
+  * @brief Disable GPIO hysteresis
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    // TODO: IDF-7480 Fix magic number 16 with proper macro
+    uint64_t bit_mask = 1ULL << gpio_num;
+    if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
+        // GPIO0-15
+        LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys &= ~bit_mask;
+    } else {
+        if (gpio_num < 32 + 16) {
+            // GPIO 16-47
+            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low &= ~(bit_mask >> 16);
+        } else {
+            // GPIO 48-56
+            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high &= ~(bit_mask >> (32 + 16));
+        }
+    }
 }
 
 /**
@@ -224,10 +296,13 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->enable_w1tc = (0x1 << gpio_num);
-    // // Ensure no other output signal is routed via GPIO matrix to this pin
-    // REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4),
-    //           CORE_GPIO_OUT_PAD_OUT0_IDX);
+    if (gpio_num < 32) {
+        hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
+    } else {
+        hw->enable1_w1tc.enable1_w1tc = (0x1 << (gpio_num - 32));
+    }
+    // Ensure no other output signal is routed via GPIO matrix to this pin
+    hw->func_out_sel_cfg[gpio_num].out_sel = SIG_GPIO_OUT_IDX;
 }
 
 /**
@@ -236,9 +311,14 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->enable_w1ts = (0x1 << gpio_num);
+    if (gpio_num < 32) {
+        hw->enable_w1ts.enable_w1ts = (0x1 << gpio_num);
+    } else {
+        hw->enable1_w1ts.enable1_w1ts = (0x1 << (gpio_num - 32));
+    }
 }
 
 /**
@@ -249,7 +329,7 @@ static inline void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->pin[gpio_num].pad_driver = 0;
+    hw->pin[gpio_num].pad_driver = 0;
 }
 
 /**
@@ -260,7 +340,7 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->pin[gpio_num].pad_driver = 1;
+    hw->pin[gpio_num].pad_driver = 1;
 }
 
 /**
@@ -273,11 +353,19 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
-    // if (level) {
-    //     hw->out_w1ts = (1 << gpio_num);
-    // } else {
-    //     hw->out_w1tc = (1 << gpio_num);
-    // }
+    if (level) {
+        if (gpio_num < 32) {
+            hw->out_w1ts.out_w1ts = (1 << gpio_num);
+        } else {
+            hw->out1_w1ts.out1_w1ts = (1 << (gpio_num - 32));
+        }
+    } else {
+        if (gpio_num < 32) {
+            hw->out_w1tc.out_w1tc = (1 << gpio_num);
+        } else {
+            hw->out1_w1tc.out1_w1tc = (1 << (gpio_num - 32));
+        }
+    }
 }
 
 /**
@@ -294,8 +382,11 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
  */
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // return (hw->in >> gpio_num) & 0x1;
-    abort();
+    if (gpio_num < 32) {
+        return (hw->in.in_data_next >> gpio_num) & 0x1;
+    } else {
+        return (hw->in1.in1_data_next >> (gpio_num - 32)) & 0x1;
+    }
 }
 
 /**
@@ -306,7 +397,7 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->pin[gpio_num].wakeup_enable = 0x1;
+    hw->pin[gpio_num].wakeup_enable = 1;
 }
 
 /**
@@ -317,7 +408,7 @@ static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // hw->pin[gpio_num].wakeup_enable = 0;
+    hw->pin[gpio_num].wakeup_enable = 0;
 }
 
 /**
@@ -329,7 +420,7 @@ static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t strength)
 {
-    SET_PERI_REG_BITS(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, strength, FUN_DRV_S);
+    IOMUX.gpio[gpio_num].fun_drv = strength;
 }
 
 /**
@@ -341,27 +432,7 @@ static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t *strength)
 {
-    *strength = (gpio_drive_cap_t)GET_PERI_REG_BITS2(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, FUN_DRV_S);
-}
-
-/**
-  * @brief Enable all digital gpio pads hold function during Deep-sleep.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  */
-static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
-{
-    //SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
-}
-
-/**
-  * @brief Disable all digital gpio pads hold function during Deep-sleep.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  */
-static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
-{
-    //SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+    *strength = (gpio_drive_cap_t)(IOMUX.gpio[gpio_num].fun_drv);
 }
 
 /**
@@ -372,6 +443,20 @@ static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
   */
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
+    // TODO: IDF-7480 Fix magic number 16 with proper macro
+    uint64_t bit_mask = 1ULL << gpio_num;
+    if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
+        // GPIO 0-15
+        LP_IOMUX.lp_pad_hold.reg_lp_gpio_hold |= bit_mask;
+    } else {
+        if (gpio_num < 32 + 16) {
+            // GPIO 16-47
+            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low |= (bit_mask >> 16);
+        } else {
+            // GPIO 48-56
+            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + 16));
+        }
+    }
 }
 
 /**
@@ -382,6 +467,51 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
+    // TODO: IDF-7480 Fix magic number 16 with proper macro
+    uint64_t bit_mask = 1ULL << gpio_num;
+    if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
+        // GPIO 0-15
+        LP_IOMUX.lp_pad_hold.reg_lp_gpio_hold &= ~bit_mask;
+    } else {
+        if (gpio_num < 32 + 16) {
+            // GPIO 16-47
+            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low &= ~(bit_mask >> 16);
+        } else {
+            // GPIO 48-56
+            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + 16));
+        }
+    }
+}
+
+/**
+  * @brief Get digital gpio pad hold status.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number, only support output GPIOs
+  *
+  * @note caller must ensure that gpio_num is a digital io pad
+  *
+  * @return
+  *     - true  digital gpio pad is held
+  *     - false digital gpio pad is unheld
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    // TODO: IDF-7480 Fix magic number 16 with proper macro
+    uint64_t bit_mask = 1ULL << gpio_num;
+    if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
+        // GPIO 0-15
+        abort();
+    } else {
+        if (gpio_num < 32 + 16) {
+            // GPIO 16-47
+            return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> 16));
+        } else {
+            // GPIO 48-56
+            return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + 16)));
+        }
+    }
 }
 
 /**
@@ -394,8 +524,8 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
 {
-    // hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    // PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio * 4));
+    hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
+    IOMUX.gpio[gpio].fun_ie = 1;
 }
 
 /**
@@ -406,8 +536,13 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
-    if (pin_name == IO_MUX_GPIO18_REG || pin_name == IO_MUX_GPIO19_REG) {
-        //CLEAR_PERI_REG_MASK(USB_DEVICE_CONF0_REG, USB_DEVICE_USB_PAD_ENABLE);
+    // Disable USB PHY configuration if pins (24, 25) (26, 27) needs to select an IOMUX function
+    // P4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) seperately.
+    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
+    if (pin_name == IO_MUX_GPIO24_REG || pin_name == IO_MUX_GPIO25_REG) {
+        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+    } else if (pin_name == IO_MUX_GPIO26_REG || pin_name == IO_MUX_GPIO27_REG) {
+        USB_WRAP.otg_conf.usb_pad_enable = 0;
     }
     PIN_FUNC_SELECT(pin_name, func);
 }
@@ -422,11 +557,15 @@ static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 __attribute__((always_inline))
 static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
-    // Disable USB Serial JTAG if pins 18 or pins 19 needs to select an IOMUX function
-    if (gpio_num == 18 || gpio_num == 19) {
-        //CLEAR_PERI_REG_MASK(USB_DEVICE_CONF0_REG, USB_DEVICE_USB_PAD_ENABLE);
+    // Disable USB PHY configuration if pins (24, 25) (26, 27) needs to select an IOMUX function
+    // P4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) seperately.
+    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
+    if (gpio_num == USB_USJ_INT_PHY_DM_GPIO_NUM || gpio_num == USB_USJ_INT_PHY_DP_GPIO_NUM) {
+        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+    } else if (gpio_num == USB_OTG_INT_PHY_DM_GPIO_NUM || gpio_num == USB_OTG_INT_PHY_DP_GPIO_NUM) {
+        USB_WRAP.otg_conf.usb_pad_enable = 0;
     }
-    PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
+    IOMUX.gpio[gpio_num].mcu_sel = func;
 }
 
 /**
@@ -440,9 +579,9 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
   */
 static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
 {
-    // hw->func_out_sel_cfg[gpio_num].oe_sel = 0;
-    // hw->func_out_sel_cfg[gpio_num].oe_inv_sel = oen_inv;
-    // gpio_ll_iomux_func_sel(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
+    hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    gpio_ll_func_sel(hw, gpio_num, func);
 }
 
 /**
@@ -452,6 +591,37 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
  */
 static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
 {
+    switch (src) {
+    case SOC_MOD_CLK_XTAL:
+        HP_SYS_CLKRST.peri_clk_ctrl26.reg_iomux_clk_src_sel = 0;
+        break;
+    case SOC_MOD_CLK_PLL_F80M:
+        HP_SYS_CLKRST.peri_clk_ctrl26.reg_iomux_clk_src_sel = 1;
+        break;
+    default:
+        // Unsupported IO_MUX clock source
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+  * @brief Force hold digital io pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_hold_all(void)
+{
+    // WT flag, it gets self-cleared after the configuration is done
+    PMU.imm_pad_hold_all.tie_high_hp_pad_hold_all = 1;
+}
+
+/**
+  * @brief Force unhold digital io pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_unhold_all(void)
+{
+    // WT flag, it gets self-cleared after the configuration is done
+    PMU.imm_pad_hold_all.tie_low_hp_pad_hold_all = 1;
 }
 
 /**
@@ -462,7 +632,7 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
   */
 static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_SEL_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].slp_sel = 1;
 }
 
 /**
@@ -474,7 +644,7 @@ static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_SEL_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].slp_sel = 0;
 }
 
 /**
@@ -485,7 +655,7 @@ static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_PULLUP_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpu = 0;
 }
 
 /**
@@ -496,7 +666,7 @@ static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_PULLUP_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpu = 1;
 }
 
 /**
@@ -507,7 +677,7 @@ static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_PULLDOWN_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpd = 1;
 }
 
 /**
@@ -518,7 +688,7 @@ static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_PULLDOWN_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpd = 0;
 }
 
 /**
@@ -529,7 +699,7 @@ static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_ie = 0;
 }
 
 /**
@@ -540,7 +710,7 @@ static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num
   */
 static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_ie = 1;
 }
 
 /**
@@ -551,7 +721,7 @@ static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_OUTPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_oe = 0;
 }
 
 /**
@@ -562,40 +732,7 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    PIN_SLP_OUTPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-}
-
-/**
- * @brief Enable GPIO deep-sleep wake-up function.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number.
- * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
- */
-static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
-{
-}
-
-/**
- * @brief Disable GPIO deep-sleep wake-up function.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number
- */
-static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
-{
-}
-
-/**
- * @brief Get the status of whether an IO is used for deep-sleep wake-up.
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number
- * @return True if the pin is enabled to wake up from deep-sleep
- */
-static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
-{
-    return 0;
+    IOMUX.gpio[gpio_num].mcu_oe = 1;
 }
 
 #ifdef __cplusplus
