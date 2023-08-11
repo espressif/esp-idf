@@ -163,7 +163,6 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
  *      - ESP_OK: I2C device probe successfully
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
-// esp_err_t i2c_master_probe(i2c_master_dev_handle_t i2c_dev, int xfer_timeout_ms);
 esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address, int xfer_timeout_ms);
 
 /**

@@ -169,8 +169,10 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
  *
  * @param i2c_bus I2C bus handle, returned from `i2c_acquire_bus_handle`
  * @return ESP_OK: If release successfully
+ *         ESP_ERR_INVALID_STATE: Release bus failed because same bus has been required several times.
+ *         Otherwise: Other reasons.
  */
-uint8_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus);
+esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus);
 
 /**
  * @brief Set clock source for I2C peripheral

@@ -87,7 +87,7 @@ bool i2c_bus_occupied(i2c_port_num_t port_num)
     return bus_occupied;
 }
 
-uint8_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
+esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
 {
     int port_num = i2c_bus->port_num;
     i2c_clock_source_t clk_src = i2c_bus->clk_src;
@@ -98,7 +98,12 @@ uint8_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
         if (s_i2c_platform.count[port_num] == 0) {
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
-
+            if (i2c_bus->intr_handle) {
+                ESP_RETURN_ON_ERROR(esp_intr_free(i2c_bus->intr_handle), TAG, "delete interrupt service failed");
+            }
+            if (i2c_bus->pm_lock) {
+                ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_bus->pm_lock), TAG, "delete pm_lock failed");
+            }
             // Disable I2C module
             periph_module_disable(i2c_periph_signal[port_num].module);
             free(i2c_bus);
@@ -119,7 +124,9 @@ uint8_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
     if (do_deinitialize) {
         ESP_LOGD(TAG, "delete bus %d", port_num);
     }
-    return s_i2c_platform.count[port_num];
+
+    ESP_RETURN_ON_FALSE(s_i2c_platform.count[port_num] == 0, ESP_ERR_INVALID_STATE, TAG, "Bus not freed entirely");
+    return ESP_OK;
 }
 
 esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t clk_src)
