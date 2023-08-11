@@ -243,6 +243,9 @@ static void IRAM_ATTR esp_reset_rpa_moudle(void)
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn,
                                          uint32_t param1, uint32_t param2)
 {
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    esp_ble_controller_log_dump_all(true);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     BT_ASSERT_PRINT("BLE assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
     assert(0);
 }
@@ -637,7 +640,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     ble_npl_count_info_t npl_info;
 
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
-
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_ERR_INVALID_STATE;
@@ -719,7 +721,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "osi coex funcs reg failed");
         ret = ESP_ERR_INVALID_ARG;
-        goto free_controller;
+        goto modem_deint;
     }
 
 #if CONFIG_SW_COEXIST_ENABLE
@@ -729,7 +731,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     ret = ble_controller_init(cfg);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
-        goto free_controller;
+        goto modem_deint;
     }
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -742,7 +744,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_CONTROLLER_LOG_DUMP
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
-        goto free_controller;
+        goto controller_init_err;
     }
 #endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
 
@@ -767,9 +769,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 free_controller:
     controller_sleep_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+controller_init_err:
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
+modem_deint:
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -1110,7 +1114,9 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 void esp_ble_controller_log_dump_all(bool output)
 {
+    BT_ASSERT_PRINT("\r\n[DUMP_START:");
     ble_log_async_output_dump_all(output);
+    BT_ASSERT_PRINT("]\r\n");
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
