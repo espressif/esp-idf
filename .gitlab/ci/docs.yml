@@ -76,7 +76,10 @@ check_docs_lang_sync:
   stage: build_doc
   tags:
     - build_docs
-  dependencies: []
+  needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
   script:
     - cd docs
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
