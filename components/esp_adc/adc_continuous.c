@@ -201,7 +201,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
 
     gdma_strategy_config_t strategy_config = {
         .auto_update_desc = true,
-        .owner_check = true
+        .owner_check = false
     };
     gdma_apply_strategy(adc_ctx->rx_dma_channel, &strategy_config);
 
