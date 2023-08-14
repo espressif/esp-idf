@@ -1002,12 +1002,12 @@ typedef union {
 
 /** Group: Command registers */
 /** Type of comd0 register
- *  I2C command register 0
+ *  I2C command register 0~7
  */
 typedef union {
     struct {
-        /** command0 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 0. It consists of three parts:
+        /** command : R/W; bitpos: [13:0]; default: 0;
+         *  Configures command. It consists of three parts:
          *  op_code is the command,
          *  0: RSTART,
          *  1: WRITE,
@@ -1019,166 +1019,18 @@ typedef union {
          *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
          *  structure for more information.
          */
-        uint32_t command0:14;
+        uint32_t command:14;
         uint32_t reserved_14:17;
-        /** command0_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 0 is done in I2C Master mode.
+        /** command_done : R/W/SS; bitpos: [31]; default: 0;
+         *  Represents whether command is done in I2C Master mode.
          *  0: Not done
          *
          *  1: Done
          */
-        uint32_t command0_done:1;
+        uint32_t command_done:1;
     };
     uint32_t val;
-} i2c_comd0_reg_t;
-
-/** Type of comd1 register
- *  I2C command register 1
- */
-typedef union {
-    struct {
-        /** command1 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 1. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command1:14;
-        uint32_t reserved_14:17;
-        /** command1_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 1 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command1_done:1;
-    };
-    uint32_t val;
-} i2c_comd1_reg_t;
-
-/** Type of comd2 register
- *  I2C command register 2
- */
-typedef union {
-    struct {
-        /** command2 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 2. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command2:14;
-        uint32_t reserved_14:17;
-        /** command2_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 2 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command2_done:1;
-    };
-    uint32_t val;
-} i2c_comd2_reg_t;
-
-/** Type of comd3 register
- *  I2C command register 3
- */
-typedef union {
-    struct {
-        /** command3 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 3. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command3:14;
-        uint32_t reserved_14:17;
-        /** command3_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 3 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command3_done:1;
-    };
-    uint32_t val;
-} i2c_comd3_reg_t;
-
-/** Type of comd4 register
- *  I2C command register 4
- */
-typedef union {
-    struct {
-        /** command4 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 4. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command4:14;
-        uint32_t reserved_14:17;
-        /** command4_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 4 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command4_done:1;
-    };
-    uint32_t val;
-} i2c_comd4_reg_t;
-
-/** Type of comd5 register
- *  I2C command register 5
- */
-typedef union {
-    struct {
-        /** command5 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 5. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command5:14;
-        uint32_t reserved_14:17;
-        /** command5_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 5 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command5_done:1;
-    };
-    uint32_t val;
-} i2c_comd5_reg_t;
-
-/** Type of comd6 register
- *  I2C command register 6
- */
-typedef union {
-    struct {
-        /** command6 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 6. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command6:14;
-        uint32_t reserved_14:17;
-        /** command6_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 6 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command6_done:1;
-    };
-    uint32_t val;
-} i2c_comd6_reg_t;
-
-/** Type of comd7 register
- *  I2C command register 7
- */
-typedef union {
-    struct {
-        /** command7 : R/W; bitpos: [13:0]; default: 0;
-         *  Configures command 7. See details in I2C_CMD0_REG[13:0].
-         */
-        uint32_t command7:14;
-        uint32_t reserved_14:17;
-        /** command7_done : R/W/SS; bitpos: [31]; default: 0;
-         *  Represents whether command 7 is done in I2C Master mode.
-         *  0: Not done
-         *
-         *  1: Done
-         */
-        uint32_t command7_done:1;
-    };
-    uint32_t val;
-} i2c_comd7_reg_t;
-
+} i2c_comd_reg_t;
 
 /** Group: Version register */
 /** Type of date register
@@ -1246,14 +1098,7 @@ typedef struct {
     volatile i2c_scl_stop_setup_reg_t scl_stop_setup;
     volatile i2c_filter_cfg_reg_t filter_cfg;
     uint32_t reserved_054;
-    volatile i2c_comd0_reg_t comd0;
-    volatile i2c_comd1_reg_t comd1;
-    volatile i2c_comd2_reg_t comd2;
-    volatile i2c_comd3_reg_t comd3;
-    volatile i2c_comd4_reg_t comd4;
-    volatile i2c_comd5_reg_t comd5;
-    volatile i2c_comd6_reg_t comd6;
-    volatile i2c_comd7_reg_t comd7;
+    volatile i2c_comd_reg_t command[8];
     volatile i2c_scl_st_time_out_reg_t scl_st_time_out;
     volatile i2c_scl_main_st_time_out_reg_t scl_main_st_time_out;
     volatile i2c_scl_sp_conf_reg_t scl_sp_conf;
@@ -1266,6 +1111,9 @@ typedef struct {
     volatile i2c_rxfifo_start_addr_reg_t rxfifo_start_addr;
 } i2c_dev_t;
 
+extern i2c_dev_t I2C0;
+extern i2c_dev_t I2C1;
+extern i2c_dev_t LP_I2C;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2c_dev_t) == 0x184, "Invalid size of i2c_dev_t structure");

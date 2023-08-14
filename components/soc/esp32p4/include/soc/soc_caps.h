@@ -52,7 +52,7 @@
 // #define SOC_SDM_SUPPORTED               1  //TODO: IDF-7551
 // #define SOC_GPSPI_SUPPORTED             1  //TODO: IDF-7502, TODO: IDF-7503
 // #define SOC_LEDC_SUPPORTED              1  //TODO: IDF-6510
-// #define SOC_I2C_SUPPORTED               1  //TODO: IDF-6507, TODO: IDF-7491
+#define SOC_I2C_SUPPORTED               1  //TODO: IDF-6507, TODO: IDF-7491
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_AES_SUPPORTED               1  //TODO: IDF-6519
 #define SOC_MPI_SUPPORTED               1
@@ -211,10 +211,11 @@
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-P4 has 1 I2C
-#define SOC_I2C_NUM                 (1U)
+// ESP32-P4 has 2 I2Cs
+#define SOC_I2C_NUM                 (2U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.

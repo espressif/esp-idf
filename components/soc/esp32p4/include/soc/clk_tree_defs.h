@@ -278,6 +278,18 @@ typedef enum {
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
+/**
+ * @brief Array initializer for all supported clock sources of I2C
+ */
+#define SOC_I2C_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+/**
+ * @brief Type of I2C clock source.
+ */
+typedef enum {
+    I2C_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
+    I2C_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,                  /*!< Select RC_FAST as the source clock */
+    I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,                     /*!< Select XTAL as the default source clock */
+} soc_periph_i2c_clk_src_t;
 /////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
 
 //TODO: IDF-7502
