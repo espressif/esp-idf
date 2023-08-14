@@ -92,6 +92,40 @@ NVS Partition Generator Utility
 
 This utility helps generate NVS partition binary files which can be flashed separately on a dedicated partition via a flashing utility. Key-value pairs to be flashed onto the partition can be provided via a CSV file. For more details, please refer to :doc:`nvs_partition_gen`.
 
+Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of the partition binary files can also be done directly from CMake using the function ``nvs_create_partition_image``::
+
+    nvs_create_partition_image(<partition> <csv> [FLASH_IN_PROJECT] [DEPENDS  dep dep dep ...])
+
+**Positional Arguments**:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Parameter
+      - Description
+    * - ``partition``
+      - Name of the NVS parition
+    * - ``csv``
+      - Path to CSV file to parse
+
+
+**Optional Arguments**:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Parameter
+     - Description
+   * - ``FLASH_IN_PROJECT``
+     - Name of the NVS parition
+   * - ``DEPENDS``
+     - Specify files on which the command depends
+
+
+If ``FLASH_IN_PROJECT`` is not specified, the image will still be generated, but you will have to flash it manually using ``idf.py <partition>-flash`` (e.g., if your parition name is ``nvs``, then use ``idf.py nvs-flash``).
+
+``nvs_create_partition_image`` must be called from one of the component ``CMakeLists.txt`` files. Currently, only non-encrypted partitions are supported.
+
 Application Example
 -------------------
 

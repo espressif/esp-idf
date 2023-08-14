@@ -92,6 +92,40 @@ NVS 分区生成程序
 
 NVS 分区生成程序帮助生成 NVS 分区二进制文件，可使用烧录程序将二进制文件单独烧录至特定分区。烧录至分区上的键值对由 CSV 文件提供，详情请参考 :doc:`nvs_partition_gen`。
 
+可以直接使用函数 ``nvs_create_partition_image`` 通过 CMake 创建分区二进制文件，无需手动调用 ``nvs_partition_gen.py`` 工具::
+
+    nvs_create_partition_image(<partition> <csv> [FLASH_IN_PROJECT] [DEPENDS  dep dep dep ...])
+
+**位置参数**:
+
+.. list-table::
+    :header-rows: 1
+
+    * - 参数
+      - 描述
+    * - ``partition``
+      - NVS 分区名
+    * - ``csv``
+      - 解析的 CSV 文件路径
+
+
+**可选参数**:
+
+.. list-table::
+   :header-rows: 1
+
+   * - 参数
+     - 描述
+   * - ``FLASH_IN_PROJECT``
+     - NVS 分区名
+   * - ``DEPENDS``
+     - 指定命令依赖的文件
+
+
+在没有指定 ``FLASH_IN_PROJECT`` 的情况下，也支持生成分区镜像，不过此时需要使用 ``idf.py <partition>-flash`` 手动进行烧录。举个例子，如果分区名为 ``nvs``，则需使用的命令为 ``idf.py nvs-flash``。
+
+目前，仅支持从组件中的 ``CMakeLists.txt`` 文件调用 ``nvs_create_partition_image``，且此选项仅适用于非加密分区。
+
 应用示例
 -------------------
 
