@@ -1285,6 +1285,7 @@ typedef UINT8 tHCI_STATUS;
 
 /* Page timeout is used in LC only and LC is counting down slots not using OS */
 #define HCI_DEFAULT_PAGE_TOUT           0x2000  /* 5.12 sec (in slots) */
+#define HCI_MIN_PAGE_TOUT               0x0016  /* 13.75 ms (in slots) */
 
 /* Scan enable flags */
 #define HCI_NO_SCAN_ENABLED             0x00

@@ -61,6 +61,8 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_get_dev_name,                    /* BTA_DM_API_GET_NAME_EVT */
 #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
+    bta_dm_set_page_timeout,                /* BTA_DM_API_PAGE_TO_SET_EVT */
+    bta_dm_get_page_timeout,                /* BTA_DM_API_PAGE_TO_GET_EVT */
 #endif
     bta_dm_set_afh_channels,                /* BTA_DM_API_SET_AFH_CHANNELS_EVT */
 #if (SDP_INCLUDED == TRUE)

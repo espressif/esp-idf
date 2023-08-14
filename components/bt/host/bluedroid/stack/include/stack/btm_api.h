@@ -810,6 +810,23 @@ typedef struct {
     UINT8       hci_status;
 } tBTM_SET_AFH_CHANNELS_RESULTS;
 
+/* Structure returned with set page timeout event (in tBTM_CMPL_CB callback function)
+** in response to BTM_WritePageTimeout call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+} tBTM_SET_PAGE_TIMEOUT_RESULTS;
+
+/* Structure returned with get page timeout event (in tBTM_CMPL_CB callback function)
+** in response to BTM_ReadPageTimeout call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+    UINT16      page_to;
+} tBTM_GET_PAGE_TIMEOUT_RESULTS;
+
 /* Structure returned with set BLE channels event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_BleSetChannels call.
 */
@@ -2192,7 +2209,21 @@ UINT8 BTM_SetTraceLevel (UINT8 new_level);
 **
 *******************************************************************************/
 //extern
-tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout);
+tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout, tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_ReadPageTimeout
+**
+** Description      Send HCI Read Page Timeout.
+**
+** Returns
+**      BTM_SUCCESS         Command sent.
+**      BTM_NO_RESOURCES    If out of resources to send the command.
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_ReadPageTimeout(tBTM_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **

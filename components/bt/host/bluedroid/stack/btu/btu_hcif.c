@@ -996,6 +996,9 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_SET_AFH_CHANNELS:
         btm_set_afh_channels_complete(p);
         break;
+    case HCI_WRITE_PAGE_TOUT:
+        btm_set_page_timeout_complete(p);
+        break;
 #endif
 
 #if (BLE_INCLUDED == TRUE)

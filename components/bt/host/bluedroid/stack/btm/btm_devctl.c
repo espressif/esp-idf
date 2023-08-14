@@ -162,6 +162,7 @@ static void reset_complete(void)
     btm_cb.btm_inq_vars.page_scan_window  = HCI_DEF_PAGESCAN_WINDOW;
     btm_cb.btm_inq_vars.page_scan_period  = HCI_DEF_PAGESCAN_INTERVAL;
     btm_cb.btm_inq_vars.page_scan_type    = HCI_DEF_SCAN_TYPE;
+    btm_cb.btm_inq_vars.page_timeout      = HCI_DEFAULT_PAGE_TOUT;
 
 #if (BLE_INCLUDED == TRUE)
     btm_cb.ble_ctr_cb.conn_state = BLE_CONN_IDLE;
@@ -197,6 +198,9 @@ static void reset_complete(void)
 #if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
     BTM_SetPinType (btm_cb.cfg.pin_type, btm_cb.cfg.pin_code, btm_cb.cfg.pin_code_len);
 #endif  ///SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    BTM_WritePageTimeout(btm_cb.btm_inq_vars.page_timeout, NULL);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     for (int i = 0; i <= controller->get_last_features_classic_index(); i++) {
         btm_decode_ext_features_page(i, controller->get_features_classic(i)->as_array);
     }
@@ -817,7 +821,7 @@ void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len)
     BTM_TRACE_DEBUG ("BTM Event: Vendor Specific event from controller");
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_WritePageTimeout
@@ -830,12 +834,115 @@ void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len)
 **
 **
 *******************************************************************************/
-tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout)
+tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout, tBTM_CMPL_CB *p_cb)
 {
     BTM_TRACE_EVENT ("BTM: BTM_WritePageTimeout: Timeout: %d.", timeout);
 
+    if (timeout >= HCI_MIN_PAGE_TOUT) {
+        btm_cb.btm_inq_vars.page_timeout = timeout;
+    }
+    btm_cb.devcb.p_page_to_set_cmpl_cb = p_cb;
+
     /* Send the HCI command */
-    if (btsnd_hcic_write_page_tout (timeout)) {
+    if (!btsnd_hcic_write_page_tout (timeout)) {
+        return (BTM_NO_RESOURCES);
+    }
+
+    if (p_cb) {
+        btu_start_timer(&btm_cb.devcb.page_timeout_set_timer, BTU_TTYPE_BTM_SET_PAGE_TO, BTM_DEV_REPLY_TIMEOUT);
+    }
+
+    return (BTM_CMD_STARTED);
+}
+
+/*******************************************************************************
+**
+** Function         btm_set_page_timeout_complete
+**
+** Description      This function is called when setting page timeout complete.
+**                  message is received from the HCI.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_set_page_timeout_complete (const UINT8 *p)
+{
+    tBTM_SET_PAGE_TIMEOUT_RESULTS results;
+
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_page_to_set_cmpl_cb;
+    btm_cb.devcb.p_page_to_set_cmpl_cb = NULL;
+    btu_free_timer (&btm_cb.devcb.page_timeout_set_timer);
+
+    /* If there is a callback address for setting page timeout, call it */
+    if (p_cb) {
+        if (p) {
+            STREAM_TO_UINT8 (results.hci_status, p);
+            switch (results.hci_status) {
+                case HCI_SUCCESS:
+                    results.status = BTM_SUCCESS;
+                    break;
+                case HCI_ERR_UNSUPPORTED_VALUE:
+                case HCI_ERR_ILLEGAL_PARAMETER_FMT:
+                    results.status = BTM_ILLEGAL_VALUE;
+                    break;
+                default:
+                    results.status = BTM_NO_RESOURCES;
+                    break;
+            }
+        } else {
+            results.hci_status = HCI_ERR_HOST_TIMEOUT;
+            results.status = BTM_DEVICE_TIMEOUT;
+        }
+        (*p_cb)(&results);
+    }
+}
+#endif  /// CLASSIC_BT_INCLUDED == TRUE
+
+/*******************************************************************************
+**
+** Function         btm_page_to_setup_timeout
+**
+** Description      This function processes a timeout.
+**                  Currently, we just report an error log
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_page_to_setup_timeout (void *p_tle)
+{
+    UNUSED(p_tle);
+    BTM_TRACE_DEBUG ("%s\n", __func__);
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    btm_set_page_timeout_complete (NULL);
+#endif  /// CLASSIC_BT_INCLUDED == TRUE
+}
+
+/*******************************************************************************
+**
+** Function         BTM_ReadPageTimeout
+**
+** Description      Send HCI Read Page Timeout.
+**
+** Returns
+**      BTM_SUCCESS         Command sent.
+**      BTM_NO_RESOURCES    If out of resources to send the command.
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_ReadPageTimeout(tBTM_CMPL_CB *p_cb)
+{
+    BTM_TRACE_EVENT ("BTM: BTM_ReadPageTimeout");
+
+    /* Get the page timeout */
+    tBTM_GET_PAGE_TIMEOUT_RESULTS results;
+
+    if (p_cb) {
+        results.hci_status = HCI_SUCCESS;
+        results.status = BTM_SUCCESS;
+        results.page_to = btm_cb.btm_inq_vars.page_timeout;
+
+        (*p_cb)(&results);
         return (BTM_SUCCESS);
     } else {
         return (BTM_NO_RESOURCES);

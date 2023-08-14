@@ -507,7 +507,7 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 #endif  ///SMP_INCLUDED == TRUE
         BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
 #if CLASSIC_BT_INCLUDED
-        BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
+        BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout, NULL);
         bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
         BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
 #endif
@@ -824,6 +824,36 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
     }
 
     bta_dm_set_eir(NULL);
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_set_page_timeout
+**
+** Description      Sets page timeout
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data)
+{
+    BTM_WritePageTimeout(p_data->set_page_timeout.page_to, p_data->set_page_timeout.set_page_to_cb);
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_get_page_timeout
+**
+** Description      Gets page timeout
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data)
+{
+    BTM_ReadPageTimeout(p_data->get_page_timeout.get_page_to_cb);
 }
 #endif
 /*******************************************************************************

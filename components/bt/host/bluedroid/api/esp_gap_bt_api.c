@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -419,5 +419,40 @@ esp_err_t esp_bt_gap_set_qos(esp_bd_addr_t remote_bda, uint32_t t_poll)
     memcpy(&arg.set_qos.bda, remote_bda, sizeof(bt_bdaddr_t));
     arg.set_qos.t_poll = t_poll;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_set_page_timeout(uint16_t page_to)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return  ESP_ERR_INVALID_STATE;
+    }
+    if (page_to < HCI_MIN_PAGE_TOUT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT;
+
+    arg.set_page_to.page_to = page_to;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_get_page_timeout(void)
+{
+    btc_msg_t msg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return  ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */
