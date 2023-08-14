@@ -159,7 +159,7 @@ typedef enum {
 /// +CNUM service type of the phone number
 typedef enum {
     ESP_HF_SUBSCRIBER_SERVICE_TYPE_UNKNOWN = 0,      /*!< unknown */
-    ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE,            /*!< voice service */
+    ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE = 4,        /*!< voice service */
     ESP_HF_SUBSCRIBER_SERVICE_TYPE_FAX,              /*!< fax service */
 } esp_hf_subscriber_service_type_t;
 
