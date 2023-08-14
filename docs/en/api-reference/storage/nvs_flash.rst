@@ -122,9 +122,9 @@ Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of t
      - Specify files on which the command depends
 
 
-If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``idf.py <partition>-flash`` (e.g. if your parition name is ``nvs`` ``idf.py nvs-flash``).
+If ``FLASH_IN_PROJECT`` is not specified, the image will still be generated, but you will have to flash it manually using ``idf.py <partition>-flash`` (e.g., if your parition name is ``nvs``, then use ``idf.py nvs-flash``).
 
-``nvs_create_partition_image`` must be called from one of the component ``CMakeLists.txt`` files. Currently only non-encrypted partitions are supported.
+``nvs_create_partition_image`` must be called from one of the component ``CMakeLists.txt`` files. Currently, only non-encrypted partitions are supported.
 
 Application Example
 -------------------
