@@ -1,8 +1,8 @@
 menu "Example Configuration"
 
-    menu "GPIO wakeup configuration"
-        config EXAMPLE_GPIO_WAKEUP_SLEEP_NUM
-            int "Enable wakeup from GPIO"
+    menu "GPIO configuration"
+        config EXAMPLE_GPIO_CONTROL_NUM
+            int "Pin for gpio control"
             default 6  if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 5  if IDF_TARGET_ESP32S2
             default 4  if IDF_TARGET_ESP32
@@ -18,21 +18,21 @@ menu "Example Configuration"
             range 0 30 if IDF_TARGET_ESP32C6
             range 0 27 if IDF_TARGET_ESP32H2
             help
-                This option is used to set the wakeup and sleep pin.
+                This option is used to set the pin for gpio control.
         
-        config EXAMPLE_USE_PULSE_WAKEUP
-            bool "Enable GPIO pulse wakeup"
+        config EXAMPLE_USE_PULSE_CONTROL
+            bool "Enable GPIO pulse control"
             default n
             help
-                This option set the gpio wakeup mode. 
-                If this option is enabled, it is a pulse wakeup mode, otherwise it is a level wakeup mode.
+                This option set the gpio control mode. 
+                If this option is enabled, it is a pulse control mode, otherwise it is a level control mode.
 
-        config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
-            bool "Enable GPIO high-level wakeup"
+        config EXAMPLE_GPIO_CONTROL_HIGH_LEVEL
+            bool "Enable GPIO high-level control"
             default n
             help
-                This option set the gpio wake-up trigger signal, In light sleep, only high or low level wake-up is
-                supported. If this option is enabled, it is a high level wake up, otherwise it is a low level wake up.
+                This option set the gpio control trigger signal, In light sleep, only high or low level wake-up is
+                supported. If this option is enabled, it is a high level wakeup, otherwise it is a low level wakeup.
 
         config EXAMPLE_USE_INTERNAL_PU_PD
             bool "Use internal pull up and pull down"
@@ -42,14 +42,14 @@ menu "Example Configuration"
                 then the internal pull-down is used, otherwise the external access pull-down is used.
     endmenu
 
-    menu "UART wakeup configuration"
+    menu "UART configuration"
         config EXAMPLE_UART_NUM
             int "Select the UART to use"
             default 0
             range 0 1
             help
                 This option sets the UART used for the UART wakeup.
-                Although the esp32 and esp32s3 have three uart, only uart0 and uart1 support uart wakeup.
+                Although the esp32s3 have three uart, only uart0 and uart1 support uart wakeup.
         
         config EXAMPLE_UART_TX_IO_NUM
             int "Select the UART tx io"
@@ -182,6 +182,13 @@ menu "Example Configuration"
             help
                 This option is used to set the number of pos-edge used for uart wakeup.
                 Note: The minimum number of pos-edge is 3
+
+        config EXAMPLE_SLEEP_TIMEOUT_US
+            int "idle wait time (us)"
+            default 8000000
+            range 1 15000000
+            help
+                This option sets the timeout for the sleep timer.
     endmenu
 
     menu "event configuration"
