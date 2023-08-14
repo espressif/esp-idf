@@ -45,6 +45,8 @@ extern "C" {
 #define MCPWM_LL_EVENT_CAPTURE(cap)          (1 << ((cap) + 27))
 
 // Maximum values due to limited register bit width
+#define MCPWM_LL_MAX_TIMER_PRESCALE          256
+#define MCPWM_LL_MAX_CARRIER_PRESCALE        16
 #define MCPWM_LL_MAX_CARRIER_ONESHOT         16
 #define MCPWM_LL_MAX_CAPTURE_PRESCALE        256
 #define MCPWM_LL_MAX_DEAD_DELAY              65536

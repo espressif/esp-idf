@@ -724,6 +724,7 @@ The MCPWM operator has a carrier submodule that can be used if galvanic isolatio
 
 To configure the carrier submodule, you can call :cpp:func:`mcpwm_operator_apply_carrier`, and provide configuration structure :cpp:type:`mcpwm_carrier_config_t`:
 
+- :cpp:member:`mcpwm_carrier_config_t::clk_src` sets the clock source of the carrier.
 - :cpp:member:`mcpwm_carrier_config_t::frequency_hz` indicates carrier frequency in Hz.
 - :cpp:member:`mcpwm_carrier_config_t::duty_cycle` indicates the duty cycle of the carrier. Note that, the supported choices of the duty cycle are discrete, the driver will search for the nearest one based on your configuration.
 - :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` indicates the duration of the first pulse in microseconds. The resolution of the first pulse duration is determined by the carrier frequency you set in the :cpp:member:`mcpwm_carrier_config_t::frequency_hz`. The first pulse duration can't be zero, and it has to be at least one period of the carrier. A longer pulse width can help conduct the inductance quicker.

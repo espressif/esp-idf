@@ -724,6 +724,7 @@ MCPWM 操作器具有载波子模块，可以根据需要（例如隔离式数�
 
 调用 :cpp:func:`mcpwm_operator_apply_carrier`，并提供配置结构体 :cpp:type:`mcpwm_carrier_config_t`，配置载波子模块：
 
+- :cpp:member:`mcpwm_carrier_config_t::clk_src` 设置载波的时钟源。
 - :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 表示载波频率，单位为赫兹。
 - :cpp:member:`mcpwm_carrier_config_t::duty_cycle` 表示载波的占空比。需注意，支持的占空比选项并不连续，驱动程序将根据配置查找最接近的占空比。
 - :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` 表示第一个脉冲的脉宽，单位为微秒。该脉冲的分辨率由 :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 中的配置决定。第一个脉冲的脉宽不能为零，且至少为一个载波周期。脉宽越长，电感传导越快。
