@@ -582,7 +582,7 @@ menu "LWIP"
 
                 Can be set lower to save RAM, the default value 1460(ipv4)/1440(ipv6) will give best throughput.
                 IPv4 TCP_MSS Range: 576 <= TCP_MSS <= 1460
-                IPv6 TCP_MSS Range: 1220<= TCP_mSS <= 1440
+                IPv6 TCP_MSS Range: 1220<= TCP_MSS <= 1440
 
         config LWIP_TCP_TMR_INTERVAL
             int "TCP timer interval(ms)"
@@ -607,7 +607,7 @@ menu "LWIP"
 
         config LWIP_TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
-            default 5744  # 4 * default MSS
+            default 5760  # 4 * default MSS
             range 2440 65535 if !LWIP_WND_SCALE
             range 2440 1024000 if LWIP_WND_SCALE
             help
@@ -624,7 +624,7 @@ menu "LWIP"
 
         config LWIP_TCP_WND_DEFAULT
             int "Default receive window size"
-            default 5744 # 4 * default MSS
+            default 5760 # 4 * default MSS
             range 2440 65535 if !LWIP_WND_SCALE
             range 2440 1024000 if LWIP_WND_SCALE
             help
@@ -665,6 +665,37 @@ menu "LWIP"
 
                 Disable this option to save some RAM during TCP sessions, at the expense
                 of increased retransmissions if segments arrive out of order.
+
+        config LWIP_TCP_OOSEQ_TIMEOUT
+            int "Timeout for each pbuf queued in TCP OOSEQ, in RTOs."
+            depends on LWIP_TCP_QUEUE_OOSEQ
+            range 1 30
+            default 6
+            help
+                The timeout value is TCP_OOSEQ_TIMEOUT * RTO.
+
+        config LWIP_TCP_OOSEQ_MAX_PBUFS
+            int "The maximum number of pbufs queued on OOSEQ per pcb"
+            depends on LWIP_TCP_QUEUE_OOSEQ
+            range 0 12
+            default 4
+            help
+                If LWIP_TCP_OOSEQ_MAX_PBUFS = 0, TCP will not control the number of OOSEQ pbufs.
+
+                In a poor network environment, many out-of-order tcp pbufs will be received.
+                These out-of-order pbufs will be cached in the TCP out-of-order queue which will
+                cause Wi-Fi/Ethernet fail to release RX buffer in time.
+                It is possible that all RX buffers for MAC layer are used by OOSEQ.
+
+                Control the number of out-of-order pbufs to ensure that the MAC layer has enough RX buffer to receive packets.
+
+                In the Wi-Fi scenario, recommended OOSEQ PBUFS Range: 0 <= TCP_OOSEQ_MAX_PBUFS <= CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM/(MAX_TCP_NUMBER + 1)
+
+                In the Ethernet scenario,recommended Ethernet OOSEQ PBUFS Range: 0 <= TCP_OOSEQ_MAX_PBUFS <= CONFIG_ETH_DMA_RX_BUFFER_NUM/(MAX_TCP_NUMBER + 1)
+
+                Within the recommended value range, the larger the value, the better the performance.
+
+                MAX_TCP_NUMBER represent Maximum number of TCP connections in Wi-Fi(STA+SoftAP) and Ethernet scenario.
 
         config LWIP_TCP_SACK_OUT
             bool "Support sending selective acknowledgements"
