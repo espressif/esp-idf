@@ -337,10 +337,13 @@ esp_err_t esp_hf_ag_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type)
+esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, int number_type, esp_hf_subscriber_service_type_t service_type)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+    if (number == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
@@ -351,7 +354,8 @@ esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_h
     memset(&arg, 0, sizeof(btc_hf_args_t));
     memcpy(&(arg.cnum_rep), remote_addr, sizeof(esp_bd_addr_t));
     arg.cnum_rep.number = number; //deep_copy
-    arg.cnum_rep.type = type;
+    arg.cnum_rep.number_type = number_type;
+    arg.cnum_rep.service_type = service_type;
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t),

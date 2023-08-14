@@ -525,14 +525,18 @@ esp_err_t esp_hf_ag_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       number: registration number
- * @param[in]       type: service type (unknown/voice/fax)
+ * @param[in]       number_type: value of number type from
+ *                               128-143: national or international, may contain prefix and/or escape digits
+ *                               144-159: international, includes country code prefix, add "+" if needed
+ *                               160-175: national, but no prefix nor escape digits
+ * @param[in]       service_type: service type (unknown/voice/fax)
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type);
+esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, int number_type, esp_hf_subscriber_service_type_t service_type);
 
 /**
  *
