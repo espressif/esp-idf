@@ -48,6 +48,12 @@ static int do_cmd_quit(int argc, char **argv)
     return 0;
 }
 
+static esp_console_cmd_t s_quit_cmd = {
+    .command = "quit",
+    .help = "Quit REPL environment",
+    .func = &do_cmd_quit
+};
+
 // Enter "quit" to exit REPL environment
 /* Marked as ignore since it cannot run as a normal unity test case
    ran separately in test_console_repl  */
@@ -57,15 +63,23 @@ TEST_CASE("esp console repl test", "[console][ignore]")
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
 
-    esp_console_cmd_t cmd = {
-        .command = "quit",
-        .help = "Quit REPL environment",
-        .func = &do_cmd_quit
-    };
-    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
 
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(2000));
+}
+
+TEST_CASE("esp console help command", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_register_help_command());
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
 }
 
 TEST_CASE("esp console init/deinit test, minimal config", "[console]")
