@@ -226,6 +226,7 @@ void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
         p_msg->hdr.event = BTA_DM_API_CONFIG_EIR_EVT;
 
         p_msg->eir_fec_required = eir_config->bta_dm_eir_fec_required;
+        p_msg->eir_included_name = eir_config->bta_dm_eir_included_name;
         p_msg->eir_included_tx_power = eir_config->bta_dm_eir_included_tx_power;
         p_msg->eir_included_uuid = eir_config->bta_dm_eir_included_uuid;
         p_msg->eir_flags = eir_config->bta_dm_eir_flags;

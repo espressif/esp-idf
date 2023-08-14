@@ -106,6 +106,7 @@ typedef struct {
     bool                    fec_required;           /*!< FEC is required or not, true by default */
     bool                    include_txpower;        /*!< EIR data include TX power, false by default */
     bool                    include_uuid;           /*!< EIR data include UUID, false by default */
+    bool                    include_name;           /*!< EIR data include device name, true by default */
     uint8_t                 flag;                   /*!< EIR flags, see ESP_BT_EIR_FLAG for details, EIR will not include flag if it is 0, 0 by default */
     uint16_t                manufacturer_len;       /*!< Manufacturer data length, 0 by default */
     uint8_t                 *p_manufacturer_data;   /*!< Manufacturer data point */

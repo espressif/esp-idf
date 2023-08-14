@@ -689,6 +689,7 @@ static void btc_gap_bt_config_eir(btc_gap_bt_args_t *arg)
     esp_bt_eir_data_t *eir_data = &arg->config_eir.eir_data;
 
     eir_config.bta_dm_eir_fec_required = eir_data->fec_required;
+    eir_config.bta_dm_eir_included_name = eir_data->include_name;
     eir_config.bta_dm_eir_included_tx_power = eir_data->include_txpower;
     eir_config.bta_dm_eir_included_uuid = eir_data->include_uuid;
     eir_config.bta_dm_eir_flags = eir_data->flag;
