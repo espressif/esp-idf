@@ -788,6 +788,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
     tBTA_DM_API_CONFIG_EIR *config_eir = &p_data->config_eir;
 
     p_bta_dm_eir_cfg->bta_dm_eir_fec_required = config_eir->eir_fec_required;
+    p_bta_dm_eir_cfg->bta_dm_eir_included_name = config_eir->eir_included_name;
     p_bta_dm_eir_cfg->bta_dm_eir_included_uuid = config_eir->eir_included_uuid;
     p_bta_dm_eir_cfg->bta_dm_eir_included_tx_power = config_eir->eir_included_tx_power;
     p_bta_dm_eir_cfg->bta_dm_eir_flags = config_eir->eir_flags;
@@ -4039,14 +4040,19 @@ static void bta_dm_set_eir (char *local_name)
         }
         return;
     }
-
-    /* if local name is not provided, get it from controller */
-    if ( local_name == NULL ) {
-        if ( BTM_ReadLocalDeviceName( &local_name ) != BTM_SUCCESS ) {
-            APPL_TRACE_ERROR("Fail to read local device name for EIR");
-        }
-    }
 #endif  // BTA_EIR_CANNED_UUID_LIST
+
+    if (p_bta_dm_eir_cfg->bta_dm_eir_included_name) {
+        /* if local name is not provided, get it from controller */
+        if ( local_name == NULL ) {
+            if ( BTM_ReadLocalDeviceName( &local_name ) != BTM_SUCCESS ) {
+                APPL_TRACE_ERROR("Fail to read local device name for EIR");
+            }
+        }
+    } else {
+        local_name = NULL;
+    }
+
 
     /* Allocate a buffer to hold HCI command */
     if ((p_buf = (BT_HDR *)osi_malloc(BTM_CMD_BUF_SIZE)) == NULL) {
@@ -4092,15 +4098,16 @@ static void bta_dm_set_eir (char *local_name)
         }
     }
 
-    UINT8_TO_STREAM(p, local_name_len + 1);
-    UINT8_TO_STREAM(p, data_type);
-    eir_type[eir_type_num++] = data_type;
+
 
     if (local_name != NULL) {
+        UINT8_TO_STREAM(p, local_name_len + 1);
+        UINT8_TO_STREAM(p, data_type);
+        eir_type[eir_type_num++] = data_type;
         memcpy(p, local_name, local_name_len);
         p += local_name_len;
+        free_eir_length -= local_name_len + 2;
     }
-    free_eir_length -= local_name_len + 2;
 
     /* if UUIDs are provided in configuration */
     if (p_bta_dm_eir_cfg->bta_dm_eir_included_uuid) {
