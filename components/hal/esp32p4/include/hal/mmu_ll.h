@@ -20,6 +20,12 @@
 extern "C" {
 #endif
 
+///< MMU is per target
+#define MMU_LL_MMU_PER_TARGET    1
+
+#define MMU_LL_FLASH_MMU_ID      0
+#define MMU_LL_PSRAM_MMU_ID      1
+
 /**
  * Convert MMU virtual address to linear address
  *
@@ -29,7 +35,7 @@ extern "C" {
  */
 static inline uint32_t mmu_ll_vaddr_to_laddr(uint32_t vaddr)
 {
-    return vaddr & SOC_MMU_LINEAR_FLASH_ADDR_MASK;
+    return vaddr & SOC_MMU_LINEAR_ADDR_MASK;
 }
 
 /**
@@ -37,20 +43,44 @@ static inline uint32_t mmu_ll_vaddr_to_laddr(uint32_t vaddr)
  *
  * @param laddr       linear address
  * @param vaddr_type  virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
+ * @param target      virtual address aimed physical memory target
  *
  * @return virtual address
  */
-static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_type)
+static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_type, mmu_target_t target)
 {
-    uint32_t raw_laddr = (laddr & ~SOC_MMU_MEM_PHYSICAL_LINEAR_CAP);
+    (void)vaddr_type;
     uint32_t vaddr_base = 0;
-    if (vaddr_type == MMU_VADDR_FLASH) {
+    if (target == MMU_TARGET_FLASH0) {
         vaddr_base = SOC_MMU_FLASH_VADDR_BASE;
     } else {
         vaddr_base = SOC_MMU_PSRAM_VADDR_BASE;
     }
 
-    return vaddr_base | raw_laddr;
+    return vaddr_base | laddr;
+}
+
+/**
+ * Convert MMU virtual address to its target
+ *
+ * @param vaddr    virtual address
+ *
+ * @return target  paddr memory target
+ */
+__attribute__((always_inline))
+static inline mmu_target_t mmu_ll_vaddr_to_target(uint32_t vaddr)
+{
+    mmu_target_t target = MMU_TARGET_FLASH0;
+
+    if (ADDRESS_IN_DRAM_FLASH(vaddr)) {
+        target = MMU_TARGET_FLASH0;
+    } else if (ADDRESS_IN_DRAM_PSRAM(vaddr)) {
+        target = MMU_TARGET_PSRAM0;
+    } else {
+        HAL_ASSERT(false);
+    }
+
+    return target;
 }
 
 __attribute__((always_inline)) static inline bool mmu_ll_cache_encryption_enabled(void)
@@ -83,9 +113,7 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 __attribute__((always_inline))
 static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
-    (void)mmu_id;
-    (void)size;
-    return;
+    HAL_ASSERT(size == MMU_PAGE_64KB);
 }
 
 /**
@@ -105,7 +133,7 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
     (void)mmu_id;
     (void)type;
     uint32_t vaddr_end = vaddr_start + len - 1;
-    return (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start) && ADDRESS_IN_DRAM0_CACHE(vaddr_end));
+    return (ADDRESS_IN_DRAM_FLASH(vaddr_start) && ADDRESS_IN_DRAM_FLASH(vaddr_end)) || (ADDRESS_IN_DRAM_PSRAM(vaddr_start) && ADDRESS_IN_DRAM_PSRAM(vaddr_end));
 }
 
 /**
@@ -120,10 +148,18 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
  */
 static inline bool mmu_ll_check_valid_paddr_region(uint32_t mmu_id, uint32_t paddr_start, uint32_t len)
 {
-    (void)mmu_id;
-    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           (len < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM));
+    int max_paddr_page_num = 0;
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
+        max_paddr_page_num = MMU_FLASH_MAX_PADDR_PAGE_NUM;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
+        max_paddr_page_num = MMU_PSRAM_MAX_PADDR_PAGE_NUM;
+    } else {
+        HAL_ASSERT(false);
+    }
+
+    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * max_paddr_page_num)) &&
+           (len < (mmu_ll_get_page_size(mmu_id) * max_paddr_page_num)) &&
+           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * max_paddr_page_num));
 }
 
 /**
@@ -138,7 +174,6 @@ static inline bool mmu_ll_check_valid_paddr_region(uint32_t mmu_id, uint32_t pad
 __attribute__((always_inline))
 static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
 {
-    (void)mmu_id;
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
@@ -173,7 +208,6 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
 __attribute__((always_inline))
 static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target)
 {
-    (void)mmu_id;
     (void)target;
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
@@ -206,30 +240,32 @@ static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_
  */
 __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
 {
-    (void)mmu_id;
-    (void)target;
-    uint32_t index_reg, content_reg, sensitive, invalid_mask;
-    if (mmu_id == 0) { // flash mmu
+    uint32_t index_reg = 0;
+    uint32_t content_reg = 0;
+    uint32_t sensitive = 0;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         index_reg = SPI_MEM_C_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_C_MMU_ITEM_CONTENT_REG;
-        sensitive = MMU_SENSITIVE;
-        invalid_mask = MMU_INVALID_MASK;
-    } else { // psram mmu
+        sensitive = MMU_FLASH_SENSITIVE;
+        mmu_val |= MMU_FLASH_VALID;
+        mmu_val |= MMU_ACCESS_FLASH;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
         index_reg = SPI_MEM_S_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_S_MMU_ITEM_CONTENT_REG;
-        sensitive = DMMU_SENSITIVE;
-        invalid_mask = DMMU_INVALID_MASK;
-        mmu_val |= MMU_PSRAM_ACCESS_SPIRAM;
-
+        sensitive = MMU_PSRAM_SENSITIVE;
+        mmu_val |= MMU_PSRAM_VALID;
+        mmu_val |= MMU_ACCESS_PSRAM;
+    } else {
+        HAL_ASSERT(false);
     }
-    uint32_t mmu_raw_value;
+
     if (mmu_ll_cache_encryption_enabled()) {
         mmu_val |= sensitive;
     }
-    /* Note: for ESP32-P4, invert invalid bit for compatible with upper-layer software */
-    mmu_raw_value = mmu_val ^ invalid_mask;
+
     REG_WRITE(index_reg, entry_id);
-    REG_WRITE(content_reg, mmu_raw_value);
+    REG_WRITE(content_reg, mmu_val);
 }
 
 /**
@@ -241,29 +277,24 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
  */
 __attribute__((always_inline)) static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
 {
-    (void)mmu_id;
-    uint32_t mmu_raw_value;
-    uint32_t ret;
-    uint32_t index_reg, content_reg, sensitive, invalid_mask;
-    if (mmu_id == 0) { // flash mmu
+    uint32_t index_reg = 0;
+    uint32_t content_reg = 0;
+    uint32_t mmu_val = 0;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         index_reg = SPI_MEM_C_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_C_MMU_ITEM_CONTENT_REG;
-        sensitive = MMU_SENSITIVE;
-        invalid_mask = MMU_INVALID_MASK;
-    } else { // psram mmu
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
         index_reg = SPI_MEM_S_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_S_MMU_ITEM_CONTENT_REG;
-        sensitive = DMMU_SENSITIVE;
-        invalid_mask = DMMU_INVALID_MASK;
+    } else {
+        HAL_ASSERT(false);
     }
+
     REG_WRITE(index_reg, entry_id);
-    mmu_raw_value = REG_READ(content_reg);
-    if (mmu_ll_cache_encryption_enabled()) {
-        mmu_raw_value &= ~sensitive;
-    }
-    /* Note: for ESP32-P4, invert invalid bit for compatible with upper-layer software */
-    ret = mmu_raw_value ^ invalid_mask;
-    return ret;
+    mmu_val = REG_READ(content_reg);
+
+    return mmu_val;
 }
 
 /**
@@ -274,16 +305,24 @@ __attribute__((always_inline)) static inline uint32_t mmu_ll_read_entry(uint32_t
  */
 __attribute__((always_inline)) static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 {
-    uint32_t index_reg, content_reg;
-    if (mmu_id == 0) { // flash mmu
+    uint32_t index_reg = 0;
+    uint32_t content_reg = 0;
+    uint32_t invalid_mask = 0;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         index_reg = SPI_MEM_C_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_C_MMU_ITEM_CONTENT_REG;
-    } else { // psram mmu
+        invalid_mask = MMU_FLASH_INVALID;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
         index_reg = SPI_MEM_S_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_S_MMU_ITEM_CONTENT_REG;
+        invalid_mask = MMU_PSRAM_INVALID;
+    } else {
+        HAL_ASSERT(false);
     }
+
     REG_WRITE(index_reg, entry_id);
-    REG_WRITE(content_reg, MMU_INVALID);
+    REG_WRITE(content_reg, invalid_mask);
 }
 
 /**
@@ -309,21 +348,32 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
  */
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {
-    uint32_t mmu_raw_value;
-    uint32_t index_reg, content_reg, invalid_mask;
-    if (mmu_id == 0) { // flash mmu
+    uint32_t mmu_raw_value = 0;
+    uint32_t index_reg = 0;
+    uint32_t content_reg = 0;
+    uint32_t valid_mask = 0;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         index_reg = SPI_MEM_C_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_C_MMU_ITEM_CONTENT_REG;
-        invalid_mask = MMU_INVALID_MASK;
-    } else { // psram mmu
+        valid_mask = MMU_FLASH_VALID;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
         index_reg = SPI_MEM_S_MMU_ITEM_INDEX_REG;
         content_reg = SPI_MEM_S_MMU_ITEM_CONTENT_REG;
-        invalid_mask = DMMU_INVALID_MASK;
+        valid_mask = MMU_PSRAM_VALID;
+    } else {
+        HAL_ASSERT(false);
     }
+
     REG_WRITE(index_reg, entry_id);
     mmu_raw_value = REG_READ(content_reg);
-    /* Note: for ESP32-P4, the invalid-bit of MMU: 0 for invalid, 1 for valid */
-    return (mmu_raw_value & invalid_mask) ? true : false;
+
+    bool is_valid = false;
+    if (mmu_raw_value & valid_mask) {
+        is_valid = true;
+    }
+
+    return is_valid;
 }
 
 /**
@@ -336,10 +386,18 @@ static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
  */
 static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t entry_id)
 {
-    if (mmu_id == 0)
-        return MMU_TARGET_FLASH0;
-    else
-        return MMU_TARGET_PSRAM0;
+    (void)entry_id;
+    mmu_target_t target = MMU_TARGET_FLASH0;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
+        target = MMU_TARGET_FLASH0;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
+        target = MMU_TARGET_PSRAM0;
+    } else {
+        HAL_ASSERT(false);
+    }
+
+    return target;
 }
 
 /**
@@ -352,7 +410,6 @@ static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t ent
  */
 static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t entry_id)
 {
-    (void)mmu_id;
     HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
 
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
@@ -373,13 +430,14 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
         default:
             HAL_ASSERT(shift_code);
     }
-    if (mmu_id == 0) {
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         REG_WRITE(SPI_MEM_C_MMU_ITEM_INDEX_REG, entry_id);
-        return (REG_READ(SPI_MEM_C_MMU_ITEM_CONTENT_REG) & MMU_VALID_VAL_MASK) << shift_code;
-    } else {
+        return (REG_READ(SPI_MEM_C_MMU_ITEM_CONTENT_REG) & MMU_FLASH_VALID_VAL_MASK) << shift_code;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
         REG_WRITE(SPI_MEM_S_MMU_ITEM_INDEX_REG, entry_id);
-        return (REG_READ(SPI_MEM_S_MMU_ITEM_CONTENT_REG) & MMU_VALID_VAL_MASK) << shift_code;
-
+        return (REG_READ(SPI_MEM_S_MMU_ITEM_CONTENT_REG) & MMU_PSRAM_VALID_VAL_MASK) << shift_code;
+    } else {
+        HAL_ASSERT(false);
     }
 }
 
@@ -396,13 +454,27 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
  */
 static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint32_t mmu_val, mmu_target_t target)
 {
-    //TODO, should check PSRAM as well?
-    (void)mmu_id;
+    uint32_t index_reg = 0;
+    uint32_t content_reg = 0;
+    uint32_t valid_val_mask = 0;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
+        index_reg = SPI_MEM_C_MMU_ITEM_INDEX_REG;
+        content_reg = SPI_MEM_C_MMU_ITEM_CONTENT_REG;
+        valid_val_mask = MMU_FLASH_VALID_VAL_MASK;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
+        index_reg = SPI_MEM_S_MMU_ITEM_INDEX_REG;
+        content_reg = SPI_MEM_S_MMU_ITEM_CONTENT_REG;
+        valid_val_mask = MMU_PSRAM_VALID_VAL_MASK;
+    } else {
+        HAL_ASSERT(false);
+    }
+
     for (int i = 0; i < MMU_ENTRY_NUM; i++) {
         if (mmu_ll_check_entry_valid(mmu_id, i)) {
             if (mmu_ll_get_entry_target(mmu_id, i) == target) {
-                REG_WRITE(SPI_MEM_C_MMU_ITEM_INDEX_REG, i);
-                if ((REG_READ(SPI_MEM_C_MMU_ITEM_CONTENT_REG) & MMU_VALID_VAL_MASK) == mmu_val) {
+                REG_WRITE(index_reg, i);
+                if ((REG_READ(content_reg) & valid_val_mask) == mmu_val) {
                     return i;
                 }
             }
@@ -421,7 +493,6 @@ static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint3
  */
 static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t entry_id, mmu_vaddr_t type)
 {
-    (void)mmu_id;
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
 
@@ -442,7 +513,7 @@ static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t e
             HAL_ASSERT(shift_code);
     }
     uint32_t laddr = entry_id << shift_code;
-    return mmu_ll_laddr_to_vaddr(laddr, type);
+    return mmu_ll_laddr_to_vaddr(laddr, type, (mmu_id == MMU_LL_FLASH_MMU_ID) ? MMU_TARGET_FLASH0 : MMU_TARGET_PSRAM0);
 }
 
 #ifdef __cplusplus

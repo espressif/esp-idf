@@ -317,9 +317,9 @@ esp_err_t esp_mmu_map_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, 
 
     uint32_t vaddr = 0;
     if (caps & MMU_MEM_CAP_EXEC) {
-        vaddr = mmu_ll_laddr_to_vaddr(laddr, MMU_VADDR_INSTRUCTION);
+        vaddr = mmu_ll_laddr_to_vaddr(laddr, MMU_VADDR_INSTRUCTION, target);
     } else {
-        vaddr = mmu_ll_laddr_to_vaddr(laddr, MMU_VADDR_DATA);
+        vaddr = mmu_ll_laddr_to_vaddr(laddr, MMU_VADDR_DATA, target);
     }
     *out_ptr = (void *)vaddr;
 
@@ -335,7 +335,6 @@ IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_cap
     if (out_caps == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-
 
     for (int i = 0; i < s_mmu_ctx.num_regions; i++) {
         region = &s_mmu_ctx.mem_regions[i];
@@ -378,6 +377,38 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
 #endif // CONFIG_IDF_TARGET_ESP32
 }
 
+
+#if MMU_LL_MMU_PER_TARGET
+FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
+{
+    uint32_t actual_mapped_len = 0;
+    uint32_t mmu_id = 0;
+    if (target == MMU_TARGET_FLASH0) {
+        mmu_id = MMU_LL_FLASH_MMU_ID;
+    } else {
+        mmu_id = MMU_LL_PSRAM_MMU_ID;
+    }
+    mmu_hal_map_region(mmu_id, target, vaddr_start, paddr_start, size, &actual_mapped_len);
+
+    return actual_mapped_len;
+}
+#else
+FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
+{
+    uint32_t actual_mapped_len = 0;
+
+    mmu_hal_map_region(0, target, vaddr_start, paddr_start, size, &actual_mapped_len);
+#if (SOC_MMU_PERIPH_NUM == 2)
+#if !CONFIG_FREERTOS_UNICORE
+    mmu_hal_map_region(1, target, vaddr_start, paddr_start, size, &actual_mapped_len);
+#endif //  #if !CONFIG_FREERTOS_UNICORE
+#endif //  #if (SOC_MMU_PERIPH_NUM == 2)
+
+    return actual_mapped_len;
+}
+#endif
+
+
 static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
 {
     /**
@@ -387,16 +418,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
      */
     spi_flash_disable_interrupts_caches_and_other_cpu();
 
-    uint32_t actual_mapped_len = 0;
-    mmu_hal_map_region(0, target, vaddr_start, paddr_start, size, &actual_mapped_len);
-#if (SOC_MMU_PERIPH_NUM == 2)
-#if !CONFIG_FREERTOS_UNICORE
-#ifndef CONFIG_IDF_TARGET_ESP32P4 // for spi flash mmap, we always use flash mmu
-    //TODO: IDF-7509
-    mmu_hal_map_region(1, target, vaddr_start, paddr_start, size, &actual_mapped_len);
-#endif
-#endif //  #if !CONFIG_FREERTOS_UNICORE
-#endif //  #if (SOC_MMU_PERIPH_NUM == 2)
+    uint32_t actual_mapped_len = s_mapping_operation(target, vaddr_start, paddr_start, size);
 
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, vaddr_start, size);
     cache_ll_l1_enable_bus(0, bus_mask);
@@ -532,22 +554,16 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     new_block->laddr_end = new_block->laddr_start + aligned_size;
     new_block->size = aligned_size;
     new_block->caps = caps;
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7509
-    new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_FLASH);
-    new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_FLASH);
-#else
-    if (caps & MMU_MEM_CAP_EXEC) {
-        new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_INSTRUCTION);
-        new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_INSTRUCTION);
-    } else {
-        new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_DATA);
-        new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_DATA);
-    }
-#endif
     new_block->paddr_start = paddr_start;
     new_block->paddr_end = paddr_start + aligned_size;
     new_block->target = target;
+    if (caps & MMU_MEM_CAP_EXEC) {
+        new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_INSTRUCTION, target);
+        new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_INSTRUCTION, target);
+    } else {
+        new_block->vaddr_start = mmu_ll_laddr_to_vaddr(new_block->laddr_start, MMU_VADDR_DATA, target);
+        new_block->vaddr_end = mmu_ll_laddr_to_vaddr(new_block->laddr_end, MMU_VADDR_DATA, target);
+    }
 
     //do mapping
     s_do_mapping(target, new_block->vaddr_start, paddr_start, aligned_size);
@@ -567,6 +583,32 @@ err:
 }
 
 
+#if MMU_LL_MMU_PER_TARGET
+FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size)
+{
+    uint32_t mmu_id = 0;
+    mmu_target_t target = mmu_ll_vaddr_to_target(vaddr_start);
+
+    if (target == MMU_TARGET_FLASH0) {
+        mmu_id = MMU_LL_FLASH_MMU_ID;
+    } else {
+        mmu_id = MMU_LL_PSRAM_MMU_ID;
+    }
+    mmu_hal_unmap_region(mmu_id, vaddr_start, size);
+}
+#else
+FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size)
+{
+    mmu_hal_unmap_region(0, vaddr_start, size);
+#if (SOC_MMU_PERIPH_NUM == 2)
+#if !CONFIG_FREERTOS_UNICORE
+    mmu_hal_unmap_region(1, vaddr_start, size);
+#endif //  #if !CONFIG_FREERTOS_UNICORE
+#endif //  #if (SOC_MMU_PERIPH_NUM == 2)
+}
+#endif
+
+
 static void IRAM_ATTR NOINLINE_ATTR s_do_unmapping(uint32_t vaddr_start, uint32_t size)
 {
     /**
@@ -576,15 +618,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_unmapping(uint32_t vaddr_start, uint32_
      */
     spi_flash_disable_interrupts_caches_and_other_cpu();
 
-    mmu_hal_unmap_region(0, vaddr_start, size);
-#if (SOC_MMU_PERIPH_NUM == 2)
-#if !CONFIG_FREERTOS_UNICORE
-#ifndef CONFIG_IDF_TARGET_ESP32P4 // for flash mmap, we always use flash mmu
-    //TODO: IDF-7509
-    mmu_hal_unmap_region(1, vaddr_start, size);
-#endif
-#endif //  #if !CONFIG_FREERTOS_UNICORE
-#endif //  #if (SOC_MMU_PERIPH_NUM == 2)
+    s_unmapping_operation(vaddr_start, size);
 
     //enable Cache, after this function, internal RAM access is no longer mandatory
     spi_flash_enable_interrupts_caches_and_other_cpu();

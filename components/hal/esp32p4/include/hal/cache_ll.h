@@ -63,10 +63,10 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
     cache_bus_mask_t mask = 0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
-    if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW && vaddr_end < SINGLE_BANK_CACHE_ADDRESS_HIGH) {
+    if (vaddr_start >= DRAM_FLASH_ADDRESS_LOW && vaddr_end < DRAM_FLASH_ADDRESS_HIGH) {
         mask |= CACHE_BUS_IBUS0;
         mask |= CACHE_BUS_DBUS0;
-    } else if (vaddr_start >= DUAL_BANK_CACHE_ADDRESS_LOW && vaddr_end < DUAL_BANK_CACHE_ADDRESS_HIGH) {
+    } else if (vaddr_start >= DRAM_PSRAM_ADDRESS_LOW && vaddr_end < DRAM_PSRAM_ADDRESS_HIGH) {
         mask |= CACHE_BUS_IBUS1;
         mask |= CACHE_BUS_DBUS1;
     } else {
