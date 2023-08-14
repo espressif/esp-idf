@@ -233,7 +233,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_ivt_addr(const void *ivt_addr)
 #endif
 }
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_INT_CLIC_SUPPORTED
 //TODO: IDF-7863
 //"MTVT is only implemented in RISC-V arch"
 /**
@@ -245,7 +245,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
 {
     rv_utils_set_mtvt((uint32_t)mtvt_addr);
 }
-#endif  //#if CONFIG_IDF_TARGET_ESP32P4
+#endif  //#if SOC_INT_CLIC_SUPPORTED
 
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 /**

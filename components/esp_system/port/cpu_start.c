@@ -150,14 +150,22 @@ static void core_intr_matrix_clear(void)
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
 #if CONFIG_IDF_TARGET_ESP32P4
         if (core_id == 0) {
-            REG_WRITE(INTERRUPT_CORE0_LP_RTC_INT_MAP_REG + 4 * i, 0);
+            REG_WRITE(INTERRUPT_CORE0_LP_RTC_INT_MAP_REG + 4 * i, ETS_INVALID_INUM);
         } else {
-            REG_WRITE(INTERRUPT_CORE1_LP_RTC_INT_MAP_REG + 4 * i, 0);
+            REG_WRITE(INTERRUPT_CORE1_LP_RTC_INT_MAP_REG + 4 * i, ETS_INVALID_INUM);
         }
 #else
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
-#endif
+#endif  // CONFIG_IDF_TARGET_ESP32P4
     }
+
+#if SOC_INT_CLIC_SUPPORTED
+    for (int i = 0; i < 32; i++) {
+        /* Set all the CPU interrupt lines to vectored by default, as it is on other RISC-V targets */
+        esprv_intc_int_set_vectored(i, true);
+    }
+#endif // SOC_INT_CLIC_SUPPORTED
+
 }
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE

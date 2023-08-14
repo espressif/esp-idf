@@ -156,21 +156,32 @@ void esp_cpu_wait_for_intr(void)
 
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 
+
+#if SOC_INT_CLIC_SUPPORTED
+
+static bool is_intr_num_resv(int ext_intr_num) {
+    /* On targets that uses CLIC as the interrupt controller, the first 16 lines (0..15) are reserved for software
+     * interrupts, all the other lines starting from 16 and above can be used by external peripheral.
+     * in the case of this function, the parameter only refers to the external peripheral index, so if
+     * `ext_intr_num` is 0, it refers to interrupt index 16.
+     *
+     * Only interrupt line 6 is reserved at the moment since it is used for disabling interrupts */
+    return ext_intr_num == 6;
+}
+
+#else // !SOC_INT_CLIC_SUPPORTED
+
 static bool is_intr_num_resv(int intr_num)
 {
     // Workaround to reserve interrupt number 1 for Wi-Fi, 5,8 for Bluetooth, 6 for "permanently disabled interrupt"
     // [TODO: IDF-2465]
     uint32_t reserved = BIT(1) | BIT(5) | BIT(6) | BIT(8);
 
-    // int_num 0,3,4,7 are inavaliable for PULP cpu
+    // int_num 0,3,4,7 are unavailable for PULP cpu
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// TODO: IDF-5728 replace with a better macro name
     reserved |= BIT(0) | BIT(3) | BIT(4) | BIT(7);
 #endif
 
-#if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7795
-    return false;
-#endif
     if (reserved & BIT(intr_num)) {
         return true;
     }
@@ -184,6 +195,8 @@ static bool is_intr_num_resv(int intr_num)
 
     return destination != (intptr_t)&_interrupt_handler;
 }
+
+#endif // SOC_INT_CLIC_SUPPORTED
 
 void esp_cpu_intr_get_desc(int core_id, int intr_num, esp_cpu_intr_desc_t *intr_desc_ret)
 {

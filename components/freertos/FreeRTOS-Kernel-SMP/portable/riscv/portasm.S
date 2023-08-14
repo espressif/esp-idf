@@ -49,8 +49,8 @@ rtos_int_enter:
 	bne t4,zero, rtos_enter_end
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* esp_hw_stack_guard_monitor_stop(); */
-    ESP_HW_STACK_GUARD_MONITOR_STOP_CPU0
+    /* esp_hw_stack_guard_monitor_stop(); pass the scratch registers */
+    ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
     /* Save current TCB and load the ISR stack */
@@ -62,9 +62,9 @@ rtos_int_enter:
     /* esp_hw_stack_guard_set_bounds(xIsrStack, xIsrStackTop); */
     la      a0, xIsrStack
     mv      a1, sp
-    ESP_HW_STACK_GUARD_SET_BOUNDS_CPU0
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2
     /* esp_hw_stack_guard_monitor_start(); */
-    ESP_HW_STACK_GUARD_MONITOR_START_CPU0
+    ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
 rtos_enter_end:
@@ -118,7 +118,7 @@ no_switch:
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* esp_hw_stack_guard_monitor_stop(); */
-    ESP_HW_STACK_GUARD_MONITOR_STOP_CPU0
+    ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
     /* Recover the stack of next task */
@@ -131,9 +131,9 @@ no_switch:
      */
     lw      a0, PORT_OFFSET_PX_STACK(t0)
     lw      a1, PORT_OFFSET_PX_END_OF_STACK(t0)
-    ESP_HW_STACK_GUARD_SET_BOUNDS_CPU0
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2
     /* esp_hw_stack_guard_monitor_start(); */
-    ESP_HW_STACK_GUARD_MONITOR_START_CPU0
+    ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
 rtos_exit_end:

@@ -230,7 +230,7 @@
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.
 
-//CPU0 Interrupt number reserved in riscv/vector.S, not touch this.
+//CPU0 Interrupt number reserved in riscv/vector_clic.S, do not touch this.
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26

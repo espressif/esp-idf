@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,12 +76,14 @@ soc_reset_reason_t esp_rom_get_reset_reason(int cpu_no);
  * Usually there're 4 steps to use an interrupt:
  * 1. Route peripheral interrupt source to CPU. e.g.  esp_rom_route_intr_matrix(0, ETS_WIFI_MAC_INTR_SOURCE, ETS_WMAC_INUM)
  * 2. Set interrupt handler for CPU
- * 3. Enable CPU interupt
+ * 3. Enable CPU interrupt
  * 4. Enable peripheral interrupt
  *
- * @param cpu_core The CPU number, which the peripheral interupt will inform to
+ * @param cpu_core The CPU number, which the peripheral interrupt will inform to
  * @param periph_intr_id The peripheral interrupt source number
- * @param cpu_intr_num The CPU interrupt number
+ * @param cpu_intr_num The CPU (external) interrupt number. On targets that use CLIC as their interrupt controller,
+ *                     this number represents the external interrupt number. For example, passing `cpu_intr_num = i`
+ *                     to this function would in fact bind peripheral source to CPU interrupt `CLIC_EXT_INTR_NUM_OFFSET + i`.
  */
 void esp_rom_route_intr_matrix(int cpu_core, uint32_t periph_intr_id, uint32_t cpu_intr_num);
 

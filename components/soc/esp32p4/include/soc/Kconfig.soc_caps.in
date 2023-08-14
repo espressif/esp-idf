@@ -207,6 +207,10 @@ config SOC_INT_CLIC_SUPPORTED
     bool
     default y
 
+config SOC_INT_HW_NESTED_SUPPORTED
+    bool
+    default y
+
 config SOC_BRANCH_PREDICTOR_SUPPORTED
     bool
     default y

@@ -14,6 +14,12 @@ else()
         "instruction_decode.c"
         "interrupt.c"
         "vectors.S")
+
+    if(CONFIG_SOC_INT_CLIC_SUPPORTED)
+        list(APPEND srcs "vectors_clic.S")
+    else()
+        list(APPEND srcs "vectors_intc.S")
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"
