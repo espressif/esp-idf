@@ -135,6 +135,7 @@ esp_err_t mcpwm_operator_register_event_callbacks(mcpwm_oper_handle_t oper, cons
  * @brief MCPWM carrier configuration structure
  */
 typedef struct {
+    mcpwm_carrier_clock_source_t clk_src;  /*!< MCPWM carrier clock source */
     uint32_t frequency_hz;            /*!< Carrier frequency in Hz */
     uint32_t first_pulse_duration_us; /*!< The duration of the first PWM pulse, in us */
     float duty_cycle;                 /*!< Carrier duty cycle */
