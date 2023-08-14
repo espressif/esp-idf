@@ -143,7 +143,8 @@ typedef union
     struct cnum_args {
         bt_bdaddr_t                      remote_addr;
         char                             *number;
-        esp_hf_subscriber_service_type_t type;
+        int                              number_type;
+        esp_hf_subscriber_service_type_t service_type;
     } cnum_rep;
 
     //BTC_HF_NREC_RESPONSE_EVT

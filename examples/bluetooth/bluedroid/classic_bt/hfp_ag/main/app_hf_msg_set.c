@@ -148,7 +148,7 @@ HF_CMD_HANDLER(ind_change)
     if (sscanf(argv[3], "%d", &ntk_state) != 1 ||
         (ntk_state != ESP_HF_NETWORK_STATE_NOT_AVAILABLE &&
         ntk_state != ESP_HF_NETWORK_STATE_AVAILABLE)) {
-        printf("Invalid argument for netwrok state %s\n", argv[3]);
+        printf("Invalid argument for network state %s\n", argv[3]);
         return 1;
     }
     if (sscanf(argv[4], "%d", &signal) != 1 ||
