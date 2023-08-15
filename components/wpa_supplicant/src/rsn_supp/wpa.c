@@ -2622,30 +2622,40 @@ int wpa_michael_mic_failure(u16 isunicast)
    eapol tx callback function to make sure new key
     install after 4-way handoff
 */
-void eapol_txcb(void *eb)
+void eapol_txcb(uint8_t *eapol_payload, size_t len, bool tx_failure)
 {
+    struct ieee802_1x_hdr *hdr;
+    struct wpa_eapol_key *key;
     struct wpa_sm *sm = &gWpaSm;
     u8 isdeauth = 0;  //no_zero value is the reason for deauth
 
-    if (false == esp_wifi_sta_is_running_internal()){
+    if (len < (sizeof(struct ieee802_1x_hdr) + sizeof(struct wpa_eapol_key))) {
+        wpa_printf(MSG_ERROR, "EAPOL TxDone with invalid payload len! (len - %d)", len);
         return;
     }
+    hdr = (struct ieee802_1x_hdr *) eapol_payload;
+    key = (struct wpa_eapol_key *) (hdr + 1);
 
     switch(WPA_SM_STATE(sm)) {
         case WPA_FIRST_HALF_4WAY_HANDSHAKE:
-            break;
         case WPA_LAST_HALF_4WAY_HANDSHAKE:
+            if (WPA_GET_BE16(key->key_data_length) == 0 ||
+                    (WPA_GET_BE16(key->key_info) & WPA_KEY_INFO_SECURE)) {
+                /* msg 4/4 Tx Done */
+                if (tx_failure) {
+                    wpa_printf(MSG_ERROR, "Eapol message 4/4 tx failure, not installing keys");
+                    return;
+                }
 
-            if (esp_wifi_eb_tx_status_success_internal(eb) != true) {
-                wpa_printf(MSG_ERROR, "Eapol message 4/4 tx failure, not installing keys");
-                return;
-            }
-
-            if (sm->txcb_flags & WPA_4_4_HANDSHAKE_BIT) {
-                sm->txcb_flags &= ~WPA_4_4_HANDSHAKE_BIT;
-                isdeauth = wpa_supplicant_send_4_of_4_txcallback(sm);
+                if (sm->txcb_flags & WPA_4_4_HANDSHAKE_BIT) {
+                    sm->txcb_flags &= ~WPA_4_4_HANDSHAKE_BIT;
+                    isdeauth = wpa_supplicant_send_4_of_4_txcallback(sm);
+                } else {
+                    wpa_printf(MSG_DEBUG, "4/4 txcb, flags=%d", sm->txcb_flags);
+                }
             } else {
-                wpa_printf(MSG_DEBUG, "4/4 txcb, flags=%d", sm->txcb_flags);
+                /* msg 2/4 Tx Done */
+                wpa_printf(MSG_DEBUG, "2/4 txcb, flags=%d, txfail %d", sm->txcb_flags, tx_failure);
             }
             break;
         case WPA_GROUP_HANDSHAKE:

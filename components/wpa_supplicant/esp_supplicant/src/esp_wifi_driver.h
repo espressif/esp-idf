@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -175,8 +175,8 @@ typedef enum wps_status {
     WPS_STATUS_MAX,
 } WPS_STATUS_t;
 
-#define WIFI_TXCB_EAPOL_ID  3
 typedef void(*wifi_tx_cb_t)(void *);
+typedef void(* eapol_txcb_t)(uint8_t *, size_t, bool);
 typedef int (*wifi_ipc_fn_t)(void *);
 typedef struct {
     wifi_ipc_fn_t fn;
@@ -241,6 +241,7 @@ bool esp_wifi_wpa_ptk_init_done_internal(uint8_t *mac);
 uint8_t esp_wifi_sta_set_reset_param_internal(uint8_t reset_flag);
 uint8_t esp_wifi_get_sta_gtk_index_internal(void);
 int esp_wifi_register_tx_cb_internal(wifi_tx_cb_t fn, u8 id);
+int esp_wifi_register_eapol_txdonecb_internal(eapol_txcb_t fn);
 int esp_wifi_register_wpa_cb_internal(struct wpa_funcs *cb);
 int esp_wifi_unregister_wpa_cb_internal(void);
 int esp_wifi_get_assoc_bssid_internal(uint8_t *bssid);
