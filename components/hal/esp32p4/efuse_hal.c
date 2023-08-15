@@ -5,6 +5,7 @@
  */
 
 #include "sdkconfig.h"
+#include "esp_attr.h"
 #include <sys/param.h>
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
@@ -14,12 +15,12 @@
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x08 << (4 * (block))))
 #define ESP_EFUSE_BLOCK_ERROR_NUM_BITS(error_reg, block) ((error_reg) & (0x07 << (4 * (block))))
 
-uint32_t efuse_hal_get_major_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
 {
     return efuse_ll_get_chip_wafer_version_major();
 }
 
-uint32_t efuse_hal_get_minor_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_minor_chip_version(void)
 {
     return efuse_ll_get_chip_wafer_version_minor();
 }

@@ -36,11 +36,13 @@ static inline uint32_t mmu_ll_vaddr_to_laddr(uint32_t vaddr)
  *
  * @param laddr       linear address
  * @param vaddr_type  virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
+ * @param target      virtual address aimed physical memory target, not used
  *
  * @return virtual address
  */
-static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_type)
+static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_type, mmu_target_t target)
 {
+    (void)target;
     uint32_t vaddr_base = 0;
     if (vaddr_type == MMU_VADDR_DATA) {
         vaddr_base = SOC_MMU_DBUS_VADDR_BASE;
@@ -309,7 +311,11 @@ static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t e
     (void)mmu_id;
     uint32_t laddr = entry_id << 16;
 
-    return mmu_ll_laddr_to_vaddr(laddr, type);
+    /**
+     * For `mmu_ll_laddr_to_vaddr`, target is for compatibility on this chip.
+     * Here we just pass MMU_TARGET_FLASH0 to get vaddr
+     */
+    return mmu_ll_laddr_to_vaddr(laddr, type, MMU_TARGET_FLASH0);
 }
 
 #ifdef __cplusplus
