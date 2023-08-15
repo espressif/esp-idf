@@ -7,6 +7,11 @@
 
 #define XOR_MASK 0xDEADBEEF
 
+/* I2C test params */
+#define I2C_SLAVE_ADDRESS 0x28
+#define DATA_LENGTH 200
+#define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
+
 typedef enum{
     LP_CORE_READ_WRITE_TEST = 1,
     LP_CORE_DELAY_TEST,
