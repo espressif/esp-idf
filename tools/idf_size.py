@@ -6,7 +6,7 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 from __future__ import division, print_function, unicode_literals
@@ -142,6 +142,7 @@ class LinkingSections(object):
         'data': r'.*\.data',
         'bss': r'.*\.bss',
         'rodata': r'.*\.rodata',
+        'rodata_noload': r'.*\.rodata_noload',
         'noinit': r'.*noinit',
         'vectors': r'.*\.vectors',
         'flash': r'.*flash.*',
@@ -585,10 +586,11 @@ class StructureForSummary(object):
         def filter_in_section(sections: Iterable[MemRegions.Region], section_to_check: str) -> List[MemRegions.Region]:
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
 
-        dram_sections = list(filter(in_dram, sections))
-        iram_sections = list(filter(in_iram, sections))
-        diram_sections = list(filter(in_diram, sections))
-        flash_sections = filter_in_section(sections, 'flash')
+        noload_sections = filter_in_section(sections, 'rodata_noload')
+        dram_sections = [x for x in list(filter(in_dram, sections)) if x not in noload_sections]
+        iram_sections = [x for x in list(filter(in_iram, sections)) if x not in noload_sections]
+        diram_sections = [x for x in list(filter(in_diram, sections)) if x not in noload_sections]
+        flash_sections = [x for x in filter_in_section(sections, 'flash') if x not in noload_sections]
 
         dram_data_list = filter_in_section(dram_sections, 'data')
         dram_bss_list = filter_in_section(dram_sections, 'bss')
@@ -906,8 +908,8 @@ class StructureForDetailedSizes(object):
 
         s = []
         for key, section_dict in sizes.items():
-            ram_st_total = sum([x[1] for x in section_dict.items() if not LinkingSections.in_section(x[0], 'flash')])
-            flash_total = sum([x[1] for x in section_dict.items() if not LinkingSections.in_section(x[0], 'bss')])  # type: int
+            ram_st_total = sum([x[1] for x in section_dict.items() if not LinkingSections.in_section(x[0], ['flash', 'rodata_noload'])])
+            flash_total = sum([x[1] for x in section_dict.items() if not LinkingSections.in_section(x[0], ['bss', 'rodata_noload'])])  # type: int
 
             section_dict['ram_st_total'] = ram_st_total
             section_dict['flash_total'] = flash_total
