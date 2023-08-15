@@ -91,7 +91,7 @@ struct i2c_bus_t {
     uint32_t clk_src_freq_hz; // Record the clock source frequency
     int sda_num; // SDA pin number
     int scl_num; // SCL pin number
-    bool pull_up_enable; // Disable pull-ups
+    bool pull_up_enable; // Enable pull-ups
     intr_handle_t intr_handle; // I2C interrupt handle
     esp_pm_lock_handle_t pm_lock; // power manange lock
 #if CONFIG_PM_ENABLE
