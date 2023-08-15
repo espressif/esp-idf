@@ -3,7 +3,7 @@ Documenting Code
 
 :link_to_translation:`zh_CN:[中文]`
 
-The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation.
+The purpose of this description is to provide a quick summary of the documentation style used in `espressif/esp-idf`_ repository and how to add new documentation.
 
 Introduction
 ------------
@@ -14,35 +14,35 @@ When documenting code for this repository, please follow `Doxygen style <https:/
      * @param ratio this is oxygen to air ratio
      */
 
-Doxygen is phrasing the code, extracting the commands together with subsequent text, and building documentation out of it.
+Doxygen can phrase the code, extract the commands together with subsequent text, and build documentation out of it.
 
-Typical comment block, that contains documentation of a function, looks like below.
+Typical comment block, that contains documentation of a function, looks like below:
 
 .. image:: ../../_static/doc-code-documentation-inline.png
     :align: center
     :alt: Sample inline code documentation
 
-Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data rich and very well organized `Doxygen Manual <https://www.doxygen.nl/manual/index.html>`_.
+Doxygen supports a couple of formatting styles. It also gives you great flexibility on the level of details to include in documentation. To get familiar with available features, please check data-rich and very well-organized `Doxygen Manual <https://www.doxygen.nl/manual/index.html>`_.
 
 
-Why we need it?
----------------
+Why We Need Doxygen?
+--------------------
 
 The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx`_ and `Breathe`_ to aid preparation and automatic updates of API documentation when the code changes.
 
-With these tools the above piece of code renders like below:
+With these tools, the above piece of code renders like below:
 
 .. image:: ../../_static/doc-code-documentation-rendered.png
     :align: center
     :alt: Sample inline code after rendering
 
 
-Go for it!
+Go for It!
 ----------
 
-When writing code for this repository, please follow guidelines below.
+When writing code for this repository, please follow guidelines below:
 
-1. Document all building blocks of code: functions, structs, typedefs, enums, macros, etc. Provide enough information about purpose, functionality and limitations of documented items, as you would like to see them documented when reading the code by others.
+1. Document all building blocks of code, including functions, structs, typedefs, enums, macros, etc. Provide enough information about purpose, functionality, and limitations of documented items, as you would like to see them documented when reading the code by others.
 
 2. Documentation of function should describe what this function does. If it accepts input parameters and returns some value, all of them should be explained.
 
@@ -52,7 +52,7 @@ When writing code for this repository, please follow guidelines below.
         :align: center
         :alt: Sample function documented inline and after rendering
 
-4. If function has void input or does not return any value, then skip ``@param`` or ``@return``
+4. If function has void input or does not return any value, then skip ``@param`` or ``@return``.
 
     .. image:: ../../_static/doc-code-void-function.png
         :align: center
@@ -64,7 +64,7 @@ When writing code for this repository, please follow guidelines below.
         :align: center
         :alt: Sample of member documentation inline and after rendering
 
-6. To provide well formatted lists, break the line after command (like ``@return`` in example below). ::
+6. To provide well-formatted lists, break the line after command (like ``@return`` in the example below). ::
 
     *
     * @return
@@ -78,12 +78,12 @@ When writing code for this repository, please follow guidelines below.
 7. Overview of functionality of documented header file, or group of files that make a library, should be placed in a separate ``README.rst`` file of the same directory. If this directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
 
 
-Go one extra mile
+Go One Extra Mile
 -----------------
 
 Here are a couple of tips on how you can make your documentation even better and more useful to the reader and writer.
 
-When writing codes, please follow the guidelines below:
+When writing code, please follow the guidelines below:
 
 1. Add code snippets to illustrate implementation. To do so, enclose snippet using ``@code{c}`` and ``@endcode`` commands. ::
 
@@ -110,7 +110,7 @@ When writing codes, please follow the guidelines below:
 
    Above example also shows how to use a numbered list.
 
-3. To provide common description to a group of similar functions, enclose them using ``/**@{*/`` and ``/**@}*/`` markup commands::
+3. To provide common description to a group of similar functions, enclose them using ``/**@{*/`` and ``/**@}*/`` markup commands. ::
 
     /**@{*/
     /**
@@ -133,27 +133,27 @@ When writing codes, please follow the guidelines below:
 
 .. note::
 
-    Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
+    Code snippets, notes, links, etc., will not make it to the documentation, if not enclosed in a comment block associated with one of the documented objects.
 
 6. Prepare one or more complete code examples together with description. Place description to a separate file ``README.md`` in specific folder of :idf:`examples` directory.
 
 Standardize Document Format
--------------------------------
+---------------------------
 
-When it comes to text, please follow guidelines below to provide well formatted Markdown (.md) or reST (.rst) documents.
+When it comes to text, please follow guidelines below to provide well-formatted Markdown (.md) or reST (.rst) documents.
 
-1. Please ensure that one paragraph is written in one line. Don't break lines like below. Breaking lines to enhance readability is only suitable for writing codes. To make the text easier to read, it is recommended to place an empty line to separate the paragraph.
+1. Please ensure that one paragraph is written in one line. Don't break lines like below. Breaking lines to enhance readability is only suitable for writing code. To make the text easier to read, it is recommended to place an empty line to separate the paragraph.
 
     .. figure:: ../../_static/doc-format1-recommend.png
         :align: center
-        :scale: 30%
+        :scale: 20%
         :alt: One line for one paragraph - recommend (click to enlarge)
 
         One line for one paragraph (click to enlarge)
 
     .. figure:: ../../_static/doc-format2-notrecommend.png
         :align: center
-        :scale: 30%
+        :scale: 20%
         :alt: One line for one paragraph - not recommend (click to enlarge)
 
         No line breaks within the same paragraph (click to enlarge)
@@ -162,14 +162,15 @@ When it comes to text, please follow guidelines below to provide well formatted 
 
     .. figure:: ../../_static/doc-format3-recommend.png
         :align: center
-        :scale: 50%
+        :scale: 40%
         :alt: Keep the line number for EN and CN files consistent (click to enlarge)
 
         Keep the line number for EN and CN documents consistent (click to enlarge)
 
 Building Documentation
 ----------------------
-The documentation is built with the `esp-docs` Python package, which is a wrapper around `Sphinx <https://www.sphinx-doc.org/>`_
+
+The documentation is built with the `esp-docs` Python package, which is a wrapper around `Sphinx <https://www.sphinx-doc.org/>`_.
 
 To install it simply do::
 
@@ -185,14 +186,12 @@ or for specific target and language with::
 
 For more in-depth documentation about `esp-docs` features please see the documentation at `esp-docs <https://docs.espressif.com/projects/esp-docs/en/latest/>`_.
 
-Wrap up
+Wrap Up
 -------
 
-We love good code that is doing cool things.
-We love it even better, if it is well documented, so we can quickly make it run and also do the cool things.
+We love good code that is doing cool things. We love it even better, if it is well-documented, so we can quickly make it run and also do the cool things.
 
 Go ahead, contribute your code and documentation!
-
 
 Related Documents
 -----------------
