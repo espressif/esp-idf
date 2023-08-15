@@ -31,6 +31,10 @@ config SOC_MCPWM_SUPPORTED
     bool
     default y
 
+config SOC_ETM_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -268,6 +272,10 @@ config SOC_GPIO_PIN_COUNT
     default 57
 
 config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_ETM
     bool
     default y
 
@@ -826,6 +834,10 @@ config SOC_TIMER_GROUP_SUPPORT_RC_FAST
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 4
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TWAI_CONTROLLER_NUM
     int
