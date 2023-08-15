@@ -32,6 +32,15 @@ typedef int mcpwm_capture_clock_source_t;
 #endif // SOC_MCPWM_SUPPORTED
 
 /**
+ * @brief MCPWM carrier clock source
+ */
+#if SOC_MCPWM_SUPPORTED
+typedef soc_periph_mcpwm_carrier_clk_src_t mcpwm_carrier_clock_source_t;
+#else
+typedef int mcpwm_carrier_clock_source_t;
+#endif // SOC_MCPWM_SUPPORTED
+
+/**
  * @brief MCPWM timer count direction
  */
 typedef enum {

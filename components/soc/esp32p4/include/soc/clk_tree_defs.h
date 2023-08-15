@@ -232,7 +232,7 @@ typedef enum {
  * @brief Array initializer for all supported clock sources of MCPWM Timer
  */
 #if SOC_CLK_TREE_SUPPORTED
-#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL}
 #else
 #define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_XTAL}
 #endif
@@ -242,7 +242,6 @@ typedef enum {
  */
 typedef enum {
     MCPWM_TIMER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
-    MCPWM_TIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
     MCPWM_TIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
 #if SOC_CLK_TREE_SUPPORTED
     MCPWM_TIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default choice */
@@ -255,7 +254,7 @@ typedef enum {
  * @brief Array initializer for all supported clock sources of MCPWM Capture Timer
  */
 #if SOC_CLK_TREE_SUPPORTED
-#define SOC_MCPWM_CAPTURE_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+#define SOC_MCPWM_CAPTURE_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL}
 #else
 #define SOC_MCPWM_CAPTURE_CLKS {SOC_MOD_CLK_XTAL}
 #endif
@@ -265,14 +264,35 @@ typedef enum {
  */
 typedef enum {
     MCPWM_CAPTURE_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
-    MCPWM_CAPTURE_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
     MCPWM_CAPTURE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
 #if SOC_CLK_TREE_SUPPORTED
-    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_F160M as the default choice */
+    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default choice */
 #else
     MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default choice */
 #endif // SOC_CLK_TREE_SUPPORTED
 } soc_periph_mcpwm_capture_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Carrier
+ */
+#if SOC_CLK_TREE_SUPPORTED
+#define SOC_MCPWM_CARRIER_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL}
+#else
+#define SOC_MCPWM_CARRIER_CLKS {SOC_MOD_CLK_XTAL}
+#endif
+
+/**
+ * @brief Type of MCPWM carrier clock source
+ */
+typedef enum {
+    MCPWM_CARRIER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
+    MCPWM_CARRIER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+#if SOC_CLK_TREE_SUPPORTED
+    MCPWM_CARRIER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default choice */
+#else
+    MCPWM_CARRIER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default choice */
+#endif // SOC_CLK_TREE_SUPPORTED
+} soc_periph_mcpwm_carrier_clk_src_t;
 
 ///////////////////////////////////////////////// I2S //////////////////////////////////////////////////////////////
 
