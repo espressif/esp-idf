@@ -25,6 +25,12 @@
 #define ALIGN_UP(addr, align) (((addr) + (align)-1) & ~((align)-1))
 #define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#define TEST_MEMCPY_DST_BASE_ALIGN 64
+#else
+#define TEST_MEMCPY_DST_BASE_ALIGN 4
+#endif
+
 typedef struct {
     uint32_t seed;
     size_t buffer_size;
@@ -68,8 +74,9 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     TEST_ASSERT_NOT_NULL_MESSAGE(dst_buf, "allocate destination buffer failed");
     // adding extra offset
     from_addr = src_buf + test_context->offset;
-    to_addr = dst_buf + test_context->offset;
+    to_addr = dst_buf;
     copy_size -= test_context->offset;
+    copy_size &= ~(test_context->align - 1);
 
     printf("...to copy size %zu Bytes, from @%p, to @%p\r\n", copy_size, from_addr, to_addr);
     printf("fill src buffer with random data\r\n");
@@ -106,7 +113,7 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
     uint8_t *sbuf = heap_caps_malloc(256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *dbuf = heap_caps_malloc(256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *dbuf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     for (int j = 0; j < 20; j++) {
         TEST_ESP_OK(esp_async_memcpy(driver, dbuf, sbuf, 256, NULL, NULL));
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -128,7 +135,7 @@ static void test_memory_copy_one_by_one(async_memcpy_handle_t driver)
 {
     uint32_t test_buffer_len[] = {256, 512, 1024, 2048, 4096, 5011};
     memcpy_testbench_context_t test_context = {
-        .align = 4,
+        .align = TEST_MEMCPY_DST_BASE_ALIGN,
     };
 
     for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
@@ -194,7 +201,8 @@ TEST_CASE("memory copy done callback", "[async mcp]")
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
     uint8_t *src_buf = heap_caps_malloc(256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *dst_buf = heap_caps_malloc(256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    // destination address should aligned to data cache line
+    uint8_t *dst_buf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     TEST_ESP_OK(esp_async_memcpy(driver, dst_buf, src_buf, 256, test_async_memcpy_cb_v1, sem));
@@ -212,8 +220,10 @@ TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
     uint32_t test_buffer_len[] = {512, 1024, 2048, 4096, 5011};
-    memcpy_testbench_context_t test_context[] = {
-        {.align = 4}, {.align = 4}, {.align = 4}, {.align = 4}, {.align = 4},
+    memcpy_testbench_context_t test_context[5] = {
+        [0 ... 4] = {
+            .align = TEST_MEMCPY_DST_BASE_ALIGN,
+        }
     };
 
     // Aligned case

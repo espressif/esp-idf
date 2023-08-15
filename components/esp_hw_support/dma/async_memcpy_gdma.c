@@ -321,17 +321,25 @@ static async_memcpy_transaction_t *try_pop_trans_from_idle_queue(async_memcpy_gd
 static bool check_buffer_aligned(async_memcpy_gdma_context_t *mcp_gdma, void *src, void *dst, size_t n)
 {
     bool valid = true;
+    uint32_t align_mask = 0;
     if (esp_ptr_external_ram(dst)) {
         if (mcp_gdma->psram_trans_align) {
-            valid = valid && (((intptr_t)dst & (mcp_gdma->psram_trans_align - 1)) == 0);
-            valid = valid && ((n & (mcp_gdma->psram_trans_align - 1)) == 0);
+            align_mask = mcp_gdma->psram_trans_align - 1;
         }
     } else {
         if (mcp_gdma->sram_trans_align) {
-            valid = valid && (((intptr_t)dst & (mcp_gdma->sram_trans_align - 1)) == 0);
-            valid = valid && ((n & (mcp_gdma->sram_trans_align - 1)) == 0);
+            align_mask = mcp_gdma->sram_trans_align - 1;
         }
     }
+#if CONFIG_IDF_TARGET_ESP32P4
+    uint32_t data_cache_line_mask = cache_hal_get_cache_line_size(CACHE_TYPE_DATA) - 1;
+    if (data_cache_line_mask > align_mask) {
+        align_mask = data_cache_line_mask;
+    }
+#endif
+    // destination address must be cache line aligned
+    valid = valid && (((uint32_t)dst & align_mask) == 0);
+    valid = valid && ((n & align_mask) == 0);
     return valid;
 }
 
