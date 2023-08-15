@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ typedef enum {
 } esp_bt_ctrl_hci_tl_t;
 
 /**
- * @breif type of BLE connection event length computation
+ * @brief type of BLE connection event length computation
  */
 typedef enum {
     ESP_BLE_CE_LEN_TYPE_ORIG = 0,      /*!< original */
@@ -225,16 +225,16 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
  *        This structure shall be registered when HCI transport layer is UART
  */
 typedef struct {
-    uint32_t _magic;                        /* Magic number */
-    uint32_t _version;                      /* version number of the defined structure */
-    uint32_t _reserved;                     /* reserved for future use */
-    int (* _open)(void);                    /* hci tl open */
-    void (* _close)(void);                  /* hci tl close */
-    void (* _finish_transfers)(void);       /* hci tl finish trasnfers */
-    void (* _recv)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /* hci tl recv */
-    void (* _send)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /* hci tl send */
-    bool (* _flow_off)(void); /* hci tl flow off */
-    void (* _flow_on)(void); /* hci tl flow on */
+    uint32_t _magic;                        /*!< Magic number */
+    uint32_t _version;                      /*!< Version number of the defined structure */
+    uint32_t _reserved;                     /*!< Reserved for future use */
+    int (* _open)(void);                    /*!< HCI transport layer open function */
+    void (* _close)(void);                  /*!< HCI transport layer close function */
+    void (* _finish_transfers)(void);       /*!< HCI transport layer finish transfers function */
+    void (* _recv)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /*!< HCI transport layer receive function */
+    void (* _send)(uint8_t *buf, uint32_t len, esp_bt_hci_tl_callback_t callback, void* arg); /*!< HCI transport layer send function */
+    bool (* _flow_off)(void);               /*!< HCI transport layer flow off function */
+    void (* _flow_on)(void);                /*!< HCI transport layer flow on function */
 } esp_bt_hci_tl_t;
 
 /**
@@ -271,7 +271,7 @@ typedef struct {
     uint8_t txant_dft;                      /*!< default Tx antenna */
     uint8_t rxant_dft;                      /*!< default Rx antenna */
     uint8_t txpwr_dft;                      /*!< default Tx power */
-    uint32_t cfg_mask;
+    uint32_t cfg_mask;                      /*!< Configuration mask to set specific options */
     uint8_t scan_duplicate_mode;            /*!< scan duplicate mode */
     uint8_t scan_duplicate_type;            /*!< scan duplicate type */
     uint16_t normal_adv_size;               /*!< Normal adv size for scan duplicate */
@@ -279,7 +279,7 @@ typedef struct {
     uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
     uint32_t hw_target_code;                /*!< hardware target */
     uint8_t slave_ce_len_min;               /*!< slave minimum ce length*/
-    uint8_t hw_recorrect_en;
+    uint8_t hw_recorrect_en;                /*!< Hardware re-correction enabled */
     uint8_t cca_thresh;                     /*!< cca threshold*/
     uint16_t scan_backoff_upperlimitmax;    /*!< scan backoff upperlimitmax value */
     uint16_t dup_list_refresh_period;       /*!< duplicate scan list refresh time */
