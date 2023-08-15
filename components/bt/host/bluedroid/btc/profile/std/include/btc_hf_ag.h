@@ -44,6 +44,7 @@ typedef enum
     BTC_HF_UNAT_RESPONSE_EVT,
     BTC_HF_CME_ERR_EVT,
     BTC_HF_IND_NOTIFICATION_EVT,
+    BTC_HF_CIEV_REPORT_EVT,
     BTC_HF_CIND_RESPONSE_EVT,
     BTC_HF_COPS_RESPONSE_EVT,
     BTC_HF_CLCC_RESPONSE_EVT,
@@ -108,6 +109,12 @@ typedef union
         esp_hf_network_state_t     ntk_state;
         int                        signal;
     } ind_change;
+
+    //BTC_HF_CIEV_REPORT_EVT
+    struct ciev_args {
+        bt_bdaddr_t                remote_addr;
+        tBTA_AG_IND                ind;
+    } ciev_rep;
 
     //BTC_HF_CIND_RESPONSE_EVT
     struct cind_args {

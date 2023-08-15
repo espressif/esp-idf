@@ -157,7 +157,10 @@ HF_CMD_HANDLER(ind_change)
         return 1;
     }
     printf("Device Indicator Changed!\n");
-    esp_hf_ag_devices_status_indchange(hf_peer_addr, call_state, call_setup_state, ntk_state, signal);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_CALL, call_state);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_CALLSETUP, call_setup_state);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_SERVICE, ntk_state);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_SIGNAL, signal);
     return 0;
 }
 
