@@ -16,16 +16,16 @@
 #include "esp_log.h"
 
 #if CONFIG_LWIP_IPV6 && CONFIG_LWIP_IPV4
-#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%d ip=%x", (info), (ip).type, (ip).u_addr.ip4.addr)
+#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%" PRIu8 " ip=%" PRIX32, (info), (ip).type, (ip).u_addr.ip4.addr)
 #elif CONFIG_LWIP_IPV4
-#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%d ip=%x", (info), IPADDR_TYPE_V4, (ip).addr)
+#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%" PRIu8 " ip=%" PRIX32, (info), IPADDR_TYPE_V4, (ip).addr)
 #elif CONFIG_LWIP_IPV6
-#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%d ip=%x,%x,5x,%x", (info), IPADDR_TYPE_V6, (ip).addr[0], (ip).addr[1], (ip).addr[2], (ip).addr[3])
+#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%" PRIu8 " ip=%" PRIX32 ", %" PRIX32 ", %" PRIX32 ", %" PRIX32 , (info), IPADDR_TYPE_V6, (ip).addr[0], (ip).addr[1], (ip).addr[2], (ip).addr[3])
 #endif
 #define DBG_LWIP_IP_PCB_SHOW(pcb) \
         DBG_LWIP_IP_SHOW("local ip", (pcb)->local_ip);\
         DBG_LWIP_IP_SHOW("remote ip", (pcb)->remote_ip);\
-        ESP_LWIP_LOGI("so_options=%x, tos=%d ttl=%d", (pcb)->so_options, (pcb)->tos, (pcb)->ttl)
+        ESP_LWIP_LOGI("so_options=%x, tos=%" PRIu8 " ttl=%" PRIu8, (pcb)->so_options, (pcb)->tos, (pcb)->ttl)
 
 #define DBG_LWIP_SEG_SHOW(seg) while(seg) { ESP_LWIP_LOGI("\tseg=%p next=%p pbuf=%p flags=%x", (seg), (seg)->next, (seg)->p, (seg)->flags); (seg)=(seg)->next;}
 #define DBG_LWIP_ITEM_NUMBER_PER_LINE 9
@@ -81,22 +81,22 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
     ESP_LWIP_LOGI("prio=%d", pcb->prio);
     ESP_LWIP_LOGI("local_port=%d, remote_port=%d", pcb->local_port, pcb->remote_port);
     ESP_LWIP_LOGI("flags=%x", pcb->flags);
-    ESP_LWIP_LOGI("pooltmr=%d pollinterval=%d, last_tmr=%d tmr=%d rtmer=%d", pcb->polltmr, pcb->pollinterval, pcb->last_timer, pcb->tmr, pcb->rtime);
-    ESP_LWIP_LOGI("recv_nxt=%d recv_wnd=%d recv_ann_wnd=%d recv_ann_right_edge=%d", pcb->rcv_nxt, pcb->rcv_wnd, pcb->rcv_ann_wnd, pcb->rcv_ann_right_edge);
+    ESP_LWIP_LOGI("pooltmr=%d pollinterval=%d, last_tmr=%d tmr=%" PRIu32 " rtmer=%d", pcb->polltmr, pcb->pollinterval, pcb->last_timer, pcb->tmr, pcb->rtime);
+    ESP_LWIP_LOGI("recv_nxt=%" PRIu32 " recv_wnd=%d recv_ann_wnd=%d recv_ann_right_edge=%" PRIu32, pcb->rcv_nxt, pcb->rcv_wnd, pcb->rcv_ann_wnd, pcb->rcv_ann_right_edge);
     ESP_LWIP_LOGI("mss=%d", pcb->mss);
-    ESP_LWIP_LOGI("rttest=%d rtseq=%d sa=%d sv=%d", pcb->rttest, pcb->rtseq, pcb->sa, pcb->sv);
+    ESP_LWIP_LOGI("rttest=%" PRIu32 " rtseq=%" PRIu32 " sa=%d sv=%d", pcb->rttest, pcb->rtseq, pcb->sa, pcb->sv);
     ESP_LWIP_LOGI("rto=%d nrtx=%d", pcb->rto, pcb->nrtx);
-    ESP_LWIP_LOGI("dupacks=%d lastack=%d", pcb->dupacks, pcb->lastack);
+    ESP_LWIP_LOGI("dupacks=%d lastack=%" PRIu32, pcb->dupacks, pcb->lastack);
 #if ESP_PER_SOC_TCP_WND
     ESP_LWIP_LOGI("per_soc_window=%d per_soc_snd_buf=%d", pcb->per_soc_tcp_wnd, pcb->per_soc_tcp_snd_buf);
 #endif
     ESP_LWIP_LOGI("cwnd=%d ssthreash=%d", pcb->cwnd, pcb->ssthresh);
-    ESP_LWIP_LOGI("snd_next=%d snd_wl1=%d snd_wl2=%d", pcb->snd_nxt, pcb->snd_wl1, pcb->snd_wl2);
-    ESP_LWIP_LOGI("snd_lbb=%d snd_wnd=%d snd_wnd_max=%d", pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max);
+    ESP_LWIP_LOGI("snd_next=%" PRIu32 " snd_wl1=%" PRIu32 " snd_wl2=%" PRIu32, pcb->snd_nxt, pcb->snd_wl1, pcb->snd_wl2);
+    ESP_LWIP_LOGI("snd_lbb=%" PRIu32 " snd_wnd=%d snd_wnd_max=%d", pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max);
     //ESP_LWIP_LOGI("acked=%d", pcb->acked);
     ESP_LWIP_LOGI("snd_buf=%d snd_queuelen=%d", pcb->snd_buf, pcb->snd_queuelen);
     ESP_LWIP_LOGI("unsent_oversize=%d", pcb->unsent_oversize);
-    ESP_LWIP_LOGI("keep_idle=%d keep_intvl=%d keep_cnt=%d", pcb->keep_idle, pcb->keep_intvl, pcb->keep_cnt);
+    ESP_LWIP_LOGI("keep_idle=%" PRIu32 " keep_intvl=%" PRIu32 " keep_cnt=%" PRIu32, pcb->keep_idle, pcb->keep_intvl, pcb->keep_cnt);
     ESP_LWIP_LOGI("persist_cnt=%d persist_backoff=%d", pcb->persist_cnt, pcb->persist_backoff);
     ESP_LWIP_LOGI("keep_cnt_sent=%d", pcb->keep_cnt_sent);
 
@@ -203,7 +203,7 @@ void dbg_lwip_cnt_show(void)
     ESP_LWIP_LOGI("-----lwip memory counter-----");
     ESP_LWIP_LOGI("%6s %8s %8s", "index", "alloc", "free");
     for (i=0; i<MEMP_MAX; i++){
-        ESP_LWIP_LOGI("%6u %8u %8u", i, g_lwip_mem_cnt[i][0], g_lwip_mem_cnt[i][1]);
+        ESP_LWIP_LOGI("%6" U32_F " %8" U32_F " %8" U32_F, (u32_t)i, g_lwip_mem_cnt[i][0], g_lwip_mem_cnt[i][1]);
     }
 }
 

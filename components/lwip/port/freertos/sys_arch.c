@@ -403,7 +403,7 @@ sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize
   ret = xTaskCreatePinnedToCore(thread, name, stacksize, arg, prio, &rtos_task,
           CONFIG_LWIP_TCPIP_TASK_AFFINITY);
 
-  LWIP_DEBUGF(TCPIP_DEBUG, ("new lwip task : %x, prio:%d,stack:%d\n",
+  LWIP_DEBUGF(TCPIP_DEBUG, ("new lwip task : %" U32_F ", prio:%d,stack:%d\n",
              (u32_t)rtos_task, prio, stacksize));
 
   if (ret != pdTRUE) {

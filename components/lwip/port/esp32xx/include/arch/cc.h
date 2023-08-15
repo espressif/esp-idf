@@ -48,9 +48,9 @@ typedef int sys_prot_t;
 #define U16_F "d"
 #define X16_F "x"
 
-#define S32_F "d"
-#define U32_F "u"
-#define X32_F "x"
+#define S32_F PRId32
+#define U32_F PRIu32
+#define X32_F PRIx32
 
 #define PACK_STRUCT_FIELD(x) x
 #define PACK_STRUCT_STRUCT __attribute__((packed))
