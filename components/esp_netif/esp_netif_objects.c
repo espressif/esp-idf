@@ -74,7 +74,7 @@ esp_err_t esp_netif_add_to_list(esp_netif_t *netif)
 
     SLIST_INSERT_HEAD(&s_head, item, next);
     ++s_esp_netif_counter;
-    ESP_LOGD(TAG, "%s netif added successfully (total netifs: %d)", __func__, s_esp_netif_counter);
+    ESP_LOGD(TAG, "%s netif added successfully (total netifs: %" PRIu32 ")", __func__, (uint32_t)s_esp_netif_counter);
     esp_netif_list_unlock();
     return ESP_OK;
 }
@@ -94,7 +94,7 @@ esp_err_t esp_netif_remove_from_list(esp_netif_t *netif)
             SLIST_REMOVE(&s_head, item, slist_netifs_s, next);
             assert(s_esp_netif_counter > 0);
             --s_esp_netif_counter;
-            ESP_LOGD(TAG, "%s netif successfully removed (total netifs: %d)", __func__, s_esp_netif_counter);
+            ESP_LOGD(TAG, "%s netif successfully removed (total netifs: %" PRIu32 ")", __func__, (uint32_t)s_esp_netif_counter);
             free(item);
             esp_netif_list_unlock();
             return ESP_OK;

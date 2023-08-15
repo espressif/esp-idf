@@ -98,12 +98,12 @@ static void port_action_start(void *handler_args, esp_event_base_t base, int32_t
     esp_netif_br_glue_t *netif_glue = handler_args;
 
     if (base == WIFI_EVENT) {
-        ESP_LOGD(TAG, "wifi_action_start: %p, %p, %d, %p", netif_glue, base, event_id, event_data);
+        ESP_LOGD(TAG, "wifi_action_start: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
         start_br_if_stopped(netif_glue);
         esp_netif_bridge_add_port(netif_glue->base.netif, netif_glue->wifi_esp_netif);
     } else if (base == ETH_EVENT) {
         esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
-        ESP_LOGD(TAG, "eth_action_start: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
+        ESP_LOGD(TAG, "eth_action_start: %p, %p, %" PRId32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
         for (int i = 0; i < netif_glue->port_cnt; i++) {
             if (eth_handle == esp_netif_get_io_driver(netif_glue->ports_esp_netifs[i])) {
                 start_br_if_stopped(netif_glue);
@@ -120,11 +120,11 @@ static void port_action_stop(void *handler_args, esp_event_base_t base, int32_t 
     // if one of the bridge's ports is stopped, we need to stop the bridge too, since port's lwip_netif is removed and so it would become
     // an invalid reference in the bridge's internal structure (there is no way how to remove single port from bridge in current LwIP)
     if (base == WIFI_EVENT) {
-        ESP_LOGD(TAG, "wifi_action_stop: %p, %p, %d, %p", netif_glue, base, event_id, event_data);
+        ESP_LOGD(TAG, "wifi_action_stop: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
         stop_br_if_started(netif_glue);
     } else if (base == ETH_EVENT) {
         esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
-        ESP_LOGD(TAG, "eth_action_stop: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
+        ESP_LOGD(TAG, "eth_action_stop: %p, %p, %" PRId32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
         for (int i = 0; i < netif_glue->port_cnt; i++) {
             if (eth_handle == esp_netif_get_io_driver(netif_glue->ports_esp_netifs[i])) {
                 stop_br_if_started(netif_glue);
@@ -144,11 +144,11 @@ static void port_action_connected(void *handler_args, esp_event_base_t base, int
     }
 
     if (base == WIFI_EVENT) {
-        ESP_LOGD(TAG, "wifi_action_connected: %p, %p, %d, %p", netif_glue, base, event_id, event_data);
+        ESP_LOGD(TAG, "wifi_action_connected: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
         esp_netif_action_connected(netif_glue->base.netif, 0, 0, NULL);
     } else if (base == ETH_EVENT) {
         esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
-        ESP_LOGD(TAG, "eth_action_connected: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
+        ESP_LOGD(TAG, "eth_action_connected: %p, %p, %" PRId32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
         for (int i = 0; i < netif_glue->port_cnt; i++) {
             if (eth_handle == esp_netif_get_io_driver(netif_glue->ports_esp_netifs[i])) {
                 esp_netif_action_connected(netif_glue->base.netif, 0, 0, NULL);
@@ -166,7 +166,7 @@ static void port_action_connected(void *handler_args, esp_event_base_t base, int
 static void port_action_disconnected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     esp_netif_br_glue_t *netif_glue = handler_args;
-    ESP_LOGD(TAG, "action_disconnected: %p, %p, %d, %p", netif_glue, base, event_id, event_data);
+    ESP_LOGD(TAG, "action_disconnected: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
     // if all ports are disconnected, set bridge as disconnected too
     if (are_ports_disconnected(netif_glue)) {
         esp_netif_action_disconnected(netif_glue->base.netif, base, event_id, event_data);
@@ -178,7 +178,7 @@ static void br_action_got_ip(void *handler_args, esp_event_base_t base, int32_t 
 {
     ip_event_got_ip_t *ip_event = (ip_event_got_ip_t *)event_data;
     esp_netif_br_glue_t *netif_glue = handler_args;
-    ESP_LOGD(TAG, "br_action_got_ip: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
+    ESP_LOGD(TAG, "br_action_got_ip: %p, %p, %" PRIu32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
     if (netif_glue->base.netif == ip_event->esp_netif) {
         esp_netif_action_got_ip(ip_event->esp_netif, base, event_id, event_data);
     }
