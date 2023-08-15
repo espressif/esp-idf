@@ -255,6 +255,27 @@ esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr,
     return (state == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_hf_ag_ciev_report(esp_bd_addr_t remote_addr, esp_hf_ciev_report_type_t ind_type, int value)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_HF;
+    msg.act = BTC_HF_CIEV_REPORT_EVT;
+
+    btc_hf_args_t arg;
+    memset(&arg, 0, sizeof(btc_hf_args_t));
+    memcpy(&(arg.ciev_rep.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
+    arg.ciev_rep.ind.type = ind_type;
+    arg.ciev_rep.ind.value = value;
+
+    /* Switch to BTC context */
+    bt_status_t state = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL, NULL);
+    return (state == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
                                 esp_hf_call_status_t call_state,
                                 esp_hf_call_setup_status_t call_setup_state,

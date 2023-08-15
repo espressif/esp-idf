@@ -528,6 +528,19 @@ static bt_status_t btc_hf_indchange_notification(bt_bdaddr_t *bd_addr,
     return BT_STATUS_SUCCESS;
 }
 
+// +CIEV<...> for device status update, send other indicators, e.g. roaming, battery, call held and bearer
+bt_status_t btc_hf_ciev_report(bt_bdaddr_t *bd_addr, tBTA_AG_IND_TYPE indicator, uint16_t value)
+{
+    int idx = btc_hf_idx_by_bdaddr(bd_addr);
+    CHECK_HF_INIT(idx);
+
+    if (is_connected(idx, bd_addr)) {
+        send_indicator_update(indicator, value);
+        return BT_STATUS_SUCCESS;
+    }
+    return BT_STATUS_FAIL;
+}
+
 //AT+CIND response
 static bt_status_t btc_hf_cind_response(bt_bdaddr_t *bd_addr,
                                         esp_hf_call_setup_status_t call_status,
@@ -1114,6 +1127,12 @@ void btc_hf_call_handler(btc_msg_t *msg)
             btc_hf_indchange_notification(&arg->ind_change.remote_addr,
                                         arg->ind_change.call_state, arg->ind_change.call_setup_state,
                                         arg->ind_change.ntk_state, arg->ind_change.signal);
+            break;
+        }
+
+        case BTC_HF_CIEV_REPORT_EVT:
+        {
+            btc_hf_ciev_report(&arg->ciev_rep.remote_addr, arg->ciev_rep.ind.type, arg->ciev_rep.ind.value);
             break;
         }
 
