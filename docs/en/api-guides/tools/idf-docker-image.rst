@@ -62,7 +62,7 @@ The above command explained:
 - ``-v $PWD:/project``: mounts the current directory on the host (``$PWD``) as ``/project`` directory in the container.
 - ``-w /project``: makes ``/project`` the working directory for the command.
 - ``-u $UID``: makes the command run with your user ID so that files are created as you (instead of root).
-- ``-e HOME=/tmp``: gives the user a home directory for storing temporary files created ``by idf.py`` in ``~/.cache``.
+- ``-e HOME=/tmp``: gives the user a home directory for storing temporary files created by ``idf.py`` in ``~/.cache``.
 - ``espressif/idf``: uses Docker image ``espressif/idf`` with tag ``latest``. The ``latest`` tag is implicitly added by Docker when no tag is specified.
 - ``idf.py build``: runs this command inside the container.
 
