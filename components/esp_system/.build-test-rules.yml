@@ -7,13 +7,3 @@ components/esp_system/test_apps/esp_system_unity_tests:
 components/esp_system/test_apps/linux_apis:
   enable:
     - if: IDF_TARGET == "linux"
-
-components/esp_system/test_apps/rtc_8md256:
-  disable:
-    - if: SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 != 1
-
-components/esp_system/test_apps/rtc_power_modes:
-  enable:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: the other targets are not tested yet
