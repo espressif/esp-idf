@@ -35,19 +35,19 @@
  * #define INST_AUTOLOAD_FLAG      BIT(2)
  */
 #if CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7516
-#define DATA_AUTOLOAD_FLAG      Cache_Disable_L2_Cache()
-#define INST_AUTOLOAD_FLAG      Cache_Disable_L2_Cache()
+#define DATA_AUTOLOAD_ENABLE      Cache_Disable_L2_Cache()
+#define INST_AUTOLOAD_ENABLE      Cache_Disable_L2_Cache()
 #else
-#define DATA_AUTOLOAD_FLAG      Cache_Disable_ICache()
-#define INST_AUTOLOAD_FLAG      Cache_Disable_ICache()
+#define DATA_AUTOLOAD_ENABLE      cache_ll_is_cache_autoload_enabled(CACHE_TYPE_DATA)
+#define INST_AUTOLOAD_ENABLE      cache_ll_is_cache_autoload_enabled(CACHE_TYPE_INSTRUCTION)
 #endif
 
 /**
  * Necessary hal contexts, could be maintained by upper layer in the future
  */
 typedef struct {
-    uint32_t data_autoload_flag;
-    uint32_t inst_autoload_flag;
+    bool data_autoload_en;
+    bool inst_autoload_en;
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
     // There's no register indicating if cache is enabled on these chips, use sw flag to save this state.
     volatile bool cache_enabled;
@@ -58,23 +58,16 @@ static cache_hal_context_t ctx;
 
 void cache_hal_init(void)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
-    ctx.data_autoload_flag = INST_AUTOLOAD_FLAG;
-#if CONFIG_IDF_TARGET_ESP32P4
-    Cache_Enable_L2_Cache(ctx.data_autoload_flag);
+    ctx.data_autoload_en = DATA_AUTOLOAD_ENABLE;
+    ctx.inst_autoload_en = INST_AUTOLOAD_ENABLE;
+#if SOC_CACHE_L2_SUPPORTED
+    Cache_Enable_L2_Cache(ctx.inst_autoload_en);
 #else
-    Cache_Enable_ICache(ctx.data_autoload_flag);
-#endif
-#else
-    ctx.data_autoload_flag = DATA_AUTOLOAD_FLAG;
-    Cache_Enable_DCache(ctx.data_autoload_flag);
-    ctx.inst_autoload_flag = INST_AUTOLOAD_FLAG;
-    Cache_Enable_ICache(ctx.inst_autoload_flag);
-#endif
+    cache_ll_enable_cache(CACHE_TYPE_ALL, ctx.inst_autoload_en, ctx.data_autoload_en);
+#endif //SOC_CACHE_L2_SUPPORTED
 
     cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_DBUS_MASK);
     cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_IBUS_MASK);
-
 #if !CONFIG_FREERTOS_UNICORE
     cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_DBUS_MASK);
     cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_IBUS_MASK);
@@ -87,22 +80,11 @@ void cache_hal_init(void)
 
 void cache_hal_disable(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_CACHE_L2_SUPPORTED
     Cache_Disable_L2_Cache();
 #else
-    Cache_Disable_ICache();
-#endif
-#else
-    if (type == CACHE_TYPE_DATA) {
-        Cache_Disable_DCache();
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        Cache_Disable_ICache();
-    } else {
-        Cache_Disable_ICache();
-        Cache_Disable_DCache();
-    }
-#endif
+    cache_ll_disable_cache(type);
+#endif //SOC_CACHE_L2_SUPPORTED
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
     ctx.cache_enabled = 0;
@@ -111,22 +93,11 @@ void cache_hal_disable(cache_type_t type)
 
 void cache_hal_enable(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32P4
-    Cache_Enable_L2_Cache(ctx.inst_autoload_flag);
+#if SOC_CACHE_L2_SUPPORTED
+    Cache_Enable_L2_Cache(ctx.inst_autoload_en);
 #else
-    Cache_Enable_ICache(ctx.inst_autoload_flag);
-#endif
-#else
-    if (type == CACHE_TYPE_DATA) {
-        Cache_Enable_DCache(ctx.data_autoload_flag);
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        Cache_Enable_ICache(ctx.inst_autoload_flag);
-    } else {
-        Cache_Enable_ICache(ctx.inst_autoload_flag);
-        Cache_Enable_DCache(ctx.data_autoload_flag);
-    }
-#endif
+    cache_ll_enable_cache(type, ctx.inst_autoload_en, ctx.data_autoload_en);
+#endif //SOC_CACHE_L2_SUPPORTED
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
     ctx.cache_enabled = 1;
@@ -137,18 +108,9 @@ void cache_hal_suspend(cache_type_t type)
 {
 #if SOC_CACHE_L2_SUPPORTED
     Cache_Suspend_L2_Cache();
-#elif SOC_SHARED_IDCACHE_SUPPORTED
-    Cache_Suspend_ICache();
 #else
-    if (type == CACHE_TYPE_DATA) {
-        Cache_Suspend_DCache();
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        Cache_Suspend_ICache();
-    } else {
-        Cache_Suspend_ICache();
-        Cache_Suspend_DCache();
-    }
-#endif
+    cache_ll_suspend_cache(type);
+#endif //SOC_CACHE_L2_SUPPORTED
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
     ctx.cache_enabled = 0;
@@ -158,18 +120,9 @@ void cache_hal_suspend(cache_type_t type)
 void cache_hal_resume(cache_type_t type)
 {
 #if SOC_CACHE_L2_SUPPORTED
-    Cache_Resume_L2_Cache(ctx.inst_autoload_flag);
-#elif SOC_SHARED_IDCACHE_SUPPORTED
-    Cache_Resume_ICache(ctx.inst_autoload_flag);
+    Cache_Resume_L2_Cache(ctx.inst_autoload_en);
 #else
-    if (type == CACHE_TYPE_DATA) {
-        Cache_Resume_DCache(ctx.data_autoload_flag);
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        Cache_Resume_ICache(ctx.inst_autoload_flag);
-    } else {
-        Cache_Resume_ICache(ctx.inst_autoload_flag);
-        Cache_Resume_DCache(ctx.data_autoload_flag);
-    }
+    cache_ll_resume_cache(type, ctx.inst_autoload_en, ctx.data_autoload_en);
 #endif
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
@@ -179,11 +132,13 @@ void cache_hal_resume(cache_type_t type)
 
 bool cache_hal_is_cache_enabled(cache_type_t type)
 {
+    bool enabled;
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
-    return ctx.cache_enabled;
+    enabled = ctx.cache_enabled;
 #else
-    return cache_ll_l1_is_cache_enabled(0, type);
-#endif
+    enabled = cache_ll_is_cache_enabled(type);
+#endif //CACHE_LL_ENABLE_DISABLE_STATE_SW
+    return enabled;
 }
 
 void cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)
@@ -193,7 +148,7 @@ void cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32P4
     Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, vaddr, size);
 #else
-    Cache_Invalidate_Addr(vaddr, size);
+    cache_ll_invalidate_addr(vaddr, size);
 #endif
 }
 
@@ -205,7 +160,7 @@ void cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
     Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, vaddr, size);
     Cache_WriteBack_Addr(CACHE_MAP_L2_CACHE, vaddr, size);
 #else
-    Cache_WriteBack_Addr(vaddr, size);
+    cache_ll_writeback_addr(vaddr, size);
 #endif
 }
 #endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
@@ -214,62 +169,30 @@ void cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
 #if SOC_CACHE_FREEZE_SUPPORTED
 void cache_hal_freeze(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_CACHE_L2_SUPPORTED
     Cache_Freeze_L2_Cache_Enable(CACHE_FREEZE_ACK_BUSY);
 #else
-    Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
-#endif
-#else
-    if (type == CACHE_TYPE_DATA) {
-        Cache_Freeze_DCache_Enable(CACHE_FREEZE_ACK_BUSY);
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
-    } else {
-        Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
-        Cache_Freeze_DCache_Enable(CACHE_FREEZE_ACK_BUSY);
-    }
-#endif
+    cache_ll_freeze_cache(type);
+#endif //SOC_CACHE_L2_SUPPORTED
 }
 
 void cache_hal_unfreeze(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_CACHE_L2_SUPPORTED
     Cache_Freeze_L2_Cache_Disable();
 #else
-    Cache_Freeze_ICache_Disable();
-#endif
-#else
-    if (type == CACHE_TYPE_DATA) {
-        Cache_Freeze_DCache_Disable();
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        Cache_Freeze_ICache_Disable();
-    } else {
-        Cache_Freeze_DCache_Disable();
-        Cache_Freeze_ICache_Disable();
-    }
-#endif
+    cache_ll_unfreeze_cache(type);
+#endif //SOC_CACHE_L2_SUPPORTED
 }
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
 uint32_t cache_hal_get_cache_line_size(cache_type_t type)
 {
-#if SOC_SHARED_IDCACHE_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32P4
-    return Cache_Get_L2_Cache_Line_Size();
+    uint32_t line_size = 0;
+#if SOC_CACHE_L2_SUPPORTED
+    line_size = Cache_Get_L2_Cache_Line_Size();
 #else
-    return Cache_Get_ICache_Line_Size();
-#endif
-#else
-    uint32_t size = 0;
-    if (type == CACHE_TYPE_DATA) {
-        size = Cache_Get_DCache_Line_Size();
-    } else if (type == CACHE_TYPE_INSTRUCTION) {
-        size = Cache_Get_ICache_Line_Size();
-    } else {
-        HAL_ASSERT(false);
-    }
-    return size;
-#endif
+    line_size = cache_ll_get_line_size(type);
+#endif //SOC_CACHE_L2_SUPPORTED
+    return line_size;
 }

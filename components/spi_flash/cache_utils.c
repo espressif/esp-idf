@@ -358,11 +358,6 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 #endif
 }
 
-/**
- * The following two functions are replacements for Cache_Read_Disable and Cache_Read_Enable
- * function in ROM. They are used to work around a bug where Cache_Read_Disable requires a call to
- * Cache_Flush before Cache_Read_Enable, even if cached data was not modified.
- */
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
     cache_hal_suspend(CACHE_TYPE_ALL);

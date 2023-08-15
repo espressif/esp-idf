@@ -8,6 +8,12 @@
 
 static uint32_t s_cache_status[2];
 
+/**
+ * On ESP32, The cache_hal_suspend()/cache_hal_resume() are replacements
+ * for Cache_Read_Disable()/Cache_Read_Enable() in ROM.
+ * There's a bug that Cache_Read_Disable requires a call to Cache_Flush
+ * before Cache_Read_Enable, even if cached data was not modified.
+ */
 void cache_hal_suspend(cache_type_t type)
 {
     s_cache_status[0] = cache_ll_l1_get_enabled_bus(0);
