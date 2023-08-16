@@ -37,7 +37,7 @@ ESP-IDF 在 GitHub 平台上的完整发布历史请见 `发布说明页面`_。
 我该选择哪个版本？
 ----------------------
 
-- 如有量产需求，请使用 `最新稳定版本`_ 。稳定版本已通过人工测试，后续更新仅修复 bug，主要特性不受影响（更多详情，请见 :ref:`versioning-scheme` ）。请访问 `发布说明页面`_ 界面查看每一个稳定发布版本。
+- 如有量产需求，请使用 `最新稳定版本`_ 。稳定版本已通过人工测试，后续更新仅修复 bug，主要特性不受影响（更多详情，请见 :ref:`versioning-scheme` ）。请访问 `发布说明页面`_ 界面查看每一个稳定发布版本。另外，为确保使用的 ESP-IDF 版本与需生产的芯片版本兼容，可参考 `ESP-IDF 版本与乐鑫芯片版本兼容性 <https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY_CN.md>`_。
 
 - 如需尝试/测试 ESP-IDF 的最新特性，请使用 `最新版本（在 master 分支上） <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/>`_。最新版本包含 ESP-IDF 的所有最新特性，已通过自动化测试，但尚未全部完成人工测试（因此存在一定风险）。
 
