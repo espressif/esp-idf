@@ -1,0 +1,22 @@
+# Mock Kconfig file to provide definitions
+menu "Wi-Fi"
+    config ESP_WIFI_STATIC_RX_BUFFER_NUM
+        int "Max number of WiFi static RX buffers"
+        range 2 25
+        default 10
+
+    config ESP_WIFI_DYNAMIC_RX_BUFFER_NUM
+        int "Max number of WiFi dynamic RX buffers"
+        range 0 1024
+        default 32
+
+    config ESP_WIFI_TX_BUFFER_TYPE
+        int
+        default 1
+
+    config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
+        int "Maximum espnow encrypt peers number"
+        range 0 17
+        default 7
+
+endmenu # Wi-Fi
