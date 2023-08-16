@@ -612,6 +612,7 @@ void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
 	/* We only support roaming in same ESS, therefore only bssid setting is needed */
 	os_memcpy(config->sta.bssid, bss->bssid, ETH_ALEN);
 	config->sta.bssid_set = 1;
+	config->sta.channel = bss->channel;
 	/* supplicant connect will only be called in case of bss transition(roaming) */
 	esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
 	esp_wifi_set_config(WIFI_IF_STA, config);
