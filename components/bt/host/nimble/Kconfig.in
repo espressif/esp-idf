@@ -662,3 +662,9 @@ config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
     help
         This option is used when data to be sent is more than 512 bytes. For peripheral role,
         BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
+
+config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
+    bool "Enable BLE high duty advertising interval feature"
+    depends on BT_NIMBLE_ENABLED
+    help
+        This enable BLE high duty advertising interval feature
