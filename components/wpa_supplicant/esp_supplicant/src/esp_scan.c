@@ -162,6 +162,7 @@ int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
 	/* update rest of the frame */
 	os_memcpy(ptr, frame, len);
 	wpa_bss_update_scan_res(wpa_s, res, &now);
+	os_get_reltime(&wpa_s->last_scan);
 	os_free(res);
 
 	return 0;
