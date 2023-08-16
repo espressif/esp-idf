@@ -48,10 +48,6 @@ examples/peripherals/i2c/i2c_tools:
       reason: lack of runners
   <<: *i2c_dependencies
 
-examples/peripherals/i2s/i2s_adc_dac:
-  disable:
-    - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
-
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1
@@ -157,10 +153,6 @@ examples/peripherals/rmt/ir_nec_transceiver:
 examples/peripherals/rmt/musical_buzzer:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT != 1
-
-examples/peripherals/rmt/onewire_ds18b20:
-  disable:
-    - if: SOC_RMT_SUPPORTED != 1
 
 examples/peripherals/rmt/stepper_motor:
   disable:

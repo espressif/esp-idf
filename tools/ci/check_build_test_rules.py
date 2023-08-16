@@ -413,6 +413,23 @@ def sort_yaml(files: List[str]) -> None:
     sys.exit(exit_code)
 
 
+def check_exist() -> None:
+    exit_code = 0
+
+    config_files = [str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')]
+    for file in config_files:
+        with open(file) as fr:
+            configs = yaml.load(fr)
+            for path in configs.keys():
+                if path.startswith('.'):
+                    continue
+                if not os.path.isdir(path):
+                    print(f'Path \'{path}\' referred in \'{file}\' does not exist!')
+                    exit_code = 1
+
+    sys.exit(exit_code)
+
+
 if __name__ == '__main__':
     if 'CI_JOB_ID' not in os.environ:
         os.environ['CI_JOB_ID'] = 'fake'  # this is a CI script
@@ -441,6 +458,8 @@ if __name__ == '__main__':
     _sort_yaml = action.add_parser('sort-yaml')
     _sort_yaml.add_argument('files', nargs='+', help='all specified yaml files')
 
+    _check_exist = action.add_parser('check-exist')
+
     arg = parser.parse_args()
 
     # Since this script is executed from the pre-commit hook environment, make sure IDF_PATH is set
@@ -450,6 +469,8 @@ if __name__ == '__main__':
 
     if arg.action == 'sort-yaml':
         sort_yaml(arg.files)
+    elif arg.action == 'check-exist':
+        check_exist()
     else:
         check_dirs = set()
 

@@ -152,6 +152,15 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
           - ruamel.yaml
+      - id: check-build-test-rules-path-exists
+        name: check path in .build-test-rules.yml exists
+        entry: tools/ci/check_build_test_rules.py check-exist
+        language: python
+        additional_dependencies:
+          - PyYAML == 5.3.1
+        always_run: true
+        pass_filenames: false
+        require_serial: true
       - id: submodule-sbom-hash-check
         name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
         entry: python tools/test_sbom/test_submodules.py

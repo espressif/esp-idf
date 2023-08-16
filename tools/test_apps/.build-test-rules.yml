@@ -23,19 +23,9 @@ tools/test_apps/linux_compatible/linux_freertos:
   enable:
     - if: IDF_TARGET == "linux"
 
-tools/test_apps/linux_compatible/rmt_mock_build_test:
-  enable:
-    - if: IDF_TARGET == "linux"
-
 tools/test_apps/peripherals/i2c_wifi:
   disable:
     - if: SOC_I2C_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1
-
-tools/test_apps/peripherals/usb:
-  enable:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: the other targets are not tested yet
 
 tools/test_apps/phy/phy_multi_init_data_test:
   disable:
@@ -56,16 +46,6 @@ tools/test_apps/protocols/esp_netif/build_config:
     - if: IDF_TARGET in ["esp32", "esp32c2"]
       temporary: false
       reason: No need to test on all targets
-
-tools/test_apps/protocols/mdns:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
-      temporary: true
-      reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
-      temporary: true
-      reason: lack of runners
 
 tools/test_apps/protocols/mqtt/publish_connect_test:
   enable:
@@ -115,12 +95,6 @@ tools/test_apps/system/cxx_pthread_bluetooth:
 tools/test_apps/system/eh_frame:
   enable:
     - if: IDF_TARGET in ["esp32c2", "esp32c3"]
-      temporary: true
-      reason: the other targets are not tested yet
-
-tools/test_apps/system/flash_psram:
-  enable:
-    - if: IDF_TARGET == "esp32s3"
       temporary: true
       reason: the other targets are not tested yet
 
