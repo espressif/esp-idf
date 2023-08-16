@@ -87,7 +87,7 @@ struct pcnt_unit_t {
     int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
-    int zero_input_gpio_num;                              // which gpio clear signal input
+    int clear_signal_gpio_num;                              // which gpio clear signal input
     int accum_value;                                      // accumulated count value
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
@@ -235,6 +235,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     unit->high_limit = config->high_limit;
     unit->low_limit = config->low_limit;
     unit->accum_value = 0;
+    unit->clear_signal_gpio_num = -1;
     unit->flags.accum_count = config->flags.accum_count;
 
     // clear/pause register is shared by all units, so using group's spinlock
@@ -252,29 +253,6 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     for (int i = 0; i < PCNT_LL_WATCH_EVENT_MAX; i++) {
         unit->watchers[i].event_id = PCNT_LL_WATCH_EVENT_INVALID; // invalid all watch point
     }
-
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-    // GPIO configuration
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
-        .pull_down_en = true,
-        .pull_up_en = false,
-    };
-
-    if (config->zero_input_gpio_num >= 0) {
-        if (config->flags.invert_zero_input) {
-            gpio_conf.pull_down_en = false;
-            gpio_conf.pull_up_en = true;
-        }
-        gpio_conf.pin_bit_mask = 1ULL << config->zero_input_gpio_num;
-        ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config zero GPIO failed");
-        esp_rom_gpio_connect_in_signal(config->zero_input_gpio_num,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig,
-                                       config->flags.invert_zero_input);
-    }
-    unit->zero_input_gpio_num = config->zero_input_gpio_num;
-#endif // SOC_PCNT_SUPPORT_ZERO_INPUT
 
     ESP_LOGD(TAG, "new pcnt unit (%d,%d) at %p, count range:[%d,%d]", group_id, unit_id, unit, unit->low_limit, unit->high_limit);
     *ret_unit = unit;
@@ -299,17 +277,51 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
         ESP_RETURN_ON_FALSE(!unit->channels[i], ESP_ERR_INVALID_STATE, TAG, "channel %d still in working", i);
     }
 
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-    if (unit->zero_input_gpio_num >= 0) {
-        gpio_reset_pin(unit->zero_input_gpio_num);
+#if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+    if (unit->clear_signal_gpio_num >= 0) {
+        gpio_reset_pin(unit->clear_signal_gpio_num);
     }
-#endif // SOC_PCNT_SUPPORT_ZERO_INPUT
+#endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(pcnt_destroy(unit), TAG, "destroy pcnt unit failed");
     return ESP_OK;
 }
+
+#if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_signal_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    pcnt_group_t *group = unit->group;
+    int group_id = group->group_id;
+    int unit_id = unit->unit_id;
+
+    if (config) {
+        gpio_config_t gpio_conf = {
+            .intr_type = GPIO_INTR_DISABLE,
+            .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
+            .pull_down_en = true,
+            .pull_up_en = false,
+        };
+        if (config->flags.invert_clear_signal) {
+            gpio_conf.pull_down_en = false;
+            gpio_conf.pull_up_en = true;
+        }
+        gpio_conf.pin_bit_mask = 1ULL << config->clear_signal_gpio_num;
+        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config zero signal GPIO failed");
+        esp_rom_gpio_connect_in_signal(config->clear_signal_gpio_num,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig,
+                                       config->flags.invert_clear_signal);
+        unit->clear_signal_gpio_num = config->clear_signal_gpio_num;
+    } else {
+        ESP_RETURN_ON_FALSE(unit->clear_signal_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG, "zero signal not set yet");
+        gpio_reset_pin(unit->clear_signal_gpio_num);
+        unit->clear_signal_gpio_num = -1;
+    }
+    return ESP_OK;
+}
+#endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
 esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch_filter_config_t *config)
 {

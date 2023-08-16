@@ -459,7 +459,7 @@ config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
     bool
     default y
 
-config SOC_PCNT_SUPPORT_ZERO_INPUT
+config SOC_PCNT_SUPPORT_CLEAR_SIGNAL
     bool
     default y
 

@@ -20,17 +20,20 @@ Functional Overview
 
 Description of the PCNT functionality is divided into the following sections:
 
-- :ref:`pcnt-resource-allocation` - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
-- :ref:`pcnt-setup-channel-actions` - covers how to configure the PCNT channel to behave on different signal edges and levels.
-- :ref:`pcnt-watch-points` - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
-- :ref:`pcnt-register-event-callbacks` - describes how to hook your specific code to the watch point event callback function.
-- :ref:`pcnt-set-glitch-filter` - describes how to enable and set the timing parameters for the internal glitch filter.
-- :ref:`pcnt-enable-disable-unit` - describes how to enable and disable the PCNT unit.
-- :ref:`pcnt-unit-io-control` - describes IO control functions of PCNT unit, like enable glitch filter, start and stop unit, get and clear count value.
-- :ref:`pcnt-power-management` - describes what functionality will prevent the chip from going into low power mode.
-- :ref:`pcnt-iram-safe` - describes tips on how to make the PCNT interrupt and IO control functions work better along with a disabled cache.
-- :ref:`pcnt-thread-safe` - lists which APIs are guaranteed to be thread safe by the driver.
-- :ref:`pcnt-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
+.. list::
+
+    - :ref:`pcnt-resource-allocation` - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
+    - :ref:`pcnt-setup-channel-actions` - covers how to configure the PCNT channel to behave on different signal edges and levels.
+    - :ref:`pcnt-watch-points` - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
+    - :ref:`pcnt-register-event-callbacks` - describes how to hook your specific code to the watch point event callback function.
+    - :ref:`pcnt-set-glitch-filter` - describes how to enable and set the timing parameters for the internal glitch filter.
+    :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - describes how to set the parameters for the zero signal.
+    - :ref:`pcnt-enable-disable-unit` - describes how to enable and disable the PCNT unit.
+    - :ref:`pcnt-unit-io-control` - describes IO control functions of PCNT unit, like enable glitch filter, start and stop unit, get and clear count value.
+    - :ref:`pcnt-power-management` - describes what functionality will prevent the chip from going into low power mode.
+    - :ref:`pcnt-iram-safe` - describes tips on how to make the PCNT interrupt and IO control functions work better along with a disabled cache.
+    - :ref:`pcnt-thread-safe` - lists which APIs are guaranteed to be thread safe by the driver.
+    - :ref:`pcnt-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
 
 .. _pcnt-resource-allocation:
 
@@ -51,12 +54,6 @@ To install a PCNT unit, there's a configuration structure that needs to be given
 .. note::
 
     Since all PCNT units share the same interrupt source, when installing multiple PCNT units make sure that the interrupt priority :cpp:member:`pcnt_unit_config_t::intr_priority` is the same for each unit.
-
-.. only:: SOC_PCNT_SUPPORT_ZERO_INPUT
-    
-    -  :cpp:member:`pcnt_unit_config_t::zero_input_gpio_num` specify the GPIO numbers used by **zero** type signal. The default active level is high, and the input mode is pull-down enabled. Please note, it can be assigned to `-1` if it's not actually used, and GPIO will not be initialized.
-    -  :cpp:member:`pcnt_unit_config_t::invert_zero_input` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is invert.
-    -  :cpp:member:`pcnt_unit_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the zreo pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
 
 Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e. unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
 
@@ -204,7 +201,33 @@ This function should be called when the unit is in the init state. Otherwise, it
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
-.. _pcnt-enable-disable-unit:
+.. only:: SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+
+    .. _pcnt-set-clear-signal:
+
+    Set Clear Signal
+    ^^^^^^^^^^^^^^^^
+
+    The PCNT unit can receive a zero signal from the GPIO. The parameters that can be configured for the zero signal are listed in :cpp:type:`pcnt_clear_signal_config_t`:
+
+        -  :cpp:member:`pcnt_clear_signal_config_t::zero_input_gpio_num` specify the GPIO numbers used by **zero** signal. The default active level is high, and the input mode is pull-down enabled.
+        -  :cpp:member:`pcnt_clear_signal_config_t::invert_zero_input` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is invert.
+        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the zreo pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
+
+    This signal acts in the same way as calling :cpp:func:`pcnt_unit_clear_count`, but is not subject to software latency, and is suitable for use in situations with high latency requirements.
+
+    .. code:: c
+
+        pcnt_clear_signal_config_t clear_signal_config = {
+            .clear_signal_gpio_num = PCNT_CLEAR_SIGNAL_GPIO,
+        };
+        ESP_ERROR_CHECK(pcnt_unit_set_clear_signal(pcnt_unit, &clear_signal_config));
+
+    .. _pcnt-enable-disable-unit:
+
+.. only:: not SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+
+    .. _pcnt-enable-disable-unit:
 
 Enable and Disable Unit
 ^^^^^^^^^^^^^^^^^^^^^^^

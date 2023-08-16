@@ -20,17 +20,20 @@ PCNT 模块通常用于：
 
 PCNT 的功能从以下几个方面进行说明：
 
-- :ref:`pcnt-resource-allocation` - 说明如何通过配置分配 PCNT 单元和通道，以及在相应操作完成之后，如何回收单元和通道。
-- :ref:`pcnt-setup-channel-actions` - 说明如何设置通道针对不同信号沿和电平进行操作。
-- :ref:`pcnt-watch-points` - 说明如何配置观察点，即当计数达到某个数值时，命令 PCNT 单元触发某个事件。
-- :ref:`pcnt-register-event-callbacks` - 说明如何将您的代码挂载到观察点事件的回调函数上。
-- :ref:`pcnt-set-glitch-filter` - 说明如何使能毛刺滤波器并设置其时序参数。
-- :ref:`pcnt-enable-disable-unit` - 说明如何使能和关闭 PCNT 单元。
-- :ref:`pcnt-unit-io-control` - 说明 PCNT 单元的 IO 控制功能，例如使能毛刺滤波器，开启和停用 PCNT 单元，获取和清除计数。
-- :ref:`pcnt-power-management` - 说明哪些功能会阻止芯片进入低功耗模式。
-- :ref:`pcnt-iram-safe` - 说明在缓存禁用的情况下，如何执行 PCNT 中断和 IO 控制功能。
-- :ref:`pcnt-thread-safe` - 列出线程安全的 API。
-- :ref:`pcnt-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可实现不同的驱动效果。
+.. list::
+
+    - :ref:`pcnt-resource-allocation` - 说明如何通过配置分配 PCNT 单元和通道，以及在相应操作完成之后，如何回收单元和通道。
+    - :ref:`pcnt-setup-channel-actions` - 说明如何设置通道针对不同信号沿和电平进行操作。
+    - :ref:`pcnt-watch-points` - 说明如何配置观察点，即当计数达到某个数值时，命令 PCNT 单元触发某个事件。
+    - :ref:`pcnt-register-event-callbacks` - 说明如何将您的代码挂载到观察点事件的回调函数上。
+    - :ref:`pcnt-set-glitch-filter` - 说明如何使能毛刺滤波器并设置其时序参数。
+    :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - 说明如何使能清零信号并设置其参数。
+    - :ref:`pcnt-enable-disable-unit` - 说明如何使能和关闭 PCNT 单元。
+    - :ref:`pcnt-unit-io-control` - 说明 PCNT 单元的 IO 控制功能，例如使能毛刺滤波器，开启和停用 PCNT 单元，获取和清除计数。
+    - :ref:`pcnt-power-management` - 说明哪些功能会阻止芯片进入低功耗模式。
+    - :ref:`pcnt-iram-safe` - 说明在缓存禁用的情况下，如何执行 PCNT 中断和 IO 控制功能。
+    - :ref:`pcnt-thread-safe` - 列出线程安全的 API。
+    - :ref:`pcnt-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可实现不同的驱动效果。
 
 .. _pcnt-resource-allocation:
 
@@ -51,12 +54,6 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 .. note::
 
     由于所有 PCNT 单元共享一个中断源，安装多个 PCNT 单元时请确保每个单元的中断优先级 :cpp:member:`pcnt_unit_config_t::intr_priority` 一致。
-
-.. only:: SOC_PCNT_SUPPORT_ZERO_INPUT
-    
-    -  :cpp:member:`pcnt_unit_config_t::zero_input_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。请注意，这个参数未被使用时，可以设置为 `-1`，初始化时将不会分配 GPIO。
-    -  :cpp:member:`pcnt_unit_config_t::invert_zero_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。翻转时使能上拉输入。
-    -  :cpp:member:`pcnt_unit_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲清零信号。
 
 调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 单元总数记录在 :c:macro:`SOC_PCNT_UNITS_PER_GROUP` 中，以供参考。
 
@@ -204,7 +201,33 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
-.. _pcnt-enable-disable-unit:
+.. only:: SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+
+    .. _pcnt-set-clear-signal:
+
+    设置清零信号
+    ^^^^^^^^^^^^^^^^
+
+    PCNT 单元的可以接收来自 GPIO 的清零信号，:cpp:type:`pcnt_clear_signal_config_t` 中列出了清零信号的配置参数：
+
+        -  :cpp:member:`pcnt_clear_signal_config_t::zero_input_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。
+        -  :cpp:member:`pcnt_clear_signal_config_t::invert_zero_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。翻转时使能上拉输入。
+        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲清零信号。
+
+    该信号作用与调用 :cpp:func:`pcnt_unit_clear_count` 相同，但不受软件延迟的限制，适用于对延迟要求较高的场合。
+
+    .. code:: c
+
+        pcnt_clear_signal_config_t clear_signal_config = {
+            .clear_signal_gpio_num = PCNT_CLEAR_SIGNAL_GPIO,
+        };
+        ESP_ERROR_CHECK(pcnt_unit_set_clear_signal(pcnt_unit, &clear_signal_config));
+
+    .. _pcnt-enable-disable-unit:
+
+.. only:: not SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+
+    .. _pcnt-enable-disable-unit:  
 
 使能和禁用单元
 ^^^^^^^^^^^^^^^^^
