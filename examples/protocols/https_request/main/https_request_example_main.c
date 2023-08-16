@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -106,6 +106,14 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
         ESP_LOGI(TAG, "Connection established...");
     } else {
         ESP_LOGE(TAG, "Connection failed...");
+        int esp_tls_code = 0, esp_tls_flags = 0;
+        esp_tls_error_handle_t tls_e = NULL;
+        esp_tls_get_error_handle(tls, &tls_e);
+        /* Try to get TLS stack level error and certificate failure flags, if any */
+        ret = esp_tls_get_and_clear_last_error(tls_e, &esp_tls_code, &esp_tls_flags);
+        if (ret == ESP_OK) {
+            ESP_LOGE(TAG, "TLS error = -0x%x, TLS flags = -0x%x", esp_tls_code, esp_tls_flags);
+        }
         goto cleanup;
     }
 
