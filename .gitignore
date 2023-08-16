@@ -78,6 +78,10 @@ test_multi_heap_host
 *.swp
 *.swo
 
+# Sublime Text files
+*.sublime-project
+*.sublime-workspace
+
 # Clion IDE CMake build & config
 .idea/
 cmake-build-*/
@@ -99,3 +103,6 @@ managed_components
 pytest_embedded_log/
 list_job_*.txt
 size_info.txt
+
+# clang config (for LSP)
+.clangd
