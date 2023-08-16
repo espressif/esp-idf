@@ -246,6 +246,10 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     mcpwm_cap_channel_t *cap_chan = NULL;
     ESP_GOTO_ON_FALSE(cap_timer && config && ret_cap_channel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(config->prescale && config->prescale <= MCPWM_LL_MAX_CAPTURE_PRESCALE, ESP_ERR_INVALID_ARG, err, TAG, "invalid prescale");
+    if (config->intr_priority) {
+        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
+                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+    }
 
     // create instance firstly, then install onto platform
     cap_chan = calloc(1, sizeof(mcpwm_cap_channel_t));
@@ -255,6 +259,10 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     mcpwm_group_t *group = cap_timer->group;
     mcpwm_hal_context_t *hal = &group->hal;
     int cap_chan_id = cap_chan->cap_chan_id;
+
+    // if interrupt priority specified before, it cannot be changed until the group is released
+    // check if the new priority specified consistents with the old one
+    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group intrrupt priority failed");
 
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_chan_id, config->flags.neg_edge);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_chan_id, config->flags.pos_edge);
@@ -367,6 +375,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
     if (!cap_channel->intr) {
         ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
         int isr_flags = MCPWM_INTR_ALLOC_FLAG;
+        isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
                             (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
                             mcpwm_capture_default_isr, cap_channel, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");

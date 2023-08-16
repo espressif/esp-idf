@@ -93,6 +93,10 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     ESP_GOTO_ON_FALSE(config && ret_fault, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
+    if (config->intr_priority) {
+        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
+                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+    }
 
     fault = heap_caps_calloc(1, sizeof(mcpwm_gpio_fault_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(fault, ESP_ERR_NO_MEM, err, TAG, "no mem for gpio fault");
@@ -102,6 +106,10 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     int group_id = group->group_id;
     mcpwm_hal_context_t *hal = &group->hal;
     int fault_id = fault->fault_id;
+
+    // if interrupt priority specified before, it cannot be changed until the group is released
+    // check if the new priority specified consistents with the old one
+    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group intrrupt priority failed");
 
     // GPIO configuration
     gpio_config_t gpio_conf = {
@@ -245,6 +253,7 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     if (!gpio_fault->intr) {
         // we want the interrupt service to be enabled after allocation successfully
         int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ESP_INTR_FLAG_INTRDISABLED;
+        isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
                             (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_FAULT_MASK(fault_id),
                             mcpwm_gpio_fault_default_isr, gpio_fault, &gpio_fault->intr), TAG, "install interrupt service for gpio fault failed");

@@ -197,13 +197,13 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
-    // if interrupt priority specified before, it cannot be changed until `pcnt_release_group_handle()` called
-    // so we have to check if the new priority specified consistents with the old one
+    // if interrupt priority specified before, it cannot be changed until the group is released
+    // check if the new priority specified consistents with the old one
     bool intr_priority_conflict = false;
     portENTER_CRITICAL(&group->spinlock);
     if (group->intr_priority == -1) {
         group->intr_priority = config->intr_priority;
-    } else {
+    } else if (config->intr_priority != 0) {
         intr_priority_conflict = (group->intr_priority != config->intr_priority);
     }
     portEXIT_CRITICAL(&group->spinlock);
