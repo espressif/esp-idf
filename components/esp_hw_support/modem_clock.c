@@ -284,7 +284,7 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #define PHY_CLOCK_DEPS          (BIT(MODEM_CLOCK_I2C_MASTER) | BIT(MODEM_CLOCK_FE))
 #define I2C_ANA_MST_CLOCK_DEPS  (BIT(MODEM_CLOCK_I2C_MASTER))
 
-static inline uint32_t modem_clock_get_module_deps(periph_module_t module)
+static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 {
     uint32_t deps = 0;
     if (module == PERIPH_ANA_I2C_MASTER_MODULE) {deps = I2C_ANA_MST_CLOCK_DEPS;}
