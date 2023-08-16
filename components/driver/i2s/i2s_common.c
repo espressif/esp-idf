@@ -43,6 +43,7 @@
 #include "i2s_private.h"
 
 #include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #include "esp_intr_alloc.h"
 #include "esp_check.h"
 #include "esp_attr.h"
@@ -435,39 +436,16 @@ static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
 }
 #endif
 
-// [clk_tree] TODO: replace the following switch table by clk_tree API
 uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
 {
-    switch (clk_src)
-    {
+    uint32_t clk_freq = 0;
 #if SOC_I2S_SUPPORTS_APLL
-    case I2S_CLK_SRC_APLL:
+    if (clk_src == I2S_CLK_SRC_APLL) {
         return i2s_set_get_apll_freq(mclk_freq_hz);
-#endif
-#if SOC_I2S_SUPPORTS_XTAL
-    case I2S_CLK_SRC_XTAL:
-        (void)mclk_freq_hz;
-        return esp_clk_xtal_freq();
-#endif
-#if SOC_I2S_SUPPORTS_PLL_F160M
-    case I2S_CLK_SRC_PLL_160M:
-        (void)mclk_freq_hz;
-        return I2S_LL_PLL_F160M_CLK_FREQ;
-#endif
-#if SOC_I2S_SUPPORTS_PLL_F96M
-    case I2S_CLK_SRC_PLL_96M:
-        (void)mclk_freq_hz;
-        return I2S_LL_PLL_F96M_CLK_FREQ;
-#endif
-#if SOC_I2S_SUPPORTS_PLL_F64M
-    case I2S_CLK_SRC_PLL_64M:
-        (void)mclk_freq_hz;
-        return I2S_LL_PLL_F64M_CLK_FREQ;
-#endif
-    default:
-        // Invalid clock source
-        return 0;
     }
+#endif
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq);
+    return clk_freq;
 }
 
 #if SOC_GDMA_SUPPORTED
@@ -711,7 +689,7 @@ void i2s_gpio_loopback_set(gpio_num_t gpio, uint32_t out_sig_idx, uint32_t in_si
     }
 }
 
-esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, bool is_apll, bool is_invert)
+esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, i2s_clock_src_t clk_src, bool is_invert)
 {
     if (gpio_num == I2S_GPIO_UNUSED) {
         return ESP_OK;
@@ -721,6 +699,7 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, bool is_apll, b
                         ESP_ERR_INVALID_ARG, TAG,
                         "ESP32 only support to set GPIO0/GPIO1/GPIO3 as mclk signal, error GPIO number:%d", gpio_num);
     bool is_i2s0 = id == I2S_NUM_0;
+    bool is_apll = clk_src == I2S_CLK_SRC_APLL;
     if (gpio_num == GPIO_NUM_0) {
         gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
         gpio_ll_iomux_pin_ctrl(is_apll ? 0xFFF6 : (is_i2s0 ? 0xFFF0 : 0xFFFF));
@@ -733,9 +712,16 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, bool is_apll, b
     }
 #else
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");
-    i2s_gpio_check_and_set(gpio_num, i2s_periph_signal[id].mck_out_sig, false, is_invert);
-#endif
-    ESP_LOGD(TAG, "MCLK is pinned to GPIO%d on I2S%d", id, gpio_num);
+#if SOC_I2S_HW_VERSION_2
+    if (clk_src == I2S_CLK_SRC_EXTERNAL) {
+        i2s_gpio_check_and_set(gpio_num, i2s_periph_signal[id].mck_in_sig, true, is_invert);
+    } else
+#endif  // SOC_I2S_HW_VERSION_2
+    {
+        i2s_gpio_check_and_set(gpio_num, i2s_periph_signal[id].mck_out_sig, false, is_invert);
+    }
+#endif  // CONFIG_IDF_TARGET_ESP32
+    ESP_LOGD(TAG, "MCLK is pinned to GPIO%d on I2S%d", gpio_num, id);
     return ESP_OK;
 }
 

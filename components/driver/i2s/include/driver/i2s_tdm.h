@@ -156,7 +156,13 @@ typedef struct {
 typedef struct {
     /* General fields */
     uint32_t                sample_rate_hz;     /*!< I2S sample rate */
-    i2s_clock_src_t         clk_src;            /*!< Choose clock source */
+    i2s_clock_src_t         clk_src;            /*!< Choose clock source, see 'soc_periph_i2s_clk_src_t' for the supported clock sources.
+                                                 *   selected 'I2S_CLK_SRC_EXTERNAL'(if supports) to enable the external source clock inputted via MCLK pin,
+                                                 *   please make sure the frequency inputted is equal or greater than 'sample_rate_hz * mclk_multiple'
+                                                 */
+    uint32_t                ext_clk_freq_hz;    /*!< External clock source frequency in Hz, only take effect when 'clk_src = I2S_CLK_SRC_EXTERNAL', otherwise this field will be ignored
+                                                 *   Please make sure the frequency inputted is equal or greater than bclk, i.e. 'sample_rate_hz * slot_bits * slot_num'
+                                                 */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate, only take effect for master role */
     uint32_t                bclk_div;           /*!< The division from mclk to bclk, only take effect for slave role, it shouldn't be smaller than 8. Increase this field when data sent by slave lag behind */
 } i2s_tdm_clk_config_t;
@@ -165,7 +171,7 @@ typedef struct {
  * @brief I2S TDM mode GPIO pins configuration
  */
 typedef struct {
-    gpio_num_t mclk;               /*!< MCK pin, output */
+    gpio_num_t mclk;               /*!< MCK pin, output by default, input if the clock source is selected to 'I2S_CLK_SRC_EXTERNAL' */
     gpio_num_t bclk;               /*!< BCK pin, input in slave role, output in master role */
     gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
     gpio_num_t dout;               /*!< DATA pin, output */

@@ -24,9 +24,9 @@ components/driver/test_apps/i2s_test_apps/i2s:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
 
-components/driver/test_apps/i2s_test_apps/i2s_tdm:
+components/driver/test_apps/i2s_test_apps/i2s_multi_dev:
   disable:
-    - if: SOC_I2S_SUPPORTS_TDM != 1
+    - if: SOC_I2S_HW_VERSION_2 != 1
 
 components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
   disable:

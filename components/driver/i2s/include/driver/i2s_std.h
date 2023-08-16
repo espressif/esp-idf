@@ -237,7 +237,14 @@ typedef struct {
 typedef struct {
     /* General fields */
     uint32_t                sample_rate_hz;     /*!< I2S sample rate */
-    i2s_clock_src_t         clk_src;            /*!< Choose clock source */
+    i2s_clock_src_t         clk_src;            /*!< Choose clock source, see 'soc_periph_i2s_clk_src_t' for the supported clock sources.
+                                                 *   selected 'I2S_CLK_SRC_EXTERNAL'(if supports) to enable the external source clock input via MCLK pin,
+                                                 */
+#if SOC_I2S_HW_VERSION_2
+    uint32_t                ext_clk_freq_hz;    /*!< External clock source frequency in Hz, only take effect when 'clk_src = I2S_CLK_SRC_EXTERNAL', otherwise this field will be ignored,
+                                                 *   Please make sure the frequency input is equal or greater than bclk, i.e. 'sample_rate_hz * slot_bits * 2'
+                                                 */
+#endif
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate
                                                  *   Default is 256 in the helper macro, it can satisfy most of cases,
                                                  *   but please set this field a multiple of '3' (like 384) when using 24-bit data width,
@@ -249,7 +256,7 @@ typedef struct {
  * @brief I2S standard mode GPIO pins configuration
  */
 typedef struct {
-    gpio_num_t mclk;               /*!< MCK pin, output */
+    gpio_num_t mclk;               /*!< MCK pin, output by default, input if the clock source is selected to 'I2S_CLK_SRC_EXTERNAL' */
     gpio_num_t bclk;               /*!< BCK pin, input in slave role, output in master role */
     gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
     gpio_num_t dout;               /*!< DATA pin, output */

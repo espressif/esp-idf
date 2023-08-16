@@ -11,5 +11,5 @@ import pytest
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)
-def test_i2s_tdm_full_duplex(case_tester) -> None:  # type: ignore
-    case_tester.run_all_cases(timeout=30)
+def test_i2s_multi_dev(case_tester) -> None:  # type: ignore
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=30)
