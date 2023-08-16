@@ -215,41 +215,88 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
     return ESP_OK;
 }
 
+static struct {
+    struct arg_str *help_cmd;
+    struct arg_end *end;
+} help_args;
+
+static void print_arg_help(cmd_item_t *it)
+{
+     /* First line: command name and hint
+      * Pad all the hints to the same column
+      */
+     const char *hint = (it->hint) ? it->hint : "";
+     printf("%-s %s\n", it->command, hint);
+     /* Second line: print help.
+      * Argtable has a nice helper function for this which does line
+      * wrapping.
+      */
+     printf("  "); // arg_print_formatted does not indent the first line
+     arg_print_formatted(stdout, 2, 78, it->help);
+     /* Finally, print the list of arguments */
+     if (it->argtable) {
+         arg_print_glossary(stdout, (void **) it->argtable, "  %12s  %s\n");
+     }
+     printf("\n");
+}
+
 static int help_command(int argc, char **argv)
 {
-    cmd_item_t *it;
+    int nerrors = arg_parse(argc, argv, (void **) &help_args);
 
-    /* Print summary of each command */
-    SLIST_FOREACH(it, &s_cmd_list, next) {
-        if (it->help == NULL) {
-            continue;
-        }
-        /* First line: command name and hint
-         * Pad all the hints to the same column
-         */
-        const char *hint = (it->hint) ? it->hint : "";
-        printf("%-s %s\n", it->command, hint);
-        /* Second line: print help.
-         * Argtable has a nice helper function for this which does line
-         * wrapping.
-         */
-        printf("  "); // arg_print_formatted does not indent the first line
-        arg_print_formatted(stdout, 2, 78, it->help);
-        /* Finally, print the list of arguments */
-        if (it->argtable) {
-            arg_print_glossary(stdout, (void **) it->argtable, "  %12s  %s\n");
-        }
-        printf("\n");
+    if (nerrors != 0) {
+        arg_print_errors(stderr, help_args.end, argv[0]);
+        return 1;
     }
-    return 0;
+
+    cmd_item_t *it;
+    int ret_value = 1;
+
+    if (help_args.help_cmd->count == 0) {
+        /* Print summary of each command */
+        SLIST_FOREACH(it, &s_cmd_list, next) {
+            if (it->help == NULL) {
+                continue;
+            }
+            print_arg_help(it);
+        }
+        ret_value = 0;
+    } else {
+        /* Print summary of given command */
+        bool found_command = false;
+        SLIST_FOREACH(it, &s_cmd_list, next) {
+            if (it->help == NULL) {
+                continue;
+            }
+            if (strcmp(help_args.help_cmd->sval[0], it->command) == 0) {
+                print_arg_help(it);
+                found_command = true;
+                ret_value = 0;
+                break;
+            }
+        }
+
+        /* If given command has not been found, print error message*/
+        if (!found_command) {
+            printf("help: Unrecognized option '%s'. Please use correct command as argument "
+                   "or type 'help' only to print help for all commands\n", help_args.help_cmd->sval[0]);
+        }
+    }
+
+    return ret_value;
 }
 
 esp_err_t esp_console_register_help_command(void)
 {
+    help_args.help_cmd = arg_str0(NULL, NULL, "<string>", "Name of command");
+    help_args.end = arg_end(1);
+
     esp_console_cmd_t command = {
         .command = "help",
-        .help = "Print the list of registered commands",
-        .func = &help_command
+        .help = "Print the summary of all registered commands if no arguments "
+                "are given, otherwise print summary of given command.",
+        .func = &help_command,
+        .argtable = &help_args
     };
     return esp_console_cmd_register(&command);
 }

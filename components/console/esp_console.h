@@ -275,7 +275,9 @@ const char *esp_console_get_hint(const char *buf, int *color, int *bold);
  * @brief Register a 'help' command
  *
  * Default 'help' command prints the list of registered commands along with
- * hints and help strings.
+ * hints and help strings if no additional argument is given. If an additional
+ * argument is given, the help command will look for a command with the same
+ * name and only print the hints and help strings of that command.
  *
  * @return
  *      - ESP_OK on success
