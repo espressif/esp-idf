@@ -14,7 +14,11 @@ Due to the dual core nature of the {IDF_TARGET_NAME}, there are instances where 
 - On particular chips (such as the ESP32), accessing memory that is exclusive to a particular CPU (such as RTC Fast Memory).
 - Reading the registers/state of another CPU.
 
-The IPC (Inter-Processor Call) feature allows a particular CPU (the calling CPU) to trigger the execution of a callback function on another CPU (the target CPU). The IPC feature allows execution of a callback function on the target CPU in either a task context, or a High Priority Interrupt context (see :doc:`/api-guides/hlinterrupts` for more details). Depending on the context that the callback function is executed in, different restrictions apply to the implementation of the callback function.
+
+.. only:: not esp32p4
+
+    The IPC (Inter-Processor Call) feature allows a particular CPU (the calling CPU) to trigger the execution of a callback function on another CPU (the target CPU). The IPC feature allows execution of a callback function on the target CPU in either a task context, or a High Priority Interrupt context (see :doc:`/api-guides/hlinterrupts` for more details). Depending on the context that the callback function is executed in, different restrictions apply to the implementation of the callback function.
+
 
 IPC in Task Context
 -------------------
@@ -42,19 +46,21 @@ The IPC feature offers the API listed below to execute a callback in a task cont
 - :cpp:func:`esp_ipc_call` triggers an IPC call on the target CPU. This function will block until the target CPU's IPC task **begins** execution of the callback.
 - :cpp:func:`esp_ipc_call_blocking` triggers an IPC on the target CPU. This function will block until the target CPU's IPC task **completes** execution of the callback.
 
-IPC in ISR Context
-------------------
+.. only:: not esp32p4
 
-In some cases, we need to quickly obtain the state of another CPU such as in a core dump, GDB stub, various unit tests, and DPORT workaround. For such scenarios, the IPC feature supports execution of callbacks in a :doc:`High Priority Interrupt </api-guides/hlinterrupts>` context. The IPC feature implements the High Priority Interrupt context by reserving a High Priority Interrupt on each CPU for IPC usage. When a calling CPU needs to execute a callback on the target CPU, the callback will execute in the context of the High Priority Interrupt of the target CPU.
+	IPC in ISR Context
+	------------------
 
-When using IPCs in High Priority Interrupt context, users need to consider the following:
+	In some cases, we need to quickly obtain the state of another CPU such as in a core dump, GDB stub, various unit tests, and DPORT workaround. For such scenarios, the IPC feature supports execution of callbacks in a :doc:`High Priority Interrupt </api-guides/hlinterrupts>` context. The IPC feature implements the High Priority Interrupt context by reserving a High Priority Interrupt on each CPU for IPC usage. When a calling CPU needs to execute a callback on the target CPU, the callback will execute in the context of the High Priority Interrupt of the target CPU.
 
-- Since the callback is executed in a High Priority Interrupt context, the callback must be written entirely in assembly. See the API Usage below for more details regarding writing assembly callbacks.
-- The priority of the reserved High Priority Interrupt is dependent on the :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` option
-- When the callback executes:
+	When using IPCs in High Priority Interrupt context, users need to consider the following:
 
-    - The calling CPU will disable interrupts of level 3 and lower
-    - Although the priority of the reserved interrupt depends on :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution IPC ISR callback, the target CPU will disable interrupts of level 5 and lower regardless of what :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` is set to.
+	- Since the callback is executed in a High Priority Interrupt context, the callback must be written entirely in assembly. See the API Usage below for more details regarding writing assembly callbacks.
+	- The priority of the reserved High Priority Interrupt is dependent on the :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` option
+	- When the callback executes:
+
+	    - The calling CPU will disable interrupts of level 3 and lower
+	    - Although the priority of the reserved interrupt depends on :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution IPC ISR callback, the target CPU will disable interrupts of level 5 and lower regardless of what :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` is set to.
 
 API Usage
 ^^^^^^^^^

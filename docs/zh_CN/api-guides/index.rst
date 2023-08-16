@@ -32,7 +32,7 @@ API 指南
    partition-tables
    performance/index
    reproducible-builds
-   :not esp32h2: RF_calibration
+   :SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED: RF_calibration
    thread-local-storage
    tools/index
    unit-tests

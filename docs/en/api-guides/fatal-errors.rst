@@ -408,18 +408,21 @@ In some situations, ESP-IDF will temporarily disable access to external SPI Flas
 Other Fatal Errors
 ------------------
 
-Brownout
-^^^^^^^^
+.. only:: SOC_BOD_SUPPORTED
 
-{IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_ESP_BROWNOUT_DET` and :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` options.
+    Brownout
+    ^^^^^^^^
 
-When the brownout detector triggers, the following message is printed::
+    {IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_ESP_BROWNOUT_DET` and :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` options.
 
-    Brownout detector was triggered
+    When the brownout detector triggers, the following message is printed::
 
-The chip is reset after the message is printed.
+        Brownout detector was triggered
 
-Note that if the supply voltage is dropping at a fast rate, only part of the message may be seen on the console.
+    The chip is reset after the message is printed.
+
+    Note that if the supply voltage is dropping at a fast rate, only part of the message may be seen on the console.
+
 
 Corrupt Heap
 ^^^^^^^^^^^^

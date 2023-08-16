@@ -168,6 +168,10 @@ ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst']
 
+ESP32H2_DOCS = ['api-guides/RF_calibration.rst']
+
+ESP32P4_DOCS = ['api-reference/system/ipc.rst']
+
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_BLE_SUPPORTED':BLE_DOCS,
@@ -212,7 +216,9 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'esp32s3':ESP32S3_DOCS,
                             'esp32c2':ESP32C2_DOCS,
                             'esp32c3':ESP32C3_DOCS,
-                            'esp32c6':ESP32C6_DOCS}
+                            'esp32c6':ESP32C6_DOCS,
+                            'esp32h2':ESP32H2_DOCS,
+                            'esp32p4':ESP32P4_DOCS}
 
 extensions += ['sphinx_copybutton',
                'sphinxcontrib.wavedrom',
@@ -242,7 +248,7 @@ html_context['github_repo'] = 'esp-idf'
 project_slug = 'esp-idf'
 versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
 
-idf_targets = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'esp32c6']
+idf_targets = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'esp32c6', 'esp32p4']
 languages = ['en', 'zh_CN']
 
 google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
