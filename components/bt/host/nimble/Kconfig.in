@@ -505,3 +505,9 @@ config BT_NIMBLE_USE_ESP_TIMER
     default y
     help
         Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer
+
+config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
+    bool "Enable BLE high duty advertising interval feature"
+    depends on BT_NIMBLE_ENABLED
+    help
+        This enable BLE high duty advertising interval feature
