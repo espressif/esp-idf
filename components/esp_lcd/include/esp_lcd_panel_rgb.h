@@ -100,13 +100,24 @@ typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const
 typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
 
 /**
+ * @brief Prototype for the function to be called when the bounce buffer finish copying the entire frame.
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
+ * @param[in] edata Panel event data, fed by driver
+ * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_register_event_callbacks()`
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*esp_lcd_rgb_panel_bounce_buf_finish_cb_t)(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
+
+/**
  * @brief Group of supported RGB LCD panel callbacks
  * @note The callbacks are all running under ISR environment
  * @note When CONFIG_LCD_RGB_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  */
 typedef struct {
-    esp_lcd_rgb_panel_vsync_cb_t on_vsync;                  /*!< VSYNC event callback */
-    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; /*!< Bounce buffer empty callback. */
+    esp_lcd_rgb_panel_vsync_cb_t on_vsync;                      /*!< VSYNC event callback */
+    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty;     /*!< Bounce buffer empty callback. */
+    esp_lcd_rgb_panel_bounce_buf_finish_cb_t on_bounce_frame_finish;  /*!< Bounce buffer finish callback. */
 } esp_lcd_rgb_panel_event_callbacks_t;
 
 /**
