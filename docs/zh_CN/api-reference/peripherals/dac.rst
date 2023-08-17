@@ -3,13 +3,14 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_DAC_CH_1: default = "GPIO25", esp32 = "GPIO25", esp32s2 = "GPIO17"}
-{IDF_TARGET_DAC_CH_2: default = "GPIO26", esp32 = "GPIO26", esp32s2 = "GPIO18"}
+{IDF_TARGET_DAC_CH_1: default = "Not Updated!", esp32 = "GPIO25", esp32s2 = "GPIO17"}
+{IDF_TARGET_DAC_CH_2: default = "Not Updated!", esp32 = "GPIO26", esp32s2 = "GPIO18"}
+{IDF_TARGET_DAC_REF_PIN: default = "Not Updated!", esp32 = "VDD3P3_RTC", esp32s2 = "VDD3P3_RTC_IO"}
 
 概况
 ----
 
-{IDF_TARGET_NAME} 有两个 8 位数模转换器 (DAC) 通道，分别连接到 {IDF_TARGET_DAC_CH_1}（通道 1）和 {IDF_TARGET_DAC_CH_2}（通道 2）。每个 DAC 通道可以将数字值 0~255 转换成模拟电压 0~Vref。输出电压可按以下方式计算::
+{IDF_TARGET_NAME} 有两个 8 位数模转换器 (DAC) 通道，分别连接到 {IDF_TARGET_DAC_CH_1}（通道 1）和 {IDF_TARGET_DAC_CH_2}（通道 2）。每个 DAC 通道可以将数字值 0~255 转换成模拟电压 0~Vref （此处的 Vref 为 {IDF_TARGET_DAC_REF_PIN} 引脚输入的参考电压，一般来说其输入的电压值应等于电源电压 VDD）。输出电压可按以下方式计算::
 
     out_voltage = Vref * digi_val / 255
 
