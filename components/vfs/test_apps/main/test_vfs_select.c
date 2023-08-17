@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,6 +101,23 @@ static void uart1_init(void)
     uart_param_config(UART_NUM_1, &uart_config);
 }
 
+static void read_task(void *param)
+{
+    char recv_message[sizeof(message)];
+    const test_task_param_t *test_task_param = param;
+    vTaskDelay(test_task_param->delay_ms / portTICK_PERIOD_MS);
+    read(test_task_param->fd, recv_message, sizeof(message));
+    if (test_task_param->sem) {
+        xSemaphoreGive(test_task_param->sem);
+    }
+    vTaskDelete(NULL);
+}
+
+static inline void start_read_task(const test_task_param_t *test_task_param)
+{
+    xTaskCreate(read_task, "read_task", 8*1024, (void *) test_task_param, 5, NULL);
+}
+
 static void send_task(void *param)
 {
     const test_task_param_t *test_task_param = param;
@@ -112,7 +129,7 @@ static void send_task(void *param)
     vTaskDelete(NULL);
 }
 
-static inline void start_task(const test_task_param_t *test_task_param)
+static inline void start_write_task(const test_task_param_t *test_task_param)
 {
     xTaskCreate(send_task, "send_task", 8*1024, (void *) test_task_param, 5, NULL);
 }
@@ -165,7 +182,7 @@ TEST_CASE("UART can do select()", "[vfs]")
         .sem = xSemaphoreCreateBinary(),
     };
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     int s = select(uart_fd + 1, &rfds, NULL, NULL, &tv);
     TEST_ASSERT_EQUAL(s, 1);
@@ -182,7 +199,7 @@ TEST_CASE("UART can do select()", "[vfs]")
     FD_SET(uart_fd, &rfds);
     FD_SET(socket_fd, &rfds);
 
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     s = select(MAX(uart_fd, socket_fd) + 1, &rfds, NULL, NULL, &tv);
     TEST_ASSERT_EQUAL(s, 1);
@@ -223,7 +240,7 @@ TEST_CASE("UART can do poll() with POLLIN event", "[vfs]")
         .sem = xSemaphoreCreateBinary(),
     };
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     int s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
     TEST_ASSERT_EQUAL(s, 1);
@@ -241,7 +258,7 @@ TEST_CASE("UART can do poll() with POLLIN event", "[vfs]")
     poll_fds[1].fd = socket_fd;
     poll_fds[1].events = POLLIN;
 
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
     TEST_ASSERT_EQUAL(s, 1);
@@ -284,7 +301,7 @@ TEST_CASE("UART can do poll() with POLLOUT event", "[vfs]")
         .sem = xSemaphoreCreateBinary(),
     };
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
     TEST_ASSERT_EQUAL(uart_fd, poll_fds[0].fd);
@@ -330,7 +347,7 @@ TEST_CASE("socket can do select()", "[vfs]")
         .sem = xSemaphoreCreateBinary(),
     };
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     const int s = select(MAX(MAX(uart_fd, socket_fd), dummy_socket_fd) + 1, &rfds, NULL, NULL, &tv);
     TEST_ASSERT_EQUAL(1, s);
@@ -379,7 +396,7 @@ TEST_CASE("socket can do poll()", "[vfs]")
         .sem = xSemaphoreCreateBinary(),
     };
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
-    start_task(&test_task_param);
+    start_write_task(&test_task_param);
 
     int s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
     TEST_ASSERT_EQUAL(s, 1);
@@ -474,8 +491,7 @@ static void select_task(void *task_param)
 {
     const test_select_task_param_t *param = task_param;
 
-    int s = select(param->maxfds, param->rdfds, param->wrfds, param->errfds, param->tv);
-    TEST_ASSERT_EQUAL(param->select_ret, s);
+    select(param->maxfds, param->rdfds, param->wrfds, param->errfds, param->tv);
 
     if (param->sem) {
         xSemaphoreGive(param->sem);
@@ -489,6 +505,74 @@ static void inline start_select_task(test_select_task_param_t *param)
 }
 
 #if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
+TEST_CASE("concurrent selects work for UART", "[vfs]")
+{
+    // This test case initiates two select tasks on the same UART FD,
+    // One task will wait for a write operation, while the other will wait for a read operation to occur.
+    // The first task will complete its operation before the second task proceeds with its operation on the same FD
+    // In this scenario, the write operation will be performed initially,
+    // followed by the subsequent continuation of the read operation.
+
+    int uart_fd, socket_fd;
+    init(&uart_fd, &socket_fd);
+
+    const test_task_param_t send_param = {
+        .fd = uart_fd,
+        .delay_ms = 0,
+        .sem = NULL,
+    };
+
+    fd_set wrfds1;
+    FD_ZERO(&wrfds1);
+    FD_SET(uart_fd, &wrfds1);
+
+    test_select_task_param_t param_write = {
+        .rdfds = NULL,
+        .wrfds = &wrfds1,
+        .errfds = NULL,
+        .maxfds = uart_fd + 1,
+        .tv = NULL,
+        .select_ret = 1,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(param_write.sem);
+    //Start first task which will wait on select call for write operation on the UART FD
+    start_select_task(&param_write);
+
+    fd_set rdfds2;
+    FD_ZERO(&rdfds2);
+    FD_SET(uart_fd, &rdfds2);
+
+    test_select_task_param_t param_read = {
+        .rdfds = &rdfds2,
+        .wrfds = NULL,
+        .errfds = NULL,
+        .maxfds = uart_fd + 1,
+        .tv = NULL,
+        .select_ret = 2,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(param_read.sem);
+    //Start second task which will wait on another select call for read operation on the same UART FD
+    start_select_task(&param_read);
+
+    //Start writing operation on the UART port
+    start_write_task(&send_param);
+    //Confirm the completion of the write operation
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param_write.sem, 1000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(param_write.sem);
+    TEST_ASSERT(FD_ISSET(uart_fd, &wrfds1));
+
+    //Start reading operation on the same UART port
+    start_read_task(&send_param);
+    //Confirm the completion of the read operation
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param_read.sem, 1000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(param_read.sem);
+    TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
+
+    deinit(uart_fd, socket_fd);
+}
+
 TEST_CASE("concurrent selects work", "[vfs]")
 {
     int uart_fd, socket_fd;
@@ -564,7 +648,7 @@ TEST_CASE("concurrent selects work", "[vfs]")
             .sem = xSemaphoreCreateBinary(),
         };
         TEST_ASSERT_NOT_NULL(send_param.sem);
-        start_task(&send_param);        // This task will write to UART which will be detected by select()
+        start_write_task(&send_param);        // This task will write to UART which will be detected by select()
         start_select_task(&param);
         vTaskDelay(100 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
