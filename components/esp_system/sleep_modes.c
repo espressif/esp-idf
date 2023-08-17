@@ -651,7 +651,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (!s_ultra_low_enabled) {
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
     }
-    if (rtc_dig_8m_enabled()) {
+    if (periph_using_8m) {
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
@@ -830,6 +830,10 @@ esp_err_t esp_light_sleep_start(void)
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
+
+#ifdef CONFIG_ESP_SYSTEM_SLEEP_RTC_BUS_ISO_WORKAROUND
+    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+#endif
 
     // Re-calibrate the RTC Timer clock
 #if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS) || defined(CONFIG_ESP32C3_RTC_CLK_SRC_EXT_CRYS)
