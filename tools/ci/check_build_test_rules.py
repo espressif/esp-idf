@@ -418,8 +418,11 @@ def check_exist() -> None:
 
     config_files = [str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')]
     for file in config_files:
+        if 'managed_components' in Path(file).parts:
+            continue
+
         with open(file) as fr:
-            configs = yaml.load(fr)
+            configs = yaml.safe_load(fr)
             for path in configs.keys():
                 if path.startswith('.'):
                     continue
