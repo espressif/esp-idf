@@ -125,7 +125,7 @@ static esp_err_t read_delta_t_from_efuse(void)
     return ESP_OK;
 }
 
-static float parse_temp_sensor_raw_value(uint32_t tsens_raw)
+static float parse_temp_sensor_raw_value(int16_t tsens_raw)
 {
     if (isnan(s_deltaT)) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
@@ -144,7 +144,7 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
     temp_sensor_config_t tsens;
     temp_sensor_get_config(&tsens);
     bool range_changed;
-    uint16_t tsens_out = temp_sensor_get_raw_value(&range_changed);
+    int16_t tsens_out = temp_sensor_get_raw_value(&range_changed);
     *celsius = parse_temp_sensor_raw_value(tsens_out);
     if (*celsius < TEMPERATURE_SENSOR_LL_MEASURE_MIN || *celsius > TEMPERATURE_SENSOR_LL_MEASURE_MAX) {
         ESP_LOGE(TAG, "Exceeding temperature measure range.");
