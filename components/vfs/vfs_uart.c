@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,10 @@ static int uart_rx_char(int fd);
 // Functions for sending and receiving bytes which use UART driver
 static void uart_tx_char_via_driver(int fd, int c);
 static int uart_rx_char_via_driver(int fd);
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static int s_uart_select_count[UART_NUM] = {0};
+#endif //CONFIG_VFS_SUPPORT_SELECT
 
 typedef struct {
     // Pointers to UART peripherals
@@ -470,7 +474,10 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     //uart_set_select_notif_callback sets the callbacks in UART ISR
     for (int i = 0; i < max_fds; ++i) {
         if (FD_ISSET(i, &args->readfds_orig) || FD_ISSET(i, &args->writefds_orig) || FD_ISSET(i, &args->errorfds_orig)) {
-            uart_set_select_notif_callback(i, select_notif_callback_isr);
+            if (s_uart_select_count[i] == 0) {
+                uart_set_select_notif_callback(i, select_notif_callback_isr);
+            }
+            s_uart_select_count[i]++;
         }
     }
 
@@ -505,7 +512,13 @@ static esp_err_t uart_end_select(void *end_select_args)
     portENTER_CRITICAL(uart_get_selectlock());
     esp_err_t ret = unregister_select(args);
     for (int i = 0; i < UART_NUM; ++i) {
-        uart_set_select_notif_callback(i, NULL);
+        if (FD_ISSET(i, &args->readfds_orig) || FD_ISSET(i, &args->writefds_orig) || FD_ISSET(i, &args->errorfds_orig)) {
+            s_uart_select_count[i]--;
+            if (s_uart_select_count[i] == 0) {
+                uart_set_select_notif_callback(i, NULL);
+            }
+            break;
+        }
     }
     portEXIT_CRITICAL(uart_get_selectlock());
 
