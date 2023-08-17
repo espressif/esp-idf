@@ -27,7 +27,7 @@ bool spi_slave_hal_usr_is_done(spi_slave_hal_context_t* hal)
 void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal)
 {
     spi_ll_clear_int_stat(hal->hw); //clear int bit
-    spi_ll_slave_user_start(hal->hw);
+    spi_ll_user_start(hal->hw);
 }
 
 void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)

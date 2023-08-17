@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -186,7 +186,8 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 
 void spi_hal_user_start(const spi_hal_context_t *hal)
 {
-    spi_ll_master_user_start(hal->hw);
+    spi_ll_apply_config(hal->hw);
+    spi_ll_user_start(hal->hw);
 }
 
 bool spi_hal_usr_is_done(const spi_hal_context_t *hal)
