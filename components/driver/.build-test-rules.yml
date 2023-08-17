@@ -12,9 +12,19 @@ components/driver/test_apps/dac_test_apps/legacy_dac_driver:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
 
+components/driver/test_apps/gpio_extensions:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported yet
+
 components/driver/test_apps/gptimer:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
+
+components/driver/test_apps/i2c_test_apps:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
 
 components/driver/test_apps/i2s_test_apps:
   disable:
@@ -26,6 +36,7 @@ components/driver/test_apps/i2s_test_apps/i2s:
 
 components/driver/test_apps/i2s_test_apps/i2s_multi_dev:
   disable:
+    - if: SOC_I2S_SUPPORTED != 1
     - if: SOC_I2S_HW_VERSION_2 != 1
 
 components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
@@ -43,6 +54,12 @@ components/driver/test_apps/ledc:
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
+
+components/driver/test_apps/legacy_i2c_driver:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported yet
 
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
@@ -81,6 +98,10 @@ components/driver/test_apps/rmt:
     - if: SOC_RMT_SUPPORTED != 1
 
 components/driver/test_apps/rs485:
+  disable:
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -95,6 +116,10 @@ components/driver/test_apps/sdio:
       reason: lack of runners
 
 components/driver/test_apps/spi/master:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+components/driver/test_apps/spi/param:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
 
@@ -117,3 +142,9 @@ components/driver/test_apps/touch_sensor_v2:
 components/driver/test_apps/twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+
+components/driver/test_apps/uart:
+  disable:
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) is not supported yet

@@ -5,3 +5,7 @@ components/fatfs/test_apps/sdcard:
     - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: No sdspi runners for these targets
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: target esp32p4 is not supported yet # TODO: IDF-7501

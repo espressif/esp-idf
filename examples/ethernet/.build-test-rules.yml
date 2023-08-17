@@ -1,5 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+examples/ethernet/enc28j60:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: target esp32p4 is not supported yet
+
 examples/ethernet/iperf:
   disable_test:
     - if: IDF_TARGET not in ["esp32"]

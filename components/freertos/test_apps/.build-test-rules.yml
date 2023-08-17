@@ -1,5 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/freertos/test_apps/freertos:
+  disable:
+    - if: CONFIG_NAME == "smp"
+
 components/freertos/test_apps/orig_inc_path:
   enable:
     - if: IDF_TARGET in ["esp32"]

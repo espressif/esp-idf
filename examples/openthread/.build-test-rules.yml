@@ -22,7 +22,7 @@
 
 examples/openthread/ot_br:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
       reason: target(s) not supported yet
   disable_test:

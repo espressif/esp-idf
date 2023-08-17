@@ -1423,6 +1423,48 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
+.rules:build:example_test-esp32p4:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32p4
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
+      changes: *patterns-example_test-sdio
+    - <<: *if-dev-push
+      changes: *patterns-example_test-usb
+    - <<: *if-dev-push
+      changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:build:example_test-esp32s2:
   rules:
     - <<: *if-revert-branch
@@ -1818,6 +1860,36 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32h2
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-sdio
+
+.rules:build:unit_test-esp32p4:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-target_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32p4
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push

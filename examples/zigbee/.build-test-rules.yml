@@ -7,7 +7,7 @@
 
 examples/zigbee/esp_zigbee_gateway:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32h2", "esp32p4"]
       temporary: true
       reason: target(s) not supported yet
   <<: *zigbee_dependencies

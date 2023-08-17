@@ -122,6 +122,13 @@ examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
       temporary: true
       reason: lack of runners
 
+examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported on p4 yet
+
 examples/peripherals/parlio:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
@@ -205,7 +212,7 @@ examples/peripherals/spi_slave/sender:
 
 examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c6", "esp32p4"]
       temporary: true
       reason: target(s) not supported yet
 
@@ -221,9 +228,7 @@ examples/peripherals/spi_slave_hd/segment_mode/seg_master:
 
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
   disable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: not supported
+    - if: IDF_TARGET == "esp32" or SOC_GPSPI_SUPPORTED != 1
 
 examples/peripherals/temperature_sensor/temp_sensor:
   disable:
