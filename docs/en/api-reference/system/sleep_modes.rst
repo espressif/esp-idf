@@ -29,8 +29,8 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
 
         - RTC controller
         :SOC_ULP_SUPPORTED: - ULP coprocessor
-        :SOC_RTC_FAST_MEM_SUPPORTED: - RTC fast memory
-        :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC slow memory
+        :SOC_RTC_FAST_MEM_SUPPORTED: - RTC FAST memory
+        :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC SLOW memory
 
 .. only:: SOC_BT_SUPPORTED
 
@@ -55,67 +55,111 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
     Sub Sleep Modes
     ^^^^^^^^^^^^^^^
 
-    Tables below list the sub sleep modes (columns), and the features they support (rows). Mode that support more features may consume more power during sleep mode. The sleep system automatically selects the mode that satisfies all the features required by the user while consuming least power.
+    Tables below list the sub sleep modes in the first row and the features they support in the first column. Modes that support more features may consume more power during sleep mode. The sleep system automatically selects the mode that satisfies all the features required by the user while consuming least power.
 
     Deep-sleep:
 
-    +-----------------------------------+----------------+--------------+-----------------+
-    |                                   | DSLP_ULTRA_LOW | DSLP_DEFAULT | DSLP_8MD256 /   |
-    |                                   |                |              | DSLP_ADC_TSENS  |
-    +===================================+================+==============+=================+
-    | ULP/Touch sensor (S2, S3 only)    | Y              | Y            | Y               |
-    +-----------------------------------+----------------+--------------+-----------------+
-    | RTC IO input/RTC mem at high temp |                | Y            | Y               |
-    +-----------------------------------+----------------+--------------+-----------------+
-    | ADC_TSEN_MONITOR                  |                |              | Y               |
-    +-----------------------------------+----------------+--------------+-----------------+
-    | 8MD256                            |                |              | Y               |
-    +-----------------------------------+----------------+--------------+-----------------+
+    .. list-table::
+       :widths: auto
+       :header-rows: 2
+
+       * -
+         - DSLP_ULTRA_LOW
+         - DSLP_DEFAULT
+         - DSLP_8MD256/
+       * -
+         -
+         -
+         - DSLP_ADC_TSENS
+       * - ULP/Touch sensor (ESP32-S2 and ESP32-S3 only)
+         - Y
+         - Y
+         - Y
+       * - RTC IO input/RTC memory at high temperature
+         -
+         - Y
+         - Y
+       * - ADC_TSEN_MONITOR
+         -
+         -
+         - Y
+       * - 8MD256 as the clock source for RTC_SLOW_CLK
+         -
+         -
+         - Y
 
     Features:
 
-    1. 8MD256: Use 8MD256 as the clock source for RTC Slow. Controlled by Kconfig option `CONFIG_RTC_CLK_SRC_INT_8MD256`.
+    1. RTC IO input/RTC memory at high temperature (experimental): Use RTC IO as input pins, or use RTC memory at high temperature. The chip can go into ultra low power mode when these features are disabled. Controlled by API :cpp:func:`rtc_sleep_enable_ultra_low`.
 
-    2. ADC_TSEN_MONITOR: Use ADC/Temperature Sensor in monitor mode (controlled by ULP). Enabled by :cpp:func:`ulp_adc_init` API or its higher level APIs. Only available for chips with monitor modes (S2 and S3).
+    2. ADC_TSEN_MONITOR: Use ADC/Temperature Sensor in monitor mode (controlled by ULP). Enabled by API :cpp:func:`ulp_adc_init` or its higher level APIs. Only available for ESP32-S2 and ESP32-S3 chips with monitor mode.
 
-    3. RTC IO input/RTC mem at high temp: Use RTC IO as input pins, or use RTC memory in high temperature. The chip can go into the ultra low power mode when these features are disabled. Controlled by API :cpp:func:`rtc_sleep_enable_ultra_low`. (Experimental)
+    3. 8MD256 as the clock source for RTC_SLOW_CLK: When 8MD256 is selected as the clock source for RTC_SLOW_CLK using the Kconfig option ``CONFIG_RTC_CLK_SRC_INT_8MD256``, the chip will automatically enter this sub sleep mode during Deep-sleep mode.
 
     Light-sleep:
 
-    +-----------------------------------+--------------+----------------+-------------+---------------+
-    |                                   | LSLP_DEFAULT | LSLP_ADC_TSENS | LSLP_8MD256 | LSLP_LEDC8M / |
-    |                                   |              |                |             | LSLP_XTAL_FPU |
-    +===================================+==============+================+=============+===============+
-    | ULP/Touch sensor (S2, S3 only)    | Y            | Y              | Y           | Y             |
-    +-----------------------------------+--------------+----------------+-------------+---------------+
-    | RTC IO input/RTC mem at high temp | Y            | Y              | Y           | Y             |
-    +-----------------------------------+--------------+----------------+-------------+---------------+
-    | ADC_TSEN_MONITOR                  |              | Y              | Y           | Y             |
-    +-----------------------------------+--------------+----------------+-------------+---------------+
-    | 8MD256                            |              |                | Y           | Y             |
-    +-----------------------------------+--------------+----------------+-------------+---------------+
-    | dig 8M                            |              |                |             | Y             |
-    +-----------------------------------+--------------+----------------+-------------+---------------+
-    | XTAL                              |              |                |             | Y             |
-    +-----------------------------------+--------------+----------------+-------------+---------------+
+    .. list-table::
+       :widths: auto
+       :header-rows: 2
 
-    Features: (See also the 8MD256 and ADC_TSEN_MONITOR feature for deep-sleep)
+       * -
+         - LSLP_DEFAULT
+         - LSLP_ADC_TSENS
+         - LSLP_8MD256
+         - LSLP_LEDC8M/
+       * -
+         -
+         -
+         -
+         - LSLP_XTAL_FPU
+       * - ULP/Touch sensor (ESP32-S2 and ESP32-S3 only)
+         - Y
+         - Y
+         - Y
+         - Y
+       * - RTC IO input/RTC memory at high temperature
+         - Y
+         - Y
+         - Y
+         - Y
+       * - ADC_TSEN_MONITOR
+         -
+         - Y
+         - Y
+         - Y
+       * - 8MD256 as the clock source for RTC_SLOW_CLK
+         -
+         -
+         - Y
+         - Y
+       * - 8 MHz RC clock source used by digital peripherals
+         -
+         -
+         -
+         - Y
+       * - Keep the XTAL clock on
+         -
+         -
+         -
+         - Y
 
-    1. XTAL: Keep XTAL on during light-sleep. Controlled by `ESP_PD_DOMAIN_XTAL` power domain.
+    Features: (Also see 8MD256 and ADC_TSEN_MONITOR features for Deep-sleep mode above)
 
-    2. dig 8M: 8M RC clock source used by digital peripherals. Currently only LEDC will use this clock source during light-sleep. When LEDC selects this clock source, this feature is automatically enabled.
+    1. 8 MHz RC clock source used by digital peripherals: Currently, only LEDC uses this clock source during Light-sleep mode. When LEDC selects this clock source, this feature is automatically enabled.
+
+    2. Keep the XTAL clock on: Keep the XTAL clock on during Light-sleep mode. Controlled by ``ESP_PD_DOMAIN_XTAL`` power domain.
 
     .. only:: esp32s2
 
-        {IDF_TARGET_NAME} uses the same power mode for LSLP_8MD256, LSLP_LEDC8M and LSLP_XTAL_FPU.
+        {IDF_TARGET_NAME} uses the same power mode for LSLP_8MD256, LSLP_LEDC8M, and LSLP_XTAL_FPU features.
 
     .. only:: esp32s3
 
-        Default mode of {IDF_TARGET_NAME} already supports the ADC_TSEN_MONITOR feature.
+        Default mode of {IDF_TARGET_NAME} already supports ADC_TSEN_MONITOR feature.
 
     .. only:: esp32c2 or esp32c3
 
-        {IDF_TARGET_NAME} doesn't have ADC_TSEN_MONITOR mode. There is no LSLP_ADC_TSENS mode either.
+        {IDF_TARGET_NAME} does not have ADC_TSEN_MONITOR or LSLP_ADC_TSENS feature.
 
 .. _api-reference-wakeup-source:
 
@@ -129,7 +173,7 @@ Following are the wakeup sources supported on {IDF_TARGET_NAME}.
 Timer
 ^^^^^
 
-The RTC controller has a built-in timer which can be used to wake up the chip after a predefined amount of time. Time is specified at microsecond precision, but the actual resolution depends on the clock source selected for RTC SLOW_CLK.
+The RTC controller has a built-in timer which can be used to wake up the chip after a predefined amount of time. Time is specified at microsecond precision, but the actual resolution depends on the clock source selected for RTC_SLOW_CLK.
 
 .. only:: SOC_ULP_SUPPORTED
 
@@ -173,8 +217,8 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
 .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
 
-    External Wakeup (ext1)
-    ^^^^^^^^^^^^^^^^^^^^^^
+    External Wakeup (``ext1``)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The RTC controller contains the logic to trigger wakeup using multiple RTC GPIOs. One of the following two logic functions can be used to trigger wakeup:
 
@@ -188,18 +232,18 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if any of the selected pins is low (``ESP_EXT1_WAKEUP_ANY_LOW``)
 
-    This wakeup source is implemented by the RTC controller. As such, RTC peripherals and RTC memories can be powered down in this mode. However, if RTC peripherals are powered down, internal pullup and pulldown resistors will be disabled if we don't use the HOLD feature. To use internal pullup or pulldown resistors, request the RTC peripherals power domain to be kept on during sleep, and configure pullup/pulldown resistors using ``rtc_gpio_`` functions before entering sleep::
+    This wakeup source is controlled by the RTC controller. Unlike ``ext0``, this wakeup source supports wakeup even when the RTC peripheral is powered down. Although the power domain of the RTC peripheral, where RTC IOs are located, is powered down during sleep modes, ESP-IDF will automatically lock the state of the wakeup pin before the system enters sleep modes and unlock upon exiting sleep modes. Therefore, the internal pull-up or pull-down resistors can still be configured for the wakeup pin::
 
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
 
-    If we turn off the ``RTC_PERIPH`` domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep. HOLD feature will be acted on the pin internally before the system entering sleep, and this can further reduce power consumption::
+    If we turn off the ``RTC_PERIPH`` domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep. HOLD feature will be acted on the pin internally before the system enters sleep modes, and this can further reduce power consumption::
 
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
 
-    If certain chips lack the ``RTC_PERIPH`` domain, we can only use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep::
+    If certain chips lack the ``RTC_PERIPH`` domain, we can only use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep modes::
 
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
@@ -217,7 +261,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
     ULP Coprocessor Wakeup
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    ULP coprocessor can run while the chip is in sleep mode, and may be used to poll sensors, monitor ADC or touch sensor values, and wake up the chip when a specific event is detected. ULP coprocessor is part of the RTC peripherals power domain, and it runs the program stored in RTC slow memory. RTC slow memory will be powered on during sleep if this wakeup mode is requested. RTC peripherals will be automatically powered on before ULP coprocessor starts running the program; once the program stops running, RTC peripherals are automatically powered down again.
+    ULP coprocessor can run while the chip is in sleep mode, and may be used to poll sensors, monitor ADC or touch sensor values, and wake up the chip when a specific event is detected. ULP coprocessor is part of the RTC peripherals power domain, and it runs the program stored in RTC SLOW memory. RTC SLOW memory will be powered on during sleep if this wakeup mode is requested. RTC peripherals will be automatically powered on before ULP coprocessor starts running the program; once the program stops running, RTC peripherals are automatically powered down again.
 
     .. only:: esp32
 
@@ -285,15 +329,15 @@ By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_star
 
 .. only:: esp32
 
-    Note: in revision 0 of ESP32, RTC fast memory is always kept enabled in Deep-sleep, so that the Deep-sleep stub can run after reset. This can be overridden, if the application does not need clean reset behaviour after Deep-sleep.
+    Note: in revision 0 of ESP32, RTC FAST memory is always kept enabled in Deep-sleep, so that the Deep-sleep stub can run after reset. This can be overridden, if the application does not need clean reset behaviour after Deep-sleep.
 
 .. only:: SOC_RTC_SLOW_MEM_SUPPORTED
 
-    If some variables in the program are placed into RTC slow memory (for example, using ``RTC_DATA_ATTR`` attribute), RTC slow memory will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
+    If some variables in the program are placed into RTC SLOW memory (for example, using ``RTC_DATA_ATTR`` attribute), RTC SLOW memory will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
 .. only:: not SOC_RTC_SLOW_MEM_SUPPORTED and SOC_RTC_FAST_MEM_SUPPORTED
 
-    In {IDF_TARGET_NAME}, there is only RTC fast memory, so if some variables in the program are marked by ``RTC_DATA_ATTR``, ``RTC_SLOW_ATTR`` or ``RTC_FAST_ATTR`` attributes, all of them go to RTC fast memory. It will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
+    In {IDF_TARGET_NAME}, there is only RTC FAST memory, so if some variables in the program are marked by ``RTC_DATA_ATTR``, ``RTC_SLOW_ATTR`` or ``RTC_FAST_ATTR`` attributes, all of them go to RTC FAST memory. It will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
 Power-down of Flash
 ^^^^^^^^^^^^^^^^^^^
@@ -384,11 +428,11 @@ Application Example
 -------------------
 
 - :example:`protocols/sntp`: the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
-- :example:`wifi/power_save`: the implementation of Wi-Fi Modem-sleep example.
+- :example:`wifi/power_save`: the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
 
 .. only:: SOC_BT_SUPPORTED
 
-    - :example:`bluetooth/nimble/power_save`: the implementation of Bluetooth Modem-sleep example.
+    - :example:`bluetooth/nimble/power_save`: the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
 
 .. only:: SOC_ULP_SUPPORTED
 
