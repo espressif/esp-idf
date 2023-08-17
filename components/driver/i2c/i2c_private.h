@@ -91,7 +91,7 @@ struct i2c_bus_t {
     uint32_t clk_src_freq_hz; // Record the clock source frequency
     int sda_num; // SDA pin number
     int scl_num; // SCL pin number
-    bool pull_up_enable; // Disable pull-ups
+    bool pull_up_enable; // Enable pull-ups
     intr_handle_t intr_handle; // I2C interrupt handle
     esp_pm_lock_handle_t pm_lock; // power manange lock
 #if CONFIG_PM_ENABLE
@@ -169,8 +169,10 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
  *
  * @param i2c_bus I2C bus handle, returned from `i2c_acquire_bus_handle`
  * @return ESP_OK: If release successfully
+ *         ESP_ERR_INVALID_STATE: Release bus failed because same bus has been required several times.
+ *         Otherwise: Other reasons.
  */
-uint8_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus);
+esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus);
 
 /**
  * @brief Set clock source for I2C peripheral

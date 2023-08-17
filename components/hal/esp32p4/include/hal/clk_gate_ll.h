@@ -33,9 +33,9 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
     case PERIPH_MIPI_CSI_MODULE:
         return 0;
     case PERIPH_I2C0_MODULE:
-        return HP_SYS_CLKRST_REG_I2C0_CLK_EN;
+        return HP_SYS_CLKRST_REG_I2C0_APB_CLK_EN;
     case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_REG_I2C1_CLK_EN;
+        return HP_SYS_CLKRST_REG_I2C1_APB_CLK_EN;
     case PERIPH_I2S0_MODULE:
         return HP_SYS_CLKRST_REG_I2S0_TX_CLK_EN | HP_SYS_CLKRST_REG_I2S0_RX_CLK_EN;
     case PERIPH_I2S1_MODULE:
@@ -240,7 +240,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return HP_SYS_CLKRST_PERI_CLK_CTRL03_REG;
     case PERIPH_I2C0_MODULE:
     case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL10_REG;
+        return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
     case PERIPH_LCD_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL110_REG;
     case PERIPH_UART0_MODULE:
@@ -323,6 +323,7 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_I3C_MODULE:
     case PERIPH_I2C0_MODULE:
     case PERIPH_I2C1_MODULE:
+        return HP_SYS_CLKRST_HP_RST_EN1_REG;
     case PERIPH_RMT_MODULE:
     case PERIPH_MCPWM0_MODULE:
     case PERIPH_MCPWM1_MODULE:

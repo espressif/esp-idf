@@ -640,14 +640,8 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 {
     ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "no memory for i2c master bus");
     i2c_master_bus_handle_t i2c_master = bus_handle;
-    if(i2c_release_bus_handle(i2c_master->base) == 0) {
+    if(i2c_release_bus_handle(i2c_master->base) == ESP_OK) {
         if (i2c_master) {
-            if (i2c_master->base->intr_handle) {
-                ESP_RETURN_ON_ERROR(esp_intr_free(i2c_master->base->intr_handle), TAG, "delete interrupt service failed");
-            }
-            if (i2c_master->base->pm_lock) {
-                ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_master->base->pm_lock), TAG, "delete pm_lock failed");
-            }
             if (i2c_master->bus_lock_mux) {
                 vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
                 i2c_master->bus_lock_mux = NULL;
@@ -727,7 +721,7 @@ static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev,
             i2c_dev->master_bus->num_trans_inqueue++;
             if (i2c_dev->master_bus->sent_all == true) {
                 // Oh no, you cannot get the queue from ISR, so you get queue here.
-                xQueueReceive(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_PROGRESS], &i2c_queue_pre, portMAX_DELAY);
+                ESP_RETURN_ON_FALSE(xQueueReceive(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_PROGRESS], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "get trans from progress queue failed");
                 i2c_dev->master_bus->num_trans_inflight--;
                 i2c_dev->master_bus->num_trans_inqueue--;
                 i2c_dev->master_bus->sent_all = false;
@@ -903,7 +897,7 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
     i2c_dev->master_bus = i2c_master;
 
     i2c_master_device_list_t *device_item = (i2c_master_device_list_t *)calloc(1, sizeof(i2c_master_device_list_t));
-    ESP_RETURN_ON_FALSE((device_item != NULL), ESP_ERR_NO_MEM, TAG, "no memory for i2c device item`");
+    ESP_GOTO_ON_FALSE((device_item != NULL), ESP_ERR_NO_MEM, err, TAG, "no memory for i2c device item`");
     device_item->device = i2c_dev;
     xSemaphoreTake(bus_handle->bus_lock_mux, portMAX_DELAY);
     SLIST_INSERT_HEAD(&bus_handle->device_list, device_item, next);
