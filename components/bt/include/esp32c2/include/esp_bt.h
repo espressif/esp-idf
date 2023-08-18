@@ -415,6 +415,14 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
  */
 extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+/**
+ * @brief dump all controller log information cached in buffer
+ * @param output : true for log dump, false will take no effect
+ */
+void esp_ble_controller_log_dump_all(bool output);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+
 #ifdef __cplusplus
 }
 #endif
