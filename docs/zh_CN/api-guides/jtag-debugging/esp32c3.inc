@@ -105,19 +105,19 @@
 
 .. jtag-pins
 
-.. list-table:: ESP32-S2 引脚和 JTAG 接口信号
+.. list-table:: ESP32-C3 引脚和 JTAG 接口信号
     :widths: 25 75
     :header-rows: 1
 
-    * - ESP32-S2 引脚
+    * - ESP32-C3 引脚
       - JTAG 信号
-    * - MTDO / GPIO40
+    * - MTDO / GPIO7
       - TDO
-    * - MTDI / GPIO41
+    * - MTDI / GPIO5
       - TDI
-    * - MTCK / GPIO39
+    * - MTCK / GPIO6
       - TCK
-    * - MTMS / GPIO42
+    * - MTMS / GPIO4
       - TMS
 
 ---
