@@ -431,6 +431,7 @@ typedef struct {
 #define BTM_SCO_XMIT_QUEUE_HIGH_WM  20
     fixed_queue_t   *xmit_data_q;       /* SCO data transmitting queue  */
     INT16           sent_not_acked;
+    tBTM_SCO_PKT_STAT_NUMS pkt_stat_nums;
 #endif
     tBTM_SCO_CB     *p_conn_cb;         /* Callback for when connected  */
     tBTM_SCO_CB     *p_disc_cb;         /* Callback for when disconnect */

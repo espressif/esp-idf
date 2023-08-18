@@ -62,6 +62,7 @@ typedef enum
     ESP_HF_DIAL_EVT,                          /*!< Origin an outgoing call with specific number or the dial the last number */
     ESP_HF_WBS_RESPONSE_EVT,                  /*!< Codec Status */
     ESP_HF_BCS_RESPONSE_EVT,                  /*!< Final Codec Choice */
+    ESP_HF_PKT_STAT_NUMS_GET_EVT,             /*!< Request number of packet different status */
 } esp_hf_cb_event_t;
 
 /// Dial type of ESP_HF_DIAL_EVT
@@ -91,6 +92,7 @@ typedef union
     struct hf_audio_stat_param {
         esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_audio_state_t state;               /*!< Audio connection state */
+        uint16_t sync_conn_handle;                /*!< (e)SCO connection handle */
     } audio_stat;                                 /*!< AG callback param of ESP_HF_AUDIO_STATE_EVT */
 
     /**
@@ -207,6 +209,19 @@ typedef union
         esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
     } bcs_rep;                                    /*!< AG callback param of ESP_HF_BCS_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_PKT_STAT_NUMS_GET_EVT
+     */
+    struct ag_pkt_status_nums {
+        uint32_t rx_total;        /*!< the total number of packets received */
+        uint32_t rx_correct;      /*!< the total number of packets data correctly received */
+        uint32_t rx_err;          /*!< the total number of packets data with possible invalid */
+        uint32_t rx_none;         /*!< the total number of packets data no received */
+        uint32_t rx_lost;         /*!< the total number of packets data partially lost */
+        uint32_t tx_total;        /*!< the total number of packets send */
+        uint32_t tx_discarded;    /*!< the total number of packets send lost */
+    } pkt_nums;                   /*!< AG callback param of ESP_HF_PKT_STAT_NUMS_GET_EVT */
 
 } esp_hf_cb_param_t;                              /*!< HFP AG callback param compound*/
 
@@ -641,6 +656,22 @@ esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_
  */
 esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send);
 
+/**
+ *
+ * @brief           Get the number of packets received and sent
+ *
+ *                  This function is only used in the case that Voice Over HCI is enabled and the audio state is connected.
+ *                  When the operation is completed, the callback function will be called with ESP_HF_PKT_STAT_NUMS_GET_EVT.
+ *
+ * @param[in]       sync_conn_handle: the (e)SCO connection handle
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_ag_pkt_stat_nums_get(uint16_t sync_conn_handle);
 
 /**
  * @brief           Trigger the lower-layer to fetch and send audio data.
