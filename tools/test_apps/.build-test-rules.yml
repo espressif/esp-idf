@@ -94,12 +94,6 @@ tools/test_apps/system/bootloader_sections:
       temporary: true
       reason: target esp32c2 is not supported yet
 
-tools/test_apps/system/build_test:
-  disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
-
 tools/test_apps/system/cxx_no_except:
   enable:
     - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32c3"
