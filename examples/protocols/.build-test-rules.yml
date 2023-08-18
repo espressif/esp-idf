@@ -14,7 +14,8 @@ examples/protocols/esp_http_client:
 
 examples/protocols/esp_local_ctrl:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
+    - if: SOC_WIFI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: not supported on p4
   disable_test:
@@ -26,7 +27,7 @@ examples/protocols/http_request:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -36,7 +37,7 @@ examples/protocols/http_server:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -46,7 +47,7 @@ examples/protocols/http_server/captive_portal:
   disable:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -56,13 +57,13 @@ examples/protocols/http_server/restful_server:
   disable:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
 
 examples/protocols/http_server/ws_echo_server:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -72,7 +73,7 @@ examples/protocols/https_mbedtls:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -82,7 +83,7 @@ examples/protocols/https_request:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -92,7 +93,7 @@ examples/protocols/https_server/simple:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -102,7 +103,7 @@ examples/protocols/https_server/wss_server:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -112,7 +113,7 @@ examples/protocols/https_x509_bundle:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8076
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -140,13 +141,13 @@ examples/protocols/modbus:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-7869
 
 examples/protocols/mqtt/ssl:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -154,7 +155,7 @@ examples/protocols/mqtt/ssl:
 
 examples/protocols/mqtt/ssl_ds:
   disable:
-    - if: SOC_DIG_SIGN_SUPPORTED != 1 or IDF_TARGET == "esp32p4"
+    - if: SOC_DIG_SIGN_SUPPORTED != 1 or IDF_TARGET == "esp32p4" # TODO: IDF-8077
       temporary: false
       reason: DS not present
 
@@ -162,19 +163,19 @@ examples/protocols/mqtt/ssl_mutual_auth:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
 
 examples/protocols/mqtt/ssl_psk:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
 
 examples/protocols/mqtt/tcp:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -184,7 +185,7 @@ examples/protocols/mqtt/ws:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -194,7 +195,7 @@ examples/protocols/mqtt/wss:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -204,7 +205,7 @@ examples/protocols/mqtt5:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8077
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true

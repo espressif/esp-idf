@@ -8,4 +8,4 @@ components/esp_rom/test_apps:
   disable:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: Not supported on p4
+      reason: Not supported on p4 # TODO: IDF-8071

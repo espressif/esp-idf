@@ -7,4 +7,4 @@ components/bootloader_support/test_apps/rtc_custom_section:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: this feature on esp32p4 isn't supported yet
+      reason: this feature on esp32p4 isn't supported yet # TODO: IDF-8069

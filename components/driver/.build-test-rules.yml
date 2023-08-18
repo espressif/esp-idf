@@ -16,7 +16,7 @@ components/driver/test_apps/gpio_extensions:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported yet
+      reason: not supported yet # TODO: IDF-7551
 
 components/driver/test_apps/gptimer:
   disable:
@@ -24,7 +24,7 @@ components/driver/test_apps/gptimer:
 
 components/driver/test_apps/i2c_test_apps:
   disable:
-    - if: SOC_I2C_SUPPORTED != 1
+    - if: SOC_I2C_SUPPORTED != 1 # TODO: IDF-8070
 
 components/driver/test_apps/i2s_test_apps:
   disable:
@@ -59,7 +59,7 @@ components/driver/test_apps/legacy_i2c_driver:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported yet
+      reason: not supported yet  # TODO: IDF-8070
 
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
@@ -101,7 +101,7 @@ components/driver/test_apps/rs485:
   disable:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: target(s) is not supported yet
+      reason: target(s) is not supported yet # TODO: IDF-6511
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -145,6 +145,7 @@ components/driver/test_apps/twai:
 
 components/driver/test_apps/uart:
   disable:
+    - if: SOC_UART_SUPPORTED != 1
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: target(s) is not supported yet
+      reason: target(s) is not supported yet # TODO: IDF-6511

@@ -10,7 +10,7 @@ examples/system/console/advanced:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8078
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Sufficient to run this app on one chip with each architecture
@@ -23,7 +23,7 @@ examples/system/console/basic:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4
+      reason: not supported on p4 # TODO: IDF-8078
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Sufficient to run this app on one chip with each architecture
@@ -32,7 +32,7 @@ examples/system/deep_sleep:
   disable:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: target(s) is not supported yet
+      reason: target(s) is not supported yet # TODO: IDF-7529
 
 examples/system/deep_sleep_wake_stub:
   disable:
@@ -44,7 +44,7 @@ examples/system/esp_timer:
   disable:
     - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4"]
       temporary: true
-      reason: target(s) is not supported yet
+      reason: target(s) is not supported yet # TODO: IDF-7529
 
 examples/system/eventfd:
   disable:

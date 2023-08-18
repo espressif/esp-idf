@@ -23,6 +23,7 @@ TARGET_MARKERS = {
     'esp32c2': 'support esp32c2 target',
     'esp32c6': 'support esp32c6 target',
     'esp32h2': 'support esp32h2 target',
+    'esp32p4': 'support esp32p4 target',
     'linux': 'support linux target',
 }
 

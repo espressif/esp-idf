@@ -127,7 +127,7 @@ examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
     - if: SOC_MCPWM_SUPPORTED != 1
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported on p4 yet
+      reason: not supported on p4 yet # TODO: IDF-8075
 
 examples/peripherals/parlio:
   disable:
@@ -214,7 +214,7 @@ examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
     - if: IDF_TARGET in ["esp32c6", "esp32p4"]
       temporary: true
-      reason: target(s) not supported yet
+      reason: target(s) not supported yet # TODO: IDF-7505
 
 examples/peripherals/spi_slave_hd/append_mode/slave:
   enable:
