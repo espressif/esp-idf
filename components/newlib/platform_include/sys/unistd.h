@@ -16,6 +16,7 @@ extern "C" {
 
 int truncate(const char *, off_t __length);
 int gethostname(char *__name, size_t __len);
+int getentropy(void *buffer, size_t length);
 
 #ifdef __cplusplus
 }

@@ -62,5 +62,24 @@ The ``flags`` argument is ignored, this function is always non-blocking but the 
 
 Return value is -1 (with ``errno`` set to ``EFAULT``) if the ``buf`` argument is NULL, and equal to ``buflen`` otherwise.
 
+getentropy
+----------
+
+A compatible version of the Linux ``getentropy()`` function is also provided for ease of porting:
+
+.. code-block:: c
+
+   #include <unistd.h>
+
+   int getentropy(void *buffer, size_t length);
+
+This function is implemented by calling :cpp:func:`getrandom` internally.
+
+Strength of any random numbers is dependent on the same conditions described above.
+
+Return value is 0 on success and -1 otherwise with ``errno`` set to:
+   - ``EFAULT`` if the ``buffer`` argument is NULL.
+   - ``EIO`` if the ``length`` is more then 256.
+
 .. _Dieharder: https://webhome.phy.duke.edu/~rgb/General/dieharder.php
 
