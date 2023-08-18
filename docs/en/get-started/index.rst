@@ -178,4 +178,4 @@ If you already have the ESP-IDF installed and not using IDE, you can build your 
 Uninstall ESP-IDF
 =================
 
-If you want to remove ESP-IDF, please follow the :ref:`Uninstall ESP-IDF guide <idf-tools-uninstall>`.
+If you want to remove ESP-IDF, please follow :ref:`idf-tools-uninstall`.

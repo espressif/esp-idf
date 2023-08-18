@@ -182,13 +182,13 @@ Uninstall ESP-IDF
 Uninstalling ESP-IDF requires removing both the tools and the environment variables that have been configured during the installation.
 
 * Windows users using the :ref:`Windows ESP-IDF Tools Installer <get-started-windows-tools-installer>` can simply run the uninstall wizard to remove ESP-IDF.
-* To remove an installation performed by running the supported :ref:`install scripts <idf-tools-install>`, simply delete the :ref:`tools installation directory <idf-tools-path>` including the downloaded and installed tools. Any environment variables set by the :ref:`export scripts<idf-tools-export>` are not permanent and will not be present after opening a new environment.
-* When dealing with a custom installation, in addition to deleting the tools as mentioned above, you may also need to manually revert any changes to environment variables or system paths that were made to accommodate the ESP-IDF tools (e.g. ``IDF_PYTHON_ENV_PATH`` or ``IDF_TOOLS_PATH``). If you manually copied any tools, you would need to track and delete those files manually.
+* To remove an installation performed by running the supported :ref:`install scripts <idf-tools-install>`, simply delete the :ref:`tools installation directory <idf-tools-path>` including the downloaded and installed tools. Any environment variables set by the :ref:`export scripts <idf-tools-export>` are not permanent and will not be present after opening a new environment.
+* When dealing with a custom installation, in addition to deleting the tools as mentioned above, you may also need to manually revert any changes to environment variables or system paths that were made to accommodate the ESP-IDF tools (e.g., ``IDF_PYTHON_ENV_PATH`` or ``IDF_TOOLS_PATH``). If you manually copied any tools, you would need to track and delete those files manually.
 * If you installed any plugins like the `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_, you should follow the specific uninstallation instructions described in the documentation of those components.
 
 .. note::
 
-  Uninstalling the ESP-IDF tools doesn't remove any project files or your code. Be mindful of what you are deleting to avoid losing any work. If you're unsure about a step, refer back to the installation instructions.
+  Uninstalling the ESP-IDF tools does not remove any project files or your code. Be mindful of what you are deleting to avoid losing any work. If you are unsure about a step, refer back to the installation instructions.
 
   These instructions assume that the tools were installed following the procedures in this provided document. If you've used a custom installation method, you might need to adapt these instructions accordingly.
 
