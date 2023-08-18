@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2023 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,9 +55,7 @@ static void _btc_storage_save(void)
             continue;
         }
 
-        if (!string_is_bdaddr(section) ||
-            !btc_config_get_int(section, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
-            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
+        if (!string_is_bdaddr(section)) {
             iter = btc_config_section_next(iter);
             continue;
         }
@@ -72,16 +70,15 @@ static void _btc_storage_save(void)
     if (need_remove_iter) {
         while(need_remove_iter != btc_config_section_end()) {
             const char *need_remove_section = btc_config_section_name(need_remove_iter);
-            if (!string_is_bdaddr(need_remove_section) ||
-                !btc_config_get_int(need_remove_section, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
-                ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
+            if (!string_is_bdaddr(need_remove_section)) {
                 need_remove_iter = btc_config_section_next(need_remove_iter);
                 continue;
             }
             need_remove_iter = btc_config_section_next(need_remove_iter);
             //delete device info
             string_to_bdaddr(need_remove_section, &bd_addr);
-            BTM_SecDeleteDevice(bd_addr.address, BT_TRANSPORT_LE);
+            BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
+            BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
             //delete config info
             if(btc_config_remove_section(need_remove_section)) {
                 BTIF_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the last device info : %s", need_remove_section);
@@ -766,7 +763,7 @@ static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
         *key_found = true;
     }
 }
-static bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add)
+bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add)
 {
     uint32_t device_type;
     int addr_type;
@@ -808,6 +805,8 @@ static bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd
 
     if (key_found) {
         return BT_STATUS_SUCCESS;
+    } else {
+        BTC_TRACE_DEBUG("Remote device:%s, no link key or ble key found", remote_bd_addr);
     }
 
     return BT_STATUS_FAIL;

@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2023 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,12 +62,14 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr);
 
 /*******************************************************************************
 **
-** Function         btc_storage_remove_bonded_device
+** Function         btc_storage_load_bonded_devices
 **
-** Description      BTC storage API - Deletes the bonded device from NVRAM
+** Description      BTC storage API - Loads all the bonded devices from NVRAM
+**                  and adds to the BTA.
+**                  Additionally, this API also invokes the adaper_properties_cb
+**                  and remote_device_properties_cb for each of the bonded devices.
 **
-** Returns          BT_STATUS_SUCCESS if the deletion was successful,
-**                  BT_STATUS_FAIL otherwise
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
 **
 *******************************************************************************/
 bt_status_t btc_storage_load_bonded_devices(void);
@@ -175,5 +177,15 @@ bt_status_t btc_storage_remove_hidd(bt_bdaddr_t *remote_bd_addr);
 #ifdef __cplusplus
 }
 #endif
+/*******************************************************************************
+**
+** Function         btc_storage_get_num_all_bond_devices
+**
+** Description      BTC storage API - get all the num of the bonded device from NVRAM
+**
+** Returns          the num of the bonded device
+**
+*******************************************************************************/
+int btc_storage_get_num_all_bond_devices(void);
 
 #endif /* BTC_STORAGE_H */
