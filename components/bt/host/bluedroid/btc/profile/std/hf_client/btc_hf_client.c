@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -679,6 +679,24 @@ static bt_status_t btc_hf_client_send_nrec(void)
 
 /*******************************************************************************
 **
+** Function         btc_hf_client_pkt_stat_nums_get;
+**
+** Description      Request packet status numbers for a specific (e)SCO connection handle
+**
+** Returns          bt_status_t
+**
+*******************************************************************************/
+static bt_status_t btc_hf_client_pkt_stat_nums_get(UINT16 sync_conn_handle)
+{
+    CHECK_HF_CLIENT_SLC_CONNECTED();
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    BTA_HfClientPktStatsNumsGet(sync_conn_handle);
+#endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE) */
+    return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+**
 ** Function         bte_hf_client_evt
 **
 ** Description      Switches context from BTE to BTIF for all HF Client events
@@ -802,6 +820,8 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
     esp_hf_client_cb_param_t param;
     bdstr_t bdstr;
 
+    memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
+
     switch (event)
     {
         case BTA_HF_CLIENT_ENABLE_EVT:
@@ -832,7 +852,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             }
 
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.conn_stat.state = hf_client_local_param.btc_hf_client_cb.state;
                 param.conn_stat.peer_feat = 0;
                 param.conn_stat.chld_feat = 0;
@@ -858,7 +877,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED;
 
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.conn_stat.state = hf_client_local_param.btc_hf_client_cb.state;
                 param.conn_stat.peer_feat = hf_client_local_param.btc_hf_client_cb.peer_feat;
                 param.conn_stat.chld_feat = hf_client_local_param.btc_hf_client_cb.chld_feat;
@@ -873,7 +891,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_INBAND)
             {
                 do {
-                    memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                     param.bsir.state =  ESP_HF_CLIENT_IN_BAND_RINGTONE_PROVIDED;
                     btc_hf_client_cb_to_app(ESP_HF_CLIENT_BSIR_EVT, &param);
                 } while (0);
@@ -885,7 +902,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
         case BTA_HF_CLIENT_CLOSE_EVT:
             hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.conn_stat.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
                 param.conn_stat.peer_feat = 0;
                 param.conn_stat.chld_feat = 0;
@@ -906,7 +922,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_MIC_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.volume_control.type = ESP_HF_VOLUME_CONTROL_TARGET_MIC;
                 param.volume_control.volume = p_data->val.value;
 
@@ -915,7 +930,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_SPK_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.volume_control.type = ESP_HF_VOLUME_CONTROL_TARGET_SPK;
                 param.volume_control.volume = p_data->val.value;
 
@@ -924,7 +938,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_VOICE_REC_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.bvra.value = p_data->val.value;
 
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_BVRA_EVT, &param);
@@ -932,35 +945,30 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_OPERATOR_NAME_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.cops.name = p_data->operator.name;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_COPS_CURRENT_OPERATOR_EVT, &param);
             } while (0);
             break;
         case BTA_HF_CLIENT_CLIP_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.clip.number = p_data->number.number;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CLIP_EVT, &param);
             } while (0);
             break;
         case BTA_HF_CLIENT_BINP_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.binp.number = p_data->number.number;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_BINP_EVT, &param);
             } while (0);
             break;
         case BTA_HF_CLIENT_CCWA_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.ccwa.number = p_data->number.number;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CCWA_EVT, &param);
             } while (0);
             break;
         case BTA_HF_CLIENT_AT_RESULT_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.at_response.code = p_data->result.type;
                 param.at_response.cme = p_data->result.cme;
 
@@ -969,7 +977,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_CLCC_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.clcc.idx = p_data->clcc.idx;
                 param.clcc.dir = p_data->clcc.inc ? ESP_HF_CURRENT_CALL_DIRECTION_INCOMING :
                     ESP_HF_CURRENT_CALL_DIRECTION_OUTGOING;
@@ -982,7 +989,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_CNUM_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.cnum.number = p_data->cnum.number;
                 if (p_data->cnum.service == 4) {
                     param.cnum.type = ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE;
@@ -998,7 +1004,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
         case BTA_HF_CLIENT_BTRH_EVT:
             if (p_data->val.value <= ESP_HF_BTRH_STATUS_REJECTED) {
                 do {
-                    memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                     param.btrh.status = p_data->val.value;
 
                     btc_hf_client_cb_to_app(ESP_HF_CLIENT_BTRH_EVT, &param);
@@ -1006,7 +1011,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             }
             break;
         case BTA_HF_CLIENT_BSIR_EVT:
-            memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
             if (p_data->val.value != 0)
             {
                 param.bsir.state = ESP_HF_CLIENT_IN_BAND_RINGTONE_PROVIDED;
@@ -1019,28 +1023,28 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
         case BTA_HF_CLIENT_AUDIO_OPEN_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTED;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
         case BTA_HF_CLIENT_AUDIO_MSBC_OPEN_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
         case BTA_HF_CLIENT_AUDIO_CLOSE_EVT:
             do {
-                memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1049,6 +1053,12 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_RING_IND_EVT, NULL);
             } while (0);
             break;
+        case BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT:
+        {
+            memcpy(&param.pkt_nums, &p_data->pkt_num, sizeof(struct hf_client_pkt_status_nums));
+            btc_hf_client_cb_to_app(ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT, &param);
+            break;
+        }
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;
@@ -1131,6 +1141,9 @@ void btc_hf_client_call_handler(btc_msg_t *msg)
         break;
     case BTC_HF_CLIENT_SEND_IPHONEACCEV_EVT:
         btc_hf_client_send_iphoneaccev(arg->send_iphoneaccev.bat_level, arg->send_iphoneaccev.docked);
+        break;
+    case BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT:
+        btc_hf_client_pkt_stat_nums_get(arg->pkt_sync_hd.sync_conn_handle);
         break;
     default:
         BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
