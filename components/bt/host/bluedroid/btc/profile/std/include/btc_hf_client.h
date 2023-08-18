@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 /*******************************************************************************
@@ -58,6 +50,7 @@ typedef enum {
     BTC_HF_CLIENT_REQUEST_LAST_VOICE_TAG_NUMBER_EVT,
     BTC_HF_CLIENT_REGISTER_DATA_CALLBACK_EVT,
     BTC_HF_CLIENT_SEND_NREC_EVT,
+    BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT,
 } btc_hf_client_act_t;
 
 /* btc_hf_client_args_t */
@@ -111,6 +104,12 @@ typedef union {
         esp_hf_client_incoming_data_cb_t recv;
         esp_hf_client_outgoing_data_cb_t send;
     } reg_data_cb;
+
+    // BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT
+    struct req_pkt_stat_sync_handle {
+        UINT16            sync_conn_handle;
+    } pkt_sync_hd;
+
 } btc_hf_client_args_t;
 
 /************************************************************************************

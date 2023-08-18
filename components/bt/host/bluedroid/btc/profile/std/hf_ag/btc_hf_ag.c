@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -396,6 +396,21 @@ bt_status_t btc_hf_disconnect_audio(bt_bdaddr_t *bd_addr)
         return BT_STATUS_SUCCESS;
     }
     return BT_STATUS_FAIL;
+}
+
+static bt_status_t btc_hf_pkt_stat_nums_get(UINT16 sync_conn_handle)
+{
+    bt_status_t status = BT_STATUS_FAIL;
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    int idx = btc_hf_latest_connected_idx();
+    CHECK_HF_SLC_CONNECTED(idx);
+
+    if (idx != BTC_HF_INVALID_IDX) {
+        BTA_AgPktStatsNumsGet(hf_local_param[idx].btc_hf_cb.handle, sync_conn_handle);
+        status = BT_STATUS_SUCCESS;
+    }
+#endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE) */
+    return status;
 }
 
 /************************************************************************************
@@ -1163,8 +1178,13 @@ void btc_hf_call_handler(btc_msg_t *msg)
         case BTC_HF_REGISTER_DATA_CALLBACK_EVT:
         {
             btc_hf_reg_data_cb(arg->reg_data_cb.recv, arg->reg_data_cb.send);
-        }
             break;
+        }
+        case BTC_HF_REQUEST_PKT_STAT_EVT:
+        {
+            btc_hf_pkt_stat_nums_get(arg->pkt_sync_hd.sync_conn_handle);
+            break;
+        }
 
         default:
             BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
@@ -1286,6 +1306,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while(0);
             break;
@@ -1298,6 +1319,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1309,6 +1331,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_DISCONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda, sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while(0);
             break;
@@ -1528,6 +1551,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             break;
         }
 #endif
+        case BTA_AG_PKT_NUMS_GET_EVT:
+        {
+            memcpy(&param.pkt_nums, &p_data->pkt_num, sizeof(struct ag_pkt_status_nums));
+            btc_hf_cb_to_app(ESP_HF_PKT_STAT_NUMS_GET_EVT, &param);
+            break;
+        }
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;

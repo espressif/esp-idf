@@ -1,10 +1,8 @@
 /*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -46,6 +44,7 @@ const char *c_hf_evt_str[] = {
     "DIAL_EVT",                          /*!< DIAL INCOMING EVT */
     "WBS_EVT",                           /*!< CURRENT CODEC EVT */
     "BCS_EVT",                           /*!< CODEC NEGO EVT */
+    "PKT_STAT_EVT",                      /*!< REQUEST PACKET STATUS EVT */
 };
 
 //esp_hf_connection_state_t
@@ -213,7 +212,7 @@ static void bt_app_send_data_timer_cb(void *arg)
 static void bt_app_send_data_task(void *arg)
 {
     uint64_t frame_data_num;
-    uint32_t item_size = 0;
+    size_t item_size = 0;
     uint8_t *buf = NULL;
     for (;;) {
         if (xSemaphoreTake(s_send_data_Semaphore, (portTickType)portMAX_DELAY)) {
@@ -293,7 +292,7 @@ void bt_app_send_data_shut_down(void)
 
 void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 {
-    if (event <= ESP_HF_BCS_RESPONSE_EVT) {
+    if (event <= ESP_HF_PKT_STAT_NUMS_GET_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
         ESP_LOGE(BT_HF_TAG, "APP HFP invalid event %d", event);
@@ -476,6 +475,11 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_BCS_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--Consequence of codec negotiation: %s",c_codec_mode_str[param->bcs_rep.mode]);
+            break;
+        }
+        case ESP_HF_PKT_STAT_NUMS_GET_EVT:
+        {
+            ESP_LOGI(BT_HF_TAG, "ESP_HF_PKT_STAT_NUMS_GET_EVT: %d.", event);
             break;
         }
 

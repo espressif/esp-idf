@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "common/bt_target.h"
 #include <string.h>
@@ -470,8 +462,27 @@ esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t 
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+esp_err_t esp_hf_client_pkt_stat_nums_get(uint16_t sync_conn_handle)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE )
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_HF_CLIENT;
+    msg.act = BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT;
+
+    btc_hf_client_args_t arg;
+    memset(&arg, 0, sizeof(btc_hf_client_args_t));
+    arg.pkt_sync_hd.sync_conn_handle = sync_conn_handle;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hf_client_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 void esp_hf_client_outgoing_data_ready(void)
 {
     BTA_HfClientCiData();
@@ -492,6 +503,6 @@ int32_t esp_hf_client_pcm_resample(void *src, uint32_t in_bytes, void *dst)
     return BTA_DmPcmResample(src, in_bytes, dst);
 }
 
-#endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE ) */
+#endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
 
 #endif /* BTC_HF_CLIENT_INCLUDED */
