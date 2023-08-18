@@ -61,6 +61,8 @@ bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr);
 
 bool btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr, uint8_t key_type, void *key_value, int key_length);
 
+bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add);
+
 bt_status_t btc_storage_add_ble_local_key(char *key, uint8_t key_type, uint8_t key_length);
 
 bt_status_t btc_storage_remove_ble_local_keys(void);
