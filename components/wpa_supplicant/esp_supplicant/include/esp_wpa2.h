@@ -18,7 +18,7 @@
   *             Please use `esp_wifi_sta_enterprise_enable()` instead.
   *
   * @attention 1. wpa2 enterprise authentication can only be used when station mode is enabled.
-  * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
+  * @attention 2. wpa2 enterprise authentication supports EAP-FAST, TLS, PEAP, TTLS(EAP, MSCHAPv2, MSCHAP, PAP, CHAP) methods.
   *
   * @return
   *    - ESP_OK: succeed.
@@ -34,7 +34,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void);
   *             Please use `esp_wifi_sta_enterprise_disable()` instead.
   *
   * @attention 1. wpa2 enterprise authentication can only be used when station mode is enabled.
-  * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
+  * @attention 2. wpa2 enterprise authentication supports EAP-FAST, TLS, PEAP, TTLS(EAP, MSCHAPv2, MSCHAP, PAP, CHAP) methods.
   *
   * @return
   *    - ESP_OK: succeed.
