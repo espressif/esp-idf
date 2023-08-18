@@ -175,16 +175,16 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
 
     .. only:: esp32
 
-        In single core mode (:ref:`CONFIG_FREERTOS_UNICORE`), remaining RTC FAST memory is be added to the heap, unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA capable.
+        In single core mode (:ref:`CONFIG_FREERTOS_UNICORE`), remaining RTC FAST memory is added to the heap, unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA-capable.
 
-        This option is not available in dual-core mode because on ESP32, RTC FAST memory can only be accessed by the PRO CPU.
+        This option is not available in dual core mode, because on {IDF_TARGET_NAME}, RTC FAST memory can only be accessed by the PRO CPU.
 
     .. only:: not esp32
 
         Remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
 
 
-DMA Capable Requirement
+DMA-Capable Requirement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. highlight:: c

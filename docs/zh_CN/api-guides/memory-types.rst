@@ -175,9 +175,9 @@ DROM（数据存储在 flash 中）
 
     .. only:: esp32
 
-        RTC FAST memory 只可以被 PRO CPU 访问。
+        在单核模式下 (:ref:`CONFIG_FREERTOS_UNICORE`)，除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
 
-        在单核模式下，除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
+        :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项在双核模式下不可用，因为 {IDF_TARGET_NAME} 的 RTC FAST memory 只能由 PRO CPU 访问。
 
     .. only:: not esp32
 
