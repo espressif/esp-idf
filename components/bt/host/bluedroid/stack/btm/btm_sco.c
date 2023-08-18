@@ -341,6 +341,82 @@ void btm_sco_process_num_completed_pkts (UINT8 *p)
 
     return;
 }
+
+/*******************************************************************************
+**
+** Function         btm_pkt_stat_nums_update
+**
+** Description      Update the number of received SCO data packet status.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btm_pkt_stat_nums_update(uint16_t sco_inx, uint8_t pkt_status)
+{
+    tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
+    p_ccb->pkt_stat_nums.rx_total++;
+    if (pkt_status == BTM_SCO_DATA_CORRECT) {
+        p_ccb->pkt_stat_nums.rx_correct++;
+    } else if (pkt_status == BTM_SCO_DATA_PAR_ERR) {
+        p_ccb->pkt_stat_nums.rx_err++;
+    } else if (pkt_status == BTM_SCO_DATA_NONE) {
+        p_ccb->pkt_stat_nums.rx_none++;
+    } else {
+        p_ccb->pkt_stat_nums.rx_lost++;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         btm_pkt_stat_send_nums_update
+**
+** Description      Update the number of send packet status.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btm_pkt_stat_send_nums_update(uint16_t sco_inx, uint8_t pkt_status)
+{
+    tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
+    p_ccb->pkt_stat_nums.tx_total++;
+    if (pkt_status != BTM_SUCCESS) {
+        p_ccb->pkt_stat_nums.tx_discarded++;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         btm_pkt_stat_nums_reset
+**
+** Description      This function is called to reset the number of packet status struct
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btm_pkt_stat_nums_reset(uint16_t sco_inx)
+{
+    memset(&btm_cb.sco_cb.sco_db[sco_inx].pkt_stat_nums, 0, sizeof(tBTM_SCO_PKT_STAT_NUMS));
+}
+
+/*******************************************************************************
+**
+** Function         BTM_PktStatNumsGet
+**
+** Description      This function is called to get the number of packet status struct
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_PktStatNumsGet(uint16_t sync_conn_handle, tBTM_SCO_PKT_STAT_NUMS *p_pkt_nums)
+{
+    uint16_t sco_inx = btm_find_scb_by_handle(sync_conn_handle);
+    if (sco_inx < BTM_MAX_SCO_LINKS) {
+        memcpy(p_pkt_nums, &btm_cb.sco_cb.sco_db[sco_inx].pkt_stat_nums, sizeof(tBTM_SCO_PKT_STAT_NUMS));
+    } else {
+        memset(p_pkt_nums, 0, sizeof(tBTM_SCO_PKT_STAT_NUMS));
+    }
+}
+
 #endif /* BTM_SCO_HCI_INCLUDED == TRUE */
 
 /*******************************************************************************
@@ -374,6 +450,7 @@ void  btm_route_sco_data(BT_HDR *p_msg)
         {
             osi_free (p_msg);
         } else {
+            btm_pkt_stat_nums_update(sco_inx, pkt_status);
             (*btm_cb.sco_cb.p_data_cb)(sco_inx, p_msg, (tBTM_SCO_DATA_FLAG) pkt_status);
         }
     } else { /* no mapping handle SCO connection is active, free the buffer */
@@ -461,6 +538,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
+    btm_pkt_stat_send_nums_update(sco_inx, status);
     return (status);
 
 #else
@@ -994,6 +1072,7 @@ void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
             }
 #if BTM_SCO_HCI_INCLUDED == TRUE
             p->sent_not_acked = 0;
+            btm_pkt_stat_nums_reset(xx);
 #endif
             p->state = SCO_ST_CONNECTED;
             p->hci_handle = hci_handle;

@@ -65,6 +65,7 @@ enum {
     BTA_HF_CLIENT_SEND_AT_CMD_EVT,
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
     BTA_HF_CLIENT_CI_SCO_DATA_EVT,
+    BTA_HF_CLIENT_PKT_NUMS_GET_EVT,
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
     BTA_HF_CLIENT_MAX_EVT,
 
@@ -121,6 +122,12 @@ typedef struct {
     char            str[BTA_HF_CLIENT_MAX_LEN + 1];
 } tBTA_HF_CLIENT_DATA_VAL;
 
+/* data type for BTA_HF_CLIENT_PKT_NUMS_GET_EVT */
+typedef struct {
+    BT_HDR          hdr;
+    UINT16          sync_conn_handle;
+} tBTA_HF_CLIENT_PKT_STAT_GET;
+
 /* union of all event datatypes */
 typedef union {
     BT_HDR                         hdr;
@@ -130,6 +137,7 @@ typedef union {
     tBTA_HF_CLIENT_DISC_RESULT     disc_result;
     tBTA_HF_CLIENT_RFC             rfc;
     tBTA_HF_CLIENT_DATA_VAL        val;
+    tBTA_HF_CLIENT_PKT_STAT_GET    pkt_stat;
 
 } tBTA_HF_CLIENT_DATA;
 
@@ -302,6 +310,7 @@ extern void bta_hf_client_binp(char *number);
 extern void bta_hf_client_dial(tBTA_HF_CLIENT_DATA *p_data);
 extern void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA *p_data);
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
+extern void bta_hf_client_pkt_stat_nums(tBTA_HF_CLIENT_DATA *p_data);
 extern void bta_hf_client_ci_sco_data(tBTA_HF_CLIENT_DATA *p_data);
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
 #endif /* #if (BTA_HF_INCLUDED == TRUE) */

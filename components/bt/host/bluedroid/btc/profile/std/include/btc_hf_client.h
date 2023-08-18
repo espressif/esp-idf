@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,7 @@ typedef enum {
     BTC_HF_CLIENT_SEND_NREC_EVT,
     BTC_HF_CLIENT_SEND_XAPL_EVT,
     BTC_HF_CLIENT_SEND_IPHONEACCEV_EVT,
+    BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT,
 } btc_hf_client_act_t;
 
 /* btc_hf_client_args_t */
@@ -117,6 +118,12 @@ typedef union {
         uint32_t bat_level;
         bool docked;
     } send_iphoneaccev;
+
+    // BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT
+    struct req_pkt_stat_sync_handle {
+        UINT16            sync_conn_handle;
+    } pkt_sync_hd;
+
 } btc_hf_client_args_t;
 
 /************************************************************************************
