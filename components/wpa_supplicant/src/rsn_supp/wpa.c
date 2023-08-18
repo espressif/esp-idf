@@ -2629,11 +2629,19 @@ void eapol_txcb(uint8_t *eapol_payload, size_t len, bool tx_failure)
     struct wpa_sm *sm = &gWpaSm;
     u8 isdeauth = 0;  //no_zero value is the reason for deauth
 
-    if (len < (sizeof(struct ieee802_1x_hdr) + sizeof(struct wpa_eapol_key))) {
-        wpa_printf(MSG_ERROR, "EAPOL TxDone with invalid payload len! (len - %d)", len);
+    if (len < sizeof(struct ieee802_1x_hdr)) {
+        /* Invalid 802.1X header, ignore */
         return;
     }
     hdr = (struct ieee802_1x_hdr *) eapol_payload;
+    if (hdr->type != IEEE802_1X_TYPE_EAPOL_KEY) {
+        /* Ignore EAPOL non-key frames */
+        return;
+    }
+    if (len < (sizeof(struct ieee802_1x_hdr) + sizeof(struct wpa_eapol_key))) {
+        wpa_printf(MSG_ERROR, "EAPOL TxDone with invalid payload len! (len - %zu)", len);
+        return;
+    }
     key = (struct wpa_eapol_key *) (hdr + 1);
 
     switch(WPA_SM_STATE(sm)) {
