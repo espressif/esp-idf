@@ -80,10 +80,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_MCPWM0_APB_CLK_EN;
     case PERIPH_MCPWM1_MODULE:
         return HP_SYS_CLKRST_REG_MCPWM1_APB_CLK_EN;
-    case PERIPH_TIMG0_MODULE:
-        return HP_SYS_CLKRST_REG_TIMERGRP0_T0_CLK_EN | HP_SYS_CLKRST_REG_TIMERGRP0_T1_CLK_EN | HP_SYS_CLKRST_REG_TIMERGRP0_WDT_CLK_EN;
-    case PERIPH_TIMG1_MODULE:
-        return HP_SYS_CLKRST_REG_TIMERGRP1_T0_CLK_EN | HP_SYS_CLKRST_REG_TIMERGRP1_T1_CLK_EN | HP_SYS_CLKRST_REG_TIMERGRP1_WDT_CLK_EN;
     case PERIPH_SYSTIMER_MODULE:
         return HP_SYS_CLKRST_REG_SYSTIMER_CLK_EN;
     case PERIPH_LEDC_MODULE:
@@ -148,10 +144,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_AXI_PDMA;
     case PERIPH_SYSTIMER_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_STIMER;
-    case PERIPH_TIMG0_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_TIMERGRP0;
-    case PERIPH_TIMG1_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_TIMERGRP1;
     case PERIPH_UART0_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_UART0_CORE;
     case PERIPH_UART1_MODULE:
@@ -268,9 +260,6 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_MCPWM1_MODULE:
     case PERIPH_PCNT_MODULE:
         return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
-    case PERIPH_TIMG0_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL20_REG;
-    case PERIPH_TIMG1_MODULE:
     case PERIPH_SYSTIMER_MODULE:
     case PERIPH_LEDC_MODULE:
     case PERIPH_RMT_MODULE:
@@ -312,8 +301,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_AHB_PDMA_MODULE:
     case PERIPH_AXI_PDMA_MODULE:
     case PERIPH_SYSTIMER_MODULE:
-    case PERIPH_TIMG0_MODULE:
-    case PERIPH_TIMG1_MODULE:
     case PERIPH_UART0_MODULE:
     case PERIPH_UART1_MODULE:
     case PERIPH_UART2_MODULE:

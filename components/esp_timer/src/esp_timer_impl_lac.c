@@ -18,6 +18,7 @@
 #include "soc/soc.h"
 #include "soc/timer_group_reg.h"
 #include "soc/rtc.h"
+#include "hal/timer_ll.h"
 #include "freertos/FreeRTOS.h"
 
 /**
@@ -245,7 +246,12 @@ void esp_timer_impl_advance(int64_t time_diff_us)
 
 esp_err_t esp_timer_impl_early_init(void)
 {
-    periph_module_enable(PERIPH_LACT);
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_LACT, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(LACT_MODULE, true);
+            timer_ll_reset_register(LACT_MODULE);
+        }
+    }
 
     REG_WRITE(CONFIG_REG, 0);
     REG_WRITE(LOAD_LO_REG, 0);
@@ -319,6 +325,11 @@ void esp_timer_impl_deinit(void)
         }
     }
     s_alarm_handler = NULL;
+    PERIPH_RCC_RELEASE_ATOMIC(PERIPH_LACT, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(LACT_MODULE, false);
+        }
+    }
 }
 
 uint64_t esp_timer_impl_get_alarm_reg(void)

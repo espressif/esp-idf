@@ -905,6 +905,7 @@ typedef struct {
     volatile system_reg_date_reg_t reg_date;
 } system_dev_t;
 
+extern system_dev_t SYSTEM;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(system_dev_t) == 0x1000, "Invalid size of system_dev_t structure");
