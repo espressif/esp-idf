@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1400,7 +1400,7 @@ esp_err_t esp_mesh_set_parent(const wifi_config_t *parent, const mesh_addr_t *pa
  * @return
  *    - ESP_OK
  *    - ESP_ERR_WIFI_NOT_INIT
- *    - ESP_ERR_WIFI_ARG
+ *    - ESP_ERR_INVALID_ARG
  *    - ESP_ERR_WIFI_FAIL
  */
 esp_err_t esp_mesh_scan_get_ap_ie_len(int *len);
@@ -1417,7 +1417,7 @@ esp_err_t esp_mesh_scan_get_ap_ie_len(int *len);
  * @return
  *    - ESP_OK
  *    - ESP_ERR_WIFI_NOT_INIT
- *    - ESP_ERR_WIFI_ARG
+ *    - ESP_ERR_INVALID_ARG
  *    - ESP_ERR_WIFI_FAIL
  */
 esp_err_t esp_mesh_scan_get_ap_record(wifi_ap_record_t *ap_record, void *buffer);
@@ -1506,7 +1506,7 @@ esp_err_t esp_mesh_switch_channel(const uint8_t *new_bssid, int csa_newchan, int
  * @return
  *    - ESP_OK
  *    - ESP_ERR_WIFI_NOT_INIT
- *    - ESP_ERR_WIFI_ARG
+ *    - ESP_ERR_INVALID_ARG
  */
 esp_err_t esp_mesh_get_router_bssid(uint8_t *router_bssid);
 

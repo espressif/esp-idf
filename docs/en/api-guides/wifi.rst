@@ -1654,7 +1654,6 @@ Wi-Fi Vendor IE Configuration
 
 By default, all Wi-Fi management frames are processed by the Wi-Fi driver, and the application can ignore them. However, some applications may have to handle the beacon, probe request, probe response, and other management frames. For example, if you insert some vendor-specific IE into the management frames, it is only the management frames which contain this vendor-specific IE that will be processed. In {IDF_TARGET_NAME}, :cpp:func:`esp_wifi_set_vendor_ie()` and :cpp:func:`esp_wifi_set_vendor_ie_cb()` are responsible for this kind of tasks.
 
-
 Wi-Fi Easy Connect™ (DPP)
 --------------------------
 
@@ -1707,6 +1706,15 @@ Radio Resource Measurement (802.11k) is intended to improve the way traffic is d
 Current implementation of 802.11k includes support for beacon measurement report, link measurement report, and neighbor request.
 
 Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and use these APIs. Example code only demonstrates how these APIs can be used, and the application should define its own algorithm and cases as required.
+
+Fast BSS Transition
+---------------------------
+Fast BSS transition (802.11R FT), is a standard to permit continuous connectivity aboard wireless devices in motion, with fast and secure client transitions from one Basic Service Set (abbreviated BSS, and also known as a base station or more colloquially, an access point) to another performed in a nearly seamless manner **avoiding 802.1i 4 way handshake** . 802.11R specifies transitions between access points by redefining the security key negotiation protocol, allowing both the negotiation and requests for wireless resources to occur in parallel. The key derived from the server to be cached in the wireless network, so that a reasonable number of future connections can be based on the cached key, avoiding the 802.1X process
+
+
+{IDF_TARGET_NAME} station supports FT for WPA2-PSK networks. Do note that {IDF_TARGET_NAME} station only support FT over the air protocol only.
+
+A config option :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :cpp:type:`ft_enabled` in :cpp:type:`wifi_sta_config_t` is provided to enable 802.11R support for station. Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` for further details.
 
 .. only:: SOC_WIFI_FTM_SUPPORT
 
@@ -2111,7 +2119,7 @@ Theoretically, if the side-effects the API imposes on the Wi-Fi driver or other 
        The recommendations above are only for avoiding side-effects and can be ignored when there are good reasons.
 
    * - Have Wi-Fi connection
-     - When the Wi-Fi connection is already set up, and the sequence is controlled by the application, the latter may impact the sequence control of the Wi-Fi connection as a whole. So, the ``en_sys_seq`` need to be true, otherwise ``ESP_ERR_WIFI_ARG`` is returned.
+     - When the Wi-Fi connection is already set up, and the sequence is controlled by the application, the latter may impact the sequence control of the Wi-Fi connection as a whole. So, the ``en_sys_seq`` need to be true, otherwise ``ESP_ERR_INVALID_ARG`` is returned.
 
        The MAC-address recommendations in the “No Wi-Fi connection” scenario also apply to this scenario.
 
@@ -2123,7 +2131,7 @@ Theoretically, if the side-effects the API imposes on the Wi-Fi driver or other 
 
        - If the packet is sent from station to AP or from AP to station, the Power Management, More Data, and Re-Transmission bits should be 0. Otherwise, the packet will be discarded by Wi-Fi driver.
 
-       ``ESP_ERR_WIFI_ARG`` is returned if any check fails.
+       ``ESP_ERR_INVALID_ARG`` is returned if any check fails.
 
 
 Wi-Fi Sniffer Mode
