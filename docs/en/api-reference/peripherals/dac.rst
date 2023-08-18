@@ -3,13 +3,14 @@ Digital To Analog Converter (DAC)
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_DAC_CH_1: default = "GPIO25", esp32 = "GPIO25", esp32s2 = "GPIO17"}
-{IDF_TARGET_DAC_CH_2: default = "GPIO26", esp32 = "GPIO26", esp32s2 = "GPIO18"}
+{IDF_TARGET_DAC_CH_1: default = "Not Updated!", esp32 = "GPIO25", esp32s2 = "GPIO17"}
+{IDF_TARGET_DAC_CH_2: default = "Not Updated!", esp32 = "GPIO26", esp32s2 = "GPIO18"}
+{IDF_TARGET_DAC_REF_PIN: default = "Not Updated!", esp32 = "VDD3P3_RTC", esp32s2 = "VDD3P3_RTC_IO"}
 
 Overview
 --------
 
-{IDF_TARGET_NAME} has two 8-bit DAC (digital to analog converter) channels respectively connected to {IDF_TARGET_DAC_CH_1} (Channel 1) and {IDF_TARGET_DAC_CH_2} (Channel 2). Each DAC channel can convert the digital value 0~255 to the analog voltage 0~Vref. The output voltage can be calculated as the following::
+{IDF_TARGET_NAME} has two 8-bit DAC (digital to analog converter) channels respectively connected to {IDF_TARGET_DAC_CH_1} (Channel 1) and {IDF_TARGET_DAC_CH_2} (Channel 2). Each DAC channel can convert the digital value 0~255 to the analog voltage 0~Vref (The reference voltage 'Vref' here is input from the pin {IDF_TARGET_DAC_REF_PIN}, which ideally equals to the power supply VDD). The output voltage can be calculated as the following::
 
     out_voltage = Vref * digi_val / 255
 
