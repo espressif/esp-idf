@@ -53,7 +53,7 @@ The necessary connections for the {IDF_TARGET_NAME}'s internal USB PHY (transcei
 .. _api_guide_dfu_build:
 
 Building the DFU Image
-======================
+----------------------
 
 The command below will create a DFU image named ``dfu.bin`` that is placed in the project's ``build`` directory::
 
@@ -65,7 +65,7 @@ The command below will create a DFU image named ``dfu.bin`` that is placed in th
 .. _api_guide_dfu_flash:
 
 Flashing the DFU Image
-======================
+----------------------
 
 The command below will download the DFU image into the {IDF_TARGET_NAME}::
 
