@@ -731,11 +731,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_ENABLE_EVT: {
         btc_clear_services_mask();
 #if (SMP_INCLUDED == TRUE)
+    //load the bonding device to the btm layer
         btc_storage_load_bonded_devices();
-#if (BLE_INCLUDED == TRUE)
-        //load the bonding device to the btm layer
-        btc_storage_load_bonded_ble_devices();
-#endif  ///BLE_INCLUDED == TRUE
 #endif  ///SMP_INCLUDED == TRUE
 
         /* Set initial device name, it can be overwritten later */
