@@ -1831,7 +1831,7 @@ Theoretically, if the side-effects the API imposes on the Wi-Fi driver or other 
        The recommendations above are only for avoiding side-effects and can be ignored when there are good reasons.
 
    * - Have Wi-Fi connection
-     - When the Wi-Fi connection is already set up, and the sequence is controlled by the application, the latter may impact the sequence control of the Wi-Fi connection as a whole. So, the en_sys_seq need to be true, otherwise ESP_ERR_WIFI_ARG is returned.
+     - When the Wi-Fi connection is already set up, and the sequence is controlled by the application, the latter may impact the sequence control of the Wi-Fi connection as a whole. So, the ``en_sys_seq`` need to be true, otherwise ``ESP_ERR_INVALID_ARG`` is returned.
 
        The MAC-address recommendations in the “No Wi-Fi connection” scenario also apply to this scenario.
 
@@ -1843,7 +1843,7 @@ Theoretically, if the side-effects the API imposes on the Wi-Fi driver or other 
 
        - If the packet is sent from station to AP or from AP to station, the Power Management, More Data, and Re-Transmission bits should be 0. Otherwise, the packet will be discarded by Wi-Fi driver.
 
-       ESP_ERR_WIFI_ARG is returned if any check fails.
+       ``ESP_ERR_INVALID_ARG`` is returned if any check fails.
 
 
 Wi-Fi Sniffer Mode
