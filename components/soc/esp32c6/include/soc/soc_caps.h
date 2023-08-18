@@ -46,6 +46,7 @@
 #define SOC_ULP_SUPPORTED               1
 #define SOC_LP_CORE_SUPPORTED           1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
+#define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1

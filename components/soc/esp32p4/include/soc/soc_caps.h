@@ -45,6 +45,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 // #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
+// #define SOC_EFUSE_SUPPORTED             1  //TODO: IDF-7512
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
 // #define SOC_I2S_SUPPORTED               1  //TODO: IDF-6508
