@@ -80,12 +80,12 @@
             - 0 is the register to hold tasks. Bits:
                 - 0: the slave should reset.
                 - 1: the slave should send interrupts.
-                - 2: the slave should write the shared registers acoording to the value in register 1.
+                - 2: the slave should write the shared registers according to the value in register 1.
             - 1 is the register to hold test value.
             - other registers will be written by the slave for testing.
 
         - FIFO:
-            The receving FIFO is size of 256 bytes.
+            The receiving FIFO is size of 256 bytes.
             When the host writes something to slave recv FIFO, the slave should return it as is to the sending FIFO.
 
     The example works as following process:
@@ -439,7 +439,7 @@ void job_fifo(essl_handle_t handle)
     /* CAUTION: This example shows that we can send random length of packet to the slave.
      * However it takes time of two transactions if the length is not multiples of 4 bytes.
      * e.g. sending 6 bytes is done by sending 4 + 2 bytes each transaction.
-     * Try to avoid unaligned packets if possible to get higher effeciency.
+     * Try to avoid unaligned packets if possible to get higher efficiency.
      */
     for (int i = 0; i < sizeof(packet_len) / sizeof(int); i++) {
         const int wait_ms = 50;
