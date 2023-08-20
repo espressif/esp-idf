@@ -84,6 +84,16 @@ menu "Core dump"
             Config delay (in ms) before printing core dump to UART.
             Delay can be interrupted by pressing Enter key.
 
+    config ESP_COREDUMP_FLASH_NO_OVERWRITE
+        bool "Don't overwrite existing core dump"
+        depends on ESP_COREDUMP_ENABLE_TO_FLASH
+        default n
+        help
+            Don't overwrite an existing core dump already present in flash.
+            Enable this option to only keep the first of multiple core dumps.
+
+            If enabled, the core dump partition must be erased before the first
+            core dump can be written.
 
     config ESP_COREDUMP_USE_STACK_SIZE
         bool
