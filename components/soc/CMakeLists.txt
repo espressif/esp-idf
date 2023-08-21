@@ -35,6 +35,10 @@ if(CONFIG_SOC_GDMA_SUPPORTED)
     list(APPEND srcs "${target}/gdma_periph.c")
 endif()
 
+if(CONFIG_SOC_DMA2D_SUPPORTED)
+    list(APPEND srcs "${target}/dma2d_periph.c")
+endif()
+
 if(CONFIG_SOC_GPSPI_SUPPORTED)
     list(APPEND srcs "${target}/spi_periph.c")
 endif()

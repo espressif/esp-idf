@@ -41,6 +41,7 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
 endif()
 
 if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "color_hal.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         if(CONFIG_SOC_SPI_FLASH_SUPPORTED)
@@ -125,6 +126,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_DW_GDMA_SUPPORTED)
         list(APPEND srcs "dw_gdma_hal.c")
+    endif()
+
+    if(CONFIG_SOC_DMA2D_SUPPORTED)
+        list(APPEND srcs "dma2d_hal.c")
     endif()
 
     if(CONFIG_SOC_I2S_SUPPORTED)

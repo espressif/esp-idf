@@ -55,3 +55,23 @@ menu "DW_GDMA Configurations"
             Wether to enable the debug log message for DW_GDMA driver.
             Note that, this option only controls the DW_GDMA driver log, won't affect other drivers.
 endmenu # DW_GDMA Configurations
+
+menu "2D-DMA Configurations"
+    depends on SOC_DMA2D_SUPPORTED
+
+    config DMA2D_OPERATION_FUNC_IN_IRAM
+        bool "Place 2D-DMA operation functions into IRAM"
+        default n
+        help
+            Place 2D-DMA all operation functions, including control functions (e.g. start/stop/append/reset) and setter
+            functions (e.g. connect/strategy/callback registration) into IRAM, so that these functions can be IRAM-safe
+            and able to be called in the other IRAM interrupt context. It also helps optimizing the performance.
+
+    config DMA2D_ISR_IRAM_SAFE
+        bool "2D-DMA ISR IRAM-Safe"
+        default n
+        help
+            This will ensure the 2D-DMA interrupt handler is IRAM-Safe, allow to avoid flash
+            cache misses, and also be able to run whilst the cache is disabled.
+            (e.g. SPI Flash write).
+endmenu # 2D-DMA Configurations
