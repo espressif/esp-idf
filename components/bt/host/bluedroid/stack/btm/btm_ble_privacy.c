@@ -402,7 +402,6 @@ void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
     tBTM_LE_RANDOM_CB *random_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
     if (!(random_cb && random_cb->set_local_privacy_cback)) {
-        BTM_TRACE_ERROR("no set local privacy callback found");
         return;
     }
 
