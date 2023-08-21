@@ -64,6 +64,14 @@ typedef enum
     ESP_HF_BCS_RESPONSE_EVT,                  /*!< Final Codec Choice */
 } esp_hf_cb_event_t;
 
+/// Dial type of ESP_HF_DIAL_EVT
+typedef enum
+{
+    ESP_HF_DIAL_MEM = 0,                      /*!< Dial with a memory position */
+    ESP_HF_DIAL_VOIP,                         /*!< Dial with VoIP */
+    ESP_HF_DIAL_NUM,                          /*!< Dial with a phone number */
+} esp_hf_dial_type_t;
+
 /// HFP AG callback parameters
 typedef union
 {
@@ -126,6 +134,7 @@ typedef union
      */
     struct hf_out_call_param {
         esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+        esp_hf_dial_type_t type;                  /*!< dial type */
         char *num_or_loc;                         /*!< location in phone memory */
     } out_call;                                   /*!< AG callback param of ESP_HF_DIAL_EVT */
 
