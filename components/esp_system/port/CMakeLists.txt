@@ -7,6 +7,10 @@ endif()
 target_include_directories(${COMPONENT_LIB} PRIVATE ${INCLUDE_FILES} include/private)
 
 set(srcs "cpu_start.c" "panic_handler.c" "brownout.c")
+if(CONFIG_ESP_CONSOLE_USB_CDC)
+    list(APPEND srcs "usb_console.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})
