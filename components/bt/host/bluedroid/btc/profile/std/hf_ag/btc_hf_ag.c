@@ -193,37 +193,6 @@ static void send_indicator_update(UINT16 indicator, UINT16 value)
     BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES, &ag_res);
 }
 
-static void btc_hf_cind_evt(tBTA_AG_IND *ind)
-{
-    esp_hf_cb_param_t param;
-    memset(&param, 0, sizeof(esp_hf_cb_param_t));
-
-    switch (ind->type) {
-        case BTA_AG_IND_CALL:
-            param.cind.call_status = ind->value;
-            break;
-        case BTA_AG_IND_CALLSETUP:
-            param.cind.call_setup_status = ind->value;
-            break;
-        case BTA_AG_IND_SERVICE:
-            param.cind.svc = ind->value;
-            break;
-        case BTA_AG_IND_SIGNAL:
-            param.cind.signal_strength = ind->value;
-            break;
-        case BTA_AG_IND_ROAM:
-            param.cind.roam = ind->value;
-            break;
-        case BTA_AG_IND_BATTCHG:
-            param.cind.battery_level = ind->value;
-            break;
-        case BTA_AG_IND_CALLHELD:
-            param.cind.call_held_status = ind->value;
-            break;
-    }
-    btc_hf_cb_to_app(ESP_HF_CIND_RESPONSE_EVT, &param);
-}
-
 static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG *param)
 {
     int param_len = 0;
@@ -1395,7 +1364,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AT_CIND_EVT:
         {
-            btc_hf_cind_evt(&p_data->ind);
+            btc_hf_cb_to_app(ESP_HF_CIND_RESPONSE_EVT, NULL);
             break;
         }
 

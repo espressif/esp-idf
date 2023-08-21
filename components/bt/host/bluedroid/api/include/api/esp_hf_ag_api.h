@@ -125,19 +125,6 @@ typedef union
     }unat_rep;                                    /*!< AG callback param of ESP_HF_UNAT_RESPONSE_EVT */
 
     /**
-     * @brief ESP_HF_CIND_RESPONSE_EVT
-     */
-    struct hf_cind_param {
-        esp_hf_call_status_t       call_status;         /*!< call status indicator */
-        esp_hf_call_setup_status_t call_setup_status;   /*!< call setup status indicator */
-        esp_hf_network_state_t svc;                     /*!< bluetooth proprietary call hold status indicator */
-        int signal_strength;                            /*!< bluetooth proprietary call hold status indicator */
-        esp_hf_roaming_status_t roam;                   /*!< bluetooth proprietary call hold status indicator */
-        int battery_level;                              /*!< battery charge value, ranges from 0 to 5 */
-        esp_hf_call_held_status_t  call_held_status;    /*!< bluetooth proprietary call hold status indicator */
-    } cind;                                             /*!< AG callback param of ESP_HF_CIND_RESPONSE_EVT */
-
-    /**
      * @brief ESP_HF_DIAL_EVT
      */
     struct hf_out_call_param {
