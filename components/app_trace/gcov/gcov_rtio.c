@@ -76,7 +76,8 @@ gcov_exit:
 void gcov_create_task(void *arg)
 {
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
-    xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", 2048, (void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
+    xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", CONFIG_APPTRACE_GCOV_DUMP_TASK_STACK_SIZE,
+		(void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
 }
 
 void gcov_create_task_tick_hook(void)
