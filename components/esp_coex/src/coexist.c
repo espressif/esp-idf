@@ -162,7 +162,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         ESP_LOGE(TAG, "Configure external coex with unexpected gpio pin!!!");
         return ESP_ERR_INVALID_ARG;
     }
-
+    esp_coex_external_set_wire_type(wire_type);
 #if SOC_EXTERNAL_COEX_ADVANCE
     esp_coex_external_params(g_external_coex_params, 0, 0);
 #endif

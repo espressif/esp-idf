@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -32,7 +32,6 @@
 #include "esp_vfs_dev.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_wifi.h"
-#include "esp_coexist.h"
 #include "mdns.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
@@ -46,6 +45,15 @@
 #include "openthread/tasklet.h"
 
 #define TAG "esp_ot_br"
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+static void ot_br_external_coexist_init(void)
+{
+    esp_external_coex_gpio_set_t gpio_pin = ESP_OPENTHREAD_DEFAULT_EXTERNAL_COEX_CONFIG();
+    esp_external_coex_set_work_mode(EXTERNAL_COEX_LEADER_ROLE);
+    ESP_ERROR_CHECK(esp_enable_extern_coex_gpio_pin(CONFIG_EXTERNAL_COEX_WIRE_TYPE, gpio_pin));
+}
+#endif /* CONFIG_EXTERNAL_COEX_ENABLE */
 
 static void ot_task_worker(void *aContext)
 {
@@ -118,6 +126,11 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_coex_wifi_i154_enable());
 #else
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+    ot_br_external_coexist_init();
+#endif // CONFIG_EXTERNAL_COEX_ENABLE
+
 #endif
     esp_openthread_set_backbone_netif(get_example_netif());
 #else
