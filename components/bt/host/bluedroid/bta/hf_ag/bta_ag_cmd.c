@@ -1522,7 +1522,6 @@ void bta_ag_hfp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
             if (p_result->data.ok_flag != BTA_AG_OK_ERROR) {
                 if (p_result->data.str[0] != 0) {
                    bta_ag_send_result(p_scb, code, p_result->data.str, 0);
-                   bta_ag_send_ok(p_scb);
                 }
                 if (p_result->data.ok_flag == BTA_AG_OK_DONE) {
                     bta_ag_send_ok(p_scb);
