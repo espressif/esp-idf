@@ -26,4 +26,4 @@ menu "Wireless Coexistence"
             This function depends on BT-off
             because currently we do not support external coex and internal coex simultaneously.
 
-endmenu  # Wi-Fi
+endmenu  # Wireless Coexistence
