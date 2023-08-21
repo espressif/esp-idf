@@ -133,7 +133,7 @@ typedef enum {
     ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT,                /*!< When scan parameters set complete, the event comes */
     ESP_GAP_BLE_SCAN_RESULT_EVT,                            /*!< When one scan result ready, the event comes each time */
     ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT,              /*!< When raw advertising data set complete, the event comes */
-    ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT,         /*!< When raw advertising data set complete, the event comes */
+    ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT,         /*!< When raw scan response data set complete, the event comes */
     ESP_GAP_BLE_ADV_START_COMPLETE_EVT,                     /*!< When start advertising complete, the event comes */
     ESP_GAP_BLE_SCAN_START_COMPLETE_EVT,                    /*!< When start scan complete, the event comes */
     //BLE_INCLUDED
@@ -1501,9 +1501,17 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params);
 esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_data_length);
 
 /**
- * @brief           This function sets the static Random Address and Non-Resolvable Private Address for the application
+ * @brief           This function allows configuring either a Non-Resolvable Private Address or a Static Random Address
  *
- * @param[in]       rand_addr: the random address which should be setting
+ * @param[in]       rand_addr: The address to be configured. Refer to the table below for possible address subtypes:
+ *
+ *               | address [47:46] | Address Type             |
+ *               |-----------------|--------------------------|
+ *               |      0b00       | Non-Resolvable Private   |
+ *               |                 | Address                  |
+ *               |-----------------|--------------------------|
+ *               |      0b11       | Static Random Address    |
+ *               |-----------------|--------------------------|
  *
  * @return
  *                  - ESP_OK : success
@@ -1525,7 +1533,7 @@ esp_err_t esp_ble_gap_clear_rand_addr(void);
 
 
 /**
- * @brief           Enable/disable privacy on the local device
+ * @brief           Enable/disable privacy (including address resolution) on the local device
  *
  * @param[in]       privacy_enable   - enable/disable privacy on remote device.
  *
@@ -1606,6 +1614,7 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           Set device name to the local device
+ *                  Note: This API don't affect the advertising data
  *
  * @param[in]       name   -  device name.
  *
@@ -1654,7 +1663,7 @@ uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *leng
  * @brief           This function is called to set raw advertising data. User need to fill
  *                  ADV data by self.
  *
- * @param[in]       raw_data : raw advertising data
+ * @param[in]       raw_data : raw advertising data with the format: [Length 1][Data Type 1][Data 1][Length 2][Data Type 2][Data 2] ...
  * @param[in]       raw_data_len : raw advertising data length , less than 31 bytes
  *
  * @return
