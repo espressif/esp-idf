@@ -424,7 +424,7 @@ static int ble_hci_unregistered_hook(void*, void*)
 
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in)
 {
-    int rc = esp_intr_alloc(source, flags | ESP_INTR_FLAG_IRAM, handler, arg, (intr_handle_t *)ret_handle_in);
+    int rc = esp_intr_alloc(source, ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM, handler, arg, (intr_handle_t *)ret_handle_in);
     return rc;
 }
 
