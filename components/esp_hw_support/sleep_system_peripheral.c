@@ -79,10 +79,10 @@ esp_err_t sleep_sys_periph_tee_apm_retention_init(void)
 
 esp_err_t sleep_sys_periph_uart0_retention_init(void)
 {
-    #define N_REGS_UART()   (((UART_ID_REG(0) - REG_UART_BASE(0)) / 4) + 1)
+    #define N_REGS_UART()   (((UART_ID_REG(0) - UART_INT_RAW_REG(0)) / 4) + 1)
 
     const static sleep_retention_entries_config_t uart_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_UART_LINK(0x00), REG_UART_BASE(0),       REG_UART_BASE(0), N_REGS_UART(),     0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* uart */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_UART_LINK(0x00), UART_INT_RAW_REG(0),       UART_INT_RAW_REG(0), N_REGS_UART(),     0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* uart */
         /* Note: uart register should set update reg to make the configuration take effect */
         [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_UART_LINK(0x01), UART_REG_UPDATE_REG(0), UART_REG_UPDATE,  UART_REG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) },
         [2] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_UART_LINK(0x02), UART_REG_UPDATE_REG(0), 0x0,              UART_REG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) }
