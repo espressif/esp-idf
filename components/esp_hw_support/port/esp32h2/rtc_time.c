@@ -9,11 +9,13 @@
 #include "soc/rtc.h"
 #include "soc/lp_timer_reg.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/timer_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
+#include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "rtc_time";
 
@@ -263,4 +265,16 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
         return 0;   // cal_val will be denominator, return 0 as the symbol of failure.
     }
     return 1000000ULL * (1 << RTC_CLK_CAL_FRACT) / cal_val;
+}
+
+/// @brief if the calibration is used, we need to enable the timer group0 first
+__attribute__((constructor))
+static void enable_timer_group0_for_calibration(void)
+{
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(0, true);
+            timer_ll_reset_register(0);
+        }
+    }
 }
