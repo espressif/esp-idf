@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -527,6 +527,40 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
     TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
 
 }
+
+#if SOC_SHA_SUPPORT_DMA
+TEST_CASE("mbedtls SHA256 PSRAM DMA large buffer", "[hw_crypto]")
+{
+    mbedtls_sha256_context sha256_ctx;
+    unsigned char sha256[32];
+
+    const size_t SZ = 257984; // specific size to cover issue in https://github.com/espressif/esp-idf/issues/11915
+    void *buffer = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    TEST_ASSERT_NOT_NULL(buffer);
+    memset(buffer, 0x55, SZ);
+
+    mbedtls_sha256_init(&sha256_ctx);
+    int r = mbedtls_sha256_starts(&sha256_ctx, false);
+    TEST_ASSERT_EQUAL(0, r);
+    r = mbedtls_sha256_update(&sha256_ctx, buffer, SZ);
+    TEST_ASSERT_EQUAL(0, r);
+    r = mbedtls_sha256_finish(&sha256_ctx, sha256);
+    TEST_ASSERT_EQUAL(0, r);
+    mbedtls_sha256_free(&sha256_ctx);
+    free(buffer);
+
+    /* Check the result. Reference value can be calculated using:
+     * dd if=/dev/zero bs=257984 count=1 | tr '\000' '\125' | sha256sum
+     */
+    const char *expected_hash = "f2330c9f81ff1c8f0515247faa82be8b6f9685601de6f5dae79172766f136c33";
+
+    char hash_str[sizeof(sha256) * 2 + 1];
+    utils_bin2hex(hash_str, sizeof(hash_str), sha256, sizeof(sha256));
+
+    TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
+}
+#endif // SOC_SHA_SUPPORT_DMA
+
 #endif //CONFIG_SPIRAM_USE_MALLOC
 
 #if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
