@@ -71,26 +71,36 @@ static hf_local_param_t *hf_local_param;
 
 #if (BTM_WBS_INCLUDED == TRUE)
 #ifndef BTC_HF_FEATURES
-#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR   | \
-                             BTA_AG_FEAT_REJECT | \
-                             BTA_AG_FEAT_ECS    | \
-                             BTA_AG_FEAT_EXTERR | \
-                             BTA_AG_FEAT_VREC   | \
-                             BTA_AG_FEAT_INBAND | \
-                             BTA_AG_FEAT_CODEC  | \
-                             BTA_AG_FEAT_ESCO_S4| \
-                             BTA_AG_FEAT_UNAT)
+#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR    | \
+                             BTA_AG_FEAT_REJECT  | \
+                             BTA_AG_FEAT_ECS     | \
+                             BTA_AG_FEAT_EXTERR  | \
+                             BTA_AG_FEAT_VREC    | \
+                             BTA_AG_FEAT_INBAND  | \
+                             BTA_AG_FEAT_CODEC   | \
+                             BTA_AG_FEAT_ESCO_S4 | \
+                             BTA_AG_FEAT_UNAT )
 #endif
 #else
 #ifndef BTC_HF_FEATURES
-#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR   | \
-                             BTA_AG_FEAT_REJECT | \
-                             BTA_AG_FEAT_ECS    | \
-                             BTA_AG_FEAT_EXTERR | \
-                             BTA_AG_FEAT_VREC   | \
-                             BTA_AG_FEAT_INBAND | \
-                             BTA_AG_FEAT_ESCO_S4| \
-                             BTA_AG_FEAT_UNAT)
+#if BT_HF_AG_BQB_INCLUDED
+#define BTC_HF_FEATURES    ( BTA_AG_FEAT_REJECT  | \
+                             BTA_AG_FEAT_ECS     | \
+                             BTA_AG_FEAT_EXTERR  | \
+                             BTA_AG_FEAT_VREC    | \
+                             BTA_AG_FEAT_INBAND  | \
+                             BTA_AG_FEAT_ESCO_S4 | \
+                             BTA_AG_FEAT_UNAT )
+#else
+#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR    | \
+                             BTA_AG_FEAT_REJECT  | \
+                             BTA_AG_FEAT_ECS     | \
+                             BTA_AG_FEAT_EXTERR  | \
+                             BTA_AG_FEAT_VREC    | \
+                             BTA_AG_FEAT_INBAND  | \
+                             BTA_AG_FEAT_ESCO_S4 | \
+                             BTA_AG_FEAT_UNAT )
+#endif /* BT_HF_AG_BQB_INCLUDED */
 #endif
 #endif
 
