@@ -1458,6 +1458,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                 if (event == BTA_AG_AT_D_EVT && p_data->val.str) {           // dial_number_or_memory
                     memset(&param, 0, sizeof(esp_hf_cb_param_t));
                     memcpy(param.out_call.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                    param.out_call.type = p_data->val.value;
                     param.out_call.num_or_loc = osi_malloc((strlen(p_data->val.str) + 1) * sizeof(char));
                     sprintf(param.out_call.num_or_loc, p_data->val.str);
                     btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
