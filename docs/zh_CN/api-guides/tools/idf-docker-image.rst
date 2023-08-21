@@ -53,13 +53,16 @@ ESP-IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自�
 
 .. code-block:: bash
 
-    docker run --rm -v $PWD:/project -w /project espressif/idf idf.py build
+    docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf idf.py build
 
 该命令具体内容如下：
 
 - ``docker run``：运行 Docker 镜像。此为 ``docker container run`` 命令的缩写形式。
 - ``--rm``：构建完成后删除相应容器。
 - ``-v $PWD:/project``：将主机当前目录 (``$PWD``) 挂载为容器中的 ``/project`` 目录。
+- ``-w /project``：使 ``/project`` 成为当前命令的工作目录。
+- ``-u $UID``：以当前用户的 ID 运行命令，使文件以当前用户而非 root 用户的身份创建。
+- ``-e HOME=/tmp``：为用户提供一个主目录，用于将 ``idf.py`` 创建的临时文件保存在 ``~/.cache`` 中。
 - ``espressif/idf``：使用标签为 ``latest`` 的 Docker 镜像 ``espressif/idf``。未指定标签时，Docker 会隐式添加 ``latest`` 标签。
 - ``idf.py build``：在容器内运行此命令。
 
@@ -67,7 +70,7 @@ ESP-IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自�
 
 .. code-block:: bash
 
-    docker run --rm -v $PWD:/project -w /project espressif/idf:release-v4.4 idf.py build
+    docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf:release-v4.4 idf.py build
 
 要查看最新可用标签列表，请参阅 https://hub.docker.com/r/espressif/idf/tags。
 
@@ -78,7 +81,7 @@ Docker 也支持以交互方式进行构建，以调试构建问题或测试自�
 
 .. code-block:: bash
 
-    docker run --rm -v $PWD:/project -w /project -it espressif/idf
+    docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp -it espressif/idf
 
 接着在容器内部照常使用 ``idf.py``：
 
