@@ -442,11 +442,26 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_DIAL_EVT:
         {
             if (param->out_call.num_or_loc) {
-                //dia_num_or_mem
-                ESP_LOGI(BT_HF_TAG, "--Dial \"%s\".", param->out_call.num_or_loc);
-                esp_bt_hf_out_call(hf_peer_addr,1,0,1,0,param->out_call.num_or_loc,0);
+                if (param->out_call.type == ESP_HF_DIAL_NUM) {
+                    // dia_num
+                    ESP_LOGI(BT_HF_TAG, "--Dial number \"%s\".", param->out_call.num_or_loc);
+                    esp_bt_hf_out_call(hf_peer_addr,1,0,1,0,param->out_call.num_or_loc,0);
+                } else if (param->out_call.type == ESP_HF_DIAL_MEM) {
+                    // dia_mem
+                    ESP_LOGI(BT_HF_TAG, "--Dial memory \"%s\".", param->out_call.num_or_loc);
+                    // AG found phone number by memory position
+                    bool num_found = true;
+                    if (num_found) {
+                        char *number = "123456";
+                        esp_bt_hf_cmee_response(hf_peer_addr, ESP_HF_AT_RESPONSE_CODE_OK, ESP_HF_CME_AG_FAILURE);
+                        esp_bt_hf_out_call(hf_peer_addr,1,0,1,0,number,0);
+                    } else {
+                        esp_bt_hf_cmee_response(hf_peer_addr, ESP_HF_AT_RESPONSE_CODE_CME, ESP_HF_CME_MEMEORY_FAILURE);
+                    }
+                }
             } else {
                 //dia_last
+                //refer to dia_mem
                 ESP_LOGI(BT_HF_TAG, "--Dial last number.");
             }
             break;
