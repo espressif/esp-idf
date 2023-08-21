@@ -63,8 +63,6 @@ _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16")
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-static const char *TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
-
 /**
  * @brief A variable is used to keep track of the critical section nesting.
  * @note This variable has to be stored as part of the task context and must be initialized to a non zero value
@@ -73,7 +71,7 @@ static const char *TAG = "cpu_start"; // [refactor-todo]: might be appropriate t
  */
 static UBaseType_t uxCriticalNesting = 0;
 static UBaseType_t uxSavedInterruptState = 0;
-BaseType_t uxSchedulerRunning = 0;
+BaseType_t uxSchedulerRunning = 0;  // Duplicate of xSchedulerRunning, accessible to port files
 UBaseType_t uxInterruptNesting = 0;
 BaseType_t xPortSwitchFlag = 0;
 __attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
@@ -381,16 +379,3 @@ void vPortSetStackWatchpoint(void *pxStackStart)
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
-
-// --------------------- App Start-up ----------------------
-
-/* [refactor-todo]: See if we can include this through a header */
-extern void esp_startup_start_app_common(void);
-
-void esp_startup_start_app(void)
-{
-    esp_startup_start_app_common();
-
-    ESP_LOGI(TAG, "Starting scheduler.");
-    vTaskStartScheduler();
-}

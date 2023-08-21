@@ -21,8 +21,10 @@
 
 static void unity_task(void *pvParameters)
 {
-    vTaskDelay(2); /* Delay a bit to let the main task be deleted */
-    unity_run_menu(); /* Doesn't return */
+    // Delay a bit to let the main task and any other startup tasks be deleted
+    vTaskDelay(pdMS_TO_TICKS(50));
+    // Start running unity (prints test menu and doesn't return)
+    unity_run_menu();
 }
 
 void test_main(void)

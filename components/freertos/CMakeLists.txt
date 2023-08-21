@@ -7,7 +7,7 @@ endif()
 idf_build_get_property(target IDF_TARGET)
 
 if(CONFIG_FREERTOS_SMP)
-    set(ldfragments linker_smp.lf)
+    set(ldfragments linker_smp.lf linker_common.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         set(srcs
             "FreeRTOS-Kernel-SMP/portable/xtensa/port.c"
@@ -50,6 +50,7 @@ if(CONFIG_FREERTOS_SMP)
     endif()
 
     list(APPEND srcs
+        "port_common.c"
         "FreeRTOS-Kernel-SMP/croutine.c"
         "FreeRTOS-Kernel-SMP/event_groups.c"
         "FreeRTOS-Kernel-SMP/list.c"
@@ -57,6 +58,7 @@ if(CONFIG_FREERTOS_SMP)
         "FreeRTOS-Kernel-SMP/tasks.c"
         "FreeRTOS-Kernel-SMP/timers.c"
         "FreeRTOS-Kernel-SMP/stream_buffer.c"
+        "app_startup.c"
         "FreeRTOS-openocd.c"
         )
 
@@ -69,7 +71,7 @@ if(CONFIG_FREERTOS_SMP)
     endif()
 
 else()
-    set(ldfragments linker.lf)
+    set(ldfragments linker.lf linker_common.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         set(srcs
             "FreeRTOS-Kernel/portable/xtensa/port.c"
@@ -112,7 +114,7 @@ else()
     endif()
 
     list(APPEND srcs
-        "FreeRTOS-Kernel/portable/port_common.c"
+        "port_common.c"
         "FreeRTOS-Kernel/portable/port_systick.c"
         "FreeRTOS-Kernel/croutine.c"
         "FreeRTOS-Kernel/event_groups.c"
@@ -121,6 +123,7 @@ else()
         "FreeRTOS-Kernel/tasks.c"
         "FreeRTOS-Kernel/timers.c"
         "FreeRTOS-Kernel/stream_buffer.c"
+        "app_startup.c"
         "FreeRTOS-openocd.c"
         "esp_additions/freertos_v8_compat.c")
 

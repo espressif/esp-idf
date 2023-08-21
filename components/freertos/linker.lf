@@ -1,133 +1,243 @@
+# ----------------------------------------------------------------------------------------------------------------------
 # Linker fragment file for IDF FreeRTOS (i.e., CONFIG_FREERTOS_SMP=n)
-[mapping:freertos]
+# Flash function placements are listed per source file, in the order that they appear in the source file.
+#
+# Placement Rules:
+#   - Default: Place all functions in internal RAM.
+#   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH:
+#       - Place functions in flash if they are never called from an ISR context (directly or indirectly).
+#       - Some functions that are called often (such as critical sections) are placed in internal RAM for speed.
+# ----------------------------------------------------------------------------------------------------------------------
+
+[mapping:freertos_idf]
 archive: libfreertos.a
 entries:
-    * (noflash_text)
-    if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
-        # vTaskGetSnapshot is omitted on purpose: as it is used to by the Task Watchdog (TWDT) interrupt
-        # handler, we want to always keep it in IRAM
-        tasks: pxTaskGetNext (default)
-        tasks: uxTaskGetSnapshotAll (default)
-        tasks: pxGetNextTaskList (default)
+    * (noflash_text)        # Default all FreeRTOS functions to IRAM
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
-        port: pxPortInitialiseStack (default)
-        port: xPortStartScheduler (default)
-        if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S3 = y :
-            port: vPortReleaseTaskMPUSettings (default)
-            tasks: xTaskCreateRestricted (default)
-            port: vPortStoreTaskMPUSettings (default)
-            tasks: vTaskAllocateMPURegions (default)
-        tasks: prvTaskCheckFreeStackSpace (default)
-        tasks: prvInitialiseNewTask (default)
-        tasks: prvInitialiseTaskLists (default)
-        tasks: prvDeleteTCB (default)
-        tasks: prvCheckTasksWaitingTermination (default)
-        tasks: prvIdleTask (default)
-        tasks: prvAddNewTaskToReadyList (default)
-        tasks: xTaskCreatePinnedToCore (default)
-        tasks: xTaskCreateStaticPinnedToCore (default)
-        tasks: vTaskResume (default)
-        tasks: vTaskStartScheduler (default)
-        tasks: vTaskSuspendAll (default)
-        tasks: uxTaskGetNumberOfTasks (default)
-        tasks: xTaskGetIdleTaskHandle (default)
-        tasks: vTaskRemoveFromUnorderedEventList (default)
-        tasks: uxTaskPriorityGet (default)
-        tasks: vTaskPrioritySet (default)
-        tasks: prvTaskPriorityRaise (default)
-        tasks: prvTaskPriorityRestore (default)
-        tasks: vTaskSetThreadLocalStoragePointerAndDelCallback (default)
-        tasks: pvTaskGetThreadLocalStoragePointer (default)
-        tasks: xTaskGetCurrentTaskHandleForCPU (default)
-        tasks: vTaskDelete (default)
-        tasks: vTaskDelayUntil (default)
-        tasks: xTaskDelayUntil (default)
-        tasks: vTaskDelay (default)
-        tasks: vTaskSuspend (default)
-        tasks: xTaskResumeAll (default)
-        tasks: uxTaskResetEventItemValue (default)
-        tasks: ulTaskNotifyTake (default)
-        tasks: ulTaskGenericNotifyTake (default)
-        tasks: xTaskNotifyWait (default)
-        tasks: xTaskGenericNotifyWait (default)
-        tasks: xTaskGenericNotify (default)
-        tasks: eTaskGetState (default)
-        tasks: pxTaskGetStackStart (default)
-        tasks: uxTaskGetStackHighWaterMark (default)
-        tasks: vTaskEndScheduler (default)
-        tasks: vTaskMissedYield (default)
-        tasks: vTaskSetThreadLocalStoragePointer (default)
-        tasks: xTaskGetAffinity (default)
-        tasks: xTaskGetIdleTaskHandleForCPU (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # event_groups.c
+        # - Exclude all ...FromISR() functions and their dependents
+        # --------------------------------------------------------------------------------------------------------------
+        event_groups:xEventGroupCreateStatic (default)
+        event_groups:xEventGroupCreate (default)
+        event_groups:xEventGroupSync (default)
+        event_groups:xEventGroupWaitBits (default)
+        event_groups:xEventGroupClearBits (default)
+        event_groups:xEventGroupSetBits (default)
+        event_groups:vEventGroupDelete (default)
+        event_groups:vEventGroupSetBitsCallback (default)
+        event_groups:vEventGroupClearBitsCallback (default)
+        event_groups:prvTestWaitCondition (default)
         if FREERTOS_USE_TRACE_FACILITY = y:
-            tasks: uxTaskGetSystemState (default)
-            tasks: uxTaskGetTaskNumber (default)
-            tasks: vTaskSetTaskNumber (default)
-        if FREERTOS_USE_STATS_FORMATTING_FUNCTIONS = y:
-            tasks: vTaskList (default)
-        if FREERTOS_GENERATE_RUN_TIME_STATS = y:
-            tasks: vTaskGetRunTimeStats (default)
-        timers: prvInsertTimerInActiveList (default)
-        timers: prvCheckForValidListAndQueue (default)
-        timers: prvInitialiseNewTimer (default)
-        timers: prvTimerTask (default)
-        timers: prvSwitchTimerLists (default)
-        timers: prvSampleTimeNow (default)
-        timers: prvProcessExpiredTimer (default)
-        timers: prvProcessTimerOrBlockTask (default)
-        timers: prvProcessReceivedCommands (default)
-        timers: xTimerCreateTimerTask (default)
-        timers: xTimerCreate (default)
-        timers: xTimerCreateStatic (default)
-        timers: xTimerGenericCommand (default)
-        timers: xTimerGetPeriod (default)
-        timers: xTimerGetExpiryTime (default)
-        timers: xTimerIsTimerActive (default)
-        timers: pvTimerGetTimerID (default)
-        timers: vTimerSetTimerID (default)
-        timers: prvGetNextExpireTime (default)
+            event_groups: uxEventGroupGetNumber (default)
+            event_groups: vEventGroupSetNumber (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # list.c
+        # - List/List Item initialization functions are never called from ISR
+        # --------------------------------------------------------------------------------------------------------------
+        list:vListInitialise (default)
+        list:vListInitialiseItem (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # queue.c
+        # - Keep all ...FromISR() functions (and their prv... calls) in internal RAM
+        # - All other functions can be moved to flash
+        # --------------------------------------------------------------------------------------------------------------
+        queue:xQueueGenericReset (default)
+        queue:xQueueGenericCreateStatic (default)
+        queue:xQueueGenericCreate (default)
+        queue:prvInitialiseNewQueue (default)
+        queue:prvInitialiseMutex (default)
+        queue:xQueueCreateMutex (default)
+        queue:xQueueCreateMutexStatic (default)
+        queue:xQueueGetMutexHolder (default)
+        queue:xQueueGiveMutexRecursive (default)
+        queue:xQueueTakeMutexRecursive (default)
+        queue:xQueueCreateCountingSemaphoreStatic (default)
+        queue:xQueueCreateCountingSemaphore (default)
+        queue:xQueueGenericSend (default)
+        queue:xQueueReceive (default)
+        queue:xQueueSemaphoreTake (default)
+        queue:xQueuePeek (default)
+        queue:uxQueueMessagesWaiting (default)
+        queue:uxQueueSpacesAvailable (default)
+        queue:vQueueDelete (default)
         if FREERTOS_USE_TRACE_FACILITY = y:
-            timers: uxTimerGetTimerNumber (default)
-            timers: vTimerSetTimerNumber (default)
-        event_groups: prvTestWaitCondition (default)
-        event_groups: xEventGroupCreate (default)
-        event_groups: xEventGroupCreateStatic (default)
-        event_groups: xEventGroupWaitBits (default)
-        event_groups: xEventGroupClearBits (default)
-        event_groups: xEventGroupSetBits (default)
-        event_groups: xEventGroupSync (default)
-        event_groups: vEventGroupDelete (default)
-        queue: prvIsQueueFull (default)
-        queue: prvInitialiseNewQueue (default)
-        queue: prvInitialiseMutex (default)
-        queue: uxQueueSpacesAvailable (default)
-        queue: xQueueGenericReset (default)
-        queue: xQueueGenericCreate (default)
-        queue: xQueueGetMutexHolder (default)
-        queue: xQueueCreateCountingSemaphore (default)
-        queue: xQueueGenericSend (default)
-        queue: xQueueCreateMutex (default)
-        queue: xQueueGiveMutexRecursive (default)
-        queue: xQueueTakeMutexRecursive (default)
-        queue: uxQueueMessagesWaiting (default)
-        queue: vQueueDelete (default)
-        queue: vQueueWaitForMessageRestricted (default)
-        queue: xQueueCreateSet (default)
-        queue: xQueueAddToSet (default)
-        queue: xQueueRemoveFromSet (default)
-        queue: xQueueSelectFromSet (default)
-        queue: xQueueGenericCreateStatic (default)
-        queue: xQueueCreateMutexStatic (default)
-        queue: xQueueCreateCountingSemaphoreStatic (default)
+            queue:uxQueueGetQueueNumber (default)
+            queue:vQueueSetQueueNumber (default)
+            queue:ucQueueGetQueueType (default)
+        queue:prvGetDisinheritPriorityAfterTimeout (default)
+        queue:prvUnlockQueue (default)
+        queue:prvIsQueueEmpty (default)
+        queue:prvIsQueueFull (default)
         if FREERTOS_QUEUE_REGISTRY_SIZE > 0:
-            queue: pcQueueGetName (default)
-            queue: vQueueAddToRegistry (default)
-            queue: vQueueUnregisterQueue (default)
+            queue:vQueueAddToRegistry (default)
+            queue:pcQueueGetName (default)
+            queue:vQueueUnregisterQueue (default)
+        queue:vQueueWaitForMessageRestricted (default)
+        queue:xQueueCreateSet (default)
+        queue:xQueueAddToSet (default)
+        queue:xQueueRemoveFromSet (default)
+        queue:xQueueSelectFromSet (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # stream_buffer.c
+        # --------------------------------------------------------------------------------------------------------------
+        stream_buffer:xStreamBufferGenericCreate (default)
+        stream_buffer:xStreamBufferGenericCreateStatic (default)
+        stream_buffer:vStreamBufferDelete (default)
+        stream_buffer:xStreamBufferReset (default)
+        stream_buffer:xStreamBufferSetTriggerLevel (default)
+        stream_buffer:xStreamBufferBytesAvailable (default)
+        stream_buffer:xStreamBufferSend (default)
+        stream_buffer:xStreamBufferReceive (default)
+        stream_buffer:xStreamBufferNextMessageLengthBytes (default)
+        stream_buffer:xStreamBufferIsEmpty (default)
+        stream_buffer:xStreamBufferIsFull (default)
+        stream_buffer:prvWriteBytesToBuffer (default)
+        stream_buffer:prvReadBytesFromBuffer (default)
+        stream_buffer:prvInitialiseNewStreamBuffer (default)
         if FREERTOS_USE_TRACE_FACILITY = y:
-            queue: uxQueueGetQueueNumber (default)
-            queue: vQueueSetQueueNumber (default)
-            queue: ucQueueGetQueueType (default)
-    port_common:main_task (default)
-    port: esp_startup_start_app (default)
-    if ESP_SYSTEM_SINGLE_CORE_MODE = n:
-        port: esp_startup_start_app_other_cores (default)
+            stream_buffer:uxStreamBufferGetStreamBufferNumber (default)
+            stream_buffer:vStreamBufferSetStreamBufferNumber (default)
+            stream_buffer:ucStreamBufferGetStreamBufferType (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # tasks.c
+        # - Tickless idle functions (i.e., step tick) are left in internal RAM for speed
+        # - The following functions are called when the cache is disabled, thus they are excluded from the list below
+        #   (i.e., called after "spi_flash_disable_interrupts_caches_and_other_cpu()" is called).
+        #   - "xTaskGetSchedulerState"
+        #   - "xTaskGetTickCount"
+        # --------------------------------------------------------------------------------------------------------------
+        tasks:xTaskCreateStaticPinnedToCore (default)
+        tasks:xTaskCreatePinnedToCore (default)
+        tasks:prvInitialiseNewTask (default)
+        tasks:prvAddNewTaskToReadyList (default)
+        tasks:vTaskDelete (default)
+        tasks:vTaskDelayUntil (default)
+        tasks:xTaskDelayUntil (default)
+        tasks:vTaskDelay (default)
+        tasks:eTaskGetState (default)
+        tasks:uxTaskPriorityGet (default)
+        tasks:vTaskPrioritySet (default)
+        tasks:vTaskSuspend (default)
+        tasks:vTaskResume (default)
+        tasks:vTaskStartScheduler (default)
+        tasks:vTaskEndScheduler (default)
+        tasks:vTaskSuspendAll (default)
+        if CONFIG_FREERTOS_USE_TICKLESS_IDLE = y:
+            tasks:prvGetExpectedIdleTime (default)
+        tasks:xTaskResumeAll (default)
+        tasks:uxTaskGetNumberOfTasks (default)
+        tasks:pcTaskGetName (default)
+        tasks:prvSearchForNameWithinSingleList (default)
+        tasks:xTaskGetHandle (default)
+        tasks:xTaskGetIdleTaskHandle (default)
+        tasks:xTaskGetIdleTaskHandleForCPU (default)
+        tasks:xTaskAbortDelay (default)
+        # IDF-6410 Application tags not supported yet
+        #tasks:vTaskSetApplicationTaskTag (default)
+        #tasks:xTaskGetApplicationTaskTag (default)
+        #tasks:xTaskCallApplicationTaskHook (default)
+        tasks:vTaskPlaceOnEventList (default)
+        tasks:vTaskPlaceOnUnorderedEventList (default)
+        tasks:vTaskPlaceOnEventListRestricted (default)
+        tasks:vTaskRemoveFromUnorderedEventList (default)
+        tasks:vTaskSetTimeOutState (default)
+        tasks:vTaskInternalSetTimeOutState (default)
+        tasks:xTaskCheckForTimeOut (default)
+        tasks:vTaskMissedYield (default)
+        tasks:prvIdleTask (default)
+        if FREERTOS_TLSP_DELETION_CALLBACKS = y:
+            tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
+            tasks:prvDeleteTLS (default)
+        if FREERTOS_THREAD_LOCAL_STORAGE_POINTERS != 0:
+            tasks:vTaskSetThreadLocalStoragePointer (default)
+            tasks:pvTaskGetThreadLocalStoragePointer (default)
+        tasks:prvInitialiseTaskLists (default)
+        tasks:prvCheckTasksWaitingTermination (default)
+        tasks:xTaskGetAffinity (default)
+        tasks:prvTaskCheckFreeStackSpace (default)
+        tasks:uxTaskGetStackHighWaterMark (default)
+        tasks:pxTaskGetStackStart (default)
+        tasks:prvDeleteTCB (default)
+        tasks:xTaskGetCurrentTaskHandle (default)
+        tasks:xTaskGetCurrentTaskHandleForCPU (default)
+        tasks:xTaskPriorityInherit (default)
+        tasks:xTaskPriorityDisinherit (default)
+        tasks:vTaskPriorityDisinheritAfterTimeout (default)
+        if FREERTOS_USE_TRACE_FACILITY = y && FREERTOS_USE_STATS_FORMATTING_FUNCTIONS = y:
+            tasks:prvWriteNameToBuffer (default)
+            tasks:vTaskList (default)
+        if FREERTOS_GENERATE_RUN_TIME_STATS = y && FREERTOS_USE_STATS_FORMATTING_FUNCTIONS = y:
+            tasks:vTaskGetRunTimeStats (default)
+        tasks:uxTaskResetEventItemValue (default)
+        tasks:pvTaskIncrementMutexHeldCount (default)
+        tasks:ulTaskNotifyTake (default)
+        tasks:ulTaskGenericNotifyTake (default)
+        tasks:xTaskNotifyWait (default)
+        tasks:xTaskGenericNotifyWait (default)
+        tasks:xTaskGenericNotify (default)
+        tasks:xTaskGenericNotifyStateClear (default)
+        tasks:ulTaskGenericNotifyValueClear (default)
+        if FREERTOS_GENERATE_RUN_TIME_STATS = y:
+            tasks:ulTaskGetIdleRunTimeCounter (default)
+        tasks:prvAddCurrentTaskToDelayedList (default)
+        if FREERTOS_USE_TRACE_FACILITY = y:
+            tasks:uxTaskGetSystemState (default)
+            tasks:uxTaskGetTaskNumber (default)
+            tasks:vTaskSetTaskNumber (default)
+            tasks:vTaskGetInfo (default)
+            tasks:prvListTasksWithinSingleList (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # timers.c
+        # - xTimerGenericCommand() is used for ISR calls as well. Thus leave it (and its dependents) in internal RAM
+        # --------------------------------------------------------------------------------------------------------------
+        timers:xTimerCreateTimerTask (default)
+        timers:xTimerCreate (default)
+        timers:xTimerCreateStatic (default)
+        timers:prvInitialiseNewTimer (default)
+        timers:xTimerGenericCommand (default)
+        timers:xTimerGetTimerDaemonTaskHandle (default)
+        timers:xTimerGetPeriod (default)
+        timers:vTimerSetReloadMode (default)
+        timers:uxTimerGetReloadMode (default)
+        timers:xTimerGetExpiryTime (default)
+        timers:pcTimerGetName (default)
+        timers:prvProcessExpiredTimer (default)
+        timers:prvTimerTask (default)
+        timers:prvProcessTimerOrBlockTask (default)
+        timers:prvGetNextExpireTime (default)
+        timers:prvSampleTimeNow (default)
+        timers:prvInsertTimerInActiveList (default)
+        timers:prvProcessReceivedCommands (default)
+        timers:prvSwitchTimerLists (default)
+        timers:prvCheckForValidListAndQueue (default)
+        timers:xTimerIsTimerActive (default)
+        timers:pvTimerGetTimerID (default)
+        timers:vTimerSetTimerID (default)
+        timers:xTimerPendFunctionCall (default)
+        if FREERTOS_USE_TRACE_FACILITY = y:
+            timers:uxTimerGetTimerNumber (default)
+            timers:vTimerSetTimerNumber (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # portable/xtensa/port.c
+        # - Most functions are called from an ISR context, except for scheduler/task init/deinit functions
+        # - MPU/Coproc currently only exists on ESP32/S3
+        # --------------------------------------------------------------------------------------------------------------
+        if IDF_TARGET_ARCH_XTENSA = y:
+            port:xPortStartScheduler (default)
+            port:vPortEndScheduler (default)
+            if FREERTOS_TASK_FUNCTION_WRAPPER = y:
+                port:vPortTaskWrapper (default)
+            port:pxPortInitialiseStack (default)
+            port:xPortGetTickRateHz (default)
+        # --------------------------------------------------------------------------------------------------------------
+        # portable/riscv/port.c
+        # - Most functions are called from an ISR context, except for scheduler/task init/deinit functions
+        # --------------------------------------------------------------------------------------------------------------
+        if IDF_TARGET_ARCH_RISCV = y:
+            port:xPortStartScheduler (default)
+            port:vPortEndScheduler (default)
+            if FREERTOS_TASK_FUNCTION_WRAPPER = y:
+                port:vPortTaskWrapper (default)
+            port:pxPortInitialiseStack (default)
+            port:xPortGetTickRateHz (default)

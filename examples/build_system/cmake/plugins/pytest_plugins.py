@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import textwrap
@@ -16,7 +16,7 @@ def test_plugins(dut: Dut) -> None:
         Successfully registered plugin 'Nihao'
         Hello plugin performing self-registration...
         Successfully registered plugin 'Hello'
-        cpu_start: Starting scheduler
+        main_task: Calling app_main()
         List of plugins:
         - Plugin 'Hello'
         - Plugin 'Nihao'
