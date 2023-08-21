@@ -20,6 +20,13 @@ extern "C" {
 
 // ------------------------------------------------------ Types --------------------------------------------------------
 
+// ----------------------- Handles -------------------------
+
+/**
+ * @brief Handle of a allocated endpoint
+ */
+typedef struct usbh_ep_handle_s *usbh_ep_handle_t;
+
 // ----------------------- Events --------------------------
 
 typedef enum {
@@ -29,16 +36,18 @@ typedef enum {
 } usbh_event_t;
 
 /**
- * @brief Hub driver requests
+ * @brief Endpoint events
  *
- * Various requests of the Hub driver that the USBH can make.
+ * @note Optimization: Keep this identical to hcd_pipe_event_t
  */
 typedef enum {
-    USBH_HUB_REQ_PORT_DISABLE,      /**< Request that the Hub driver disable a particular port (occurs after a device
-                                         has been freed). Hub driver should respond with a USBH_HUB_EVENT_PORT_DISABLED */
-    USBH_HUB_REQ_PORT_RECOVER,      /**< Request that the Hub driver recovers a particular port (occurs after a gone
-                                         device has been freed). */
-} usbh_hub_req_t;
+    USBH_EP_EVENT_NONE,                     /**< The EP has no events (used to indicate no events when polling) */
+    USBH_EP_EVENT_URB_DONE,                 /**< The EP has completed a URB. The URB can be dequeued */
+    USBH_EP_EVENT_ERROR_XFER,               /**< The EP encountered excessive errors when transferring a URB i.e., three three consecutive transaction errors (e.g., no ACK, bad CRC etc) */
+    USBH_EP_EVENT_ERROR_URB_NOT_AVAIL,      /**< The EP tried to execute a transfer but no URB was available */
+    USBH_EP_EVENT_ERROR_OVERFLOW,           /**< The EP received more data than requested. Usually a Packet babble error (i.e., an IN packet has exceeded the EP's MPS) */
+    USBH_EP_EVENT_ERROR_STALL,              /**< EP received a STALL response */
+} usbh_ep_event_t;
 
 /**
  * @brief Hub driver events for the USBH
@@ -62,6 +71,31 @@ typedef enum {
                                          connected to that port should be marked gone. */
     USBH_HUB_EVENT_PORT_DISABLED,   /**< Previous USBH_HUB_REQ_PORT_DISABLE request completed */
 } usbh_hub_event_t;
+
+// ------------------ Requests/Commands --------------------
+
+/**
+ * @brief Hub driver requests
+ *
+ * Various requests of the Hub driver that the USBH can make.
+ */
+typedef enum {
+    USBH_HUB_REQ_PORT_DISABLE,      /**< Request that the Hub driver disable a particular port (occurs after a device
+                                         has been freed). Hub driver should respond with a USBH_HUB_EVENT_PORT_DISABLED */
+    USBH_HUB_REQ_PORT_RECOVER,      /**< Request that the Hub driver recovers a particular port (occurs after a gone
+                                         device has been freed). */
+} usbh_hub_req_t;
+
+/**
+ * @brief Endpoint commands
+ *
+ * @note Optimization: Keep this identical to hcd_pipe_cmd_t
+ */
+typedef enum {
+    USBH_EP_CMD_HALT,           /**< Halt an active endpoint. Any currently executing URB will be canceled. Enqueued URBs are left untouched */
+    USBH_EP_CMD_FLUSH,          /**< Can only be called when halted. Will cause all enqueued URBs to be canceled */
+    USBH_EP_CMD_CLEAR,          /**< Causes a halted endpoint to become active again. Any enqueued URBs will being executing.*/
+} usbh_ep_cmd_t;
 
 // ---------------------- Callbacks ------------------------
 
@@ -87,29 +121,37 @@ typedef void (*usbh_event_cb_t)(usb_device_handle_t dev_hdl, usbh_event_t usbh_e
  */
 typedef void (*usbh_hub_req_cb_t)(hcd_port_handle_t port_hdl, usbh_hub_req_t hub_req, void *arg);
 
+/**
+ * @brief Callback used to indicate an event on an endpoint
+ *
+ * Return whether to yield or not if called from an ISR. Always return false if not called from an ISR
+ */
+typedef bool (*usbh_ep_cb_t)(usbh_ep_handle_t ep_hdl, usbh_ep_event_t ep_event, void *arg, bool in_isr);
+
 // ----------------------- Objects -------------------------
 
 /**
  * @brief Configuration for an endpoint being allocated using usbh_ep_alloc()
  */
 typedef struct {
-    const usb_ep_desc_t *ep_desc;           /**< Endpoint descriptor */
-    hcd_pipe_callback_t pipe_cb;            /**< Endpoint's pipe callback */
-    void *pipe_cb_arg;                      /**< Pipe callback argument */
-    void *context;                          /**< Pipe context */
+    uint8_t bInterfaceNumber;       /**< Interface number */
+    uint8_t bAlternateSetting;      /**< Alternate setting number of the interface */
+    uint8_t bEndpointAddress;       /**< Endpoint address */
+    usbh_ep_cb_t ep_cb;             /**< Endpoint event callback */
+    void *ep_cb_arg;                /**< Endpoint callback argument */
+    void *context;                  /**< Endpoint context */
 } usbh_ep_config_t;
 
 /**
  * @brief USBH configuration used in usbh_install()
  */
 typedef struct {
-    usb_notif_cb_t notif_cb;                /**< Notification callback */
-    void *notif_cb_arg;                     /**< Notification callback argument */
+    usb_proc_req_cb_t proc_req_cb;          /**< Processing request callback */
+    void *proc_req_cb_arg;                  /**< Processing request callback argument */
     usbh_ctrl_xfer_cb_t ctrl_xfer_cb;       /**< Control transfer callback */
     void *ctrl_xfer_cb_arg;                 /**< Control transfer callback argument */
     usbh_event_cb_t event_cb;               /**< USBH event callback */
     void *event_cb_arg;                     /**< USBH event callback argument */
-    hcd_config_t hcd_config;                /**< HCD configuration */
 } usbh_config_t;
 
 // ------------------------------------------------- USBH Functions ----------------------------------------------------
@@ -143,8 +185,8 @@ esp_err_t usbh_uninstall(void);
  * @brief USBH processing function
  *
  * - USBH processing function that must be called repeatedly to process USBH events
- * - If blocking, the caller can block until a USB_NOTIF_SOURCE_USBH notification is received before running this
- *   function
+ * - If blocking, the caller can block until the proc_req_cb() is called with USB_PROC_REQ_SOURCE_USBH as the request
+ *   source. The USB_PROC_REQ_SOURCE_USBH source indicates that this function should be called.
  *
  * @note This function can block
  * @return esp_err_t
@@ -271,31 +313,84 @@ esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
 /**
  * @brief Allocate an endpoint on a device
  *
- * Clients that have opened a device must call this function to allocate all endpoints in an interface that is claimed.
- * The pipe handle of the endpoint is returned so that clients can use and control the pipe directly.
+ * This function allows clients to allocate a non-default endpoint (i.e., not EP0) on a connected device
+ *
+ * - A client must have opened the device using usbh_dev_open() before attempting to allocate an endpoint on the device
+ * - A client should call this function to allocate all endpoints in an interface that the client has claimed.
+ * - A client must allocate an endpoint using this function before attempting to communicate with it
+ * - Once the client allocates an endpoint, the client is now owns/manages the endpoint. No other client should use or
+ * deallocate the endpoint.
  *
  * @note This function can block
- * @note Default pipes are owned by the USBH. For control transfers, use usbh_dev_submit_ctrl_urb() instead
- * @note Device must be opened by the client first
+ * @note Default endpoints (EP0) are owned by the USBH. For control transfers, use usbh_dev_submit_ctrl_urb() instead
  *
  * @param[in] dev_hdl Device handle
- * @param[in] ep_config
- * @param[out] pipe_hdl_ret Pipe handle
+ * @param[in] ep_config Endpoint configuration
+ * @param[out] ep_hdl_ret Endpoint handle
  * @return esp_err_t
  */
-esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config, hcd_pipe_handle_t *pipe_hdl_ret);
+esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config, usbh_ep_handle_t *ep_hdl_ret);
 
 /**
  * @brief Free and endpoint on a device
  *
- * Free an endpoint previously opened by usbh_ep_alloc()
+ * This function frees an endpoint previously allocated by the client using usbh_ep_alloc()
+ *
+ * - Only the client that allocated the endpoint should free it
+ * - The client must have halted and flushed the endpoint using usbh_ep_command() before attempting to free it
+ * - The client must ensure that there are no more function calls to the endpoint before freeing it
  *
  * @note This function can block
- * @param[in] dev_hdl Device handle
- * @param[in] bEndpointAddress Endpoint's address
+ * @param[in] ep_hdl Endpoint handle
  * @return esp_err_t
  */
-esp_err_t usbh_ep_free(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
+esp_err_t usbh_ep_free(usbh_ep_handle_t ep_hdl);
+
+/**
+ * @brief Get the handle of an endpoint using its address
+ *
+ * The endpoint must have been previously allocated using usbh_ep_alloc()
+ *
+ * @param[in] dev_hdl Device handle
+ * @param[in] bEndpointAddress Endpoint address
+ * @param[out] ep_hdl_ret Endpoint handle
+ * @return esp_err_t
+ */
+esp_err_t usbh_ep_get_handle(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress, usbh_ep_handle_t *ep_hdl_ret);
+
+/**
+ * @brief Enqueue a URB to an endpoint
+ *
+ * The URB will remain enqueued until it completes (successfully or errors out). Use usbh_ep_dequeue_urb() to dequeue
+ * a completed URB.
+ *
+ * @param[in] ep_hdl Endpoint handle
+ * @param[in] urb URB to enqueue
+ * @return esp_err_t
+ */
+esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb);
+
+/**
+ * @brief Dequeue a URB from an endpoint
+ *
+ * Dequeue a completed URB from an endpoint. The USBH_EP_EVENT_URB_DONE indicates that URBs can be dequeued
+ *
+ * @param[in] ep_hdl Endpoint handle
+ * @param[out] urb_ret Dequeued URB, or NULL if no more URBs to dequeue
+ * @return esp_err_t
+ */
+esp_err_t usbh_ep_dequeue_urb(usbh_ep_handle_t ep_hdl, urb_t **urb_ret);
+
+/**
+ * @brief Execute a command on a particular endpoint
+ *
+ * Endpoint commands allows executing a certain action on an endpoint (e.g., halting, flushing, clearing etc)
+ *
+ * @param[in] ep_hdl Endpoint handle
+ * @param[in] command Endpoint command
+ * @return esp_err_t
+ */
+esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command);
 
 /**
  * @brief Get the context of an endpoint
@@ -303,12 +398,10 @@ esp_err_t usbh_ep_free(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
  * Get the context variable assigned to and endpoint on allocation.
  *
  * @note This function can block
- * @param[in] dev_hdl Device handle
- * @param[in] bEndpointAddress Endpoint's address
- * @param[out] context_ret Context variable
- * @return esp_err_t
+ * @param[in] ep_hdl Endpoint handle
+ * @return Endpoint context
  */
-esp_err_t usbh_ep_get_context(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress, void **context_ret);
+void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl);
 
 // -------------------------------------------------- Hub Functions ----------------------------------------------------
 
@@ -396,7 +489,7 @@ esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_
  * @note Must call in sequence
  * @param dev_hdl Device handle
  * @param str_desc Pointer to string descriptor
- * @param select Select which string descriptor. 0/1/2 for Manufacturer/Product/Serial Number string descriptors respecitvely
+ * @param select Select which string descriptor. 0/1/2 for Manufacturer/Product/Serial Number string descriptors respectively
  * @return esp_err_t
  */
 esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select);

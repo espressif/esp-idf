@@ -15,8 +15,8 @@ urb_t *urb_alloc(size_t data_buffer_size, size_t header_size, int num_isoc_packe
     if (urb == NULL || data_buffer == NULL)     {
         goto err;
     }
-    urb->usb_host_header_size = header_size;    //Indicate that this URB's data_buffer has a header in front of it.
-    //Case as dummy transfer to write to initialize const fields
+    urb->usb_host_header_size = header_size;    // Indicate that this URB's data_buffer has a header in front of it.
+    // Case as dummy transfer to write to initialize const fields
     usb_transfer_dummy_t *dummy_transfer = (usb_transfer_dummy_t *)&urb->transfer;
     dummy_transfer->data_buffer = (uint8_t *)(data_buffer + header_size);
     dummy_transfer->data_buffer_size = data_buffer_size;

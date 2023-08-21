@@ -116,12 +116,12 @@ typedef enum {
 /**
  * @brief Port handle type
  */
-typedef void * hcd_port_handle_t;
+typedef void *hcd_port_handle_t;
 
 /**
  * @brief Pipe handle type
  */
-typedef void * hcd_pipe_handle_t;
+typedef void *hcd_pipe_handle_t;
 
 /**
  * @brief Port event callback type
@@ -448,12 +448,23 @@ esp_err_t hcd_pipe_set_persist_reset(hcd_pipe_handle_t pipe_hdl);
 void *hcd_pipe_get_context(hcd_pipe_handle_t pipe_hdl);
 
 /**
- * @brief Get the current sate of the pipe
+ * @brief Get the current state of the pipe
  *
  * @param pipe_hdl Pipe handle
  * @return hcd_pipe_state_t Current state of the pipe
  */
 hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl);
+
+/**
+ * @brief Get the number of in-flight URBs in the pipe
+ *
+ * Returns the current number of URBs that have been enqueued (via hcd_urb_enqueue()) and have yet to be dequeued (via
+ * hcd_urb_dequeue()).
+ *
+ * @param pipe_hdl Pipe handle
+ * @return Number of in-flight URBs
+ */
+unsigned int hcd_pipe_get_num_urbs(hcd_pipe_handle_t pipe_hdl);
 
 /**
  * @brief Execute a command on a particular pipe
