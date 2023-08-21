@@ -31,8 +31,8 @@ examples/wifi/itwt:
   disable:
     - if: SOC_WIFI_HE_SUPPORT != 1
 
-examples/wifi/powersave:
-  disable_test:
+examples/wifi/power_save:
+  disable:
     - if: SOC_WIFI_SUPPORTED != 1
 
 examples/wifi/wifi_aware:
