@@ -18,7 +18,7 @@ extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
 #define gl_bta_scan_rsp_data    (*gl_bta_scan_rsp_data_ptr)
 #endif
 
-#define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))
+#define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)))
 
 typedef enum {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
