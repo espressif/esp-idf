@@ -328,7 +328,7 @@ test_pytest_qemu:
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
-      --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
       --app-info-filepattern \"list_job_*.txt\"
 
 test_pytest_linux:
@@ -356,5 +356,5 @@ test_pytest_linux:
       --target linux
       -m host_test
       --junitxml=XUNIT_RESULT.xml
-      --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
       --app-info-filepattern \"list_job_*.txt\"

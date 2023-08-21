@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yaml
-from idf_ci_utils import IDF_PATH, get_pytest_cases, get_ttfw_cases
+from idf_ci_utils import IDF_PATH, get_ttfw_cases
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -215,6 +215,7 @@ def check_test_scripts(
 ) -> None:
     from idf_build_apps import App, find_apps
     from idf_build_apps.constants import SUPPORTED_TARGETS
+    from idf_pytest.script import get_pytest_cases
 
     # takes long time, run only in CI
     # dict:
@@ -418,8 +419,11 @@ def check_exist() -> None:
 
     config_files = [str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')]
     for file in config_files:
+        if 'managed_components' in Path(file).parts:
+            continue
+
         with open(file) as fr:
-            configs = yaml.load(fr)
+            configs = yaml.safe_load(fr)
             for path in configs.keys():
                 if path.startswith('.'):
                     continue
@@ -520,6 +524,7 @@ if __name__ == '__main__':
                 extra_default_build_targets=extra_default_build_targets_list,
             )
         elif arg.action == 'check-test-scripts':
+            os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
             check_test_scripts(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,
