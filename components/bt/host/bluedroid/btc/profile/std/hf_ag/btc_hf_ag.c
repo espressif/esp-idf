@@ -1510,7 +1510,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                     param.out_call.num_or_loc = osi_malloc((strlen(p_data->val.str) + 1) * sizeof(char));
                     sprintf(param.out_call.num_or_loc, "%s", p_data->val.str);
                     btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
-                    send_indicator_update(BTA_AG_IND_CALLSETUP,BTA_AG_CALLSETUP_OUTGOING);
                     osi_free(param.out_call.num_or_loc);
                 } else if (event == BTA_AG_AT_BLDN_EVT) {                    //dial_last
                     memcpy(param.out_call.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));

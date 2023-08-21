@@ -620,6 +620,9 @@ esp_err_t esp_hf_ag_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
  *
  * @brief           Initiate a call from AG.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
+ *                  If the AG is driven by the HF to call esp_hf_ag_out_call, it needs to response an OK or ERROR
+ *                  to HF. But if the AG is actively calling esp_hf_ag_out_call, it does not need to take a response
+ *                  to HF.
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       num_active: the number of active call
