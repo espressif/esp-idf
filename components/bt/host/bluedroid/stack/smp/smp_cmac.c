@@ -133,7 +133,7 @@ static void cmac_aes_cleanup(void)
 static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 tlen)
 {
     tSMP_ENC output;
-    UINT8    i = 1, err = 0;
+    UINT16    i = 1, err = 0;
     UINT8    x[16] = {0};
     UINT8   *p_mac;
 
