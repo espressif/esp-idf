@@ -1,4 +1,4 @@
-Install pre-commit Hook for ESP-IDF Project
+Install Pre-commit Hook for ESP-IDF Project
 ===========================================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -6,7 +6,7 @@ Install pre-commit Hook for ESP-IDF Project
 Required Dependency
 -------------------
 
-Python 3.8.* or above. This is our recommended Python version for IDF developers.
+Python 3.8.* or above. This is our recommended Python version for ESP-IDF developers.
 
 If you still have Python versions not compatible, update your Python versions before installing the pre-commit hook.
 
@@ -18,19 +18,19 @@ Run ``pip install pre-commit``
 Install pre-commit Hook
 -----------------------
 
-1. Go to the IDF project directory.
+1. Go to the ESP-IDF project directory.
 
 2. Run ``pre-commit install --allow-missing-config -t pre-commit -t commit-msg``. Install hook by this approach will let you commit successfully even in branches without the ``.pre-commit-config.yaml``
 
-3. pre-commit hook will run automatically when you're running ``git commit`` command
+3. pre-commit hook will run automatically when you are running ``git commit`` command
 
 Uninstall pre-commit Hook
 -----------------------------
 
 Run ``pre-commit uninstall``
 
-What's More?
-------------
+What Is More?
+-------------
 
 For detailed usage, please refer to the documentation of pre-commit_.
 
@@ -41,9 +41,9 @@ Common Problems For Windows Users
 
 ``/usr/bin/env: python: Permission denied.``
 
-   If you're in Git Bash, please check the Python executable location by run ``which python``.
+   If you are in Git Bash, please check the python executable location by run ``which python``.
 
-   If the executable is under ``~/AppData/Local/Microsoft/WindowsApps/``, then it's a link to Windows AppStore, not a real one.
+   If the executable is under ``~/AppData/Local/Microsoft/WindowsApps/``, then it is a link to Windows AppStore, not a real one.
 
    Please install Python manually and update this in your ``PATH`` environment variable.
 

@@ -24,7 +24,7 @@ The checker can be configured with the ``tools/ci/check_copyright_config.yaml`` 
 Common Examples of Copyright Headers
 ------------------------------------
 
-The simplest case is when the code is not based on any licensed previous work, e.g. it was written completely from scratch. Such code can be decorated with the following copyright header and put under the license of ESP-IDF::
+The simplest case is when the code is not based on any licensed previous work, e.g., it was written completely from scratch. Such code can be decorated with the following copyright header and put under the license of ESP-IDF::
 
     /*
      * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD

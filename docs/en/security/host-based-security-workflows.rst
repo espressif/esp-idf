@@ -23,6 +23,7 @@ Goals
 
 Pre-requisite
 -------------
+
 * ``esptool``: Please make sure the ``esptool`` has been installed. It can be installed by running:
 
 .. code:: bash
@@ -31,6 +32,7 @@ Pre-requisite
 
 Scope
 -----
+
 * :ref:`enable-flash-encryption-and-secure-boot-v2-externally`
 * :ref:`enable-flash-encryption-externally`
 * :ref:`enable-secure-boot-v2-externally`
@@ -65,8 +67,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
     See how to check :ref:`flash-encryption-status`.
 
-  In this case the Flash on the chip must be erased and flash encryption must not be enabled.
-  The chip can be erased by running:
+  In this case the flash on the chip must be erased and flash encryption must not be enabled. The chip can be erased by running:
 
   .. code:: bash
 
@@ -223,7 +224,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
       - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
       :esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
-      :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it's recommended to permanently disable this mode to reduce the options available to an attacker.
+      :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
       :not esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
       :not esp32: - :ref:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
       - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
@@ -294,7 +295,9 @@ In this case all the eFuses related to flash encryption are written with help of
   
         espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
   
-    .. note:: Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
+    .. note::
+
+        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
   
   B) Write protect security eFuses:
   
@@ -366,6 +369,7 @@ Flash Encryption Guidelines
 
 Enable Secure Boot V2 Externally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 In this workflow we shall use ``espsecure`` tool to generate signing keys and use the ``espefuse`` tool to burn the relevant eFuses. The details about the Secure Boot V2 process can be found at :doc:`Secure Boot V2 Guide </security/secure-boot-v2>`
 
 1. Generate Secure Boot V2 Signing Private Key.
@@ -471,7 +475,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
 6. Sign and Flash the binaries.
 
-  The Secure Boot V2 workflow only verifies the ``bootloader`` and ``application`` binaries, hence only those binaries need to be signed. The other binaries (e.g. ``partition-table.bin``) can be flashed as they are generated in the build stage.
+  The Secure Boot V2 workflow only verifies the ``bootloader`` and ``application`` binaries, hence only those binaries need to be signed. The other binaries (e.g., ``partition-table.bin``) can be flashed as they are generated in the build stage.
 
   The ``bootloader.bin`` and ``app.bin`` binaries can be signed by running:
 
@@ -499,7 +503,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
      espsecure.py signature_info_v2 bootloader-signed.bin
 
-  The above files along with other binaries (e.g. partition table) can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds. The flash offset for your firmware can be obtained by checking the partition table entry or by running ``idf.py partition-table``.
+  The above files along with other binaries (e.g., partition table) can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds. The flash offset for your firmware can be obtained by checking the partition table entry or by running ``idf.py partition-table``.
 
 7. Burn relevant eFuses.
 
@@ -527,7 +531,9 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
   
         espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
   
-    .. note:: Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
+    .. note::
+
+        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
   
   B) Secure Boot V2 related eFuses:
   

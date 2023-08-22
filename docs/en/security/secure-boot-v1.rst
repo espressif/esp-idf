@@ -3,12 +3,12 @@ Secure Boot
 
 .. important::
 
-    All references in this document are related to Secure Boot V1 (The AES based Secure Boot Scheme). ESP32 Revision 3 onwards, the preferred secure boot scheme is :doc:`Secure Boot V2 <secure-boot-v2>`.  
+    All references in this document are related to Secure Boot V1 (The AES based Secure Boot Scheme). ESP32 Revision 3 onwards, the preferred secure boot scheme is :doc:`secure-boot-v2`.
     Please refer to Secure Boot V2 document for ESP32 Revision 3 or ESP32-S2.
 
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 
-Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feature, and you can use secure boot without encrypting the flash contents. However, for a secure environment both should be used simultaneously. See :ref:`secure-boot-and-flash-encr` for more details.
+Secure Boot is separate from the :doc:`flash-encryption` feature, and you can use secure boot without encrypting the flash contents. However, for a secure environment both should be used simultaneously. See :ref:`secure-boot-and-flash-encr` for more details.
 
 .. important::
 
@@ -21,7 +21,7 @@ Background
 
 - Efuses are used to store the secure bootloader key (in efuse BLOCK2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip.  For more details on eFuses, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-- To understand the secure boot process, first familiarise yourself with the standard :doc:`ESP-IDF boot process <../api-guides/startup>`.
+- To understand the secure boot process, first familiarise yourself with the standard :doc:`../api-guides/startup`.
 
 - Both stages of the boot process (initial software bootloader load, and subsequent partition & app loading) are verified by the secure boot process, in a "chain of trust" relationship.
 
@@ -60,7 +60,7 @@ The following keys are used by the secure boot process:
 
     For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *System Parameter coding_scheme* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`details<secure-bootloader-digest-algorithm>`).
+  The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`secure-bootloader-digest-algorithm`).
 
 - "secure boot signing key" is a standard ECDSA public/private key pair (see :ref:`secure-boot-image-signing-algorithm`) in PEM format.
 
@@ -87,26 +87,34 @@ How To Enable Secure Boot
 4. The first time you run ``make``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
 .. important::
+
    A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
 
 .. important::
+
    For production environments, we recommend generating the keypair using openssl or another industry standard encryption program. See :ref:`secure-boot-generate-key` for more details.
 
 5. Run ``idf.py bootloader`` to build a secure boot enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool.py write_flash``.
 
 .. _secure-boot-resume-normal-flashing:
 
-6. When you're ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by make) and then wait for flashing to complete. **Remember this is a one time flash, you can't change the bootloader after this!**.
+6. When you are ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by make) and then wait for flashing to complete. **Remember this is a one time flash, you can not change the bootloader after this!**.
 
 7. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 4.
 
-.. note:: ``idf.py flash`` doesn't flash the bootloader if secure boot is enabled.
+.. note::
+
+  ``idf.py flash`` does not flash the bootloader if secure boot is enabled.
 
 8. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
-.. note:: Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
+.. note::
 
-.. note:: If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
+  Secure boot will not be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
+
+.. note::
+
+  If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
 9. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed (using the secure bootloader key) and then the software bootloader will verify the signed partition table and app image (using the public key portion of the secure boot signing key).
 
@@ -117,15 +125,17 @@ Re-Flashable Software Bootloader
 
 Configuration "Secure Boot: One-Time Flash" is the recommended configuration for production devices. In this mode, each device gets a unique key that is never stored outside the device.
 
-However, an alternative mode :ref:`Secure Boot: Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` is also available. This mode allows you to supply a binary key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
+However, an alternative mode :ref:`CONFIG_SECURE_BOOTLOADER_MODE` is also available. This mode allows you to supply a binary key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
 
 In the esp-idf build process, this 256-bit key file is derived from the ECDSA app signing key generated by the user (see the :ref:`secure-boot-generate-key` step below). This private key's SHA-256 digest is used as the secure bootloader key in efuse (as-is for Coding Scheme None, or truncate to 192 bytes for 3/4 Encoding). This is a convenience so you only need to generate/protect a single private key.
 
-.. note:: Although it's possible, we strongly recommend not generating one secure boot key and flashing it to every device in a production environment. The "One-Time Flash" option is recommended for production environments.
+.. note::
+
+  Although it is possible, we strongly recommend not generating one secure boot key and flashing it to every device in a production environment. The "One-Time Flash" option is recommended for production environments.
 
 To enable a reflashable bootloader:
 
-1. In the :ref:`project-configuration-menu`, select "Bootloader Config" -> :ref:`CONFIG_SECURE_BOOT` -> CONFIG_SECURE_BOOT_V1_ENABLED  ->  :ref:`CONFIG_SECURE_BOOTLOADER_MODE` -> Reflashable.
+1. In the :ref:`project-configuration-menu`, select "Bootloader Config" > :ref:`CONFIG_SECURE_BOOT` > CONFIG_SECURE_BOOT_V1_ENABLED  >  :ref:`CONFIG_SECURE_BOOTLOADER_MODE` > Reflashable.
 
 2. If necessary, set the :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING` based on the coding scheme used by the device. The coding scheme is shown in the ``Features`` line when ``esptool.py`` connects to the chip, or in the ``espefuse.py summary`` output.
 
@@ -182,7 +192,7 @@ Secure Boot Best Practices
 * Keep the signing key private at all times. A leak of this key will compromise the secure boot system.
 * Do not allow any third party to observe any aspects of the key generation or signing process using espsecure.py. Both processes are vulnerable to timing or other side-channel attacks.
 * Enable all secure boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpeter, and disabling the UART bootloader encrypted flash access.
-* Use secure boot in combination with :doc:`flash encryption<flash-encryption>` to prevent local readout of the flash contents.
+* Use secure boot in combination with :doc:`flash-encryption` to prevent local readout of the flash contents.
 
 .. _secure-boot-technical-details:
 
@@ -271,7 +281,7 @@ The output of the ``espsecure.py digest_secure_bootloader`` command is a single 
 Secure Boot & Flash Encryption
 ------------------------------
 
-If secure boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
+If secure boot is used without :doc:`flash-encryption`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
 
 .. _signed-app-verify:
 
@@ -286,20 +296,20 @@ An app can be verified on update and, optionally, be verified on boot.
 
 - Verification on update: When enabled, the signature is automatically checked whenever the esp_ota_ops.h APIs are used for OTA updates. If hardware secure boot is enabled, this option is always enabled and cannot be disabled. If hardware secure boot is not enabled, this option still adds significant security against network-based attackers by preventing spoofing of OTA updates.
 
-- Verification on boot: When enabled, the bootloader will be compiled with code to verify that an app is signed before booting it. If hardware secure boot is enabled, this option is always enabled and cannot be disabled. If hardware secure boot is not enabled, this option doesn't add significant security by itself so most users will want to leave it disabled.
+- Verification on boot: When enabled, the bootloader will be compiled with code to verify that an app is signed before booting it. If hardware secure boot is enabled, this option is always enabled and cannot be disabled. If hardware secure boot is not enabled, this option does not add significant security by itself so most users will want to leave it disabled.
 
 .. _signed-app-verify-howto:
 
 How To Enable Signed App Verification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Open :ref:`project-configuration-menu` -> Security features -> Enable :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`
+1. Open :ref:`project-configuration-menu` > Security features > Enable :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`
 
 2. "Bootloader verifies app signatures" can be enabled, which verifies app on boot.
 
 3. By default, "Sign binaries during build" will be enabled on selecting "Require signed app images" option, which will sign binary files as a part of build process. The file named in "Secure boot private signing key" will be used to sign the image.
 
-4. If you disable "Sign binaries during build" option then you'll have to enter path of a public key file used to verify signed images in "Secure boot public signature verification key".
+4. If you disable "Sign binaries during build" option then you will have to enter path of a public key file used to verify signed images in "Secure boot public signature verification key".
    In this case, private signing key should be generated by following instructions in :ref:`secure-boot-generate-key`; public verification key and signed image should be generated by following instructions in :ref:`remote-sign-image`.
 
 Advanced Features
