@@ -407,11 +407,14 @@ static void usbjtag_tx_char_via_driver(int fd, int c)
 {
     char ch = (char) c;
     TickType_t ticks = (TX_FLUSH_TIMEOUT_US / 1000) / portTICK_PERIOD_MS;
+    // Attempt to send the character immediately without blocking.
     if (usb_serial_jtag_write_bytes(&ch, 1, 0) != 0) {
         s_ctx.tx_tried_blocking = false;
+    } else {
         return;
     }
 
+    // If immediate send fails, try blocking with a timeout.
     if (s_ctx.tx_tried_blocking == false) {
         if (usb_serial_jtag_write_bytes(&ch, 1, ticks) != 0) {
             return;

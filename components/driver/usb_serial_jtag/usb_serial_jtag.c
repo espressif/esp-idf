@@ -163,10 +163,13 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
 
     const uint8_t *buff = (const uint8_t *)src;
     // Blocking method, Sending data to ringbuffer, and handle the data in ISR.
-    xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff), size, ticks_to_wait);
+    BaseType_t result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff), size, ticks_to_wait);
+
     // Now trigger the ISR to read data from the ring buffer.
-   usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
-   return size;
+    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+       
+    // Return -1 on failure, 0 on success.
+    return (result == pdFALSE) ? -1 : 0;
 }
 
 esp_err_t usb_serial_jtag_driver_uninstall(void)
