@@ -1,4 +1,4 @@
-Optional features for flash
+Optional Features for Flash
 ===========================
 
 Some features are not supported on all ESP chips and Flash chips. You can check the list below for more information.
