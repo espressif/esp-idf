@@ -71,7 +71,7 @@ When writing code for this repository, please follow guidelines below:
     *    - ESP_OK if erase operation was successful
     *    - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
     *    - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
-    *    - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
+    *    - ESP_ERR_NVS_NOT_FOUND if the requested key does not exist
     *    - other error codes from the underlying storage driver
     *
 
@@ -142,7 +142,7 @@ Standardize Document Format
 
 When it comes to text, please follow guidelines below to provide well-formatted Markdown (.md) or reST (.rst) documents.
 
-1. Please ensure that one paragraph is written in one line. Don't break lines like below. Breaking lines to enhance readability is only suitable for writing code. To make the text easier to read, it is recommended to place an empty line to separate the paragraph.
+1. Please ensure that one paragraph is written in one line. Do not break lines like below. Breaking lines to enhance readability is only suitable for writing code. To make the text easier to read, it is recommended to place an empty line to separate the paragraph.
 
     .. figure:: ../../_static/doc-format1-recommend.png
         :align: center

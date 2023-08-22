@@ -1,6 +1,7 @@
 Security Guides
 ***************
-:link_to_translation:`zh_CN:[中文]`
+
+:link_to_translation:`en:[English]`
 
 Overview
 --------

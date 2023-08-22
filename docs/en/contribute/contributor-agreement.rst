@@ -1,7 +1,7 @@
 Contributor Agreement
 =====================
 
-Individual Contributor Non-Exclusive License Agreement including the Traditional Patent License OPTION
+Individual Contributor Non-Exclusive License Agreement Including the Traditional Patent License OPTION
 ------------------------------------------------------------------------------------------------------
 
 Thank you for your interest in contributing to this Espressif project hosted on GitHub ("We" or "Us").

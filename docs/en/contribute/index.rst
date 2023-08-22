@@ -3,12 +3,12 @@ Contributions Guide
 
 :link_to_translation:`zh_CN:[中文]`
 
-We welcome contributions to the esp-idf project!
+We welcome contributions to the ESP-IDF project!
 
 How to Contribute
 -----------------
 
-Contributions to esp-idf - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via `Github Pull Requests <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`_.
+Contributions to ESP-IDF - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via `Github Pull Requests <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`_.
 
 Before Contributing
 -------------------
@@ -17,9 +17,9 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Is the contribution entirely your own work, or already licensed under an Apache License 2.0 compatible Open Source License? If not then we unfortunately cannot accept it. Please check the :doc:`Copyright Header Guide <copyright-guide>` for additional information.
 
-* Does any new code conform to the esp-idf :doc:`Style Guide <style-guide>`?
+* Does any new code conform to the ESP-IDF :doc:`Style Guide <style-guide>`?
 
-* Have you installed the :doc:`pre-commit hook <install-pre-commit-hook>` for esp-idf project?
+* Have you installed the :doc:`pre-commit hook <install-pre-commit-hook>` for ESP-IDF project?
 
 * Does the code documentation follow requirements in :doc:`documenting-code`?
 
@@ -33,7 +33,7 @@ Before sending us a Pull Request, please consider this list of points:
 
 * If the contribution contains multiple commits, are they grouped together into logical changes (one major change per pull request)? Are any commits with names like "fixed typo" `squashed into previous commits <https://eli.thegreenplace.net/2014/02/19/squashing-github-pull-requests-into-a-single-commit/>`_?
 
-* If you're unsure about any of these points, please open the Pull Request anyhow and then ask us for feedback.
+* If you are unsure about any of these points, please open the Pull Request anyhow and then ask us for feedback.
 
 Pull Request Process
 --------------------

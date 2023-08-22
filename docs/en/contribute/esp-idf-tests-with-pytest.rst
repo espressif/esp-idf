@@ -28,10 +28,10 @@ All dependencies could be installed by running the install script with the ``--e
 Common Issues During Installation
 ---------------------------------
 
-No Package 'dbus-1' found
+No Package 'dbus-1' Found
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you're facing an error message like:
+If you are facing an error message like:
 
 .. code:: text
 
@@ -42,7 +42,7 @@ If you're facing an error message like:
    Consider adjusting the PKG_CONFIG_PATH environment variable if you
    installed software in a non-standard prefix.
 
-If you're running under ubuntu system, you may need to run:
+If you are running under ubuntu system, you may need to run:
 
 .. code:: shell
 
@@ -56,10 +56,10 @@ or
 
 For other linux distros, you may Google the error message and find the solution. This issue could be solved by installing the related header files.
 
-Invalid command 'bdist_wheel'
+Invalid Command 'bdist_wheel'
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you're facing an error message like:
+If you are facing an error message like:
 
 .. code:: text
 
@@ -77,7 +77,7 @@ Or
 
    python -m pip install wheel
 
-Before running the pip commands, please make sure you're using the IDF python virtual environment.
+Before running the pip commands, please make sure you are using the IDF python virtual environment.
 
 Basic Concepts
 ==============
@@ -220,7 +220,7 @@ This code example is taken from :idf_file:`pytest_console_basic.py <examples/sys
        elif config == 'nohistory':
            dut.expect('Command history disabled')
 
-Let's go through this simple test case line by line in the following subsections.
+Let us go through this simple test case line by line in the following subsections.
 
 Use Markers to Specify the Supported Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -237,10 +237,10 @@ The above lines indicate that this test case supports target esp32 and esp32c3, 
 
    If the test case supports all officially ESP-IDF supported targets (You may check the value via "idf.py --list-targets"), you can use a special marker ``supported_targets`` to apply all of them in one line.
 
-Use Params to Specify the sdkconfig Files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use Params to Specify the ``sdkconfig`` Files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can use ``pytest.mark.parametrize`` with “config” to apply the same test to different apps with different sdkconfig files. For more information about ``sdkconfig.ci.xxx`` files, please refer to the Configuration Files section under :idf_file:`this readme <tools/test_apps/README.md>`.
+You can use ``pytest.mark.parametrize`` with "config" to apply the same test to different apps with different sdkconfig files. For more information about ``sdkconfig.ci.xxx`` files, please refer to the Configuration Files section under :idf_file:`this readme <tools/test_apps/README.md>`.
 
 .. code:: python
 
@@ -256,7 +256,7 @@ Overall, this test function would be replicated to 4 test cases:
 -  esp32c3.history.test_console_advanced
 -  esp32c3.nohistory.test_console_advanced
 
-Expect From the Serial output
+Expect From the Serial Output
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
@@ -267,7 +267,7 @@ Expect From the Serial output
        elif config == 'nohistory':
            dut.expect('Command history disabled')
 
-When we're using ``dut.expect(...)``, the string would be compiled into regex at first, and then seeks through the serial output until the compiled regex is matched, or a timeout is exceeded. You may have to pay extra attention when the string contains regex keyword characters, like parentheses, or square brackets.
+When we are using ``dut.expect(...)``, the string would be compiled into regex at first, and then seeks through the serial output until the compiled regex is matched, or a timeout is exceeded. You may have to pay extra attention when the string contains regex keyword characters, like parentheses, or square brackets.
 
 Actually using ``dut.expect_exact(...)`` here is better, since it would seek until the string is matched. For further reading about the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting.html>`__.
 
@@ -321,7 +321,7 @@ Here the first dut was flashed with the app :idf_file:`softap <examples/wifi/get
 Multi Dut Tests with Different Apps, and Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This code example is taken from :idf_file:`pytest_wifi_getting_started.py <examples/wifi/getting_started/pytest_wifi_getting_started.py>`. As the comment says, for now it's not running in the ESP-IDF CI.
+This code example is taken from :idf_file:`pytest_wifi_getting_started.py <examples/wifi/getting_started/pytest_wifi_getting_started.py>`. As the comment says, for now it is not running in the ESP-IDF CI.
 
 .. code:: python
 
@@ -346,8 +346,8 @@ Overall, this test function would be replicated to 2 test cases:
 - softap with esp32 target, and station with esp32s2 target
 - softap with esp32s2 target, and station with esp32 target
 
-Support different targets with different sdkconfig files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Support Different Targets with Different ``sdkconfig`` Files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>` as an advanced example.
 
@@ -413,10 +413,10 @@ This flaky marker means that if the test function failed, the test case would re
 Mark Known Failure Cases
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes a test couldn't pass for the following reasons:
+Sometimes a test could not pass for the following reasons:
 
 - Has a bug
-- The success ratio is too low because of environment issue, such as network issue. Retry couldn't help
+- The success ratio is too low because of environment issue, such as network issue. Retry could not help
 
 Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ with a user-friendly readable reason.
 
@@ -486,7 +486,7 @@ For further reading about our unit testing in ESP-IDF, please refer to :doc:`our
 Run the Tests in CI
 ===================
 
-The workflow in CI is simple, build jobs -> target test jobs.
+The workflow in CI is simple, build jobs > target test jobs.
 
 Build Jobs
 ----------
@@ -568,7 +568,7 @@ For example, if you want to run all the esp32 tests under the ``$IDF_PATH/exampl
    $ idf.py build
    $ pytest --target esp32
 
-If you have multiple sdkconfig files in your test app, like those ``sdkconfig.ci.*`` files, the simple ``idf.py build`` won't apply the extra sdkconfig files. Let's take ``$IDF_PATH/examples/system/console/basic`` as an example.
+If you have multiple sdkconfig files in your test app, like those ``sdkconfig.ci.*`` files, the simple ``idf.py build`` won't apply the extra sdkconfig files. Let us take ``$IDF_PATH/examples/system/console/basic`` as an example.
 
 If you want to test this app with config ``history``, and build with ``idf.py build``, you should run
 
@@ -607,9 +607,9 @@ Filter the Test Cases
 Add New Markers
 ---------------
 
-We’re using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test case should be assigned to runners with these tags in CI.
+We are using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test case should be assigned to runners with these tags in CI.
 
-You can add new markers by adding one line under the ``${IDF_PATH}/conftest.py``. If it's a target marker, it should be added into ``TARGET_MARKERS``. If it's a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The grammar should be: ``<marker_name>: <marker_description>``.
+You can add new markers by adding one line under the ``${IDF_PATH}/conftest.py``. If it is a target marker, it should be added into ``TARGET_MARKERS``. If it is a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The grammar should be: ``<marker_name>: <marker_description>``.
 
 Generate JUnit Report
 ---------------------
@@ -619,7 +619,7 @@ You can call pytest with ``--junitxml <filepath>`` to generate the JUnit report.
 Skip Auto Flash Binary
 ----------------------
 
-Skipping auto-flash binary every time would be useful when you're debugging your test script.
+Skipping auto-flash binary every time would be useful when you are debugging your test script.
 
 You can call pytest with ``--skip-autoflash y`` to achieve it.
 
@@ -664,7 +664,7 @@ The above example would log the performance item with pre-defined format: "[perf
 ``check_performance``
 """""""""""""""""""""
 
-We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATER_THAN`` to log the performance item and check if the value is in the valid range. Sometimes the performance item value could not be measured in C code, so we also provide a python function for the same purpose. Please note that using C macros is the preferred approach, since the python function couldn't recognize the threshold values of the same performance item under different ifdef blocks well.
+We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATER_THAN`` to log the performance item and check if the value is in the valid range. Sometimes the performance item value could not be measured in C code, so we also provide a python function for the same purpose. Please note that using C macros is the preferred approach, since the python function could not recognize the threshold values of the same performance item under different ifdef blocks well.
 
 .. code:: python
 
@@ -677,7 +677,7 @@ We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATE
 
 The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from :idf_file:`components/idf_test/include/idf_performance.h` and the target-specific one :idf_file:`components/idf_test/include/esp32/idf_performance_target.h`, then check if the value reached the minimum limit or exceeded the maximum limit.
 
-Let's assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 19000. so the first ``check_performance`` line would pass and the second one would fail with warning: ``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``
+Let us assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 19000. so the first ``check_performance`` line would pass and the second one would fail with warning: ``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``
 
 Further Readings
 ================

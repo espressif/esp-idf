@@ -25,7 +25,7 @@ Secure Boot V2
 
     .. only:: esp32
 
-        For ESP32 before ECO3, refer to :doc:`Secure Boot <secure-boot-v1>`. It is recommended that users use Secure Boot V2 if they have a chip version that supports it. Secure Boot V2 is safer and more flexible than Secure Boot V1.
+        For ESP32 before ECO3, refer to :doc:`secure-boot-v1`. It is recommended that users use Secure Boot V2 if they have a chip version that supports it. Secure Boot V2 is safer and more flexible than Secure Boot V1.
 
     Secure Boot V2 uses {IDF_TARGET_SBV2_SCHEME} based app and bootloader (:ref:`second-stage-bootloader`) verification. This document can also be used as a reference for signing apps using the {IDF_TARGET_SBV2_SCHEME} scheme without signing the bootloader.
 
@@ -126,7 +126,7 @@ The Secure Boot V2 process follows these steps:
 Signature Block Format
 ----------------------
 
-The signature block starts on a 4KB aligned boundary and has a flash sector of its own. The signature is calculated over all bytes in the image including the padding bytes (:ref:`secure_padding`).
+The signature block starts on a 4 KB aligned boundary and has a flash sector of its own. The signature is calculated over all bytes in the image including the padding bytes (:ref:`secure_padding`).
 
 .. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
 
@@ -201,6 +201,7 @@ The content of each signature block is shown in the following table:
 
 
     .. note::
+
       R and M' are used for hardware-assisted Montgomery Multiplication.
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
@@ -278,6 +279,7 @@ Following table explains the Secure Boot V2 signed image with secure padding and
           - Signature block
 
 .. note::
+
     Please note that the application image always starts on the next flash MMU page size boundary (default 64KB) and hence the space left over after the signature block shown above can be utilized to store any other data partitions (e.g., ``nvs``).
 
 .. _verify_signature-block:
@@ -285,18 +287,18 @@ Following table explains the Secure Boot V2 signed image with secure padding and
 Verifying a Signature Block
 -----------------------------
 
-A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is stored at offset 1196. Otherwise it's invalid.
+A signature block is "valid" if the first byte is 0xe7 and a valid CRC32 is stored at offset 1196. Otherwise it is invalid.
 
 .. _verify_image:
 
 Verifying an Image
 -----------------------------
 
-An image is “verified” if the public key stored in any signature block is valid for this device, and if the stored signature is valid for the image data read from flash.
+An image is "verified" if the public key stored in any signature block is valid for this device, and if the stored signature is valid for the image data read from flash.
 
-1. Compare the SHA-256 hash digest of the public key embedded in the bootloader's signature block with the digest(s) saved in the eFuses. If public key's hash doesn't match any of the hashes from the eFuses, the verification fails.
+1. Compare the SHA-256 hash digest of the public key embedded in the bootloader's signature block with the digest(s) saved in the eFuses. If public key's hash does not match any of the hashes from the eFuses, the verification fails.
 
-2. Generate the application image digest and match it with the image digest in the signature block. If the digests don't match, the verification fails.
+2. Generate the application image digest and match it with the image digest in the signature block. If the digests do not match, the verification fails.
 
 .. only:: esp32 or (SOC_SECURE_BOOT_V2_RSA and not SOC_SECURE_BOOT_V2_ECC)
 
@@ -320,7 +322,7 @@ In the case when :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is disabled, th
 
 .. _efuse-usage:
 
-eFuse usage
+eFuse Usage
 -----------
 
 .. only:: esp32
@@ -329,7 +331,7 @@ eFuse usage
 
     - ABS_DONE_1 - Enables Secure Boot protection on boot.
 
-    - BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, pre-calculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block. The write-protection bit must be set, but the read-protection bit must not.
+    - BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, pre-calculated R & M' values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block. The write-protection bit must be set, but the read-protection bit must not.
 
 .. only:: not esp32
 
@@ -339,7 +341,7 @@ eFuse usage
 
     - KEY_PURPOSE_X - Set the purpose of the key block on {IDF_TARGET_NAME} by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot V2 public key digest. The write-protection bit must be set (this field does not have a read-protection bit).
 
-    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, pre-calculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block. The write-protection bit must be set, but the read-protection bit must not.
+    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, pre-calculated R & M' values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block. The write-protection bit must be set, but the read-protection bit must not.
 
     - KEY_REVOKEX - The revocation bits corresponding to each of the 3 key block. Ex. Setting KEY_REVOKE2 revokes the key block whose key purpose is SECURE_BOOT_DIGEST2.
 
@@ -384,21 +386,27 @@ How To Enable Secure Boot V2
 
 7. Run ``idf.py bootloader`` to build a Secure Boot enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool.py write_flash``.
 
-8. When you're ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by the build system) and then wait for flashing to complete.
+8. When you are ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by the build system) and then wait for flashing to complete.
 
 9. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 6.
 
-.. note:: ``idf.py flash`` doesn't flash the bootloader if Secure Boot is enabled.
+.. note::
+
+  ``idf.py flash`` does not flash the bootloader if Secure Boot is enabled.
 
 10. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable Secure Boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that Secure Boot is enabled and no errors have occurred due to the build configuration.
 
-.. note:: Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
+.. note::
 
-.. note:: If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
+  Secure boot will not be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
+
+.. note::
+
+  If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
 11. On subsequent boots, the Secure Boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image (using the validated public key portion of its appended signature block).
 
-Restrictions after Secure Boot is enabled
+Restrictions After Secure Boot Is Enabled
 -----------------------------------------
 
 - Any updated bootloader or app will need to be signed with a key matching the digest already stored in eFuse.
@@ -455,8 +463,8 @@ Remember that the strength of the Secure Boot system depends on keeping the sign
 Remote Signing of Images
 ------------------------
 
-Signing using espsecure.py
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Signing Using ``espsecure.py``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default esp-idf Secure Boot configuration). The espsecure.py command line program can be used to sign app images & partition table data for Secure Boot, on a remote system.
 
@@ -470,7 +478,7 @@ The above command appends the image signature to the existing binary. You can us
 
   espsecure.py sign_data --version 2 --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
-Signing using Pre-calculated Signatures
+Signing Using Pre-calculated Signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have valid pre-calculated signatures generated for an image and their corresponding public keys, you can use these signatures to generate a signature sector and append it to the image. Note that the pre-calculated signature should be calculated over all bytes in the image including the secure-padding bytes.
@@ -482,7 +490,7 @@ In such cases, the firmware image should be built by disabling the option :ref:`
 The above command verifies the signature, generates a signature block (refer to :ref:`signature-block-format`) and appends it to the binary file.
 
 
-Signing using an External Hardware Security Module (HSM)
+Signing Using an External Hardware Security Module (HSM)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For security reasons, you might also use an external Hardware Security Module (HSM) to store your private signing key, which cannot be accessed directly but has an interface to generate the signature of a binary file and its corresponding public key.
@@ -506,7 +514,7 @@ Secure Boot Best Practices
 * Keep the signing key private at all times. A leak of this key will compromise the Secure Boot system.
 * Do not allow any third party to observe any aspects of the key generation or signing process using espsecure.py. Both processes are vulnerable to timing or other side-channel attacks.
 * Enable all Secure Boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpreter, and disabling the UART bootloader encrypted flash access.
-* Use Secure Boot in combination with :doc:`flash encryption<flash-encryption>` to prevent local readout of the flash contents.
+* Use Secure Boot in combination with :doc:`flash-encryption` to prevent local readout of the flash contents.
 
 .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -539,7 +547,7 @@ Secure Boot Best Practices
     * Applications should be signed with only one key at a time, to minimize the exposure of unused private keys.
     * The bootloader can be signed with multiple keys from the factory.
 
-    Conservative approach:
+    Conservative Approach:
     ~~~~~~~~~~~~~~~~~~~~~~
 
     Assuming a trusted private key (N-1) has been compromised, to update to new key pair (N).
@@ -556,14 +564,14 @@ Secure Boot Best Practices
 
     .. _secure-boot-v2-aggressive-key-revocation:
 
-    Aggressive approach:
+    Aggressive Approach:
     ~~~~~~~~~~~~~~~~~~~~
 
     ROM code has an additional feature of revoking a public key digest if the signature verification fails.
 
     To enable this feature, you need to burn SECURE_BOOT_AGGRESSIVE_REVOKE efuse or enable :ref:`CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE`
 
-    Key revocation is not applicable unless secure boot is successfully enabled. Also, a key is not revoked in case of invalid signature block or invalid image digest, it is only revoked in case the signature verification fails, i.e. revoke key only if failure in step 3 of :ref:`verify_image`
+    Key revocation is not applicable unless secure boot is successfully enabled. Also, a key is not revoked in case of invalid signature block or invalid image digest, it is only revoked in case the signature verification fails, i.e., revoke key only if failure in step 3 of :ref:`verify_image`
 
     Once a key is revoked, it can never be used for verfying a signature of an image. This feature provides strong resistance against physical attacks on the device. However, this could also brick the device permanently if all the keys are revoked because of signature verification failure.
 
@@ -592,7 +600,7 @@ Keyfile is the PEM file containing an {IDF_TARGET_SBV2_KEY} private signing key.
 Secure Boot & Flash Encryption
 ------------------------------
 
-If Secure Boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
+If Secure Boot is used without :doc:`flash-encryption`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
 
 .. only:: esp32c2
 
@@ -608,17 +616,17 @@ The Secure Boot V2 signature of apps can be checked on OTA update, without enabl
 
 This may be desirable in cases where the delay of Secure Boot verification on startup is unacceptable, and/or where the threat model does not include physical access or attackers writing to bootloader or app partitions in flash.
 
-In this mode, the public key which is present in the signature block of the currently running app will be used to verify the signature of a newly updated app. (The signature on the running app isn't verified during the update process, it's assumed to be valid.) In this way the system creates a chain of trust from the running app to the newly updated app.
+In this mode, the public key which is present in the signature block of the currently running app will be used to verify the signature of a newly updated app. (The signature on the running app is not verified during the update process, it is assumed to be valid.) In this way the system creates a chain of trust from the running app to the newly updated app.
 
-For this reason, it's essential that the initial app flashed to the device is also signed. A check is run on app startup and the app will abort if no signatures are found. This is to try and prevent a situation where no update is possible. The app should have only one valid signature block in the first position. Note again that, unlike hardware Secure Boot V2, the signature of the running app isn't verified on boot. The system only verifies a signature block in the first position and ignores any other appended signatures.
+For this reason, it is essential that the initial app flashed to the device is also signed. A check is run on app startup and the app will abort if no signatures are found. This is to try and prevent a situation where no update is possible. The app should have only one valid signature block in the first position. Note again that, unlike hardware Secure Boot V2, the signature of the running app is not verified on boot. The system only verifies a signature block in the first position and ignores any other appended signatures.
 
 .. only:: not esp32
 
-    Although multiple trusted keys are supported when using hardware Secure Boot, only the first public key in the signature block is used to verify updates if signature checking without Secure Boot is configured. If multiple trusted public keys are required, it's necessary to enable the full Secure Boot feature instead.
+    Although multiple trusted keys are supported when using hardware Secure Boot, only the first public key in the signature block is used to verify updates if signature checking without Secure Boot is configured. If multiple trusted public keys are required, it is necessary to enable the full Secure Boot feature instead.
 
 .. note::
 
-   In general, it's recommended to use full hardware Secure Boot unless certain that this option is sufficient for application security needs.
+   In general, it is recommended to use full hardware Secure Boot unless certain that this option is sufficient for application security needs.
 
 .. _signed-app-verify-v2-howto:
 

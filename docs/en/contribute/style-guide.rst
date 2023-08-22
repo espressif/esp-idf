@@ -32,31 +32,31 @@ Naming
 Indentation
 ^^^^^^^^^^^
 
-Use 4 spaces for each indentation level. Don't use tabs for indentation. Configure the editor to emit 4 spaces each time you press tab key.
+Use 4 spaces for each indentation level. Do not use tabs for indentation. Configure the editor to emit 4 spaces each time you press tab key.
 
 Vertical Space
 ^^^^^^^^^^^^^^
 
-Place one empty line between functions. Don't begin or end a function with an empty line.
+Place one empty line between functions. Do not begin or end a function with an empty line.
 ::
 
     void function1()
     {
         do_one_thing();
         do_another_thing();
-                                    // INCORRECT, don't place empty line here
+                                    // INCORRECT, do not place empty line here
     }
                                     // place empty line here
     void function2()
     {
-                                    // INCORRECT, don't use an empty line here
+                                    // INCORRECT, do not use an empty line here
         int var = 0;
         while (var < SOME_CONSTANT) {
             do_stuff(&var);
         }
     }
 
-The maximum line length is 120 characters as long as it doesn't seriously affect the readability.
+The maximum line length is 120 characters as long as it does not seriously affect the readability.
 
 Horizontal Space
 ^^^^^^^^^^^^^^^^
@@ -98,7 +98,7 @@ Sometimes adding horizontal space within a line can help make code more readable
     esp_rom_gpio_connect_in_signal(PIN_CAM_HREF, I2S0I_H_ENABLE_IDX,  false);
     esp_rom_gpio_connect_in_signal(PIN_CAM_PCLK, I2S0I_DATA_IN15_IDX, false);
 
-Note however that if someone goes to add new line with a longer identifier as first argument (e.g.  ``PIN_CAM_VSYNC``), it will not fit. So other lines would have to be realigned, adding meaningless changes to the commit.
+Note however that if someone goes to add new line with a longer identifier as first argument (e.g.,  ``PIN_CAM_VSYNC``), it will not fit. So other lines would have to be realigned, adding meaningless changes to the commit.
 
 Therefore, use horizontal alignment sparingly, especially if you expect new lines to be added to the list later.
 
@@ -139,7 +139,7 @@ Use ``//`` for single line comments. For multi-line comments it is okay to use e
 
 Although not directly related to formatting, here are a few notes about using comments effectively.
 
-- Don't use single comments to disable some functionality::
+- Do not use single comments to disable some functionality::
 
     void init_something()
     {
@@ -158,9 +158,9 @@ Although not directly related to formatting, here are a few notes about using co
         start_timer();
     }
 
-- Same goes for ``#if 0 ... #endif`` blocks. Remove code block completely if it is not used. Otherwise, add comment explaining why the block is disabled. Don't use ``#if 0 ... #endif`` or comments to store code snippets which you may need in the future.
+- Same goes for ``#if 0 ... #endif`` blocks. Remove code block completely if it is not used. Otherwise, add comment explaining why the block is disabled. Do not use ``#if 0 ... #endif`` or comments to store code snippets which you may need in the future.
 
-- Don't add trivial comments about authorship and change date. You can always look up who modified any given line using git. E.g. this comment adds clutter to the code without adding any useful information::
+- Do not add trivial comments about authorship and change date. You can always look up who modified any given line using git. E.g., this comment adds clutter to the code without adding any useful information::
 
     void init_something()
     {
@@ -188,14 +188,14 @@ If you accidentally have some commits in your branch that add LF endings, you ca
 
 (Note that this line rebases on master, change the branch name at the end to rebase on another branch.)
 
-For updating a single commit, it's possible to run ``dos2unix FILENAME`` and then run ``git commit --amend``
+For updating a single commit, it is possible to run ``dos2unix FILENAME`` and then run ``git commit --amend``
 
 Formatting Your Code
 ^^^^^^^^^^^^^^^^^^^^
 
 You can use ``astyle`` program to format your code according to the above recommendations.
 
-If you are writing a file from scratch, or doing a complete rewrite, feel free to re-format the entire file. If you are changing a small portion of file, don't re-format the code you didn't change. This will help others when they review your changes.
+If you are writing a file from scratch, or doing a complete rewrite, feel free to re-format the entire file. If you are changing a small portion of file, do not re-format the code you did not change. This will help others when they review your changes.
 
 To re-format a file, run:
 
@@ -229,17 +229,17 @@ Enums should be defined through the `typedef` and be namespaced::
 Assertions
 ^^^^^^^^^^
 
-The standard C ``assert()`` function, defined in ``assert.h`` should be used to check conditions that should be true in source code. In the default configuration, an assert condition that returns ``false`` or 0 will call ``abort()`` and trigger a :doc:`Fatal Error</api-guides/fatal-errors>`.
+The standard C ``assert()`` function, defined in ``assert.h`` should be used to check conditions that should be true in source code. In the default configuration, an assert condition that returns ``false`` or 0 will call ``abort()`` and trigger a :doc:`Fatal Error </api-guides/fatal-errors>`.
 
-``assert()`` should only be used to detect unrecoverable errors due to a serious internal logic bug or corruption, where it's not possible for the program to continue. For recoverable errors, including errors that are possible due to invalid external input, an :doc:`error value should be returned </api-guides/error-handling>`.
+``assert()`` should only be used to detect unrecoverable errors due to a serious internal logic bug or corruption, where it is not possible for the program to continue. For recoverable errors, including errors that are possible due to invalid external input, an :doc:`error value should be returned </api-guides/error-handling>`.
 
 .. note::
 
    When asserting a value of type ``esp_err_t``is equal to ``ESP_OK``, use the :ref:`esp-error-check-macro` instead of an ``assert()``.
 
-It's possible to configure ESP-IDF projects with assertions disabled (see :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`). Therefore, functions called in an ``assert()`` statement should not have side-effects.
+It is possible to configure ESP-IDF projects with assertions disabled (see :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`). Therefore, functions called in an ``assert()`` statement should not have side-effects.
 
-It's also necessary to use particular techniques to avoid "variable set but not used" warnings when assertions are disabled, due to code patterns such as::
+It is also necessary to use particular techniques to avoid "variable set but not used" warnings when assertions are disabled, due to code patterns such as::
 
   int res = do_something();
   assert(res == 0);
@@ -263,7 +263,7 @@ If the variable is declared separately, for example if it is used for multiple a
   assert(res != 0);
 
 
-Header file guards
+Header File Guards
 ------------------
 
 All public facing header files should have preprocessor guards. A pragma is preferred::
@@ -294,7 +294,7 @@ In addition to guard macros, all C header files should have ``extern "C"`` guard
     #endif
 
 
-Include statements
+Include Statements
 ------------------
 
 When writing ``#include`` statements, try to maintain the following order:
@@ -323,7 +323,7 @@ C++ Header files have the extension ``.hpp``. C++ source files have the extensio
 Naming
 ^^^^^^
 
-* **Class and struct** names shall be written in ``CamelCase`` with a capital letter as beginning. Member variables and methods shall be in ``snake_case``. An exception from ``CamelCase`` is if the readability is severely decreased, e.g. in ``GPIOOutput``, then an underscore ``_`` is allowed to make it more readable: ``GPIO_Output``.
+* **Class and struct** names shall be written in ``CamelCase`` with a capital letter as beginning. Member variables and methods shall be in ``snake_case``. An exception from ``CamelCase`` is if the readability is severely decreased, e.g., in ``GPIOOutput``, then an underscore ``_`` is allowed to make it more readable: ``GPIO_Output``.
 * **Namespaces** shall be in lower ``snake_case``.
 * **Templates** are specified in the line above the function declaration.
 * Interfaces in terms of Object-Oriented Programming shall be named without the suffix ``...Interface``. Later, this makes it easier to extract interfaces from normal classes and vice versa without making a breaking change.
@@ -363,7 +363,7 @@ For example:
 Spacing
 ^^^^^^^
 
-* Don't indent inside namespaces.
+* Do not indent inside namespaces.
 * Put ``public``, ``protected`` and ``private`` labels at the same indentation level as the corresponding ``class`` label.
 
 Simple Example
@@ -446,7 +446,7 @@ CMake Code Style
 - Maximum line length 120 characters. When splitting lines, try to
   focus on readability where possible (for example, by pairing up
   keyword/argument pairs on individual lines).
-- Don't put anything in the optional parentheses after ``endforeach()``, ``endif()``, etc.
+- Do not put anything in the optional parentheses after ``endforeach()``, ``endif()``, etc.
 - Use lowercase (``with_underscores``) for command, function, and macro names.
 - For locally scoped variables, use lowercase (``with_underscores``).
 - For globally scoped variables, use uppercase (``WITH_UNDERSCORES``).
