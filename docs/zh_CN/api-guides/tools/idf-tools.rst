@@ -12,7 +12,7 @@
 下文中，这类可下载的工具简称为“工具”。除此类工具外，ESP-IDF 还使用以下工具：
 
 * ESP-IDF 捆绑的 Python 脚本，如 ``idf.py``
-* 从 PyPI 安装的 Python 软件包 
+* 从 PyPI 安装的 Python 软件包
 
 以下各小节介绍了可下载工具的安装方法，并提供了在不同平台上安装的工具列表。
 
@@ -75,7 +75,7 @@ ESP-IDF 随附的 :idf_file:`tools/idf_tools.py` 脚本具备以下功能：
   环境变量可以以 ``shell`` 或 ``key-value`` 格式列出，使用 ``--format`` 参数设置该选项。
 
   - ``export`` 可选参数：
-    
+
     - ``--unset``：该参数可用于创建语句，取消特定全局变量设置，使环境恢复到调用 ``export.{sh/fish}`` 前的状态。
     - ``--add_paths_extras``：该参数将 ``$PATH`` 中与 ESP-IDF 相关的额外路径添加到 ``${IDF_TOOLS_PATH}/esp-idf.json`` 中，以保证在退出当前 ESP-IDF 环境时删除全局变量。例如，在运行 ``export.{sh/fish}`` 脚本时，如果在全局变量 ``$PATH`` 中添加了新的路径，在命令中添加该参数可以将这些新路径保存到 ``${IDF_TOOLS_PATH}/esp-idf.json`` 文件中。
 
@@ -96,7 +96,7 @@ ESP-IDF 随附的 :idf_file:`tools/idf_tools.py` 脚本具备以下功能：
         当前不支持以 Powershell 格式导出环境变量，可以用 ``key-value`` 格式代替。
 
     如果 shell 支持，则该命令的输出可用于更新环境变量。例如
-    
+
     .. code-block:: none
 
         eval $($IDF_PATH/tools/idf_tools.py export)
@@ -104,7 +104,7 @@ ESP-IDF 随附的 :idf_file:`tools/idf_tools.py` 脚本具备以下功能：
   - ``key-value``：以 ``VARIABLE=VALUE`` 格式生成输出，以便其他脚本解析
 
     .. code-block:: none
-    
+
         PATH=/home/user/.espressif/tools/tool/v1.0.0:$PATH
 
     注意，用于处理此输出的脚本必须对输出中的 ``$VAR`` 或 ``%VAR%`` 模式进行扩展，即解析成对应变量。
@@ -130,7 +130,7 @@ ESP-IDF 随附的 :idf_file:`tools/idf_tools.py` 脚本具备以下功能：
     #. 用户可选择任意数量的可选功能，已选功能列表存储在 ``idf-env.json`` 中。
 
     #. 依赖文件中存储了需要安装的 Python 包以及 ``espidf.constraints.*.txt`` 文件，该约束文件从 https://dl.espressif.com 下载，并存储在 ``${IDF_TOOLS_PATH}`` 目录，包含了针对特定 ESP-IDF 版本的安装包版本要求。
-  
+
   .. note::
 
     可以通过使用 ``--no-constraints`` 参数或将环境变量 ``IDF_PYTHON_CHECK_CONSTRAINTS`` 设置为 ``no``，禁用约束文件的下载和使用，但 **并不建议此做法**。
@@ -140,12 +140,12 @@ ESP-IDF 随附的 :idf_file:`tools/idf_tools.py` 脚本具备以下功能：
   .. note::
 
     约束文件可通过 ``install-python-env`` 命令下载。与 ``install-python-env`` 命令类似，可以通过使用 ``--no-constraints`` 参数或将环境变量 ``IDF_PYTHON_CHECK_CONSTRAINTS`` 设置为 ``no``，禁止使用约束文件。
-  
+
 * ``uninstall``：打印并删除当前 ESP-IDF 版本未使用的工具。
 
   - ``--dry-run`` 打印已安装但未使用的工具。
   - ``--remove-archives`` 删除过去下载的所有旧版本软件安装包。
-  
+
 .. _idf-tools-install:
 
 安装脚本
@@ -201,6 +201,24 @@ ESP-IDF 的根目录中提供了针对不同 shell 的用户安装脚本，包�
 -------------------
 
 推荐用户使用上述方法安装 ESP-IDF 工具，但也可以选择其他方式来构建 ESP-IDF 应用程序。自定义安装时，用户需将所有必要的工具都安装在某个位置，并在 ``PATH`` 中定义，以保证 ESP-IDF 构建系统可用。
+
+.. _idf-tools-uninstall:
+
+卸载 ESP-IDF
+-----------------
+
+卸载 ESP-IDF 需要删除安装过程中配置的工具和环境变量。
+
+* 使用 :ref:`Windows ESP-IDF 工具安装器 <get-started-windows-tools-installer>` 的 Windows 用户可以直接运行卸载向导卸载 ESP-IDF。
+* :ref:`工具安装目录 <idf-tools-path>` 下包含了已下载及安装的工具，删除该目录即可删除此前通过运行 :ref:`安装脚本 <idf-tools-install>` 安装的内容。通过 :ref:`导出脚本 <idf-tools-export>` 设置的环境变量不具备永久性，新环境中不会存在此类环境变量。
+* 如在安装过程中进行了自定义设置，除删除上述工具外，可能还涉及手动恢复此前为适用 ESP-IDF 工具而修改的环境变量及系统路径，例如 ``IDF_PYTHON_ENV_PATH`` 或 ``IDF_TOOLS_PATH``。如存在通过手动复制安装的工具，则也需手动追踪并删除相关文件。
+* 如安装了 `ESP-IDF Eclipse <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ 或 `VSCode ESP-IDF 扩展程序 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_ 等插件，则需按照对应插件文档中的特定卸载说明进行操作。
+
+.. note::
+
+  卸载 ESP-IDF 工具不会删除任何项目文件或用户代码。为防止意外丢失其他文件，请在删除文件时谨慎操作。如果对某个步骤的操作有所疑问，请参考前述安装说明。
+
+  上述卸载指南默认需卸载的工具是按本文档中的步骤进行安装的。如果使用了自定义安装，可能需要进行相应调整。
 
 .. _idf-tools-list:
 

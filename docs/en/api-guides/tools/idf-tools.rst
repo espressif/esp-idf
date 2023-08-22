@@ -75,7 +75,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
   The environment variables can be listed in either ``shell`` or ``key-value`` formats, which can be set using the ``--format`` parameter:
 
   - ``export`` optional parameters:
-    
+
     - ``--unset``: Creates a statement that unsets specific global variables and restores the environment to its state before calling ``export.{sh/fish}``.
     - ``--add_paths_extras``: Adds extra ESP-IDF-related paths of ``$PATH`` to ``${IDF_TOOLS_PATH}/esp-idf.json``, which is used to remove global variables when the active ESP-IDF environment is deactivated. For example, while processing the ``export.{sh/fish}`` script, if new paths are added to the global variable ``$PATH``, this option saves these new paths to the ``${IDF_TOOLS_PATH}/esp-idf.json`` file.
 
@@ -96,7 +96,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
         Exporting environment variables in Powershell format is not supported at the moment. ``key-value`` format may be used instead.
 
     The output of this command may be used to update the environment variables if the shell supports it. For example
-    
+
     .. code-block:: none
 
         eval $($IDF_PATH/tools/idf_tools.py export)
@@ -104,7 +104,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
   - ``key-value``: Produces output in the ``VARIABLE=VALUE`` format that is suitable for parsing by other scripts
 
     .. code-block:: none
-    
+
         PATH=/home/user/.espressif/tools/tool/v1.0.0:$PATH
 
     Note that the script consuming this output has to perform expansion of ``$VAR`` or ``%VAR%`` patterns found in the output.
@@ -117,9 +117,9 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
 
 * ``check``: For each tool, checks whether the tool is available in the system path and in ``IDF_TOOLS_PATH``.
 
-* ``install-python-env``: Creates a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory or directly in the directory set by the ``IDF_PYTHON_ENV_PATH`` environment variable, and install the required Python packages there. 
+* ``install-python-env``: Creates a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory or directly in the directory set by the ``IDF_PYTHON_ENV_PATH`` environment variable, and install the required Python packages there.
 
-  * An optional ``--features`` argument allows one to specify a comma-separated list of features to be added or removed. 
+  * An optional ``--features`` argument allows one to specify a comma-separated list of features to be added or removed.
 
     #. A feature that begins with ``-`` will be removed, and features with ``+`` or without any sign will be added. Example syntax for removing feature ``XY`` is ``--features=-XY``, and for adding feature ``XY`` is ``--features=+XY`` or ``--features=XY``. If both removing and adding options are provided with the same feature, no operation is performed.
 
@@ -136,7 +136,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
     Although **it is not recommended**, the download and use of constraint files can be disabled with the ``--no-constraints`` argument or setting the ``IDF_PYTHON_CHECK_CONSTRAINTS`` environment variable to ``no``.
 
 * ``check-python-dependencies``: Checks if all required Python packages are installed. Packages from ``${IDF_PATH}/tools/requirements/requirements.*.txt`` files selected by the feature list of ``idf-env.json`` are checked with the package versions specified in the ``espidf.constraints.*.txt`` file.
-  
+
   .. note::
 
     The constraint file is downloaded with the ``install-python-env`` command. Similar to the ``install-python-env`` command, the use of constraint files can be disabled with the ``--no-constraints`` argument or setting the ``IDF_PYTHON_CHECK_CONSTRAINTS`` environment variable to ``no``.
@@ -145,7 +145,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
 
   - ``--dry-run``: Prints installed unused tools.
   - ``--remove-archives``: Additionally removes all older versions of previously downloaded installation packages.
-  
+
 .. _idf-tools-install:
 
 Install Scripts
@@ -201,6 +201,24 @@ Custom Installation
 -------------------
 
 Although the methods above are recommended for ESP-IDF users, they are not a must for building ESP-IDF applications. ESP-IDF build system expects that all the necessary tools are installed somewhere, and made available in the ``PATH``.
+
+.. _idf-tools-uninstall:
+
+Uninstall ESP-IDF
+-----------------
+
+Uninstalling ESP-IDF requires removing both the tools and the environment variables that have been configured during the installation.
+
+* Windows users using the :ref:`Windows ESP-IDF Tools Installer <get-started-windows-tools-installer>` can simply run the uninstall wizard to remove ESP-IDF.
+* To remove an installation performed by running the supported :ref:`install scripts <idf-tools-install>`, simply delete the :ref:`tools installation directory <idf-tools-path>` including the downloaded and installed tools. Any environment variables set by the :ref:`export scripts <idf-tools-export>` are not permanent and will not be present after opening a new environment.
+* When dealing with a custom installation, in addition to deleting the tools as mentioned above, you may also need to manually revert any changes to environment variables or system paths that were made to accommodate the ESP-IDF tools (e.g., ``IDF_PYTHON_ENV_PATH`` or ``IDF_TOOLS_PATH``). If you manually copied any tools, you would need to track and delete those files manually.
+* If you installed any plugins like the `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_, you should follow the specific uninstallation instructions described in the documentation of those components.
+
+.. note::
+
+  Uninstalling the ESP-IDF tools does not remove any project files or your code. Be mindful of what you are deleting to avoid losing any work. If you are unsure about a step, refer back to the installation instructions.
+
+  These instructions assume that the tools were installed following the procedures in this provided document. If you've used a custom installation method, you might need to adapt these instructions accordingly.
 
 .. _idf-tools-list:
 
