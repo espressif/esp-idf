@@ -42,7 +42,6 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
     };
     TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
 
-
     i2s_chan_handle_t tx_handle = NULL;
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     // I2S driver won't be installed as the same I2S port has been used by LCD
@@ -299,7 +298,7 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
 
@@ -419,7 +418,7 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
