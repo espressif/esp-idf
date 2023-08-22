@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,13 @@
 #include <assert.h>
 
 #if BTC_AV_SRC_INCLUDED
+
+/*****************************************************************************
+ **  BQB global variables
+ *****************************************************************************/
+#if A2D_SRC_BQB_INCLUDED
+bool a2dp_src_bqb_set_sbc_encoder_flag = FALSE;
+#endif /* A2D_SRC_BQB_INCLUDED */
 
 /*****************************************************************************
  **  Constants
@@ -928,6 +935,27 @@ static void btc_a2dp_source_enc_update(BT_HDR *p_msg)
     }
 }
 
+#if A2D_SRC_BQB_INCLUDED
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_bqb_sbc_encoder_set
+ **
+ ** Description      Set SBC encoder for bqb test cases A2DP/SRC/SET/BV-04-I and A2DP/SRC/SET/BV-06-I
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void btc_a2dp_source_bqb_sbc_encoder_set(void)
+{
+    a2dp_source_local_param.btc_aa_src_cb.encoder.s16NumOfSubBands = 8;
+    a2dp_source_local_param.btc_aa_src_cb.encoder.s16NumOfBlocks = 8;
+    a2dp_source_local_param.btc_aa_src_cb.encoder.s16AllocationMethod = SBC_LOUDNESS;
+    a2dp_source_local_param.btc_aa_src_cb.encoder.s16ChannelMode = SBC_MONO;
+    a2dp_source_local_param.btc_aa_src_cb.encoder.s16SamplingFreq = SBC_sf44100;
+    SBC_Encoder_Init(&(a2dp_source_local_param.btc_aa_src_cb.encoder));
+}
+#endif /* A2D_SRC_BQB_INCLUDED */
+
 /*******************************************************************************
  **
  ** Function         btc_a2dp_source_pcm2sbc_init
@@ -998,6 +1026,12 @@ static void btc_a2dp_source_pcm2sbc_init(tBTC_MEDIA_INIT_AUDIO_FEEDING *p_feedin
     } else {
         APPL_TRACE_DEBUG("%s no SBC reconfig needed", __FUNCTION__);
     }
+
+#if A2D_SRC_BQB_INCLUDED
+    if (a2dp_src_bqb_set_sbc_encoder_flag) {
+        btc_a2dp_source_bqb_sbc_encoder_set();
+    }
+#endif /* A2D_SRC_BQB_INCLUDED */
 }
 
 /*******************************************************************************
