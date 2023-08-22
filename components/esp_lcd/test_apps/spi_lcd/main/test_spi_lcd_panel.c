@@ -157,7 +157,7 @@ TEST_CASE("lcd_panel_with_8-line_spi_interface_(st7789)", "[lcd]")
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 8, 8, true);
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
@@ -171,7 +171,7 @@ TEST_CASE("lcd_panel_with_8-line_spi_interface_(nt35510)", "[lcd]")
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 16, 16, true);
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
@@ -186,7 +186,7 @@ TEST_CASE("lcd_panel_with_1-line_spi_interface_(st7789)", "[lcd]")
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 8, 8, false);
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
@@ -212,7 +212,7 @@ TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
     // we don't use the panel handle in this test, creating the panel just for a quick initialization
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
