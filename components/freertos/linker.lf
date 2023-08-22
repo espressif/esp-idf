@@ -233,9 +233,10 @@ entries:
             port:xPortStartScheduler (default)
             port:vPortEndScheduler (default)
             port:pxPortInitialiseStack (default)
+            port:xPortGetTickRateHz (default)
             if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S3 = y :
                 port:vPortCleanUpCoprocArea (default)
-            port:xPortGetTickRateHz (default)
+            port:vPortTCBPreDeleteHook (default)
         # --------------------------------------------------------------------------------------------------------------
         # portable/riscv/port.c
         # - Most functions are called from an ISR context, except for scheduler/task init/deinit functions
@@ -245,3 +246,4 @@ entries:
             port:vPortEndScheduler (default)
             port:pxPortInitialiseStack (default)
             port:xPortGetTickRateHz (default)
+            port:vPortTCBPreDeleteHook (default)

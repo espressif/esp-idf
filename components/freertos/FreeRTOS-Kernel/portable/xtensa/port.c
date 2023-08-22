@@ -607,6 +607,25 @@ void vPortSetStackWatchpoint( void *pxStackStart )
 
 // --------------------- TCB Cleanup -----------------------
 
+#if ( XCHAL_CP_NUM > 0 )
+static void vPortCleanUpCoprocArea(void *pvTCB)
+{
+    UBaseType_t uxCoprocArea;
+    BaseType_t xTargetCoreID;
+
+    /* Get a pointer to the task's coprocessor save area */
+    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pvTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
+    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
+
+    /* Get xTargetCoreID from the TCB.xCoreID */
+    xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+
+    /* If task has live floating point registers somewhere, release them */
+    void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
+    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
+}
+#endif /* XCHAL_CP_NUM > 0 */
+
 void vPortTCBPreDeleteHook( void *pxTCB )
 {
     #if ( CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK )
@@ -624,26 +643,9 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         extern void vPortCleanUpTCB( void * pxTCB );
         vPortCleanUpTCB( pxTCB );
     #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+
+    #if ( XCHAL_CP_NUM > 0 )
+        /* Cleanup coproc save area */
+        vPortCleanUpCoprocArea( pxTCB );
+    #endif /* XCHAL_CP_NUM > 0 */
 }
-
-// -------------------- Co-Processor -----------------------
-
-#if XCHAL_CP_NUM > 0
-void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
-
-void vPortCleanUpCoprocArea(void *pvTCB)
-{
-    UBaseType_t uxCoprocArea;
-    BaseType_t xTargetCoreID;
-
-    /* Get a pointer to the task's coprocessor save area */
-    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pvTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
-    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
-
-    /* Get xTargetCoreID from the TCB.xCoreID */
-    xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
-
-    /* If task has live floating point registers somewhere, release them */
-    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
-}
-#endif /* XCHAL_CP_NUM > 0 */

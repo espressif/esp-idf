@@ -4951,10 +4951,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
             vPortReleaseTaskMPUSettings( &( pxTCB->xMPUSettings ) );
         #endif
 
-        #ifdef portCLEAN_UP_COPROC
-            portCLEAN_UP_COPROC( ( void * ) pxTCB );
-        #endif
-
         #if ( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) && ( portUSING_MPU_WRAPPERS == 0 ) )
             {
                 /* The task can only have been allocated dynamically - free both
