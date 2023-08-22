@@ -1,6 +1,16 @@
 Ethernet
 ========
 
+{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 and GPIO50"}
+{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 and GPIO17", esp32p4="GPIO23 and GPIO39"}
+{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 and GPIO49"}
+{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 and GPIO41"}
+{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 and GPIO42"}
+{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28, GPIO45 and GPIO51"}
+{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29, GPIO46 and GPIO52"}
+{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30, GPIO47 and GPIO53"}
+
+
 :link_to_translation:`zh_CN:[中文]`
 
 .. -------------------------------- Overview -----------------------------------
@@ -8,7 +18,13 @@ Ethernet
 Overview
 --------
 
-ESP-IDF provides a set of consistent and flexible APIs to support both internal Ethernet MAC (EMAC) controller and external SPI-Ethernet modules.
+.. only:: SOC_EMAC_SUPPORTED
+
+    ESP-IDF provides a set of consistent and flexible APIs to support both internal Ethernet MAC (EMAC) controller and external SPI-Ethernet modules.
+
+.. only:: not SOC_EMAC_SUPPORTED
+
+    ESP-IDF provides a set of consistent and flexible APIs to support external SPI-Ethernet modules.
 
 This programming guide is split into the following sections:
 
@@ -113,36 +129,100 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     One of the obvious differences between MII and RMII is signal consumption. MII usually costs up to 18 signals, while the RMII interface can reduce the consumption to 9.
 
-    In RMII mode, both the receiver and transmitter signals are referenced to the ``REF_CLK``. **REF_CLK must be stable during any access to PHY and MAC**. Generally, there are three ways to generate the ``REF_CLK`` depending on the PHY device in your design:
+    .. only:: esp32
 
-    * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option **a** in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+        .. note::
+            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII` or always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in the Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`.
 
-    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+    .. only:: not esp32
 
-    * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option **c** in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_OUTPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+        .. note::
+            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
 
-    .. note::
-        ``REF_CLK`` is configured via Project Configuration as described above by default. However, it can be overwritten from user application code by appropriately setting :cpp:member:`eth_esp32_emac_config_t::interface` and :cpp:member:`eth_esp32_emac_config_t::clock_config` members. See :cpp:enum:`emac_rmii_clock_mode_t` and :cpp:enum:`emac_rmii_clock_gpio_t` for more details.
+    In RMII mode, both the receiver and transmitter signals are referenced to the ``REF_CLK``. ``REF_CLK`` **must be stable during any access to PHY and MAC**. Generally, there are three ways to generate the ``REF_CLK`` depending on the PHY device in your design:
 
-    .. warning::
-        If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_OUTPUT``, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
+    * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option **a** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
-        What is more, if you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock. See :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
+    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
-        If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_INPUT``, then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
+    * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option **c** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
 
-        The ways to disable the ``REF_CLK`` signal can be:
+    .. only:: esp32
 
-        * Disable or power down the crystal oscillator (as the case **b** in the picture).
+        .. note::
+            The ``REF_CLK`` can be also configured via Project Configuration when :cpp:member:`eth_esp32_emac_config_t::clock_config::mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_DEFAULT`. Choose appropriately ``CONFIG_ETH_RMII_CLK_INPUT`` or ``CONFIG_ETH_RMII_CLK_OUTPUT`` option under :ref:`CONFIG_ETH_RMII_CLK_MODE` configuration based on your design as discussed above.
 
-        * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
+        .. warning::
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` (or ``CONFIG_ETH_RMII_CLK_OUTPUT`` is selected), then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_APPL_CLK_OUT_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
+
+            What is more, if you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_GPIO` and :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_180_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
+
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` (or ``CONFIG_ETH_RMII_CLK_INPUT`` is selected), then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
+
+            The ways to disable the ``REF_CLK`` signal can be:
+
+            * Disable or power down the crystal oscillator (as the case **b** in the picture).
+
+            * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
+
+    .. only:: not esp32
+
+        .. note::
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} can be selected as output pin of the ``REF_CLK`` signal via IO_MUX.
+
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, {IDF_TARGET_SOC_REF_CLK_IN_GPIO} can be selected as input pin for the ``REF_CLK`` signal via IO_MUX.
+
+    .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+
+        .. warning::
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, the ``REF_CLK`` output signal must be looped back to the EMAC externally. You have to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` and select GPIO number associated with ``REF_CLK`` input GPIO's ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}).
+
+            .. only:: esp32p4
+
+                .. figure:: ../../../_static/rmii_ref_clk_esp32p4.png
+                    :scale: 95 %
+                    :alt: RMII REF_CKL Output Loopback
+                    :figclass: align-center
+
+                    RMII REF_CKL Output Loopback
 
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep it away from RF devices and inductor elements.
 
-    .. note::
-        ESP-IDF only supports the RMII interface (i.e., always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in the Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`).
+    .. only:: not SOC_EMAC_USE_IO_MUX
 
-        Signals used in the data plane are fixed to specific GPIOs via MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
+        .. note::
+            Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
+
+    .. only:: SOC_EMAC_USE_IO_MUX
+
+        .. note::
+            Signals used in the data plane can be configured to predefined set of GPIOs via IO_MUX for the RMII, see below table. The data plane GPIO configuration is performed by the driver based on content of :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`. Signals used in the control plane can be routed to any free GPIOs via GPIO Matrix.
+
+            .. list-table:: {IDF_TARGET_NAME} RMII Data Plane GPIO
+                :header-rows: 1
+                :widths: 50 50
+                :align: center
+
+                * - Pin Name
+                  - GPIO Number
+
+                * - TX_EN
+                  - {IDF_TARGET_SOC_RMII_TX_EN}
+
+                * - TXD0
+                  - {IDF_TARGET_SOC_RMII_TXD0}
+
+                * - TXD1
+                  - {IDF_TARGET_SOC_RMII_TXD1}
+
+                * - CRS_DV
+                  - {IDF_TARGET_SOC_RMII_CRS_DV}
+
+                * - RXD0
+                  - {IDF_TARGET_SOC_RMII_RXD0}
+
+                * - RXD1
+                  - {IDF_TARGET_SOC_RMII_RXD1}
 
 You need to set up the necessary parameters for MAC and PHY respectively based on your Ethernet board design, and then combine the two together to complete the driver installation.
 
@@ -161,6 +241,10 @@ Configuration for MAC is described in :cpp:class:`eth_mac_config_t`, including:
     :SOC_EMAC_SUPPORTED: * :cpp:member:`eth_esp32_emac_config_t::interface`: configuration of MAC Data interface to PHY (MII/RMII).
 
     :SOC_EMAC_SUPPORTED: * :cpp:member:`eth_esp32_emac_config_t::clock_config`: configuration of EMAC Interface clock (``REF_CLK`` mode and GPIO number in case of RMII).
+
+    :SOC_EMAC_USE_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
+
+    :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`: configuration of EMAC input interface clock when ``REF_CLK`` signal is generated internally and is looped back to the EMAC externally. The mode must be always configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`. This option is valid only when configuration of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
 
 Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
@@ -486,6 +570,7 @@ Once you finish the new custom PHY driver implementation, consider sharing it am
 API Reference
 -------------
 
+.. include-build-file:: inc/eth_types.inc
 .. include-build-file:: inc/esp_eth.inc
 .. include-build-file:: inc/esp_eth_driver.inc
 .. include-build-file:: inc/esp_eth_com.inc

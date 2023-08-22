@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,13 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "hal/clk_tree_hal.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/rtc_clk.h"
 #include "esp_private/esp_ldo_psram.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "../esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_timing_tuning_ll.h"
+#include "clk_ctrl_os.h"
 
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
 #define PSRAM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -366,10 +365,9 @@ static void s_configure_psram_ecc(void)
 
 esp_err_t esp_psram_impl_enable(void)
 {
-    esp_ldo_vdd_psram_early_init();
 #if SOC_CLK_MPLL_SUPPORTED
-    rtc_clk_mpll_enable();
-    rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ);
+    periph_rtc_mpll_early_acquire();
+    periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, NULL);
 #endif
 
     PSRAM_RCC_ATOMIC() {

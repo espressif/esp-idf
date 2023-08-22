@@ -2,7 +2,7 @@ choice ESP32P4_UNIVERSAL_MAC_ADDRESSES
     bool "Number of universally administered (by IEEE) MAC address"
     default ESP32P4_UNIVERSAL_MAC_ADDRESSES_TWO
     help
-        TODO IDF-6514
+        TODO IDF-8949
 
     config ESP32P4_UNIVERSAL_MAC_ADDRESSES_TWO
         bool "Two"
