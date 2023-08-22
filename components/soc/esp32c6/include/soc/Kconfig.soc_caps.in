@@ -1319,6 +1319,10 @@ config SOC_BLE_POWER_CONTROL_SUPPORTED
     bool
     default y
 
+config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+    bool
+    default y
+
 config SOC_BLUFI_SUPPORTED
     bool
     default y
