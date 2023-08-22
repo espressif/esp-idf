@@ -38,6 +38,7 @@
 #include "ap/ieee802_1x.h"
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
+#include "wps/wps.h"
 
 const wifi_osi_funcs_t *wifi_funcs;
 struct wpa_funcs *wpa_cb;
@@ -278,6 +279,13 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
     /* Condition for this, WPS is running and WPS IEs are part of assoc req */
     if (!wps_ie || (wps_type == WPS_TYPE_DISABLE)) {
         return 0;
+    }
+
+    if (wps_type == WPS_TYPE_PBC) {
+        if (esp_wps_registrar_check_pbc_overlap(hapd->wps)) {
+            wpa_printf(MSG_DEBUG, "WPS: PBC session overlap detected");
+            return -1;
+        }
     }
 
     sta_info->wps_ie = wps_ie;
