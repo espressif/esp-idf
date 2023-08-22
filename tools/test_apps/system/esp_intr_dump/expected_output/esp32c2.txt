@@ -2,14 +2,14 @@ CPU 0 interrupt status:
  Int  Level  Type   Status
   0     *      *    Reserved
   1     *      *    Reserved
-  2     2    Level  Used: RTC_CORE
-  3     2    Level  Used: SYSTIMER_TARGET2_EDGE
-  4     2    Level  Used: ETS_FROM_CPU_INTR0
+  2     1    Level  Used: RTC_CORE
+  3     1    Level  Used: SYSTIMER_TARGET2_EDGE
+  4     1    Level  Used: ETS_FROM_CPU_INTR0
   5     *      *    Reserved
   6     *      *    Reserved
-  7     2    Level  Used: SYSTIMER_TARGET0_EDGE
+  7     1    Level  Used: SYSTIMER_TARGET0_EDGE
   8     *      *    Reserved
-  9     2    Level  Used: UART
+  9     1    Level  Used: UART
  10     *      *    Free
  11     *      *    Free
  12     *      *    Free
