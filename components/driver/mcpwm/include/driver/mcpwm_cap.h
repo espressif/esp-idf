@@ -21,6 +21,7 @@ extern "C" {
 typedef struct {
     int group_id;                         /*!< Specify from which group to allocate the capture timer */
     mcpwm_capture_clock_source_t clk_src; /*!< MCPWM capture timer clock source */
+    uint32_t resolution_hz;               /*!< Resolution of capture timer */
 } mcpwm_capture_timer_config_t;
 
 /**

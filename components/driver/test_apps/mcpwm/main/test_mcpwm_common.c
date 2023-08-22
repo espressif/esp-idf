@@ -123,3 +123,48 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_timer(timer));
     TEST_ESP_OK(mcpwm_del_fault(fault));
 }
+
+TEST_CASE("mcpwm_group_set_prescale_dynamically", "[mcpwm]")
+{
+    mcpwm_timer_config_t timer_config = {
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 100 * 1000, // 100kHz
+        .period_ticks = 400,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP_DOWN,
+        .group_id = 0,
+    };
+
+    mcpwm_timer_handle_t timer = NULL;
+    printf("create mcpwm timer\r\n");
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+
+    mcpwm_operator_config_t operator_config = {
+        .group_id = 0,
+    };
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+
+    mcpwm_generator_config_t generator_config = {
+        .gen_gpio_num = 0,
+    };
+    mcpwm_gen_handle_t generator = NULL;
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
+
+    printf("add carrier to PWM wave\r\n");
+    mcpwm_carrier_config_t carrier_config = {
+        .clk_src = MCPWM_CARRIER_CLK_SRC_DEFAULT,
+        .frequency_hz = 100000, // 100KHz carrier need higher group prescale
+        .duty_cycle = 0.5,
+        .first_pulse_duration_us = 10,
+    };
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_operator_apply_carrier(oper, &carrier_config));
+    carrier_config.frequency_hz = 2000000; // 2MHz carrier
+    carrier_config.first_pulse_duration_us = 5;
+    TEST_ESP_OK(mcpwm_operator_apply_carrier(oper, &carrier_config));
+
+
+    TEST_ESP_OK(mcpwm_del_generator(generator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
+}

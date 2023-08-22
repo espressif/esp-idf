@@ -115,8 +115,8 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     // reset the timer to a determined state
     mcpwm_hal_timer_reset(hal, timer_id);
     // set timer resolution
-    uint32_t prescale = group->resolution_hz / config->resolution_hz;
-    ESP_RETURN_ON_FALSE(prescale > 0 && prescale <= MCPWM_LL_MAX_TIMER_PRESCALE, ESP_ERR_INVALID_STATE, TAG, "group clock cannot match the resolution");
+    uint32_t prescale = 0;
+    ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, config->resolution_hz, MCPWM_LL_MAX_TIMER_PRESCALE, &prescale), err, TAG, "set prescale failed");
     mcpwm_ll_timer_set_clock_prescale(hal->dev, timer_id, prescale);
     timer->resolution_hz = group->resolution_hz / prescale;
     if (timer->resolution_hz != config->resolution_hz) {
