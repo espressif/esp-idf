@@ -1,4 +1,4 @@
-Classic Bluetooth L2CAP API
+Classic Bluetooth® L2CAP API
 ============================
 
 Application Example

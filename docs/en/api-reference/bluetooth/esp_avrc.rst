@@ -1,5 +1,5 @@
-BT AVRCP APIs
-=============
+Bluetooth® AVRCP APIs
+=====================
 
 Overview
 --------

@@ -1,5 +1,5 @@
-BT DEVICE APIs
-===============
+Bluetooth® Device APIs
+======================
 
 Overview
 --------

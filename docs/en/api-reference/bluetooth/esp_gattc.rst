@@ -1,4 +1,4 @@
-GATT CLIENT API
+GATT Client API
 ===============
 
 Application Example
@@ -16,7 +16,7 @@ Check :example:`bluetooth/bluedroid/ble` folder in ESP-IDF examples, which conta
     - :example:`bluetooth/bluedroid/ble/gattc_multi_connect`
     - :example_file:`GATT Client Multi-connection Example Walkthrough <bluetooth/bluedroid/ble/gattc_multi_connect/tutorial/Gatt_Client_Multi_Connection_Example_Walkthrough.md>`
 
-* This is a BLE SPP-Like demo. This demo, which acts as a GATT client, can receive data from UART and then send the data to the peer device automatically.
+* This is a demo similar to Bluetooth® Low Energy (Bluetooth LE) SPP. This demo, which acts as a GATT client, can receive data from UART and then send the data to the peer device automatically.
 
     - :example:`bluetooth/bluedroid/ble/ble_spp_client`
 

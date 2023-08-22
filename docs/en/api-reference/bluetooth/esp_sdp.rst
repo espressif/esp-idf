@@ -1,5 +1,5 @@
-BT SDP APIs
-=============
+Bluetooth® SDP APIs
+===================
 
 Overview
 --------

@@ -1,4 +1,4 @@
-GATT DEFINES
+GATT Defines
 ============
 
 API Reference

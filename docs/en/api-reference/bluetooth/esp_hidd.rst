@@ -1,5 +1,5 @@
-Bluetooth HID Device API
-========================
+Bluetooth® HID Device API
+=========================
 
 Overview
 --------

@@ -1,5 +1,5 @@
-BT GENERIC DEFINES
-==================
+Bluetooth® Generic Defines
+==========================
 
 API Reference
 -------------

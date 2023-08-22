@@ -1,4 +1,4 @@
-HFP CLIENT API
+HFP Client API
 ==============
 
 API Reference
