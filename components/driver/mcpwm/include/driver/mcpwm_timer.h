@@ -31,7 +31,7 @@ typedef struct {
 typedef struct {
     int group_id;                        /*!< Specify from which group to allocate the MCPWM timer */
     mcpwm_timer_clock_source_t clk_src;  /*!< MCPWM timer clock source */
-    uint32_t resolution_hz;              /*!< Counter resolution in Hz, ranges from around 300KHz to 80MHz.
+    uint32_t resolution_hz;              /*!< Counter resolution in Hz
                                               The step size of each count tick equals to (1 / resolution_hz) seconds */
     mcpwm_timer_count_mode_t count_mode; /*!< Count mode */
     uint32_t period_ticks;               /*!< Number of count ticks within a period */

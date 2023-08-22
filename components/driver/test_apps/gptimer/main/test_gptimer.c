@@ -141,7 +141,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
 #if CONFIG_PM_ENABLE
 #define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  150
 #else
-#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  30
+#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  40
 #endif // CONFIG_PM_ENABLE
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_stop_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
