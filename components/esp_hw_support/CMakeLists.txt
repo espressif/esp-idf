@@ -14,6 +14,7 @@ if(NOT BOOTLOADER_BUILD)
                      "hw_random.c"
                      "intr_alloc.c"
                      "mac_addr.c"
+                     "revision.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
