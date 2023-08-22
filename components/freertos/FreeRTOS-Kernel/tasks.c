@@ -379,9 +379,6 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvThreadLocalStoragePointers[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-            TlsDeleteCallbackFunction_t pvThreadLocalStoragePointersDelCallback[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #endif
     #endif
 
     #if ( configGENERATE_RUN_TIME_STATS == 1 )
@@ -570,13 +567,6 @@ static portTASK_FUNCTION_PROTO( prvIdleTask, pvParameters ) PRIVILEGED_FUNCTION;
 
     static void prvDeleteTCB( TCB_t * pxTCB ) PRIVILEGED_FUNCTION;
 
-#endif
-
-/* Function to call the Thread Local Storage Pointer Deletion Callbacks. Will be
- * called during task deletion before prvDeleteTCB is called.
- */
-#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-    static void prvDeleteTLS( TCB_t * pxTCB );
 #endif
 
 /*
@@ -1167,9 +1157,6 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
             for( x = 0; x < ( UBaseType_t ) configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
             {
                 pxNewTCB->pvThreadLocalStoragePointers[ x ] = NULL;
-                #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-                    pxNewTCB->pvThreadLocalStoragePointersDelCallback[ x ] = NULL;
-                #endif
             }
         }
     #endif
@@ -1514,10 +1501,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
         if( xFreeNow == pdTRUE )
         {
-            #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-                prvDeleteTLS( pxTCB );
-            #endif
-
             prvDeleteTCB( pxTCB );
         }
 
@@ -4468,7 +4451,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         {
             TCB_t * pxTCB;
 
-            if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
+            /* If TLSP deletion callbacks are enabled, then
+             * configNUM_THREAD_LOCAL_STORAGE_POINTERS is doubled in size so
+             * that the latter half of the pvThreadLocalStoragePointers stores
+             * the deletion callbacks. */
+            if( xIndex < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) )
             {
                 #if ( configNUM_CORES > 1 )
 
@@ -4479,8 +4466,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 #endif /* ( configNUM_CORES > 1 ) */
 
                 pxTCB = prvGetTCBFromHandle( xTaskToSet );
+                /* Store the TLSP by indexing the first half of the array */
                 pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-                pxTCB->pvThreadLocalStoragePointersDelCallback[ xIndex ] = xDelCallback;
+                /* Store the TLSP deletion callback by indexing the second half
+                 * of the array. */
+                pxTCB->pvThreadLocalStoragePointers[ ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ) ] = ( void * ) xDelCallback;
 
                 #if ( configNUM_CORES > 1 )
                     /* Release the previously taken kernel lock. */
@@ -4537,7 +4527,15 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         void * pvReturn = NULL;
         TCB_t * pxTCB;
 
-        if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
+            /* If TLSP deletion callbacks are enabled, then
+             * configNUM_THREAD_LOCAL_STORAGE_POINTERS is doubled in size so
+             * that the latter half of the pvThreadLocalStoragePointers stores
+             * the deletion callbacks. */
+            if( xIndex < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) )
+        #else /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
+            if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
+        #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
         {
             pxTCB = prvGetTCBFromHandle( xTaskToQuery );
             pvReturn = pxTCB->pvThreadLocalStoragePointers[ xIndex ];
@@ -4648,9 +4646,6 @@ static void prvCheckTasksWaitingTermination( void )
 
                     if ( pxTCB != NULL )
                     {
-                        #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-                            prvDeleteTLS( pxTCB );
-                        #endif
                         prvDeleteTCB( pxTCB );
                     }
                     else
@@ -4668,9 +4663,6 @@ static void prvCheckTasksWaitingTermination( void )
                     }
                     taskEXIT_CRITICAL( &xKernelLock );
 
-                    #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-                        prvDeleteTLS( pxTCB );
-                    #endif
                     prvDeleteTCB( pxTCB );
                 #endif  /* configNUM_CORES > 1 */
             }
@@ -4989,25 +4981,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 #endif /* INCLUDE_vTaskDelete */
 /*-----------------------------------------------------------*/
-
-#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-
-    static void prvDeleteTLS( TCB_t * pxTCB )
-    {
-        configASSERT( pxTCB );
-
-        for( int x = 0; x < configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
-        {
-            if( pxTCB->pvThreadLocalStoragePointersDelCallback[ x ] != NULL )                                       /*If del cb is set */
-            {
-                pxTCB->pvThreadLocalStoragePointersDelCallback[ x ]( x, pxTCB->pvThreadLocalStoragePointers[ x ] ); /*Call del cb */
-            }
-        }
-    }
-
-#endif /* ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
-/*-----------------------------------------------------------*/
-
 
 static void prvResetNextTaskUnblockTime( void )
 {

@@ -109,15 +109,16 @@
 
 #define configMAX_TASK_NAME_LEN                        CONFIG_FREERTOS_MAX_TASK_NAME_LEN
 
-/* The distinciton between Amazon SMP FreeRTOS and IDF FreeRTOS is necessary because in IDF FreeRTOS,
- * TLSP deletion callbacks can be added directly to the TCB, which is not allowed in Amazon SMP FreeRTOS.
- * In the latter, the TLSP number is simply doubled to accomodate space for a deletion callback of each TLSP.
- */
-#if CONFIG_FREERTOS_SMP
+/* If deletion callbacks are enabled, the number of TLSP's are doubled (i.e.,
+ * the length of the TCB's pvThreadLocalStoragePointersThis array). This allows
+ * the latter half of the array to store the deletion callback pointers (whereas
+ * the first half stores the TLSPs themselves). */
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
     #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    ( CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS * 2 )
-#else /* CONFIG_FREERTOS_SMP */
+#else /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
     #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
-#endif /* CONFIG_FREERTOS_SMP */
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
 #define configSTACK_DEPTH_TYPE                         uint32_t
 #if CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
     #define configENABLE_BACKWARD_COMPATIBILITY        1

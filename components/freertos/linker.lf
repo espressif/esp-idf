@@ -153,7 +153,6 @@ entries:
         tasks:prvIdleTask (default)
         if FREERTOS_TLSP_DELETION_CALLBACKS = y:
             tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
-            tasks:prvDeleteTLS (default)
         if FREERTOS_THREAD_LOCAL_STORAGE_POINTERS != 0:
             tasks:vTaskSetThreadLocalStoragePointer (default)
             tasks:pvTaskGetThreadLocalStoragePointer (default)
@@ -234,6 +233,8 @@ entries:
             port:vPortEndScheduler (default)
             port:pxPortInitialiseStack (default)
             port:xPortGetTickRateHz (default)
+            if FREERTOS_TLSP_DELETION_CALLBACKS = y:
+                port:vPortTLSPointersDelCb (default)
             if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S3 = y :
                 port:vPortCleanUpCoprocArea (default)
             port:vPortTCBPreDeleteHook (default)
@@ -246,4 +247,6 @@ entries:
             port:vPortEndScheduler (default)
             port:pxPortInitialiseStack (default)
             port:xPortGetTickRateHz (default)
+            if FREERTOS_TLSP_DELETION_CALLBACKS = y:
+                port:vPortTLSPointersDelCb (default)
             port:vPortTCBPreDeleteHook (default)
