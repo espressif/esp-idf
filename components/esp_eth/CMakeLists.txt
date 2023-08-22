@@ -44,7 +44,8 @@ if(CONFIG_ETH_ENABLED)
     endif()
 
     if(CONFIG_ETH_USE_OPENETH)
-        list(APPEND srcs "src/esp_eth_mac_openeth.c")
+        list(APPEND srcs "src/esp_eth_mac_openeth.c"
+                         "src/esp_eth_phy_dp83848.c")
     endif()
 endif()
 
