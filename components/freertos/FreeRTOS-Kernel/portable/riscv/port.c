@@ -589,7 +589,26 @@ void vPortSetStackWatchpoint(void *pxStackStart)
     esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, STACK_WATCH_AREA_SIZE, ESP_CPU_WATCHPOINT_STORE);
 }
 
+// --------------------- TCB Cleanup -----------------------
 
+void vPortTCBPreDeleteHook( void *pxTCB )
+{
+    #if ( CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK )
+        /* Call the user defined task pre-deletion hook */
+        extern void vTaskPreDeletionHook( void * pxTCB );
+        vTaskPreDeletionHook( pxTCB );
+    #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
+
+    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
+        /*
+         * If the user is using the legacy task pre-deletion hook, call it.
+         * Todo: Will be removed in IDF-8097
+         */
+        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
+        extern void vPortCleanUpTCB( void * pxTCB );
+        vPortCleanUpTCB( pxTCB );
+    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+}
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *
