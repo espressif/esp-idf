@@ -327,8 +327,9 @@ All the APIs provided by the driver are guaranteed to be thread safe, which mean
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` controls where to place the GPTimer control functions (IRAM or flash), see Section :ref:`gptimer-iram-safe` for more information.
-- :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled, see Section :ref:`gptimer-iram-safe` for more information.
+- :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` controls where to place the GPTimer control functions (IRAM or flash).
+- :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` controls where to place the GPTimer ISR handler (IRAM or flash).
+- :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled, see Section :ref:`gptimer-iram-safe` for more information.
 - :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size.
 
 Application Examples

@@ -480,8 +480,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     return ESP_OK;
 }
 
-// Put the default ISR handler in the IRAM for better performance
-IRAM_ATTR static void gptimer_default_isr(void *args)
+static void gptimer_default_isr(void *args)
 {
     bool need_yield = false;
     gptimer_t *timer = (gptimer_t *)args;

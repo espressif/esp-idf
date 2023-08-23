@@ -306,37 +306,7 @@ menu "Driver Configurations"
                 Note that, this option only controls the Analog Comparator driver log, won't affect other drivers.
     endmenu # Analog Comparator Configuration
 
-    menu "GPTimer Configuration"
-        config GPTIMER_CTRL_FUNC_IN_IRAM
-            bool "Place GPTimer control functions into IRAM"
-            default n
-            help
-                Place GPTimer control functions (like start/stop) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
-                Enabling this option can improve driver performance as well.
-
-        config GPTIMER_ISR_IRAM_SAFE
-            bool "GPTimer ISR IRAM-Safe"
-            default n
-            help
-                Ensure the GPTimer interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-        config GPTIMER_SUPPRESS_DEPRECATE_WARN
-            bool "Suppress legacy driver deprecated warning"
-            default n
-            help
-                Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
-                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
-                you can enable this option.
-
-        config GPTIMER_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for GPTimer driver.
-                Note that, this option only controls the GPTimer driver log, won't affect other drivers.
-    endmenu # GPTimer Configuration
+    orsource "./gptimer/Kconfig.gptimer"
 
     menu "PCNT Configuration"
         depends on SOC_PCNT_SUPPORTED

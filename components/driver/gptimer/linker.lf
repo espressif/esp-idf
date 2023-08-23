@@ -1,0 +1,21 @@
+[mapping:gptimer_driver]
+archive: libdriver.a
+entries:
+    if GPTIMER_ISR_HANDLER_IN_IRAM = y:
+        gptimer: gptimer_default_isr (noflash)
+    if GPTIMER_CTRL_FUNC_IN_IRAM = y:
+        gptimer: gptimer_set_raw_count (noflash)
+        gptimer: gptimer_get_raw_count (noflash)
+        gptimer: gptimer_get_captured_count (noflash)
+        gptimer: gptimer_set_alarm_action (noflash)
+        gptimer: gptimer_start (noflash)
+        gptimer: gptimer_stop (noflash)
+
+[mapping:gptimer_hal]
+archive: libhal.a
+entries:
+    if GPTIMER_ISR_HANDLER_IN_IRAM = y:
+        timer_hal: timer_hal_capture_and_get_counter_value (noflash)
+    if GPTIMER_CTRL_FUNC_IN_IRAM = y:
+        timer_hal: timer_hal_set_counter_value (noflash)
+        timer_hal: timer_hal_capture_and_get_counter_value (noflash)
