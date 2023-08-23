@@ -373,8 +373,8 @@ esp_netif_t* esp_netif_create_default_wifi_ap(void)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_AP();
     esp_netif_t *netif = esp_netif_new(&cfg);
     assert(netif);
-    esp_netif_attach_wifi_ap(netif);
-    esp_wifi_set_default_wifi_ap_handlers();
+    ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif));
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
     return netif;
 }
 #endif
@@ -387,8 +387,8 @@ esp_netif_t* esp_netif_create_default_wifi_sta(void)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
     esp_netif_t *netif = esp_netif_new(&cfg);
     assert(netif);
-    esp_netif_attach_wifi_station(netif);
-    esp_wifi_set_default_wifi_sta_handlers();
+    ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif));
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
     return netif;
 }
 

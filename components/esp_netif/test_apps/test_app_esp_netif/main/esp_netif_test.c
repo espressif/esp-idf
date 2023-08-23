@@ -325,6 +325,7 @@ TEST(esp_netif, create_destroy_default_wifi)
     // Helper constants to refer default STA and AP's params
     static const esp_netif_inherent_config_t default_sta_cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
     static const esp_netif_inherent_config_t default_ap_cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+    TEST_ESP_OK(esp_event_loop_create_default());
 
     // create default station
     esp_netif_t *sta = esp_netif_create_default_wifi_sta();
@@ -352,6 +353,7 @@ TEST(esp_netif, create_destroy_default_wifi)
     sta = esp_netif_create_default_wifi_sta();
     TEST_ASSERT_NOT_NULL(sta);
     esp_netif_destroy_default_wifi(sta);
+    TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
 TEST(esp_netif, get_set_hostname)
