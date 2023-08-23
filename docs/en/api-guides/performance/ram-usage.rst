@@ -41,6 +41,7 @@ To minimize static memory use:
 
    - Constant data can be stored in flash memory instead of RAM, thus it is recommended to declare structures, buffers, or other variables as ``const``. This approach may require modifying firmware functions to accept ``const *`` arguments instead of mutable pointer arguments. These changes can also help reduce the stack usage of certain functions.
    :SOC_BT_SUPPORTED: - If using Bluedroid, setting the option :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` will cause Bluedroid to allocate memory on initialization and free it on deinitialization. This does not necessarily reduce the peak memory usage, but changes it from static memory usage to runtime memory usage.
+   - If using OpenThread, enabling the option :ref:`CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT` will cause OpenThread to allocate message pool buffers from PSRAM, which will reduce static memory use.
 
 .. _optimize-stack-sizes:
 
