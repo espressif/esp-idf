@@ -65,6 +65,7 @@ MCPWM Timers
 You can allocate a MCPWM timer object by calling :cpp:func:`mcpwm_new_timer` function, with a configuration structure :cpp:type:`mcpwm_timer_config_t` as the parameter. The configuration structure is defined as:
 
 - :cpp:member:`mcpwm_timer_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, timers located in different groups are totally independent.
+- :cpp:member:`mcpwm_timer_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_timer_config_t::clk_src` sets the clock source of the timer.
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` sets the expected resolution of the timer. The driver internally will set a proper divider based on the clock source and the resolution.
 - :cpp:member:`mcpwm_timer_config_t::count_mode` sets the count mode of the timer.
@@ -82,6 +83,7 @@ MCPWM Operators
 You can allocate a MCPWM operator object by calling :cpp:func:`mcpwm_new_operator` function, with a configuration structure :cpp:type:`mcpwm_operator_config_t` as the parameter. The configuration structure is defined as:
 
 - :cpp:member:`mcpwm_operator_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, operators located in different groups are totally independent.
+- :cpp:member:`mcpwm_operator_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` sets whether to update the generator action when the timer counts to zero. Here and below, the timer refers to the one that is connected to the operator by :cpp:func:`mcpwm_operator_connect_timer`.
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` sets whether to update the generator action when the timer counts to peak.
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_sync` sets whether to update the generator action when the timer takes a sync signal.
@@ -98,6 +100,7 @@ MCPWM Comparators
 
 You can allocate a MCPWM comparator object by calling the :cpp:func:`mcpwm_new_comparator` function, with a MCPWM operator handle and configuration structure :cpp:type:`mcpwm_comparator_config_t` as the parameter. The operator handle is created by :cpp:func:`mcpwm_new_operator`. The configuration structure is defined as:
 
+- :cpp:member:`mcpwm_comparator_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` sets whether to update the compare threshold when the timer counts to zero.
 - :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` sets whether to update the compare threshold when the timer counts to the peak.
 - :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` sets whether to update the compare threshold when the timer takes a sync signal.
@@ -129,6 +132,7 @@ There are two types of faults: A fault signal reflected from the GPIO and a faul
 To allocate a GPIO fault object, you can call the :cpp:func:`mcpwm_new_gpio_fault` function, with the configuration structure :cpp:type:`mcpwm_gpio_fault_config_t` as the parameter. The configuration structure is defined as:
 
 - :cpp:member:`mcpwm_gpio_fault_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, GPIO faults located in different groups are totally independent, i.e., GPIO faults in group 0 can not be detected by the operator in group 1.
+- :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` sets the GPIO number used by the fault.
 - :cpp:member:`mcpwm_gpio_fault_config_t::active_level` sets the active level of the fault signal.
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` and :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
@@ -184,6 +188,7 @@ The :cpp:func:`mcpwm_new_capture_timer` will return a pointer to the allocated c
 
 Next, to allocate a capture channel, you can call the :cpp:func:`mcpwm_new_capture_channel` function, with a capture timer handle and configuration structure :cpp:type:`mcpwm_capture_channel_config_t` as the parameter. The configuration structure is defined as:
 
+- :cpp:member:`mcpwm_capture_channel_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_capture_channel_config_t::gpio_num` sets the GPIO number used by the capture channel.
 - :cpp:member:`mcpwm_capture_channel_config_t::prescale` sets the prescaler of the input signal.
 - :cpp:member:`mcpwm_capture_channel_config_t::pos_edge` and :cpp:member:`mcpwm_capture_channel_config_t::neg_edge` set whether to capture on the positive and/or negative edge of the input signal.
@@ -194,6 +199,15 @@ Next, to allocate a capture channel, you can call the :cpp:func:`mcpwm_new_captu
 The :cpp:func:`mcpwm_new_capture_channel` will return a pointer to the allocated capture channel object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no free capture channel left in the capture timer, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error.
 
 On the contrary, calling :cpp:func:`mcpwm_del_capture_channel` and :cpp:func:`mcpwm_del_capture_timer` will free the allocated capture channel and timer object accordingly.
+
+MCPWM interrupt priority
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+MCPWM allows configuring interrupts separately for timer, operator, comparator, fault, and capture events. The interrupt priority is determined by the respective ``config_t::intr_priority``. Additionally, events within the same MCPWM group share a common interrupt source. When registering multiple interrupt events, the interrupt priorities need to remain consistent.
+
+.. note::
+
+    When registering multiple interrupt events within an MCPWM group, the driver will use the interrupt priority of the first registered event as the MCPWM group's interrupt priority.
 
 
 .. _mcpwm-timer-operations-and-events:

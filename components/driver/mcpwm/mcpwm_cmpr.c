@@ -75,6 +75,10 @@ esp_err_t mcpwm_new_comparator(mcpwm_oper_handle_t oper, const mcpwm_comparator_
     esp_err_t ret = ESP_OK;
     mcpwm_cmpr_t *cmpr = NULL;
     ESP_GOTO_ON_FALSE(oper && config && ret_cmpr, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    if (config->intr_priority) {
+        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
+                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+    }
 
     cmpr = heap_caps_calloc(1, sizeof(mcpwm_cmpr_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cmpr, ESP_ERR_NO_MEM, err, TAG, "no mem for comparator");
@@ -84,6 +88,10 @@ esp_err_t mcpwm_new_comparator(mcpwm_oper_handle_t oper, const mcpwm_comparator_
     mcpwm_hal_context_t *hal = &group->hal;
     int oper_id = oper->oper_id;
     int cmpr_id = cmpr->cmpr_id;
+
+    // if interrupt priority specified before, it cannot be changed until the group is released
+    // check if the new priority specified consistents with the old one
+    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group intrrupt priority failed");
 
     mcpwm_ll_operator_enable_update_compare_on_tez(hal->dev, oper_id, cmpr_id, config->flags.update_cmp_on_tez);
     mcpwm_ll_operator_enable_update_compare_on_tep(hal->dev, oper_id, cmpr_id, config->flags.update_cmp_on_tep);
@@ -162,6 +170,7 @@ esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, co
     if (!cmpr->intr) {
         // we want the interrupt service to be enabled after allocation successfully
         int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ ESP_INTR_FLAG_INTRDISABLED;
+        isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
                             (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id),
                             mcpwm_comparator_default_isr, cmpr, &cmpr->intr), TAG, "install interrupt service for comparator failed");

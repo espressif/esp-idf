@@ -65,6 +65,7 @@ MCPWM 定时器
 调用 :cpp:func:`mcpwm_new_timer` 函数，以配置结构体 :cpp:type:`mcpwm_timer_config_t` 为参数，分配一个 MCPWM 定时器为对象。结构体定义为：
 
 - :cpp:member:`mcpwm_timer_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的定时器彼此独立。
+- :cpp:member:`mcpwm_timer_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_timer_config_t::clk_src` 设置定时器的时钟源。
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` 设置定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。
 - :cpp:member:`mcpwm_timer_config_t::count_mode` 设置定时器的计数模式。
@@ -82,6 +83,7 @@ MCPWM 操作器
 调用 :cpp:func:`mcpwm_new_operator` 函数，以配置结构体 :cpp:type:`mcpwm_operator_config_t` 为参数，分配一个 MCPWM 操作器为对象。结构体定义为：
 
 - :cpp:member:`mcpwm_operator_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的操作器彼此独立。
+- :cpp:member:`mcpwm_operator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` 设置是否在定时器计数为零时更新生成器操作。此处及下文提到的定时器指通过 :cpp:func:`mcpwm_operator_connect_timer` 连接到操作器的定时器。
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` 设置当定时器计数达到峰值时是否更新生成器操作。
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_sync` 设置当定时器接收同步信号时是否更新生成器操作。
@@ -98,6 +100,7 @@ MCPWM 比较器
 
 调用 :cpp:func:`mcpwm_new_comparator` 函数，以一个 MCPWM 操作器句柄和配置结构体 :cpp:type:`mcpwm_comparator_config_t` 为参数，分配一个 MCPWM 比较器为对象。操作器句柄由 :cpp:func:`mcpwm_new_operator` 生成，结构体定义为：
 
+- :cpp:member:`mcpwm_comparator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` 设置当定时器计数为零时是否更新比较阈值。
 - :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` 设置当定时器计数达到峰值时是否更新比较阈值。
 - :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` 设置当定时器接收同步信号时是否更新比较阈值。
@@ -129,6 +132,7 @@ MCPWM 故障分为两种类型：来自 GPIO 的故障信号和软件故障。
 调用 :cpp:func:`mcpwm_new_gpio_fault` 函数，以配置结构体 :cpp:type:`mcpwm_gpio_fault_config_t` 为参数，分配一个 GPIO 故障为对象。结构体定义为：
 
 - :cpp:member:`mcpwm_gpio_fault_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的 GPIO 故障彼此独立，也就是说，1 组的操作器无法检测到 0 组的 GPIO 故障。
+- :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` 设置故障所使用的 GPIO 编号。
 - :cpp:member:`mcpwm_gpio_fault_config_t::active_level` 设置故障信号的有效电平。
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
@@ -184,6 +188,7 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 
 接下来，可以调用 :cpp:func:`mcpwm_new_capture_channel` 函数，以一个捕获定时器句柄和配置结构体 :cpp:type:`mcpwm_capture_channel_config_t` 为参数，分配一个捕获通道。结构体定义为：
 
+- :cpp:member:`mcpwm_capture_channel_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_capture_channel_config_t::gpio_num` 设置捕获通道使用的 GPIO 编号。
 - :cpp:member:`mcpwm_capture_channel_config_t::prescale` 设置输入信号的预分频器。
 - :cpp:member:`mcpwm_capture_channel_config_t::pos_edge` 和 :cpp:member:`mcpwm_capture_channel_config_t::neg_edge` 设置是否在输入信号的上升沿和/或下降沿捕获时间戳。
@@ -194,6 +199,15 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 分配成功后，:cpp:func:`mcpwm_new_capture_channel` 将返回一个指向已分配捕获通道的指针。否则，函数将返回错误代码。具体来说，当捕获定时器中没有空闲捕获通道时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 
 反之，调用 :cpp:func:`mcpwm_del_capture_channel` 和 :cpp:func:`mcpwm_del_capture_timer` 将释放已分配的捕获通道和定时器。
+
+MCPWM 中断优先级
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+MCPWM 允许为 定时器、操作器、比较器、故障以及捕获事件分别配置中断，中断优先级由各自的 ``config_t::intr_priority`` 决定。且同一个 MCPWM 组中的事件共享同一个中断源。注册多个中断事件时，中断优先级需要保持一致。
+
+.. note::
+
+    MCPWM 组注册多个中断事件时，驱动将以第一个事件的中断优先级作为 MCPWM 组的中断优先级。
 
 
 .. _mcpwm-timer-operations-and-events:

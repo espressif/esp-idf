@@ -767,6 +767,7 @@ TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
 TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
 {
     const int generator_gpio = 0;
+    const int fault_gpio_num[3] = {2, 4, 5};
     printf("create timer and operator\r\n");
 
     mcpwm_operator_config_t oper_config = {
@@ -777,17 +778,16 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
 
     printf("install gpio faults trigger\r\n");
     mcpwm_fault_handle_t gpio_faults[3];
-    mcpwm_gpio_fault_config_t gpio_trigger_config[3];
-    gpio_trigger_config[0].gpio_num = 2;
-    gpio_trigger_config[1].gpio_num = 4;
-    gpio_trigger_config[2].gpio_num = 5;
+    mcpwm_gpio_fault_config_t gpio_trigger_config = {
+        .group_id = 0,
+        .flags.active_level = 1,
+        .flags.pull_down = 1,
+        .flags.pull_up = 0,
+        .flags.io_loop_back = 1, // so that we can write the GPIO value by GPIO driver
+    };
     for (int i = 0 ; i < 3; i++) {
-        gpio_trigger_config[i].group_id = 0;
-        gpio_trigger_config[i].flags.active_level = 1;
-        gpio_trigger_config[i].flags.pull_down = 1;
-        gpio_trigger_config[i].flags.pull_up = 0;
-        gpio_trigger_config[i].flags.io_loop_back = 1; // so that we can write the GPIO value by GPIO driver
-        TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_trigger_config[i], &gpio_faults[i]));
+        gpio_trigger_config.gpio_num = fault_gpio_num[i];
+        TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_trigger_config, &gpio_faults[i]));
     }
 
     printf("create generator\r\n");
@@ -808,14 +808,14 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
                  MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[2], MCPWM_GEN_ACTION_LOW)));
 
     TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
-    gpio_set_level(gpio_trigger_config[0].gpio_num, 1);
-    gpio_set_level(gpio_trigger_config[0].gpio_num, 0);
+    gpio_set_level(fault_gpio_num[0], 1);
+    gpio_set_level(fault_gpio_num[0], 0);
     TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
     vTaskDelay(pdMS_TO_TICKS(10));
 
     TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
-    gpio_set_level(gpio_trigger_config[1].gpio_num, 1);
-    gpio_set_level(gpio_trigger_config[1].gpio_num, 0);
+    gpio_set_level(fault_gpio_num[1], 1);
+    gpio_set_level(fault_gpio_num[1], 0);
     TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
     vTaskDelay(pdMS_TO_TICKS(10));
 
