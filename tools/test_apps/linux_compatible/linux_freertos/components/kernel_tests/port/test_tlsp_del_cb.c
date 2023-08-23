@@ -103,15 +103,6 @@ TEST_CASE("Test TLSP deletion callbacks", "[freertos]")
 //The variables pointed to by Thread Local Storage Pointer
 static uint32_t task_storage[portNUM_PROCESSORS][NO_OF_TLSP] = {0};
 
-/* If static task cleanup is defined, can't set index 0 even if the calling task is not a pthread,
-   as the cleanup is called for every task.
-*/
-#if defined(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
-static const int skip_index = 0; /*PTHREAD_TLS_INDEX*/
-#else
-static const int skip_index = -1;
-#endif
-
 static void del_cb(int index, void *ptr)
 {
     *((uint32_t *)ptr) = (TLSP_DEL_BASE << index);   //Indicate deletion by setting task storage element to a unique value
@@ -121,19 +112,11 @@ static void task_cb(void *arg)
 {
     int core = xPortGetCoreID();
     for(int i = 0; i < NO_OF_TLSP; i++){
-        if (i == skip_index) {
-            continue;
-        }
-
         task_storage[core][i] = (TLSP_SET_BASE << i);   //Give each element of task_storage a unique number
         vTaskSetThreadLocalStoragePointerAndDelCallback(NULL, i, (void *)&task_storage[core][i], del_cb);   //Set each TLSP to point to a task storage element
     }
 
     for(int i = 0; i < NO_OF_TLSP; i++){
-        if (i == skip_index) {
-            continue;
-        }
-
         uint32_t * tlsp = (uint32_t *)pvTaskGetThreadLocalStoragePointer(NULL, i);
         TEST_ASSERT_EQUAL(*tlsp, (TLSP_SET_BASE << i)); //Check if TLSP points to the correct task storage element by checking unique value
     }
@@ -151,9 +134,6 @@ TEST_CASE("Test FreeRTOS thread local storage pointers and del cb", "[freertos]"
 
     for(int core = 0; core < portNUM_PROCESSORS; core++){
         for(int i = 0; i < NO_OF_TLSP; i++){
-            if (i == skip_index) {
-                continue;
-            }
             TEST_ASSERT_EQUAL((TLSP_DEL_BASE << i), task_storage[core][i]);     //Check del_cb ran by checking task storage for unique value
         }
     }

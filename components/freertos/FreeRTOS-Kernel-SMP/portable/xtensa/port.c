@@ -42,6 +42,14 @@
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 
+/**
+ * @brief Align stack pointer in a downward growing stack
+ *
+ * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
+ * This macro is generally used when allocating aligned areas on a downward growing stack.
+ */
+#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
+
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  * - Various variables used to maintain the FreeRTOS port's state. Used from both port.c and various .S files
  * - Constant offsets are used by assembly to jump to particular TCB members or a stack area (such as the CPSA). We use
@@ -209,6 +217,90 @@ void vPortReleaseLock( portMUX_TYPE *lock )
 
 // ----------------------- System --------------------------
 
+// ------------------- Run Time Stats ----------------------
+
+// --------------------- TCB Cleanup -----------------------
+
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+static void vPortTLSPointersDelCb( void *pxTCB )
+{
+    /* Typecast pxTCB to StaticTask_t type to access TCB struct members.
+     * pvDummy15 corresponds to pvThreadLocalStoragePointers member of the TCB.
+     */
+    StaticTask_t *tcb = ( StaticTask_t * )pxTCB;
+
+    /* The TLSP deletion callbacks are stored at an offset of (configNUM_THREAD_LOCAL_STORAGE_POINTERS/2) */
+    TlsDeleteCallbackFunction_t *pvThreadLocalStoragePointersDelCallback = ( TlsDeleteCallbackFunction_t * )( &( tcb->pvDummy15[ ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ] ) );
+
+    /* We need to iterate over half the depth of the pvThreadLocalStoragePointers area
+     * to access all TLS pointers and their respective TLS deletion callbacks.
+     */
+    for ( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ ) {
+        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL ) {  //If del cb is set
+            /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
+            if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
+                // We call EARLY log here as currently portCLEAN_UP_TCB() is called in a critical section
+                ESP_EARLY_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
+                abort();
+            }
+
+            pvThreadLocalStoragePointersDelCallback[ x ]( x, tcb->pvDummy15[ x ] );   //Call del cb
+        }
+    }
+}
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+static void vPortCleanUpCoprocArea( void *pxTCB )
+{
+    UBaseType_t uxCoprocArea;
+    BaseType_t xTargetCoreID;
+
+    /* Get pointer to the task's coprocessor save area from TCB->pxEndOfStack. See uxInitialiseStackCPSA() */
+    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pxTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
+    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
+
+    /* Extract core ID from the affinity mask */
+    xTargetCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy25 ;
+    xTargetCoreID = ( BaseType_t ) __builtin_ffs( ( int ) xTargetCoreID );
+    assert( xTargetCoreID >= 1 ); // __builtin_ffs always returns first set index + 1
+    xTargetCoreID -= 1;
+
+    /* If task has live floating point registers somewhere, release them */
+    void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
+    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
+}
+#endif /* ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+
+void vPortTCBPreDeleteHook( void *pxTCB )
+{
+    #if ( CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK )
+        /* Call the user defined task pre-deletion hook */
+        extern void vTaskPreDeletionHook( void * pxTCB );
+        vTaskPreDeletionHook( pxTCB );
+    #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
+
+    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
+        /*
+         * If the user is using the legacy task pre-deletion hook, call it.
+         * Todo: Will be removed in IDF-8097
+         */
+        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
+        extern void vPortCleanUpTCB( void * pxTCB );
+        vPortCleanUpTCB( pxTCB );
+    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+
+    #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+        /* Call TLS pointers deletion callbacks */
+        vPortTLSPointersDelCb( pxTCB );
+    #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
+    #if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+        /* Cleanup coproc save area */
+        vPortCleanUpCoprocArea( pxTCB );
+    #endif /* ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+}
+
 /* ------------------------------------------------ FreeRTOS Portable --------------------------------------------------
  * - Provides implementation for functions required by FreeRTOS
  * - Declared in portable.h
@@ -268,14 +360,6 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
     abort();
 }
 #endif
-
-/**
- * @brief Align stack pointer in a downward growing stack
- *
- * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
- * This macro is generally used when allocating aligned areas on a downward growing stack.
- */
-#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
 
 #if XCHAL_CP_NUM > 0
 /**
@@ -559,61 +643,6 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     // Return the task's current stack pointer address which should point to the starting interrupt stack frame
     return (StackType_t *)uxStackPointer;
 }
-// -------------------- Co-Processor -----------------------
-#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-
-void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
-
-void vPortCleanUpCoprocArea( void *pxTCB )
-{
-    UBaseType_t uxCoprocArea;
-    BaseType_t xTargetCoreID;
-
-    /* Get pointer to the task's coprocessor save area from TCB->pxEndOfStack. See uxInitialiseStackCPSA() */
-    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pxTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
-    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
-
-    /* Extract core ID from the affinity mask */
-    xTargetCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy25 ;
-    xTargetCoreID = ( BaseType_t ) __builtin_ffs( ( int ) xTargetCoreID );
-    assert( xTargetCoreID >= 1 ); // __builtin_ffs always returns first set index + 1
-    xTargetCoreID -= 1;
-
-    /* If task has live floating point registers somewhere, release them */
-    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
-}
-#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-
-// ------- Thread Local Storage Pointers Deletion Callbacks -------
-
-#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
-void vPortTLSPointersDelCb( void *pxTCB )
-{
-    /* Typecast pxTCB to StaticTask_t type to access TCB struct members.
-     * pvDummy15 corresponds to pvThreadLocalStoragePointers member of the TCB.
-     */
-    StaticTask_t *tcb = ( StaticTask_t * )pxTCB;
-
-    /* The TLSP deletion callbacks are stored at an offset of (configNUM_THREAD_LOCAL_STORAGE_POINTERS/2) */
-    TlsDeleteCallbackFunction_t *pvThreadLocalStoragePointersDelCallback = ( TlsDeleteCallbackFunction_t * )( &( tcb->pvDummy15[ ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ] ) );
-
-    /* We need to iterate over half the depth of the pvThreadLocalStoragePointers area
-     * to access all TLS pointers and their respective TLS deletion callbacks.
-     */
-    for ( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ ) {
-        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL ) {  //If del cb is set
-            /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
-            if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
-                // We call EARLY log here as currently portCLEAN_UP_TCB() is called in a critical section
-                ESP_EARLY_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
-                abort();
-            }
-
-            pvThreadLocalStoragePointersDelCallback[ x ]( x, tcb->pvDummy15[ x ] );   //Call del cb
-        }
-    }
-}
-#endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
 // ------------------- Hook Functions ----------------------
 
@@ -655,31 +684,3 @@ void vApplicationMinimalIdleHook( void )
     esp_vApplicationIdleHook(); //Run IDF style hooks
 }
 #endif // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
-
-/*
- * Hook function called during prvDeleteTCB() to cleanup any
- * user defined static memory areas in the TCB.
- */
-#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-void __real_vPortCleanUpTCB( void *pxTCB );
-
-void __wrap_vPortCleanUpTCB( void *pxTCB )
-#else
-void vPortCleanUpTCB ( void *pxTCB )
-#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
-{
-#if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-    /* Call user defined vPortCleanUpTCB */
-    __real_vPortCleanUpTCB( pxTCB );
-#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
-
-#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
-    /* Call TLS pointers deletion callbacks */
-    vPortTLSPointersDelCb( pxTCB );
-#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
-
-#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-    /* Cleanup coproc save area */
-    vPortCleanUpCoprocArea( pxTCB );
-#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-}

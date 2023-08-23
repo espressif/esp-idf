@@ -219,7 +219,7 @@ entries:
                 port:vPortCleanUpCoprocArea (default)
             if FREERTOS_TLSP_DELETION_CALLBACKS = y:
                 port:vPortTLSPointersDelCb (default)
-            port:vPortCleanUpTCB (default)
+            port:vPortTCBPreDeleteHook (default)
         # --------------------------------------------------------------------------------------------------------------
         # portable/riscv/port.c
         # - Most functions are called from an ISR context, except for scheduler/task init/deinit functions
@@ -234,4 +234,4 @@ entries:
             port:pxPortInitialiseStack (default)
             if FREERTOS_TLSP_DELETION_CALLBACKS = y:
                 port:vPortTLSPointersDelCb (default)
-            port:vPortCleanUpTCB (default)
+            port:vPortTCBPreDeleteHook (default)

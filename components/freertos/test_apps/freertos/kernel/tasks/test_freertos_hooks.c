@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,7 @@ TEST_CASE("FreeRTOS tick hook", "[freertos]")
 #endif // configUSE_TICK_HOOK
 #endif // CONFIG_FREERTOS_SMP
 
-#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+#if CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK
 
 static volatile void *deleted_tcb;
 
@@ -74,7 +74,7 @@ static void taskDeletesItself(void *ignored)
     vTaskDelete(NULL);
 }
 
-void vPortCleanUpTCB(void *pxTCB)
+void vTaskPreDeletionHook(void *pxTCB)
 {
     deleted_tcb = pxTCB;
 }
@@ -91,4 +91,4 @@ TEST_CASE("static task cleanup hook is called based on config", "[freertos]")
     }
 }
 
-#endif // CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+#endif // CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK
