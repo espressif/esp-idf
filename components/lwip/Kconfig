@@ -80,6 +80,14 @@ menu "LWIP"
             This feature will reduce the power consumption for applications which do not
             use IGMP and MLD6.
 
+    config LWIP_ND6
+        bool "LWIP NDP6 Enable/Disable"
+        default y
+        depends on LWIP_IPV6
+        help
+            This option is used to disable the Network Discovery Protocol (NDP) if it is not required.
+            Please use this option with caution, as the NDP is essential for IPv6 functionality within a local network.
+
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
         range 1 16
