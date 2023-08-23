@@ -7,7 +7,6 @@
 // The LL layer for UART register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
 
-
 #pragma once
 
 #include "esp_attr.h"
@@ -18,6 +17,7 @@
 #include "soc/lp_uart_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
+#include "soc/lpperi_struct.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -105,7 +105,60 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     }
 }
 
-// LP_UART clock control LL functions are located in lp_periph_clk_ctrl_ll.h
+/**
+ * @brief Set LP UART source clock
+ *
+ * @param  hw Address offset of the LP UART peripheral registers
+ * @param  src_clk Source clock for the LP UART peripheral
+ */
+static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_clk_src_t src_clk)
+{
+    (void)hw;
+    switch (src_clk) {
+    case LP_UART_SCLK_LP_FAST:
+        LP_CLKRST.lpperi.lp_uart_clk_sel = 0;
+        break;
+    case LP_UART_SCLK_XTAL_D2:
+        LP_CLKRST.lpperi.lp_uart_clk_sel = 1;
+        break;
+    default:
+        // Invalid LP_UART clock source
+        HAL_ASSERT(false);
+    }
+}
+
+/// LP_CLKRST.lpperi is a shared register, so this function must be used in an atomic way
+#define lp_uart_ll_set_source_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_set_source_clk(__VA_ARGS__)
+
+/**
+ * @brief Enable bus clock for the LP UART module
+ *
+ * @param hw_id LP UART instance ID
+ * @param enable True to enable, False to disable
+ */
+static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
+{
+    (void)hw_id;
+    LPPERI.clk_en.lp_uart_ck_en = enable;
+}
+
+/// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
+#define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset LP UART module
+ *
+ * @param hw_id LP UART instance ID
+ */
+static inline void lp_uart_ll_reset_register(int hw_id)
+{
+    (void)hw_id;
+    LPPERI.reset_en.lp_uart_reset_en = 1;
+    LPPERI.reset_en.lp_uart_reset_en = 0;
+}
+
+/// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
+#define lp_uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_reset_register(__VA_ARGS__)
 
 /*************************************** General LL functions ******************************************/
 /**
@@ -982,7 +1035,7 @@ FORCE_INLINE_ATTR void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
 {
     hw->swfc_conf0_sync.force_xon = 1;
     uart_ll_update(hw);
-    if(!always_on) {
+    if (!always_on) {
         hw->swfc_conf0_sync.force_xon = 0;
         uart_ll_update(hw);
     }
@@ -1031,7 +1084,7 @@ FORCE_INLINE_ATTR void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 FORCE_INLINE_ATTR void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 {
     uint16_t tout_val = tout_thrd;
-    if(tout_thrd > 0) {
+    if (tout_thrd > 0) {
         hw->tout_conf_sync.rx_tout_thrhd = tout_val;
         hw->tout_conf_sync.rx_tout_en = 1;
     } else {
@@ -1050,7 +1103,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 FORCE_INLINE_ATTR uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
 {
     uint16_t tout_thrd = 0;
-    if(hw->tout_conf_sync.rx_tout_en > 0) {
+    if (hw->tout_conf_sync.rx_tout_en > 0) {
         tout_thrd = hw->tout_conf_sync.rx_tout_thrhd;
     }
     return tout_thrd;

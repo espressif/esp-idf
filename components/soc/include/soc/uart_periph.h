@@ -45,9 +45,6 @@ typedef struct {
     const uint8_t irq;
     union {
         const periph_module_t module;
-#if (SOC_UART_LP_NUM >= 1)
-        const lp_periph_module_t lp_module;
-#endif
     };
 } uart_signal_conn_t;
 

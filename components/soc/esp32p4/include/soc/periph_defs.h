@@ -70,15 +70,11 @@ typedef enum {
     PERIPH_AXI_PDMA_MODULE,
     PERIPH_UHCI_MODULE,
     PERIPH_PCNT_MODULE,
-
+    /* LP peripherals */
+    PERIPH_LP_I2C0_MODULE,
+    PERIPH_LP_UART0_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
-
-typedef enum {
-    LP_PERIPH_I2C0_MODULE = 0,
-    LP_PERIPH_UART0_MODULE,
-    LP_PERIPH_MODULE_MAX,
-} lp_periph_module_t;
 
 #ifdef __cplusplus
 }

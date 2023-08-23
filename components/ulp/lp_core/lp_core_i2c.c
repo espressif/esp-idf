@@ -11,7 +11,7 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc_io_channel.h"
 #include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/lp_periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
 static const char *LPI2C_TAG = "lp_core_i2c";
 
@@ -94,7 +94,7 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
 
     /* Check if we have a valid user configured source clock */
     soc_periph_lp_i2c_clk_src_t clk_srcs[] = SOC_LP_I2C_CLKS;
-    for (int i = 0; i < sizeof(clk_srcs)/sizeof(clk_srcs[0]); i++) {
+    for (int i = 0; i < sizeof(clk_srcs) / sizeof(clk_srcs[0]); i++) {
         if (clk_srcs[i] == cfg->i2c_src_clk) {
             /* Clock source matches. Override the source clock type with the user configured value */
             source_clk = cfg->i2c_src_clk;
@@ -108,8 +108,10 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
     /* Verify that the I2C_SCLK operates at a frequency 20 times larger than the requested SCL bus frequency */
     ESP_RETURN_ON_FALSE(cfg->i2c_timing_cfg.clk_speed_hz * 20 <= source_freq, ESP_ERR_INVALID_ARG, LPI2C_TAG, "I2C_SCLK frequency (%"PRId32") should operate at a frequency at least 20 times larger than the I2C SCL bus frequency (%"PRId32")", source_freq, cfg->i2c_timing_cfg.clk_speed_hz);
 
-    /* Set LP I2C source clock */
-    lp_periph_set_clk_src(LP_PERIPH_I2C0_MODULE, (soc_module_clk_t)source_clk);
+    /* LP I2C clock source is mixed with other peripherals in the same register */
+    PERIPH_RCC_ATOMIC() {
+        lp_i2c_ll_set_source_clk(i2c_hal.dev, source_clk);
+    }
 
     /* Configure LP I2C timing paramters. source_clk is ignored for LP_I2C in this call */
     i2c_hal_set_bus_timing(&i2c_hal, cfg->i2c_timing_cfg.clk_speed_hz, (i2c_clock_source_t)source_clk, source_freq);
@@ -128,11 +130,15 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
     /* Configure LP I2C GPIOs */
     ESP_RETURN_ON_ERROR(lp_i2c_set_pin(cfg), LPI2C_TAG, "Failed to configure LP I2C GPIOs");
 
+    PERIPH_RCC_ATOMIC() {
+        /* Enable LP I2C bus clock */
+        lp_i2c_ll_enable_bus_clock(lp_i2c_num - LP_I2C_NUM_0, true);
+        /* Reset LP I2C register */
+        lp_i2c_ll_reset_register(lp_i2c_num - LP_I2C_NUM_0);
+    }
+
     /* Initialize LP I2C HAL */
     i2c_hal_init(&i2c_hal, lp_i2c_num);
-
-    /* Enable LP I2C controller clock */
-    lp_periph_module_enable(LP_PERIPH_I2C0_MODULE);
 
     /* Initialize LP I2C Master mode */
     i2c_hal_master_init(&i2c_hal);

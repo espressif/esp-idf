@@ -109,6 +109,6 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             },
         },
         .irq = ETS_LP_UART_INTR_SOURCE,
-        .lp_module = LP_PERIPH_UART0_MODULE,
+        .module = PERIPH_LP_UART0_MODULE,
     },
 };

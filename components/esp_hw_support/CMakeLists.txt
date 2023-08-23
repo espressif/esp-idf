@@ -36,10 +36,6 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c")
 
-    if(CONFIG_SOC_LP_PERIPHERALS_SUPPORTED)
-        list(APPEND srcs "lp_periph_ctrl.c")
-    endif()
-
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
     endif()

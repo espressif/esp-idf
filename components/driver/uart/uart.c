@@ -27,7 +27,6 @@
 #include "driver/rtc_io.h"
 #include "driver/uart_select.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/lp_periph_ctrl.h"
 #include "esp_clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
@@ -77,14 +76,12 @@ static const char *UART_TAG = "uart";
                             | (UART_INTR_PARITY_ERR))
 #endif
 
-
 #define UART_ENTER_CRITICAL_SAFE(spinlock)   esp_os_enter_critical_safe(spinlock)
 #define UART_EXIT_CRITICAL_SAFE(spinlock)    esp_os_exit_critical_safe(spinlock)
 #define UART_ENTER_CRITICAL_ISR(spinlock)    esp_os_enter_critical_isr(spinlock)
 #define UART_EXIT_CRITICAL_ISR(spinlock)     esp_os_exit_critical_isr(spinlock)
 #define UART_ENTER_CRITICAL(spinlock)        esp_os_enter_critical(spinlock)
 #define UART_EXIT_CRITICAL(spinlock)         esp_os_exit_critical(spinlock)
-
 
 // Check actual UART mode set
 #define UART_IS_MODE_SET(uart_number, mode) ((p_uart_obj[uart_number]->uart_mode == mode))
@@ -189,8 +186,10 @@ static void uart_module_enable(uart_port_t uart_num)
         }
 #if (SOC_UART_LP_NUM >= 1)
         else {
-            lp_periph_module_enable(uart_periph_signal[uart_num].lp_module);
-            lp_periph_module_reset(uart_periph_signal[uart_num].lp_module);
+            PERIPH_RCC_ATOMIC() {
+                lp_uart_ll_enable_bus_clock(uart_num - SOC_UART_HP_NUM, true);
+                lp_uart_ll_reset_register(uart_num - SOC_UART_HP_NUM);
+            }
         }
 #endif
         uart_context[uart_num].hw_enabled = true;
@@ -207,7 +206,9 @@ static void uart_module_disable(uart_port_t uart_num)
         }
 #if (SOC_UART_LP_NUM >= 1)
         else if (uart_num >= SOC_UART_HP_NUM) {
-            lp_periph_module_disable(uart_periph_signal[uart_num].lp_module);
+            PERIPH_RCC_ATOMIC() {
+                lp_uart_ll_enable_bus_clock(uart_num - SOC_UART_HP_NUM, false);
+            }
         }
 #endif
         uart_context[uart_num].hw_enabled = false;
@@ -561,7 +562,6 @@ esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_c
     return ESP_OK;
 }
 
-
 esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num)
 {
     return uart_disable_intr_mask(uart_num, UART_INTR_CMD_CHAR_DET);
@@ -747,7 +747,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     }
 #if (SOC_UART_LP_NUM >= 1)
     else {
-        lp_periph_set_clk_src(uart_periph_signal[uart_num].lp_module, uart_sclk_sel);
+        PERIPH_RCC_ATOMIC() {
+            lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)uart_sclk_sel);
+        }
     }
 #endif
     uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
