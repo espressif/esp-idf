@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,10 +26,21 @@ typedef void (*esp_deep_sleep_cb_t)(void);
 /**
  * @brief Logic function used for EXT1 wakeup mode.
  */
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+#if CONFIG_IDF_TARGET_ESP32
 typedef enum {
     ESP_EXT1_WAKEUP_ALL_LOW = 0,    //!< Wake the chip when all selected GPIOs go low
     ESP_EXT1_WAKEUP_ANY_HIGH = 1    //!< Wake the chip when any of the selected GPIOs go high
 } esp_sleep_ext1_wakeup_mode_t;
+#else
+typedef enum {
+    ESP_EXT1_WAKEUP_ANY_LOW = 0,    //!< Wake the chip when any of the selected GPIOs go low
+    ESP_EXT1_WAKEUP_ANY_HIGH = 1,    //!< Wake the chip when any of the selected GPIOs go high
+    ESP_EXT1_WAKEUP_ALL_LOW __attribute__((deprecated("wakeup mode \"ALL_LOW\" is no longer supported after ESP32, \
+    please use ESP_EXT1_WAKEUP_ANY_LOW instead"))) = ESP_EXT1_WAKEUP_ANY_LOW
+} esp_sleep_ext1_wakeup_mode_t;
+#endif
+#endif
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 typedef enum {
@@ -250,18 +261,27 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * @note Internal pullups and pulldowns don't work when RTC peripherals are
  *       shut down. In this case, external resistors need to be added.
  *       Alternatively, RTC peripherals (and pullups/pulldowns) may be
- *       kept enabled using esp_sleep_pd_config function.
+ *       kept enabled using esp_sleep_pd_config function. If we turn off the
+ *       ``RTC_PERIPH`` domain or certain chips lack the ``RTC_PERIPH`` domain,
+ *       we will use the HOLD feature to maintain the pull-up and pull-down on
+ *       the pins during sleep. HOLD feature will be acted on the pin internally
+ *       before the system entering sleep, and this can further reduce power consumption.
  *
  * @param mask  bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *              which have RTC functionality can be used in this bit map.
  *              For different SoCs, the related GPIOs are:
- *                - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
- *                - ESP32-S2: 0-21;
- *                - ESP32-S3: 0-21.
- *                - ESP32-C6: 0-7.
+ *                - ESP32: 0, 2, 4, 12-15, 25-27, 32-39
+ *                - ESP32-S2: 0-21
+ *                - ESP32-S3: 0-21
+ *                - ESP32-C6: 0-7
+ *                - ESP32-H2: 7-14
  * @param mode select logic function used to determine wakeup condition:
- *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
- *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
+ *             When target chip is ESP32:
+ *                - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
+ *                - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
+ *             When target chip is ESP32-S2, ESP32-S3, ESP32-C6 or ESP32-H2:
+ *                - ESP_EXT1_WAKEUP_ANY_LOW: wake up when any of the selected GPIOs is low
+ *                - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if any of the selected GPIOs is not an RTC GPIO,

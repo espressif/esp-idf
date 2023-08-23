@@ -13,6 +13,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['default',], indirect=True)
 def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:

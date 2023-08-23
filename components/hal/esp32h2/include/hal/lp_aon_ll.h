@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-C6 LP_AON register operations
+// The LL layer for ESP32-H2 LP_AON register operations
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #include "soc/soc.h"
 #include "soc/lp_aon_struct.h"
 #include "hal/misc.h"
-#include "esp32c6/rom/rtc.h"
+#include "esp32h2/rom/rtc.h"
 
 
 #ifdef __cplusplus

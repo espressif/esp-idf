@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,12 @@
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
 
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_PIN_COUNT > 0
 #include "soc/rtc_io_channel.h"
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
+#endif
 #endif
 
 #if SOC_ADC_RTC_CTRL_SUPPORTED
@@ -26,8 +28,8 @@ extern "C"
 {
 #endif
 
+#if SOC_RTCIO_PIN_COUNT > 0
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-
 /**
  * @brief Pin function information for a single RTCIO pad's.
  *
@@ -60,6 +62,7 @@ typedef struct {
  * for external use.
  */
 extern const rtc_io_desc_t rtc_io_desc[SOC_RTCIO_PIN_COUNT];
+#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 /**
  * @brief Provides a constant table to get rtc io number with gpio number
@@ -68,8 +71,7 @@ extern const rtc_io_desc_t rtc_io_desc[SOC_RTCIO_PIN_COUNT];
  * for external use.
  */
 extern const int rtc_io_num_map[SOC_GPIO_PIN_COUNT];
-
-#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#endif //SOC_RTCIO_PIN_COUNT > 0
 
 #ifdef __cplusplus
 }
