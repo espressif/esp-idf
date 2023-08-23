@@ -54,7 +54,9 @@ When enabling the Flash Encryption and Secure Boot V2 externally we need to enab
 #. Enable Flash Encryption feature by following the steps listed in :ref:`enable-flash-encryption-externally`.
 #. Enable Secure Boot V2 feature by following the steps listed in :ref:`enable-secure-boot-v2-externally`.
 
-The reason for this order is that when Secure Boot V2 is enabled, we write protect the eFuse ``WR_DIS``. Once that eFuse is write protected, we can no longer enable Flash Encryption.
+The reason for this order is as follows:
+
+To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write-protection for RD_DIS (ESP_EFUSE_WR_DIS_RD_DIS) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the RD_DIS is already write-protected, making it impossible to read protect the FE key.
 
 .. _enable-flash-encryption-externally:
 
@@ -134,7 +136,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
       espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
-    where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
+    where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``XTS_AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
 
     For AES-128 (256-bit key) - ``XTS_AES_128_KEY``:
 
