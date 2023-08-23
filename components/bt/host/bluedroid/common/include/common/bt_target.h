@@ -1437,6 +1437,12 @@
 #define SDP_INCLUDED                FALSE
 #endif
 
+#if (SDP_INCLUDED == TRUE) && (BTA_JV_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_SDP_BQB_INCLUDED         TRUE
+#else
+#define BT_SDP_BQB_INCLUDED         FALSE
+#endif
+
 /* This is set to enable SDP server functionality. */
 #ifndef SDP_SERVER_ENABLED
 #if SDP_INCLUDED == TRUE
