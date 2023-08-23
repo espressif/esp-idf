@@ -3,6 +3,8 @@
 Concurrency Constraints for Flash on SPI1
 =========================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI Flash driver). Hence, operations to SPI1 will cause significant influence to the whole system. This kind of operations include calling SPI Flash API or other drivers on SPI1 bus, any operations like read/write/erase or other user defined SPI operations, regardless to the main flash or other SPI slave devices.
 
 .. only:: not (esp32c3 or SOC_SPIRAM_XIP_SUPPORTED)

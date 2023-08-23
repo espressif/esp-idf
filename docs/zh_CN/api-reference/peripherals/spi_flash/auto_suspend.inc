@@ -4,7 +4,7 @@
 当使能 flash 擦除的自动暂停
 --------------------------------------
 
-.. important:
+.. important::
 
     您使用的 flash 需要有 suspend/resume 功能，而且不是所有具备 suspend/resume 的 flash 都可以在 {IDF_TARGET_NAME} 上使用自动暂停功能。如果您在不支持自动暂停的 flash 上使用该功能，可能会造成严重的程序崩溃。因此，我们强烈建议您在使用前阅读对应的 flash 的数据手册，确保您的 flash 可以满足如下条件, 即使这样，我们也建议您对 flash 做完整的测试：
 
