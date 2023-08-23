@@ -92,7 +92,8 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     cap_timer = heap_caps_calloc(1, sizeof(mcpwm_cap_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cap_timer, ESP_ERR_NO_MEM, err, TAG, "no mem for capture timer");
 
-    switch (config->clk_src) {
+    mcpwm_capture_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_CAPTURE_CLK_SRC_DEFAULT;
+    switch (clk_src) {
     case MCPWM_CAPTURE_CLK_SRC_APB:
         cap_timer->resolution_hz = esp_clk_apb_freq();
 #if CONFIG_PM_ENABLE

@@ -101,7 +101,8 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     mcpwm_hal_context_t *hal = &group->hal;
     int timer_id = timer->timer_id;
     // select the clock source
-    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, config->clk_src), err, TAG, "set group clock failed");
+    mcpwm_timer_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_TIMER_CLK_SRC_DEFAULT;
+    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
     // reset the timer to a determined state
     mcpwm_hal_timer_reset(hal, timer_id);
     // set timer resolution
