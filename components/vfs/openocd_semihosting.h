@@ -276,7 +276,7 @@ static inline int semihosting_utime(const char *host_path, const struct utimbuf 
 static inline int semihosting_stat(const char *host_path, struct stat *restrict statbuf)
 {
     int host_errno = 0;
-    long args[] = {(long)host_path, strlen(host_path), (int)statbuf, 0};
+    long args[] = {(long)host_path, strlen(host_path), (long)statbuf, 0};
     int ret = (int)semihosting_call(ESP_SEMIHOSTING_SYS_STAT, args, &host_errno);
     if (ret < 0) {
         errno = host_errno;
@@ -328,7 +328,7 @@ static inline int semihosting_opendir(const char *path, long offset)
     return ret;
 }
 
-static inline int semihosting_readdir(int struct_dirent_ptr, long offset)
+static inline int semihosting_readdir(long struct_dirent_ptr, long offset)
 {
     int host_errno = 0;
     long args[] = {struct_dirent_ptr, offset, 0, 0};

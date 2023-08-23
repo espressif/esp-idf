@@ -377,7 +377,7 @@ static int vfs_semihost_readdir_r(void* ctx, DIR* dirp, struct dirent* entry, st
     }
 
     ESP_LOGV(TAG, "%s: %s %ld", __func__, semihost_dirp->path, semihost_dirp->id);
-    int ret_fd = semihosting_readdir((int)entry, semihost_dirp->id);
+    int ret_fd = semihosting_readdir((long)entry, semihost_dirp->id);
     if (ret_fd < 0) {
         if (errno == 0) { /* end of directory */
             *out_dirent = NULL;
