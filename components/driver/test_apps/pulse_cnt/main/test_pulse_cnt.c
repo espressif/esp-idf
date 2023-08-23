@@ -21,9 +21,6 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         .low_limit = -100,
         .high_limit = 100,
         .intr_priority = 0,
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        .zero_input_gpio_num = -1,
-#endif
     };
     pcnt_unit_handle_t units[SOC_PCNT_UNITS_PER_GROUP];
     int count_value = 0;
@@ -91,9 +88,6 @@ TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        .zero_input_gpio_num = -1,
-#endif
     };
     pcnt_chan_config_t chan_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A, // only detect edge signal in this case
@@ -182,9 +176,6 @@ TEST_CASE("pcnt_multiple_units_pulse_count", "[pcnt]")
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        .zero_input_gpio_num = -1,
-#endif
     };
     pcnt_unit_handle_t units[2];
     for (int i = 0; i < 2; i++) {
@@ -250,9 +241,6 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        .zero_input_gpio_num = -1,
-#endif
     };
 
     printf("install pcnt unit\r\n");
@@ -376,9 +364,6 @@ TEST_CASE("pcnt_zero_cross_mode", "[pcnt]")
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        .zero_input_gpio_num = -1,
-#endif
     };
 
     printf("install pcnt unit\r\n");
@@ -471,9 +456,6 @@ TEST_CASE("pcnt_virtual_io", "[pcnt]")
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        .zero_input_gpio_num = -1,
-#endif
     };
     pcnt_chan_config_t chan_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A, // only detect edge signal in this case
@@ -520,23 +502,24 @@ TEST_CASE("pcnt_virtual_io", "[pcnt]")
     TEST_ESP_OK(pcnt_del_unit(unit));
 }
 
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
+#if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
 {
     pcnt_unit_config_t unit_config = {
         .low_limit = -1000,
         .high_limit = 1000,
-        .zero_input_gpio_num = TEST_PCNT_GPIO_Z,
-        .flags.io_loop_back = true,
     };
 
     printf("install pcnt unit\r\n");
     pcnt_unit_handle_t unit = NULL;
     TEST_ESP_OK(pcnt_new_unit(&unit_config, &unit));
-    pcnt_glitch_filter_config_t filter_config = {
-        .max_glitch_ns = 1000,
+
+    pcnt_clear_signal_config_t clear_signal_config = {
+        .clear_signal_gpio_num = TEST_PCNT_GPIO_Z,
+        .flags.io_loop_back = true,
     };
-    TEST_ESP_OK(pcnt_unit_set_glitch_filter(unit, &filter_config));
+
+    TEST_ESP_OK(pcnt_unit_set_clear_signal(unit, &clear_signal_config));
 
     printf("install pcnt channels\r\n");
     pcnt_chan_config_t chan_config = {
@@ -571,11 +554,30 @@ TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
 
     TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
     printf("count_value=%d\r\n", count_value);
-    TEST_ASSERT_EQUAL(0, count_value); // 0 after rst_sig
+    TEST_ASSERT_EQUAL(0, count_value); // 0 after zero signal
+
+    printf("remove zero signal\r\n");
+    TEST_ESP_OK(pcnt_unit_set_clear_signal(unit, NULL));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_unit_set_clear_signal(unit, NULL));
+
+    // trigger 10 rising edge on GPIO
+    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
+
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("count_value=%d\r\n", count_value);
+    TEST_ASSERT_EQUAL(10, count_value);
+
+    printf("simulating zero input signal\r\n");
+    TEST_ESP_OK(gpio_set_level(TEST_PCNT_GPIO_Z, 1));
+    TEST_ESP_OK(gpio_set_level(TEST_PCNT_GPIO_Z, 0));
+
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("count_value=%d\r\n", count_value);
+    TEST_ASSERT_EQUAL(10, count_value); // 10 with no zero signal
 
     TEST_ESP_OK(pcnt_del_channel(channel));
     TEST_ESP_OK(pcnt_unit_stop(unit));
     TEST_ESP_OK(pcnt_unit_disable(unit));
     TEST_ESP_OK(pcnt_del_unit(unit));
 }
-#endif // SOC_PCNT_SUPPORT_ZERO_INPUT
+#endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL

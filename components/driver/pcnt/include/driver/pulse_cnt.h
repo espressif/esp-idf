@@ -63,15 +63,8 @@ typedef struct {
     int high_limit;     /*!< High limitation of the count unit, should be higher than 0 */
     int intr_priority;  /*!< PCNT interrupt priority,
                             if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-    int zero_input_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high, input mode with pull down enabled. Set to -1 if unused */
-#endif
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
-#if SOC_PCNT_SUPPORT_ZERO_INPUT
-        uint32_t invert_zero_input: 1;   /*!< Invert the zero input signal and set input mode with pull up.*/
-        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-#endif
     } flags;       /*!< Extra flags */
 } pcnt_unit_config_t;
 
@@ -145,6 +138,34 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit);
  *      - ESP_FAIL: Set glitch filter failed because of other error
  */
 esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch_filter_config_t *config);
+
+#if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
+/**
+ * @brief PCNT clear signal configuration
+ */
+typedef struct {
+    int clear_signal_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high, input mode with pull down enabled */
+    struct {
+        uint32_t invert_clear_signal: 1;   /*!< Invert the clear input signal and set input mode with pull up */
+        uint32_t io_loop_back: 1;         /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+    } flags;                              /*!< clear signal config flags */
+} pcnt_clear_signal_config_t;
+
+/**
+ * @brief Set clear signal for PCNT unit
+ *
+ * @note The function of clear signal is the same as `pcnt_unit_clear_count()`. High-level Active
+ *
+ * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
+ * @param[in] config PCNT clear signal configuration, set config to NULL means disabling the clear signal
+ * @return
+ *      - ESP_OK: Set clear signal successfully
+ *      - ESP_ERR_INVALID_ARG: Set clear signal failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Set clear signal failed because set clear signal repeatly or disable clear signal before set it
+ *      - ESP_FAIL: Set clear signal failed because of other error
+ */
+esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_signal_config_t *config);
+#endif
 
 /**
  * @brief Enable the PCNT unit
