@@ -348,7 +348,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_UNAT_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--UNKOW AT CMD: %s", param->unat_rep.unat);
-            esp_hf_ag_unknown_at_send(hf_peer_addr, NULL);
+            esp_hf_ag_unknown_at_send(param->unat_rep.remote_bda, NULL);
             break;
         }
 
@@ -359,7 +359,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             esp_hf_call_setup_status_t call_setup_state = 2;
             esp_hf_network_state_t ntk_state = 1;
             int signal = 2;
-            esp_hf_ag_devices_status_indchange(hf_peer_addr,call_state,call_setup_state,ntk_state,signal);
+            esp_hf_ag_devices_status_indchange(param->ind_upd.remote_addr,call_state,call_setup_state,ntk_state,signal);
             break;
         }
 
@@ -373,14 +373,14 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             esp_hf_roaming_status_t roam = 0;
             int batt_lev = 3;
             esp_hf_call_held_status_t call_held_status = 0;
-            esp_hf_ag_cind_response(hf_peer_addr,call_status,call_setup_status,ntk_state,signal,roam,batt_lev,call_held_status);
+            esp_hf_ag_cind_response(param->cind_rep.remote_addr,call_status,call_setup_status,ntk_state,signal,roam,batt_lev,call_held_status);
             break;
         }
 
         case ESP_HF_COPS_RESPONSE_EVT:
         {
             const int svc_type = 1;
-            esp_hf_ag_cops_response(hf_peer_addr, c_operator_name_str[svc_type]);
+            esp_hf_ag_cops_response(param->cops_rep.remote_addr, c_operator_name_str[svc_type]);
             break;
         }
 
@@ -397,7 +397,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             esp_hf_call_addr_type_t type = ESP_HF_CALL_ADDR_TYPE_UNKNOWN;
 
             ESP_LOGI(BT_HF_TAG, "--Calling Line Identification.");
-            esp_hf_ag_clcc_response(hf_peer_addr, index, dir, current_call_status, mode, mpty, number, type);
+            esp_hf_ag_clcc_response(param->clcc_rep.remote_addr, index, dir, current_call_status, mode, mpty, number, type);
             break;
         }
 
@@ -406,7 +406,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             char *number = {"123456"};
             esp_hf_subscriber_service_type_t type = 1;
             ESP_LOGI(BT_HF_TAG, "--Current Number is %s ,Type is %s.", number, c_subscriber_service_type_str[type]);
-            esp_hf_ag_cnum_response(hf_peer_addr, number,type);
+            esp_hf_ag_cnum_response(param->cnum_rep.remote_addr, number,type);
             break;
         }
 
@@ -426,7 +426,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         {
             ESP_LOGI(BT_HF_TAG, "--Asnwer Incoming Call.");
             char *number = {"123456"};
-            esp_hf_ag_answer_call(hf_peer_addr,1,0,1,0,number,0);
+            esp_hf_ag_answer_call(param->ata_rep.remote_addr,1,0,1,0,number,0);
             break;
         }
 
@@ -434,7 +434,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         {
             ESP_LOGI(BT_HF_TAG, "--Reject Incoming Call.");
             char *number = {"123456"};
-            esp_hf_ag_reject_call(hf_peer_addr,0,0,0,0,number,0);
+            esp_hf_ag_reject_call(param->chup_rep.remote_addr,0,0,0,0,number,0);
             break;
         }
 
@@ -444,7 +444,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
                 if (param->out_call.type == ESP_HF_DIAL_NUM) {
                     // dia_num
                     ESP_LOGI(BT_HF_TAG, "--Dial number \"%s\".", param->out_call.num_or_loc);
-                    esp_hf_ag_out_call(hf_peer_addr,1,0,1,0,param->out_call.num_or_loc,0);
+                    esp_hf_ag_out_call(param->out_call.remote_addr,1,0,1,0,param->out_call.num_or_loc,0);
                 } else if (param->out_call.type == ESP_HF_DIAL_MEM) {
                     // dia_mem
                     ESP_LOGI(BT_HF_TAG, "--Dial memory \"%s\".", param->out_call.num_or_loc);
@@ -452,10 +452,10 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
                     bool num_found = true;
                     if (num_found) {
                         char *number = "123456";
-                        esp_hf_ag_cmee_send(hf_peer_addr, ESP_HF_AT_RESPONSE_CODE_OK, ESP_HF_CME_AG_FAILURE);
-                        esp_hf_ag_out_call(hf_peer_addr,1,0,1,0,number,0);
+                        esp_hf_ag_cmee_send(param->out_call.remote_addr, ESP_HF_AT_RESPONSE_CODE_OK, ESP_HF_CME_AG_FAILURE);
+                        esp_hf_ag_out_call(param->out_call.remote_addr,1,0,1,0,number,0);
                     } else {
-                        esp_hf_ag_cmee_send(hf_peer_addr, ESP_HF_AT_RESPONSE_CODE_CME, ESP_HF_CME_MEMORY_FAILURE);
+                        esp_hf_ag_cmee_send(param->out_call.remote_addr, ESP_HF_AT_RESPONSE_CODE_CME, ESP_HF_CME_MEMORY_FAILURE);
                     }
                 }
             } else {

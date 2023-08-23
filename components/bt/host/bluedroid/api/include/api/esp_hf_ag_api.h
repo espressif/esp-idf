@@ -105,6 +105,7 @@ typedef union
      * @brief ESP_HF_VOLUME_CONTROL_EVT
      */
     struct hf_volume_control_param {
+        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
         esp_hf_volume_type_t type;                /*!< Volume control target, speaker or microphone */
         int volume;                               /*!< Gain, ranges from 0 to 15 */
     } volume_control;                             /*!< AG callback param of ESP_HF_VOLUME_CONTROL_EVT */
@@ -113,8 +114,9 @@ typedef union
      * @brief ESP_HF_UNAT_RESPONSE_EVT
      */
     struct hf_unat_rep_param {
+        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
         char *unat;                               /*!< Unknown AT command string */
-    }unat_rep;                                    /*!< AG callback param of ESP_HF_UNAT_RESPONSE_EVT */
+    } unat_rep;                                   /*!< AG callback param of ESP_HF_UNAT_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_DIAL_EVT
@@ -126,23 +128,75 @@ typedef union
     } out_call;                                   /*!< AG callback param of ESP_HF_DIAL_EVT */
 
     /**
+     * @brief ESP_HF_IND_UPDATE_EVT
+     */
+    struct hf_ind_upd_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } ind_upd;                                    /*!< AG callback param of ESP_HF_IND_UPDATE_EVT */
+
+    /**
+     * @brief ESP_HF_CIND_RESPONSE_EVT
+     */
+    struct hf_cind_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } cind_rep;                                   /*!< AG callback param of ESP_HF_CIND_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_COPS_RESPONSE_EVT
+     */
+    struct hf_cops_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } cops_rep;                                   /*!< AG callback param of ESP_HF_COPS_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_CLCC_RESPONSE_EVT
+     */
+    struct hf_clcc_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } clcc_rep;                                   /*!< AG callback param of ESP_HF_CLCC_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_CNUM_RESPONSE_EVT
+     */
+    struct hf_cnum_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } cnum_rep;                                   /*!< AG callback param of ESP_HF_CNUM_RESPONSE_EVT */
+
+    /**
      * @brief ESP_HF_VTS_RESPONSE_EVT
      */
     struct hf_vts_rep_param {
+        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
         char *code;                               /*!< MTF code from HF Client */
-    }vts_rep;                                     /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
+    } vts_rep;                                    /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_NREC_RESPONSE_EVT
      */
     struct hf_nrec_param {
-       esp_hf_nrec_t state;                       /*!< NREC enabled or disabled */
+        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_hf_nrec_t state;                      /*!< NREC enabled or disabled */
     } nrec;                                       /*!< AG callback param of ESP_HF_NREC_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_ATA_RESPONSE_EVT
+     */
+    struct hf_ata_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } ata_rep;                                    /*!< AG callback param of ESP_HF_ATA_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_CHUP_RESPONSE_EVT
+     */
+    struct hf_chup_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+    } chup_rep;                                   /*!< AG callback param of ESP_HF_CHUP_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_WBS_RESPONSE_EVT
      */
     struct hf_wbs_rep_param {
+        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t codec;                /*!< codec mode CVSD or mSBC */
     } wbs_rep;                                    /*!< AG callback param of ESP_HF_WBS_RESPONSE_EVT */
 
@@ -150,6 +204,7 @@ typedef union
      * @brief ESP_HF_BCS_RESPONSE_EVT
      */
     struct hf_bcs_rep_param {
+        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
     } bcs_rep;                                    /*!< AG callback param of ESP_HF_BCS_RESPONSE_EVT */
 
