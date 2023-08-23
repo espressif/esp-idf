@@ -304,7 +304,7 @@ void esp_intr_disable_source(int inum);
  */
 static inline int esp_intr_flags_to_level(int flags)
 {
-    return __builtin_ffs((flags & ESP_INTR_FLAG_LEVELMASK) >> 1) + 1;
+    return __builtin_ffs((flags & ESP_INTR_FLAG_LEVELMASK) >> 1);
 }
 
 /**@}*/
