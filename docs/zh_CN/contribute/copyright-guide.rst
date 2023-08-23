@@ -3,9 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-.. highlight:: c
-
-ESP-IDF 基于 Apache License 2.0，并包含一些不同许可证下的第三方版权代码。要了解更多信息，请参考 :doc:`the list of copyrights and licenses <../../../COPYRIGHT>`。
+ESP-IDF 基于 :project_file:`the Apache License 2.0 <LICENSE>`，并包含一些不同许可证下的第三方版权代码。要了解更多信息，请参考 :doc:`the list of copyrights and licenses <../../../COPYRIGHT>`。
 
 本页面介绍了如何在源代码中正确标注版权标头。ESP-IDF 使用 `Software Package Data Exchange (SPDX) <https://spdx.dev>`_ 格式，简短易读，能够方便自动化工具处理及进行版权检查。
 
