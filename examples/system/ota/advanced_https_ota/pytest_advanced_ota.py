@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -659,11 +659,11 @@ def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(dut: Dut) 
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         host_ip = get_host_ip4_by_dest_ip(ip_address)
 
-        dut.expect('Starting Advanced OTA example', timeout=30)
-        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
         dut.expect('Started advertising.', timeout=30)
         print('Started GAP advertising.')
 
+        time.sleep(1)
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
         dut.expect('upgrade successful. Rebooting ...', timeout=150)
         # after reboot
