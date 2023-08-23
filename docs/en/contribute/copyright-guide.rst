@@ -3,8 +3,6 @@ Copyright Header Guide
 
 :link_to_translation:`zh_CN:[中文]`
 
-.. highlight:: c
-
 ESP-IDF is released under :project_file:`the Apache License 2.0 <LICENSE>` with some additional third-party copyrighted code released under various licenses. For further information please refer to :doc:`the list of copyrights and licenses <../../../COPYRIGHT>`.
 
 This page explains how the source code should be properly marked with a copyright header. ESP-IDF uses the `Software Package Data Exchange (SPDX) <https://spdx.dev>`_ format which is short and can be easily read by humans or processed by automated tools for copyright checks.
