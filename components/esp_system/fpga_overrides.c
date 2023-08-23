@@ -77,14 +77,6 @@ void esp_clk_init(void)
 
 void esp_perip_clk_init(void)
 {
-    /* Enable TimerGroup 0 clock to ensure its reference counter will never
-     * be decremented to 0 during normal operation and preventing it from
-     * being disabled.
-     * If the TimerGroup 0 clock is disabled and then reenabled, the watchdog
-     * registers (Flashboot protection included) will be reenabled, and some
-     * seconds later, will trigger an unintended reset.
-     */
-    periph_module_enable(PERIPH_TIMG0_MODULE);
 }
 
 /**

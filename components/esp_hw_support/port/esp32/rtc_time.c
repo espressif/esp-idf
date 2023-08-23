@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +8,13 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/rtc_cntl_ll.h"
+#include "hal/timer_ll.h"
 #include "soc/rtc.h"
 #include "soc/timer_periph.h"
 #include "esp_hw_log.h"
+#include "esp_private/periph_ctrl.h"
 
-static const char* TAG = "rtc_time";
+static const char *TAG = "rtc_time";
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
@@ -55,10 +57,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     uint32_t expected_freq;
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     if (cal_clk == RTC_CAL_32K_XTAL ||
-        (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
+            (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX; /* standard 32k XTAL */
     } else if (cal_clk == RTC_CAL_8MD256 ||
-            (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256)) {
+               (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256)) {
         expected_freq = SOC_CLK_RC_FAST_D256_FREQ_APPROX;
     } else {
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX; /* 150k internal oscillator */
@@ -184,4 +186,23 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
         return 0;   // cal_val will be denominator, return 0 as the symbol of failure.
     }
     return 1000000ULL * (1 << RTC_CLK_CAL_FRACT) / cal_val;
+}
+
+/// @brief if the calibration is used, we need to enable the timer group0 first
+__attribute__((constructor))
+static void enable_timer_group0_for_calibration(void)
+{
+#ifndef BOOTLOADER_BUILD
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(0, true);
+            timer_ll_reset_register(0);
+        }
+    }
+#else
+    // no critical section is needed for bootloader
+    int __DECLARE_RCC_RC_ATOMIC_ENV;
+    timer_ll_enable_bus_clock(0, true);
+    timer_ll_reset_register(0);
+#endif
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -251,13 +251,4 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
-
-    /* Enable TimerGroup 0 clock to ensure its reference counter will never
-     * be decremented to 0 during normal operation and preventing it from
-     * being disabled.
-     * If the TimerGroup 0 clock is disabled and then reenabled, the watchdog
-     * registers (Flashboot protection included) will be reenabled, and some
-     * seconds later, will trigger an unintended reset.
-     */
-    periph_module_enable(PERIPH_TIMG0_MODULE);
 }

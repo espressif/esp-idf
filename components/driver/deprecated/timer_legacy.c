@@ -34,6 +34,12 @@ static const char *TIMER_TAG = "timer_group";
 #define TIMER_ENTER_CRITICAL(mux)      portENTER_CRITICAL_SAFE(mux);
 #define TIMER_EXIT_CRITICAL(mux)       portEXIT_CRITICAL_SAFE(mux);
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#define GPTIMER_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define GPTIMER_CLOCK_SRC_ATOMIC()
+#endif
+
 typedef struct {
     timer_isr_t fn;  /*!< isr function */
     void *args;      /*!< isr function args */
@@ -305,7 +311,12 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     }
     timer_hal_context_t *hal = &p_timer_obj[group_num][timer_num]->hal;
 
-    periph_module_enable(timer_group_periph_signals.groups[group_num].module);
+    PERIPH_RCC_ACQUIRE_ATOMIC(timer_group_periph_signals.groups[group_num].module, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(group_num, true);
+            timer_ll_reset_register(group_num);
+        }
+    }
 
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_hal_init(hal, group_num, timer_num);
@@ -315,9 +326,12 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     if (config->clk_src) {
         clk_src = config->clk_src;
     }
-    // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
-    // as the underlying enum entries come from the same `soc_module_clk_t`
-    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)clk_src);
+    GPTIMER_CLOCK_SRC_ATOMIC() {
+        // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
+        // as the underlying enum entries come from the same `soc_module_clk_t`
+        timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)clk_src);
+        timer_ll_enable_clock(hal->dev, timer_num, true);
+    }
     timer_ll_set_clock_prescale(hal->dev, timer_num, config->divider);
     timer_ll_set_count_direction(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, config->counter_dir);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
@@ -343,11 +357,21 @@ esp_err_t timer_deinit(timer_group_t group_num, timer_idx_t timer_num)
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
     timer_hal_context_t *hal = &p_timer_obj[group_num][timer_num]->hal;
 
+    // disable the source clock
+    GPTIMER_CLOCK_SRC_ATOMIC() {
+        timer_ll_enable_clock(hal->dev, hal->timer_id, false);
+    }
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
     timer_ll_clear_intr_status(hal->dev, TIMER_LL_EVENT_ALARM(timer_num));
     timer_hal_deinit(hal);
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
+
+    PERIPH_RCC_RELEASE_ATOMIC(timer_group_periph_signals.groups[group_num].module, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(group_num, false);
+        }
+    }
 
     free(p_timer_obj[group_num][timer_num]);
     p_timer_obj[group_num][timer_num] = NULL;

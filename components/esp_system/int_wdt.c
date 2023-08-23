@@ -11,6 +11,7 @@
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
 #include "hal/mwdt_ll.h"
+#include "hal/timer_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
 #include "esp_err.h"
@@ -30,6 +31,8 @@
 #define IWDT_TICKS_PER_US       500
 #define IWDT_INSTANCE           WDT_MWDT1
 #define IWDT_INITIAL_TIMEOUT_S  5
+#define IWDT_PERIPH             PERIPH_TIMG1_MODULE
+#define IWDT_TIMER_GROUP        1
 
 #else
 
@@ -38,6 +41,8 @@
 #define IWDT_TICKS_PER_US       500
 #define IWDT_INSTANCE           WDT_MWDT0
 #define IWDT_INITIAL_TIMEOUT_S  5
+#define IWDT_PERIPH             PERIPH_TIMG0_MODULE
+#define IWDT_TIMER_GROUP        0
 
 #endif // SOC_TIMER_GROUPS > 1
 
@@ -99,7 +104,12 @@ static void IRAM_ATTR tick_hook(void)
 
 void esp_int_wdt_init(void)
 {
-    periph_module_enable(PERIPH_TIMG1_MODULE);
+    PERIPH_RCC_ACQUIRE_ATOMIC(IWDT_PERIPH, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(IWDT_TIMER_GROUP, true);
+            timer_ll_reset_register(IWDT_TIMER_GROUP);
+        }
+    }
     /*
      * Initialize the WDT timeout stages. Note that the initial timeout is set to 5 seconds as variable startup times of
      * each CPU can lead to a timeout. The tick hooks will set the WDT timers to the actual timeout.

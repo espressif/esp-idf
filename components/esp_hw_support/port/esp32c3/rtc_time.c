@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,10 @@
 #include "soc/rtc_cntl_reg.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/rtc_cntl_ll.h"
+#include "hal/timer_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
+#include "esp_private/periph_ctrl.h"
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
@@ -49,7 +51,6 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         cal_clk = RTC_CAL_RTC_MUX;
     }
 
-
     /* Enable requested clock (150k clock is always on) */
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
@@ -72,7 +73,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
          */
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, 1);
         while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)
-               && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
+                && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
     }
 
     /* Prepare calibration */
@@ -146,8 +147,9 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
 
-    if ((cal_clk == RTC_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid(xtal_freq, slowclk_cycles, xtal_cycles))
+    if ((cal_clk == RTC_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid(xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
+    }
 
     uint64_t divider = ((uint64_t)xtal_freq) * slowclk_cycles;
     uint64_t period_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT) + divider / 2 - 1) / divider;
@@ -187,4 +189,16 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
         return 0;   // cal_val will be denominator, return 0 as the symbol of failure.
     }
     return 1000000ULL * (1 << RTC_CLK_CAL_FRACT) / cal_val;
+}
+
+/// @brief if the calibration is used, we need to enable the timer group0 first
+__attribute__((constructor))
+static void enable_timer_group0_for_calibration(void)
+{
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
+        if (ref_count == 0) {
+            timer_ll_enable_bus_clock(0, true);
+            timer_ll_reset_register(0);
+        }
+    }
 }

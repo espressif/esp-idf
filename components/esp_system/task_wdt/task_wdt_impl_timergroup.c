@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "hal/wdt_hal.h"
 #include "hal/mwdt_ll.h"
+#include "hal/timer_ll.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -21,6 +22,7 @@
 #define TWDT_TICKS_PER_US       500
 #define TWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define TWDT_PERIPH_MODULE      PERIPH_TIMG0_MODULE
+#define TWDT_TIMER_GROUP        0
 #define TWDT_INTR_SOURCE        ETS_TG0_WDT_LEVEL_INTR_SOURCE
 
 /**
@@ -55,7 +57,13 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
     }
 
     if (ret == ESP_OK) {
-        periph_module_enable(TWDT_PERIPH_MODULE);
+        // enable bus clock for the timer group registers
+        PERIPH_RCC_ACQUIRE_ATOMIC(TWDT_PERIPH_MODULE, ref_count) {
+            if (ref_count == 0) {
+                timer_ll_enable_bus_clock(TWDT_TIMER_GROUP, true);
+                timer_ll_reset_register(TWDT_TIMER_GROUP);
+            }
+        }
         wdt_hal_init(&ctx->hal, TWDT_INSTANCE, TWDT_PRESCALER, true);
 
         wdt_hal_write_protect_disable(&ctx->hal);
@@ -106,7 +114,11 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
         ESP_ERROR_CHECK(esp_intr_disable(ctx->intr_handle));
 
         /* Disable the Timer Group module */
-        periph_module_disable(TWDT_PERIPH_MODULE);
+        PERIPH_RCC_RELEASE_ATOMIC(TWDT_PERIPH_MODULE, ref_count) {
+            if (ref_count == 0) {
+                timer_ll_enable_bus_clock(TWDT_TIMER_GROUP, false);
+            }
+        }
 
         /* Deregister interrupt */
         ESP_ERROR_CHECK(esp_intr_free(ctx->intr_handle));
