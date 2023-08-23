@@ -41,6 +41,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
    - 由于常量数据可以存储在 flash 中，不占用 RAM，建议尽量将结构体、缓冲区或其他变量声明为 ``const``。为此，可能需要修改固件参数，使其接收 ``const *`` 参数而非可变指针参数。以上更改还可以减少某些函数的栈内存使用。
    :SOC_BT_SUPPORTED: - 若使用 Bluedroid，请设置 :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` 选项，Bluedroid 将在初始化时分配内存，并在去初始化时释放内存。这并不一定会降低内存使用峰值，但可以将使用静态内存改为运行时使用动态内存。
+   - 若使用 OpenThread，请设置 :ref:`CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT` 选项，OpenThread 将从外部 PSRAM 中分配消息池缓冲区，从而减少对内部静态内存的使用。
 
 .. _optimize-stack-sizes:
 
