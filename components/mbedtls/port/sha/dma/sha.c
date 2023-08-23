@@ -217,7 +217,6 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 {
     int ret = 0;
     unsigned char *dma_cap_buf = NULL;
-    int dma_op_num = ( ilen / (SOC_SHA_DMA_MAX_BUFFER_SIZE + 1) ) + 1;
 
     if (buf_len > block_length(sha_type)) {
         ESP_LOGE(TAG, "SHA DMA buf_len cannot exceed max size for a single block");
@@ -251,6 +250,16 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
         buf = dma_cap_buf;
     }
 
+    uint32_t dma_op_num;
+
+    if (ilen > 0) {
+        /* Number of DMA operations based on maximum chunk size in single operation */
+        dma_op_num = (ilen + SOC_SHA_DMA_MAX_BUFFER_SIZE - 1) / SOC_SHA_DMA_MAX_BUFFER_SIZE;
+    } else {
+        /* For zero input length, we must allow at-least 1 DMA operation to see
+         * if there is any pending data that is yet to be copied out */
+        dma_op_num = 1;
+    }
 
     /* The max amount of blocks in a single hardware operation is 2^6 - 1 = 63
        Thus we only do a single DMA input list + dma buf list,
