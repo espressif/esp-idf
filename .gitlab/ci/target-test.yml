@@ -1130,6 +1130,14 @@ pytest_test_apps_esp32_jtag:
     SETUP_TOOLS: "1"  # need gdb
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
+pytest_test_apps_esp32_ethernet:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32
+  needs:
+    - build_pytest_test_apps_esp32
+  tags: [ esp32, ethernet ]
+
 pytest_test_apps_esp32s2_generic:
   extends:
     - .pytest_test_apps_dir_template
