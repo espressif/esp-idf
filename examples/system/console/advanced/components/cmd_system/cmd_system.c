@@ -273,6 +273,7 @@ static int deep_sleep(int argc, char **argv)
 #endif //CONFIG_IDF_TARGET_ESP32
 
     esp_deep_sleep_start();
+    return 1;
 }
 
 static void register_deep_sleep(void)
