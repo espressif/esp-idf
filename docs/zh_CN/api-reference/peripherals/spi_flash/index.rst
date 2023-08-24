@@ -19,7 +19,7 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
     大多数 ``esp_flash_*`` API 使用 SPI1，SPI2 等外设而非通过 SPI0 上的 cache。这使得它们不仅能访问主 flash，也能访问外部 flash 。
 
-    而由于 cache 的限制，所有经过 cache 的操作都只能对主 flash 进行。这些操作的地址同样受到 cache 能力的限制。Cache 无法访问外部 flash 或者高于它能力的地址段。这些 cache 操作包括：mmap ，加密读写，执行代码或者访问在 flash 中的变量。
+    而由于 cache 的限制，所有经过 cache 的操作都只能对主 flash 进行。这些操作的地址同样受到 cache 能力的限制。Cache 无法访问外部 flash 或者高于它能力的地址段。这些 cache 操作包括：mmap、加密读写、执行代码或者访问在 flash 中的变量。
 
 .. note::
 
@@ -237,6 +237,7 @@ OS 函数层目前支持访问锁和延迟的方法。
 ------------
 
 必须确保操作期间，两个 CPU 均未从 flash 运行代码，实现细节如下：
+
 - 单核模式下，SDK 在执行 flash 操作前将禁用中断或调度算法。
 - 双核模式下，SDK 需确保两个 CPU 均未运行 flash 代码。
 

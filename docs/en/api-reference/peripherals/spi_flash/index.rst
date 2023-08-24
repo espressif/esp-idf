@@ -6,12 +6,12 @@ SPI Flash API
 Overview
 --------
 
-The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash.
+The spi_flash component contains API functions related to reading, writing, erasing, and memory mapping for data in the external flash.
 
 For higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`, see :doc:`/api-reference/storage/partition`
 
 .. note::
-    ``esp_partition_*`` APIs are recommended to be used instead of the lower level ``esp_flash_*`` API functions when accessing the main SPI Flash chip, since they do bounds checking and are guaranteed to calculate correct offsets in flash based on the information in the partition table. ``esp_flash_*`` functions can still be used directly when accessing an external (secondary) SPI flash chip.
+    ``esp_partition_*`` APIs are recommended to be used instead of the lower level ``esp_flash_*`` API functions when accessing the main SPI flash chip, since they conduct bounds checking and are guaranteed to calculate correct offsets in flash based on the information in the partition table. ``esp_flash_*`` functions can still be used directly when accessing an external (secondary) SPI flash chip.
 
 Different from the API before ESP-IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
 
@@ -19,7 +19,7 @@ Different from the API before ESP-IDF v4.0, the functionality of ``esp_flash_*``
 
     Instead of going through the cache connected to the SPI0 peripheral, most ``esp_flash_*`` APIs go through other SPI peripherals like SPI1, SPI2, etc. This makes them able to access not only the main flash, but also external (secondary) flash.
 
-    However, due to limitations of the cache, operations through the cache are limited to the main flash. The address range limitation for these operations are also on the cache side. The cache is not able to access external flash chips or address range above its capabilities. These cache operations include: mmap, encrypted read/write, executing code or access to variables in the flash.
+    However, due to the limitations of the cache, operations through the cache are limited to the main flash. The address range limitation for these operations is also on the cache side. The cache is not able to access external flash chips or address range above its capabilities. These cache operations include: mmap, encrypted read/write, executing code or access to variables in the flash.
 
 .. note::
 
@@ -37,7 +37,7 @@ Quad/Dual Mode Chips
 
 Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all flashes with 24-bit address are supported, because they don't need any vendor-specific commands.
 
-Quad mode (QIO/QOUT) is supported on following chip types:
+Quad mode (QIO/QOUT) is supported on the following chip types:
 
 1. ISSI
 2. GD
@@ -237,6 +237,7 @@ Implementation Details
 ----------------------
 
 In order to perform some flash operations, it is necessary to make sure that both CPUs are not running any code from flash for the duration of the flash operation:
+
 - In a single-core setup, the SDK needs to disable interrupts or scheduler before performing the flash operation.
 - In a dual-core setup, the SDK needs to make sure that both CPUs are not running any code from flash.
 
