@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -32,13 +32,14 @@ void ble_store_config_init(void);
 
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
-#define COC_BUF_COUNT         (3 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
+#define COC_BUF_COUNT         (20 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
+#define MTU                    512
 
-static uint16_t mtu = 512;
 uint16_t psm = 0x1002;
-static os_membuf_t sdu_coc_mem[OS_MEMPOOL_SIZE(COC_BUF_COUNT, 500)];
+static os_membuf_t sdu_coc_mem[OS_MEMPOOL_SIZE(COC_BUF_COUNT, MTU)];
 static struct os_mempool sdu_coc_mbuf_mempool;
 static struct os_mbuf_pool sdu_os_mbuf_pool;
+static uint16_t peer_sdu_size;
 #endif
 
 /**
@@ -259,11 +260,16 @@ bleprph_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
             for (int i = 0; i < event->receive.sdu_rx->om_len; i++) {
                 console_printf("%d ", event->receive.sdu_rx->om_data[i]);
             }
+            os_mbuf_free(event->receive.sdu_rx);
         }
         fflush(stdout);
+        bleprph_l2cap_coc_accept(event->receive.conn_handle,
+                                 peer_sdu_size,
+                                 event->receive.chan);
         return 0;
 
     case BLE_L2CAP_EVENT_COC_ACCEPT:
+        peer_sdu_size = event->accept.peer_sdu_size;
         bleprph_l2cap_coc_accept(event->accept.conn_handle,
                                  event->accept.peer_sdu_size,
                                  event->accept.chan);
@@ -277,10 +283,10 @@ static void
 bleprph_l2cap_coc_mem_init(void)
 {
     int rc;
-    rc = os_mempool_init(&sdu_coc_mbuf_mempool, COC_BUF_COUNT, mtu, sdu_coc_mem,
+    rc = os_mempool_init(&sdu_coc_mbuf_mempool, COC_BUF_COUNT, MTU, sdu_coc_mem,
                          "coc_sdu_pool");
     assert(rc == 0);
-    rc = os_mbuf_pool_init(&sdu_os_mbuf_pool, &sdu_coc_mbuf_mempool, mtu,
+    rc = os_mbuf_pool_init(&sdu_os_mbuf_pool, &sdu_coc_mbuf_mempool, MTU,
                            COC_BUF_COUNT);
     assert(rc == 0);
 }
@@ -333,7 +339,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
-            rc = ble_l2cap_create_server(psm, mtu, bleprph_l2cap_coc_event_cb, NULL);
+            rc = ble_l2cap_create_server(psm, MTU, bleprph_l2cap_coc_event_cb, NULL);
 #endif
         }
         return 0;
