@@ -125,6 +125,7 @@ class Platforms:
         'Windows-x86_64': PLATFORM_WIN64,
         'Windows-AMD64': PLATFORM_WIN64,
         'x86_64-w64-mingw32': PLATFORM_WIN64,
+        'Windows-ARM64': PLATFORM_WIN64,
         # macOS
         PLATFORM_MACOS: PLATFORM_MACOS,
         'osx': PLATFORM_MACOS,
