@@ -36,7 +36,7 @@
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
 // #define SOC_TWAI_SUPPORTED              1  //TODO: IDF-7470
-// #define SOC_ETM_SUPPORTED               1  //TODO: IDF-7478
+#define SOC_ETM_SUPPORTED               1
 // #define SOC_PARLIO_SUPPORTED            1  //TODO: IDF-7471, TODO: IDF-7472
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // disable usb serial jtag for esp32p4, current image does not support
@@ -162,7 +162,7 @@
 #define SOC_GDMA_NUM_GROUPS_MAX         2
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
 #define SOC_AXI_GDMA_SUPPORT_PSRAM      1
-// #define SOC_GDMA_SUPPORT_ETM            1  // Both AHB-DMA and AXI-DMA supports ETM  //TODO: IDF-7478
+// #define SOC_GDMA_SUPPORT_ETM            1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -177,7 +177,7 @@
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1  //TODO: IDF-7841
+#define SOC_GPIO_SUPPORT_ETM          1
 #define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
 #define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
@@ -408,6 +408,7 @@
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      1
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   1
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      4
+#define SOC_TIMER_SUPPORT_ETM             1
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         2

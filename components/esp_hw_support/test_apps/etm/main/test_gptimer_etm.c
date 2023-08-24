@@ -342,7 +342,7 @@ TEST_CASE("gptimer_etm_task_capture", "[etm]")
     TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
 
-    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_rom_delay_us(500 * 1000);
 
     // simulate the edge signal by software
     TEST_ESP_OK(gpio_set_level(input_gpio, 1));
@@ -432,7 +432,7 @@ TEST_CASE("gptimer_start_stop_by_etm_task", "[etm]")
 
     // trigger an pos-edge, this should start the gptimer
     TEST_ESP_OK(gpio_set_level(input_gpio, 1));
-    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_rom_delay_us(500 * 1000);
     uint64_t cur_count_val = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &cur_count_val));
     printf("cur_count_val: %llu\r\n", cur_count_val);
@@ -442,7 +442,7 @@ TEST_CASE("gptimer_start_stop_by_etm_task", "[etm]")
     TEST_ESP_OK(gpio_set_level(input_gpio, 0));
     uint64_t count_val_0 = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &count_val_0));
-    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_rom_delay_us(500 * 1000);
     uint64_t count_val_1 = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &count_val_1));
     TEST_ASSERT_EQUAL(count_val_0, count_val_1);

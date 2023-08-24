@@ -24,6 +24,62 @@ extern "C" {
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
 
+#define TIMER_LL_ETM_TASK_TABLE(group, timer, task)                         \
+    (uint32_t[2][2][GPTIMER_ETM_TASK_MAX]){                                 \
+        {                                                                   \
+            {                                                               \
+                [GPTIMER_ETM_TASK_START_COUNT] = TG0_TASK_CNT_START_TIMER0, \
+                [GPTIMER_ETM_TASK_STOP_COUNT] = TG0_TASK_CNT_STOP_TIMER0,   \
+                [GPTIMER_ETM_TASK_EN_ALARM] = TG0_TASK_ALARM_START_TIMER0,  \
+                [GPTIMER_ETM_TASK_RELOAD] = TG0_TASK_CNT_RELOAD_TIMER0,     \
+                [GPTIMER_ETM_TASK_CAPTURE] = TG0_TASK_CNT_CAP_TIMER0,       \
+            },                                                              \
+            {                                                               \
+                [GPTIMER_ETM_TASK_START_COUNT] = TG0_TASK_CNT_START_TIMER1, \
+                [GPTIMER_ETM_TASK_STOP_COUNT] = TG0_TASK_CNT_STOP_TIMER1,   \
+                [GPTIMER_ETM_TASK_EN_ALARM] = TG0_TASK_ALARM_START_TIMER1,  \
+                [GPTIMER_ETM_TASK_RELOAD] = TG0_TASK_CNT_RELOAD_TIMER1,     \
+                [GPTIMER_ETM_TASK_CAPTURE] = TG0_TASK_CNT_CAP_TIMER1,       \
+            },                                                              \
+        },                                                                  \
+        {                                                                   \
+            {                                                               \
+                [GPTIMER_ETM_TASK_START_COUNT] = TG1_TASK_CNT_START_TIMER0, \
+                [GPTIMER_ETM_TASK_STOP_COUNT] = TG1_TASK_CNT_STOP_TIMER0,   \
+                [GPTIMER_ETM_TASK_EN_ALARM] = TG1_TASK_ALARM_START_TIMER0,  \
+                [GPTIMER_ETM_TASK_RELOAD] = TG1_TASK_CNT_RELOAD_TIMER0,     \
+                [GPTIMER_ETM_TASK_CAPTURE] = TG1_TASK_CNT_CAP_TIMER0,       \
+            },                                                              \
+            {                                                               \
+                [GPTIMER_ETM_TASK_START_COUNT] = TG1_TASK_CNT_START_TIMER1, \
+                [GPTIMER_ETM_TASK_STOP_COUNT] = TG1_TASK_CNT_STOP_TIMER1,   \
+                [GPTIMER_ETM_TASK_EN_ALARM] = TG1_TASK_ALARM_START_TIMER1,  \
+                [GPTIMER_ETM_TASK_RELOAD] = TG1_TASK_CNT_RELOAD_TIMER1,     \
+                [GPTIMER_ETM_TASK_CAPTURE] = TG1_TASK_CNT_CAP_TIMER1,       \
+            },                                                              \
+        },                                                                  \
+    }[group][timer][task]
+
+#define TIMER_LL_ETM_EVENT_TABLE(group, timer, event)                     \
+    (uint32_t[2][2][GPTIMER_ETM_EVENT_MAX]){                              \
+        {                                                                 \
+            {                                                             \
+                [GPTIMER_ETM_EVENT_ALARM_MATCH] = TG0_EVT_CNT_CMP_TIMER0, \
+            },                                                            \
+            {                                                             \
+                [GPTIMER_ETM_EVENT_ALARM_MATCH] = TG0_EVT_CNT_CMP_TIMER1, \
+            },                                                            \
+        },                                                                \
+        {                                                                 \
+            {                                                             \
+                [GPTIMER_ETM_EVENT_ALARM_MATCH] = TG1_EVT_CNT_CMP_TIMER0, \
+            },                                                            \
+            {                                                             \
+                [GPTIMER_ETM_EVENT_ALARM_MATCH] = TG1_EVT_CNT_CMP_TIMER1, \
+            },                                                            \
+        },                                                                \
+    }[group][timer][event]
+
 /**
  * @brief Enable the bus clock for timer group module
  *

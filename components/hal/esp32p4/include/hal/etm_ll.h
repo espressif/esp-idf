@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,14 +12,14 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "soc/soc_etm_struct.h"
-#include "soc/pcr_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Enable the clock for ETM register
+ * @brief Enable the bus clock for ETM module
  *
  * @param group_id Group ID
  * @param enable true to enable, false to disable
@@ -27,20 +27,29 @@ extern "C" {
 static inline void etm_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    PCR.etm_conf.etm_clk_en = enable;
+    HP_SYS_CLKRST.soc_clk_ctrl3.reg_etm_apb_clk_en = enable;
+    HP_SYS_CLKRST.soc_clk_ctrl1.reg_etm_sys_clk_en = enable;
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define etm_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; etm_ll_enable_bus_clock(__VA_ARGS__)
+
 /**
- * @brief Reset the ETM register
+ * @brief Reset the ETM module
  *
  * @param group_id Group ID
  */
 static inline void etm_ll_reset_register(int group_id)
 {
     (void)group_id;
-    PCR.etm_conf.etm_rst_en = 1;
-    PCR.etm_conf.etm_rst_en = 0;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_etm = 1;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_etm = 0;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define etm_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; etm_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable ETM channel
