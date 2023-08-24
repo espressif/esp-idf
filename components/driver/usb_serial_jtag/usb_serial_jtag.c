@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -163,10 +163,10 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
 
     const uint8_t *buff = (const uint8_t *)src;
     // Blocking method, Sending data to ringbuffer, and handle the data in ISR.
-    xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff), size, ticks_to_wait);
+    BaseType_t result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff), size, ticks_to_wait);
     // Now trigger the ISR to read data from the ring buffer.
-   usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
-   return size;
+    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+    return (result == pdFALSE) ? 0 : size;
 }
 
 esp_err_t usb_serial_jtag_driver_uninstall(void)
