@@ -300,6 +300,9 @@ menu "SPI RAM config"
                 The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design. If user use
                 1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
 
+                If configured to the same pin as Flash, PSRAM shouldn't be rev0. Contact Espressif for more
+                information.
+
         config D0WD_PSRAM_CS_IO
             int "PSRAM CS IO number"
             depends on SPIRAM
@@ -321,6 +324,9 @@ menu "SPI RAM config"
                 User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
                 so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
 
+                If configured to the same pin (GPIO6) as Flash, PSRAM shouldn't be rev0. Contact Espressif for more
+                information.
+
         config D2WD_PSRAM_CS_IO
             int "PSRAM CS IO number"
             depends on SPIRAM
@@ -331,7 +337,7 @@ menu "SPI RAM config"
                 so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
     endmenu
 
-    menu "PSRAM clock and cs IO for ESP32-PICO"
+    menu "PSRAM clock and cs IO for ESP32-PICO-D4"
 
         config PICO_PSRAM_CS_IO
             int "PSRAM CS IO number"
