@@ -44,6 +44,14 @@ static int recent_test_id = STANDARD_TEST_ID;
 
 #define FAULT_ARR_SIZE 2
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
 static bool has_reg_fault = true;
 
 
