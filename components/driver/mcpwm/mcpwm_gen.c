@@ -86,10 +86,11 @@ esp_err_t mcpwm_new_generator(mcpwm_oper_handle_t oper, const mcpwm_generator_co
     // GPIO configuration
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_OUTPUT | (config->flags.io_loop_back ? GPIO_MODE_INPUT : 0), // also enable the input path if `io_loop_back` is enabled
+        // also enable the input path if `io_loop_back` is enabled
+        .mode = (config->flags.io_od_mode ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT) | (config->flags.io_loop_back ? GPIO_MODE_INPUT : 0),
         .pin_bit_mask = (1ULL << config->gen_gpio_num),
-        .pull_down_en = false,
-        .pull_up_en = true,
+        .pull_down_en = config->flags.pull_down,
+        .pull_up_en = config->flags.pull_up,
     };
     ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config gen GPIO failed");
     esp_rom_gpio_connect_out_signal(config->gen_gpio_num,
