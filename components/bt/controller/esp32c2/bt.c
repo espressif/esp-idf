@@ -312,6 +312,7 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     if (*(data) == DATA_TYPE_COMMAND) {
         struct ble_hci_cmd *cmd = NULL;
         cmd = (struct ble_hci_cmd *) ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
+        assert(cmd);
         memcpy((uint8_t *)cmd, data + 1, len - 1);
         ble_hci_trans_hs_cmd_tx((uint8_t *)cmd);
     }
