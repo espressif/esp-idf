@@ -48,6 +48,8 @@
 
 -  :cpp:member:`gptimer_config_t::resolution_hz` 设置内部计数器的分辨率。计数器每滴答一次相当于 **1 / resolution_hz** 秒。
 
+-  :cpp:member:`gptimer_config::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
+
 -  选用 :cpp:member:`gptimer_config_t::intr_shared` 设置是否将定时器中断源标记为共享源。了解共享中断的优缺点，请参考 :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`。
 
 完成上述结构配置之后，可以将结构传递给 :cpp:func:`gptimer_new_timer`，用以实例化定时器实例并返回定时器句柄。
