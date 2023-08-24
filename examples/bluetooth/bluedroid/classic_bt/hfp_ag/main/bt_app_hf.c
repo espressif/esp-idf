@@ -276,13 +276,13 @@ void bt_app_send_data_shut_down(void)
         vTaskDelete(s_bt_app_send_data_task_handler);
         s_bt_app_send_data_task_handler = NULL;
     }
-    if (s_send_data_Semaphore) {
-        vSemaphoreDelete(s_send_data_Semaphore);
-        s_send_data_Semaphore = NULL;
-    }
     if(s_periodic_timer) {
         ESP_ERROR_CHECK(esp_timer_stop(s_periodic_timer));
         ESP_ERROR_CHECK(esp_timer_delete(s_periodic_timer));
+    }
+    if (s_send_data_Semaphore) {
+        vSemaphoreDelete(s_send_data_Semaphore);
+        s_send_data_Semaphore = NULL;
     }
     if (s_m_rb) {
         vRingbufferDelete(s_m_rb);
