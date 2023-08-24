@@ -18,3 +18,4 @@
 #include "driver/mcpwm_fault.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/mcpwm_cap.h"
+#include "driver/mcpwm_etm.h"

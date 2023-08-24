@@ -105,6 +105,14 @@ typedef enum {
     MCPWM_CAP_EDGE_NEG, /*!< Capture on the negative edge */
 } mcpwm_capture_edge_t;
 
+/**
+ * @brief MCPWM comparator specific events that supported by the ETM module
+ */
+typedef enum {
+    MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD, /* !< The count value of the timer that PWM operator connects is equal to the value of comparator */
+    MCPWM_ETM_COMPARATOR_EVENT_MAX,       /*!< Maximum number of comparator events */
+} mcpwm_comparator_etm_event_type_t;
+
 #ifdef __cplusplus
 }
 #endif

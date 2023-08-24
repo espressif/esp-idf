@@ -34,23 +34,25 @@ MCPWM 外设是一个多功能 PWM 生成器，集成多个子模块，在电力
 
 下文将分节概述 MCPWM 的功能：
 
-- :ref:`mcpwm-resource-allocation-and-initialization` - 介绍各类 MCPWM 模块的分配，如定时器、操作器、比较器、生成器等。随后介绍的 IO 设置和控制功能也将围绕这些模块进行。
-- :ref:`mcpwm-timer-operations-and-events` - 介绍 MCPWM 定时器支持的控制功能和事件回调。
-- :ref:`mcpwm-comparator-operations-and-events` - 介绍 MCPWM 比较器支持的控制功能和事件回调。
-- :ref:`mcpwm-generator-actions-on-events` - 介绍如何针对 MCPWM 定时器和比较器生成的特定事件，设置 MCPWM 生成器的相应执行操作。
-- :ref:`mcpwm-classical-pwm-waveforms-and-generator-configurations` - 介绍一些经典 PWM 波形的生成器配置。
-- :ref:`mcpwm-dead-time` - 介绍如何设置 MCPWM 生成器的死区时间。
-- :ref:`mcpwm-classical-pwm-waveforms-and-dead-time-configurations` - 介绍一些经典 PWM 波形的死区配置。
-- :ref:`mcpwm-carrier-modulation` - 介绍如何在最终输出的 PWM 波形上调制高频载波。
-- :ref:`mcpwm-faults-and-brake-actions` - 介绍如何为 MCPWM 操作器配置特定故障事件下的制动操作。
-- :ref:`mcpwm-generator-force-actions` - 介绍如何强制异步控制生成器的输出水平。
-- :ref:`mcpwm-synchronization` - 介绍如何同步 MCPWM 定时器，并确保生成的最终输出 PWM 信号具有固定的相位差。
-- :ref:`mcpwm-capture` - 介绍如何使用 MCPWM 捕获模块测量信号脉宽。
-- :ref:`mcpwm-power-management` - 介绍不同的时钟源对功耗的影响。
-- :ref:`mcpwm-iram-safe` - 介绍如何协调 RMT 中断与禁用缓存。
-- :ref:`mcpwm-thread-safety` - 列出了由驱动程序认证为线程安全的 API。
-- :ref:`mcpwm-kconfig-options` - 列出了针对驱动的数个 Kconfig 支持选项。
+.. list::
 
+    - :ref:`mcpwm-resource-allocation-and-initialization` - 介绍各类 MCPWM 模块的分配，如定时器、操作器、比较器、生成器等。随后介绍的 IO 设置和控制功能也将围绕这些模块进行。
+    - :ref:`mcpwm-timer-operations-and-events` - 介绍 MCPWM 定时器支持的控制功能和事件回调。
+    - :ref:`mcpwm-comparator-operations-and-events` - 介绍 MCPWM 比较器支持的控制功能和事件回调。
+    - :ref:`mcpwm-generator-actions-on-events` - 介绍如何针对 MCPWM 定时器和比较器生成的特定事件，设置 MCPWM 生成器的相应执行操作。
+    - :ref:`mcpwm-classical-pwm-waveforms-and-generator-configurations` - 介绍一些经典 PWM 波形的生成器配置。
+    - :ref:`mcpwm-dead-time` - 介绍如何设置 MCPWM 生成器的死区时间。
+    - :ref:`mcpwm-classical-pwm-waveforms-and-dead-time-configurations` - 介绍一些经典 PWM 波形的死区配置。
+    - :ref:`mcpwm-carrier-modulation` - 介绍如何在最终输出的 PWM 波形上调制高频载波。
+    - :ref:`mcpwm-faults-and-brake-actions` - 介绍如何为 MCPWM 操作器配置特定故障事件下的制动操作。
+    - :ref:`mcpwm-generator-force-actions` - 介绍如何强制异步控制生成器的输出水平。
+    - :ref:`mcpwm-synchronization` - 介绍如何同步 MCPWM 定时器，并确保生成的最终输出 PWM 信号具有固定的相位差。
+    - :ref:`mcpwm-capture` - 介绍如何使用 MCPWM 捕获模块测量信号脉宽。
+    :SOC_MCPWM_SUPPORT_ETM: - :ref:`mcpwm-etm-event-and-task` - MCPWM 提供了哪些事件和任务可以连接到 ETM 通道上。
+    - :ref:`mcpwm-power-management` - 介绍不同的时钟源对功耗的影响。
+    - :ref:`mcpwm-iram-safe` - 介绍如何协调 RMT 中断与禁用缓存。
+    - :ref:`mcpwm-thread-safety` - 列出了由驱动程序认证为线程安全的 API。
+    - :ref:`mcpwm-kconfig-options` - 列出了针对驱动的数个 Kconfig 支持选项。
 
 .. _mcpwm-resource-allocation-and-initialization:
 
@@ -934,8 +936,22 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
 某些场景下，可能存在需要软件触发“虚假”捕获事件的需求。此时，可以调用 :cpp:func:`mcpwm_capture_channel_trigger_soft_catch` 实现。需注意，此类“虚假”捕获事件仍然会触发中断，并从而调用捕获事件回调函数。
 
+.. only:: SOC_MCPWM_SUPPORT_ETM
 
-.. _mcpwm-power-management:
+    .. _mcpwm-etm-event-and-task:
+
+    ETM 事件与任务
+    ^^^^^^^^^^^^^^^^^^
+
+    MCPWM 比较器可以产生事件，这些事件可以连接到 :doc:`ETM </api-reference/peripherals/etm>` 模块。:cpp:type:`mcpwm_comparator_etm_event_type_t` 中列出了 MCPWM 比较器能够产生的事件类型。用户可以通过调用 :cpp:func:`mcpwm_comparator_new_etm_event` 来获得相应事件的 ETM event 句柄。
+
+    关于如何将 MCPWM 比较器事件连接到 ETM 通道中，请参阅 :doc:`ETM </api-reference/peripherals/etm>` 文档。
+
+    .. _mcpwm-power-management:
+
+.. only:: not SOC_MCPWM_SUPPORT_ETM
+
+    .. _mcpwm-power-management:
 
 电源管理
 ^^^^^^^^^^^^^^^^

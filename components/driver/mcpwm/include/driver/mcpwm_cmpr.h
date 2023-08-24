@@ -29,6 +29,14 @@ typedef struct {
 } mcpwm_comparator_config_t;
 
 /**
+ * @brief MCPWM event comparator configuration
+ */
+typedef struct {
+
+} mcpwm_event_comparator_config_t;
+
+
+/**
  * @brief Create MCPWM comparator
  *
  * @param[in] oper MCPWM operator, allocated by `mcpwm_new_operator()`, the new comparator will be allocated from this operator
@@ -53,6 +61,23 @@ esp_err_t mcpwm_new_comparator(mcpwm_oper_handle_t oper, const mcpwm_comparator_
  *      - ESP_FAIL: Delete MCPWM comparator failed because of other error
  */
 esp_err_t mcpwm_del_comparator(mcpwm_cmpr_handle_t cmpr);
+
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+/**
+ * @brief Create MCPWM event comparator
+ *
+ * @param[in] oper MCPWM operator, allocated by `mcpwm_new_operator()`, the new event comparator will be allocated from this operator
+ * @param[in] config MCPWM comparator configuration
+ * @param[out] ret_cmpr Returned MCPWM event comparator
+ * @return
+ *      - ESP_OK: Create MCPWM event comparator successfully
+ *      - ESP_ERR_INVALID_ARG: Create MCPWM event comparator failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create MCPWM event comparator failed because out of memory
+ *      - ESP_ERR_NOT_FOUND: Create MCPWM event comparator failed because can't find free resource
+ *      - ESP_FAIL: Create MCPWM event comparator failed because of other error
+ */
+esp_err_t mcpwm_new_event_comparator(mcpwm_oper_handle_t oper, const mcpwm_event_comparator_config_t *config, mcpwm_cmpr_handle_t *ret_cmpr);
+#endif
 
 /**
  * @brief Group of supported MCPWM compare event callbacks

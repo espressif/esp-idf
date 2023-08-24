@@ -20,6 +20,7 @@
 #include "hal/mcpwm_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +57,13 @@ extern "C" {
 #define MCPWM_LL_TIMER_EVENT_TO_REG_VAL(event) ((uint8_t[]) {0, 1}[(event)])
 #define MCPWM_LL_GEN_ACTION_TO_REG_CAL(action) ((uint8_t[]) {0, 1, 2, 3}[(action)])
 #define MCPWM_LL_BRAKE_MODE_TO_REG_VAL(mode)  ((uint8_t[]) {0, 1}[(mode)])
+
+// MCPWM ETM comparator event table
+#define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)                                        \
+    (uint32_t [1][MCPWM_ETM_COMPARATOR_EVENT_MAX]){{                                                               \
+                            [MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD] = MCPWM_EVT_OP0_TEA + oper_id + 3 * cmpr_id,    \
+    }}[group][event]
+
 
 /**
  * @brief The dead time module's clock source
@@ -1591,6 +1599,25 @@ static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel
 {
     HAL_ASSERT(prescale > 0);
     HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->cap_chn_cfg[channel], capn_prescale, prescale - 1);
+}
+
+//////////////////////////////////////////MCPWM ETM Specific////////////////////////////////////////////////////////////
+
+/**
+ * @brief Enable comparator ETM event
+ *
+ * @param mcpwm Peripheral instance address
+ * @param operator_id Operator ID, index from 0 to 2
+ * @param cmpr_id Comparator ID, index from 0 to 2
+ * @param en True: enable ETM module, False: disable ETM module
+ */
+static inline void mcpwm_ll_etm_enable_comparator_event(mcpwm_dev_t *mcpwm, int operator_id, int cmpr_id, bool en)
+{
+    if (en) {
+        mcpwm->evt_en.val |= 1 << (operator_id + 3 * cmpr_id + 9) ;
+    } else {
+        mcpwm->evt_en.val &= ~(1 << (operator_id + 3 * cmpr_id + 9)) ;
+    }
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

@@ -134,6 +134,9 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
                      "mcpwm/mcpwm_sync.c"
                      "mcpwm/mcpwm_timer.c"
                      "deprecated/mcpwm_legacy.c")
+    if(CONFIG_SOC_MCPWM_SUPPORT_ETM)
+        list(APPEND srcs "mcpwm/mcpwm_etm.c")
+    endif()
 endif()
 
 # PCNT related source files

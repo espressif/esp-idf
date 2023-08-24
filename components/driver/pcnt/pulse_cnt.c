@@ -185,7 +185,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
                       config->high_limit <= PCNT_LL_MAX_LIM, ESP_ERR_INVALID_ARG, err, TAG,
                       "invalid limit range:[%d,%d]", config->low_limit, config->high_limit);
     if (config->intr_priority) {
-        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & PCNT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
+        ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & PCNT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 

@@ -17,7 +17,7 @@ void timer_hal_init(timer_hal_context_t *hal, uint32_t group_num, uint32_t timer
     timer_ll_enable_counter(hal->dev, timer_num, false);
     timer_ll_enable_auto_reload(hal->dev, timer_num, false);
     timer_ll_enable_alarm(hal->dev, timer_num, false);
-    // enable RTM subsystem if available
+    // enable ETM subsystem if available
 #if SOC_TIMER_SUPPORT_ETM
     timer_ll_enable_etm(hal->dev, true);
 #endif

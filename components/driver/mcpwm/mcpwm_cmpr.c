@@ -33,13 +33,34 @@ static esp_err_t mcpwm_comparator_register_to_operator(mcpwm_cmpr_t *cmpr, mcpwm
 {
     int cmpr_id = -1;
     portENTER_CRITICAL(&oper->spinlock);
-    for (int i = 0; i < SOC_MCPWM_COMPARATORS_PER_OPERATOR; i++) {
-        if (!oper->comparators[i]) {
-            oper->comparators[i] = cmpr;
-            cmpr_id = i;
-            break;
+    switch (cmpr->type) {
+    case MCPWM_OPERATOR_COMPARATOR:
+        mcpwm_oper_cmpr_t *oper_cmpr = __containerof(cmpr, mcpwm_oper_cmpr_t, base);
+        for (int i = 0; i < SOC_MCPWM_COMPARATORS_PER_OPERATOR; i++) {
+            if (!oper->comparators[i]) {
+                oper->comparators[i] = oper_cmpr;
+                cmpr_id = i;
+                break;
+            }
         }
+        break;
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    case MCPWM_EVENT_COMPARATOR:
+        mcpwm_evt_cmpr_t *evt_cmpr = __containerof(cmpr, mcpwm_evt_cmpr_t, base);
+        for (int i = 0; i < SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR; i++) {
+            if (!oper->event_comparators[i]) {
+                oper->event_comparators[i] = evt_cmpr;
+                cmpr_id = i;
+                break;
+            }
+        }
+        break;
+#endif
+    default:
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "unknown comparator type:%d", cmpr->type);
+        break;
     }
+
     portEXIT_CRITICAL(&oper->spinlock);
     ESP_RETURN_ON_FALSE(cmpr_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free comparator in operator (%d,%d)", oper->group->group_id, oper->oper_id);
 
@@ -54,40 +75,61 @@ static void mcpwm_comparator_unregister_from_operator(mcpwm_cmpr_t *cmpr)
     int cmpr_id = cmpr->cmpr_id;
 
     portENTER_CRITICAL(&oper->spinlock);
-    oper->comparators[cmpr_id] = NULL;
+    switch (cmpr->type) {
+    case MCPWM_OPERATOR_COMPARATOR:
+        oper->comparators[cmpr_id] = NULL;
+        break;
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    case MCPWM_EVENT_COMPARATOR:
+        oper->event_comparators[cmpr_id] = NULL;
+        break;
+#endif
+    }
     portEXIT_CRITICAL(&oper->spinlock);
 }
 
 static esp_err_t mcpwm_comparator_destroy(mcpwm_cmpr_t *cmpr)
 {
-    if (cmpr->intr) {
-        ESP_RETURN_ON_ERROR(esp_intr_free(cmpr->intr), TAG, "uninstall interrupt service failed");
-    }
     if (cmpr->oper) {
         mcpwm_comparator_unregister_from_operator(cmpr);
     }
-    free(cmpr);
+    switch (cmpr->type) {
+    case MCPWM_OPERATOR_COMPARATOR:
+        mcpwm_oper_cmpr_t *oper_cmpr = __containerof(cmpr, mcpwm_oper_cmpr_t, base);
+        if (oper_cmpr->intr) {
+            ESP_RETURN_ON_ERROR(esp_intr_free(oper_cmpr->intr), TAG, "uninstall interrupt service failed");
+        }
+        free(oper_cmpr);
+        break;
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    case MCPWM_EVENT_COMPARATOR:
+        mcpwm_evt_cmpr_t *evt_cmpr = __containerof(cmpr, mcpwm_evt_cmpr_t, base);
+        free(evt_cmpr);
+        break;
+#endif
+    }
     return ESP_OK;
 }
 
 esp_err_t mcpwm_new_comparator(mcpwm_oper_handle_t oper, const mcpwm_comparator_config_t *config, mcpwm_cmpr_handle_t *ret_cmpr)
 {
     esp_err_t ret = ESP_OK;
-    mcpwm_cmpr_t *cmpr = NULL;
+    mcpwm_oper_cmpr_t *cmpr = NULL;
     ESP_GOTO_ON_FALSE(oper && config && ret_cmpr, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     if (config->intr_priority) {
-        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
-                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+        ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
+                          TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
-    cmpr = heap_caps_calloc(1, sizeof(mcpwm_cmpr_t), MCPWM_MEM_ALLOC_CAPS);
+    cmpr = heap_caps_calloc(1, sizeof(mcpwm_oper_cmpr_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cmpr, ESP_ERR_NO_MEM, err, TAG, "no mem for comparator");
+    cmpr->base.type = MCPWM_OPERATOR_COMPARATOR;
 
-    ESP_GOTO_ON_ERROR(mcpwm_comparator_register_to_operator(cmpr, oper), err, TAG, "register comparator failed");
+    ESP_GOTO_ON_ERROR(mcpwm_comparator_register_to_operator(&cmpr->base, oper), err, TAG, "register comparator failed");
     mcpwm_group_t *group = oper->group;
     mcpwm_hal_context_t *hal = &group->hal;
     int oper_id = oper->oper_id;
-    int cmpr_id = cmpr->cmpr_id;
+    int cmpr_id = cmpr->base.cmpr_id;
 
     // if interrupt priority specified before, it cannot be changed until the group is released
     // check if the new priority specified consistents with the old one
@@ -98,14 +140,14 @@ esp_err_t mcpwm_new_comparator(mcpwm_oper_handle_t oper, const mcpwm_comparator_
     mcpwm_ll_operator_enable_update_compare_on_sync(hal->dev, oper_id, cmpr_id, config->flags.update_cmp_on_sync);
 
     // fill in other comparator members
-    cmpr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    *ret_cmpr = cmpr;
+    cmpr->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    *ret_cmpr = &cmpr->base;
     ESP_LOGD(TAG, "new comparator (%d,%d,%d) at %p", group->group_id, oper_id, cmpr_id, cmpr);
     return ESP_OK;
 
 err:
     if (cmpr) {
-        mcpwm_comparator_destroy(cmpr);
+        mcpwm_comparator_destroy(&cmpr->base);
     }
     return ret;
 }
@@ -120,8 +162,21 @@ esp_err_t mcpwm_del_comparator(mcpwm_cmpr_handle_t cmpr)
     int cmpr_id = cmpr->cmpr_id;
 
     portENTER_CRITICAL(&group->spinlock);
-    mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id), false);
-    mcpwm_ll_intr_clear_status(hal->dev, MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id));
+    switch (cmpr->type) {
+    case MCPWM_OPERATOR_COMPARATOR:
+        mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id), false);
+        mcpwm_ll_intr_clear_status(hal->dev, MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id));
+        mcpwm_ll_operator_enable_update_compare_on_sync(hal->dev, oper_id, cmpr_id, false);
+#if SOC_MCPWM_SUPPORT_ETM
+        mcpwm_ll_etm_enable_comparator_event(hal->dev, oper_id, cmpr_id, false);
+#endif
+        break;
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    case MCPWM_EVENT_COMPARATOR:
+        mcpwm_ll_etm_enable_evt_comparator_event(hal->dev, oper_id, cmpr_id, false);
+        break;
+#endif
+    }
     portEXIT_CRITICAL(&group->spinlock);
 
     ESP_LOGD(TAG, "del comparator (%d,%d,%d)", group->group_id, oper_id, cmpr_id);
@@ -129,6 +184,42 @@ esp_err_t mcpwm_del_comparator(mcpwm_cmpr_handle_t cmpr)
     ESP_RETURN_ON_ERROR(mcpwm_comparator_destroy(cmpr), TAG, "destroy comparator failed");
     return ESP_OK;
 }
+
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+esp_err_t mcpwm_new_event_comparator(mcpwm_oper_handle_t oper, const mcpwm_event_comparator_config_t *config, mcpwm_cmpr_handle_t *ret_cmpr)
+{
+    esp_err_t ret = ESP_OK;
+    mcpwm_evt_cmpr_t *cmpr = NULL;
+    ESP_GOTO_ON_FALSE(oper && config && ret_cmpr, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+
+
+    cmpr = heap_caps_calloc(1, sizeof(mcpwm_evt_cmpr_t), MCPWM_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(cmpr, ESP_ERR_NO_MEM, err, TAG, "no mem for event comparator");
+    cmpr->base.type = MCPWM_EVENT_COMPARATOR;
+
+    ESP_GOTO_ON_ERROR(mcpwm_comparator_register_to_operator(&cmpr->base, oper), err, TAG, "register event comparator failed");
+    mcpwm_group_t *group = oper->group;
+    mcpwm_hal_context_t *hal = &group->hal;
+    int oper_id = oper->oper_id;
+    int cmpr_id = cmpr->base.cmpr_id;
+
+    portENTER_CRITICAL(&group->spinlock);
+    mcpwm_ll_etm_enable_evt_comparator_event(hal->dev, oper_id, cmpr_id, true);
+    portEXIT_CRITICAL(&group->spinlock);
+
+    // fill in other comparator members
+    cmpr->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    *ret_cmpr = &cmpr->base;
+    ESP_LOGD(TAG, "new comparator (%d,%d,%d) at %p", group->group_id, oper_id, cmpr_id, cmpr);
+    return ESP_OK;
+
+err:
+    if (cmpr) {
+        mcpwm_comparator_destroy(&cmpr->base);
+    }
+    return ret;
+}
+# endif
 
 esp_err_t mcpwm_comparator_set_compare_value(mcpwm_cmpr_handle_t cmpr, uint32_t cmp_ticks)
 {
@@ -140,7 +231,16 @@ esp_err_t mcpwm_comparator_set_compare_value(mcpwm_cmpr_handle_t cmpr, uint32_t 
     ESP_RETURN_ON_FALSE_ISR(cmp_ticks <= timer->peak_ticks, ESP_ERR_INVALID_ARG, TAG, "compare value out of range");
 
     portENTER_CRITICAL_SAFE(&cmpr->spinlock);
-    mcpwm_ll_operator_set_compare_value(group->hal.dev, oper->oper_id, cmpr->cmpr_id, cmp_ticks);
+    switch (cmpr->type) {
+    case MCPWM_OPERATOR_COMPARATOR:
+        mcpwm_ll_operator_set_compare_value(group->hal.dev, oper->oper_id, cmpr->cmpr_id, cmp_ticks);
+        break;
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    case MCPWM_EVENT_COMPARATOR:
+        mcpwm_ll_operator_set_event_compare_value(group->hal.dev, oper->oper_id, cmpr->cmpr_id, cmp_ticks);
+        break;
+#endif
+    }
     portEXIT_CRITICAL_SAFE(&cmpr->spinlock);
 
     cmpr->compare_ticks = cmp_ticks;
@@ -150,6 +250,7 @@ esp_err_t mcpwm_comparator_set_compare_value(mcpwm_cmpr_handle_t cmpr, uint32_t 
 esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, const mcpwm_comparator_event_callbacks_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(cmpr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(cmpr->type == MCPWM_OPERATOR_COMPARATOR, ESP_ERR_INVALID_ARG, TAG, "only oper cmpr can register event callback");
     mcpwm_oper_t *oper = cmpr->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_hal_context_t *hal = &group->hal;
@@ -166,49 +267,50 @@ esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, co
     }
 #endif
 
+    mcpwm_oper_cmpr_t *oper_cmpr = __containerof(cmpr, mcpwm_oper_cmpr_t, base);
     // lazy install interrupt service
-    if (!cmpr->intr) {
+    if (!oper_cmpr->intr) {
         // we want the interrupt service to be enabled after allocation successfully
         int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ ESP_INTR_FLAG_INTRDISABLED;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
                             (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id),
-                            mcpwm_comparator_default_isr, cmpr, &cmpr->intr), TAG, "install interrupt service for comparator failed");
+                            mcpwm_comparator_default_isr, oper_cmpr, &oper_cmpr->intr), TAG, "install interrupt service for comparator failed");
     }
 
     portENTER_CRITICAL(&group->spinlock);
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id), cbs->on_reach != NULL);
     portEXIT_CRITICAL(&group->spinlock);
 
-    cmpr->on_reach = cbs->on_reach;
-    cmpr->user_data = user_data;
+    oper_cmpr->on_reach = cbs->on_reach;
+    oper_cmpr->user_data = user_data;
 
     return ESP_OK;
 }
 
 static void IRAM_ATTR mcpwm_comparator_default_isr(void *args)
 {
-    mcpwm_cmpr_t *cmpr = (mcpwm_cmpr_t *)args;
-    mcpwm_oper_t *oper = cmpr->oper;
+    mcpwm_oper_cmpr_t *cmpr = (mcpwm_oper_cmpr_t *)args;
+    mcpwm_oper_t *oper = cmpr->base.oper;
     mcpwm_timer_t *timer = oper->timer;
     mcpwm_group_t *group = oper->group;
     mcpwm_hal_context_t *hal = &group->hal;
     int oper_id = oper->oper_id;
-    int cmpr_id = cmpr->cmpr_id;
+    int cmpr_id = cmpr->base.cmpr_id;
     bool need_yield = false;
 
     uint32_t status = mcpwm_ll_intr_get_status(hal->dev);
     mcpwm_ll_intr_clear_status(hal->dev, status & MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id));
 
     mcpwm_compare_event_data_t edata = {
-        .compare_ticks = cmpr->compare_ticks,
+        .compare_ticks = cmpr->base.compare_ticks,
         .direction = mcpwm_ll_timer_get_count_direction(hal->dev, timer->timer_id),
     };
 
     if (status & MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id)) {
         mcpwm_compare_event_cb_t cb = cmpr->on_reach;
         if (cb) {
-            if (cb(cmpr, &edata, cmpr->user_data)) {
+            if (cb(&cmpr->base, &edata, cmpr->user_data)) {
                 need_yield = true;
             }
         }
