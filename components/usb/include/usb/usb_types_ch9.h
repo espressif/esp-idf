@@ -346,10 +346,10 @@ ESP_STATIC_ASSERT(sizeof(usb_config_desc_t) == USB_CONFIG_DESC_SIZE, "Size of us
 /**
  * @brief Bit masks belonging to the bmAttributes field of a configuration descriptor
  */
-#define USB_BM_ATTRIBUTES_ONE               (1 << 7)    //Must be set
-#define USB_BM_ATTRIBUTES_SELFPOWER         (1 << 6)    //Self powered
-#define USB_BM_ATTRIBUTES_WAKEUP            (1 << 5)    //Can wake-up
-#define USB_BM_ATTRIBUTES_BATTERY           (1 << 4)    //Battery powered
+#define USB_BM_ATTRIBUTES_ONE               (1 << 7)    /**< Must be set */
+#define USB_BM_ATTRIBUTES_SELFPOWER         (1 << 6)    /**< Self powered */
+#define USB_BM_ATTRIBUTES_WAKEUP            (1 << 5)    /**< Can wake-up */
+#define USB_BM_ATTRIBUTES_BATTERY           (1 << 4)    /**< Battery powered */
 
 // ---------- Interface Association Descriptor -------------
 
