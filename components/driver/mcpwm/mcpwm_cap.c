@@ -96,13 +96,14 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     mcpwm_group_t *group = cap_timer->group;
     int group_id = group->group_id;
 
+    mcpwm_capture_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_CAPTURE_CLK_SRC_DEFAULT;
 #if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     // capture timer clock source is same as the MCPWM group
-    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)config->clk_src), err, TAG, "set group clock failed");
+    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
     cap_timer->resolution_hz = group->resolution_hz;
 #else
     // capture timer has independent clock source selection
-    switch (config->clk_src) {
+    switch (clk_src) {
     case MCPWM_CAPTURE_CLK_SRC_APB:
         cap_timer->resolution_hz = esp_clk_apb_freq();
 #if CONFIG_PM_ENABLE

@@ -61,7 +61,7 @@ The first argument of a HAL function is usually a pointer to the **context objec
 `/include/hal` contains header files which provides a hardware-agnostic interface to the SoC. The interface consists of function declarations and abstracted types that other, higher level components can make use of in order to have code portable to all targets ESP-IDF supports.
 
 It contains an abstraction layer for interacting with/driving the hardware found in the SoC such as the peripherals and 'core' hardware such as the CPU, MPU, caches, etc. It contains for the abstracted types.
-The abstraction design is actually two levels -- often sometimes `xxx_hal.h` includes a lower-level header from a `xxx_ll.h`,  which resides in the implementation. More on this abstraction design in the [`hal/include/hal`'s Readme](include/hal/readme.md)
+The abstraction design is actually two levels -- often sometimes `xxx_hal.h` includes a lower-level header from a `xxx_ll.h`,  which resides in the implementation.
 
 ### `target/include`
 

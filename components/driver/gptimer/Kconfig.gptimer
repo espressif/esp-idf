@@ -1,4 +1,5 @@
 menu "GPTimer Configuration"
+    depends on SOC_GPTIMER_SUPPORTED
     config GPTIMER_ISR_HANDLER_IN_IRAM
         bool "Place GPTimer ISR handler into IRAM"
         default y
@@ -16,7 +17,6 @@ menu "GPTimer Configuration"
     config GPTIMER_ISR_IRAM_SAFE
         bool "GPTimer ISR IRAM-Safe"
         select GPTIMER_ISR_HANDLER_IN_IRAM
-        select GPTIMER_ISR_NON_MASKABLE
         default n
         help
             Ensure the GPTimer interrupt is IRAM-Safe by allowing the interrupt handler to be
