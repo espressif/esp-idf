@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -47,6 +47,10 @@ start_periodic_adv(void)
     struct os_mbuf *data;
     uint8_t instance = 1;
     ble_addr_t addr;
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+    struct ble_gap_periodic_adv_enable_params eparams;
+    memset(&eparams, 0, sizeof(eparams));
+#endif
 
     /* set random (NRPA) address for instance */
     rc = ble_hs_id_gen_rnd(1, &addr);
@@ -101,11 +105,22 @@ start_periodic_adv(void)
 
     rc = os_mbuf_append(data, periodic_adv_raw_data, sizeof(periodic_adv_raw_data));
     assert(rc == 0);
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+    rc = ble_gap_periodic_adv_set_data(instance, data, NULL);
+#else
     rc = ble_gap_periodic_adv_set_data(instance, data);
+#endif
     assert (rc == 0);
 
     /* start periodic advertising */
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+#if CONFIG_EXAMPLE_PERIODIC_ADV_ENH
+    eparams.include_adi = 1;
+#endif
+    rc = ble_gap_periodic_adv_start(instance, &eparams);
+#else
     rc = ble_gap_periodic_adv_start(instance);
+#endif
     assert (rc == 0);
 
     /* start advertising */
