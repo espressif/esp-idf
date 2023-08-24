@@ -168,8 +168,8 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
     // Now trigger the ISR to read data from the ring buffer.
     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
        
-    // Return -1 on failure, 0 on success.
-    return (result == pdFALSE) ? -1 : 0;
+    // Return 0 on failure, size on success.
+    return (result == pdFALSE) ? 0 : size;
 }
 
 esp_err_t usb_serial_jtag_driver_uninstall(void)

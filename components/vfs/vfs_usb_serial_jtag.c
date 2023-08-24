@@ -410,7 +410,6 @@ static void usbjtag_tx_char_via_driver(int fd, int c)
     // Attempt to send the character immediately without blocking.
     if (usb_serial_jtag_write_bytes(&ch, 1, 0) != 0) {
         s_ctx.tx_tried_blocking = false;
-    } else {
         return;
     }
 
