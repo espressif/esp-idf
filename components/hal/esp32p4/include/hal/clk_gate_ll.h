@@ -60,10 +60,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_TWAI1_CLK_EN;
     case PERIPH_TWAI2_MODULE:
         return HP_SYS_CLKRST_REG_TWAI2_CLK_EN;
-    case PERIPH_AHB_PDMA_MODULE:
-        return HP_SYS_CLKRST_REG_AHB_PDMA_SYS_CLK_EN;
-    case PERIPH_AXI_PDMA_MODULE:
-        return HP_SYS_CLKRST_REG_AXI_PDMA_SYS_CLK_EN;
     case PERIPH_GPSPI_MODULE:
         return HP_SYS_CLKRST_REG_GPSPI2_HS_CLK_EN;
     case PERIPH_GPSPI2_MODULE:
@@ -120,8 +116,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     switch (periph) {
     case PERIPH_PVT_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PVT_TOP;
-    case PERIPH_GDMA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_GDMA;
     case PERIPH_MSPI_FLASH_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_MSPI_AXI;
     case PERIPH_MSPI_PSRAM_MODULE:
@@ -138,10 +132,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_DMA2D;
     case PERIPH_PPA_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PPA;
-    case PERIPH_AHB_PDMA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_AHB_PDMA;
-    case PERIPH_AXI_PDMA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_AXI_PDMA;
     case PERIPH_SYSTIMER_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_STIMER;
     case PERIPH_UART0_MODULE:
@@ -222,9 +212,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_AHB_PDMA_MODULE:
-    case PERIPH_AXI_PDMA_MODULE:
-        return HP_SYS_CLKRST_SOC_CLK_CTRL1_REG;
     case PERIPH_MSPI_FLASH_MODULE:
     case PERIPH_MSPI_PSRAM_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL00_REG;
@@ -290,7 +277,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     switch (periph) {
     case PERIPH_PVT_MODULE:
-    case PERIPH_GDMA_MODULE:
     case PERIPH_MSPI_FLASH_MODULE:
     case PERIPH_MSPI_PSRAM_MODULE:
     case PERIPH_ISP_MODULE:
@@ -298,8 +284,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_DMA2D_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN0_REG;
     case PERIPH_PPA_MODULE:
-    case PERIPH_AHB_PDMA_MODULE:
-    case PERIPH_AXI_PDMA_MODULE:
     case PERIPH_SYSTIMER_MODULE:
     case PERIPH_UART0_MODULE:
     case PERIPH_UART1_MODULE:

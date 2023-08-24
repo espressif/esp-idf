@@ -12,6 +12,7 @@
 #include "hal/gdma_types.h"
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +61,34 @@ extern "C" {
 #define GDMA_LL_AHB_PAIRS_PER_GROUP   5 // Number of GDMA pairs in each AHB group
 
 ///////////////////////////////////// Common /////////////////////////////////////////
+
+/**
+ * @brief Enable the bus clock for the DMA module
+ */
+static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en1.dma_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the DMA module
+ */
+static inline void gdma_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en1.dma_rst = 1;
+    SYSTEM.perip_rst_en1.dma_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
+
 /**
  * @brief Force enable register clock
  */

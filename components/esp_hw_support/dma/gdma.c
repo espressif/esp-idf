@@ -48,6 +48,13 @@
 
 static const char *TAG = "gdma";
 
+#if !SOC_RCC_IS_INDEPENDENT
+// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
+#define GDMA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define GDMA_RCC_ATOMIC()
+#endif
+
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
 #define SEARCH_REQUEST_TX_CHANNEL (1 << 1)
@@ -615,7 +622,9 @@ static void gdma_release_group_handle(gdma_group_t *group)
 
     if (do_deinitialize) {
         gdma_hal_deinit(&group->hal);
-        periph_module_disable(gdma_periph_signals.groups[group_id].module);
+        GDMA_RCC_ATOMIC() {
+            gdma_ll_enable_bus_clock(group_id, false);
+        }
         free(group);
         ESP_LOGD(TAG, "del group %d", group_id);
     }
@@ -646,7 +655,10 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id, void (*hal_init)(gd
         group->group_id = group_id;
         group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
         // enable APB to access GDMA registers
-        periph_module_enable(gdma_periph_signals.groups[group_id].module);
+        GDMA_RCC_ATOMIC() {
+            gdma_ll_enable_bus_clock(group_id, true);
+            gdma_ll_reset_register(group_id);
+        }
         gdma_hal_config_t config = {
             .group_id = group_id,
         };
