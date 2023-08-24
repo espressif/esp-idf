@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,18 +99,10 @@ static intr_handle_t s_timer_interrupt_handle[ISR_HANDLERS] = { NULL };
 static intr_handler_t s_alarm_handler = NULL;
 
 /* Spinlock used to protect access to the hardware registers. */
-portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
+extern portMUX_TYPE s_time_update_lock;
 
-
-void esp_timer_impl_lock(void)
-{
-    portENTER_CRITICAL(&s_time_update_lock);
-}
-
-void esp_timer_impl_unlock(void)
-{
-    portEXIT_CRITICAL(&s_time_update_lock);
-}
+/* Alarm values to generate interrupt on match */
+extern uint64_t timestamp_id[2];
 
 uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 {
@@ -152,7 +144,7 @@ int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")
 
 void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
 {
-    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
+    assert(alarm_id < sizeof(timestamp_id) / sizeof(timestamp_id[0]));
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
     timestamp_id[alarm_id] = timestamp;
     timestamp = MIN(timestamp_id[0], timestamp_id[1]);
@@ -180,16 +172,12 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
-void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
-{
-    esp_timer_impl_set_alarm_id(timestamp, 0);
-}
-
 static void IRAM_ATTR timer_alarm_isr(void *arg)
 {
 #if ISR_HANDLERS == 1
     /* Clear interrupt status */
     REG_WRITE(INT_CLR_REG, TIMG_LACT_INT_CLR);
+
     /* Call the upper layer handler */
     (*s_alarm_handler)(arg);
 #else
@@ -333,12 +321,6 @@ void esp_timer_impl_deinit(void)
     s_alarm_handler = NULL;
 }
 
-/* FIXME: This value is safe for 80MHz APB frequency, should be modified to depend on clock frequency. */
-uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us(void)
-{
-    return 50;
-}
-
 uint64_t esp_timer_impl_get_alarm_reg(void)
 {
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
@@ -353,5 +335,3 @@ uint64_t esp_timer_impl_get_alarm_reg(void)
 void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
 void esp_timer_private_set(uint64_t new_us) __attribute__((alias("esp_timer_impl_set")));
 void esp_timer_private_advance(int64_t time_diff_us) __attribute__((alias("esp_timer_impl_advance")));
-void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
-void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));
