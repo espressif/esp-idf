@@ -508,7 +508,7 @@ esp_err_t esp_hf_client_answer_call(void);
 
 /**
  *
- * @brief           Reject an incoming call(send AT+CHUP command).
+ * @brief           Reject an incoming call or terminate an ongoing call(send AT+CHUP command).
  *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
