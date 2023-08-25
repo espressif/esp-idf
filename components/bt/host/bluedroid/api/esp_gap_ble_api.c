@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_bt_device.h"
@@ -1028,8 +1020,13 @@ esp_err_t esp_ble_gap_periodic_adv_set_params(uint8_t instance, const esp_ble_ga
 
 }
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
+                                                                           const uint8_t *data, bool only_update_did)
+#else
 esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
                                                                            const uint8_t *data)
+#endif
 {
     btc_msg_t msg;
     btc_ble_5_gap_args_t arg;
@@ -1043,13 +1040,22 @@ esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t le
     arg.periodic_adv_cfg_data.instance = instance;
     arg.periodic_adv_cfg_data.len = length;
     arg.periodic_adv_cfg_data.data = (uint8_t *)data;
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    arg.periodic_adv_cfg_data.only_update_did = only_update_did;
+#else
+    arg.periodic_adv_cfg_data.only_update_did = false;
+#endif
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), btc_gap_ble_arg_deep_copy,
                 btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance,bool include_adi)
+#else
 esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance)
+#endif
 {
     btc_msg_t msg;
     btc_ble_5_gap_args_t arg;
@@ -1060,6 +1066,11 @@ esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_PERIODIC_ADV_START;
 
+    #if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    arg.periodic_adv_start.include_adi = include_adi;
+    #else
+    arg.periodic_adv_start.include_adi = false;
+    #endif
     arg.periodic_adv_start.instance = instance;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
