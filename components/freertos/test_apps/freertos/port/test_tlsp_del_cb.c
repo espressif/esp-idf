@@ -6,8 +6,6 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_FREERTOS_SMP
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -79,66 +77,3 @@ TEST_CASE("Test TLSP deletion callbacks", "[freertos]")
         }
     }
 }
-
-#else // CONFIG_FREERTOS_SMP
-
-// Todo: Remove IDF FreeRTOS Test Case
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "unity.h"
-#include "test_utils.h"
-
-/* --------Test backported thread local storage pointer and deletion cb feature----------
- * vTaskSetThreadLocalStoragePointerAndDelCallback()
- * pvTaskGetThreadLocalStoragePointer(),
- *
- * This test creates a task and set's the task's TLSPs. The task is then deleted
- * which should trigger the deletion cb.
- */
-
-#define NO_OF_TLSP  configNUM_THREAD_LOCAL_STORAGE_POINTERS
-#define TLSP_SET_BASE    0x0F       //0b1111 to be bit shifted by index
-#define TLSP_DEL_BASE    0x05       //0b0101 to be bit shifted by index
-
-//The variables pointed to by Thread Local Storage Pointer
-static uint32_t task_storage[portNUM_PROCESSORS][NO_OF_TLSP] = {0};
-
-static void del_cb(int index, void *ptr)
-{
-    *((uint32_t *)ptr) = (TLSP_DEL_BASE << index);   //Indicate deletion by setting task storage element to a unique value
-}
-
-static void task_cb(void *arg)
-{
-    int core = xPortGetCoreID();
-    for(int i = 0; i < NO_OF_TLSP; i++){
-        task_storage[core][i] = (TLSP_SET_BASE << i);   //Give each element of task_storage a unique number
-        vTaskSetThreadLocalStoragePointerAndDelCallback(NULL, i, (void *)&task_storage[core][i], del_cb);   //Set each TLSP to point to a task storage element
-    }
-
-    for(int i = 0; i < NO_OF_TLSP; i++){
-        uint32_t * tlsp = (uint32_t *)pvTaskGetThreadLocalStoragePointer(NULL, i);
-        TEST_ASSERT_EQUAL(*tlsp, (TLSP_SET_BASE << i)); //Check if TLSP points to the correct task storage element by checking unique value
-    }
-
-    vTaskDelete(NULL);      //Delete Task to Trigger TSLP deletion callback
-}
-
-TEST_CASE("Test FreeRTOS thread local storage pointers and del cb", "[freertos]")
-{
-    //Create Task
-    for(int core = 0; core < portNUM_PROCESSORS; core++){
-        xTaskCreatePinnedToCore(task_cb, "task", 1024, NULL, UNITY_FREERTOS_PRIORITY+1, NULL, core);
-    }
-    vTaskDelay(10);     //Delay long enough for tasks to run to completion
-
-    for(int core = 0; core < portNUM_PROCESSORS; core++){
-        for(int i = 0; i < NO_OF_TLSP; i++){
-            TEST_ASSERT_EQUAL((TLSP_DEL_BASE << i), task_storage[core][i]);     //Check del_cb ran by checking task storage for unique value
-        }
-    }
-}
-
-#endif // CONFIG_FREERTOS_SMP

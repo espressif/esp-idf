@@ -647,13 +647,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
  * - These are not part of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// -------------------- Co-Processor -----------------------
-
-#if XCHAL_CP_NUM > 0
-void vPortCleanUpCoprocArea(void *pvTCB);
-#define portCLEAN_UP_COPROC(pvTCB)      vPortCleanUpCoprocArea(pvTCB)
-#endif
-
 // -------------------- Heap Related -----------------------
 
 /**
