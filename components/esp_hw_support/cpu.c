@@ -467,30 +467,7 @@ exit:
     }
     return ret;
 
-//TODO: IDF-7771
 #else // __riscv
-#if SOC_CPU_CORES_NUM > 1
-    /* We use lr.w and sc.w pair for riscv TAS. lr.w will read the memory and register a cpu lock signal
-     * The state of the lock signal is internal to core, and it is not possible for another core to
-     * interface. sc.w will assert the address is registered. Then write memory and release the lock
-     * signal. During the lr.w and sc.w time, if other core acquires the same address, will wait
-     */
-    volatile uint32_t old_value = 0xB33FFFFF;
-    volatile int error = 1;
-
-    __asm__ __volatile__(
-        "0: lr.w %0, 0(%2)     \n"
-        "   bne  %0, %3, 1f    \n"
-        "   sc.w %1, %4, 0(%2) \n"
-        "   bnez %1, 0b        \n"
-        "1:                    \n"
-        : "+r" (old_value), "+r" (error)
-        : "r" (addr), "r" (compare_value), "r" (new_value)
-    );
-    return (old_value == compare_value);
-#else
-    // Single core targets don't have atomic CAS instruction. So access method is the same for internal and external RAM
     return rv_utils_compare_and_set(addr, compare_value, new_value);
-#endif
 #endif
 }

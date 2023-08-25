@@ -23,9 +23,6 @@
 extern "C" {
 #endif
 
-// interrupt module will mask interrupt with priority less than threshold
-#define RVHAL_EXCM_LEVEL    4
-
 typedef spinlock_t portMUX_TYPE;
 
 /**< Spinlock initializer */

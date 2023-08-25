@@ -24,7 +24,8 @@ extern "C" {
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
 
-//TODO: IDF-7771
+/* SW defined level which the interrupt module will mask interrupt with priority less than threshold during critical sections
+   and spinlocks */
 #define RVHAL_EXCM_LEVEL    4
 
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
@@ -162,6 +163,17 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
 
     return old_thresh;
 }
+
+FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_mask_int_level_lower_than(uint32_t intlevel)
+{
+#if SOC_INT_CLIC_SUPPORTED
+    /* CLIC's set interrupt level is inclusive, i.e. it does mask the set level  */
+    return rv_utils_set_intlevel(intlevel - 1);
+#else
+    return rv_utils_set_intlevel(intlevel);
+#endif /* SOC_INT_CLIC_SUPPORTED */
+}
+
 #endif  //#if (SOC_CPU_CORES_NUM > 1)
 
 FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
@@ -295,9 +307,22 @@ FORCE_INLINE_ATTR void rv_utils_dbgr_break(void)
 
 FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, uint32_t new_value)
 {
-    // ESP32C6 starts to support atomic CAS instructions, but it is still a single core target, no need to implement
-    // through lr and sc instructions for now
-    // For an RV target has no atomic CAS instruction, we can achieve atomicity by disabling interrupts
+#if __riscv_atomic
+    uint32_t old_value = 0;
+    int error = 0;
+
+    /* Based on sample code for CAS from RISCV specs v2.2, atomic instructions */
+    __asm__ __volatile__(
+        "cas: lr.w %0, 0(%2)     \n"                        // load 4 bytes from addr (%2) into old_value (%0)
+        "     bne  %0, %3, fail  \n"                        // fail if old_value if not equal to compare_value (%3)
+        "     sc.w %1, %4, 0(%2) \n"                        // store new_value (%4) into addr,
+        "     bnez %1, cas       \n"                        // if we failed to store the new value then retry the operation
+        "fail:                   \n"
+        : "+r" (old_value), "+r" (error)                    // output parameters
+        : "r" (addr), "r" (compare_value), "r" (new_value)  // input parameters
+    );
+#else
+    // For a single core RV target has no atomic CAS instruction, we can achieve atomicity by disabling interrupts
     unsigned old_mstatus;
     old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     // Compare and set
@@ -309,6 +334,7 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
     // Restore interrupts
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 
+#endif //__riscv_atomic
     return (old_value == compare_value);
 }
 
