@@ -12,7 +12,7 @@
 #include "esp_ble_mesh_health_model_api.h"
 
 #if CONFIG_BLE_MESH_HEALTH_CLI
-#include "health_cli.h"
+#include "mesh/health_cli.h"
 
 /* Health Client Model related functions */
 
@@ -453,7 +453,7 @@ void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg)
 #endif /* CONFIG_BLE_MESH_HEALTH_CLI */
 
 #if CONFIG_BLE_MESH_HEALTH_SRV
-#include "health_srv.h"
+#include "mesh/health_srv.h"
 
 /* Health Server Model related functions */
 

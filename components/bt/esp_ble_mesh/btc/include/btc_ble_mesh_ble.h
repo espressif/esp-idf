@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include "btc/btc_manage.h"
-#include "mesh_bearer_adapt.h"
+#include "mesh/adapter.h"
 #include "esp_ble_mesh_ble_api.h"
 
 #ifdef __cplusplus

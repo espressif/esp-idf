@@ -12,7 +12,7 @@
 #include "esp_ble_mesh_config_model_api.h"
 
 #if CONFIG_BLE_MESH_CFG_CLI
-#include "cfg_cli.h"
+#include "mesh/cfg_cli.h"
 
 /* Configuration Client Model related functions */
 

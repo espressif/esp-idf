@@ -26,7 +26,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
-#include "mesh_util.h"
+#include "mesh/utils.h"
 #define PARAM_MAX           7
 
 #define SYNC_TIMEOUT   500000 //500ms

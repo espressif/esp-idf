@@ -238,13 +238,13 @@ ESP-BLE-MESH 架构采用分层的方式进行设计，数据包的处理所经�
 
   * - 文件
     - 功能
-  * - :component_file:`access.c <bt/esp_ble_mesh/mesh_core/access.c>`
+  * - :component_file:`access.c <bt/esp_ble_mesh/core/access.c>`
     - ESP-BLE-MESH 接入层
-  * - :component_file:`transport.c <bt/esp_ble_mesh/mesh_core/transport.c>`
+  * - :component_file:`transport.c <bt/esp_ble_mesh/core/transport.c>`
     - ESP-BLE-MESH 底层/上层传输层
-  * - :component_file:`net.c <bt/esp_ble_mesh/mesh_core/net.c>`
+  * - :component_file:`net.c <bt/esp_ble_mesh/core/net.c>`
     - ESP-BLE-MESH 网络层
-  * - :component_file:`adv.c <bt/esp_ble_mesh/mesh_core/adv.c>`
+  * - :component_file:`adv.c <bt/esp_ble_mesh/core/adv.c>`
     - 用于发送 ESP-BLE-MESH 广播包的任务，一个用于处理收到的广播包的回调以及用于分配 adv 缓冲区的 API
 
 2.1.2 Mesh Provisioning 实现
@@ -260,11 +260,11 @@ ESP-BLE-MESH 架构采用分层的方式进行设计，数据包的处理所经�
 
   * - 文件
     - 功能
-  * - :component_file:`prov.c <bt/esp_ble_mesh/mesh_core/prov.c>`
+  * - :component_file:`prov_node.c <bt/esp_ble_mesh/core/prov_node.c>`
     - ESP-BLE-MESH 节点配网 (PB-ADV & PB-GATT)
-  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
+  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/core/proxy_server.c>`
     - ESP-BLE-MESH 节点代理服务器相关功能
-  * - :component_file:`beacon.c <bt/esp_ble_mesh/mesh_core/beacon.c>`
+  * - :component_file:`beacon.c <bt/esp_ble_mesh/core/beacon.c>`
     - 用于处理 ESP-BLE-MESH Beacon 的 API
 
 实现 Provisioner 配置功能的特定文件如表 2.3 所示：
@@ -275,11 +275,11 @@ ESP-BLE-MESH 架构采用分层的方式进行设计，数据包的处理所经�
 
   * - 文件
     - 功能
-  * - :component_file:`provisioner_prov.c <bt/esp_ble_mesh/mesh_core/provisioner_prov.c>`
+  * - :component_file:`prov_pvnr.c <bt/esp_ble_mesh/core/prov_pvnr.c>`
     - ESP-BLE-MESH Provisioner 配置入网 (PB-ADV & PB-GATT)
-  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/mesh_core/proxy_client.c>`
+  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/core/proxy_client.c>`
     - ESP-BLE-MESH 代理客户端相关功能
-  * - :component_file:`provisioner_main.c <bt/esp_ble_mesh/mesh_core/provisioner_main.c>`
+  * - :component_file:`pvnr_mgmt.c <bt/esp_ble_mesh/core/pvnr_mgmt.c>`
     - ESP-BLE-MESH Provisioner 网络相关功能
 
 2.1.3 Mesh Models 实现
@@ -293,37 +293,37 @@ Mesh Models 用于实现节点中所包含的模型的具体功能。服务器�
 
   * - 文件
     - 功能
-  * - :component_file:`cfg_cli.c <bt/esp_ble_mesh/mesh_core/cfg_cli.c>`
+  * - :component_file:`cfg_cli.c <bt/esp_ble_mesh/core/cfg_cli.c>`
     - 发送 Configuration Client 消息，接收相应应答消息
-  * - :component_file:`cfg_srv.c <bt/esp_ble_mesh/mesh_core/cfg_srv.c>`
+  * - :component_file:`cfg_srv.c <bt/esp_ble_mesh/core/cfg_srv.c>`
     - 接收 Configuration Client 消息，发送适当应答消息
-  * - :component_file:`health_cli.c <bt/esp_ble_mesh/mesh_core/health_cli.c>`
+  * - :component_file:`health_cli.c <bt/esp_ble_mesh/core/health_cli.c>`
     - 发送 Health Client 消息，接收相应应答消息
-  * - :component_file:`health_srv.c <bt/esp_ble_mesh/mesh_core/health_srv.c>`
+  * - :component_file:`health_srv.c <bt/esp_ble_mesh/core/health_srv.c>`
     - 接收 Health Client 消息，发送适当应答消息
-  * - :component_file:`client_common.c <bt/esp_ble_mesh/mesh_models/client/client_common.c>`
+  * - :component_file:`client_common.c <bt/esp_ble_mesh/models/client/client_common.c>`
     - ESP-BLE-MESH 模型相关操作
-  * - :component_file:`generic_client.c <bt/esp_ble_mesh/mesh_models/client/generic_client.c>`
+  * - :component_file:`generic_client.c <bt/esp_ble_mesh/models/client/generic_client.c>`
     - 发送 ESP-BLE-MESH Generic Client 消息，接收相应应答消息
-  * - :component_file:`lighting_client.c <bt/esp_ble_mesh/mesh_models/client/lighting_client.c>`
+  * - :component_file:`lighting_client.c <bt/esp_ble_mesh/models/client/lighting_client.c>`
     - 发送 ESP-BLE-MESH Lighting Client 消息，接收相应应答消息
-  * - :component_file:`sensor_client.c <bt/esp_ble_mesh/mesh_models/client/sensor_client.c>`
+  * - :component_file:`sensor_client.c <bt/esp_ble_mesh/models/client/sensor_client.c>`
     - 发送 ESP-BLE-MESH Sensor Client 消息，接收相应应答消息
-  * - :component_file:`time_scene_client.c <bt/esp_ble_mesh/mesh_models/client/time_scene_client.c>`
+  * - :component_file:`time_scene_client.c <bt/esp_ble_mesh/models/client/time_scene_client.c>`
     - 发送 ESP-BLE-MESH Time Scene Client 消息，接收相应应答消息
-  * - :component_file:`generic_server.c <bt/esp_ble_mesh/mesh_models/server/generic_server.c>`
+  * - :component_file:`generic_server.c <bt/esp_ble_mesh/models/server/generic_server.c>`
     - 发送 ESP-BLE-MESH Generic Client 消息，发送相应应答消息
-  * - :component_file:`lighting_server.c <bt/esp_ble_mesh/mesh_models/server/lighting_server.c>`
+  * - :component_file:`lighting_server.c <bt/esp_ble_mesh/models/server/lighting_server.c>`
     - 接收 ESP-BLE-MESH Lighting Client 消息，发送相应应答消息
-  * - :component_file:`sensor_server.c <bt/esp_ble_mesh/mesh_models/server/sensor_server.c>`
+  * - :component_file:`sensor_server.c <bt/esp_ble_mesh/models/server/sensor_server.c>`
     - 接收 ESP-BLE-MESH Sensor Client 消息，发送相应应答消息
-  * - :component_file:`time_scene_server.c <bt/esp_ble_mesh/mesh_models/server/time_scene_server.c>`
+  * - :component_file:`time_scene_server.c <bt/esp_ble_mesh/models/server/time_scene_server.c>`
     - 接收 ESP-BLE-MESH Time Scene Client 消息，发送相应应答消息
 
 2.2 Mesh Bearers 实现
 ^^^^^^^^^^^^^^^^^^^^^
 
-Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议栈需要移植到其它平台时，用户只需要修改 :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c>` 就能移植成功。
+Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议栈需要移植到其它平台时，用户只需要修改 :component_file:`adapter.c <bt/esp_ble_mesh/core/bluedroid_host/adapter.c>` 就能移植成功。
 
 .. list-table:: 表 2.5  Mesh Bearers 文件描述
   :widths: 40 150
@@ -331,12 +331,12 @@ Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议�
 
   * - 文件
     - 功能
-  * - :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c>`
+  * - :component_file:`adapter.c <bt/esp_ble_mesh/core/bluedroid_host/adapter.c>`
     - ESP-BLE-MESH 承载层适配文件。此文件提供用于接收和发送 ESP-BLE-MESH ADV 和 GATT 相关数据包的接口。
 
 .. note::
 
-  :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c>` 是对 Mesh 网络框架中 ``Advertising Bearer`` 和 ``GATT Bearer`` 的实现。
+  :component_file:`adapter.c <bt/esp_ble_mesh/core/bluedroid_host/adapter.c>` 是对 Mesh 网络框架中 ``Advertising Bearer`` 和 ``GATT Bearer`` 的实现。
 
 2.3 Mesh Applications 实现
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -380,17 +380,17 @@ Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议�
 
   * - 文件
     - 功能
-  * - :component_file:`lpn.c <bt/esp_ble_mesh/mesh_core/lpn.c>`
+  * - :component_file:`lpn.c <bt/esp_ble_mesh/core/lpn.c>`
     - ESP-BLE-MESH 低功耗功能
-  * - :component_file:`friend.c <bt/esp_ble_mesh/mesh_core/friend.c>`
+  * - :component_file:`friend.c <bt/esp_ble_mesh/core/friend.c>`
     - ESP-BLE-MESH 好友功能
-  * - :component_file:`net.c <bt/esp_ble_mesh/mesh_core/net.c>`
+  * - :component_file:`net.c <bt/esp_ble_mesh/core/net.c>`
     - ESP-BLE-MESH 中继功能、网络创建、网络索引更新程序、网络索引恢复程序、秘钥更新程序相关功能
-  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
+  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/core/proxy_server.c>`
     - ESP-BLE-MESH 代理服务器相关功能
-  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/mesh_core/proxy_client.c>`
+  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/core/proxy_client.c>`
     - ESP-BLE-MESH 代理客户端相关功能
-  * - :component_file:`settings.c <bt/esp_ble_mesh/mesh_core/settings.c>`
+  * - :component_file:`settings.c <bt/esp_ble_mesh/core/settings.c>`
     - ESP-BLE-MESH NVS 存储器功能
-  * - :component_file:`main.c <bt/esp_ble_mesh/mesh_core/main.c>`
+  * - :component_file:`main.c <bt/esp_ble_mesh/core/main.c>`
     - ESP-BLE-MESH 协议栈初始化，协议栈使能，节点移除相关功能

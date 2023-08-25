@@ -16,42 +16,42 @@
 #include "btc_ble_mesh_lighting_model.h"
 
 #include "adv.h"
-#include "mesh_kernel.h"
-#include "mesh_proxy.h"
+#include "mesh/kernel.h"
+#include "mesh/proxy.h"
 #include "mesh.h"
 #include "access.h"
-#include "prov.h"
+#include "prov_node.h"
 #include "settings_uid.h"
 #include "proxy_server.h"
 #include "proxy_client.h"
-#include "provisioner_prov.h"
-#include "provisioner_main.h"
+#include "prov_pvnr.h"
+#include "pvnr_mgmt.h"
 
 #if CONFIG_BLE_MESH_CFG_CLI
-#include "cfg_cli.h"
+#include "mesh/cfg_cli.h"
 #endif /* CONFIG_BLE_MESH_CFG_CLI */
 #if CONFIG_BLE_MESH_HEALTH_CLI
-#include "health_cli.h"
+#include "mesh/health_cli.h"
 #endif /* CONFIG_BLE_MESH_HEALTH_CLI */
-#include "cfg_srv.h"
+#include "mesh/cfg_srv.h"
 #if CONFIG_BLE_MESH_HEALTH_SRV
-#include "health_srv.h"
+#include "mesh/health_srv.h"
 #endif /* CONFIG_BLE_MESH_HEALTH_SRV */
 #if CONFIG_BLE_MESH_GENERIC_CLIENT
-#include "generic_client.h"
+#include "mesh/generic_client.h"
 #endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */
 #if CONFIG_BLE_MESH_LIGHTING_CLIENT
-#include "lighting_client.h"
+#include "mesh/lighting_client.h"
 #endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */
 #if CONFIG_BLE_MESH_SENSOR_CLI
-#include "sensor_client.h"
+#include "mesh/sensor_client.h"
 #endif /* CONFIG_BLE_MESH_SENSOR_CLI */
 #if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
-#include "time_scene_client.h"
+#include "mesh/time_scene_client.h"
 #endif /* CONFIG_BLE_MESH_TIME_SCENE_CLIENT */
-#include "client_common.h"
-#include "state_binding.h"
-#include "local_operation.h"
+#include "mesh/client_common.h"
+#include "mesh/state_binding.h"
+#include "local.h"
 
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"

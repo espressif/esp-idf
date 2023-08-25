@@ -9,10 +9,10 @@
 
 #include <stdint.h>
 
-#include "mesh_config.h"
-#include "mesh_common.h"
+#include "mesh/config.h"
+#include "mesh/common.h"
 #include "proxy_server.h"
-#include "provisioner_main.h"
+#include "pvnr_mgmt.h"
 
 #ifdef __cplusplus
 extern "C" {

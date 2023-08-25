@@ -25,7 +25,7 @@
 
 /* We include the internal header file mesh_bearer_adapt.h here
    just for some specific test purpose, which is not recommended for the other applications. */
-#include "mesh_bearer_adapt.h"
+#include "mesh/adapter.h"
 
 typedef struct {
     struct arg_str *static_val;

@@ -8,11 +8,11 @@
 #define _BTC_BLE_MESH_PROV_H_
 
 #include "btc/btc_manage.h"
-#include "mesh_byteorder.h"
-#include "mesh_config.h"
-#include "mesh_main.h"
+#include "mesh/byteorder.h"
+#include "mesh/config.h"
+#include "mesh/main.h"
 #include "fast_prov.h"
-#include "provisioner_prov.h"
+#include "prov_pvnr.h"
 #include "esp_ble_mesh_defs.h"
 
 #ifdef __cplusplus

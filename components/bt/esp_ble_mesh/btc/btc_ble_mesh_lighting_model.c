@@ -11,7 +11,7 @@
 #include "esp_ble_mesh_lighting_model_api.h"
 
 #if CONFIG_BLE_MESH_LIGHTING_CLIENT
-#include "lighting_client.h"
+#include "mesh/lighting_client.h"
 
 /* Lighting Client Models related functions */
 

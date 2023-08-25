@@ -11,7 +11,7 @@
 #include "esp_ble_mesh_sensor_model_api.h"
 
 #if CONFIG_BLE_MESH_SENSOR_CLI
-#include "sensor_client.h"
+#include "mesh/sensor_client.h"
 
 /* Sensor Client Models related functions */
 
