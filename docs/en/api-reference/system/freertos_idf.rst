@@ -6,7 +6,7 @@ FreeRTOS (ESP-IDF)
 Overview
 --------
 
-The original FreeRTOS (hereinafter referred to as Vanilla FreeRTOS) is a small and efficient Real Time Operating System supported on many single-core MCUs and SoCs. However, to support numerous dual core ESP targets (such as the ESP32 and ESP32-S3), ESP-IDF provides a dual core SMP (Symmetric Multiprocessing) capable implementation of FreeRTOS, (hereinafter referred to as ESP-IDF FreeRTOS).
+The original FreeRTOS (hereinafter referred to as Vanilla FreeRTOS) is a small and efficient Real Time Operating System supported on many single-core MCUs and SoCs. However, to support numerous dual core ESP targets (such as the ESP32, ESP32-S3 and ESP32-P4), ESP-IDF provides a dual core SMP (Symmetric Multiprocessing) capable implementation of FreeRTOS, (hereinafter referred to as ESP-IDF FreeRTOS).
 
 ESP-IDF FreeRTOS is based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to both API and kernel behavior in order to support dual core SMP. This document describes the API and behavioral differences between Vanilla FreeRTOS and ESP-IDF FreeRTOS.
 
@@ -50,9 +50,9 @@ Although an SMP system allows threads to switch cores, there are scenarios where
 SMP on an ESP Target
 ^^^^^^^^^^^^^^^^^^^^
 
-ESP targets (such as the ESP32, ESP32-S3) are dual core SMP SoCs. These targets have the following hardware features that make them SMP capable:
+ESP targets (such as the ESP32, ESP32-S3 and ESP32-P4) are dual core SMP SoCs. These targets have the following hardware features that make them SMP capable:
 
-- Two identical cores known as CPU0 (i.e., Protocol CPU or PRO_CPU) and CPU1 (i.e., Application CPU or APP_CPU). This  means that the execution of a piece of code is identical regardless of which core it runs on.
+- Two identical cores known as CPU0 and CPU1. This  means that the execution of a piece of code is identical regardless of which core it runs on.
 - Symmetric memory (with some small exceptions).
 
   - If multiple cores access the same memory address, their access will be serialized at the memory bus level.
@@ -60,9 +60,12 @@ ESP targets (such as the ESP32, ESP32-S3) are dual core SMP SoCs. These targets 
 
 - Cross-core interrupts that allow one CPU to trigger and interrupt on another CPU. This allows cores to signal each other.
 
-.. note::
 
-  The ``PRO_CPU`` and ``APP_CPU`` aliases for CPU0 and CPU1 exist in ESP-IDF as they reflect how typical ESP-IDF applications utilize the two CPUs. Typically, the tasks responsible for handling wireless networking (e.g., Wi-Fi or Bluetooth) are pinned to CPU0 (thus the name PRO_CPU), whereas the tasks handling the remainder of the application are pinned to CPU1 (thus the name APP_CPU).
+.. only:: not esp32p4
+
+    .. note::
+
+        CPU0 is also known as Protocol CPU or ``PRO_CPU`` and CPU1 is also known as Application CPU or ``APP_CPU``. The ``PRO_CPU`` and ``APP_CPU`` aliases for CPU0 and CPU1 exist in ESP-IDF as they reflect how typical ESP-IDF applications utilize the two CPUs. Typically, the tasks responsible for handling wireless networking (e.g., Wi-Fi or Bluetooth) are pinned to CPU0 (thus the name PRO_CPU), whereas the tasks handling the remainder of the application are pinned to CPU1 (thus the name APP_CPU).
 
 
 .. ------------------------------------------------------ Tasks --------------------------------------------------------
@@ -112,7 +115,7 @@ Task deletion in Vanilla FreeRTOS is called via :cpp:func:`vTaskDelete`. The fun
 ESP-IDF FreeRTOS provides the same :cpp:func:`vTaskDelete` function. However, due to the dual core nature, there are some behavioral differences when calling :cpp:func:`vTaskDelete` in ESP-IDF FreeRTOS:
 
 - When deleting a task that is pinned to the other core, that task's memory is always freed by the idle task of the other core (due to the need to clear FPU registers).
-- When deleting a task that is currently running on the other core, a yield is triggered on the other core and the task's memory is freed by one of the idle tasks (depending on the task's core affinity)
+- When deleting a task that is currently running on the other core, an yield is triggered on the other core and the task's memory is freed by one of the idle tasks (depending on the task's core affinity)
 - A deleted task's memory is freed immediately if...
 
   - The tasks is currently running on this core and is also pinned to this core
@@ -419,32 +422,34 @@ Given that interrupts (or interrupt nesting) are disabled during a critical sect
 Misc
 ----
 
-Floating Point Usage
-^^^^^^^^^^^^^^^^^^^^
+.. only:: SOC_CPU_HAS_FPU
 
-Usually, when a context switch occurs:
+    Floating Point Usage
+    ^^^^^^^^^^^^^^^^^^^^
 
-- the current state of a CPU's registers are saved to the stack of task being switch out
-- the previously saved state of the CPU's registers are loaded from the stack of the task being switched in
+    Usually, when a context switch occurs:
 
-However, ESP-IDF FreeRTOS implements Lazy Context Switching for the FPU (Floating Point Unit) registers of a CPU. In other words, when a context switch occurs on a particular core (e.g., CPU0), the state of the core's FPU registers are not immediately saved to the stack of the task getting switched out (e.g., Task A). The FPU's registers are left untouched until:
+    - the current state of a CPU's registers are saved to the stack of task being switch out
+    - the previously saved state of the CPU's registers are loaded from the stack of the task being switched in
 
-- A different task (e.g., Task B) runs on the same core and uses the FPU. This will trigger an exception that saves the FPU registers to Task A's stack.
-- Task A get's scheduled to the same core and continues execution. Saving and restoring the FPU's registers is not necessary in this case.
+    However, ESP-IDF FreeRTOS implements Lazy Context Switching for the FPU (Floating Point Unit) registers of a CPU. In other words, when a context switch occurs on a particular core (e.g., CPU0), the state of the core's FPU registers are not immediately saved to the stack of the task getting switched out (e.g., Task A). The FPU's registers are left untouched until:
 
-However, given that tasks can be unpinned thus can be scheduled on different cores (e.g., Task A switches to CPU1), it is unfeasible to copy and restore the FPU's registers across cores. Therefore, when a task utilizes the FPU (by using a ``float`` type in its call flow), ESP-IDF FreeRTOS will automatically pin the task to the current core it is running on. This ensures that all tasks that uses the FPU are always pinned to a particular core.
+    - A different task (e.g., Task B) runs on the same core and uses the FPU. This will trigger an exception that saves the FPU registers to Task A's stack.
+    - Task A get's scheduled to the same core and continues execution. Saving and restoring the FPU's registers is not necessary in this case.
 
-Furthermore, ESP-IDF FreeRTOS by default does not support the usage of the FPU within an interrupt context given that the FPU's register state is tied to a particular task.
+    However, given that tasks can be unpinned thus can be scheduled on different cores (e.g., Task A switches to CPU1), it is unfeasible to copy and restore the FPU's registers across cores. Therefore, when a task utilizes the FPU (by using a ``float`` type in its call flow), ESP-IDF FreeRTOS will automatically pin the task to the current core it is running on. This ensures that all tasks that uses the FPU are always pinned to a particular core.
 
-.. only: esp32
+    Furthermore, ESP-IDF FreeRTOS by default does not support the usage of the FPU within an interrupt context given that the FPU's register state is tied to a particular task.
 
-  .. note::
+    .. only: esp32
 
-    Users that require the use of the ``float`` type in an ISR routine should refer to the :ref:`CONFIG_FREERTOS_FPU_IN_ISR` configuration option.
+      .. note::
 
-.. note::
+        Users that require the use of the ``float`` type in an ISR routine should refer to the :ref:`CONFIG_FREERTOS_FPU_IN_ISR` configuration option.
 
-  ESP targets that contain an FPU do not support hardware acceleration for double precision floating point arithmetic (``double``). Instead ``double`` is implemented via software hence the behavioral restrictions regarding the ``float`` type do not apply to ``double``. Note that due to the lack of hardware acceleration, ``double`` operations may consume significantly more CPU time in comparison to ``float``.
+    .. note::
+
+      ESP targets that contain an FPU do not support hardware acceleration for double precision floating point arithmetic (``double``). Instead ``double`` is implemented via software hence the behavioral restrictions regarding the ``float`` type do not apply to ``double``. Note that due to the lack of hardware acceleration, ``double`` operations may consume significantly more CPU time in comparison to ``float``.
 
 
 .. -------------------------------------------------- Single Core  -----------------------------------------------------

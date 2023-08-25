@@ -44,9 +44,11 @@ POSIX/Linux 模拟器的模拟
 
 ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ 预览应用程序在目标芯片上的运行效果。使用该模拟器可以在主机上运行 ESP-IDF 组件，并使这类组件可用于在主机上运行的 ESP-IDF 应用程序。目前，只有一部分组件可以在 Linux 上构建。此外，各组件移植到 Linux 上后，其功能可能也会受到限制，或与在芯片目标上构建该组件的功能有所不同。有关所需组件在 Linux 上是否受支持的更多信息，请参阅 :ref:`component-linux-mock-support`。
 
-.. note::
+.. only:: not esp32p4
 
-    FreeRTOS POSIX/Linux 模拟器支持配置 :ref:`amazon_smp_freertos` 版本，但模拟仍在单核模式下运行。支持 Amazon SMP FreeRTOS 主要是为给 Amazon SMP FreeRTOS 编写的 ESP-IDF 应用程序提供 API 兼容性。
+    .. note::
+
+        FreeRTOS POSIX/Linux 模拟器支持配置 :ref:`amazon_smp_freertos` 版本，但模拟仍在单核模式下运行。支持 Amazon SMP FreeRTOS 主要是为给 Amazon SMP FreeRTOS 编写的 ESP-IDF 应用程序提供 API 兼容性。
 
 使用模拟器的前提
 -----------------

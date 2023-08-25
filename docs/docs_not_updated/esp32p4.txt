@@ -173,13 +173,11 @@ api-reference/system/async_memcpy.rst
 api-reference/system/random.rst
 api-reference/system/esp_timer.rst
 api-reference/system/esp_event.rst
-api-reference/system/freertos.rst
 api-reference/system/system_time.rst
 api-reference/system/log.rst
 api-reference/system/soc_caps.rst
 api-reference/system/internal-unstable.rst
 api-reference/system/app_image_format.rst
-api-reference/system/freertos_additions.rst
 api-reference/system/himem.rst
 api-reference/system/power_management.rst
 api-reference/system/mem_alloc.rst
@@ -196,7 +194,6 @@ api-reference/system/ipc.rst
 api-reference/system/esp_https_ota.rst
 api-reference/system/ulp-risc-v.rst
 api-reference/system/esp_err.rst
-api-reference/system/freertos_idf.rst
 api-reference/system/console.rst
 api-reference/system/intr_alloc.rst
 api-reference/system/index.rst

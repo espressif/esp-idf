@@ -9,27 +9,29 @@ FreeRTOS is an open source real-time operating system kernel that acts as the op
 Implementations
 ---------------
 
-The `official FreeRTOS <https://www.freertos.org/index.html>`_ (henceforth referred to as Vanilla FreeRTOS) is a single-core RTOS. In order to support the various multi-core ESP targets, ESP-IDF supports different FreeRTOS implementations, namely **ESP-IDF FreeRTOS** and **Amazon SMP FreeRTOS**.
+The `official FreeRTOS <https://www.freertos.org/index.html>`_ (henceforth referred to as Vanilla FreeRTOS) is a single-core RTOS. In order to support the various multi-core ESP targets, ESP-IDF supports different FreeRTOS implementations as listed below:
 
 ESP-IDF FreeRTOS
 ^^^^^^^^^^^^^^^^
 
-ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to support SMP. ESP-IDF FreeRTOS only supports two cores at most (i.e., dual core SMP), but is more optimized for this scenario by design. For more details regarding ESP-IDF FreeRTOS and its modifications, please refer to the :doc:`freertos_idf` document.
+    ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to support SMP. ESP-IDF FreeRTOS only supports two cores at most (i.e., dual core SMP), but is more optimized for this scenario by design. For more details regarding ESP-IDF FreeRTOS and its modifications, please refer to the :doc:`freertos_idf` document.
 
-.. note::
+    .. note::
 
-    ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
+        ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
 
-.. _amazon_smp_freertos:
+.. only:: not esp32p4
 
-Amazon SMP FreeRTOS
-^^^^^^^^^^^^^^^^^^^
+    .. _amazon_smp_freertos:
 
-Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
+    Amazon SMP FreeRTOS
+    ^^^^^^^^^^^^^^^^^^^
 
-.. warning::
-  
-    The Amazon SMP FreeRTOS implementation (and its port in ESP-IDF) are currently in experimental/beta state. Therefore, significant behavioral changes and breaking API changes can occur.
+        Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
+
+        .. warning::
+
+            The Amazon SMP FreeRTOS implementation (and its port in ESP-IDF) are currently in experimental/beta state. Therefore, significant behavioral changes and breaking API changes can occur.
 
 Configuration
 -------------
@@ -77,7 +79,7 @@ Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:f
 Background Tasks
 ^^^^^^^^^^^^^^^^
 
-During startup, ESP-IDF and FreeRTOS automatically creates multiple tasks that run in the background (listed in the the table below).
+During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple tasks that run in the background (listed in the the table below).
 
 .. list-table:: List of Tasks Created During Startup
     :widths: 10 75 5 5 5
@@ -115,7 +117,7 @@ During startup, ESP-IDF and FreeRTOS automatically creates multiple tasks that r
       - ``22``
 
 .. note::
-    Note that if an application uses other ESP-IDF features (e.g., WiFi or Bluetooth), those features may create their own background tasks in addition to the tasks listed in the table above.
+    Note that if an application uses other ESP-IDF features (e.g., Wi-Fi or Bluetooth), those features may create their own background tasks in addition to the tasks listed in the table above.
 
 FreeRTOS Additions
 ------------------
