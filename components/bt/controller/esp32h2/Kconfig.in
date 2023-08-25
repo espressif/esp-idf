@@ -393,21 +393,6 @@ config BT_LE_SLEEP_ENABLE
     help
         Enable BLE sleep
 
-choice BT_LE_WAKEUP_SOURCE
-    prompt "BLE light sleep wakeup source"
-    depends on BT_LE_SLEEP_ENABLE
-    default BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-    config BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
-        bool "Use ESP timer to wakeup CPU"
-        help
-            Use esp timer to wakeup CPU
-
-    config BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
-        bool "Use BLE rtc timer to wakeup CPU"
-        help
-            Use BLE rtc timer to wakeup CPU
-endchoice
-
 choice BT_LE_LP_CLK_SRC
     prompt "BLE low power clock source"
     default BT_LE_LP_CLK_SRC_MAIN_XTAL
