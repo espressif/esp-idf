@@ -1,0 +1,3 @@
+components/nvs_flash/host_test:
+  enable:
+    - if: IDF_TARGET == "linux"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -308,6 +308,25 @@ extern "C" void nvs_close(nvs_handle_t handle)
     }
     s_nvs_handles.erase(it);
     delete static_cast<NVSHandleEntry*>(it);
+}
+
+extern "C" esp_err_t nvs_find_key(nvs_handle_t c_handle, const char* key, nvs_type_t* out_type)
+{
+    Lock lock;
+    ESP_LOGD(TAG, "%s %s", __func__, key);
+    NVSHandleSimple *handle;
+    auto err = nvs_find_ns_handle(c_handle, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    nvs_type_t nvstype;
+    err = handle->find_key(key, nvstype);
+
+    if(err == ESP_OK && out_type != nullptr)
+        *out_type = nvstype;
+
+    return err;
 }
 
 extern "C" esp_err_t nvs_erase_key(nvs_handle_t c_handle, const char* key)
