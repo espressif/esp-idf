@@ -85,9 +85,9 @@ const char *c_volume_control_target_str[] = {
 
 // esp_hf_subscriber_service_type_t
 char *c_operator_name_str[] = {
-    "中国移动",
-    "中国联通",
-    "中国电信",
+    "China Mobile",
+    "China Unicom",
+    "China Telecom",
 };
 
 // esp_hf_subscriber_service_type_t
