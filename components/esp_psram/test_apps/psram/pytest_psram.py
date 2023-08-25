@@ -11,6 +11,7 @@ from pytest_embedded import Dut
     'config',
     [
         'esp32_release',
+        'esp32_2t',
     ],
     indirect=True,
 )
