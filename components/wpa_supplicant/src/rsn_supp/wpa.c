@@ -2720,7 +2720,7 @@ int wpa_michael_mic_failure(u16 isunicast)
          * Need to wait for completion of request frame. We do not get
          * any callback for the message completion, so just wait a
          * short while and hope for the best. */
-         esp_rom_delay_us(10000);
+         os_sleep(0, 10000);
 
         /*deauthenticate AP*/
 
