@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -84,16 +84,16 @@ class BLE_Bleak_Client:
                 devices = list(discovery.values())
 
             self.devname = devices[select - 1][0].name
-            found_device = devices[select - 1][0]
+            found_device = devices[select - 1]
         else:
             for d in devices:
-                if d.name == self.devname:
+                if d[0].name == self.devname:
                     found_device = d
 
         if not found_device:
             raise RuntimeError('Device not found')
 
-        uuids = devices[select - 1][1].service_uuids
+        uuids = found_device[1].service_uuids
         # There should be 1 service UUID in advertising data
         # If bluez had cached an old version of the advertisement data
         # the list of uuids may be incorrect, in which case connection
@@ -103,7 +103,7 @@ class BLE_Bleak_Client:
             self.srv_uuid_adv = uuids[0]
 
         print('Connecting...')
-        self.device = bleak.BleakClient(found_device.address)
+        self.device = bleak.BleakClient(found_device[0].address)
         await self.device.connect()
         # must be paired on Windows to access characteristics;
         # cannot be paired on Mac
