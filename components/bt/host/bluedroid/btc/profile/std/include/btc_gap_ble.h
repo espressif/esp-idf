@@ -296,9 +296,11 @@ typedef union {
         uint8_t instance;
         uint16_t len;
         uint8_t *data;
+        bool only_update_did;
     } periodic_adv_cfg_data;
 
     struct periodic_adv_start_args {
+        bool    include_adi;
         uint8_t instance;
     } periodic_adv_start;
 
