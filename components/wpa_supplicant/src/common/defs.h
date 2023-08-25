@@ -51,6 +51,7 @@ typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 
 static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 {
+#ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
 	return !!(akm & (WPA_KEY_MGMT_IEEE8021X |
 			 WPA_KEY_MGMT_FT_IEEE8021X |
 			 WPA_KEY_MGMT_CCKM |
@@ -58,6 +59,9 @@ static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
+#else
+        return 0;
+#endif
 }
 
 static inline int wpa_key_mgmt_wpa_psk(int akm)

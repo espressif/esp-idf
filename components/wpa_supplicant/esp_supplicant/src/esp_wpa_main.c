@@ -184,9 +184,11 @@ void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 bool  wpa_deattach(void)
 {
     struct wpa_sm *sm = &gWpaSm;
+#ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (sm->wpa_sm_wpa2_ent_disable) {
         sm->wpa_sm_wpa2_ent_disable();
     }
+#endif
     if (sm->wpa_sm_wps_disable) {
         sm->wpa_sm_wps_disable();
     }
