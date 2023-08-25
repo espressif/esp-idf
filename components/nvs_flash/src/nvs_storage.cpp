@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -285,13 +285,27 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     }
 
     Page* findPage = nullptr;
+    bool matchedTypePageFound = false;
     Item item;
 
     esp_err_t err;
     if (datatype == ItemType::BLOB) {
         err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item);
+        if(err == ESP_OK && findPage != nullptr) {
+            matchedTypePageFound = true;
+        }
     } else {
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
         err = findItem(nsIndex, datatype, key, findPage, item);
+        if(err == ESP_OK && findPage != nullptr) {
+            matchedTypePageFound = true;
+        }
+#else
+        err = findItem(nsIndex, ItemType::ANY, key, findPage, item);
+        if(err == ESP_OK && findPage != nullptr && datatype == item.datatype) {
+            matchedTypePageFound = true;
+        }
+#endif
     }
 
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
@@ -301,7 +315,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     if (datatype == ItemType::BLOB) {
         VerOffset prevStart,  nextStart;
         prevStart = nextStart = VerOffset::VER_0_OFFSET;
-        if (findPage) {
+        if (matchedTypePageFound) {
             // Do a sanity check that the item in question is actually being modified.
             // If it isn't, it is cheaper to purposefully not write out new data.
             // since it may invoke an erasure of flash.
@@ -335,7 +349,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
             return err;
         }
 
-        if (findPage) {
+        if (matchedTypePageFound) {
             /* Erase the blob with earlier version*/
             err = eraseMultiPageBlob(nsIndex, key, prevStart);
 
@@ -358,7 +372,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
         // Do a sanity check that the item in question is actually being modified.
         // If it isn't, it is cheaper to purposefully not write out new data.
         // since it may invoke an erasure of flash.
-        if (findPage != nullptr &&
+        if (matchedTypePageFound &&
                 findPage->cmpItem(nsIndex, datatype, key, data, dataSize) == ESP_OK) {
             return ESP_OK;
         }
@@ -392,12 +406,20 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     if (findPage) {
         if (findPage->state() == Page::PageState::UNINITIALIZED ||
                 findPage->state() == Page::PageState::INVALID) {
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
             err = findItem(nsIndex, datatype, key, findPage, item);
+#else
+            err = findItem(nsIndex, ItemType::ANY, key, findPage, item);
+#endif
             if (err != ESP_OK) {
                 return err;
             }
         }
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
         err = findPage->eraseItem(nsIndex, datatype, key);
+#else
+        err = findPage->eraseItem(nsIndex, ItemType::ANY, key);
+#endif
         if (err == ESP_ERR_FLASH_OP_FAIL) {
             return ESP_ERR_NVS_REMOVE_FAILED;
         }

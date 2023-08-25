@@ -3255,6 +3255,71 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 }
 
+TEST_CASE("nvs multiple write with same key but different types", "[nvs][xxx]")
+{
+    PartitionEmulationFixture f(0, 10);
+
+    nvs_handle_t handle_1;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
+
+    for (uint16_t j = NVS_FLASH_SECTOR; j < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++j) {
+        f.erase(j);
+    }
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                NVS_FLASH_SECTOR,
+                NVS_FLASH_SECTOR_COUNT_MIN));
+
+    TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
+
+    nvs_erase_all(handle_1);
+
+    int32_t v32;
+    int8_t v8;
+
+    TEST_ESP_OK(nvs_set_i32(handle_1, "foo", (int32_t)12345678));
+    TEST_ESP_OK(nvs_set_i8(handle_1, "foo", (int8_t)12));
+    TEST_ESP_OK(nvs_set_i8(handle_1, "foo", (int8_t)34));
+
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+    // Legacy behavior
+    // First use of key hooks data type until removed by nvs_erase_key. Alternative re-use of same key with different
+    // data type is written to the storage as hidden active value. It is returned by nvs_get function after nvs_erase_key is called.
+    // Mixing more than 2 data types brings undefined behavior. It is not tested here.
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, "foo", &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_i32(handle_1, "foo", &v32));
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo"));
+
+    TEST_ESP_OK(nvs_get_i8(handle_1, "foo", &v8));
+    TEST_ESP_ERR(nvs_get_i32(handle_1, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo"));
+
+    TEST_ESP_OK(nvs_get_i8(handle_1, "foo", &v8));
+    TEST_ESP_ERR(nvs_get_i32(handle_1, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo"));
+
+    TEST_ESP_ERR(nvs_erase_key(handle_1, "foo"), ESP_ERR_NVS_NOT_FOUND);
+#else
+    // New behavior
+    // Latest nvs_set call replaces any existing value. Only one active value under the key exists in storage
+
+    TEST_ESP_OK(nvs_get_i8(handle_1, "foo", &v8));
+    TEST_ESP_ERR(nvs_get_i32(handle_1, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo"));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, "foo", &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i32(handle_1, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_erase_key(handle_1, "foo"), ESP_ERR_NVS_NOT_FOUND);
+#endif
+
+    nvs_close(handle_1);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
+}
+
+
 /* Add new tests above */
 /* This test has to be the final one */
 

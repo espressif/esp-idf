@@ -35,12 +35,9 @@ NVS operates on key-value pairs. Keys are ASCII strings; the maximum key length 
 
 Additional types, such as ``float`` and ``double`` might be added later.
 
-Keys are required to be unique. Assigning a new value to an existing key works as follows:
+Keys are required to be unique. Assigning a new value to an existing key replaces the old value and data type with the value and data type specified by a write operation.
 
--  If the new value is of the same type as the old one, value is updated.
--  If the new value has a different data type, an error is returned.
-
-Data type check is also performed when reading a value. An error is returned if the data type of the read operation does not match the data type of the value.
+A data type check is performed when reading a value. An error is returned if the data type expected by read operation does not match the data type of entry found for the key provided.
 
 
 Namespaces

@@ -878,7 +878,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         end = ENTRY_COUNT;
     }
 
-    if (nsIndex != NS_ANY && datatype != ItemType::ANY && key != NULL) {
+    if (nsIndex != NS_ANY && key != NULL) {
         size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key, chunkIdx));
         if (cachedIndex < ENTRY_COUNT) {
             start = cachedIndex;
