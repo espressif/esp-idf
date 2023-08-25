@@ -1180,4 +1180,73 @@ TEST_CASE("Test ESP_TIMER_ISR, stop API cleans alarm reg if ISR timer list is em
     vSemaphoreDelete(done);
     printf("timer deleted\n");
 }
+
+volatile uint64_t task_t1;
+volatile uint64_t isr_t1;
+const uint64_t period_task_ms = 200;
+const uint64_t period_isr_ms = 20;
+
+void task_timer_cb(void *arg) {
+    uint64_t t2 = esp_timer_get_time();
+    uint64_t dt_task_ms = (t2 - task_t1) / 1000;
+    task_t1 = t2;
+    printf("task callback, %d msec\n", (int)dt_task_ms);
+    vTaskDelay((period_task_ms / 2) / portTICK_PERIOD_MS);  // very long callback in timer task
+    static bool first_run = true;
+    if (first_run) {
+        first_run = false;
+    } else {
+        TEST_ASSERT_INT_WITHIN(period_task_ms / 3, period_task_ms, dt_task_ms);
+    }
+}
+
+void IRAM_ATTR isr_timer_cb(void *arg) {
+    uint64_t t2 = esp_timer_get_time();
+    uint64_t dt_isr_ms = (t2 - isr_t1) / 1000;
+    isr_t1 = t2;
+    esp_rom_printf("isr callback, %d msec\n", (int)dt_isr_ms);
+    static bool first_run = true;
+    if (first_run) {
+        first_run = false;
+    } else {
+        TEST_ASSERT_INT_WITHIN(period_isr_ms / 3, period_isr_ms, dt_isr_ms);
+    }
+}
+
+TEST_CASE("Test ISR dispatch callbacks are not blocked even if TASK callbacks take more time", "[esp_timer][isr_dispatch]")
+{
+    esp_timer_handle_t task_timer_handle;
+    esp_timer_handle_t isr_timer_handle;
+
+    const esp_timer_create_args_t task_timer_args = {
+        .callback = &task_timer_cb,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "task_timer",
+        .skip_unhandled_events = true,
+    };
+
+    const esp_timer_create_args_t isr_timer_args = {
+        .callback = &isr_timer_cb,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "isr_timer",
+        .skip_unhandled_events = true,
+    };
+
+    ESP_ERROR_CHECK(esp_timer_create(&task_timer_args, &task_timer_handle));
+    ESP_ERROR_CHECK(esp_timer_create(&isr_timer_args, &isr_timer_handle));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(task_timer_handle, period_task_ms * 1000));
+    task_t1 = esp_timer_get_time();
+    ESP_ERROR_CHECK(esp_timer_start_periodic(isr_timer_handle, period_isr_ms * 1000));
+    isr_t1 = esp_timer_get_time();
+
+    vTaskDelay(period_task_ms * 5 / portTICK_PERIOD_MS);
+
+    TEST_ESP_OK(esp_timer_stop(task_timer_handle));
+    TEST_ESP_OK(esp_timer_stop(isr_timer_handle));
+    TEST_ESP_OK(esp_timer_delete(task_timer_handle));
+    TEST_ESP_OK(esp_timer_delete(isr_timer_handle));
+}
+
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD

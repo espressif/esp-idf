@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,17 +48,10 @@ static intr_handler_t s_alarm_handler = NULL;
 static systimer_hal_context_t systimer_hal;
 
 /* Spinlock used to protect access to the hardware registers. */
-static portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
+extern portMUX_TYPE s_time_update_lock;
 
-void esp_timer_impl_lock(void)
-{
-    portENTER_CRITICAL(&s_time_update_lock);
-}
-
-void esp_timer_impl_unlock(void)
-{
-    portEXIT_CRITICAL(&s_time_update_lock);
-}
+/* Alarm values to generate interrupt on match */
+extern uint64_t timestamp_id[2];
 
 uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 {
@@ -76,7 +69,7 @@ int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")
 
 void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
 {
-    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
+    assert(alarm_id < sizeof(timestamp_id) / sizeof(timestamp_id[0]));
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
     timestamp_id[alarm_id] = timestamp;
     timestamp = MIN(timestamp_id[0], timestamp_id[1]);
@@ -84,11 +77,6 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
         systimer_hal_set_alarm_target(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, timestamp);
     }
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
-}
-
-void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
-{
-    esp_timer_impl_set_alarm_id(timestamp, 0);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
@@ -200,11 +188,6 @@ void esp_timer_impl_deinit(void)
     s_alarm_handler = NULL;
 }
 
-uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us(void)
-{
-    return 50;
-}
-
 uint64_t esp_timer_impl_get_alarm_reg(void)
 {
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
@@ -216,5 +199,3 @@ uint64_t esp_timer_impl_get_alarm_reg(void)
 void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
 void esp_timer_private_set(uint64_t new_us) __attribute__((alias("esp_timer_impl_set")));
 void esp_timer_private_advance(int64_t time_diff_us) __attribute__((alias("esp_timer_impl_advance")));
-void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
-void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));
