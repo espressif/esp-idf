@@ -1,6 +1,8 @@
 ESP Local Control
 =================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
@@ -88,21 +90,20 @@ Similarly for HTTPS transport:
 
 You may set security for transport in ESP local control using following options:
 
-1. ``PROTOCOM_SEC2``: specifies that SRP6a based key exchange and end to end encryption based on AES-GCM is used. This is the most preffered option as it adds a robust security with Augmented PAKE protocol i.e., SRP6a.
-2. ``PROTOCOM_SEC1``: specifies that Curve25519 based key exchange and end to end encryption based on AES-CTR is used.
+1. ``PROTOCOM_SEC2``: specifies that SRP6a-based key exchange and end-to-end encryption based on AES-GCM are used. This is the most preferred option as it adds a robust security with Augmented PAKE protocol, i.e., SRP6a.
+2. ``PROTOCOM_SEC1``: specifies that Curve25519-based key exchange and end-to-end encryption based on AES-CTR are used.
 3. ``PROTOCOM_SEC0``: specifies that data will be exchanged as a plain text (no security).
 4. ``PROTOCOM_SEC_CUSTOM``: you can define your own security requirement. Please note that you will also have to provide ``custom_handle`` of type ``protocomm_security_t *`` in this context.
 
 .. note::
-
     The respective security schemes need to be enabled through the project configuration menu. Please refer to the Enabling protocom security version section in :doc:`Protocol Communication </api-reference/provisioning/protocomm>` for more details.
 
 Creating a Property
 -------------------
 
-Now that we know how to start the **esp_local_ctrl** service, let us add a property to it. Each property must have a unique ``name`` (string), a ``type`` (e.g., enum), ``flags`` (bit fields) and ``size``.
+Now that we know how to start the **esp_local_ctrl** service, let's add a property to it. Each property must have a unique ```name``` (string), a ``type`` (e.g., enum), ``flags``` (bit fields) and ``size```.
 
-The ``size`` is to be kept 0, if we want our property value to be of variable length (e.g., if its a string or bytestream). For fixed length property value data-types, like int, float, etc., setting the ``size`` field to the right value, helps **esp_local_ctrl** to perform internal checks on arguments received with write requests.
+The ``size`` is to be kept 0, if we want our property value to be of variable length (e.g., if it is a string or bytestream). For data types with fixed-length property value, like int, float, etc., setting the ``size`` field to the right value helps **esp_local_ctrl** to perform internal checks on arguments received with write requests.
 
 The interpretation of ``type`` and ``flags`` fields is totally upto the application, hence they may be used as enumerations, bitfields, or even simple integers. One way is to use ``type`` values to classify properties, while ``flags`` to specify characteristics of a property.
 
@@ -124,7 +125,7 @@ Here is an example property which is to function as a timestamp. It is assumed t
         esp_local_ctrl_add_property(&timestamp);
 
 
-Also notice that there is a ctx field, which is set to point to some custom ``func_get_time()``. This can be used inside the property get/set handlers to retrieve timestamp.
+Also notice that there is a ctx field, which is set to point to some custom `func_get_time()`. This can be used inside the property get/set handlers to retrieve timestamp.
 
 Here is an example of ``get_prop_values()`` handler, which is used for retrieving the timestamp.
 
@@ -175,20 +176,20 @@ Here is an example of ``set_prop_values()`` handler. Notice how we restrict from
         }
 
 
-For complete example see :example:`protocols/esp_local_ctrl`
+For complete example see :example:`protocols/esp_local_ctrl`.
 
 Client Side Implementation
 --------------------------
 
-The client side implementation will have establish a protocomm session with the device first, over the supported mode of transport, and then send and receive protobuf messages understood by the **esp_local_ctrl** service. The service will translate these messages into requests and then call the appropriate handlers (set/get). Then, the generated response for each handler is again packed into a protobuf message and transmitted back to the client.
+The client side implementation establishes a protocomm session with the device first, over the supported mode of transport, and then send and receive protobuf messages understood by the **esp_local_ctrl** service. The service translates these messages into requests and then call the appropriate handlers (set/get). Then, the generated response for each handler is again packed into a protobuf message and transmitted back to the client.
 
 See below the various protobuf messages understood by the **esp_local_ctrl** service:
 
-1. ``get_prop_count`` : This should simply return the total number of properties supported by the service
-2. ``get_prop_values`` : This accepts an array of indices and should return the information (name, type, flags) and values of the properties corresponding to those indices
-3. ``set_prop_values`` : This accepts an array of indices and an array of new values, which are used for setting the values of the properties corresponding to the indices
+1. ``get_prop_count`` : This should simply return the total number of properties supported by the service.
+2. ``get_prop_values`` : This accepts an array of indices and should return the information (name, type, flags) and values of the properties corresponding to those indices.
+3. ``set_prop_values`` : This accepts an array of indices and an array of new values, which are used for setting the values of the properties corresponding to the indices.
 
-Note that indices may or may not be the same for a property, across multiple sessions. Therefore, the client must only use the names of the properties to uniquely identify them. So, every time a new session is established, the client should first call ``get_prop_count`` and then ``get_prop_values``, hence form an index to name mapping for all properties. Now when calling ``set_prop_values`` for a set of properties, it must first convert the names to indexes, using the created mapping. As emphasized earlier, the client must refresh the index to name mapping every time a new session is established with the same device.
+Note that indices may or may not be the same for a property, across multiple sessions. Therefore, the client must only use the names of the properties to uniquely identify them. So, every time a new session is established, the client should first call ``get_prop_count`` and then ``get_prop_values``, hence form an index-to-name mapping for all properties. Now when calling ``set_prop_values`` for a set of properties, it must first convert the names to indexes, using the created mapping. As emphasized earlier, the client must refresh the index-to-name mapping every time a new session is established with the same device.
 
 The various protocomm endpoints provided by **esp_local_ctrl** are listed below:
 
@@ -204,7 +205,7 @@ The various protocomm endpoints provided by **esp_local_ctrl** are listed below:
      - Endpoint used for retrieving version string
    * - esp_local_ctrl/control
      - https://<mdns-hostname>.local/esp_local_ctrl/control
-     - Endpoint used for sending / receiving control messages
+     - Endpoint used for sending or receiving control messages
 
 
 API Reference
