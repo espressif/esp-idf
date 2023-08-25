@@ -110,6 +110,7 @@ struct esp_rgb_panel_t {
     gdma_channel_handle_t dma_chan; // DMA channel handle
     esp_lcd_rgb_panel_vsync_cb_t on_vsync; // VSYNC event callback
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // callback used to fill a bounce buffer rather than copying from the frame buffer
+    esp_lcd_rgb_panel_bounce_buf_finish_cb_t on_bounce_frame_finish; // callback used to notify when the bounce buffer finish copying the entire frame
     void *user_ctx;                 // Reserved user's data of callback functions
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
@@ -364,12 +365,16 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     if (callbacks->on_bounce_empty) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_bounce_empty), ESP_ERR_INVALID_ARG, TAG, "on_bounce_empty callback not in IRAM");
     }
+    if (callbacks->on_bounce_frame_finish) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_bounce_frame_finish), ESP_ERR_INVALID_ARG, TAG, "on_bounce_frame_finish callback not in IRAM");
+    }
     if (user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
     rgb_panel->on_vsync = callbacks->on_vsync;
     rgb_panel->on_bounce_empty = callbacks->on_bounce_empty;
+    rgb_panel->on_bounce_frame_finish = callbacks->on_bounce_frame_finish;
     rgb_panel->user_ctx = user_ctx;
     return ESP_OK;
 }
@@ -886,7 +891,9 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
     if (panel->num_fbs == 0) {
         if (panel->on_bounce_empty) {
             // We don't have a frame buffer here; we need to call a callback to refill the bounce buffer
-            need_yield = panel->on_bounce_empty(&panel->base, buffer, panel->bounce_pos_px, panel->bb_size, panel->user_ctx);
+            if (panel->on_bounce_empty(&panel->base, buffer, panel->bounce_pos_px, panel->bb_size, panel->user_ctx)) {
+                need_yield = true;
+            }
         }
     } else {
         // We do have frame buffer; copy from there.
@@ -903,6 +910,11 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
     if (panel->bounce_pos_px >= panel->fb_size / bytes_per_pixel) {
         panel->bounce_pos_px = 0;
         panel->bb_fb_index = panel->cur_fb_index;
+        if (panel->on_bounce_frame_finish) {
+            if (panel->on_bounce_frame_finish(&panel->base, NULL, panel->user_ctx)) {
+                need_yield = true;
+            }
+        }
     }
     if (panel->num_fbs > 0) {
         // Preload the next bit of buffer from psram

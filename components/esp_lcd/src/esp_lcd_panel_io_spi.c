@@ -53,6 +53,7 @@ typedef struct {
     struct {
         unsigned int dc_data_level: 1;   // Indicates the level of DC line when tranfering data
         unsigned int octal_mode: 1;      // Indicates whether the transmitting is enabled with octal mode (8 data lines)
+        unsigned int quad_mode: 1;       // Indicates whether the transmitting is enabled with quad mode (4 data lines)
     } flags;
     lcd_spi_trans_descriptor_t trans_pool[]; // Transaction pool
 } esp_lcd_panel_io_spi_t;
@@ -94,6 +95,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
 
     spi_panel_io->flags.dc_data_level = !io_config->flags.dc_low_on_data;
     spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
+    spi_panel_io->flags.quad_mode = io_config->flags.quad_mode;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
     spi_panel_io->user_ctx = io_config->user_ctx;
     spi_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
@@ -328,6 +330,9 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
         lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
         lcd_trans->base.tx_buffer = &lcd_cmd;
+        if(color && color_size) {
+            lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+        }
         if (spi_panel_io->flags.octal_mode) {
             // use 8 lines for transmitting command, address and data
             lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
@@ -371,6 +376,9 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         if (spi_panel_io->flags.octal_mode) {
             // use 8 lines for transmitting command, address and data
             lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+        } else if (spi_panel_io->flags.quad_mode) {
+            // use 4 lines only for transmitting data
+            lcd_trans->base.flags |= SPI_TRANS_MODE_QIO;
         }
 
         // color data is usually large, using queue+blocking mode

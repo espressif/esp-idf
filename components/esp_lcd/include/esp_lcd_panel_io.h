@@ -138,6 +138,7 @@ typedef struct {
     struct {
         unsigned int dc_low_on_data: 1;  /*!< If this flag is enabled, DC line = 0 means transfer data, DC line = 1 means transfer command; vice versa */
         unsigned int octal_mode: 1;      /*!< transmit with octal mode (8 data lines), this mode is used to simulate Intel 8080 timing */
+        unsigned int quad_mode: 1;       /*!< transmit with quad mode (4 data lines), this mode is useful when transmitting LCD parameters (Only use one line for command) */
         unsigned int sio_mode: 1; /*!< Read and write through a single data line (MOSI) */
         unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */
