@@ -174,3 +174,8 @@ IDE
 如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+
+卸载 ESP-IDF
+=================
+
+如需卸载 ESP-IDF，请参考 :ref:`idf-tools-uninstall`。
