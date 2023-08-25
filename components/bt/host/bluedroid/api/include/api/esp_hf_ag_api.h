@@ -520,7 +520,7 @@ esp_err_t esp_hf_ag_cops_response(esp_bd_addr_t remote_addr, char *name);
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
- * @param[in]       index: the index of current call
+ * @param[in]       index: the index of current call, starting with 1, finishing response with 0 (send OK)
  * @param[in]       dir: call direction (incoming/outgoing)
  * @param[in]       current_call_state: current call state
  * @param[in]       mode: current call mode (voice/data/fax)

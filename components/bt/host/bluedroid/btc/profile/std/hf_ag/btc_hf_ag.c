@@ -535,7 +535,7 @@ static bt_status_t btc_hf_indchange_notification(bt_bdaddr_t *bd_addr,
         send_indicator_update(BTA_AG_IND_SIGNAL, signal);
         return BT_STATUS_SUCCESS;
     }
-    return BT_STATUS_SUCCESS;
+    return BT_STATUS_FAIL;
 }
 
 // +CIEV<...> for device status update, send other indicators, e.g. roaming, battery, call held and bearer
