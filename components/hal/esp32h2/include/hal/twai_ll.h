@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 // The Lowlevel layer for TWAI
 
 #pragma once
-
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -85,6 +84,32 @@ typedef union {
 } __attribute__((packed)) twai_ll_frame_buffer_t;
 
 ESP_STATIC_ASSERT(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should be 13 bytes");
+
+/* ---------------------------- Reset and Clock Control ------------------------------ */
+
+/**
+ * @brief Enable the bus clock for twai module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void twai_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.twai0_conf.twai0_clk_en = enable;
+}
+
+/**
+ * @brief Reset the twai module
+ *
+ * @param group_id Group ID
+ */
+static inline void twai_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.twai0_conf.twai0_rst_en = 1;
+    PCR.twai0_conf.twai0_rst_en = 0;
+}
 
 /* ---------------------------- Peripheral Control Register ----------------- */
 

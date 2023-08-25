@@ -130,7 +130,6 @@ menu "Driver Configurations"
         config TWAI_ISR_IN_IRAM
             bool "Place TWAI ISR function into IRAM"
             default n
-            select PERIPH_CTRL_FUNC_IN_IRAM if TWAI_ERRATA_FIX_RX_FRAME_INVALID || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
             help
                 Place the TWAI ISR in to IRAM. This will allow the ISR to avoid
                 cache misses, and also be able to run whilst the cache is disabled

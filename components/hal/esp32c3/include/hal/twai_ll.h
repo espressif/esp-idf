@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
 #include "soc/twai_struct.h"
+#include "soc/system_struct.h"
 
 #define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI) : NULL)
 
@@ -83,6 +84,40 @@ typedef union {
 } __attribute__((packed)) twai_ll_frame_buffer_t;
 
 ESP_STATIC_ASSERT(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should be 13 bytes");
+
+/* ---------------------------- Reset and Clock Control ------------------------------ */
+
+/**
+ * @brief Enable the bus clock for twai module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void twai_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en0.reg_can_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define twai_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; twai_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the twai module
+ *
+ * @param group_id Group ID
+ */
+static inline void twai_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en0.reg_can_rst = 1;
+    SYSTEM.perip_rst_en0.reg_can_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define twai_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; twai_ll_reset_register(__VA_ARGS__)
 
 /* ---------------------------- Peripheral Control Register ----------------- */
 
@@ -547,7 +582,7 @@ static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
  * @note Must be called in reset mode
  */
 __attribute__((always_inline))
-static inline void twai_ll_set_acc_filter(twai_dev_t* hw, uint32_t code, uint32_t mask, bool single_filter)
+static inline void twai_ll_set_acc_filter(twai_dev_t *hw, uint32_t code, uint32_t mask, bool single_filter)
 {
     uint32_t code_swapped = HAL_SWAP32(code);
     uint32_t mask_swapped = HAL_SWAP32(mask);
@@ -611,7 +646,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
  */
 __attribute__((always_inline))
 static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const uint8_t *data,
-                                              uint32_t flags, twai_ll_frame_buffer_t *tx_frame)
+        uint32_t flags, twai_ll_frame_buffer_t *tx_frame)
 {
     bool is_extd = flags & TWAI_MSG_FLAG_EXTD;
     bool is_rtr = flags & TWAI_MSG_FLAG_RTR;
@@ -655,7 +690,7 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
  */
 __attribute__((always_inline))
 static inline void twai_ll_parse_frame_buffer(twai_ll_frame_buffer_t *rx_frame, uint32_t *id, uint8_t *dlc,
-                                             uint8_t *data, uint32_t *flags)
+        uint8_t *data, uint32_t *flags)
 {
     //Copy frame information
     *dlc = rx_frame->dlc;

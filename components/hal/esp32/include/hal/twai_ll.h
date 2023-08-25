@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
 #include "soc/twai_struct.h"
+#include "soc/dport_reg.h"
 
 #define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI) : NULL)
 
@@ -149,6 +150,44 @@ typedef enum {
     TWAI_LL_ERR_SEG_MAX = 29,
 } twai_ll_err_seg_t;
 #endif
+
+/* ---------------------------- Reset and Clock Control ------------------------------ */
+
+/**
+ * @brief Enable the bus clock for twai module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void twai_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
+    reg_val &= ~DPORT_TWAI_CLK_EN;
+    reg_val |= enable << 19;
+    DPORT_WRITE_PERI_REG(DPORT_PERIP_CLK_EN_REG, reg_val);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define twai_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; twai_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the twai module
+ *
+ * @param group_id Group ID
+ */
+__attribute__((always_inline))
+static inline void twai_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, DPORT_TWAI_RST);
+    DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, 0);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define twai_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; twai_ll_reset_register(__VA_ARGS__)
 
 /* ---------------------------- Peripheral Control Register ----------------- */
 
@@ -533,9 +572,9 @@ static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
 
 #ifdef CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID
 static inline void twai_ll_parse_err_code_cap(twai_dev_t *hw,
-                                              twai_ll_err_type_t *type,
-                                              twai_ll_err_dir_t *dir,
-                                              twai_ll_err_seg_t *seg)
+        twai_ll_err_type_t *type,
+        twai_ll_err_dir_t *dir,
+        twai_ll_err_seg_t *seg)
 {
     uint32_t ecc = hw->error_code_capture_reg.val;
     *type = (twai_ll_err_type_t) ((ecc >> 6) & 0x3);
@@ -709,7 +748,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
  */
 __attribute__((always_inline))
 static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const uint8_t *data,
-                                              uint32_t flags, twai_ll_frame_buffer_t *tx_frame)
+        uint32_t flags, twai_ll_frame_buffer_t *tx_frame)
 {
     bool is_extd = flags & TWAI_MSG_FLAG_EXTD;
     bool is_rtr = flags & TWAI_MSG_FLAG_RTR;
@@ -753,7 +792,7 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
  */
 __attribute__((always_inline))
 static inline void twai_ll_parse_frame_buffer(twai_ll_frame_buffer_t *rx_frame, uint32_t *id, uint8_t *dlc,
-                                             uint8_t *data, uint32_t *flags)
+        uint8_t *data, uint32_t *flags)
 {
     //Copy frame information
     *dlc = rx_frame->dlc;

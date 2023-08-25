@@ -413,7 +413,7 @@
 #define SOC_TIMER_SUPPORT_ETM             (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_CONTROLLER_NUM         1
+#define SOC_TWAI_CONTROLLER_NUM         1UL
 #define SOC_TWAI_CLK_SUPPORT_XTAL       1
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                32768
@@ -495,6 +495,8 @@
 
 #define SOC_CLK_LP_FAST_SUPPORT_LP_PLL            (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
+
+#define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

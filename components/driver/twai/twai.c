@@ -56,12 +56,17 @@
 #define ALERT_LOG_LEVEL_WARNING     TWAI_ALERT_ARB_LOST  //Alerts above and including this level use ESP_LOGW
 #define ALERT_LOG_LEVEL_ERROR       TWAI_ALERT_TX_FAILED //Alerts above and including this level use ESP_LOGE
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define TWAI_RCC_ATOMIC()
+#endif
+
 /* ------------------ Typedefs, structures, and variables ------------------- */
 
 //Control structure for TWAI driver
 typedef struct {
     int controller_id;
-    periph_module_t module;  // peripheral module
     //Control and status members
     twai_state_t state;
     twai_mode_t mode;
@@ -208,7 +213,9 @@ static void twai_intr_handler_main(void *arg)
 #if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         twai_hal_prepare_for_reset(&twai_context);
-        periph_module_reset(p_twai_obj->module);
+        TWAI_RCC_ATOMIC() {
+            twai_ll_reset_register(p_twai_obj->controller_id);
+        }
         twai_hal_recover_from_reset(&twai_context);
         p_twai_obj->rx_missed_count += twai_hal_get_reset_lost_rx_cnt(&twai_context);
         twai_alert_handler(TWAI_ALERT_PERIPH_RESET, &alert_req);
@@ -442,7 +449,6 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     p_twai_obj_dummy->state = TWAI_STATE_STOPPED;
     p_twai_obj_dummy->mode = g_config->mode;
     p_twai_obj_dummy->alerts_enabled = g_config->alerts_enabled;
-    p_twai_obj_dummy->module = twai_controller_periph_signals.controllers[controller_id].module;
 
     //Assign the TWAI object
     TWAI_ENTER_CRITICAL();
@@ -455,8 +461,10 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
         goto err;
     }
     //Enable TWAI peripheral register clock
-    periph_module_reset(p_twai_obj_dummy->module);
-    periph_module_enable(p_twai_obj_dummy->module);
+    TWAI_RCC_ATOMIC() {
+        twai_ll_enable_bus_clock(p_twai_obj->controller_id, true);
+        twai_ll_reset_register(p_twai_obj->controller_id);
+    }
 
     //Initialize TWAI HAL layer
     twai_hal_config_t hal_config = {
@@ -496,7 +504,9 @@ esp_err_t twai_driver_uninstall(void)
     TWAI_CHECK_FROM_CRIT(p_twai_obj->state == TWAI_STATE_STOPPED || p_twai_obj->state == TWAI_STATE_BUS_OFF, ESP_ERR_INVALID_STATE);
     //Clear registers by reading
     twai_hal_deinit(&twai_context);
-    periph_module_disable(p_twai_obj->module);   //Disable TWAI peripheral
+    TWAI_RCC_ATOMIC() {
+        twai_ll_enable_bus_clock(p_twai_obj->controller_id, false);
+    }
     p_twai_obj_dummy = p_twai_obj;        //Use dummy to shorten critical section
     p_twai_obj = NULL;
     TWAI_EXIT_CRITICAL();
