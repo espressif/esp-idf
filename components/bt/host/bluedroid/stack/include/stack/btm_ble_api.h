@@ -2667,9 +2667,9 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void);
 
 tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Params *params);
 
-tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data);
+tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data, BOOLEAN only_update_did);
 
-tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, BOOLEAN enable);
+tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, UINT8 enable);
 
 tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params);
 

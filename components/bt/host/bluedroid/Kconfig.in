@@ -1151,6 +1151,13 @@ config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     help
         This enables BLE periodic advertising sync transfer feature
 
+config BT_BLE_FEAT_PERIODIC_ADV_ENH
+    bool "Enable periodic adv enhancements(adi support)"
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
+    default n
+    help
+        Enable the periodic advertising enhancements
+
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
     depends on BT_BLUEDROID_ENABLED
