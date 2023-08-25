@@ -246,6 +246,7 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     BOOLEAN             eir_fec_required;
+    BOOLEAN             eir_included_name;
     BOOLEAN             eir_included_tx_power;
     BOOLEAN             eir_included_uuid;
     UINT8               eir_flags;
