@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -296,9 +296,11 @@ typedef union {
         uint8_t instance;
         uint16_t len;
         uint8_t *data;
+        bool only_update_did;
     } periodic_adv_cfg_data;
 
     struct periodic_adv_start_args {
+        bool    include_adi;
         uint8_t instance;
     } periodic_adv_start;
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1052,8 +1052,13 @@ esp_err_t esp_ble_gap_periodic_adv_set_params(uint8_t instance, const esp_ble_ga
 
 }
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
+                                                                           const uint8_t *data, bool only_update_did)
+#else
 esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
                                                                            const uint8_t *data)
+#endif
 {
     btc_msg_t msg;
     btc_ble_5_gap_args_t arg;
@@ -1067,13 +1072,22 @@ esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t le
     arg.periodic_adv_cfg_data.instance = instance;
     arg.periodic_adv_cfg_data.len = length;
     arg.periodic_adv_cfg_data.data = (uint8_t *)data;
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    arg.periodic_adv_cfg_data.only_update_did = only_update_did;
+#else
+    arg.periodic_adv_cfg_data.only_update_did = false;
+#endif
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), btc_gap_ble_arg_deep_copy,
                 btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance,bool include_adi)
+#else
 esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance)
+#endif
 {
     btc_msg_t msg;
     btc_ble_5_gap_args_t arg;
@@ -1084,6 +1098,11 @@ esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_PERIODIC_ADV_START;
 
+    #if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    arg.periodic_adv_start.include_adi = include_adi;
+    #else
+    arg.periodic_adv_start.include_adi = false;
+    #endif
     arg.periodic_adv_start.instance = instance;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
