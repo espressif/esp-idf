@@ -75,6 +75,7 @@
 #define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
+#define SOC_EFUSE_SUPPORTED         1
 #define SOC_EMAC_SUPPORTED          1
 #define SOC_ULP_SUPPORTED           1
 #define SOC_CCOMP_TIMER_SUPPORTED   1

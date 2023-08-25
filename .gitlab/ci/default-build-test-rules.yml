@@ -7,12 +7,10 @@
 #
 # This file should ONLY be used during bringup. Should be reset to empty after the bringup process
 extra_default_build_targets:
- - esp32c6
- - esp32h2
+ - esp32p4
 
-# bypass_check_test_targets:
-#  - esp32h2
-#  - esp32c6
+bypass_check_test_targets:
+ - esp32p4
 #
 # These lines would
 # - enable the README.md check for esp32c6. Don't forget to add the build jobs in .gitlab/ci/build.yml

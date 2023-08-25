@@ -37,6 +37,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
+#define SOC_EFUSE_SUPPORTED             1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1

@@ -74,6 +74,12 @@ tools/test_apps/system/bootloader_sections:
       temporary: true
       reason: target esp32c2 is not supported yet
 
+tools/test_apps/system/build_test:
+  disable:
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) not supported yet #TODO: IDF-8119
+
 tools/test_apps/system/cxx_no_except:
   enable:
     - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32c3"
@@ -108,6 +114,12 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
+tools/test_apps/system/gdbstub_runtime:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported yet #TODO: IDF-7510
+
 tools/test_apps/system/longjmp_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
@@ -139,6 +151,12 @@ tools/test_apps/system/no_embedded_paths:
     - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
       temporary: true
       reason: the other targets are not tested yet
+
+tools/test_apps/system/panic:
+  disable:
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) not supported yet # TODO: IDF-7511
 
 tools/test_apps/system/ram_loadable_app:
   disable:
