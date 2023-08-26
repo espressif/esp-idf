@@ -9,12 +9,12 @@
 	* `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK`.
 4. The destination node reports its Onoff state with the `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS` message.
 
-Example: The nRF Mesh app sends a `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET` message to the node that runs the `ble_mesh_client_model` project. Then this node sends a `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET` message to the destination node that runs the `ble_mesh_node` project. The address of the destination node is entered by the user via the serial port.
+Example: The nRF Mesh app sends a `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET` message to the node that runs the `ble_mesh_client_model` project. Then this node sends a `ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET` message to the destination node that runs the `onoff_models` project. The address of the destination node is entered by the user via the serial port.
 
 ## 1.1.1 What You Need
 
 * 1 x Device that runs the `ble_mesh_client_model` project.
-* 1 x Device that runs the `ble_mesh_node` project.
+* 1 x Device that runs the `onoff_models` project.
 * 1 x Phone that installs the nRF Mesh app for controlling these two devices
 
 ## 1.2 Node Composition
@@ -38,7 +38,7 @@ You can choose from the 4 message sequences described below:
 
 ## 2. Code Analysis
 
-Code initialization part reference [Initializing Bluetooth and BLE Mesh](../../../ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md)
+Code initialization part reference [Initializing Bluetooth and BLE Mesh](../../../wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md)
 
 ### 2.1 Model Definition
 

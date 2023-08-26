@@ -10,7 +10,7 @@ Note: To use examples in this directory, you need to have Bluetooth enabled in c
 
 This directory includes examples to demonstrate ESP-BLE-MESH functionality based on [Zephyr Bluetooth Mesh stack](https://github.com/zephyrproject-rtos/zephyr/tree/master/subsys/bluetooth/mesh).
 
-## ble_mesh_fast_provision
+## fast_provisioning
 
 This example illustrates the solution of ESP-BLE-MESH Fast Provisioning.
 
@@ -18,7 +18,7 @@ This example illustrates the solution of ESP-BLE-MESH Fast Provisioning.
 
 This example shows how ESP32, acting as a BLE Mesh Fast Provisioning Client, provisions other unprovisioned devices and then controls the nodes.
 
-See [fast_prov_client](ble_mesh_fast_provision/fast_prov_client) folder for more details.
+See [fast_prov_client](fast_provisioning/fast_prov_client) folder for more details.
 
 #### fast_prov_server
 
@@ -26,9 +26,9 @@ This example illustrates the process that:
 1. ESP32 as a BLE Mesh Fast Provisioning Server is provisioned into a node;
 2. ESP32 as a Temporary Provisioner provisions other unprovisioned devices.
 
-See [fast_prov_server](ble_mesh_fast_provision/fast_prov_server) folder for more details.
+See [fast_prov_server](fast_provisioning/fast_prov_server) folder for more details.
 
-## ble_mesh_node
+## onoff_models
 
 This example demonstrates how ESP32 acts as a BLE Mesh node with Generic OnOff Server model or Generic OnOff Client model on board.
 
@@ -36,21 +36,21 @@ This example demonstrates how ESP32 acts as a BLE Mesh node with Generic OnOff S
 
 This example shows how ESP32 acts as a BLE Mesh Node with Generic OnOff Client model in the Primary Element.
 
-See [onoff_client](ble_mesh_node/onoff_client) folder for more details.
+See [onoff_client](onoff_models/onoff_client) folder for more details.
 
 #### onoff_server
 
 This example shows how ESP32 acts as a BLE Mesh Node with only Generic OnOff Server model in the Primary Element.
 
-See [onoff_server](ble_mesh_node/onoff_server) folder for more details.
+See [onoff_server](onoff_models/onoff_server) folder for more details.
 
-## ble_mesh_provisioner
+## provisioner
 
 This example shows how ESP32 acts as a BLE Mesh Provisioner and provisions other unprovisioned devices.
 
-See [ble_mesh_provisioner](ble_mesh_provisioner) folder for more details.
+See [provisioner](provisioner) folder for more details.
 
-## ble_mesh_vendor_model
+## vendor_models
 
 This example demonstrates how ESP32 acts as a BLE Mesh Provisioner with vendor client model or as a BLE Mesh node with vendor server model.
 
@@ -58,19 +58,19 @@ This example demonstrates how ESP32 acts as a BLE Mesh Provisioner with vendor c
 
 This example shows how ESP32 acts as a BLE Mesh Provisioner with a vendor client model in the Primary Element.
 
-See [vendor_client](ble_mesh_vendor_model/vendor_client) folder for more details.
+See [vendor_client](vendor_models/vendor_client) folder for more details.
 
 #### vendor_server
 
 This example shows how ESP32 acts as a BLE Mesh Node with a vendor server model in the Primary Element.
 
-See [vendor_server](ble_mesh_vendor_model/vendor_server) folder for more details.
+See [vendor_server](vendor_models/vendor_server) folder for more details.
 
-## ble_mesh_wifi_coexist
+## wifi_coexist
 
 This example shows how ESP32 acts as a BLE Mesh Fast Provisioning Server and coexists with Wi-Fi iperf functionality.
 
-See [ble_mesh_wifi_coexist](ble_mesh_wifi_coexist) folder for more details.
+See [wifi_coexist](wifi_coexist) folder for more details.
 
 # More
 

@@ -113,20 +113,20 @@ Mesh Applications
 """""""""""""""""
 
 * ESP-BLE-MESH Node
-    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>`
-    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>`
-    * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_node>`
+    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/onoff_models/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>`
+    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>`
+    * :example:`Example <bluetooth/esp_ble_mesh/onoff_models>`
 * ESP-BLE-MESH Provisioner
-    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>`
-    * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`
+    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>`
+    * :example:`Example <bluetooth/esp_ble_mesh/provisioner>`
 * ESP-BLE-MESH Fast Provisioning
-    * :example_file:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
-    * :example_file:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
-    * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_fast_provision>`
+    * :example_file:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
+    * :example_file:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
+    * :example:`Example <bluetooth/esp_ble_mesh/fast_provision>`
     * `Demo Video <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`__
 * ESP-BLE-MESH and Wi-Fi Coexistence
-    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
-    * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`
+    * :example_file:`Tutorial <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
+    * :example:`Example <bluetooth/esp_ble_mesh/wifi_coexist>`
     * `Demo Video <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`__
 
 

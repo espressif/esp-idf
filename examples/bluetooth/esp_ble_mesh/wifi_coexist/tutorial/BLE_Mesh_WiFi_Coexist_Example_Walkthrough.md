@@ -10,7 +10,7 @@ This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature 
 
 # What You Need
 
-Download and flash the `ble_mesh_wifi_coexist` project to your ESP32 development board and then use the following commands to get started with this demo.
+Download and flash the `wifi_coexist` project to your ESP32 development board and then use the following commands to get started with this demo.
 
 1. Connect your development board to the Wi-Fi network by entering the `sta ssid password` command in your serial port tool.
 	- For example, you should enter `sta test_wifi 12345678` if you want to connect your board to a network with a SSID of `test_wifi` and a password of `12345678`.
@@ -31,10 +31,10 @@ Meanwhile, you can use the Bluetooth function during the whole process, for exam
 
 # Project Directory
 
-The `ble_mesh_wifi_coexist` demo contains the following files and subfolders:
+The `wifi_coexist` demo contains the following files and subfolders:
 
 ```
-$ tree examples/bluetooth/esp_ble_mesh/ble_mesh/ble_mesh_wifi_coexist
+$ tree examples/bluetooth/esp_ble_mesh/wifi_coexist
 ├── main        /* Stores the `.c` and `.h` application code files for this demo */
 ├── components  /* Stores the `.c` and `.h` iperf code files for this demo */
 ├── Makefile    /* Compiling parameters for the demo */

@@ -4,7 +4,7 @@
 ESP-BLE-MESH 和 Wi-Fi Coexistence 示例
 ==========================================
 
-此示例是用来测试当 ESP-BLE-MESH 进行配网和收发消息的时，Wi-Fi 所能达到的最大 throughput 值。用户可以根据此示例中的 throughput 值来实现自己需要的应用场景。如果用户对 ESP-BLE-MESH 的使用方法还不熟悉，请参考 [ESP-BLE-MESH Node Example](../ble_mesh_node/onoff_server/README.md)。
+此示例是用来测试当 ESP-BLE-MESH 进行配网和收发消息的时，Wi-Fi 所能达到的最大 throughput 值。用户可以根据此示例中的 throughput 值来实现自己需要的应用场景。如果用户对 ESP-BLE-MESH 的使用方法还不熟悉，请参考 [ESP-BLE-MESH Node Example](../onoff_models/onoff_server/README.md)。
 
 此示例主要分为两个部分：
 

@@ -47,7 +47,7 @@ ESP-BLE-MESH 快速入门
 
 软件：
 
-* 下载至 ESP32 开发板的示例应用 :example:`bluetooth/esp_ble_mesh/ble_mesh_node`。
+* 下载至 ESP32 开发板的示例应用 :example:`bluetooth/esp_ble_mesh/onoff_models`。
 * 手机 App: **nRF Mesh** Android 或 iOS 版本。除 nRF Mesh 的 App，以下 App 也支持 ESP-BLE-MESH：
 
     - `EspBleMesh <https://github.com/EspressifApp/EspBLEMeshForAndroid/releases/tag/v1.0.0>`_ Android App
@@ -74,12 +74,12 @@ ESP-BLE-MESH 快速入门
 步骤 2. 配置软件
 """"""""""""""""
 
-进入 :example:`bluetooth/esp_ble_mesh/ble_mesh_node` 示例文件夹，运行 :code:`idf.py menuconfig` 选择所使用的开发板，然后运行 :code:`idf.py build` 编译示例。
+进入 :example:`bluetooth/esp_ble_mesh/onoff_models` 示例文件夹，运行 :code:`idf.py menuconfig` 选择所使用的开发板，然后运行 :code:`idf.py build` 编译示例。
 
 步骤 3. 下载应用
 """""""""""""""""
 
- :example:`bluetooth/esp_ble_mesh/ble_mesh_node` 示例编译成功后，用户可以运行 :code:`idf.py flash` 将编译生成的二进制文件下载至 3 块开发板中。
+ :example:`bluetooth/esp_ble_mesh/onoff_models` 示例编译成功后，用户可以运行 :code:`idf.py flash` 将编译生成的二进制文件下载至 3 块开发板中。
 
 当开发板上电后，RGB 灯会变为 **绿色**。
 
@@ -189,7 +189,7 @@ Step 5. 运行网络
 
 当 3 个元素中的 Generic OnOff Server Models 均成功绑定 AppKey 后，用户可以使用 App 开关 RBG 灯。
 
-在 :example:`bluetooth/esp_ble_mesh/ble_mesh_node` 示例中，第一个 Generic OnOff Server Model 用来控制 **红色**，第二个用来控制 **绿色**，同时第三个用来控制 **蓝色**.
+在 :example:`bluetooth/esp_ble_mesh/onoff_models` 示例中，第一个 Generic OnOff Server Model 用来控制 **红色**，第二个用来控制 **绿色**，同时第三个用来控制 **蓝色**.
 
 .. figure:: ../../../_static/ble-mesh-generic-onoff.png
     :align: center
@@ -213,15 +213,15 @@ Step 5. 运行网络
 ESP-BLE-MESH 示例
 ===================
 
-* :example_file:`ESP-BLE-MESH 节点 <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - 展示了将 ESP-BLE-MESH 作为拥有 Configuration Server model 和 Generic OnOff Server model 的节点设备的用法。然后，ESP-BLE-MESH Provisioner 可以配网设备，控制表示开/关状态的 RGB 灯，示例请见 :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server>`。
+* :example_file:`ESP-BLE-MESH 节点 <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - 展示了将 ESP-BLE-MESH 作为拥有 Configuration Server model 和 Generic OnOff Server model 的节点设备的用法。然后，ESP-BLE-MESH Provisioner 可以配网设备，控制表示开/关状态的 RGB 灯，示例请见 :example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_server>`。
 
-* :example_file:`ESP-BLE-MESH 客户端模型 <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>` - 展示了 Generic OnOff Client model 如何在节点内工作。节点拥有 Configuration Server model、Generic OnOff Server model 和 Generic OnOff Client model，示例请见：:example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client>`。
+* :example_file:`ESP-BLE-MESH 客户端模型 <bluetooth/esp_ble_mesh/onoff_models/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>` - 展示了 Generic OnOff Client model 如何在节点内工作。节点拥有 Configuration Server model、Generic OnOff Server model 和 Generic OnOff Client model，示例请见：:example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_client>`。
 
-* :example_file:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>` - 展示了设备如何充当 ESP-BLE-MESH Provisioner 以配网设备。Provisioner 拥有 Configuration Server model、Configuration Client model 和 Generic OnOff Client model，示例请见 :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`。
+* :example_file:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>` - 展示了设备如何充当 ESP-BLE-MESH Provisioner 以配网设备。Provisioner 拥有 Configuration Server model、Configuration Client model 和 Generic OnOff Client model，示例请见 :example:`example code <bluetooth/esp_ble_mesh/provisioner>`。
 
-* ESP-BLE-MESH 快速配网 - :example_file:`Client <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` 和 :example_file:`Server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - 该示例用于演示快速配网。配网 100 个设备费时不超过 60 秒，示例请见：:example:`example client code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_client>` 和 :example:`example server code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server>`。
+* ESP-BLE-MESH 快速配网 - :example_file:`Client <bluetooth/esp_ble_mesh/fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` 和 :example_file:`Server <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - 该示例用于演示快速配网。配网 100 个设备费时不超过 60 秒，示例请见：:example:`example client code <bluetooth/esp_ble_mesh/fast_provision/fast_prov_client>` 和 :example:`example server code <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server>`。
 
-* :example_file:`Wi-Fi 和 ESP-BLE-MESH 共存 <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - 该示例用于演示 Wi-Fi 和 ESP-BLE-MESH 共存的功能。简而言之，用户可在运行 ESP-BLE-MESH 时使用 Wi-Fi，示例请见 :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`。
+* :example_file:`Wi-Fi 和 ESP-BLE-MESH 共存 <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - 该示例用于演示 Wi-Fi 和 ESP-BLE-MESH 共存的功能。简而言之，用户可在运行 ESP-BLE-MESH 时使用 Wi-Fi，示例请见 :example:`example code <bluetooth/esp_ble_mesh/wifi_coexist>`。
 
 
 .. _esp-ble-mesh-demo-videos:

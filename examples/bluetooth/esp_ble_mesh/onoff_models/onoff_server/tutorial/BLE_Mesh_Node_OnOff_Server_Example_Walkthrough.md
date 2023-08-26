@@ -19,10 +19,10 @@ This demo has only one element, in which the following two models are implemente
 
 ### 2.1 Folder Structure
 
-The folder `ble_mesh_node` contains the following files and subfolders:
+The folder `onoff_models` contains the following files and subfolders:
 
 ```
-$ tree examples/bluetooth/esp_ble_mesh/ble_mesh/ble_mesh_node
+$ tree examples/bluetooth/esp_ble_mesh/onoff_models
 ├── Makefile    /* Compiling parameters for the demo */
 ├── README.md   /* Quick start guide */
 ├── build

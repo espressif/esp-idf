@@ -82,7 +82,7 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo:
       temporary: true
       reason: The runner doesn't support yet
 
-examples/bluetooth/esp_ble_mesh/ble_mesh_coex_test:
+examples/bluetooth/esp_ble_mesh/coex_test:
   enable:
     - if: IDF_TARGET in ["esp32"]
       temporary: true

@@ -4,7 +4,7 @@
 ESP-BLE-MESH and Wi-Fi Coexistence Example
 =============================================
 
-This example is used to measure the maximum throughput value that Wi-Fi can achieve when ESP-BLE-MESH is provisioning, sending and receiving messages. Users can implement their own application scenarios based on the throughput value in this example. If users are not familiar with how to use ESP-BLE-MESH, please refer to [ESP-BLE-MESH Node Example](../ble_mesh_node/onoff_server/README.md).
+This example is used to measure the maximum throughput value that Wi-Fi can achieve when ESP-BLE-MESH is provisioning, sending and receiving messages. Users can implement their own application scenarios based on the throughput value in this example. If users are not familiar with how to use ESP-BLE-MESH, please refer to [ESP-BLE-MESH Node Example](../onoff_models/onoff_server/README.md).
 
 This example is divided into two main parts:
 
