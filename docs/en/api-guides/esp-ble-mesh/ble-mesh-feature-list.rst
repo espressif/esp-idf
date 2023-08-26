@@ -128,8 +128,6 @@ Mesh Applications
     * :example_file:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`
     * `Demo Video <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`__
-* ESP-BLE-MESH Console Commands
-    * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_console>`
 
 
 Future Release Features

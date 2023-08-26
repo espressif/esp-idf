@@ -10,10 +10,6 @@ Note: To use examples in this directory, you need to have Bluetooth enabled in c
 
 This directory includes examples to demonstrate ESP-BLE-MESH functionality based on [Zephyr Bluetooth Mesh stack](https://github.com/zephyrproject-rtos/zephyr/tree/master/subsys/bluetooth/mesh).
 
-## ble_mesh_console
-
-This example demonstrates how ESP-BLE-MESH uses Console for message transmitting/receiving tests.
-
 ## ble_mesh_fast_provision
 
 This example illustrates the solution of ESP-BLE-MESH Fast Provisioning.
