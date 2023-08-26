@@ -378,7 +378,9 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     uint32_t phys = spi_flash_cache2phys(esp_partition_find);
     TEST_ASSERT_NOT_EQUAL(SPI_FLASH_CACHE2PHYS_FAIL, phys);
     TEST_ASSERT_EQUAL_PTR(esp_partition_find, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_INST));
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_DATA));
+#endif //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
     /* Read the flash @ 'phys' and compare it to the data we get via regular cache access */
     spi_flash_read_maybe_encrypted(phys, buf, sizeof(buf));
@@ -394,7 +396,9 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     TEST_ASSERT_NOT_EQUAL(SPI_FLASH_CACHE2PHYS_FAIL, phys);
     TEST_ASSERT_EQUAL_PTR(&constant_data,
                           spi_flash_phys2cache(phys, SPI_FLASH_MMAP_DATA));
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_INST));
+#endif
 
     /* Read the flash @ 'phys' and compare it to the data we get via normal cache access */
     spi_flash_read_maybe_encrypted(phys, buf, sizeof(constant_data));

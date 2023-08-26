@@ -198,6 +198,13 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
         for (pos = start; pos < start + page_count; ++pos, ++pageno) {
             int table_val = (int) mmu_ll_read_entry(MMU_TABLE_CORE0, pos);
             uint8_t refcnt = s_mmap_page_refcnt[pos];
+
+#if !CONFIG_IDF_TARGET_ESP32 && SOC_SPIRAM_SUPPORTED
+            if (table_val == SOC_MMU_PAGE_IN_PSRAM(pages[pageno])) {
+                break;
+            }
+#endif  //#if !CONFIG_IDF_TARGET_ESP32
+
             if (refcnt != 0 && table_val != SOC_MMU_PAGE_IN_FLASH(pages[pageno])) {
                 break;
             }
@@ -219,6 +226,12 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
 #if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
             uint32_t entry_app = mmu_ll_read_entry(MMU_TABLE_CORE1, i);
 #endif
+            if (s_mmap_page_refcnt[i] == 0) {
+                assert(mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE0, i));
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
+                assert(mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE1, i));
+#endif
+            }
             assert(s_mmap_page_refcnt[i] == 0 ||
                     (entry_pro == SOC_MMU_PAGE_IN_FLASH(pages[pageno])
 #if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
