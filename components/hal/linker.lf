@@ -30,23 +30,3 @@ entries:
         gpio_hal: gpio_hal_intr_disable (noflash)
     if LCD_RGB_ISR_IRAM_SAFE = y:
         lcd_hal: lcd_hal_cal_pclk_freq (noflash)
-    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
-        adc_oneshot_hal (noflash)
-        if COMPILER_OPTIMIZATION_DEFAULT = y:
-            adc_hal_common: get_controller (noflash)
-        adc_hal_common: adc_hal_set_controller (noflash)
-        if SOC_ADC_ARBITER_SUPPORTED = y:
-            adc_hal_common: adc_hal_arbiter_config (noflash)
-        if SOC_ADC_CALIBRATION_V1_SUPPORTED = y:
-            adc_hal_common: adc_hal_set_calibration_param (noflash)
-            adc_hal_common: adc_hal_calibration_init (noflash)
-    if ADC_CONTINUOUS_ISR_IRAM_SAFE = y:
-        adc_hal: adc_hal_get_reading_result (noflash)
-        adc_hal: adc_hal_digi_start (noflash)
-        if COMPILER_OPTIMIZATION_DEFAULT = y:
-            adc_hal: adc_hal_digi_dma_link_descriptors (noflash)
-        adc_hal: adc_hal_digi_stop (noflash)
-        if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
-            adc_hal: adc_hal_check_event (noflash)
-            adc_hal: adc_hal_digi_clr_intr (noflash)
-            adc_hal: adc_hal_get_desc_addr (noflash)
