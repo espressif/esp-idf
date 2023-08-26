@@ -160,12 +160,10 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
         size = 2;
     }
 
-    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -294,7 +292,11 @@ esp_err_t bootloader_init_spi_flash(void)
     bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
 #endif
     print_flash_info(&bootloader_image_hdr);
+
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     update_flash_config(&bootloader_image_hdr);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+
     //ensure the flash is write-protected
     bootloader_enable_wp();
     return ESP_OK;
@@ -365,9 +367,9 @@ void bootloader_flash_hardware_init(void)
     bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
 #endif
 
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     update_flash_config(&hdr);
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 
     //ensure the flash is write-protected
     bootloader_enable_wp();

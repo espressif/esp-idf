@@ -270,13 +270,10 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     default:
         size = 2;
     }
-    Cache_Read_Disable(0);
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    Cache_Flush(0);
-    Cache_Read_Enable(0);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -381,7 +378,12 @@ esp_err_t bootloader_init_spi_flash(void)
 #endif
 
     print_flash_info(&bootloader_image_hdr);
+
+    Cache_Read_Disable(0);
     update_flash_config(&bootloader_image_hdr);
+    Cache_Flush(0);
+    Cache_Read_Enable(0);
+
     //ensure the flash is write-protected
     bootloader_enable_wp();
     return ESP_OK;
@@ -465,7 +467,12 @@ void bootloader_flash_hardware_init(void)
 
     /* Remaining parts in bootloader_init_spi_flash */
     bootloader_flash_unlock();
+
+    Cache_Read_Disable(0);
     update_flash_config(&hdr);
+    Cache_Flush(0);
+    Cache_Read_Enable(0);
+
     //ensure the flash is write-protected
     bootloader_enable_wp();
 }
