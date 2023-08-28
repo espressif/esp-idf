@@ -1273,17 +1273,16 @@ UINT8 btsnd_hcic_ble_set_ext_adv_data(UINT8 adv_handle,
     UINT8_TO_STREAM(pp, operation);
     UINT8_TO_STREAM(pp, fragment_prefrence);
 
-    if (p_data != NULL && data_len > 0) {
-        if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
-            data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
-        }
-
-        UINT8_TO_STREAM (pp, data_len);
-
-        ARRAY_TO_STREAM (pp, p_data, data_len);
-    } else {
-        return FALSE;
+    if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
+        data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
     }
+
+    UINT8_TO_STREAM (pp, data_len);
+
+    if (p_data != NULL && data_len > 0){
+        ARRAY_TO_STREAM (pp, p_data, data_len);
+    }
+
     uint8_t status = btu_hcif_send_cmd_sync (LOCAL_BR_EDR_CONTROLLER_ID, p);
     return status;
 
@@ -1309,16 +1308,13 @@ UINT8 btsnd_hcic_ble_set_ext_adv_scan_rsp_data(UINT8 adv_handle,
 
     memset(pp, 0, data_len);
 
+    if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
+        data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
+    }
+
+    UINT8_TO_STREAM (pp, data_len);
     if (p_data != NULL && data_len > 0) {
-        if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
-            data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
-        }
-
-        UINT8_TO_STREAM (pp, data_len);
-
         ARRAY_TO_STREAM (pp, p_data, data_len);
-    } else {
-        return FALSE;
     }
 
     return btu_hcif_send_cmd_sync (LOCAL_BR_EDR_CONTROLLER_ID, p);
@@ -1455,16 +1451,14 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_data(UINT8 adv_handle,
 
     //memset(pp, 0, len);
 
+    if (len > HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA) {
+        len = HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA;
+    }
+
+    UINT8_TO_STREAM (pp, len);
+
     if (p_data != NULL && len > 0) {
-        if (len > HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA) {
-            len = HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA;
-        }
-
-        UINT8_TO_STREAM (pp, len);
-
         ARRAY_TO_STREAM (pp, p_data, len);
-    } else {
-        return FALSE;
     }
 
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);

@@ -1081,7 +1081,7 @@ static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *
 
 static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data)
 {
-    if (!data) {
+    if (data == NULL && len > 0) {
         BTM_TRACE_ERROR("%s, the extend adv data is NULL. line %d", __func__, __LINE__);
         return BTM_ILLEGAL_VALUE;
     }

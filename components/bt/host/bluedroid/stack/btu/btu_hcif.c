@@ -1084,7 +1084,10 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_BLE_READ_RESOLVABLE_ADDR_LOCAL:
+        break;
     case HCI_BLE_SET_ADDR_RESOLUTION_ENABLE:
+        btm_ble_set_addr_resolution_enable_complete(p, evt_len);
+        break;
     case HCI_BLE_SET_RAND_PRIV_ADDR_TIMOUT:
         break;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
