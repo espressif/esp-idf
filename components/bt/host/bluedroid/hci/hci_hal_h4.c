@@ -613,7 +613,7 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
 int
 ble_hs_rx_data(struct os_mbuf *om, void *arg)
 {
-    uint16_t len = om->om_len + 1;
+    uint16_t len = OS_MBUF_PKTHDR(om)->omp_len + 1;
     uint8_t *data = (uint8_t *)malloc(len);
     assert(data != NULL);
     data[0] = 0x02;
