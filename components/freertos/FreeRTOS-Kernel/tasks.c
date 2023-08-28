@@ -3016,12 +3016,6 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         return xIdleTaskHandle[ xPortGetCoreID() ];
     }
 
-    TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid )
-    {
-        configASSERT( cpuid < configNUM_CORES );
-        configASSERT( ( xIdleTaskHandle[ cpuid ] != NULL ) );
-        return xIdleTaskHandle[ cpuid ];
-    }
 #endif /* INCLUDE_xTaskGetIdleTaskHandle */
 /*----------------------------------------------------------*/
 
@@ -4677,16 +4671,6 @@ static void prvCheckTasksWaitingTermination( void )
 #endif /* configUSE_TRACE_FACILITY */
 /*-----------------------------------------------------------*/
 
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
-{
-    TCB_t * pxTCB;
-
-    pxTCB = prvGetTCBFromHandle( xTask );
-
-    return pxTCB->xCoreID;
-}
-/*-----------------------------------------------------------*/
-
 #if ( configUSE_TRACE_FACILITY == 1 )
 
     static UBaseType_t prvListTasksWithinSingleList( TaskStatus_t * pxTaskStatusArray,
@@ -4809,20 +4793,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 #endif /* INCLUDE_uxTaskGetStackHighWaterMark */
 /*-----------------------------------------------------------*/
-#if ( INCLUDE_pxTaskGetStackStart == 1 )
-
-    uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
-    {
-        TCB_t * pxTCB;
-        uint8_t * uxReturn;
-
-        pxTCB = prvGetTCBFromHandle( xTask );
-        uxReturn = ( uint8_t * ) pxTCB->pxStack;
-
-        return uxReturn;
-    }
-
-#endif /* INCLUDE_pxTaskGetStackStart */
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
@@ -4910,7 +4880,7 @@ static void prvResetNextTaskUnblockTime( void )
 }
 /*-----------------------------------------------------------*/
 
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) || ( configNUM_CORES > 1 ) )
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
 
     TaskHandle_t xTaskGetCurrentTaskHandle( void )
     {
@@ -4920,19 +4890,6 @@ static void prvResetNextTaskUnblockTime( void )
         state = portSET_INTERRUPT_MASK_FROM_ISR();
         xReturn = pxCurrentTCB[ xPortGetCoreID() ];
         portCLEAR_INTERRUPT_MASK_FROM_ISR( state );
-
-        return xReturn;
-    }
-
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid )
-    {
-        TaskHandle_t xReturn = NULL;
-
-        /*Xtensa-specific: the pxCurrentPCB pointer is atomic so we shouldn't need a lock. */
-        if( cpuid < configNUM_CORES )
-        {
-            xReturn = pxCurrentTCB[ cpuid ];
-        }
 
         return xReturn;
     }

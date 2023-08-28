@@ -1950,21 +1950,6 @@ UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTIO
  */
 configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
-/**
- * Returns the start of the stack associated with xTask.
- *
- * INCLUDE_pxTaskGetStackStart must be set to 1 in FreeRTOSConfig.h for
- * this function to be available.
- *
- * Returns the lowest stack memory address, regardless of whether the stack grows up or down.
- *
- * @param xTask Handle of the task associated with the stack returned.
- * Set xTask to NULL to return the stack of the calling task.
- *
- * @return A pointer to the start of the stack.
- */
-uint8_t * pxTaskGetStackStart( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
-
 /* When using trace macros it is sometimes necessary to include task.h before
  * FreeRTOS.h.  When this is done TaskHookFunction_t will not yet have been defined,
  * so the following two prototypes will cause a compilation error.  This can be
@@ -3438,32 +3423,6 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
  * SCHEDULER INTERNALS AVAILABLE FOR PORTING PURPOSES
  *----------------------------------------------------------*/
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
-
-/*
- * Return the handle of the task running on a certain CPU. Because of
- * the nature of SMP processing, there is no guarantee that this
- * value will still be valid on return and should only be used for
- * debugging purposes.
- */
-TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid );
-
-/**
- * Get the handle of idle task for the given CPU.
- *
- * xTaskGetIdleTaskHandleForCPU() is only available if
- * INCLUDE_xTaskGetIdleTaskHandle is set to 1 in FreeRTOSConfig.h.
- *
- * @param cpuid The CPU to get the handle for
- *
- * @return Idle task handle of a given cpu. It is not valid to call
- * xTaskGetIdleTaskHandleForCPU() before the scheduler has been started.
- */
-TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid );
-
-/*
- * Get the current core affinity of a task
- */
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS ONLY

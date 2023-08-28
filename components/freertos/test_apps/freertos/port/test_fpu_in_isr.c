@@ -115,11 +115,13 @@ static void unpinned_task(void *arg)
     vTaskSuspendAll();
 #endif
     // Check that the task is unpinned
+#if !CONFIG_FREERTOS_UNICORE
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
 #endif
+#endif // !CONFIG_FREERTOS_UNICORE
 
     // Allocate an ISR to use the FPU
     intr_handle_t isr_handle;
@@ -130,11 +132,13 @@ static void unpinned_task(void *arg)
     esp_intr_free(isr_handle);
 
     // Task should remain unpinned after the ISR uses the FPU
+#if !CONFIG_FREERTOS_UNICORE
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
 #endif
+#endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption
 #if CONFIG_FREERTOS_SMP
     vTaskPreemptionEnable(NULL);

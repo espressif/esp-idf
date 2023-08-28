@@ -137,11 +137,13 @@ static void unpinned_task(void *arg)
 #endif
     BaseType_t cur_core_num = xPortGetCoreID();
     // Check that the task is unpinned
+#if !CONFIG_FREERTOS_UNICORE
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
 #endif
+#endif // !CONFIG_FREERTOS_UNICORE
 
     /*
     Use the FPU
@@ -156,11 +158,13 @@ static void unpinned_task(void *arg)
     // We allow a 0.1% delta on the final result in case of any loss of precision from floating point calculations
     TEST_ASSERT_FLOAT_WITHIN(0.00256f, 2.56f, test_float);
 
+#if !CONFIG_FREERTOS_UNICORE
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(1 << cur_core_num, vTaskCoreAffinityGet(NULL));
 #else
     TEST_ASSERT_EQUAL(cur_core_num, xTaskGetAffinity(NULL));
 #endif
+#endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption
 #if CONFIG_FREERTOS_SMP
     vTaskPreemptionEnable(NULL);

@@ -28,7 +28,9 @@ entries:
         # Task Utilities
         tasks:xTaskGetCurrentTaskHandleForCPU (default)
         tasks:xTaskGetIdleTaskHandleForCPU (default)
+        tasks:xTaskGetCurrentTaskHandleForCPU (default)
         tasks:xTaskGetAffinity (default)
+        tasks:pxTaskGetStackStart (default)
         tasks:prvTaskPriorityRaise (default)
         tasks:prvTaskPriorityRestore (default)
         # TLSP Deletion Callbacks

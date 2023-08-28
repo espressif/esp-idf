@@ -244,64 +244,101 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
 /* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
-#if CONFIG_FREERTOS_SMP
-
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
-    {
-        TaskHandle_t xTaskHandleTemp;
-
-        assert( xCoreID >= 0 && xCoreID < configNUM_CORES );
-        taskENTER_CRITICAL();
-        xTaskHandleTemp = ( TaskHandle_t ) pxCurrentTCBs[ xCoreID ];
-        taskEXIT_CRITICAL();
-        return xTaskHandleTemp;
-    }
-
-#endif /* CONFIG_FREERTOS_SMP */
-/*----------------------------------------------------------*/
-
-#if CONFIG_FREERTOS_SMP
+#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
 
     TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
     {
-        assert( xCoreID >= 0 && xCoreID < configNUM_CORES );
+        configASSERT( xCoreID >= 0 && xCoreID < configNUM_CORES );
+        configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
         return ( TaskHandle_t ) xIdleTaskHandle[ xCoreID ];
     }
 
-#endif /* CONFIG_FREERTOS_SMP */
+#endif /* INCLUDE_xTaskGetIdleTaskHandle */
 /*----------------------------------------------------------*/
 
-#if CONFIG_FREERTOS_SMP
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
 
-    BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
     {
-        taskENTER_CRITICAL();
-        UBaseType_t uxCoreAffinityMask;
-        #if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-            TCB_t * pxTCB = prvGetTCBFromHandle( xTask );
-            uxCoreAffinityMask = pxTCB->uxCoreAffinityMask;
-        #else
-            uxCoreAffinityMask = tskNO_AFFINITY;
-        #endif
-        taskEXIT_CRITICAL();
-        BaseType_t ret;
+        TaskHandle_t xReturn;
 
-        /* If the task is not pinned to a particular core, treat it as tskNO_AFFINITY */
-        if( uxCoreAffinityMask & ( uxCoreAffinityMask - 1 ) ) /* If more than one bit set */
+        #if CONFIG_FREERTOS_SMP
         {
-            ret = tskNO_AFFINITY;
+            xReturn = xTaskGetCurrentTaskHandleCPU( xCoreID );
         }
-        else
+        #else /* CONFIG_FREERTOS_SMP */
         {
-            int index_plus_one = __builtin_ffs( uxCoreAffinityMask );
-            assert( index_plus_one >= 1 );
-            ret = index_plus_one - 1;
+            if( xCoreID < configNUM_CORES )
+            {
+                xReturn = pxCurrentTCB[ xCoreID ];
+            }
+            else
+            {
+                xReturn = NULL;
+            }
         }
+        #endif /* CONFIG_FREERTOS_SMP */
 
-        return ret;
+        return xReturn;
     }
 
-#endif /* CONFIG_FREERTOS_SMP */
+#endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
+/*----------------------------------------------------------*/
+
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+    BaseType_t xReturn;
+
+    #if ( configNUM_CORES > 1 )
+    {
+        #if CONFIG_FREERTOS_SMP
+            UBaseType_t uxCoreAffinityMask;
+
+            /* Get the core affinity mask and covert it to an ID */
+            uxCoreAffinityMask = vTaskCoreAffinityGet( xTask );
+
+            /* If the task is not pinned to a particular core, treat it as tskNO_AFFINITY */
+            if( uxCoreAffinityMask & ( uxCoreAffinityMask - 1 ) ) /* If more than one bit set */
+            {
+                xReturn = tskNO_AFFINITY;
+            }
+            else
+            {
+                int iIndexPlusOne = __builtin_ffs( uxCoreAffinityMask );
+                assert( iIndexPlusOne >= 1 );
+                xReturn = iIndexPlusOne - 1;
+            }
+        #else /* CONFIG_FREERTOS_SMP */
+            TCB_t * pxTCB;
+
+            pxTCB = prvGetTCBFromHandle( xTask );
+            /* Simply read the xCoreID member of the TCB */
+            taskENTER_CRITICAL( &xKernelLock );
+            xReturn = pxTCB->xCoreID;
+            taskEXIT_CRITICAL_ISR( &xKernelLock );
+        #endif /* CONFIG_FREERTOS_SMP */
+    }
+    #else /* configNUM_CORES > 1 */
+    {
+        /* Single-core. Just return a core ID of 0 */
+        xReturn = 0;
+    }
+    #endif /* configNUM_CORES > 1 */
+
+    return xReturn;
+}
+/*----------------------------------------------------------*/
+
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
+{
+    TCB_t * pxTCB;
+    uint8_t * uxReturn;
+
+    pxTCB = prvGetTCBFromHandle( xTask );
+    uxReturn = ( uint8_t * ) pxTCB->pxStack;
+
+    return uxReturn;
+}
 /*----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskPrioritySet == 1 )

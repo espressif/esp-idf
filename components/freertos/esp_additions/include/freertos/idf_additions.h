@@ -103,45 +103,35 @@
 
 #endif /* ( CONFIG_FREERTOS_SMP && ( configSUPPORT_STATIC_ALLOCATION == 1 ) ) */
 
-/* ------------------------------------------------- Task Utilities ----------------------------------------------------
- * Todo: Move IDF FreeRTOS SMP related additions to this header as well (see IDF-7201)
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#if CONFIG_FREERTOS_SMP
+/* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
 /**
- * @brief Get the handle of the task running on a certain core
+ * @brief Get the handle of idle task for the given core.
+ *
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)
+ *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call xTaskGetIdleTaskHandle()
+ * instead.
+ * @param xCoreID The core to query
+ * @return Handle of the idle task for the queried core
+ */
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
+
+/**
+ * @brief Get the handle of the task currently running on a certain core
  *
  * Because of the nature of SMP processing, there is no guarantee that this
  * value will still be valid on return and should only be used for debugging
  * purposes.
  *
- * [refactor-todo] Mark this function as deprecated, call
- * xTaskGetCurrentTaskHandleCPU() instead
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)
  *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call xTaskGetCurrentTaskHandleCPU()
+ * instead.
  * @param xCoreID The core to query
  * @return Handle of the current task running on the queried core
  */
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID );
-
-#endif /* CONFIG_FREERTOS_SMP */
-
-#if CONFIG_FREERTOS_SMP
-
-/**
- * @brief Get the handle of idle task for the given CPU.
- *
- * [refactor-todo] Mark this function as deprecated, call
- * xTaskGetIdleTaskHandle() instead
- *
- * @param xCoreID The core to query
- * @return Handle of the idle task for the queried core
- */
-    TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
-
-#endif /* CONFIG_FREERTOS_SMP */
-
-#if CONFIG_FREERTOS_SMP
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID );
 
 /**
  * @brief Get the current core affinity of a particular task
@@ -150,15 +140,31 @@
  * pinned to a particular core, the core ID is returned. If the task is not
  * pinned to a particular core, tskNO_AFFINITY is returned.
  *
- * [refactor-todo] Mark this function as deprecated, call vTaskCoreAffinityGet()
- * instead
+ * If CONFIG_FREERTOS_UNICORE is enabled, this function simply returns 0.
  *
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)(IDF-8164)
+ *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call vTaskCoreAffinityGet()
+ * instead.
  * @param xTask The task to query
  * @return The tasks coreID or tskNO_AFFINITY
  */
-    BaseType_t xTaskGetAffinity( TaskHandle_t xTask );
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask );
 
-#endif /* CONFIG_FREERTOS_SMP */
+/**
+ * Returns the start of the stack associated with xTask.
+ *
+ * Returns the lowest stack memory address, regardless of whether the stack
+ * grows up or down.
+ *
+ * [refactor-todo] Change return type to StackType_t (IDF-8158)
+ *
+ * @param xTask Handle of the task associated with the stack returned.
+ * Set xTask to NULL to return the stack of the calling task.
+ *
+ * @return A pointer to the start of the stack.
+ */
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
 
 /* --------------------------------------------- TLSP Deletion Callbacks -----------------------------------------------
  * TLSP Deletion Callback API Additions
