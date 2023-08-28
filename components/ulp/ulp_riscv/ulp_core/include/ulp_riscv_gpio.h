@@ -12,7 +12,7 @@ extern "C" {
 
 #include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
-
+#include "ulp_riscv_register_ops.h"
 
 typedef enum {
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */

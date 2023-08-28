@@ -7,6 +7,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "ulp_riscv_register_ops.h"
 #include "hal/touch_sensor_types.h"
 
 #ifdef __cplusplus
